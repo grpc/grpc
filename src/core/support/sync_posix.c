@@ -59,8 +59,11 @@ void gpr_mu_unlock(gpr_mu* mu) {
 }
 
 int gpr_mu_trylock(gpr_mu* mu) {
-  int err = pthread_mutex_trylock(mu);
+  int err;
+  GPR_TIMER_BEGIN("gpr_mu_trylock", 0);
+  err = pthread_mutex_trylock(mu);
   GPR_ASSERT(err == 0 || err == EBUSY);
+  GPR_TIMER_END("gpr_mu_trylock", 0);
   return err == 0;
 }
 

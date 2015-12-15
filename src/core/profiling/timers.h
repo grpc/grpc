@@ -48,6 +48,8 @@ void gpr_timer_begin(const char *tagstr, int important, const char *file,
 void gpr_timer_end(const char *tagstr, int important, const char *file,
                    int line);
 
+void gpr_timers_set_log_filename(const char *filename);
+
 #if !(defined(GRPC_STAP_PROFILER) + defined(GRPC_BASIC_PROFILER))
 /* No profiling. No-op all the things. */
 #define GPR_TIMER_MARK(tag, important) \

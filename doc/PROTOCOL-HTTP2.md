@@ -45,7 +45,7 @@ Request-Headers are delivered as HTTP2 headers in HEADERS + CONTINUATION frames.
 * **Custom-Metadata** → Binary-Header / ASCII-Header
 * **Binary-Header** → {Header-Name "-bin" } {_base64 encoded value_}
 * **ASCII-Header** → Header-Name ASCII-Value
-* **Header-Name** → 1\*( %x30-39 / %x61-7A / "\_" / "-") ; 0-9 a-z \_ -
+* **Header-Name** → 1\*( %x30-39 / %x61-7A / "\_" / "-" / ".") ; 0-9 a-z \_ - .
 * **ASCII-Value** → 1\*( %x20-%x7E ) ; space and printable ASCII
 
 

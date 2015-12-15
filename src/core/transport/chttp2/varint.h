@@ -50,7 +50,8 @@ void grpc_chttp2_hpack_write_varint_tail(gpr_uint32 tail_value,
 /* maximum value that can be bitpacked with the opcode if the opcode has a
    prefix
    of length prefix_bits */
-#define GRPC_CHTTP2_MAX_IN_PREFIX(prefix_bits) ((1 << (8 - (prefix_bits))) - 1)
+#define GRPC_CHTTP2_MAX_IN_PREFIX(prefix_bits) \
+  ((gpr_uint32)((1 << (8 - (prefix_bits))) - 1))
 
 /* length required to bitpack a value */
 #define GRPC_CHTTP2_VARINT_LENGTH(n, prefix_bits) \
@@ -65,7 +66,8 @@ void grpc_chttp2_hpack_write_varint_tail(gpr_uint32 tail_value,
     if ((length) == 1u) {                                                     \
       (tgt)[0] = (gpr_uint8)((prefix_or) | (n));                              \
     } else {                                                                  \
-      (tgt)[0] = (prefix_or) | GRPC_CHTTP2_MAX_IN_PREFIX(prefix_bits);        \
+      (tgt)[0] =                                                              \
+          (prefix_or) | (gpr_uint8)GRPC_CHTTP2_MAX_IN_PREFIX(prefix_bits);    \
       grpc_chttp2_hpack_write_varint_tail(                                    \
           (n)-GRPC_CHTTP2_MAX_IN_PREFIX(prefix_bits), (tgt) + 1, (length)-1); \
     }                                                                         \

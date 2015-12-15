@@ -38,7 +38,8 @@
 
 #include "src/core/iomgr/pollset.h"
 #include "src/core/iomgr/pollset_set.h"
-#include "src/core/transport/stream_op.h"
+#include "src/core/transport/metadata_batch.h"
+#include "src/core/transport/byte_stream.h"
 #include "src/core/channel/context.h"
 
 /* forward declarations */
@@ -49,36 +50,48 @@ typedef struct grpc_transport grpc_transport;
    for a stream. */
 typedef struct grpc_stream grpc_stream;
 
-/* Represents the send/recv closed state of a stream. */
-typedef enum grpc_stream_state {
-  /* the stream is open for sends and receives */
-  GRPC_STREAM_OPEN,
-  /* the stream is closed for sends, but may still receive data */
-  GRPC_STREAM_SEND_CLOSED,
-  /* the stream is closed for receives, but may still send data */
-  GRPC_STREAM_RECV_CLOSED,
-  /* the stream is closed for both sends and receives */
-  GRPC_STREAM_CLOSED
-} grpc_stream_state;
+/*#define GRPC_STREAM_REFCOUNT_DEBUG*/
+
+typedef struct grpc_stream_refcount {
+  gpr_refcount refs;
+  grpc_closure destroy;
+#ifdef GRPC_STREAM_REFCOUNT_DEBUG
+  const char *object_type;
+#endif
+} grpc_stream_refcount;
+
+#ifdef GRPC_STREAM_REFCOUNT_DEBUG
+void grpc_stream_ref_init(grpc_stream_refcount *refcount, int initial_refs,
+                          grpc_iomgr_cb_func cb, void *cb_arg,
+                          const char *object_type);
+void grpc_stream_ref(grpc_stream_refcount *refcount, const char *reason);
+void grpc_stream_unref(grpc_exec_ctx *exec_ctx, grpc_stream_refcount *refcount,
+                       const char *reason);
+#define GRPC_STREAM_REF_INIT(rc, ir, cb, cb_arg, objtype) \
+  grpc_stream_ref_init(rc, ir, cb, cb_arg, objtype)
+#else
+void grpc_stream_ref_init(grpc_stream_refcount *refcount, int initial_refs,
+                          grpc_iomgr_cb_func cb, void *cb_arg);
+void grpc_stream_ref(grpc_stream_refcount *refcount);
+void grpc_stream_unref(grpc_exec_ctx *exec_ctx, grpc_stream_refcount *refcount);
+#define GRPC_STREAM_REF_INIT(rc, ir, cb, cb_arg, objtype) \
+  grpc_stream_ref_init(rc, ir, cb, cb_arg)
+#endif
 
 /* Transport stream op: a set of operations to perform on a transport
    against a single stream */
 typedef struct grpc_transport_stream_op {
-  grpc_closure *on_consumed;
+  grpc_metadata_batch *send_initial_metadata;
+  grpc_metadata_batch *send_trailing_metadata;
 
-  grpc_stream_op_buffer *send_ops;
-  int is_last_send;
-  grpc_closure *on_done_send;
+  grpc_byte_stream *send_message;
 
-  grpc_stream_op_buffer *recv_ops;
-  grpc_stream_state *recv_state;
-  /** The number of bytes this peer is currently prepared to receive.
-      These bytes will be eventually used to replenish per-stream flow control
-      windows. */
-  size_t max_recv_bytes;
-  grpc_closure *on_done_recv;
+  grpc_metadata_batch *recv_initial_metadata;
+  grpc_byte_stream **recv_message;
+  grpc_closure *recv_message_ready;
+  grpc_metadata_batch *recv_trailing_metadata;
 
-  grpc_pollset *bind_pollset;
+  grpc_closure *on_complete;
 
   /** If != GRPC_STATUS_OK, cancel this stream */
   grpc_status_code cancel_with_status;
@@ -96,7 +109,7 @@ typedef struct grpc_transport_stream_op {
 typedef struct grpc_transport_op {
   /** called when processing of this op is done */
   grpc_closure *on_consumed;
-  /** connectivity monitoring */
+  /** connectivity monitoring - set connectivity_state to NULL to unsubscribe */
   grpc_closure *on_connectivity_state_change;
   grpc_connectivity_state *connectivity_state;
   /** should the transport be disconnected */
@@ -110,8 +123,8 @@ typedef struct grpc_transport_op {
   gpr_slice *goaway_message;
   /** set the callback for accepting new streams;
       this is a permanent callback, unlike the other one-shot closures */
-  void (*set_accept_stream)(void *user_data, grpc_transport *transport,
-                            const void *server_data);
+  void (*set_accept_stream)(grpc_exec_ctx *exec_ctx, void *user_data,
+                            grpc_transport *transport, const void *server_data);
   void *set_accept_stream_user_data;
   /** add this transport to a pollset */
   grpc_pollset *bind_pollset;
@@ -136,8 +149,12 @@ size_t grpc_transport_stream_size(grpc_transport *transport);
                    supplied from the accept_stream callback function */
 int grpc_transport_init_stream(grpc_exec_ctx *exec_ctx,
                                grpc_transport *transport, grpc_stream *stream,
-                               const void *server_data,
-                               grpc_transport_stream_op *initial_op);
+                               grpc_stream_refcount *refcount,
+                               const void *server_data);
+
+void grpc_transport_set_pollset(grpc_exec_ctx *exec_ctx,
+                                grpc_transport *transport, grpc_stream *stream,
+                                grpc_pollset *pollset);
 
 /* Destroy transport data for a stream.
 

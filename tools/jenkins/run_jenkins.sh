@@ -63,7 +63,7 @@ then
   # Prevent msbuild from picking up "platform" env variable, which would break the build
   unset platform
 
-  python tools/run_tests/run_tests.py -t -l $language -x report.xml $@ || true
+  python tools/run_tests/run_tests.py -t -l $language -c $config -x report.xml $@ || true
 
 elif [ "$platform" == "macos" ]
 then
@@ -77,11 +77,6 @@ then
 
   MAKE=gmake ./tools/run_tests/run_tests.py -t -l $language -c $config -x report.xml $@ || true
 
-elif [ "$platform" == "interop" ]
-then
-  echo "building interop tests for language $language"
-
-  ./tools/run_tests/run_interop_tests.py --use_docker -t -l $language --cloud_to_prod --server all || true
 else
   echo "Unknown platform $platform"
   exit 1

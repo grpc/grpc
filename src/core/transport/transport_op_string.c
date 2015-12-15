@@ -63,46 +63,10 @@ static void put_metadata_list(gpr_strvec *b, grpc_metadata_batch md) {
   }
   if (gpr_time_cmp(md.deadline, gpr_inf_future(md.deadline.clock_type)) != 0) {
     char *tmp;
-    gpr_asprintf(&tmp, " deadline=%d.%09d", md.deadline.tv_sec,
-                 md.deadline.tv_nsec);
+    gpr_asprintf(&tmp, " deadline=%lld.%09d", (long long)md.deadline.tv_sec,
+                 (int)md.deadline.tv_nsec);
     gpr_strvec_add(b, tmp);
   }
-}
-
-char *grpc_sopb_string(grpc_stream_op_buffer *sopb) {
-  char *out;
-  char *tmp;
-  size_t i;
-  gpr_strvec b;
-  gpr_strvec_init(&b);
-
-  for (i = 0; i < sopb->nops; i++) {
-    grpc_stream_op *op = &sopb->ops[i];
-    if (i > 0) gpr_strvec_add(&b, gpr_strdup(", "));
-    switch (op->type) {
-      case GRPC_NO_OP:
-        gpr_strvec_add(&b, gpr_strdup("NO_OP"));
-        break;
-      case GRPC_OP_BEGIN_MESSAGE:
-        gpr_asprintf(&tmp, "BEGIN_MESSAGE:%d", op->data.begin_message.length);
-        gpr_strvec_add(&b, tmp);
-        break;
-      case GRPC_OP_SLICE:
-        gpr_asprintf(&tmp, "SLICE:%d", GPR_SLICE_LENGTH(op->data.slice));
-        gpr_strvec_add(&b, tmp);
-        break;
-      case GRPC_OP_METADATA:
-        gpr_strvec_add(&b, gpr_strdup("METADATA{"));
-        put_metadata_list(&b, op->data.metadata);
-        gpr_strvec_add(&b, gpr_strdup("}"));
-        break;
-    }
-  }
-
-  out = gpr_strvec_flatten(&b, NULL);
-  gpr_strvec_destroy(&b);
-
-  return out;
 }
 
 char *grpc_transport_stream_op_string(grpc_transport_stream_op *op) {
@@ -113,42 +77,52 @@ char *grpc_transport_stream_op_string(grpc_transport_stream_op *op) {
   gpr_strvec b;
   gpr_strvec_init(&b);
 
-  if (op->send_ops) {
+  if (op->send_initial_metadata != NULL) {
     if (!first) gpr_strvec_add(&b, gpr_strdup(" "));
     first = 0;
-    gpr_asprintf(&tmp, "SEND%s:%p", op->is_last_send ? "_LAST" : "",
-                 op->on_done_send);
-    gpr_strvec_add(&b, tmp);
-    gpr_strvec_add(&b, gpr_strdup("["));
-    gpr_strvec_add(&b, grpc_sopb_string(op->send_ops));
-    gpr_strvec_add(&b, gpr_strdup("]"));
+    gpr_strvec_add(&b, gpr_strdup("SEND_INITIAL_METADATA{"));
+    put_metadata_list(&b, *op->send_initial_metadata);
+    gpr_strvec_add(&b, gpr_strdup("}"));
   }
 
-  if (op->recv_ops) {
+  if (op->send_message != NULL) {
     if (!first) gpr_strvec_add(&b, gpr_strdup(" "));
     first = 0;
-    gpr_asprintf(&tmp, "RECV:%p:max_recv_bytes=%d", op->on_done_recv,
-                 op->max_recv_bytes);
+    gpr_asprintf(&tmp, "SEND_MESSAGE:flags=0x%08x:len=%d",
+                 op->send_message->flags, op->send_message->length);
     gpr_strvec_add(&b, tmp);
   }
 
-  if (op->bind_pollset) {
+  if (op->send_trailing_metadata != NULL) {
     if (!first) gpr_strvec_add(&b, gpr_strdup(" "));
     first = 0;
-    gpr_strvec_add(&b, gpr_strdup("BIND"));
+    gpr_strvec_add(&b, gpr_strdup("SEND_TRAILING_METADATA{"));
+    put_metadata_list(&b, *op->send_trailing_metadata);
+    gpr_strvec_add(&b, gpr_strdup("}"));
+  }
+
+  if (op->recv_initial_metadata != NULL) {
+    if (!first) gpr_strvec_add(&b, gpr_strdup(" "));
+    first = 0;
+    gpr_strvec_add(&b, gpr_strdup("RECV_INITIAL_METADATA"));
+  }
+
+  if (op->recv_message != NULL) {
+    if (!first) gpr_strvec_add(&b, gpr_strdup(" "));
+    first = 0;
+    gpr_strvec_add(&b, gpr_strdup("RECV_MESSAGE"));
+  }
+
+  if (op->recv_trailing_metadata != NULL) {
+    if (!first) gpr_strvec_add(&b, gpr_strdup(" "));
+    first = 0;
+    gpr_strvec_add(&b, gpr_strdup("RECV_TRAILING_METADATA"));
   }
 
   if (op->cancel_with_status != GRPC_STATUS_OK) {
     if (!first) gpr_strvec_add(&b, gpr_strdup(" "));
     first = 0;
     gpr_asprintf(&tmp, "CANCEL:%d", op->cancel_with_status);
-    gpr_strvec_add(&b, tmp);
-  }
-
-  if (op->on_consumed != NULL) {
-    if (!first) gpr_strvec_add(&b, gpr_strdup(" "));
-    first = 0;
-    gpr_asprintf(&tmp, "ON_CONSUMED:%p", op->on_consumed);
     gpr_strvec_add(&b, tmp);
   }
 

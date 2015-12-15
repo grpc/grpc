@@ -44,11 +44,11 @@
 #include <grpc/support/useful.h>
 
 static void setup_transport(grpc_exec_ctx *exec_ctx, void *server,
-                            grpc_transport *transport, grpc_mdctx *mdctx) {
+                            grpc_transport *transport) {
   static grpc_channel_filter const *extra_filters[] = {
       &grpc_http_server_filter};
   grpc_server_setup_transport(exec_ctx, server, transport, extra_filters,
-                              GPR_ARRAY_SIZE(extra_filters), mdctx,
+                              GPR_ARRAY_SIZE(extra_filters),
                               grpc_server_get_channel_args(server));
 }
 
@@ -61,10 +61,9 @@ static void new_transport(grpc_exec_ctx *exec_ctx, void *server,
    * (as in server_secure_chttp2.c) needs to add synchronization to avoid this
    * case.
    */
-  grpc_mdctx *mdctx = grpc_mdctx_create();
   grpc_transport *transport = grpc_create_chttp2_transport(
-      exec_ctx, grpc_server_get_channel_args(server), tcp, mdctx, 0);
-  setup_transport(exec_ctx, server, transport, mdctx);
+      exec_ctx, grpc_server_get_channel_args(server), tcp, 0);
+  setup_transport(exec_ctx, server, transport);
   grpc_chttp2_transport_start_reading(exec_ctx, transport, NULL, 0);
 }
 
@@ -102,15 +101,15 @@ int grpc_server_add_insecure_http2_port(grpc_server *server, const char *addr) {
   }
 
   tcp = grpc_tcp_server_create();
-  if (!tcp) {
-    goto error;
-  }
+  GPR_ASSERT(tcp);
 
   for (i = 0; i < resolved->naddrs; i++) {
-    port_temp = grpc_tcp_server_add_port(
+    grpc_tcp_listener *listener;
+    listener = grpc_tcp_server_add_port(
         tcp, (struct sockaddr *)&resolved->addrs[i].addr,
         resolved->addrs[i].len);
-    if (port_temp >= 0) {
+    port_temp = grpc_tcp_listener_get_port(listener);
+    if (port_temp > 0) {
       if (port_num == -1) {
         port_num = port_temp;
       } else {

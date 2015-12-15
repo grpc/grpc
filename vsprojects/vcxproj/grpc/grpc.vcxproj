@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="..\..\..\vsprojects\packages\grpc.dependencies.openssl.1.0.2.3\build\native\grpc.dependencies.openssl.props" Condition="Exists('..\..\..\vsprojects\packages\grpc.dependencies.openssl.1.0.2.3\build\native\1.0.2.3.props')" />
+  <Import Project="..\..\..\vsprojects\packages\grpc.dependencies.openssl.1.0.204.1\build\native\grpc.dependencies.openssl.props" Condition="Exists('..\..\..\vsprojects\packages\grpc.dependencies.openssl.1.0.204.1\build\native\1.0.204.1.props')" />
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug-DLL|Win32">
       <Configuration>Debug-DLL</Configuration>
@@ -47,6 +47,9 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(VisualStudioVersion)' == '12.0'" Label="Configuration">
     <PlatformToolset>v120</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(VisualStudioVersion)' == '14.0'" Label="Configuration">
+    <PlatformToolset>v140</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)'=='Debug'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
@@ -96,7 +99,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;_USE_32BIT_TIME_T;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <TreatWarningAsError>true</TreatWarningAsError>
@@ -132,7 +135,7 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;_USE_32BIT_TIME_T;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <TreatWarningAsError>true</TreatWarningAsError>
@@ -172,7 +175,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;_USE_32BIT_TIME_T;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <TreatWarningAsError>true</TreatWarningAsError>
@@ -208,7 +211,7 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;_USE_32BIT_TIME_T;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <TreatWarningAsError>true</TreatWarningAsError>
@@ -276,9 +279,10 @@
     <ClInclude Include="..\..\..\src\core\channel\context.h" />
     <ClInclude Include="..\..\..\src\core\channel\http_client_filter.h" />
     <ClInclude Include="..\..\..\src\core\channel\http_server_filter.h" />
-    <ClInclude Include="..\..\..\src\core\channel\noop_filter.h" />
+    <ClInclude Include="..\..\..\src\core\channel\subchannel_call_holder.h" />
     <ClInclude Include="..\..\..\src\core\client_config\client_config.h" />
     <ClInclude Include="..\..\..\src\core\client_config\connector.h" />
+    <ClInclude Include="..\..\..\src\core\client_config\initial_connect_string.h" />
     <ClInclude Include="..\..\..\src\core\client_config\lb_policies\pick_first.h" />
     <ClInclude Include="..\..\..\src\core\client_config\lb_policies\round_robin.h" />
     <ClInclude Include="..\..\..\src\core\client_config\lb_policy.h" />
@@ -291,9 +295,8 @@
     <ClInclude Include="..\..\..\src\core\client_config\resolvers\sockaddr_resolver.h" />
     <ClInclude Include="..\..\..\src\core\client_config\subchannel.h" />
     <ClInclude Include="..\..\..\src\core\client_config\subchannel_factory.h" />
-    <ClInclude Include="..\..\..\src\core\client_config\subchannel_factory_decorators\add_channel_arg.h" />
-    <ClInclude Include="..\..\..\src\core\client_config\subchannel_factory_decorators\merge_channel_args.h" />
     <ClInclude Include="..\..\..\src\core\client_config\uri_parser.h" />
+    <ClInclude Include="..\..\..\src\core\compression\algorithm_metadata.h" />
     <ClInclude Include="..\..\..\src\core\compression\message_compress.h" />
     <ClInclude Include="..\..\..\src\core\debug\trace.h" />
     <ClInclude Include="..\..\..\src\core\httpcli\format_request.h" />
@@ -343,7 +346,6 @@
     <ClInclude Include="..\..\..\src\core\statistics\census_interface.h" />
     <ClInclude Include="..\..\..\src\core\statistics\census_rpc_stats.h" />
     <ClInclude Include="..\..\..\src\core\surface\api_trace.h" />
-    <ClInclude Include="..\..\..\src\core\surface\byte_buffer_queue.h" />
     <ClInclude Include="..\..\..\src\core\surface\call.h" />
     <ClInclude Include="..\..\..\src\core\surface\call_test_only.h" />
     <ClInclude Include="..\..\..\src\core\surface\channel.h" />
@@ -352,6 +354,7 @@
     <ClInclude Include="..\..\..\src\core\surface\init.h" />
     <ClInclude Include="..\..\..\src\core\surface\server.h" />
     <ClInclude Include="..\..\..\src\core\surface\surface_trace.h" />
+    <ClInclude Include="..\..\..\src\core\transport\byte_stream.h" />
     <ClInclude Include="..\..\..\src\core\transport\chttp2\alpn.h" />
     <ClInclude Include="..\..\..\src\core\transport\chttp2\bin_encoder.h" />
     <ClInclude Include="..\..\..\src\core\transport\chttp2\frame.h" />
@@ -361,6 +364,7 @@
     <ClInclude Include="..\..\..\src\core\transport\chttp2\frame_rst_stream.h" />
     <ClInclude Include="..\..\..\src\core\transport\chttp2\frame_settings.h" />
     <ClInclude Include="..\..\..\src\core\transport\chttp2\frame_window_update.h" />
+    <ClInclude Include="..\..\..\src\core\transport\chttp2\hpack_encoder.h" />
     <ClInclude Include="..\..\..\src\core\transport\chttp2\hpack_parser.h" />
     <ClInclude Include="..\..\..\src\core\transport\chttp2\hpack_table.h" />
     <ClInclude Include="..\..\..\src\core\transport\chttp2\http2_errors.h" />
@@ -368,14 +372,14 @@
     <ClInclude Include="..\..\..\src\core\transport\chttp2\incoming_metadata.h" />
     <ClInclude Include="..\..\..\src\core\transport\chttp2\internal.h" />
     <ClInclude Include="..\..\..\src\core\transport\chttp2\status_conversion.h" />
-    <ClInclude Include="..\..\..\src\core\transport\chttp2\stream_encoder.h" />
     <ClInclude Include="..\..\..\src\core\transport\chttp2\stream_map.h" />
     <ClInclude Include="..\..\..\src\core\transport\chttp2\timeout_encoding.h" />
     <ClInclude Include="..\..\..\src\core\transport\chttp2\varint.h" />
     <ClInclude Include="..\..\..\src\core\transport\chttp2_transport.h" />
     <ClInclude Include="..\..\..\src\core\transport\connectivity_state.h" />
     <ClInclude Include="..\..\..\src\core\transport\metadata.h" />
-    <ClInclude Include="..\..\..\src\core\transport\stream_op.h" />
+    <ClInclude Include="..\..\..\src\core\transport\metadata_batch.h" />
+    <ClInclude Include="..\..\..\src\core\transport\static_metadata.h" />
     <ClInclude Include="..\..\..\src\core\transport\transport.h" />
     <ClInclude Include="..\..\..\src\core\transport\transport_impl.h" />
     <ClInclude Include="..\..\..\src\core\census\aggregation.h" />
@@ -445,11 +449,15 @@
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\channel\http_server_filter.c">
     </ClCompile>
-    <ClCompile Include="..\..\..\src\core\channel\noop_filter.c">
+    <ClCompile Include="..\..\..\src\core\channel\subchannel_call_holder.c">
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\client_config\client_config.c">
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\client_config\connector.c">
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\client_config\default_initial_connect_string.c">
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\client_config\initial_connect_string.c">
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\client_config\lb_policies\pick_first.c">
     </ClCompile>
@@ -474,10 +482,6 @@
     <ClCompile Include="..\..\..\src\core\client_config\subchannel.c">
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\client_config\subchannel_factory.c">
-    </ClCompile>
-    <ClCompile Include="..\..\..\src\core\client_config\subchannel_factory_decorators\add_channel_arg.c">
-    </ClCompile>
-    <ClCompile Include="..\..\..\src\core\client_config\subchannel_factory_decorators\merge_channel_args.c">
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\client_config\uri_parser.c">
     </ClCompile>
@@ -585,8 +589,6 @@
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\surface\byte_buffer.c">
     </ClCompile>
-    <ClCompile Include="..\..\..\src\core\surface\byte_buffer_queue.c">
-    </ClCompile>
     <ClCompile Include="..\..\..\src\core\surface\byte_buffer_reader.c">
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\surface\call.c">
@@ -600,6 +602,8 @@
     <ClCompile Include="..\..\..\src\core\surface\channel_connectivity.c">
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\surface\channel_create.c">
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\surface\channel_ping.c">
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\surface\completion_queue.c">
     </ClCompile>
@@ -619,6 +623,8 @@
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\surface\version.c">
     </ClCompile>
+    <ClCompile Include="..\..\..\src\core\transport\byte_stream.c">
+    </ClCompile>
     <ClCompile Include="..\..\..\src\core\transport\chttp2\alpn.c">
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\transport\chttp2\bin_encoder.c">
@@ -635,6 +641,8 @@
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\transport\chttp2\frame_window_update.c">
     </ClCompile>
+    <ClCompile Include="..\..\..\src\core\transport\chttp2\hpack_encoder.c">
+    </ClCompile>
     <ClCompile Include="..\..\..\src\core\transport\chttp2\hpack_parser.c">
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\transport\chttp2\hpack_table.c">
@@ -646,8 +654,6 @@
     <ClCompile Include="..\..\..\src\core\transport\chttp2\parsing.c">
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\transport\chttp2\status_conversion.c">
-    </ClCompile>
-    <ClCompile Include="..\..\..\src\core\transport\chttp2\stream_encoder.c">
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\transport\chttp2\stream_lists.c">
     </ClCompile>
@@ -665,7 +671,9 @@
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\transport\metadata.c">
     </ClCompile>
-    <ClCompile Include="..\..\..\src\core\transport\stream_op.c">
+    <ClCompile Include="..\..\..\src\core\transport\metadata_batch.c">
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\transport\static_metadata.c">
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\transport\transport.c">
     </ClCompile>
@@ -690,20 +698,20 @@
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
-  <Import Project="..\..\..\vsprojects\packages\grpc.dependencies.zlib.redist.1.2.8.9\build\native\grpc.dependencies.zlib.redist.targets" Condition="Exists('..\..\..\vsprojects\packages\grpc.dependencies.zlib.redist.1.2.8.9\build\native\grpc.dependencies\grpc.dependencies.zlib.targets')" />
-  <Import Project="..\..\..\vsprojects\packages\grpc.dependencies.zlib.1.2.8.9\build\native\grpc.dependencies.zlib.targets" Condition="Exists('..\..\..\vsprojects\packages\grpc.dependencies.zlib.1.2.8.9\build\native\grpc.dependencies\grpc.dependencies.zlib.targets')" />
-  <Import Project="..\..\..\vsprojects\packages\grpc.dependencies.openssl.redist.1.0.2.3\build\native\grpc.dependencies.openssl.redist.targets" Condition="Exists('..\..\..\vsprojects\packages\grpc.dependencies.openssl.redist.1.0.2.3\build\native\grpc.dependencies\grpc.dependencies.openssl.targets')" />
-  <Import Project="..\..\..\vsprojects\packages\grpc.dependencies.openssl.1.0.2.3\build\native\grpc.dependencies.openssl.targets" Condition="Exists('..\..\..\vsprojects\packages\grpc.dependencies.openssl.1.0.2.3\build\native\grpc.dependencies\grpc.dependencies.openssl.targets')" />
+  <Import Project="..\..\..\vsprojects\packages\grpc.dependencies.zlib.redist.1.2.8.10\build\native\grpc.dependencies.zlib.redist.targets" Condition="Exists('..\..\..\vsprojects\packages\grpc.dependencies.zlib.redist.1.2.8.10\build\native\grpc.dependencies\grpc.dependencies.zlib.targets')" />
+  <Import Project="..\..\..\vsprojects\packages\grpc.dependencies.zlib.1.2.8.10\build\native\grpc.dependencies.zlib.targets" Condition="Exists('..\..\..\vsprojects\packages\grpc.dependencies.zlib.1.2.8.10\build\native\grpc.dependencies\grpc.dependencies.zlib.targets')" />
+  <Import Project="..\..\..\vsprojects\packages\grpc.dependencies.openssl.redist.1.0.204.1\build\native\grpc.dependencies.openssl.redist.targets" Condition="Exists('..\..\..\vsprojects\packages\grpc.dependencies.openssl.redist.1.0.204.1\build\native\grpc.dependencies\grpc.dependencies.openssl.targets')" />
+  <Import Project="..\..\..\vsprojects\packages\grpc.dependencies.openssl.1.0.204.1\build\native\grpc.dependencies.openssl.targets" Condition="Exists('..\..\..\vsprojects\packages\grpc.dependencies.openssl.1.0.204.1\build\native\grpc.dependencies\grpc.dependencies.openssl.targets')" />
   </ImportGroup>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Enable NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('..\..\..\vsprojects\packages\grpc.dependencies.zlib.redist.1.2.8.9\build\native\grpc.dependencies.zlib.redist.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\vsprojects\packages\grpc.dependencies.zlib.redist.1.2.8.9\build\native\grpc.dependencies.zlib.redist.targets')" />
-    <Error Condition="!Exists('..\..\..\vsprojects\packages\grpc.dependencies.zlib.1.2.8.9\build\native\grpc.dependencies.zlib.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\vsprojects\packages\grpc.dependencies.zlib.1.2.8.9\build\native\grpc.dependencies.zlib.targets')" />
-    <Error Condition="!Exists('..\..\..\vsprojects\packages\grpc.dependencies.openssl.redist.1.0.2.3\build\native\grpc.dependencies.openssl.redist.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\vsprojects\packages\grpc.dependencies.openssl.redist.1.0.2.3\build\native\grpc.dependencies.openssl.redist.targets')" />
-    <Error Condition="!Exists('..\..\..\vsprojects\packages\grpc.dependencies.openssl.1.0.2.3\build\native\grpc.dependencies.openssl.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\vsprojects\packages\grpc.dependencies.openssl.1.0.2.3\build\native\grpc.dependencies.openssl.props')" />
-    <Error Condition="!Exists('..\..\..\vsprojects\packages\grpc.dependencies.openssl.1.0.2.3\build\native\grpc.dependencies.openssl.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\vsprojects\packages\grpc.dependencies.openssl.1.0.2.3\build\native\grpc.dependencies.openssl.targets')" />
+    <Error Condition="!Exists('..\..\..\vsprojects\packages\grpc.dependencies.zlib.redist.1.2.8.10\build\native\grpc.dependencies.zlib.redist.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\vsprojects\packages\grpc.dependencies.zlib.redist.1.2.8.10\build\native\grpc.dependencies.zlib.redist.targets')" />
+    <Error Condition="!Exists('..\..\..\vsprojects\packages\grpc.dependencies.zlib.1.2.8.10\build\native\grpc.dependencies.zlib.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\vsprojects\packages\grpc.dependencies.zlib.1.2.8.10\build\native\grpc.dependencies.zlib.targets')" />
+    <Error Condition="!Exists('..\..\..\vsprojects\packages\grpc.dependencies.openssl.redist.1.0.204.1\build\native\grpc.dependencies.openssl.redist.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\vsprojects\packages\grpc.dependencies.openssl.redist.1.0.204.1\build\native\grpc.dependencies.openssl.redist.targets')" />
+    <Error Condition="!Exists('..\..\..\vsprojects\packages\grpc.dependencies.openssl.1.0.204.1\build\native\grpc.dependencies.openssl.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\vsprojects\packages\grpc.dependencies.openssl.1.0.204.1\build\native\grpc.dependencies.openssl.props')" />
+    <Error Condition="!Exists('..\..\..\vsprojects\packages\grpc.dependencies.openssl.1.0.204.1\build\native\grpc.dependencies.openssl.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\vsprojects\packages\grpc.dependencies.openssl.1.0.204.1\build\native\grpc.dependencies.openssl.targets')" />
   </Target>
 </Project>
 

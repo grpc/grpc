@@ -52,10 +52,15 @@
 #include "src/core/profiling/timers.h"
 #include "src/core/surface/api_trace.h"
 #include "src/core/surface/call.h"
+#include "src/core/surface/completion_queue.h"
 #include "src/core/surface/init.h"
 #include "src/core/surface/surface_trace.h"
 #include "src/core/transport/chttp2_transport.h"
 #include "src/core/transport/connectivity_state.h"
+
+#ifndef GRPC_DEFAULT_NAME_PREFIX
+#define GRPC_DEFAULT_NAME_PREFIX "dns:///"
+#endif
 
 #define MAX_PLUGINS 128
 
@@ -92,10 +97,11 @@ void grpc_init(void) {
   gpr_mu_lock(&g_init_mu);
   if (++g_initializations == 1) {
     gpr_time_init();
+    grpc_mdctx_global_init();
     grpc_lb_policy_registry_init(grpc_pick_first_lb_factory_create());
     grpc_register_lb_policy(grpc_pick_first_lb_factory_create());
     grpc_register_lb_policy(grpc_round_robin_lb_factory_create());
-    grpc_resolver_registry_init("dns:///");
+    grpc_resolver_registry_init(GRPC_DEFAULT_NAME_PREFIX);
     grpc_register_resolver_type(grpc_dns_resolver_factory_create());
     grpc_register_resolver_type(grpc_ipv4_resolver_factory_create());
     grpc_register_resolver_type(grpc_ipv6_resolver_factory_create());
@@ -118,6 +124,7 @@ void grpc_init(void) {
       }
     }
     gpr_timers_global_init();
+    grpc_cq_global_init();
     for (i = 0; i < g_number_of_plugins; i++) {
       if (g_all_of_the_plugins[i].init != NULL) {
         g_all_of_the_plugins[i].init();
@@ -133,17 +140,20 @@ void grpc_shutdown(void) {
   GRPC_API_TRACE("grpc_shutdown(void)", 0, ());
   gpr_mu_lock(&g_init_mu);
   if (--g_initializations == 0) {
-    grpc_iomgr_shutdown();
     grpc_executor_shutdown();
+    grpc_cq_global_shutdown();
+    grpc_iomgr_shutdown();
     census_shutdown();
     gpr_timers_global_destroy();
     grpc_tracer_shutdown();
     grpc_resolver_registry_shutdown();
+    grpc_lb_policy_registry_shutdown();
     for (i = 0; i < g_number_of_plugins; i++) {
       if (g_all_of_the_plugins[i].destroy != NULL) {
         g_all_of_the_plugins[i].destroy();
       }
     }
+    grpc_mdctx_global_shutdown();
   }
   gpr_mu_unlock(&g_init_mu);
 }

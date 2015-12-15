@@ -94,13 +94,19 @@
     <ClCompile Include="..\..\..\src\core\channel\http_server_filter.c">
       <Filter>src\core\channel</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\core\channel\noop_filter.c">
+    <ClCompile Include="..\..\..\src\core\channel\subchannel_call_holder.c">
       <Filter>src\core\channel</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\client_config\client_config.c">
       <Filter>src\core\client_config</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\client_config\connector.c">
+      <Filter>src\core\client_config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\client_config\default_initial_connect_string.c">
+      <Filter>src\core\client_config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\client_config\initial_connect_string.c">
       <Filter>src\core\client_config</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\client_config\lb_policies\pick_first.c">
@@ -138,12 +144,6 @@
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\client_config\subchannel_factory.c">
       <Filter>src\core\client_config</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\src\core\client_config\subchannel_factory_decorators\add_channel_arg.c">
-      <Filter>src\core\client_config\subchannel_factory_decorators</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\src\core\client_config\subchannel_factory_decorators\merge_channel_args.c">
-      <Filter>src\core\client_config\subchannel_factory_decorators</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\client_config\uri_parser.c">
       <Filter>src\core\client_config</Filter>
@@ -304,9 +304,6 @@
     <ClCompile Include="..\..\..\src\core\surface\byte_buffer.c">
       <Filter>src\core\surface</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\core\surface\byte_buffer_queue.c">
-      <Filter>src\core\surface</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\src\core\surface\byte_buffer_reader.c">
       <Filter>src\core\surface</Filter>
     </ClCompile>
@@ -326,6 +323,9 @@
       <Filter>src\core\surface</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\surface\channel_create.c">
+      <Filter>src\core\surface</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\surface\channel_ping.c">
       <Filter>src\core\surface</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\surface\completion_queue.c">
@@ -355,6 +355,9 @@
     <ClCompile Include="..\..\..\src\core\surface\version.c">
       <Filter>src\core\surface</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\src\core\transport\byte_stream.c">
+      <Filter>src\core\transport</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\src\core\transport\chttp2\alpn.c">
       <Filter>src\core\transport\chttp2</Filter>
     </ClCompile>
@@ -379,6 +382,9 @@
     <ClCompile Include="..\..\..\src\core\transport\chttp2\frame_window_update.c">
       <Filter>src\core\transport\chttp2</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\src\core\transport\chttp2\hpack_encoder.c">
+      <Filter>src\core\transport\chttp2</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\src\core\transport\chttp2\hpack_parser.c">
       <Filter>src\core\transport\chttp2</Filter>
     </ClCompile>
@@ -395,9 +401,6 @@
       <Filter>src\core\transport\chttp2</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\transport\chttp2\status_conversion.c">
-      <Filter>src\core\transport\chttp2</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\src\core\transport\chttp2\stream_encoder.c">
       <Filter>src\core\transport\chttp2</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\transport\chttp2\stream_lists.c">
@@ -424,7 +427,10 @@
     <ClCompile Include="..\..\..\src\core\transport\metadata.c">
       <Filter>src\core\transport</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\core\transport\stream_op.c">
+    <ClCompile Include="..\..\..\src\core\transport\metadata_batch.c">
+      <Filter>src\core\transport</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\transport\static_metadata.c">
       <Filter>src\core\transport</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\transport\transport.c">
@@ -539,13 +545,16 @@
     <ClInclude Include="..\..\..\src\core\channel\http_server_filter.h">
       <Filter>src\core\channel</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\src\core\channel\noop_filter.h">
+    <ClInclude Include="..\..\..\src\core\channel\subchannel_call_holder.h">
       <Filter>src\core\channel</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\core\client_config\client_config.h">
       <Filter>src\core\client_config</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\core\client_config\connector.h">
+      <Filter>src\core\client_config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\core\client_config\initial_connect_string.h">
       <Filter>src\core\client_config</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\core\client_config\lb_policies\pick_first.h">
@@ -584,14 +593,11 @@
     <ClInclude Include="..\..\..\src\core\client_config\subchannel_factory.h">
       <Filter>src\core\client_config</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\src\core\client_config\subchannel_factory_decorators\add_channel_arg.h">
-      <Filter>src\core\client_config\subchannel_factory_decorators</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\src\core\client_config\subchannel_factory_decorators\merge_channel_args.h">
-      <Filter>src\core\client_config\subchannel_factory_decorators</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\src\core\client_config\uri_parser.h">
       <Filter>src\core\client_config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\core\compression\algorithm_metadata.h">
+      <Filter>src\core\compression</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\core\compression\message_compress.h">
       <Filter>src\core\compression</Filter>
@@ -740,9 +746,6 @@
     <ClInclude Include="..\..\..\src\core\surface\api_trace.h">
       <Filter>src\core\surface</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\src\core\surface\byte_buffer_queue.h">
-      <Filter>src\core\surface</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\src\core\surface\call.h">
       <Filter>src\core\surface</Filter>
     </ClInclude>
@@ -766,6 +769,9 @@
     </ClInclude>
     <ClInclude Include="..\..\..\src\core\surface\surface_trace.h">
       <Filter>src\core\surface</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\core\transport\byte_stream.h">
+      <Filter>src\core\transport</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\core\transport\chttp2\alpn.h">
       <Filter>src\core\transport\chttp2</Filter>
@@ -794,6 +800,9 @@
     <ClInclude Include="..\..\..\src\core\transport\chttp2\frame_window_update.h">
       <Filter>src\core\transport\chttp2</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\src\core\transport\chttp2\hpack_encoder.h">
+      <Filter>src\core\transport\chttp2</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\..\src\core\transport\chttp2\hpack_parser.h">
       <Filter>src\core\transport\chttp2</Filter>
     </ClInclude>
@@ -815,9 +824,6 @@
     <ClInclude Include="..\..\..\src\core\transport\chttp2\status_conversion.h">
       <Filter>src\core\transport\chttp2</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\src\core\transport\chttp2\stream_encoder.h">
-      <Filter>src\core\transport\chttp2</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\src\core\transport\chttp2\stream_map.h">
       <Filter>src\core\transport\chttp2</Filter>
     </ClInclude>
@@ -836,7 +842,10 @@
     <ClInclude Include="..\..\..\src\core\transport\metadata.h">
       <Filter>src\core\transport</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\src\core\transport\stream_op.h">
+    <ClInclude Include="..\..\..\src\core\transport\metadata_batch.h">
+      <Filter>src\core\transport</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\core\transport\static_metadata.h">
       <Filter>src\core\transport</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\core\transport\transport.h">
@@ -883,9 +892,6 @@
     </Filter>
     <Filter Include="src\core\client_config\resolvers">
       <UniqueIdentifier>{6d97b8d9-2c15-927a-892a-709d073c02ab}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="src\core\client_config\subchannel_factory_decorators">
-      <UniqueIdentifier>{428cdbb1-c777-2c64-79b3-43d6ee413061}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\core\compression">
       <UniqueIdentifier>{263cb913-dfe6-42a4-096b-cac231f76305}</UniqueIdentifier>

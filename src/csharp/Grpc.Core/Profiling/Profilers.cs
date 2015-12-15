@@ -40,12 +40,12 @@ namespace Grpc.Core.Profiling
 {
     internal static class Profilers
     {
-        static readonly NopProfiler defaultProfiler = new NopProfiler();
+        static readonly NopProfiler DefaultProfiler = new NopProfiler();
         static readonly ThreadLocal<IProfiler> profilers = new ThreadLocal<IProfiler>();
 
         public static IProfiler ForCurrentThread()
         {
-            return profilers.Value ?? defaultProfiler;
+            return profilers.Value ?? DefaultProfiler;
         }
 
         public static void SetForCurrentThread(IProfiler profiler)
@@ -89,15 +89,18 @@ namespace Grpc.Core.Profiling
             this.entries = new ProfilerEntry[capacity];
         }
 
-        public void Begin(string tag) {
+        public void Begin(string tag)
+        {
             AddEntry(new ProfilerEntry(Timespec.PreciseNow, ProfilerEntry.Type.BEGIN, tag));
         }
 
-        public void End(string tag) {
+        public void End(string tag)
+        {
             AddEntry(new ProfilerEntry(Timespec.PreciseNow, ProfilerEntry.Type.END, tag));
         }
 
-        public void Mark(string tag) {
+        public void Mark(string tag)
+        {
             AddEntry(new ProfilerEntry(Timespec.PreciseNow, ProfilerEntry.Type.MARK, tag));
         }
 

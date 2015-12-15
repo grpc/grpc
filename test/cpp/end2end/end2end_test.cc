@@ -1191,14 +1191,14 @@ TEST_P(SecureEnd2endTest, ClientAuthContext) {
 }
 
 INSTANTIATE_TEST_CASE_P(End2end, End2endTest,
-                        ::testing::Values(TestScenario(false, true),
-                                          TestScenario(false, false)));
+                        ::testing::Values(TestScenario(false, false),
+                                          TestScenario(false, true)));
 
 INSTANTIATE_TEST_CASE_P(ProxyEnd2end, ProxyEnd2endTest,
-                        ::testing::Values(TestScenario(true, true),
-                                          TestScenario(true, false),
+                        ::testing::Values(TestScenario(false, false),
                                           TestScenario(false, true),
-                                          TestScenario(false, false)));
+                                          TestScenario(true, false),
+                                          TestScenario(true, true)));
 
 INSTANTIATE_TEST_CASE_P(SecureEnd2end, SecureEnd2endTest,
                         ::testing::Values(TestScenario(false, true)));

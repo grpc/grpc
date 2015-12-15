@@ -48,8 +48,13 @@ typedef struct grpc_pollset_vtable grpc_pollset_vtable;
    use the struct tag */
 struct grpc_fd;
 
+typedef struct grpc_cached_wakeup_fd {
+  grpc_wakeup_fd fd;
+  struct grpc_cached_wakeup_fd *next;
+} grpc_cached_wakeup_fd;
+
 typedef struct grpc_pollset_worker {
-  grpc_wakeup_fd wakeup_fd;
+  grpc_cached_wakeup_fd *wakeup_fd;
   int reevaluate_polling_on_wakeup;
   int kicked_specifically;
   struct grpc_pollset_worker *next;
@@ -74,12 +79,12 @@ typedef struct grpc_pollset {
     int fd;
     void *ptr;
   } data;
+  /* Local cache of eventfds for workers */
+  grpc_cached_wakeup_fd *local_wakeup_cache;
 } grpc_pollset;
 
 struct grpc_pollset_vtable {
   void (*add_fd)(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
-                 struct grpc_fd *fd, int and_unlock_pollset);
-  void (*del_fd)(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
                  struct grpc_fd *fd, int and_unlock_pollset);
   void (*maybe_work_and_unlock)(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
                                 grpc_pollset_worker *worker,
@@ -92,10 +97,6 @@ struct grpc_pollset_vtable {
 
 /* Add an fd to a pollset */
 void grpc_pollset_add_fd(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
-                         struct grpc_fd *fd);
-/* Force remove an fd from a pollset (normally they are removed on the next
-   poll after an fd is orphaned) */
-void grpc_pollset_del_fd(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
                          struct grpc_fd *fd);
 
 /* Returns the fd to listen on for kicks */

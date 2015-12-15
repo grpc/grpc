@@ -196,7 +196,7 @@ static void on_writable(grpc_exec_ctx *exec_ctx, void *acp, int success) {
 finish:
   if (fd != NULL) {
     grpc_pollset_set_del_fd(exec_ctx, ac->interested_parties, fd);
-    grpc_fd_orphan(exec_ctx, fd, NULL, "tcp_client_orphan");
+    grpc_fd_orphan(exec_ctx, fd, NULL, NULL, "tcp_client_orphan");
     fd = NULL;
   }
   done = (--ac->refs == 0);
@@ -265,7 +265,7 @@ void grpc_tcp_client_connect(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
 
   if (errno != EWOULDBLOCK && errno != EINPROGRESS) {
     gpr_log(GPR_ERROR, "connect error to '%s': %s", addr_str, strerror(errno));
-    grpc_fd_orphan(exec_ctx, fdobj, NULL, "tcp_client_connect_error");
+    grpc_fd_orphan(exec_ctx, fdobj, NULL, NULL, "tcp_client_connect_error");
     grpc_exec_ctx_enqueue(exec_ctx, closure, 0);
     goto done;
   }

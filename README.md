@@ -13,34 +13,28 @@ You can find more detailed documentation and examples in the [doc](doc) and [exa
 
 See grpc/INSTALL for installation instructions for various platforms.
 
-#Repository Structure
+#Repository Structure & Status
 
-This repository contains source code for gRPC libraries for multiple languages written on top
-of shared C core library [src/core] (src/core).
-
-   * C++ source code: [src/cpp] (src/cpp)
-   * Ruby source code: [src/ruby] (src/ruby)
-   * NodeJS source code: [src/node] (src/node)
-   * Python source code: [src/python] (src/python)
-   * PHP source code: [src/php] (src/php)
-   * C# source code: [src/csharp] (src/csharp)
-   * Objective-C source code: [src/objective-c] (src/objective-c)
-
-Java source code is in [grpc-java] (http://github.com/grpc/grpc-java) repository.
-Go source code is in [grpc-go] (http://github.com/grpc/grpc-go) repository.
-
-#Current Status of libraries
+This repository contains source code for gRPC libraries for multiple languages written on top of shared C core library [src/core] (src/core).
 
 Libraries in different languages are in different state of development. We are seeking contributions for all of these libraries.
 
-   * shared C core library [src/core] (src/core) : Beta - the surface API is stable
-   * C++ Library: [src/cpp] (src/cpp) : Beta - the surface API is stable
-   * Ruby Library: [src/ruby] (src/ruby) : Beta - the surface API is stable
-   * NodeJS Library: [src/node] (src/node) : Beta - the surface API is stable
-   * Python Library: [src/python] (src/python) : Beta - the surface API is stable
-   * C# Library: [src/csharp] (src/csharp) : Beta - the surface API is stable
-   * Objective-C Library: [src/objective-c] (src/objective-c): Beta - the surface API is stable
-   * PHP Library: [src/php] (src/php) : Beta - the surface API is stable
+| Language                | Source                              | Status                          |
+|-------------------------|-------------------------------------|---------------------------------|
+| Shared C [core library] | [src/core] (src/core)               | Beta - the surface API is stable |
+| C++                     | [src/cpp] (src/cpp)                 | Beta - the surface API is stable |
+| Ruby                    | [src/ruby] (src/ruby)               | Beta - the surface API is stable |
+| NodeJS                  | [src/node] (src/node)               | Beta - the surface API is stable |
+| Python                  | [src/python] (src/python)           | Beta - the surface API is stable |
+| PHP                     | [src/php] (src/php)                 | Beta - the surface API is stable |
+| C#                      | [src/csharp] (src/csharp)           | Beta - the surface API is stable |
+| Objective-C             | [src/objective-c] (src/objective-c) | Beta - the surface API is stable |
+
+<small>
+Java source code is in [grpc-java] (http://github.com/grpc/grpc-java) repository.
+Go source code is in [grpc-go] (http://github.com/grpc/grpc-go) repository.
+</small>
+
 
 #Overview
 

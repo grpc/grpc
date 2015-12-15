@@ -774,6 +774,7 @@ include/grpc++/impl/proto_utils.h \
 include/grpc++/impl/rpc_method.h \
 include/grpc++/impl/rpc_service_method.h \
 include/grpc++/impl/serialization_traits.h \
+include/grpc++/impl/server_builder_option.h \
 include/grpc++/impl/service_type.h \
 include/grpc++/impl/sync.h \
 include/grpc++/impl/sync_cxx11.h \
@@ -809,14 +810,13 @@ src/cpp/common/create_auth_context.h \
 src/cpp/server/dynamic_thread_pool.h \
 src/cpp/server/fixed_size_thread_pool.h \
 src/cpp/server/thread_pool_interface.h \
-src/cpp/client/secure_channel_arguments.cc \
 src/cpp/client/secure_credentials.cc \
 src/cpp/common/auth_property_iterator.cc \
 src/cpp/common/secure_auth_context.cc \
+src/cpp/common/secure_channel_arguments.cc \
 src/cpp/common/secure_create_auth_context.cc \
 src/cpp/server/secure_server_credentials.cc \
 src/cpp/client/channel.cc \
-src/cpp/client/channel_arguments.cc \
 src/cpp/client/client_context.cc \
 src/cpp/client/create_channel.cc \
 src/cpp/client/create_channel_internal.cc \
@@ -824,6 +824,7 @@ src/cpp/client/credentials.cc \
 src/cpp/client/generic_stub.cc \
 src/cpp/client/insecure_credentials.cc \
 src/cpp/common/call.cc \
+src/cpp/common/channel_arguments.cc \
 src/cpp/common/completion_queue.cc \
 src/cpp/common/rpc_method.cc \
 src/cpp/proto/proto_utils.cc \
