@@ -151,11 +151,11 @@ int main(int argc, char **argv) {
     /* figure out where we are */
     char *root;
     if (lslash) {
-      root = gpr_malloc(lslash - me + 1);
+      root = gpr_malloc((size_t)(lslash - me + 1));
       memcpy(root, me, (size_t)(lslash - me));
       root[lslash - me] = 0;
     } else {
-      root = strdup(".");
+      root = gpr_strdup(".");
     }
     gpr_asprintf(&args[0], "%s/../../test/core/httpcli/test_server.py", root);
     gpr_free(root);
