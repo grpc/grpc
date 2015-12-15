@@ -46,7 +46,7 @@
  * a protocol that the connecting client does not support. It does this by
  * overriding the functions declared in alpn.c from the core library. */
 
-static const char *const fake_versions[] = {"h2"};
+static const char *const fake_versions[] = {"not-h2"};
 
 int grpc_chttp2_is_alpn_version_supported(const char *version, size_t size) {
   size_t i;
