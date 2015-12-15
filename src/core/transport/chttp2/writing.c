@@ -332,10 +332,6 @@ void grpc_chttp2_cleanup_writing(
 
   while (grpc_chttp2_list_pop_written_stream(
       transport_global, transport_writing, &stream_global, &stream_writing)) {
-    if (stream_writing->sent_trailing_metadata) {
-      grpc_chttp2_mark_stream_closed(exec_ctx, transport_global, stream_global,
-                                     !transport_global->is_client, 1);
-    }
     if (stream_writing->sent_initial_metadata) {
       grpc_chttp2_complete_closure_step(
           exec_ctx, &stream_global->send_initial_metadata_finished, 1);
@@ -349,6 +345,10 @@ void grpc_chttp2_cleanup_writing(
     if (stream_writing->sent_trailing_metadata) {
       grpc_chttp2_complete_closure_step(
           exec_ctx, &stream_global->send_trailing_metadata_finished, 1);
+    }
+    if (stream_writing->sent_trailing_metadata) {
+      grpc_chttp2_mark_stream_closed(exec_ctx, transport_global, stream_global,
+                                     !transport_global->is_client, 1);
     }
     GRPC_CHTTP2_STREAM_UNREF(exec_ctx, stream_global, "chttp2_writing");
   }
