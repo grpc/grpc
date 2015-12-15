@@ -1963,6 +1963,10 @@ initial_settings_frame_bad_client_test: $(BINDIR)/$(CONFIG)/initial_settings_fra
 server_registered_method_bad_client_test: $(BINDIR)/$(CONFIG)/server_registered_method_bad_client_test
 simple_request_bad_client_test: $(BINDIR)/$(CONFIG)/simple_request_bad_client_test
 unknown_frame_bad_client_test: $(BINDIR)/$(CONFIG)/unknown_frame_bad_client_test
+bad_ssl_alpn_server: $(BINDIR)/$(CONFIG)/bad_ssl_alpn_server
+bad_ssl_cert_server: $(BINDIR)/$(CONFIG)/bad_ssl_cert_server
+bad_ssl_alpn_test: $(BINDIR)/$(CONFIG)/bad_ssl_alpn_test
+bad_ssl_cert_test: $(BINDIR)/$(CONFIG)/bad_ssl_cert_test
 
 run_dep_checks:
 	$(OPENSSL_ALPN_CHECK_CMD) || true
@@ -2059,7 +2063,7 @@ plugins: $(PROTOC_PLUGINS)
 
 privatelibs: privatelibs_c privatelibs_cxx
 
-privatelibs_c:  $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libreconnect_server.a $(LIBDIR)/$(CONFIG)/libtest_tcp_server.a $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_compress.a $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_fakesec.a $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full.a $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll.a $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_oauth2.a $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair.a $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair+trace.a $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair_1byte.a $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl.a $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl+poll.a $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uds.a $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uds+poll.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_compress.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair+trace.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair_1byte.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uds.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uds+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_bad_hostname.a $(LIBDIR)/$(CONFIG)/libend2end_test_binary_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_test_call_creds.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_accept.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_client_done.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_invoke.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_before_invoke.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_in_a_vacuum.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_with_status.a $(LIBDIR)/$(CONFIG)/libend2end_test_channel_connectivity.a $(LIBDIR)/$(CONFIG)/libend2end_test_channel_ping.a $(LIBDIR)/$(CONFIG)/libend2end_test_compressed_payload.a $(LIBDIR)/$(CONFIG)/libend2end_test_default_host.a $(LIBDIR)/$(CONFIG)/libend2end_test_disappearing_server.a $(LIBDIR)/$(CONFIG)/libend2end_test_empty_batch.a $(LIBDIR)/$(CONFIG)/libend2end_test_graceful_server_shutdown.a $(LIBDIR)/$(CONFIG)/libend2end_test_high_initial_seqno.a $(LIBDIR)/$(CONFIG)/libend2end_test_hpack_size.a $(LIBDIR)/$(CONFIG)/libend2end_test_invoke_large_request.a $(LIBDIR)/$(CONFIG)/libend2end_test_large_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_test_max_concurrent_streams.a $(LIBDIR)/$(CONFIG)/libend2end_test_max_message_length.a $(LIBDIR)/$(CONFIG)/libend2end_test_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_test_negative_deadline.a $(LIBDIR)/$(CONFIG)/libend2end_test_no_op.a $(LIBDIR)/$(CONFIG)/libend2end_test_payload.a $(LIBDIR)/$(CONFIG)/libend2end_test_ping_pong_streaming.a $(LIBDIR)/$(CONFIG)/libend2end_test_registered_call.a $(LIBDIR)/$(CONFIG)/libend2end_test_request_with_flags.a $(LIBDIR)/$(CONFIG)/libend2end_test_request_with_payload.a $(LIBDIR)/$(CONFIG)/libend2end_test_server_finishes_request.a $(LIBDIR)/$(CONFIG)/libend2end_test_shutdown_finishes_calls.a $(LIBDIR)/$(CONFIG)/libend2end_test_shutdown_finishes_tags.a $(LIBDIR)/$(CONFIG)/libend2end_test_simple_delayed_request.a $(LIBDIR)/$(CONFIG)/libend2end_test_simple_request.a $(LIBDIR)/$(CONFIG)/libend2end_test_trailing_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_bad_hostname.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_binary_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_after_accept.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_after_client_done.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_after_invoke.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_before_invoke.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_in_a_vacuum.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_with_status.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_channel_connectivity.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_channel_ping.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_compressed_payload.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_default_host.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_disappearing_server.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_empty_batch.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_graceful_server_shutdown.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_high_initial_seqno.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_hpack_size.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_invoke_large_request.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_large_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_max_concurrent_streams.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_max_message_length.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_negative_deadline.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_no_op.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_payload.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_ping_pong_streaming.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_registered_call.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_request_with_flags.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_request_with_payload.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_server_finishes_request.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_shutdown_finishes_calls.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_shutdown_finishes_tags.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_simple_delayed_request.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_simple_request.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_trailing_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libbad_client_test.a
+privatelibs_c:  $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libreconnect_server.a $(LIBDIR)/$(CONFIG)/libtest_tcp_server.a $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_compress.a $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_fakesec.a $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full.a $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll.a $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_oauth2.a $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair.a $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair+trace.a $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair_1byte.a $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl.a $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl+poll.a $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uds.a $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uds+poll.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_compress.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair+trace.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair_1byte.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uds.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uds+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_bad_hostname.a $(LIBDIR)/$(CONFIG)/libend2end_test_binary_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_test_call_creds.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_accept.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_client_done.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_invoke.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_before_invoke.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_in_a_vacuum.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_with_status.a $(LIBDIR)/$(CONFIG)/libend2end_test_channel_connectivity.a $(LIBDIR)/$(CONFIG)/libend2end_test_channel_ping.a $(LIBDIR)/$(CONFIG)/libend2end_test_compressed_payload.a $(LIBDIR)/$(CONFIG)/libend2end_test_default_host.a $(LIBDIR)/$(CONFIG)/libend2end_test_disappearing_server.a $(LIBDIR)/$(CONFIG)/libend2end_test_empty_batch.a $(LIBDIR)/$(CONFIG)/libend2end_test_graceful_server_shutdown.a $(LIBDIR)/$(CONFIG)/libend2end_test_high_initial_seqno.a $(LIBDIR)/$(CONFIG)/libend2end_test_hpack_size.a $(LIBDIR)/$(CONFIG)/libend2end_test_invoke_large_request.a $(LIBDIR)/$(CONFIG)/libend2end_test_large_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_test_max_concurrent_streams.a $(LIBDIR)/$(CONFIG)/libend2end_test_max_message_length.a $(LIBDIR)/$(CONFIG)/libend2end_test_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_test_negative_deadline.a $(LIBDIR)/$(CONFIG)/libend2end_test_no_op.a $(LIBDIR)/$(CONFIG)/libend2end_test_payload.a $(LIBDIR)/$(CONFIG)/libend2end_test_ping_pong_streaming.a $(LIBDIR)/$(CONFIG)/libend2end_test_registered_call.a $(LIBDIR)/$(CONFIG)/libend2end_test_request_with_flags.a $(LIBDIR)/$(CONFIG)/libend2end_test_request_with_payload.a $(LIBDIR)/$(CONFIG)/libend2end_test_server_finishes_request.a $(LIBDIR)/$(CONFIG)/libend2end_test_shutdown_finishes_calls.a $(LIBDIR)/$(CONFIG)/libend2end_test_shutdown_finishes_tags.a $(LIBDIR)/$(CONFIG)/libend2end_test_simple_delayed_request.a $(LIBDIR)/$(CONFIG)/libend2end_test_simple_request.a $(LIBDIR)/$(CONFIG)/libend2end_test_trailing_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_bad_hostname.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_binary_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_after_accept.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_after_client_done.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_after_invoke.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_before_invoke.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_in_a_vacuum.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_with_status.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_channel_connectivity.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_channel_ping.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_compressed_payload.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_default_host.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_disappearing_server.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_empty_batch.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_graceful_server_shutdown.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_high_initial_seqno.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_hpack_size.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_invoke_large_request.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_large_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_max_concurrent_streams.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_max_message_length.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_negative_deadline.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_no_op.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_payload.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_ping_pong_streaming.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_registered_call.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_request_with_flags.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_request_with_payload.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_server_finishes_request.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_shutdown_finishes_calls.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_shutdown_finishes_tags.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_simple_delayed_request.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_simple_request.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_trailing_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libbad_ssl_test_server.a
 pc_gpr: $(LIBDIR)/$(CONFIG)/pkgconfig/gpr.pc
 
 pc_c: $(LIBDIR)/$(CONFIG)/pkgconfig/grpc.pc
@@ -3222,6 +3226,10 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/server_registered_method_bad_client_test \
   $(BINDIR)/$(CONFIG)/simple_request_bad_client_test \
   $(BINDIR)/$(CONFIG)/unknown_frame_bad_client_test \
+  $(BINDIR)/$(CONFIG)/bad_ssl_alpn_server \
+  $(BINDIR)/$(CONFIG)/bad_ssl_cert_server \
+  $(BINDIR)/$(CONFIG)/bad_ssl_alpn_test \
+  $(BINDIR)/$(CONFIG)/bad_ssl_cert_test \
 
 
 buildtests_cxx: buildtests_zookeeper privatelibs_cxx \
@@ -5540,6 +5548,10 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/simple_request_bad_client_test || ( echo test simple_request_bad_client_test failed ; exit 1 )
 	$(E) "[RUN]     Testing unknown_frame_bad_client_test"
 	$(Q) $(BINDIR)/$(CONFIG)/unknown_frame_bad_client_test || ( echo test unknown_frame_bad_client_test failed ; exit 1 )
+	$(E) "[RUN]     Testing bad_ssl_alpn_test"
+	$(Q) $(BINDIR)/$(CONFIG)/bad_ssl_alpn_test || ( echo test bad_ssl_alpn_test failed ; exit 1 )
+	$(E) "[RUN]     Testing bad_ssl_cert_test"
+	$(Q) $(BINDIR)/$(CONFIG)/bad_ssl_cert_test || ( echo test bad_ssl_cert_test failed ; exit 1 )
 
 
 flaky_test_c: buildtests_c
@@ -10158,6 +10170,43 @@ endif
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(LIBBAD_CLIENT_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+LIBBAD_SSL_TEST_SERVER_SRC = \
+    test/core/bad_ssl/server.c \
+
+
+LIBBAD_SSL_TEST_SERVER_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBAD_SSL_TEST_SERVER_SRC))))
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure libraries if you don't have OpenSSL.
+
+$(LIBDIR)/$(CONFIG)/libbad_ssl_test_server.a: openssl_dep_error
+
+
+else
+
+
+$(LIBDIR)/$(CONFIG)/libbad_ssl_test_server.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(LIBBAD_SSL_TEST_SERVER_OBJS)
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libbad_ssl_test_server.a
+	$(Q) $(AR) rcs $(LIBDIR)/$(CONFIG)/libbad_ssl_test_server.a $(LIBBAD_SSL_TEST_SERVER_OBJS)
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib $(LIBDIR)/$(CONFIG)/libbad_ssl_test_server.a
+endif
+
+
+
+
+endif
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(LIBBAD_SSL_TEST_SERVER_OBJS:.o=.dep)
 endif
 endif
 
@@ -29235,6 +29284,122 @@ ifneq ($(NO_DEPS),true)
 endif
 
 
+BAD_SSL_ALPN_SERVER_SRC = \
+    test/core/bad_ssl/servers/alpn.c \
+
+BAD_SSL_ALPN_SERVER_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BAD_SSL_ALPN_SERVER_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/bad_ssl_alpn_server: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/bad_ssl_alpn_server: $(BAD_SSL_ALPN_SERVER_OBJS) $(LIBDIR)/$(CONFIG)/libbad_ssl_test_server.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(BAD_SSL_ALPN_SERVER_OBJS) $(LIBDIR)/$(CONFIG)/libbad_ssl_test_server.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/bad_ssl_alpn_server
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/bad_ssl/servers/alpn.o:  $(LIBDIR)/$(CONFIG)/libbad_ssl_test_server.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+deps_bad_ssl_alpn_server: $(BAD_SSL_ALPN_SERVER_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(BAD_SSL_ALPN_SERVER_OBJS:.o=.dep)
+endif
+endif
+
+
+BAD_SSL_CERT_SERVER_SRC = \
+    test/core/bad_ssl/servers/cert.c \
+
+BAD_SSL_CERT_SERVER_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BAD_SSL_CERT_SERVER_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/bad_ssl_cert_server: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/bad_ssl_cert_server: $(BAD_SSL_CERT_SERVER_OBJS) $(LIBDIR)/$(CONFIG)/libbad_ssl_test_server.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(BAD_SSL_CERT_SERVER_OBJS) $(LIBDIR)/$(CONFIG)/libbad_ssl_test_server.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/bad_ssl_cert_server
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/bad_ssl/servers/cert.o:  $(LIBDIR)/$(CONFIG)/libbad_ssl_test_server.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+deps_bad_ssl_cert_server: $(BAD_SSL_CERT_SERVER_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(BAD_SSL_CERT_SERVER_OBJS:.o=.dep)
+endif
+endif
+
+
+BAD_SSL_ALPN_TEST_SRC = \
+    test/core/bad_ssl/bad_ssl_test.c \
+
+BAD_SSL_ALPN_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BAD_SSL_ALPN_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/bad_ssl_alpn_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/bad_ssl_alpn_test: $(BAD_SSL_ALPN_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(BAD_SSL_ALPN_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/bad_ssl_alpn_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/bad_ssl/bad_ssl_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+deps_bad_ssl_alpn_test: $(BAD_SSL_ALPN_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(BAD_SSL_ALPN_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+BAD_SSL_CERT_TEST_SRC = \
+    test/core/bad_ssl/bad_ssl_test.c \
+
+BAD_SSL_CERT_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BAD_SSL_CERT_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/bad_ssl_cert_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/bad_ssl_cert_test: $(BAD_SSL_CERT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(BAD_SSL_CERT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/bad_ssl_cert_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/bad_ssl/bad_ssl_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+deps_bad_ssl_cert_test: $(BAD_SSL_CERT_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(BAD_SSL_CERT_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
 
 
 
@@ -29272,6 +29437,7 @@ src/cpp/common/secure_create_auth_context.cc: $(OPENSSL_DEP)
 src/cpp/server/secure_server_credentials.cc: $(OPENSSL_DEP)
 src/csharp/ext/grpc_csharp_ext.c: $(OPENSSL_DEP)
 test/core/bad_client/bad_client.c: $(OPENSSL_DEP)
+test/core/bad_ssl/server.c: $(OPENSSL_DEP)
 test/core/end2end/data/server1_cert.c: $(OPENSSL_DEP)
 test/core/end2end/data/server1_key.c: $(OPENSSL_DEP)
 test/core/end2end/data/test_root_cert.c: $(OPENSSL_DEP)
