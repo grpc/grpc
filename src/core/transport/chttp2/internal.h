@@ -284,9 +284,6 @@ struct grpc_chttp2_transport_parsing {
   gpr_slice goaway_text;
 
   gpr_int64 outgoing_window;
-
-  /** pings awaiting responses */
-  grpc_chttp2_outstanding_ping pings;
 };
 
 struct grpc_chttp2_transport {
