@@ -171,6 +171,8 @@ namespace Grpc.Core
             handle.CancelAllCalls();
             await shutdownTcs.Task.ConfigureAwait(false);
             DisposeHandle();
+
+            await Task.Run(() => GrpcEnvironment.Release()).ConfigureAwait(false);
         }
 
         internal void AddCallReference(object call)
