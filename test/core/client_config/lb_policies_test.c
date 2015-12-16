@@ -377,6 +377,9 @@ static int *perform_request(servers_fixture *f, grpc_channel *client,
       }
     }
 
+    GPR_ASSERT(grpc_completion_queue_next(
+        f->cq, GRPC_TIMEOUT_MILLIS_TO_DEADLINE(200), NULL).type == GRPC_QUEUE_TIMEOUT);
+
     grpc_metadata_array_destroy(&rdata->initial_metadata_recv);
     grpc_metadata_array_destroy(&rdata->trailing_metadata_recv);
 
@@ -771,6 +774,23 @@ static void verify_partial_carnage_round_robin(
   gpr_free(expected_connection_sequence);
 }
 
+static void dump_array(const char *desc, const int *data, const size_t count) {
+  gpr_strvec s;
+  char *tmp;
+  size_t i;
+  gpr_strvec_init(&s);
+  gpr_strvec_add(&s, gpr_strdup(desc));
+  gpr_strvec_add(&s, gpr_strdup(":"));
+  for (i = 0; i < count; i++) {
+    gpr_asprintf(&tmp, " %d", data[i]);
+    gpr_strvec_add(&s, tmp);
+  }
+  tmp = gpr_strvec_flatten(&s, NULL);
+  gpr_strvec_destroy(&s);
+  gpr_log(GPR_DEBUG, "%s", tmp);
+  gpr_free(tmp);
+}
+
 static void verify_rebirth_round_robin(const servers_fixture *f,
                                        grpc_channel *client,
                                        const int *actual_connection_sequence,
@@ -778,7 +798,9 @@ static void verify_rebirth_round_robin(const servers_fixture *f,
   int *expected_connection_sequence;
   size_t i, j, unique_seq_last_idx, unique_seq_first_idx;
   const size_t expected_seq_length = f->num_servers;
-  uint8_t *seen_elements;
+  int *seen_elements;
+
+  dump_array("actual_connection_sequence", actual_connection_sequence, num_iters);
 
   /* verify conn. seq. expectation */
   /* get the first unique run of length "num_servers". */
@@ -787,12 +809,12 @@ static void verify_rebirth_round_robin(const servers_fixture *f,
 
   unique_seq_last_idx = ~(size_t)0;
 
-  memset(seen_elements, 0, sizeof(uint8_t) * expected_seq_length);
+  memset(seen_elements, 0, sizeof(int) * expected_seq_length);
   for (i = 0; i < num_iters; i++) {
     if (actual_connection_sequence[i] < 0 ||
         seen_elements[actual_connection_sequence[i]] != 0) {
       /* if anything breaks the uniqueness of the run, back to square zero */
-      memset(seen_elements, 0, sizeof(uint8_t) * expected_seq_length);
+      memset(seen_elements, 0, sizeof(int) * expected_seq_length);
       continue;
     }
     seen_elements[actual_connection_sequence[i]] = 1;
@@ -805,6 +827,7 @@ static void verify_rebirth_round_robin(const servers_fixture *f,
     }
   }
   /* make sure we found a valid run */
+  dump_array("seen_elements", seen_elements, expected_seq_length);
   for (j = 0; j < expected_seq_length; j++) {
     GPR_ASSERT(seen_elements[j] != 0);
   }
