@@ -114,4 +114,15 @@ abstract class AbstractCall
 
         return call_user_func($this->deserialize, $value);
     }
+
+    /**
+     * Set the CallCredentials for the underlying Call.
+     *
+     * @param CallCredentials $call_credentials The CallCredentials
+     *                                          object
+     */
+    public function setCallCredentials($call_credentials)
+    {
+        $this->call->setCredentials($call_credentials);
+    }
 }

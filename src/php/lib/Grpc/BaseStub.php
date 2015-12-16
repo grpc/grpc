@@ -72,6 +72,11 @@ class BaseStub
         }
         $opts['grpc.primary_user_agent'] .=
             'grpc-php/'.$package_config['version'];
+        if (!array_key_exists('credentials', $opts)) {
+            throw new \Exception("The opts['credentials'] key is now ".
+                                 'required. Please see one of the '.
+                                 'ChannelCredentials::create methods');
+        }
         $this->channel = new Channel($hostname, $opts);
     }
 
