@@ -1068,6 +1068,7 @@ static void receiving_stream_ready(grpc_exec_ctx *exec_ctx, void *bctlp,
 
   if (call->receiving_stream == NULL) {
     *call->receiving_buffer = NULL;
+    call->receiving_message = 0; 
     if (gpr_unref(&bctl->steps_to_complete)) {
       post_batch_completion(exec_ctx, bctl);
     }
@@ -1078,6 +1079,7 @@ static void receiving_stream_ready(grpc_exec_ctx *exec_ctx, void *bctlp,
     grpc_byte_stream_destroy(call->receiving_stream);
     call->receiving_stream = NULL;
     *call->receiving_buffer = NULL;
+    call->receiving_message = 0; 
     if (gpr_unref(&bctl->steps_to_complete)) {
       post_batch_completion(exec_ctx, bctl);
     }
