@@ -1049,6 +1049,12 @@ static void remove_stream(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
     t->parsing.incoming_stream = NULL;
     grpc_chttp2_parsing_become_skip_parser(exec_ctx, &t->parsing);
   }
+  if (s->parsing.data_parser.parsing_frame != NULL) {
+    grpc_chttp2_incoming_byte_stream_finished(
+        exec_ctx, s->parsing.data_parser.parsing_frame, 0, 0);
+    s->parsing.data_parser.parsing_frame = NULL;
+  }
+
   if (grpc_chttp2_unregister_stream(t, s) && t->global.sent_goaway) {
     close_transport_locked(exec_ctx, t);
   }
@@ -1503,6 +1509,10 @@ static int incoming_byte_stream_next(grpc_exec_ctx *exec_ctx,
     *slice = gpr_slice_buffer_take_first(&bs->slices);
     unlock(exec_ctx, bs->transport);
     return 1;
+  } else if (bs->failed) {
+    grpc_exec_ctx_enqueue(exec_ctx, on_complete, 0);
+    unlock(exec_ctx, bs->transport);
+    return 0;
   } else {
     bs->on_next = on_complete;
     bs->next = slice;
@@ -1537,7 +1547,29 @@ void grpc_chttp2_incoming_byte_stream_push(grpc_exec_ctx *exec_ctx,
 }
 
 void grpc_chttp2_incoming_byte_stream_finished(
-    grpc_exec_ctx *exec_ctx, grpc_chttp2_incoming_byte_stream *bs) {
+    grpc_exec_ctx *exec_ctx, grpc_chttp2_incoming_byte_stream *bs, int success,
+    int from_parsing_thread) {
+  if (!success) {
+    if (from_parsing_thread) {
+      gpr_mu_lock(&bs->transport->mu);
+    }
+    grpc_exec_ctx_enqueue(exec_ctx, bs->on_next, 0);
+    bs->on_next = NULL;
+    bs->failed = 1;
+    if (from_parsing_thread) {
+      gpr_mu_unlock(&bs->transport->mu);
+    }
+  } else {
+#ifndef NDEBUG
+    if (from_parsing_thread) {
+      gpr_mu_lock(&bs->transport->mu);
+    }
+    GPR_ASSERT(bs->on_next == NULL);
+    if (from_parsing_thread) {
+      gpr_mu_unlock(&bs->transport->mu);
+    }
+#endif
+  }
   incoming_byte_stream_unref(bs);
 }
 
@@ -1558,6 +1590,7 @@ grpc_chttp2_incoming_byte_stream *grpc_chttp2_incoming_byte_stream_create(
   gpr_slice_buffer_init(&incoming_byte_stream->slices);
   incoming_byte_stream->on_next = NULL;
   incoming_byte_stream->is_tail = 1;
+  incoming_byte_stream->failed = 0;
   if (add_to_queue->head == NULL) {
     add_to_queue->head = incoming_byte_stream;
   } else {
