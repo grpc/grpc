@@ -53,7 +53,8 @@ void grpc_chttp2_data_parser_destroy(grpc_exec_ctx *exec_ctx,
                                      grpc_chttp2_data_parser *parser) {
   grpc_byte_stream *bs;
   if (parser->parsing_frame) {
-    grpc_chttp2_incoming_byte_stream_finished(exec_ctx, parser->parsing_frame);
+    grpc_chttp2_incoming_byte_stream_finished(exec_ctx, parser->parsing_frame,
+                                              0, 1);
   }
   while (
       (bs = grpc_chttp2_incoming_frame_queue_pop(&parser->incoming_frames))) {
@@ -118,7 +119,7 @@ void grpc_chttp2_encode_data(gpr_uint32 id, gpr_slice_buffer *inbuf,
 
   hdr = gpr_slice_malloc(9);
   p = GPR_SLICE_START_PTR(hdr);
-  GPR_ASSERT(write_bytes < 16777316);
+  GPR_ASSERT(write_bytes < (1 << 24));
   *p++ = (gpr_uint8)(write_bytes >> 16);
   *p++ = (gpr_uint8)(write_bytes >> 8);
   *p++ = (gpr_uint8)(write_bytes);
@@ -218,7 +219,8 @@ grpc_chttp2_parse_error grpc_chttp2_data_parser_parse(
         grpc_chttp2_incoming_byte_stream_push(
             exec_ctx, p->parsing_frame,
             gpr_slice_sub(slice, (size_t)(cur - beg), (size_t)(end - beg)));
-        grpc_chttp2_incoming_byte_stream_finished(exec_ctx, p->parsing_frame);
+        grpc_chttp2_incoming_byte_stream_finished(exec_ctx, p->parsing_frame, 1,
+                                                  1);
         p->parsing_frame = NULL;
         p->state = GRPC_CHTTP2_DATA_FH_0;
         return GRPC_CHTTP2_PARSE_OK;
@@ -227,7 +229,8 @@ grpc_chttp2_parse_error grpc_chttp2_data_parser_parse(
             exec_ctx, p->parsing_frame,
             gpr_slice_sub(slice, (size_t)(cur - beg),
                           (size_t)(cur + p->frame_size - beg)));
-        grpc_chttp2_incoming_byte_stream_finished(exec_ctx, p->parsing_frame);
+        grpc_chttp2_incoming_byte_stream_finished(exec_ctx, p->parsing_frame, 1,
+                                                  1);
         p->parsing_frame = NULL;
         cur += p->frame_size;
         goto fh_0; /* loop */

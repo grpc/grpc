@@ -43,11 +43,23 @@ import time
 _DEFAULT_MAX_JOBS = 16 * multiprocessing.cpu_count()
 _MAX_RESULT_SIZE = 8192
 
+def platform_string():
+  if platform.system() == 'Windows':
+    return 'windows'
+  elif platform.system()[:7] == 'MSYS_NT':
+    return 'windows'
+  elif platform.system() == 'Darwin':
+    return 'mac'
+  elif platform.system() == 'Linux':
+    return 'linux'
+  else:
+    return 'posix'
+
 
 # setup a signal handler so that signal.pause registers 'something'
 # when a child finishes
 # not using futures and threading to avoid a dependency on subprocess32
-if platform.system() == 'Windows':
+if platform_string() == 'windows':
   pass
 else:
   have_alarm = False
@@ -99,7 +111,7 @@ def message(tag, msg, explanatory_text=None, do_newline=False):
   message.old_tag = tag
   message.old_msg = msg
   try:
-    if platform.system() == 'Windows' or not sys.stdout.isatty():
+    if platform_string() == 'windows' or not sys.stdout.isatty():
       if explanatory_text:
         print explanatory_text
       print '%s: %s' % (tag, msg)
@@ -166,6 +178,9 @@ class JobSpec(object):
 
   def __cmp__(self, other):
     return self.identity() == other.identity()
+    
+  def __repr__(self):
+    return 'JobSpec(shortname=%s, cmdline=%s)' % (self.shortname, self.cmdline)
 
 
 class JobResult(object):
@@ -258,7 +273,7 @@ class Job(object):
           update_cache.finished(self._spec.identity(), self._bin_hash)
     elif self._state == _RUNNING and time.time() - self._start > self._spec.timeout_seconds:
       if self._timeout_retries < self._spec.timeout_retries:
-        message('TIMEOUT_FLAKE', self._spec.shortname, stdout, do_newline=True)
+        message('TIMEOUT_FLAKE', '%s [pid=%d]' % (self._spec.shortname, self._process.pid), stdout, do_newline=True)
         self._timeout_retries += 1
         self.result.num_failures += 1
         self.result.retries = self._timeout_retries + self._retries
@@ -267,7 +282,7 @@ class Job(object):
         self._process.terminate()
         self.start()
       else:
-        message('TIMEOUT', self._spec.shortname, stdout, do_newline=True)
+        message('TIMEOUT', '%s [pid=%d]' % (self._spec.shortname, self._process.pid), stdout, do_newline=True)
         self.kill()
         self.result.state = 'TIMEOUT'
         self.result.num_failures += 1
@@ -361,10 +376,10 @@ class Jobset(object):
         self._running.remove(job)
       if dead: return
       if (not self._travis):
-        rstr = '' if self._remaining is None else ', %d remaining' % self._remaining
-        message('WAITING', '%d jobs running, %d complete, %d failed%s' % (
-            len(self._running), self._completed, self._failures, rstr))
-      if platform.system() == 'Windows':
+        rstr = '' if self._remaining is None else '%d queued, ' % self._remaining
+        message('WAITING', '%s%d jobs running, %d complete, %d failed' % (
+            rstr, len(self._running), self._completed, self._failures))
+      if platform_string() == 'windows':
         time.sleep(0.1)
       else:
         global have_alarm

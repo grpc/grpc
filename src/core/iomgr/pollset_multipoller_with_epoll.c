@@ -123,26 +123,6 @@ static void multipoll_with_epoll_pollset_add_fd(grpc_exec_ctx *exec_ctx,
   }
 }
 
-static void multipoll_with_epoll_pollset_del_fd(grpc_exec_ctx *exec_ctx,
-                                                grpc_pollset *pollset,
-                                                grpc_fd *fd,
-                                                int and_unlock_pollset) {
-  pollset_hdr *h = pollset->data.ptr;
-  int err;
-
-  if (and_unlock_pollset) {
-    gpr_mu_unlock(&pollset->mu);
-  }
-
-  /* Note that this can race with concurrent poll, but that should be fine since
-   * at worst it creates a spurious read event on a reused grpc_fd object. */
-  err = epoll_ctl(h->epoll_fd, EPOLL_CTL_DEL, fd->fd, NULL);
-  if (err < 0) {
-    gpr_log(GPR_ERROR, "epoll_ctl del for %d failed: %s", fd->fd,
-            strerror(errno));
-  }
-}
-
 /* TODO(klempner): We probably want to turn this down a bit */
 #define GRPC_EPOLL_MAX_EVENTS 1000
 
@@ -235,7 +215,7 @@ static void multipoll_with_epoll_pollset_destroy(grpc_pollset *pollset) {
 }
 
 static const grpc_pollset_vtable multipoll_with_epoll_pollset = {
-    multipoll_with_epoll_pollset_add_fd, multipoll_with_epoll_pollset_del_fd,
+    multipoll_with_epoll_pollset_add_fd,
     multipoll_with_epoll_pollset_maybe_work_and_unlock,
     multipoll_with_epoll_pollset_finish_shutdown,
     multipoll_with_epoll_pollset_destroy};

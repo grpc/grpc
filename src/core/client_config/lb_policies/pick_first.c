@@ -360,8 +360,20 @@ void pf_notify_on_state_change(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
   gpr_mu_unlock(&p->mu);
 }
 
+void pf_ping_one(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
+                 grpc_closure *closure) {
+  pick_first_lb_policy *p = (pick_first_lb_policy *)pol;
+  gpr_mu_lock(&p->mu);
+  if (p->selected) {
+    grpc_connected_subchannel_ping(exec_ctx, p->selected, closure);
+  } else {
+    grpc_exec_ctx_enqueue(exec_ctx, closure, 0);
+  }
+  gpr_mu_unlock(&p->mu);
+}
+
 static const grpc_lb_policy_vtable pick_first_lb_policy_vtable = {
-    pf_destroy, pf_shutdown, pf_pick, pf_cancel_pick, pf_exit_idle,
+    pf_destroy, pf_shutdown, pf_pick, pf_cancel_pick, pf_ping_one, pf_exit_idle,
     pf_check_connectivity, pf_notify_on_state_change};
 
 static void pick_first_factory_ref(grpc_lb_policy_factory *factory) {}

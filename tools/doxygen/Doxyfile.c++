@@ -774,6 +774,7 @@ include/grpc++/impl/proto_utils.h \
 include/grpc++/impl/rpc_method.h \
 include/grpc++/impl/rpc_service_method.h \
 include/grpc++/impl/serialization_traits.h \
+include/grpc++/impl/server_builder_option.h \
 include/grpc++/impl/service_type.h \
 include/grpc++/impl/sync.h \
 include/grpc++/impl/sync_cxx11.h \

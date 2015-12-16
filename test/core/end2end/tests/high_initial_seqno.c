@@ -36,13 +36,15 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "src/core/support/string.h"
 #include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 #include <grpc/support/useful.h>
+
+#include "src/core/support/string.h"
 #include "test/core/end2end/cq_verifier.h"
 
 enum { TIMEOUT = 200000 };
@@ -208,6 +210,7 @@ static void test_invoke_10_simple_requests(grpc_end2end_test_config config,
   grpc_end2end_test_fixture f;
   grpc_arg client_arg;
   grpc_channel_args client_args;
+  char *name;
 
   client_arg.type = GRPC_ARG_INTEGER;
   client_arg.key = GRPC_ARG_HTTP2_INITIAL_SEQUENCE_NUMBER;
@@ -216,13 +219,16 @@ static void test_invoke_10_simple_requests(grpc_end2end_test_config config,
   client_args.num_args = 1;
   client_args.args = &client_arg;
 
-  f = begin_test(config, "test_invoke_10_simple_requests", &client_args, NULL);
+  gpr_asprintf(&name, "test_invoke_requests first_seqno=%d",
+               initial_sequence_number);
+  f = begin_test(config, name, &client_args, NULL);
   for (i = 0; i < 10; i++) {
     simple_request_body(f);
     gpr_log(GPR_INFO, "Passed simple request %d", i);
   }
   end_test(&f);
   config.tear_down_data(&f);
+  gpr_free(name);
 }
 
 void grpc_end2end_tests(grpc_end2end_test_config config) {

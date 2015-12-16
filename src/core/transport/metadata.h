@@ -86,11 +86,7 @@ struct grpc_mdelem {
   /* there is a private part to this in metadata.c */
 };
 
-/* Test only accessors to internal state - only for testing this code - do not
-   rely on it outside of metadata_test.c */
-size_t grpc_mdctx_get_mdtab_capacity_test_only(void);
-size_t grpc_mdctx_get_mdtab_count_test_only(void);
-size_t grpc_mdctx_get_mdtab_free_test_only(void);
+void grpc_test_only_set_metadata_hash_seed(gpr_uint32 seed);
 
 /* Constructors for grpc_mdstr instances; take a variety of data types that
    clients may have handy */

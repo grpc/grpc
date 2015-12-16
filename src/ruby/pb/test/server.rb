@@ -126,7 +126,7 @@ end
 # produces a string of null chars (\0) of length l.
 def nulls(l)
   fail 'requires #{l} to be +ve' if l < 0
-  [].pack('x' * l).force_encoding('utf-8')
+  [].pack('x' * l).force_encoding('ascii-8bit')
 end
 
 # A EnumeratorQueue wraps a Queue yielding the items added to it via each_item.

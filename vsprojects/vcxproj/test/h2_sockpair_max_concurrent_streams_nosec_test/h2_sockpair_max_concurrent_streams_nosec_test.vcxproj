@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="..\..\..\..\vsprojects\packages\grpc.dependencies.openssl.1.0.2.3\build\native\grpc.dependencies.openssl.props" Condition="Exists('..\..\..\..\vsprojects\packages\grpc.dependencies.openssl.1.0.2.3\build\native\1.0.2.3.props')" />
+  <Import Project="..\..\..\..\vsprojects\packages\grpc.dependencies.openssl.1.0.204.1\build\native\grpc.dependencies.openssl.props" Condition="Exists('..\..\..\..\vsprojects\packages\grpc.dependencies.openssl.1.0.204.1\build\native\1.0.204.1.props')" />
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
@@ -31,6 +31,9 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(VisualStudioVersion)' == '12.0'" Label="Configuration">
     <PlatformToolset>v120</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(VisualStudioVersion)' == '14.0'" Label="Configuration">
+    <PlatformToolset>v140</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)'=='Debug'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
@@ -71,7 +74,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;_USE_32BIT_TIME_T;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <TreatWarningAsError>true</TreatWarningAsError>
@@ -107,7 +110,7 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;_USE_32BIT_TIME_T;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <TreatWarningAsError>true</TreatWarningAsError>
@@ -147,11 +150,11 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\vsprojects\vcxproj\test\end2end_fixture_h2_sockpair\end2end_fixture_h2_sockpair.vcxproj">
-      <Project>{67A1675D-FF50-3B78-2706-155D69ADC290}</Project>
+    <ProjectReference Include="..\..\..\..\vsprojects\vcxproj\test\end2end_nosec_fixture_h2_sockpair\end2end_nosec_fixture_h2_sockpair.vcxproj">
+      <Project>{F2E018CC-0515-CD39-BA5A-0F62BA15FE88}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\..\vsprojects\vcxproj\test\end2end_test_max_concurrent_streams\end2end_test_max_concurrent_streams.vcxproj">
-      <Project>{A956BC1B-7A05-A9F1-7368-802A5248136F}</Project>
+    <ProjectReference Include="..\..\..\..\vsprojects\vcxproj\test\end2end_nosec_test_max_concurrent_streams\end2end_nosec_test_max_concurrent_streams.vcxproj">
+      <Project>{A92DD304-92AE-EF2A-A98D-00FDD4920026}</Project>
     </ProjectReference>
     <ProjectReference Include="..\..\..\..\vsprojects\vcxproj\.\grpc_test_util_unsecure\grpc_test_util_unsecure.vcxproj">
       <Project>{0A7E7F92-FDEA-40F1-A9EC-3BA484F98BBF}</Project>
@@ -171,20 +174,20 @@
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
-  <Import Project="..\..\..\..\vsprojects\packages\grpc.dependencies.zlib.redist.1.2.8.9\build\native\grpc.dependencies.zlib.redist.targets" Condition="Exists('..\..\..\..\vsprojects\packages\grpc.dependencies.zlib.redist.1.2.8.9\build\native\grpc.dependencies\grpc.dependencies.zlib.targets')" />
-  <Import Project="..\..\..\..\vsprojects\packages\grpc.dependencies.zlib.1.2.8.9\build\native\grpc.dependencies.zlib.targets" Condition="Exists('..\..\..\..\vsprojects\packages\grpc.dependencies.zlib.1.2.8.9\build\native\grpc.dependencies\grpc.dependencies.zlib.targets')" />
-  <Import Project="..\..\..\..\vsprojects\packages\grpc.dependencies.openssl.redist.1.0.2.3\build\native\grpc.dependencies.openssl.redist.targets" Condition="Exists('..\..\..\..\vsprojects\packages\grpc.dependencies.openssl.redist.1.0.2.3\build\native\grpc.dependencies\grpc.dependencies.openssl.targets')" />
-  <Import Project="..\..\..\..\vsprojects\packages\grpc.dependencies.openssl.1.0.2.3\build\native\grpc.dependencies.openssl.targets" Condition="Exists('..\..\..\..\vsprojects\packages\grpc.dependencies.openssl.1.0.2.3\build\native\grpc.dependencies\grpc.dependencies.openssl.targets')" />
+  <Import Project="..\..\..\..\vsprojects\packages\grpc.dependencies.zlib.redist.1.2.8.10\build\native\grpc.dependencies.zlib.redist.targets" Condition="Exists('..\..\..\..\vsprojects\packages\grpc.dependencies.zlib.redist.1.2.8.10\build\native\grpc.dependencies\grpc.dependencies.zlib.targets')" />
+  <Import Project="..\..\..\..\vsprojects\packages\grpc.dependencies.zlib.1.2.8.10\build\native\grpc.dependencies.zlib.targets" Condition="Exists('..\..\..\..\vsprojects\packages\grpc.dependencies.zlib.1.2.8.10\build\native\grpc.dependencies\grpc.dependencies.zlib.targets')" />
+  <Import Project="..\..\..\..\vsprojects\packages\grpc.dependencies.openssl.redist.1.0.204.1\build\native\grpc.dependencies.openssl.redist.targets" Condition="Exists('..\..\..\..\vsprojects\packages\grpc.dependencies.openssl.redist.1.0.204.1\build\native\grpc.dependencies\grpc.dependencies.openssl.targets')" />
+  <Import Project="..\..\..\..\vsprojects\packages\grpc.dependencies.openssl.1.0.204.1\build\native\grpc.dependencies.openssl.targets" Condition="Exists('..\..\..\..\vsprojects\packages\grpc.dependencies.openssl.1.0.204.1\build\native\grpc.dependencies\grpc.dependencies.openssl.targets')" />
   </ImportGroup>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Enable NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('..\..\..\..\vsprojects\packages\grpc.dependencies.zlib.redist.1.2.8.9\build\native\grpc.dependencies.zlib.redist.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\..\vsprojects\packages\grpc.dependencies.zlib.redist.1.2.8.9\build\native\grpc.dependencies.zlib.redist.targets')" />
-    <Error Condition="!Exists('..\..\..\..\vsprojects\packages\grpc.dependencies.zlib.1.2.8.9\build\native\grpc.dependencies.zlib.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\..\vsprojects\packages\grpc.dependencies.zlib.1.2.8.9\build\native\grpc.dependencies.zlib.targets')" />
-    <Error Condition="!Exists('..\..\..\..\vsprojects\packages\grpc.dependencies.openssl.redist.1.0.2.3\build\native\grpc.dependencies.openssl.redist.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\..\vsprojects\packages\grpc.dependencies.openssl.redist.1.0.2.3\build\native\grpc.dependencies.openssl.redist.targets')" />
-    <Error Condition="!Exists('..\..\..\..\vsprojects\packages\grpc.dependencies.openssl.1.0.2.3\build\native\grpc.dependencies.openssl.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\..\vsprojects\packages\grpc.dependencies.openssl.1.0.2.3\build\native\grpc.dependencies.openssl.props')" />
-    <Error Condition="!Exists('..\..\..\..\vsprojects\packages\grpc.dependencies.openssl.1.0.2.3\build\native\grpc.dependencies.openssl.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\..\vsprojects\packages\grpc.dependencies.openssl.1.0.2.3\build\native\grpc.dependencies.openssl.targets')" />
+    <Error Condition="!Exists('..\..\..\..\vsprojects\packages\grpc.dependencies.zlib.redist.1.2.8.10\build\native\grpc.dependencies.zlib.redist.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\..\vsprojects\packages\grpc.dependencies.zlib.redist.1.2.8.10\build\native\grpc.dependencies.zlib.redist.targets')" />
+    <Error Condition="!Exists('..\..\..\..\vsprojects\packages\grpc.dependencies.zlib.1.2.8.10\build\native\grpc.dependencies.zlib.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\..\vsprojects\packages\grpc.dependencies.zlib.1.2.8.10\build\native\grpc.dependencies.zlib.targets')" />
+    <Error Condition="!Exists('..\..\..\..\vsprojects\packages\grpc.dependencies.openssl.redist.1.0.204.1\build\native\grpc.dependencies.openssl.redist.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\..\vsprojects\packages\grpc.dependencies.openssl.redist.1.0.204.1\build\native\grpc.dependencies.openssl.redist.targets')" />
+    <Error Condition="!Exists('..\..\..\..\vsprojects\packages\grpc.dependencies.openssl.1.0.204.1\build\native\grpc.dependencies.openssl.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\..\vsprojects\packages\grpc.dependencies.openssl.1.0.204.1\build\native\grpc.dependencies.openssl.props')" />
+    <Error Condition="!Exists('..\..\..\..\vsprojects\packages\grpc.dependencies.openssl.1.0.204.1\build\native\grpc.dependencies.openssl.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\..\vsprojects\packages\grpc.dependencies.openssl.1.0.204.1\build\native\grpc.dependencies.openssl.targets')" />
   </Target>
 </Project>
 

@@ -49,13 +49,14 @@ typedef struct {
   grpc_server *server;
   grpc_completion_queue *cq;
   grpc_bad_client_server_side_validator validator;
+  void *registered_method;
   gpr_event done_thd;
   gpr_event done_write;
 } thd_args;
 
 static void thd_func(void *arg) {
   thd_args *a = arg;
-  a->validator(a->server, a->cq);
+  a->validator(a->server, a->cq, a->registered_method);
   gpr_event_set(&a->done_thd, (void *)1);
 }
 
@@ -110,6 +111,9 @@ void grpc_run_bad_client_test(grpc_bad_client_server_side_validator validator,
   gpr_event_init(&a.done_write);
   a.validator = validator;
   grpc_server_register_completion_queue(a.server, a.cq, NULL);
+  a.registered_method =
+      grpc_server_register_method(a.server, GRPC_BAD_CLIENT_REGISTERED_METHOD,
+                                  GRPC_BAD_CLIENT_REGISTERED_HOST);
   grpc_server_start(a.server);
   transport = grpc_create_chttp2_transport(&exec_ctx, NULL, sfd.server, 0);
   server_setup_transport(&a, transport);

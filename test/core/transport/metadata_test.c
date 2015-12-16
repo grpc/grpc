@@ -241,6 +241,25 @@ static void test_base64_and_huffman_works(void) {
   grpc_shutdown();
 }
 
+static void test_user_data_works(void) {
+  int *ud1;
+  int *ud2;
+  grpc_mdelem *md;
+  LOG_TEST("test_user_data_works");
+
+  grpc_init();
+  ud1 = gpr_malloc(sizeof(int));
+  *ud1 = 1;
+  ud2 = gpr_malloc(sizeof(int));
+  *ud2 = 2;
+  md = grpc_mdelem_from_strings("abc", "123");
+  grpc_mdelem_set_user_data(md, gpr_free, ud1);
+  grpc_mdelem_set_user_data(md, gpr_free, ud2);
+  GPR_ASSERT(grpc_mdelem_get_user_data(md, gpr_free) == ud1);
+  GRPC_MDELEM_UNREF(md);
+  grpc_shutdown();
+}
+
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
   test_no_op();
@@ -252,5 +271,6 @@ int main(int argc, char **argv) {
   test_things_stick_around();
   test_slices_work();
   test_base64_and_huffman_works();
+  test_user_data_works();
   return 0;
 }

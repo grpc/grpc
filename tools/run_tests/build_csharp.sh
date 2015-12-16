@@ -30,7 +30,7 @@
 
 set -ex
 
-if [ "$CONFIG" = "dbg" ] || [ "$CONFIG" = "gcov" ]
+if [ "$CONFIG" = "dbg" ]
 then
   MSBUILD_CONFIG="Debug"
 else

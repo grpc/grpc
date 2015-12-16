@@ -43,7 +43,9 @@ message GaugeResponse {
   }
 }
 
-message GaugeRequest { string name = 1; }
+message GaugeRequest {
+  string name = 1;
+}
 
 message EmptyMessage {
 }

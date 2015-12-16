@@ -100,12 +100,53 @@ def grpc_call_options(disable_compression=False, credentials=None):
     disable_compression: A boolean indicating whether or not compression should
       be disabled for the request object of the RPC. Only valid for
       request-unary RPCs.
-    credentials: Reserved for gRPC per-call credentials. The type for this does
-      not exist yet at the Python level.
+    credentials: A CallCredentials object to use for the invoked RPC.
   """
-  if credentials is not None:
-    raise ValueError('`credentials` is a reserved argument')
   return GRPCCallOptions(disable_compression, None, credentials)
+
+
+class GRPCAuthMetadataContext(object):
+  """Provides information to call credentials metadata plugins.
+
+  Attributes:
+    service_url: A string URL of the service being called into.
+    method_name: A string of the fully qualified method name being called.
+  """
+  __metaclass__ = abc.ABCMeta
+
+
+class GRPCAuthMetadataPluginCallback(object):
+  """Callback object received by a metadata plugin."""
+  __metaclass__ = abc.ABCMeta
+
+  def __call__(self, metadata, error):
+    """Inform the gRPC runtime of the metadata to construct a CallCredentials.
+
+    Args:
+      metadata: An iterable of 2-sequences (e.g. tuples) of metadata key/value
+        pairs.
+      error: An Exception to indicate error or None to indicate success.
+    """
+    raise NotImplementedError()
+
+
+class GRPCAuthMetadataPlugin(object):
+  """
+  """
+  __metaclass__ = abc.ABCMeta
+
+  def __call__(self, context, callback):
+    """Invoke the plugin.
+
+    Must not block. Need only be called by the gRPC runtime.
+
+    Args:
+      context: A GRPCAuthMetadataContext providing information on what the
+        plugin is being used for.
+      callback: A GRPCAuthMetadataPluginCallback to be invoked either
+        synchronously or asynchronously.
+    """
+    raise NotImplementedError()
 
 
 class GRPCServicerContext(object):

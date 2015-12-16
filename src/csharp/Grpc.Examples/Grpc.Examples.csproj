@@ -66,6 +66,5 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
-    <None Include="proto\math.proto" />
   </ItemGroup>
 </Project>

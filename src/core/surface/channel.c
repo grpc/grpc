@@ -112,7 +112,7 @@ grpc_channel *grpc_channel_create_from_filters(
         }
       } else if (0 == strcmp(args->args[i].key, GRPC_ARG_DEFAULT_AUTHORITY)) {
         if (args->args[i].type != GRPC_ARG_STRING) {
-          gpr_log(GPR_ERROR, "%s: must be an string",
+          gpr_log(GPR_ERROR, "%s ignored: it must be a string",
                   GRPC_ARG_DEFAULT_AUTHORITY);
         } else {
           if (channel->default_authority) {
@@ -125,13 +125,14 @@ grpc_channel *grpc_channel_create_from_filters(
       } else if (0 ==
                  strcmp(args->args[i].key, GRPC_SSL_TARGET_NAME_OVERRIDE_ARG)) {
         if (args->args[i].type != GRPC_ARG_STRING) {
-          gpr_log(GPR_ERROR, "%s: must be an string",
+          gpr_log(GPR_ERROR, "%s ignored: it must be a string",
                   GRPC_SSL_TARGET_NAME_OVERRIDE_ARG);
         } else {
           if (channel->default_authority) {
             /* other ways of setting this (notably ssl) take precedence */
-            gpr_log(GPR_ERROR, "%s: default host already set some other way",
-                    GRPC_ARG_DEFAULT_AUTHORITY);
+            gpr_log(GPR_ERROR,
+                    "%s ignored: default host already set some other way",
+                    GRPC_SSL_TARGET_NAME_OVERRIDE_ARG);
           } else {
             channel->default_authority = grpc_mdelem_from_strings(
                 ":authority", args->args[i].value.string);
@@ -194,11 +195,11 @@ grpc_call *grpc_channel_create_call(grpc_channel *channel,
       "grpc_channel_create_call("
       "channel=%p, parent_call=%p, propagation_mask=%x, cq=%p, method=%s, "
       "host=%s, "
-      "deadline=gpr_timespec { tv_sec: %ld, tv_nsec: %d, clock_type: %d }, "
+      "deadline=gpr_timespec { tv_sec: %lld, tv_nsec: %d, clock_type: %d }, "
       "reserved=%p)",
       10, (channel, parent_call, (unsigned)propagation_mask, cq, method, host,
-           (long)deadline.tv_sec, deadline.tv_nsec, (int)deadline.clock_type,
-           reserved));
+           (long long)deadline.tv_sec, (int)deadline.tv_nsec,
+           (int)deadline.clock_type, reserved));
   GPR_ASSERT(!reserved);
   return grpc_channel_create_call_internal(
       channel, parent_call, propagation_mask, cq,
@@ -238,11 +239,11 @@ grpc_call *grpc_channel_create_registered_call(
       "grpc_channel_create_registered_call("
       "channel=%p, parent_call=%p, propagation_mask=%x, completion_queue=%p, "
       "registered_call_handle=%p, "
-      "deadline=gpr_timespec { tv_sec: %ld, tv_nsec: %d, clock_type: %d }, "
+      "deadline=gpr_timespec { tv_sec: %lld, tv_nsec: %d, clock_type: %d }, "
       "reserved=%p)",
       9, (channel, parent_call, (unsigned)propagation_mask, completion_queue,
-          registered_call_handle, (long)deadline.tv_sec, deadline.tv_nsec,
-          (int)deadline.clock_type, reserved));
+          registered_call_handle, (long long)deadline.tv_sec,
+          (int)deadline.tv_nsec, (int)deadline.clock_type, reserved));
   GPR_ASSERT(!reserved);
   return grpc_channel_create_call_internal(
       channel, parent_call, propagation_mask, completion_queue,
