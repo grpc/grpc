@@ -58,7 +58,6 @@ grpc_call *grpc_call_create(grpc_channel *channel, grpc_call *parent_call,
 
 void grpc_call_set_completion_queue(grpc_exec_ctx *exec_ctx, grpc_call *call,
                                     grpc_completion_queue *cq);
-grpc_completion_queue *grpc_call_get_completion_queue(grpc_call *call);
 
 #ifdef GRPC_STREAM_REFCOUNT_DEBUG
 void grpc_call_internal_ref(grpc_call *call, const char *reason);
@@ -90,19 +89,6 @@ grpc_call *grpc_call_from_top_element(grpc_call_element *surface_element);
 void grpc_call_log_batch(char *file, int line, gpr_log_severity severity,
                          grpc_call *call, const grpc_op *ops, size_t nops,
                          void *tag);
-
-void grpc_server_log_request_call(char *file, int line,
-                                  gpr_log_severity severity,
-                                  grpc_server *server, grpc_call **call,
-                                  grpc_call_details *details,
-                                  grpc_metadata_array *initial_metadata,
-                                  grpc_completion_queue *cq_bound_to_call,
-                                  grpc_completion_queue *cq_for_notification,
-                                  void *tag);
-
-void grpc_server_log_shutdown(char *file, int line, gpr_log_severity severity,
-                              grpc_server *server, grpc_completion_queue *cq,
-                              void *tag);
 
 /* Set a context pointer.
    No thread safety guarantees are made wrt this value. */

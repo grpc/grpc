@@ -68,11 +68,11 @@ int main(void) {
   for (i = '0'; i <= '9'; i++) legal(i);
   legal('-');
   legal('_');
+  legal('.');
   dump();
 
   clear();
   for (i = 32; i <= 126; i++) {
-    if (i == ',') continue;
     legal(i);
   }
   dump();

@@ -6,7 +6,7 @@ require 'google/protobuf'
 Google::Protobuf::DescriptorPool.generated_pool.build do
   add_message "grpc.testing.Payload" do
     optional :type, :enum, 1, "grpc.testing.PayloadType"
-    optional :body, :string, 2
+    optional :body, :bytes, 2
   end
   add_message "grpc.testing.EchoStatus" do
     optional :code, :int32, 1

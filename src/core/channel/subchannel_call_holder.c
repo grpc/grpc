@@ -155,7 +155,7 @@ retry:
       holder->connected_subchannel != NULL) {
     gpr_atm_rel_store(
         &holder->subchannel_call,
-        grpc_connected_subchannel_create_call(
+        (gpr_atm)(gpr_uintptr)grpc_connected_subchannel_create_call(
             exec_ctx, holder->connected_subchannel, holder->pollset));
     retry_waiting_locked(exec_ctx, holder);
     goto retry;
@@ -180,7 +180,7 @@ static void subchannel_ready(grpc_exec_ctx *exec_ctx, void *arg, int success) {
   } else {
     gpr_atm_rel_store(
         &holder->subchannel_call,
-        grpc_connected_subchannel_create_call(
+        (gpr_atm)(gpr_uintptr)grpc_connected_subchannel_create_call(
             exec_ctx, holder->connected_subchannel, holder->pollset));
     retry_waiting_locked(exec_ctx, holder);
   }

@@ -37,6 +37,7 @@ filegroups:
   - include/grpc++/impl/rpc_method.h
   - include/grpc++/impl/rpc_service_method.h
   - include/grpc++/impl/serialization_traits.h
+  - include/grpc++/impl/server_builder_option.h
   - include/grpc++/impl/service_type.h
   - include/grpc++/impl/sync.h
   - include/grpc++/impl/sync_cxx11.h
@@ -72,7 +73,6 @@ filegroups:
   - src/cpp/server/thread_pool_interface.h
   src:
   - src/cpp/client/channel.cc
-  - src/cpp/client/channel_arguments.cc
   - src/cpp/client/client_context.cc
   - src/cpp/client/create_channel.cc
   - src/cpp/client/create_channel_internal.cc
@@ -80,6 +80,7 @@ filegroups:
   - src/cpp/client/generic_stub.cc
   - src/cpp/client/insecure_credentials.cc
   - src/cpp/common/call.cc
+  - src/cpp/common/channel_arguments.cc
   - src/cpp/common/completion_queue.cc
   - src/cpp/common/rpc_method.cc
   - src/cpp/proto/proto_utils.cc
@@ -115,7 +116,6 @@ filegroups:
   - src/core/channel/context.h
   - src/core/channel/http_client_filter.h
   - src/core/channel/http_server_filter.h
-  - src/core/channel/noop_filter.h
   - src/core/channel/subchannel_call_holder.h
   - src/core/client_config/client_config.h
   - src/core/client_config/connector.h
@@ -132,8 +132,6 @@ filegroups:
   - src/core/client_config/resolvers/sockaddr_resolver.h
   - src/core/client_config/subchannel.h
   - src/core/client_config/subchannel_factory.h
-  - src/core/client_config/subchannel_factory_decorators/add_channel_arg.h
-  - src/core/client_config/subchannel_factory_decorators/merge_channel_args.h
   - src/core/client_config/uri_parser.h
   - src/core/compression/algorithm_metadata.h
   - src/core/compression/message_compress.h
@@ -232,7 +230,6 @@ filegroups:
   - src/core/channel/connected_channel.c
   - src/core/channel/http_client_filter.c
   - src/core/channel/http_server_filter.c
-  - src/core/channel/noop_filter.c
   - src/core/channel/subchannel_call_holder.c
   - src/core/client_config/client_config.c
   - src/core/client_config/connector.c
@@ -250,8 +247,6 @@ filegroups:
   - src/core/client_config/resolvers/sockaddr_resolver.c
   - src/core/client_config/subchannel.c
   - src/core/client_config/subchannel_factory.c
-  - src/core/client_config/subchannel_factory_decorators/add_channel_arg.c
-  - src/core/client_config/subchannel_factory_decorators/merge_channel_args.c
   - src/core/client_config/uri_parser.c
   - src/core/compression/algorithm.c
   - src/core/compression/message_compress.c
@@ -312,6 +307,7 @@ filegroups:
   - src/core/surface/channel.c
   - src/core/surface/channel_connectivity.c
   - src/core/surface/channel_create.c
+  - src/core/surface/channel_ping.c
   - src/core/surface/completion_queue.c
   - src/core/surface/event_string.c
   - src/core/surface/init.c
@@ -354,7 +350,6 @@ filegroups:
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/fixtures/proxy.h
   - test/core/iomgr/endpoint_tests.h
-  - test/core/security/oauth2_utils.h
   - test/core/util/grpc_profiler.h
   - test/core/util/parse_hexstring.h
   - test/core/util/port.h
@@ -363,7 +358,6 @@ filegroups:
   - test/core/end2end/cq_verifier.c
   - test/core/end2end/fixtures/proxy.c
   - test/core/iomgr/endpoint_tests.c
-  - test/core/security/oauth2_utils.c
   - test/core/util/grpc_profiler.c
   - test/core/util/parse_hexstring.c
   - test/core/util/port_posix.c
@@ -526,10 +520,12 @@ libs:
   language: c
   headers:
   - test/core/end2end/data/ssl_test_data.h
+  - test/core/security/oauth2_utils.h
   src:
   - test/core/end2end/data/server1_cert.c
   - test/core/end2end/data/server1_key.c
   - test/core/end2end/data/test_root_cert.c
+  - test/core/security/oauth2_utils.c
   deps:
   - gpr
   - gpr_test_util
@@ -543,7 +539,7 @@ libs:
   deps:
   - gpr
   - gpr_test_util
-  - grpc
+  - grpc_unsecure
   filegroups:
   - grpc_test_util_base
   secure: false
@@ -612,10 +608,10 @@ libs:
   - src/cpp/common/secure_auth_context.h
   - src/cpp/server/secure_server_credentials.h
   src:
-  - src/cpp/client/secure_channel_arguments.cc
   - src/cpp/client/secure_credentials.cc
   - src/cpp/common/auth_property_iterator.cc
   - src/cpp/common/secure_auth_context.cc
+  - src/cpp/common/secure_channel_arguments.cc
   - src/cpp/common/secure_create_auth_context.cc
   - src/cpp/server/secure_server_credentials.cc
   deps:
@@ -814,6 +810,24 @@ libs:
   - winsock
   - global
 targets:
+- name: algorithm_test
+  build: test
+  language: c
+  src:
+  - test/core/compression/algorithm_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: alloc_test
+  build: test
+  language: c
+  src:
+  - test/core/support/alloc_test.c
+  deps:
+  - gpr_test_util
+  - gpr
 - name: alpn_test
   build: test
   language: c
@@ -829,6 +843,16 @@ targets:
   language: c
   src:
   - test/core/transport/chttp2/bin_encoder_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: channel_create_test
+  build: test
+  language: c
+  src:
+  - test/core/surface/channel_create_test.c
   deps:
   - grpc_test_util
   - grpc
@@ -864,11 +888,31 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: chttp2_varint_test
+  build: test
+  language: c
+  src:
+  - test/core/transport/chttp2/varint_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: compression_test
   build: test
   language: c
   src:
   - test/core/compression/compression_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: dns_resolver_test
+  build: test
+  language: c
+  src:
+  - test/core/client_config/resolvers/dns_resolver_test.c
   deps:
   - grpc_test_util
   - grpc
@@ -1216,6 +1260,16 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: grpc_invalid_channel_args_test
+  build: test
+  language: c
+  src:
+  - test/core/surface/invalid_channel_args_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: grpc_json_token_test
   build: test
   language: c
@@ -1324,6 +1378,38 @@ targets:
   - mac
   - linux
   - posix
+- name: httpscli_test
+  build: test
+  language: c
+  src:
+  - test/core/httpcli/httpscli_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  platforms:
+  - linux
+- name: init_test
+  build: test
+  language: c
+  src:
+  - test/core/surface/init_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: invalid_call_argument_test
+  build: test
+  language: c
+  src:
+  - test/core/end2end/invalid_call_argument_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: json_rewrite
   build: test
   run: false
@@ -1338,6 +1424,16 @@ targets:
   language: c
   src:
   - test/core/json/json_rewrite_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: json_stream_error_test
+  build: test
+  language: c
+  src:
+  - test/core/json/json_stream_error_test.c
   deps:
   - grpc_test_util
   - grpc
@@ -1397,16 +1493,6 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
-- name: multi_init_test
-  build: test
-  language: c
-  src:
-  - test/core/surface/multi_init_test.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
 - name: multiple_server_queues_test
   build: test
   language: c
@@ -1445,11 +1531,41 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: secure_channel_create_test
+  build: test
+  language: c
+  src:
+  - test/core/surface/secure_channel_create_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: secure_endpoint_test
   build: test
   language: c
   src:
   - test/core/security/secure_endpoint_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: server_chttp2_test
+  build: test
+  language: c
+  src:
+  - test/core/surface/server_chttp2_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: server_test
+  build: test
+  language: c
+  src:
+  - test/core/surface/server_test.c
   deps:
   - grpc_test_util
   - grpc
@@ -1466,6 +1582,16 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: sockaddr_resolver_test
+  build: test
+  language: c
+  src:
+  - test/core/client_config/resolvers/sockaddr_resolver_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: sockaddr_utils_test
   build: test
   language: c
@@ -1476,6 +1602,20 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: socket_utils_test
+  build: test
+  language: c
+  src:
+  - test/core/iomgr/socket_utils_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  platforms:
+  - mac
+  - linux
+  - posix
 - name: tcp_client_posix_test
   build: test
   language: c
@@ -1563,6 +1703,16 @@ targets:
   language: c
   src:
   - test/core/profiling/timers_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: transport_connectivity_state_test
+  build: test
+  language: c
+  src:
+  - test/core/transport/connectivity_state_test.c
   deps:
   - grpc_test_util
   - grpc
@@ -1692,7 +1842,7 @@ targets:
   build: test
   language: c++
   src:
-  - test/cpp/client/channel_arguments_test.cc
+  - test/cpp/common/channel_arguments_test.cc
   deps:
   - grpc++
   - grpc
@@ -2269,11 +2419,11 @@ vspackages:
   name: grpc.dependencies.zlib
   props: false
   redist: true
-  version: 1.2.8.9
+  version: 1.2.8.10
 - name: grpc.dependencies.openssl
   props: true
   redist: true
-  version: 1.0.2.3
+  version: 1.0.204.1
 - name: gflags
   props: false
   redist: false

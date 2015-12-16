@@ -124,6 +124,8 @@ static void on_lb_policy_state_changed_locked(
       w->chand->resolver != NULL) {
     publish_state = GRPC_CHANNEL_TRANSIENT_FAILURE;
     grpc_resolver_channel_saw_error(exec_ctx, w->chand->resolver);
+    GRPC_LB_POLICY_UNREF(exec_ctx, w->chand->lb_policy, "channel");
+    w->chand->lb_policy = NULL;
   }
   grpc_connectivity_state_set(exec_ctx, &w->chand->state_tracker, publish_state,
                               "lb_changed");
@@ -250,7 +252,10 @@ static void cc_start_transport_op(grpc_exec_ctx *exec_ctx,
   grpc_exec_ctx_enqueue(exec_ctx, op->on_consumed, 1);
 
   GPR_ASSERT(op->set_accept_stream == NULL);
-  GPR_ASSERT(op->bind_pollset == NULL);
+  if (op->bind_pollset != NULL) {
+    grpc_pollset_set_add_pollset(exec_ctx, &chand->interested_parties,
+                                 op->bind_pollset);
+  }
 
   gpr_mu_lock(&chand->mu_config);
   if (op->on_connectivity_state_change != NULL) {
@@ -259,6 +264,16 @@ static void cc_start_transport_op(grpc_exec_ctx *exec_ctx,
         op->on_connectivity_state_change);
     op->on_connectivity_state_change = NULL;
     op->connectivity_state = NULL;
+  }
+
+  if (op->send_ping != NULL) {
+    if (chand->lb_policy == NULL) {
+      grpc_exec_ctx_enqueue(exec_ctx, op->send_ping, 0);
+    } else {
+      grpc_lb_policy_ping_one(exec_ctx, chand->lb_policy, op->send_ping);
+      op->bind_pollset = NULL;
+    }
+    op->send_ping = NULL;
   }
 
   if (op->disconnect && chand->resolver != NULL) {

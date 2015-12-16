@@ -32,7 +32,6 @@
 # pubsub_demo demos accesses the Google PubSub API via its gRPC interface
 #
 # $ GOOGLE_APPLICATION_CREDENTIALS=<path_to_service_account_key_file> \
-#   SSL_CERT_FILE=<path/to/ssl/certs> \
 #   path/to/pubsub_demo.rb \
 #   [--action=<chosen_demo_action> ]
 #
@@ -55,18 +54,9 @@ require 'google/protobuf/empty'
 require 'tech/pubsub/proto/pubsub'
 require 'tech/pubsub/proto/pubsub_services'
 
-# loads the certificates used to access the test server securely.
-def load_prod_cert
-  fail 'could not find a production cert' if ENV['SSL_CERT_FILE'].nil?
-  p "loading prod certs from #{ENV['SSL_CERT_FILE']}"
-  File.open(ENV['SSL_CERT_FILE']) do |f|
-    return f.read
-  end
-end
-
 # creates a SSL Credentials from the production certificates.
 def ssl_creds
-  GRPC::Core::ChannelCredentials.new(load_prod_cert)
+  GRPC::Core::ChannelCredentials.new()
 end
 
 # Builds the metadata authentication update proc.
@@ -80,8 +70,9 @@ def publisher_stub(opts)
   address = "#{opts.host}:#{opts.port}"
   stub_clz = Tech::Pubsub::PublisherService::Stub # shorter
   GRPC.logger.info("... access PublisherService at #{address}")
-  stub_clz.new(address,
-               creds: ssl_creds, update_metadata: auth_proc(opts),
+  call_creds = GRPC::Core::CallCredentials.new(auth_proc(opts))
+  combined_creds = ssl_creds.compose(call_creds)
+  stub_clz.new(address, creds: combined_creds,
                GRPC::Core::Channel::SSL_TARGET => opts.host)
 end
 
@@ -90,8 +81,9 @@ def subscriber_stub(opts)
   address = "#{opts.host}:#{opts.port}"
   stub_clz = Tech::Pubsub::SubscriberService::Stub # shorter
   GRPC.logger.info("... access SubscriberService at #{address}")
-  stub_clz.new(address,
-               creds: ssl_creds, update_metadata: auth_proc(opts),
+  call_creds = GRPC::Core::CallCredentials.new(auth_proc(opts))
+  combined_creds = ssl_creds.compose(call_creds)
+  stub_clz.new(address, creds: combined_creds,
                GRPC::Core::Channel::SSL_TARGET => opts.host)
 end
 

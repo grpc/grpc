@@ -58,6 +58,10 @@
 #include "src/core/transport/chttp2_transport.h"
 #include "src/core/transport/connectivity_state.h"
 
+#ifndef GRPC_DEFAULT_NAME_PREFIX
+#define GRPC_DEFAULT_NAME_PREFIX "dns:///"
+#endif
+
 #define MAX_PLUGINS 128
 
 static gpr_once g_basic_init = GPR_ONCE_INIT;
@@ -97,7 +101,7 @@ void grpc_init(void) {
     grpc_lb_policy_registry_init(grpc_pick_first_lb_factory_create());
     grpc_register_lb_policy(grpc_pick_first_lb_factory_create());
     grpc_register_lb_policy(grpc_round_robin_lb_factory_create());
-    grpc_resolver_registry_init("dns:///");
+    grpc_resolver_registry_init(GRPC_DEFAULT_NAME_PREFIX);
     grpc_register_resolver_type(grpc_dns_resolver_factory_create());
     grpc_register_resolver_type(grpc_ipv4_resolver_factory_create());
     grpc_register_resolver_type(grpc_ipv6_resolver_factory_create());
@@ -143,6 +147,7 @@ void grpc_shutdown(void) {
     gpr_timers_global_destroy();
     grpc_tracer_shutdown();
     grpc_resolver_registry_shutdown();
+    grpc_lb_policy_registry_shutdown();
     for (i = 0; i < g_number_of_plugins; i++) {
       if (g_all_of_the_plugins[i].destroy != NULL) {
         g_all_of_the_plugins[i].destroy();

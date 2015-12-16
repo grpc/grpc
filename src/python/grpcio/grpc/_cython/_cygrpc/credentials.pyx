@@ -27,6 +27,8 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+cimport cpython
+
 from grpc._cython._cygrpc cimport grpc
 from grpc._cython._cygrpc cimport records
 
@@ -71,11 +73,72 @@ cdef class ServerCredentials:
 
   def __cinit__(self):
     self.c_credentials = NULL
+    self.references = []
 
   def __dealloc__(self):
     if self.c_credentials != NULL:
       grpc.grpc_server_credentials_release(self.c_credentials)
 
+
+cdef class CredentialsMetadataPlugin:
+
+  def __cinit__(self, object plugin_callback, str name):
+    """
+    Args:
+      plugin_callback (callable): Callback accepting a service URL (str/bytes)
+        and callback object (accepting a records.Metadata,
+        grpc.grpc_status_code, and a str/bytes error message). This argument
+        when called should be non-blocking and eventually call the callback
+        object with the appropriate status code/details and metadata (if
+        successful).
+      name (str): Plugin name.
+    """
+    if not callable(plugin_callback):
+      raise ValueError('expected callable plugin_callback')
+    self.plugin_callback = plugin_callback
+    self.plugin_name = name
+
+  @staticmethod
+  cdef grpc.grpc_metadata_credentials_plugin make_c_plugin(self):
+    cdef grpc.grpc_metadata_credentials_plugin result
+    result.get_metadata = plugin_get_metadata
+    result.destroy = plugin_destroy_c_plugin_state
+    result.state = <void *>self
+    result.type = self.plugin_name
+    cpython.Py_INCREF(self)
+    return result
+
+
+cdef class AuthMetadataContext:
+
+  def __cinit__(self):
+    self.context.service_url = NULL
+    self.context.method_name = NULL
+
+  @property
+  def service_url(self):
+    return self.context.service_url
+
+  @property
+  def method_name(self):
+    return self.context.method_name
+
+
+cdef void plugin_get_metadata(
+    void *state, grpc.grpc_auth_metadata_context context,
+    grpc.grpc_credentials_plugin_metadata_cb cb, void *user_data) with gil:
+  def python_callback(
+      records.Metadata metadata, grpc.grpc_status_code status,
+      const char *error_details):
+    cb(user_data, metadata.c_metadata_array.metadata,
+       metadata.c_metadata_array.count, status, error_details)
+  cdef CredentialsMetadataPlugin self = <CredentialsMetadataPlugin>state
+  cdef AuthMetadataContext cy_context = AuthMetadataContext()
+  cy_context.context = context
+  self.plugin_callback(cy_context, python_callback)
+
+cdef void plugin_destroy_c_plugin_state(void *state):
+  cpython.Py_DECREF(<CredentialsMetadataPlugin>state)
 
 def channel_credentials_google_default():
   cdef ChannelCredentials credentials = ChannelCredentials();
@@ -83,7 +146,7 @@ def channel_credentials_google_default():
   return credentials
 
 def channel_credentials_ssl(pem_root_certificates,
-                           records.SslPemKeyCertPair ssl_pem_key_cert_pair):
+                            records.SslPemKeyCertPair ssl_pem_key_cert_pair):
   if pem_root_certificates is None:
     pass
   elif isinstance(pem_root_certificates, bytes):
@@ -104,6 +167,7 @@ def channel_credentials_ssl(pem_root_certificates,
   else:
     credentials.c_credentials = grpc.grpc_ssl_credentials_create(
       c_pem_root_certificates, NULL, NULL)
+  return credentials
 
 def channel_credentials_composite(
     ChannelCredentials credentials_1 not None,
@@ -135,7 +199,6 @@ def call_credentials_google_compute_engine():
       grpc.grpc_google_compute_engine_credentials_create(NULL))
   return credentials
 
-#TODO rename to something like client_credentials_service_account_jwt_access.
 def call_credentials_service_account_jwt_access(
     json_key, records.Timespec token_lifetime not None):
   if isinstance(json_key, bytes):
@@ -184,14 +247,25 @@ def call_credentials_google_iam(authorization_token, authority_selector):
   credentials.references.append(authority_selector)
   return credentials
 
+def call_credentials_metadata_plugin(CredentialsMetadataPlugin plugin):
+  cdef CallCredentials credentials = CallCredentials()
+  credentials.c_credentials = (
+      grpc.grpc_metadata_credentials_create_from_plugin(plugin.make_c_plugin(),
+                                                        NULL))
+  # TODO(atash): the following held reference is *probably* never necessary
+  credentials.references.append(plugin)
+  return credentials
+
 def server_credentials_ssl(pem_root_certs, pem_key_cert_pairs,
                            bint force_client_auth):
+  cdef char *c_pem_root_certs = NULL
   if pem_root_certs is None:
     pass
   elif isinstance(pem_root_certs, bytes):
-    pass
+    c_pem_root_certs = pem_root_certs
   elif isinstance(pem_root_certs, basestring):
     pem_root_certs = pem_root_certs.encode()
+    c_pem_root_certs = pem_root_certs
   else:
     raise TypeError("expected pem_root_certs to be str or bytes")
   pem_key_cert_pairs = list(pem_key_cert_pairs)
@@ -212,7 +286,7 @@ def server_credentials_ssl(pem_root_certs, pem_key_cert_pairs,
     credentials.c_ssl_pem_key_cert_pairs[i] = (
         (<records.SslPemKeyCertPair>pem_key_cert_pairs[i]).c_pair)
   credentials.c_credentials = grpc.grpc_ssl_server_credentials_create(
-      pem_root_certs, credentials.c_ssl_pem_key_cert_pairs,
+      c_pem_root_certs, credentials.c_ssl_pem_key_cert_pairs,
       credentials.c_ssl_pem_key_cert_pairs_count, force_client_auth, NULL)
   return credentials
 

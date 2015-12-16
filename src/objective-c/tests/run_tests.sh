@@ -51,4 +51,5 @@ xcodebuild \
     -scheme AllTests \
     -destination name="iPhone 6" \
     test \
-    | egrep "$XCODEBUILD_FILTER" -
+    | egrep "$XCODEBUILD_FILTER" \
+    | egrep -v "(GPBDictionary|GPBArray)" -

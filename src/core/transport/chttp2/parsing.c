@@ -115,9 +115,6 @@ void grpc_chttp2_publish_reads(
         transport_parsing->incoming_stream_id;
   }
 
-  /* copy parsing qbuf to global qbuf */
-  gpr_slice_buffer_move_into(&transport_parsing->qbuf, &transport_global->qbuf);
-
   /* update global settings */
   if (transport_parsing->settings_updated) {
     memcpy(transport_global->settings[GRPC_PEER_SETTINGS],
@@ -607,7 +604,7 @@ static void on_initial_header(void *tp, grpc_mdelem *md) {
                                       cached_timeout)) {
         gpr_log(GPR_ERROR, "Ignoring bad timeout value '%s'",
                 grpc_mdstr_as_c_string(md->value));
-        *cached_timeout = gpr_inf_future(GPR_CLOCK_REALTIME);
+        *cached_timeout = gpr_inf_future(GPR_TIMESPAN);
       }
       grpc_mdelem_set_user_data(md, free_timeout, cached_timeout);
     }

@@ -45,4 +45,6 @@ void grpc_do_security_handshake(grpc_exec_ctx *exec_ctx,
                                 grpc_security_handshake_done_cb cb,
                                 void *user_data);
 
+void grpc_security_handshake_shutdown(grpc_exec_ctx *exec_ctx, void *handshake);
+
 #endif /* GRPC_INTERNAL_CORE_SECURITY_HANDSHAKE_H */

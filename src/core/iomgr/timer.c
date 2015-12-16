@@ -126,8 +126,8 @@ static double ts_to_dbl(gpr_timespec ts) {
 
 static gpr_timespec dbl_to_ts(double d) {
   gpr_timespec ts;
-  ts.tv_sec = (time_t)d;
-  ts.tv_nsec = (int)(1e9 * (d - (double)ts.tv_sec));
+  ts.tv_sec = (gpr_int64)d;
+  ts.tv_nsec = (gpr_int32)(1e9 * (d - (double)ts.tv_sec));
   ts.clock_type = GPR_TIMESPAN;
   return ts;
 }
@@ -342,12 +342,4 @@ int grpc_timer_check(grpc_exec_ctx *exec_ctx, gpr_timespec now,
   return run_some_expired_timers(
       exec_ctx, now, next,
       gpr_time_cmp(now, gpr_inf_future(now.clock_type)) != 0);
-}
-
-gpr_timespec grpc_timer_list_next_timeout(void) {
-  gpr_timespec out;
-  gpr_mu_lock(&g_mu);
-  out = g_shard_queue[0]->min_deadline;
-  gpr_mu_unlock(&g_mu);
-  return out;
 }
