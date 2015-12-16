@@ -751,7 +751,7 @@ for l in languages:
 
 def build_step_environ(cfg):
   environ = {'CONFIG': cfg}
-  msbuild_cfg = _WINDOWS_CONFIG[cfg]
+  msbuild_cfg = _WINDOWS_CONFIG.get(cfg)
   if msbuild_cfg:
     environ['MSBUILD_CONFIG'] = msbuild_cfg
   return environ
