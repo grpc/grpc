@@ -128,8 +128,8 @@ int gpr_stack_lockfree_push(gpr_stack_lockfree *stack, int entry) {
     gpr_atm old_val;
 
     old_val = gpr_atm_no_barrier_fetch_add(&stack->pushed[pushed_index],
-                                           (gpr_atm)(1UL << pushed_bit));
-    GPR_ASSERT((old_val & (gpr_atm)(1UL << pushed_bit)) == 0);
+                                           ((gpr_atm)1 << pushed_bit));
+	GPR_ASSERT((old_val & ((gpr_atm)1 << pushed_bit)) == 0);
   }
 #endif
 
@@ -166,8 +166,8 @@ int gpr_stack_lockfree_pop(gpr_stack_lockfree *stack) {
     gpr_atm old_val;
 
     old_val = gpr_atm_no_barrier_fetch_add(&stack->pushed[pushed_index],
-                                           -(gpr_atm)(1UL << pushed_bit));
-    GPR_ASSERT((old_val & (gpr_atm)(1UL << pushed_bit)) != 0);
+                                           -((gpr_atm)1 << pushed_bit));
+	GPR_ASSERT((old_val & ((gpr_atm)1 << pushed_bit)) != 0);
   }
 #endif
 
