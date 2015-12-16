@@ -107,6 +107,7 @@
 				633BFFBF1B950B210007E424 /* Frameworks */,
 				633BFFC01B950B210007E424 /* Resources */,
 				AC2F6F9AB1C090BB0BEE6E4D /* Copy Pods Resources */,
+				A1738A987353B0BF2C64F0F7 /* Embed Pods Frameworks */,
 			);
 			buildRules = (
 			);
@@ -123,6 +124,7 @@
 		633BFFBA1B950B210007E424 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
+				LastSwiftUpdateCheck = 0710;
 				LastUpgradeCheck = 0640;
 				ORGANIZATIONNAME = gRPC;
 				TargetAttributes = {
@@ -175,6 +177,21 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "diff \"${PODS_ROOT}/../Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [[ $? != 0 ]] ; then\n    cat << EOM\nerror: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\nEOM\n    exit 1\nfi\n";
+			showEnvVarsInLog = 0;
+		};
+		A1738A987353B0BF2C64F0F7 /* Embed Pods Frameworks */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Embed Pods Frameworks";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${SRCROOT}/Pods/Target Support Files/Pods/Pods-frameworks.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 		AC2F6F9AB1C090BB0BEE6E4D /* Copy Pods Resources */ = {
@@ -310,7 +327,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_OBJC_BRIDGING_HEADER = "Bridging-Header.h";
-				USER_HEADER_SEARCH_PATHS = "Pods/**";
+				USER_HEADER_SEARCH_PATHS = "";
 			};
 			name = Debug;
 		};
@@ -323,7 +340,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_OBJC_BRIDGING_HEADER = "Bridging-Header.h";
-				USER_HEADER_SEARCH_PATHS = "Pods/**";
+				USER_HEADER_SEARCH_PATHS = "";
 			};
 			name = Release;
 		};
