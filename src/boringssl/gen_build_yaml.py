@@ -46,6 +46,12 @@ def map_dir(filename):
   else:
     return 'src/boringssl/' + filename
 
+def map_testarg(arg):
+  if '/' in arg:
+    return 'third_party/boringssl/' + arg
+  else:
+    return arg
+
 class Grpc(object):
 
   yaml = None
@@ -71,12 +77,14 @@ class Grpc(object):
               map_dir(f)
               for f in files['ssl_headers'] + files['ssl_internal_headers'] + files['crypto_headers'] + files['crypto_internal_headers']
             ),
+            'boringssl': True,
           },
           {
             'name': 'boringssl_test_util',
             'build': 'private',
             'language': 'c++',
             'secure': 'no',
+            'boringssl': True,
             'src': [
               map_dir(f)
               for f in sorted(files['test_support'])
@@ -85,19 +93,33 @@ class Grpc(object):
       ],
       'targets': [
           {
-              'name': 'boringssl_%s' % os.path.splitext(os.path.basename(test))[0],
-              'build': 'test',
-              'run': False,
-              'secure': 'no',
-              'language': 'c' if os.path.splitext(test)[1] == '.c' else 'c++',
-              'src': [map_dir(test)],
-              'vs_proj_dir': 'test/boringssl',
-              'deps': [
-                  'boringssl_test_util',
-                  'boringssl',
-              ]
+            'name': 'boringssl_%s' % os.path.splitext(os.path.basename(test))[0],
+            'build': 'test',
+            'run': False,
+            'secure': 'no',
+            'language': 'c' if os.path.splitext(test)[1] == '.c' else 'c++',
+            'src': [map_dir(test)],
+            'vs_proj_dir': 'test/boringssl',
+            'boringssl': True,
+            'deps': [
+                'boringssl_test_util',
+                'boringssl',
+            ]
           }
           for test in sorted(files['test'])
+      ],
+      'tests': [
+          {
+            'name': 'boringssl_%s' % os.path.basename(test[0]),
+            'args': [map_testarg(arg) for arg in test[1:]],
+            'exclude_configs': [],
+            'ci_platforms': ['linux', 'mac', 'posix', 'windows'],
+            'platforms': ['linux', 'mac', 'posix', 'windows'],
+            'flaky': False,
+            'language': 'c' if (test[0] + '.c') in files['test'] else 'c++',
+            'boringssl': True
+          }
+          for test in files['tests']
       ]
     }
 
