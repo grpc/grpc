@@ -34,57 +34,57 @@ import os
 import yaml
 
 boring_ssl_root = os.path.abspath(os.path.join(
-		os.path.dirname(sys.argv[0]), 
-		'../../third_party/boringssl'))
+    os.path.dirname(sys.argv[0]), 
+    '../../third_party/boringssl'))
 sys.path.append(os.path.join(boring_ssl_root, 'util'))
 
 import generate_build_files
 
 def map_dir(filename):
-	if filename[0:4] == 'src/':
-		return 'third_party/boringssl/' + filename[4:]
-	else:
-		return 'src/boringssl/' + filename
+  if filename[0:4] == 'src/':
+    return 'third_party/boringssl/' + filename[4:]
+  else:
+    return 'src/boringssl/' + filename
 
 class Grpc(object):
 
-	yaml = None
+  yaml = None
 
-	def WriteFiles(self, files, asm_outputs):
-		#print 'files: %r' % files
-		#print 'asm_outputs: %r' % asm_outputs
+  def WriteFiles(self, files, asm_outputs):
+    #print 'files: %r' % files
+    #print 'asm_outputs: %r' % asm_outputs
 
-		self.yaml = {
-			'#': 'generated with tools/buildgen/gen_boring_ssl_build_yaml.py',
-			'libs': [
-					{
-						'name': 'boringssl',
-						'build': 'private',
-						'language': 'c',
-						'src': [
-							map_dir(f)
-							for f in files['ssl'] + files['crypto']
-						],
-						'headers': [
-							map_dir(f)
-							for f in files['ssl_headers'] + files['crypto_headers']
-						]
-					}
-			]
-		}
+    self.yaml = {
+      '#': 'generated with tools/buildgen/gen_boring_ssl_build_yaml.py',
+      'libs': [
+          {
+            'name': 'boringssl',
+            'build': 'private',
+            'language': 'c',
+            'src': [
+              map_dir(f)
+              for f in files['ssl'] + files['crypto']
+            ],
+            'headers': [
+              map_dir(f)
+              for f in files['ssl_headers'] + files['crypto_headers']
+            ]
+          }
+      ]
+    }
 
 
 os.chdir(os.path.dirname(sys.argv[0]))
 os.mkdir('src')
 try:
-	for f in os.listdir(boring_ssl_root):
-		os.symlink(os.path.join(boring_ssl_root, f),
-							 os.path.join('src', f))
+  for f in os.listdir(boring_ssl_root):
+    os.symlink(os.path.join(boring_ssl_root, f),
+               os.path.join('src', f))
 
-	g = Grpc()
-	generate_build_files.main([g])
+  g = Grpc()
+  generate_build_files.main([g])
 
-	print yaml.dump(g.yaml)
+  print yaml.dump(g.yaml)
 
 finally:
-	shutil.rmtree('src')
+  shutil.rmtree('src')
