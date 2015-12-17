@@ -80,6 +80,24 @@ CompressionType GetInteropCompressionTypeFromCompressionAlgorithm(
       GPR_ASSERT(false);
   }
 }
+
+void NoopChecks(const InteropClientContextInspector& inspector,
+                const SimpleRequest* request, const SimpleResponse* response) {}
+
+void CompressionChecks(const InteropClientContextInspector& inspector,
+                       const SimpleRequest* request,
+                       const SimpleResponse* response) {
+  GPR_ASSERT(request->response_compression() ==
+             GetInteropCompressionTypeFromCompressionAlgorithm(
+                 inspector.GetCallCompressionAlgorithm()));
+  if (request->response_compression() == NONE) {
+    GPR_ASSERT(!(inspector.GetMessageFlags() & GRPC_WRITE_INTERNAL_COMPRESS));
+  } else if (request->response_type() == PayloadType::COMPRESSABLE) {
+    // requested compression and compressable response => results should always
+    // be compressed.
+    GPR_ASSERT(inspector.GetMessageFlags() & GRPC_WRITE_INTERNAL_COMPRESS);
+  }
+}
 }  // namespace
 
 InteropClient::ServiceStub::ServiceStub(std::shared_ptr<Channel> channel,
@@ -145,9 +163,14 @@ void InteropClient::DoEmpty() {
   gpr_log(GPR_INFO, "Empty rpc done.");
 }
 
-// Shared code to set large payload, make rpc and check response payload.
 void InteropClient::PerformLargeUnary(SimpleRequest* request,
                                       SimpleResponse* response) {
+  PerformLargeUnary(request, response, NoopChecks);
+}
+
+void InteropClient::PerformLargeUnary(SimpleRequest* request,
+                                      SimpleResponse* response,
+                                      CheckerFn custom_checks_fn) {
   ClientContext context;
   InteropClientContextInspector inspector(context);
   // If the request doesn't already specify the response type, default to
@@ -157,20 +180,9 @@ void InteropClient::PerformLargeUnary(SimpleRequest* request,
   request->mutable_payload()->set_body(payload.c_str(), kLargeRequestSize);
 
   Status s = serviceStub_.Get()->UnaryCall(&context, *request, response);
-
-  // Compression related checks.
-  GPR_ASSERT(request->response_compression() ==
-             GetInteropCompressionTypeFromCompressionAlgorithm(
-                 inspector.GetCallCompressionAlgorithm()));
-  if (request->response_compression() == NONE) {
-    GPR_ASSERT(!(inspector.GetMessageFlags() & GRPC_WRITE_INTERNAL_COMPRESS));
-  } else if (request->response_type() == PayloadType::COMPRESSABLE) {
-    // requested compression and compressable response => results should always
-    // be compressed.
-    GPR_ASSERT(inspector.GetMessageFlags() & GRPC_WRITE_INTERNAL_COMPRESS);
-  }
-
   AssertOkOrPrintErrorStatus(s);
+
+  custom_checks_fn(inspector, request, response);
 
   // Payload related checks.
   if (request->response_type() != PayloadType::RANDOM) {
@@ -293,7 +305,7 @@ void InteropClient::DoLargeCompressedUnary() {
       SimpleResponse response;
       request.set_response_type(payload_types[i]);
       request.set_response_compression(compression_types[j]);
-      PerformLargeUnary(&request, &response);
+      PerformLargeUnary(&request, &response, CompressionChecks);
       gpr_log(GPR_INFO, "Large compressed unary done %s.", log_suffix);
       gpr_free(log_suffix);
     }

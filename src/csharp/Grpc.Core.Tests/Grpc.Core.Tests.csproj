@@ -64,6 +64,7 @@
       <Link>Version.cs</Link>
     </Compile>
     <Compile Include="CallCredentialsTest.cs" />
+    <Compile Include="CallOptionsTest.cs" />
     <Compile Include="UserAgentStringTest.cs" />
     <Compile Include="FakeCredentials.cs" />
     <Compile Include="MarshallingErrorsTest.cs" />
@@ -90,6 +91,7 @@
     <Compile Include="ContextPropagationTest.cs" />
     <Compile Include="MetadataTest.cs" />
     <Compile Include="PerformanceTest.cs" />
+    <Compile Include="SanityTest.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>

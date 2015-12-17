@@ -486,8 +486,12 @@ void grpc_tcp_server_start(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s,
 }
 
 int grpc_tcp_listener_get_port(grpc_tcp_listener *listener) {
-  grpc_tcp_listener *sp = listener;
-  return sp->port;
+  if (listener != NULL) {
+    grpc_tcp_listener *sp = listener;
+    return sp->port;
+  } else {
+    return 0;
+  }
 }
 
 void grpc_tcp_listener_ref(grpc_tcp_listener *listener) {

@@ -272,7 +272,7 @@ static void test(const char *name, void (*body)(void *m),
     test_destroy(m);
   }
   time_taken = gpr_time_sub(gpr_now(GPR_CLOCK_REALTIME), start);
-  fprintf(stderr, " done %ld.%09d s\n", (long)time_taken.tv_sec,
+  fprintf(stderr, " done %lld.%09d s\n", (long long)time_taken.tv_sec,
           (int)time_taken.tv_nsec);
 }
 
@@ -429,7 +429,6 @@ static void refinc(void *v /*=m*/) {
   }
   mark_thread_done(m);
 }
-
 
 /* Wait until m->event is set to (void *)1, then decrement m->refcount by 1
    (m->threads * m->iterations * m->incr_step) times, and ensure that the last

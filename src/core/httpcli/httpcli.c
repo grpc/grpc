@@ -53,6 +53,7 @@ typedef struct {
   size_t next_address;
   grpc_endpoint *ep;
   char *host;
+  char *ssl_host_override;
   gpr_timespec deadline;
   int have_read_byte;
   const grpc_httpcli_handshaker *handshaker;
@@ -106,6 +107,7 @@ static void finish(grpc_exec_ctx *exec_ctx, internal_request *req,
   }
   gpr_slice_unref(req->request_text);
   gpr_free(req->host);
+  gpr_free(req->ssl_host_override);
   grpc_iomgr_unregister_object(&req->iomgr_obj);
   gpr_slice_buffer_destroy(&req->incoming);
   gpr_slice_buffer_destroy(&req->outgoing);
@@ -180,8 +182,10 @@ static void on_connected(grpc_exec_ctx *exec_ctx, void *arg, int success) {
     next_address(exec_ctx, req);
     return;
   }
-  req->handshaker->handshake(exec_ctx, req, req->ep, req->host,
-                             on_handshake_done);
+  req->handshaker->handshake(
+      exec_ctx, req, req->ep,
+      req->ssl_host_override ? req->ssl_host_override : req->host,
+      on_handshake_done);
 }
 
 static void next_address(grpc_exec_ctx *exec_ctx, internal_request *req) {
@@ -231,6 +235,7 @@ static void internal_request_begin(
   gpr_slice_buffer_init(&req->outgoing);
   grpc_iomgr_register_object(&req->iomgr_obj, name);
   req->host = gpr_strdup(request->host);
+  req->ssl_host_override = gpr_strdup(request->ssl_host_override);
 
   grpc_pollset_set_add_pollset(exec_ctx, &req->context->pollset_set,
                                req->pollset);

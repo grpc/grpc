@@ -128,9 +128,29 @@ namespace Grpc.IntegrationTesting
         }
 
         [Test]
-        public async Task TimeoutOnSleepingServerAsync()
+        public async Task TimeoutOnSleepingServer()
         {
             await InteropClient.RunTimeoutOnSleepingServerAsync(client);
+        }
+
+        [Test]
+        public async Task CustomMetadata()
+        {
+            await InteropClient.RunCustomMetadataAsync(client);
+        }
+
+        [Test]
+        [Ignore("TODO: see #4427")]
+        public async Task StatusCodeAndMessage()
+        {
+            await InteropClient.RunStatusCodeAndMessageAsync(client);
+        }
+
+        [Test]
+        [Ignore("TODO: see #4427")]
+        public void UnimplementedMethod()
+        {
+            InteropClient.RunUnimplementedMethod(UnimplementedService.NewClient(channel));
         }
     }
 }

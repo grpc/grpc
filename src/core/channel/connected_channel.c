@@ -89,9 +89,9 @@ static void init_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
   int r;
 
   GPR_ASSERT(elem->filter == &grpc_connected_channel_filter);
-  r = grpc_transport_init_stream(exec_ctx, chand->transport,
-                                 TRANSPORT_STREAM_FROM_CALL_DATA(calld),
-                                 args->refcount, args->server_transport_data);
+  r = grpc_transport_init_stream(
+      exec_ctx, chand->transport, TRANSPORT_STREAM_FROM_CALL_DATA(calld),
+      &args->call_stack->refcount, args->server_transport_data);
   GPR_ASSERT(r == 0);
 }
 

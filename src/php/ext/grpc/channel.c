@@ -154,16 +154,20 @@ PHP_METHOD(Channel, __construct) {
     array_hash = Z_ARRVAL_P(args_array);
     if (zend_hash_find(array_hash, "credentials", sizeof("credentials"),
                        (void **)&creds_obj) == SUCCESS) {
-      if (zend_get_class_entry(*creds_obj TSRMLS_CC) !=
+      if (Z_TYPE_P(*creds_obj) == IS_NULL) {
+        creds = NULL;
+        zend_hash_del(array_hash, "credentials", 12);
+      } else if (zend_get_class_entry(*creds_obj TSRMLS_CC) !=
           grpc_ce_channel_credentials) {
         zend_throw_exception(spl_ce_InvalidArgumentException,
                              "credentials must be a ChannelCredentials object",
                              1 TSRMLS_CC);
         return;
+      } else {
+        creds = (wrapped_grpc_channel_credentials *)zend_object_store_get_object(
+            *creds_obj TSRMLS_CC);
+        zend_hash_del(array_hash, "credentials", 12);
       }
-      creds = (wrapped_grpc_channel_credentials *)zend_object_store_get_object(
-          *creds_obj TSRMLS_CC);
-      zend_hash_del(array_hash, "credentials", 12);
     }
     php_grpc_read_args_array(args_array, &args);
     if (creds == NULL) {

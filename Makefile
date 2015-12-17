@@ -777,6 +777,7 @@ systemtap_dep_error:
 stop:
 	@false
 
+algorithm_test: $(BINDIR)/$(CONFIG)/algorithm_test
 alloc_test: $(BINDIR)/$(CONFIG)/alloc_test
 alpn_test: $(BINDIR)/$(CONFIG)/alpn_test
 bin_encoder_test: $(BINDIR)/$(CONFIG)/bin_encoder_test
@@ -786,6 +787,7 @@ chttp2_status_conversion_test: $(BINDIR)/$(CONFIG)/chttp2_status_conversion_test
 chttp2_stream_map_test: $(BINDIR)/$(CONFIG)/chttp2_stream_map_test
 chttp2_varint_test: $(BINDIR)/$(CONFIG)/chttp2_varint_test
 compression_test: $(BINDIR)/$(CONFIG)/compression_test
+dns_resolver_test: $(BINDIR)/$(CONFIG)/dns_resolver_test
 dualstack_socket_test: $(BINDIR)/$(CONFIG)/dualstack_socket_test
 endpoint_pair_test: $(BINDIR)/$(CONFIG)/endpoint_pair_test
 fd_conservation_posix_test: $(BINDIR)/$(CONFIG)/fd_conservation_posix_test
@@ -833,10 +835,12 @@ hpack_table_test: $(BINDIR)/$(CONFIG)/hpack_table_test
 httpcli_format_request_test: $(BINDIR)/$(CONFIG)/httpcli_format_request_test
 httpcli_parser_test: $(BINDIR)/$(CONFIG)/httpcli_parser_test
 httpcli_test: $(BINDIR)/$(CONFIG)/httpcli_test
+httpscli_test: $(BINDIR)/$(CONFIG)/httpscli_test
 init_test: $(BINDIR)/$(CONFIG)/init_test
 invalid_call_argument_test: $(BINDIR)/$(CONFIG)/invalid_call_argument_test
 json_rewrite: $(BINDIR)/$(CONFIG)/json_rewrite
 json_rewrite_test: $(BINDIR)/$(CONFIG)/json_rewrite_test
+json_stream_error_test: $(BINDIR)/$(CONFIG)/json_stream_error_test
 json_test: $(BINDIR)/$(CONFIG)/json_test
 lame_client_test: $(BINDIR)/$(CONFIG)/lame_client_test
 lb_policies_test: $(BINDIR)/$(CONFIG)/lb_policies_test
@@ -846,9 +850,14 @@ multiple_server_queues_test: $(BINDIR)/$(CONFIG)/multiple_server_queues_test
 murmur_hash_test: $(BINDIR)/$(CONFIG)/murmur_hash_test
 no_server_test: $(BINDIR)/$(CONFIG)/no_server_test
 resolve_address_test: $(BINDIR)/$(CONFIG)/resolve_address_test
+secure_channel_create_test: $(BINDIR)/$(CONFIG)/secure_channel_create_test
 secure_endpoint_test: $(BINDIR)/$(CONFIG)/secure_endpoint_test
+server_chttp2_test: $(BINDIR)/$(CONFIG)/server_chttp2_test
+server_test: $(BINDIR)/$(CONFIG)/server_test
 set_initial_connect_string_test: $(BINDIR)/$(CONFIG)/set_initial_connect_string_test
+sockaddr_resolver_test: $(BINDIR)/$(CONFIG)/sockaddr_resolver_test
 sockaddr_utils_test: $(BINDIR)/$(CONFIG)/sockaddr_utils_test
+socket_utils_test: $(BINDIR)/$(CONFIG)/socket_utils_test
 tcp_client_posix_test: $(BINDIR)/$(CONFIG)/tcp_client_posix_test
 tcp_posix_test: $(BINDIR)/$(CONFIG)/tcp_posix_test
 tcp_server_posix_test: $(BINDIR)/$(CONFIG)/tcp_server_posix_test
@@ -857,6 +866,7 @@ timeout_encoding_test: $(BINDIR)/$(CONFIG)/timeout_encoding_test
 timer_heap_test: $(BINDIR)/$(CONFIG)/timer_heap_test
 timer_list_test: $(BINDIR)/$(CONFIG)/timer_list_test
 timers_test: $(BINDIR)/$(CONFIG)/timers_test
+transport_connectivity_state_test: $(BINDIR)/$(CONFIG)/transport_connectivity_state_test
 transport_metadata_test: $(BINDIR)/$(CONFIG)/transport_metadata_test
 transport_security_test: $(BINDIR)/$(CONFIG)/transport_security_test
 udp_server_test: $(BINDIR)/$(CONFIG)/udp_server_test
@@ -907,6 +917,42 @@ sync_streaming_ping_pong_test: $(BINDIR)/$(CONFIG)/sync_streaming_ping_pong_test
 sync_unary_ping_pong_test: $(BINDIR)/$(CONFIG)/sync_unary_ping_pong_test
 thread_stress_test: $(BINDIR)/$(CONFIG)/thread_stress_test
 zookeeper_test: $(BINDIR)/$(CONFIG)/zookeeper_test
+h2_census_bad_hostname_test: $(BINDIR)/$(CONFIG)/h2_census_bad_hostname_test
+h2_census_binary_metadata_test: $(BINDIR)/$(CONFIG)/h2_census_binary_metadata_test
+h2_census_call_creds_test: $(BINDIR)/$(CONFIG)/h2_census_call_creds_test
+h2_census_cancel_after_accept_test: $(BINDIR)/$(CONFIG)/h2_census_cancel_after_accept_test
+h2_census_cancel_after_client_done_test: $(BINDIR)/$(CONFIG)/h2_census_cancel_after_client_done_test
+h2_census_cancel_after_invoke_test: $(BINDIR)/$(CONFIG)/h2_census_cancel_after_invoke_test
+h2_census_cancel_before_invoke_test: $(BINDIR)/$(CONFIG)/h2_census_cancel_before_invoke_test
+h2_census_cancel_in_a_vacuum_test: $(BINDIR)/$(CONFIG)/h2_census_cancel_in_a_vacuum_test
+h2_census_cancel_with_status_test: $(BINDIR)/$(CONFIG)/h2_census_cancel_with_status_test
+h2_census_channel_connectivity_test: $(BINDIR)/$(CONFIG)/h2_census_channel_connectivity_test
+h2_census_channel_ping_test: $(BINDIR)/$(CONFIG)/h2_census_channel_ping_test
+h2_census_compressed_payload_test: $(BINDIR)/$(CONFIG)/h2_census_compressed_payload_test
+h2_census_default_host_test: $(BINDIR)/$(CONFIG)/h2_census_default_host_test
+h2_census_disappearing_server_test: $(BINDIR)/$(CONFIG)/h2_census_disappearing_server_test
+h2_census_empty_batch_test: $(BINDIR)/$(CONFIG)/h2_census_empty_batch_test
+h2_census_graceful_server_shutdown_test: $(BINDIR)/$(CONFIG)/h2_census_graceful_server_shutdown_test
+h2_census_high_initial_seqno_test: $(BINDIR)/$(CONFIG)/h2_census_high_initial_seqno_test
+h2_census_hpack_size_test: $(BINDIR)/$(CONFIG)/h2_census_hpack_size_test
+h2_census_invoke_large_request_test: $(BINDIR)/$(CONFIG)/h2_census_invoke_large_request_test
+h2_census_large_metadata_test: $(BINDIR)/$(CONFIG)/h2_census_large_metadata_test
+h2_census_max_concurrent_streams_test: $(BINDIR)/$(CONFIG)/h2_census_max_concurrent_streams_test
+h2_census_max_message_length_test: $(BINDIR)/$(CONFIG)/h2_census_max_message_length_test
+h2_census_metadata_test: $(BINDIR)/$(CONFIG)/h2_census_metadata_test
+h2_census_negative_deadline_test: $(BINDIR)/$(CONFIG)/h2_census_negative_deadline_test
+h2_census_no_op_test: $(BINDIR)/$(CONFIG)/h2_census_no_op_test
+h2_census_payload_test: $(BINDIR)/$(CONFIG)/h2_census_payload_test
+h2_census_ping_pong_streaming_test: $(BINDIR)/$(CONFIG)/h2_census_ping_pong_streaming_test
+h2_census_registered_call_test: $(BINDIR)/$(CONFIG)/h2_census_registered_call_test
+h2_census_request_with_flags_test: $(BINDIR)/$(CONFIG)/h2_census_request_with_flags_test
+h2_census_request_with_payload_test: $(BINDIR)/$(CONFIG)/h2_census_request_with_payload_test
+h2_census_server_finishes_request_test: $(BINDIR)/$(CONFIG)/h2_census_server_finishes_request_test
+h2_census_shutdown_finishes_calls_test: $(BINDIR)/$(CONFIG)/h2_census_shutdown_finishes_calls_test
+h2_census_shutdown_finishes_tags_test: $(BINDIR)/$(CONFIG)/h2_census_shutdown_finishes_tags_test
+h2_census_simple_delayed_request_test: $(BINDIR)/$(CONFIG)/h2_census_simple_delayed_request_test
+h2_census_simple_request_test: $(BINDIR)/$(CONFIG)/h2_census_simple_request_test
+h2_census_trailing_metadata_test: $(BINDIR)/$(CONFIG)/h2_census_trailing_metadata_test
 h2_compress_bad_hostname_test: $(BINDIR)/$(CONFIG)/h2_compress_bad_hostname_test
 h2_compress_binary_metadata_test: $(BINDIR)/$(CONFIG)/h2_compress_binary_metadata_test
 h2_compress_call_creds_test: $(BINDIR)/$(CONFIG)/h2_compress_call_creds_test
@@ -916,8 +962,8 @@ h2_compress_cancel_after_invoke_test: $(BINDIR)/$(CONFIG)/h2_compress_cancel_aft
 h2_compress_cancel_before_invoke_test: $(BINDIR)/$(CONFIG)/h2_compress_cancel_before_invoke_test
 h2_compress_cancel_in_a_vacuum_test: $(BINDIR)/$(CONFIG)/h2_compress_cancel_in_a_vacuum_test
 h2_compress_cancel_with_status_test: $(BINDIR)/$(CONFIG)/h2_compress_cancel_with_status_test
-h2_compress_census_simple_request_test: $(BINDIR)/$(CONFIG)/h2_compress_census_simple_request_test
 h2_compress_channel_connectivity_test: $(BINDIR)/$(CONFIG)/h2_compress_channel_connectivity_test
+h2_compress_channel_ping_test: $(BINDIR)/$(CONFIG)/h2_compress_channel_ping_test
 h2_compress_compressed_payload_test: $(BINDIR)/$(CONFIG)/h2_compress_compressed_payload_test
 h2_compress_default_host_test: $(BINDIR)/$(CONFIG)/h2_compress_default_host_test
 h2_compress_disappearing_server_test: $(BINDIR)/$(CONFIG)/h2_compress_disappearing_server_test
@@ -952,8 +998,8 @@ h2_fakesec_cancel_after_invoke_test: $(BINDIR)/$(CONFIG)/h2_fakesec_cancel_after
 h2_fakesec_cancel_before_invoke_test: $(BINDIR)/$(CONFIG)/h2_fakesec_cancel_before_invoke_test
 h2_fakesec_cancel_in_a_vacuum_test: $(BINDIR)/$(CONFIG)/h2_fakesec_cancel_in_a_vacuum_test
 h2_fakesec_cancel_with_status_test: $(BINDIR)/$(CONFIG)/h2_fakesec_cancel_with_status_test
-h2_fakesec_census_simple_request_test: $(BINDIR)/$(CONFIG)/h2_fakesec_census_simple_request_test
 h2_fakesec_channel_connectivity_test: $(BINDIR)/$(CONFIG)/h2_fakesec_channel_connectivity_test
+h2_fakesec_channel_ping_test: $(BINDIR)/$(CONFIG)/h2_fakesec_channel_ping_test
 h2_fakesec_compressed_payload_test: $(BINDIR)/$(CONFIG)/h2_fakesec_compressed_payload_test
 h2_fakesec_default_host_test: $(BINDIR)/$(CONFIG)/h2_fakesec_default_host_test
 h2_fakesec_disappearing_server_test: $(BINDIR)/$(CONFIG)/h2_fakesec_disappearing_server_test
@@ -988,8 +1034,8 @@ h2_full_cancel_after_invoke_test: $(BINDIR)/$(CONFIG)/h2_full_cancel_after_invok
 h2_full_cancel_before_invoke_test: $(BINDIR)/$(CONFIG)/h2_full_cancel_before_invoke_test
 h2_full_cancel_in_a_vacuum_test: $(BINDIR)/$(CONFIG)/h2_full_cancel_in_a_vacuum_test
 h2_full_cancel_with_status_test: $(BINDIR)/$(CONFIG)/h2_full_cancel_with_status_test
-h2_full_census_simple_request_test: $(BINDIR)/$(CONFIG)/h2_full_census_simple_request_test
 h2_full_channel_connectivity_test: $(BINDIR)/$(CONFIG)/h2_full_channel_connectivity_test
+h2_full_channel_ping_test: $(BINDIR)/$(CONFIG)/h2_full_channel_ping_test
 h2_full_compressed_payload_test: $(BINDIR)/$(CONFIG)/h2_full_compressed_payload_test
 h2_full_default_host_test: $(BINDIR)/$(CONFIG)/h2_full_default_host_test
 h2_full_disappearing_server_test: $(BINDIR)/$(CONFIG)/h2_full_disappearing_server_test
@@ -1015,6 +1061,42 @@ h2_full_shutdown_finishes_tags_test: $(BINDIR)/$(CONFIG)/h2_full_shutdown_finish
 h2_full_simple_delayed_request_test: $(BINDIR)/$(CONFIG)/h2_full_simple_delayed_request_test
 h2_full_simple_request_test: $(BINDIR)/$(CONFIG)/h2_full_simple_request_test
 h2_full_trailing_metadata_test: $(BINDIR)/$(CONFIG)/h2_full_trailing_metadata_test
+h2_full+pipe_bad_hostname_test: $(BINDIR)/$(CONFIG)/h2_full+pipe_bad_hostname_test
+h2_full+pipe_binary_metadata_test: $(BINDIR)/$(CONFIG)/h2_full+pipe_binary_metadata_test
+h2_full+pipe_call_creds_test: $(BINDIR)/$(CONFIG)/h2_full+pipe_call_creds_test
+h2_full+pipe_cancel_after_accept_test: $(BINDIR)/$(CONFIG)/h2_full+pipe_cancel_after_accept_test
+h2_full+pipe_cancel_after_client_done_test: $(BINDIR)/$(CONFIG)/h2_full+pipe_cancel_after_client_done_test
+h2_full+pipe_cancel_after_invoke_test: $(BINDIR)/$(CONFIG)/h2_full+pipe_cancel_after_invoke_test
+h2_full+pipe_cancel_before_invoke_test: $(BINDIR)/$(CONFIG)/h2_full+pipe_cancel_before_invoke_test
+h2_full+pipe_cancel_in_a_vacuum_test: $(BINDIR)/$(CONFIG)/h2_full+pipe_cancel_in_a_vacuum_test
+h2_full+pipe_cancel_with_status_test: $(BINDIR)/$(CONFIG)/h2_full+pipe_cancel_with_status_test
+h2_full+pipe_channel_connectivity_test: $(BINDIR)/$(CONFIG)/h2_full+pipe_channel_connectivity_test
+h2_full+pipe_channel_ping_test: $(BINDIR)/$(CONFIG)/h2_full+pipe_channel_ping_test
+h2_full+pipe_compressed_payload_test: $(BINDIR)/$(CONFIG)/h2_full+pipe_compressed_payload_test
+h2_full+pipe_default_host_test: $(BINDIR)/$(CONFIG)/h2_full+pipe_default_host_test
+h2_full+pipe_disappearing_server_test: $(BINDIR)/$(CONFIG)/h2_full+pipe_disappearing_server_test
+h2_full+pipe_empty_batch_test: $(BINDIR)/$(CONFIG)/h2_full+pipe_empty_batch_test
+h2_full+pipe_graceful_server_shutdown_test: $(BINDIR)/$(CONFIG)/h2_full+pipe_graceful_server_shutdown_test
+h2_full+pipe_high_initial_seqno_test: $(BINDIR)/$(CONFIG)/h2_full+pipe_high_initial_seqno_test
+h2_full+pipe_hpack_size_test: $(BINDIR)/$(CONFIG)/h2_full+pipe_hpack_size_test
+h2_full+pipe_invoke_large_request_test: $(BINDIR)/$(CONFIG)/h2_full+pipe_invoke_large_request_test
+h2_full+pipe_large_metadata_test: $(BINDIR)/$(CONFIG)/h2_full+pipe_large_metadata_test
+h2_full+pipe_max_concurrent_streams_test: $(BINDIR)/$(CONFIG)/h2_full+pipe_max_concurrent_streams_test
+h2_full+pipe_max_message_length_test: $(BINDIR)/$(CONFIG)/h2_full+pipe_max_message_length_test
+h2_full+pipe_metadata_test: $(BINDIR)/$(CONFIG)/h2_full+pipe_metadata_test
+h2_full+pipe_negative_deadline_test: $(BINDIR)/$(CONFIG)/h2_full+pipe_negative_deadline_test
+h2_full+pipe_no_op_test: $(BINDIR)/$(CONFIG)/h2_full+pipe_no_op_test
+h2_full+pipe_payload_test: $(BINDIR)/$(CONFIG)/h2_full+pipe_payload_test
+h2_full+pipe_ping_pong_streaming_test: $(BINDIR)/$(CONFIG)/h2_full+pipe_ping_pong_streaming_test
+h2_full+pipe_registered_call_test: $(BINDIR)/$(CONFIG)/h2_full+pipe_registered_call_test
+h2_full+pipe_request_with_flags_test: $(BINDIR)/$(CONFIG)/h2_full+pipe_request_with_flags_test
+h2_full+pipe_request_with_payload_test: $(BINDIR)/$(CONFIG)/h2_full+pipe_request_with_payload_test
+h2_full+pipe_server_finishes_request_test: $(BINDIR)/$(CONFIG)/h2_full+pipe_server_finishes_request_test
+h2_full+pipe_shutdown_finishes_calls_test: $(BINDIR)/$(CONFIG)/h2_full+pipe_shutdown_finishes_calls_test
+h2_full+pipe_shutdown_finishes_tags_test: $(BINDIR)/$(CONFIG)/h2_full+pipe_shutdown_finishes_tags_test
+h2_full+pipe_simple_delayed_request_test: $(BINDIR)/$(CONFIG)/h2_full+pipe_simple_delayed_request_test
+h2_full+pipe_simple_request_test: $(BINDIR)/$(CONFIG)/h2_full+pipe_simple_request_test
+h2_full+pipe_trailing_metadata_test: $(BINDIR)/$(CONFIG)/h2_full+pipe_trailing_metadata_test
 h2_full+poll_bad_hostname_test: $(BINDIR)/$(CONFIG)/h2_full+poll_bad_hostname_test
 h2_full+poll_binary_metadata_test: $(BINDIR)/$(CONFIG)/h2_full+poll_binary_metadata_test
 h2_full+poll_call_creds_test: $(BINDIR)/$(CONFIG)/h2_full+poll_call_creds_test
@@ -1024,8 +1106,8 @@ h2_full+poll_cancel_after_invoke_test: $(BINDIR)/$(CONFIG)/h2_full+poll_cancel_a
 h2_full+poll_cancel_before_invoke_test: $(BINDIR)/$(CONFIG)/h2_full+poll_cancel_before_invoke_test
 h2_full+poll_cancel_in_a_vacuum_test: $(BINDIR)/$(CONFIG)/h2_full+poll_cancel_in_a_vacuum_test
 h2_full+poll_cancel_with_status_test: $(BINDIR)/$(CONFIG)/h2_full+poll_cancel_with_status_test
-h2_full+poll_census_simple_request_test: $(BINDIR)/$(CONFIG)/h2_full+poll_census_simple_request_test
 h2_full+poll_channel_connectivity_test: $(BINDIR)/$(CONFIG)/h2_full+poll_channel_connectivity_test
+h2_full+poll_channel_ping_test: $(BINDIR)/$(CONFIG)/h2_full+poll_channel_ping_test
 h2_full+poll_compressed_payload_test: $(BINDIR)/$(CONFIG)/h2_full+poll_compressed_payload_test
 h2_full+poll_default_host_test: $(BINDIR)/$(CONFIG)/h2_full+poll_default_host_test
 h2_full+poll_disappearing_server_test: $(BINDIR)/$(CONFIG)/h2_full+poll_disappearing_server_test
@@ -1051,6 +1133,42 @@ h2_full+poll_shutdown_finishes_tags_test: $(BINDIR)/$(CONFIG)/h2_full+poll_shutd
 h2_full+poll_simple_delayed_request_test: $(BINDIR)/$(CONFIG)/h2_full+poll_simple_delayed_request_test
 h2_full+poll_simple_request_test: $(BINDIR)/$(CONFIG)/h2_full+poll_simple_request_test
 h2_full+poll_trailing_metadata_test: $(BINDIR)/$(CONFIG)/h2_full+poll_trailing_metadata_test
+h2_full+poll+pipe_bad_hostname_test: $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_bad_hostname_test
+h2_full+poll+pipe_binary_metadata_test: $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_binary_metadata_test
+h2_full+poll+pipe_call_creds_test: $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_call_creds_test
+h2_full+poll+pipe_cancel_after_accept_test: $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_cancel_after_accept_test
+h2_full+poll+pipe_cancel_after_client_done_test: $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_cancel_after_client_done_test
+h2_full+poll+pipe_cancel_after_invoke_test: $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_cancel_after_invoke_test
+h2_full+poll+pipe_cancel_before_invoke_test: $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_cancel_before_invoke_test
+h2_full+poll+pipe_cancel_in_a_vacuum_test: $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_cancel_in_a_vacuum_test
+h2_full+poll+pipe_cancel_with_status_test: $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_cancel_with_status_test
+h2_full+poll+pipe_channel_connectivity_test: $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_channel_connectivity_test
+h2_full+poll+pipe_channel_ping_test: $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_channel_ping_test
+h2_full+poll+pipe_compressed_payload_test: $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_compressed_payload_test
+h2_full+poll+pipe_default_host_test: $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_default_host_test
+h2_full+poll+pipe_disappearing_server_test: $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_disappearing_server_test
+h2_full+poll+pipe_empty_batch_test: $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_empty_batch_test
+h2_full+poll+pipe_graceful_server_shutdown_test: $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_graceful_server_shutdown_test
+h2_full+poll+pipe_high_initial_seqno_test: $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_high_initial_seqno_test
+h2_full+poll+pipe_hpack_size_test: $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_hpack_size_test
+h2_full+poll+pipe_invoke_large_request_test: $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_invoke_large_request_test
+h2_full+poll+pipe_large_metadata_test: $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_large_metadata_test
+h2_full+poll+pipe_max_concurrent_streams_test: $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_max_concurrent_streams_test
+h2_full+poll+pipe_max_message_length_test: $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_max_message_length_test
+h2_full+poll+pipe_metadata_test: $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_metadata_test
+h2_full+poll+pipe_negative_deadline_test: $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_negative_deadline_test
+h2_full+poll+pipe_no_op_test: $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_no_op_test
+h2_full+poll+pipe_payload_test: $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_payload_test
+h2_full+poll+pipe_ping_pong_streaming_test: $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_ping_pong_streaming_test
+h2_full+poll+pipe_registered_call_test: $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_registered_call_test
+h2_full+poll+pipe_request_with_flags_test: $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_request_with_flags_test
+h2_full+poll+pipe_request_with_payload_test: $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_request_with_payload_test
+h2_full+poll+pipe_server_finishes_request_test: $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_server_finishes_request_test
+h2_full+poll+pipe_shutdown_finishes_calls_test: $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_shutdown_finishes_calls_test
+h2_full+poll+pipe_shutdown_finishes_tags_test: $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_shutdown_finishes_tags_test
+h2_full+poll+pipe_simple_delayed_request_test: $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_simple_delayed_request_test
+h2_full+poll+pipe_simple_request_test: $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_simple_request_test
+h2_full+poll+pipe_trailing_metadata_test: $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_trailing_metadata_test
 h2_oauth2_bad_hostname_test: $(BINDIR)/$(CONFIG)/h2_oauth2_bad_hostname_test
 h2_oauth2_binary_metadata_test: $(BINDIR)/$(CONFIG)/h2_oauth2_binary_metadata_test
 h2_oauth2_call_creds_test: $(BINDIR)/$(CONFIG)/h2_oauth2_call_creds_test
@@ -1060,8 +1178,8 @@ h2_oauth2_cancel_after_invoke_test: $(BINDIR)/$(CONFIG)/h2_oauth2_cancel_after_i
 h2_oauth2_cancel_before_invoke_test: $(BINDIR)/$(CONFIG)/h2_oauth2_cancel_before_invoke_test
 h2_oauth2_cancel_in_a_vacuum_test: $(BINDIR)/$(CONFIG)/h2_oauth2_cancel_in_a_vacuum_test
 h2_oauth2_cancel_with_status_test: $(BINDIR)/$(CONFIG)/h2_oauth2_cancel_with_status_test
-h2_oauth2_census_simple_request_test: $(BINDIR)/$(CONFIG)/h2_oauth2_census_simple_request_test
 h2_oauth2_channel_connectivity_test: $(BINDIR)/$(CONFIG)/h2_oauth2_channel_connectivity_test
+h2_oauth2_channel_ping_test: $(BINDIR)/$(CONFIG)/h2_oauth2_channel_ping_test
 h2_oauth2_compressed_payload_test: $(BINDIR)/$(CONFIG)/h2_oauth2_compressed_payload_test
 h2_oauth2_default_host_test: $(BINDIR)/$(CONFIG)/h2_oauth2_default_host_test
 h2_oauth2_disappearing_server_test: $(BINDIR)/$(CONFIG)/h2_oauth2_disappearing_server_test
@@ -1096,7 +1214,6 @@ h2_proxy_cancel_after_invoke_test: $(BINDIR)/$(CONFIG)/h2_proxy_cancel_after_inv
 h2_proxy_cancel_before_invoke_test: $(BINDIR)/$(CONFIG)/h2_proxy_cancel_before_invoke_test
 h2_proxy_cancel_in_a_vacuum_test: $(BINDIR)/$(CONFIG)/h2_proxy_cancel_in_a_vacuum_test
 h2_proxy_cancel_with_status_test: $(BINDIR)/$(CONFIG)/h2_proxy_cancel_with_status_test
-h2_proxy_census_simple_request_test: $(BINDIR)/$(CONFIG)/h2_proxy_census_simple_request_test
 h2_proxy_default_host_test: $(BINDIR)/$(CONFIG)/h2_proxy_default_host_test
 h2_proxy_disappearing_server_test: $(BINDIR)/$(CONFIG)/h2_proxy_disappearing_server_test
 h2_proxy_empty_batch_test: $(BINDIR)/$(CONFIG)/h2_proxy_empty_batch_test
@@ -1127,7 +1244,6 @@ h2_sockpair_cancel_after_invoke_test: $(BINDIR)/$(CONFIG)/h2_sockpair_cancel_aft
 h2_sockpair_cancel_before_invoke_test: $(BINDIR)/$(CONFIG)/h2_sockpair_cancel_before_invoke_test
 h2_sockpair_cancel_in_a_vacuum_test: $(BINDIR)/$(CONFIG)/h2_sockpair_cancel_in_a_vacuum_test
 h2_sockpair_cancel_with_status_test: $(BINDIR)/$(CONFIG)/h2_sockpair_cancel_with_status_test
-h2_sockpair_census_simple_request_test: $(BINDIR)/$(CONFIG)/h2_sockpair_census_simple_request_test
 h2_sockpair_compressed_payload_test: $(BINDIR)/$(CONFIG)/h2_sockpair_compressed_payload_test
 h2_sockpair_empty_batch_test: $(BINDIR)/$(CONFIG)/h2_sockpair_empty_batch_test
 h2_sockpair_graceful_server_shutdown_test: $(BINDIR)/$(CONFIG)/h2_sockpair_graceful_server_shutdown_test
@@ -1159,7 +1275,6 @@ h2_sockpair+trace_cancel_after_invoke_test: $(BINDIR)/$(CONFIG)/h2_sockpair+trac
 h2_sockpair+trace_cancel_before_invoke_test: $(BINDIR)/$(CONFIG)/h2_sockpair+trace_cancel_before_invoke_test
 h2_sockpair+trace_cancel_in_a_vacuum_test: $(BINDIR)/$(CONFIG)/h2_sockpair+trace_cancel_in_a_vacuum_test
 h2_sockpair+trace_cancel_with_status_test: $(BINDIR)/$(CONFIG)/h2_sockpair+trace_cancel_with_status_test
-h2_sockpair+trace_census_simple_request_test: $(BINDIR)/$(CONFIG)/h2_sockpair+trace_census_simple_request_test
 h2_sockpair+trace_compressed_payload_test: $(BINDIR)/$(CONFIG)/h2_sockpair+trace_compressed_payload_test
 h2_sockpair+trace_empty_batch_test: $(BINDIR)/$(CONFIG)/h2_sockpair+trace_empty_batch_test
 h2_sockpair+trace_graceful_server_shutdown_test: $(BINDIR)/$(CONFIG)/h2_sockpair+trace_graceful_server_shutdown_test
@@ -1190,7 +1305,6 @@ h2_sockpair_1byte_cancel_after_invoke_test: $(BINDIR)/$(CONFIG)/h2_sockpair_1byt
 h2_sockpair_1byte_cancel_before_invoke_test: $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_cancel_before_invoke_test
 h2_sockpair_1byte_cancel_in_a_vacuum_test: $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_cancel_in_a_vacuum_test
 h2_sockpair_1byte_cancel_with_status_test: $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_cancel_with_status_test
-h2_sockpair_1byte_census_simple_request_test: $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_census_simple_request_test
 h2_sockpair_1byte_compressed_payload_test: $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_compressed_payload_test
 h2_sockpair_1byte_empty_batch_test: $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_empty_batch_test
 h2_sockpair_1byte_graceful_server_shutdown_test: $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_graceful_server_shutdown_test
@@ -1222,8 +1336,8 @@ h2_ssl_cancel_after_invoke_test: $(BINDIR)/$(CONFIG)/h2_ssl_cancel_after_invoke_
 h2_ssl_cancel_before_invoke_test: $(BINDIR)/$(CONFIG)/h2_ssl_cancel_before_invoke_test
 h2_ssl_cancel_in_a_vacuum_test: $(BINDIR)/$(CONFIG)/h2_ssl_cancel_in_a_vacuum_test
 h2_ssl_cancel_with_status_test: $(BINDIR)/$(CONFIG)/h2_ssl_cancel_with_status_test
-h2_ssl_census_simple_request_test: $(BINDIR)/$(CONFIG)/h2_ssl_census_simple_request_test
 h2_ssl_channel_connectivity_test: $(BINDIR)/$(CONFIG)/h2_ssl_channel_connectivity_test
+h2_ssl_channel_ping_test: $(BINDIR)/$(CONFIG)/h2_ssl_channel_ping_test
 h2_ssl_compressed_payload_test: $(BINDIR)/$(CONFIG)/h2_ssl_compressed_payload_test
 h2_ssl_default_host_test: $(BINDIR)/$(CONFIG)/h2_ssl_default_host_test
 h2_ssl_disappearing_server_test: $(BINDIR)/$(CONFIG)/h2_ssl_disappearing_server_test
@@ -1258,8 +1372,8 @@ h2_ssl+poll_cancel_after_invoke_test: $(BINDIR)/$(CONFIG)/h2_ssl+poll_cancel_aft
 h2_ssl+poll_cancel_before_invoke_test: $(BINDIR)/$(CONFIG)/h2_ssl+poll_cancel_before_invoke_test
 h2_ssl+poll_cancel_in_a_vacuum_test: $(BINDIR)/$(CONFIG)/h2_ssl+poll_cancel_in_a_vacuum_test
 h2_ssl+poll_cancel_with_status_test: $(BINDIR)/$(CONFIG)/h2_ssl+poll_cancel_with_status_test
-h2_ssl+poll_census_simple_request_test: $(BINDIR)/$(CONFIG)/h2_ssl+poll_census_simple_request_test
 h2_ssl+poll_channel_connectivity_test: $(BINDIR)/$(CONFIG)/h2_ssl+poll_channel_connectivity_test
+h2_ssl+poll_channel_ping_test: $(BINDIR)/$(CONFIG)/h2_ssl+poll_channel_ping_test
 h2_ssl+poll_compressed_payload_test: $(BINDIR)/$(CONFIG)/h2_ssl+poll_compressed_payload_test
 h2_ssl+poll_default_host_test: $(BINDIR)/$(CONFIG)/h2_ssl+poll_default_host_test
 h2_ssl+poll_disappearing_server_test: $(BINDIR)/$(CONFIG)/h2_ssl+poll_disappearing_server_test
@@ -1294,7 +1408,6 @@ h2_ssl_proxy_cancel_after_invoke_test: $(BINDIR)/$(CONFIG)/h2_ssl_proxy_cancel_a
 h2_ssl_proxy_cancel_before_invoke_test: $(BINDIR)/$(CONFIG)/h2_ssl_proxy_cancel_before_invoke_test
 h2_ssl_proxy_cancel_in_a_vacuum_test: $(BINDIR)/$(CONFIG)/h2_ssl_proxy_cancel_in_a_vacuum_test
 h2_ssl_proxy_cancel_with_status_test: $(BINDIR)/$(CONFIG)/h2_ssl_proxy_cancel_with_status_test
-h2_ssl_proxy_census_simple_request_test: $(BINDIR)/$(CONFIG)/h2_ssl_proxy_census_simple_request_test
 h2_ssl_proxy_default_host_test: $(BINDIR)/$(CONFIG)/h2_ssl_proxy_default_host_test
 h2_ssl_proxy_disappearing_server_test: $(BINDIR)/$(CONFIG)/h2_ssl_proxy_disappearing_server_test
 h2_ssl_proxy_empty_batch_test: $(BINDIR)/$(CONFIG)/h2_ssl_proxy_empty_batch_test
@@ -1325,11 +1438,7 @@ h2_uchannel_cancel_after_invoke_test: $(BINDIR)/$(CONFIG)/h2_uchannel_cancel_aft
 h2_uchannel_cancel_before_invoke_test: $(BINDIR)/$(CONFIG)/h2_uchannel_cancel_before_invoke_test
 h2_uchannel_cancel_in_a_vacuum_test: $(BINDIR)/$(CONFIG)/h2_uchannel_cancel_in_a_vacuum_test
 h2_uchannel_cancel_with_status_test: $(BINDIR)/$(CONFIG)/h2_uchannel_cancel_with_status_test
-h2_uchannel_census_simple_request_test: $(BINDIR)/$(CONFIG)/h2_uchannel_census_simple_request_test
-h2_uchannel_channel_connectivity_test: $(BINDIR)/$(CONFIG)/h2_uchannel_channel_connectivity_test
 h2_uchannel_compressed_payload_test: $(BINDIR)/$(CONFIG)/h2_uchannel_compressed_payload_test
-h2_uchannel_default_host_test: $(BINDIR)/$(CONFIG)/h2_uchannel_default_host_test
-h2_uchannel_disappearing_server_test: $(BINDIR)/$(CONFIG)/h2_uchannel_disappearing_server_test
 h2_uchannel_empty_batch_test: $(BINDIR)/$(CONFIG)/h2_uchannel_empty_batch_test
 h2_uchannel_graceful_server_shutdown_test: $(BINDIR)/$(CONFIG)/h2_uchannel_graceful_server_shutdown_test
 h2_uchannel_high_initial_seqno_test: $(BINDIR)/$(CONFIG)/h2_uchannel_high_initial_seqno_test
@@ -1349,7 +1458,6 @@ h2_uchannel_request_with_payload_test: $(BINDIR)/$(CONFIG)/h2_uchannel_request_w
 h2_uchannel_server_finishes_request_test: $(BINDIR)/$(CONFIG)/h2_uchannel_server_finishes_request_test
 h2_uchannel_shutdown_finishes_calls_test: $(BINDIR)/$(CONFIG)/h2_uchannel_shutdown_finishes_calls_test
 h2_uchannel_shutdown_finishes_tags_test: $(BINDIR)/$(CONFIG)/h2_uchannel_shutdown_finishes_tags_test
-h2_uchannel_simple_delayed_request_test: $(BINDIR)/$(CONFIG)/h2_uchannel_simple_delayed_request_test
 h2_uchannel_simple_request_test: $(BINDIR)/$(CONFIG)/h2_uchannel_simple_request_test
 h2_uchannel_trailing_metadata_test: $(BINDIR)/$(CONFIG)/h2_uchannel_trailing_metadata_test
 h2_uds_bad_hostname_test: $(BINDIR)/$(CONFIG)/h2_uds_bad_hostname_test
@@ -1361,8 +1469,8 @@ h2_uds_cancel_after_invoke_test: $(BINDIR)/$(CONFIG)/h2_uds_cancel_after_invoke_
 h2_uds_cancel_before_invoke_test: $(BINDIR)/$(CONFIG)/h2_uds_cancel_before_invoke_test
 h2_uds_cancel_in_a_vacuum_test: $(BINDIR)/$(CONFIG)/h2_uds_cancel_in_a_vacuum_test
 h2_uds_cancel_with_status_test: $(BINDIR)/$(CONFIG)/h2_uds_cancel_with_status_test
-h2_uds_census_simple_request_test: $(BINDIR)/$(CONFIG)/h2_uds_census_simple_request_test
 h2_uds_channel_connectivity_test: $(BINDIR)/$(CONFIG)/h2_uds_channel_connectivity_test
+h2_uds_channel_ping_test: $(BINDIR)/$(CONFIG)/h2_uds_channel_ping_test
 h2_uds_compressed_payload_test: $(BINDIR)/$(CONFIG)/h2_uds_compressed_payload_test
 h2_uds_disappearing_server_test: $(BINDIR)/$(CONFIG)/h2_uds_disappearing_server_test
 h2_uds_empty_batch_test: $(BINDIR)/$(CONFIG)/h2_uds_empty_batch_test
@@ -1396,8 +1504,8 @@ h2_uds+poll_cancel_after_invoke_test: $(BINDIR)/$(CONFIG)/h2_uds+poll_cancel_aft
 h2_uds+poll_cancel_before_invoke_test: $(BINDIR)/$(CONFIG)/h2_uds+poll_cancel_before_invoke_test
 h2_uds+poll_cancel_in_a_vacuum_test: $(BINDIR)/$(CONFIG)/h2_uds+poll_cancel_in_a_vacuum_test
 h2_uds+poll_cancel_with_status_test: $(BINDIR)/$(CONFIG)/h2_uds+poll_cancel_with_status_test
-h2_uds+poll_census_simple_request_test: $(BINDIR)/$(CONFIG)/h2_uds+poll_census_simple_request_test
 h2_uds+poll_channel_connectivity_test: $(BINDIR)/$(CONFIG)/h2_uds+poll_channel_connectivity_test
+h2_uds+poll_channel_ping_test: $(BINDIR)/$(CONFIG)/h2_uds+poll_channel_ping_test
 h2_uds+poll_compressed_payload_test: $(BINDIR)/$(CONFIG)/h2_uds+poll_compressed_payload_test
 h2_uds+poll_disappearing_server_test: $(BINDIR)/$(CONFIG)/h2_uds+poll_disappearing_server_test
 h2_uds+poll_empty_batch_test: $(BINDIR)/$(CONFIG)/h2_uds+poll_empty_batch_test
@@ -1422,6 +1530,41 @@ h2_uds+poll_shutdown_finishes_tags_test: $(BINDIR)/$(CONFIG)/h2_uds+poll_shutdow
 h2_uds+poll_simple_delayed_request_test: $(BINDIR)/$(CONFIG)/h2_uds+poll_simple_delayed_request_test
 h2_uds+poll_simple_request_test: $(BINDIR)/$(CONFIG)/h2_uds+poll_simple_request_test
 h2_uds+poll_trailing_metadata_test: $(BINDIR)/$(CONFIG)/h2_uds+poll_trailing_metadata_test
+h2_census_bad_hostname_nosec_test: $(BINDIR)/$(CONFIG)/h2_census_bad_hostname_nosec_test
+h2_census_binary_metadata_nosec_test: $(BINDIR)/$(CONFIG)/h2_census_binary_metadata_nosec_test
+h2_census_cancel_after_accept_nosec_test: $(BINDIR)/$(CONFIG)/h2_census_cancel_after_accept_nosec_test
+h2_census_cancel_after_client_done_nosec_test: $(BINDIR)/$(CONFIG)/h2_census_cancel_after_client_done_nosec_test
+h2_census_cancel_after_invoke_nosec_test: $(BINDIR)/$(CONFIG)/h2_census_cancel_after_invoke_nosec_test
+h2_census_cancel_before_invoke_nosec_test: $(BINDIR)/$(CONFIG)/h2_census_cancel_before_invoke_nosec_test
+h2_census_cancel_in_a_vacuum_nosec_test: $(BINDIR)/$(CONFIG)/h2_census_cancel_in_a_vacuum_nosec_test
+h2_census_cancel_with_status_nosec_test: $(BINDIR)/$(CONFIG)/h2_census_cancel_with_status_nosec_test
+h2_census_channel_connectivity_nosec_test: $(BINDIR)/$(CONFIG)/h2_census_channel_connectivity_nosec_test
+h2_census_channel_ping_nosec_test: $(BINDIR)/$(CONFIG)/h2_census_channel_ping_nosec_test
+h2_census_compressed_payload_nosec_test: $(BINDIR)/$(CONFIG)/h2_census_compressed_payload_nosec_test
+h2_census_default_host_nosec_test: $(BINDIR)/$(CONFIG)/h2_census_default_host_nosec_test
+h2_census_disappearing_server_nosec_test: $(BINDIR)/$(CONFIG)/h2_census_disappearing_server_nosec_test
+h2_census_empty_batch_nosec_test: $(BINDIR)/$(CONFIG)/h2_census_empty_batch_nosec_test
+h2_census_graceful_server_shutdown_nosec_test: $(BINDIR)/$(CONFIG)/h2_census_graceful_server_shutdown_nosec_test
+h2_census_high_initial_seqno_nosec_test: $(BINDIR)/$(CONFIG)/h2_census_high_initial_seqno_nosec_test
+h2_census_hpack_size_nosec_test: $(BINDIR)/$(CONFIG)/h2_census_hpack_size_nosec_test
+h2_census_invoke_large_request_nosec_test: $(BINDIR)/$(CONFIG)/h2_census_invoke_large_request_nosec_test
+h2_census_large_metadata_nosec_test: $(BINDIR)/$(CONFIG)/h2_census_large_metadata_nosec_test
+h2_census_max_concurrent_streams_nosec_test: $(BINDIR)/$(CONFIG)/h2_census_max_concurrent_streams_nosec_test
+h2_census_max_message_length_nosec_test: $(BINDIR)/$(CONFIG)/h2_census_max_message_length_nosec_test
+h2_census_metadata_nosec_test: $(BINDIR)/$(CONFIG)/h2_census_metadata_nosec_test
+h2_census_negative_deadline_nosec_test: $(BINDIR)/$(CONFIG)/h2_census_negative_deadline_nosec_test
+h2_census_no_op_nosec_test: $(BINDIR)/$(CONFIG)/h2_census_no_op_nosec_test
+h2_census_payload_nosec_test: $(BINDIR)/$(CONFIG)/h2_census_payload_nosec_test
+h2_census_ping_pong_streaming_nosec_test: $(BINDIR)/$(CONFIG)/h2_census_ping_pong_streaming_nosec_test
+h2_census_registered_call_nosec_test: $(BINDIR)/$(CONFIG)/h2_census_registered_call_nosec_test
+h2_census_request_with_flags_nosec_test: $(BINDIR)/$(CONFIG)/h2_census_request_with_flags_nosec_test
+h2_census_request_with_payload_nosec_test: $(BINDIR)/$(CONFIG)/h2_census_request_with_payload_nosec_test
+h2_census_server_finishes_request_nosec_test: $(BINDIR)/$(CONFIG)/h2_census_server_finishes_request_nosec_test
+h2_census_shutdown_finishes_calls_nosec_test: $(BINDIR)/$(CONFIG)/h2_census_shutdown_finishes_calls_nosec_test
+h2_census_shutdown_finishes_tags_nosec_test: $(BINDIR)/$(CONFIG)/h2_census_shutdown_finishes_tags_nosec_test
+h2_census_simple_delayed_request_nosec_test: $(BINDIR)/$(CONFIG)/h2_census_simple_delayed_request_nosec_test
+h2_census_simple_request_nosec_test: $(BINDIR)/$(CONFIG)/h2_census_simple_request_nosec_test
+h2_census_trailing_metadata_nosec_test: $(BINDIR)/$(CONFIG)/h2_census_trailing_metadata_nosec_test
 h2_compress_bad_hostname_nosec_test: $(BINDIR)/$(CONFIG)/h2_compress_bad_hostname_nosec_test
 h2_compress_binary_metadata_nosec_test: $(BINDIR)/$(CONFIG)/h2_compress_binary_metadata_nosec_test
 h2_compress_cancel_after_accept_nosec_test: $(BINDIR)/$(CONFIG)/h2_compress_cancel_after_accept_nosec_test
@@ -1430,8 +1573,8 @@ h2_compress_cancel_after_invoke_nosec_test: $(BINDIR)/$(CONFIG)/h2_compress_canc
 h2_compress_cancel_before_invoke_nosec_test: $(BINDIR)/$(CONFIG)/h2_compress_cancel_before_invoke_nosec_test
 h2_compress_cancel_in_a_vacuum_nosec_test: $(BINDIR)/$(CONFIG)/h2_compress_cancel_in_a_vacuum_nosec_test
 h2_compress_cancel_with_status_nosec_test: $(BINDIR)/$(CONFIG)/h2_compress_cancel_with_status_nosec_test
-h2_compress_census_simple_request_nosec_test: $(BINDIR)/$(CONFIG)/h2_compress_census_simple_request_nosec_test
 h2_compress_channel_connectivity_nosec_test: $(BINDIR)/$(CONFIG)/h2_compress_channel_connectivity_nosec_test
+h2_compress_channel_ping_nosec_test: $(BINDIR)/$(CONFIG)/h2_compress_channel_ping_nosec_test
 h2_compress_compressed_payload_nosec_test: $(BINDIR)/$(CONFIG)/h2_compress_compressed_payload_nosec_test
 h2_compress_default_host_nosec_test: $(BINDIR)/$(CONFIG)/h2_compress_default_host_nosec_test
 h2_compress_disappearing_server_nosec_test: $(BINDIR)/$(CONFIG)/h2_compress_disappearing_server_nosec_test
@@ -1465,8 +1608,8 @@ h2_full_cancel_after_invoke_nosec_test: $(BINDIR)/$(CONFIG)/h2_full_cancel_after
 h2_full_cancel_before_invoke_nosec_test: $(BINDIR)/$(CONFIG)/h2_full_cancel_before_invoke_nosec_test
 h2_full_cancel_in_a_vacuum_nosec_test: $(BINDIR)/$(CONFIG)/h2_full_cancel_in_a_vacuum_nosec_test
 h2_full_cancel_with_status_nosec_test: $(BINDIR)/$(CONFIG)/h2_full_cancel_with_status_nosec_test
-h2_full_census_simple_request_nosec_test: $(BINDIR)/$(CONFIG)/h2_full_census_simple_request_nosec_test
 h2_full_channel_connectivity_nosec_test: $(BINDIR)/$(CONFIG)/h2_full_channel_connectivity_nosec_test
+h2_full_channel_ping_nosec_test: $(BINDIR)/$(CONFIG)/h2_full_channel_ping_nosec_test
 h2_full_compressed_payload_nosec_test: $(BINDIR)/$(CONFIG)/h2_full_compressed_payload_nosec_test
 h2_full_default_host_nosec_test: $(BINDIR)/$(CONFIG)/h2_full_default_host_nosec_test
 h2_full_disappearing_server_nosec_test: $(BINDIR)/$(CONFIG)/h2_full_disappearing_server_nosec_test
@@ -1492,6 +1635,41 @@ h2_full_shutdown_finishes_tags_nosec_test: $(BINDIR)/$(CONFIG)/h2_full_shutdown_
 h2_full_simple_delayed_request_nosec_test: $(BINDIR)/$(CONFIG)/h2_full_simple_delayed_request_nosec_test
 h2_full_simple_request_nosec_test: $(BINDIR)/$(CONFIG)/h2_full_simple_request_nosec_test
 h2_full_trailing_metadata_nosec_test: $(BINDIR)/$(CONFIG)/h2_full_trailing_metadata_nosec_test
+h2_full+pipe_bad_hostname_nosec_test: $(BINDIR)/$(CONFIG)/h2_full+pipe_bad_hostname_nosec_test
+h2_full+pipe_binary_metadata_nosec_test: $(BINDIR)/$(CONFIG)/h2_full+pipe_binary_metadata_nosec_test
+h2_full+pipe_cancel_after_accept_nosec_test: $(BINDIR)/$(CONFIG)/h2_full+pipe_cancel_after_accept_nosec_test
+h2_full+pipe_cancel_after_client_done_nosec_test: $(BINDIR)/$(CONFIG)/h2_full+pipe_cancel_after_client_done_nosec_test
+h2_full+pipe_cancel_after_invoke_nosec_test: $(BINDIR)/$(CONFIG)/h2_full+pipe_cancel_after_invoke_nosec_test
+h2_full+pipe_cancel_before_invoke_nosec_test: $(BINDIR)/$(CONFIG)/h2_full+pipe_cancel_before_invoke_nosec_test
+h2_full+pipe_cancel_in_a_vacuum_nosec_test: $(BINDIR)/$(CONFIG)/h2_full+pipe_cancel_in_a_vacuum_nosec_test
+h2_full+pipe_cancel_with_status_nosec_test: $(BINDIR)/$(CONFIG)/h2_full+pipe_cancel_with_status_nosec_test
+h2_full+pipe_channel_connectivity_nosec_test: $(BINDIR)/$(CONFIG)/h2_full+pipe_channel_connectivity_nosec_test
+h2_full+pipe_channel_ping_nosec_test: $(BINDIR)/$(CONFIG)/h2_full+pipe_channel_ping_nosec_test
+h2_full+pipe_compressed_payload_nosec_test: $(BINDIR)/$(CONFIG)/h2_full+pipe_compressed_payload_nosec_test
+h2_full+pipe_default_host_nosec_test: $(BINDIR)/$(CONFIG)/h2_full+pipe_default_host_nosec_test
+h2_full+pipe_disappearing_server_nosec_test: $(BINDIR)/$(CONFIG)/h2_full+pipe_disappearing_server_nosec_test
+h2_full+pipe_empty_batch_nosec_test: $(BINDIR)/$(CONFIG)/h2_full+pipe_empty_batch_nosec_test
+h2_full+pipe_graceful_server_shutdown_nosec_test: $(BINDIR)/$(CONFIG)/h2_full+pipe_graceful_server_shutdown_nosec_test
+h2_full+pipe_high_initial_seqno_nosec_test: $(BINDIR)/$(CONFIG)/h2_full+pipe_high_initial_seqno_nosec_test
+h2_full+pipe_hpack_size_nosec_test: $(BINDIR)/$(CONFIG)/h2_full+pipe_hpack_size_nosec_test
+h2_full+pipe_invoke_large_request_nosec_test: $(BINDIR)/$(CONFIG)/h2_full+pipe_invoke_large_request_nosec_test
+h2_full+pipe_large_metadata_nosec_test: $(BINDIR)/$(CONFIG)/h2_full+pipe_large_metadata_nosec_test
+h2_full+pipe_max_concurrent_streams_nosec_test: $(BINDIR)/$(CONFIG)/h2_full+pipe_max_concurrent_streams_nosec_test
+h2_full+pipe_max_message_length_nosec_test: $(BINDIR)/$(CONFIG)/h2_full+pipe_max_message_length_nosec_test
+h2_full+pipe_metadata_nosec_test: $(BINDIR)/$(CONFIG)/h2_full+pipe_metadata_nosec_test
+h2_full+pipe_negative_deadline_nosec_test: $(BINDIR)/$(CONFIG)/h2_full+pipe_negative_deadline_nosec_test
+h2_full+pipe_no_op_nosec_test: $(BINDIR)/$(CONFIG)/h2_full+pipe_no_op_nosec_test
+h2_full+pipe_payload_nosec_test: $(BINDIR)/$(CONFIG)/h2_full+pipe_payload_nosec_test
+h2_full+pipe_ping_pong_streaming_nosec_test: $(BINDIR)/$(CONFIG)/h2_full+pipe_ping_pong_streaming_nosec_test
+h2_full+pipe_registered_call_nosec_test: $(BINDIR)/$(CONFIG)/h2_full+pipe_registered_call_nosec_test
+h2_full+pipe_request_with_flags_nosec_test: $(BINDIR)/$(CONFIG)/h2_full+pipe_request_with_flags_nosec_test
+h2_full+pipe_request_with_payload_nosec_test: $(BINDIR)/$(CONFIG)/h2_full+pipe_request_with_payload_nosec_test
+h2_full+pipe_server_finishes_request_nosec_test: $(BINDIR)/$(CONFIG)/h2_full+pipe_server_finishes_request_nosec_test
+h2_full+pipe_shutdown_finishes_calls_nosec_test: $(BINDIR)/$(CONFIG)/h2_full+pipe_shutdown_finishes_calls_nosec_test
+h2_full+pipe_shutdown_finishes_tags_nosec_test: $(BINDIR)/$(CONFIG)/h2_full+pipe_shutdown_finishes_tags_nosec_test
+h2_full+pipe_simple_delayed_request_nosec_test: $(BINDIR)/$(CONFIG)/h2_full+pipe_simple_delayed_request_nosec_test
+h2_full+pipe_simple_request_nosec_test: $(BINDIR)/$(CONFIG)/h2_full+pipe_simple_request_nosec_test
+h2_full+pipe_trailing_metadata_nosec_test: $(BINDIR)/$(CONFIG)/h2_full+pipe_trailing_metadata_nosec_test
 h2_full+poll_bad_hostname_nosec_test: $(BINDIR)/$(CONFIG)/h2_full+poll_bad_hostname_nosec_test
 h2_full+poll_binary_metadata_nosec_test: $(BINDIR)/$(CONFIG)/h2_full+poll_binary_metadata_nosec_test
 h2_full+poll_cancel_after_accept_nosec_test: $(BINDIR)/$(CONFIG)/h2_full+poll_cancel_after_accept_nosec_test
@@ -1500,8 +1678,8 @@ h2_full+poll_cancel_after_invoke_nosec_test: $(BINDIR)/$(CONFIG)/h2_full+poll_ca
 h2_full+poll_cancel_before_invoke_nosec_test: $(BINDIR)/$(CONFIG)/h2_full+poll_cancel_before_invoke_nosec_test
 h2_full+poll_cancel_in_a_vacuum_nosec_test: $(BINDIR)/$(CONFIG)/h2_full+poll_cancel_in_a_vacuum_nosec_test
 h2_full+poll_cancel_with_status_nosec_test: $(BINDIR)/$(CONFIG)/h2_full+poll_cancel_with_status_nosec_test
-h2_full+poll_census_simple_request_nosec_test: $(BINDIR)/$(CONFIG)/h2_full+poll_census_simple_request_nosec_test
 h2_full+poll_channel_connectivity_nosec_test: $(BINDIR)/$(CONFIG)/h2_full+poll_channel_connectivity_nosec_test
+h2_full+poll_channel_ping_nosec_test: $(BINDIR)/$(CONFIG)/h2_full+poll_channel_ping_nosec_test
 h2_full+poll_compressed_payload_nosec_test: $(BINDIR)/$(CONFIG)/h2_full+poll_compressed_payload_nosec_test
 h2_full+poll_default_host_nosec_test: $(BINDIR)/$(CONFIG)/h2_full+poll_default_host_nosec_test
 h2_full+poll_disappearing_server_nosec_test: $(BINDIR)/$(CONFIG)/h2_full+poll_disappearing_server_nosec_test
@@ -1527,6 +1705,41 @@ h2_full+poll_shutdown_finishes_tags_nosec_test: $(BINDIR)/$(CONFIG)/h2_full+poll
 h2_full+poll_simple_delayed_request_nosec_test: $(BINDIR)/$(CONFIG)/h2_full+poll_simple_delayed_request_nosec_test
 h2_full+poll_simple_request_nosec_test: $(BINDIR)/$(CONFIG)/h2_full+poll_simple_request_nosec_test
 h2_full+poll_trailing_metadata_nosec_test: $(BINDIR)/$(CONFIG)/h2_full+poll_trailing_metadata_nosec_test
+h2_full+poll+pipe_bad_hostname_nosec_test: $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_bad_hostname_nosec_test
+h2_full+poll+pipe_binary_metadata_nosec_test: $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_binary_metadata_nosec_test
+h2_full+poll+pipe_cancel_after_accept_nosec_test: $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_cancel_after_accept_nosec_test
+h2_full+poll+pipe_cancel_after_client_done_nosec_test: $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_cancel_after_client_done_nosec_test
+h2_full+poll+pipe_cancel_after_invoke_nosec_test: $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_cancel_after_invoke_nosec_test
+h2_full+poll+pipe_cancel_before_invoke_nosec_test: $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_cancel_before_invoke_nosec_test
+h2_full+poll+pipe_cancel_in_a_vacuum_nosec_test: $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_cancel_in_a_vacuum_nosec_test
+h2_full+poll+pipe_cancel_with_status_nosec_test: $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_cancel_with_status_nosec_test
+h2_full+poll+pipe_channel_connectivity_nosec_test: $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_channel_connectivity_nosec_test
+h2_full+poll+pipe_channel_ping_nosec_test: $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_channel_ping_nosec_test
+h2_full+poll+pipe_compressed_payload_nosec_test: $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_compressed_payload_nosec_test
+h2_full+poll+pipe_default_host_nosec_test: $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_default_host_nosec_test
+h2_full+poll+pipe_disappearing_server_nosec_test: $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_disappearing_server_nosec_test
+h2_full+poll+pipe_empty_batch_nosec_test: $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_empty_batch_nosec_test
+h2_full+poll+pipe_graceful_server_shutdown_nosec_test: $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_graceful_server_shutdown_nosec_test
+h2_full+poll+pipe_high_initial_seqno_nosec_test: $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_high_initial_seqno_nosec_test
+h2_full+poll+pipe_hpack_size_nosec_test: $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_hpack_size_nosec_test
+h2_full+poll+pipe_invoke_large_request_nosec_test: $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_invoke_large_request_nosec_test
+h2_full+poll+pipe_large_metadata_nosec_test: $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_large_metadata_nosec_test
+h2_full+poll+pipe_max_concurrent_streams_nosec_test: $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_max_concurrent_streams_nosec_test
+h2_full+poll+pipe_max_message_length_nosec_test: $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_max_message_length_nosec_test
+h2_full+poll+pipe_metadata_nosec_test: $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_metadata_nosec_test
+h2_full+poll+pipe_negative_deadline_nosec_test: $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_negative_deadline_nosec_test
+h2_full+poll+pipe_no_op_nosec_test: $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_no_op_nosec_test
+h2_full+poll+pipe_payload_nosec_test: $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_payload_nosec_test
+h2_full+poll+pipe_ping_pong_streaming_nosec_test: $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_ping_pong_streaming_nosec_test
+h2_full+poll+pipe_registered_call_nosec_test: $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_registered_call_nosec_test
+h2_full+poll+pipe_request_with_flags_nosec_test: $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_request_with_flags_nosec_test
+h2_full+poll+pipe_request_with_payload_nosec_test: $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_request_with_payload_nosec_test
+h2_full+poll+pipe_server_finishes_request_nosec_test: $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_server_finishes_request_nosec_test
+h2_full+poll+pipe_shutdown_finishes_calls_nosec_test: $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_shutdown_finishes_calls_nosec_test
+h2_full+poll+pipe_shutdown_finishes_tags_nosec_test: $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_shutdown_finishes_tags_nosec_test
+h2_full+poll+pipe_simple_delayed_request_nosec_test: $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_simple_delayed_request_nosec_test
+h2_full+poll+pipe_simple_request_nosec_test: $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_simple_request_nosec_test
+h2_full+poll+pipe_trailing_metadata_nosec_test: $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_trailing_metadata_nosec_test
 h2_proxy_bad_hostname_nosec_test: $(BINDIR)/$(CONFIG)/h2_proxy_bad_hostname_nosec_test
 h2_proxy_binary_metadata_nosec_test: $(BINDIR)/$(CONFIG)/h2_proxy_binary_metadata_nosec_test
 h2_proxy_cancel_after_accept_nosec_test: $(BINDIR)/$(CONFIG)/h2_proxy_cancel_after_accept_nosec_test
@@ -1535,7 +1748,6 @@ h2_proxy_cancel_after_invoke_nosec_test: $(BINDIR)/$(CONFIG)/h2_proxy_cancel_aft
 h2_proxy_cancel_before_invoke_nosec_test: $(BINDIR)/$(CONFIG)/h2_proxy_cancel_before_invoke_nosec_test
 h2_proxy_cancel_in_a_vacuum_nosec_test: $(BINDIR)/$(CONFIG)/h2_proxy_cancel_in_a_vacuum_nosec_test
 h2_proxy_cancel_with_status_nosec_test: $(BINDIR)/$(CONFIG)/h2_proxy_cancel_with_status_nosec_test
-h2_proxy_census_simple_request_nosec_test: $(BINDIR)/$(CONFIG)/h2_proxy_census_simple_request_nosec_test
 h2_proxy_default_host_nosec_test: $(BINDIR)/$(CONFIG)/h2_proxy_default_host_nosec_test
 h2_proxy_disappearing_server_nosec_test: $(BINDIR)/$(CONFIG)/h2_proxy_disappearing_server_nosec_test
 h2_proxy_empty_batch_nosec_test: $(BINDIR)/$(CONFIG)/h2_proxy_empty_batch_nosec_test
@@ -1565,7 +1777,6 @@ h2_sockpair_cancel_after_invoke_nosec_test: $(BINDIR)/$(CONFIG)/h2_sockpair_canc
 h2_sockpair_cancel_before_invoke_nosec_test: $(BINDIR)/$(CONFIG)/h2_sockpair_cancel_before_invoke_nosec_test
 h2_sockpair_cancel_in_a_vacuum_nosec_test: $(BINDIR)/$(CONFIG)/h2_sockpair_cancel_in_a_vacuum_nosec_test
 h2_sockpair_cancel_with_status_nosec_test: $(BINDIR)/$(CONFIG)/h2_sockpair_cancel_with_status_nosec_test
-h2_sockpair_census_simple_request_nosec_test: $(BINDIR)/$(CONFIG)/h2_sockpair_census_simple_request_nosec_test
 h2_sockpair_compressed_payload_nosec_test: $(BINDIR)/$(CONFIG)/h2_sockpair_compressed_payload_nosec_test
 h2_sockpair_empty_batch_nosec_test: $(BINDIR)/$(CONFIG)/h2_sockpair_empty_batch_nosec_test
 h2_sockpair_graceful_server_shutdown_nosec_test: $(BINDIR)/$(CONFIG)/h2_sockpair_graceful_server_shutdown_nosec_test
@@ -1596,7 +1807,6 @@ h2_sockpair+trace_cancel_after_invoke_nosec_test: $(BINDIR)/$(CONFIG)/h2_sockpai
 h2_sockpair+trace_cancel_before_invoke_nosec_test: $(BINDIR)/$(CONFIG)/h2_sockpair+trace_cancel_before_invoke_nosec_test
 h2_sockpair+trace_cancel_in_a_vacuum_nosec_test: $(BINDIR)/$(CONFIG)/h2_sockpair+trace_cancel_in_a_vacuum_nosec_test
 h2_sockpair+trace_cancel_with_status_nosec_test: $(BINDIR)/$(CONFIG)/h2_sockpair+trace_cancel_with_status_nosec_test
-h2_sockpair+trace_census_simple_request_nosec_test: $(BINDIR)/$(CONFIG)/h2_sockpair+trace_census_simple_request_nosec_test
 h2_sockpair+trace_compressed_payload_nosec_test: $(BINDIR)/$(CONFIG)/h2_sockpair+trace_compressed_payload_nosec_test
 h2_sockpair+trace_empty_batch_nosec_test: $(BINDIR)/$(CONFIG)/h2_sockpair+trace_empty_batch_nosec_test
 h2_sockpair+trace_graceful_server_shutdown_nosec_test: $(BINDIR)/$(CONFIG)/h2_sockpair+trace_graceful_server_shutdown_nosec_test
@@ -1626,7 +1836,6 @@ h2_sockpair_1byte_cancel_after_invoke_nosec_test: $(BINDIR)/$(CONFIG)/h2_sockpai
 h2_sockpair_1byte_cancel_before_invoke_nosec_test: $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_cancel_before_invoke_nosec_test
 h2_sockpair_1byte_cancel_in_a_vacuum_nosec_test: $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_cancel_in_a_vacuum_nosec_test
 h2_sockpair_1byte_cancel_with_status_nosec_test: $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_cancel_with_status_nosec_test
-h2_sockpair_1byte_census_simple_request_nosec_test: $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_census_simple_request_nosec_test
 h2_sockpair_1byte_compressed_payload_nosec_test: $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_compressed_payload_nosec_test
 h2_sockpair_1byte_empty_batch_nosec_test: $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_empty_batch_nosec_test
 h2_sockpair_1byte_graceful_server_shutdown_nosec_test: $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_graceful_server_shutdown_nosec_test
@@ -1657,11 +1866,7 @@ h2_uchannel_cancel_after_invoke_nosec_test: $(BINDIR)/$(CONFIG)/h2_uchannel_canc
 h2_uchannel_cancel_before_invoke_nosec_test: $(BINDIR)/$(CONFIG)/h2_uchannel_cancel_before_invoke_nosec_test
 h2_uchannel_cancel_in_a_vacuum_nosec_test: $(BINDIR)/$(CONFIG)/h2_uchannel_cancel_in_a_vacuum_nosec_test
 h2_uchannel_cancel_with_status_nosec_test: $(BINDIR)/$(CONFIG)/h2_uchannel_cancel_with_status_nosec_test
-h2_uchannel_census_simple_request_nosec_test: $(BINDIR)/$(CONFIG)/h2_uchannel_census_simple_request_nosec_test
-h2_uchannel_channel_connectivity_nosec_test: $(BINDIR)/$(CONFIG)/h2_uchannel_channel_connectivity_nosec_test
 h2_uchannel_compressed_payload_nosec_test: $(BINDIR)/$(CONFIG)/h2_uchannel_compressed_payload_nosec_test
-h2_uchannel_default_host_nosec_test: $(BINDIR)/$(CONFIG)/h2_uchannel_default_host_nosec_test
-h2_uchannel_disappearing_server_nosec_test: $(BINDIR)/$(CONFIG)/h2_uchannel_disappearing_server_nosec_test
 h2_uchannel_empty_batch_nosec_test: $(BINDIR)/$(CONFIG)/h2_uchannel_empty_batch_nosec_test
 h2_uchannel_graceful_server_shutdown_nosec_test: $(BINDIR)/$(CONFIG)/h2_uchannel_graceful_server_shutdown_nosec_test
 h2_uchannel_high_initial_seqno_nosec_test: $(BINDIR)/$(CONFIG)/h2_uchannel_high_initial_seqno_nosec_test
@@ -1681,7 +1886,6 @@ h2_uchannel_request_with_payload_nosec_test: $(BINDIR)/$(CONFIG)/h2_uchannel_req
 h2_uchannel_server_finishes_request_nosec_test: $(BINDIR)/$(CONFIG)/h2_uchannel_server_finishes_request_nosec_test
 h2_uchannel_shutdown_finishes_calls_nosec_test: $(BINDIR)/$(CONFIG)/h2_uchannel_shutdown_finishes_calls_nosec_test
 h2_uchannel_shutdown_finishes_tags_nosec_test: $(BINDIR)/$(CONFIG)/h2_uchannel_shutdown_finishes_tags_nosec_test
-h2_uchannel_simple_delayed_request_nosec_test: $(BINDIR)/$(CONFIG)/h2_uchannel_simple_delayed_request_nosec_test
 h2_uchannel_simple_request_nosec_test: $(BINDIR)/$(CONFIG)/h2_uchannel_simple_request_nosec_test
 h2_uchannel_trailing_metadata_nosec_test: $(BINDIR)/$(CONFIG)/h2_uchannel_trailing_metadata_nosec_test
 h2_uds_bad_hostname_nosec_test: $(BINDIR)/$(CONFIG)/h2_uds_bad_hostname_nosec_test
@@ -1692,8 +1896,8 @@ h2_uds_cancel_after_invoke_nosec_test: $(BINDIR)/$(CONFIG)/h2_uds_cancel_after_i
 h2_uds_cancel_before_invoke_nosec_test: $(BINDIR)/$(CONFIG)/h2_uds_cancel_before_invoke_nosec_test
 h2_uds_cancel_in_a_vacuum_nosec_test: $(BINDIR)/$(CONFIG)/h2_uds_cancel_in_a_vacuum_nosec_test
 h2_uds_cancel_with_status_nosec_test: $(BINDIR)/$(CONFIG)/h2_uds_cancel_with_status_nosec_test
-h2_uds_census_simple_request_nosec_test: $(BINDIR)/$(CONFIG)/h2_uds_census_simple_request_nosec_test
 h2_uds_channel_connectivity_nosec_test: $(BINDIR)/$(CONFIG)/h2_uds_channel_connectivity_nosec_test
+h2_uds_channel_ping_nosec_test: $(BINDIR)/$(CONFIG)/h2_uds_channel_ping_nosec_test
 h2_uds_compressed_payload_nosec_test: $(BINDIR)/$(CONFIG)/h2_uds_compressed_payload_nosec_test
 h2_uds_disappearing_server_nosec_test: $(BINDIR)/$(CONFIG)/h2_uds_disappearing_server_nosec_test
 h2_uds_empty_batch_nosec_test: $(BINDIR)/$(CONFIG)/h2_uds_empty_batch_nosec_test
@@ -1726,8 +1930,8 @@ h2_uds+poll_cancel_after_invoke_nosec_test: $(BINDIR)/$(CONFIG)/h2_uds+poll_canc
 h2_uds+poll_cancel_before_invoke_nosec_test: $(BINDIR)/$(CONFIG)/h2_uds+poll_cancel_before_invoke_nosec_test
 h2_uds+poll_cancel_in_a_vacuum_nosec_test: $(BINDIR)/$(CONFIG)/h2_uds+poll_cancel_in_a_vacuum_nosec_test
 h2_uds+poll_cancel_with_status_nosec_test: $(BINDIR)/$(CONFIG)/h2_uds+poll_cancel_with_status_nosec_test
-h2_uds+poll_census_simple_request_nosec_test: $(BINDIR)/$(CONFIG)/h2_uds+poll_census_simple_request_nosec_test
 h2_uds+poll_channel_connectivity_nosec_test: $(BINDIR)/$(CONFIG)/h2_uds+poll_channel_connectivity_nosec_test
+h2_uds+poll_channel_ping_nosec_test: $(BINDIR)/$(CONFIG)/h2_uds+poll_channel_ping_nosec_test
 h2_uds+poll_compressed_payload_nosec_test: $(BINDIR)/$(CONFIG)/h2_uds+poll_compressed_payload_nosec_test
 h2_uds+poll_disappearing_server_nosec_test: $(BINDIR)/$(CONFIG)/h2_uds+poll_disappearing_server_nosec_test
 h2_uds+poll_empty_batch_nosec_test: $(BINDIR)/$(CONFIG)/h2_uds+poll_empty_batch_nosec_test
@@ -1752,12 +1956,18 @@ h2_uds+poll_shutdown_finishes_tags_nosec_test: $(BINDIR)/$(CONFIG)/h2_uds+poll_s
 h2_uds+poll_simple_delayed_request_nosec_test: $(BINDIR)/$(CONFIG)/h2_uds+poll_simple_delayed_request_nosec_test
 h2_uds+poll_simple_request_nosec_test: $(BINDIR)/$(CONFIG)/h2_uds+poll_simple_request_nosec_test
 h2_uds+poll_trailing_metadata_nosec_test: $(BINDIR)/$(CONFIG)/h2_uds+poll_trailing_metadata_nosec_test
+badreq_bad_client_test: $(BINDIR)/$(CONFIG)/badreq_bad_client_test
 connection_prefix_bad_client_test: $(BINDIR)/$(CONFIG)/connection_prefix_bad_client_test
 headers_bad_client_test: $(BINDIR)/$(CONFIG)/headers_bad_client_test
 initial_settings_frame_bad_client_test: $(BINDIR)/$(CONFIG)/initial_settings_frame_bad_client_test
+server_registered_method_bad_client_test: $(BINDIR)/$(CONFIG)/server_registered_method_bad_client_test
 simple_request_bad_client_test: $(BINDIR)/$(CONFIG)/simple_request_bad_client_test
 unknown_frame_bad_client_test: $(BINDIR)/$(CONFIG)/unknown_frame_bad_client_test
 window_overflow_bad_client_test: $(BINDIR)/$(CONFIG)/window_overflow_bad_client_test
+bad_ssl_alpn_server: $(BINDIR)/$(CONFIG)/bad_ssl_alpn_server
+bad_ssl_cert_server: $(BINDIR)/$(CONFIG)/bad_ssl_cert_server
+bad_ssl_alpn_test: $(BINDIR)/$(CONFIG)/bad_ssl_alpn_test
+bad_ssl_cert_test: $(BINDIR)/$(CONFIG)/bad_ssl_cert_test
 
 run_dep_checks:
 	$(OPENSSL_ALPN_CHECK_CMD) || true
@@ -1854,7 +2064,7 @@ plugins: $(PROTOC_PLUGINS)
 
 privatelibs: privatelibs_c privatelibs_cxx
 
-privatelibs_c:  $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libreconnect_server.a $(LIBDIR)/$(CONFIG)/libtest_tcp_server.a $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_compress.a $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_fakesec.a $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full.a $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll.a $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_oauth2.a $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair.a $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair+trace.a $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair_1byte.a $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl.a $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl+poll.a $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uds.a $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uds+poll.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_compress.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair+trace.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair_1byte.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uds.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uds+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_bad_hostname.a $(LIBDIR)/$(CONFIG)/libend2end_test_binary_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_test_call_creds.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_accept.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_client_done.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_invoke.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_before_invoke.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_in_a_vacuum.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_with_status.a $(LIBDIR)/$(CONFIG)/libend2end_test_census_simple_request.a $(LIBDIR)/$(CONFIG)/libend2end_test_channel_connectivity.a $(LIBDIR)/$(CONFIG)/libend2end_test_compressed_payload.a $(LIBDIR)/$(CONFIG)/libend2end_test_default_host.a $(LIBDIR)/$(CONFIG)/libend2end_test_disappearing_server.a $(LIBDIR)/$(CONFIG)/libend2end_test_empty_batch.a $(LIBDIR)/$(CONFIG)/libend2end_test_graceful_server_shutdown.a $(LIBDIR)/$(CONFIG)/libend2end_test_high_initial_seqno.a $(LIBDIR)/$(CONFIG)/libend2end_test_hpack_size.a $(LIBDIR)/$(CONFIG)/libend2end_test_invoke_large_request.a $(LIBDIR)/$(CONFIG)/libend2end_test_large_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_test_max_concurrent_streams.a $(LIBDIR)/$(CONFIG)/libend2end_test_max_message_length.a $(LIBDIR)/$(CONFIG)/libend2end_test_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_test_negative_deadline.a $(LIBDIR)/$(CONFIG)/libend2end_test_no_op.a $(LIBDIR)/$(CONFIG)/libend2end_test_payload.a $(LIBDIR)/$(CONFIG)/libend2end_test_ping_pong_streaming.a $(LIBDIR)/$(CONFIG)/libend2end_test_registered_call.a $(LIBDIR)/$(CONFIG)/libend2end_test_request_with_flags.a $(LIBDIR)/$(CONFIG)/libend2end_test_request_with_payload.a $(LIBDIR)/$(CONFIG)/libend2end_test_server_finishes_request.a $(LIBDIR)/$(CONFIG)/libend2end_test_shutdown_finishes_calls.a $(LIBDIR)/$(CONFIG)/libend2end_test_shutdown_finishes_tags.a $(LIBDIR)/$(CONFIG)/libend2end_test_simple_delayed_request.a $(LIBDIR)/$(CONFIG)/libend2end_test_simple_request.a $(LIBDIR)/$(CONFIG)/libend2end_test_trailing_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_bad_hostname.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_binary_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_after_accept.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_after_client_done.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_after_invoke.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_before_invoke.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_in_a_vacuum.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_with_status.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_census_simple_request.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_channel_connectivity.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_compressed_payload.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_default_host.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_disappearing_server.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_empty_batch.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_graceful_server_shutdown.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_high_initial_seqno.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_hpack_size.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_invoke_large_request.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_large_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_max_concurrent_streams.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_max_message_length.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_negative_deadline.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_no_op.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_payload.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_ping_pong_streaming.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_registered_call.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_request_with_flags.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_request_with_payload.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_server_finishes_request.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_shutdown_finishes_calls.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_shutdown_finishes_tags.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_simple_delayed_request.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_simple_request.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_trailing_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libbad_client_test.a
+privatelibs_c:  $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libreconnect_server.a $(LIBDIR)/$(CONFIG)/libtest_tcp_server.a $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_compress.a $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_fakesec.a $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full.a $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll.a $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_oauth2.a $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair.a $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair+trace.a $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair_1byte.a $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl.a $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl+poll.a $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uds.a $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uds+poll.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_compress.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair+trace.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair_1byte.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uds.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uds+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_bad_hostname.a $(LIBDIR)/$(CONFIG)/libend2end_test_binary_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_test_call_creds.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_accept.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_client_done.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_invoke.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_before_invoke.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_in_a_vacuum.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_with_status.a $(LIBDIR)/$(CONFIG)/libend2end_test_channel_connectivity.a $(LIBDIR)/$(CONFIG)/libend2end_test_channel_ping.a $(LIBDIR)/$(CONFIG)/libend2end_test_compressed_payload.a $(LIBDIR)/$(CONFIG)/libend2end_test_default_host.a $(LIBDIR)/$(CONFIG)/libend2end_test_disappearing_server.a $(LIBDIR)/$(CONFIG)/libend2end_test_empty_batch.a $(LIBDIR)/$(CONFIG)/libend2end_test_graceful_server_shutdown.a $(LIBDIR)/$(CONFIG)/libend2end_test_high_initial_seqno.a $(LIBDIR)/$(CONFIG)/libend2end_test_hpack_size.a $(LIBDIR)/$(CONFIG)/libend2end_test_invoke_large_request.a $(LIBDIR)/$(CONFIG)/libend2end_test_large_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_test_max_concurrent_streams.a $(LIBDIR)/$(CONFIG)/libend2end_test_max_message_length.a $(LIBDIR)/$(CONFIG)/libend2end_test_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_test_negative_deadline.a $(LIBDIR)/$(CONFIG)/libend2end_test_no_op.a $(LIBDIR)/$(CONFIG)/libend2end_test_payload.a $(LIBDIR)/$(CONFIG)/libend2end_test_ping_pong_streaming.a $(LIBDIR)/$(CONFIG)/libend2end_test_registered_call.a $(LIBDIR)/$(CONFIG)/libend2end_test_request_with_flags.a $(LIBDIR)/$(CONFIG)/libend2end_test_request_with_payload.a $(LIBDIR)/$(CONFIG)/libend2end_test_server_finishes_request.a $(LIBDIR)/$(CONFIG)/libend2end_test_shutdown_finishes_calls.a $(LIBDIR)/$(CONFIG)/libend2end_test_shutdown_finishes_tags.a $(LIBDIR)/$(CONFIG)/libend2end_test_simple_delayed_request.a $(LIBDIR)/$(CONFIG)/libend2end_test_simple_request.a $(LIBDIR)/$(CONFIG)/libend2end_test_trailing_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_bad_hostname.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_binary_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_after_accept.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_after_client_done.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_after_invoke.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_before_invoke.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_in_a_vacuum.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_with_status.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_channel_connectivity.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_channel_ping.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_compressed_payload.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_default_host.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_disappearing_server.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_empty_batch.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_graceful_server_shutdown.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_high_initial_seqno.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_hpack_size.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_invoke_large_request.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_large_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_max_concurrent_streams.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_max_message_length.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_negative_deadline.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_no_op.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_payload.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_ping_pong_streaming.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_registered_call.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_request_with_flags.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_request_with_payload.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_server_finishes_request.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_shutdown_finishes_calls.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_shutdown_finishes_tags.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_simple_delayed_request.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_simple_request.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_trailing_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libbad_ssl_test_server.a
 pc_gpr: $(LIBDIR)/$(CONFIG)/pkgconfig/gpr.pc
 
 pc_c: $(LIBDIR)/$(CONFIG)/pkgconfig/grpc.pc
@@ -1882,12 +2092,1192 @@ endif
 
 buildtests: buildtests_c buildtests_cxx buildtests_zookeeper
 
-buildtests_c: privatelibs_c $(BINDIR)/$(CONFIG)/alloc_test $(BINDIR)/$(CONFIG)/alpn_test $(BINDIR)/$(CONFIG)/bin_encoder_test $(BINDIR)/$(CONFIG)/channel_create_test $(BINDIR)/$(CONFIG)/chttp2_hpack_encoder_test $(BINDIR)/$(CONFIG)/chttp2_status_conversion_test $(BINDIR)/$(CONFIG)/chttp2_stream_map_test $(BINDIR)/$(CONFIG)/chttp2_varint_test $(BINDIR)/$(CONFIG)/compression_test $(BINDIR)/$(CONFIG)/dualstack_socket_test $(BINDIR)/$(CONFIG)/endpoint_pair_test $(BINDIR)/$(CONFIG)/fd_conservation_posix_test $(BINDIR)/$(CONFIG)/fd_posix_test $(BINDIR)/$(CONFIG)/fling_client $(BINDIR)/$(CONFIG)/fling_server $(BINDIR)/$(CONFIG)/fling_stream_test $(BINDIR)/$(CONFIG)/fling_test $(BINDIR)/$(CONFIG)/gpr_avl_test $(BINDIR)/$(CONFIG)/gpr_cmdline_test $(BINDIR)/$(CONFIG)/gpr_cpu_test $(BINDIR)/$(CONFIG)/gpr_env_test $(BINDIR)/$(CONFIG)/gpr_file_test $(BINDIR)/$(CONFIG)/gpr_histogram_test $(BINDIR)/$(CONFIG)/gpr_host_port_test $(BINDIR)/$(CONFIG)/gpr_log_test $(BINDIR)/$(CONFIG)/gpr_slice_buffer_test $(BINDIR)/$(CONFIG)/gpr_slice_test $(BINDIR)/$(CONFIG)/gpr_stack_lockfree_test $(BINDIR)/$(CONFIG)/gpr_string_test $(BINDIR)/$(CONFIG)/gpr_sync_test $(BINDIR)/$(CONFIG)/gpr_thd_test $(BINDIR)/$(CONFIG)/gpr_time_test $(BINDIR)/$(CONFIG)/gpr_tls_test $(BINDIR)/$(CONFIG)/gpr_useful_test $(BINDIR)/$(CONFIG)/grpc_auth_context_test $(BINDIR)/$(CONFIG)/grpc_base64_test $(BINDIR)/$(CONFIG)/grpc_byte_buffer_reader_test $(BINDIR)/$(CONFIG)/grpc_channel_args_test $(BINDIR)/$(CONFIG)/grpc_channel_stack_test $(BINDIR)/$(CONFIG)/grpc_completion_queue_test $(BINDIR)/$(CONFIG)/grpc_credentials_test $(BINDIR)/$(CONFIG)/grpc_invalid_channel_args_test $(BINDIR)/$(CONFIG)/grpc_json_token_test $(BINDIR)/$(CONFIG)/grpc_jwt_verifier_test $(BINDIR)/$(CONFIG)/grpc_security_connector_test $(BINDIR)/$(CONFIG)/hpack_parser_test $(BINDIR)/$(CONFIG)/hpack_table_test $(BINDIR)/$(CONFIG)/httpcli_format_request_test $(BINDIR)/$(CONFIG)/httpcli_parser_test $(BINDIR)/$(CONFIG)/httpcli_test $(BINDIR)/$(CONFIG)/init_test $(BINDIR)/$(CONFIG)/invalid_call_argument_test $(BINDIR)/$(CONFIG)/json_rewrite $(BINDIR)/$(CONFIG)/json_rewrite_test $(BINDIR)/$(CONFIG)/json_test $(BINDIR)/$(CONFIG)/lame_client_test $(BINDIR)/$(CONFIG)/lb_policies_test $(BINDIR)/$(CONFIG)/message_compress_test $(BINDIR)/$(CONFIG)/multiple_server_queues_test $(BINDIR)/$(CONFIG)/murmur_hash_test $(BINDIR)/$(CONFIG)/no_server_test $(BINDIR)/$(CONFIG)/resolve_address_test $(BINDIR)/$(CONFIG)/secure_endpoint_test $(BINDIR)/$(CONFIG)/set_initial_connect_string_test $(BINDIR)/$(CONFIG)/sockaddr_utils_test $(BINDIR)/$(CONFIG)/tcp_client_posix_test $(BINDIR)/$(CONFIG)/tcp_posix_test $(BINDIR)/$(CONFIG)/tcp_server_posix_test $(BINDIR)/$(CONFIG)/time_averaged_stats_test $(BINDIR)/$(CONFIG)/timeout_encoding_test $(BINDIR)/$(CONFIG)/timer_heap_test $(BINDIR)/$(CONFIG)/timer_list_test $(BINDIR)/$(CONFIG)/timers_test $(BINDIR)/$(CONFIG)/transport_metadata_test $(BINDIR)/$(CONFIG)/transport_security_test $(BINDIR)/$(CONFIG)/udp_server_test $(BINDIR)/$(CONFIG)/uri_parser_test $(BINDIR)/$(CONFIG)/workqueue_test $(BINDIR)/$(CONFIG)/h2_compress_bad_hostname_test $(BINDIR)/$(CONFIG)/h2_compress_binary_metadata_test $(BINDIR)/$(CONFIG)/h2_compress_call_creds_test $(BINDIR)/$(CONFIG)/h2_compress_cancel_after_accept_test $(BINDIR)/$(CONFIG)/h2_compress_cancel_after_client_done_test $(BINDIR)/$(CONFIG)/h2_compress_cancel_after_invoke_test $(BINDIR)/$(CONFIG)/h2_compress_cancel_before_invoke_test $(BINDIR)/$(CONFIG)/h2_compress_cancel_in_a_vacuum_test $(BINDIR)/$(CONFIG)/h2_compress_cancel_with_status_test $(BINDIR)/$(CONFIG)/h2_compress_census_simple_request_test $(BINDIR)/$(CONFIG)/h2_compress_channel_connectivity_test $(BINDIR)/$(CONFIG)/h2_compress_compressed_payload_test $(BINDIR)/$(CONFIG)/h2_compress_default_host_test $(BINDIR)/$(CONFIG)/h2_compress_disappearing_server_test $(BINDIR)/$(CONFIG)/h2_compress_empty_batch_test $(BINDIR)/$(CONFIG)/h2_compress_graceful_server_shutdown_test $(BINDIR)/$(CONFIG)/h2_compress_high_initial_seqno_test $(BINDIR)/$(CONFIG)/h2_compress_hpack_size_test $(BINDIR)/$(CONFIG)/h2_compress_invoke_large_request_test $(BINDIR)/$(CONFIG)/h2_compress_large_metadata_test $(BINDIR)/$(CONFIG)/h2_compress_max_concurrent_streams_test $(BINDIR)/$(CONFIG)/h2_compress_max_message_length_test $(BINDIR)/$(CONFIG)/h2_compress_metadata_test $(BINDIR)/$(CONFIG)/h2_compress_negative_deadline_test $(BINDIR)/$(CONFIG)/h2_compress_no_op_test $(BINDIR)/$(CONFIG)/h2_compress_payload_test $(BINDIR)/$(CONFIG)/h2_compress_ping_pong_streaming_test $(BINDIR)/$(CONFIG)/h2_compress_registered_call_test $(BINDIR)/$(CONFIG)/h2_compress_request_with_flags_test $(BINDIR)/$(CONFIG)/h2_compress_request_with_payload_test $(BINDIR)/$(CONFIG)/h2_compress_server_finishes_request_test $(BINDIR)/$(CONFIG)/h2_compress_shutdown_finishes_calls_test $(BINDIR)/$(CONFIG)/h2_compress_shutdown_finishes_tags_test $(BINDIR)/$(CONFIG)/h2_compress_simple_delayed_request_test $(BINDIR)/$(CONFIG)/h2_compress_simple_request_test $(BINDIR)/$(CONFIG)/h2_compress_trailing_metadata_test $(BINDIR)/$(CONFIG)/h2_fakesec_bad_hostname_test $(BINDIR)/$(CONFIG)/h2_fakesec_binary_metadata_test $(BINDIR)/$(CONFIG)/h2_fakesec_call_creds_test $(BINDIR)/$(CONFIG)/h2_fakesec_cancel_after_accept_test $(BINDIR)/$(CONFIG)/h2_fakesec_cancel_after_client_done_test $(BINDIR)/$(CONFIG)/h2_fakesec_cancel_after_invoke_test $(BINDIR)/$(CONFIG)/h2_fakesec_cancel_before_invoke_test $(BINDIR)/$(CONFIG)/h2_fakesec_cancel_in_a_vacuum_test $(BINDIR)/$(CONFIG)/h2_fakesec_cancel_with_status_test $(BINDIR)/$(CONFIG)/h2_fakesec_census_simple_request_test $(BINDIR)/$(CONFIG)/h2_fakesec_channel_connectivity_test $(BINDIR)/$(CONFIG)/h2_fakesec_compressed_payload_test $(BINDIR)/$(CONFIG)/h2_fakesec_default_host_test $(BINDIR)/$(CONFIG)/h2_fakesec_disappearing_server_test $(BINDIR)/$(CONFIG)/h2_fakesec_empty_batch_test $(BINDIR)/$(CONFIG)/h2_fakesec_graceful_server_shutdown_test $(BINDIR)/$(CONFIG)/h2_fakesec_high_initial_seqno_test $(BINDIR)/$(CONFIG)/h2_fakesec_hpack_size_test $(BINDIR)/$(CONFIG)/h2_fakesec_invoke_large_request_test $(BINDIR)/$(CONFIG)/h2_fakesec_large_metadata_test $(BINDIR)/$(CONFIG)/h2_fakesec_max_concurrent_streams_test $(BINDIR)/$(CONFIG)/h2_fakesec_max_message_length_test $(BINDIR)/$(CONFIG)/h2_fakesec_metadata_test $(BINDIR)/$(CONFIG)/h2_fakesec_negative_deadline_test $(BINDIR)/$(CONFIG)/h2_fakesec_no_op_test $(BINDIR)/$(CONFIG)/h2_fakesec_payload_test $(BINDIR)/$(CONFIG)/h2_fakesec_ping_pong_streaming_test $(BINDIR)/$(CONFIG)/h2_fakesec_registered_call_test $(BINDIR)/$(CONFIG)/h2_fakesec_request_with_flags_test $(BINDIR)/$(CONFIG)/h2_fakesec_request_with_payload_test $(BINDIR)/$(CONFIG)/h2_fakesec_server_finishes_request_test $(BINDIR)/$(CONFIG)/h2_fakesec_shutdown_finishes_calls_test $(BINDIR)/$(CONFIG)/h2_fakesec_shutdown_finishes_tags_test $(BINDIR)/$(CONFIG)/h2_fakesec_simple_delayed_request_test $(BINDIR)/$(CONFIG)/h2_fakesec_simple_request_test $(BINDIR)/$(CONFIG)/h2_fakesec_trailing_metadata_test $(BINDIR)/$(CONFIG)/h2_full_bad_hostname_test $(BINDIR)/$(CONFIG)/h2_full_binary_metadata_test $(BINDIR)/$(CONFIG)/h2_full_call_creds_test $(BINDIR)/$(CONFIG)/h2_full_cancel_after_accept_test $(BINDIR)/$(CONFIG)/h2_full_cancel_after_client_done_test $(BINDIR)/$(CONFIG)/h2_full_cancel_after_invoke_test $(BINDIR)/$(CONFIG)/h2_full_cancel_before_invoke_test $(BINDIR)/$(CONFIG)/h2_full_cancel_in_a_vacuum_test $(BINDIR)/$(CONFIG)/h2_full_cancel_with_status_test $(BINDIR)/$(CONFIG)/h2_full_census_simple_request_test $(BINDIR)/$(CONFIG)/h2_full_channel_connectivity_test $(BINDIR)/$(CONFIG)/h2_full_compressed_payload_test $(BINDIR)/$(CONFIG)/h2_full_default_host_test $(BINDIR)/$(CONFIG)/h2_full_disappearing_server_test $(BINDIR)/$(CONFIG)/h2_full_empty_batch_test $(BINDIR)/$(CONFIG)/h2_full_graceful_server_shutdown_test $(BINDIR)/$(CONFIG)/h2_full_high_initial_seqno_test $(BINDIR)/$(CONFIG)/h2_full_hpack_size_test $(BINDIR)/$(CONFIG)/h2_full_invoke_large_request_test $(BINDIR)/$(CONFIG)/h2_full_large_metadata_test $(BINDIR)/$(CONFIG)/h2_full_max_concurrent_streams_test $(BINDIR)/$(CONFIG)/h2_full_max_message_length_test $(BINDIR)/$(CONFIG)/h2_full_metadata_test $(BINDIR)/$(CONFIG)/h2_full_negative_deadline_test $(BINDIR)/$(CONFIG)/h2_full_no_op_test $(BINDIR)/$(CONFIG)/h2_full_payload_test $(BINDIR)/$(CONFIG)/h2_full_ping_pong_streaming_test $(BINDIR)/$(CONFIG)/h2_full_registered_call_test $(BINDIR)/$(CONFIG)/h2_full_request_with_flags_test $(BINDIR)/$(CONFIG)/h2_full_request_with_payload_test $(BINDIR)/$(CONFIG)/h2_full_server_finishes_request_test $(BINDIR)/$(CONFIG)/h2_full_shutdown_finishes_calls_test $(BINDIR)/$(CONFIG)/h2_full_shutdown_finishes_tags_test $(BINDIR)/$(CONFIG)/h2_full_simple_delayed_request_test $(BINDIR)/$(CONFIG)/h2_full_simple_request_test $(BINDIR)/$(CONFIG)/h2_full_trailing_metadata_test $(BINDIR)/$(CONFIG)/h2_full+poll_bad_hostname_test $(BINDIR)/$(CONFIG)/h2_full+poll_binary_metadata_test $(BINDIR)/$(CONFIG)/h2_full+poll_call_creds_test $(BINDIR)/$(CONFIG)/h2_full+poll_cancel_after_accept_test $(BINDIR)/$(CONFIG)/h2_full+poll_cancel_after_client_done_test $(BINDIR)/$(CONFIG)/h2_full+poll_cancel_after_invoke_test $(BINDIR)/$(CONFIG)/h2_full+poll_cancel_before_invoke_test $(BINDIR)/$(CONFIG)/h2_full+poll_cancel_in_a_vacuum_test $(BINDIR)/$(CONFIG)/h2_full+poll_cancel_with_status_test $(BINDIR)/$(CONFIG)/h2_full+poll_census_simple_request_test $(BINDIR)/$(CONFIG)/h2_full+poll_channel_connectivity_test $(BINDIR)/$(CONFIG)/h2_full+poll_compressed_payload_test $(BINDIR)/$(CONFIG)/h2_full+poll_default_host_test $(BINDIR)/$(CONFIG)/h2_full+poll_disappearing_server_test $(BINDIR)/$(CONFIG)/h2_full+poll_empty_batch_test $(BINDIR)/$(CONFIG)/h2_full+poll_graceful_server_shutdown_test $(BINDIR)/$(CONFIG)/h2_full+poll_high_initial_seqno_test $(BINDIR)/$(CONFIG)/h2_full+poll_hpack_size_test $(BINDIR)/$(CONFIG)/h2_full+poll_invoke_large_request_test $(BINDIR)/$(CONFIG)/h2_full+poll_large_metadata_test $(BINDIR)/$(CONFIG)/h2_full+poll_max_concurrent_streams_test $(BINDIR)/$(CONFIG)/h2_full+poll_max_message_length_test $(BINDIR)/$(CONFIG)/h2_full+poll_metadata_test $(BINDIR)/$(CONFIG)/h2_full+poll_negative_deadline_test $(BINDIR)/$(CONFIG)/h2_full+poll_no_op_test $(BINDIR)/$(CONFIG)/h2_full+poll_payload_test $(BINDIR)/$(CONFIG)/h2_full+poll_ping_pong_streaming_test $(BINDIR)/$(CONFIG)/h2_full+poll_registered_call_test $(BINDIR)/$(CONFIG)/h2_full+poll_request_with_flags_test $(BINDIR)/$(CONFIG)/h2_full+poll_request_with_payload_test $(BINDIR)/$(CONFIG)/h2_full+poll_server_finishes_request_test $(BINDIR)/$(CONFIG)/h2_full+poll_shutdown_finishes_calls_test $(BINDIR)/$(CONFIG)/h2_full+poll_shutdown_finishes_tags_test $(BINDIR)/$(CONFIG)/h2_full+poll_simple_delayed_request_test $(BINDIR)/$(CONFIG)/h2_full+poll_simple_request_test $(BINDIR)/$(CONFIG)/h2_full+poll_trailing_metadata_test $(BINDIR)/$(CONFIG)/h2_oauth2_bad_hostname_test $(BINDIR)/$(CONFIG)/h2_oauth2_binary_metadata_test $(BINDIR)/$(CONFIG)/h2_oauth2_call_creds_test $(BINDIR)/$(CONFIG)/h2_oauth2_cancel_after_accept_test $(BINDIR)/$(CONFIG)/h2_oauth2_cancel_after_client_done_test $(BINDIR)/$(CONFIG)/h2_oauth2_cancel_after_invoke_test $(BINDIR)/$(CONFIG)/h2_oauth2_cancel_before_invoke_test $(BINDIR)/$(CONFIG)/h2_oauth2_cancel_in_a_vacuum_test $(BINDIR)/$(CONFIG)/h2_oauth2_cancel_with_status_test $(BINDIR)/$(CONFIG)/h2_oauth2_census_simple_request_test $(BINDIR)/$(CONFIG)/h2_oauth2_channel_connectivity_test $(BINDIR)/$(CONFIG)/h2_oauth2_compressed_payload_test $(BINDIR)/$(CONFIG)/h2_oauth2_default_host_test $(BINDIR)/$(CONFIG)/h2_oauth2_disappearing_server_test $(BINDIR)/$(CONFIG)/h2_oauth2_empty_batch_test $(BINDIR)/$(CONFIG)/h2_oauth2_graceful_server_shutdown_test $(BINDIR)/$(CONFIG)/h2_oauth2_high_initial_seqno_test $(BINDIR)/$(CONFIG)/h2_oauth2_hpack_size_test $(BINDIR)/$(CONFIG)/h2_oauth2_invoke_large_request_test $(BINDIR)/$(CONFIG)/h2_oauth2_large_metadata_test $(BINDIR)/$(CONFIG)/h2_oauth2_max_concurrent_streams_test $(BINDIR)/$(CONFIG)/h2_oauth2_max_message_length_test $(BINDIR)/$(CONFIG)/h2_oauth2_metadata_test $(BINDIR)/$(CONFIG)/h2_oauth2_negative_deadline_test $(BINDIR)/$(CONFIG)/h2_oauth2_no_op_test $(BINDIR)/$(CONFIG)/h2_oauth2_payload_test $(BINDIR)/$(CONFIG)/h2_oauth2_ping_pong_streaming_test $(BINDIR)/$(CONFIG)/h2_oauth2_registered_call_test $(BINDIR)/$(CONFIG)/h2_oauth2_request_with_flags_test $(BINDIR)/$(CONFIG)/h2_oauth2_request_with_payload_test $(BINDIR)/$(CONFIG)/h2_oauth2_server_finishes_request_test $(BINDIR)/$(CONFIG)/h2_oauth2_shutdown_finishes_calls_test $(BINDIR)/$(CONFIG)/h2_oauth2_shutdown_finishes_tags_test $(BINDIR)/$(CONFIG)/h2_oauth2_simple_delayed_request_test $(BINDIR)/$(CONFIG)/h2_oauth2_simple_request_test $(BINDIR)/$(CONFIG)/h2_oauth2_trailing_metadata_test $(BINDIR)/$(CONFIG)/h2_proxy_bad_hostname_test $(BINDIR)/$(CONFIG)/h2_proxy_binary_metadata_test $(BINDIR)/$(CONFIG)/h2_proxy_call_creds_test $(BINDIR)/$(CONFIG)/h2_proxy_cancel_after_accept_test $(BINDIR)/$(CONFIG)/h2_proxy_cancel_after_client_done_test $(BINDIR)/$(CONFIG)/h2_proxy_cancel_after_invoke_test $(BINDIR)/$(CONFIG)/h2_proxy_cancel_before_invoke_test $(BINDIR)/$(CONFIG)/h2_proxy_cancel_in_a_vacuum_test $(BINDIR)/$(CONFIG)/h2_proxy_cancel_with_status_test $(BINDIR)/$(CONFIG)/h2_proxy_census_simple_request_test $(BINDIR)/$(CONFIG)/h2_proxy_default_host_test $(BINDIR)/$(CONFIG)/h2_proxy_disappearing_server_test $(BINDIR)/$(CONFIG)/h2_proxy_empty_batch_test $(BINDIR)/$(CONFIG)/h2_proxy_graceful_server_shutdown_test $(BINDIR)/$(CONFIG)/h2_proxy_high_initial_seqno_test $(BINDIR)/$(CONFIG)/h2_proxy_invoke_large_request_test $(BINDIR)/$(CONFIG)/h2_proxy_large_metadata_test $(BINDIR)/$(CONFIG)/h2_proxy_max_message_length_test $(BINDIR)/$(CONFIG)/h2_proxy_metadata_test $(BINDIR)/$(CONFIG)/h2_proxy_negative_deadline_test $(BINDIR)/$(CONFIG)/h2_proxy_no_op_test $(BINDIR)/$(CONFIG)/h2_proxy_payload_test $(BINDIR)/$(CONFIG)/h2_proxy_ping_pong_streaming_test $(BINDIR)/$(CONFIG)/h2_proxy_registered_call_test $(BINDIR)/$(CONFIG)/h2_proxy_request_with_payload_test $(BINDIR)/$(CONFIG)/h2_proxy_server_finishes_request_test $(BINDIR)/$(CONFIG)/h2_proxy_shutdown_finishes_calls_test $(BINDIR)/$(CONFIG)/h2_proxy_shutdown_finishes_tags_test $(BINDIR)/$(CONFIG)/h2_proxy_simple_delayed_request_test $(BINDIR)/$(CONFIG)/h2_proxy_simple_request_test $(BINDIR)/$(CONFIG)/h2_proxy_trailing_metadata_test $(BINDIR)/$(CONFIG)/h2_sockpair_bad_hostname_test $(BINDIR)/$(CONFIG)/h2_sockpair_binary_metadata_test $(BINDIR)/$(CONFIG)/h2_sockpair_call_creds_test $(BINDIR)/$(CONFIG)/h2_sockpair_cancel_after_accept_test $(BINDIR)/$(CONFIG)/h2_sockpair_cancel_after_client_done_test $(BINDIR)/$(CONFIG)/h2_sockpair_cancel_after_invoke_test $(BINDIR)/$(CONFIG)/h2_sockpair_cancel_before_invoke_test $(BINDIR)/$(CONFIG)/h2_sockpair_cancel_in_a_vacuum_test $(BINDIR)/$(CONFIG)/h2_sockpair_cancel_with_status_test $(BINDIR)/$(CONFIG)/h2_sockpair_census_simple_request_test $(BINDIR)/$(CONFIG)/h2_sockpair_compressed_payload_test $(BINDIR)/$(CONFIG)/h2_sockpair_empty_batch_test $(BINDIR)/$(CONFIG)/h2_sockpair_graceful_server_shutdown_test $(BINDIR)/$(CONFIG)/h2_sockpair_high_initial_seqno_test $(BINDIR)/$(CONFIG)/h2_sockpair_hpack_size_test $(BINDIR)/$(CONFIG)/h2_sockpair_invoke_large_request_test $(BINDIR)/$(CONFIG)/h2_sockpair_large_metadata_test $(BINDIR)/$(CONFIG)/h2_sockpair_max_concurrent_streams_test $(BINDIR)/$(CONFIG)/h2_sockpair_max_message_length_test $(BINDIR)/$(CONFIG)/h2_sockpair_metadata_test $(BINDIR)/$(CONFIG)/h2_sockpair_negative_deadline_test $(BINDIR)/$(CONFIG)/h2_sockpair_no_op_test $(BINDIR)/$(CONFIG)/h2_sockpair_payload_test $(BINDIR)/$(CONFIG)/h2_sockpair_ping_pong_streaming_test $(BINDIR)/$(CONFIG)/h2_sockpair_registered_call_test $(BINDIR)/$(CONFIG)/h2_sockpair_request_with_flags_test $(BINDIR)/$(CONFIG)/h2_sockpair_request_with_payload_test $(BINDIR)/$(CONFIG)/h2_sockpair_server_finishes_request_test $(BINDIR)/$(CONFIG)/h2_sockpair_shutdown_finishes_calls_test $(BINDIR)/$(CONFIG)/h2_sockpair_shutdown_finishes_tags_test $(BINDIR)/$(CONFIG)/h2_sockpair_simple_request_test $(BINDIR)/$(CONFIG)/h2_sockpair_trailing_metadata_test $(BINDIR)/$(CONFIG)/h2_sockpair+trace_bad_hostname_test $(BINDIR)/$(CONFIG)/h2_sockpair+trace_binary_metadata_test $(BINDIR)/$(CONFIG)/h2_sockpair+trace_call_creds_test $(BINDIR)/$(CONFIG)/h2_sockpair+trace_cancel_after_accept_test $(BINDIR)/$(CONFIG)/h2_sockpair+trace_cancel_after_client_done_test $(BINDIR)/$(CONFIG)/h2_sockpair+trace_cancel_after_invoke_test $(BINDIR)/$(CONFIG)/h2_sockpair+trace_cancel_before_invoke_test $(BINDIR)/$(CONFIG)/h2_sockpair+trace_cancel_in_a_vacuum_test $(BINDIR)/$(CONFIG)/h2_sockpair+trace_cancel_with_status_test $(BINDIR)/$(CONFIG)/h2_sockpair+trace_census_simple_request_test $(BINDIR)/$(CONFIG)/h2_sockpair+trace_compressed_payload_test $(BINDIR)/$(CONFIG)/h2_sockpair+trace_empty_batch_test $(BINDIR)/$(CONFIG)/h2_sockpair+trace_graceful_server_shutdown_test $(BINDIR)/$(CONFIG)/h2_sockpair+trace_high_initial_seqno_test $(BINDIR)/$(CONFIG)/h2_sockpair+trace_invoke_large_request_test $(BINDIR)/$(CONFIG)/h2_sockpair+trace_large_metadata_test $(BINDIR)/$(CONFIG)/h2_sockpair+trace_max_concurrent_streams_test $(BINDIR)/$(CONFIG)/h2_sockpair+trace_max_message_length_test $(BINDIR)/$(CONFIG)/h2_sockpair+trace_metadata_test $(BINDIR)/$(CONFIG)/h2_sockpair+trace_negative_deadline_test $(BINDIR)/$(CONFIG)/h2_sockpair+trace_no_op_test $(BINDIR)/$(CONFIG)/h2_sockpair+trace_payload_test $(BINDIR)/$(CONFIG)/h2_sockpair+trace_ping_pong_streaming_test $(BINDIR)/$(CONFIG)/h2_sockpair+trace_registered_call_test $(BINDIR)/$(CONFIG)/h2_sockpair+trace_request_with_flags_test $(BINDIR)/$(CONFIG)/h2_sockpair+trace_request_with_payload_test $(BINDIR)/$(CONFIG)/h2_sockpair+trace_server_finishes_request_test $(BINDIR)/$(CONFIG)/h2_sockpair+trace_shutdown_finishes_calls_test $(BINDIR)/$(CONFIG)/h2_sockpair+trace_shutdown_finishes_tags_test $(BINDIR)/$(CONFIG)/h2_sockpair+trace_simple_request_test $(BINDIR)/$(CONFIG)/h2_sockpair+trace_trailing_metadata_test $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_bad_hostname_test $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_binary_metadata_test $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_call_creds_test $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_cancel_after_accept_test $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_cancel_after_client_done_test $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_cancel_after_invoke_test $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_cancel_before_invoke_test $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_cancel_in_a_vacuum_test $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_cancel_with_status_test $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_census_simple_request_test $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_compressed_payload_test $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_empty_batch_test $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_graceful_server_shutdown_test $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_high_initial_seqno_test $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_hpack_size_test $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_invoke_large_request_test $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_large_metadata_test $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_max_concurrent_streams_test $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_max_message_length_test $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_metadata_test $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_negative_deadline_test $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_no_op_test $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_payload_test $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_ping_pong_streaming_test $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_registered_call_test $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_request_with_flags_test $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_request_with_payload_test $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_server_finishes_request_test $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_shutdown_finishes_calls_test $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_shutdown_finishes_tags_test $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_simple_request_test $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_trailing_metadata_test $(BINDIR)/$(CONFIG)/h2_ssl_bad_hostname_test $(BINDIR)/$(CONFIG)/h2_ssl_binary_metadata_test $(BINDIR)/$(CONFIG)/h2_ssl_call_creds_test $(BINDIR)/$(CONFIG)/h2_ssl_cancel_after_accept_test $(BINDIR)/$(CONFIG)/h2_ssl_cancel_after_client_done_test $(BINDIR)/$(CONFIG)/h2_ssl_cancel_after_invoke_test $(BINDIR)/$(CONFIG)/h2_ssl_cancel_before_invoke_test $(BINDIR)/$(CONFIG)/h2_ssl_cancel_in_a_vacuum_test $(BINDIR)/$(CONFIG)/h2_ssl_cancel_with_status_test $(BINDIR)/$(CONFIG)/h2_ssl_census_simple_request_test $(BINDIR)/$(CONFIG)/h2_ssl_channel_connectivity_test $(BINDIR)/$(CONFIG)/h2_ssl_compressed_payload_test $(BINDIR)/$(CONFIG)/h2_ssl_default_host_test $(BINDIR)/$(CONFIG)/h2_ssl_disappearing_server_test $(BINDIR)/$(CONFIG)/h2_ssl_empty_batch_test $(BINDIR)/$(CONFIG)/h2_ssl_graceful_server_shutdown_test $(BINDIR)/$(CONFIG)/h2_ssl_high_initial_seqno_test $(BINDIR)/$(CONFIG)/h2_ssl_hpack_size_test $(BINDIR)/$(CONFIG)/h2_ssl_invoke_large_request_test $(BINDIR)/$(CONFIG)/h2_ssl_large_metadata_test $(BINDIR)/$(CONFIG)/h2_ssl_max_concurrent_streams_test $(BINDIR)/$(CONFIG)/h2_ssl_max_message_length_test $(BINDIR)/$(CONFIG)/h2_ssl_metadata_test $(BINDIR)/$(CONFIG)/h2_ssl_negative_deadline_test $(BINDIR)/$(CONFIG)/h2_ssl_no_op_test $(BINDIR)/$(CONFIG)/h2_ssl_payload_test $(BINDIR)/$(CONFIG)/h2_ssl_ping_pong_streaming_test $(BINDIR)/$(CONFIG)/h2_ssl_registered_call_test $(BINDIR)/$(CONFIG)/h2_ssl_request_with_flags_test $(BINDIR)/$(CONFIG)/h2_ssl_request_with_payload_test $(BINDIR)/$(CONFIG)/h2_ssl_server_finishes_request_test $(BINDIR)/$(CONFIG)/h2_ssl_shutdown_finishes_calls_test $(BINDIR)/$(CONFIG)/h2_ssl_shutdown_finishes_tags_test $(BINDIR)/$(CONFIG)/h2_ssl_simple_delayed_request_test $(BINDIR)/$(CONFIG)/h2_ssl_simple_request_test $(BINDIR)/$(CONFIG)/h2_ssl_trailing_metadata_test $(BINDIR)/$(CONFIG)/h2_ssl+poll_bad_hostname_test $(BINDIR)/$(CONFIG)/h2_ssl+poll_binary_metadata_test $(BINDIR)/$(CONFIG)/h2_ssl+poll_call_creds_test $(BINDIR)/$(CONFIG)/h2_ssl+poll_cancel_after_accept_test $(BINDIR)/$(CONFIG)/h2_ssl+poll_cancel_after_client_done_test $(BINDIR)/$(CONFIG)/h2_ssl+poll_cancel_after_invoke_test $(BINDIR)/$(CONFIG)/h2_ssl+poll_cancel_before_invoke_test $(BINDIR)/$(CONFIG)/h2_ssl+poll_cancel_in_a_vacuum_test $(BINDIR)/$(CONFIG)/h2_ssl+poll_cancel_with_status_test $(BINDIR)/$(CONFIG)/h2_ssl+poll_census_simple_request_test $(BINDIR)/$(CONFIG)/h2_ssl+poll_channel_connectivity_test $(BINDIR)/$(CONFIG)/h2_ssl+poll_compressed_payload_test $(BINDIR)/$(CONFIG)/h2_ssl+poll_default_host_test $(BINDIR)/$(CONFIG)/h2_ssl+poll_disappearing_server_test $(BINDIR)/$(CONFIG)/h2_ssl+poll_empty_batch_test $(BINDIR)/$(CONFIG)/h2_ssl+poll_graceful_server_shutdown_test $(BINDIR)/$(CONFIG)/h2_ssl+poll_high_initial_seqno_test $(BINDIR)/$(CONFIG)/h2_ssl+poll_hpack_size_test $(BINDIR)/$(CONFIG)/h2_ssl+poll_invoke_large_request_test $(BINDIR)/$(CONFIG)/h2_ssl+poll_large_metadata_test $(BINDIR)/$(CONFIG)/h2_ssl+poll_max_concurrent_streams_test $(BINDIR)/$(CONFIG)/h2_ssl+poll_max_message_length_test $(BINDIR)/$(CONFIG)/h2_ssl+poll_metadata_test $(BINDIR)/$(CONFIG)/h2_ssl+poll_negative_deadline_test $(BINDIR)/$(CONFIG)/h2_ssl+poll_no_op_test $(BINDIR)/$(CONFIG)/h2_ssl+poll_payload_test $(BINDIR)/$(CONFIG)/h2_ssl+poll_ping_pong_streaming_test $(BINDIR)/$(CONFIG)/h2_ssl+poll_registered_call_test $(BINDIR)/$(CONFIG)/h2_ssl+poll_request_with_flags_test $(BINDIR)/$(CONFIG)/h2_ssl+poll_request_with_payload_test $(BINDIR)/$(CONFIG)/h2_ssl+poll_server_finishes_request_test $(BINDIR)/$(CONFIG)/h2_ssl+poll_shutdown_finishes_calls_test $(BINDIR)/$(CONFIG)/h2_ssl+poll_shutdown_finishes_tags_test $(BINDIR)/$(CONFIG)/h2_ssl+poll_simple_delayed_request_test $(BINDIR)/$(CONFIG)/h2_ssl+poll_simple_request_test $(BINDIR)/$(CONFIG)/h2_ssl+poll_trailing_metadata_test $(BINDIR)/$(CONFIG)/h2_ssl_proxy_bad_hostname_test $(BINDIR)/$(CONFIG)/h2_ssl_proxy_binary_metadata_test $(BINDIR)/$(CONFIG)/h2_ssl_proxy_call_creds_test $(BINDIR)/$(CONFIG)/h2_ssl_proxy_cancel_after_accept_test $(BINDIR)/$(CONFIG)/h2_ssl_proxy_cancel_after_client_done_test $(BINDIR)/$(CONFIG)/h2_ssl_proxy_cancel_after_invoke_test $(BINDIR)/$(CONFIG)/h2_ssl_proxy_cancel_before_invoke_test $(BINDIR)/$(CONFIG)/h2_ssl_proxy_cancel_in_a_vacuum_test $(BINDIR)/$(CONFIG)/h2_ssl_proxy_cancel_with_status_test $(BINDIR)/$(CONFIG)/h2_ssl_proxy_census_simple_request_test $(BINDIR)/$(CONFIG)/h2_ssl_proxy_default_host_test $(BINDIR)/$(CONFIG)/h2_ssl_proxy_disappearing_server_test $(BINDIR)/$(CONFIG)/h2_ssl_proxy_empty_batch_test $(BINDIR)/$(CONFIG)/h2_ssl_proxy_graceful_server_shutdown_test $(BINDIR)/$(CONFIG)/h2_ssl_proxy_high_initial_seqno_test $(BINDIR)/$(CONFIG)/h2_ssl_proxy_invoke_large_request_test $(BINDIR)/$(CONFIG)/h2_ssl_proxy_large_metadata_test $(BINDIR)/$(CONFIG)/h2_ssl_proxy_max_message_length_test $(BINDIR)/$(CONFIG)/h2_ssl_proxy_metadata_test $(BINDIR)/$(CONFIG)/h2_ssl_proxy_negative_deadline_test $(BINDIR)/$(CONFIG)/h2_ssl_proxy_no_op_test $(BINDIR)/$(CONFIG)/h2_ssl_proxy_payload_test $(BINDIR)/$(CONFIG)/h2_ssl_proxy_ping_pong_streaming_test $(BINDIR)/$(CONFIG)/h2_ssl_proxy_registered_call_test $(BINDIR)/$(CONFIG)/h2_ssl_proxy_request_with_payload_test $(BINDIR)/$(CONFIG)/h2_ssl_proxy_server_finishes_request_test $(BINDIR)/$(CONFIG)/h2_ssl_proxy_shutdown_finishes_calls_test $(BINDIR)/$(CONFIG)/h2_ssl_proxy_shutdown_finishes_tags_test $(BINDIR)/$(CONFIG)/h2_ssl_proxy_simple_delayed_request_test $(BINDIR)/$(CONFIG)/h2_ssl_proxy_simple_request_test $(BINDIR)/$(CONFIG)/h2_ssl_proxy_trailing_metadata_test $(BINDIR)/$(CONFIG)/h2_uchannel_bad_hostname_test $(BINDIR)/$(CONFIG)/h2_uchannel_binary_metadata_test $(BINDIR)/$(CONFIG)/h2_uchannel_call_creds_test $(BINDIR)/$(CONFIG)/h2_uchannel_cancel_after_accept_test $(BINDIR)/$(CONFIG)/h2_uchannel_cancel_after_client_done_test $(BINDIR)/$(CONFIG)/h2_uchannel_cancel_after_invoke_test $(BINDIR)/$(CONFIG)/h2_uchannel_cancel_before_invoke_test $(BINDIR)/$(CONFIG)/h2_uchannel_cancel_in_a_vacuum_test $(BINDIR)/$(CONFIG)/h2_uchannel_cancel_with_status_test $(BINDIR)/$(CONFIG)/h2_uchannel_census_simple_request_test $(BINDIR)/$(CONFIG)/h2_uchannel_channel_connectivity_test $(BINDIR)/$(CONFIG)/h2_uchannel_compressed_payload_test $(BINDIR)/$(CONFIG)/h2_uchannel_default_host_test $(BINDIR)/$(CONFIG)/h2_uchannel_disappearing_server_test $(BINDIR)/$(CONFIG)/h2_uchannel_empty_batch_test $(BINDIR)/$(CONFIG)/h2_uchannel_graceful_server_shutdown_test $(BINDIR)/$(CONFIG)/h2_uchannel_high_initial_seqno_test $(BINDIR)/$(CONFIG)/h2_uchannel_hpack_size_test $(BINDIR)/$(CONFIG)/h2_uchannel_invoke_large_request_test $(BINDIR)/$(CONFIG)/h2_uchannel_large_metadata_test $(BINDIR)/$(CONFIG)/h2_uchannel_max_concurrent_streams_test $(BINDIR)/$(CONFIG)/h2_uchannel_max_message_length_test $(BINDIR)/$(CONFIG)/h2_uchannel_metadata_test $(BINDIR)/$(CONFIG)/h2_uchannel_negative_deadline_test $(BINDIR)/$(CONFIG)/h2_uchannel_no_op_test $(BINDIR)/$(CONFIG)/h2_uchannel_payload_test $(BINDIR)/$(CONFIG)/h2_uchannel_ping_pong_streaming_test $(BINDIR)/$(CONFIG)/h2_uchannel_registered_call_test $(BINDIR)/$(CONFIG)/h2_uchannel_request_with_flags_test $(BINDIR)/$(CONFIG)/h2_uchannel_request_with_payload_test $(BINDIR)/$(CONFIG)/h2_uchannel_server_finishes_request_test $(BINDIR)/$(CONFIG)/h2_uchannel_shutdown_finishes_calls_test $(BINDIR)/$(CONFIG)/h2_uchannel_shutdown_finishes_tags_test $(BINDIR)/$(CONFIG)/h2_uchannel_simple_delayed_request_test $(BINDIR)/$(CONFIG)/h2_uchannel_simple_request_test $(BINDIR)/$(CONFIG)/h2_uchannel_trailing_metadata_test $(BINDIR)/$(CONFIG)/h2_uds_bad_hostname_test $(BINDIR)/$(CONFIG)/h2_uds_binary_metadata_test $(BINDIR)/$(CONFIG)/h2_uds_call_creds_test $(BINDIR)/$(CONFIG)/h2_uds_cancel_after_accept_test $(BINDIR)/$(CONFIG)/h2_uds_cancel_after_client_done_test $(BINDIR)/$(CONFIG)/h2_uds_cancel_after_invoke_test $(BINDIR)/$(CONFIG)/h2_uds_cancel_before_invoke_test $(BINDIR)/$(CONFIG)/h2_uds_cancel_in_a_vacuum_test $(BINDIR)/$(CONFIG)/h2_uds_cancel_with_status_test $(BINDIR)/$(CONFIG)/h2_uds_census_simple_request_test $(BINDIR)/$(CONFIG)/h2_uds_channel_connectivity_test $(BINDIR)/$(CONFIG)/h2_uds_compressed_payload_test $(BINDIR)/$(CONFIG)/h2_uds_disappearing_server_test $(BINDIR)/$(CONFIG)/h2_uds_empty_batch_test $(BINDIR)/$(CONFIG)/h2_uds_graceful_server_shutdown_test $(BINDIR)/$(CONFIG)/h2_uds_high_initial_seqno_test $(BINDIR)/$(CONFIG)/h2_uds_hpack_size_test $(BINDIR)/$(CONFIG)/h2_uds_invoke_large_request_test $(BINDIR)/$(CONFIG)/h2_uds_large_metadata_test $(BINDIR)/$(CONFIG)/h2_uds_max_concurrent_streams_test $(BINDIR)/$(CONFIG)/h2_uds_max_message_length_test $(BINDIR)/$(CONFIG)/h2_uds_metadata_test $(BINDIR)/$(CONFIG)/h2_uds_negative_deadline_test $(BINDIR)/$(CONFIG)/h2_uds_no_op_test $(BINDIR)/$(CONFIG)/h2_uds_payload_test $(BINDIR)/$(CONFIG)/h2_uds_ping_pong_streaming_test $(BINDIR)/$(CONFIG)/h2_uds_registered_call_test $(BINDIR)/$(CONFIG)/h2_uds_request_with_flags_test $(BINDIR)/$(CONFIG)/h2_uds_request_with_payload_test $(BINDIR)/$(CONFIG)/h2_uds_server_finishes_request_test $(BINDIR)/$(CONFIG)/h2_uds_shutdown_finishes_calls_test $(BINDIR)/$(CONFIG)/h2_uds_shutdown_finishes_tags_test $(BINDIR)/$(CONFIG)/h2_uds_simple_delayed_request_test $(BINDIR)/$(CONFIG)/h2_uds_simple_request_test $(BINDIR)/$(CONFIG)/h2_uds_trailing_metadata_test $(BINDIR)/$(CONFIG)/h2_uds+poll_bad_hostname_test $(BINDIR)/$(CONFIG)/h2_uds+poll_binary_metadata_test $(BINDIR)/$(CONFIG)/h2_uds+poll_call_creds_test $(BINDIR)/$(CONFIG)/h2_uds+poll_cancel_after_accept_test $(BINDIR)/$(CONFIG)/h2_uds+poll_cancel_after_client_done_test $(BINDIR)/$(CONFIG)/h2_uds+poll_cancel_after_invoke_test $(BINDIR)/$(CONFIG)/h2_uds+poll_cancel_before_invoke_test $(BINDIR)/$(CONFIG)/h2_uds+poll_cancel_in_a_vacuum_test $(BINDIR)/$(CONFIG)/h2_uds+poll_cancel_with_status_test $(BINDIR)/$(CONFIG)/h2_uds+poll_census_simple_request_test $(BINDIR)/$(CONFIG)/h2_uds+poll_channel_connectivity_test $(BINDIR)/$(CONFIG)/h2_uds+poll_compressed_payload_test $(BINDIR)/$(CONFIG)/h2_uds+poll_disappearing_server_test $(BINDIR)/$(CONFIG)/h2_uds+poll_empty_batch_test $(BINDIR)/$(CONFIG)/h2_uds+poll_graceful_server_shutdown_test $(BINDIR)/$(CONFIG)/h2_uds+poll_high_initial_seqno_test $(BINDIR)/$(CONFIG)/h2_uds+poll_hpack_size_test $(BINDIR)/$(CONFIG)/h2_uds+poll_invoke_large_request_test $(BINDIR)/$(CONFIG)/h2_uds+poll_large_metadata_test $(BINDIR)/$(CONFIG)/h2_uds+poll_max_concurrent_streams_test $(BINDIR)/$(CONFIG)/h2_uds+poll_max_message_length_test $(BINDIR)/$(CONFIG)/h2_uds+poll_metadata_test $(BINDIR)/$(CONFIG)/h2_uds+poll_negative_deadline_test $(BINDIR)/$(CONFIG)/h2_uds+poll_no_op_test $(BINDIR)/$(CONFIG)/h2_uds+poll_payload_test $(BINDIR)/$(CONFIG)/h2_uds+poll_ping_pong_streaming_test $(BINDIR)/$(CONFIG)/h2_uds+poll_registered_call_test $(BINDIR)/$(CONFIG)/h2_uds+poll_request_with_flags_test $(BINDIR)/$(CONFIG)/h2_uds+poll_request_with_payload_test $(BINDIR)/$(CONFIG)/h2_uds+poll_server_finishes_request_test $(BINDIR)/$(CONFIG)/h2_uds+poll_shutdown_finishes_calls_test $(BINDIR)/$(CONFIG)/h2_uds+poll_shutdown_finishes_tags_test $(BINDIR)/$(CONFIG)/h2_uds+poll_simple_delayed_request_test $(BINDIR)/$(CONFIG)/h2_uds+poll_simple_request_test $(BINDIR)/$(CONFIG)/h2_uds+poll_trailing_metadata_test $(BINDIR)/$(CONFIG)/h2_compress_bad_hostname_nosec_test $(BINDIR)/$(CONFIG)/h2_compress_binary_metadata_nosec_test $(BINDIR)/$(CONFIG)/h2_compress_cancel_after_accept_nosec_test $(BINDIR)/$(CONFIG)/h2_compress_cancel_after_client_done_nosec_test $(BINDIR)/$(CONFIG)/h2_compress_cancel_after_invoke_nosec_test $(BINDIR)/$(CONFIG)/h2_compress_cancel_before_invoke_nosec_test $(BINDIR)/$(CONFIG)/h2_compress_cancel_in_a_vacuum_nosec_test $(BINDIR)/$(CONFIG)/h2_compress_cancel_with_status_nosec_test $(BINDIR)/$(CONFIG)/h2_compress_census_simple_request_nosec_test $(BINDIR)/$(CONFIG)/h2_compress_channel_connectivity_nosec_test $(BINDIR)/$(CONFIG)/h2_compress_compressed_payload_nosec_test $(BINDIR)/$(CONFIG)/h2_compress_default_host_nosec_test $(BINDIR)/$(CONFIG)/h2_compress_disappearing_server_nosec_test $(BINDIR)/$(CONFIG)/h2_compress_empty_batch_nosec_test $(BINDIR)/$(CONFIG)/h2_compress_graceful_server_shutdown_nosec_test $(BINDIR)/$(CONFIG)/h2_compress_high_initial_seqno_nosec_test $(BINDIR)/$(CONFIG)/h2_compress_hpack_size_nosec_test $(BINDIR)/$(CONFIG)/h2_compress_invoke_large_request_nosec_test $(BINDIR)/$(CONFIG)/h2_compress_large_metadata_nosec_test $(BINDIR)/$(CONFIG)/h2_compress_max_concurrent_streams_nosec_test $(BINDIR)/$(CONFIG)/h2_compress_max_message_length_nosec_test $(BINDIR)/$(CONFIG)/h2_compress_metadata_nosec_test $(BINDIR)/$(CONFIG)/h2_compress_negative_deadline_nosec_test $(BINDIR)/$(CONFIG)/h2_compress_no_op_nosec_test $(BINDIR)/$(CONFIG)/h2_compress_payload_nosec_test $(BINDIR)/$(CONFIG)/h2_compress_ping_pong_streaming_nosec_test $(BINDIR)/$(CONFIG)/h2_compress_registered_call_nosec_test $(BINDIR)/$(CONFIG)/h2_compress_request_with_flags_nosec_test $(BINDIR)/$(CONFIG)/h2_compress_request_with_payload_nosec_test $(BINDIR)/$(CONFIG)/h2_compress_server_finishes_request_nosec_test $(BINDIR)/$(CONFIG)/h2_compress_shutdown_finishes_calls_nosec_test $(BINDIR)/$(CONFIG)/h2_compress_shutdown_finishes_tags_nosec_test $(BINDIR)/$(CONFIG)/h2_compress_simple_delayed_request_nosec_test $(BINDIR)/$(CONFIG)/h2_compress_simple_request_nosec_test $(BINDIR)/$(CONFIG)/h2_compress_trailing_metadata_nosec_test $(BINDIR)/$(CONFIG)/h2_full_bad_hostname_nosec_test $(BINDIR)/$(CONFIG)/h2_full_binary_metadata_nosec_test $(BINDIR)/$(CONFIG)/h2_full_cancel_after_accept_nosec_test $(BINDIR)/$(CONFIG)/h2_full_cancel_after_client_done_nosec_test $(BINDIR)/$(CONFIG)/h2_full_cancel_after_invoke_nosec_test $(BINDIR)/$(CONFIG)/h2_full_cancel_before_invoke_nosec_test $(BINDIR)/$(CONFIG)/h2_full_cancel_in_a_vacuum_nosec_test $(BINDIR)/$(CONFIG)/h2_full_cancel_with_status_nosec_test $(BINDIR)/$(CONFIG)/h2_full_census_simple_request_nosec_test $(BINDIR)/$(CONFIG)/h2_full_channel_connectivity_nosec_test $(BINDIR)/$(CONFIG)/h2_full_compressed_payload_nosec_test $(BINDIR)/$(CONFIG)/h2_full_default_host_nosec_test $(BINDIR)/$(CONFIG)/h2_full_disappearing_server_nosec_test $(BINDIR)/$(CONFIG)/h2_full_empty_batch_nosec_test $(BINDIR)/$(CONFIG)/h2_full_graceful_server_shutdown_nosec_test $(BINDIR)/$(CONFIG)/h2_full_high_initial_seqno_nosec_test $(BINDIR)/$(CONFIG)/h2_full_hpack_size_nosec_test $(BINDIR)/$(CONFIG)/h2_full_invoke_large_request_nosec_test $(BINDIR)/$(CONFIG)/h2_full_large_metadata_nosec_test $(BINDIR)/$(CONFIG)/h2_full_max_concurrent_streams_nosec_test $(BINDIR)/$(CONFIG)/h2_full_max_message_length_nosec_test $(BINDIR)/$(CONFIG)/h2_full_metadata_nosec_test $(BINDIR)/$(CONFIG)/h2_full_negative_deadline_nosec_test $(BINDIR)/$(CONFIG)/h2_full_no_op_nosec_test $(BINDIR)/$(CONFIG)/h2_full_payload_nosec_test $(BINDIR)/$(CONFIG)/h2_full_ping_pong_streaming_nosec_test $(BINDIR)/$(CONFIG)/h2_full_registered_call_nosec_test $(BINDIR)/$(CONFIG)/h2_full_request_with_flags_nosec_test $(BINDIR)/$(CONFIG)/h2_full_request_with_payload_nosec_test $(BINDIR)/$(CONFIG)/h2_full_server_finishes_request_nosec_test $(BINDIR)/$(CONFIG)/h2_full_shutdown_finishes_calls_nosec_test $(BINDIR)/$(CONFIG)/h2_full_shutdown_finishes_tags_nosec_test $(BINDIR)/$(CONFIG)/h2_full_simple_delayed_request_nosec_test $(BINDIR)/$(CONFIG)/h2_full_simple_request_nosec_test $(BINDIR)/$(CONFIG)/h2_full_trailing_metadata_nosec_test $(BINDIR)/$(CONFIG)/h2_full+poll_bad_hostname_nosec_test $(BINDIR)/$(CONFIG)/h2_full+poll_binary_metadata_nosec_test $(BINDIR)/$(CONFIG)/h2_full+poll_cancel_after_accept_nosec_test $(BINDIR)/$(CONFIG)/h2_full+poll_cancel_after_client_done_nosec_test $(BINDIR)/$(CONFIG)/h2_full+poll_cancel_after_invoke_nosec_test $(BINDIR)/$(CONFIG)/h2_full+poll_cancel_before_invoke_nosec_test $(BINDIR)/$(CONFIG)/h2_full+poll_cancel_in_a_vacuum_nosec_test $(BINDIR)/$(CONFIG)/h2_full+poll_cancel_with_status_nosec_test $(BINDIR)/$(CONFIG)/h2_full+poll_census_simple_request_nosec_test $(BINDIR)/$(CONFIG)/h2_full+poll_channel_connectivity_nosec_test $(BINDIR)/$(CONFIG)/h2_full+poll_compressed_payload_nosec_test $(BINDIR)/$(CONFIG)/h2_full+poll_default_host_nosec_test $(BINDIR)/$(CONFIG)/h2_full+poll_disappearing_server_nosec_test $(BINDIR)/$(CONFIG)/h2_full+poll_empty_batch_nosec_test $(BINDIR)/$(CONFIG)/h2_full+poll_graceful_server_shutdown_nosec_test $(BINDIR)/$(CONFIG)/h2_full+poll_high_initial_seqno_nosec_test $(BINDIR)/$(CONFIG)/h2_full+poll_hpack_size_nosec_test $(BINDIR)/$(CONFIG)/h2_full+poll_invoke_large_request_nosec_test $(BINDIR)/$(CONFIG)/h2_full+poll_large_metadata_nosec_test $(BINDIR)/$(CONFIG)/h2_full+poll_max_concurrent_streams_nosec_test $(BINDIR)/$(CONFIG)/h2_full+poll_max_message_length_nosec_test $(BINDIR)/$(CONFIG)/h2_full+poll_metadata_nosec_test $(BINDIR)/$(CONFIG)/h2_full+poll_negative_deadline_nosec_test $(BINDIR)/$(CONFIG)/h2_full+poll_no_op_nosec_test $(BINDIR)/$(CONFIG)/h2_full+poll_payload_nosec_test $(BINDIR)/$(CONFIG)/h2_full+poll_ping_pong_streaming_nosec_test $(BINDIR)/$(CONFIG)/h2_full+poll_registered_call_nosec_test $(BINDIR)/$(CONFIG)/h2_full+poll_request_with_flags_nosec_test $(BINDIR)/$(CONFIG)/h2_full+poll_request_with_payload_nosec_test $(BINDIR)/$(CONFIG)/h2_full+poll_server_finishes_request_nosec_test $(BINDIR)/$(CONFIG)/h2_full+poll_shutdown_finishes_calls_nosec_test $(BINDIR)/$(CONFIG)/h2_full+poll_shutdown_finishes_tags_nosec_test $(BINDIR)/$(CONFIG)/h2_full+poll_simple_delayed_request_nosec_test $(BINDIR)/$(CONFIG)/h2_full+poll_simple_request_nosec_test $(BINDIR)/$(CONFIG)/h2_full+poll_trailing_metadata_nosec_test $(BINDIR)/$(CONFIG)/h2_proxy_bad_hostname_nosec_test $(BINDIR)/$(CONFIG)/h2_proxy_binary_metadata_nosec_test $(BINDIR)/$(CONFIG)/h2_proxy_cancel_after_accept_nosec_test $(BINDIR)/$(CONFIG)/h2_proxy_cancel_after_client_done_nosec_test $(BINDIR)/$(CONFIG)/h2_proxy_cancel_after_invoke_nosec_test $(BINDIR)/$(CONFIG)/h2_proxy_cancel_before_invoke_nosec_test $(BINDIR)/$(CONFIG)/h2_proxy_cancel_in_a_vacuum_nosec_test $(BINDIR)/$(CONFIG)/h2_proxy_cancel_with_status_nosec_test $(BINDIR)/$(CONFIG)/h2_proxy_census_simple_request_nosec_test $(BINDIR)/$(CONFIG)/h2_proxy_default_host_nosec_test $(BINDIR)/$(CONFIG)/h2_proxy_disappearing_server_nosec_test $(BINDIR)/$(CONFIG)/h2_proxy_empty_batch_nosec_test $(BINDIR)/$(CONFIG)/h2_proxy_graceful_server_shutdown_nosec_test $(BINDIR)/$(CONFIG)/h2_proxy_high_initial_seqno_nosec_test $(BINDIR)/$(CONFIG)/h2_proxy_invoke_large_request_nosec_test $(BINDIR)/$(CONFIG)/h2_proxy_large_metadata_nosec_test $(BINDIR)/$(CONFIG)/h2_proxy_max_message_length_nosec_test $(BINDIR)/$(CONFIG)/h2_proxy_metadata_nosec_test $(BINDIR)/$(CONFIG)/h2_proxy_negative_deadline_nosec_test $(BINDIR)/$(CONFIG)/h2_proxy_no_op_nosec_test $(BINDIR)/$(CONFIG)/h2_proxy_payload_nosec_test $(BINDIR)/$(CONFIG)/h2_proxy_ping_pong_streaming_nosec_test $(BINDIR)/$(CONFIG)/h2_proxy_registered_call_nosec_test $(BINDIR)/$(CONFIG)/h2_proxy_request_with_payload_nosec_test $(BINDIR)/$(CONFIG)/h2_proxy_server_finishes_request_nosec_test $(BINDIR)/$(CONFIG)/h2_proxy_shutdown_finishes_calls_nosec_test $(BINDIR)/$(CONFIG)/h2_proxy_shutdown_finishes_tags_nosec_test $(BINDIR)/$(CONFIG)/h2_proxy_simple_delayed_request_nosec_test $(BINDIR)/$(CONFIG)/h2_proxy_simple_request_nosec_test $(BINDIR)/$(CONFIG)/h2_proxy_trailing_metadata_nosec_test $(BINDIR)/$(CONFIG)/h2_sockpair_bad_hostname_nosec_test $(BINDIR)/$(CONFIG)/h2_sockpair_binary_metadata_nosec_test $(BINDIR)/$(CONFIG)/h2_sockpair_cancel_after_accept_nosec_test $(BINDIR)/$(CONFIG)/h2_sockpair_cancel_after_client_done_nosec_test $(BINDIR)/$(CONFIG)/h2_sockpair_cancel_after_invoke_nosec_test $(BINDIR)/$(CONFIG)/h2_sockpair_cancel_before_invoke_nosec_test $(BINDIR)/$(CONFIG)/h2_sockpair_cancel_in_a_vacuum_nosec_test $(BINDIR)/$(CONFIG)/h2_sockpair_cancel_with_status_nosec_test $(BINDIR)/$(CONFIG)/h2_sockpair_census_simple_request_nosec_test $(BINDIR)/$(CONFIG)/h2_sockpair_compressed_payload_nosec_test $(BINDIR)/$(CONFIG)/h2_sockpair_empty_batch_nosec_test $(BINDIR)/$(CONFIG)/h2_sockpair_graceful_server_shutdown_nosec_test $(BINDIR)/$(CONFIG)/h2_sockpair_high_initial_seqno_nosec_test $(BINDIR)/$(CONFIG)/h2_sockpair_hpack_size_nosec_test $(BINDIR)/$(CONFIG)/h2_sockpair_invoke_large_request_nosec_test $(BINDIR)/$(CONFIG)/h2_sockpair_large_metadata_nosec_test $(BINDIR)/$(CONFIG)/h2_sockpair_max_concurrent_streams_nosec_test $(BINDIR)/$(CONFIG)/h2_sockpair_max_message_length_nosec_test $(BINDIR)/$(CONFIG)/h2_sockpair_metadata_nosec_test $(BINDIR)/$(CONFIG)/h2_sockpair_negative_deadline_nosec_test $(BINDIR)/$(CONFIG)/h2_sockpair_no_op_nosec_test $(BINDIR)/$(CONFIG)/h2_sockpair_payload_nosec_test $(BINDIR)/$(CONFIG)/h2_sockpair_ping_pong_streaming_nosec_test $(BINDIR)/$(CONFIG)/h2_sockpair_registered_call_nosec_test $(BINDIR)/$(CONFIG)/h2_sockpair_request_with_flags_nosec_test $(BINDIR)/$(CONFIG)/h2_sockpair_request_with_payload_nosec_test $(BINDIR)/$(CONFIG)/h2_sockpair_server_finishes_request_nosec_test $(BINDIR)/$(CONFIG)/h2_sockpair_shutdown_finishes_calls_nosec_test $(BINDIR)/$(CONFIG)/h2_sockpair_shutdown_finishes_tags_nosec_test $(BINDIR)/$(CONFIG)/h2_sockpair_simple_request_nosec_test $(BINDIR)/$(CONFIG)/h2_sockpair_trailing_metadata_nosec_test $(BINDIR)/$(CONFIG)/h2_sockpair+trace_bad_hostname_nosec_test $(BINDIR)/$(CONFIG)/h2_sockpair+trace_binary_metadata_nosec_test $(BINDIR)/$(CONFIG)/h2_sockpair+trace_cancel_after_accept_nosec_test $(BINDIR)/$(CONFIG)/h2_sockpair+trace_cancel_after_client_done_nosec_test $(BINDIR)/$(CONFIG)/h2_sockpair+trace_cancel_after_invoke_nosec_test $(BINDIR)/$(CONFIG)/h2_sockpair+trace_cancel_before_invoke_nosec_test $(BINDIR)/$(CONFIG)/h2_sockpair+trace_cancel_in_a_vacuum_nosec_test $(BINDIR)/$(CONFIG)/h2_sockpair+trace_cancel_with_status_nosec_test $(BINDIR)/$(CONFIG)/h2_sockpair+trace_census_simple_request_nosec_test $(BINDIR)/$(CONFIG)/h2_sockpair+trace_compressed_payload_nosec_test $(BINDIR)/$(CONFIG)/h2_sockpair+trace_empty_batch_nosec_test $(BINDIR)/$(CONFIG)/h2_sockpair+trace_graceful_server_shutdown_nosec_test $(BINDIR)/$(CONFIG)/h2_sockpair+trace_high_initial_seqno_nosec_test $(BINDIR)/$(CONFIG)/h2_sockpair+trace_invoke_large_request_nosec_test $(BINDIR)/$(CONFIG)/h2_sockpair+trace_large_metadata_nosec_test $(BINDIR)/$(CONFIG)/h2_sockpair+trace_max_concurrent_streams_nosec_test $(BINDIR)/$(CONFIG)/h2_sockpair+trace_max_message_length_nosec_test $(BINDIR)/$(CONFIG)/h2_sockpair+trace_metadata_nosec_test $(BINDIR)/$(CONFIG)/h2_sockpair+trace_negative_deadline_nosec_test $(BINDIR)/$(CONFIG)/h2_sockpair+trace_no_op_nosec_test $(BINDIR)/$(CONFIG)/h2_sockpair+trace_payload_nosec_test $(BINDIR)/$(CONFIG)/h2_sockpair+trace_ping_pong_streaming_nosec_test $(BINDIR)/$(CONFIG)/h2_sockpair+trace_registered_call_nosec_test $(BINDIR)/$(CONFIG)/h2_sockpair+trace_request_with_flags_nosec_test $(BINDIR)/$(CONFIG)/h2_sockpair+trace_request_with_payload_nosec_test $(BINDIR)/$(CONFIG)/h2_sockpair+trace_server_finishes_request_nosec_test $(BINDIR)/$(CONFIG)/h2_sockpair+trace_shutdown_finishes_calls_nosec_test $(BINDIR)/$(CONFIG)/h2_sockpair+trace_shutdown_finishes_tags_nosec_test $(BINDIR)/$(CONFIG)/h2_sockpair+trace_simple_request_nosec_test $(BINDIR)/$(CONFIG)/h2_sockpair+trace_trailing_metadata_nosec_test $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_bad_hostname_nosec_test $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_binary_metadata_nosec_test $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_cancel_after_accept_nosec_test $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_cancel_after_client_done_nosec_test $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_cancel_after_invoke_nosec_test $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_cancel_before_invoke_nosec_test $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_cancel_in_a_vacuum_nosec_test $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_cancel_with_status_nosec_test $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_census_simple_request_nosec_test $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_compressed_payload_nosec_test $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_empty_batch_nosec_test $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_graceful_server_shutdown_nosec_test $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_high_initial_seqno_nosec_test $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_hpack_size_nosec_test $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_invoke_large_request_nosec_test $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_large_metadata_nosec_test $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_max_concurrent_streams_nosec_test $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_max_message_length_nosec_test $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_metadata_nosec_test $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_negative_deadline_nosec_test $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_no_op_nosec_test $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_payload_nosec_test $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_ping_pong_streaming_nosec_test $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_registered_call_nosec_test $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_request_with_flags_nosec_test $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_request_with_payload_nosec_test $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_server_finishes_request_nosec_test $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_shutdown_finishes_calls_nosec_test $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_shutdown_finishes_tags_nosec_test $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_simple_request_nosec_test $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_trailing_metadata_nosec_test $(BINDIR)/$(CONFIG)/h2_uchannel_bad_hostname_nosec_test $(BINDIR)/$(CONFIG)/h2_uchannel_binary_metadata_nosec_test $(BINDIR)/$(CONFIG)/h2_uchannel_cancel_after_accept_nosec_test $(BINDIR)/$(CONFIG)/h2_uchannel_cancel_after_client_done_nosec_test $(BINDIR)/$(CONFIG)/h2_uchannel_cancel_after_invoke_nosec_test $(BINDIR)/$(CONFIG)/h2_uchannel_cancel_before_invoke_nosec_test $(BINDIR)/$(CONFIG)/h2_uchannel_cancel_in_a_vacuum_nosec_test $(BINDIR)/$(CONFIG)/h2_uchannel_cancel_with_status_nosec_test $(BINDIR)/$(CONFIG)/h2_uchannel_census_simple_request_nosec_test $(BINDIR)/$(CONFIG)/h2_uchannel_channel_connectivity_nosec_test $(BINDIR)/$(CONFIG)/h2_uchannel_compressed_payload_nosec_test $(BINDIR)/$(CONFIG)/h2_uchannel_default_host_nosec_test $(BINDIR)/$(CONFIG)/h2_uchannel_disappearing_server_nosec_test $(BINDIR)/$(CONFIG)/h2_uchannel_empty_batch_nosec_test $(BINDIR)/$(CONFIG)/h2_uchannel_graceful_server_shutdown_nosec_test $(BINDIR)/$(CONFIG)/h2_uchannel_high_initial_seqno_nosec_test $(BINDIR)/$(CONFIG)/h2_uchannel_hpack_size_nosec_test $(BINDIR)/$(CONFIG)/h2_uchannel_invoke_large_request_nosec_test $(BINDIR)/$(CONFIG)/h2_uchannel_large_metadata_nosec_test $(BINDIR)/$(CONFIG)/h2_uchannel_max_concurrent_streams_nosec_test $(BINDIR)/$(CONFIG)/h2_uchannel_max_message_length_nosec_test $(BINDIR)/$(CONFIG)/h2_uchannel_metadata_nosec_test $(BINDIR)/$(CONFIG)/h2_uchannel_negative_deadline_nosec_test $(BINDIR)/$(CONFIG)/h2_uchannel_no_op_nosec_test $(BINDIR)/$(CONFIG)/h2_uchannel_payload_nosec_test $(BINDIR)/$(CONFIG)/h2_uchannel_ping_pong_streaming_nosec_test $(BINDIR)/$(CONFIG)/h2_uchannel_registered_call_nosec_test $(BINDIR)/$(CONFIG)/h2_uchannel_request_with_flags_nosec_test $(BINDIR)/$(CONFIG)/h2_uchannel_request_with_payload_nosec_test $(BINDIR)/$(CONFIG)/h2_uchannel_server_finishes_request_nosec_test $(BINDIR)/$(CONFIG)/h2_uchannel_shutdown_finishes_calls_nosec_test $(BINDIR)/$(CONFIG)/h2_uchannel_shutdown_finishes_tags_nosec_test $(BINDIR)/$(CONFIG)/h2_uchannel_simple_delayed_request_nosec_test $(BINDIR)/$(CONFIG)/h2_uchannel_simple_request_nosec_test $(BINDIR)/$(CONFIG)/h2_uchannel_trailing_metadata_nosec_test $(BINDIR)/$(CONFIG)/h2_uds_bad_hostname_nosec_test $(BINDIR)/$(CONFIG)/h2_uds_binary_metadata_nosec_test $(BINDIR)/$(CONFIG)/h2_uds_cancel_after_accept_nosec_test $(BINDIR)/$(CONFIG)/h2_uds_cancel_after_client_done_nosec_test $(BINDIR)/$(CONFIG)/h2_uds_cancel_after_invoke_nosec_test $(BINDIR)/$(CONFIG)/h2_uds_cancel_before_invoke_nosec_test $(BINDIR)/$(CONFIG)/h2_uds_cancel_in_a_vacuum_nosec_test $(BINDIR)/$(CONFIG)/h2_uds_cancel_with_status_nosec_test $(BINDIR)/$(CONFIG)/h2_uds_census_simple_request_nosec_test $(BINDIR)/$(CONFIG)/h2_uds_channel_connectivity_nosec_test $(BINDIR)/$(CONFIG)/h2_uds_compressed_payload_nosec_test $(BINDIR)/$(CONFIG)/h2_uds_disappearing_server_nosec_test $(BINDIR)/$(CONFIG)/h2_uds_empty_batch_nosec_test $(BINDIR)/$(CONFIG)/h2_uds_graceful_server_shutdown_nosec_test $(BINDIR)/$(CONFIG)/h2_uds_high_initial_seqno_nosec_test $(BINDIR)/$(CONFIG)/h2_uds_hpack_size_nosec_test $(BINDIR)/$(CONFIG)/h2_uds_invoke_large_request_nosec_test $(BINDIR)/$(CONFIG)/h2_uds_large_metadata_nosec_test $(BINDIR)/$(CONFIG)/h2_uds_max_concurrent_streams_nosec_test $(BINDIR)/$(CONFIG)/h2_uds_max_message_length_nosec_test $(BINDIR)/$(CONFIG)/h2_uds_metadata_nosec_test $(BINDIR)/$(CONFIG)/h2_uds_negative_deadline_nosec_test $(BINDIR)/$(CONFIG)/h2_uds_no_op_nosec_test $(BINDIR)/$(CONFIG)/h2_uds_payload_nosec_test $(BINDIR)/$(CONFIG)/h2_uds_ping_pong_streaming_nosec_test $(BINDIR)/$(CONFIG)/h2_uds_registered_call_nosec_test $(BINDIR)/$(CONFIG)/h2_uds_request_with_flags_nosec_test $(BINDIR)/$(CONFIG)/h2_uds_request_with_payload_nosec_test $(BINDIR)/$(CONFIG)/h2_uds_server_finishes_request_nosec_test $(BINDIR)/$(CONFIG)/h2_uds_shutdown_finishes_calls_nosec_test $(BINDIR)/$(CONFIG)/h2_uds_shutdown_finishes_tags_nosec_test $(BINDIR)/$(CONFIG)/h2_uds_simple_delayed_request_nosec_test $(BINDIR)/$(CONFIG)/h2_uds_simple_request_nosec_test $(BINDIR)/$(CONFIG)/h2_uds_trailing_metadata_nosec_test $(BINDIR)/$(CONFIG)/h2_uds+poll_bad_hostname_nosec_test $(BINDIR)/$(CONFIG)/h2_uds+poll_binary_metadata_nosec_test $(BINDIR)/$(CONFIG)/h2_uds+poll_cancel_after_accept_nosec_test $(BINDIR)/$(CONFIG)/h2_uds+poll_cancel_after_client_done_nosec_test $(BINDIR)/$(CONFIG)/h2_uds+poll_cancel_after_invoke_nosec_test $(BINDIR)/$(CONFIG)/h2_uds+poll_cancel_before_invoke_nosec_test $(BINDIR)/$(CONFIG)/h2_uds+poll_cancel_in_a_vacuum_nosec_test $(BINDIR)/$(CONFIG)/h2_uds+poll_cancel_with_status_nosec_test $(BINDIR)/$(CONFIG)/h2_uds+poll_census_simple_request_nosec_test $(BINDIR)/$(CONFIG)/h2_uds+poll_channel_connectivity_nosec_test $(BINDIR)/$(CONFIG)/h2_uds+poll_compressed_payload_nosec_test $(BINDIR)/$(CONFIG)/h2_uds+poll_disappearing_server_nosec_test $(BINDIR)/$(CONFIG)/h2_uds+poll_empty_batch_nosec_test $(BINDIR)/$(CONFIG)/h2_uds+poll_graceful_server_shutdown_nosec_test $(BINDIR)/$(CONFIG)/h2_uds+poll_high_initial_seqno_nosec_test $(BINDIR)/$(CONFIG)/h2_uds+poll_hpack_size_nosec_test $(BINDIR)/$(CONFIG)/h2_uds+poll_invoke_large_request_nosec_test $(BINDIR)/$(CONFIG)/h2_uds+poll_large_metadata_nosec_test $(BINDIR)/$(CONFIG)/h2_uds+poll_max_concurrent_streams_nosec_test $(BINDIR)/$(CONFIG)/h2_uds+poll_max_message_length_nosec_test $(BINDIR)/$(CONFIG)/h2_uds+poll_metadata_nosec_test $(BINDIR)/$(CONFIG)/h2_uds+poll_negative_deadline_nosec_test $(BINDIR)/$(CONFIG)/h2_uds+poll_no_op_nosec_test $(BINDIR)/$(CONFIG)/h2_uds+poll_payload_nosec_test $(BINDIR)/$(CONFIG)/h2_uds+poll_ping_pong_streaming_nosec_test $(BINDIR)/$(CONFIG)/h2_uds+poll_registered_call_nosec_test $(BINDIR)/$(CONFIG)/h2_uds+poll_request_with_flags_nosec_test $(BINDIR)/$(CONFIG)/h2_uds+poll_request_with_payload_nosec_test $(BINDIR)/$(CONFIG)/h2_uds+poll_server_finishes_request_nosec_test $(BINDIR)/$(CONFIG)/h2_uds+poll_shutdown_finishes_calls_nosec_test $(BINDIR)/$(CONFIG)/h2_uds+poll_shutdown_finishes_tags_nosec_test $(BINDIR)/$(CONFIG)/h2_uds+poll_simple_delayed_request_nosec_test $(BINDIR)/$(CONFIG)/h2_uds+poll_simple_request_nosec_test $(BINDIR)/$(CONFIG)/h2_uds+poll_trailing_metadata_nosec_test $(BINDIR)/$(CONFIG)/connection_prefix_bad_client_test $(BINDIR)/$(CONFIG)/headers_bad_client_test $(BINDIR)/$(CONFIG)/initial_settings_frame_bad_client_test $(BINDIR)/$(CONFIG)/simple_request_bad_client_test $(BINDIR)/$(CONFIG)/unknown_frame_bad_client_test $(BINDIR)/$(CONFIG)/window_overflow_bad_client_test
+buildtests_c: privatelibs_c \
+  $(BINDIR)/$(CONFIG)/algorithm_test \
+  $(BINDIR)/$(CONFIG)/alloc_test \
+  $(BINDIR)/$(CONFIG)/alpn_test \
+  $(BINDIR)/$(CONFIG)/bin_encoder_test \
+  $(BINDIR)/$(CONFIG)/channel_create_test \
+  $(BINDIR)/$(CONFIG)/chttp2_hpack_encoder_test \
+  $(BINDIR)/$(CONFIG)/chttp2_status_conversion_test \
+  $(BINDIR)/$(CONFIG)/chttp2_stream_map_test \
+  $(BINDIR)/$(CONFIG)/chttp2_varint_test \
+  $(BINDIR)/$(CONFIG)/compression_test \
+  $(BINDIR)/$(CONFIG)/dns_resolver_test \
+  $(BINDIR)/$(CONFIG)/dualstack_socket_test \
+  $(BINDIR)/$(CONFIG)/endpoint_pair_test \
+  $(BINDIR)/$(CONFIG)/fd_conservation_posix_test \
+  $(BINDIR)/$(CONFIG)/fd_posix_test \
+  $(BINDIR)/$(CONFIG)/fling_client \
+  $(BINDIR)/$(CONFIG)/fling_server \
+  $(BINDIR)/$(CONFIG)/fling_stream_test \
+  $(BINDIR)/$(CONFIG)/fling_test \
+  $(BINDIR)/$(CONFIG)/gpr_avl_test \
+  $(BINDIR)/$(CONFIG)/gpr_cmdline_test \
+  $(BINDIR)/$(CONFIG)/gpr_cpu_test \
+  $(BINDIR)/$(CONFIG)/gpr_env_test \
+  $(BINDIR)/$(CONFIG)/gpr_file_test \
+  $(BINDIR)/$(CONFIG)/gpr_histogram_test \
+  $(BINDIR)/$(CONFIG)/gpr_host_port_test \
+  $(BINDIR)/$(CONFIG)/gpr_log_test \
+  $(BINDIR)/$(CONFIG)/gpr_slice_buffer_test \
+  $(BINDIR)/$(CONFIG)/gpr_slice_test \
+  $(BINDIR)/$(CONFIG)/gpr_stack_lockfree_test \
+  $(BINDIR)/$(CONFIG)/gpr_string_test \
+  $(BINDIR)/$(CONFIG)/gpr_sync_test \
+  $(BINDIR)/$(CONFIG)/gpr_thd_test \
+  $(BINDIR)/$(CONFIG)/gpr_time_test \
+  $(BINDIR)/$(CONFIG)/gpr_tls_test \
+  $(BINDIR)/$(CONFIG)/gpr_useful_test \
+  $(BINDIR)/$(CONFIG)/grpc_auth_context_test \
+  $(BINDIR)/$(CONFIG)/grpc_base64_test \
+  $(BINDIR)/$(CONFIG)/grpc_byte_buffer_reader_test \
+  $(BINDIR)/$(CONFIG)/grpc_channel_args_test \
+  $(BINDIR)/$(CONFIG)/grpc_channel_stack_test \
+  $(BINDIR)/$(CONFIG)/grpc_completion_queue_test \
+  $(BINDIR)/$(CONFIG)/grpc_credentials_test \
+  $(BINDIR)/$(CONFIG)/grpc_invalid_channel_args_test \
+  $(BINDIR)/$(CONFIG)/grpc_json_token_test \
+  $(BINDIR)/$(CONFIG)/grpc_jwt_verifier_test \
+  $(BINDIR)/$(CONFIG)/grpc_security_connector_test \
+  $(BINDIR)/$(CONFIG)/hpack_parser_test \
+  $(BINDIR)/$(CONFIG)/hpack_table_test \
+  $(BINDIR)/$(CONFIG)/httpcli_format_request_test \
+  $(BINDIR)/$(CONFIG)/httpcli_parser_test \
+  $(BINDIR)/$(CONFIG)/httpcli_test \
+  $(BINDIR)/$(CONFIG)/httpscli_test \
+  $(BINDIR)/$(CONFIG)/init_test \
+  $(BINDIR)/$(CONFIG)/invalid_call_argument_test \
+  $(BINDIR)/$(CONFIG)/json_rewrite \
+  $(BINDIR)/$(CONFIG)/json_rewrite_test \
+  $(BINDIR)/$(CONFIG)/json_stream_error_test \
+  $(BINDIR)/$(CONFIG)/json_test \
+  $(BINDIR)/$(CONFIG)/lame_client_test \
+  $(BINDIR)/$(CONFIG)/lb_policies_test \
+  $(BINDIR)/$(CONFIG)/message_compress_test \
+  $(BINDIR)/$(CONFIG)/multiple_server_queues_test \
+  $(BINDIR)/$(CONFIG)/murmur_hash_test \
+  $(BINDIR)/$(CONFIG)/no_server_test \
+  $(BINDIR)/$(CONFIG)/resolve_address_test \
+  $(BINDIR)/$(CONFIG)/secure_channel_create_test \
+  $(BINDIR)/$(CONFIG)/secure_endpoint_test \
+  $(BINDIR)/$(CONFIG)/server_chttp2_test \
+  $(BINDIR)/$(CONFIG)/server_test \
+  $(BINDIR)/$(CONFIG)/set_initial_connect_string_test \
+  $(BINDIR)/$(CONFIG)/sockaddr_resolver_test \
+  $(BINDIR)/$(CONFIG)/sockaddr_utils_test \
+  $(BINDIR)/$(CONFIG)/socket_utils_test \
+  $(BINDIR)/$(CONFIG)/tcp_client_posix_test \
+  $(BINDIR)/$(CONFIG)/tcp_posix_test \
+  $(BINDIR)/$(CONFIG)/tcp_server_posix_test \
+  $(BINDIR)/$(CONFIG)/time_averaged_stats_test \
+  $(BINDIR)/$(CONFIG)/timeout_encoding_test \
+  $(BINDIR)/$(CONFIG)/timer_heap_test \
+  $(BINDIR)/$(CONFIG)/timer_list_test \
+  $(BINDIR)/$(CONFIG)/timers_test \
+  $(BINDIR)/$(CONFIG)/transport_connectivity_state_test \
+  $(BINDIR)/$(CONFIG)/transport_metadata_test \
+  $(BINDIR)/$(CONFIG)/transport_security_test \
+  $(BINDIR)/$(CONFIG)/udp_server_test \
+  $(BINDIR)/$(CONFIG)/uri_parser_test \
+  $(BINDIR)/$(CONFIG)/workqueue_test \
+  $(BINDIR)/$(CONFIG)/h2_census_bad_hostname_test \
+  $(BINDIR)/$(CONFIG)/h2_census_binary_metadata_test \
+  $(BINDIR)/$(CONFIG)/h2_census_call_creds_test \
+  $(BINDIR)/$(CONFIG)/h2_census_cancel_after_accept_test \
+  $(BINDIR)/$(CONFIG)/h2_census_cancel_after_client_done_test \
+  $(BINDIR)/$(CONFIG)/h2_census_cancel_after_invoke_test \
+  $(BINDIR)/$(CONFIG)/h2_census_cancel_before_invoke_test \
+  $(BINDIR)/$(CONFIG)/h2_census_cancel_in_a_vacuum_test \
+  $(BINDIR)/$(CONFIG)/h2_census_cancel_with_status_test \
+  $(BINDIR)/$(CONFIG)/h2_census_channel_connectivity_test \
+  $(BINDIR)/$(CONFIG)/h2_census_channel_ping_test \
+  $(BINDIR)/$(CONFIG)/h2_census_compressed_payload_test \
+  $(BINDIR)/$(CONFIG)/h2_census_default_host_test \
+  $(BINDIR)/$(CONFIG)/h2_census_disappearing_server_test \
+  $(BINDIR)/$(CONFIG)/h2_census_empty_batch_test \
+  $(BINDIR)/$(CONFIG)/h2_census_graceful_server_shutdown_test \
+  $(BINDIR)/$(CONFIG)/h2_census_high_initial_seqno_test \
+  $(BINDIR)/$(CONFIG)/h2_census_hpack_size_test \
+  $(BINDIR)/$(CONFIG)/h2_census_invoke_large_request_test \
+  $(BINDIR)/$(CONFIG)/h2_census_large_metadata_test \
+  $(BINDIR)/$(CONFIG)/h2_census_max_concurrent_streams_test \
+  $(BINDIR)/$(CONFIG)/h2_census_max_message_length_test \
+  $(BINDIR)/$(CONFIG)/h2_census_metadata_test \
+  $(BINDIR)/$(CONFIG)/h2_census_negative_deadline_test \
+  $(BINDIR)/$(CONFIG)/h2_census_no_op_test \
+  $(BINDIR)/$(CONFIG)/h2_census_payload_test \
+  $(BINDIR)/$(CONFIG)/h2_census_ping_pong_streaming_test \
+  $(BINDIR)/$(CONFIG)/h2_census_registered_call_test \
+  $(BINDIR)/$(CONFIG)/h2_census_request_with_flags_test \
+  $(BINDIR)/$(CONFIG)/h2_census_request_with_payload_test \
+  $(BINDIR)/$(CONFIG)/h2_census_server_finishes_request_test \
+  $(BINDIR)/$(CONFIG)/h2_census_shutdown_finishes_calls_test \
+  $(BINDIR)/$(CONFIG)/h2_census_shutdown_finishes_tags_test \
+  $(BINDIR)/$(CONFIG)/h2_census_simple_delayed_request_test \
+  $(BINDIR)/$(CONFIG)/h2_census_simple_request_test \
+  $(BINDIR)/$(CONFIG)/h2_census_trailing_metadata_test \
+  $(BINDIR)/$(CONFIG)/h2_compress_bad_hostname_test \
+  $(BINDIR)/$(CONFIG)/h2_compress_binary_metadata_test \
+  $(BINDIR)/$(CONFIG)/h2_compress_call_creds_test \
+  $(BINDIR)/$(CONFIG)/h2_compress_cancel_after_accept_test \
+  $(BINDIR)/$(CONFIG)/h2_compress_cancel_after_client_done_test \
+  $(BINDIR)/$(CONFIG)/h2_compress_cancel_after_invoke_test \
+  $(BINDIR)/$(CONFIG)/h2_compress_cancel_before_invoke_test \
+  $(BINDIR)/$(CONFIG)/h2_compress_cancel_in_a_vacuum_test \
+  $(BINDIR)/$(CONFIG)/h2_compress_cancel_with_status_test \
+  $(BINDIR)/$(CONFIG)/h2_compress_channel_connectivity_test \
+  $(BINDIR)/$(CONFIG)/h2_compress_channel_ping_test \
+  $(BINDIR)/$(CONFIG)/h2_compress_compressed_payload_test \
+  $(BINDIR)/$(CONFIG)/h2_compress_default_host_test \
+  $(BINDIR)/$(CONFIG)/h2_compress_disappearing_server_test \
+  $(BINDIR)/$(CONFIG)/h2_compress_empty_batch_test \
+  $(BINDIR)/$(CONFIG)/h2_compress_graceful_server_shutdown_test \
+  $(BINDIR)/$(CONFIG)/h2_compress_high_initial_seqno_test \
+  $(BINDIR)/$(CONFIG)/h2_compress_hpack_size_test \
+  $(BINDIR)/$(CONFIG)/h2_compress_invoke_large_request_test \
+  $(BINDIR)/$(CONFIG)/h2_compress_large_metadata_test \
+  $(BINDIR)/$(CONFIG)/h2_compress_max_concurrent_streams_test \
+  $(BINDIR)/$(CONFIG)/h2_compress_max_message_length_test \
+  $(BINDIR)/$(CONFIG)/h2_compress_metadata_test \
+  $(BINDIR)/$(CONFIG)/h2_compress_negative_deadline_test \
+  $(BINDIR)/$(CONFIG)/h2_compress_no_op_test \
+  $(BINDIR)/$(CONFIG)/h2_compress_payload_test \
+  $(BINDIR)/$(CONFIG)/h2_compress_ping_pong_streaming_test \
+  $(BINDIR)/$(CONFIG)/h2_compress_registered_call_test \
+  $(BINDIR)/$(CONFIG)/h2_compress_request_with_flags_test \
+  $(BINDIR)/$(CONFIG)/h2_compress_request_with_payload_test \
+  $(BINDIR)/$(CONFIG)/h2_compress_server_finishes_request_test \
+  $(BINDIR)/$(CONFIG)/h2_compress_shutdown_finishes_calls_test \
+  $(BINDIR)/$(CONFIG)/h2_compress_shutdown_finishes_tags_test \
+  $(BINDIR)/$(CONFIG)/h2_compress_simple_delayed_request_test \
+  $(BINDIR)/$(CONFIG)/h2_compress_simple_request_test \
+  $(BINDIR)/$(CONFIG)/h2_compress_trailing_metadata_test \
+  $(BINDIR)/$(CONFIG)/h2_fakesec_bad_hostname_test \
+  $(BINDIR)/$(CONFIG)/h2_fakesec_binary_metadata_test \
+  $(BINDIR)/$(CONFIG)/h2_fakesec_call_creds_test \
+  $(BINDIR)/$(CONFIG)/h2_fakesec_cancel_after_accept_test \
+  $(BINDIR)/$(CONFIG)/h2_fakesec_cancel_after_client_done_test \
+  $(BINDIR)/$(CONFIG)/h2_fakesec_cancel_after_invoke_test \
+  $(BINDIR)/$(CONFIG)/h2_fakesec_cancel_before_invoke_test \
+  $(BINDIR)/$(CONFIG)/h2_fakesec_cancel_in_a_vacuum_test \
+  $(BINDIR)/$(CONFIG)/h2_fakesec_cancel_with_status_test \
+  $(BINDIR)/$(CONFIG)/h2_fakesec_channel_connectivity_test \
+  $(BINDIR)/$(CONFIG)/h2_fakesec_channel_ping_test \
+  $(BINDIR)/$(CONFIG)/h2_fakesec_compressed_payload_test \
+  $(BINDIR)/$(CONFIG)/h2_fakesec_default_host_test \
+  $(BINDIR)/$(CONFIG)/h2_fakesec_disappearing_server_test \
+  $(BINDIR)/$(CONFIG)/h2_fakesec_empty_batch_test \
+  $(BINDIR)/$(CONFIG)/h2_fakesec_graceful_server_shutdown_test \
+  $(BINDIR)/$(CONFIG)/h2_fakesec_high_initial_seqno_test \
+  $(BINDIR)/$(CONFIG)/h2_fakesec_hpack_size_test \
+  $(BINDIR)/$(CONFIG)/h2_fakesec_invoke_large_request_test \
+  $(BINDIR)/$(CONFIG)/h2_fakesec_large_metadata_test \
+  $(BINDIR)/$(CONFIG)/h2_fakesec_max_concurrent_streams_test \
+  $(BINDIR)/$(CONFIG)/h2_fakesec_max_message_length_test \
+  $(BINDIR)/$(CONFIG)/h2_fakesec_metadata_test \
+  $(BINDIR)/$(CONFIG)/h2_fakesec_negative_deadline_test \
+  $(BINDIR)/$(CONFIG)/h2_fakesec_no_op_test \
+  $(BINDIR)/$(CONFIG)/h2_fakesec_payload_test \
+  $(BINDIR)/$(CONFIG)/h2_fakesec_ping_pong_streaming_test \
+  $(BINDIR)/$(CONFIG)/h2_fakesec_registered_call_test \
+  $(BINDIR)/$(CONFIG)/h2_fakesec_request_with_flags_test \
+  $(BINDIR)/$(CONFIG)/h2_fakesec_request_with_payload_test \
+  $(BINDIR)/$(CONFIG)/h2_fakesec_server_finishes_request_test \
+  $(BINDIR)/$(CONFIG)/h2_fakesec_shutdown_finishes_calls_test \
+  $(BINDIR)/$(CONFIG)/h2_fakesec_shutdown_finishes_tags_test \
+  $(BINDIR)/$(CONFIG)/h2_fakesec_simple_delayed_request_test \
+  $(BINDIR)/$(CONFIG)/h2_fakesec_simple_request_test \
+  $(BINDIR)/$(CONFIG)/h2_fakesec_trailing_metadata_test \
+  $(BINDIR)/$(CONFIG)/h2_full_bad_hostname_test \
+  $(BINDIR)/$(CONFIG)/h2_full_binary_metadata_test \
+  $(BINDIR)/$(CONFIG)/h2_full_call_creds_test \
+  $(BINDIR)/$(CONFIG)/h2_full_cancel_after_accept_test \
+  $(BINDIR)/$(CONFIG)/h2_full_cancel_after_client_done_test \
+  $(BINDIR)/$(CONFIG)/h2_full_cancel_after_invoke_test \
+  $(BINDIR)/$(CONFIG)/h2_full_cancel_before_invoke_test \
+  $(BINDIR)/$(CONFIG)/h2_full_cancel_in_a_vacuum_test \
+  $(BINDIR)/$(CONFIG)/h2_full_cancel_with_status_test \
+  $(BINDIR)/$(CONFIG)/h2_full_channel_connectivity_test \
+  $(BINDIR)/$(CONFIG)/h2_full_channel_ping_test \
+  $(BINDIR)/$(CONFIG)/h2_full_compressed_payload_test \
+  $(BINDIR)/$(CONFIG)/h2_full_default_host_test \
+  $(BINDIR)/$(CONFIG)/h2_full_disappearing_server_test \
+  $(BINDIR)/$(CONFIG)/h2_full_empty_batch_test \
+  $(BINDIR)/$(CONFIG)/h2_full_graceful_server_shutdown_test \
+  $(BINDIR)/$(CONFIG)/h2_full_high_initial_seqno_test \
+  $(BINDIR)/$(CONFIG)/h2_full_hpack_size_test \
+  $(BINDIR)/$(CONFIG)/h2_full_invoke_large_request_test \
+  $(BINDIR)/$(CONFIG)/h2_full_large_metadata_test \
+  $(BINDIR)/$(CONFIG)/h2_full_max_concurrent_streams_test \
+  $(BINDIR)/$(CONFIG)/h2_full_max_message_length_test \
+  $(BINDIR)/$(CONFIG)/h2_full_metadata_test \
+  $(BINDIR)/$(CONFIG)/h2_full_negative_deadline_test \
+  $(BINDIR)/$(CONFIG)/h2_full_no_op_test \
+  $(BINDIR)/$(CONFIG)/h2_full_payload_test \
+  $(BINDIR)/$(CONFIG)/h2_full_ping_pong_streaming_test \
+  $(BINDIR)/$(CONFIG)/h2_full_registered_call_test \
+  $(BINDIR)/$(CONFIG)/h2_full_request_with_flags_test \
+  $(BINDIR)/$(CONFIG)/h2_full_request_with_payload_test \
+  $(BINDIR)/$(CONFIG)/h2_full_server_finishes_request_test \
+  $(BINDIR)/$(CONFIG)/h2_full_shutdown_finishes_calls_test \
+  $(BINDIR)/$(CONFIG)/h2_full_shutdown_finishes_tags_test \
+  $(BINDIR)/$(CONFIG)/h2_full_simple_delayed_request_test \
+  $(BINDIR)/$(CONFIG)/h2_full_simple_request_test \
+  $(BINDIR)/$(CONFIG)/h2_full_trailing_metadata_test \
+  $(BINDIR)/$(CONFIG)/h2_full+pipe_bad_hostname_test \
+  $(BINDIR)/$(CONFIG)/h2_full+pipe_binary_metadata_test \
+  $(BINDIR)/$(CONFIG)/h2_full+pipe_call_creds_test \
+  $(BINDIR)/$(CONFIG)/h2_full+pipe_cancel_after_accept_test \
+  $(BINDIR)/$(CONFIG)/h2_full+pipe_cancel_after_client_done_test \
+  $(BINDIR)/$(CONFIG)/h2_full+pipe_cancel_after_invoke_test \
+  $(BINDIR)/$(CONFIG)/h2_full+pipe_cancel_before_invoke_test \
+  $(BINDIR)/$(CONFIG)/h2_full+pipe_cancel_in_a_vacuum_test \
+  $(BINDIR)/$(CONFIG)/h2_full+pipe_cancel_with_status_test \
+  $(BINDIR)/$(CONFIG)/h2_full+pipe_channel_connectivity_test \
+  $(BINDIR)/$(CONFIG)/h2_full+pipe_channel_ping_test \
+  $(BINDIR)/$(CONFIG)/h2_full+pipe_compressed_payload_test \
+  $(BINDIR)/$(CONFIG)/h2_full+pipe_default_host_test \
+  $(BINDIR)/$(CONFIG)/h2_full+pipe_disappearing_server_test \
+  $(BINDIR)/$(CONFIG)/h2_full+pipe_empty_batch_test \
+  $(BINDIR)/$(CONFIG)/h2_full+pipe_graceful_server_shutdown_test \
+  $(BINDIR)/$(CONFIG)/h2_full+pipe_high_initial_seqno_test \
+  $(BINDIR)/$(CONFIG)/h2_full+pipe_hpack_size_test \
+  $(BINDIR)/$(CONFIG)/h2_full+pipe_invoke_large_request_test \
+  $(BINDIR)/$(CONFIG)/h2_full+pipe_large_metadata_test \
+  $(BINDIR)/$(CONFIG)/h2_full+pipe_max_concurrent_streams_test \
+  $(BINDIR)/$(CONFIG)/h2_full+pipe_max_message_length_test \
+  $(BINDIR)/$(CONFIG)/h2_full+pipe_metadata_test \
+  $(BINDIR)/$(CONFIG)/h2_full+pipe_negative_deadline_test \
+  $(BINDIR)/$(CONFIG)/h2_full+pipe_no_op_test \
+  $(BINDIR)/$(CONFIG)/h2_full+pipe_payload_test \
+  $(BINDIR)/$(CONFIG)/h2_full+pipe_ping_pong_streaming_test \
+  $(BINDIR)/$(CONFIG)/h2_full+pipe_registered_call_test \
+  $(BINDIR)/$(CONFIG)/h2_full+pipe_request_with_flags_test \
+  $(BINDIR)/$(CONFIG)/h2_full+pipe_request_with_payload_test \
+  $(BINDIR)/$(CONFIG)/h2_full+pipe_server_finishes_request_test \
+  $(BINDIR)/$(CONFIG)/h2_full+pipe_shutdown_finishes_calls_test \
+  $(BINDIR)/$(CONFIG)/h2_full+pipe_shutdown_finishes_tags_test \
+  $(BINDIR)/$(CONFIG)/h2_full+pipe_simple_delayed_request_test \
+  $(BINDIR)/$(CONFIG)/h2_full+pipe_simple_request_test \
+  $(BINDIR)/$(CONFIG)/h2_full+pipe_trailing_metadata_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll_bad_hostname_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll_binary_metadata_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll_call_creds_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll_cancel_after_accept_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll_cancel_after_client_done_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll_cancel_after_invoke_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll_cancel_before_invoke_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll_cancel_in_a_vacuum_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll_cancel_with_status_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll_channel_connectivity_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll_channel_ping_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll_compressed_payload_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll_default_host_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll_disappearing_server_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll_empty_batch_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll_graceful_server_shutdown_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll_high_initial_seqno_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll_hpack_size_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll_invoke_large_request_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll_large_metadata_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll_max_concurrent_streams_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll_max_message_length_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll_metadata_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll_negative_deadline_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll_no_op_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll_payload_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll_ping_pong_streaming_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll_registered_call_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll_request_with_flags_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll_request_with_payload_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll_server_finishes_request_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll_shutdown_finishes_calls_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll_shutdown_finishes_tags_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll_simple_delayed_request_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll_simple_request_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll_trailing_metadata_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_bad_hostname_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_binary_metadata_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_call_creds_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_cancel_after_accept_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_cancel_after_client_done_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_cancel_after_invoke_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_cancel_before_invoke_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_cancel_in_a_vacuum_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_cancel_with_status_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_channel_connectivity_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_channel_ping_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_compressed_payload_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_default_host_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_disappearing_server_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_empty_batch_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_graceful_server_shutdown_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_high_initial_seqno_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_hpack_size_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_invoke_large_request_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_large_metadata_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_max_concurrent_streams_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_max_message_length_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_metadata_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_negative_deadline_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_no_op_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_payload_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_ping_pong_streaming_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_registered_call_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_request_with_flags_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_request_with_payload_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_server_finishes_request_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_shutdown_finishes_calls_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_shutdown_finishes_tags_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_simple_delayed_request_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_simple_request_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_trailing_metadata_test \
+  $(BINDIR)/$(CONFIG)/h2_oauth2_bad_hostname_test \
+  $(BINDIR)/$(CONFIG)/h2_oauth2_binary_metadata_test \
+  $(BINDIR)/$(CONFIG)/h2_oauth2_call_creds_test \
+  $(BINDIR)/$(CONFIG)/h2_oauth2_cancel_after_accept_test \
+  $(BINDIR)/$(CONFIG)/h2_oauth2_cancel_after_client_done_test \
+  $(BINDIR)/$(CONFIG)/h2_oauth2_cancel_after_invoke_test \
+  $(BINDIR)/$(CONFIG)/h2_oauth2_cancel_before_invoke_test \
+  $(BINDIR)/$(CONFIG)/h2_oauth2_cancel_in_a_vacuum_test \
+  $(BINDIR)/$(CONFIG)/h2_oauth2_cancel_with_status_test \
+  $(BINDIR)/$(CONFIG)/h2_oauth2_channel_connectivity_test \
+  $(BINDIR)/$(CONFIG)/h2_oauth2_channel_ping_test \
+  $(BINDIR)/$(CONFIG)/h2_oauth2_compressed_payload_test \
+  $(BINDIR)/$(CONFIG)/h2_oauth2_default_host_test \
+  $(BINDIR)/$(CONFIG)/h2_oauth2_disappearing_server_test \
+  $(BINDIR)/$(CONFIG)/h2_oauth2_empty_batch_test \
+  $(BINDIR)/$(CONFIG)/h2_oauth2_graceful_server_shutdown_test \
+  $(BINDIR)/$(CONFIG)/h2_oauth2_high_initial_seqno_test \
+  $(BINDIR)/$(CONFIG)/h2_oauth2_hpack_size_test \
+  $(BINDIR)/$(CONFIG)/h2_oauth2_invoke_large_request_test \
+  $(BINDIR)/$(CONFIG)/h2_oauth2_large_metadata_test \
+  $(BINDIR)/$(CONFIG)/h2_oauth2_max_concurrent_streams_test \
+  $(BINDIR)/$(CONFIG)/h2_oauth2_max_message_length_test \
+  $(BINDIR)/$(CONFIG)/h2_oauth2_metadata_test \
+  $(BINDIR)/$(CONFIG)/h2_oauth2_negative_deadline_test \
+  $(BINDIR)/$(CONFIG)/h2_oauth2_no_op_test \
+  $(BINDIR)/$(CONFIG)/h2_oauth2_payload_test \
+  $(BINDIR)/$(CONFIG)/h2_oauth2_ping_pong_streaming_test \
+  $(BINDIR)/$(CONFIG)/h2_oauth2_registered_call_test \
+  $(BINDIR)/$(CONFIG)/h2_oauth2_request_with_flags_test \
+  $(BINDIR)/$(CONFIG)/h2_oauth2_request_with_payload_test \
+  $(BINDIR)/$(CONFIG)/h2_oauth2_server_finishes_request_test \
+  $(BINDIR)/$(CONFIG)/h2_oauth2_shutdown_finishes_calls_test \
+  $(BINDIR)/$(CONFIG)/h2_oauth2_shutdown_finishes_tags_test \
+  $(BINDIR)/$(CONFIG)/h2_oauth2_simple_delayed_request_test \
+  $(BINDIR)/$(CONFIG)/h2_oauth2_simple_request_test \
+  $(BINDIR)/$(CONFIG)/h2_oauth2_trailing_metadata_test \
+  $(BINDIR)/$(CONFIG)/h2_proxy_bad_hostname_test \
+  $(BINDIR)/$(CONFIG)/h2_proxy_binary_metadata_test \
+  $(BINDIR)/$(CONFIG)/h2_proxy_call_creds_test \
+  $(BINDIR)/$(CONFIG)/h2_proxy_cancel_after_accept_test \
+  $(BINDIR)/$(CONFIG)/h2_proxy_cancel_after_client_done_test \
+  $(BINDIR)/$(CONFIG)/h2_proxy_cancel_after_invoke_test \
+  $(BINDIR)/$(CONFIG)/h2_proxy_cancel_before_invoke_test \
+  $(BINDIR)/$(CONFIG)/h2_proxy_cancel_in_a_vacuum_test \
+  $(BINDIR)/$(CONFIG)/h2_proxy_cancel_with_status_test \
+  $(BINDIR)/$(CONFIG)/h2_proxy_default_host_test \
+  $(BINDIR)/$(CONFIG)/h2_proxy_disappearing_server_test \
+  $(BINDIR)/$(CONFIG)/h2_proxy_empty_batch_test \
+  $(BINDIR)/$(CONFIG)/h2_proxy_graceful_server_shutdown_test \
+  $(BINDIR)/$(CONFIG)/h2_proxy_high_initial_seqno_test \
+  $(BINDIR)/$(CONFIG)/h2_proxy_invoke_large_request_test \
+  $(BINDIR)/$(CONFIG)/h2_proxy_large_metadata_test \
+  $(BINDIR)/$(CONFIG)/h2_proxy_max_message_length_test \
+  $(BINDIR)/$(CONFIG)/h2_proxy_metadata_test \
+  $(BINDIR)/$(CONFIG)/h2_proxy_negative_deadline_test \
+  $(BINDIR)/$(CONFIG)/h2_proxy_no_op_test \
+  $(BINDIR)/$(CONFIG)/h2_proxy_payload_test \
+  $(BINDIR)/$(CONFIG)/h2_proxy_ping_pong_streaming_test \
+  $(BINDIR)/$(CONFIG)/h2_proxy_registered_call_test \
+  $(BINDIR)/$(CONFIG)/h2_proxy_request_with_payload_test \
+  $(BINDIR)/$(CONFIG)/h2_proxy_server_finishes_request_test \
+  $(BINDIR)/$(CONFIG)/h2_proxy_shutdown_finishes_calls_test \
+  $(BINDIR)/$(CONFIG)/h2_proxy_shutdown_finishes_tags_test \
+  $(BINDIR)/$(CONFIG)/h2_proxy_simple_delayed_request_test \
+  $(BINDIR)/$(CONFIG)/h2_proxy_simple_request_test \
+  $(BINDIR)/$(CONFIG)/h2_proxy_trailing_metadata_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_bad_hostname_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_binary_metadata_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_call_creds_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_cancel_after_accept_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_cancel_after_client_done_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_cancel_after_invoke_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_cancel_before_invoke_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_cancel_in_a_vacuum_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_cancel_with_status_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_compressed_payload_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_empty_batch_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_graceful_server_shutdown_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_high_initial_seqno_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_hpack_size_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_invoke_large_request_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_large_metadata_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_max_concurrent_streams_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_max_message_length_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_metadata_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_negative_deadline_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_no_op_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_payload_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_ping_pong_streaming_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_registered_call_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_request_with_flags_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_request_with_payload_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_server_finishes_request_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_shutdown_finishes_calls_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_shutdown_finishes_tags_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_simple_request_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_trailing_metadata_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair+trace_bad_hostname_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair+trace_binary_metadata_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair+trace_call_creds_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair+trace_cancel_after_accept_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair+trace_cancel_after_client_done_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair+trace_cancel_after_invoke_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair+trace_cancel_before_invoke_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair+trace_cancel_in_a_vacuum_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair+trace_cancel_with_status_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair+trace_compressed_payload_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair+trace_empty_batch_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair+trace_graceful_server_shutdown_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair+trace_high_initial_seqno_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair+trace_invoke_large_request_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair+trace_large_metadata_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair+trace_max_concurrent_streams_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair+trace_max_message_length_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair+trace_metadata_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair+trace_negative_deadline_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair+trace_no_op_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair+trace_payload_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair+trace_ping_pong_streaming_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair+trace_registered_call_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair+trace_request_with_flags_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair+trace_request_with_payload_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair+trace_server_finishes_request_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair+trace_shutdown_finishes_calls_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair+trace_shutdown_finishes_tags_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair+trace_simple_request_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair+trace_trailing_metadata_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_bad_hostname_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_binary_metadata_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_call_creds_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_cancel_after_accept_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_cancel_after_client_done_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_cancel_after_invoke_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_cancel_before_invoke_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_cancel_in_a_vacuum_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_cancel_with_status_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_compressed_payload_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_empty_batch_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_graceful_server_shutdown_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_high_initial_seqno_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_hpack_size_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_invoke_large_request_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_large_metadata_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_max_concurrent_streams_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_max_message_length_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_metadata_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_negative_deadline_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_no_op_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_payload_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_ping_pong_streaming_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_registered_call_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_request_with_flags_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_request_with_payload_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_server_finishes_request_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_shutdown_finishes_calls_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_shutdown_finishes_tags_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_simple_request_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_trailing_metadata_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl_bad_hostname_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl_binary_metadata_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl_call_creds_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl_cancel_after_accept_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl_cancel_after_client_done_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl_cancel_after_invoke_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl_cancel_before_invoke_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl_cancel_in_a_vacuum_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl_cancel_with_status_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl_channel_connectivity_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl_channel_ping_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl_compressed_payload_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl_default_host_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl_disappearing_server_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl_empty_batch_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl_graceful_server_shutdown_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl_high_initial_seqno_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl_hpack_size_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl_invoke_large_request_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl_large_metadata_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl_max_concurrent_streams_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl_max_message_length_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl_metadata_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl_negative_deadline_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl_no_op_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl_payload_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl_ping_pong_streaming_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl_registered_call_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl_request_with_flags_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl_request_with_payload_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl_server_finishes_request_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl_shutdown_finishes_calls_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl_shutdown_finishes_tags_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl_simple_delayed_request_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl_simple_request_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl_trailing_metadata_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl+poll_bad_hostname_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl+poll_binary_metadata_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl+poll_call_creds_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl+poll_cancel_after_accept_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl+poll_cancel_after_client_done_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl+poll_cancel_after_invoke_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl+poll_cancel_before_invoke_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl+poll_cancel_in_a_vacuum_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl+poll_cancel_with_status_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl+poll_channel_connectivity_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl+poll_channel_ping_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl+poll_compressed_payload_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl+poll_default_host_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl+poll_disappearing_server_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl+poll_empty_batch_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl+poll_graceful_server_shutdown_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl+poll_high_initial_seqno_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl+poll_hpack_size_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl+poll_invoke_large_request_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl+poll_large_metadata_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl+poll_max_concurrent_streams_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl+poll_max_message_length_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl+poll_metadata_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl+poll_negative_deadline_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl+poll_no_op_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl+poll_payload_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl+poll_ping_pong_streaming_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl+poll_registered_call_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl+poll_request_with_flags_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl+poll_request_with_payload_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl+poll_server_finishes_request_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl+poll_shutdown_finishes_calls_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl+poll_shutdown_finishes_tags_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl+poll_simple_delayed_request_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl+poll_simple_request_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl+poll_trailing_metadata_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl_proxy_bad_hostname_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl_proxy_binary_metadata_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl_proxy_call_creds_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl_proxy_cancel_after_accept_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl_proxy_cancel_after_client_done_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl_proxy_cancel_after_invoke_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl_proxy_cancel_before_invoke_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl_proxy_cancel_in_a_vacuum_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl_proxy_cancel_with_status_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl_proxy_default_host_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl_proxy_disappearing_server_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl_proxy_empty_batch_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl_proxy_graceful_server_shutdown_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl_proxy_high_initial_seqno_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl_proxy_invoke_large_request_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl_proxy_large_metadata_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl_proxy_max_message_length_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl_proxy_metadata_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl_proxy_negative_deadline_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl_proxy_no_op_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl_proxy_payload_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl_proxy_ping_pong_streaming_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl_proxy_registered_call_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl_proxy_request_with_payload_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl_proxy_server_finishes_request_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl_proxy_shutdown_finishes_calls_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl_proxy_shutdown_finishes_tags_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl_proxy_simple_delayed_request_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl_proxy_simple_request_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl_proxy_trailing_metadata_test \
+  $(BINDIR)/$(CONFIG)/h2_uchannel_bad_hostname_test \
+  $(BINDIR)/$(CONFIG)/h2_uchannel_binary_metadata_test \
+  $(BINDIR)/$(CONFIG)/h2_uchannel_call_creds_test \
+  $(BINDIR)/$(CONFIG)/h2_uchannel_cancel_after_accept_test \
+  $(BINDIR)/$(CONFIG)/h2_uchannel_cancel_after_client_done_test \
+  $(BINDIR)/$(CONFIG)/h2_uchannel_cancel_after_invoke_test \
+  $(BINDIR)/$(CONFIG)/h2_uchannel_cancel_before_invoke_test \
+  $(BINDIR)/$(CONFIG)/h2_uchannel_cancel_in_a_vacuum_test \
+  $(BINDIR)/$(CONFIG)/h2_uchannel_cancel_with_status_test \
+  $(BINDIR)/$(CONFIG)/h2_uchannel_compressed_payload_test \
+  $(BINDIR)/$(CONFIG)/h2_uchannel_empty_batch_test \
+  $(BINDIR)/$(CONFIG)/h2_uchannel_graceful_server_shutdown_test \
+  $(BINDIR)/$(CONFIG)/h2_uchannel_high_initial_seqno_test \
+  $(BINDIR)/$(CONFIG)/h2_uchannel_hpack_size_test \
+  $(BINDIR)/$(CONFIG)/h2_uchannel_invoke_large_request_test \
+  $(BINDIR)/$(CONFIG)/h2_uchannel_large_metadata_test \
+  $(BINDIR)/$(CONFIG)/h2_uchannel_max_concurrent_streams_test \
+  $(BINDIR)/$(CONFIG)/h2_uchannel_max_message_length_test \
+  $(BINDIR)/$(CONFIG)/h2_uchannel_metadata_test \
+  $(BINDIR)/$(CONFIG)/h2_uchannel_negative_deadline_test \
+  $(BINDIR)/$(CONFIG)/h2_uchannel_no_op_test \
+  $(BINDIR)/$(CONFIG)/h2_uchannel_payload_test \
+  $(BINDIR)/$(CONFIG)/h2_uchannel_ping_pong_streaming_test \
+  $(BINDIR)/$(CONFIG)/h2_uchannel_registered_call_test \
+  $(BINDIR)/$(CONFIG)/h2_uchannel_request_with_flags_test \
+  $(BINDIR)/$(CONFIG)/h2_uchannel_request_with_payload_test \
+  $(BINDIR)/$(CONFIG)/h2_uchannel_server_finishes_request_test \
+  $(BINDIR)/$(CONFIG)/h2_uchannel_shutdown_finishes_calls_test \
+  $(BINDIR)/$(CONFIG)/h2_uchannel_shutdown_finishes_tags_test \
+  $(BINDIR)/$(CONFIG)/h2_uchannel_simple_request_test \
+  $(BINDIR)/$(CONFIG)/h2_uchannel_trailing_metadata_test \
+  $(BINDIR)/$(CONFIG)/h2_uds_bad_hostname_test \
+  $(BINDIR)/$(CONFIG)/h2_uds_binary_metadata_test \
+  $(BINDIR)/$(CONFIG)/h2_uds_call_creds_test \
+  $(BINDIR)/$(CONFIG)/h2_uds_cancel_after_accept_test \
+  $(BINDIR)/$(CONFIG)/h2_uds_cancel_after_client_done_test \
+  $(BINDIR)/$(CONFIG)/h2_uds_cancel_after_invoke_test \
+  $(BINDIR)/$(CONFIG)/h2_uds_cancel_before_invoke_test \
+  $(BINDIR)/$(CONFIG)/h2_uds_cancel_in_a_vacuum_test \
+  $(BINDIR)/$(CONFIG)/h2_uds_cancel_with_status_test \
+  $(BINDIR)/$(CONFIG)/h2_uds_channel_connectivity_test \
+  $(BINDIR)/$(CONFIG)/h2_uds_channel_ping_test \
+  $(BINDIR)/$(CONFIG)/h2_uds_compressed_payload_test \
+  $(BINDIR)/$(CONFIG)/h2_uds_disappearing_server_test \
+  $(BINDIR)/$(CONFIG)/h2_uds_empty_batch_test \
+  $(BINDIR)/$(CONFIG)/h2_uds_graceful_server_shutdown_test \
+  $(BINDIR)/$(CONFIG)/h2_uds_high_initial_seqno_test \
+  $(BINDIR)/$(CONFIG)/h2_uds_hpack_size_test \
+  $(BINDIR)/$(CONFIG)/h2_uds_invoke_large_request_test \
+  $(BINDIR)/$(CONFIG)/h2_uds_large_metadata_test \
+  $(BINDIR)/$(CONFIG)/h2_uds_max_concurrent_streams_test \
+  $(BINDIR)/$(CONFIG)/h2_uds_max_message_length_test \
+  $(BINDIR)/$(CONFIG)/h2_uds_metadata_test \
+  $(BINDIR)/$(CONFIG)/h2_uds_negative_deadline_test \
+  $(BINDIR)/$(CONFIG)/h2_uds_no_op_test \
+  $(BINDIR)/$(CONFIG)/h2_uds_payload_test \
+  $(BINDIR)/$(CONFIG)/h2_uds_ping_pong_streaming_test \
+  $(BINDIR)/$(CONFIG)/h2_uds_registered_call_test \
+  $(BINDIR)/$(CONFIG)/h2_uds_request_with_flags_test \
+  $(BINDIR)/$(CONFIG)/h2_uds_request_with_payload_test \
+  $(BINDIR)/$(CONFIG)/h2_uds_server_finishes_request_test \
+  $(BINDIR)/$(CONFIG)/h2_uds_shutdown_finishes_calls_test \
+  $(BINDIR)/$(CONFIG)/h2_uds_shutdown_finishes_tags_test \
+  $(BINDIR)/$(CONFIG)/h2_uds_simple_delayed_request_test \
+  $(BINDIR)/$(CONFIG)/h2_uds_simple_request_test \
+  $(BINDIR)/$(CONFIG)/h2_uds_trailing_metadata_test \
+  $(BINDIR)/$(CONFIG)/h2_uds+poll_bad_hostname_test \
+  $(BINDIR)/$(CONFIG)/h2_uds+poll_binary_metadata_test \
+  $(BINDIR)/$(CONFIG)/h2_uds+poll_call_creds_test \
+  $(BINDIR)/$(CONFIG)/h2_uds+poll_cancel_after_accept_test \
+  $(BINDIR)/$(CONFIG)/h2_uds+poll_cancel_after_client_done_test \
+  $(BINDIR)/$(CONFIG)/h2_uds+poll_cancel_after_invoke_test \
+  $(BINDIR)/$(CONFIG)/h2_uds+poll_cancel_before_invoke_test \
+  $(BINDIR)/$(CONFIG)/h2_uds+poll_cancel_in_a_vacuum_test \
+  $(BINDIR)/$(CONFIG)/h2_uds+poll_cancel_with_status_test \
+  $(BINDIR)/$(CONFIG)/h2_uds+poll_channel_connectivity_test \
+  $(BINDIR)/$(CONFIG)/h2_uds+poll_channel_ping_test \
+  $(BINDIR)/$(CONFIG)/h2_uds+poll_compressed_payload_test \
+  $(BINDIR)/$(CONFIG)/h2_uds+poll_disappearing_server_test \
+  $(BINDIR)/$(CONFIG)/h2_uds+poll_empty_batch_test \
+  $(BINDIR)/$(CONFIG)/h2_uds+poll_graceful_server_shutdown_test \
+  $(BINDIR)/$(CONFIG)/h2_uds+poll_high_initial_seqno_test \
+  $(BINDIR)/$(CONFIG)/h2_uds+poll_hpack_size_test \
+  $(BINDIR)/$(CONFIG)/h2_uds+poll_invoke_large_request_test \
+  $(BINDIR)/$(CONFIG)/h2_uds+poll_large_metadata_test \
+  $(BINDIR)/$(CONFIG)/h2_uds+poll_max_concurrent_streams_test \
+  $(BINDIR)/$(CONFIG)/h2_uds+poll_max_message_length_test \
+  $(BINDIR)/$(CONFIG)/h2_uds+poll_metadata_test \
+  $(BINDIR)/$(CONFIG)/h2_uds+poll_negative_deadline_test \
+  $(BINDIR)/$(CONFIG)/h2_uds+poll_no_op_test \
+  $(BINDIR)/$(CONFIG)/h2_uds+poll_payload_test \
+  $(BINDIR)/$(CONFIG)/h2_uds+poll_ping_pong_streaming_test \
+  $(BINDIR)/$(CONFIG)/h2_uds+poll_registered_call_test \
+  $(BINDIR)/$(CONFIG)/h2_uds+poll_request_with_flags_test \
+  $(BINDIR)/$(CONFIG)/h2_uds+poll_request_with_payload_test \
+  $(BINDIR)/$(CONFIG)/h2_uds+poll_server_finishes_request_test \
+  $(BINDIR)/$(CONFIG)/h2_uds+poll_shutdown_finishes_calls_test \
+  $(BINDIR)/$(CONFIG)/h2_uds+poll_shutdown_finishes_tags_test \
+  $(BINDIR)/$(CONFIG)/h2_uds+poll_simple_delayed_request_test \
+  $(BINDIR)/$(CONFIG)/h2_uds+poll_simple_request_test \
+  $(BINDIR)/$(CONFIG)/h2_uds+poll_trailing_metadata_test \
+  $(BINDIR)/$(CONFIG)/h2_census_bad_hostname_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_census_binary_metadata_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_census_cancel_after_accept_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_census_cancel_after_client_done_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_census_cancel_after_invoke_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_census_cancel_before_invoke_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_census_cancel_in_a_vacuum_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_census_cancel_with_status_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_census_channel_connectivity_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_census_channel_ping_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_census_compressed_payload_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_census_default_host_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_census_disappearing_server_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_census_empty_batch_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_census_graceful_server_shutdown_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_census_high_initial_seqno_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_census_hpack_size_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_census_invoke_large_request_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_census_large_metadata_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_census_max_concurrent_streams_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_census_max_message_length_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_census_metadata_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_census_negative_deadline_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_census_no_op_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_census_payload_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_census_ping_pong_streaming_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_census_registered_call_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_census_request_with_flags_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_census_request_with_payload_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_census_server_finishes_request_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_census_shutdown_finishes_calls_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_census_shutdown_finishes_tags_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_census_simple_delayed_request_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_census_simple_request_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_census_trailing_metadata_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_compress_bad_hostname_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_compress_binary_metadata_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_compress_cancel_after_accept_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_compress_cancel_after_client_done_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_compress_cancel_after_invoke_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_compress_cancel_before_invoke_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_compress_cancel_in_a_vacuum_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_compress_cancel_with_status_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_compress_channel_connectivity_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_compress_channel_ping_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_compress_compressed_payload_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_compress_default_host_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_compress_disappearing_server_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_compress_empty_batch_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_compress_graceful_server_shutdown_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_compress_high_initial_seqno_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_compress_hpack_size_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_compress_invoke_large_request_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_compress_large_metadata_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_compress_max_concurrent_streams_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_compress_max_message_length_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_compress_metadata_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_compress_negative_deadline_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_compress_no_op_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_compress_payload_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_compress_ping_pong_streaming_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_compress_registered_call_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_compress_request_with_flags_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_compress_request_with_payload_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_compress_server_finishes_request_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_compress_shutdown_finishes_calls_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_compress_shutdown_finishes_tags_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_compress_simple_delayed_request_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_compress_simple_request_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_compress_trailing_metadata_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full_bad_hostname_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full_binary_metadata_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full_cancel_after_accept_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full_cancel_after_client_done_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full_cancel_after_invoke_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full_cancel_before_invoke_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full_cancel_in_a_vacuum_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full_cancel_with_status_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full_channel_connectivity_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full_channel_ping_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full_compressed_payload_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full_default_host_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full_disappearing_server_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full_empty_batch_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full_graceful_server_shutdown_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full_high_initial_seqno_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full_hpack_size_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full_invoke_large_request_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full_large_metadata_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full_max_concurrent_streams_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full_max_message_length_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full_metadata_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full_negative_deadline_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full_no_op_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full_payload_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full_ping_pong_streaming_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full_registered_call_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full_request_with_flags_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full_request_with_payload_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full_server_finishes_request_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full_shutdown_finishes_calls_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full_shutdown_finishes_tags_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full_simple_delayed_request_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full_simple_request_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full_trailing_metadata_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+pipe_bad_hostname_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+pipe_binary_metadata_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+pipe_cancel_after_accept_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+pipe_cancel_after_client_done_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+pipe_cancel_after_invoke_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+pipe_cancel_before_invoke_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+pipe_cancel_in_a_vacuum_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+pipe_cancel_with_status_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+pipe_channel_connectivity_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+pipe_channel_ping_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+pipe_compressed_payload_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+pipe_default_host_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+pipe_disappearing_server_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+pipe_empty_batch_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+pipe_graceful_server_shutdown_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+pipe_high_initial_seqno_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+pipe_hpack_size_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+pipe_invoke_large_request_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+pipe_large_metadata_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+pipe_max_concurrent_streams_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+pipe_max_message_length_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+pipe_metadata_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+pipe_negative_deadline_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+pipe_no_op_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+pipe_payload_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+pipe_ping_pong_streaming_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+pipe_registered_call_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+pipe_request_with_flags_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+pipe_request_with_payload_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+pipe_server_finishes_request_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+pipe_shutdown_finishes_calls_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+pipe_shutdown_finishes_tags_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+pipe_simple_delayed_request_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+pipe_simple_request_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+pipe_trailing_metadata_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll_bad_hostname_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll_binary_metadata_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll_cancel_after_accept_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll_cancel_after_client_done_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll_cancel_after_invoke_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll_cancel_before_invoke_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll_cancel_in_a_vacuum_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll_cancel_with_status_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll_channel_connectivity_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll_channel_ping_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll_compressed_payload_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll_default_host_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll_disappearing_server_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll_empty_batch_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll_graceful_server_shutdown_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll_high_initial_seqno_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll_hpack_size_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll_invoke_large_request_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll_large_metadata_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll_max_concurrent_streams_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll_max_message_length_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll_metadata_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll_negative_deadline_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll_no_op_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll_payload_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll_ping_pong_streaming_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll_registered_call_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll_request_with_flags_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll_request_with_payload_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll_server_finishes_request_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll_shutdown_finishes_calls_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll_shutdown_finishes_tags_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll_simple_delayed_request_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll_simple_request_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll_trailing_metadata_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_bad_hostname_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_binary_metadata_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_cancel_after_accept_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_cancel_after_client_done_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_cancel_after_invoke_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_cancel_before_invoke_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_cancel_in_a_vacuum_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_cancel_with_status_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_channel_connectivity_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_channel_ping_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_compressed_payload_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_default_host_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_disappearing_server_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_empty_batch_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_graceful_server_shutdown_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_high_initial_seqno_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_hpack_size_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_invoke_large_request_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_large_metadata_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_max_concurrent_streams_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_max_message_length_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_metadata_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_negative_deadline_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_no_op_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_payload_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_ping_pong_streaming_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_registered_call_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_request_with_flags_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_request_with_payload_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_server_finishes_request_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_shutdown_finishes_calls_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_shutdown_finishes_tags_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_simple_delayed_request_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_simple_request_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_trailing_metadata_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_proxy_bad_hostname_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_proxy_binary_metadata_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_proxy_cancel_after_accept_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_proxy_cancel_after_client_done_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_proxy_cancel_after_invoke_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_proxy_cancel_before_invoke_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_proxy_cancel_in_a_vacuum_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_proxy_cancel_with_status_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_proxy_default_host_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_proxy_disappearing_server_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_proxy_empty_batch_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_proxy_graceful_server_shutdown_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_proxy_high_initial_seqno_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_proxy_invoke_large_request_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_proxy_large_metadata_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_proxy_max_message_length_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_proxy_metadata_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_proxy_negative_deadline_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_proxy_no_op_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_proxy_payload_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_proxy_ping_pong_streaming_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_proxy_registered_call_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_proxy_request_with_payload_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_proxy_server_finishes_request_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_proxy_shutdown_finishes_calls_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_proxy_shutdown_finishes_tags_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_proxy_simple_delayed_request_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_proxy_simple_request_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_proxy_trailing_metadata_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_bad_hostname_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_binary_metadata_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_cancel_after_accept_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_cancel_after_client_done_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_cancel_after_invoke_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_cancel_before_invoke_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_cancel_in_a_vacuum_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_cancel_with_status_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_compressed_payload_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_empty_batch_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_graceful_server_shutdown_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_high_initial_seqno_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_hpack_size_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_invoke_large_request_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_large_metadata_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_max_concurrent_streams_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_max_message_length_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_metadata_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_negative_deadline_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_no_op_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_payload_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_ping_pong_streaming_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_registered_call_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_request_with_flags_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_request_with_payload_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_server_finishes_request_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_shutdown_finishes_calls_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_shutdown_finishes_tags_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_simple_request_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_trailing_metadata_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair+trace_bad_hostname_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair+trace_binary_metadata_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair+trace_cancel_after_accept_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair+trace_cancel_after_client_done_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair+trace_cancel_after_invoke_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair+trace_cancel_before_invoke_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair+trace_cancel_in_a_vacuum_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair+trace_cancel_with_status_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair+trace_compressed_payload_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair+trace_empty_batch_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair+trace_graceful_server_shutdown_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair+trace_high_initial_seqno_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair+trace_invoke_large_request_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair+trace_large_metadata_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair+trace_max_concurrent_streams_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair+trace_max_message_length_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair+trace_metadata_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair+trace_negative_deadline_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair+trace_no_op_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair+trace_payload_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair+trace_ping_pong_streaming_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair+trace_registered_call_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair+trace_request_with_flags_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair+trace_request_with_payload_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair+trace_server_finishes_request_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair+trace_shutdown_finishes_calls_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair+trace_shutdown_finishes_tags_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair+trace_simple_request_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair+trace_trailing_metadata_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_bad_hostname_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_binary_metadata_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_cancel_after_accept_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_cancel_after_client_done_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_cancel_after_invoke_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_cancel_before_invoke_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_cancel_in_a_vacuum_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_cancel_with_status_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_compressed_payload_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_empty_batch_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_graceful_server_shutdown_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_high_initial_seqno_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_hpack_size_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_invoke_large_request_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_large_metadata_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_max_concurrent_streams_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_max_message_length_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_metadata_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_negative_deadline_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_no_op_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_payload_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_ping_pong_streaming_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_registered_call_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_request_with_flags_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_request_with_payload_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_server_finishes_request_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_shutdown_finishes_calls_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_shutdown_finishes_tags_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_simple_request_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_trailing_metadata_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_uchannel_bad_hostname_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_uchannel_binary_metadata_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_uchannel_cancel_after_accept_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_uchannel_cancel_after_client_done_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_uchannel_cancel_after_invoke_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_uchannel_cancel_before_invoke_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_uchannel_cancel_in_a_vacuum_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_uchannel_cancel_with_status_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_uchannel_compressed_payload_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_uchannel_empty_batch_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_uchannel_graceful_server_shutdown_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_uchannel_high_initial_seqno_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_uchannel_hpack_size_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_uchannel_invoke_large_request_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_uchannel_large_metadata_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_uchannel_max_concurrent_streams_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_uchannel_max_message_length_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_uchannel_metadata_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_uchannel_negative_deadline_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_uchannel_no_op_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_uchannel_payload_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_uchannel_ping_pong_streaming_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_uchannel_registered_call_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_uchannel_request_with_flags_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_uchannel_request_with_payload_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_uchannel_server_finishes_request_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_uchannel_shutdown_finishes_calls_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_uchannel_shutdown_finishes_tags_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_uchannel_simple_request_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_uchannel_trailing_metadata_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_uds_bad_hostname_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_uds_binary_metadata_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_uds_cancel_after_accept_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_uds_cancel_after_client_done_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_uds_cancel_after_invoke_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_uds_cancel_before_invoke_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_uds_cancel_in_a_vacuum_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_uds_cancel_with_status_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_uds_channel_connectivity_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_uds_channel_ping_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_uds_compressed_payload_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_uds_disappearing_server_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_uds_empty_batch_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_uds_graceful_server_shutdown_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_uds_high_initial_seqno_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_uds_hpack_size_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_uds_invoke_large_request_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_uds_large_metadata_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_uds_max_concurrent_streams_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_uds_max_message_length_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_uds_metadata_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_uds_negative_deadline_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_uds_no_op_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_uds_payload_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_uds_ping_pong_streaming_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_uds_registered_call_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_uds_request_with_flags_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_uds_request_with_payload_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_uds_server_finishes_request_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_uds_shutdown_finishes_calls_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_uds_shutdown_finishes_tags_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_uds_simple_delayed_request_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_uds_simple_request_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_uds_trailing_metadata_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_uds+poll_bad_hostname_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_uds+poll_binary_metadata_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_uds+poll_cancel_after_accept_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_uds+poll_cancel_after_client_done_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_uds+poll_cancel_after_invoke_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_uds+poll_cancel_before_invoke_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_uds+poll_cancel_in_a_vacuum_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_uds+poll_cancel_with_status_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_uds+poll_channel_connectivity_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_uds+poll_channel_ping_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_uds+poll_compressed_payload_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_uds+poll_disappearing_server_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_uds+poll_empty_batch_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_uds+poll_graceful_server_shutdown_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_uds+poll_high_initial_seqno_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_uds+poll_hpack_size_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_uds+poll_invoke_large_request_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_uds+poll_large_metadata_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_uds+poll_max_concurrent_streams_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_uds+poll_max_message_length_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_uds+poll_metadata_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_uds+poll_negative_deadline_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_uds+poll_no_op_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_uds+poll_payload_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_uds+poll_ping_pong_streaming_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_uds+poll_registered_call_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_uds+poll_request_with_flags_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_uds+poll_request_with_payload_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_uds+poll_server_finishes_request_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_uds+poll_shutdown_finishes_calls_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_uds+poll_shutdown_finishes_tags_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_uds+poll_simple_delayed_request_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_uds+poll_simple_request_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_uds+poll_trailing_metadata_nosec_test \
+  $(BINDIR)/$(CONFIG)/badreq_bad_client_test \
+  $(BINDIR)/$(CONFIG)/connection_prefix_bad_client_test \
+  $(BINDIR)/$(CONFIG)/headers_bad_client_test \
+  $(BINDIR)/$(CONFIG)/initial_settings_frame_bad_client_test \
+  $(BINDIR)/$(CONFIG)/server_registered_method_bad_client_test \
+  $(BINDIR)/$(CONFIG)/simple_request_bad_client_test \
+  $(BINDIR)/$(CONFIG)/unknown_frame_bad_client_test \
+  $(BINDIR)/$(CONFIG)/window_overflow_bad_client_test \
+  $(BINDIR)/$(CONFIG)/bad_ssl_alpn_server \
+  $(BINDIR)/$(CONFIG)/bad_ssl_cert_server \
+  $(BINDIR)/$(CONFIG)/bad_ssl_alpn_test \
+  $(BINDIR)/$(CONFIG)/bad_ssl_cert_test \
 
-buildtests_cxx: buildtests_zookeeper privatelibs_cxx $(BINDIR)/$(CONFIG)/async_end2end_test $(BINDIR)/$(CONFIG)/async_streaming_ping_pong_test $(BINDIR)/$(CONFIG)/async_unary_ping_pong_test $(BINDIR)/$(CONFIG)/auth_property_iterator_test $(BINDIR)/$(CONFIG)/channel_arguments_test $(BINDIR)/$(CONFIG)/cli_call_test $(BINDIR)/$(CONFIG)/client_crash_test $(BINDIR)/$(CONFIG)/client_crash_test_server $(BINDIR)/$(CONFIG)/credentials_test $(BINDIR)/$(CONFIG)/cxx_byte_buffer_test $(BINDIR)/$(CONFIG)/cxx_slice_test $(BINDIR)/$(CONFIG)/cxx_string_ref_test $(BINDIR)/$(CONFIG)/cxx_time_test $(BINDIR)/$(CONFIG)/end2end_test $(BINDIR)/$(CONFIG)/generic_end2end_test $(BINDIR)/$(CONFIG)/grpc_cli $(BINDIR)/$(CONFIG)/interop_client $(BINDIR)/$(CONFIG)/interop_server $(BINDIR)/$(CONFIG)/interop_test $(BINDIR)/$(CONFIG)/metrics_client $(BINDIR)/$(CONFIG)/mock_test $(BINDIR)/$(CONFIG)/qps_interarrival_test $(BINDIR)/$(CONFIG)/qps_openloop_test $(BINDIR)/$(CONFIG)/qps_test $(BINDIR)/$(CONFIG)/reconnect_interop_client $(BINDIR)/$(CONFIG)/reconnect_interop_server $(BINDIR)/$(CONFIG)/secure_auth_context_test $(BINDIR)/$(CONFIG)/secure_sync_unary_ping_pong_test $(BINDIR)/$(CONFIG)/server_crash_test $(BINDIR)/$(CONFIG)/server_crash_test_client $(BINDIR)/$(CONFIG)/shutdown_test $(BINDIR)/$(CONFIG)/status_test $(BINDIR)/$(CONFIG)/streaming_throughput_test $(BINDIR)/$(CONFIG)/stress_test $(BINDIR)/$(CONFIG)/sync_streaming_ping_pong_test $(BINDIR)/$(CONFIG)/sync_unary_ping_pong_test $(BINDIR)/$(CONFIG)/thread_stress_test
+
+buildtests_cxx: buildtests_zookeeper privatelibs_cxx \
+  $(BINDIR)/$(CONFIG)/async_end2end_test \
+  $(BINDIR)/$(CONFIG)/async_streaming_ping_pong_test \
+  $(BINDIR)/$(CONFIG)/async_unary_ping_pong_test \
+  $(BINDIR)/$(CONFIG)/auth_property_iterator_test \
+  $(BINDIR)/$(CONFIG)/channel_arguments_test \
+  $(BINDIR)/$(CONFIG)/cli_call_test \
+  $(BINDIR)/$(CONFIG)/client_crash_test \
+  $(BINDIR)/$(CONFIG)/client_crash_test_server \
+  $(BINDIR)/$(CONFIG)/credentials_test \
+  $(BINDIR)/$(CONFIG)/cxx_byte_buffer_test \
+  $(BINDIR)/$(CONFIG)/cxx_slice_test \
+  $(BINDIR)/$(CONFIG)/cxx_string_ref_test \
+  $(BINDIR)/$(CONFIG)/cxx_time_test \
+  $(BINDIR)/$(CONFIG)/end2end_test \
+  $(BINDIR)/$(CONFIG)/generic_end2end_test \
+  $(BINDIR)/$(CONFIG)/grpc_cli \
+  $(BINDIR)/$(CONFIG)/interop_client \
+  $(BINDIR)/$(CONFIG)/interop_server \
+  $(BINDIR)/$(CONFIG)/interop_test \
+  $(BINDIR)/$(CONFIG)/metrics_client \
+  $(BINDIR)/$(CONFIG)/mock_test \
+  $(BINDIR)/$(CONFIG)/qps_interarrival_test \
+  $(BINDIR)/$(CONFIG)/qps_openloop_test \
+  $(BINDIR)/$(CONFIG)/qps_test \
+  $(BINDIR)/$(CONFIG)/reconnect_interop_client \
+  $(BINDIR)/$(CONFIG)/reconnect_interop_server \
+  $(BINDIR)/$(CONFIG)/secure_auth_context_test \
+  $(BINDIR)/$(CONFIG)/secure_sync_unary_ping_pong_test \
+  $(BINDIR)/$(CONFIG)/server_crash_test \
+  $(BINDIR)/$(CONFIG)/server_crash_test_client \
+  $(BINDIR)/$(CONFIG)/shutdown_test \
+  $(BINDIR)/$(CONFIG)/status_test \
+  $(BINDIR)/$(CONFIG)/streaming_throughput_test \
+  $(BINDIR)/$(CONFIG)/stress_test \
+  $(BINDIR)/$(CONFIG)/sync_streaming_ping_pong_test \
+  $(BINDIR)/$(CONFIG)/sync_unary_ping_pong_test \
+  $(BINDIR)/$(CONFIG)/thread_stress_test \
+
 
 ifeq ($(HAS_ZOOKEEPER),true)
-buildtests_zookeeper: privatelibs_zookeeper $(BINDIR)/$(CONFIG)/zookeeper_test
+buildtests_zookeeper: privatelibs_zookeeper \
+ $(BINDIR)/$(CONFIG)/zookeeper_test \
+
 else
 buildtests_zookeeper:
 endif
@@ -1898,6 +3288,8 @@ test: test_c test_cxx test_zookeeper
 flaky_test: flaky_test_c flaky_test_cxx flaky_test_zookeeper
 
 test_c: buildtests_c
+	$(E) "[RUN]     Testing algorithm_test"
+	$(Q) $(BINDIR)/$(CONFIG)/algorithm_test || ( echo test algorithm_test failed ; exit 1 )
 	$(E) "[RUN]     Testing alloc_test"
 	$(Q) $(BINDIR)/$(CONFIG)/alloc_test || ( echo test alloc_test failed ; exit 1 )
 	$(E) "[RUN]     Testing alpn_test"
@@ -1916,6 +3308,8 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/chttp2_varint_test || ( echo test chttp2_varint_test failed ; exit 1 )
 	$(E) "[RUN]     Testing compression_test"
 	$(Q) $(BINDIR)/$(CONFIG)/compression_test || ( echo test compression_test failed ; exit 1 )
+	$(E) "[RUN]     Testing dns_resolver_test"
+	$(Q) $(BINDIR)/$(CONFIG)/dns_resolver_test || ( echo test dns_resolver_test failed ; exit 1 )
 	$(E) "[RUN]     Testing dualstack_socket_test"
 	$(Q) $(BINDIR)/$(CONFIG)/dualstack_socket_test || ( echo test dualstack_socket_test failed ; exit 1 )
 	$(E) "[RUN]     Testing endpoint_pair_test"
@@ -1994,12 +3388,16 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/httpcli_parser_test || ( echo test httpcli_parser_test failed ; exit 1 )
 	$(E) "[RUN]     Testing httpcli_test"
 	$(Q) $(BINDIR)/$(CONFIG)/httpcli_test || ( echo test httpcli_test failed ; exit 1 )
+	$(E) "[RUN]     Testing httpscli_test"
+	$(Q) $(BINDIR)/$(CONFIG)/httpscli_test || ( echo test httpscli_test failed ; exit 1 )
 	$(E) "[RUN]     Testing init_test"
 	$(Q) $(BINDIR)/$(CONFIG)/init_test || ( echo test init_test failed ; exit 1 )
 	$(E) "[RUN]     Testing invalid_call_argument_test"
 	$(Q) $(BINDIR)/$(CONFIG)/invalid_call_argument_test || ( echo test invalid_call_argument_test failed ; exit 1 )
 	$(E) "[RUN]     Testing json_rewrite_test"
 	$(Q) $(BINDIR)/$(CONFIG)/json_rewrite_test || ( echo test json_rewrite_test failed ; exit 1 )
+	$(E) "[RUN]     Testing json_stream_error_test"
+	$(Q) $(BINDIR)/$(CONFIG)/json_stream_error_test || ( echo test json_stream_error_test failed ; exit 1 )
 	$(E) "[RUN]     Testing json_test"
 	$(Q) $(BINDIR)/$(CONFIG)/json_test || ( echo test json_test failed ; exit 1 )
 	$(E) "[RUN]     Testing lame_client_test"
@@ -2016,12 +3414,22 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/no_server_test || ( echo test no_server_test failed ; exit 1 )
 	$(E) "[RUN]     Testing resolve_address_test"
 	$(Q) $(BINDIR)/$(CONFIG)/resolve_address_test || ( echo test resolve_address_test failed ; exit 1 )
+	$(E) "[RUN]     Testing secure_channel_create_test"
+	$(Q) $(BINDIR)/$(CONFIG)/secure_channel_create_test || ( echo test secure_channel_create_test failed ; exit 1 )
 	$(E) "[RUN]     Testing secure_endpoint_test"
 	$(Q) $(BINDIR)/$(CONFIG)/secure_endpoint_test || ( echo test secure_endpoint_test failed ; exit 1 )
+	$(E) "[RUN]     Testing server_chttp2_test"
+	$(Q) $(BINDIR)/$(CONFIG)/server_chttp2_test || ( echo test server_chttp2_test failed ; exit 1 )
+	$(E) "[RUN]     Testing server_test"
+	$(Q) $(BINDIR)/$(CONFIG)/server_test || ( echo test server_test failed ; exit 1 )
 	$(E) "[RUN]     Testing set_initial_connect_string_test"
 	$(Q) $(BINDIR)/$(CONFIG)/set_initial_connect_string_test || ( echo test set_initial_connect_string_test failed ; exit 1 )
+	$(E) "[RUN]     Testing sockaddr_resolver_test"
+	$(Q) $(BINDIR)/$(CONFIG)/sockaddr_resolver_test || ( echo test sockaddr_resolver_test failed ; exit 1 )
 	$(E) "[RUN]     Testing sockaddr_utils_test"
 	$(Q) $(BINDIR)/$(CONFIG)/sockaddr_utils_test || ( echo test sockaddr_utils_test failed ; exit 1 )
+	$(E) "[RUN]     Testing socket_utils_test"
+	$(Q) $(BINDIR)/$(CONFIG)/socket_utils_test || ( echo test socket_utils_test failed ; exit 1 )
 	$(E) "[RUN]     Testing tcp_client_posix_test"
 	$(Q) $(BINDIR)/$(CONFIG)/tcp_client_posix_test || ( echo test tcp_client_posix_test failed ; exit 1 )
 	$(E) "[RUN]     Testing tcp_posix_test"
@@ -2038,6 +3446,8 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/timer_list_test || ( echo test timer_list_test failed ; exit 1 )
 	$(E) "[RUN]     Testing timers_test"
 	$(Q) $(BINDIR)/$(CONFIG)/timers_test || ( echo test timers_test failed ; exit 1 )
+	$(E) "[RUN]     Testing transport_connectivity_state_test"
+	$(Q) $(BINDIR)/$(CONFIG)/transport_connectivity_state_test || ( echo test transport_connectivity_state_test failed ; exit 1 )
 	$(E) "[RUN]     Testing transport_metadata_test"
 	$(Q) $(BINDIR)/$(CONFIG)/transport_metadata_test || ( echo test transport_metadata_test failed ; exit 1 )
 	$(E) "[RUN]     Testing transport_security_test"
@@ -2048,6 +3458,78 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/uri_parser_test || ( echo test uri_parser_test failed ; exit 1 )
 	$(E) "[RUN]     Testing workqueue_test"
 	$(Q) $(BINDIR)/$(CONFIG)/workqueue_test || ( echo test workqueue_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_census_bad_hostname_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_census_bad_hostname_test || ( echo test h2_census_bad_hostname_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_census_binary_metadata_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_census_binary_metadata_test || ( echo test h2_census_binary_metadata_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_census_call_creds_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_census_call_creds_test || ( echo test h2_census_call_creds_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_census_cancel_after_accept_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_census_cancel_after_accept_test || ( echo test h2_census_cancel_after_accept_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_census_cancel_after_client_done_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_census_cancel_after_client_done_test || ( echo test h2_census_cancel_after_client_done_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_census_cancel_after_invoke_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_census_cancel_after_invoke_test || ( echo test h2_census_cancel_after_invoke_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_census_cancel_before_invoke_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_census_cancel_before_invoke_test || ( echo test h2_census_cancel_before_invoke_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_census_cancel_in_a_vacuum_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_census_cancel_in_a_vacuum_test || ( echo test h2_census_cancel_in_a_vacuum_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_census_cancel_with_status_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_census_cancel_with_status_test || ( echo test h2_census_cancel_with_status_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_census_channel_connectivity_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_census_channel_connectivity_test || ( echo test h2_census_channel_connectivity_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_census_channel_ping_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_census_channel_ping_test || ( echo test h2_census_channel_ping_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_census_compressed_payload_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_census_compressed_payload_test || ( echo test h2_census_compressed_payload_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_census_default_host_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_census_default_host_test || ( echo test h2_census_default_host_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_census_disappearing_server_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_census_disappearing_server_test || ( echo test h2_census_disappearing_server_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_census_empty_batch_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_census_empty_batch_test || ( echo test h2_census_empty_batch_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_census_graceful_server_shutdown_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_census_graceful_server_shutdown_test || ( echo test h2_census_graceful_server_shutdown_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_census_high_initial_seqno_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_census_high_initial_seqno_test || ( echo test h2_census_high_initial_seqno_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_census_hpack_size_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_census_hpack_size_test || ( echo test h2_census_hpack_size_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_census_invoke_large_request_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_census_invoke_large_request_test || ( echo test h2_census_invoke_large_request_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_census_large_metadata_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_census_large_metadata_test || ( echo test h2_census_large_metadata_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_census_max_concurrent_streams_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_census_max_concurrent_streams_test || ( echo test h2_census_max_concurrent_streams_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_census_max_message_length_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_census_max_message_length_test || ( echo test h2_census_max_message_length_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_census_metadata_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_census_metadata_test || ( echo test h2_census_metadata_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_census_negative_deadline_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_census_negative_deadline_test || ( echo test h2_census_negative_deadline_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_census_no_op_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_census_no_op_test || ( echo test h2_census_no_op_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_census_payload_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_census_payload_test || ( echo test h2_census_payload_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_census_ping_pong_streaming_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_census_ping_pong_streaming_test || ( echo test h2_census_ping_pong_streaming_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_census_registered_call_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_census_registered_call_test || ( echo test h2_census_registered_call_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_census_request_with_flags_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_census_request_with_flags_test || ( echo test h2_census_request_with_flags_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_census_request_with_payload_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_census_request_with_payload_test || ( echo test h2_census_request_with_payload_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_census_server_finishes_request_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_census_server_finishes_request_test || ( echo test h2_census_server_finishes_request_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_census_shutdown_finishes_calls_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_census_shutdown_finishes_calls_test || ( echo test h2_census_shutdown_finishes_calls_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_census_shutdown_finishes_tags_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_census_shutdown_finishes_tags_test || ( echo test h2_census_shutdown_finishes_tags_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_census_simple_delayed_request_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_census_simple_delayed_request_test || ( echo test h2_census_simple_delayed_request_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_census_simple_request_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_census_simple_request_test || ( echo test h2_census_simple_request_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_census_trailing_metadata_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_census_trailing_metadata_test || ( echo test h2_census_trailing_metadata_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_compress_bad_hostname_test"
 	$(Q) $(BINDIR)/$(CONFIG)/h2_compress_bad_hostname_test || ( echo test h2_compress_bad_hostname_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_compress_binary_metadata_test"
@@ -2066,10 +3548,10 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/h2_compress_cancel_in_a_vacuum_test || ( echo test h2_compress_cancel_in_a_vacuum_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_compress_cancel_with_status_test"
 	$(Q) $(BINDIR)/$(CONFIG)/h2_compress_cancel_with_status_test || ( echo test h2_compress_cancel_with_status_test failed ; exit 1 )
-	$(E) "[RUN]     Testing h2_compress_census_simple_request_test"
-	$(Q) $(BINDIR)/$(CONFIG)/h2_compress_census_simple_request_test || ( echo test h2_compress_census_simple_request_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_compress_channel_connectivity_test"
 	$(Q) $(BINDIR)/$(CONFIG)/h2_compress_channel_connectivity_test || ( echo test h2_compress_channel_connectivity_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_compress_channel_ping_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_compress_channel_ping_test || ( echo test h2_compress_channel_ping_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_compress_compressed_payload_test"
 	$(Q) $(BINDIR)/$(CONFIG)/h2_compress_compressed_payload_test || ( echo test h2_compress_compressed_payload_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_compress_default_host_test"
@@ -2138,10 +3620,10 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/h2_fakesec_cancel_in_a_vacuum_test || ( echo test h2_fakesec_cancel_in_a_vacuum_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_fakesec_cancel_with_status_test"
 	$(Q) $(BINDIR)/$(CONFIG)/h2_fakesec_cancel_with_status_test || ( echo test h2_fakesec_cancel_with_status_test failed ; exit 1 )
-	$(E) "[RUN]     Testing h2_fakesec_census_simple_request_test"
-	$(Q) $(BINDIR)/$(CONFIG)/h2_fakesec_census_simple_request_test || ( echo test h2_fakesec_census_simple_request_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_fakesec_channel_connectivity_test"
 	$(Q) $(BINDIR)/$(CONFIG)/h2_fakesec_channel_connectivity_test || ( echo test h2_fakesec_channel_connectivity_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_fakesec_channel_ping_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_fakesec_channel_ping_test || ( echo test h2_fakesec_channel_ping_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_fakesec_compressed_payload_test"
 	$(Q) $(BINDIR)/$(CONFIG)/h2_fakesec_compressed_payload_test || ( echo test h2_fakesec_compressed_payload_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_fakesec_default_host_test"
@@ -2210,10 +3692,10 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/h2_full_cancel_in_a_vacuum_test || ( echo test h2_full_cancel_in_a_vacuum_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_full_cancel_with_status_test"
 	$(Q) $(BINDIR)/$(CONFIG)/h2_full_cancel_with_status_test || ( echo test h2_full_cancel_with_status_test failed ; exit 1 )
-	$(E) "[RUN]     Testing h2_full_census_simple_request_test"
-	$(Q) $(BINDIR)/$(CONFIG)/h2_full_census_simple_request_test || ( echo test h2_full_census_simple_request_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_full_channel_connectivity_test"
 	$(Q) $(BINDIR)/$(CONFIG)/h2_full_channel_connectivity_test || ( echo test h2_full_channel_connectivity_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full_channel_ping_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full_channel_ping_test || ( echo test h2_full_channel_ping_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_full_compressed_payload_test"
 	$(Q) $(BINDIR)/$(CONFIG)/h2_full_compressed_payload_test || ( echo test h2_full_compressed_payload_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_full_default_host_test"
@@ -2264,6 +3746,78 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/h2_full_simple_request_test || ( echo test h2_full_simple_request_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_full_trailing_metadata_test"
 	$(Q) $(BINDIR)/$(CONFIG)/h2_full_trailing_metadata_test || ( echo test h2_full_trailing_metadata_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+pipe_bad_hostname_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+pipe_bad_hostname_test || ( echo test h2_full+pipe_bad_hostname_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+pipe_binary_metadata_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+pipe_binary_metadata_test || ( echo test h2_full+pipe_binary_metadata_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+pipe_call_creds_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+pipe_call_creds_test || ( echo test h2_full+pipe_call_creds_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+pipe_cancel_after_accept_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+pipe_cancel_after_accept_test || ( echo test h2_full+pipe_cancel_after_accept_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+pipe_cancel_after_client_done_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+pipe_cancel_after_client_done_test || ( echo test h2_full+pipe_cancel_after_client_done_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+pipe_cancel_after_invoke_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+pipe_cancel_after_invoke_test || ( echo test h2_full+pipe_cancel_after_invoke_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+pipe_cancel_before_invoke_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+pipe_cancel_before_invoke_test || ( echo test h2_full+pipe_cancel_before_invoke_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+pipe_cancel_in_a_vacuum_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+pipe_cancel_in_a_vacuum_test || ( echo test h2_full+pipe_cancel_in_a_vacuum_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+pipe_cancel_with_status_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+pipe_cancel_with_status_test || ( echo test h2_full+pipe_cancel_with_status_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+pipe_channel_connectivity_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+pipe_channel_connectivity_test || ( echo test h2_full+pipe_channel_connectivity_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+pipe_channel_ping_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+pipe_channel_ping_test || ( echo test h2_full+pipe_channel_ping_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+pipe_compressed_payload_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+pipe_compressed_payload_test || ( echo test h2_full+pipe_compressed_payload_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+pipe_default_host_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+pipe_default_host_test || ( echo test h2_full+pipe_default_host_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+pipe_disappearing_server_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+pipe_disappearing_server_test || ( echo test h2_full+pipe_disappearing_server_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+pipe_empty_batch_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+pipe_empty_batch_test || ( echo test h2_full+pipe_empty_batch_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+pipe_graceful_server_shutdown_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+pipe_graceful_server_shutdown_test || ( echo test h2_full+pipe_graceful_server_shutdown_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+pipe_high_initial_seqno_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+pipe_high_initial_seqno_test || ( echo test h2_full+pipe_high_initial_seqno_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+pipe_hpack_size_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+pipe_hpack_size_test || ( echo test h2_full+pipe_hpack_size_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+pipe_invoke_large_request_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+pipe_invoke_large_request_test || ( echo test h2_full+pipe_invoke_large_request_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+pipe_large_metadata_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+pipe_large_metadata_test || ( echo test h2_full+pipe_large_metadata_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+pipe_max_concurrent_streams_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+pipe_max_concurrent_streams_test || ( echo test h2_full+pipe_max_concurrent_streams_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+pipe_max_message_length_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+pipe_max_message_length_test || ( echo test h2_full+pipe_max_message_length_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+pipe_metadata_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+pipe_metadata_test || ( echo test h2_full+pipe_metadata_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+pipe_negative_deadline_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+pipe_negative_deadline_test || ( echo test h2_full+pipe_negative_deadline_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+pipe_no_op_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+pipe_no_op_test || ( echo test h2_full+pipe_no_op_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+pipe_payload_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+pipe_payload_test || ( echo test h2_full+pipe_payload_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+pipe_ping_pong_streaming_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+pipe_ping_pong_streaming_test || ( echo test h2_full+pipe_ping_pong_streaming_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+pipe_registered_call_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+pipe_registered_call_test || ( echo test h2_full+pipe_registered_call_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+pipe_request_with_flags_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+pipe_request_with_flags_test || ( echo test h2_full+pipe_request_with_flags_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+pipe_request_with_payload_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+pipe_request_with_payload_test || ( echo test h2_full+pipe_request_with_payload_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+pipe_server_finishes_request_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+pipe_server_finishes_request_test || ( echo test h2_full+pipe_server_finishes_request_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+pipe_shutdown_finishes_calls_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+pipe_shutdown_finishes_calls_test || ( echo test h2_full+pipe_shutdown_finishes_calls_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+pipe_shutdown_finishes_tags_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+pipe_shutdown_finishes_tags_test || ( echo test h2_full+pipe_shutdown_finishes_tags_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+pipe_simple_delayed_request_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+pipe_simple_delayed_request_test || ( echo test h2_full+pipe_simple_delayed_request_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+pipe_simple_request_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+pipe_simple_request_test || ( echo test h2_full+pipe_simple_request_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+pipe_trailing_metadata_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+pipe_trailing_metadata_test || ( echo test h2_full+pipe_trailing_metadata_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_full+poll_bad_hostname_test"
 	$(Q) $(BINDIR)/$(CONFIG)/h2_full+poll_bad_hostname_test || ( echo test h2_full+poll_bad_hostname_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_full+poll_binary_metadata_test"
@@ -2282,10 +3836,10 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/h2_full+poll_cancel_in_a_vacuum_test || ( echo test h2_full+poll_cancel_in_a_vacuum_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_full+poll_cancel_with_status_test"
 	$(Q) $(BINDIR)/$(CONFIG)/h2_full+poll_cancel_with_status_test || ( echo test h2_full+poll_cancel_with_status_test failed ; exit 1 )
-	$(E) "[RUN]     Testing h2_full+poll_census_simple_request_test"
-	$(Q) $(BINDIR)/$(CONFIG)/h2_full+poll_census_simple_request_test || ( echo test h2_full+poll_census_simple_request_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_full+poll_channel_connectivity_test"
 	$(Q) $(BINDIR)/$(CONFIG)/h2_full+poll_channel_connectivity_test || ( echo test h2_full+poll_channel_connectivity_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+poll_channel_ping_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+poll_channel_ping_test || ( echo test h2_full+poll_channel_ping_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_full+poll_compressed_payload_test"
 	$(Q) $(BINDIR)/$(CONFIG)/h2_full+poll_compressed_payload_test || ( echo test h2_full+poll_compressed_payload_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_full+poll_default_host_test"
@@ -2336,6 +3890,78 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/h2_full+poll_simple_request_test || ( echo test h2_full+poll_simple_request_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_full+poll_trailing_metadata_test"
 	$(Q) $(BINDIR)/$(CONFIG)/h2_full+poll_trailing_metadata_test || ( echo test h2_full+poll_trailing_metadata_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+poll+pipe_bad_hostname_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_bad_hostname_test || ( echo test h2_full+poll+pipe_bad_hostname_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+poll+pipe_binary_metadata_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_binary_metadata_test || ( echo test h2_full+poll+pipe_binary_metadata_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+poll+pipe_call_creds_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_call_creds_test || ( echo test h2_full+poll+pipe_call_creds_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+poll+pipe_cancel_after_accept_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_cancel_after_accept_test || ( echo test h2_full+poll+pipe_cancel_after_accept_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+poll+pipe_cancel_after_client_done_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_cancel_after_client_done_test || ( echo test h2_full+poll+pipe_cancel_after_client_done_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+poll+pipe_cancel_after_invoke_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_cancel_after_invoke_test || ( echo test h2_full+poll+pipe_cancel_after_invoke_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+poll+pipe_cancel_before_invoke_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_cancel_before_invoke_test || ( echo test h2_full+poll+pipe_cancel_before_invoke_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+poll+pipe_cancel_in_a_vacuum_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_cancel_in_a_vacuum_test || ( echo test h2_full+poll+pipe_cancel_in_a_vacuum_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+poll+pipe_cancel_with_status_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_cancel_with_status_test || ( echo test h2_full+poll+pipe_cancel_with_status_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+poll+pipe_channel_connectivity_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_channel_connectivity_test || ( echo test h2_full+poll+pipe_channel_connectivity_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+poll+pipe_channel_ping_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_channel_ping_test || ( echo test h2_full+poll+pipe_channel_ping_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+poll+pipe_compressed_payload_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_compressed_payload_test || ( echo test h2_full+poll+pipe_compressed_payload_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+poll+pipe_default_host_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_default_host_test || ( echo test h2_full+poll+pipe_default_host_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+poll+pipe_disappearing_server_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_disappearing_server_test || ( echo test h2_full+poll+pipe_disappearing_server_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+poll+pipe_empty_batch_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_empty_batch_test || ( echo test h2_full+poll+pipe_empty_batch_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+poll+pipe_graceful_server_shutdown_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_graceful_server_shutdown_test || ( echo test h2_full+poll+pipe_graceful_server_shutdown_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+poll+pipe_high_initial_seqno_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_high_initial_seqno_test || ( echo test h2_full+poll+pipe_high_initial_seqno_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+poll+pipe_hpack_size_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_hpack_size_test || ( echo test h2_full+poll+pipe_hpack_size_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+poll+pipe_invoke_large_request_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_invoke_large_request_test || ( echo test h2_full+poll+pipe_invoke_large_request_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+poll+pipe_large_metadata_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_large_metadata_test || ( echo test h2_full+poll+pipe_large_metadata_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+poll+pipe_max_concurrent_streams_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_max_concurrent_streams_test || ( echo test h2_full+poll+pipe_max_concurrent_streams_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+poll+pipe_max_message_length_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_max_message_length_test || ( echo test h2_full+poll+pipe_max_message_length_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+poll+pipe_metadata_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_metadata_test || ( echo test h2_full+poll+pipe_metadata_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+poll+pipe_negative_deadline_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_negative_deadline_test || ( echo test h2_full+poll+pipe_negative_deadline_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+poll+pipe_no_op_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_no_op_test || ( echo test h2_full+poll+pipe_no_op_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+poll+pipe_payload_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_payload_test || ( echo test h2_full+poll+pipe_payload_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+poll+pipe_ping_pong_streaming_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_ping_pong_streaming_test || ( echo test h2_full+poll+pipe_ping_pong_streaming_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+poll+pipe_registered_call_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_registered_call_test || ( echo test h2_full+poll+pipe_registered_call_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+poll+pipe_request_with_flags_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_request_with_flags_test || ( echo test h2_full+poll+pipe_request_with_flags_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+poll+pipe_request_with_payload_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_request_with_payload_test || ( echo test h2_full+poll+pipe_request_with_payload_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+poll+pipe_server_finishes_request_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_server_finishes_request_test || ( echo test h2_full+poll+pipe_server_finishes_request_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+poll+pipe_shutdown_finishes_calls_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_shutdown_finishes_calls_test || ( echo test h2_full+poll+pipe_shutdown_finishes_calls_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+poll+pipe_shutdown_finishes_tags_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_shutdown_finishes_tags_test || ( echo test h2_full+poll+pipe_shutdown_finishes_tags_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+poll+pipe_simple_delayed_request_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_simple_delayed_request_test || ( echo test h2_full+poll+pipe_simple_delayed_request_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+poll+pipe_simple_request_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_simple_request_test || ( echo test h2_full+poll+pipe_simple_request_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+poll+pipe_trailing_metadata_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_trailing_metadata_test || ( echo test h2_full+poll+pipe_trailing_metadata_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_oauth2_bad_hostname_test"
 	$(Q) $(BINDIR)/$(CONFIG)/h2_oauth2_bad_hostname_test || ( echo test h2_oauth2_bad_hostname_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_oauth2_binary_metadata_test"
@@ -2354,10 +3980,10 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/h2_oauth2_cancel_in_a_vacuum_test || ( echo test h2_oauth2_cancel_in_a_vacuum_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_oauth2_cancel_with_status_test"
 	$(Q) $(BINDIR)/$(CONFIG)/h2_oauth2_cancel_with_status_test || ( echo test h2_oauth2_cancel_with_status_test failed ; exit 1 )
-	$(E) "[RUN]     Testing h2_oauth2_census_simple_request_test"
-	$(Q) $(BINDIR)/$(CONFIG)/h2_oauth2_census_simple_request_test || ( echo test h2_oauth2_census_simple_request_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_oauth2_channel_connectivity_test"
 	$(Q) $(BINDIR)/$(CONFIG)/h2_oauth2_channel_connectivity_test || ( echo test h2_oauth2_channel_connectivity_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_oauth2_channel_ping_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_oauth2_channel_ping_test || ( echo test h2_oauth2_channel_ping_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_oauth2_compressed_payload_test"
 	$(Q) $(BINDIR)/$(CONFIG)/h2_oauth2_compressed_payload_test || ( echo test h2_oauth2_compressed_payload_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_oauth2_default_host_test"
@@ -2426,8 +4052,6 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/h2_proxy_cancel_in_a_vacuum_test || ( echo test h2_proxy_cancel_in_a_vacuum_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_proxy_cancel_with_status_test"
 	$(Q) $(BINDIR)/$(CONFIG)/h2_proxy_cancel_with_status_test || ( echo test h2_proxy_cancel_with_status_test failed ; exit 1 )
-	$(E) "[RUN]     Testing h2_proxy_census_simple_request_test"
-	$(Q) $(BINDIR)/$(CONFIG)/h2_proxy_census_simple_request_test || ( echo test h2_proxy_census_simple_request_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_proxy_default_host_test"
 	$(Q) $(BINDIR)/$(CONFIG)/h2_proxy_default_host_test || ( echo test h2_proxy_default_host_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_proxy_disappearing_server_test"
@@ -2488,8 +4112,6 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/h2_sockpair_cancel_in_a_vacuum_test || ( echo test h2_sockpair_cancel_in_a_vacuum_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_sockpair_cancel_with_status_test"
 	$(Q) $(BINDIR)/$(CONFIG)/h2_sockpair_cancel_with_status_test || ( echo test h2_sockpair_cancel_with_status_test failed ; exit 1 )
-	$(E) "[RUN]     Testing h2_sockpair_census_simple_request_test"
-	$(Q) $(BINDIR)/$(CONFIG)/h2_sockpair_census_simple_request_test || ( echo test h2_sockpair_census_simple_request_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_sockpair_compressed_payload_test"
 	$(Q) $(BINDIR)/$(CONFIG)/h2_sockpair_compressed_payload_test || ( echo test h2_sockpair_compressed_payload_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_sockpair_empty_batch_test"
@@ -2552,8 +4174,6 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/h2_sockpair+trace_cancel_in_a_vacuum_test || ( echo test h2_sockpair+trace_cancel_in_a_vacuum_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_sockpair+trace_cancel_with_status_test"
 	$(Q) $(BINDIR)/$(CONFIG)/h2_sockpair+trace_cancel_with_status_test || ( echo test h2_sockpair+trace_cancel_with_status_test failed ; exit 1 )
-	$(E) "[RUN]     Testing h2_sockpair+trace_census_simple_request_test"
-	$(Q) $(BINDIR)/$(CONFIG)/h2_sockpair+trace_census_simple_request_test || ( echo test h2_sockpair+trace_census_simple_request_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_sockpair+trace_compressed_payload_test"
 	$(Q) $(BINDIR)/$(CONFIG)/h2_sockpair+trace_compressed_payload_test || ( echo test h2_sockpair+trace_compressed_payload_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_sockpair+trace_empty_batch_test"
@@ -2614,8 +4234,6 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_cancel_in_a_vacuum_test || ( echo test h2_sockpair_1byte_cancel_in_a_vacuum_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_sockpair_1byte_cancel_with_status_test"
 	$(Q) $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_cancel_with_status_test || ( echo test h2_sockpair_1byte_cancel_with_status_test failed ; exit 1 )
-	$(E) "[RUN]     Testing h2_sockpair_1byte_census_simple_request_test"
-	$(Q) $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_census_simple_request_test || ( echo test h2_sockpair_1byte_census_simple_request_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_sockpair_1byte_compressed_payload_test"
 	$(Q) $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_compressed_payload_test || ( echo test h2_sockpair_1byte_compressed_payload_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_sockpair_1byte_empty_batch_test"
@@ -2678,10 +4296,10 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/h2_ssl_cancel_in_a_vacuum_test || ( echo test h2_ssl_cancel_in_a_vacuum_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_ssl_cancel_with_status_test"
 	$(Q) $(BINDIR)/$(CONFIG)/h2_ssl_cancel_with_status_test || ( echo test h2_ssl_cancel_with_status_test failed ; exit 1 )
-	$(E) "[RUN]     Testing h2_ssl_census_simple_request_test"
-	$(Q) $(BINDIR)/$(CONFIG)/h2_ssl_census_simple_request_test || ( echo test h2_ssl_census_simple_request_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_ssl_channel_connectivity_test"
 	$(Q) $(BINDIR)/$(CONFIG)/h2_ssl_channel_connectivity_test || ( echo test h2_ssl_channel_connectivity_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_ssl_channel_ping_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_ssl_channel_ping_test || ( echo test h2_ssl_channel_ping_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_ssl_compressed_payload_test"
 	$(Q) $(BINDIR)/$(CONFIG)/h2_ssl_compressed_payload_test || ( echo test h2_ssl_compressed_payload_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_ssl_default_host_test"
@@ -2750,10 +4368,10 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/h2_ssl+poll_cancel_in_a_vacuum_test || ( echo test h2_ssl+poll_cancel_in_a_vacuum_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_ssl+poll_cancel_with_status_test"
 	$(Q) $(BINDIR)/$(CONFIG)/h2_ssl+poll_cancel_with_status_test || ( echo test h2_ssl+poll_cancel_with_status_test failed ; exit 1 )
-	$(E) "[RUN]     Testing h2_ssl+poll_census_simple_request_test"
-	$(Q) $(BINDIR)/$(CONFIG)/h2_ssl+poll_census_simple_request_test || ( echo test h2_ssl+poll_census_simple_request_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_ssl+poll_channel_connectivity_test"
 	$(Q) $(BINDIR)/$(CONFIG)/h2_ssl+poll_channel_connectivity_test || ( echo test h2_ssl+poll_channel_connectivity_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_ssl+poll_channel_ping_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_ssl+poll_channel_ping_test || ( echo test h2_ssl+poll_channel_ping_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_ssl+poll_compressed_payload_test"
 	$(Q) $(BINDIR)/$(CONFIG)/h2_ssl+poll_compressed_payload_test || ( echo test h2_ssl+poll_compressed_payload_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_ssl+poll_default_host_test"
@@ -2822,8 +4440,6 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/h2_ssl_proxy_cancel_in_a_vacuum_test || ( echo test h2_ssl_proxy_cancel_in_a_vacuum_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_ssl_proxy_cancel_with_status_test"
 	$(Q) $(BINDIR)/$(CONFIG)/h2_ssl_proxy_cancel_with_status_test || ( echo test h2_ssl_proxy_cancel_with_status_test failed ; exit 1 )
-	$(E) "[RUN]     Testing h2_ssl_proxy_census_simple_request_test"
-	$(Q) $(BINDIR)/$(CONFIG)/h2_ssl_proxy_census_simple_request_test || ( echo test h2_ssl_proxy_census_simple_request_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_ssl_proxy_default_host_test"
 	$(Q) $(BINDIR)/$(CONFIG)/h2_ssl_proxy_default_host_test || ( echo test h2_ssl_proxy_default_host_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_ssl_proxy_disappearing_server_test"
@@ -2884,16 +4500,8 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/h2_uchannel_cancel_in_a_vacuum_test || ( echo test h2_uchannel_cancel_in_a_vacuum_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_uchannel_cancel_with_status_test"
 	$(Q) $(BINDIR)/$(CONFIG)/h2_uchannel_cancel_with_status_test || ( echo test h2_uchannel_cancel_with_status_test failed ; exit 1 )
-	$(E) "[RUN]     Testing h2_uchannel_census_simple_request_test"
-	$(Q) $(BINDIR)/$(CONFIG)/h2_uchannel_census_simple_request_test || ( echo test h2_uchannel_census_simple_request_test failed ; exit 1 )
-	$(E) "[RUN]     Testing h2_uchannel_channel_connectivity_test"
-	$(Q) $(BINDIR)/$(CONFIG)/h2_uchannel_channel_connectivity_test || ( echo test h2_uchannel_channel_connectivity_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_uchannel_compressed_payload_test"
 	$(Q) $(BINDIR)/$(CONFIG)/h2_uchannel_compressed_payload_test || ( echo test h2_uchannel_compressed_payload_test failed ; exit 1 )
-	$(E) "[RUN]     Testing h2_uchannel_default_host_test"
-	$(Q) $(BINDIR)/$(CONFIG)/h2_uchannel_default_host_test || ( echo test h2_uchannel_default_host_test failed ; exit 1 )
-	$(E) "[RUN]     Testing h2_uchannel_disappearing_server_test"
-	$(Q) $(BINDIR)/$(CONFIG)/h2_uchannel_disappearing_server_test || ( echo test h2_uchannel_disappearing_server_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_uchannel_empty_batch_test"
 	$(Q) $(BINDIR)/$(CONFIG)/h2_uchannel_empty_batch_test || ( echo test h2_uchannel_empty_batch_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_uchannel_graceful_server_shutdown_test"
@@ -2932,8 +4540,6 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/h2_uchannel_shutdown_finishes_calls_test || ( echo test h2_uchannel_shutdown_finishes_calls_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_uchannel_shutdown_finishes_tags_test"
 	$(Q) $(BINDIR)/$(CONFIG)/h2_uchannel_shutdown_finishes_tags_test || ( echo test h2_uchannel_shutdown_finishes_tags_test failed ; exit 1 )
-	$(E) "[RUN]     Testing h2_uchannel_simple_delayed_request_test"
-	$(Q) $(BINDIR)/$(CONFIG)/h2_uchannel_simple_delayed_request_test || ( echo test h2_uchannel_simple_delayed_request_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_uchannel_simple_request_test"
 	$(Q) $(BINDIR)/$(CONFIG)/h2_uchannel_simple_request_test || ( echo test h2_uchannel_simple_request_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_uchannel_trailing_metadata_test"
@@ -2956,10 +4562,10 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/h2_uds_cancel_in_a_vacuum_test || ( echo test h2_uds_cancel_in_a_vacuum_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_uds_cancel_with_status_test"
 	$(Q) $(BINDIR)/$(CONFIG)/h2_uds_cancel_with_status_test || ( echo test h2_uds_cancel_with_status_test failed ; exit 1 )
-	$(E) "[RUN]     Testing h2_uds_census_simple_request_test"
-	$(Q) $(BINDIR)/$(CONFIG)/h2_uds_census_simple_request_test || ( echo test h2_uds_census_simple_request_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_uds_channel_connectivity_test"
 	$(Q) $(BINDIR)/$(CONFIG)/h2_uds_channel_connectivity_test || ( echo test h2_uds_channel_connectivity_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_uds_channel_ping_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_uds_channel_ping_test || ( echo test h2_uds_channel_ping_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_uds_compressed_payload_test"
 	$(Q) $(BINDIR)/$(CONFIG)/h2_uds_compressed_payload_test || ( echo test h2_uds_compressed_payload_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_uds_disappearing_server_test"
@@ -3026,10 +4632,10 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/h2_uds+poll_cancel_in_a_vacuum_test || ( echo test h2_uds+poll_cancel_in_a_vacuum_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_uds+poll_cancel_with_status_test"
 	$(Q) $(BINDIR)/$(CONFIG)/h2_uds+poll_cancel_with_status_test || ( echo test h2_uds+poll_cancel_with_status_test failed ; exit 1 )
-	$(E) "[RUN]     Testing h2_uds+poll_census_simple_request_test"
-	$(Q) $(BINDIR)/$(CONFIG)/h2_uds+poll_census_simple_request_test || ( echo test h2_uds+poll_census_simple_request_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_uds+poll_channel_connectivity_test"
 	$(Q) $(BINDIR)/$(CONFIG)/h2_uds+poll_channel_connectivity_test || ( echo test h2_uds+poll_channel_connectivity_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_uds+poll_channel_ping_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_uds+poll_channel_ping_test || ( echo test h2_uds+poll_channel_ping_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_uds+poll_compressed_payload_test"
 	$(Q) $(BINDIR)/$(CONFIG)/h2_uds+poll_compressed_payload_test || ( echo test h2_uds+poll_compressed_payload_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_uds+poll_disappearing_server_test"
@@ -3078,6 +4684,76 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/h2_uds+poll_simple_request_test || ( echo test h2_uds+poll_simple_request_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_uds+poll_trailing_metadata_test"
 	$(Q) $(BINDIR)/$(CONFIG)/h2_uds+poll_trailing_metadata_test || ( echo test h2_uds+poll_trailing_metadata_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_census_bad_hostname_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_census_bad_hostname_nosec_test || ( echo test h2_census_bad_hostname_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_census_binary_metadata_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_census_binary_metadata_nosec_test || ( echo test h2_census_binary_metadata_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_census_cancel_after_accept_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_census_cancel_after_accept_nosec_test || ( echo test h2_census_cancel_after_accept_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_census_cancel_after_client_done_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_census_cancel_after_client_done_nosec_test || ( echo test h2_census_cancel_after_client_done_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_census_cancel_after_invoke_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_census_cancel_after_invoke_nosec_test || ( echo test h2_census_cancel_after_invoke_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_census_cancel_before_invoke_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_census_cancel_before_invoke_nosec_test || ( echo test h2_census_cancel_before_invoke_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_census_cancel_in_a_vacuum_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_census_cancel_in_a_vacuum_nosec_test || ( echo test h2_census_cancel_in_a_vacuum_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_census_cancel_with_status_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_census_cancel_with_status_nosec_test || ( echo test h2_census_cancel_with_status_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_census_channel_connectivity_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_census_channel_connectivity_nosec_test || ( echo test h2_census_channel_connectivity_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_census_channel_ping_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_census_channel_ping_nosec_test || ( echo test h2_census_channel_ping_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_census_compressed_payload_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_census_compressed_payload_nosec_test || ( echo test h2_census_compressed_payload_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_census_default_host_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_census_default_host_nosec_test || ( echo test h2_census_default_host_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_census_disappearing_server_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_census_disappearing_server_nosec_test || ( echo test h2_census_disappearing_server_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_census_empty_batch_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_census_empty_batch_nosec_test || ( echo test h2_census_empty_batch_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_census_graceful_server_shutdown_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_census_graceful_server_shutdown_nosec_test || ( echo test h2_census_graceful_server_shutdown_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_census_high_initial_seqno_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_census_high_initial_seqno_nosec_test || ( echo test h2_census_high_initial_seqno_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_census_hpack_size_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_census_hpack_size_nosec_test || ( echo test h2_census_hpack_size_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_census_invoke_large_request_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_census_invoke_large_request_nosec_test || ( echo test h2_census_invoke_large_request_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_census_large_metadata_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_census_large_metadata_nosec_test || ( echo test h2_census_large_metadata_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_census_max_concurrent_streams_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_census_max_concurrent_streams_nosec_test || ( echo test h2_census_max_concurrent_streams_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_census_max_message_length_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_census_max_message_length_nosec_test || ( echo test h2_census_max_message_length_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_census_metadata_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_census_metadata_nosec_test || ( echo test h2_census_metadata_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_census_negative_deadline_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_census_negative_deadline_nosec_test || ( echo test h2_census_negative_deadline_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_census_no_op_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_census_no_op_nosec_test || ( echo test h2_census_no_op_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_census_payload_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_census_payload_nosec_test || ( echo test h2_census_payload_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_census_ping_pong_streaming_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_census_ping_pong_streaming_nosec_test || ( echo test h2_census_ping_pong_streaming_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_census_registered_call_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_census_registered_call_nosec_test || ( echo test h2_census_registered_call_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_census_request_with_flags_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_census_request_with_flags_nosec_test || ( echo test h2_census_request_with_flags_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_census_request_with_payload_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_census_request_with_payload_nosec_test || ( echo test h2_census_request_with_payload_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_census_server_finishes_request_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_census_server_finishes_request_nosec_test || ( echo test h2_census_server_finishes_request_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_census_shutdown_finishes_calls_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_census_shutdown_finishes_calls_nosec_test || ( echo test h2_census_shutdown_finishes_calls_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_census_shutdown_finishes_tags_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_census_shutdown_finishes_tags_nosec_test || ( echo test h2_census_shutdown_finishes_tags_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_census_simple_delayed_request_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_census_simple_delayed_request_nosec_test || ( echo test h2_census_simple_delayed_request_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_census_simple_request_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_census_simple_request_nosec_test || ( echo test h2_census_simple_request_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_census_trailing_metadata_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_census_trailing_metadata_nosec_test || ( echo test h2_census_trailing_metadata_nosec_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_compress_bad_hostname_nosec_test"
 	$(Q) $(BINDIR)/$(CONFIG)/h2_compress_bad_hostname_nosec_test || ( echo test h2_compress_bad_hostname_nosec_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_compress_binary_metadata_nosec_test"
@@ -3094,10 +4770,10 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/h2_compress_cancel_in_a_vacuum_nosec_test || ( echo test h2_compress_cancel_in_a_vacuum_nosec_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_compress_cancel_with_status_nosec_test"
 	$(Q) $(BINDIR)/$(CONFIG)/h2_compress_cancel_with_status_nosec_test || ( echo test h2_compress_cancel_with_status_nosec_test failed ; exit 1 )
-	$(E) "[RUN]     Testing h2_compress_census_simple_request_nosec_test"
-	$(Q) $(BINDIR)/$(CONFIG)/h2_compress_census_simple_request_nosec_test || ( echo test h2_compress_census_simple_request_nosec_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_compress_channel_connectivity_nosec_test"
 	$(Q) $(BINDIR)/$(CONFIG)/h2_compress_channel_connectivity_nosec_test || ( echo test h2_compress_channel_connectivity_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_compress_channel_ping_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_compress_channel_ping_nosec_test || ( echo test h2_compress_channel_ping_nosec_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_compress_compressed_payload_nosec_test"
 	$(Q) $(BINDIR)/$(CONFIG)/h2_compress_compressed_payload_nosec_test || ( echo test h2_compress_compressed_payload_nosec_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_compress_default_host_nosec_test"
@@ -3164,10 +4840,10 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/h2_full_cancel_in_a_vacuum_nosec_test || ( echo test h2_full_cancel_in_a_vacuum_nosec_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_full_cancel_with_status_nosec_test"
 	$(Q) $(BINDIR)/$(CONFIG)/h2_full_cancel_with_status_nosec_test || ( echo test h2_full_cancel_with_status_nosec_test failed ; exit 1 )
-	$(E) "[RUN]     Testing h2_full_census_simple_request_nosec_test"
-	$(Q) $(BINDIR)/$(CONFIG)/h2_full_census_simple_request_nosec_test || ( echo test h2_full_census_simple_request_nosec_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_full_channel_connectivity_nosec_test"
 	$(Q) $(BINDIR)/$(CONFIG)/h2_full_channel_connectivity_nosec_test || ( echo test h2_full_channel_connectivity_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full_channel_ping_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full_channel_ping_nosec_test || ( echo test h2_full_channel_ping_nosec_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_full_compressed_payload_nosec_test"
 	$(Q) $(BINDIR)/$(CONFIG)/h2_full_compressed_payload_nosec_test || ( echo test h2_full_compressed_payload_nosec_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_full_default_host_nosec_test"
@@ -3218,6 +4894,76 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/h2_full_simple_request_nosec_test || ( echo test h2_full_simple_request_nosec_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_full_trailing_metadata_nosec_test"
 	$(Q) $(BINDIR)/$(CONFIG)/h2_full_trailing_metadata_nosec_test || ( echo test h2_full_trailing_metadata_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+pipe_bad_hostname_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+pipe_bad_hostname_nosec_test || ( echo test h2_full+pipe_bad_hostname_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+pipe_binary_metadata_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+pipe_binary_metadata_nosec_test || ( echo test h2_full+pipe_binary_metadata_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+pipe_cancel_after_accept_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+pipe_cancel_after_accept_nosec_test || ( echo test h2_full+pipe_cancel_after_accept_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+pipe_cancel_after_client_done_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+pipe_cancel_after_client_done_nosec_test || ( echo test h2_full+pipe_cancel_after_client_done_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+pipe_cancel_after_invoke_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+pipe_cancel_after_invoke_nosec_test || ( echo test h2_full+pipe_cancel_after_invoke_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+pipe_cancel_before_invoke_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+pipe_cancel_before_invoke_nosec_test || ( echo test h2_full+pipe_cancel_before_invoke_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+pipe_cancel_in_a_vacuum_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+pipe_cancel_in_a_vacuum_nosec_test || ( echo test h2_full+pipe_cancel_in_a_vacuum_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+pipe_cancel_with_status_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+pipe_cancel_with_status_nosec_test || ( echo test h2_full+pipe_cancel_with_status_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+pipe_channel_connectivity_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+pipe_channel_connectivity_nosec_test || ( echo test h2_full+pipe_channel_connectivity_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+pipe_channel_ping_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+pipe_channel_ping_nosec_test || ( echo test h2_full+pipe_channel_ping_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+pipe_compressed_payload_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+pipe_compressed_payload_nosec_test || ( echo test h2_full+pipe_compressed_payload_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+pipe_default_host_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+pipe_default_host_nosec_test || ( echo test h2_full+pipe_default_host_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+pipe_disappearing_server_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+pipe_disappearing_server_nosec_test || ( echo test h2_full+pipe_disappearing_server_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+pipe_empty_batch_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+pipe_empty_batch_nosec_test || ( echo test h2_full+pipe_empty_batch_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+pipe_graceful_server_shutdown_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+pipe_graceful_server_shutdown_nosec_test || ( echo test h2_full+pipe_graceful_server_shutdown_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+pipe_high_initial_seqno_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+pipe_high_initial_seqno_nosec_test || ( echo test h2_full+pipe_high_initial_seqno_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+pipe_hpack_size_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+pipe_hpack_size_nosec_test || ( echo test h2_full+pipe_hpack_size_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+pipe_invoke_large_request_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+pipe_invoke_large_request_nosec_test || ( echo test h2_full+pipe_invoke_large_request_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+pipe_large_metadata_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+pipe_large_metadata_nosec_test || ( echo test h2_full+pipe_large_metadata_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+pipe_max_concurrent_streams_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+pipe_max_concurrent_streams_nosec_test || ( echo test h2_full+pipe_max_concurrent_streams_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+pipe_max_message_length_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+pipe_max_message_length_nosec_test || ( echo test h2_full+pipe_max_message_length_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+pipe_metadata_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+pipe_metadata_nosec_test || ( echo test h2_full+pipe_metadata_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+pipe_negative_deadline_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+pipe_negative_deadline_nosec_test || ( echo test h2_full+pipe_negative_deadline_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+pipe_no_op_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+pipe_no_op_nosec_test || ( echo test h2_full+pipe_no_op_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+pipe_payload_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+pipe_payload_nosec_test || ( echo test h2_full+pipe_payload_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+pipe_ping_pong_streaming_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+pipe_ping_pong_streaming_nosec_test || ( echo test h2_full+pipe_ping_pong_streaming_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+pipe_registered_call_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+pipe_registered_call_nosec_test || ( echo test h2_full+pipe_registered_call_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+pipe_request_with_flags_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+pipe_request_with_flags_nosec_test || ( echo test h2_full+pipe_request_with_flags_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+pipe_request_with_payload_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+pipe_request_with_payload_nosec_test || ( echo test h2_full+pipe_request_with_payload_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+pipe_server_finishes_request_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+pipe_server_finishes_request_nosec_test || ( echo test h2_full+pipe_server_finishes_request_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+pipe_shutdown_finishes_calls_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+pipe_shutdown_finishes_calls_nosec_test || ( echo test h2_full+pipe_shutdown_finishes_calls_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+pipe_shutdown_finishes_tags_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+pipe_shutdown_finishes_tags_nosec_test || ( echo test h2_full+pipe_shutdown_finishes_tags_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+pipe_simple_delayed_request_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+pipe_simple_delayed_request_nosec_test || ( echo test h2_full+pipe_simple_delayed_request_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+pipe_simple_request_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+pipe_simple_request_nosec_test || ( echo test h2_full+pipe_simple_request_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+pipe_trailing_metadata_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+pipe_trailing_metadata_nosec_test || ( echo test h2_full+pipe_trailing_metadata_nosec_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_full+poll_bad_hostname_nosec_test"
 	$(Q) $(BINDIR)/$(CONFIG)/h2_full+poll_bad_hostname_nosec_test || ( echo test h2_full+poll_bad_hostname_nosec_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_full+poll_binary_metadata_nosec_test"
@@ -3234,10 +4980,10 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/h2_full+poll_cancel_in_a_vacuum_nosec_test || ( echo test h2_full+poll_cancel_in_a_vacuum_nosec_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_full+poll_cancel_with_status_nosec_test"
 	$(Q) $(BINDIR)/$(CONFIG)/h2_full+poll_cancel_with_status_nosec_test || ( echo test h2_full+poll_cancel_with_status_nosec_test failed ; exit 1 )
-	$(E) "[RUN]     Testing h2_full+poll_census_simple_request_nosec_test"
-	$(Q) $(BINDIR)/$(CONFIG)/h2_full+poll_census_simple_request_nosec_test || ( echo test h2_full+poll_census_simple_request_nosec_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_full+poll_channel_connectivity_nosec_test"
 	$(Q) $(BINDIR)/$(CONFIG)/h2_full+poll_channel_connectivity_nosec_test || ( echo test h2_full+poll_channel_connectivity_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+poll_channel_ping_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+poll_channel_ping_nosec_test || ( echo test h2_full+poll_channel_ping_nosec_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_full+poll_compressed_payload_nosec_test"
 	$(Q) $(BINDIR)/$(CONFIG)/h2_full+poll_compressed_payload_nosec_test || ( echo test h2_full+poll_compressed_payload_nosec_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_full+poll_default_host_nosec_test"
@@ -3288,6 +5034,76 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/h2_full+poll_simple_request_nosec_test || ( echo test h2_full+poll_simple_request_nosec_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_full+poll_trailing_metadata_nosec_test"
 	$(Q) $(BINDIR)/$(CONFIG)/h2_full+poll_trailing_metadata_nosec_test || ( echo test h2_full+poll_trailing_metadata_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+poll+pipe_bad_hostname_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_bad_hostname_nosec_test || ( echo test h2_full+poll+pipe_bad_hostname_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+poll+pipe_binary_metadata_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_binary_metadata_nosec_test || ( echo test h2_full+poll+pipe_binary_metadata_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+poll+pipe_cancel_after_accept_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_cancel_after_accept_nosec_test || ( echo test h2_full+poll+pipe_cancel_after_accept_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+poll+pipe_cancel_after_client_done_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_cancel_after_client_done_nosec_test || ( echo test h2_full+poll+pipe_cancel_after_client_done_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+poll+pipe_cancel_after_invoke_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_cancel_after_invoke_nosec_test || ( echo test h2_full+poll+pipe_cancel_after_invoke_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+poll+pipe_cancel_before_invoke_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_cancel_before_invoke_nosec_test || ( echo test h2_full+poll+pipe_cancel_before_invoke_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+poll+pipe_cancel_in_a_vacuum_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_cancel_in_a_vacuum_nosec_test || ( echo test h2_full+poll+pipe_cancel_in_a_vacuum_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+poll+pipe_cancel_with_status_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_cancel_with_status_nosec_test || ( echo test h2_full+poll+pipe_cancel_with_status_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+poll+pipe_channel_connectivity_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_channel_connectivity_nosec_test || ( echo test h2_full+poll+pipe_channel_connectivity_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+poll+pipe_channel_ping_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_channel_ping_nosec_test || ( echo test h2_full+poll+pipe_channel_ping_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+poll+pipe_compressed_payload_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_compressed_payload_nosec_test || ( echo test h2_full+poll+pipe_compressed_payload_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+poll+pipe_default_host_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_default_host_nosec_test || ( echo test h2_full+poll+pipe_default_host_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+poll+pipe_disappearing_server_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_disappearing_server_nosec_test || ( echo test h2_full+poll+pipe_disappearing_server_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+poll+pipe_empty_batch_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_empty_batch_nosec_test || ( echo test h2_full+poll+pipe_empty_batch_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+poll+pipe_graceful_server_shutdown_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_graceful_server_shutdown_nosec_test || ( echo test h2_full+poll+pipe_graceful_server_shutdown_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+poll+pipe_high_initial_seqno_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_high_initial_seqno_nosec_test || ( echo test h2_full+poll+pipe_high_initial_seqno_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+poll+pipe_hpack_size_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_hpack_size_nosec_test || ( echo test h2_full+poll+pipe_hpack_size_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+poll+pipe_invoke_large_request_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_invoke_large_request_nosec_test || ( echo test h2_full+poll+pipe_invoke_large_request_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+poll+pipe_large_metadata_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_large_metadata_nosec_test || ( echo test h2_full+poll+pipe_large_metadata_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+poll+pipe_max_concurrent_streams_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_max_concurrent_streams_nosec_test || ( echo test h2_full+poll+pipe_max_concurrent_streams_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+poll+pipe_max_message_length_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_max_message_length_nosec_test || ( echo test h2_full+poll+pipe_max_message_length_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+poll+pipe_metadata_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_metadata_nosec_test || ( echo test h2_full+poll+pipe_metadata_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+poll+pipe_negative_deadline_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_negative_deadline_nosec_test || ( echo test h2_full+poll+pipe_negative_deadline_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+poll+pipe_no_op_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_no_op_nosec_test || ( echo test h2_full+poll+pipe_no_op_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+poll+pipe_payload_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_payload_nosec_test || ( echo test h2_full+poll+pipe_payload_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+poll+pipe_ping_pong_streaming_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_ping_pong_streaming_nosec_test || ( echo test h2_full+poll+pipe_ping_pong_streaming_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+poll+pipe_registered_call_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_registered_call_nosec_test || ( echo test h2_full+poll+pipe_registered_call_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+poll+pipe_request_with_flags_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_request_with_flags_nosec_test || ( echo test h2_full+poll+pipe_request_with_flags_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+poll+pipe_request_with_payload_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_request_with_payload_nosec_test || ( echo test h2_full+poll+pipe_request_with_payload_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+poll+pipe_server_finishes_request_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_server_finishes_request_nosec_test || ( echo test h2_full+poll+pipe_server_finishes_request_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+poll+pipe_shutdown_finishes_calls_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_shutdown_finishes_calls_nosec_test || ( echo test h2_full+poll+pipe_shutdown_finishes_calls_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+poll+pipe_shutdown_finishes_tags_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_shutdown_finishes_tags_nosec_test || ( echo test h2_full+poll+pipe_shutdown_finishes_tags_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+poll+pipe_simple_delayed_request_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_simple_delayed_request_nosec_test || ( echo test h2_full+poll+pipe_simple_delayed_request_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+poll+pipe_simple_request_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_simple_request_nosec_test || ( echo test h2_full+poll+pipe_simple_request_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_full+poll+pipe_trailing_metadata_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_trailing_metadata_nosec_test || ( echo test h2_full+poll+pipe_trailing_metadata_nosec_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_proxy_bad_hostname_nosec_test"
 	$(Q) $(BINDIR)/$(CONFIG)/h2_proxy_bad_hostname_nosec_test || ( echo test h2_proxy_bad_hostname_nosec_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_proxy_binary_metadata_nosec_test"
@@ -3304,8 +5120,6 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/h2_proxy_cancel_in_a_vacuum_nosec_test || ( echo test h2_proxy_cancel_in_a_vacuum_nosec_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_proxy_cancel_with_status_nosec_test"
 	$(Q) $(BINDIR)/$(CONFIG)/h2_proxy_cancel_with_status_nosec_test || ( echo test h2_proxy_cancel_with_status_nosec_test failed ; exit 1 )
-	$(E) "[RUN]     Testing h2_proxy_census_simple_request_nosec_test"
-	$(Q) $(BINDIR)/$(CONFIG)/h2_proxy_census_simple_request_nosec_test || ( echo test h2_proxy_census_simple_request_nosec_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_proxy_default_host_nosec_test"
 	$(Q) $(BINDIR)/$(CONFIG)/h2_proxy_default_host_nosec_test || ( echo test h2_proxy_default_host_nosec_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_proxy_disappearing_server_nosec_test"
@@ -3364,8 +5178,6 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/h2_sockpair_cancel_in_a_vacuum_nosec_test || ( echo test h2_sockpair_cancel_in_a_vacuum_nosec_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_sockpair_cancel_with_status_nosec_test"
 	$(Q) $(BINDIR)/$(CONFIG)/h2_sockpair_cancel_with_status_nosec_test || ( echo test h2_sockpair_cancel_with_status_nosec_test failed ; exit 1 )
-	$(E) "[RUN]     Testing h2_sockpair_census_simple_request_nosec_test"
-	$(Q) $(BINDIR)/$(CONFIG)/h2_sockpair_census_simple_request_nosec_test || ( echo test h2_sockpair_census_simple_request_nosec_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_sockpair_compressed_payload_nosec_test"
 	$(Q) $(BINDIR)/$(CONFIG)/h2_sockpair_compressed_payload_nosec_test || ( echo test h2_sockpair_compressed_payload_nosec_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_sockpair_empty_batch_nosec_test"
@@ -3426,8 +5238,6 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/h2_sockpair+trace_cancel_in_a_vacuum_nosec_test || ( echo test h2_sockpair+trace_cancel_in_a_vacuum_nosec_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_sockpair+trace_cancel_with_status_nosec_test"
 	$(Q) $(BINDIR)/$(CONFIG)/h2_sockpair+trace_cancel_with_status_nosec_test || ( echo test h2_sockpair+trace_cancel_with_status_nosec_test failed ; exit 1 )
-	$(E) "[RUN]     Testing h2_sockpair+trace_census_simple_request_nosec_test"
-	$(Q) $(BINDIR)/$(CONFIG)/h2_sockpair+trace_census_simple_request_nosec_test || ( echo test h2_sockpair+trace_census_simple_request_nosec_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_sockpair+trace_compressed_payload_nosec_test"
 	$(Q) $(BINDIR)/$(CONFIG)/h2_sockpair+trace_compressed_payload_nosec_test || ( echo test h2_sockpair+trace_compressed_payload_nosec_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_sockpair+trace_empty_batch_nosec_test"
@@ -3486,8 +5296,6 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_cancel_in_a_vacuum_nosec_test || ( echo test h2_sockpair_1byte_cancel_in_a_vacuum_nosec_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_sockpair_1byte_cancel_with_status_nosec_test"
 	$(Q) $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_cancel_with_status_nosec_test || ( echo test h2_sockpair_1byte_cancel_with_status_nosec_test failed ; exit 1 )
-	$(E) "[RUN]     Testing h2_sockpair_1byte_census_simple_request_nosec_test"
-	$(Q) $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_census_simple_request_nosec_test || ( echo test h2_sockpair_1byte_census_simple_request_nosec_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_sockpair_1byte_compressed_payload_nosec_test"
 	$(Q) $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_compressed_payload_nosec_test || ( echo test h2_sockpair_1byte_compressed_payload_nosec_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_sockpair_1byte_empty_batch_nosec_test"
@@ -3548,16 +5356,8 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/h2_uchannel_cancel_in_a_vacuum_nosec_test || ( echo test h2_uchannel_cancel_in_a_vacuum_nosec_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_uchannel_cancel_with_status_nosec_test"
 	$(Q) $(BINDIR)/$(CONFIG)/h2_uchannel_cancel_with_status_nosec_test || ( echo test h2_uchannel_cancel_with_status_nosec_test failed ; exit 1 )
-	$(E) "[RUN]     Testing h2_uchannel_census_simple_request_nosec_test"
-	$(Q) $(BINDIR)/$(CONFIG)/h2_uchannel_census_simple_request_nosec_test || ( echo test h2_uchannel_census_simple_request_nosec_test failed ; exit 1 )
-	$(E) "[RUN]     Testing h2_uchannel_channel_connectivity_nosec_test"
-	$(Q) $(BINDIR)/$(CONFIG)/h2_uchannel_channel_connectivity_nosec_test || ( echo test h2_uchannel_channel_connectivity_nosec_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_uchannel_compressed_payload_nosec_test"
 	$(Q) $(BINDIR)/$(CONFIG)/h2_uchannel_compressed_payload_nosec_test || ( echo test h2_uchannel_compressed_payload_nosec_test failed ; exit 1 )
-	$(E) "[RUN]     Testing h2_uchannel_default_host_nosec_test"
-	$(Q) $(BINDIR)/$(CONFIG)/h2_uchannel_default_host_nosec_test || ( echo test h2_uchannel_default_host_nosec_test failed ; exit 1 )
-	$(E) "[RUN]     Testing h2_uchannel_disappearing_server_nosec_test"
-	$(Q) $(BINDIR)/$(CONFIG)/h2_uchannel_disappearing_server_nosec_test || ( echo test h2_uchannel_disappearing_server_nosec_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_uchannel_empty_batch_nosec_test"
 	$(Q) $(BINDIR)/$(CONFIG)/h2_uchannel_empty_batch_nosec_test || ( echo test h2_uchannel_empty_batch_nosec_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_uchannel_graceful_server_shutdown_nosec_test"
@@ -3596,8 +5396,6 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/h2_uchannel_shutdown_finishes_calls_nosec_test || ( echo test h2_uchannel_shutdown_finishes_calls_nosec_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_uchannel_shutdown_finishes_tags_nosec_test"
 	$(Q) $(BINDIR)/$(CONFIG)/h2_uchannel_shutdown_finishes_tags_nosec_test || ( echo test h2_uchannel_shutdown_finishes_tags_nosec_test failed ; exit 1 )
-	$(E) "[RUN]     Testing h2_uchannel_simple_delayed_request_nosec_test"
-	$(Q) $(BINDIR)/$(CONFIG)/h2_uchannel_simple_delayed_request_nosec_test || ( echo test h2_uchannel_simple_delayed_request_nosec_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_uchannel_simple_request_nosec_test"
 	$(Q) $(BINDIR)/$(CONFIG)/h2_uchannel_simple_request_nosec_test || ( echo test h2_uchannel_simple_request_nosec_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_uchannel_trailing_metadata_nosec_test"
@@ -3618,10 +5416,10 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/h2_uds_cancel_in_a_vacuum_nosec_test || ( echo test h2_uds_cancel_in_a_vacuum_nosec_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_uds_cancel_with_status_nosec_test"
 	$(Q) $(BINDIR)/$(CONFIG)/h2_uds_cancel_with_status_nosec_test || ( echo test h2_uds_cancel_with_status_nosec_test failed ; exit 1 )
-	$(E) "[RUN]     Testing h2_uds_census_simple_request_nosec_test"
-	$(Q) $(BINDIR)/$(CONFIG)/h2_uds_census_simple_request_nosec_test || ( echo test h2_uds_census_simple_request_nosec_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_uds_channel_connectivity_nosec_test"
 	$(Q) $(BINDIR)/$(CONFIG)/h2_uds_channel_connectivity_nosec_test || ( echo test h2_uds_channel_connectivity_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_uds_channel_ping_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_uds_channel_ping_nosec_test || ( echo test h2_uds_channel_ping_nosec_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_uds_compressed_payload_nosec_test"
 	$(Q) $(BINDIR)/$(CONFIG)/h2_uds_compressed_payload_nosec_test || ( echo test h2_uds_compressed_payload_nosec_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_uds_disappearing_server_nosec_test"
@@ -3686,10 +5484,10 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/h2_uds+poll_cancel_in_a_vacuum_nosec_test || ( echo test h2_uds+poll_cancel_in_a_vacuum_nosec_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_uds+poll_cancel_with_status_nosec_test"
 	$(Q) $(BINDIR)/$(CONFIG)/h2_uds+poll_cancel_with_status_nosec_test || ( echo test h2_uds+poll_cancel_with_status_nosec_test failed ; exit 1 )
-	$(E) "[RUN]     Testing h2_uds+poll_census_simple_request_nosec_test"
-	$(Q) $(BINDIR)/$(CONFIG)/h2_uds+poll_census_simple_request_nosec_test || ( echo test h2_uds+poll_census_simple_request_nosec_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_uds+poll_channel_connectivity_nosec_test"
 	$(Q) $(BINDIR)/$(CONFIG)/h2_uds+poll_channel_connectivity_nosec_test || ( echo test h2_uds+poll_channel_connectivity_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_uds+poll_channel_ping_nosec_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_uds+poll_channel_ping_nosec_test || ( echo test h2_uds+poll_channel_ping_nosec_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_uds+poll_compressed_payload_nosec_test"
 	$(Q) $(BINDIR)/$(CONFIG)/h2_uds+poll_compressed_payload_nosec_test || ( echo test h2_uds+poll_compressed_payload_nosec_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_uds+poll_disappearing_server_nosec_test"
@@ -3738,18 +5536,26 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/h2_uds+poll_simple_request_nosec_test || ( echo test h2_uds+poll_simple_request_nosec_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_uds+poll_trailing_metadata_nosec_test"
 	$(Q) $(BINDIR)/$(CONFIG)/h2_uds+poll_trailing_metadata_nosec_test || ( echo test h2_uds+poll_trailing_metadata_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing badreq_bad_client_test"
+	$(Q) $(BINDIR)/$(CONFIG)/badreq_bad_client_test || ( echo test badreq_bad_client_test failed ; exit 1 )
 	$(E) "[RUN]     Testing connection_prefix_bad_client_test"
 	$(Q) $(BINDIR)/$(CONFIG)/connection_prefix_bad_client_test || ( echo test connection_prefix_bad_client_test failed ; exit 1 )
 	$(E) "[RUN]     Testing headers_bad_client_test"
 	$(Q) $(BINDIR)/$(CONFIG)/headers_bad_client_test || ( echo test headers_bad_client_test failed ; exit 1 )
 	$(E) "[RUN]     Testing initial_settings_frame_bad_client_test"
 	$(Q) $(BINDIR)/$(CONFIG)/initial_settings_frame_bad_client_test || ( echo test initial_settings_frame_bad_client_test failed ; exit 1 )
+	$(E) "[RUN]     Testing server_registered_method_bad_client_test"
+	$(Q) $(BINDIR)/$(CONFIG)/server_registered_method_bad_client_test || ( echo test server_registered_method_bad_client_test failed ; exit 1 )
 	$(E) "[RUN]     Testing simple_request_bad_client_test"
 	$(Q) $(BINDIR)/$(CONFIG)/simple_request_bad_client_test || ( echo test simple_request_bad_client_test failed ; exit 1 )
 	$(E) "[RUN]     Testing unknown_frame_bad_client_test"
 	$(Q) $(BINDIR)/$(CONFIG)/unknown_frame_bad_client_test || ( echo test unknown_frame_bad_client_test failed ; exit 1 )
 	$(E) "[RUN]     Testing window_overflow_bad_client_test"
 	$(Q) $(BINDIR)/$(CONFIG)/window_overflow_bad_client_test || ( echo test window_overflow_bad_client_test failed ; exit 1 )
+	$(E) "[RUN]     Testing bad_ssl_alpn_test"
+	$(Q) $(BINDIR)/$(CONFIG)/bad_ssl_alpn_test || ( echo test bad_ssl_alpn_test failed ; exit 1 )
+	$(E) "[RUN]     Testing bad_ssl_cert_test"
+	$(Q) $(BINDIR)/$(CONFIG)/bad_ssl_cert_test || ( echo test bad_ssl_cert_test failed ; exit 1 )
 
 
 flaky_test_c: buildtests_c
@@ -4634,6 +6440,7 @@ LIBGRPC_SRC = \
     src/core/surface/channel.c \
     src/core/surface/channel_connectivity.c \
     src/core/surface/channel_create.c \
+    src/core/surface/channel_ping.c \
     src/core/surface/completion_queue.c \
     src/core/surface/event_string.c \
     src/core/surface/init.c \
@@ -4916,6 +6723,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/surface/channel.c \
     src/core/surface/channel_connectivity.c \
     src/core/surface/channel_create.c \
+    src/core/surface/channel_ping.c \
     src/core/surface/completion_queue.c \
     src/core/surface/event_string.c \
     src/core/surface/init.c \
@@ -5864,6 +7672,29 @@ endif
 endif
 
 
+LIBEND2END_FIXTURE_H2_CENSUS_SRC = \
+    test/core/end2end/fixtures/h2_census.c \
+
+
+LIBEND2END_FIXTURE_H2_CENSUS_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_FIXTURE_H2_CENSUS_SRC))))
+
+$(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a: $(ZLIB_DEP) $(LIBEND2END_FIXTURE_H2_CENSUS_OBJS)
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a
+	$(Q) $(AR) rcs $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBEND2END_FIXTURE_H2_CENSUS_OBJS)
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a
+endif
+
+
+
+
+ifneq ($(NO_DEPS),true)
+-include $(LIBEND2END_FIXTURE_H2_CENSUS_OBJS:.o=.dep)
+endif
+
+
 LIBEND2END_FIXTURE_H2_COMPRESS_SRC = \
     test/core/end2end/fixtures/h2_compress.c \
 
@@ -5947,6 +7778,29 @@ ifneq ($(NO_DEPS),true)
 endif
 
 
+LIBEND2END_FIXTURE_H2_FULL+PIPE_SRC = \
+    test/core/end2end/fixtures/h2_full+pipe.c \
+
+
+LIBEND2END_FIXTURE_H2_FULL+PIPE_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_FIXTURE_H2_FULL+PIPE_SRC))))
+
+$(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a: $(ZLIB_DEP) $(LIBEND2END_FIXTURE_H2_FULL+PIPE_OBJS)
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a
+	$(Q) $(AR) rcs $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBEND2END_FIXTURE_H2_FULL+PIPE_OBJS)
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a
+endif
+
+
+
+
+ifneq ($(NO_DEPS),true)
+-include $(LIBEND2END_FIXTURE_H2_FULL+PIPE_OBJS:.o=.dep)
+endif
+
+
 LIBEND2END_FIXTURE_H2_FULL+POLL_SRC = \
     test/core/end2end/fixtures/h2_full+poll.c \
 
@@ -5967,6 +7821,29 @@ endif
 
 ifneq ($(NO_DEPS),true)
 -include $(LIBEND2END_FIXTURE_H2_FULL+POLL_OBJS:.o=.dep)
+endif
+
+
+LIBEND2END_FIXTURE_H2_FULL+POLL+PIPE_SRC = \
+    test/core/end2end/fixtures/h2_full+poll+pipe.c \
+
+
+LIBEND2END_FIXTURE_H2_FULL+POLL+PIPE_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_FIXTURE_H2_FULL+POLL+PIPE_SRC))))
+
+$(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a: $(ZLIB_DEP) $(LIBEND2END_FIXTURE_H2_FULL+POLL+PIPE_OBJS)
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a
+	$(Q) $(AR) rcs $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBEND2END_FIXTURE_H2_FULL+POLL+PIPE_OBJS)
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a
+endif
+
+
+
+
+ifneq ($(NO_DEPS),true)
+-include $(LIBEND2END_FIXTURE_H2_FULL+POLL+PIPE_OBJS:.o=.dep)
 endif
 
 
@@ -6279,6 +8156,29 @@ ifneq ($(NO_DEPS),true)
 endif
 
 
+LIBEND2END_NOSEC_FIXTURE_H2_CENSUS_SRC = \
+    test/core/end2end/fixtures/h2_census.c \
+
+
+LIBEND2END_NOSEC_FIXTURE_H2_CENSUS_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_NOSEC_FIXTURE_H2_CENSUS_SRC))))
+
+$(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a: $(ZLIB_DEP) $(LIBEND2END_NOSEC_FIXTURE_H2_CENSUS_OBJS)
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a
+	$(Q) $(AR) rcs $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBEND2END_NOSEC_FIXTURE_H2_CENSUS_OBJS)
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a
+endif
+
+
+
+
+ifneq ($(NO_DEPS),true)
+-include $(LIBEND2END_NOSEC_FIXTURE_H2_CENSUS_OBJS:.o=.dep)
+endif
+
+
 LIBEND2END_NOSEC_FIXTURE_H2_COMPRESS_SRC = \
     test/core/end2end/fixtures/h2_compress.c \
 
@@ -6325,6 +8225,29 @@ ifneq ($(NO_DEPS),true)
 endif
 
 
+LIBEND2END_NOSEC_FIXTURE_H2_FULL+PIPE_SRC = \
+    test/core/end2end/fixtures/h2_full+pipe.c \
+
+
+LIBEND2END_NOSEC_FIXTURE_H2_FULL+PIPE_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_NOSEC_FIXTURE_H2_FULL+PIPE_SRC))))
+
+$(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a: $(ZLIB_DEP) $(LIBEND2END_NOSEC_FIXTURE_H2_FULL+PIPE_OBJS)
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a
+	$(Q) $(AR) rcs $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBEND2END_NOSEC_FIXTURE_H2_FULL+PIPE_OBJS)
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a
+endif
+
+
+
+
+ifneq ($(NO_DEPS),true)
+-include $(LIBEND2END_NOSEC_FIXTURE_H2_FULL+PIPE_OBJS:.o=.dep)
+endif
+
+
 LIBEND2END_NOSEC_FIXTURE_H2_FULL+POLL_SRC = \
     test/core/end2end/fixtures/h2_full+poll.c \
 
@@ -6345,6 +8268,29 @@ endif
 
 ifneq ($(NO_DEPS),true)
 -include $(LIBEND2END_NOSEC_FIXTURE_H2_FULL+POLL_OBJS:.o=.dep)
+endif
+
+
+LIBEND2END_NOSEC_FIXTURE_H2_FULL+POLL+PIPE_SRC = \
+    test/core/end2end/fixtures/h2_full+poll+pipe.c \
+
+
+LIBEND2END_NOSEC_FIXTURE_H2_FULL+POLL+PIPE_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_NOSEC_FIXTURE_H2_FULL+POLL+PIPE_SRC))))
+
+$(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a: $(ZLIB_DEP) $(LIBEND2END_NOSEC_FIXTURE_H2_FULL+POLL+PIPE_OBJS)
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a
+	$(Q) $(AR) rcs $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBEND2END_NOSEC_FIXTURE_H2_FULL+POLL+PIPE_OBJS)
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a
+endif
+
+
+
+
+ifneq ($(NO_DEPS),true)
+-include $(LIBEND2END_NOSEC_FIXTURE_H2_FULL+POLL+PIPE_OBJS:.o=.dep)
 endif
 
 
@@ -6730,29 +8676,6 @@ ifneq ($(NO_DEPS),true)
 endif
 
 
-LIBEND2END_TEST_CENSUS_SIMPLE_REQUEST_SRC = \
-    test/core/end2end/tests/census_simple_request.c \
-
-
-LIBEND2END_TEST_CENSUS_SIMPLE_REQUEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_TEST_CENSUS_SIMPLE_REQUEST_SRC))))
-
-$(LIBDIR)/$(CONFIG)/libend2end_test_census_simple_request.a: $(ZLIB_DEP) $(LIBEND2END_TEST_CENSUS_SIMPLE_REQUEST_OBJS)
-	$(E) "[AR]      Creating $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libend2end_test_census_simple_request.a
-	$(Q) $(AR) rcs $(LIBDIR)/$(CONFIG)/libend2end_test_census_simple_request.a $(LIBEND2END_TEST_CENSUS_SIMPLE_REQUEST_OBJS)
-ifeq ($(SYSTEM),Darwin)
-	$(Q) ranlib $(LIBDIR)/$(CONFIG)/libend2end_test_census_simple_request.a
-endif
-
-
-
-
-ifneq ($(NO_DEPS),true)
--include $(LIBEND2END_TEST_CENSUS_SIMPLE_REQUEST_OBJS:.o=.dep)
-endif
-
-
 LIBEND2END_TEST_CHANNEL_CONNECTIVITY_SRC = \
     test/core/end2end/tests/channel_connectivity.c \
 
@@ -6773,6 +8696,29 @@ endif
 
 ifneq ($(NO_DEPS),true)
 -include $(LIBEND2END_TEST_CHANNEL_CONNECTIVITY_OBJS:.o=.dep)
+endif
+
+
+LIBEND2END_TEST_CHANNEL_PING_SRC = \
+    test/core/end2end/tests/channel_ping.c \
+
+
+LIBEND2END_TEST_CHANNEL_PING_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_TEST_CHANNEL_PING_SRC))))
+
+$(LIBDIR)/$(CONFIG)/libend2end_test_channel_ping.a: $(ZLIB_DEP) $(LIBEND2END_TEST_CHANNEL_PING_OBJS)
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libend2end_test_channel_ping.a
+	$(Q) $(AR) rcs $(LIBDIR)/$(CONFIG)/libend2end_test_channel_ping.a $(LIBEND2END_TEST_CHANNEL_PING_OBJS)
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib $(LIBDIR)/$(CONFIG)/libend2end_test_channel_ping.a
+endif
+
+
+
+
+ifneq ($(NO_DEPS),true)
+-include $(LIBEND2END_TEST_CHANNEL_PING_OBJS:.o=.dep)
 endif
 
 
@@ -7535,29 +9481,6 @@ ifneq ($(NO_DEPS),true)
 endif
 
 
-LIBEND2END_NOSEC_TEST_CENSUS_SIMPLE_REQUEST_SRC = \
-    test/core/end2end/tests/census_simple_request.c \
-
-
-LIBEND2END_NOSEC_TEST_CENSUS_SIMPLE_REQUEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_NOSEC_TEST_CENSUS_SIMPLE_REQUEST_SRC))))
-
-$(LIBDIR)/$(CONFIG)/libend2end_nosec_test_census_simple_request.a: $(ZLIB_DEP) $(LIBEND2END_NOSEC_TEST_CENSUS_SIMPLE_REQUEST_OBJS)
-	$(E) "[AR]      Creating $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_census_simple_request.a
-	$(Q) $(AR) rcs $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_census_simple_request.a $(LIBEND2END_NOSEC_TEST_CENSUS_SIMPLE_REQUEST_OBJS)
-ifeq ($(SYSTEM),Darwin)
-	$(Q) ranlib $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_census_simple_request.a
-endif
-
-
-
-
-ifneq ($(NO_DEPS),true)
--include $(LIBEND2END_NOSEC_TEST_CENSUS_SIMPLE_REQUEST_OBJS:.o=.dep)
-endif
-
-
 LIBEND2END_NOSEC_TEST_CHANNEL_CONNECTIVITY_SRC = \
     test/core/end2end/tests/channel_connectivity.c \
 
@@ -7578,6 +9501,29 @@ endif
 
 ifneq ($(NO_DEPS),true)
 -include $(LIBEND2END_NOSEC_TEST_CHANNEL_CONNECTIVITY_OBJS:.o=.dep)
+endif
+
+
+LIBEND2END_NOSEC_TEST_CHANNEL_PING_SRC = \
+    test/core/end2end/tests/channel_ping.c \
+
+
+LIBEND2END_NOSEC_TEST_CHANNEL_PING_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_NOSEC_TEST_CHANNEL_PING_SRC))))
+
+$(LIBDIR)/$(CONFIG)/libend2end_nosec_test_channel_ping.a: $(ZLIB_DEP) $(LIBEND2END_NOSEC_TEST_CHANNEL_PING_OBJS)
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_channel_ping.a
+	$(Q) $(AR) rcs $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_channel_ping.a $(LIBEND2END_NOSEC_TEST_CHANNEL_PING_OBJS)
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_channel_ping.a
+endif
+
+
+
+
+ifneq ($(NO_DEPS),true)
+-include $(LIBEND2END_NOSEC_TEST_CHANNEL_PING_OBJS:.o=.dep)
 endif
 
 
@@ -8232,8 +10178,74 @@ endif
 endif
 
 
+LIBBAD_SSL_TEST_SERVER_SRC = \
+    test/core/bad_ssl/server.c \
+
+
+LIBBAD_SSL_TEST_SERVER_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBAD_SSL_TEST_SERVER_SRC))))
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure libraries if you don't have OpenSSL.
+
+$(LIBDIR)/$(CONFIG)/libbad_ssl_test_server.a: openssl_dep_error
+
+
+else
+
+
+$(LIBDIR)/$(CONFIG)/libbad_ssl_test_server.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(LIBBAD_SSL_TEST_SERVER_OBJS)
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libbad_ssl_test_server.a
+	$(Q) $(AR) rcs $(LIBDIR)/$(CONFIG)/libbad_ssl_test_server.a $(LIBBAD_SSL_TEST_SERVER_OBJS)
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib $(LIBDIR)/$(CONFIG)/libbad_ssl_test_server.a
+endif
+
+
+
+
+endif
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(LIBBAD_SSL_TEST_SERVER_OBJS:.o=.dep)
+endif
+endif
+
+
 
 # All of the test targets, and protoc plugins
+
+
+ALGORITHM_TEST_SRC = \
+    test/core/compression/algorithm_test.c \
+
+ALGORITHM_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(ALGORITHM_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/algorithm_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/algorithm_test: $(ALGORITHM_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(ALGORITHM_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/algorithm_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/compression/algorithm_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+deps_algorithm_test: $(ALGORITHM_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(ALGORITHM_TEST_OBJS:.o=.dep)
+endif
+endif
 
 
 ALLOC_TEST_SRC = \
@@ -8493,6 +10505,35 @@ deps_compression_test: $(COMPRESSION_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(COMPRESSION_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+DNS_RESOLVER_TEST_SRC = \
+    test/core/client_config/resolvers/dns_resolver_test.c \
+
+DNS_RESOLVER_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(DNS_RESOLVER_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/dns_resolver_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/dns_resolver_test: $(DNS_RESOLVER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(DNS_RESOLVER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/dns_resolver_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/client_config/resolvers/dns_resolver_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+deps_dns_resolver_test: $(DNS_RESOLVER_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(DNS_RESOLVER_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -9860,6 +11901,35 @@ endif
 endif
 
 
+HTTPSCLI_TEST_SRC = \
+    test/core/httpcli/httpscli_test.c \
+
+HTTPSCLI_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(HTTPSCLI_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/httpscli_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/httpscli_test: $(HTTPSCLI_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(HTTPSCLI_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/httpscli_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/httpcli/httpscli_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+deps_httpscli_test: $(HTTPSCLI_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(HTTPSCLI_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
 INIT_TEST_SRC = \
     test/core/surface/init_test.c \
 
@@ -9972,6 +12042,35 @@ deps_json_rewrite_test: $(JSON_REWRITE_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(JSON_REWRITE_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+JSON_STREAM_ERROR_TEST_SRC = \
+    test/core/json/json_stream_error_test.c \
+
+JSON_STREAM_ERROR_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(JSON_STREAM_ERROR_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/json_stream_error_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/json_stream_error_test: $(JSON_STREAM_ERROR_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(JSON_STREAM_ERROR_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/json_stream_error_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/json/json_stream_error_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+deps_json_stream_error_test: $(JSON_STREAM_ERROR_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(JSON_STREAM_ERROR_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -10237,6 +12336,35 @@ endif
 endif
 
 
+SECURE_CHANNEL_CREATE_TEST_SRC = \
+    test/core/surface/secure_channel_create_test.c \
+
+SECURE_CHANNEL_CREATE_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(SECURE_CHANNEL_CREATE_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/secure_channel_create_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/secure_channel_create_test: $(SECURE_CHANNEL_CREATE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(SECURE_CHANNEL_CREATE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/secure_channel_create_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/surface/secure_channel_create_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+deps_secure_channel_create_test: $(SECURE_CHANNEL_CREATE_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(SECURE_CHANNEL_CREATE_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
 SECURE_ENDPOINT_TEST_SRC = \
     test/core/security/secure_endpoint_test.c \
 
@@ -10262,6 +12390,64 @@ deps_secure_endpoint_test: $(SECURE_ENDPOINT_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(SECURE_ENDPOINT_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+SERVER_CHTTP2_TEST_SRC = \
+    test/core/surface/server_chttp2_test.c \
+
+SERVER_CHTTP2_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(SERVER_CHTTP2_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/server_chttp2_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/server_chttp2_test: $(SERVER_CHTTP2_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(SERVER_CHTTP2_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/server_chttp2_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/surface/server_chttp2_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+deps_server_chttp2_test: $(SERVER_CHTTP2_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(SERVER_CHTTP2_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+SERVER_TEST_SRC = \
+    test/core/surface/server_test.c \
+
+SERVER_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(SERVER_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/server_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/server_test: $(SERVER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(SERVER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/server_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/surface/server_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+deps_server_test: $(SERVER_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(SERVER_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -10295,6 +12481,35 @@ endif
 endif
 
 
+SOCKADDR_RESOLVER_TEST_SRC = \
+    test/core/client_config/resolvers/sockaddr_resolver_test.c \
+
+SOCKADDR_RESOLVER_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(SOCKADDR_RESOLVER_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/sockaddr_resolver_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/sockaddr_resolver_test: $(SOCKADDR_RESOLVER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(SOCKADDR_RESOLVER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/sockaddr_resolver_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/client_config/resolvers/sockaddr_resolver_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+deps_sockaddr_resolver_test: $(SOCKADDR_RESOLVER_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(SOCKADDR_RESOLVER_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
 SOCKADDR_UTILS_TEST_SRC = \
     test/core/iomgr/sockaddr_utils_test.c \
 
@@ -10320,6 +12535,35 @@ deps_sockaddr_utils_test: $(SOCKADDR_UTILS_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(SOCKADDR_UTILS_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+SOCKET_UTILS_TEST_SRC = \
+    test/core/iomgr/socket_utils_test.c \
+
+SOCKET_UTILS_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(SOCKET_UTILS_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/socket_utils_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/socket_utils_test: $(SOCKET_UTILS_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(SOCKET_UTILS_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/socket_utils_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/iomgr/socket_utils_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+deps_socket_utils_test: $(SOCKET_UTILS_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(SOCKET_UTILS_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -10552,6 +12796,35 @@ deps_timers_test: $(TIMERS_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(TIMERS_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+TRANSPORT_CONNECTIVITY_STATE_TEST_SRC = \
+    test/core/transport/connectivity_state_test.c \
+
+TRANSPORT_CONNECTIVITY_STATE_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(TRANSPORT_CONNECTIVITY_STATE_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/transport_connectivity_state_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/transport_connectivity_state_test: $(TRANSPORT_CONNECTIVITY_STATE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(TRANSPORT_CONNECTIVITY_STATE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/transport_connectivity_state_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/transport/connectivity_state_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+deps_transport_connectivity_state_test: $(TRANSPORT_CONNECTIVITY_STATE_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(TRANSPORT_CONNECTIVITY_STATE_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -12458,6 +14731,654 @@ ifeq ($(NO_SECURE),true)
 
 # You can't build secure targets if you don't have OpenSSL.
 
+$(BINDIR)/$(CONFIG)/h2_census_bad_hostname_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_census_bad_hostname_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_bad_hostname.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_bad_hostname.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_census_bad_hostname_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_census_binary_metadata_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_census_binary_metadata_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_binary_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_binary_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_census_binary_metadata_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_census_call_creds_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_census_call_creds_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_call_creds.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_call_creds.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_census_call_creds_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_census_cancel_after_accept_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_census_cancel_after_accept_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_accept.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_accept.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_census_cancel_after_accept_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_census_cancel_after_client_done_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_census_cancel_after_client_done_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_client_done.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_client_done.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_census_cancel_after_client_done_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_census_cancel_after_invoke_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_census_cancel_after_invoke_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_invoke.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_invoke.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_census_cancel_after_invoke_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_census_cancel_before_invoke_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_census_cancel_before_invoke_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_before_invoke.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_before_invoke.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_census_cancel_before_invoke_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_census_cancel_in_a_vacuum_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_census_cancel_in_a_vacuum_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_in_a_vacuum.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_in_a_vacuum.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_census_cancel_in_a_vacuum_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_census_cancel_with_status_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_census_cancel_with_status_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_with_status.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_with_status.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_census_cancel_with_status_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_census_channel_connectivity_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_census_channel_connectivity_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_channel_connectivity.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_channel_connectivity.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_census_channel_connectivity_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_census_channel_ping_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_census_channel_ping_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_channel_ping.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_channel_ping.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_census_channel_ping_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_census_compressed_payload_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_census_compressed_payload_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_compressed_payload.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_compressed_payload.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_census_compressed_payload_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_census_default_host_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_census_default_host_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_default_host.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_default_host.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_census_default_host_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_census_disappearing_server_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_census_disappearing_server_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_disappearing_server.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_disappearing_server.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_census_disappearing_server_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_census_empty_batch_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_census_empty_batch_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_empty_batch.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_empty_batch.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_census_empty_batch_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_census_graceful_server_shutdown_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_census_graceful_server_shutdown_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_graceful_server_shutdown.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_graceful_server_shutdown.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_census_graceful_server_shutdown_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_census_high_initial_seqno_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_census_high_initial_seqno_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_high_initial_seqno.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_high_initial_seqno.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_census_high_initial_seqno_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_census_hpack_size_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_census_hpack_size_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_hpack_size.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_hpack_size.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_census_hpack_size_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_census_invoke_large_request_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_census_invoke_large_request_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_invoke_large_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_invoke_large_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_census_invoke_large_request_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_census_large_metadata_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_census_large_metadata_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_large_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_large_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_census_large_metadata_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_census_max_concurrent_streams_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_census_max_concurrent_streams_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_max_concurrent_streams.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_max_concurrent_streams.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_census_max_concurrent_streams_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_census_max_message_length_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_census_max_message_length_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_max_message_length.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_max_message_length.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_census_max_message_length_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_census_metadata_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_census_metadata_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_census_metadata_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_census_negative_deadline_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_census_negative_deadline_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_negative_deadline.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_negative_deadline.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_census_negative_deadline_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_census_no_op_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_census_no_op_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_no_op.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_no_op.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_census_no_op_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_census_payload_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_census_payload_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_payload.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_payload.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_census_payload_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_census_ping_pong_streaming_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_census_ping_pong_streaming_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_ping_pong_streaming.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_ping_pong_streaming.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_census_ping_pong_streaming_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_census_registered_call_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_census_registered_call_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_registered_call.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_registered_call.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_census_registered_call_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_census_request_with_flags_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_census_request_with_flags_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_request_with_flags.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_request_with_flags.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_census_request_with_flags_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_census_request_with_payload_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_census_request_with_payload_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_request_with_payload.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_request_with_payload.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_census_request_with_payload_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_census_server_finishes_request_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_census_server_finishes_request_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_server_finishes_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_server_finishes_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_census_server_finishes_request_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_census_shutdown_finishes_calls_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_census_shutdown_finishes_calls_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_shutdown_finishes_calls.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_shutdown_finishes_calls.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_census_shutdown_finishes_calls_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_census_shutdown_finishes_tags_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_census_shutdown_finishes_tags_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_shutdown_finishes_tags.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_shutdown_finishes_tags.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_census_shutdown_finishes_tags_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_census_simple_delayed_request_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_census_simple_delayed_request_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_simple_delayed_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_simple_delayed_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_census_simple_delayed_request_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_census_simple_request_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_census_simple_request_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_simple_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_simple_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_census_simple_request_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_census_trailing_metadata_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_census_trailing_metadata_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_trailing_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_trailing_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_census_trailing_metadata_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
 $(BINDIR)/$(CONFIG)/h2_compress_bad_hostname_test: openssl_dep_error
 
 else
@@ -12620,14 +15541,14 @@ ifeq ($(NO_SECURE),true)
 
 # You can't build secure targets if you don't have OpenSSL.
 
-$(BINDIR)/$(CONFIG)/h2_compress_census_simple_request_test: openssl_dep_error
+$(BINDIR)/$(CONFIG)/h2_compress_channel_connectivity_test: openssl_dep_error
 
 else
 
-$(BINDIR)/$(CONFIG)/h2_compress_census_simple_request_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_compress.a $(LIBDIR)/$(CONFIG)/libend2end_test_census_simple_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(BINDIR)/$(CONFIG)/h2_compress_channel_connectivity_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_compress.a $(LIBDIR)/$(CONFIG)/libend2end_test_channel_connectivity.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_compress.a $(LIBDIR)/$(CONFIG)/libend2end_test_census_simple_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_compress_census_simple_request_test
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_compress.a $(LIBDIR)/$(CONFIG)/libend2end_test_channel_connectivity.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_compress_channel_connectivity_test
 
 endif
 
@@ -12638,14 +15559,14 @@ ifeq ($(NO_SECURE),true)
 
 # You can't build secure targets if you don't have OpenSSL.
 
-$(BINDIR)/$(CONFIG)/h2_compress_channel_connectivity_test: openssl_dep_error
+$(BINDIR)/$(CONFIG)/h2_compress_channel_ping_test: openssl_dep_error
 
 else
 
-$(BINDIR)/$(CONFIG)/h2_compress_channel_connectivity_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_compress.a $(LIBDIR)/$(CONFIG)/libend2end_test_channel_connectivity.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(BINDIR)/$(CONFIG)/h2_compress_channel_ping_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_compress.a $(LIBDIR)/$(CONFIG)/libend2end_test_channel_ping.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_compress.a $(LIBDIR)/$(CONFIG)/libend2end_test_channel_connectivity.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_compress_channel_connectivity_test
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_compress.a $(LIBDIR)/$(CONFIG)/libend2end_test_channel_ping.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_compress_channel_ping_test
 
 endif
 
@@ -13268,14 +16189,14 @@ ifeq ($(NO_SECURE),true)
 
 # You can't build secure targets if you don't have OpenSSL.
 
-$(BINDIR)/$(CONFIG)/h2_fakesec_census_simple_request_test: openssl_dep_error
+$(BINDIR)/$(CONFIG)/h2_fakesec_channel_connectivity_test: openssl_dep_error
 
 else
 
-$(BINDIR)/$(CONFIG)/h2_fakesec_census_simple_request_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_fakesec.a $(LIBDIR)/$(CONFIG)/libend2end_test_census_simple_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(BINDIR)/$(CONFIG)/h2_fakesec_channel_connectivity_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_fakesec.a $(LIBDIR)/$(CONFIG)/libend2end_test_channel_connectivity.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_fakesec.a $(LIBDIR)/$(CONFIG)/libend2end_test_census_simple_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_fakesec_census_simple_request_test
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_fakesec.a $(LIBDIR)/$(CONFIG)/libend2end_test_channel_connectivity.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_fakesec_channel_connectivity_test
 
 endif
 
@@ -13286,14 +16207,14 @@ ifeq ($(NO_SECURE),true)
 
 # You can't build secure targets if you don't have OpenSSL.
 
-$(BINDIR)/$(CONFIG)/h2_fakesec_channel_connectivity_test: openssl_dep_error
+$(BINDIR)/$(CONFIG)/h2_fakesec_channel_ping_test: openssl_dep_error
 
 else
 
-$(BINDIR)/$(CONFIG)/h2_fakesec_channel_connectivity_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_fakesec.a $(LIBDIR)/$(CONFIG)/libend2end_test_channel_connectivity.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(BINDIR)/$(CONFIG)/h2_fakesec_channel_ping_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_fakesec.a $(LIBDIR)/$(CONFIG)/libend2end_test_channel_ping.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_fakesec.a $(LIBDIR)/$(CONFIG)/libend2end_test_channel_connectivity.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_fakesec_channel_connectivity_test
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_fakesec.a $(LIBDIR)/$(CONFIG)/libend2end_test_channel_ping.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_fakesec_channel_ping_test
 
 endif
 
@@ -13916,14 +16837,14 @@ ifeq ($(NO_SECURE),true)
 
 # You can't build secure targets if you don't have OpenSSL.
 
-$(BINDIR)/$(CONFIG)/h2_full_census_simple_request_test: openssl_dep_error
+$(BINDIR)/$(CONFIG)/h2_full_channel_connectivity_test: openssl_dep_error
 
 else
 
-$(BINDIR)/$(CONFIG)/h2_full_census_simple_request_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full.a $(LIBDIR)/$(CONFIG)/libend2end_test_census_simple_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(BINDIR)/$(CONFIG)/h2_full_channel_connectivity_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full.a $(LIBDIR)/$(CONFIG)/libend2end_test_channel_connectivity.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full.a $(LIBDIR)/$(CONFIG)/libend2end_test_census_simple_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_full_census_simple_request_test
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full.a $(LIBDIR)/$(CONFIG)/libend2end_test_channel_connectivity.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_full_channel_connectivity_test
 
 endif
 
@@ -13934,14 +16855,14 @@ ifeq ($(NO_SECURE),true)
 
 # You can't build secure targets if you don't have OpenSSL.
 
-$(BINDIR)/$(CONFIG)/h2_full_channel_connectivity_test: openssl_dep_error
+$(BINDIR)/$(CONFIG)/h2_full_channel_ping_test: openssl_dep_error
 
 else
 
-$(BINDIR)/$(CONFIG)/h2_full_channel_connectivity_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full.a $(LIBDIR)/$(CONFIG)/libend2end_test_channel_connectivity.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(BINDIR)/$(CONFIG)/h2_full_channel_ping_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full.a $(LIBDIR)/$(CONFIG)/libend2end_test_channel_ping.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full.a $(LIBDIR)/$(CONFIG)/libend2end_test_channel_connectivity.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_full_channel_connectivity_test
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full.a $(LIBDIR)/$(CONFIG)/libend2end_test_channel_ping.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_full_channel_ping_test
 
 endif
 
@@ -14402,6 +17323,654 @@ ifeq ($(NO_SECURE),true)
 
 # You can't build secure targets if you don't have OpenSSL.
 
+$(BINDIR)/$(CONFIG)/h2_full+pipe_bad_hostname_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_full+pipe_bad_hostname_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_bad_hostname.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_bad_hostname.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_full+pipe_bad_hostname_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_full+pipe_binary_metadata_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_full+pipe_binary_metadata_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_binary_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_binary_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_full+pipe_binary_metadata_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_full+pipe_call_creds_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_full+pipe_call_creds_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_call_creds.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_call_creds.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_full+pipe_call_creds_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_full+pipe_cancel_after_accept_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_full+pipe_cancel_after_accept_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_accept.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_accept.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_full+pipe_cancel_after_accept_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_full+pipe_cancel_after_client_done_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_full+pipe_cancel_after_client_done_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_client_done.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_client_done.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_full+pipe_cancel_after_client_done_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_full+pipe_cancel_after_invoke_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_full+pipe_cancel_after_invoke_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_invoke.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_invoke.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_full+pipe_cancel_after_invoke_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_full+pipe_cancel_before_invoke_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_full+pipe_cancel_before_invoke_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_before_invoke.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_before_invoke.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_full+pipe_cancel_before_invoke_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_full+pipe_cancel_in_a_vacuum_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_full+pipe_cancel_in_a_vacuum_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_in_a_vacuum.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_in_a_vacuum.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_full+pipe_cancel_in_a_vacuum_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_full+pipe_cancel_with_status_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_full+pipe_cancel_with_status_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_with_status.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_with_status.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_full+pipe_cancel_with_status_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_full+pipe_channel_connectivity_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_full+pipe_channel_connectivity_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_channel_connectivity.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_channel_connectivity.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_full+pipe_channel_connectivity_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_full+pipe_channel_ping_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_full+pipe_channel_ping_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_channel_ping.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_channel_ping.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_full+pipe_channel_ping_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_full+pipe_compressed_payload_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_full+pipe_compressed_payload_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_compressed_payload.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_compressed_payload.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_full+pipe_compressed_payload_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_full+pipe_default_host_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_full+pipe_default_host_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_default_host.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_default_host.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_full+pipe_default_host_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_full+pipe_disappearing_server_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_full+pipe_disappearing_server_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_disappearing_server.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_disappearing_server.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_full+pipe_disappearing_server_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_full+pipe_empty_batch_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_full+pipe_empty_batch_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_empty_batch.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_empty_batch.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_full+pipe_empty_batch_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_full+pipe_graceful_server_shutdown_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_full+pipe_graceful_server_shutdown_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_graceful_server_shutdown.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_graceful_server_shutdown.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_full+pipe_graceful_server_shutdown_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_full+pipe_high_initial_seqno_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_full+pipe_high_initial_seqno_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_high_initial_seqno.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_high_initial_seqno.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_full+pipe_high_initial_seqno_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_full+pipe_hpack_size_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_full+pipe_hpack_size_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_hpack_size.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_hpack_size.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_full+pipe_hpack_size_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_full+pipe_invoke_large_request_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_full+pipe_invoke_large_request_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_invoke_large_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_invoke_large_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_full+pipe_invoke_large_request_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_full+pipe_large_metadata_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_full+pipe_large_metadata_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_large_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_large_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_full+pipe_large_metadata_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_full+pipe_max_concurrent_streams_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_full+pipe_max_concurrent_streams_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_max_concurrent_streams.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_max_concurrent_streams.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_full+pipe_max_concurrent_streams_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_full+pipe_max_message_length_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_full+pipe_max_message_length_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_max_message_length.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_max_message_length.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_full+pipe_max_message_length_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_full+pipe_metadata_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_full+pipe_metadata_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_full+pipe_metadata_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_full+pipe_negative_deadline_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_full+pipe_negative_deadline_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_negative_deadline.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_negative_deadline.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_full+pipe_negative_deadline_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_full+pipe_no_op_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_full+pipe_no_op_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_no_op.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_no_op.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_full+pipe_no_op_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_full+pipe_payload_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_full+pipe_payload_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_payload.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_payload.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_full+pipe_payload_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_full+pipe_ping_pong_streaming_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_full+pipe_ping_pong_streaming_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_ping_pong_streaming.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_ping_pong_streaming.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_full+pipe_ping_pong_streaming_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_full+pipe_registered_call_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_full+pipe_registered_call_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_registered_call.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_registered_call.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_full+pipe_registered_call_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_full+pipe_request_with_flags_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_full+pipe_request_with_flags_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_request_with_flags.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_request_with_flags.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_full+pipe_request_with_flags_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_full+pipe_request_with_payload_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_full+pipe_request_with_payload_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_request_with_payload.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_request_with_payload.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_full+pipe_request_with_payload_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_full+pipe_server_finishes_request_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_full+pipe_server_finishes_request_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_server_finishes_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_server_finishes_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_full+pipe_server_finishes_request_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_full+pipe_shutdown_finishes_calls_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_full+pipe_shutdown_finishes_calls_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_shutdown_finishes_calls.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_shutdown_finishes_calls.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_full+pipe_shutdown_finishes_calls_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_full+pipe_shutdown_finishes_tags_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_full+pipe_shutdown_finishes_tags_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_shutdown_finishes_tags.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_shutdown_finishes_tags.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_full+pipe_shutdown_finishes_tags_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_full+pipe_simple_delayed_request_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_full+pipe_simple_delayed_request_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_simple_delayed_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_simple_delayed_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_full+pipe_simple_delayed_request_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_full+pipe_simple_request_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_full+pipe_simple_request_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_simple_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_simple_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_full+pipe_simple_request_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_full+pipe_trailing_metadata_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_full+pipe_trailing_metadata_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_trailing_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_trailing_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_full+pipe_trailing_metadata_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
 $(BINDIR)/$(CONFIG)/h2_full+poll_bad_hostname_test: openssl_dep_error
 
 else
@@ -14564,14 +18133,14 @@ ifeq ($(NO_SECURE),true)
 
 # You can't build secure targets if you don't have OpenSSL.
 
-$(BINDIR)/$(CONFIG)/h2_full+poll_census_simple_request_test: openssl_dep_error
+$(BINDIR)/$(CONFIG)/h2_full+poll_channel_connectivity_test: openssl_dep_error
 
 else
 
-$(BINDIR)/$(CONFIG)/h2_full+poll_census_simple_request_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_census_simple_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(BINDIR)/$(CONFIG)/h2_full+poll_channel_connectivity_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_channel_connectivity.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_census_simple_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_full+poll_census_simple_request_test
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_channel_connectivity.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_full+poll_channel_connectivity_test
 
 endif
 
@@ -14582,14 +18151,14 @@ ifeq ($(NO_SECURE),true)
 
 # You can't build secure targets if you don't have OpenSSL.
 
-$(BINDIR)/$(CONFIG)/h2_full+poll_channel_connectivity_test: openssl_dep_error
+$(BINDIR)/$(CONFIG)/h2_full+poll_channel_ping_test: openssl_dep_error
 
 else
 
-$(BINDIR)/$(CONFIG)/h2_full+poll_channel_connectivity_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_channel_connectivity.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(BINDIR)/$(CONFIG)/h2_full+poll_channel_ping_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_channel_ping.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_channel_connectivity.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_full+poll_channel_connectivity_test
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_channel_ping.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_full+poll_channel_ping_test
 
 endif
 
@@ -15050,6 +18619,654 @@ ifeq ($(NO_SECURE),true)
 
 # You can't build secure targets if you don't have OpenSSL.
 
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_bad_hostname_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_bad_hostname_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_bad_hostname.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_bad_hostname.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_bad_hostname_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_binary_metadata_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_binary_metadata_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_binary_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_binary_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_binary_metadata_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_call_creds_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_call_creds_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_call_creds.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_call_creds.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_call_creds_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_cancel_after_accept_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_cancel_after_accept_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_accept.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_accept.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_cancel_after_accept_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_cancel_after_client_done_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_cancel_after_client_done_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_client_done.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_client_done.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_cancel_after_client_done_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_cancel_after_invoke_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_cancel_after_invoke_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_invoke.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_invoke.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_cancel_after_invoke_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_cancel_before_invoke_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_cancel_before_invoke_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_before_invoke.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_before_invoke.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_cancel_before_invoke_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_cancel_in_a_vacuum_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_cancel_in_a_vacuum_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_in_a_vacuum.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_in_a_vacuum.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_cancel_in_a_vacuum_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_cancel_with_status_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_cancel_with_status_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_with_status.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_with_status.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_cancel_with_status_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_channel_connectivity_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_channel_connectivity_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_channel_connectivity.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_channel_connectivity.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_channel_connectivity_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_channel_ping_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_channel_ping_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_channel_ping.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_channel_ping.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_channel_ping_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_compressed_payload_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_compressed_payload_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_compressed_payload.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_compressed_payload.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_compressed_payload_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_default_host_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_default_host_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_default_host.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_default_host.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_default_host_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_disappearing_server_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_disappearing_server_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_disappearing_server.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_disappearing_server.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_disappearing_server_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_empty_batch_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_empty_batch_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_empty_batch.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_empty_batch.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_empty_batch_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_graceful_server_shutdown_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_graceful_server_shutdown_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_graceful_server_shutdown.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_graceful_server_shutdown.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_graceful_server_shutdown_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_high_initial_seqno_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_high_initial_seqno_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_high_initial_seqno.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_high_initial_seqno.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_high_initial_seqno_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_hpack_size_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_hpack_size_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_hpack_size.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_hpack_size.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_hpack_size_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_invoke_large_request_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_invoke_large_request_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_invoke_large_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_invoke_large_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_invoke_large_request_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_large_metadata_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_large_metadata_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_large_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_large_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_large_metadata_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_max_concurrent_streams_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_max_concurrent_streams_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_max_concurrent_streams.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_max_concurrent_streams.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_max_concurrent_streams_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_max_message_length_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_max_message_length_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_max_message_length.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_max_message_length.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_max_message_length_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_metadata_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_metadata_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_metadata_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_negative_deadline_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_negative_deadline_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_negative_deadline.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_negative_deadline.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_negative_deadline_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_no_op_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_no_op_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_no_op.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_no_op.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_no_op_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_payload_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_payload_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_payload.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_payload.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_payload_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_ping_pong_streaming_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_ping_pong_streaming_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_ping_pong_streaming.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_ping_pong_streaming.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_ping_pong_streaming_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_registered_call_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_registered_call_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_registered_call.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_registered_call.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_registered_call_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_request_with_flags_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_request_with_flags_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_request_with_flags.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_request_with_flags.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_request_with_flags_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_request_with_payload_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_request_with_payload_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_request_with_payload.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_request_with_payload.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_request_with_payload_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_server_finishes_request_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_server_finishes_request_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_server_finishes_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_server_finishes_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_server_finishes_request_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_shutdown_finishes_calls_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_shutdown_finishes_calls_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_shutdown_finishes_calls.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_shutdown_finishes_calls.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_shutdown_finishes_calls_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_shutdown_finishes_tags_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_shutdown_finishes_tags_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_shutdown_finishes_tags.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_shutdown_finishes_tags.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_shutdown_finishes_tags_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_simple_delayed_request_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_simple_delayed_request_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_simple_delayed_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_simple_delayed_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_simple_delayed_request_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_simple_request_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_simple_request_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_simple_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_simple_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_simple_request_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_trailing_metadata_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_trailing_metadata_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_trailing_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_trailing_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_trailing_metadata_test
+
+endif
+
+
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
 $(BINDIR)/$(CONFIG)/h2_oauth2_bad_hostname_test: openssl_dep_error
 
 else
@@ -15212,14 +19429,14 @@ ifeq ($(NO_SECURE),true)
 
 # You can't build secure targets if you don't have OpenSSL.
 
-$(BINDIR)/$(CONFIG)/h2_oauth2_census_simple_request_test: openssl_dep_error
+$(BINDIR)/$(CONFIG)/h2_oauth2_channel_connectivity_test: openssl_dep_error
 
 else
 
-$(BINDIR)/$(CONFIG)/h2_oauth2_census_simple_request_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_oauth2.a $(LIBDIR)/$(CONFIG)/libend2end_test_census_simple_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(BINDIR)/$(CONFIG)/h2_oauth2_channel_connectivity_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_oauth2.a $(LIBDIR)/$(CONFIG)/libend2end_test_channel_connectivity.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_oauth2.a $(LIBDIR)/$(CONFIG)/libend2end_test_census_simple_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_oauth2_census_simple_request_test
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_oauth2.a $(LIBDIR)/$(CONFIG)/libend2end_test_channel_connectivity.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_oauth2_channel_connectivity_test
 
 endif
 
@@ -15230,14 +19447,14 @@ ifeq ($(NO_SECURE),true)
 
 # You can't build secure targets if you don't have OpenSSL.
 
-$(BINDIR)/$(CONFIG)/h2_oauth2_channel_connectivity_test: openssl_dep_error
+$(BINDIR)/$(CONFIG)/h2_oauth2_channel_ping_test: openssl_dep_error
 
 else
 
-$(BINDIR)/$(CONFIG)/h2_oauth2_channel_connectivity_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_oauth2.a $(LIBDIR)/$(CONFIG)/libend2end_test_channel_connectivity.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(BINDIR)/$(CONFIG)/h2_oauth2_channel_ping_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_oauth2.a $(LIBDIR)/$(CONFIG)/libend2end_test_channel_ping.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_oauth2.a $(LIBDIR)/$(CONFIG)/libend2end_test_channel_connectivity.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_oauth2_channel_connectivity_test
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_oauth2.a $(LIBDIR)/$(CONFIG)/libend2end_test_channel_ping.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_oauth2_channel_ping_test
 
 endif
 
@@ -15860,24 +20077,6 @@ ifeq ($(NO_SECURE),true)
 
 # You can't build secure targets if you don't have OpenSSL.
 
-$(BINDIR)/$(CONFIG)/h2_proxy_census_simple_request_test: openssl_dep_error
-
-else
-
-$(BINDIR)/$(CONFIG)/h2_proxy_census_simple_request_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_test_census_simple_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_test_census_simple_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_proxy_census_simple_request_test
-
-endif
-
-
-
-
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
 $(BINDIR)/$(CONFIG)/h2_proxy_default_host_test: openssl_dep_error
 
 else
@@ -16408,24 +20607,6 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_cancel_with_status_test:  $(LIBDIR)/$(CONFIG)/li
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_with_status.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_sockpair_cancel_with_status_test
-
-endif
-
-
-
-
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/h2_sockpair_census_simple_request_test: openssl_dep_error
-
-else
-
-$(BINDIR)/$(CONFIG)/h2_sockpair_census_simple_request_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair.a $(LIBDIR)/$(CONFIG)/libend2end_test_census_simple_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair.a $(LIBDIR)/$(CONFIG)/libend2end_test_census_simple_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_sockpair_census_simple_request_test
 
 endif
 
@@ -16994,24 +21175,6 @@ ifeq ($(NO_SECURE),true)
 
 # You can't build secure targets if you don't have OpenSSL.
 
-$(BINDIR)/$(CONFIG)/h2_sockpair+trace_census_simple_request_test: openssl_dep_error
-
-else
-
-$(BINDIR)/$(CONFIG)/h2_sockpair+trace_census_simple_request_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair+trace.a $(LIBDIR)/$(CONFIG)/libend2end_test_census_simple_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair+trace.a $(LIBDIR)/$(CONFIG)/libend2end_test_census_simple_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_sockpair+trace_census_simple_request_test
-
-endif
-
-
-
-
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
 $(BINDIR)/$(CONFIG)/h2_sockpair+trace_compressed_payload_test: openssl_dep_error
 
 else
@@ -17542,24 +21705,6 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_cancel_with_status_test:  $(LIBDIR)/$(CONF
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair_1byte.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_with_status.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_cancel_with_status_test
-
-endif
-
-
-
-
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/h2_sockpair_1byte_census_simple_request_test: openssl_dep_error
-
-else
-
-$(BINDIR)/$(CONFIG)/h2_sockpair_1byte_census_simple_request_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair_1byte.a $(LIBDIR)/$(CONFIG)/libend2end_test_census_simple_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair_1byte.a $(LIBDIR)/$(CONFIG)/libend2end_test_census_simple_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_census_simple_request_test
 
 endif
 
@@ -18128,14 +22273,14 @@ ifeq ($(NO_SECURE),true)
 
 # You can't build secure targets if you don't have OpenSSL.
 
-$(BINDIR)/$(CONFIG)/h2_ssl_census_simple_request_test: openssl_dep_error
+$(BINDIR)/$(CONFIG)/h2_ssl_channel_connectivity_test: openssl_dep_error
 
 else
 
-$(BINDIR)/$(CONFIG)/h2_ssl_census_simple_request_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl.a $(LIBDIR)/$(CONFIG)/libend2end_test_census_simple_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(BINDIR)/$(CONFIG)/h2_ssl_channel_connectivity_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl.a $(LIBDIR)/$(CONFIG)/libend2end_test_channel_connectivity.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl.a $(LIBDIR)/$(CONFIG)/libend2end_test_census_simple_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_ssl_census_simple_request_test
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl.a $(LIBDIR)/$(CONFIG)/libend2end_test_channel_connectivity.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_ssl_channel_connectivity_test
 
 endif
 
@@ -18146,14 +22291,14 @@ ifeq ($(NO_SECURE),true)
 
 # You can't build secure targets if you don't have OpenSSL.
 
-$(BINDIR)/$(CONFIG)/h2_ssl_channel_connectivity_test: openssl_dep_error
+$(BINDIR)/$(CONFIG)/h2_ssl_channel_ping_test: openssl_dep_error
 
 else
 
-$(BINDIR)/$(CONFIG)/h2_ssl_channel_connectivity_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl.a $(LIBDIR)/$(CONFIG)/libend2end_test_channel_connectivity.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(BINDIR)/$(CONFIG)/h2_ssl_channel_ping_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl.a $(LIBDIR)/$(CONFIG)/libend2end_test_channel_ping.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl.a $(LIBDIR)/$(CONFIG)/libend2end_test_channel_connectivity.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_ssl_channel_connectivity_test
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl.a $(LIBDIR)/$(CONFIG)/libend2end_test_channel_ping.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_ssl_channel_ping_test
 
 endif
 
@@ -18776,14 +22921,14 @@ ifeq ($(NO_SECURE),true)
 
 # You can't build secure targets if you don't have OpenSSL.
 
-$(BINDIR)/$(CONFIG)/h2_ssl+poll_census_simple_request_test: openssl_dep_error
+$(BINDIR)/$(CONFIG)/h2_ssl+poll_channel_connectivity_test: openssl_dep_error
 
 else
 
-$(BINDIR)/$(CONFIG)/h2_ssl+poll_census_simple_request_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_census_simple_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(BINDIR)/$(CONFIG)/h2_ssl+poll_channel_connectivity_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_channel_connectivity.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_census_simple_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_ssl+poll_census_simple_request_test
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_channel_connectivity.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_ssl+poll_channel_connectivity_test
 
 endif
 
@@ -18794,14 +22939,14 @@ ifeq ($(NO_SECURE),true)
 
 # You can't build secure targets if you don't have OpenSSL.
 
-$(BINDIR)/$(CONFIG)/h2_ssl+poll_channel_connectivity_test: openssl_dep_error
+$(BINDIR)/$(CONFIG)/h2_ssl+poll_channel_ping_test: openssl_dep_error
 
 else
 
-$(BINDIR)/$(CONFIG)/h2_ssl+poll_channel_connectivity_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_channel_connectivity.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(BINDIR)/$(CONFIG)/h2_ssl+poll_channel_ping_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_channel_ping.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_channel_connectivity.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_ssl+poll_channel_connectivity_test
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_channel_ping.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_ssl+poll_channel_ping_test
 
 endif
 
@@ -19424,24 +23569,6 @@ ifeq ($(NO_SECURE),true)
 
 # You can't build secure targets if you don't have OpenSSL.
 
-$(BINDIR)/$(CONFIG)/h2_ssl_proxy_census_simple_request_test: openssl_dep_error
-
-else
-
-$(BINDIR)/$(CONFIG)/h2_ssl_proxy_census_simple_request_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_test_census_simple_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_test_census_simple_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_ssl_proxy_census_simple_request_test
-
-endif
-
-
-
-
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
 $(BINDIR)/$(CONFIG)/h2_ssl_proxy_default_host_test: openssl_dep_error
 
 else
@@ -19982,42 +24109,6 @@ ifeq ($(NO_SECURE),true)
 
 # You can't build secure targets if you don't have OpenSSL.
 
-$(BINDIR)/$(CONFIG)/h2_uchannel_census_simple_request_test: openssl_dep_error
-
-else
-
-$(BINDIR)/$(CONFIG)/h2_uchannel_census_simple_request_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_test_census_simple_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_test_census_simple_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_uchannel_census_simple_request_test
-
-endif
-
-
-
-
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/h2_uchannel_channel_connectivity_test: openssl_dep_error
-
-else
-
-$(BINDIR)/$(CONFIG)/h2_uchannel_channel_connectivity_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_test_channel_connectivity.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_test_channel_connectivity.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_uchannel_channel_connectivity_test
-
-endif
-
-
-
-
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
 $(BINDIR)/$(CONFIG)/h2_uchannel_compressed_payload_test: openssl_dep_error
 
 else
@@ -20026,42 +24117,6 @@ $(BINDIR)/$(CONFIG)/h2_uchannel_compressed_payload_test:  $(LIBDIR)/$(CONFIG)/li
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_test_compressed_payload.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_uchannel_compressed_payload_test
-
-endif
-
-
-
-
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/h2_uchannel_default_host_test: openssl_dep_error
-
-else
-
-$(BINDIR)/$(CONFIG)/h2_uchannel_default_host_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_test_default_host.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_test_default_host.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_uchannel_default_host_test
-
-endif
-
-
-
-
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/h2_uchannel_disappearing_server_test: openssl_dep_error
-
-else
-
-$(BINDIR)/$(CONFIG)/h2_uchannel_disappearing_server_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_test_disappearing_server.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_test_disappearing_server.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_uchannel_disappearing_server_test
 
 endif
 
@@ -20414,24 +24469,6 @@ ifeq ($(NO_SECURE),true)
 
 # You can't build secure targets if you don't have OpenSSL.
 
-$(BINDIR)/$(CONFIG)/h2_uchannel_simple_delayed_request_test: openssl_dep_error
-
-else
-
-$(BINDIR)/$(CONFIG)/h2_uchannel_simple_delayed_request_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_test_simple_delayed_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_test_simple_delayed_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_uchannel_simple_delayed_request_test
-
-endif
-
-
-
-
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
 $(BINDIR)/$(CONFIG)/h2_uchannel_simple_request_test: openssl_dep_error
 
 else
@@ -20630,14 +24667,14 @@ ifeq ($(NO_SECURE),true)
 
 # You can't build secure targets if you don't have OpenSSL.
 
-$(BINDIR)/$(CONFIG)/h2_uds_census_simple_request_test: openssl_dep_error
+$(BINDIR)/$(CONFIG)/h2_uds_channel_connectivity_test: openssl_dep_error
 
 else
 
-$(BINDIR)/$(CONFIG)/h2_uds_census_simple_request_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_census_simple_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(BINDIR)/$(CONFIG)/h2_uds_channel_connectivity_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_channel_connectivity.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_census_simple_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_uds_census_simple_request_test
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_channel_connectivity.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_uds_channel_connectivity_test
 
 endif
 
@@ -20648,14 +24685,14 @@ ifeq ($(NO_SECURE),true)
 
 # You can't build secure targets if you don't have OpenSSL.
 
-$(BINDIR)/$(CONFIG)/h2_uds_channel_connectivity_test: openssl_dep_error
+$(BINDIR)/$(CONFIG)/h2_uds_channel_ping_test: openssl_dep_error
 
 else
 
-$(BINDIR)/$(CONFIG)/h2_uds_channel_connectivity_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_channel_connectivity.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(BINDIR)/$(CONFIG)/h2_uds_channel_ping_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_channel_ping.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_channel_connectivity.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_uds_channel_connectivity_test
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_channel_ping.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_uds_channel_ping_test
 
 endif
 
@@ -21260,14 +25297,14 @@ ifeq ($(NO_SECURE),true)
 
 # You can't build secure targets if you don't have OpenSSL.
 
-$(BINDIR)/$(CONFIG)/h2_uds+poll_census_simple_request_test: openssl_dep_error
+$(BINDIR)/$(CONFIG)/h2_uds+poll_channel_connectivity_test: openssl_dep_error
 
 else
 
-$(BINDIR)/$(CONFIG)/h2_uds+poll_census_simple_request_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uds+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_census_simple_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(BINDIR)/$(CONFIG)/h2_uds+poll_channel_connectivity_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uds+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_channel_connectivity.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uds+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_census_simple_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_uds+poll_census_simple_request_test
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uds+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_channel_connectivity.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_uds+poll_channel_connectivity_test
 
 endif
 
@@ -21278,14 +25315,14 @@ ifeq ($(NO_SECURE),true)
 
 # You can't build secure targets if you don't have OpenSSL.
 
-$(BINDIR)/$(CONFIG)/h2_uds+poll_channel_connectivity_test: openssl_dep_error
+$(BINDIR)/$(CONFIG)/h2_uds+poll_channel_ping_test: openssl_dep_error
 
 else
 
-$(BINDIR)/$(CONFIG)/h2_uds+poll_channel_connectivity_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uds+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_channel_connectivity.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(BINDIR)/$(CONFIG)/h2_uds+poll_channel_ping_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uds+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_channel_ping.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uds+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_channel_connectivity.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_uds+poll_channel_connectivity_test
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uds+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_channel_ping.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_uds+poll_channel_ping_test
 
 endif
 
@@ -21724,6 +25761,286 @@ endif
 
 
 
+$(BINDIR)/$(CONFIG)/h2_census_bad_hostname_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_bad_hostname.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_bad_hostname.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_census_bad_hostname_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_census_binary_metadata_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_binary_metadata.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_binary_metadata.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_census_binary_metadata_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_census_cancel_after_accept_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_after_accept.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_after_accept.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_census_cancel_after_accept_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_census_cancel_after_client_done_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_after_client_done.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_after_client_done.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_census_cancel_after_client_done_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_census_cancel_after_invoke_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_after_invoke.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_after_invoke.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_census_cancel_after_invoke_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_census_cancel_before_invoke_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_before_invoke.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_before_invoke.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_census_cancel_before_invoke_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_census_cancel_in_a_vacuum_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_in_a_vacuum.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_in_a_vacuum.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_census_cancel_in_a_vacuum_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_census_cancel_with_status_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_with_status.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_with_status.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_census_cancel_with_status_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_census_channel_connectivity_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_channel_connectivity.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_channel_connectivity.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_census_channel_connectivity_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_census_channel_ping_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_channel_ping.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_channel_ping.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_census_channel_ping_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_census_compressed_payload_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_compressed_payload.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_compressed_payload.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_census_compressed_payload_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_census_default_host_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_default_host.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_default_host.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_census_default_host_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_census_disappearing_server_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_disappearing_server.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_disappearing_server.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_census_disappearing_server_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_census_empty_batch_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_empty_batch.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_empty_batch.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_census_empty_batch_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_census_graceful_server_shutdown_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_graceful_server_shutdown.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_graceful_server_shutdown.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_census_graceful_server_shutdown_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_census_high_initial_seqno_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_high_initial_seqno.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_high_initial_seqno.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_census_high_initial_seqno_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_census_hpack_size_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_hpack_size.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_hpack_size.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_census_hpack_size_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_census_invoke_large_request_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_invoke_large_request.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_invoke_large_request.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_census_invoke_large_request_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_census_large_metadata_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_large_metadata.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_large_metadata.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_census_large_metadata_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_census_max_concurrent_streams_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_max_concurrent_streams.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_max_concurrent_streams.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_census_max_concurrent_streams_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_census_max_message_length_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_max_message_length.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_max_message_length.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_census_max_message_length_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_census_metadata_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_metadata.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_metadata.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_census_metadata_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_census_negative_deadline_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_negative_deadline.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_negative_deadline.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_census_negative_deadline_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_census_no_op_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_no_op.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_no_op.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_census_no_op_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_census_payload_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_payload.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_payload.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_census_payload_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_census_ping_pong_streaming_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_ping_pong_streaming.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_ping_pong_streaming.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_census_ping_pong_streaming_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_census_registered_call_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_registered_call.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_registered_call.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_census_registered_call_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_census_request_with_flags_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_request_with_flags.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_request_with_flags.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_census_request_with_flags_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_census_request_with_payload_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_request_with_payload.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_request_with_payload.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_census_request_with_payload_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_census_server_finishes_request_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_server_finishes_request.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_server_finishes_request.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_census_server_finishes_request_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_census_shutdown_finishes_calls_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_shutdown_finishes_calls.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_shutdown_finishes_calls.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_census_shutdown_finishes_calls_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_census_shutdown_finishes_tags_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_shutdown_finishes_tags.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_shutdown_finishes_tags.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_census_shutdown_finishes_tags_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_census_simple_delayed_request_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_simple_delayed_request.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_simple_delayed_request.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_census_simple_delayed_request_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_census_simple_request_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_simple_request.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_simple_request.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_census_simple_request_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_census_trailing_metadata_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_trailing_metadata.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_trailing_metadata.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_census_trailing_metadata_nosec_test
+
+
+
+
 $(BINDIR)/$(CONFIG)/h2_compress_bad_hostname_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_compress.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_bad_hostname.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
@@ -21788,18 +26105,18 @@ $(BINDIR)/$(CONFIG)/h2_compress_cancel_with_status_nosec_test:  $(LIBDIR)/$(CONF
 
 
 
-$(BINDIR)/$(CONFIG)/h2_compress_census_simple_request_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_compress.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_census_simple_request.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_compress.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_census_simple_request.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_compress_census_simple_request_nosec_test
-
-
-
-
 $(BINDIR)/$(CONFIG)/h2_compress_channel_connectivity_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_compress.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_channel_connectivity.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_compress.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_channel_connectivity.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_compress_channel_connectivity_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_compress_channel_ping_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_compress.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_channel_ping.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_compress.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_channel_ping.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_compress_channel_ping_nosec_test
 
 
 
@@ -22068,18 +26385,18 @@ $(BINDIR)/$(CONFIG)/h2_full_cancel_with_status_nosec_test:  $(LIBDIR)/$(CONFIG)/
 
 
 
-$(BINDIR)/$(CONFIG)/h2_full_census_simple_request_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_census_simple_request.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_census_simple_request.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_full_census_simple_request_nosec_test
-
-
-
-
 $(BINDIR)/$(CONFIG)/h2_full_channel_connectivity_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_channel_connectivity.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_channel_connectivity.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_full_channel_connectivity_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_full_channel_ping_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_channel_ping.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_channel_ping.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_full_channel_ping_nosec_test
 
 
 
@@ -22284,6 +26601,286 @@ $(BINDIR)/$(CONFIG)/h2_full_trailing_metadata_nosec_test:  $(LIBDIR)/$(CONFIG)/l
 
 
 
+$(BINDIR)/$(CONFIG)/h2_full+pipe_bad_hostname_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_bad_hostname.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_bad_hostname.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_full+pipe_bad_hostname_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_full+pipe_binary_metadata_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_binary_metadata.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_binary_metadata.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_full+pipe_binary_metadata_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_full+pipe_cancel_after_accept_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_after_accept.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_after_accept.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_full+pipe_cancel_after_accept_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_full+pipe_cancel_after_client_done_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_after_client_done.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_after_client_done.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_full+pipe_cancel_after_client_done_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_full+pipe_cancel_after_invoke_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_after_invoke.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_after_invoke.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_full+pipe_cancel_after_invoke_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_full+pipe_cancel_before_invoke_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_before_invoke.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_before_invoke.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_full+pipe_cancel_before_invoke_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_full+pipe_cancel_in_a_vacuum_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_in_a_vacuum.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_in_a_vacuum.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_full+pipe_cancel_in_a_vacuum_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_full+pipe_cancel_with_status_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_with_status.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_with_status.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_full+pipe_cancel_with_status_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_full+pipe_channel_connectivity_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_channel_connectivity.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_channel_connectivity.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_full+pipe_channel_connectivity_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_full+pipe_channel_ping_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_channel_ping.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_channel_ping.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_full+pipe_channel_ping_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_full+pipe_compressed_payload_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_compressed_payload.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_compressed_payload.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_full+pipe_compressed_payload_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_full+pipe_default_host_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_default_host.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_default_host.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_full+pipe_default_host_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_full+pipe_disappearing_server_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_disappearing_server.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_disappearing_server.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_full+pipe_disappearing_server_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_full+pipe_empty_batch_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_empty_batch.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_empty_batch.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_full+pipe_empty_batch_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_full+pipe_graceful_server_shutdown_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_graceful_server_shutdown.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_graceful_server_shutdown.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_full+pipe_graceful_server_shutdown_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_full+pipe_high_initial_seqno_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_high_initial_seqno.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_high_initial_seqno.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_full+pipe_high_initial_seqno_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_full+pipe_hpack_size_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_hpack_size.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_hpack_size.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_full+pipe_hpack_size_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_full+pipe_invoke_large_request_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_invoke_large_request.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_invoke_large_request.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_full+pipe_invoke_large_request_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_full+pipe_large_metadata_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_large_metadata.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_large_metadata.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_full+pipe_large_metadata_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_full+pipe_max_concurrent_streams_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_max_concurrent_streams.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_max_concurrent_streams.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_full+pipe_max_concurrent_streams_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_full+pipe_max_message_length_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_max_message_length.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_max_message_length.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_full+pipe_max_message_length_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_full+pipe_metadata_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_metadata.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_metadata.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_full+pipe_metadata_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_full+pipe_negative_deadline_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_negative_deadline.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_negative_deadline.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_full+pipe_negative_deadline_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_full+pipe_no_op_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_no_op.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_no_op.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_full+pipe_no_op_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_full+pipe_payload_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_payload.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_payload.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_full+pipe_payload_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_full+pipe_ping_pong_streaming_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_ping_pong_streaming.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_ping_pong_streaming.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_full+pipe_ping_pong_streaming_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_full+pipe_registered_call_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_registered_call.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_registered_call.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_full+pipe_registered_call_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_full+pipe_request_with_flags_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_request_with_flags.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_request_with_flags.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_full+pipe_request_with_flags_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_full+pipe_request_with_payload_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_request_with_payload.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_request_with_payload.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_full+pipe_request_with_payload_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_full+pipe_server_finishes_request_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_server_finishes_request.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_server_finishes_request.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_full+pipe_server_finishes_request_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_full+pipe_shutdown_finishes_calls_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_shutdown_finishes_calls.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_shutdown_finishes_calls.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_full+pipe_shutdown_finishes_calls_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_full+pipe_shutdown_finishes_tags_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_shutdown_finishes_tags.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_shutdown_finishes_tags.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_full+pipe_shutdown_finishes_tags_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_full+pipe_simple_delayed_request_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_simple_delayed_request.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_simple_delayed_request.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_full+pipe_simple_delayed_request_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_full+pipe_simple_request_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_simple_request.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_simple_request.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_full+pipe_simple_request_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_full+pipe_trailing_metadata_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_trailing_metadata.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_trailing_metadata.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_full+pipe_trailing_metadata_nosec_test
+
+
+
+
 $(BINDIR)/$(CONFIG)/h2_full+poll_bad_hostname_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_bad_hostname.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
@@ -22348,18 +26945,18 @@ $(BINDIR)/$(CONFIG)/h2_full+poll_cancel_with_status_nosec_test:  $(LIBDIR)/$(CON
 
 
 
-$(BINDIR)/$(CONFIG)/h2_full+poll_census_simple_request_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_census_simple_request.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_census_simple_request.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_full+poll_census_simple_request_nosec_test
-
-
-
-
 $(BINDIR)/$(CONFIG)/h2_full+poll_channel_connectivity_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_channel_connectivity.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_channel_connectivity.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_full+poll_channel_connectivity_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_full+poll_channel_ping_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_channel_ping.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_channel_ping.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_full+poll_channel_ping_nosec_test
 
 
 
@@ -22564,6 +27161,286 @@ $(BINDIR)/$(CONFIG)/h2_full+poll_trailing_metadata_nosec_test:  $(LIBDIR)/$(CONF
 
 
 
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_bad_hostname_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_bad_hostname.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_bad_hostname.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_bad_hostname_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_binary_metadata_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_binary_metadata.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_binary_metadata.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_binary_metadata_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_cancel_after_accept_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_after_accept.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_after_accept.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_cancel_after_accept_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_cancel_after_client_done_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_after_client_done.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_after_client_done.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_cancel_after_client_done_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_cancel_after_invoke_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_after_invoke.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_after_invoke.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_cancel_after_invoke_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_cancel_before_invoke_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_before_invoke.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_before_invoke.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_cancel_before_invoke_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_cancel_in_a_vacuum_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_in_a_vacuum.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_in_a_vacuum.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_cancel_in_a_vacuum_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_cancel_with_status_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_with_status.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_with_status.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_cancel_with_status_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_channel_connectivity_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_channel_connectivity.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_channel_connectivity.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_channel_connectivity_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_channel_ping_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_channel_ping.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_channel_ping.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_channel_ping_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_compressed_payload_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_compressed_payload.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_compressed_payload.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_compressed_payload_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_default_host_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_default_host.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_default_host.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_default_host_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_disappearing_server_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_disappearing_server.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_disappearing_server.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_disappearing_server_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_empty_batch_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_empty_batch.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_empty_batch.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_empty_batch_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_graceful_server_shutdown_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_graceful_server_shutdown.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_graceful_server_shutdown.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_graceful_server_shutdown_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_high_initial_seqno_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_high_initial_seqno.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_high_initial_seqno.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_high_initial_seqno_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_hpack_size_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_hpack_size.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_hpack_size.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_hpack_size_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_invoke_large_request_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_invoke_large_request.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_invoke_large_request.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_invoke_large_request_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_large_metadata_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_large_metadata.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_large_metadata.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_large_metadata_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_max_concurrent_streams_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_max_concurrent_streams.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_max_concurrent_streams.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_max_concurrent_streams_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_max_message_length_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_max_message_length.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_max_message_length.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_max_message_length_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_metadata_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_metadata.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_metadata.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_metadata_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_negative_deadline_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_negative_deadline.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_negative_deadline.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_negative_deadline_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_no_op_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_no_op.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_no_op.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_no_op_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_payload_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_payload.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_payload.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_payload_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_ping_pong_streaming_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_ping_pong_streaming.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_ping_pong_streaming.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_ping_pong_streaming_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_registered_call_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_registered_call.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_registered_call.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_registered_call_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_request_with_flags_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_request_with_flags.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_request_with_flags.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_request_with_flags_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_request_with_payload_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_request_with_payload.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_request_with_payload.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_request_with_payload_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_server_finishes_request_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_server_finishes_request.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_server_finishes_request.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_server_finishes_request_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_shutdown_finishes_calls_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_shutdown_finishes_calls.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_shutdown_finishes_calls.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_shutdown_finishes_calls_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_shutdown_finishes_tags_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_shutdown_finishes_tags.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_shutdown_finishes_tags.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_shutdown_finishes_tags_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_simple_delayed_request_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_simple_delayed_request.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_simple_delayed_request.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_simple_delayed_request_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_simple_request_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_simple_request.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_simple_request.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_simple_request_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_full+poll+pipe_trailing_metadata_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_trailing_metadata.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_trailing_metadata.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_trailing_metadata_nosec_test
+
+
+
+
 $(BINDIR)/$(CONFIG)/h2_proxy_bad_hostname_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_bad_hostname.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
@@ -22624,14 +27501,6 @@ $(BINDIR)/$(CONFIG)/h2_proxy_cancel_with_status_nosec_test:  $(LIBDIR)/$(CONFIG)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_with_status.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_proxy_cancel_with_status_nosec_test
-
-
-
-
-$(BINDIR)/$(CONFIG)/h2_proxy_census_simple_request_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_census_simple_request.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_census_simple_request.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_proxy_census_simple_request_nosec_test
 
 
 
@@ -22864,14 +27733,6 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_cancel_with_status_nosec_test:  $(LIBDIR)/$(CONF
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_with_status.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_sockpair_cancel_with_status_nosec_test
-
-
-
-
-$(BINDIR)/$(CONFIG)/h2_sockpair_census_simple_request_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_census_simple_request.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_census_simple_request.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_sockpair_census_simple_request_nosec_test
 
 
 
@@ -23116,14 +27977,6 @@ $(BINDIR)/$(CONFIG)/h2_sockpair+trace_cancel_with_status_nosec_test:  $(LIBDIR)/
 
 
 
-$(BINDIR)/$(CONFIG)/h2_sockpair+trace_census_simple_request_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair+trace.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_census_simple_request.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair+trace.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_census_simple_request.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_sockpair+trace_census_simple_request_nosec_test
-
-
-
-
 $(BINDIR)/$(CONFIG)/h2_sockpair+trace_compressed_payload_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair+trace.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_compressed_payload.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
@@ -23352,14 +28205,6 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_cancel_with_status_nosec_test:  $(LIBDIR)/
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair_1byte.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_with_status.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_cancel_with_status_nosec_test
-
-
-
-
-$(BINDIR)/$(CONFIG)/h2_sockpair_1byte_census_simple_request_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair_1byte.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_census_simple_request.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair_1byte.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_census_simple_request.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_census_simple_request_nosec_test
 
 
 
@@ -23604,42 +28449,10 @@ $(BINDIR)/$(CONFIG)/h2_uchannel_cancel_with_status_nosec_test:  $(LIBDIR)/$(CONF
 
 
 
-$(BINDIR)/$(CONFIG)/h2_uchannel_census_simple_request_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_census_simple_request.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_census_simple_request.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_uchannel_census_simple_request_nosec_test
-
-
-
-
-$(BINDIR)/$(CONFIG)/h2_uchannel_channel_connectivity_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_channel_connectivity.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_channel_connectivity.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_uchannel_channel_connectivity_nosec_test
-
-
-
-
 $(BINDIR)/$(CONFIG)/h2_uchannel_compressed_payload_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_compressed_payload.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_compressed_payload.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_uchannel_compressed_payload_nosec_test
-
-
-
-
-$(BINDIR)/$(CONFIG)/h2_uchannel_default_host_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_default_host.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_default_host.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_uchannel_default_host_nosec_test
-
-
-
-
-$(BINDIR)/$(CONFIG)/h2_uchannel_disappearing_server_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_disappearing_server.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_disappearing_server.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_uchannel_disappearing_server_nosec_test
 
 
 
@@ -23796,14 +28609,6 @@ $(BINDIR)/$(CONFIG)/h2_uchannel_shutdown_finishes_tags_nosec_test:  $(LIBDIR)/$(
 
 
 
-$(BINDIR)/$(CONFIG)/h2_uchannel_simple_delayed_request_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_simple_delayed_request.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_simple_delayed_request.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_uchannel_simple_delayed_request_nosec_test
-
-
-
-
 $(BINDIR)/$(CONFIG)/h2_uchannel_simple_request_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_simple_request.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
@@ -23884,18 +28689,18 @@ $(BINDIR)/$(CONFIG)/h2_uds_cancel_with_status_nosec_test:  $(LIBDIR)/$(CONFIG)/l
 
 
 
-$(BINDIR)/$(CONFIG)/h2_uds_census_simple_request_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uds.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_census_simple_request.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uds.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_census_simple_request.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_uds_census_simple_request_nosec_test
-
-
-
-
 $(BINDIR)/$(CONFIG)/h2_uds_channel_connectivity_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uds.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_channel_connectivity.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uds.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_channel_connectivity.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_uds_channel_connectivity_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_uds_channel_ping_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uds.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_channel_ping.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uds.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_channel_ping.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_uds_channel_ping_nosec_test
 
 
 
@@ -24156,18 +28961,18 @@ $(BINDIR)/$(CONFIG)/h2_uds+poll_cancel_with_status_nosec_test:  $(LIBDIR)/$(CONF
 
 
 
-$(BINDIR)/$(CONFIG)/h2_uds+poll_census_simple_request_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uds+poll.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_census_simple_request.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uds+poll.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_census_simple_request.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_uds+poll_census_simple_request_nosec_test
-
-
-
-
 $(BINDIR)/$(CONFIG)/h2_uds+poll_channel_connectivity_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uds+poll.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_channel_connectivity.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uds+poll.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_channel_connectivity.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_uds+poll_channel_connectivity_nosec_test
+
+
+
+
+$(BINDIR)/$(CONFIG)/h2_uds+poll_channel_ping_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uds+poll.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_channel_ping.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uds+poll.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_channel_ping.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_uds+poll_channel_ping_nosec_test
 
 
 
@@ -24364,6 +29169,23 @@ $(BINDIR)/$(CONFIG)/h2_uds+poll_trailing_metadata_nosec_test:  $(LIBDIR)/$(CONFI
 
 
 
+BADREQ_BAD_CLIENT_TEST_SRC = \
+    test/core/bad_client/tests/badreq.c \
+
+BADREQ_BAD_CLIENT_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BADREQ_BAD_CLIENT_TEST_SRC))))
+$(BINDIR)/$(CONFIG)/badreq_bad_client_test: $(BADREQ_BAD_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(BADREQ_BAD_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/badreq_bad_client_test
+
+$(OBJDIR)/$(CONFIG)/test/core/bad_client/tests/badreq.o:  $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+deps_badreq_bad_client_test: $(BADREQ_BAD_CLIENT_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(BADREQ_BAD_CLIENT_TEST_OBJS:.o=.dep)
+endif
+
+
 CONNECTION_PREFIX_BAD_CLIENT_TEST_SRC = \
     test/core/bad_client/tests/connection_prefix.c \
 
@@ -24412,6 +29234,23 @@ deps_initial_settings_frame_bad_client_test: $(INITIAL_SETTINGS_FRAME_BAD_CLIENT
 
 ifneq ($(NO_DEPS),true)
 -include $(INITIAL_SETTINGS_FRAME_BAD_CLIENT_TEST_OBJS:.o=.dep)
+endif
+
+
+SERVER_REGISTERED_METHOD_BAD_CLIENT_TEST_SRC = \
+    test/core/bad_client/tests/server_registered_method.c \
+
+SERVER_REGISTERED_METHOD_BAD_CLIENT_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(SERVER_REGISTERED_METHOD_BAD_CLIENT_TEST_SRC))))
+$(BINDIR)/$(CONFIG)/server_registered_method_bad_client_test: $(SERVER_REGISTERED_METHOD_BAD_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(SERVER_REGISTERED_METHOD_BAD_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/server_registered_method_bad_client_test
+
+$(OBJDIR)/$(CONFIG)/test/core/bad_client/tests/server_registered_method.o:  $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+deps_server_registered_method_bad_client_test: $(SERVER_REGISTERED_METHOD_BAD_CLIENT_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(SERVER_REGISTERED_METHOD_BAD_CLIENT_TEST_OBJS:.o=.dep)
 endif
 
 
@@ -24466,6 +29305,122 @@ ifneq ($(NO_DEPS),true)
 endif
 
 
+BAD_SSL_ALPN_SERVER_SRC = \
+    test/core/bad_ssl/servers/alpn.c \
+
+BAD_SSL_ALPN_SERVER_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BAD_SSL_ALPN_SERVER_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/bad_ssl_alpn_server: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/bad_ssl_alpn_server: $(BAD_SSL_ALPN_SERVER_OBJS) $(LIBDIR)/$(CONFIG)/libbad_ssl_test_server.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(BAD_SSL_ALPN_SERVER_OBJS) $(LIBDIR)/$(CONFIG)/libbad_ssl_test_server.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/bad_ssl_alpn_server
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/bad_ssl/servers/alpn.o:  $(LIBDIR)/$(CONFIG)/libbad_ssl_test_server.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+deps_bad_ssl_alpn_server: $(BAD_SSL_ALPN_SERVER_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(BAD_SSL_ALPN_SERVER_OBJS:.o=.dep)
+endif
+endif
+
+
+BAD_SSL_CERT_SERVER_SRC = \
+    test/core/bad_ssl/servers/cert.c \
+
+BAD_SSL_CERT_SERVER_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BAD_SSL_CERT_SERVER_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/bad_ssl_cert_server: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/bad_ssl_cert_server: $(BAD_SSL_CERT_SERVER_OBJS) $(LIBDIR)/$(CONFIG)/libbad_ssl_test_server.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(BAD_SSL_CERT_SERVER_OBJS) $(LIBDIR)/$(CONFIG)/libbad_ssl_test_server.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/bad_ssl_cert_server
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/bad_ssl/servers/cert.o:  $(LIBDIR)/$(CONFIG)/libbad_ssl_test_server.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+deps_bad_ssl_cert_server: $(BAD_SSL_CERT_SERVER_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(BAD_SSL_CERT_SERVER_OBJS:.o=.dep)
+endif
+endif
+
+
+BAD_SSL_ALPN_TEST_SRC = \
+    test/core/bad_ssl/bad_ssl_test.c \
+
+BAD_SSL_ALPN_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BAD_SSL_ALPN_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/bad_ssl_alpn_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/bad_ssl_alpn_test: $(BAD_SSL_ALPN_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(BAD_SSL_ALPN_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/bad_ssl_alpn_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/bad_ssl/bad_ssl_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+deps_bad_ssl_alpn_test: $(BAD_SSL_ALPN_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(BAD_SSL_ALPN_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+BAD_SSL_CERT_TEST_SRC = \
+    test/core/bad_ssl/bad_ssl_test.c \
+
+BAD_SSL_CERT_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BAD_SSL_CERT_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/bad_ssl_cert_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/bad_ssl_cert_test: $(BAD_SSL_CERT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(BAD_SSL_CERT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/bad_ssl_cert_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/bad_ssl/bad_ssl_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+deps_bad_ssl_cert_test: $(BAD_SSL_CERT_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(BAD_SSL_CERT_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
 
 
 
@@ -24503,6 +29458,7 @@ src/cpp/common/secure_create_auth_context.cc: $(OPENSSL_DEP)
 src/cpp/server/secure_server_credentials.cc: $(OPENSSL_DEP)
 src/csharp/ext/grpc_csharp_ext.c: $(OPENSSL_DEP)
 test/core/bad_client/bad_client.c: $(OPENSSL_DEP)
+test/core/bad_ssl/server.c: $(OPENSSL_DEP)
 test/core/end2end/data/server1_cert.c: $(OPENSSL_DEP)
 test/core/end2end/data/server1_key.c: $(OPENSSL_DEP)
 test/core/end2end/data/test_root_cert.c: $(OPENSSL_DEP)

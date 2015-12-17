@@ -32,6 +32,7 @@
 #endregion
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
@@ -144,6 +145,45 @@ namespace Grpc.Core.Tests
             var call = Calls.AsyncClientStreamingCall(helper.CreateClientStreamingCall());
             await call.RequestStream.WriteAllAsync(new string[] { "A", "B", "C" });
             Assert.AreEqual("ABC", await call.ResponseAsync);
+
+            Assert.AreEqual(StatusCode.OK, call.GetStatus().StatusCode);
+            Assert.IsNotNull(call.GetTrailers());
+        }
+
+        [Test]
+        public async Task ServerStreamingCall()
+        {
+            helper.ServerStreamingHandler = new ServerStreamingServerMethod<string, string>(async (request, responseStream, context) =>
+            {
+                await responseStream.WriteAllAsync(request.Split(new []{' '}));
+                context.ResponseTrailers.Add("xyz", "");
+            });
+
+            var call = Calls.AsyncServerStreamingCall(helper.CreateServerStreamingCall(), "A B C");
+            CollectionAssert.AreEqual(new string[] { "A", "B", "C" }, await call.ResponseStream.ToListAsync());
+
+            Assert.AreEqual(StatusCode.OK, call.GetStatus().StatusCode);
+            Assert.IsNotNull("xyz", call.GetTrailers()[0].Key);
+        }
+
+        [Test]
+        public async Task DuplexStreamingCall()
+        {
+            helper.DuplexStreamingHandler = new DuplexStreamingServerMethod<string, string>(async (requestStream, responseStream, context) =>
+            {
+                while (await requestStream.MoveNext())
+                {
+                    await responseStream.WriteAsync(requestStream.Current);
+                }
+                context.ResponseTrailers.Add("xyz", "xyz-value");
+            });
+
+            var call = Calls.AsyncDuplexStreamingCall(helper.CreateDuplexStreamingCall());
+            await call.RequestStream.WriteAllAsync(new string[] { "A", "B", "C" });
+            CollectionAssert.AreEqual(new string[] { "A", "B", "C" }, await call.ResponseStream.ToListAsync());
+
+            Assert.AreEqual(StatusCode.OK, call.GetStatus().StatusCode);
+            Assert.IsNotNull("xyz-value", call.GetTrailers()[0].Value);
         }
 
         [Test]
@@ -219,7 +259,7 @@ namespace Grpc.Core.Tests
         }
 
         [Test]
-        public void PeerInfoPresent()
+        public void ServerCallContext_PeerInfoPresent()
         {
             helper.UnaryHandler = new UnaryServerMethod<string, string>(async (request, context) =>
             {
@@ -228,6 +268,18 @@ namespace Grpc.Core.Tests
 
             string peer = Calls.BlockingUnaryCall(helper.CreateUnaryCall(), "abc");
             Assert.IsTrue(peer.Contains(Host));
+        }
+
+        [Test]
+        public void ServerCallContext_HostAndMethodPresent()
+        {
+            helper.UnaryHandler = new UnaryServerMethod<string, string>(async (request, context) =>
+            {
+                Assert.IsTrue(context.Host.Contains(Host));
+                Assert.AreEqual("/tests.Test/Unary", context.Method);
+                return "PASS";
+            });
+            Assert.AreEqual("PASS", Calls.BlockingUnaryCall(helper.CreateUnaryCall(), "abc"));
         }
 
         [Test]

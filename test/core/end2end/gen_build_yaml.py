@@ -50,9 +50,14 @@ uds_fixture_options = default_unsecure_fixture_options._replace(dns_resolver=Fal
 # maps fixture name to whether it requires the security library
 END2END_FIXTURES = {
     'h2_compress': default_unsecure_fixture_options,
+    'h2_census': default_unsecure_fixture_options,
     'h2_fakesec': default_secure_fixture_options._replace(ci_mac=False),
     'h2_full': default_unsecure_fixture_options,
     'h2_full+poll': default_unsecure_fixture_options._replace(
+        platforms=['linux']),
+    'h2_full+pipe': default_unsecure_fixture_options._replace(
+        platforms=['linux']),
+    'h2_full+poll+pipe': default_unsecure_fixture_options._replace(
         platforms=['linux']),
     'h2_oauth2': default_secure_fixture_options._replace(ci_mac=False),
     'h2_proxy': default_unsecure_fixture_options._replace(includes_proxy=True,
@@ -66,7 +71,7 @@ END2END_FIXTURES = {
     'h2_ssl+poll': default_secure_fixture_options._replace(platforms=['linux']),
     'h2_ssl_proxy': default_secure_fixture_options._replace(includes_proxy=True,
                                                             ci_mac=False),
-    'h2_uchannel': default_unsecure_fixture_options,
+    'h2_uchannel': default_unsecure_fixture_options._replace(fullstack=False),
     'h2_uds+poll': uds_fixture_options._replace(platforms=['linux']),
     'h2_uds': uds_fixture_options,
 }
@@ -87,8 +92,8 @@ END2END_TESTS = {
     'cancel_before_invoke': default_test_options,
     'cancel_in_a_vacuum': default_test_options,
     'cancel_with_status': default_test_options,
-    'census_simple_request': default_test_options,
     'channel_connectivity': connectivity_test_options._replace(proxyable=False),
+    'channel_ping': connectivity_test_options._replace(proxyable=False),
     'compressed_payload': default_test_options._replace(proxyable=False),
     'default_host': default_test_options._replace(needs_fullstack=True,
                                                   needs_dns=True),
