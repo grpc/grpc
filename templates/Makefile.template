@@ -174,7 +174,8 @@
   CXX_asan = clang++
   LD_asan = clang
   LDXX_asan = clang++
-  CPPFLAGS_asan = -O0 -fsanitize=address -fno-omit-frame-pointer -Wno-unused-command-line-argument
+  CFLAGS_asan = -O0 -fsanitize=address -fno-omit-frame-pointer -Wno-unused-command-line-argument
+  CXXFLAGS_asan = -O0 -fsanitize=address -fno-omit-frame-pointer -Wno-unused-command-line-argument
   LDFLAGS_asan = -fsanitize=address
   DEFINES_asan = GRPC_TEST_SLOWDOWN_BUILD_FACTOR=3
 
@@ -184,7 +185,8 @@
   CXX_msan = clang++-libc++
   LD_msan = clang
   LDXX_msan = clang++-libc++
-  CPPFLAGS_msan = -O0 -fsanitize=memory -fsanitize-memory-track-origins -fno-omit-frame-pointer -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1 -Wno-unused-command-line-argument
+  CFLAGS_msan = -O0 -fsanitize=memory -fsanitize-memory-track-origins -fno-omit-frame-pointer -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1 -Wno-unused-command-line-argument
+  CXXFLAGS_msan = -O0 -fsanitize=memory -fsanitize-memory-track-origins -fno-omit-frame-pointer -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1 -Wno-unused-command-line-argument
   OPENSSL_CFLAGS_msan = -DPURIFY
   LDFLAGS_msan = -fsanitize=memory -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1
   DEFINES_msan = NDEBUG GRPC_TEST_SLOWDOWN_BUILD_FACTOR=4
@@ -195,7 +197,8 @@
   CXX_ubsan = clang++
   LD_ubsan = clang
   LDXX_ubsan = clang++
-  CPPFLAGS_ubsan = -O1 -fsanitize=undefined -fno-omit-frame-pointer -Wno-unused-command-line-argument
+  CFLAGS_ubsan = -O1 -fsanitize=undefined -fno-omit-frame-pointer -Wno-unused-command-line-argument
+  CXXFLAGS_ubsan = -O1 -fsanitize=undefined -fno-omit-frame-pointer -Wno-unused-command-line-argument
   OPENSSL_CFLAGS_ubsan = -DPURIFY
   LDFLAGS_ubsan = -fsanitize=undefined
   DEFINES_ubsan = NDEBUG GRPC_TEST_SLOWDOWN_BUILD_FACTOR=3
@@ -205,7 +208,8 @@
   CXX_gcov = g++
   LD_gcov = gcc
   LDXX_gcov = g++
-  CPPFLAGS_gcov = -O0 -fprofile-arcs -ftest-coverage -Wno-return-type
+  CFLAGS_gcov = -O0 -fprofile-arcs -ftest-coverage -Wno-return-type
+  CXXFLAGS_gcov = -O0 -fprofile-arcs -ftest-coverage -Wno-return-type
   LDFLAGS_gcov = -fprofile-arcs -ftest-coverage -rdynamic
   DEFINES_gcov = _DEBUG DEBUG GPR_GCOV
 
@@ -270,10 +274,13 @@
   else
   CXXFLAGS += -std=c++0x
   endif
-  CPPFLAGS += -g -Wall -Wextra -Werror -Wno-long-long -Wno-unused-parameter
+  CFLAGS += -g -Wall -Wextra -Werror -Wno-long-long -Wno-unused-parameter
+  CXXFLAGS += -g -Wall -Wextra -Werror -Wno-long-long -Wno-unused-parameter
   LDFLAGS += -g
 
   CPPFLAGS += $(CPPFLAGS_$(CONFIG))
+  CFLAGS += $(CFLAGS_$(CONFIG))
+  CXXFLAGS += $(CXXFLAGS_$(CONFIG))
   DEFINES += $(DEFINES_$(CONFIG)) INSTALL_PREFIX=\"$(prefix)\"
   LDFLAGS += $(LDFLAGS_$(CONFIG))
 
@@ -1537,7 +1544,7 @@
   # boringssl needs an override to ensure that it does not include
   # system openssl headers regardless of other configuration
   # we do so here with a target specific variable assignment
-  $(LIB${lib.name.upper()}_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -std=c99 -Wno-sign-conversion -Wno-conversion
+  $(LIB${lib.name.upper()}_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -std=c99 -Wno-sign-conversion -Wno-conversion -Wno-unused-value
   $(LIB${lib.name.upper()}_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
   $(LIB${lib.name.upper()}_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
   % else:
@@ -1748,7 +1755,7 @@
   # boringssl needs an override to ensure that it does not include
   # system openssl headers regardless of other configuration
   # we do so here with a target specific variable assignment
-  $(${tgt.name.upper()}_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -std=c99 -Wno-sign-conversion -Wno-conversion -DOPENSSL_NO_ASM
+  $(${tgt.name.upper()}_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -std=c99 -Wno-sign-conversion -Wno-conversion -Wno-unused-value
   $(${tgt.name.upper()}_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
   $(${tgt.name.upper()}_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
   % else:
