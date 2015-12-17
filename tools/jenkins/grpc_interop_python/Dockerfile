@@ -75,6 +75,7 @@ RUN ln -s /usr/bin/ccache /usr/local/bin/clang++
 # Install Python requisites
 RUN /bin/bash -l -c "pip install --upgrade pip"
 RUN /bin/bash -l -c "pip install virtualenv"
+RUN /bin/bash -l -c "pip install tox"
 
 # Define the default command.
 CMD ["bash"]

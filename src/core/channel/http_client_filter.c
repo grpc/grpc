@@ -31,12 +31,12 @@
  */
 
 #include "src/core/channel/http_client_filter.h"
-#include <string.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
-#include "src/core/support/string.h"
+#include <string.h>
 #include "src/core/profiling/timers.h"
+#include "src/core/support/string.h"
 #include "src/core/transport/static_metadata.h"
 
 typedef struct call_data {

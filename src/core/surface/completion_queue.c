@@ -73,6 +73,12 @@ struct grpc_completion_queue {
   plucker pluckers[GRPC_MAX_COMPLETION_QUEUE_PLUCKERS];
   grpc_closure pollset_shutdown_done;
 
+#ifndef NDEBUG
+  void **outstanding_tags;
+  size_t outstanding_tag_count;
+  size_t outstanding_tag_capacity;
+#endif
+
   grpc_completion_queue *next_free;
 };
 
@@ -89,6 +95,9 @@ void grpc_cq_global_shutdown(void) {
   while (g_freelist) {
     grpc_completion_queue *next = g_freelist->next_free;
     grpc_pollset_destroy(&g_freelist->pollset);
+#ifndef NDEBUG
+    gpr_free(g_freelist->outstanding_tags);
+#endif
     gpr_free(g_freelist);
     g_freelist = next;
   }
@@ -117,6 +126,10 @@ grpc_completion_queue *grpc_completion_queue_create(void *reserved) {
 
     cc = gpr_malloc(sizeof(grpc_completion_queue));
     grpc_pollset_init(&cc->pollset);
+#ifndef NDEBUG
+    cc->outstanding_tags = NULL;
+    cc->outstanding_tag_capacity = 0;
+#endif
   } else {
     cc = g_freelist;
     g_freelist = g_freelist->next_free;
@@ -134,6 +147,9 @@ grpc_completion_queue *grpc_completion_queue_create(void *reserved) {
   cc->shutdown_called = 0;
   cc->is_server_cq = 0;
   cc->num_pluckers = 0;
+#ifndef NDEBUG
+  cc->outstanding_tag_count = 0;
+#endif
   grpc_closure_init(&cc->pollset_shutdown_done, on_pollset_shutdown_done, cc);
 
   GPR_TIMER_END("grpc_completion_queue_create", 0);
@@ -176,10 +192,17 @@ void grpc_cq_internal_unref(grpc_completion_queue *cc) {
   }
 }
 
-void grpc_cq_begin_op(grpc_completion_queue *cc) {
+void grpc_cq_begin_op(grpc_completion_queue *cc, void *tag) {
 #ifndef NDEBUG
   gpr_mu_lock(GRPC_POLLSET_MU(&cc->pollset));
   GPR_ASSERT(!cc->shutdown_called);
+  if (cc->outstanding_tag_count == cc->outstanding_tag_capacity) {
+    cc->outstanding_tag_capacity = GPR_MAX(4, 2 * cc->outstanding_tag_capacity);
+    cc->outstanding_tags =
+        gpr_realloc(cc->outstanding_tags, sizeof(*cc->outstanding_tags) *
+                                              cc->outstanding_tag_capacity);
+  }
+  cc->outstanding_tags[cc->outstanding_tag_count++] = tag;
   gpr_mu_unlock(GRPC_POLLSET_MU(&cc->pollset));
 #endif
   gpr_ref(&cc->pending_events);
@@ -196,6 +219,9 @@ void grpc_cq_end_op(grpc_exec_ctx *exec_ctx, grpc_completion_queue *cc,
   int shutdown;
   int i;
   grpc_pollset_worker *pluck_worker;
+#ifndef NDEBUG
+  int found = 0;
+#endif
 
   GPR_TIMER_BEGIN("grpc_cq_end_op", 0);
 
@@ -206,6 +232,18 @@ void grpc_cq_end_op(grpc_exec_ctx *exec_ctx, grpc_completion_queue *cc,
       ((gpr_uintptr)&cc->completed_head) | ((gpr_uintptr)(success != 0));
 
   gpr_mu_lock(GRPC_POLLSET_MU(&cc->pollset));
+#ifndef NDEBUG
+  for (i = 0; i < (int)cc->outstanding_tag_count; i++) {
+    if (cc->outstanding_tags[i] == tag) {
+      cc->outstanding_tag_count--;
+      GPR_SWAP(void *, cc->outstanding_tags[i],
+               cc->outstanding_tags[cc->outstanding_tag_count]);
+      found = 1;
+      break;
+    }
+  }
+  GPR_ASSERT(found);
+#endif
   shutdown = gpr_unref(&cc->pending_events);
   if (!shutdown) {
     cc->completed_tail->next =
@@ -247,10 +285,10 @@ grpc_event grpc_completion_queue_next(grpc_completion_queue *cc,
   GRPC_API_TRACE(
       "grpc_completion_queue_next("
       "cc=%p, "
-      "deadline=gpr_timespec { tv_sec: %ld, tv_nsec: %d, clock_type: %d }, "
+      "deadline=gpr_timespec { tv_sec: %lld, tv_nsec: %d, clock_type: %d }, "
       "reserved=%p)",
-      5, (cc, (long)deadline.tv_sec, deadline.tv_nsec, (int)deadline.clock_type,
-          reserved));
+      5, (cc, (long long)deadline.tv_sec, (int)deadline.tv_nsec,
+          (int)deadline.clock_type, reserved));
   GPR_ASSERT(!reserved);
 
   deadline = gpr_convert_clock_type(deadline, GPR_CLOCK_MONOTONIC);
@@ -335,9 +373,9 @@ grpc_event grpc_completion_queue_pluck(grpc_completion_queue *cc, void *tag,
   GRPC_API_TRACE(
       "grpc_completion_queue_pluck("
       "cc=%p, tag=%p, "
-      "deadline=gpr_timespec { tv_sec: %ld, tv_nsec: %d, clock_type: %d }, "
+      "deadline=gpr_timespec { tv_sec: %lld, tv_nsec: %d, clock_type: %d }, "
       "reserved=%p)",
-      6, (cc, tag, (long)deadline.tv_sec, deadline.tv_nsec,
+      6, (cc, tag, (long long)deadline.tv_sec, (int)deadline.tv_nsec,
           (int)deadline.clock_type, reserved));
   GPR_ASSERT(!reserved);
 

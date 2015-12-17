@@ -39,7 +39,7 @@
 #include "src/core/channel/channel_args.h"
 #include "src/core/channel/http_client_filter.h"
 #include "src/core/httpcli/httpcli.h"
-#include "src/core/iomgr/iomgr.h"
+#include "src/core/iomgr/executor.h"
 #include "src/core/json/json.h"
 #include "src/core/support/string.h"
 #include "src/core/surface/api_trace.h"
@@ -48,7 +48,6 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
-#include <grpc/support/thd.h>
 #include <grpc/support/time.h>
 
 /* -- Common. -- */
@@ -511,10 +510,11 @@ grpc_call_credentials *grpc_service_account_jwt_access_credentials_create(
       "grpc_service_account_jwt_access_credentials_create("
       "json_key=%s, "
       "token_lifetime="
-      "gpr_timespec { tv_sec: %ld, tv_nsec: %d, clock_type: %d }, "
+      "gpr_timespec { tv_sec: %lld, tv_nsec: %d, clock_type: %d }, "
       "reserved=%p)",
-      5, (json_key, (long)token_lifetime.tv_sec, token_lifetime.tv_nsec,
-          (int)token_lifetime.clock_type, reserved));
+      5,
+      (json_key, (long long)token_lifetime.tv_sec, (int)token_lifetime.tv_nsec,
+       (int)token_lifetime.clock_type, reserved));
   GPR_ASSERT(reserved == NULL);
   return grpc_service_account_jwt_access_credentials_create_from_auth_json_key(
       grpc_auth_json_key_create_from_string(json_key), token_lifetime);
@@ -792,15 +792,14 @@ static void md_only_test_destruct(grpc_call_credentials *creds) {
   grpc_credentials_md_store_unref(c->md_store);
 }
 
-static void on_simulated_token_fetch_done(void *user_data) {
+static void on_simulated_token_fetch_done(grpc_exec_ctx *exec_ctx,
+                                          void *user_data, int success) {
   grpc_credentials_metadata_request *r =
       (grpc_credentials_metadata_request *)user_data;
   grpc_md_only_test_credentials *c = (grpc_md_only_test_credentials *)r->creds;
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  r->cb(&exec_ctx, r->user_data, c->md_store->entries, c->md_store->num_entries,
+  r->cb(exec_ctx, r->user_data, c->md_store->entries, c->md_store->num_entries,
         GRPC_CREDENTIALS_OK);
   grpc_credentials_metadata_request_destroy(r);
-  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 static void md_only_test_get_request_metadata(
@@ -810,10 +809,10 @@ static void md_only_test_get_request_metadata(
   grpc_md_only_test_credentials *c = (grpc_md_only_test_credentials *)creds;
 
   if (c->is_async) {
-    gpr_thd_id thd_id;
     grpc_credentials_metadata_request *cb_arg =
         grpc_credentials_metadata_request_create(creds, cb, user_data);
-    gpr_thd_new(&thd_id, on_simulated_token_fetch_done, cb_arg, NULL);
+    grpc_executor_enqueue(
+        grpc_closure_create(on_simulated_token_fetch_done, cb_arg), 1);
   } else {
     cb(exec_ctx, user_data, c->md_store->entries, 1, GRPC_CREDENTIALS_OK);
   }

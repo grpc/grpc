@@ -225,7 +225,8 @@ void grpc_mdctx_global_shutdown(void) {
     gc_mdtab(shard);
     /* TODO(ctiller): GPR_ASSERT(shard->count == 0); */
     if (shard->count != 0) {
-      gpr_log(GPR_DEBUG, "WARNING: %d metadata elements were leaked", shard->count);
+      gpr_log(GPR_DEBUG, "WARNING: %d metadata elements were leaked",
+              shard->count);
     }
     gpr_free(shard->elems);
   }
@@ -234,7 +235,8 @@ void grpc_mdctx_global_shutdown(void) {
     gpr_mu_destroy(&shard->mu);
     /* TODO(ctiller): GPR_ASSERT(shard->count == 0); */
     if (shard->count != 0) {
-      gpr_log(GPR_DEBUG, "WARNING: %d metadata strings were leaked", shard->count);
+      gpr_log(GPR_DEBUG, "WARNING: %d metadata strings were leaked",
+              shard->count);
     }
     gpr_free(shard->strs);
   }
@@ -701,7 +703,7 @@ static int conforms_to(grpc_mdstr *s, const gpr_uint8 *legal_bits) {
 
 int grpc_mdstr_is_legal_header(grpc_mdstr *s) {
   static const gpr_uint8 legal_header_bits[256 / 8] = {
-      0x00, 0x00, 0x00, 0x00, 0x00, 0x20, 0xff, 0x03, 0x00, 0x00, 0x00,
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x60, 0xff, 0x03, 0x00, 0x00, 0x00,
       0x80, 0xfe, 0xff, 0xff, 0x07, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
   return conforms_to(s, legal_header_bits);
@@ -709,7 +711,7 @@ int grpc_mdstr_is_legal_header(grpc_mdstr *s) {
 
 int grpc_mdstr_is_legal_nonbin_header(grpc_mdstr *s) {
   static const gpr_uint8 legal_header_bits[256 / 8] = {
-      0x00, 0x00, 0x00, 0x00, 0xff, 0xef, 0xff, 0xff, 0xff, 0xff, 0xff,
+      0x00, 0x00, 0x00, 0x00, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
       0xff, 0xff, 0xff, 0xff, 0x7f, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
   return conforms_to(s, legal_header_bits);

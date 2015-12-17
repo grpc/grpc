@@ -34,6 +34,7 @@
 #ifndef GRPCXX_IMPL_RPC_SERVICE_METHOD_H
 #define GRPCXX_IMPL_RPC_SERVICE_METHOD_H
 
+#include <climits>
 #include <functional>
 #include <map>
 #include <memory>
@@ -251,7 +252,11 @@ class RpcService {
   void AddMethod(RpcServiceMethod* method) { methods_.emplace_back(method); }
 
   RpcServiceMethod* GetMethod(int i) { return methods_[i].get(); }
-  int GetMethodCount() const { return methods_.size(); }
+  int GetMethodCount() const {
+    // On win x64, int is only 32bit
+    GPR_ASSERT(methods_.size() <= INT_MAX);
+    return (int)methods_.size();
+  }
 
  private:
   std::vector<std::unique_ptr<RpcServiceMethod>> methods_;
