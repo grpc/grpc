@@ -1533,6 +1533,13 @@
 
   LIB${lib.name.upper()}_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIB${lib.name.upper()}_SRC))))
 
+  % if lib.name[0:9] == 'boringssl':
+  # boringssl needs an override to ensure that it does not include
+  # system openssl headers regardless of other configuration
+  # we do so here with a target specific variable assignment
+  $(LIB${lib.name.upper()}_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS)
+  % endif
+
   ## If the library requires OpenSSL, let's add some restrictions.
   % if lib.get('secure', 'check') == True or lib.get('secure', 'check') == 'check':
   ifeq ($(NO_SECURE),true)
