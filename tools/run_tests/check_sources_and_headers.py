@@ -33,7 +33,6 @@ def target_has_header(target, name):
 
 errors = 0
 for target in js:
-	if target['name'] == 'boringssl': continue
 	for fn in target['src']:
 		with open(os.path.join(root, fn)) as f:
 			src = f.read().splitlines()
