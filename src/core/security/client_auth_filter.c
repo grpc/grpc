@@ -68,6 +68,7 @@ typedef struct {
 /* We can have a per-channel credentials. */
 typedef struct {
   grpc_channel_security_connector *security_connector;
+  grpc_auth_context *auth_context;
 } channel_data;
 
 static void reset_auth_metadata_context(
@@ -122,6 +123,7 @@ static void on_credentials_metadata(grpc_exec_ctx *exec_ctx, void *user_data,
 }
 
 void build_auth_metadata_context(grpc_security_connector *sc,
+                                 grpc_auth_context *auth_context,
                                  call_data *calld) {
   char *service = gpr_strdup(grpc_mdstr_as_c_string(calld->method));
   char *last_slash = strrchr(service, '/');
@@ -145,7 +147,7 @@ void build_auth_metadata_context(grpc_security_connector *sc,
   calld->auth_md_context.service_url = service_url;
   calld->auth_md_context.method_name = method_name;
   calld->auth_md_context.channel_auth_context =
-      GRPC_AUTH_CONTEXT_REF(sc->auth_context, "grpc_auth_metadata_context");
+      GRPC_AUTH_CONTEXT_REF(auth_context, "grpc_auth_metadata_context");
   gpr_free(service);
 }
 
@@ -179,7 +181,8 @@ static void send_security_metadata(grpc_exec_ctx *exec_ctx,
         call_creds_has_md ? ctx->creds : channel_call_creds);
   }
 
-  build_auth_metadata_context(&chand->security_connector->base, calld);
+  build_auth_metadata_context(&chand->security_connector->base,
+                              chand->auth_context, calld);
   calld->op = *op; /* Copy op (originates from the caller's stack). */
   GPR_ASSERT(calld->pollset);
   grpc_call_credentials_get_request_metadata(
@@ -230,7 +233,7 @@ static void auth_start_transport_op(grpc_exec_ctx *exec_ctx,
     sec_ctx = op->context[GRPC_CONTEXT_SECURITY].value;
     GRPC_AUTH_CONTEXT_UNREF(sec_ctx->auth_context, "client auth filter");
     sec_ctx->auth_context = GRPC_AUTH_CONTEXT_REF(
-        chand->security_connector->base.auth_context, "client_auth_filter");
+        chand->auth_context, "client_auth_filter");
   }
 
   if (op->send_initial_metadata != NULL) {
@@ -307,6 +310,9 @@ static void init_channel_elem(grpc_exec_ctx *exec_ctx,
                               grpc_channel_element_args *args) {
   grpc_security_connector *sc =
       grpc_find_security_connector_in_args(args->channel_args);
+  grpc_auth_context *auth_context =
+      grpc_find_auth_context_in_args(args->channel_args);
+
   /* grab pointers to our data from the channel element */
   channel_data *chand = elem->channel_data;
 
@@ -315,12 +321,15 @@ static void init_channel_elem(grpc_exec_ctx *exec_ctx,
      path */
   GPR_ASSERT(!args->is_last);
   GPR_ASSERT(sc != NULL);
+  GPR_ASSERT(auth_context != NULL);
 
   /* initialize members */
   GPR_ASSERT(sc->is_client_side);
   chand->security_connector =
       (grpc_channel_security_connector *)GRPC_SECURITY_CONNECTOR_REF(
           sc, "client_auth_filter");
+  chand->auth_context =
+      GRPC_AUTH_CONTEXT_REF(auth_context, "client_auth_filter");
 }
 
 /* Destructor for channel data */
@@ -328,10 +337,11 @@ static void destroy_channel_elem(grpc_exec_ctx *exec_ctx,
                                  grpc_channel_element *elem) {
   /* grab pointers to our data from the channel element */
   channel_data *chand = elem->channel_data;
-  grpc_channel_security_connector *ctx = chand->security_connector;
-  if (ctx != NULL) {
-    GRPC_SECURITY_CONNECTOR_UNREF(&ctx->base, "client_auth_filter");
+  grpc_channel_security_connector *sc = chand->security_connector;
+  if (sc != NULL) {
+    GRPC_SECURITY_CONNECTOR_UNREF(&sc->base, "client_auth_filter");
   }
+  GRPC_AUTH_CONTEXT_UNREF(chand->auth_context, "client_auth_filter");
 }
 
 const grpc_channel_filter grpc_client_auth_filter = {
