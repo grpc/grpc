@@ -54,8 +54,7 @@ const char *grpc_connectivity_state_name(grpc_connectivity_state state) {
     case GRPC_CHANNEL_FATAL_FAILURE:
       return "FATAL_FAILURE";
   }
-  abort();
-  return "UNKNOWN";
+  GPR_UNREACHABLE_CODE(return "UNKNOWN");
 }
 
 void grpc_connectivity_state_init(grpc_connectivity_state_tracker *tracker,
@@ -88,7 +87,7 @@ void grpc_connectivity_state_destroy(grpc_exec_ctx *exec_ctx,
 grpc_connectivity_state grpc_connectivity_state_check(
     grpc_connectivity_state_tracker *tracker) {
   if (grpc_connectivity_state_trace) {
-    gpr_log(GPR_DEBUG, "CONWATCH: %s: get %s", tracker->name,
+    gpr_log(GPR_DEBUG, "CONWATCH: %p %s: get %s", tracker, tracker->name,
             grpc_connectivity_state_name(tracker->current_state));
   }
   return tracker->current_state;
@@ -98,42 +97,47 @@ int grpc_connectivity_state_notify_on_state_change(
     grpc_exec_ctx *exec_ctx, grpc_connectivity_state_tracker *tracker,
     grpc_connectivity_state *current, grpc_closure *notify) {
   if (grpc_connectivity_state_trace) {
-    gpr_log(GPR_DEBUG, "CONWATCH: %s: from %s [cur=%s] notify=%p",
-            tracker->name, grpc_connectivity_state_name(*current),
-            grpc_connectivity_state_name(tracker->current_state), notify);
-  }
-  if (tracker->current_state != *current) {
-    *current = tracker->current_state;
-    grpc_exec_ctx_enqueue(exec_ctx, notify, 1);
-  } else {
-    grpc_connectivity_state_watcher *w = gpr_malloc(sizeof(*w));
-    w->current = current;
-    w->notify = notify;
-    w->next = tracker->watchers;
-    tracker->watchers = w;
-  }
-  return tracker->current_state == GRPC_CHANNEL_IDLE;
-}
-
-int grpc_connectivity_state_change_unsubscribe(
-    grpc_exec_ctx *exec_ctx, grpc_connectivity_state_tracker *tracker,
-    grpc_closure *subscribed_notify) {
-  grpc_connectivity_state_watcher *w = tracker->watchers;
-  if (w != NULL && w->notify == subscribed_notify) {
-    tracker->watchers = w->next;
-    gpr_free(w);
-    return 1;
-  }
-  while (w != NULL) {
-    grpc_connectivity_state_watcher *rm_candidate = w->next;
-    if (rm_candidate != NULL && rm_candidate->notify == subscribed_notify) {
-      w->next = w->next->next;
-      gpr_free(rm_candidate);
-      return 1;
+    if (current == NULL) {
+      gpr_log(GPR_DEBUG, "CONWATCH: %p %s: unsubscribe notify=%p", tracker,
+              tracker->name, notify);
+    } else {
+      gpr_log(GPR_DEBUG, "CONWATCH: %p %s: from %s [cur=%s] notify=%p", tracker,
+              tracker->name, grpc_connectivity_state_name(*current),
+              grpc_connectivity_state_name(tracker->current_state), notify);
     }
-    w = w->next;
   }
-  return 0;
+  if (current == NULL) {
+    grpc_connectivity_state_watcher *w = tracker->watchers;
+    if (w != NULL && w->notify == notify) {
+      grpc_exec_ctx_enqueue(exec_ctx, notify, 0);
+      tracker->watchers = w->next;
+      gpr_free(w);
+      return 0;
+    }
+    while (w != NULL) {
+      grpc_connectivity_state_watcher *rm_candidate = w->next;
+      if (rm_candidate != NULL && rm_candidate->notify == notify) {
+        grpc_exec_ctx_enqueue(exec_ctx, notify, 0);
+        w->next = w->next->next;
+        gpr_free(rm_candidate);
+        return 0;
+      }
+      w = w->next;
+    }
+    return 0;
+  } else {
+    if (tracker->current_state != *current) {
+      *current = tracker->current_state;
+      grpc_exec_ctx_enqueue(exec_ctx, notify, 1);
+    } else {
+      grpc_connectivity_state_watcher *w = gpr_malloc(sizeof(*w));
+      w->current = current;
+      w->notify = notify;
+      w->next = tracker->watchers;
+      tracker->watchers = w;
+    }
+    return tracker->current_state == GRPC_CHANNEL_IDLE;
+  }
 }
 
 void grpc_connectivity_state_set(grpc_exec_ctx *exec_ctx,
@@ -142,7 +146,7 @@ void grpc_connectivity_state_set(grpc_exec_ctx *exec_ctx,
                                  const char *reason) {
   grpc_connectivity_state_watcher *w;
   if (grpc_connectivity_state_trace) {
-    gpr_log(GPR_DEBUG, "SET: %s: %s --> %s [%s]", tracker->name,
+    gpr_log(GPR_DEBUG, "SET: %p %s: %s --> %s [%s]", tracker, tracker->name,
             grpc_connectivity_state_name(tracker->current_state),
             grpc_connectivity_state_name(state), reason);
   }

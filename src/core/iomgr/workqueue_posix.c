@@ -103,6 +103,9 @@ void grpc_workqueue_add_to_pollset(grpc_exec_ctx *exec_ctx,
 
 void grpc_workqueue_flush(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue) {
   gpr_mu_lock(&workqueue->mu);
+  if (grpc_closure_list_empty(workqueue->closure_list)) {
+    grpc_wakeup_fd_wakeup(&workqueue->wakeup_fd);
+  }
   grpc_closure_list_move(&exec_ctx->closure_list, &workqueue->closure_list);
   gpr_mu_unlock(&workqueue->mu);
 }

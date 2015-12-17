@@ -42,12 +42,11 @@
     called when the subchannel is available) */
 typedef int (*grpc_subchannel_call_holder_pick_subchannel)(
     grpc_exec_ctx *exec_ctx, void *arg, grpc_metadata_batch *initial_metadata,
-    grpc_subchannel **subchannel, grpc_closure *on_ready);
+    grpc_connected_subchannel **connected_subchannel, grpc_closure *on_ready);
 
 typedef enum {
   GRPC_SUBCHANNEL_CALL_HOLDER_NOT_CREATING,
-  GRPC_SUBCHANNEL_CALL_HOLDER_PICKING_SUBCHANNEL,
-  GRPC_SUBCHANNEL_CALL_HOLDER_CREATING_CALL
+  GRPC_SUBCHANNEL_CALL_HOLDER_PICKING_SUBCHANNEL
 } grpc_subchannel_call_holder_creation_phase;
 
 /** Wrapper for holding a pointer to grpc_subchannel_call, and the
@@ -71,7 +70,7 @@ typedef struct grpc_subchannel_call_holder {
   gpr_mu mu;
 
   grpc_subchannel_call_holder_creation_phase creation_phase;
-  grpc_subchannel *subchannel;
+  grpc_connected_subchannel *connected_subchannel;
   grpc_pollset *pollset;
 
   grpc_transport_stream_op *waiting_ops;
@@ -79,12 +78,14 @@ typedef struct grpc_subchannel_call_holder {
   size_t waiting_ops_capacity;
 
   grpc_closure next_step;
+
+  grpc_call_stack *owning_call;
 } grpc_subchannel_call_holder;
 
 void grpc_subchannel_call_holder_init(
     grpc_subchannel_call_holder *holder,
     grpc_subchannel_call_holder_pick_subchannel pick_subchannel,
-    void *pick_subchannel_arg);
+    void *pick_subchannel_arg, grpc_call_stack *owning_call);
 void grpc_subchannel_call_holder_destroy(grpc_exec_ctx *exec_ctx,
                                          grpc_subchannel_call_holder *holder);
 
@@ -92,7 +93,6 @@ void grpc_subchannel_call_holder_perform_op(grpc_exec_ctx *exec_ctx,
                                             grpc_subchannel_call_holder *holder,
                                             grpc_transport_stream_op *op);
 char *grpc_subchannel_call_holder_get_peer(grpc_exec_ctx *exec_ctx,
-                                           grpc_subchannel_call_holder *holder,
-                                           grpc_channel *master);
+                                           grpc_subchannel_call_holder *holder);
 
 #endif

@@ -69,11 +69,19 @@ namespace Grpc.Core.Tests
         [Test]
         public async Task PropagateCancellation()
         {
+            var readyToCancelTcs = new TaskCompletionSource<object>();
+            var successTcs = new TaskCompletionSource<string>();
+
             helper.UnaryHandler = new UnaryServerMethod<string, string>(async (request, context) =>
             {
-                // check that we didn't obtain the default cancellation token.
-                Assert.IsTrue(context.CancellationToken.CanBeCanceled);
-                return "PASS";
+                readyToCancelTcs.SetResult(null);  // child call running, ready to parent call
+
+                while (!context.CancellationToken.IsCancellationRequested)
+                {
+                    await Task.Delay(10);
+                }
+                successTcs.SetResult("CHILD_CALL_CANCELLED");
+                return "";
             });
 
             helper.ClientStreamingHandler = new ClientStreamingServerMethod<string, string>(async (requestStream, context) =>
@@ -82,13 +90,23 @@ namespace Grpc.Core.Tests
                 Assert.IsNotNull(propagationToken.ParentCall);
 
                 var callOptions = new CallOptions(propagationToken: propagationToken);
-                return await Calls.AsyncUnaryCall(helper.CreateUnaryCall(callOptions), "xyz");
+                try
+                {
+                    await Calls.AsyncUnaryCall(helper.CreateUnaryCall(callOptions), "xyz");
+                }
+                catch(RpcException)
+                {
+                    // Child call will get cancelled, eat the exception.
+                }
+                return "";
             });
                 
             var cts = new CancellationTokenSource();
-            var call = Calls.AsyncClientStreamingCall(helper.CreateClientStreamingCall(new CallOptions(cancellationToken: cts.Token)));
-            await call.RequestStream.CompleteAsync();
-            Assert.AreEqual("PASS", await call);
+            var parentCall = Calls.AsyncClientStreamingCall(helper.CreateClientStreamingCall(new CallOptions(cancellationToken: cts.Token)));
+            await readyToCancelTcs.Task;
+            cts.Cancel();
+            Assert.Throws(typeof(RpcException), async () => await parentCall);
+            Assert.AreEqual("CHILD_CALL_CANCELLED", await successTcs.Task);
         }
 
         [Test]

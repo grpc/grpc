@@ -543,6 +543,7 @@ TEST_P(End2endTest, BidiStream) {
 
   stream->WritesDone();
   EXPECT_FALSE(stream->Read(&response));
+  EXPECT_FALSE(stream->Read(&response));
 
   Status s = stream->Finish();
   EXPECT_TRUE(s.ok());

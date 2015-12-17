@@ -51,7 +51,8 @@
   "\x10\x0c"                                                               \
   "content-type\x10"                                                       \
   "application/grpc"                                                       \
-  "\x10\x14grpc-accept-encoding\x15""deflate,identity,gzip"                \
+  "\x10\x14grpc-accept-encoding\x15"                                       \
+  "deflate,identity,gzip"                                                  \
   "\x10\x02te\x08trailers"                                                 \
   "\x10\x0auser-agent\"bad-client grpc-c/0.12.0.0 (linux)"
 
@@ -65,16 +66,21 @@
   "\x10\x07:scheme\x04http"                                                \
   "\x10\x07:method\x04POST"                                                \
   "\x10\x04host\x09localhost"                                              \
-  "\x10\x0c""content-type\x1e""application/grpc+this-is-valid"             \
+  "\x10\x0c"                                                               \
+  "content-type\x1e"                                                       \
+  "application/grpc+this-is-valid"                                         \
   "\x10\x14grpc-accept-encoding\x15identity,deflate,gzip"                  \
   "\x10\x02te\x08trailers"                                                 \
   "\x10\x0auser-agent\"bad-client grpc-c/0.12.0.0 (linux)"                 \
-  "\x10\x0cgrpc-timeout\x03""10S"                                          \
-  "\x10\x0cgrpc-timeout\x02""5S"
+  "\x10\x0cgrpc-timeout\x03"                                               \
+  "10S"                                                                    \
+  "\x10\x0cgrpc-timeout\x02"                                               \
+  "5S"
 
 static void *tag(gpr_intptr t) { return (void *)t; }
 
-static void verifier(grpc_server *server, grpc_completion_queue *cq) {
+static void verifier(grpc_server *server, grpc_completion_queue *cq,
+                     void *registered_method) {
   grpc_call_error error;
   grpc_call *s;
   grpc_call_details call_details;
@@ -99,6 +105,15 @@ static void verifier(grpc_server *server, grpc_completion_queue *cq) {
   cq_verifier_destroy(cqv);
 }
 
+static void failure_verifier(grpc_server *server, grpc_completion_queue *cq,
+                             void *registered_method) {
+  while (grpc_server_has_open_connections(server)) {
+    GPR_ASSERT(grpc_completion_queue_next(cq,
+                                          GRPC_TIMEOUT_MILLIS_TO_DEADLINE(20),
+                                          NULL).type == GRPC_QUEUE_TIMEOUT);
+  }
+}
+
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
 
@@ -115,6 +130,30 @@ int main(int argc, char **argv) {
   /* push a data frame with bad flags */
   GRPC_RUN_BAD_CLIENT_TEST(verifier,
                            PFX_STR "\x00\x00\x00\x00\x02\x00\x00\x00\x01", 0);
+  /* push a window update with a bad length */
+  GRPC_RUN_BAD_CLIENT_TEST(failure_verifier,
+                           PFX_STR "\x00\x00\x01\x08\x00\x00\x00\x00\x01", 0);
+  /* push a window update with bad flags */
+  GRPC_RUN_BAD_CLIENT_TEST(failure_verifier,
+                           PFX_STR "\x00\x00\x00\x08\x10\x00\x00\x00\x01", 0);
+  /* push a window update with bad data */
+  GRPC_RUN_BAD_CLIENT_TEST(failure_verifier, PFX_STR
+                           "\x00\x00\x04\x08\x00\x00\x00\x00\x01"
+                           "\xff\xff\xff\xff",
+                           0);
+  /* push a short goaway */
+  GRPC_RUN_BAD_CLIENT_TEST(failure_verifier,
+                           PFX_STR "\x00\x00\x04\x07\x00\x00\x00\x00\x00", 0);
+  /* disconnect before sending goaway */
+  GRPC_RUN_BAD_CLIENT_TEST(failure_verifier,
+                           PFX_STR "\x00\x01\x12\x07\x00\x00\x00\x00\x00",
+                           GRPC_BAD_CLIENT_DISCONNECT);
+  /* push a rst_stream with a bad length */
+  GRPC_RUN_BAD_CLIENT_TEST(failure_verifier,
+                           PFX_STR "\x00\x00\x01\x03\x00\x00\x00\x00\x01", 0);
+  /* push a rst_stream with bad flags */
+  GRPC_RUN_BAD_CLIENT_TEST(failure_verifier,
+                           PFX_STR "\x00\x00\x00\x03\x10\x00\x00\x00\x01", 0);
 
   return 0;
 }
