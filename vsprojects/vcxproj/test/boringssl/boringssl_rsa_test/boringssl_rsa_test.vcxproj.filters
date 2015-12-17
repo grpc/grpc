@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="..\..\..\..\third_party\boringssl\crypto\rsa\rsa_test.cc">
+      <Filter>third_party\boringssl\crypto\rsa</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="third_party">
+      <UniqueIdentifier>{42d4727c-fce1-2a72-78fd-5faacccc83cb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party\boringssl">
+      <UniqueIdentifier>{03165995-c29c-1f3f-4765-d17e846c4e47}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party\boringssl\crypto">
+      <UniqueIdentifier>{72d171e0-bd20-dd1c-4db7-63c797161cd6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party\boringssl\crypto\rsa">
+      <UniqueIdentifier>{00da1733-b2b8-3a6c-399d-d0207df15df4}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

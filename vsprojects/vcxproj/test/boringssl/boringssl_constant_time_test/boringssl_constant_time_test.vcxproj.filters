@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="..\..\..\..\third_party\boringssl\crypto\constant_time_test.c">
+      <Filter>third_party\boringssl\crypto</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="third_party">
+      <UniqueIdentifier>{04fb9445-5a13-1f3b-69ca-01cb87a48874}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party\boringssl">
+      <UniqueIdentifier>{85eef6cd-8872-03ae-45a6-75cd14b4b4c2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party\boringssl\crypto">
+      <UniqueIdentifier>{f89bda9b-2b2f-dd20-efd1-aecb1715fd63}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

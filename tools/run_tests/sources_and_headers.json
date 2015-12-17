@@ -2030,6 +2030,438 @@
   }, 
   {
     "deps": [
+      "boringssl", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "boringssl_aes_test", 
+    "src": [
+      "third_party/boringssl/crypto/aes/aes_test.cc"
+    ]
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "boringssl_base64_test", 
+    "src": [
+      "third_party/boringssl/crypto/base64/base64_test.cc"
+    ]
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "boringssl_bio_test", 
+    "src": [
+      "third_party/boringssl/crypto/bio/bio_test.cc"
+    ]
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "boringssl_bn_test", 
+    "src": [
+      "third_party/boringssl/crypto/bn/bn_test.cc"
+    ]
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "boringssl_bytestring_test", 
+    "src": [
+      "third_party/boringssl/crypto/bytestring/bytestring_test.cc"
+    ]
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "boringssl_aead_test", 
+    "src": [
+      "third_party/boringssl/crypto/cipher/aead_test.cc"
+    ]
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "boringssl_cipher_test", 
+    "src": [
+      "third_party/boringssl/crypto/cipher/cipher_test.cc"
+    ]
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "boringssl_cmac_test", 
+    "src": [
+      "third_party/boringssl/crypto/cmac/cmac_test.cc"
+    ]
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "boringssl_constant_time_test", 
+    "src": [
+      "third_party/boringssl/crypto/constant_time_test.c"
+    ]
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "boringssl_ed25519_test", 
+    "src": [
+      "third_party/boringssl/crypto/curve25519/ed25519_test.cc"
+    ]
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "boringssl_x25519_test", 
+    "src": [
+      "third_party/boringssl/crypto/curve25519/x25519_test.cc"
+    ]
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "boringssl_dh_test", 
+    "src": [
+      "third_party/boringssl/crypto/dh/dh_test.cc"
+    ]
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "boringssl_digest_test", 
+    "src": [
+      "third_party/boringssl/crypto/digest/digest_test.cc"
+    ]
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "boringssl_dsa_test", 
+    "src": [
+      "third_party/boringssl/crypto/dsa/dsa_test.c"
+    ]
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "boringssl_ec_test", 
+    "src": [
+      "third_party/boringssl/crypto/ec/ec_test.cc"
+    ]
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "boringssl_example_mul", 
+    "src": [
+      "third_party/boringssl/crypto/ec/example_mul.c"
+    ]
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "boringssl_ecdsa_test", 
+    "src": [
+      "third_party/boringssl/crypto/ecdsa/ecdsa_test.cc"
+    ]
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "boringssl_err_test", 
+    "src": [
+      "third_party/boringssl/crypto/err/err_test.cc"
+    ]
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "boringssl_evp_extra_test", 
+    "src": [
+      "third_party/boringssl/crypto/evp/evp_extra_test.cc"
+    ]
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "boringssl_evp_test", 
+    "src": [
+      "third_party/boringssl/crypto/evp/evp_test.cc"
+    ]
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "boringssl_pbkdf_test", 
+    "src": [
+      "third_party/boringssl/crypto/evp/pbkdf_test.cc"
+    ]
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "boringssl_hkdf_test", 
+    "src": [
+      "third_party/boringssl/crypto/hkdf/hkdf_test.c"
+    ]
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "boringssl_hmac_test", 
+    "src": [
+      "third_party/boringssl/crypto/hmac/hmac_test.cc"
+    ]
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "boringssl_lhash_test", 
+    "src": [
+      "third_party/boringssl/crypto/lhash/lhash_test.c"
+    ]
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "boringssl_gcm_test", 
+    "src": [
+      "third_party/boringssl/crypto/modes/gcm_test.c"
+    ]
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "boringssl_pkcs12_test", 
+    "src": [
+      "third_party/boringssl/crypto/pkcs8/pkcs12_test.cc"
+    ]
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "boringssl_pkcs8_test", 
+    "src": [
+      "third_party/boringssl/crypto/pkcs8/pkcs8_test.cc"
+    ]
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "boringssl_poly1305_test", 
+    "src": [
+      "third_party/boringssl/crypto/poly1305/poly1305_test.cc"
+    ]
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "boringssl_refcount_test", 
+    "src": [
+      "third_party/boringssl/crypto/refcount_test.c"
+    ]
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "boringssl_rsa_test", 
+    "src": [
+      "third_party/boringssl/crypto/rsa/rsa_test.cc"
+    ]
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "boringssl_thread_test", 
+    "src": [
+      "third_party/boringssl/crypto/thread_test.c"
+    ]
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "boringssl_pkcs7_test", 
+    "src": [
+      "third_party/boringssl/crypto/x509/pkcs7_test.c"
+    ]
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "boringssl_tab_test", 
+    "src": [
+      "third_party/boringssl/crypto/x509v3/tab_test.c"
+    ]
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "boringssl_v3name_test", 
+    "src": [
+      "third_party/boringssl/crypto/x509v3/v3name_test.c"
+    ]
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "boringssl_pqueue_test", 
+    "src": [
+      "third_party/boringssl/ssl/pqueue/pqueue_test.c"
+    ]
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "boringssl_ssl_test", 
+    "src": [
+      "third_party/boringssl/ssl/ssl_test.cc"
+    ]
+  }, 
+  {
+    "deps": [
       "end2end_certs", 
       "end2end_fixture_h2_census", 
       "end2end_test_bad_hostname", 
@@ -18963,6 +19395,37 @@
   {
     "deps": [], 
     "headers": [
+      "third_party/boringssl/crypto/aes/internal.h", 
+      "third_party/boringssl/crypto/asn1/asn1_locl.h", 
+      "third_party/boringssl/crypto/bio/internal.h", 
+      "third_party/boringssl/crypto/bn/internal.h", 
+      "third_party/boringssl/crypto/bn/rsaz_exp.h", 
+      "third_party/boringssl/crypto/bytestring/internal.h", 
+      "third_party/boringssl/crypto/cipher/internal.h", 
+      "third_party/boringssl/crypto/conf/conf_def.h", 
+      "third_party/boringssl/crypto/conf/internal.h", 
+      "third_party/boringssl/crypto/des/internal.h", 
+      "third_party/boringssl/crypto/dh/internal.h", 
+      "third_party/boringssl/crypto/digest/internal.h", 
+      "third_party/boringssl/crypto/digest/md32_common.h", 
+      "third_party/boringssl/crypto/directory.h", 
+      "third_party/boringssl/crypto/dsa/internal.h", 
+      "third_party/boringssl/crypto/ec/internal.h", 
+      "third_party/boringssl/crypto/ec/p256-x86_64-table.h", 
+      "third_party/boringssl/crypto/evp/internal.h", 
+      "third_party/boringssl/crypto/internal.h", 
+      "third_party/boringssl/crypto/modes/internal.h", 
+      "third_party/boringssl/crypto/obj/obj_dat.h", 
+      "third_party/boringssl/crypto/obj/obj_xref.h", 
+      "third_party/boringssl/crypto/pkcs8/internal.h", 
+      "third_party/boringssl/crypto/rand/internal.h", 
+      "third_party/boringssl/crypto/rsa/internal.h", 
+      "third_party/boringssl/crypto/test/scoped_types.h", 
+      "third_party/boringssl/crypto/test/test_util.h", 
+      "third_party/boringssl/crypto/x509/charmap.h", 
+      "third_party/boringssl/crypto/x509/vpm_int.h", 
+      "third_party/boringssl/crypto/x509v3/ext_dat.h", 
+      "third_party/boringssl/crypto/x509v3/pcy_int.h", 
       "third_party/boringssl/include/openssl/aead.h", 
       "third_party/boringssl/include/openssl/aes.h", 
       "third_party/boringssl/include/openssl/arm_arch.h", 
@@ -19033,13 +19496,19 @@
       "third_party/boringssl/include/openssl/type_check.h", 
       "third_party/boringssl/include/openssl/x509.h", 
       "third_party/boringssl/include/openssl/x509_vfy.h", 
-      "third_party/boringssl/include/openssl/x509v3.h"
+      "third_party/boringssl/include/openssl/x509v3.h", 
+      "third_party/boringssl/ssl/internal.h", 
+      "third_party/boringssl/ssl/test/async_bio.h", 
+      "third_party/boringssl/ssl/test/packeted_bio.h", 
+      "third_party/boringssl/ssl/test/scoped_types.h", 
+      "third_party/boringssl/ssl/test/test_config.h"
     ], 
     "language": "c", 
     "name": "boringssl", 
     "src": [
       "src/boringssl/err_data.c", 
       "third_party/boringssl/crypto/aes/aes.c", 
+      "third_party/boringssl/crypto/aes/internal.h", 
       "third_party/boringssl/crypto/aes/mode_wrappers.c", 
       "third_party/boringssl/crypto/asn1/a_bitstr.c", 
       "third_party/boringssl/crypto/asn1/a_bool.c", 
@@ -19060,6 +19529,7 @@
       "third_party/boringssl/crypto/asn1/a_utctm.c", 
       "third_party/boringssl/crypto/asn1/a_utf8.c", 
       "third_party/boringssl/crypto/asn1/asn1_lib.c", 
+      "third_party/boringssl/crypto/asn1/asn1_locl.h", 
       "third_party/boringssl/crypto/asn1/asn1_par.c", 
       "third_party/boringssl/crypto/asn1/asn_pack.c", 
       "third_party/boringssl/crypto/asn1/bio_asn1.c", 
@@ -19086,6 +19556,7 @@
       "third_party/boringssl/crypto/bio/fd.c", 
       "third_party/boringssl/crypto/bio/file.c", 
       "third_party/boringssl/crypto/bio/hexdump.c", 
+      "third_party/boringssl/crypto/bio/internal.h", 
       "third_party/boringssl/crypto/bio/pair.c", 
       "third_party/boringssl/crypto/bio/printf.c", 
       "third_party/boringssl/crypto/bio/socket.c", 
@@ -19101,18 +19572,21 @@
       "third_party/boringssl/crypto/bn/exponentiation.c", 
       "third_party/boringssl/crypto/bn/gcd.c", 
       "third_party/boringssl/crypto/bn/generic.c", 
+      "third_party/boringssl/crypto/bn/internal.h", 
       "third_party/boringssl/crypto/bn/kronecker.c", 
       "third_party/boringssl/crypto/bn/montgomery.c", 
       "third_party/boringssl/crypto/bn/mul.c", 
       "third_party/boringssl/crypto/bn/prime.c", 
       "third_party/boringssl/crypto/bn/random.c", 
       "third_party/boringssl/crypto/bn/rsaz_exp.c", 
+      "third_party/boringssl/crypto/bn/rsaz_exp.h", 
       "third_party/boringssl/crypto/bn/shift.c", 
       "third_party/boringssl/crypto/bn/sqrt.c", 
       "third_party/boringssl/crypto/buf/buf.c", 
       "third_party/boringssl/crypto/bytestring/ber.c", 
       "third_party/boringssl/crypto/bytestring/cbb.c", 
       "third_party/boringssl/crypto/bytestring/cbs.c", 
+      "third_party/boringssl/crypto/bytestring/internal.h", 
       "third_party/boringssl/crypto/chacha/chacha_generic.c", 
       "third_party/boringssl/crypto/chacha/chacha_vec.c", 
       "third_party/boringssl/crypto/cipher/aead.c", 
@@ -19126,31 +19600,42 @@
       "third_party/boringssl/crypto/cipher/e_rc4.c", 
       "third_party/boringssl/crypto/cipher/e_ssl3.c", 
       "third_party/boringssl/crypto/cipher/e_tls.c", 
+      "third_party/boringssl/crypto/cipher/internal.h", 
       "third_party/boringssl/crypto/cipher/tls_cbc.c", 
       "third_party/boringssl/crypto/cmac/cmac.c", 
       "third_party/boringssl/crypto/conf/conf.c", 
+      "third_party/boringssl/crypto/conf/conf_def.h", 
+      "third_party/boringssl/crypto/conf/internal.h", 
       "third_party/boringssl/crypto/cpu-arm.c", 
       "third_party/boringssl/crypto/cpu-intel.c", 
       "third_party/boringssl/crypto/crypto.c", 
       "third_party/boringssl/crypto/curve25519/curve25519.c", 
       "third_party/boringssl/crypto/des/des.c", 
+      "third_party/boringssl/crypto/des/internal.h", 
       "third_party/boringssl/crypto/dh/check.c", 
       "third_party/boringssl/crypto/dh/dh.c", 
       "third_party/boringssl/crypto/dh/dh_asn1.c", 
+      "third_party/boringssl/crypto/dh/internal.h", 
       "third_party/boringssl/crypto/dh/params.c", 
       "third_party/boringssl/crypto/digest/digest.c", 
       "third_party/boringssl/crypto/digest/digests.c", 
+      "third_party/boringssl/crypto/digest/internal.h", 
+      "third_party/boringssl/crypto/digest/md32_common.h", 
+      "third_party/boringssl/crypto/directory.h", 
       "third_party/boringssl/crypto/directory_posix.c", 
       "third_party/boringssl/crypto/directory_win.c", 
       "third_party/boringssl/crypto/dsa/dsa.c", 
       "third_party/boringssl/crypto/dsa/dsa_asn1.c", 
+      "third_party/boringssl/crypto/dsa/internal.h", 
       "third_party/boringssl/crypto/ec/ec.c", 
       "third_party/boringssl/crypto/ec/ec_asn1.c", 
       "third_party/boringssl/crypto/ec/ec_key.c", 
       "third_party/boringssl/crypto/ec/ec_montgomery.c", 
+      "third_party/boringssl/crypto/ec/internal.h", 
       "third_party/boringssl/crypto/ec/oct.c", 
       "third_party/boringssl/crypto/ec/p224-64.c", 
       "third_party/boringssl/crypto/ec/p256-64.c", 
+      "third_party/boringssl/crypto/ec/p256-x86_64-table.h", 
       "third_party/boringssl/crypto/ec/p256-x86_64.c", 
       "third_party/boringssl/crypto/ec/simple.c", 
       "third_party/boringssl/crypto/ec/util-64.c", 
@@ -19165,6 +19650,7 @@
       "third_party/boringssl/crypto/evp/evp.c", 
       "third_party/boringssl/crypto/evp/evp_asn1.c", 
       "third_party/boringssl/crypto/evp/evp_ctx.c", 
+      "third_party/boringssl/crypto/evp/internal.h", 
       "third_party/boringssl/crypto/evp/p_dsa_asn1.c", 
       "third_party/boringssl/crypto/evp/p_ec.c", 
       "third_party/boringssl/crypto/evp/p_ec_asn1.c", 
@@ -19175,6 +19661,7 @@
       "third_party/boringssl/crypto/ex_data.c", 
       "third_party/boringssl/crypto/hkdf/hkdf.c", 
       "third_party/boringssl/crypto/hmac/hmac.c", 
+      "third_party/boringssl/crypto/internal.h", 
       "third_party/boringssl/crypto/lhash/lhash.c", 
       "third_party/boringssl/crypto/md4/md4.c", 
       "third_party/boringssl/crypto/md5/md5.c", 
@@ -19183,9 +19670,12 @@
       "third_party/boringssl/crypto/modes/cfb.c", 
       "third_party/boringssl/crypto/modes/ctr.c", 
       "third_party/boringssl/crypto/modes/gcm.c", 
+      "third_party/boringssl/crypto/modes/internal.h", 
       "third_party/boringssl/crypto/modes/ofb.c", 
       "third_party/boringssl/crypto/obj/obj.c", 
+      "third_party/boringssl/crypto/obj/obj_dat.h", 
       "third_party/boringssl/crypto/obj/obj_xref.c", 
+      "third_party/boringssl/crypto/obj/obj_xref.h", 
       "third_party/boringssl/crypto/pem/pem_all.c", 
       "third_party/boringssl/crypto/pem/pem_info.c", 
       "third_party/boringssl/crypto/pem/pem_lib.c", 
@@ -19194,6 +19684,7 @@
       "third_party/boringssl/crypto/pem/pem_pkey.c", 
       "third_party/boringssl/crypto/pem/pem_x509.c", 
       "third_party/boringssl/crypto/pem/pem_xaux.c", 
+      "third_party/boringssl/crypto/pkcs8/internal.h", 
       "third_party/boringssl/crypto/pkcs8/p5_pbe.c", 
       "third_party/boringssl/crypto/pkcs8/p5_pbev2.c", 
       "third_party/boringssl/crypto/pkcs8/p8_pkey.c", 
@@ -19201,6 +19692,7 @@
       "third_party/boringssl/crypto/poly1305/poly1305.c", 
       "third_party/boringssl/crypto/poly1305/poly1305_arm.c", 
       "third_party/boringssl/crypto/poly1305/poly1305_vec.c", 
+      "third_party/boringssl/crypto/rand/internal.h", 
       "third_party/boringssl/crypto/rand/rand.c", 
       "third_party/boringssl/crypto/rand/urandom.c", 
       "third_party/boringssl/crypto/rand/windows.c", 
@@ -19208,6 +19700,7 @@
       "third_party/boringssl/crypto/refcount_c11.c", 
       "third_party/boringssl/crypto/refcount_lock.c", 
       "third_party/boringssl/crypto/rsa/blinding.c", 
+      "third_party/boringssl/crypto/rsa/internal.h", 
       "third_party/boringssl/crypto/rsa/padding.c", 
       "third_party/boringssl/crypto/rsa/rsa.c", 
       "third_party/boringssl/crypto/rsa/rsa_asn1.c", 
@@ -19216,6 +19709,8 @@
       "third_party/boringssl/crypto/sha/sha256.c", 
       "third_party/boringssl/crypto/sha/sha512.c", 
       "third_party/boringssl/crypto/stack/stack.c", 
+      "third_party/boringssl/crypto/test/scoped_types.h", 
+      "third_party/boringssl/crypto/test/test_util.h", 
       "third_party/boringssl/crypto/thread.c", 
       "third_party/boringssl/crypto/thread_none.c", 
       "third_party/boringssl/crypto/thread_pthread.c", 
@@ -19228,12 +19723,14 @@
       "third_party/boringssl/crypto/x509/asn1_gen.c", 
       "third_party/boringssl/crypto/x509/by_dir.c", 
       "third_party/boringssl/crypto/x509/by_file.c", 
+      "third_party/boringssl/crypto/x509/charmap.h", 
       "third_party/boringssl/crypto/x509/i2d_pr.c", 
       "third_party/boringssl/crypto/x509/pkcs7.c", 
       "third_party/boringssl/crypto/x509/t_crl.c", 
       "third_party/boringssl/crypto/x509/t_req.c", 
       "third_party/boringssl/crypto/x509/t_x509.c", 
       "third_party/boringssl/crypto/x509/t_x509a.c", 
+      "third_party/boringssl/crypto/x509/vpm_int.h", 
       "third_party/boringssl/crypto/x509/x509.c", 
       "third_party/boringssl/crypto/x509/x509_att.c", 
       "third_party/boringssl/crypto/x509/x509_cmp.c", 
@@ -19270,8 +19767,10 @@
       "third_party/boringssl/crypto/x509/x_val.c", 
       "third_party/boringssl/crypto/x509/x_x509.c", 
       "third_party/boringssl/crypto/x509/x_x509a.c", 
+      "third_party/boringssl/crypto/x509v3/ext_dat.h", 
       "third_party/boringssl/crypto/x509v3/pcy_cache.c", 
       "third_party/boringssl/crypto/x509v3/pcy_data.c", 
+      "third_party/boringssl/crypto/x509v3/pcy_int.h", 
       "third_party/boringssl/crypto/x509v3/pcy_lib.c", 
       "third_party/boringssl/crypto/x509v3/pcy_map.c", 
       "third_party/boringssl/crypto/x509v3/pcy_node.c", 
@@ -19382,6 +19881,7 @@
       "third_party/boringssl/ssl/d1_srtp.c", 
       "third_party/boringssl/ssl/d1_srvr.c", 
       "third_party/boringssl/ssl/dtls_record.c", 
+      "third_party/boringssl/ssl/internal.h", 
       "third_party/boringssl/ssl/pqueue/pqueue.c", 
       "third_party/boringssl/ssl/s3_both.c", 
       "third_party/boringssl/ssl/s3_clnt.c", 
@@ -19402,7 +19902,22 @@
       "third_party/boringssl/ssl/ssl_stat.c", 
       "third_party/boringssl/ssl/t1_enc.c", 
       "third_party/boringssl/ssl/t1_lib.c", 
+      "third_party/boringssl/ssl/test/async_bio.h", 
+      "third_party/boringssl/ssl/test/packeted_bio.h", 
+      "third_party/boringssl/ssl/test/scoped_types.h", 
+      "third_party/boringssl/ssl/test/test_config.h", 
       "third_party/boringssl/ssl/tls_record.c"
+    ]
+  }, 
+  {
+    "deps": [], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "boringssl_test_util", 
+    "src": [
+      "third_party/boringssl/crypto/test/file_test.cc", 
+      "third_party/boringssl/crypto/test/malloc.cc", 
+      "third_party/boringssl/crypto/test/test_util.cc"
     ]
   }, 
   {

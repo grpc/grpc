@@ -51,25 +51,53 @@ class Grpc(object):
   yaml = None
 
   def WriteFiles(self, files, asm_outputs):
-    #print 'files: %r' % files
-    #print 'asm_outputs: %r' % asm_outputs
-
     self.yaml = {
       '#': 'generated with tools/buildgen/gen_boring_ssl_build_yaml.py',
+      'raw_boringssl_build_output_for_debugging': {
+        'files': files,
+        'asm_outputs': asm_outputs,
+      },
       'libs': [
           {
             'name': 'boringssl',
             'build': 'private',
             'language': 'c',
-            'src': [
+            'secure': 'no',
+            'src': sorted(
               map_dir(f)
               for f in files['ssl'] + files['crypto']
-            ],
-            'headers': [
+            ),
+            'headers': sorted(
               map_dir(f)
-              for f in files['ssl_headers'] + files['crypto_headers']
-            ]
+              for f in files['ssl_headers'] + files['ssl_internal_headers'] + files['crypto_headers'] + files['crypto_internal_headers']
+            ),
+          },
+          {
+            'name': 'boringssl_test_util',
+            'build': 'private',
+            'language': 'c++',
+            'secure': 'no',
+            'src': [
+              map_dir(f)
+              for f in sorted(files['test_support'])
+            ],
           }
+      ],
+      'targets': [
+          {
+              'name': 'boringssl_%s' % os.path.splitext(os.path.basename(test))[0],
+              'build': 'test',
+              'run': False,
+              'secure': 'no',
+              'language': 'c' if os.path.splitext(test)[1] == '.c' else 'c++',
+              'src': [map_dir(test)],
+              'vs_proj_dir': 'test/boringssl',
+              'deps': [
+                  'boringssl_test_util',
+                  'boringssl',
+              ]
+          }
+          for test in sorted(files['test'])
       ]
     }
 

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="..\..\..\..\third_party\boringssl\crypto\curve25519\ed25519_test.cc">
+      <Filter>third_party\boringssl\crypto\curve25519</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="third_party">
+      <UniqueIdentifier>{a9e7f0be-e413-9ab3-918b-ba4de47e7262}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party\boringssl">
+      <UniqueIdentifier>{6629b869-7668-4aa8-75bc-04e6681576ec}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party\boringssl\crypto">
+      <UniqueIdentifier>{188d14a2-adea-4db6-59c9-569020b7dc10}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party\boringssl\crypto\curve25519">
+      <UniqueIdentifier>{a4fa2c07-fc40-676a-a9e5-aa8f2209cf44}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

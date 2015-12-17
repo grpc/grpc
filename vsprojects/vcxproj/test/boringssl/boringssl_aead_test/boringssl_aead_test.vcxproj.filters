@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="..\..\..\..\third_party\boringssl\crypto\cipher\aead_test.cc">
+      <Filter>third_party\boringssl\crypto\cipher</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="third_party">
+      <UniqueIdentifier>{361988be-9649-de24-6602-3cca558cf9d6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party\boringssl">
+      <UniqueIdentifier>{9e0444ef-57e0-0266-16bc-0d36a8ad1645}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party\boringssl\crypto">
+      <UniqueIdentifier>{6558db59-b140-abfd-41d1-74b3b48dd90b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party\boringssl\crypto\cipher">
+      <UniqueIdentifier>{3f3e6874-7305-aaf3-0dd2-2cfcb950146f}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+
