@@ -872,7 +872,9 @@ static void perform_stream_op_locked(
     GPR_ASSERT(stream_global->recv_message_ready == NULL);
     stream_global->recv_message_ready = op->recv_message_ready;
     stream_global->recv_message = op->recv_message;
-    if (stream_global->incoming_frames.head == NULL || stream_global->incoming_frames.head->is_tail) {
+    if (stream_global->id != 0 &&
+        (stream_global->incoming_frames.head == NULL ||
+         stream_global->incoming_frames.head->is_tail)) {
       incoming_byte_stream_update_flow_control(transport_global, stream_global, transport_global->stream_lookahead, 0);
     }
     grpc_chttp2_list_add_check_read_ops(transport_global, stream_global);
