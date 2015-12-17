@@ -52,11 +52,13 @@
   "\x10\x0c"                                                               \
   "content-type\x10"                                                       \
   "application/grpc"                                                       \
-  "\x10\x14grpc-accept-encoding\x15""deflate,identity,gzip"                \
+  "\x10\x14grpc-accept-encoding\x15"                                       \
+  "deflate,identity,gzip"                                                  \
   "\x10\x02te\x08trailers"                                                 \
   "\x10\x0auser-agent\"bad-client grpc-c/0.12.0.0 (linux)"
 
-static void verifier(grpc_server *server, grpc_completion_queue *cq, void *registered_method) {
+static void verifier(grpc_server *server, grpc_completion_queue *cq,
+                     void *registered_method) {
   while (grpc_server_has_open_connections(server)) {
     GPR_ASSERT(grpc_completion_queue_next(cq,
                                           GRPC_TIMEOUT_MILLIS_TO_DEADLINE(20),
@@ -80,28 +82,20 @@ static void addbuf(const void *data, size_t len) {
 int main(int argc, char **argv) {
   int i, j;
 #define MAX_FRAME_SIZE 16384
-#define MESSAGES_PER_FRAME (MAX_FRAME_SIZE/5)
-#define FRAME_SIZE (MESSAGES_PER_FRAME*5)
-#define SEND_SIZE (100*1024)
+#define MESSAGES_PER_FRAME (MAX_FRAME_SIZE / 5)
+#define FRAME_SIZE (MESSAGES_PER_FRAME * 5)
+#define SEND_SIZE (100 * 1024)
 #define NUM_FRAMES (SEND_SIZE / FRAME_SIZE + 1)
   grpc_test_init(argc, argv);
 
   addbuf(PFX_STR, sizeof(PFX_STR) - 1);
   for (i = 0; i < NUM_FRAMES; i++) {
-    gpr_uint8 hdr[9] = {
-      (gpr_uint8)(FRAME_SIZE >> 16),
-      (gpr_uint8)(FRAME_SIZE >> 8),
-      (gpr_uint8)FRAME_SIZE,
-      0,
-      0,
-      0,
-      0,
-      0,
-      1
-    };
+    gpr_uint8 hdr[9] = {(gpr_uint8)(FRAME_SIZE >> 16),
+                        (gpr_uint8)(FRAME_SIZE >> 8), (gpr_uint8)FRAME_SIZE, 0,
+                        0, 0, 0, 0, 1};
     addbuf(hdr, sizeof(hdr));
     for (j = 0; j < MESSAGES_PER_FRAME; j++) {
-      gpr_uint8 message[5] = {0,0,0,0,0};
+      gpr_uint8 message[5] = {0, 0, 0, 0, 0};
       addbuf(message, sizeof(message));
     }
   }

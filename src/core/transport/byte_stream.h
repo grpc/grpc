@@ -72,7 +72,8 @@ int grpc_byte_stream_next(grpc_exec_ctx *exec_ctx,
                           grpc_byte_stream *byte_stream, gpr_slice *slice,
                           size_t max_size_hint, grpc_closure *on_complete);
 
-void grpc_byte_stream_destroy(grpc_exec_ctx *exec_ctx, grpc_byte_stream *byte_stream);
+void grpc_byte_stream_destroy(grpc_exec_ctx *exec_ctx,
+                              grpc_byte_stream *byte_stream);
 
 /* grpc_byte_stream that wraps a slice buffer */
 typedef struct grpc_slice_buffer_stream {
