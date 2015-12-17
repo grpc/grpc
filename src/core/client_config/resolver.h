@@ -35,8 +35,8 @@
 #define GRPC_INTERNAL_CORE_CLIENT_CONFIG_RESOLVER_H
 
 #include "src/core/client_config/client_config.h"
+#include "src/core/client_config/subchannel.h"
 #include "src/core/iomgr/iomgr.h"
-#include "src/core/iomgr/sockaddr.h"
 
 typedef struct grpc_resolver grpc_resolver;
 typedef struct grpc_resolver_vtable grpc_resolver_vtable;
@@ -51,9 +51,7 @@ struct grpc_resolver {
 struct grpc_resolver_vtable {
   void (*destroy)(grpc_exec_ctx *exec_ctx, grpc_resolver *resolver);
   void (*shutdown)(grpc_exec_ctx *exec_ctx, grpc_resolver *resolver);
-  void (*channel_saw_error)(grpc_exec_ctx *exec_ctx, grpc_resolver *resolver,
-                            struct sockaddr *failing_address,
-                            int failing_address_len);
+  void (*channel_saw_error)(grpc_exec_ctx *exec_ctx, grpc_resolver *resolver);
   void (*next)(grpc_exec_ctx *exec_ctx, grpc_resolver *resolver,
                grpc_client_config **target_config, grpc_closure *on_complete);
 };
@@ -81,9 +79,7 @@ void grpc_resolver_shutdown(grpc_exec_ctx *exec_ctx, grpc_resolver *resolver);
 /** Notification that the channel has seen an error on some address.
     Can be used as a hint that re-resolution is desirable soon. */
 void grpc_resolver_channel_saw_error(grpc_exec_ctx *exec_ctx,
-                                     grpc_resolver *resolver,
-                                     struct sockaddr *failing_address,
-                                     int failing_address_len);
+                                     grpc_resolver *resolver);
 
 /** Get the next client config. Called by the channel to fetch a new
     configuration. Expected to set *target_config with a new configuration,

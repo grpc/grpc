@@ -83,7 +83,6 @@ typedef struct {
   gpr_mu mu;
   callback_phase phase;
   int success;
-  int removed;
   grpc_closure on_complete;
   grpc_timer alarm;
   grpc_connectivity_state state;
@@ -135,30 +134,15 @@ static void finished_completion(grpc_exec_ctx *exec_ctx, void *pw,
 static void partly_done(grpc_exec_ctx *exec_ctx, state_watcher *w,
                         int due_to_completion) {
   int delete = 0;
-  grpc_channel_element *client_channel_elem = NULL;
 
-  gpr_mu_lock(&w->mu);
-  if (w->removed == 0) {
-    w->removed = 1;
-    client_channel_elem = grpc_channel_stack_last_element(
-        grpc_channel_get_channel_stack(w->channel));
-    if (client_channel_elem->filter == &grpc_client_channel_filter) {
-      grpc_client_channel_del_interested_party(exec_ctx, client_channel_elem,
-                                               grpc_cq_pollset(w->cq));
-    } else {
-      grpc_client_uchannel_del_interested_party(exec_ctx, client_channel_elem,
-                                                grpc_cq_pollset(w->cq));
-    }
-  }
-  gpr_mu_unlock(&w->mu);
   if (due_to_completion) {
-    gpr_mu_lock(&w->mu);
-    w->success = 1;
-    gpr_mu_unlock(&w->mu);
     grpc_timer_cancel(exec_ctx, &w->alarm);
   }
 
   gpr_mu_lock(&w->mu);
+  if (due_to_completion) {
+    w->success = 1;
+  }
   switch (w->phase) {
     case WAITING:
       w->phase = CALLING_BACK;
@@ -200,19 +184,18 @@ void grpc_channel_watch_connectivity_state(
   GRPC_API_TRACE(
       "grpc_channel_watch_connectivity_state("
       "channel=%p, last_observed_state=%d, "
-      "deadline=gpr_timespec { tv_sec: %ld, tv_nsec: %d, clock_type: %d }, "
+      "deadline=gpr_timespec { tv_sec: %lld, tv_nsec: %d, clock_type: %d }, "
       "cq=%p, tag=%p)",
-      7, (channel, (int)last_observed_state, (long)deadline.tv_sec,
-          deadline.tv_nsec, (int)deadline.clock_type, cq, tag));
+      7, (channel, (int)last_observed_state, (long long)deadline.tv_sec,
+          (int)deadline.tv_nsec, (int)deadline.clock_type, cq, tag));
 
-  grpc_cq_begin_op(cq);
+  grpc_cq_begin_op(cq, tag);
 
   gpr_mu_init(&w->mu);
   grpc_closure_init(&w->on_complete, watch_complete, w);
   w->phase = WAITING;
   w->state = last_observed_state;
   w->success = 0;
-  w->removed = 0;
   w->cq = cq;
   w->tag = tag;
   w->channel = channel;
@@ -223,16 +206,14 @@ void grpc_channel_watch_connectivity_state(
 
   if (client_channel_elem->filter == &grpc_client_channel_filter) {
     GRPC_CHANNEL_INTERNAL_REF(channel, "watch_channel_connectivity");
-    grpc_client_channel_add_interested_party(&exec_ctx, client_channel_elem,
-                                             grpc_cq_pollset(cq));
     grpc_client_channel_watch_connectivity_state(&exec_ctx, client_channel_elem,
-                                                 &w->state, &w->on_complete);
+                                                 grpc_cq_pollset(cq), &w->state,
+                                                 &w->on_complete);
   } else if (client_channel_elem->filter == &grpc_client_uchannel_filter) {
     GRPC_CHANNEL_INTERNAL_REF(channel, "watch_uchannel_connectivity");
-    grpc_client_uchannel_add_interested_party(&exec_ctx, client_channel_elem,
-                                              grpc_cq_pollset(cq));
     grpc_client_uchannel_watch_connectivity_state(
-        &exec_ctx, client_channel_elem, &w->state, &w->on_complete);
+        &exec_ctx, client_channel_elem, grpc_cq_pollset(cq), &w->state,
+        &w->on_complete);
   }
 
   grpc_exec_ctx_finish(&exec_ctx);

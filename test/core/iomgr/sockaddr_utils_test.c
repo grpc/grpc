@@ -236,6 +236,29 @@ static void test_sockaddr_to_string(void) {
   GPR_ASSERT(errno == 0x7EADBEEF);
 }
 
+static void test_sockaddr_set_get_port(void) {
+  struct sockaddr_in input4;
+  struct sockaddr_in6 input6;
+  struct sockaddr dummy;
+
+  gpr_log(GPR_DEBUG, "test_sockaddr_set_get_port");
+
+  input4 = make_addr4(kIPv4, sizeof(kIPv4));
+  GPR_ASSERT(grpc_sockaddr_get_port((struct sockaddr *)&input4) == 12345);
+  GPR_ASSERT(grpc_sockaddr_set_port((struct sockaddr *)&input4, 54321));
+  GPR_ASSERT(grpc_sockaddr_get_port((struct sockaddr *)&input4) == 54321);
+
+  input6 = make_addr6(kIPv6, sizeof(kIPv6));
+  GPR_ASSERT(grpc_sockaddr_get_port((struct sockaddr *)&input6) == 12345);
+  GPR_ASSERT(grpc_sockaddr_set_port((struct sockaddr *)&input6, 54321));
+  GPR_ASSERT(grpc_sockaddr_get_port((struct sockaddr *)&input6) == 54321);
+
+  memset(&dummy, 0, sizeof(dummy));
+  dummy.sa_family = 123;
+  GPR_ASSERT(grpc_sockaddr_get_port(&dummy) == 0);
+  GPR_ASSERT(grpc_sockaddr_set_port(&dummy, 1234) == 0);
+}
+
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
 
@@ -243,6 +266,7 @@ int main(int argc, char **argv) {
   test_sockaddr_to_v4mapped();
   test_sockaddr_is_wildcard();
   test_sockaddr_to_string();
+  test_sockaddr_set_get_port();
 
   return 0;
 }

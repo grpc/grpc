@@ -365,10 +365,10 @@ static void hpack_enc(grpc_chttp2_hpack_compressor *c, grpc_mdelem *elem,
   GPR_ASSERT(GPR_SLICE_LENGTH(elem->key->slice) > 0);
   if (GPR_SLICE_START_PTR(elem->key->slice)[0] != ':') { /* regular header */
     st->seen_regular_header = 1;
-  } else if (st->seen_regular_header != 0) { /* reserved header */
-    gpr_log(GPR_ERROR,
-            "Reserved header (colon-prefixed) happening after regular ones.");
-    abort();
+  } else {
+    GPR_ASSERT(
+        st->seen_regular_header == 0 &&
+        "Reserved header (colon-prefixed) happening after regular ones.");
   }
 
   inc_filter(HASH_FRAGMENT_1(elem_hash), &c->filter_elems_sum, c->filter_elems);
@@ -456,12 +456,6 @@ static void deadline_enc(grpc_chttp2_hpack_compressor *c, gpr_timespec deadline,
       GRPC_MDSTR_GRPC_TIMEOUT, grpc_mdstr_from_string(timeout_str));
   hpack_enc(c, mdelem, st);
   GRPC_MDELEM_UNREF(mdelem);
-}
-
-gpr_slice grpc_chttp2_data_frame_create_empty_close(gpr_uint32 id) {
-  gpr_slice slice = gpr_slice_malloc(9);
-  fill_header(GPR_SLICE_START_PTR(slice), GRPC_CHTTP2_FRAME_DATA, id, 0, 1);
-  return slice;
 }
 
 static gpr_uint32 elems_for_bytes(gpr_uint32 bytes) {

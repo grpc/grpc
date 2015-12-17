@@ -71,11 +71,8 @@ void grpc_resolver_shutdown(grpc_exec_ctx *exec_ctx, grpc_resolver *resolver) {
 }
 
 void grpc_resolver_channel_saw_error(grpc_exec_ctx *exec_ctx,
-                                     grpc_resolver *resolver,
-                                     struct sockaddr *failing_address,
-                                     int failing_address_len) {
-  resolver->vtable->channel_saw_error(exec_ctx, resolver, failing_address,
-                                      failing_address_len);
+                                     grpc_resolver *resolver) {
+  resolver->vtable->channel_saw_error(exec_ctx, resolver);
 }
 
 void grpc_resolver_next(grpc_exec_ctx *exec_ctx, grpc_resolver *resolver,

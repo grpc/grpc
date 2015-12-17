@@ -74,6 +74,8 @@ extern const grpc_httpcli_handshaker grpc_httpcli_ssl;
 typedef struct grpc_httpcli_request {
   /* The host name to connect to */
   char *host;
+  /* The host to verify in the SSL handshake (or NULL) */
+  char *ssl_host_override;
   /* The path of the resource to fetch */
   char *path;
   /* Additional headers: count and key/values; the following are supplied

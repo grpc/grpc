@@ -26,6 +26,10 @@ const (
 	SettingsMaxHeaderListSize    SettingsIdentifier = 6
 )
 
+const (
+	SETTINGS_FLAG_ACK byte = 0x01
+)
+
 func (si SettingsIdentifier) String() string {
 	switch si {
 	case SettingsHeaderTableSize:

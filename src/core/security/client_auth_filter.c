@@ -39,11 +39,11 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/support/string.h"
 #include "src/core/channel/channel_stack.h"
-#include "src/core/security/security_context.h"
-#include "src/core/security/security_connector.h"
 #include "src/core/security/credentials.h"
+#include "src/core/security/security_connector.h"
+#include "src/core/security/security_context.h"
+#include "src/core/support/string.h"
 #include "src/core/surface/call.h"
 #include "src/core/transport/static_metadata.h"
 
