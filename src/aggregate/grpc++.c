@@ -35,8 +35,8 @@
 #define GRPC++_CC_
 
 
-#include "src/core/aggregate/gpr.c"
-#include "src/core/aggregate/grpc.c"
+#include "src/aggregate/gpr.c"
+#include "src/aggregate/grpc.c"
 
 #include "src/cpp/client/secure_credentials.cc"
 #include "src/cpp/common/auth_property_iterator.cc"

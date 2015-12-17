@@ -38,7 +38,7 @@
 extern "C" {
 #endif
 
-#include "src/core/aggregate/gpr.c"
+#include "src/aggregate/gpr.c"
 
 #include "src/core/httpcli/httpcli_security_connector.c"
 #include "src/core/security/base64.c"

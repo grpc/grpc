@@ -35,8 +35,8 @@
 #define GRPC++_UNSECURE_CC_
 
 
-#include "src/core/aggregate/gpr.c"
-#include "src/core/aggregate/grpc_unsecure.c"
+#include "src/aggregate/gpr.c"
+#include "src/aggregate/grpc_unsecure.c"
 
 #include "src/cpp/common/insecure_create_auth_context.cc"
 #include "src/cpp/client/channel.cc"

@@ -38,8 +38,8 @@
 extern "C" {
 #endif
 
-#include "src/core/aggregate/gpr.c"
-#include "src/core/aggregate/grpc.c"
+#include "src/aggregate/gpr.c"
+#include "src/aggregate/grpc.c"
 
 #include "src/core/client_config/resolvers/zookeeper_resolver.c"
 

@@ -49,7 +49,7 @@ template: |
   % endif
 
   % for dep in selected.resolved_deps:
-  #include "src/core/aggregate/${dep.name}.${language_extensions[dep.language]}"
+  #include "src/aggregate/${dep.name}.${language_extensions[dep.language]}"
   %endfor
 
   % for source in selected.src:

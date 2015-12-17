@@ -38,7 +38,7 @@
 extern "C" {
 #endif
 
-#include "src/core/aggregate/gpr.c"
+#include "src/aggregate/gpr.c"
 
 #include "src/core/surface/init_unsecure.c"
 #include "src/core/census/grpc_context.c"
