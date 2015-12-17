@@ -76,6 +76,8 @@ ${gen_package_props(packages, repo_root)}\
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>${project_guid if project_guid else project.vs_project_guid}</ProjectGuid>
+## Silence MSB8029 warning. See #4506
+    <IgnoreWarnIntDirInTempDetected>true</IgnoreWarnIntDirInTempDetected>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(VisualStudioVersion)' == '10.0'" Label="Configuration">
@@ -148,6 +150,8 @@ ${gen_package_props(packages, repo_root)}\
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <TreatWarningAsError>true</TreatWarningAsError>
       <DebugInformationFormat Condition="$(Jenkins)">None</DebugInformationFormat>
+## Silence D9007 warning. See #4508
+      <MinimalRebuild Condition="$(Jenkins)">false</MinimalRebuild>
     </ClCompile>
     <Link>
       <SubSystem>${get_subsystem(project.is_library)}</SubSystem>
@@ -165,6 +169,7 @@ ${gen_package_props(packages, repo_root)}\
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <TreatWarningAsError>true</TreatWarningAsError>
       <DebugInformationFormat Condition="$(Jenkins)">None</DebugInformationFormat>
+      <MinimalRebuild Condition="$(Jenkins)">false</MinimalRebuild>
     </ClCompile>
     <Link>
       <SubSystem>${get_subsystem(project.is_library)}</SubSystem>
@@ -184,6 +189,7 @@ ${gen_package_props(packages, repo_root)}\
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <TreatWarningAsError>true</TreatWarningAsError>
       <DebugInformationFormat Condition="$(Jenkins)">None</DebugInformationFormat>
+      <MinimalRebuild Condition="$(Jenkins)">false</MinimalRebuild>
     </ClCompile>
     <Link>
       <SubSystem>${get_subsystem(project.is_library)}</SubSystem>
@@ -205,6 +211,7 @@ ${gen_package_props(packages, repo_root)}\
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <TreatWarningAsError>true</TreatWarningAsError>
       <DebugInformationFormat Condition="$(Jenkins)">None</DebugInformationFormat>
+      <MinimalRebuild Condition="$(Jenkins)">false</MinimalRebuild>
     </ClCompile>
     <Link>
       <SubSystem>${get_subsystem(project.is_library)}</SubSystem>
@@ -225,6 +232,7 @@ ${gen_package_props(packages, repo_root)}\
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <TreatWarningAsError>true</TreatWarningAsError>
       <DebugInformationFormat Condition="$(Jenkins)">None</DebugInformationFormat>
+      <MinimalRebuild Condition="$(Jenkins)">false</MinimalRebuild>
     </ClCompile>
     <Link>
       <SubSystem>${get_subsystem(project.is_library)}</SubSystem>
@@ -242,6 +250,7 @@ ${gen_package_props(packages, repo_root)}\
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <TreatWarningAsError>true</TreatWarningAsError>
       <DebugInformationFormat Condition="$(Jenkins)">None</DebugInformationFormat>
+      <MinimalRebuild Condition="$(Jenkins)">false</MinimalRebuild>
     </ClCompile>
     <Link>
       <SubSystem>${get_subsystem(project.is_library)}</SubSystem>
@@ -261,6 +270,7 @@ ${gen_package_props(packages, repo_root)}\
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <TreatWarningAsError>true</TreatWarningAsError>
       <DebugInformationFormat Condition="$(Jenkins)">None</DebugInformationFormat>
+      <MinimalRebuild Condition="$(Jenkins)">false</MinimalRebuild>
     </ClCompile>
     <Link>
       <SubSystem>${get_subsystem(project.is_library)}</SubSystem>
@@ -282,6 +292,7 @@ ${gen_package_props(packages, repo_root)}\
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <TreatWarningAsError>true</TreatWarningAsError>
       <DebugInformationFormat Condition="$(Jenkins)">None</DebugInformationFormat>
+      <MinimalRebuild Condition="$(Jenkins)">false</MinimalRebuild>
     </ClCompile>
     <Link>
       <SubSystem>${get_subsystem(project.is_library)}</SubSystem>
