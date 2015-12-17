@@ -264,7 +264,7 @@
   DEFINES += $(EXTRA_DEFINES)
   endif
 
-  CFLAGS += -std=c89 -pedantic -Wsign-conversion -Wconversion -Wshadow
+  CFLAGS += -std=c89 -Wsign-conversion -Wconversion -Wshadow
   ifeq ($(HAS_CXX11),true)
   CXXFLAGS += -std=c++11
   else
@@ -1537,8 +1537,11 @@
   # boringssl needs an override to ensure that it does not include
   # system openssl headers regardless of other configuration
   # we do so here with a target specific variable assignment
-  $(LIB${lib.name.upper()}_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -std=c99 -no-pedantic -Wno-sign-conversion -Wno-conversion -DOPENSSL_NO_ASM
-  $(LIB${lib.name.upper()}_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS) -DOPENSSL_NO_ASM
+  $(LIB${lib.name.upper()}_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -std=c99 -Wno-sign-conversion -Wno-conversion
+  $(LIB${lib.name.upper()}_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+  $(LIB${lib.name.upper()}_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+  % else:
+  $(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
   % endif
 
   ## If the library requires OpenSSL, let's add some restrictions.
@@ -1745,8 +1748,11 @@
   # boringssl needs an override to ensure that it does not include
   # system openssl headers regardless of other configuration
   # we do so here with a target specific variable assignment
-  $(${tgt.name.upper()}_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -std=c99 -no-pedantic -Wno-sign-conversion -Wno-conversion -DOPENSSL_NO_ASM
-  $(${tgt.name.upper()}_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS) -DOPENSSL_NO_ASM
+  $(${tgt.name.upper()}_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -std=c99 -Wno-sign-conversion -Wno-conversion -DOPENSSL_NO_ASM
+  $(${tgt.name.upper()}_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+  $(${tgt.name.upper()}_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+  % else:
+  $(${tgt.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
   % endif
 
   ##
@@ -1782,7 +1788,7 @@
    $(LIBDIR)/$(CONFIG)/lib${dep}.a\
   % endfor
 
-  % if tgt.language == "c++":
+  % if tgt.language == "c++" or tgt.boringssl:
   ## C++ targets specificies.
   % if tgt.build == 'protoc':
   	$(E) "[HOSTLD]  Linking $@"

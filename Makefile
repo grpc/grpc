@@ -248,7 +248,7 @@ ifdef EXTRA_DEFINES
 DEFINES += $(EXTRA_DEFINES)
 endif
 
-CFLAGS += -std=c89 -pedantic -Wsign-conversion -Wconversion -Wshadow
+CFLAGS += -std=c89 -Wsign-conversion -Wconversion -Wshadow
 ifeq ($(HAS_CXX11),true)
 CXXFLAGS += -std=c++11
 else
@@ -6342,6 +6342,7 @@ PUBLIC_HEADERS_C += \
 
 LIBGPR_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGPR_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(LIBDIR)/$(CONFIG)/libgpr.a: $(ZLIB_DEP) $(LIBGPR_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -6383,6 +6384,7 @@ LIBGPR_TEST_UTIL_SRC = \
 
 LIBGPR_TEST_UTIL_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGPR_TEST_UTIL_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(LIBDIR)/$(CONFIG)/libgpr_test_util.a: $(ZLIB_DEP) $(LIBGPR_TEST_UTIL_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -6564,6 +6566,7 @@ PUBLIC_HEADERS_C += \
 
 LIBGRPC_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 ifeq ($(NO_SECURE),true)
 
@@ -6643,6 +6646,7 @@ PUBLIC_HEADERS_C += \
 
 LIBGRPC_TEST_UTIL_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC_TEST_UTIL_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 ifeq ($(NO_SECURE),true)
 
@@ -6689,6 +6693,7 @@ PUBLIC_HEADERS_C += \
 
 LIBGRPC_TEST_UTIL_UNSECURE_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC_TEST_UTIL_UNSECURE_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a: $(ZLIB_DEP) $(LIBGRPC_TEST_UTIL_UNSECURE_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -6849,6 +6854,7 @@ PUBLIC_HEADERS_C += \
 
 LIBGRPC_UNSECURE_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC_UNSECURE_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a: $(ZLIB_DEP) $(LIBGRPC_UNSECURE_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -6892,6 +6898,7 @@ PUBLIC_HEADERS_C += \
 
 LIBGRPC_ZOOKEEPER_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC_ZOOKEEPER_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(LIBDIR)/$(CONFIG)/libgrpc_zookeeper.a: $(ZLIB_DEP) $(LIBGRPC_ZOOKEEPER_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -6933,6 +6940,7 @@ LIBRECONNECT_SERVER_SRC = \
 
 LIBRECONNECT_SERVER_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBRECONNECT_SERVER_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 ifeq ($(NO_SECURE),true)
 
@@ -6971,6 +6979,7 @@ LIBTEST_TCP_SERVER_SRC = \
 
 LIBTEST_TCP_SERVER_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBTEST_TCP_SERVER_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 ifeq ($(NO_SECURE),true)
 
@@ -7083,6 +7092,7 @@ PUBLIC_HEADERS_CXX += \
 
 LIBGRPC++_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC++_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 ifeq ($(NO_SECURE),true)
 
@@ -7158,6 +7168,7 @@ LIBGRPC++_TEST_CONFIG_SRC = \
 
 LIBGRPC++_TEST_CONFIG_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC++_TEST_CONFIG_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 ifeq ($(NO_SECURE),true)
 
@@ -7212,6 +7223,7 @@ LIBGRPC++_TEST_UTIL_SRC = \
 
 LIBGRPC++_TEST_UTIL_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC++_TEST_UTIL_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 ifeq ($(NO_SECURE),true)
 
@@ -7333,6 +7345,7 @@ PUBLIC_HEADERS_CXX += \
 
 LIBGRPC++_UNSECURE_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC++_UNSECURE_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 ifeq ($(NO_PROTOBUF),true)
 
@@ -7394,6 +7407,7 @@ LIBGRPC_PLUGIN_SUPPORT_SRC = \
 
 LIBGRPC_PLUGIN_SUPPORT_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC_PLUGIN_SUPPORT_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 ifeq ($(NO_PROTOBUF),true)
 
@@ -7430,6 +7444,7 @@ LIBINTEROP_CLIENT_HELPER_SRC = \
 
 LIBINTEROP_CLIENT_HELPER_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBINTEROP_CLIENT_HELPER_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 ifeq ($(NO_SECURE),true)
 
@@ -7483,6 +7498,7 @@ LIBINTEROP_CLIENT_MAIN_SRC = \
 
 LIBINTEROP_CLIENT_MAIN_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBINTEROP_CLIENT_MAIN_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 ifeq ($(NO_SECURE),true)
 
@@ -7533,6 +7549,7 @@ LIBINTEROP_SERVER_HELPER_SRC = \
 
 LIBINTEROP_SERVER_HELPER_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBINTEROP_SERVER_HELPER_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 ifeq ($(NO_SECURE),true)
 
@@ -7584,6 +7601,7 @@ LIBINTEROP_SERVER_MAIN_SRC = \
 
 LIBINTEROP_SERVER_MAIN_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBINTEROP_SERVER_MAIN_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 ifeq ($(NO_SECURE),true)
 
@@ -7648,6 +7666,7 @@ LIBQPS_SRC = \
 
 LIBQPS_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBQPS_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 ifeq ($(NO_SECURE),true)
 
@@ -7706,6 +7725,7 @@ LIBGRPC_CSHARP_EXT_SRC = \
 
 LIBGRPC_CSHARP_EXT_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC_CSHARP_EXT_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 ifeq ($(NO_SECURE),true)
 
@@ -8062,8 +8082,9 @@ LIBBORINGSSL_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename
 # boringssl needs an override to ensure that it does not include
 # system openssl headers regardless of other configuration
 # we do so here with a target specific variable assignment
-$(LIBBORINGSSL_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -std=c99 -no-pedantic -Wno-sign-conversion -Wno-conversion -DOPENSSL_NO_ASM
-$(LIBBORINGSSL_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS) -DOPENSSL_NO_ASM
+$(LIBBORINGSSL_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -std=c99 -Wno-sign-conversion -Wno-conversion
+$(LIBBORINGSSL_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(LIBBORINGSSL_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
 
 $(LIBDIR)/$(CONFIG)/libboringssl.a: $(ZLIB_DEP) $(LIBBORINGSSL_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -8093,8 +8114,9 @@ LIBBORINGSSL_TEST_UTIL_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, 
 # boringssl needs an override to ensure that it does not include
 # system openssl headers regardless of other configuration
 # we do so here with a target specific variable assignment
-$(LIBBORINGSSL_TEST_UTIL_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -std=c99 -no-pedantic -Wno-sign-conversion -Wno-conversion -DOPENSSL_NO_ASM
-$(LIBBORINGSSL_TEST_UTIL_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS) -DOPENSSL_NO_ASM
+$(LIBBORINGSSL_TEST_UTIL_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -std=c99 -Wno-sign-conversion -Wno-conversion
+$(LIBBORINGSSL_TEST_UTIL_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(LIBBORINGSSL_TEST_UTIL_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
 
 ifeq ($(NO_PROTOBUF),true)
 
@@ -8130,6 +8152,7 @@ LIBEND2END_FIXTURE_H2_CENSUS_SRC = \
 
 LIBEND2END_FIXTURE_H2_CENSUS_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_FIXTURE_H2_CENSUS_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a: $(ZLIB_DEP) $(LIBEND2END_FIXTURE_H2_CENSUS_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -8154,6 +8177,7 @@ LIBEND2END_FIXTURE_H2_COMPRESS_SRC = \
 
 LIBEND2END_FIXTURE_H2_COMPRESS_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_FIXTURE_H2_COMPRESS_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_compress.a: $(ZLIB_DEP) $(LIBEND2END_FIXTURE_H2_COMPRESS_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -8178,6 +8202,7 @@ LIBEND2END_FIXTURE_H2_FAKESEC_SRC = \
 
 LIBEND2END_FIXTURE_H2_FAKESEC_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_FIXTURE_H2_FAKESEC_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 ifeq ($(NO_SECURE),true)
 
@@ -8216,6 +8241,7 @@ LIBEND2END_FIXTURE_H2_FULL_SRC = \
 
 LIBEND2END_FIXTURE_H2_FULL_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_FIXTURE_H2_FULL_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full.a: $(ZLIB_DEP) $(LIBEND2END_FIXTURE_H2_FULL_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -8240,6 +8266,7 @@ LIBEND2END_FIXTURE_H2_FULL+PIPE_SRC = \
 
 LIBEND2END_FIXTURE_H2_FULL+PIPE_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_FIXTURE_H2_FULL+PIPE_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a: $(ZLIB_DEP) $(LIBEND2END_FIXTURE_H2_FULL+PIPE_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -8264,6 +8291,7 @@ LIBEND2END_FIXTURE_H2_FULL+POLL_SRC = \
 
 LIBEND2END_FIXTURE_H2_FULL+POLL_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_FIXTURE_H2_FULL+POLL_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll.a: $(ZLIB_DEP) $(LIBEND2END_FIXTURE_H2_FULL+POLL_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -8288,6 +8316,7 @@ LIBEND2END_FIXTURE_H2_FULL+POLL+PIPE_SRC = \
 
 LIBEND2END_FIXTURE_H2_FULL+POLL+PIPE_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_FIXTURE_H2_FULL+POLL+PIPE_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a: $(ZLIB_DEP) $(LIBEND2END_FIXTURE_H2_FULL+POLL+PIPE_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -8312,6 +8341,7 @@ LIBEND2END_FIXTURE_H2_OAUTH2_SRC = \
 
 LIBEND2END_FIXTURE_H2_OAUTH2_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_FIXTURE_H2_OAUTH2_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 ifeq ($(NO_SECURE),true)
 
@@ -8350,6 +8380,7 @@ LIBEND2END_FIXTURE_H2_PROXY_SRC = \
 
 LIBEND2END_FIXTURE_H2_PROXY_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_FIXTURE_H2_PROXY_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_proxy.a: $(ZLIB_DEP) $(LIBEND2END_FIXTURE_H2_PROXY_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -8374,6 +8405,7 @@ LIBEND2END_FIXTURE_H2_SOCKPAIR_SRC = \
 
 LIBEND2END_FIXTURE_H2_SOCKPAIR_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_FIXTURE_H2_SOCKPAIR_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair.a: $(ZLIB_DEP) $(LIBEND2END_FIXTURE_H2_SOCKPAIR_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -8398,6 +8430,7 @@ LIBEND2END_FIXTURE_H2_SOCKPAIR+TRACE_SRC = \
 
 LIBEND2END_FIXTURE_H2_SOCKPAIR+TRACE_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_FIXTURE_H2_SOCKPAIR+TRACE_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair+trace.a: $(ZLIB_DEP) $(LIBEND2END_FIXTURE_H2_SOCKPAIR+TRACE_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -8422,6 +8455,7 @@ LIBEND2END_FIXTURE_H2_SOCKPAIR_1BYTE_SRC = \
 
 LIBEND2END_FIXTURE_H2_SOCKPAIR_1BYTE_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_FIXTURE_H2_SOCKPAIR_1BYTE_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair_1byte.a: $(ZLIB_DEP) $(LIBEND2END_FIXTURE_H2_SOCKPAIR_1BYTE_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -8446,6 +8480,7 @@ LIBEND2END_FIXTURE_H2_SSL_SRC = \
 
 LIBEND2END_FIXTURE_H2_SSL_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_FIXTURE_H2_SSL_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 ifeq ($(NO_SECURE),true)
 
@@ -8484,6 +8519,7 @@ LIBEND2END_FIXTURE_H2_SSL+POLL_SRC = \
 
 LIBEND2END_FIXTURE_H2_SSL+POLL_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_FIXTURE_H2_SSL+POLL_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 ifeq ($(NO_SECURE),true)
 
@@ -8522,6 +8558,7 @@ LIBEND2END_FIXTURE_H2_SSL_PROXY_SRC = \
 
 LIBEND2END_FIXTURE_H2_SSL_PROXY_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_FIXTURE_H2_SSL_PROXY_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 ifeq ($(NO_SECURE),true)
 
@@ -8560,6 +8597,7 @@ LIBEND2END_FIXTURE_H2_UCHANNEL_SRC = \
 
 LIBEND2END_FIXTURE_H2_UCHANNEL_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_FIXTURE_H2_UCHANNEL_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uchannel.a: $(ZLIB_DEP) $(LIBEND2END_FIXTURE_H2_UCHANNEL_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -8584,6 +8622,7 @@ LIBEND2END_FIXTURE_H2_UDS_SRC = \
 
 LIBEND2END_FIXTURE_H2_UDS_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_FIXTURE_H2_UDS_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uds.a: $(ZLIB_DEP) $(LIBEND2END_FIXTURE_H2_UDS_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -8608,6 +8647,7 @@ LIBEND2END_FIXTURE_H2_UDS+POLL_SRC = \
 
 LIBEND2END_FIXTURE_H2_UDS+POLL_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_FIXTURE_H2_UDS+POLL_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uds+poll.a: $(ZLIB_DEP) $(LIBEND2END_FIXTURE_H2_UDS+POLL_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -8632,6 +8672,7 @@ LIBEND2END_NOSEC_FIXTURE_H2_CENSUS_SRC = \
 
 LIBEND2END_NOSEC_FIXTURE_H2_CENSUS_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_NOSEC_FIXTURE_H2_CENSUS_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a: $(ZLIB_DEP) $(LIBEND2END_NOSEC_FIXTURE_H2_CENSUS_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -8656,6 +8697,7 @@ LIBEND2END_NOSEC_FIXTURE_H2_COMPRESS_SRC = \
 
 LIBEND2END_NOSEC_FIXTURE_H2_COMPRESS_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_NOSEC_FIXTURE_H2_COMPRESS_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_compress.a: $(ZLIB_DEP) $(LIBEND2END_NOSEC_FIXTURE_H2_COMPRESS_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -8680,6 +8722,7 @@ LIBEND2END_NOSEC_FIXTURE_H2_FULL_SRC = \
 
 LIBEND2END_NOSEC_FIXTURE_H2_FULL_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_NOSEC_FIXTURE_H2_FULL_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full.a: $(ZLIB_DEP) $(LIBEND2END_NOSEC_FIXTURE_H2_FULL_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -8704,6 +8747,7 @@ LIBEND2END_NOSEC_FIXTURE_H2_FULL+PIPE_SRC = \
 
 LIBEND2END_NOSEC_FIXTURE_H2_FULL+PIPE_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_NOSEC_FIXTURE_H2_FULL+PIPE_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a: $(ZLIB_DEP) $(LIBEND2END_NOSEC_FIXTURE_H2_FULL+PIPE_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -8728,6 +8772,7 @@ LIBEND2END_NOSEC_FIXTURE_H2_FULL+POLL_SRC = \
 
 LIBEND2END_NOSEC_FIXTURE_H2_FULL+POLL_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_NOSEC_FIXTURE_H2_FULL+POLL_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll.a: $(ZLIB_DEP) $(LIBEND2END_NOSEC_FIXTURE_H2_FULL+POLL_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -8752,6 +8797,7 @@ LIBEND2END_NOSEC_FIXTURE_H2_FULL+POLL+PIPE_SRC = \
 
 LIBEND2END_NOSEC_FIXTURE_H2_FULL+POLL+PIPE_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_NOSEC_FIXTURE_H2_FULL+POLL+PIPE_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a: $(ZLIB_DEP) $(LIBEND2END_NOSEC_FIXTURE_H2_FULL+POLL+PIPE_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -8776,6 +8822,7 @@ LIBEND2END_NOSEC_FIXTURE_H2_PROXY_SRC = \
 
 LIBEND2END_NOSEC_FIXTURE_H2_PROXY_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_NOSEC_FIXTURE_H2_PROXY_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_proxy.a: $(ZLIB_DEP) $(LIBEND2END_NOSEC_FIXTURE_H2_PROXY_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -8800,6 +8847,7 @@ LIBEND2END_NOSEC_FIXTURE_H2_SOCKPAIR_SRC = \
 
 LIBEND2END_NOSEC_FIXTURE_H2_SOCKPAIR_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_NOSEC_FIXTURE_H2_SOCKPAIR_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair.a: $(ZLIB_DEP) $(LIBEND2END_NOSEC_FIXTURE_H2_SOCKPAIR_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -8824,6 +8872,7 @@ LIBEND2END_NOSEC_FIXTURE_H2_SOCKPAIR+TRACE_SRC = \
 
 LIBEND2END_NOSEC_FIXTURE_H2_SOCKPAIR+TRACE_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_NOSEC_FIXTURE_H2_SOCKPAIR+TRACE_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair+trace.a: $(ZLIB_DEP) $(LIBEND2END_NOSEC_FIXTURE_H2_SOCKPAIR+TRACE_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -8848,6 +8897,7 @@ LIBEND2END_NOSEC_FIXTURE_H2_SOCKPAIR_1BYTE_SRC = \
 
 LIBEND2END_NOSEC_FIXTURE_H2_SOCKPAIR_1BYTE_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_NOSEC_FIXTURE_H2_SOCKPAIR_1BYTE_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair_1byte.a: $(ZLIB_DEP) $(LIBEND2END_NOSEC_FIXTURE_H2_SOCKPAIR_1BYTE_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -8872,6 +8922,7 @@ LIBEND2END_NOSEC_FIXTURE_H2_UCHANNEL_SRC = \
 
 LIBEND2END_NOSEC_FIXTURE_H2_UCHANNEL_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_NOSEC_FIXTURE_H2_UCHANNEL_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uchannel.a: $(ZLIB_DEP) $(LIBEND2END_NOSEC_FIXTURE_H2_UCHANNEL_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -8896,6 +8947,7 @@ LIBEND2END_NOSEC_FIXTURE_H2_UDS_SRC = \
 
 LIBEND2END_NOSEC_FIXTURE_H2_UDS_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_NOSEC_FIXTURE_H2_UDS_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uds.a: $(ZLIB_DEP) $(LIBEND2END_NOSEC_FIXTURE_H2_UDS_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -8920,6 +8972,7 @@ LIBEND2END_NOSEC_FIXTURE_H2_UDS+POLL_SRC = \
 
 LIBEND2END_NOSEC_FIXTURE_H2_UDS+POLL_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_NOSEC_FIXTURE_H2_UDS+POLL_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uds+poll.a: $(ZLIB_DEP) $(LIBEND2END_NOSEC_FIXTURE_H2_UDS+POLL_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -8944,6 +8997,7 @@ LIBEND2END_TEST_BAD_HOSTNAME_SRC = \
 
 LIBEND2END_TEST_BAD_HOSTNAME_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_TEST_BAD_HOSTNAME_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(LIBDIR)/$(CONFIG)/libend2end_test_bad_hostname.a: $(ZLIB_DEP) $(LIBEND2END_TEST_BAD_HOSTNAME_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -8968,6 +9022,7 @@ LIBEND2END_TEST_BINARY_METADATA_SRC = \
 
 LIBEND2END_TEST_BINARY_METADATA_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_TEST_BINARY_METADATA_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(LIBDIR)/$(CONFIG)/libend2end_test_binary_metadata.a: $(ZLIB_DEP) $(LIBEND2END_TEST_BINARY_METADATA_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -8992,6 +9047,7 @@ LIBEND2END_TEST_CALL_CREDS_SRC = \
 
 LIBEND2END_TEST_CALL_CREDS_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_TEST_CALL_CREDS_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 ifeq ($(NO_SECURE),true)
 
@@ -9030,6 +9086,7 @@ LIBEND2END_TEST_CANCEL_AFTER_ACCEPT_SRC = \
 
 LIBEND2END_TEST_CANCEL_AFTER_ACCEPT_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_TEST_CANCEL_AFTER_ACCEPT_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_accept.a: $(ZLIB_DEP) $(LIBEND2END_TEST_CANCEL_AFTER_ACCEPT_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -9054,6 +9111,7 @@ LIBEND2END_TEST_CANCEL_AFTER_CLIENT_DONE_SRC = \
 
 LIBEND2END_TEST_CANCEL_AFTER_CLIENT_DONE_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_TEST_CANCEL_AFTER_CLIENT_DONE_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_client_done.a: $(ZLIB_DEP) $(LIBEND2END_TEST_CANCEL_AFTER_CLIENT_DONE_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -9078,6 +9136,7 @@ LIBEND2END_TEST_CANCEL_AFTER_INVOKE_SRC = \
 
 LIBEND2END_TEST_CANCEL_AFTER_INVOKE_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_TEST_CANCEL_AFTER_INVOKE_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_invoke.a: $(ZLIB_DEP) $(LIBEND2END_TEST_CANCEL_AFTER_INVOKE_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -9102,6 +9161,7 @@ LIBEND2END_TEST_CANCEL_BEFORE_INVOKE_SRC = \
 
 LIBEND2END_TEST_CANCEL_BEFORE_INVOKE_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_TEST_CANCEL_BEFORE_INVOKE_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_before_invoke.a: $(ZLIB_DEP) $(LIBEND2END_TEST_CANCEL_BEFORE_INVOKE_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -9126,6 +9186,7 @@ LIBEND2END_TEST_CANCEL_IN_A_VACUUM_SRC = \
 
 LIBEND2END_TEST_CANCEL_IN_A_VACUUM_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_TEST_CANCEL_IN_A_VACUUM_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_in_a_vacuum.a: $(ZLIB_DEP) $(LIBEND2END_TEST_CANCEL_IN_A_VACUUM_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -9150,6 +9211,7 @@ LIBEND2END_TEST_CANCEL_WITH_STATUS_SRC = \
 
 LIBEND2END_TEST_CANCEL_WITH_STATUS_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_TEST_CANCEL_WITH_STATUS_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_with_status.a: $(ZLIB_DEP) $(LIBEND2END_TEST_CANCEL_WITH_STATUS_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -9174,6 +9236,7 @@ LIBEND2END_TEST_CHANNEL_CONNECTIVITY_SRC = \
 
 LIBEND2END_TEST_CHANNEL_CONNECTIVITY_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_TEST_CHANNEL_CONNECTIVITY_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(LIBDIR)/$(CONFIG)/libend2end_test_channel_connectivity.a: $(ZLIB_DEP) $(LIBEND2END_TEST_CHANNEL_CONNECTIVITY_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -9198,6 +9261,7 @@ LIBEND2END_TEST_CHANNEL_PING_SRC = \
 
 LIBEND2END_TEST_CHANNEL_PING_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_TEST_CHANNEL_PING_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(LIBDIR)/$(CONFIG)/libend2end_test_channel_ping.a: $(ZLIB_DEP) $(LIBEND2END_TEST_CHANNEL_PING_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -9222,6 +9286,7 @@ LIBEND2END_TEST_COMPRESSED_PAYLOAD_SRC = \
 
 LIBEND2END_TEST_COMPRESSED_PAYLOAD_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_TEST_COMPRESSED_PAYLOAD_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(LIBDIR)/$(CONFIG)/libend2end_test_compressed_payload.a: $(ZLIB_DEP) $(LIBEND2END_TEST_COMPRESSED_PAYLOAD_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -9246,6 +9311,7 @@ LIBEND2END_TEST_DEFAULT_HOST_SRC = \
 
 LIBEND2END_TEST_DEFAULT_HOST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_TEST_DEFAULT_HOST_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(LIBDIR)/$(CONFIG)/libend2end_test_default_host.a: $(ZLIB_DEP) $(LIBEND2END_TEST_DEFAULT_HOST_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -9270,6 +9336,7 @@ LIBEND2END_TEST_DISAPPEARING_SERVER_SRC = \
 
 LIBEND2END_TEST_DISAPPEARING_SERVER_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_TEST_DISAPPEARING_SERVER_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(LIBDIR)/$(CONFIG)/libend2end_test_disappearing_server.a: $(ZLIB_DEP) $(LIBEND2END_TEST_DISAPPEARING_SERVER_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -9294,6 +9361,7 @@ LIBEND2END_TEST_EMPTY_BATCH_SRC = \
 
 LIBEND2END_TEST_EMPTY_BATCH_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_TEST_EMPTY_BATCH_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(LIBDIR)/$(CONFIG)/libend2end_test_empty_batch.a: $(ZLIB_DEP) $(LIBEND2END_TEST_EMPTY_BATCH_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -9318,6 +9386,7 @@ LIBEND2END_TEST_GRACEFUL_SERVER_SHUTDOWN_SRC = \
 
 LIBEND2END_TEST_GRACEFUL_SERVER_SHUTDOWN_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_TEST_GRACEFUL_SERVER_SHUTDOWN_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(LIBDIR)/$(CONFIG)/libend2end_test_graceful_server_shutdown.a: $(ZLIB_DEP) $(LIBEND2END_TEST_GRACEFUL_SERVER_SHUTDOWN_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -9342,6 +9411,7 @@ LIBEND2END_TEST_HIGH_INITIAL_SEQNO_SRC = \
 
 LIBEND2END_TEST_HIGH_INITIAL_SEQNO_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_TEST_HIGH_INITIAL_SEQNO_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(LIBDIR)/$(CONFIG)/libend2end_test_high_initial_seqno.a: $(ZLIB_DEP) $(LIBEND2END_TEST_HIGH_INITIAL_SEQNO_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -9366,6 +9436,7 @@ LIBEND2END_TEST_HPACK_SIZE_SRC = \
 
 LIBEND2END_TEST_HPACK_SIZE_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_TEST_HPACK_SIZE_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(LIBDIR)/$(CONFIG)/libend2end_test_hpack_size.a: $(ZLIB_DEP) $(LIBEND2END_TEST_HPACK_SIZE_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -9390,6 +9461,7 @@ LIBEND2END_TEST_INVOKE_LARGE_REQUEST_SRC = \
 
 LIBEND2END_TEST_INVOKE_LARGE_REQUEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_TEST_INVOKE_LARGE_REQUEST_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(LIBDIR)/$(CONFIG)/libend2end_test_invoke_large_request.a: $(ZLIB_DEP) $(LIBEND2END_TEST_INVOKE_LARGE_REQUEST_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -9414,6 +9486,7 @@ LIBEND2END_TEST_LARGE_METADATA_SRC = \
 
 LIBEND2END_TEST_LARGE_METADATA_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_TEST_LARGE_METADATA_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(LIBDIR)/$(CONFIG)/libend2end_test_large_metadata.a: $(ZLIB_DEP) $(LIBEND2END_TEST_LARGE_METADATA_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -9438,6 +9511,7 @@ LIBEND2END_TEST_MAX_CONCURRENT_STREAMS_SRC = \
 
 LIBEND2END_TEST_MAX_CONCURRENT_STREAMS_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_TEST_MAX_CONCURRENT_STREAMS_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(LIBDIR)/$(CONFIG)/libend2end_test_max_concurrent_streams.a: $(ZLIB_DEP) $(LIBEND2END_TEST_MAX_CONCURRENT_STREAMS_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -9462,6 +9536,7 @@ LIBEND2END_TEST_MAX_MESSAGE_LENGTH_SRC = \
 
 LIBEND2END_TEST_MAX_MESSAGE_LENGTH_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_TEST_MAX_MESSAGE_LENGTH_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(LIBDIR)/$(CONFIG)/libend2end_test_max_message_length.a: $(ZLIB_DEP) $(LIBEND2END_TEST_MAX_MESSAGE_LENGTH_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -9486,6 +9561,7 @@ LIBEND2END_TEST_METADATA_SRC = \
 
 LIBEND2END_TEST_METADATA_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_TEST_METADATA_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(LIBDIR)/$(CONFIG)/libend2end_test_metadata.a: $(ZLIB_DEP) $(LIBEND2END_TEST_METADATA_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -9510,6 +9586,7 @@ LIBEND2END_TEST_NEGATIVE_DEADLINE_SRC = \
 
 LIBEND2END_TEST_NEGATIVE_DEADLINE_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_TEST_NEGATIVE_DEADLINE_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(LIBDIR)/$(CONFIG)/libend2end_test_negative_deadline.a: $(ZLIB_DEP) $(LIBEND2END_TEST_NEGATIVE_DEADLINE_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -9534,6 +9611,7 @@ LIBEND2END_TEST_NO_OP_SRC = \
 
 LIBEND2END_TEST_NO_OP_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_TEST_NO_OP_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(LIBDIR)/$(CONFIG)/libend2end_test_no_op.a: $(ZLIB_DEP) $(LIBEND2END_TEST_NO_OP_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -9558,6 +9636,7 @@ LIBEND2END_TEST_PAYLOAD_SRC = \
 
 LIBEND2END_TEST_PAYLOAD_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_TEST_PAYLOAD_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(LIBDIR)/$(CONFIG)/libend2end_test_payload.a: $(ZLIB_DEP) $(LIBEND2END_TEST_PAYLOAD_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -9582,6 +9661,7 @@ LIBEND2END_TEST_PING_PONG_STREAMING_SRC = \
 
 LIBEND2END_TEST_PING_PONG_STREAMING_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_TEST_PING_PONG_STREAMING_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(LIBDIR)/$(CONFIG)/libend2end_test_ping_pong_streaming.a: $(ZLIB_DEP) $(LIBEND2END_TEST_PING_PONG_STREAMING_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -9606,6 +9686,7 @@ LIBEND2END_TEST_REGISTERED_CALL_SRC = \
 
 LIBEND2END_TEST_REGISTERED_CALL_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_TEST_REGISTERED_CALL_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(LIBDIR)/$(CONFIG)/libend2end_test_registered_call.a: $(ZLIB_DEP) $(LIBEND2END_TEST_REGISTERED_CALL_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -9630,6 +9711,7 @@ LIBEND2END_TEST_REQUEST_WITH_FLAGS_SRC = \
 
 LIBEND2END_TEST_REQUEST_WITH_FLAGS_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_TEST_REQUEST_WITH_FLAGS_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(LIBDIR)/$(CONFIG)/libend2end_test_request_with_flags.a: $(ZLIB_DEP) $(LIBEND2END_TEST_REQUEST_WITH_FLAGS_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -9654,6 +9736,7 @@ LIBEND2END_TEST_REQUEST_WITH_PAYLOAD_SRC = \
 
 LIBEND2END_TEST_REQUEST_WITH_PAYLOAD_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_TEST_REQUEST_WITH_PAYLOAD_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(LIBDIR)/$(CONFIG)/libend2end_test_request_with_payload.a: $(ZLIB_DEP) $(LIBEND2END_TEST_REQUEST_WITH_PAYLOAD_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -9678,6 +9761,7 @@ LIBEND2END_TEST_SERVER_FINISHES_REQUEST_SRC = \
 
 LIBEND2END_TEST_SERVER_FINISHES_REQUEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_TEST_SERVER_FINISHES_REQUEST_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(LIBDIR)/$(CONFIG)/libend2end_test_server_finishes_request.a: $(ZLIB_DEP) $(LIBEND2END_TEST_SERVER_FINISHES_REQUEST_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -9702,6 +9786,7 @@ LIBEND2END_TEST_SHUTDOWN_FINISHES_CALLS_SRC = \
 
 LIBEND2END_TEST_SHUTDOWN_FINISHES_CALLS_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_TEST_SHUTDOWN_FINISHES_CALLS_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(LIBDIR)/$(CONFIG)/libend2end_test_shutdown_finishes_calls.a: $(ZLIB_DEP) $(LIBEND2END_TEST_SHUTDOWN_FINISHES_CALLS_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -9726,6 +9811,7 @@ LIBEND2END_TEST_SHUTDOWN_FINISHES_TAGS_SRC = \
 
 LIBEND2END_TEST_SHUTDOWN_FINISHES_TAGS_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_TEST_SHUTDOWN_FINISHES_TAGS_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(LIBDIR)/$(CONFIG)/libend2end_test_shutdown_finishes_tags.a: $(ZLIB_DEP) $(LIBEND2END_TEST_SHUTDOWN_FINISHES_TAGS_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -9750,6 +9836,7 @@ LIBEND2END_TEST_SIMPLE_DELAYED_REQUEST_SRC = \
 
 LIBEND2END_TEST_SIMPLE_DELAYED_REQUEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_TEST_SIMPLE_DELAYED_REQUEST_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(LIBDIR)/$(CONFIG)/libend2end_test_simple_delayed_request.a: $(ZLIB_DEP) $(LIBEND2END_TEST_SIMPLE_DELAYED_REQUEST_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -9774,6 +9861,7 @@ LIBEND2END_TEST_SIMPLE_REQUEST_SRC = \
 
 LIBEND2END_TEST_SIMPLE_REQUEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_TEST_SIMPLE_REQUEST_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(LIBDIR)/$(CONFIG)/libend2end_test_simple_request.a: $(ZLIB_DEP) $(LIBEND2END_TEST_SIMPLE_REQUEST_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -9798,6 +9886,7 @@ LIBEND2END_TEST_TRAILING_METADATA_SRC = \
 
 LIBEND2END_TEST_TRAILING_METADATA_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_TEST_TRAILING_METADATA_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(LIBDIR)/$(CONFIG)/libend2end_test_trailing_metadata.a: $(ZLIB_DEP) $(LIBEND2END_TEST_TRAILING_METADATA_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -9822,6 +9911,7 @@ LIBEND2END_NOSEC_TEST_BAD_HOSTNAME_SRC = \
 
 LIBEND2END_NOSEC_TEST_BAD_HOSTNAME_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_NOSEC_TEST_BAD_HOSTNAME_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_bad_hostname.a: $(ZLIB_DEP) $(LIBEND2END_NOSEC_TEST_BAD_HOSTNAME_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -9846,6 +9936,7 @@ LIBEND2END_NOSEC_TEST_BINARY_METADATA_SRC = \
 
 LIBEND2END_NOSEC_TEST_BINARY_METADATA_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_NOSEC_TEST_BINARY_METADATA_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_binary_metadata.a: $(ZLIB_DEP) $(LIBEND2END_NOSEC_TEST_BINARY_METADATA_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -9870,6 +9961,7 @@ LIBEND2END_NOSEC_TEST_CANCEL_AFTER_ACCEPT_SRC = \
 
 LIBEND2END_NOSEC_TEST_CANCEL_AFTER_ACCEPT_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_NOSEC_TEST_CANCEL_AFTER_ACCEPT_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_after_accept.a: $(ZLIB_DEP) $(LIBEND2END_NOSEC_TEST_CANCEL_AFTER_ACCEPT_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -9894,6 +9986,7 @@ LIBEND2END_NOSEC_TEST_CANCEL_AFTER_CLIENT_DONE_SRC = \
 
 LIBEND2END_NOSEC_TEST_CANCEL_AFTER_CLIENT_DONE_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_NOSEC_TEST_CANCEL_AFTER_CLIENT_DONE_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_after_client_done.a: $(ZLIB_DEP) $(LIBEND2END_NOSEC_TEST_CANCEL_AFTER_CLIENT_DONE_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -9918,6 +10011,7 @@ LIBEND2END_NOSEC_TEST_CANCEL_AFTER_INVOKE_SRC = \
 
 LIBEND2END_NOSEC_TEST_CANCEL_AFTER_INVOKE_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_NOSEC_TEST_CANCEL_AFTER_INVOKE_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_after_invoke.a: $(ZLIB_DEP) $(LIBEND2END_NOSEC_TEST_CANCEL_AFTER_INVOKE_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -9942,6 +10036,7 @@ LIBEND2END_NOSEC_TEST_CANCEL_BEFORE_INVOKE_SRC = \
 
 LIBEND2END_NOSEC_TEST_CANCEL_BEFORE_INVOKE_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_NOSEC_TEST_CANCEL_BEFORE_INVOKE_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_before_invoke.a: $(ZLIB_DEP) $(LIBEND2END_NOSEC_TEST_CANCEL_BEFORE_INVOKE_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -9966,6 +10061,7 @@ LIBEND2END_NOSEC_TEST_CANCEL_IN_A_VACUUM_SRC = \
 
 LIBEND2END_NOSEC_TEST_CANCEL_IN_A_VACUUM_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_NOSEC_TEST_CANCEL_IN_A_VACUUM_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_in_a_vacuum.a: $(ZLIB_DEP) $(LIBEND2END_NOSEC_TEST_CANCEL_IN_A_VACUUM_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -9990,6 +10086,7 @@ LIBEND2END_NOSEC_TEST_CANCEL_WITH_STATUS_SRC = \
 
 LIBEND2END_NOSEC_TEST_CANCEL_WITH_STATUS_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_NOSEC_TEST_CANCEL_WITH_STATUS_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_with_status.a: $(ZLIB_DEP) $(LIBEND2END_NOSEC_TEST_CANCEL_WITH_STATUS_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -10014,6 +10111,7 @@ LIBEND2END_NOSEC_TEST_CHANNEL_CONNECTIVITY_SRC = \
 
 LIBEND2END_NOSEC_TEST_CHANNEL_CONNECTIVITY_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_NOSEC_TEST_CHANNEL_CONNECTIVITY_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_channel_connectivity.a: $(ZLIB_DEP) $(LIBEND2END_NOSEC_TEST_CHANNEL_CONNECTIVITY_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -10038,6 +10136,7 @@ LIBEND2END_NOSEC_TEST_CHANNEL_PING_SRC = \
 
 LIBEND2END_NOSEC_TEST_CHANNEL_PING_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_NOSEC_TEST_CHANNEL_PING_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_channel_ping.a: $(ZLIB_DEP) $(LIBEND2END_NOSEC_TEST_CHANNEL_PING_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -10062,6 +10161,7 @@ LIBEND2END_NOSEC_TEST_COMPRESSED_PAYLOAD_SRC = \
 
 LIBEND2END_NOSEC_TEST_COMPRESSED_PAYLOAD_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_NOSEC_TEST_COMPRESSED_PAYLOAD_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_compressed_payload.a: $(ZLIB_DEP) $(LIBEND2END_NOSEC_TEST_COMPRESSED_PAYLOAD_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -10086,6 +10186,7 @@ LIBEND2END_NOSEC_TEST_DEFAULT_HOST_SRC = \
 
 LIBEND2END_NOSEC_TEST_DEFAULT_HOST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_NOSEC_TEST_DEFAULT_HOST_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_default_host.a: $(ZLIB_DEP) $(LIBEND2END_NOSEC_TEST_DEFAULT_HOST_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -10110,6 +10211,7 @@ LIBEND2END_NOSEC_TEST_DISAPPEARING_SERVER_SRC = \
 
 LIBEND2END_NOSEC_TEST_DISAPPEARING_SERVER_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_NOSEC_TEST_DISAPPEARING_SERVER_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_disappearing_server.a: $(ZLIB_DEP) $(LIBEND2END_NOSEC_TEST_DISAPPEARING_SERVER_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -10134,6 +10236,7 @@ LIBEND2END_NOSEC_TEST_EMPTY_BATCH_SRC = \
 
 LIBEND2END_NOSEC_TEST_EMPTY_BATCH_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_NOSEC_TEST_EMPTY_BATCH_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_empty_batch.a: $(ZLIB_DEP) $(LIBEND2END_NOSEC_TEST_EMPTY_BATCH_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -10158,6 +10261,7 @@ LIBEND2END_NOSEC_TEST_GRACEFUL_SERVER_SHUTDOWN_SRC = \
 
 LIBEND2END_NOSEC_TEST_GRACEFUL_SERVER_SHUTDOWN_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_NOSEC_TEST_GRACEFUL_SERVER_SHUTDOWN_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_graceful_server_shutdown.a: $(ZLIB_DEP) $(LIBEND2END_NOSEC_TEST_GRACEFUL_SERVER_SHUTDOWN_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -10182,6 +10286,7 @@ LIBEND2END_NOSEC_TEST_HIGH_INITIAL_SEQNO_SRC = \
 
 LIBEND2END_NOSEC_TEST_HIGH_INITIAL_SEQNO_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_NOSEC_TEST_HIGH_INITIAL_SEQNO_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_high_initial_seqno.a: $(ZLIB_DEP) $(LIBEND2END_NOSEC_TEST_HIGH_INITIAL_SEQNO_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -10206,6 +10311,7 @@ LIBEND2END_NOSEC_TEST_HPACK_SIZE_SRC = \
 
 LIBEND2END_NOSEC_TEST_HPACK_SIZE_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_NOSEC_TEST_HPACK_SIZE_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_hpack_size.a: $(ZLIB_DEP) $(LIBEND2END_NOSEC_TEST_HPACK_SIZE_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -10230,6 +10336,7 @@ LIBEND2END_NOSEC_TEST_INVOKE_LARGE_REQUEST_SRC = \
 
 LIBEND2END_NOSEC_TEST_INVOKE_LARGE_REQUEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_NOSEC_TEST_INVOKE_LARGE_REQUEST_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_invoke_large_request.a: $(ZLIB_DEP) $(LIBEND2END_NOSEC_TEST_INVOKE_LARGE_REQUEST_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -10254,6 +10361,7 @@ LIBEND2END_NOSEC_TEST_LARGE_METADATA_SRC = \
 
 LIBEND2END_NOSEC_TEST_LARGE_METADATA_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_NOSEC_TEST_LARGE_METADATA_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_large_metadata.a: $(ZLIB_DEP) $(LIBEND2END_NOSEC_TEST_LARGE_METADATA_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -10278,6 +10386,7 @@ LIBEND2END_NOSEC_TEST_MAX_CONCURRENT_STREAMS_SRC = \
 
 LIBEND2END_NOSEC_TEST_MAX_CONCURRENT_STREAMS_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_NOSEC_TEST_MAX_CONCURRENT_STREAMS_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_max_concurrent_streams.a: $(ZLIB_DEP) $(LIBEND2END_NOSEC_TEST_MAX_CONCURRENT_STREAMS_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -10302,6 +10411,7 @@ LIBEND2END_NOSEC_TEST_MAX_MESSAGE_LENGTH_SRC = \
 
 LIBEND2END_NOSEC_TEST_MAX_MESSAGE_LENGTH_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_NOSEC_TEST_MAX_MESSAGE_LENGTH_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_max_message_length.a: $(ZLIB_DEP) $(LIBEND2END_NOSEC_TEST_MAX_MESSAGE_LENGTH_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -10326,6 +10436,7 @@ LIBEND2END_NOSEC_TEST_METADATA_SRC = \
 
 LIBEND2END_NOSEC_TEST_METADATA_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_NOSEC_TEST_METADATA_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_metadata.a: $(ZLIB_DEP) $(LIBEND2END_NOSEC_TEST_METADATA_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -10350,6 +10461,7 @@ LIBEND2END_NOSEC_TEST_NEGATIVE_DEADLINE_SRC = \
 
 LIBEND2END_NOSEC_TEST_NEGATIVE_DEADLINE_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_NOSEC_TEST_NEGATIVE_DEADLINE_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_negative_deadline.a: $(ZLIB_DEP) $(LIBEND2END_NOSEC_TEST_NEGATIVE_DEADLINE_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -10374,6 +10486,7 @@ LIBEND2END_NOSEC_TEST_NO_OP_SRC = \
 
 LIBEND2END_NOSEC_TEST_NO_OP_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_NOSEC_TEST_NO_OP_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_no_op.a: $(ZLIB_DEP) $(LIBEND2END_NOSEC_TEST_NO_OP_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -10398,6 +10511,7 @@ LIBEND2END_NOSEC_TEST_PAYLOAD_SRC = \
 
 LIBEND2END_NOSEC_TEST_PAYLOAD_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_NOSEC_TEST_PAYLOAD_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_payload.a: $(ZLIB_DEP) $(LIBEND2END_NOSEC_TEST_PAYLOAD_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -10422,6 +10536,7 @@ LIBEND2END_NOSEC_TEST_PING_PONG_STREAMING_SRC = \
 
 LIBEND2END_NOSEC_TEST_PING_PONG_STREAMING_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_NOSEC_TEST_PING_PONG_STREAMING_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_ping_pong_streaming.a: $(ZLIB_DEP) $(LIBEND2END_NOSEC_TEST_PING_PONG_STREAMING_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -10446,6 +10561,7 @@ LIBEND2END_NOSEC_TEST_REGISTERED_CALL_SRC = \
 
 LIBEND2END_NOSEC_TEST_REGISTERED_CALL_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_NOSEC_TEST_REGISTERED_CALL_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_registered_call.a: $(ZLIB_DEP) $(LIBEND2END_NOSEC_TEST_REGISTERED_CALL_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -10470,6 +10586,7 @@ LIBEND2END_NOSEC_TEST_REQUEST_WITH_FLAGS_SRC = \
 
 LIBEND2END_NOSEC_TEST_REQUEST_WITH_FLAGS_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_NOSEC_TEST_REQUEST_WITH_FLAGS_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_request_with_flags.a: $(ZLIB_DEP) $(LIBEND2END_NOSEC_TEST_REQUEST_WITH_FLAGS_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -10494,6 +10611,7 @@ LIBEND2END_NOSEC_TEST_REQUEST_WITH_PAYLOAD_SRC = \
 
 LIBEND2END_NOSEC_TEST_REQUEST_WITH_PAYLOAD_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_NOSEC_TEST_REQUEST_WITH_PAYLOAD_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_request_with_payload.a: $(ZLIB_DEP) $(LIBEND2END_NOSEC_TEST_REQUEST_WITH_PAYLOAD_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -10518,6 +10636,7 @@ LIBEND2END_NOSEC_TEST_SERVER_FINISHES_REQUEST_SRC = \
 
 LIBEND2END_NOSEC_TEST_SERVER_FINISHES_REQUEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_NOSEC_TEST_SERVER_FINISHES_REQUEST_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_server_finishes_request.a: $(ZLIB_DEP) $(LIBEND2END_NOSEC_TEST_SERVER_FINISHES_REQUEST_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -10542,6 +10661,7 @@ LIBEND2END_NOSEC_TEST_SHUTDOWN_FINISHES_CALLS_SRC = \
 
 LIBEND2END_NOSEC_TEST_SHUTDOWN_FINISHES_CALLS_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_NOSEC_TEST_SHUTDOWN_FINISHES_CALLS_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_shutdown_finishes_calls.a: $(ZLIB_DEP) $(LIBEND2END_NOSEC_TEST_SHUTDOWN_FINISHES_CALLS_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -10566,6 +10686,7 @@ LIBEND2END_NOSEC_TEST_SHUTDOWN_FINISHES_TAGS_SRC = \
 
 LIBEND2END_NOSEC_TEST_SHUTDOWN_FINISHES_TAGS_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_NOSEC_TEST_SHUTDOWN_FINISHES_TAGS_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_shutdown_finishes_tags.a: $(ZLIB_DEP) $(LIBEND2END_NOSEC_TEST_SHUTDOWN_FINISHES_TAGS_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -10590,6 +10711,7 @@ LIBEND2END_NOSEC_TEST_SIMPLE_DELAYED_REQUEST_SRC = \
 
 LIBEND2END_NOSEC_TEST_SIMPLE_DELAYED_REQUEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_NOSEC_TEST_SIMPLE_DELAYED_REQUEST_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_simple_delayed_request.a: $(ZLIB_DEP) $(LIBEND2END_NOSEC_TEST_SIMPLE_DELAYED_REQUEST_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -10614,6 +10736,7 @@ LIBEND2END_NOSEC_TEST_SIMPLE_REQUEST_SRC = \
 
 LIBEND2END_NOSEC_TEST_SIMPLE_REQUEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_NOSEC_TEST_SIMPLE_REQUEST_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_simple_request.a: $(ZLIB_DEP) $(LIBEND2END_NOSEC_TEST_SIMPLE_REQUEST_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -10638,6 +10761,7 @@ LIBEND2END_NOSEC_TEST_TRAILING_METADATA_SRC = \
 
 LIBEND2END_NOSEC_TEST_TRAILING_METADATA_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_NOSEC_TEST_TRAILING_METADATA_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_trailing_metadata.a: $(ZLIB_DEP) $(LIBEND2END_NOSEC_TEST_TRAILING_METADATA_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -10664,6 +10788,7 @@ LIBEND2END_CERTS_SRC = \
 
 LIBEND2END_CERTS_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_CERTS_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 ifeq ($(NO_SECURE),true)
 
@@ -10702,6 +10827,7 @@ LIBBAD_CLIENT_TEST_SRC = \
 
 LIBBAD_CLIENT_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBAD_CLIENT_TEST_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 ifeq ($(NO_SECURE),true)
 
@@ -10740,6 +10866,7 @@ LIBBAD_SSL_TEST_SERVER_SRC = \
 
 LIBBAD_SSL_TEST_SERVER_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBAD_SSL_TEST_SERVER_SRC))))
 
+$(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 ifeq ($(NO_SECURE),true)
 
@@ -10789,6 +10916,7 @@ $(BINDIR)/$(CONFIG)/algorithm_test: openssl_dep_error
 else
 
 
+$(ALGORITHM_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/algorithm_test: $(ALGORITHM_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -10820,6 +10948,7 @@ $(BINDIR)/$(CONFIG)/alloc_test: openssl_dep_error
 else
 
 
+$(ALLOC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/alloc_test: $(ALLOC_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -10851,6 +10980,7 @@ $(BINDIR)/$(CONFIG)/alpn_test: openssl_dep_error
 else
 
 
+$(ALPN_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/alpn_test: $(ALPN_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -10882,6 +11012,7 @@ $(BINDIR)/$(CONFIG)/bin_encoder_test: openssl_dep_error
 else
 
 
+$(BIN_ENCODER_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/bin_encoder_test: $(BIN_ENCODER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -10913,6 +11044,7 @@ $(BINDIR)/$(CONFIG)/channel_create_test: openssl_dep_error
 else
 
 
+$(CHANNEL_CREATE_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/channel_create_test: $(CHANNEL_CREATE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -10944,6 +11076,7 @@ $(BINDIR)/$(CONFIG)/chttp2_hpack_encoder_test: openssl_dep_error
 else
 
 
+$(CHTTP2_HPACK_ENCODER_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/chttp2_hpack_encoder_test: $(CHTTP2_HPACK_ENCODER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -10975,6 +11108,7 @@ $(BINDIR)/$(CONFIG)/chttp2_status_conversion_test: openssl_dep_error
 else
 
 
+$(CHTTP2_STATUS_CONVERSION_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/chttp2_status_conversion_test: $(CHTTP2_STATUS_CONVERSION_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -11006,6 +11140,7 @@ $(BINDIR)/$(CONFIG)/chttp2_stream_map_test: openssl_dep_error
 else
 
 
+$(CHTTP2_STREAM_MAP_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/chttp2_stream_map_test: $(CHTTP2_STREAM_MAP_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -11037,6 +11172,7 @@ $(BINDIR)/$(CONFIG)/chttp2_varint_test: openssl_dep_error
 else
 
 
+$(CHTTP2_VARINT_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/chttp2_varint_test: $(CHTTP2_VARINT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -11068,6 +11204,7 @@ $(BINDIR)/$(CONFIG)/compression_test: openssl_dep_error
 else
 
 
+$(COMPRESSION_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/compression_test: $(COMPRESSION_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -11099,6 +11236,7 @@ $(BINDIR)/$(CONFIG)/dns_resolver_test: openssl_dep_error
 else
 
 
+$(DNS_RESOLVER_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/dns_resolver_test: $(DNS_RESOLVER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -11130,6 +11268,7 @@ $(BINDIR)/$(CONFIG)/dualstack_socket_test: openssl_dep_error
 else
 
 
+$(DUALSTACK_SOCKET_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/dualstack_socket_test: $(DUALSTACK_SOCKET_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -11161,6 +11300,7 @@ $(BINDIR)/$(CONFIG)/endpoint_pair_test: openssl_dep_error
 else
 
 
+$(ENDPOINT_PAIR_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/endpoint_pair_test: $(ENDPOINT_PAIR_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -11192,6 +11332,7 @@ $(BINDIR)/$(CONFIG)/fd_conservation_posix_test: openssl_dep_error
 else
 
 
+$(FD_CONSERVATION_POSIX_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/fd_conservation_posix_test: $(FD_CONSERVATION_POSIX_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -11223,6 +11364,7 @@ $(BINDIR)/$(CONFIG)/fd_posix_test: openssl_dep_error
 else
 
 
+$(FD_POSIX_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/fd_posix_test: $(FD_POSIX_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -11254,6 +11396,7 @@ $(BINDIR)/$(CONFIG)/fling_client: openssl_dep_error
 else
 
 
+$(FLING_CLIENT_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/fling_client: $(FLING_CLIENT_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -11285,6 +11428,7 @@ $(BINDIR)/$(CONFIG)/fling_server: openssl_dep_error
 else
 
 
+$(FLING_SERVER_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/fling_server: $(FLING_SERVER_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -11316,6 +11460,7 @@ $(BINDIR)/$(CONFIG)/fling_stream_test: openssl_dep_error
 else
 
 
+$(FLING_STREAM_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/fling_stream_test: $(FLING_STREAM_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -11347,6 +11492,7 @@ $(BINDIR)/$(CONFIG)/fling_test: openssl_dep_error
 else
 
 
+$(FLING_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/fling_test: $(FLING_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -11378,6 +11524,7 @@ $(BINDIR)/$(CONFIG)/gen_hpack_tables: openssl_dep_error
 else
 
 
+$(GEN_HPACK_TABLES_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/gen_hpack_tables: $(GEN_HPACK_TABLES_OBJS) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a
 	$(E) "[LD]      Linking $@"
@@ -11409,6 +11556,7 @@ $(BINDIR)/$(CONFIG)/gen_legal_metadata_characters: openssl_dep_error
 else
 
 
+$(GEN_LEGAL_METADATA_CHARACTERS_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/gen_legal_metadata_characters: $(GEN_LEGAL_METADATA_CHARACTERS_OBJS)
 	$(E) "[LD]      Linking $@"
@@ -11440,6 +11588,7 @@ $(BINDIR)/$(CONFIG)/gpr_avl_test: openssl_dep_error
 else
 
 
+$(GPR_AVL_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/gpr_avl_test: $(GPR_AVL_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -11471,6 +11620,7 @@ $(BINDIR)/$(CONFIG)/gpr_cmdline_test: openssl_dep_error
 else
 
 
+$(GPR_CMDLINE_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/gpr_cmdline_test: $(GPR_CMDLINE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -11502,6 +11652,7 @@ $(BINDIR)/$(CONFIG)/gpr_cpu_test: openssl_dep_error
 else
 
 
+$(GPR_CPU_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/gpr_cpu_test: $(GPR_CPU_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -11533,6 +11684,7 @@ $(BINDIR)/$(CONFIG)/gpr_env_test: openssl_dep_error
 else
 
 
+$(GPR_ENV_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/gpr_env_test: $(GPR_ENV_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -11564,6 +11716,7 @@ $(BINDIR)/$(CONFIG)/gpr_file_test: openssl_dep_error
 else
 
 
+$(GPR_FILE_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/gpr_file_test: $(GPR_FILE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -11595,6 +11748,7 @@ $(BINDIR)/$(CONFIG)/gpr_histogram_test: openssl_dep_error
 else
 
 
+$(GPR_HISTOGRAM_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/gpr_histogram_test: $(GPR_HISTOGRAM_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -11626,6 +11780,7 @@ $(BINDIR)/$(CONFIG)/gpr_host_port_test: openssl_dep_error
 else
 
 
+$(GPR_HOST_PORT_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/gpr_host_port_test: $(GPR_HOST_PORT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -11657,6 +11812,7 @@ $(BINDIR)/$(CONFIG)/gpr_log_test: openssl_dep_error
 else
 
 
+$(GPR_LOG_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/gpr_log_test: $(GPR_LOG_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -11688,6 +11844,7 @@ $(BINDIR)/$(CONFIG)/gpr_slice_buffer_test: openssl_dep_error
 else
 
 
+$(GPR_SLICE_BUFFER_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/gpr_slice_buffer_test: $(GPR_SLICE_BUFFER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -11719,6 +11876,7 @@ $(BINDIR)/$(CONFIG)/gpr_slice_test: openssl_dep_error
 else
 
 
+$(GPR_SLICE_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/gpr_slice_test: $(GPR_SLICE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -11750,6 +11908,7 @@ $(BINDIR)/$(CONFIG)/gpr_stack_lockfree_test: openssl_dep_error
 else
 
 
+$(GPR_STACK_LOCKFREE_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/gpr_stack_lockfree_test: $(GPR_STACK_LOCKFREE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -11781,6 +11940,7 @@ $(BINDIR)/$(CONFIG)/gpr_string_test: openssl_dep_error
 else
 
 
+$(GPR_STRING_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/gpr_string_test: $(GPR_STRING_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -11812,6 +11972,7 @@ $(BINDIR)/$(CONFIG)/gpr_sync_test: openssl_dep_error
 else
 
 
+$(GPR_SYNC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/gpr_sync_test: $(GPR_SYNC_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -11843,6 +12004,7 @@ $(BINDIR)/$(CONFIG)/gpr_thd_test: openssl_dep_error
 else
 
 
+$(GPR_THD_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/gpr_thd_test: $(GPR_THD_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -11874,6 +12036,7 @@ $(BINDIR)/$(CONFIG)/gpr_time_test: openssl_dep_error
 else
 
 
+$(GPR_TIME_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/gpr_time_test: $(GPR_TIME_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -11905,6 +12068,7 @@ $(BINDIR)/$(CONFIG)/gpr_tls_test: openssl_dep_error
 else
 
 
+$(GPR_TLS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/gpr_tls_test: $(GPR_TLS_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -11936,6 +12100,7 @@ $(BINDIR)/$(CONFIG)/gpr_useful_test: openssl_dep_error
 else
 
 
+$(GPR_USEFUL_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/gpr_useful_test: $(GPR_USEFUL_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -11967,6 +12132,7 @@ $(BINDIR)/$(CONFIG)/grpc_auth_context_test: openssl_dep_error
 else
 
 
+$(GRPC_AUTH_CONTEXT_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/grpc_auth_context_test: $(GRPC_AUTH_CONTEXT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -11998,6 +12164,7 @@ $(BINDIR)/$(CONFIG)/grpc_base64_test: openssl_dep_error
 else
 
 
+$(GRPC_BASE64_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/grpc_base64_test: $(GRPC_BASE64_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -12029,6 +12196,7 @@ $(BINDIR)/$(CONFIG)/grpc_byte_buffer_reader_test: openssl_dep_error
 else
 
 
+$(GRPC_BYTE_BUFFER_READER_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/grpc_byte_buffer_reader_test: $(GRPC_BYTE_BUFFER_READER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -12060,6 +12228,7 @@ $(BINDIR)/$(CONFIG)/grpc_channel_args_test: openssl_dep_error
 else
 
 
+$(GRPC_CHANNEL_ARGS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/grpc_channel_args_test: $(GRPC_CHANNEL_ARGS_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -12091,6 +12260,7 @@ $(BINDIR)/$(CONFIG)/grpc_channel_stack_test: openssl_dep_error
 else
 
 
+$(GRPC_CHANNEL_STACK_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/grpc_channel_stack_test: $(GRPC_CHANNEL_STACK_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -12122,6 +12292,7 @@ $(BINDIR)/$(CONFIG)/grpc_completion_queue_test: openssl_dep_error
 else
 
 
+$(GRPC_COMPLETION_QUEUE_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/grpc_completion_queue_test: $(GRPC_COMPLETION_QUEUE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -12153,6 +12324,7 @@ $(BINDIR)/$(CONFIG)/grpc_create_jwt: openssl_dep_error
 else
 
 
+$(GRPC_CREATE_JWT_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/grpc_create_jwt: $(GRPC_CREATE_JWT_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -12184,6 +12356,7 @@ $(BINDIR)/$(CONFIG)/grpc_credentials_test: openssl_dep_error
 else
 
 
+$(GRPC_CREDENTIALS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/grpc_credentials_test: $(GRPC_CREDENTIALS_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -12215,6 +12388,7 @@ $(BINDIR)/$(CONFIG)/grpc_fetch_oauth2: openssl_dep_error
 else
 
 
+$(GRPC_FETCH_OAUTH2_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/grpc_fetch_oauth2: $(GRPC_FETCH_OAUTH2_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -12246,6 +12420,7 @@ $(BINDIR)/$(CONFIG)/grpc_invalid_channel_args_test: openssl_dep_error
 else
 
 
+$(GRPC_INVALID_CHANNEL_ARGS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/grpc_invalid_channel_args_test: $(GRPC_INVALID_CHANNEL_ARGS_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -12277,6 +12452,7 @@ $(BINDIR)/$(CONFIG)/grpc_json_token_test: openssl_dep_error
 else
 
 
+$(GRPC_JSON_TOKEN_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/grpc_json_token_test: $(GRPC_JSON_TOKEN_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -12308,6 +12484,7 @@ $(BINDIR)/$(CONFIG)/grpc_jwt_verifier_test: openssl_dep_error
 else
 
 
+$(GRPC_JWT_VERIFIER_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/grpc_jwt_verifier_test: $(GRPC_JWT_VERIFIER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -12339,6 +12516,7 @@ $(BINDIR)/$(CONFIG)/grpc_print_google_default_creds_token: openssl_dep_error
 else
 
 
+$(GRPC_PRINT_GOOGLE_DEFAULT_CREDS_TOKEN_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/grpc_print_google_default_creds_token: $(GRPC_PRINT_GOOGLE_DEFAULT_CREDS_TOKEN_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -12370,6 +12548,7 @@ $(BINDIR)/$(CONFIG)/grpc_security_connector_test: openssl_dep_error
 else
 
 
+$(GRPC_SECURITY_CONNECTOR_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/grpc_security_connector_test: $(GRPC_SECURITY_CONNECTOR_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -12401,6 +12580,7 @@ $(BINDIR)/$(CONFIG)/grpc_verify_jwt: openssl_dep_error
 else
 
 
+$(GRPC_VERIFY_JWT_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/grpc_verify_jwt: $(GRPC_VERIFY_JWT_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -12432,6 +12612,7 @@ $(BINDIR)/$(CONFIG)/hpack_parser_test: openssl_dep_error
 else
 
 
+$(HPACK_PARSER_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/hpack_parser_test: $(HPACK_PARSER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -12463,6 +12644,7 @@ $(BINDIR)/$(CONFIG)/hpack_table_test: openssl_dep_error
 else
 
 
+$(HPACK_TABLE_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/hpack_table_test: $(HPACK_TABLE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -12494,6 +12676,7 @@ $(BINDIR)/$(CONFIG)/httpcli_format_request_test: openssl_dep_error
 else
 
 
+$(HTTPCLI_FORMAT_REQUEST_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/httpcli_format_request_test: $(HTTPCLI_FORMAT_REQUEST_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -12525,6 +12708,7 @@ $(BINDIR)/$(CONFIG)/httpcli_parser_test: openssl_dep_error
 else
 
 
+$(HTTPCLI_PARSER_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/httpcli_parser_test: $(HTTPCLI_PARSER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -12556,6 +12740,7 @@ $(BINDIR)/$(CONFIG)/httpcli_test: openssl_dep_error
 else
 
 
+$(HTTPCLI_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/httpcli_test: $(HTTPCLI_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -12587,6 +12772,7 @@ $(BINDIR)/$(CONFIG)/httpscli_test: openssl_dep_error
 else
 
 
+$(HTTPSCLI_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/httpscli_test: $(HTTPSCLI_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -12618,6 +12804,7 @@ $(BINDIR)/$(CONFIG)/init_test: openssl_dep_error
 else
 
 
+$(INIT_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/init_test: $(INIT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -12649,6 +12836,7 @@ $(BINDIR)/$(CONFIG)/invalid_call_argument_test: openssl_dep_error
 else
 
 
+$(INVALID_CALL_ARGUMENT_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/invalid_call_argument_test: $(INVALID_CALL_ARGUMENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -12680,6 +12868,7 @@ $(BINDIR)/$(CONFIG)/json_rewrite: openssl_dep_error
 else
 
 
+$(JSON_REWRITE_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/json_rewrite: $(JSON_REWRITE_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -12711,6 +12900,7 @@ $(BINDIR)/$(CONFIG)/json_rewrite_test: openssl_dep_error
 else
 
 
+$(JSON_REWRITE_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/json_rewrite_test: $(JSON_REWRITE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -12742,6 +12932,7 @@ $(BINDIR)/$(CONFIG)/json_stream_error_test: openssl_dep_error
 else
 
 
+$(JSON_STREAM_ERROR_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/json_stream_error_test: $(JSON_STREAM_ERROR_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -12773,6 +12964,7 @@ $(BINDIR)/$(CONFIG)/json_test: openssl_dep_error
 else
 
 
+$(JSON_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/json_test: $(JSON_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -12804,6 +12996,7 @@ $(BINDIR)/$(CONFIG)/lame_client_test: openssl_dep_error
 else
 
 
+$(LAME_CLIENT_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/lame_client_test: $(LAME_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -12835,6 +13028,7 @@ $(BINDIR)/$(CONFIG)/lb_policies_test: openssl_dep_error
 else
 
 
+$(LB_POLICIES_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/lb_policies_test: $(LB_POLICIES_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -12866,6 +13060,7 @@ $(BINDIR)/$(CONFIG)/low_level_ping_pong_benchmark: openssl_dep_error
 else
 
 
+$(LOW_LEVEL_PING_PONG_BENCHMARK_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/low_level_ping_pong_benchmark: $(LOW_LEVEL_PING_PONG_BENCHMARK_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -12897,6 +13092,7 @@ $(BINDIR)/$(CONFIG)/message_compress_test: openssl_dep_error
 else
 
 
+$(MESSAGE_COMPRESS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/message_compress_test: $(MESSAGE_COMPRESS_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -12928,6 +13124,7 @@ $(BINDIR)/$(CONFIG)/multiple_server_queues_test: openssl_dep_error
 else
 
 
+$(MULTIPLE_SERVER_QUEUES_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/multiple_server_queues_test: $(MULTIPLE_SERVER_QUEUES_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -12959,6 +13156,7 @@ $(BINDIR)/$(CONFIG)/murmur_hash_test: openssl_dep_error
 else
 
 
+$(MURMUR_HASH_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/murmur_hash_test: $(MURMUR_HASH_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -12990,6 +13188,7 @@ $(BINDIR)/$(CONFIG)/no_server_test: openssl_dep_error
 else
 
 
+$(NO_SERVER_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/no_server_test: $(NO_SERVER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -13021,6 +13220,7 @@ $(BINDIR)/$(CONFIG)/resolve_address_test: openssl_dep_error
 else
 
 
+$(RESOLVE_ADDRESS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/resolve_address_test: $(RESOLVE_ADDRESS_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -13052,6 +13252,7 @@ $(BINDIR)/$(CONFIG)/secure_channel_create_test: openssl_dep_error
 else
 
 
+$(SECURE_CHANNEL_CREATE_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/secure_channel_create_test: $(SECURE_CHANNEL_CREATE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -13083,6 +13284,7 @@ $(BINDIR)/$(CONFIG)/secure_endpoint_test: openssl_dep_error
 else
 
 
+$(SECURE_ENDPOINT_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/secure_endpoint_test: $(SECURE_ENDPOINT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -13114,6 +13316,7 @@ $(BINDIR)/$(CONFIG)/server_chttp2_test: openssl_dep_error
 else
 
 
+$(SERVER_CHTTP2_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/server_chttp2_test: $(SERVER_CHTTP2_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -13145,6 +13348,7 @@ $(BINDIR)/$(CONFIG)/server_test: openssl_dep_error
 else
 
 
+$(SERVER_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/server_test: $(SERVER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -13176,6 +13380,7 @@ $(BINDIR)/$(CONFIG)/set_initial_connect_string_test: openssl_dep_error
 else
 
 
+$(SET_INITIAL_CONNECT_STRING_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/set_initial_connect_string_test: $(SET_INITIAL_CONNECT_STRING_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libtest_tcp_server.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -13207,6 +13412,7 @@ $(BINDIR)/$(CONFIG)/sockaddr_resolver_test: openssl_dep_error
 else
 
 
+$(SOCKADDR_RESOLVER_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/sockaddr_resolver_test: $(SOCKADDR_RESOLVER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -13238,6 +13444,7 @@ $(BINDIR)/$(CONFIG)/sockaddr_utils_test: openssl_dep_error
 else
 
 
+$(SOCKADDR_UTILS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/sockaddr_utils_test: $(SOCKADDR_UTILS_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -13269,6 +13476,7 @@ $(BINDIR)/$(CONFIG)/socket_utils_test: openssl_dep_error
 else
 
 
+$(SOCKET_UTILS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/socket_utils_test: $(SOCKET_UTILS_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -13300,6 +13508,7 @@ $(BINDIR)/$(CONFIG)/tcp_client_posix_test: openssl_dep_error
 else
 
 
+$(TCP_CLIENT_POSIX_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/tcp_client_posix_test: $(TCP_CLIENT_POSIX_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -13331,6 +13540,7 @@ $(BINDIR)/$(CONFIG)/tcp_posix_test: openssl_dep_error
 else
 
 
+$(TCP_POSIX_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/tcp_posix_test: $(TCP_POSIX_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -13362,6 +13572,7 @@ $(BINDIR)/$(CONFIG)/tcp_server_posix_test: openssl_dep_error
 else
 
 
+$(TCP_SERVER_POSIX_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/tcp_server_posix_test: $(TCP_SERVER_POSIX_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -13393,6 +13604,7 @@ $(BINDIR)/$(CONFIG)/time_averaged_stats_test: openssl_dep_error
 else
 
 
+$(TIME_AVERAGED_STATS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/time_averaged_stats_test: $(TIME_AVERAGED_STATS_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -13424,6 +13636,7 @@ $(BINDIR)/$(CONFIG)/timeout_encoding_test: openssl_dep_error
 else
 
 
+$(TIMEOUT_ENCODING_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/timeout_encoding_test: $(TIMEOUT_ENCODING_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -13455,6 +13668,7 @@ $(BINDIR)/$(CONFIG)/timer_heap_test: openssl_dep_error
 else
 
 
+$(TIMER_HEAP_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/timer_heap_test: $(TIMER_HEAP_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -13486,6 +13700,7 @@ $(BINDIR)/$(CONFIG)/timer_list_test: openssl_dep_error
 else
 
 
+$(TIMER_LIST_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/timer_list_test: $(TIMER_LIST_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -13517,6 +13732,7 @@ $(BINDIR)/$(CONFIG)/timers_test: openssl_dep_error
 else
 
 
+$(TIMERS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/timers_test: $(TIMERS_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -13548,6 +13764,7 @@ $(BINDIR)/$(CONFIG)/transport_connectivity_state_test: openssl_dep_error
 else
 
 
+$(TRANSPORT_CONNECTIVITY_STATE_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/transport_connectivity_state_test: $(TRANSPORT_CONNECTIVITY_STATE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -13579,6 +13796,7 @@ $(BINDIR)/$(CONFIG)/transport_metadata_test: openssl_dep_error
 else
 
 
+$(TRANSPORT_METADATA_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/transport_metadata_test: $(TRANSPORT_METADATA_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -13610,6 +13828,7 @@ $(BINDIR)/$(CONFIG)/transport_security_test: openssl_dep_error
 else
 
 
+$(TRANSPORT_SECURITY_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/transport_security_test: $(TRANSPORT_SECURITY_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -13641,6 +13860,7 @@ $(BINDIR)/$(CONFIG)/udp_server_test: openssl_dep_error
 else
 
 
+$(UDP_SERVER_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/udp_server_test: $(UDP_SERVER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -13672,6 +13892,7 @@ $(BINDIR)/$(CONFIG)/uri_parser_test: openssl_dep_error
 else
 
 
+$(URI_PARSER_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/uri_parser_test: $(URI_PARSER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -13703,6 +13924,7 @@ $(BINDIR)/$(CONFIG)/workqueue_test: openssl_dep_error
 else
 
 
+$(WORKQUEUE_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/workqueue_test: $(WORKQUEUE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -13734,6 +13956,7 @@ $(BINDIR)/$(CONFIG)/async_end2end_test: openssl_dep_error
 else
 
 
+$(ASYNC_END2END_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 
 ifeq ($(NO_PROTOBUF),true)
@@ -13776,6 +13999,7 @@ $(BINDIR)/$(CONFIG)/async_streaming_ping_pong_test: openssl_dep_error
 else
 
 
+$(ASYNC_STREAMING_PING_PONG_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 
 ifeq ($(NO_PROTOBUF),true)
@@ -13818,6 +14042,7 @@ $(BINDIR)/$(CONFIG)/async_unary_ping_pong_test: openssl_dep_error
 else
 
 
+$(ASYNC_UNARY_PING_PONG_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 
 ifeq ($(NO_PROTOBUF),true)
@@ -13860,6 +14085,7 @@ $(BINDIR)/$(CONFIG)/auth_property_iterator_test: openssl_dep_error
 else
 
 
+$(AUTH_PROPERTY_ITERATOR_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 
 ifeq ($(NO_PROTOBUF),true)
@@ -13902,6 +14128,7 @@ $(BINDIR)/$(CONFIG)/channel_arguments_test: openssl_dep_error
 else
 
 
+$(CHANNEL_ARGUMENTS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 
 ifeq ($(NO_PROTOBUF),true)
@@ -13944,6 +14171,7 @@ $(BINDIR)/$(CONFIG)/cli_call_test: openssl_dep_error
 else
 
 
+$(CLI_CALL_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 
 ifeq ($(NO_PROTOBUF),true)
@@ -13986,6 +14214,7 @@ $(BINDIR)/$(CONFIG)/client_crash_test: openssl_dep_error
 else
 
 
+$(CLIENT_CRASH_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 
 ifeq ($(NO_PROTOBUF),true)
@@ -14028,6 +14257,7 @@ $(BINDIR)/$(CONFIG)/client_crash_test_server: openssl_dep_error
 else
 
 
+$(CLIENT_CRASH_TEST_SERVER_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 
 ifeq ($(NO_PROTOBUF),true)
@@ -14070,6 +14300,7 @@ $(BINDIR)/$(CONFIG)/credentials_test: openssl_dep_error
 else
 
 
+$(CREDENTIALS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 
 ifeq ($(NO_PROTOBUF),true)
@@ -14112,6 +14343,7 @@ $(BINDIR)/$(CONFIG)/cxx_byte_buffer_test: openssl_dep_error
 else
 
 
+$(CXX_BYTE_BUFFER_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 
 ifeq ($(NO_PROTOBUF),true)
@@ -14154,6 +14386,7 @@ $(BINDIR)/$(CONFIG)/cxx_slice_test: openssl_dep_error
 else
 
 
+$(CXX_SLICE_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 
 ifeq ($(NO_PROTOBUF),true)
@@ -14196,6 +14429,7 @@ $(BINDIR)/$(CONFIG)/cxx_string_ref_test: openssl_dep_error
 else
 
 
+$(CXX_STRING_REF_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 
 ifeq ($(NO_PROTOBUF),true)
@@ -14238,6 +14472,7 @@ $(BINDIR)/$(CONFIG)/cxx_time_test: openssl_dep_error
 else
 
 
+$(CXX_TIME_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 
 ifeq ($(NO_PROTOBUF),true)
@@ -14280,6 +14515,7 @@ $(BINDIR)/$(CONFIG)/end2end_test: openssl_dep_error
 else
 
 
+$(END2END_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 
 ifeq ($(NO_PROTOBUF),true)
@@ -14322,6 +14558,7 @@ $(BINDIR)/$(CONFIG)/generic_end2end_test: openssl_dep_error
 else
 
 
+$(GENERIC_END2END_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 
 ifeq ($(NO_PROTOBUF),true)
@@ -14364,6 +14601,7 @@ $(BINDIR)/$(CONFIG)/grpc_cli: openssl_dep_error
 else
 
 
+$(GRPC_CLI_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 
 ifeq ($(NO_PROTOBUF),true)
@@ -14398,6 +14636,7 @@ GRPC_CPP_PLUGIN_SRC = \
 
 GRPC_CPP_PLUGIN_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GRPC_CPP_PLUGIN_SRC))))
 
+$(GRPC_CPP_PLUGIN_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 
 ifeq ($(NO_PROTOBUF),true)
@@ -14428,6 +14667,7 @@ GRPC_CSHARP_PLUGIN_SRC = \
 
 GRPC_CSHARP_PLUGIN_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GRPC_CSHARP_PLUGIN_SRC))))
 
+$(GRPC_CSHARP_PLUGIN_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 
 ifeq ($(NO_PROTOBUF),true)
@@ -14458,6 +14698,7 @@ GRPC_OBJECTIVE_C_PLUGIN_SRC = \
 
 GRPC_OBJECTIVE_C_PLUGIN_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GRPC_OBJECTIVE_C_PLUGIN_SRC))))
 
+$(GRPC_OBJECTIVE_C_PLUGIN_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 
 ifeq ($(NO_PROTOBUF),true)
@@ -14488,6 +14729,7 @@ GRPC_PYTHON_PLUGIN_SRC = \
 
 GRPC_PYTHON_PLUGIN_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GRPC_PYTHON_PLUGIN_SRC))))
 
+$(GRPC_PYTHON_PLUGIN_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 
 ifeq ($(NO_PROTOBUF),true)
@@ -14518,6 +14760,7 @@ GRPC_RUBY_PLUGIN_SRC = \
 
 GRPC_RUBY_PLUGIN_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GRPC_RUBY_PLUGIN_SRC))))
 
+$(GRPC_RUBY_PLUGIN_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 
 ifeq ($(NO_PROTOBUF),true)
@@ -14552,6 +14795,7 @@ $(BINDIR)/$(CONFIG)/interop_client: openssl_dep_error
 else
 
 
+$(INTEROP_CLIENT_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 
 ifeq ($(NO_PROTOBUF),true)
@@ -14583,6 +14827,7 @@ $(BINDIR)/$(CONFIG)/interop_server: openssl_dep_error
 else
 
 
+$(INTEROP_SERVER_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 
 ifeq ($(NO_PROTOBUF),true)
@@ -14618,6 +14863,7 @@ $(BINDIR)/$(CONFIG)/interop_test: openssl_dep_error
 else
 
 
+$(INTEROP_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 
 ifeq ($(NO_PROTOBUF),true)
@@ -14661,6 +14907,7 @@ $(BINDIR)/$(CONFIG)/metrics_client: openssl_dep_error
 else
 
 
+$(METRICS_CLIENT_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 
 ifeq ($(NO_PROTOBUF),true)
@@ -14705,6 +14952,7 @@ $(BINDIR)/$(CONFIG)/mock_test: openssl_dep_error
 else
 
 
+$(MOCK_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 
 ifeq ($(NO_PROTOBUF),true)
@@ -14747,6 +14995,7 @@ $(BINDIR)/$(CONFIG)/qps_driver: openssl_dep_error
 else
 
 
+$(QPS_DRIVER_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 
 ifeq ($(NO_PROTOBUF),true)
@@ -14789,6 +15038,7 @@ $(BINDIR)/$(CONFIG)/qps_interarrival_test: openssl_dep_error
 else
 
 
+$(QPS_INTERARRIVAL_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 
 ifeq ($(NO_PROTOBUF),true)
@@ -14831,6 +15081,7 @@ $(BINDIR)/$(CONFIG)/qps_openloop_test: openssl_dep_error
 else
 
 
+$(QPS_OPENLOOP_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 
 ifeq ($(NO_PROTOBUF),true)
@@ -14873,6 +15124,7 @@ $(BINDIR)/$(CONFIG)/qps_test: openssl_dep_error
 else
 
 
+$(QPS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 
 ifeq ($(NO_PROTOBUF),true)
@@ -14915,6 +15167,7 @@ $(BINDIR)/$(CONFIG)/qps_worker: openssl_dep_error
 else
 
 
+$(QPS_WORKER_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 
 ifeq ($(NO_PROTOBUF),true)
@@ -14960,6 +15213,7 @@ $(BINDIR)/$(CONFIG)/reconnect_interop_client: openssl_dep_error
 else
 
 
+$(RECONNECT_INTEROP_CLIENT_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 
 ifeq ($(NO_PROTOBUF),true)
@@ -15009,6 +15263,7 @@ $(BINDIR)/$(CONFIG)/reconnect_interop_server: openssl_dep_error
 else
 
 
+$(RECONNECT_INTEROP_SERVER_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 
 ifeq ($(NO_PROTOBUF),true)
@@ -15055,6 +15310,7 @@ $(BINDIR)/$(CONFIG)/secure_auth_context_test: openssl_dep_error
 else
 
 
+$(SECURE_AUTH_CONTEXT_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 
 ifeq ($(NO_PROTOBUF),true)
@@ -15097,6 +15353,7 @@ $(BINDIR)/$(CONFIG)/secure_sync_unary_ping_pong_test: openssl_dep_error
 else
 
 
+$(SECURE_SYNC_UNARY_PING_PONG_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 
 ifeq ($(NO_PROTOBUF),true)
@@ -15139,6 +15396,7 @@ $(BINDIR)/$(CONFIG)/server_crash_test: openssl_dep_error
 else
 
 
+$(SERVER_CRASH_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 
 ifeq ($(NO_PROTOBUF),true)
@@ -15181,6 +15439,7 @@ $(BINDIR)/$(CONFIG)/server_crash_test_client: openssl_dep_error
 else
 
 
+$(SERVER_CRASH_TEST_CLIENT_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 
 ifeq ($(NO_PROTOBUF),true)
@@ -15223,6 +15482,7 @@ $(BINDIR)/$(CONFIG)/shutdown_test: openssl_dep_error
 else
 
 
+$(SHUTDOWN_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 
 ifeq ($(NO_PROTOBUF),true)
@@ -15265,6 +15525,7 @@ $(BINDIR)/$(CONFIG)/status_test: openssl_dep_error
 else
 
 
+$(STATUS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 
 ifeq ($(NO_PROTOBUF),true)
@@ -15307,6 +15568,7 @@ $(BINDIR)/$(CONFIG)/streaming_throughput_test: openssl_dep_error
 else
 
 
+$(STREAMING_THROUGHPUT_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 
 ifeq ($(NO_PROTOBUF),true)
@@ -15356,6 +15618,7 @@ $(BINDIR)/$(CONFIG)/stress_test: openssl_dep_error
 else
 
 
+$(STRESS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 
 ifeq ($(NO_PROTOBUF),true)
@@ -15409,6 +15672,7 @@ $(BINDIR)/$(CONFIG)/sync_streaming_ping_pong_test: openssl_dep_error
 else
 
 
+$(SYNC_STREAMING_PING_PONG_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 
 ifeq ($(NO_PROTOBUF),true)
@@ -15451,6 +15715,7 @@ $(BINDIR)/$(CONFIG)/sync_unary_ping_pong_test: openssl_dep_error
 else
 
 
+$(SYNC_UNARY_PING_PONG_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 
 ifeq ($(NO_PROTOBUF),true)
@@ -15493,6 +15758,7 @@ $(BINDIR)/$(CONFIG)/thread_stress_test: openssl_dep_error
 else
 
 
+$(THREAD_STRESS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 
 ifeq ($(NO_PROTOBUF),true)
@@ -15535,6 +15801,7 @@ $(BINDIR)/$(CONFIG)/zookeeper_test: openssl_dep_error
 else
 
 
+$(ZOOKEEPER_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 
 ifeq ($(NO_PROTOBUF),true)
@@ -15572,8 +15839,9 @@ BORINGSSL_AES_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(ba
 # boringssl needs an override to ensure that it does not include
 # system openssl headers regardless of other configuration
 # we do so here with a target specific variable assignment
-$(BORINGSSL_AES_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -std=c99 -no-pedantic -Wno-sign-conversion -Wno-conversion -DOPENSSL_NO_ASM
-$(BORINGSSL_AES_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS) -DOPENSSL_NO_ASM
+$(BORINGSSL_AES_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -std=c99 -Wno-sign-conversion -Wno-conversion -DOPENSSL_NO_ASM
+$(BORINGSSL_AES_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_AES_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
 
 
 ifeq ($(NO_PROTOBUF),true)
@@ -15607,8 +15875,9 @@ BORINGSSL_BASE64_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $
 # boringssl needs an override to ensure that it does not include
 # system openssl headers regardless of other configuration
 # we do so here with a target specific variable assignment
-$(BORINGSSL_BASE64_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -std=c99 -no-pedantic -Wno-sign-conversion -Wno-conversion -DOPENSSL_NO_ASM
-$(BORINGSSL_BASE64_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS) -DOPENSSL_NO_ASM
+$(BORINGSSL_BASE64_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -std=c99 -Wno-sign-conversion -Wno-conversion -DOPENSSL_NO_ASM
+$(BORINGSSL_BASE64_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_BASE64_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
 
 
 ifeq ($(NO_PROTOBUF),true)
@@ -15642,8 +15911,9 @@ BORINGSSL_BIO_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(ba
 # boringssl needs an override to ensure that it does not include
 # system openssl headers regardless of other configuration
 # we do so here with a target specific variable assignment
-$(BORINGSSL_BIO_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -std=c99 -no-pedantic -Wno-sign-conversion -Wno-conversion -DOPENSSL_NO_ASM
-$(BORINGSSL_BIO_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS) -DOPENSSL_NO_ASM
+$(BORINGSSL_BIO_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -std=c99 -Wno-sign-conversion -Wno-conversion -DOPENSSL_NO_ASM
+$(BORINGSSL_BIO_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_BIO_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
 
 
 ifeq ($(NO_PROTOBUF),true)
@@ -15677,8 +15947,9 @@ BORINGSSL_BN_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(bas
 # boringssl needs an override to ensure that it does not include
 # system openssl headers regardless of other configuration
 # we do so here with a target specific variable assignment
-$(BORINGSSL_BN_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -std=c99 -no-pedantic -Wno-sign-conversion -Wno-conversion -DOPENSSL_NO_ASM
-$(BORINGSSL_BN_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS) -DOPENSSL_NO_ASM
+$(BORINGSSL_BN_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -std=c99 -Wno-sign-conversion -Wno-conversion -DOPENSSL_NO_ASM
+$(BORINGSSL_BN_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_BN_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
 
 
 ifeq ($(NO_PROTOBUF),true)
@@ -15712,8 +15983,9 @@ BORINGSSL_BYTESTRING_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .
 # boringssl needs an override to ensure that it does not include
 # system openssl headers regardless of other configuration
 # we do so here with a target specific variable assignment
-$(BORINGSSL_BYTESTRING_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -std=c99 -no-pedantic -Wno-sign-conversion -Wno-conversion -DOPENSSL_NO_ASM
-$(BORINGSSL_BYTESTRING_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS) -DOPENSSL_NO_ASM
+$(BORINGSSL_BYTESTRING_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -std=c99 -Wno-sign-conversion -Wno-conversion -DOPENSSL_NO_ASM
+$(BORINGSSL_BYTESTRING_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_BYTESTRING_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
 
 
 ifeq ($(NO_PROTOBUF),true)
@@ -15747,8 +16019,9 @@ BORINGSSL_AEAD_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(b
 # boringssl needs an override to ensure that it does not include
 # system openssl headers regardless of other configuration
 # we do so here with a target specific variable assignment
-$(BORINGSSL_AEAD_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -std=c99 -no-pedantic -Wno-sign-conversion -Wno-conversion -DOPENSSL_NO_ASM
-$(BORINGSSL_AEAD_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS) -DOPENSSL_NO_ASM
+$(BORINGSSL_AEAD_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -std=c99 -Wno-sign-conversion -Wno-conversion -DOPENSSL_NO_ASM
+$(BORINGSSL_AEAD_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_AEAD_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
 
 
 ifeq ($(NO_PROTOBUF),true)
@@ -15782,8 +16055,9 @@ BORINGSSL_CIPHER_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $
 # boringssl needs an override to ensure that it does not include
 # system openssl headers regardless of other configuration
 # we do so here with a target specific variable assignment
-$(BORINGSSL_CIPHER_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -std=c99 -no-pedantic -Wno-sign-conversion -Wno-conversion -DOPENSSL_NO_ASM
-$(BORINGSSL_CIPHER_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS) -DOPENSSL_NO_ASM
+$(BORINGSSL_CIPHER_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -std=c99 -Wno-sign-conversion -Wno-conversion -DOPENSSL_NO_ASM
+$(BORINGSSL_CIPHER_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_CIPHER_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
 
 
 ifeq ($(NO_PROTOBUF),true)
@@ -15817,8 +16091,9 @@ BORINGSSL_CMAC_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(b
 # boringssl needs an override to ensure that it does not include
 # system openssl headers regardless of other configuration
 # we do so here with a target specific variable assignment
-$(BORINGSSL_CMAC_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -std=c99 -no-pedantic -Wno-sign-conversion -Wno-conversion -DOPENSSL_NO_ASM
-$(BORINGSSL_CMAC_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS) -DOPENSSL_NO_ASM
+$(BORINGSSL_CMAC_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -std=c99 -Wno-sign-conversion -Wno-conversion -DOPENSSL_NO_ASM
+$(BORINGSSL_CMAC_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_CMAC_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
 
 
 ifeq ($(NO_PROTOBUF),true)
@@ -15852,13 +16127,14 @@ BORINGSSL_CONSTANT_TIME_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffi
 # boringssl needs an override to ensure that it does not include
 # system openssl headers regardless of other configuration
 # we do so here with a target specific variable assignment
-$(BORINGSSL_CONSTANT_TIME_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -std=c99 -no-pedantic -Wno-sign-conversion -Wno-conversion -DOPENSSL_NO_ASM
-$(BORINGSSL_CONSTANT_TIME_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS) -DOPENSSL_NO_ASM
+$(BORINGSSL_CONSTANT_TIME_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -std=c99 -Wno-sign-conversion -Wno-conversion -DOPENSSL_NO_ASM
+$(BORINGSSL_CONSTANT_TIME_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_CONSTANT_TIME_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
 
 $(BINDIR)/$(CONFIG)/boringssl_constant_time_test: $(BORINGSSL_CONSTANT_TIME_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(BORINGSSL_CONSTANT_TIME_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/boringssl_constant_time_test
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_CONSTANT_TIME_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/boringssl_constant_time_test
 
 $(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/constant_time_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 deps_boringssl_constant_time_test: $(BORINGSSL_CONSTANT_TIME_TEST_OBJS:.o=.dep)
@@ -15876,8 +16152,9 @@ BORINGSSL_ED25519_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, 
 # boringssl needs an override to ensure that it does not include
 # system openssl headers regardless of other configuration
 # we do so here with a target specific variable assignment
-$(BORINGSSL_ED25519_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -std=c99 -no-pedantic -Wno-sign-conversion -Wno-conversion -DOPENSSL_NO_ASM
-$(BORINGSSL_ED25519_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS) -DOPENSSL_NO_ASM
+$(BORINGSSL_ED25519_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -std=c99 -Wno-sign-conversion -Wno-conversion -DOPENSSL_NO_ASM
+$(BORINGSSL_ED25519_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_ED25519_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
 
 
 ifeq ($(NO_PROTOBUF),true)
@@ -15911,8 +16188,9 @@ BORINGSSL_X25519_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $
 # boringssl needs an override to ensure that it does not include
 # system openssl headers regardless of other configuration
 # we do so here with a target specific variable assignment
-$(BORINGSSL_X25519_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -std=c99 -no-pedantic -Wno-sign-conversion -Wno-conversion -DOPENSSL_NO_ASM
-$(BORINGSSL_X25519_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS) -DOPENSSL_NO_ASM
+$(BORINGSSL_X25519_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -std=c99 -Wno-sign-conversion -Wno-conversion -DOPENSSL_NO_ASM
+$(BORINGSSL_X25519_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_X25519_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
 
 
 ifeq ($(NO_PROTOBUF),true)
@@ -15946,8 +16224,9 @@ BORINGSSL_DH_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(bas
 # boringssl needs an override to ensure that it does not include
 # system openssl headers regardless of other configuration
 # we do so here with a target specific variable assignment
-$(BORINGSSL_DH_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -std=c99 -no-pedantic -Wno-sign-conversion -Wno-conversion -DOPENSSL_NO_ASM
-$(BORINGSSL_DH_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS) -DOPENSSL_NO_ASM
+$(BORINGSSL_DH_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -std=c99 -Wno-sign-conversion -Wno-conversion -DOPENSSL_NO_ASM
+$(BORINGSSL_DH_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_DH_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
 
 
 ifeq ($(NO_PROTOBUF),true)
@@ -15981,8 +16260,9 @@ BORINGSSL_DIGEST_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $
 # boringssl needs an override to ensure that it does not include
 # system openssl headers regardless of other configuration
 # we do so here with a target specific variable assignment
-$(BORINGSSL_DIGEST_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -std=c99 -no-pedantic -Wno-sign-conversion -Wno-conversion -DOPENSSL_NO_ASM
-$(BORINGSSL_DIGEST_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS) -DOPENSSL_NO_ASM
+$(BORINGSSL_DIGEST_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -std=c99 -Wno-sign-conversion -Wno-conversion -DOPENSSL_NO_ASM
+$(BORINGSSL_DIGEST_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_DIGEST_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
 
 
 ifeq ($(NO_PROTOBUF),true)
@@ -16016,13 +16296,14 @@ BORINGSSL_DSA_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(ba
 # boringssl needs an override to ensure that it does not include
 # system openssl headers regardless of other configuration
 # we do so here with a target specific variable assignment
-$(BORINGSSL_DSA_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -std=c99 -no-pedantic -Wno-sign-conversion -Wno-conversion -DOPENSSL_NO_ASM
-$(BORINGSSL_DSA_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS) -DOPENSSL_NO_ASM
+$(BORINGSSL_DSA_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -std=c99 -Wno-sign-conversion -Wno-conversion -DOPENSSL_NO_ASM
+$(BORINGSSL_DSA_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_DSA_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
 
 $(BINDIR)/$(CONFIG)/boringssl_dsa_test: $(BORINGSSL_DSA_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(BORINGSSL_DSA_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/boringssl_dsa_test
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_DSA_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/boringssl_dsa_test
 
 $(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/dsa/dsa_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 deps_boringssl_dsa_test: $(BORINGSSL_DSA_TEST_OBJS:.o=.dep)
@@ -16040,8 +16321,9 @@ BORINGSSL_EC_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(bas
 # boringssl needs an override to ensure that it does not include
 # system openssl headers regardless of other configuration
 # we do so here with a target specific variable assignment
-$(BORINGSSL_EC_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -std=c99 -no-pedantic -Wno-sign-conversion -Wno-conversion -DOPENSSL_NO_ASM
-$(BORINGSSL_EC_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS) -DOPENSSL_NO_ASM
+$(BORINGSSL_EC_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -std=c99 -Wno-sign-conversion -Wno-conversion -DOPENSSL_NO_ASM
+$(BORINGSSL_EC_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_EC_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
 
 
 ifeq ($(NO_PROTOBUF),true)
@@ -16075,13 +16357,14 @@ BORINGSSL_EXAMPLE_MUL_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $
 # boringssl needs an override to ensure that it does not include
 # system openssl headers regardless of other configuration
 # we do so here with a target specific variable assignment
-$(BORINGSSL_EXAMPLE_MUL_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -std=c99 -no-pedantic -Wno-sign-conversion -Wno-conversion -DOPENSSL_NO_ASM
-$(BORINGSSL_EXAMPLE_MUL_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS) -DOPENSSL_NO_ASM
+$(BORINGSSL_EXAMPLE_MUL_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -std=c99 -Wno-sign-conversion -Wno-conversion -DOPENSSL_NO_ASM
+$(BORINGSSL_EXAMPLE_MUL_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_EXAMPLE_MUL_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
 
 $(BINDIR)/$(CONFIG)/boringssl_example_mul: $(BORINGSSL_EXAMPLE_MUL_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(BORINGSSL_EXAMPLE_MUL_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/boringssl_example_mul
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_EXAMPLE_MUL_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/boringssl_example_mul
 
 $(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/ec/example_mul.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 deps_boringssl_example_mul: $(BORINGSSL_EXAMPLE_MUL_OBJS:.o=.dep)
@@ -16099,8 +16382,9 @@ BORINGSSL_ECDSA_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(
 # boringssl needs an override to ensure that it does not include
 # system openssl headers regardless of other configuration
 # we do so here with a target specific variable assignment
-$(BORINGSSL_ECDSA_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -std=c99 -no-pedantic -Wno-sign-conversion -Wno-conversion -DOPENSSL_NO_ASM
-$(BORINGSSL_ECDSA_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS) -DOPENSSL_NO_ASM
+$(BORINGSSL_ECDSA_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -std=c99 -Wno-sign-conversion -Wno-conversion -DOPENSSL_NO_ASM
+$(BORINGSSL_ECDSA_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_ECDSA_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
 
 
 ifeq ($(NO_PROTOBUF),true)
@@ -16134,8 +16418,9 @@ BORINGSSL_ERR_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(ba
 # boringssl needs an override to ensure that it does not include
 # system openssl headers regardless of other configuration
 # we do so here with a target specific variable assignment
-$(BORINGSSL_ERR_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -std=c99 -no-pedantic -Wno-sign-conversion -Wno-conversion -DOPENSSL_NO_ASM
-$(BORINGSSL_ERR_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS) -DOPENSSL_NO_ASM
+$(BORINGSSL_ERR_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -std=c99 -Wno-sign-conversion -Wno-conversion -DOPENSSL_NO_ASM
+$(BORINGSSL_ERR_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_ERR_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
 
 
 ifeq ($(NO_PROTOBUF),true)
@@ -16169,8 +16454,9 @@ BORINGSSL_EVP_EXTRA_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o
 # boringssl needs an override to ensure that it does not include
 # system openssl headers regardless of other configuration
 # we do so here with a target specific variable assignment
-$(BORINGSSL_EVP_EXTRA_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -std=c99 -no-pedantic -Wno-sign-conversion -Wno-conversion -DOPENSSL_NO_ASM
-$(BORINGSSL_EVP_EXTRA_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS) -DOPENSSL_NO_ASM
+$(BORINGSSL_EVP_EXTRA_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -std=c99 -Wno-sign-conversion -Wno-conversion -DOPENSSL_NO_ASM
+$(BORINGSSL_EVP_EXTRA_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_EVP_EXTRA_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
 
 
 ifeq ($(NO_PROTOBUF),true)
@@ -16204,8 +16490,9 @@ BORINGSSL_EVP_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(ba
 # boringssl needs an override to ensure that it does not include
 # system openssl headers regardless of other configuration
 # we do so here with a target specific variable assignment
-$(BORINGSSL_EVP_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -std=c99 -no-pedantic -Wno-sign-conversion -Wno-conversion -DOPENSSL_NO_ASM
-$(BORINGSSL_EVP_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS) -DOPENSSL_NO_ASM
+$(BORINGSSL_EVP_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -std=c99 -Wno-sign-conversion -Wno-conversion -DOPENSSL_NO_ASM
+$(BORINGSSL_EVP_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_EVP_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
 
 
 ifeq ($(NO_PROTOBUF),true)
@@ -16239,8 +16526,9 @@ BORINGSSL_PBKDF_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(
 # boringssl needs an override to ensure that it does not include
 # system openssl headers regardless of other configuration
 # we do so here with a target specific variable assignment
-$(BORINGSSL_PBKDF_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -std=c99 -no-pedantic -Wno-sign-conversion -Wno-conversion -DOPENSSL_NO_ASM
-$(BORINGSSL_PBKDF_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS) -DOPENSSL_NO_ASM
+$(BORINGSSL_PBKDF_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -std=c99 -Wno-sign-conversion -Wno-conversion -DOPENSSL_NO_ASM
+$(BORINGSSL_PBKDF_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_PBKDF_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
 
 
 ifeq ($(NO_PROTOBUF),true)
@@ -16274,13 +16562,14 @@ BORINGSSL_HKDF_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(b
 # boringssl needs an override to ensure that it does not include
 # system openssl headers regardless of other configuration
 # we do so here with a target specific variable assignment
-$(BORINGSSL_HKDF_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -std=c99 -no-pedantic -Wno-sign-conversion -Wno-conversion -DOPENSSL_NO_ASM
-$(BORINGSSL_HKDF_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS) -DOPENSSL_NO_ASM
+$(BORINGSSL_HKDF_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -std=c99 -Wno-sign-conversion -Wno-conversion -DOPENSSL_NO_ASM
+$(BORINGSSL_HKDF_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_HKDF_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
 
 $(BINDIR)/$(CONFIG)/boringssl_hkdf_test: $(BORINGSSL_HKDF_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(BORINGSSL_HKDF_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/boringssl_hkdf_test
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_HKDF_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/boringssl_hkdf_test
 
 $(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/hkdf/hkdf_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 deps_boringssl_hkdf_test: $(BORINGSSL_HKDF_TEST_OBJS:.o=.dep)
@@ -16298,8 +16587,9 @@ BORINGSSL_HMAC_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(b
 # boringssl needs an override to ensure that it does not include
 # system openssl headers regardless of other configuration
 # we do so here with a target specific variable assignment
-$(BORINGSSL_HMAC_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -std=c99 -no-pedantic -Wno-sign-conversion -Wno-conversion -DOPENSSL_NO_ASM
-$(BORINGSSL_HMAC_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS) -DOPENSSL_NO_ASM
+$(BORINGSSL_HMAC_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -std=c99 -Wno-sign-conversion -Wno-conversion -DOPENSSL_NO_ASM
+$(BORINGSSL_HMAC_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_HMAC_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
 
 
 ifeq ($(NO_PROTOBUF),true)
@@ -16333,13 +16623,14 @@ BORINGSSL_LHASH_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(
 # boringssl needs an override to ensure that it does not include
 # system openssl headers regardless of other configuration
 # we do so here with a target specific variable assignment
-$(BORINGSSL_LHASH_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -std=c99 -no-pedantic -Wno-sign-conversion -Wno-conversion -DOPENSSL_NO_ASM
-$(BORINGSSL_LHASH_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS) -DOPENSSL_NO_ASM
+$(BORINGSSL_LHASH_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -std=c99 -Wno-sign-conversion -Wno-conversion -DOPENSSL_NO_ASM
+$(BORINGSSL_LHASH_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_LHASH_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
 
 $(BINDIR)/$(CONFIG)/boringssl_lhash_test: $(BORINGSSL_LHASH_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(BORINGSSL_LHASH_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/boringssl_lhash_test
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_LHASH_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/boringssl_lhash_test
 
 $(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/lhash/lhash_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 deps_boringssl_lhash_test: $(BORINGSSL_LHASH_TEST_OBJS:.o=.dep)
@@ -16357,13 +16648,14 @@ BORINGSSL_GCM_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(ba
 # boringssl needs an override to ensure that it does not include
 # system openssl headers regardless of other configuration
 # we do so here with a target specific variable assignment
-$(BORINGSSL_GCM_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -std=c99 -no-pedantic -Wno-sign-conversion -Wno-conversion -DOPENSSL_NO_ASM
-$(BORINGSSL_GCM_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS) -DOPENSSL_NO_ASM
+$(BORINGSSL_GCM_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -std=c99 -Wno-sign-conversion -Wno-conversion -DOPENSSL_NO_ASM
+$(BORINGSSL_GCM_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_GCM_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
 
 $(BINDIR)/$(CONFIG)/boringssl_gcm_test: $(BORINGSSL_GCM_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(BORINGSSL_GCM_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/boringssl_gcm_test
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_GCM_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/boringssl_gcm_test
 
 $(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/modes/gcm_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 deps_boringssl_gcm_test: $(BORINGSSL_GCM_TEST_OBJS:.o=.dep)
@@ -16381,8 +16673,9 @@ BORINGSSL_PKCS12_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $
 # boringssl needs an override to ensure that it does not include
 # system openssl headers regardless of other configuration
 # we do so here with a target specific variable assignment
-$(BORINGSSL_PKCS12_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -std=c99 -no-pedantic -Wno-sign-conversion -Wno-conversion -DOPENSSL_NO_ASM
-$(BORINGSSL_PKCS12_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS) -DOPENSSL_NO_ASM
+$(BORINGSSL_PKCS12_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -std=c99 -Wno-sign-conversion -Wno-conversion -DOPENSSL_NO_ASM
+$(BORINGSSL_PKCS12_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_PKCS12_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
 
 
 ifeq ($(NO_PROTOBUF),true)
@@ -16416,8 +16709,9 @@ BORINGSSL_PKCS8_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(
 # boringssl needs an override to ensure that it does not include
 # system openssl headers regardless of other configuration
 # we do so here with a target specific variable assignment
-$(BORINGSSL_PKCS8_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -std=c99 -no-pedantic -Wno-sign-conversion -Wno-conversion -DOPENSSL_NO_ASM
-$(BORINGSSL_PKCS8_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS) -DOPENSSL_NO_ASM
+$(BORINGSSL_PKCS8_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -std=c99 -Wno-sign-conversion -Wno-conversion -DOPENSSL_NO_ASM
+$(BORINGSSL_PKCS8_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_PKCS8_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
 
 
 ifeq ($(NO_PROTOBUF),true)
@@ -16451,8 +16745,9 @@ BORINGSSL_POLY1305_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o,
 # boringssl needs an override to ensure that it does not include
 # system openssl headers regardless of other configuration
 # we do so here with a target specific variable assignment
-$(BORINGSSL_POLY1305_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -std=c99 -no-pedantic -Wno-sign-conversion -Wno-conversion -DOPENSSL_NO_ASM
-$(BORINGSSL_POLY1305_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS) -DOPENSSL_NO_ASM
+$(BORINGSSL_POLY1305_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -std=c99 -Wno-sign-conversion -Wno-conversion -DOPENSSL_NO_ASM
+$(BORINGSSL_POLY1305_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_POLY1305_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
 
 
 ifeq ($(NO_PROTOBUF),true)
@@ -16486,13 +16781,14 @@ BORINGSSL_REFCOUNT_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o,
 # boringssl needs an override to ensure that it does not include
 # system openssl headers regardless of other configuration
 # we do so here with a target specific variable assignment
-$(BORINGSSL_REFCOUNT_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -std=c99 -no-pedantic -Wno-sign-conversion -Wno-conversion -DOPENSSL_NO_ASM
-$(BORINGSSL_REFCOUNT_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS) -DOPENSSL_NO_ASM
+$(BORINGSSL_REFCOUNT_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -std=c99 -Wno-sign-conversion -Wno-conversion -DOPENSSL_NO_ASM
+$(BORINGSSL_REFCOUNT_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_REFCOUNT_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
 
 $(BINDIR)/$(CONFIG)/boringssl_refcount_test: $(BORINGSSL_REFCOUNT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(BORINGSSL_REFCOUNT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/boringssl_refcount_test
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_REFCOUNT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/boringssl_refcount_test
 
 $(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/refcount_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 deps_boringssl_refcount_test: $(BORINGSSL_REFCOUNT_TEST_OBJS:.o=.dep)
@@ -16510,8 +16806,9 @@ BORINGSSL_RSA_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(ba
 # boringssl needs an override to ensure that it does not include
 # system openssl headers regardless of other configuration
 # we do so here with a target specific variable assignment
-$(BORINGSSL_RSA_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -std=c99 -no-pedantic -Wno-sign-conversion -Wno-conversion -DOPENSSL_NO_ASM
-$(BORINGSSL_RSA_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS) -DOPENSSL_NO_ASM
+$(BORINGSSL_RSA_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -std=c99 -Wno-sign-conversion -Wno-conversion -DOPENSSL_NO_ASM
+$(BORINGSSL_RSA_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_RSA_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
 
 
 ifeq ($(NO_PROTOBUF),true)
@@ -16545,13 +16842,14 @@ BORINGSSL_THREAD_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $
 # boringssl needs an override to ensure that it does not include
 # system openssl headers regardless of other configuration
 # we do so here with a target specific variable assignment
-$(BORINGSSL_THREAD_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -std=c99 -no-pedantic -Wno-sign-conversion -Wno-conversion -DOPENSSL_NO_ASM
-$(BORINGSSL_THREAD_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS) -DOPENSSL_NO_ASM
+$(BORINGSSL_THREAD_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -std=c99 -Wno-sign-conversion -Wno-conversion -DOPENSSL_NO_ASM
+$(BORINGSSL_THREAD_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_THREAD_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
 
 $(BINDIR)/$(CONFIG)/boringssl_thread_test: $(BORINGSSL_THREAD_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(BORINGSSL_THREAD_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/boringssl_thread_test
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_THREAD_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/boringssl_thread_test
 
 $(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/thread_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 deps_boringssl_thread_test: $(BORINGSSL_THREAD_TEST_OBJS:.o=.dep)
@@ -16569,13 +16867,14 @@ BORINGSSL_PKCS7_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(
 # boringssl needs an override to ensure that it does not include
 # system openssl headers regardless of other configuration
 # we do so here with a target specific variable assignment
-$(BORINGSSL_PKCS7_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -std=c99 -no-pedantic -Wno-sign-conversion -Wno-conversion -DOPENSSL_NO_ASM
-$(BORINGSSL_PKCS7_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS) -DOPENSSL_NO_ASM
+$(BORINGSSL_PKCS7_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -std=c99 -Wno-sign-conversion -Wno-conversion -DOPENSSL_NO_ASM
+$(BORINGSSL_PKCS7_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_PKCS7_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
 
 $(BINDIR)/$(CONFIG)/boringssl_pkcs7_test: $(BORINGSSL_PKCS7_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(BORINGSSL_PKCS7_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/boringssl_pkcs7_test
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_PKCS7_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/boringssl_pkcs7_test
 
 $(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/x509/pkcs7_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 deps_boringssl_pkcs7_test: $(BORINGSSL_PKCS7_TEST_OBJS:.o=.dep)
@@ -16593,13 +16892,14 @@ BORINGSSL_TAB_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(ba
 # boringssl needs an override to ensure that it does not include
 # system openssl headers regardless of other configuration
 # we do so here with a target specific variable assignment
-$(BORINGSSL_TAB_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -std=c99 -no-pedantic -Wno-sign-conversion -Wno-conversion -DOPENSSL_NO_ASM
-$(BORINGSSL_TAB_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS) -DOPENSSL_NO_ASM
+$(BORINGSSL_TAB_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -std=c99 -Wno-sign-conversion -Wno-conversion -DOPENSSL_NO_ASM
+$(BORINGSSL_TAB_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_TAB_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
 
 $(BINDIR)/$(CONFIG)/boringssl_tab_test: $(BORINGSSL_TAB_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(BORINGSSL_TAB_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/boringssl_tab_test
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_TAB_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/boringssl_tab_test
 
 $(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/x509v3/tab_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 deps_boringssl_tab_test: $(BORINGSSL_TAB_TEST_OBJS:.o=.dep)
@@ -16617,13 +16917,14 @@ BORINGSSL_V3NAME_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $
 # boringssl needs an override to ensure that it does not include
 # system openssl headers regardless of other configuration
 # we do so here with a target specific variable assignment
-$(BORINGSSL_V3NAME_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -std=c99 -no-pedantic -Wno-sign-conversion -Wno-conversion -DOPENSSL_NO_ASM
-$(BORINGSSL_V3NAME_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS) -DOPENSSL_NO_ASM
+$(BORINGSSL_V3NAME_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -std=c99 -Wno-sign-conversion -Wno-conversion -DOPENSSL_NO_ASM
+$(BORINGSSL_V3NAME_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_V3NAME_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
 
 $(BINDIR)/$(CONFIG)/boringssl_v3name_test: $(BORINGSSL_V3NAME_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(BORINGSSL_V3NAME_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/boringssl_v3name_test
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_V3NAME_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/boringssl_v3name_test
 
 $(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/x509v3/v3name_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 deps_boringssl_v3name_test: $(BORINGSSL_V3NAME_TEST_OBJS:.o=.dep)
@@ -16641,13 +16942,14 @@ BORINGSSL_PQUEUE_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $
 # boringssl needs an override to ensure that it does not include
 # system openssl headers regardless of other configuration
 # we do so here with a target specific variable assignment
-$(BORINGSSL_PQUEUE_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -std=c99 -no-pedantic -Wno-sign-conversion -Wno-conversion -DOPENSSL_NO_ASM
-$(BORINGSSL_PQUEUE_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS) -DOPENSSL_NO_ASM
+$(BORINGSSL_PQUEUE_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -std=c99 -Wno-sign-conversion -Wno-conversion -DOPENSSL_NO_ASM
+$(BORINGSSL_PQUEUE_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_PQUEUE_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
 
 $(BINDIR)/$(CONFIG)/boringssl_pqueue_test: $(BORINGSSL_PQUEUE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(BORINGSSL_PQUEUE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/boringssl_pqueue_test
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_PQUEUE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/boringssl_pqueue_test
 
 $(OBJDIR)/$(CONFIG)/third_party/boringssl/ssl/pqueue/pqueue_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 deps_boringssl_pqueue_test: $(BORINGSSL_PQUEUE_TEST_OBJS:.o=.dep)
@@ -16665,8 +16967,9 @@ BORINGSSL_SSL_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(ba
 # boringssl needs an override to ensure that it does not include
 # system openssl headers regardless of other configuration
 # we do so here with a target specific variable assignment
-$(BORINGSSL_SSL_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -std=c99 -no-pedantic -Wno-sign-conversion -Wno-conversion -DOPENSSL_NO_ASM
-$(BORINGSSL_SSL_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS) -DOPENSSL_NO_ASM
+$(BORINGSSL_SSL_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -std=c99 -Wno-sign-conversion -Wno-conversion -DOPENSSL_NO_ASM
+$(BORINGSSL_SSL_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_SSL_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
 
 
 ifeq ($(NO_PROTOBUF),true)
@@ -16701,6 +17004,7 @@ $(BINDIR)/$(CONFIG)/h2_census_bad_hostname_test: openssl_dep_error
 else
 
 
+$(H2_CENSUS_BAD_HOSTNAME_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_census_bad_hostname_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_bad_hostname.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -16721,6 +17025,7 @@ $(BINDIR)/$(CONFIG)/h2_census_binary_metadata_test: openssl_dep_error
 else
 
 
+$(H2_CENSUS_BINARY_METADATA_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_census_binary_metadata_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_binary_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -16741,6 +17046,7 @@ $(BINDIR)/$(CONFIG)/h2_census_call_creds_test: openssl_dep_error
 else
 
 
+$(H2_CENSUS_CALL_CREDS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_census_call_creds_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_call_creds.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -16761,6 +17067,7 @@ $(BINDIR)/$(CONFIG)/h2_census_cancel_after_accept_test: openssl_dep_error
 else
 
 
+$(H2_CENSUS_CANCEL_AFTER_ACCEPT_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_census_cancel_after_accept_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_accept.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -16781,6 +17088,7 @@ $(BINDIR)/$(CONFIG)/h2_census_cancel_after_client_done_test: openssl_dep_error
 else
 
 
+$(H2_CENSUS_CANCEL_AFTER_CLIENT_DONE_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_census_cancel_after_client_done_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_client_done.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -16801,6 +17109,7 @@ $(BINDIR)/$(CONFIG)/h2_census_cancel_after_invoke_test: openssl_dep_error
 else
 
 
+$(H2_CENSUS_CANCEL_AFTER_INVOKE_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_census_cancel_after_invoke_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_invoke.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -16821,6 +17130,7 @@ $(BINDIR)/$(CONFIG)/h2_census_cancel_before_invoke_test: openssl_dep_error
 else
 
 
+$(H2_CENSUS_CANCEL_BEFORE_INVOKE_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_census_cancel_before_invoke_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_before_invoke.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -16841,6 +17151,7 @@ $(BINDIR)/$(CONFIG)/h2_census_cancel_in_a_vacuum_test: openssl_dep_error
 else
 
 
+$(H2_CENSUS_CANCEL_IN_A_VACUUM_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_census_cancel_in_a_vacuum_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_in_a_vacuum.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -16861,6 +17172,7 @@ $(BINDIR)/$(CONFIG)/h2_census_cancel_with_status_test: openssl_dep_error
 else
 
 
+$(H2_CENSUS_CANCEL_WITH_STATUS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_census_cancel_with_status_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_with_status.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -16881,6 +17193,7 @@ $(BINDIR)/$(CONFIG)/h2_census_channel_connectivity_test: openssl_dep_error
 else
 
 
+$(H2_CENSUS_CHANNEL_CONNECTIVITY_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_census_channel_connectivity_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_channel_connectivity.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -16901,6 +17214,7 @@ $(BINDIR)/$(CONFIG)/h2_census_channel_ping_test: openssl_dep_error
 else
 
 
+$(H2_CENSUS_CHANNEL_PING_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_census_channel_ping_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_channel_ping.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -16921,6 +17235,7 @@ $(BINDIR)/$(CONFIG)/h2_census_compressed_payload_test: openssl_dep_error
 else
 
 
+$(H2_CENSUS_COMPRESSED_PAYLOAD_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_census_compressed_payload_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_compressed_payload.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -16941,6 +17256,7 @@ $(BINDIR)/$(CONFIG)/h2_census_default_host_test: openssl_dep_error
 else
 
 
+$(H2_CENSUS_DEFAULT_HOST_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_census_default_host_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_default_host.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -16961,6 +17277,7 @@ $(BINDIR)/$(CONFIG)/h2_census_disappearing_server_test: openssl_dep_error
 else
 
 
+$(H2_CENSUS_DISAPPEARING_SERVER_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_census_disappearing_server_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_disappearing_server.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -16981,6 +17298,7 @@ $(BINDIR)/$(CONFIG)/h2_census_empty_batch_test: openssl_dep_error
 else
 
 
+$(H2_CENSUS_EMPTY_BATCH_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_census_empty_batch_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_empty_batch.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -17001,6 +17319,7 @@ $(BINDIR)/$(CONFIG)/h2_census_graceful_server_shutdown_test: openssl_dep_error
 else
 
 
+$(H2_CENSUS_GRACEFUL_SERVER_SHUTDOWN_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_census_graceful_server_shutdown_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_graceful_server_shutdown.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -17021,6 +17340,7 @@ $(BINDIR)/$(CONFIG)/h2_census_high_initial_seqno_test: openssl_dep_error
 else
 
 
+$(H2_CENSUS_HIGH_INITIAL_SEQNO_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_census_high_initial_seqno_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_high_initial_seqno.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -17041,6 +17361,7 @@ $(BINDIR)/$(CONFIG)/h2_census_hpack_size_test: openssl_dep_error
 else
 
 
+$(H2_CENSUS_HPACK_SIZE_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_census_hpack_size_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_hpack_size.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -17061,6 +17382,7 @@ $(BINDIR)/$(CONFIG)/h2_census_invoke_large_request_test: openssl_dep_error
 else
 
 
+$(H2_CENSUS_INVOKE_LARGE_REQUEST_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_census_invoke_large_request_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_invoke_large_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -17081,6 +17403,7 @@ $(BINDIR)/$(CONFIG)/h2_census_large_metadata_test: openssl_dep_error
 else
 
 
+$(H2_CENSUS_LARGE_METADATA_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_census_large_metadata_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_large_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -17101,6 +17424,7 @@ $(BINDIR)/$(CONFIG)/h2_census_max_concurrent_streams_test: openssl_dep_error
 else
 
 
+$(H2_CENSUS_MAX_CONCURRENT_STREAMS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_census_max_concurrent_streams_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_max_concurrent_streams.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -17121,6 +17445,7 @@ $(BINDIR)/$(CONFIG)/h2_census_max_message_length_test: openssl_dep_error
 else
 
 
+$(H2_CENSUS_MAX_MESSAGE_LENGTH_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_census_max_message_length_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_max_message_length.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -17141,6 +17466,7 @@ $(BINDIR)/$(CONFIG)/h2_census_metadata_test: openssl_dep_error
 else
 
 
+$(H2_CENSUS_METADATA_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_census_metadata_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -17161,6 +17487,7 @@ $(BINDIR)/$(CONFIG)/h2_census_negative_deadline_test: openssl_dep_error
 else
 
 
+$(H2_CENSUS_NEGATIVE_DEADLINE_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_census_negative_deadline_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_negative_deadline.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -17181,6 +17508,7 @@ $(BINDIR)/$(CONFIG)/h2_census_no_op_test: openssl_dep_error
 else
 
 
+$(H2_CENSUS_NO_OP_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_census_no_op_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_no_op.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -17201,6 +17529,7 @@ $(BINDIR)/$(CONFIG)/h2_census_payload_test: openssl_dep_error
 else
 
 
+$(H2_CENSUS_PAYLOAD_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_census_payload_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_payload.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -17221,6 +17550,7 @@ $(BINDIR)/$(CONFIG)/h2_census_ping_pong_streaming_test: openssl_dep_error
 else
 
 
+$(H2_CENSUS_PING_PONG_STREAMING_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_census_ping_pong_streaming_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_ping_pong_streaming.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -17241,6 +17571,7 @@ $(BINDIR)/$(CONFIG)/h2_census_registered_call_test: openssl_dep_error
 else
 
 
+$(H2_CENSUS_REGISTERED_CALL_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_census_registered_call_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_registered_call.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -17261,6 +17592,7 @@ $(BINDIR)/$(CONFIG)/h2_census_request_with_flags_test: openssl_dep_error
 else
 
 
+$(H2_CENSUS_REQUEST_WITH_FLAGS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_census_request_with_flags_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_request_with_flags.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -17281,6 +17613,7 @@ $(BINDIR)/$(CONFIG)/h2_census_request_with_payload_test: openssl_dep_error
 else
 
 
+$(H2_CENSUS_REQUEST_WITH_PAYLOAD_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_census_request_with_payload_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_request_with_payload.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -17301,6 +17634,7 @@ $(BINDIR)/$(CONFIG)/h2_census_server_finishes_request_test: openssl_dep_error
 else
 
 
+$(H2_CENSUS_SERVER_FINISHES_REQUEST_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_census_server_finishes_request_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_server_finishes_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -17321,6 +17655,7 @@ $(BINDIR)/$(CONFIG)/h2_census_shutdown_finishes_calls_test: openssl_dep_error
 else
 
 
+$(H2_CENSUS_SHUTDOWN_FINISHES_CALLS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_census_shutdown_finishes_calls_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_shutdown_finishes_calls.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -17341,6 +17676,7 @@ $(BINDIR)/$(CONFIG)/h2_census_shutdown_finishes_tags_test: openssl_dep_error
 else
 
 
+$(H2_CENSUS_SHUTDOWN_FINISHES_TAGS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_census_shutdown_finishes_tags_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_shutdown_finishes_tags.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -17361,6 +17697,7 @@ $(BINDIR)/$(CONFIG)/h2_census_simple_delayed_request_test: openssl_dep_error
 else
 
 
+$(H2_CENSUS_SIMPLE_DELAYED_REQUEST_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_census_simple_delayed_request_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_simple_delayed_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -17381,6 +17718,7 @@ $(BINDIR)/$(CONFIG)/h2_census_simple_request_test: openssl_dep_error
 else
 
 
+$(H2_CENSUS_SIMPLE_REQUEST_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_census_simple_request_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_simple_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -17401,6 +17739,7 @@ $(BINDIR)/$(CONFIG)/h2_census_trailing_metadata_test: openssl_dep_error
 else
 
 
+$(H2_CENSUS_TRAILING_METADATA_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_census_trailing_metadata_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_test_trailing_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -17421,6 +17760,7 @@ $(BINDIR)/$(CONFIG)/h2_compress_bad_hostname_test: openssl_dep_error
 else
 
 
+$(H2_COMPRESS_BAD_HOSTNAME_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_compress_bad_hostname_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_compress.a $(LIBDIR)/$(CONFIG)/libend2end_test_bad_hostname.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -17441,6 +17781,7 @@ $(BINDIR)/$(CONFIG)/h2_compress_binary_metadata_test: openssl_dep_error
 else
 
 
+$(H2_COMPRESS_BINARY_METADATA_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_compress_binary_metadata_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_compress.a $(LIBDIR)/$(CONFIG)/libend2end_test_binary_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -17461,6 +17802,7 @@ $(BINDIR)/$(CONFIG)/h2_compress_call_creds_test: openssl_dep_error
 else
 
 
+$(H2_COMPRESS_CALL_CREDS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_compress_call_creds_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_compress.a $(LIBDIR)/$(CONFIG)/libend2end_test_call_creds.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -17481,6 +17823,7 @@ $(BINDIR)/$(CONFIG)/h2_compress_cancel_after_accept_test: openssl_dep_error
 else
 
 
+$(H2_COMPRESS_CANCEL_AFTER_ACCEPT_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_compress_cancel_after_accept_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_compress.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_accept.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -17501,6 +17844,7 @@ $(BINDIR)/$(CONFIG)/h2_compress_cancel_after_client_done_test: openssl_dep_error
 else
 
 
+$(H2_COMPRESS_CANCEL_AFTER_CLIENT_DONE_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_compress_cancel_after_client_done_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_compress.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_client_done.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -17521,6 +17865,7 @@ $(BINDIR)/$(CONFIG)/h2_compress_cancel_after_invoke_test: openssl_dep_error
 else
 
 
+$(H2_COMPRESS_CANCEL_AFTER_INVOKE_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_compress_cancel_after_invoke_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_compress.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_invoke.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -17541,6 +17886,7 @@ $(BINDIR)/$(CONFIG)/h2_compress_cancel_before_invoke_test: openssl_dep_error
 else
 
 
+$(H2_COMPRESS_CANCEL_BEFORE_INVOKE_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_compress_cancel_before_invoke_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_compress.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_before_invoke.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -17561,6 +17907,7 @@ $(BINDIR)/$(CONFIG)/h2_compress_cancel_in_a_vacuum_test: openssl_dep_error
 else
 
 
+$(H2_COMPRESS_CANCEL_IN_A_VACUUM_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_compress_cancel_in_a_vacuum_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_compress.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_in_a_vacuum.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -17581,6 +17928,7 @@ $(BINDIR)/$(CONFIG)/h2_compress_cancel_with_status_test: openssl_dep_error
 else
 
 
+$(H2_COMPRESS_CANCEL_WITH_STATUS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_compress_cancel_with_status_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_compress.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_with_status.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -17601,6 +17949,7 @@ $(BINDIR)/$(CONFIG)/h2_compress_channel_connectivity_test: openssl_dep_error
 else
 
 
+$(H2_COMPRESS_CHANNEL_CONNECTIVITY_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_compress_channel_connectivity_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_compress.a $(LIBDIR)/$(CONFIG)/libend2end_test_channel_connectivity.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -17621,6 +17970,7 @@ $(BINDIR)/$(CONFIG)/h2_compress_channel_ping_test: openssl_dep_error
 else
 
 
+$(H2_COMPRESS_CHANNEL_PING_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_compress_channel_ping_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_compress.a $(LIBDIR)/$(CONFIG)/libend2end_test_channel_ping.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -17641,6 +17991,7 @@ $(BINDIR)/$(CONFIG)/h2_compress_compressed_payload_test: openssl_dep_error
 else
 
 
+$(H2_COMPRESS_COMPRESSED_PAYLOAD_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_compress_compressed_payload_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_compress.a $(LIBDIR)/$(CONFIG)/libend2end_test_compressed_payload.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -17661,6 +18012,7 @@ $(BINDIR)/$(CONFIG)/h2_compress_default_host_test: openssl_dep_error
 else
 
 
+$(H2_COMPRESS_DEFAULT_HOST_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_compress_default_host_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_compress.a $(LIBDIR)/$(CONFIG)/libend2end_test_default_host.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -17681,6 +18033,7 @@ $(BINDIR)/$(CONFIG)/h2_compress_disappearing_server_test: openssl_dep_error
 else
 
 
+$(H2_COMPRESS_DISAPPEARING_SERVER_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_compress_disappearing_server_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_compress.a $(LIBDIR)/$(CONFIG)/libend2end_test_disappearing_server.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -17701,6 +18054,7 @@ $(BINDIR)/$(CONFIG)/h2_compress_empty_batch_test: openssl_dep_error
 else
 
 
+$(H2_COMPRESS_EMPTY_BATCH_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_compress_empty_batch_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_compress.a $(LIBDIR)/$(CONFIG)/libend2end_test_empty_batch.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -17721,6 +18075,7 @@ $(BINDIR)/$(CONFIG)/h2_compress_graceful_server_shutdown_test: openssl_dep_error
 else
 
 
+$(H2_COMPRESS_GRACEFUL_SERVER_SHUTDOWN_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_compress_graceful_server_shutdown_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_compress.a $(LIBDIR)/$(CONFIG)/libend2end_test_graceful_server_shutdown.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -17741,6 +18096,7 @@ $(BINDIR)/$(CONFIG)/h2_compress_high_initial_seqno_test: openssl_dep_error
 else
 
 
+$(H2_COMPRESS_HIGH_INITIAL_SEQNO_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_compress_high_initial_seqno_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_compress.a $(LIBDIR)/$(CONFIG)/libend2end_test_high_initial_seqno.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -17761,6 +18117,7 @@ $(BINDIR)/$(CONFIG)/h2_compress_hpack_size_test: openssl_dep_error
 else
 
 
+$(H2_COMPRESS_HPACK_SIZE_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_compress_hpack_size_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_compress.a $(LIBDIR)/$(CONFIG)/libend2end_test_hpack_size.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -17781,6 +18138,7 @@ $(BINDIR)/$(CONFIG)/h2_compress_invoke_large_request_test: openssl_dep_error
 else
 
 
+$(H2_COMPRESS_INVOKE_LARGE_REQUEST_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_compress_invoke_large_request_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_compress.a $(LIBDIR)/$(CONFIG)/libend2end_test_invoke_large_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -17801,6 +18159,7 @@ $(BINDIR)/$(CONFIG)/h2_compress_large_metadata_test: openssl_dep_error
 else
 
 
+$(H2_COMPRESS_LARGE_METADATA_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_compress_large_metadata_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_compress.a $(LIBDIR)/$(CONFIG)/libend2end_test_large_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -17821,6 +18180,7 @@ $(BINDIR)/$(CONFIG)/h2_compress_max_concurrent_streams_test: openssl_dep_error
 else
 
 
+$(H2_COMPRESS_MAX_CONCURRENT_STREAMS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_compress_max_concurrent_streams_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_compress.a $(LIBDIR)/$(CONFIG)/libend2end_test_max_concurrent_streams.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -17841,6 +18201,7 @@ $(BINDIR)/$(CONFIG)/h2_compress_max_message_length_test: openssl_dep_error
 else
 
 
+$(H2_COMPRESS_MAX_MESSAGE_LENGTH_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_compress_max_message_length_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_compress.a $(LIBDIR)/$(CONFIG)/libend2end_test_max_message_length.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -17861,6 +18222,7 @@ $(BINDIR)/$(CONFIG)/h2_compress_metadata_test: openssl_dep_error
 else
 
 
+$(H2_COMPRESS_METADATA_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_compress_metadata_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_compress.a $(LIBDIR)/$(CONFIG)/libend2end_test_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -17881,6 +18243,7 @@ $(BINDIR)/$(CONFIG)/h2_compress_negative_deadline_test: openssl_dep_error
 else
 
 
+$(H2_COMPRESS_NEGATIVE_DEADLINE_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_compress_negative_deadline_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_compress.a $(LIBDIR)/$(CONFIG)/libend2end_test_negative_deadline.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -17901,6 +18264,7 @@ $(BINDIR)/$(CONFIG)/h2_compress_no_op_test: openssl_dep_error
 else
 
 
+$(H2_COMPRESS_NO_OP_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_compress_no_op_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_compress.a $(LIBDIR)/$(CONFIG)/libend2end_test_no_op.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -17921,6 +18285,7 @@ $(BINDIR)/$(CONFIG)/h2_compress_payload_test: openssl_dep_error
 else
 
 
+$(H2_COMPRESS_PAYLOAD_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_compress_payload_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_compress.a $(LIBDIR)/$(CONFIG)/libend2end_test_payload.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -17941,6 +18306,7 @@ $(BINDIR)/$(CONFIG)/h2_compress_ping_pong_streaming_test: openssl_dep_error
 else
 
 
+$(H2_COMPRESS_PING_PONG_STREAMING_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_compress_ping_pong_streaming_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_compress.a $(LIBDIR)/$(CONFIG)/libend2end_test_ping_pong_streaming.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -17961,6 +18327,7 @@ $(BINDIR)/$(CONFIG)/h2_compress_registered_call_test: openssl_dep_error
 else
 
 
+$(H2_COMPRESS_REGISTERED_CALL_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_compress_registered_call_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_compress.a $(LIBDIR)/$(CONFIG)/libend2end_test_registered_call.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -17981,6 +18348,7 @@ $(BINDIR)/$(CONFIG)/h2_compress_request_with_flags_test: openssl_dep_error
 else
 
 
+$(H2_COMPRESS_REQUEST_WITH_FLAGS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_compress_request_with_flags_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_compress.a $(LIBDIR)/$(CONFIG)/libend2end_test_request_with_flags.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -18001,6 +18369,7 @@ $(BINDIR)/$(CONFIG)/h2_compress_request_with_payload_test: openssl_dep_error
 else
 
 
+$(H2_COMPRESS_REQUEST_WITH_PAYLOAD_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_compress_request_with_payload_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_compress.a $(LIBDIR)/$(CONFIG)/libend2end_test_request_with_payload.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -18021,6 +18390,7 @@ $(BINDIR)/$(CONFIG)/h2_compress_server_finishes_request_test: openssl_dep_error
 else
 
 
+$(H2_COMPRESS_SERVER_FINISHES_REQUEST_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_compress_server_finishes_request_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_compress.a $(LIBDIR)/$(CONFIG)/libend2end_test_server_finishes_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -18041,6 +18411,7 @@ $(BINDIR)/$(CONFIG)/h2_compress_shutdown_finishes_calls_test: openssl_dep_error
 else
 
 
+$(H2_COMPRESS_SHUTDOWN_FINISHES_CALLS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_compress_shutdown_finishes_calls_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_compress.a $(LIBDIR)/$(CONFIG)/libend2end_test_shutdown_finishes_calls.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -18061,6 +18432,7 @@ $(BINDIR)/$(CONFIG)/h2_compress_shutdown_finishes_tags_test: openssl_dep_error
 else
 
 
+$(H2_COMPRESS_SHUTDOWN_FINISHES_TAGS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_compress_shutdown_finishes_tags_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_compress.a $(LIBDIR)/$(CONFIG)/libend2end_test_shutdown_finishes_tags.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -18081,6 +18453,7 @@ $(BINDIR)/$(CONFIG)/h2_compress_simple_delayed_request_test: openssl_dep_error
 else
 
 
+$(H2_COMPRESS_SIMPLE_DELAYED_REQUEST_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_compress_simple_delayed_request_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_compress.a $(LIBDIR)/$(CONFIG)/libend2end_test_simple_delayed_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -18101,6 +18474,7 @@ $(BINDIR)/$(CONFIG)/h2_compress_simple_request_test: openssl_dep_error
 else
 
 
+$(H2_COMPRESS_SIMPLE_REQUEST_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_compress_simple_request_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_compress.a $(LIBDIR)/$(CONFIG)/libend2end_test_simple_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -18121,6 +18495,7 @@ $(BINDIR)/$(CONFIG)/h2_compress_trailing_metadata_test: openssl_dep_error
 else
 
 
+$(H2_COMPRESS_TRAILING_METADATA_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_compress_trailing_metadata_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_compress.a $(LIBDIR)/$(CONFIG)/libend2end_test_trailing_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -18141,6 +18516,7 @@ $(BINDIR)/$(CONFIG)/h2_fakesec_bad_hostname_test: openssl_dep_error
 else
 
 
+$(H2_FAKESEC_BAD_HOSTNAME_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_fakesec_bad_hostname_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_fakesec.a $(LIBDIR)/$(CONFIG)/libend2end_test_bad_hostname.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -18161,6 +18537,7 @@ $(BINDIR)/$(CONFIG)/h2_fakesec_binary_metadata_test: openssl_dep_error
 else
 
 
+$(H2_FAKESEC_BINARY_METADATA_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_fakesec_binary_metadata_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_fakesec.a $(LIBDIR)/$(CONFIG)/libend2end_test_binary_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -18181,6 +18558,7 @@ $(BINDIR)/$(CONFIG)/h2_fakesec_call_creds_test: openssl_dep_error
 else
 
 
+$(H2_FAKESEC_CALL_CREDS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_fakesec_call_creds_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_fakesec.a $(LIBDIR)/$(CONFIG)/libend2end_test_call_creds.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -18201,6 +18579,7 @@ $(BINDIR)/$(CONFIG)/h2_fakesec_cancel_after_accept_test: openssl_dep_error
 else
 
 
+$(H2_FAKESEC_CANCEL_AFTER_ACCEPT_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_fakesec_cancel_after_accept_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_fakesec.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_accept.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -18221,6 +18600,7 @@ $(BINDIR)/$(CONFIG)/h2_fakesec_cancel_after_client_done_test: openssl_dep_error
 else
 
 
+$(H2_FAKESEC_CANCEL_AFTER_CLIENT_DONE_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_fakesec_cancel_after_client_done_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_fakesec.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_client_done.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -18241,6 +18621,7 @@ $(BINDIR)/$(CONFIG)/h2_fakesec_cancel_after_invoke_test: openssl_dep_error
 else
 
 
+$(H2_FAKESEC_CANCEL_AFTER_INVOKE_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_fakesec_cancel_after_invoke_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_fakesec.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_invoke.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -18261,6 +18642,7 @@ $(BINDIR)/$(CONFIG)/h2_fakesec_cancel_before_invoke_test: openssl_dep_error
 else
 
 
+$(H2_FAKESEC_CANCEL_BEFORE_INVOKE_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_fakesec_cancel_before_invoke_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_fakesec.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_before_invoke.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -18281,6 +18663,7 @@ $(BINDIR)/$(CONFIG)/h2_fakesec_cancel_in_a_vacuum_test: openssl_dep_error
 else
 
 
+$(H2_FAKESEC_CANCEL_IN_A_VACUUM_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_fakesec_cancel_in_a_vacuum_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_fakesec.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_in_a_vacuum.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -18301,6 +18684,7 @@ $(BINDIR)/$(CONFIG)/h2_fakesec_cancel_with_status_test: openssl_dep_error
 else
 
 
+$(H2_FAKESEC_CANCEL_WITH_STATUS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_fakesec_cancel_with_status_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_fakesec.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_with_status.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -18321,6 +18705,7 @@ $(BINDIR)/$(CONFIG)/h2_fakesec_channel_connectivity_test: openssl_dep_error
 else
 
 
+$(H2_FAKESEC_CHANNEL_CONNECTIVITY_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_fakesec_channel_connectivity_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_fakesec.a $(LIBDIR)/$(CONFIG)/libend2end_test_channel_connectivity.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -18341,6 +18726,7 @@ $(BINDIR)/$(CONFIG)/h2_fakesec_channel_ping_test: openssl_dep_error
 else
 
 
+$(H2_FAKESEC_CHANNEL_PING_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_fakesec_channel_ping_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_fakesec.a $(LIBDIR)/$(CONFIG)/libend2end_test_channel_ping.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -18361,6 +18747,7 @@ $(BINDIR)/$(CONFIG)/h2_fakesec_compressed_payload_test: openssl_dep_error
 else
 
 
+$(H2_FAKESEC_COMPRESSED_PAYLOAD_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_fakesec_compressed_payload_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_fakesec.a $(LIBDIR)/$(CONFIG)/libend2end_test_compressed_payload.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -18381,6 +18768,7 @@ $(BINDIR)/$(CONFIG)/h2_fakesec_default_host_test: openssl_dep_error
 else
 
 
+$(H2_FAKESEC_DEFAULT_HOST_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_fakesec_default_host_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_fakesec.a $(LIBDIR)/$(CONFIG)/libend2end_test_default_host.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -18401,6 +18789,7 @@ $(BINDIR)/$(CONFIG)/h2_fakesec_disappearing_server_test: openssl_dep_error
 else
 
 
+$(H2_FAKESEC_DISAPPEARING_SERVER_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_fakesec_disappearing_server_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_fakesec.a $(LIBDIR)/$(CONFIG)/libend2end_test_disappearing_server.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -18421,6 +18810,7 @@ $(BINDIR)/$(CONFIG)/h2_fakesec_empty_batch_test: openssl_dep_error
 else
 
 
+$(H2_FAKESEC_EMPTY_BATCH_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_fakesec_empty_batch_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_fakesec.a $(LIBDIR)/$(CONFIG)/libend2end_test_empty_batch.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -18441,6 +18831,7 @@ $(BINDIR)/$(CONFIG)/h2_fakesec_graceful_server_shutdown_test: openssl_dep_error
 else
 
 
+$(H2_FAKESEC_GRACEFUL_SERVER_SHUTDOWN_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_fakesec_graceful_server_shutdown_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_fakesec.a $(LIBDIR)/$(CONFIG)/libend2end_test_graceful_server_shutdown.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -18461,6 +18852,7 @@ $(BINDIR)/$(CONFIG)/h2_fakesec_high_initial_seqno_test: openssl_dep_error
 else
 
 
+$(H2_FAKESEC_HIGH_INITIAL_SEQNO_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_fakesec_high_initial_seqno_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_fakesec.a $(LIBDIR)/$(CONFIG)/libend2end_test_high_initial_seqno.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -18481,6 +18873,7 @@ $(BINDIR)/$(CONFIG)/h2_fakesec_hpack_size_test: openssl_dep_error
 else
 
 
+$(H2_FAKESEC_HPACK_SIZE_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_fakesec_hpack_size_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_fakesec.a $(LIBDIR)/$(CONFIG)/libend2end_test_hpack_size.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -18501,6 +18894,7 @@ $(BINDIR)/$(CONFIG)/h2_fakesec_invoke_large_request_test: openssl_dep_error
 else
 
 
+$(H2_FAKESEC_INVOKE_LARGE_REQUEST_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_fakesec_invoke_large_request_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_fakesec.a $(LIBDIR)/$(CONFIG)/libend2end_test_invoke_large_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -18521,6 +18915,7 @@ $(BINDIR)/$(CONFIG)/h2_fakesec_large_metadata_test: openssl_dep_error
 else
 
 
+$(H2_FAKESEC_LARGE_METADATA_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_fakesec_large_metadata_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_fakesec.a $(LIBDIR)/$(CONFIG)/libend2end_test_large_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -18541,6 +18936,7 @@ $(BINDIR)/$(CONFIG)/h2_fakesec_max_concurrent_streams_test: openssl_dep_error
 else
 
 
+$(H2_FAKESEC_MAX_CONCURRENT_STREAMS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_fakesec_max_concurrent_streams_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_fakesec.a $(LIBDIR)/$(CONFIG)/libend2end_test_max_concurrent_streams.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -18561,6 +18957,7 @@ $(BINDIR)/$(CONFIG)/h2_fakesec_max_message_length_test: openssl_dep_error
 else
 
 
+$(H2_FAKESEC_MAX_MESSAGE_LENGTH_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_fakesec_max_message_length_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_fakesec.a $(LIBDIR)/$(CONFIG)/libend2end_test_max_message_length.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -18581,6 +18978,7 @@ $(BINDIR)/$(CONFIG)/h2_fakesec_metadata_test: openssl_dep_error
 else
 
 
+$(H2_FAKESEC_METADATA_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_fakesec_metadata_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_fakesec.a $(LIBDIR)/$(CONFIG)/libend2end_test_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -18601,6 +18999,7 @@ $(BINDIR)/$(CONFIG)/h2_fakesec_negative_deadline_test: openssl_dep_error
 else
 
 
+$(H2_FAKESEC_NEGATIVE_DEADLINE_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_fakesec_negative_deadline_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_fakesec.a $(LIBDIR)/$(CONFIG)/libend2end_test_negative_deadline.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -18621,6 +19020,7 @@ $(BINDIR)/$(CONFIG)/h2_fakesec_no_op_test: openssl_dep_error
 else
 
 
+$(H2_FAKESEC_NO_OP_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_fakesec_no_op_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_fakesec.a $(LIBDIR)/$(CONFIG)/libend2end_test_no_op.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -18641,6 +19041,7 @@ $(BINDIR)/$(CONFIG)/h2_fakesec_payload_test: openssl_dep_error
 else
 
 
+$(H2_FAKESEC_PAYLOAD_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_fakesec_payload_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_fakesec.a $(LIBDIR)/$(CONFIG)/libend2end_test_payload.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -18661,6 +19062,7 @@ $(BINDIR)/$(CONFIG)/h2_fakesec_ping_pong_streaming_test: openssl_dep_error
 else
 
 
+$(H2_FAKESEC_PING_PONG_STREAMING_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_fakesec_ping_pong_streaming_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_fakesec.a $(LIBDIR)/$(CONFIG)/libend2end_test_ping_pong_streaming.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -18681,6 +19083,7 @@ $(BINDIR)/$(CONFIG)/h2_fakesec_registered_call_test: openssl_dep_error
 else
 
 
+$(H2_FAKESEC_REGISTERED_CALL_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_fakesec_registered_call_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_fakesec.a $(LIBDIR)/$(CONFIG)/libend2end_test_registered_call.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -18701,6 +19104,7 @@ $(BINDIR)/$(CONFIG)/h2_fakesec_request_with_flags_test: openssl_dep_error
 else
 
 
+$(H2_FAKESEC_REQUEST_WITH_FLAGS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_fakesec_request_with_flags_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_fakesec.a $(LIBDIR)/$(CONFIG)/libend2end_test_request_with_flags.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -18721,6 +19125,7 @@ $(BINDIR)/$(CONFIG)/h2_fakesec_request_with_payload_test: openssl_dep_error
 else
 
 
+$(H2_FAKESEC_REQUEST_WITH_PAYLOAD_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_fakesec_request_with_payload_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_fakesec.a $(LIBDIR)/$(CONFIG)/libend2end_test_request_with_payload.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -18741,6 +19146,7 @@ $(BINDIR)/$(CONFIG)/h2_fakesec_server_finishes_request_test: openssl_dep_error
 else
 
 
+$(H2_FAKESEC_SERVER_FINISHES_REQUEST_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_fakesec_server_finishes_request_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_fakesec.a $(LIBDIR)/$(CONFIG)/libend2end_test_server_finishes_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -18761,6 +19167,7 @@ $(BINDIR)/$(CONFIG)/h2_fakesec_shutdown_finishes_calls_test: openssl_dep_error
 else
 
 
+$(H2_FAKESEC_SHUTDOWN_FINISHES_CALLS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_fakesec_shutdown_finishes_calls_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_fakesec.a $(LIBDIR)/$(CONFIG)/libend2end_test_shutdown_finishes_calls.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -18781,6 +19188,7 @@ $(BINDIR)/$(CONFIG)/h2_fakesec_shutdown_finishes_tags_test: openssl_dep_error
 else
 
 
+$(H2_FAKESEC_SHUTDOWN_FINISHES_TAGS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_fakesec_shutdown_finishes_tags_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_fakesec.a $(LIBDIR)/$(CONFIG)/libend2end_test_shutdown_finishes_tags.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -18801,6 +19209,7 @@ $(BINDIR)/$(CONFIG)/h2_fakesec_simple_delayed_request_test: openssl_dep_error
 else
 
 
+$(H2_FAKESEC_SIMPLE_DELAYED_REQUEST_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_fakesec_simple_delayed_request_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_fakesec.a $(LIBDIR)/$(CONFIG)/libend2end_test_simple_delayed_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -18821,6 +19230,7 @@ $(BINDIR)/$(CONFIG)/h2_fakesec_simple_request_test: openssl_dep_error
 else
 
 
+$(H2_FAKESEC_SIMPLE_REQUEST_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_fakesec_simple_request_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_fakesec.a $(LIBDIR)/$(CONFIG)/libend2end_test_simple_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -18841,6 +19251,7 @@ $(BINDIR)/$(CONFIG)/h2_fakesec_trailing_metadata_test: openssl_dep_error
 else
 
 
+$(H2_FAKESEC_TRAILING_METADATA_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_fakesec_trailing_metadata_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_fakesec.a $(LIBDIR)/$(CONFIG)/libend2end_test_trailing_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -18861,6 +19272,7 @@ $(BINDIR)/$(CONFIG)/h2_full_bad_hostname_test: openssl_dep_error
 else
 
 
+$(H2_FULL_BAD_HOSTNAME_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full_bad_hostname_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full.a $(LIBDIR)/$(CONFIG)/libend2end_test_bad_hostname.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -18881,6 +19293,7 @@ $(BINDIR)/$(CONFIG)/h2_full_binary_metadata_test: openssl_dep_error
 else
 
 
+$(H2_FULL_BINARY_METADATA_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full_binary_metadata_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full.a $(LIBDIR)/$(CONFIG)/libend2end_test_binary_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -18901,6 +19314,7 @@ $(BINDIR)/$(CONFIG)/h2_full_call_creds_test: openssl_dep_error
 else
 
 
+$(H2_FULL_CALL_CREDS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full_call_creds_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full.a $(LIBDIR)/$(CONFIG)/libend2end_test_call_creds.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -18921,6 +19335,7 @@ $(BINDIR)/$(CONFIG)/h2_full_cancel_after_accept_test: openssl_dep_error
 else
 
 
+$(H2_FULL_CANCEL_AFTER_ACCEPT_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full_cancel_after_accept_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_accept.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -18941,6 +19356,7 @@ $(BINDIR)/$(CONFIG)/h2_full_cancel_after_client_done_test: openssl_dep_error
 else
 
 
+$(H2_FULL_CANCEL_AFTER_CLIENT_DONE_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full_cancel_after_client_done_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_client_done.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -18961,6 +19377,7 @@ $(BINDIR)/$(CONFIG)/h2_full_cancel_after_invoke_test: openssl_dep_error
 else
 
 
+$(H2_FULL_CANCEL_AFTER_INVOKE_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full_cancel_after_invoke_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_invoke.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -18981,6 +19398,7 @@ $(BINDIR)/$(CONFIG)/h2_full_cancel_before_invoke_test: openssl_dep_error
 else
 
 
+$(H2_FULL_CANCEL_BEFORE_INVOKE_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full_cancel_before_invoke_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_before_invoke.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -19001,6 +19419,7 @@ $(BINDIR)/$(CONFIG)/h2_full_cancel_in_a_vacuum_test: openssl_dep_error
 else
 
 
+$(H2_FULL_CANCEL_IN_A_VACUUM_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full_cancel_in_a_vacuum_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_in_a_vacuum.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -19021,6 +19440,7 @@ $(BINDIR)/$(CONFIG)/h2_full_cancel_with_status_test: openssl_dep_error
 else
 
 
+$(H2_FULL_CANCEL_WITH_STATUS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full_cancel_with_status_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_with_status.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -19041,6 +19461,7 @@ $(BINDIR)/$(CONFIG)/h2_full_channel_connectivity_test: openssl_dep_error
 else
 
 
+$(H2_FULL_CHANNEL_CONNECTIVITY_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full_channel_connectivity_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full.a $(LIBDIR)/$(CONFIG)/libend2end_test_channel_connectivity.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -19061,6 +19482,7 @@ $(BINDIR)/$(CONFIG)/h2_full_channel_ping_test: openssl_dep_error
 else
 
 
+$(H2_FULL_CHANNEL_PING_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full_channel_ping_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full.a $(LIBDIR)/$(CONFIG)/libend2end_test_channel_ping.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -19081,6 +19503,7 @@ $(BINDIR)/$(CONFIG)/h2_full_compressed_payload_test: openssl_dep_error
 else
 
 
+$(H2_FULL_COMPRESSED_PAYLOAD_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full_compressed_payload_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full.a $(LIBDIR)/$(CONFIG)/libend2end_test_compressed_payload.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -19101,6 +19524,7 @@ $(BINDIR)/$(CONFIG)/h2_full_default_host_test: openssl_dep_error
 else
 
 
+$(H2_FULL_DEFAULT_HOST_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full_default_host_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full.a $(LIBDIR)/$(CONFIG)/libend2end_test_default_host.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -19121,6 +19545,7 @@ $(BINDIR)/$(CONFIG)/h2_full_disappearing_server_test: openssl_dep_error
 else
 
 
+$(H2_FULL_DISAPPEARING_SERVER_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full_disappearing_server_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full.a $(LIBDIR)/$(CONFIG)/libend2end_test_disappearing_server.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -19141,6 +19566,7 @@ $(BINDIR)/$(CONFIG)/h2_full_empty_batch_test: openssl_dep_error
 else
 
 
+$(H2_FULL_EMPTY_BATCH_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full_empty_batch_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full.a $(LIBDIR)/$(CONFIG)/libend2end_test_empty_batch.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -19161,6 +19587,7 @@ $(BINDIR)/$(CONFIG)/h2_full_graceful_server_shutdown_test: openssl_dep_error
 else
 
 
+$(H2_FULL_GRACEFUL_SERVER_SHUTDOWN_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full_graceful_server_shutdown_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full.a $(LIBDIR)/$(CONFIG)/libend2end_test_graceful_server_shutdown.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -19181,6 +19608,7 @@ $(BINDIR)/$(CONFIG)/h2_full_high_initial_seqno_test: openssl_dep_error
 else
 
 
+$(H2_FULL_HIGH_INITIAL_SEQNO_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full_high_initial_seqno_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full.a $(LIBDIR)/$(CONFIG)/libend2end_test_high_initial_seqno.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -19201,6 +19629,7 @@ $(BINDIR)/$(CONFIG)/h2_full_hpack_size_test: openssl_dep_error
 else
 
 
+$(H2_FULL_HPACK_SIZE_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full_hpack_size_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full.a $(LIBDIR)/$(CONFIG)/libend2end_test_hpack_size.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -19221,6 +19650,7 @@ $(BINDIR)/$(CONFIG)/h2_full_invoke_large_request_test: openssl_dep_error
 else
 
 
+$(H2_FULL_INVOKE_LARGE_REQUEST_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full_invoke_large_request_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full.a $(LIBDIR)/$(CONFIG)/libend2end_test_invoke_large_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -19241,6 +19671,7 @@ $(BINDIR)/$(CONFIG)/h2_full_large_metadata_test: openssl_dep_error
 else
 
 
+$(H2_FULL_LARGE_METADATA_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full_large_metadata_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full.a $(LIBDIR)/$(CONFIG)/libend2end_test_large_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -19261,6 +19692,7 @@ $(BINDIR)/$(CONFIG)/h2_full_max_concurrent_streams_test: openssl_dep_error
 else
 
 
+$(H2_FULL_MAX_CONCURRENT_STREAMS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full_max_concurrent_streams_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full.a $(LIBDIR)/$(CONFIG)/libend2end_test_max_concurrent_streams.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -19281,6 +19713,7 @@ $(BINDIR)/$(CONFIG)/h2_full_max_message_length_test: openssl_dep_error
 else
 
 
+$(H2_FULL_MAX_MESSAGE_LENGTH_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full_max_message_length_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full.a $(LIBDIR)/$(CONFIG)/libend2end_test_max_message_length.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -19301,6 +19734,7 @@ $(BINDIR)/$(CONFIG)/h2_full_metadata_test: openssl_dep_error
 else
 
 
+$(H2_FULL_METADATA_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full_metadata_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full.a $(LIBDIR)/$(CONFIG)/libend2end_test_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -19321,6 +19755,7 @@ $(BINDIR)/$(CONFIG)/h2_full_negative_deadline_test: openssl_dep_error
 else
 
 
+$(H2_FULL_NEGATIVE_DEADLINE_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full_negative_deadline_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full.a $(LIBDIR)/$(CONFIG)/libend2end_test_negative_deadline.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -19341,6 +19776,7 @@ $(BINDIR)/$(CONFIG)/h2_full_no_op_test: openssl_dep_error
 else
 
 
+$(H2_FULL_NO_OP_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full_no_op_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full.a $(LIBDIR)/$(CONFIG)/libend2end_test_no_op.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -19361,6 +19797,7 @@ $(BINDIR)/$(CONFIG)/h2_full_payload_test: openssl_dep_error
 else
 
 
+$(H2_FULL_PAYLOAD_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full_payload_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full.a $(LIBDIR)/$(CONFIG)/libend2end_test_payload.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -19381,6 +19818,7 @@ $(BINDIR)/$(CONFIG)/h2_full_ping_pong_streaming_test: openssl_dep_error
 else
 
 
+$(H2_FULL_PING_PONG_STREAMING_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full_ping_pong_streaming_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full.a $(LIBDIR)/$(CONFIG)/libend2end_test_ping_pong_streaming.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -19401,6 +19839,7 @@ $(BINDIR)/$(CONFIG)/h2_full_registered_call_test: openssl_dep_error
 else
 
 
+$(H2_FULL_REGISTERED_CALL_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full_registered_call_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full.a $(LIBDIR)/$(CONFIG)/libend2end_test_registered_call.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -19421,6 +19860,7 @@ $(BINDIR)/$(CONFIG)/h2_full_request_with_flags_test: openssl_dep_error
 else
 
 
+$(H2_FULL_REQUEST_WITH_FLAGS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full_request_with_flags_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full.a $(LIBDIR)/$(CONFIG)/libend2end_test_request_with_flags.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -19441,6 +19881,7 @@ $(BINDIR)/$(CONFIG)/h2_full_request_with_payload_test: openssl_dep_error
 else
 
 
+$(H2_FULL_REQUEST_WITH_PAYLOAD_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full_request_with_payload_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full.a $(LIBDIR)/$(CONFIG)/libend2end_test_request_with_payload.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -19461,6 +19902,7 @@ $(BINDIR)/$(CONFIG)/h2_full_server_finishes_request_test: openssl_dep_error
 else
 
 
+$(H2_FULL_SERVER_FINISHES_REQUEST_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full_server_finishes_request_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full.a $(LIBDIR)/$(CONFIG)/libend2end_test_server_finishes_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -19481,6 +19923,7 @@ $(BINDIR)/$(CONFIG)/h2_full_shutdown_finishes_calls_test: openssl_dep_error
 else
 
 
+$(H2_FULL_SHUTDOWN_FINISHES_CALLS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full_shutdown_finishes_calls_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full.a $(LIBDIR)/$(CONFIG)/libend2end_test_shutdown_finishes_calls.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -19501,6 +19944,7 @@ $(BINDIR)/$(CONFIG)/h2_full_shutdown_finishes_tags_test: openssl_dep_error
 else
 
 
+$(H2_FULL_SHUTDOWN_FINISHES_TAGS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full_shutdown_finishes_tags_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full.a $(LIBDIR)/$(CONFIG)/libend2end_test_shutdown_finishes_tags.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -19521,6 +19965,7 @@ $(BINDIR)/$(CONFIG)/h2_full_simple_delayed_request_test: openssl_dep_error
 else
 
 
+$(H2_FULL_SIMPLE_DELAYED_REQUEST_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full_simple_delayed_request_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full.a $(LIBDIR)/$(CONFIG)/libend2end_test_simple_delayed_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -19541,6 +19986,7 @@ $(BINDIR)/$(CONFIG)/h2_full_simple_request_test: openssl_dep_error
 else
 
 
+$(H2_FULL_SIMPLE_REQUEST_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full_simple_request_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full.a $(LIBDIR)/$(CONFIG)/libend2end_test_simple_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -19561,6 +20007,7 @@ $(BINDIR)/$(CONFIG)/h2_full_trailing_metadata_test: openssl_dep_error
 else
 
 
+$(H2_FULL_TRAILING_METADATA_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full_trailing_metadata_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full.a $(LIBDIR)/$(CONFIG)/libend2end_test_trailing_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -19581,6 +20028,7 @@ $(BINDIR)/$(CONFIG)/h2_full+pipe_bad_hostname_test: openssl_dep_error
 else
 
 
+$(H2_FULL+PIPE_BAD_HOSTNAME_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+pipe_bad_hostname_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_bad_hostname.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -19601,6 +20049,7 @@ $(BINDIR)/$(CONFIG)/h2_full+pipe_binary_metadata_test: openssl_dep_error
 else
 
 
+$(H2_FULL+PIPE_BINARY_METADATA_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+pipe_binary_metadata_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_binary_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -19621,6 +20070,7 @@ $(BINDIR)/$(CONFIG)/h2_full+pipe_call_creds_test: openssl_dep_error
 else
 
 
+$(H2_FULL+PIPE_CALL_CREDS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+pipe_call_creds_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_call_creds.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -19641,6 +20091,7 @@ $(BINDIR)/$(CONFIG)/h2_full+pipe_cancel_after_accept_test: openssl_dep_error
 else
 
 
+$(H2_FULL+PIPE_CANCEL_AFTER_ACCEPT_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+pipe_cancel_after_accept_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_accept.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -19661,6 +20112,7 @@ $(BINDIR)/$(CONFIG)/h2_full+pipe_cancel_after_client_done_test: openssl_dep_erro
 else
 
 
+$(H2_FULL+PIPE_CANCEL_AFTER_CLIENT_DONE_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+pipe_cancel_after_client_done_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_client_done.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -19681,6 +20133,7 @@ $(BINDIR)/$(CONFIG)/h2_full+pipe_cancel_after_invoke_test: openssl_dep_error
 else
 
 
+$(H2_FULL+PIPE_CANCEL_AFTER_INVOKE_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+pipe_cancel_after_invoke_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_invoke.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -19701,6 +20154,7 @@ $(BINDIR)/$(CONFIG)/h2_full+pipe_cancel_before_invoke_test: openssl_dep_error
 else
 
 
+$(H2_FULL+PIPE_CANCEL_BEFORE_INVOKE_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+pipe_cancel_before_invoke_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_before_invoke.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -19721,6 +20175,7 @@ $(BINDIR)/$(CONFIG)/h2_full+pipe_cancel_in_a_vacuum_test: openssl_dep_error
 else
 
 
+$(H2_FULL+PIPE_CANCEL_IN_A_VACUUM_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+pipe_cancel_in_a_vacuum_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_in_a_vacuum.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -19741,6 +20196,7 @@ $(BINDIR)/$(CONFIG)/h2_full+pipe_cancel_with_status_test: openssl_dep_error
 else
 
 
+$(H2_FULL+PIPE_CANCEL_WITH_STATUS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+pipe_cancel_with_status_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_with_status.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -19761,6 +20217,7 @@ $(BINDIR)/$(CONFIG)/h2_full+pipe_channel_connectivity_test: openssl_dep_error
 else
 
 
+$(H2_FULL+PIPE_CHANNEL_CONNECTIVITY_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+pipe_channel_connectivity_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_channel_connectivity.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -19781,6 +20238,7 @@ $(BINDIR)/$(CONFIG)/h2_full+pipe_channel_ping_test: openssl_dep_error
 else
 
 
+$(H2_FULL+PIPE_CHANNEL_PING_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+pipe_channel_ping_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_channel_ping.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -19801,6 +20259,7 @@ $(BINDIR)/$(CONFIG)/h2_full+pipe_compressed_payload_test: openssl_dep_error
 else
 
 
+$(H2_FULL+PIPE_COMPRESSED_PAYLOAD_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+pipe_compressed_payload_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_compressed_payload.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -19821,6 +20280,7 @@ $(BINDIR)/$(CONFIG)/h2_full+pipe_default_host_test: openssl_dep_error
 else
 
 
+$(H2_FULL+PIPE_DEFAULT_HOST_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+pipe_default_host_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_default_host.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -19841,6 +20301,7 @@ $(BINDIR)/$(CONFIG)/h2_full+pipe_disappearing_server_test: openssl_dep_error
 else
 
 
+$(H2_FULL+PIPE_DISAPPEARING_SERVER_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+pipe_disappearing_server_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_disappearing_server.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -19861,6 +20322,7 @@ $(BINDIR)/$(CONFIG)/h2_full+pipe_empty_batch_test: openssl_dep_error
 else
 
 
+$(H2_FULL+PIPE_EMPTY_BATCH_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+pipe_empty_batch_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_empty_batch.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -19881,6 +20343,7 @@ $(BINDIR)/$(CONFIG)/h2_full+pipe_graceful_server_shutdown_test: openssl_dep_erro
 else
 
 
+$(H2_FULL+PIPE_GRACEFUL_SERVER_SHUTDOWN_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+pipe_graceful_server_shutdown_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_graceful_server_shutdown.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -19901,6 +20364,7 @@ $(BINDIR)/$(CONFIG)/h2_full+pipe_high_initial_seqno_test: openssl_dep_error
 else
 
 
+$(H2_FULL+PIPE_HIGH_INITIAL_SEQNO_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+pipe_high_initial_seqno_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_high_initial_seqno.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -19921,6 +20385,7 @@ $(BINDIR)/$(CONFIG)/h2_full+pipe_hpack_size_test: openssl_dep_error
 else
 
 
+$(H2_FULL+PIPE_HPACK_SIZE_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+pipe_hpack_size_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_hpack_size.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -19941,6 +20406,7 @@ $(BINDIR)/$(CONFIG)/h2_full+pipe_invoke_large_request_test: openssl_dep_error
 else
 
 
+$(H2_FULL+PIPE_INVOKE_LARGE_REQUEST_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+pipe_invoke_large_request_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_invoke_large_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -19961,6 +20427,7 @@ $(BINDIR)/$(CONFIG)/h2_full+pipe_large_metadata_test: openssl_dep_error
 else
 
 
+$(H2_FULL+PIPE_LARGE_METADATA_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+pipe_large_metadata_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_large_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -19981,6 +20448,7 @@ $(BINDIR)/$(CONFIG)/h2_full+pipe_max_concurrent_streams_test: openssl_dep_error
 else
 
 
+$(H2_FULL+PIPE_MAX_CONCURRENT_STREAMS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+pipe_max_concurrent_streams_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_max_concurrent_streams.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -20001,6 +20469,7 @@ $(BINDIR)/$(CONFIG)/h2_full+pipe_max_message_length_test: openssl_dep_error
 else
 
 
+$(H2_FULL+PIPE_MAX_MESSAGE_LENGTH_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+pipe_max_message_length_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_max_message_length.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -20021,6 +20490,7 @@ $(BINDIR)/$(CONFIG)/h2_full+pipe_metadata_test: openssl_dep_error
 else
 
 
+$(H2_FULL+PIPE_METADATA_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+pipe_metadata_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -20041,6 +20511,7 @@ $(BINDIR)/$(CONFIG)/h2_full+pipe_negative_deadline_test: openssl_dep_error
 else
 
 
+$(H2_FULL+PIPE_NEGATIVE_DEADLINE_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+pipe_negative_deadline_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_negative_deadline.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -20061,6 +20532,7 @@ $(BINDIR)/$(CONFIG)/h2_full+pipe_no_op_test: openssl_dep_error
 else
 
 
+$(H2_FULL+PIPE_NO_OP_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+pipe_no_op_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_no_op.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -20081,6 +20553,7 @@ $(BINDIR)/$(CONFIG)/h2_full+pipe_payload_test: openssl_dep_error
 else
 
 
+$(H2_FULL+PIPE_PAYLOAD_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+pipe_payload_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_payload.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -20101,6 +20574,7 @@ $(BINDIR)/$(CONFIG)/h2_full+pipe_ping_pong_streaming_test: openssl_dep_error
 else
 
 
+$(H2_FULL+PIPE_PING_PONG_STREAMING_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+pipe_ping_pong_streaming_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_ping_pong_streaming.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -20121,6 +20595,7 @@ $(BINDIR)/$(CONFIG)/h2_full+pipe_registered_call_test: openssl_dep_error
 else
 
 
+$(H2_FULL+PIPE_REGISTERED_CALL_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+pipe_registered_call_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_registered_call.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -20141,6 +20616,7 @@ $(BINDIR)/$(CONFIG)/h2_full+pipe_request_with_flags_test: openssl_dep_error
 else
 
 
+$(H2_FULL+PIPE_REQUEST_WITH_FLAGS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+pipe_request_with_flags_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_request_with_flags.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -20161,6 +20637,7 @@ $(BINDIR)/$(CONFIG)/h2_full+pipe_request_with_payload_test: openssl_dep_error
 else
 
 
+$(H2_FULL+PIPE_REQUEST_WITH_PAYLOAD_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+pipe_request_with_payload_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_request_with_payload.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -20181,6 +20658,7 @@ $(BINDIR)/$(CONFIG)/h2_full+pipe_server_finishes_request_test: openssl_dep_error
 else
 
 
+$(H2_FULL+PIPE_SERVER_FINISHES_REQUEST_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+pipe_server_finishes_request_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_server_finishes_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -20201,6 +20679,7 @@ $(BINDIR)/$(CONFIG)/h2_full+pipe_shutdown_finishes_calls_test: openssl_dep_error
 else
 
 
+$(H2_FULL+PIPE_SHUTDOWN_FINISHES_CALLS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+pipe_shutdown_finishes_calls_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_shutdown_finishes_calls.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -20221,6 +20700,7 @@ $(BINDIR)/$(CONFIG)/h2_full+pipe_shutdown_finishes_tags_test: openssl_dep_error
 else
 
 
+$(H2_FULL+PIPE_SHUTDOWN_FINISHES_TAGS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+pipe_shutdown_finishes_tags_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_shutdown_finishes_tags.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -20241,6 +20721,7 @@ $(BINDIR)/$(CONFIG)/h2_full+pipe_simple_delayed_request_test: openssl_dep_error
 else
 
 
+$(H2_FULL+PIPE_SIMPLE_DELAYED_REQUEST_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+pipe_simple_delayed_request_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_simple_delayed_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -20261,6 +20742,7 @@ $(BINDIR)/$(CONFIG)/h2_full+pipe_simple_request_test: openssl_dep_error
 else
 
 
+$(H2_FULL+PIPE_SIMPLE_REQUEST_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+pipe_simple_request_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_simple_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -20281,6 +20763,7 @@ $(BINDIR)/$(CONFIG)/h2_full+pipe_trailing_metadata_test: openssl_dep_error
 else
 
 
+$(H2_FULL+PIPE_TRAILING_METADATA_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+pipe_trailing_metadata_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_trailing_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -20301,6 +20784,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll_bad_hostname_test: openssl_dep_error
 else
 
 
+$(H2_FULL+POLL_BAD_HOSTNAME_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll_bad_hostname_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_bad_hostname.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -20321,6 +20805,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll_binary_metadata_test: openssl_dep_error
 else
 
 
+$(H2_FULL+POLL_BINARY_METADATA_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll_binary_metadata_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_binary_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -20341,6 +20826,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll_call_creds_test: openssl_dep_error
 else
 
 
+$(H2_FULL+POLL_CALL_CREDS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll_call_creds_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_call_creds.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -20361,6 +20847,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll_cancel_after_accept_test: openssl_dep_error
 else
 
 
+$(H2_FULL+POLL_CANCEL_AFTER_ACCEPT_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll_cancel_after_accept_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_accept.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -20381,6 +20868,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll_cancel_after_client_done_test: openssl_dep_erro
 else
 
 
+$(H2_FULL+POLL_CANCEL_AFTER_CLIENT_DONE_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll_cancel_after_client_done_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_client_done.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -20401,6 +20889,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll_cancel_after_invoke_test: openssl_dep_error
 else
 
 
+$(H2_FULL+POLL_CANCEL_AFTER_INVOKE_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll_cancel_after_invoke_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_invoke.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -20421,6 +20910,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll_cancel_before_invoke_test: openssl_dep_error
 else
 
 
+$(H2_FULL+POLL_CANCEL_BEFORE_INVOKE_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll_cancel_before_invoke_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_before_invoke.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -20441,6 +20931,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll_cancel_in_a_vacuum_test: openssl_dep_error
 else
 
 
+$(H2_FULL+POLL_CANCEL_IN_A_VACUUM_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll_cancel_in_a_vacuum_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_in_a_vacuum.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -20461,6 +20952,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll_cancel_with_status_test: openssl_dep_error
 else
 
 
+$(H2_FULL+POLL_CANCEL_WITH_STATUS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll_cancel_with_status_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_with_status.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -20481,6 +20973,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll_channel_connectivity_test: openssl_dep_error
 else
 
 
+$(H2_FULL+POLL_CHANNEL_CONNECTIVITY_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll_channel_connectivity_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_channel_connectivity.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -20501,6 +20994,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll_channel_ping_test: openssl_dep_error
 else
 
 
+$(H2_FULL+POLL_CHANNEL_PING_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll_channel_ping_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_channel_ping.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -20521,6 +21015,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll_compressed_payload_test: openssl_dep_error
 else
 
 
+$(H2_FULL+POLL_COMPRESSED_PAYLOAD_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll_compressed_payload_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_compressed_payload.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -20541,6 +21036,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll_default_host_test: openssl_dep_error
 else
 
 
+$(H2_FULL+POLL_DEFAULT_HOST_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll_default_host_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_default_host.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -20561,6 +21057,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll_disappearing_server_test: openssl_dep_error
 else
 
 
+$(H2_FULL+POLL_DISAPPEARING_SERVER_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll_disappearing_server_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_disappearing_server.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -20581,6 +21078,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll_empty_batch_test: openssl_dep_error
 else
 
 
+$(H2_FULL+POLL_EMPTY_BATCH_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll_empty_batch_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_empty_batch.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -20601,6 +21099,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll_graceful_server_shutdown_test: openssl_dep_erro
 else
 
 
+$(H2_FULL+POLL_GRACEFUL_SERVER_SHUTDOWN_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll_graceful_server_shutdown_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_graceful_server_shutdown.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -20621,6 +21120,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll_high_initial_seqno_test: openssl_dep_error
 else
 
 
+$(H2_FULL+POLL_HIGH_INITIAL_SEQNO_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll_high_initial_seqno_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_high_initial_seqno.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -20641,6 +21141,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll_hpack_size_test: openssl_dep_error
 else
 
 
+$(H2_FULL+POLL_HPACK_SIZE_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll_hpack_size_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_hpack_size.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -20661,6 +21162,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll_invoke_large_request_test: openssl_dep_error
 else
 
 
+$(H2_FULL+POLL_INVOKE_LARGE_REQUEST_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll_invoke_large_request_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_invoke_large_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -20681,6 +21183,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll_large_metadata_test: openssl_dep_error
 else
 
 
+$(H2_FULL+POLL_LARGE_METADATA_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll_large_metadata_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_large_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -20701,6 +21204,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll_max_concurrent_streams_test: openssl_dep_error
 else
 
 
+$(H2_FULL+POLL_MAX_CONCURRENT_STREAMS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll_max_concurrent_streams_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_max_concurrent_streams.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -20721,6 +21225,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll_max_message_length_test: openssl_dep_error
 else
 
 
+$(H2_FULL+POLL_MAX_MESSAGE_LENGTH_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll_max_message_length_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_max_message_length.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -20741,6 +21246,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll_metadata_test: openssl_dep_error
 else
 
 
+$(H2_FULL+POLL_METADATA_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll_metadata_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -20761,6 +21267,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll_negative_deadline_test: openssl_dep_error
 else
 
 
+$(H2_FULL+POLL_NEGATIVE_DEADLINE_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll_negative_deadline_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_negative_deadline.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -20781,6 +21288,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll_no_op_test: openssl_dep_error
 else
 
 
+$(H2_FULL+POLL_NO_OP_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll_no_op_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_no_op.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -20801,6 +21309,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll_payload_test: openssl_dep_error
 else
 
 
+$(H2_FULL+POLL_PAYLOAD_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll_payload_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_payload.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -20821,6 +21330,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll_ping_pong_streaming_test: openssl_dep_error
 else
 
 
+$(H2_FULL+POLL_PING_PONG_STREAMING_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll_ping_pong_streaming_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_ping_pong_streaming.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -20841,6 +21351,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll_registered_call_test: openssl_dep_error
 else
 
 
+$(H2_FULL+POLL_REGISTERED_CALL_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll_registered_call_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_registered_call.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -20861,6 +21372,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll_request_with_flags_test: openssl_dep_error
 else
 
 
+$(H2_FULL+POLL_REQUEST_WITH_FLAGS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll_request_with_flags_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_request_with_flags.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -20881,6 +21393,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll_request_with_payload_test: openssl_dep_error
 else
 
 
+$(H2_FULL+POLL_REQUEST_WITH_PAYLOAD_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll_request_with_payload_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_request_with_payload.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -20901,6 +21414,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll_server_finishes_request_test: openssl_dep_error
 else
 
 
+$(H2_FULL+POLL_SERVER_FINISHES_REQUEST_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll_server_finishes_request_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_server_finishes_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -20921,6 +21435,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll_shutdown_finishes_calls_test: openssl_dep_error
 else
 
 
+$(H2_FULL+POLL_SHUTDOWN_FINISHES_CALLS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll_shutdown_finishes_calls_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_shutdown_finishes_calls.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -20941,6 +21456,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll_shutdown_finishes_tags_test: openssl_dep_error
 else
 
 
+$(H2_FULL+POLL_SHUTDOWN_FINISHES_TAGS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll_shutdown_finishes_tags_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_shutdown_finishes_tags.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -20961,6 +21477,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll_simple_delayed_request_test: openssl_dep_error
 else
 
 
+$(H2_FULL+POLL_SIMPLE_DELAYED_REQUEST_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll_simple_delayed_request_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_simple_delayed_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -20981,6 +21498,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll_simple_request_test: openssl_dep_error
 else
 
 
+$(H2_FULL+POLL_SIMPLE_REQUEST_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll_simple_request_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_simple_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -21001,6 +21519,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll_trailing_metadata_test: openssl_dep_error
 else
 
 
+$(H2_FULL+POLL_TRAILING_METADATA_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll_trailing_metadata_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_trailing_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -21021,6 +21540,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_bad_hostname_test: openssl_dep_error
 else
 
 
+$(H2_FULL+POLL+PIPE_BAD_HOSTNAME_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_bad_hostname_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_bad_hostname.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -21041,6 +21561,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_binary_metadata_test: openssl_dep_error
 else
 
 
+$(H2_FULL+POLL+PIPE_BINARY_METADATA_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_binary_metadata_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_binary_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -21061,6 +21582,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_call_creds_test: openssl_dep_error
 else
 
 
+$(H2_FULL+POLL+PIPE_CALL_CREDS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_call_creds_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_call_creds.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -21081,6 +21603,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_cancel_after_accept_test: openssl_dep_erro
 else
 
 
+$(H2_FULL+POLL+PIPE_CANCEL_AFTER_ACCEPT_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_cancel_after_accept_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_accept.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -21101,6 +21624,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_cancel_after_client_done_test: openssl_dep
 else
 
 
+$(H2_FULL+POLL+PIPE_CANCEL_AFTER_CLIENT_DONE_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_cancel_after_client_done_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_client_done.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -21121,6 +21645,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_cancel_after_invoke_test: openssl_dep_erro
 else
 
 
+$(H2_FULL+POLL+PIPE_CANCEL_AFTER_INVOKE_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_cancel_after_invoke_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_invoke.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -21141,6 +21666,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_cancel_before_invoke_test: openssl_dep_err
 else
 
 
+$(H2_FULL+POLL+PIPE_CANCEL_BEFORE_INVOKE_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_cancel_before_invoke_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_before_invoke.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -21161,6 +21687,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_cancel_in_a_vacuum_test: openssl_dep_error
 else
 
 
+$(H2_FULL+POLL+PIPE_CANCEL_IN_A_VACUUM_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_cancel_in_a_vacuum_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_in_a_vacuum.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -21181,6 +21708,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_cancel_with_status_test: openssl_dep_error
 else
 
 
+$(H2_FULL+POLL+PIPE_CANCEL_WITH_STATUS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_cancel_with_status_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_with_status.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -21201,6 +21729,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_channel_connectivity_test: openssl_dep_err
 else
 
 
+$(H2_FULL+POLL+PIPE_CHANNEL_CONNECTIVITY_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_channel_connectivity_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_channel_connectivity.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -21221,6 +21750,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_channel_ping_test: openssl_dep_error
 else
 
 
+$(H2_FULL+POLL+PIPE_CHANNEL_PING_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_channel_ping_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_channel_ping.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -21241,6 +21771,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_compressed_payload_test: openssl_dep_error
 else
 
 
+$(H2_FULL+POLL+PIPE_COMPRESSED_PAYLOAD_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_compressed_payload_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_compressed_payload.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -21261,6 +21792,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_default_host_test: openssl_dep_error
 else
 
 
+$(H2_FULL+POLL+PIPE_DEFAULT_HOST_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_default_host_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_default_host.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -21281,6 +21813,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_disappearing_server_test: openssl_dep_erro
 else
 
 
+$(H2_FULL+POLL+PIPE_DISAPPEARING_SERVER_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_disappearing_server_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_disappearing_server.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -21301,6 +21834,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_empty_batch_test: openssl_dep_error
 else
 
 
+$(H2_FULL+POLL+PIPE_EMPTY_BATCH_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_empty_batch_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_empty_batch.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -21321,6 +21855,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_graceful_server_shutdown_test: openssl_dep
 else
 
 
+$(H2_FULL+POLL+PIPE_GRACEFUL_SERVER_SHUTDOWN_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_graceful_server_shutdown_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_graceful_server_shutdown.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -21341,6 +21876,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_high_initial_seqno_test: openssl_dep_error
 else
 
 
+$(H2_FULL+POLL+PIPE_HIGH_INITIAL_SEQNO_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_high_initial_seqno_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_high_initial_seqno.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -21361,6 +21897,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_hpack_size_test: openssl_dep_error
 else
 
 
+$(H2_FULL+POLL+PIPE_HPACK_SIZE_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_hpack_size_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_hpack_size.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -21381,6 +21918,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_invoke_large_request_test: openssl_dep_err
 else
 
 
+$(H2_FULL+POLL+PIPE_INVOKE_LARGE_REQUEST_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_invoke_large_request_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_invoke_large_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -21401,6 +21939,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_large_metadata_test: openssl_dep_error
 else
 
 
+$(H2_FULL+POLL+PIPE_LARGE_METADATA_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_large_metadata_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_large_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -21421,6 +21960,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_max_concurrent_streams_test: openssl_dep_e
 else
 
 
+$(H2_FULL+POLL+PIPE_MAX_CONCURRENT_STREAMS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_max_concurrent_streams_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_max_concurrent_streams.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -21441,6 +21981,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_max_message_length_test: openssl_dep_error
 else
 
 
+$(H2_FULL+POLL+PIPE_MAX_MESSAGE_LENGTH_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_max_message_length_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_max_message_length.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -21461,6 +22002,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_metadata_test: openssl_dep_error
 else
 
 
+$(H2_FULL+POLL+PIPE_METADATA_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_metadata_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -21481,6 +22023,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_negative_deadline_test: openssl_dep_error
 else
 
 
+$(H2_FULL+POLL+PIPE_NEGATIVE_DEADLINE_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_negative_deadline_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_negative_deadline.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -21501,6 +22044,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_no_op_test: openssl_dep_error
 else
 
 
+$(H2_FULL+POLL+PIPE_NO_OP_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_no_op_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_no_op.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -21521,6 +22065,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_payload_test: openssl_dep_error
 else
 
 
+$(H2_FULL+POLL+PIPE_PAYLOAD_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_payload_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_payload.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -21541,6 +22086,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_ping_pong_streaming_test: openssl_dep_erro
 else
 
 
+$(H2_FULL+POLL+PIPE_PING_PONG_STREAMING_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_ping_pong_streaming_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_ping_pong_streaming.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -21561,6 +22107,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_registered_call_test: openssl_dep_error
 else
 
 
+$(H2_FULL+POLL+PIPE_REGISTERED_CALL_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_registered_call_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_registered_call.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -21581,6 +22128,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_request_with_flags_test: openssl_dep_error
 else
 
 
+$(H2_FULL+POLL+PIPE_REQUEST_WITH_FLAGS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_request_with_flags_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_request_with_flags.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -21601,6 +22149,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_request_with_payload_test: openssl_dep_err
 else
 
 
+$(H2_FULL+POLL+PIPE_REQUEST_WITH_PAYLOAD_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_request_with_payload_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_request_with_payload.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -21621,6 +22170,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_server_finishes_request_test: openssl_dep_
 else
 
 
+$(H2_FULL+POLL+PIPE_SERVER_FINISHES_REQUEST_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_server_finishes_request_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_server_finishes_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -21641,6 +22191,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_shutdown_finishes_calls_test: openssl_dep_
 else
 
 
+$(H2_FULL+POLL+PIPE_SHUTDOWN_FINISHES_CALLS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_shutdown_finishes_calls_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_shutdown_finishes_calls.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -21661,6 +22212,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_shutdown_finishes_tags_test: openssl_dep_e
 else
 
 
+$(H2_FULL+POLL+PIPE_SHUTDOWN_FINISHES_TAGS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_shutdown_finishes_tags_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_shutdown_finishes_tags.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -21681,6 +22233,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_simple_delayed_request_test: openssl_dep_e
 else
 
 
+$(H2_FULL+POLL+PIPE_SIMPLE_DELAYED_REQUEST_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_simple_delayed_request_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_simple_delayed_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -21701,6 +22254,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_simple_request_test: openssl_dep_error
 else
 
 
+$(H2_FULL+POLL+PIPE_SIMPLE_REQUEST_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_simple_request_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_simple_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -21721,6 +22275,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_trailing_metadata_test: openssl_dep_error
 else
 
 
+$(H2_FULL+POLL+PIPE_TRAILING_METADATA_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_trailing_metadata_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_test_trailing_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -21741,6 +22296,7 @@ $(BINDIR)/$(CONFIG)/h2_oauth2_bad_hostname_test: openssl_dep_error
 else
 
 
+$(H2_OAUTH2_BAD_HOSTNAME_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_oauth2_bad_hostname_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_oauth2.a $(LIBDIR)/$(CONFIG)/libend2end_test_bad_hostname.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -21761,6 +22317,7 @@ $(BINDIR)/$(CONFIG)/h2_oauth2_binary_metadata_test: openssl_dep_error
 else
 
 
+$(H2_OAUTH2_BINARY_METADATA_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_oauth2_binary_metadata_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_oauth2.a $(LIBDIR)/$(CONFIG)/libend2end_test_binary_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -21781,6 +22338,7 @@ $(BINDIR)/$(CONFIG)/h2_oauth2_call_creds_test: openssl_dep_error
 else
 
 
+$(H2_OAUTH2_CALL_CREDS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_oauth2_call_creds_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_oauth2.a $(LIBDIR)/$(CONFIG)/libend2end_test_call_creds.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -21801,6 +22359,7 @@ $(BINDIR)/$(CONFIG)/h2_oauth2_cancel_after_accept_test: openssl_dep_error
 else
 
 
+$(H2_OAUTH2_CANCEL_AFTER_ACCEPT_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_oauth2_cancel_after_accept_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_oauth2.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_accept.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -21821,6 +22380,7 @@ $(BINDIR)/$(CONFIG)/h2_oauth2_cancel_after_client_done_test: openssl_dep_error
 else
 
 
+$(H2_OAUTH2_CANCEL_AFTER_CLIENT_DONE_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_oauth2_cancel_after_client_done_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_oauth2.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_client_done.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -21841,6 +22401,7 @@ $(BINDIR)/$(CONFIG)/h2_oauth2_cancel_after_invoke_test: openssl_dep_error
 else
 
 
+$(H2_OAUTH2_CANCEL_AFTER_INVOKE_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_oauth2_cancel_after_invoke_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_oauth2.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_invoke.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -21861,6 +22422,7 @@ $(BINDIR)/$(CONFIG)/h2_oauth2_cancel_before_invoke_test: openssl_dep_error
 else
 
 
+$(H2_OAUTH2_CANCEL_BEFORE_INVOKE_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_oauth2_cancel_before_invoke_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_oauth2.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_before_invoke.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -21881,6 +22443,7 @@ $(BINDIR)/$(CONFIG)/h2_oauth2_cancel_in_a_vacuum_test: openssl_dep_error
 else
 
 
+$(H2_OAUTH2_CANCEL_IN_A_VACUUM_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_oauth2_cancel_in_a_vacuum_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_oauth2.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_in_a_vacuum.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -21901,6 +22464,7 @@ $(BINDIR)/$(CONFIG)/h2_oauth2_cancel_with_status_test: openssl_dep_error
 else
 
 
+$(H2_OAUTH2_CANCEL_WITH_STATUS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_oauth2_cancel_with_status_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_oauth2.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_with_status.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -21921,6 +22485,7 @@ $(BINDIR)/$(CONFIG)/h2_oauth2_channel_connectivity_test: openssl_dep_error
 else
 
 
+$(H2_OAUTH2_CHANNEL_CONNECTIVITY_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_oauth2_channel_connectivity_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_oauth2.a $(LIBDIR)/$(CONFIG)/libend2end_test_channel_connectivity.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -21941,6 +22506,7 @@ $(BINDIR)/$(CONFIG)/h2_oauth2_channel_ping_test: openssl_dep_error
 else
 
 
+$(H2_OAUTH2_CHANNEL_PING_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_oauth2_channel_ping_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_oauth2.a $(LIBDIR)/$(CONFIG)/libend2end_test_channel_ping.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -21961,6 +22527,7 @@ $(BINDIR)/$(CONFIG)/h2_oauth2_compressed_payload_test: openssl_dep_error
 else
 
 
+$(H2_OAUTH2_COMPRESSED_PAYLOAD_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_oauth2_compressed_payload_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_oauth2.a $(LIBDIR)/$(CONFIG)/libend2end_test_compressed_payload.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -21981,6 +22548,7 @@ $(BINDIR)/$(CONFIG)/h2_oauth2_default_host_test: openssl_dep_error
 else
 
 
+$(H2_OAUTH2_DEFAULT_HOST_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_oauth2_default_host_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_oauth2.a $(LIBDIR)/$(CONFIG)/libend2end_test_default_host.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -22001,6 +22569,7 @@ $(BINDIR)/$(CONFIG)/h2_oauth2_disappearing_server_test: openssl_dep_error
 else
 
 
+$(H2_OAUTH2_DISAPPEARING_SERVER_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_oauth2_disappearing_server_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_oauth2.a $(LIBDIR)/$(CONFIG)/libend2end_test_disappearing_server.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -22021,6 +22590,7 @@ $(BINDIR)/$(CONFIG)/h2_oauth2_empty_batch_test: openssl_dep_error
 else
 
 
+$(H2_OAUTH2_EMPTY_BATCH_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_oauth2_empty_batch_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_oauth2.a $(LIBDIR)/$(CONFIG)/libend2end_test_empty_batch.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -22041,6 +22611,7 @@ $(BINDIR)/$(CONFIG)/h2_oauth2_graceful_server_shutdown_test: openssl_dep_error
 else
 
 
+$(H2_OAUTH2_GRACEFUL_SERVER_SHUTDOWN_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_oauth2_graceful_server_shutdown_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_oauth2.a $(LIBDIR)/$(CONFIG)/libend2end_test_graceful_server_shutdown.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -22061,6 +22632,7 @@ $(BINDIR)/$(CONFIG)/h2_oauth2_high_initial_seqno_test: openssl_dep_error
 else
 
 
+$(H2_OAUTH2_HIGH_INITIAL_SEQNO_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_oauth2_high_initial_seqno_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_oauth2.a $(LIBDIR)/$(CONFIG)/libend2end_test_high_initial_seqno.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -22081,6 +22653,7 @@ $(BINDIR)/$(CONFIG)/h2_oauth2_hpack_size_test: openssl_dep_error
 else
 
 
+$(H2_OAUTH2_HPACK_SIZE_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_oauth2_hpack_size_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_oauth2.a $(LIBDIR)/$(CONFIG)/libend2end_test_hpack_size.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -22101,6 +22674,7 @@ $(BINDIR)/$(CONFIG)/h2_oauth2_invoke_large_request_test: openssl_dep_error
 else
 
 
+$(H2_OAUTH2_INVOKE_LARGE_REQUEST_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_oauth2_invoke_large_request_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_oauth2.a $(LIBDIR)/$(CONFIG)/libend2end_test_invoke_large_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -22121,6 +22695,7 @@ $(BINDIR)/$(CONFIG)/h2_oauth2_large_metadata_test: openssl_dep_error
 else
 
 
+$(H2_OAUTH2_LARGE_METADATA_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_oauth2_large_metadata_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_oauth2.a $(LIBDIR)/$(CONFIG)/libend2end_test_large_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -22141,6 +22716,7 @@ $(BINDIR)/$(CONFIG)/h2_oauth2_max_concurrent_streams_test: openssl_dep_error
 else
 
 
+$(H2_OAUTH2_MAX_CONCURRENT_STREAMS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_oauth2_max_concurrent_streams_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_oauth2.a $(LIBDIR)/$(CONFIG)/libend2end_test_max_concurrent_streams.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -22161,6 +22737,7 @@ $(BINDIR)/$(CONFIG)/h2_oauth2_max_message_length_test: openssl_dep_error
 else
 
 
+$(H2_OAUTH2_MAX_MESSAGE_LENGTH_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_oauth2_max_message_length_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_oauth2.a $(LIBDIR)/$(CONFIG)/libend2end_test_max_message_length.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -22181,6 +22758,7 @@ $(BINDIR)/$(CONFIG)/h2_oauth2_metadata_test: openssl_dep_error
 else
 
 
+$(H2_OAUTH2_METADATA_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_oauth2_metadata_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_oauth2.a $(LIBDIR)/$(CONFIG)/libend2end_test_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -22201,6 +22779,7 @@ $(BINDIR)/$(CONFIG)/h2_oauth2_negative_deadline_test: openssl_dep_error
 else
 
 
+$(H2_OAUTH2_NEGATIVE_DEADLINE_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_oauth2_negative_deadline_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_oauth2.a $(LIBDIR)/$(CONFIG)/libend2end_test_negative_deadline.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -22221,6 +22800,7 @@ $(BINDIR)/$(CONFIG)/h2_oauth2_no_op_test: openssl_dep_error
 else
 
 
+$(H2_OAUTH2_NO_OP_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_oauth2_no_op_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_oauth2.a $(LIBDIR)/$(CONFIG)/libend2end_test_no_op.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -22241,6 +22821,7 @@ $(BINDIR)/$(CONFIG)/h2_oauth2_payload_test: openssl_dep_error
 else
 
 
+$(H2_OAUTH2_PAYLOAD_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_oauth2_payload_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_oauth2.a $(LIBDIR)/$(CONFIG)/libend2end_test_payload.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -22261,6 +22842,7 @@ $(BINDIR)/$(CONFIG)/h2_oauth2_ping_pong_streaming_test: openssl_dep_error
 else
 
 
+$(H2_OAUTH2_PING_PONG_STREAMING_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_oauth2_ping_pong_streaming_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_oauth2.a $(LIBDIR)/$(CONFIG)/libend2end_test_ping_pong_streaming.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -22281,6 +22863,7 @@ $(BINDIR)/$(CONFIG)/h2_oauth2_registered_call_test: openssl_dep_error
 else
 
 
+$(H2_OAUTH2_REGISTERED_CALL_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_oauth2_registered_call_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_oauth2.a $(LIBDIR)/$(CONFIG)/libend2end_test_registered_call.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -22301,6 +22884,7 @@ $(BINDIR)/$(CONFIG)/h2_oauth2_request_with_flags_test: openssl_dep_error
 else
 
 
+$(H2_OAUTH2_REQUEST_WITH_FLAGS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_oauth2_request_with_flags_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_oauth2.a $(LIBDIR)/$(CONFIG)/libend2end_test_request_with_flags.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -22321,6 +22905,7 @@ $(BINDIR)/$(CONFIG)/h2_oauth2_request_with_payload_test: openssl_dep_error
 else
 
 
+$(H2_OAUTH2_REQUEST_WITH_PAYLOAD_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_oauth2_request_with_payload_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_oauth2.a $(LIBDIR)/$(CONFIG)/libend2end_test_request_with_payload.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -22341,6 +22926,7 @@ $(BINDIR)/$(CONFIG)/h2_oauth2_server_finishes_request_test: openssl_dep_error
 else
 
 
+$(H2_OAUTH2_SERVER_FINISHES_REQUEST_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_oauth2_server_finishes_request_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_oauth2.a $(LIBDIR)/$(CONFIG)/libend2end_test_server_finishes_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -22361,6 +22947,7 @@ $(BINDIR)/$(CONFIG)/h2_oauth2_shutdown_finishes_calls_test: openssl_dep_error
 else
 
 
+$(H2_OAUTH2_SHUTDOWN_FINISHES_CALLS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_oauth2_shutdown_finishes_calls_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_oauth2.a $(LIBDIR)/$(CONFIG)/libend2end_test_shutdown_finishes_calls.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -22381,6 +22968,7 @@ $(BINDIR)/$(CONFIG)/h2_oauth2_shutdown_finishes_tags_test: openssl_dep_error
 else
 
 
+$(H2_OAUTH2_SHUTDOWN_FINISHES_TAGS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_oauth2_shutdown_finishes_tags_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_oauth2.a $(LIBDIR)/$(CONFIG)/libend2end_test_shutdown_finishes_tags.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -22401,6 +22989,7 @@ $(BINDIR)/$(CONFIG)/h2_oauth2_simple_delayed_request_test: openssl_dep_error
 else
 
 
+$(H2_OAUTH2_SIMPLE_DELAYED_REQUEST_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_oauth2_simple_delayed_request_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_oauth2.a $(LIBDIR)/$(CONFIG)/libend2end_test_simple_delayed_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -22421,6 +23010,7 @@ $(BINDIR)/$(CONFIG)/h2_oauth2_simple_request_test: openssl_dep_error
 else
 
 
+$(H2_OAUTH2_SIMPLE_REQUEST_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_oauth2_simple_request_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_oauth2.a $(LIBDIR)/$(CONFIG)/libend2end_test_simple_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -22441,6 +23031,7 @@ $(BINDIR)/$(CONFIG)/h2_oauth2_trailing_metadata_test: openssl_dep_error
 else
 
 
+$(H2_OAUTH2_TRAILING_METADATA_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_oauth2_trailing_metadata_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_oauth2.a $(LIBDIR)/$(CONFIG)/libend2end_test_trailing_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -22461,6 +23052,7 @@ $(BINDIR)/$(CONFIG)/h2_proxy_bad_hostname_test: openssl_dep_error
 else
 
 
+$(H2_PROXY_BAD_HOSTNAME_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_proxy_bad_hostname_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_test_bad_hostname.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -22481,6 +23073,7 @@ $(BINDIR)/$(CONFIG)/h2_proxy_binary_metadata_test: openssl_dep_error
 else
 
 
+$(H2_PROXY_BINARY_METADATA_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_proxy_binary_metadata_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_test_binary_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -22501,6 +23094,7 @@ $(BINDIR)/$(CONFIG)/h2_proxy_call_creds_test: openssl_dep_error
 else
 
 
+$(H2_PROXY_CALL_CREDS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_proxy_call_creds_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_test_call_creds.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -22521,6 +23115,7 @@ $(BINDIR)/$(CONFIG)/h2_proxy_cancel_after_accept_test: openssl_dep_error
 else
 
 
+$(H2_PROXY_CANCEL_AFTER_ACCEPT_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_proxy_cancel_after_accept_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_accept.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -22541,6 +23136,7 @@ $(BINDIR)/$(CONFIG)/h2_proxy_cancel_after_client_done_test: openssl_dep_error
 else
 
 
+$(H2_PROXY_CANCEL_AFTER_CLIENT_DONE_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_proxy_cancel_after_client_done_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_client_done.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -22561,6 +23157,7 @@ $(BINDIR)/$(CONFIG)/h2_proxy_cancel_after_invoke_test: openssl_dep_error
 else
 
 
+$(H2_PROXY_CANCEL_AFTER_INVOKE_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_proxy_cancel_after_invoke_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_invoke.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -22581,6 +23178,7 @@ $(BINDIR)/$(CONFIG)/h2_proxy_cancel_before_invoke_test: openssl_dep_error
 else
 
 
+$(H2_PROXY_CANCEL_BEFORE_INVOKE_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_proxy_cancel_before_invoke_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_before_invoke.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -22601,6 +23199,7 @@ $(BINDIR)/$(CONFIG)/h2_proxy_cancel_in_a_vacuum_test: openssl_dep_error
 else
 
 
+$(H2_PROXY_CANCEL_IN_A_VACUUM_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_proxy_cancel_in_a_vacuum_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_in_a_vacuum.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -22621,6 +23220,7 @@ $(BINDIR)/$(CONFIG)/h2_proxy_cancel_with_status_test: openssl_dep_error
 else
 
 
+$(H2_PROXY_CANCEL_WITH_STATUS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_proxy_cancel_with_status_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_with_status.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -22641,6 +23241,7 @@ $(BINDIR)/$(CONFIG)/h2_proxy_default_host_test: openssl_dep_error
 else
 
 
+$(H2_PROXY_DEFAULT_HOST_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_proxy_default_host_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_test_default_host.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -22661,6 +23262,7 @@ $(BINDIR)/$(CONFIG)/h2_proxy_disappearing_server_test: openssl_dep_error
 else
 
 
+$(H2_PROXY_DISAPPEARING_SERVER_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_proxy_disappearing_server_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_test_disappearing_server.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -22681,6 +23283,7 @@ $(BINDIR)/$(CONFIG)/h2_proxy_empty_batch_test: openssl_dep_error
 else
 
 
+$(H2_PROXY_EMPTY_BATCH_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_proxy_empty_batch_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_test_empty_batch.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -22701,6 +23304,7 @@ $(BINDIR)/$(CONFIG)/h2_proxy_graceful_server_shutdown_test: openssl_dep_error
 else
 
 
+$(H2_PROXY_GRACEFUL_SERVER_SHUTDOWN_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_proxy_graceful_server_shutdown_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_test_graceful_server_shutdown.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -22721,6 +23325,7 @@ $(BINDIR)/$(CONFIG)/h2_proxy_high_initial_seqno_test: openssl_dep_error
 else
 
 
+$(H2_PROXY_HIGH_INITIAL_SEQNO_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_proxy_high_initial_seqno_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_test_high_initial_seqno.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -22741,6 +23346,7 @@ $(BINDIR)/$(CONFIG)/h2_proxy_invoke_large_request_test: openssl_dep_error
 else
 
 
+$(H2_PROXY_INVOKE_LARGE_REQUEST_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_proxy_invoke_large_request_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_test_invoke_large_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -22761,6 +23367,7 @@ $(BINDIR)/$(CONFIG)/h2_proxy_large_metadata_test: openssl_dep_error
 else
 
 
+$(H2_PROXY_LARGE_METADATA_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_proxy_large_metadata_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_test_large_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -22781,6 +23388,7 @@ $(BINDIR)/$(CONFIG)/h2_proxy_max_message_length_test: openssl_dep_error
 else
 
 
+$(H2_PROXY_MAX_MESSAGE_LENGTH_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_proxy_max_message_length_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_test_max_message_length.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -22801,6 +23409,7 @@ $(BINDIR)/$(CONFIG)/h2_proxy_metadata_test: openssl_dep_error
 else
 
 
+$(H2_PROXY_METADATA_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_proxy_metadata_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_test_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -22821,6 +23430,7 @@ $(BINDIR)/$(CONFIG)/h2_proxy_negative_deadline_test: openssl_dep_error
 else
 
 
+$(H2_PROXY_NEGATIVE_DEADLINE_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_proxy_negative_deadline_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_test_negative_deadline.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -22841,6 +23451,7 @@ $(BINDIR)/$(CONFIG)/h2_proxy_no_op_test: openssl_dep_error
 else
 
 
+$(H2_PROXY_NO_OP_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_proxy_no_op_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_test_no_op.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -22861,6 +23472,7 @@ $(BINDIR)/$(CONFIG)/h2_proxy_payload_test: openssl_dep_error
 else
 
 
+$(H2_PROXY_PAYLOAD_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_proxy_payload_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_test_payload.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -22881,6 +23493,7 @@ $(BINDIR)/$(CONFIG)/h2_proxy_ping_pong_streaming_test: openssl_dep_error
 else
 
 
+$(H2_PROXY_PING_PONG_STREAMING_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_proxy_ping_pong_streaming_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_test_ping_pong_streaming.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -22901,6 +23514,7 @@ $(BINDIR)/$(CONFIG)/h2_proxy_registered_call_test: openssl_dep_error
 else
 
 
+$(H2_PROXY_REGISTERED_CALL_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_proxy_registered_call_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_test_registered_call.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -22921,6 +23535,7 @@ $(BINDIR)/$(CONFIG)/h2_proxy_request_with_payload_test: openssl_dep_error
 else
 
 
+$(H2_PROXY_REQUEST_WITH_PAYLOAD_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_proxy_request_with_payload_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_test_request_with_payload.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -22941,6 +23556,7 @@ $(BINDIR)/$(CONFIG)/h2_proxy_server_finishes_request_test: openssl_dep_error
 else
 
 
+$(H2_PROXY_SERVER_FINISHES_REQUEST_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_proxy_server_finishes_request_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_test_server_finishes_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -22961,6 +23577,7 @@ $(BINDIR)/$(CONFIG)/h2_proxy_shutdown_finishes_calls_test: openssl_dep_error
 else
 
 
+$(H2_PROXY_SHUTDOWN_FINISHES_CALLS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_proxy_shutdown_finishes_calls_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_test_shutdown_finishes_calls.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -22981,6 +23598,7 @@ $(BINDIR)/$(CONFIG)/h2_proxy_shutdown_finishes_tags_test: openssl_dep_error
 else
 
 
+$(H2_PROXY_SHUTDOWN_FINISHES_TAGS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_proxy_shutdown_finishes_tags_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_test_shutdown_finishes_tags.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -23001,6 +23619,7 @@ $(BINDIR)/$(CONFIG)/h2_proxy_simple_delayed_request_test: openssl_dep_error
 else
 
 
+$(H2_PROXY_SIMPLE_DELAYED_REQUEST_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_proxy_simple_delayed_request_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_test_simple_delayed_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -23021,6 +23640,7 @@ $(BINDIR)/$(CONFIG)/h2_proxy_simple_request_test: openssl_dep_error
 else
 
 
+$(H2_PROXY_SIMPLE_REQUEST_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_proxy_simple_request_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_test_simple_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -23041,6 +23661,7 @@ $(BINDIR)/$(CONFIG)/h2_proxy_trailing_metadata_test: openssl_dep_error
 else
 
 
+$(H2_PROXY_TRAILING_METADATA_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_proxy_trailing_metadata_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_test_trailing_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -23061,6 +23682,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_bad_hostname_test: openssl_dep_error
 else
 
 
+$(H2_SOCKPAIR_BAD_HOSTNAME_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_bad_hostname_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair.a $(LIBDIR)/$(CONFIG)/libend2end_test_bad_hostname.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -23081,6 +23703,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_binary_metadata_test: openssl_dep_error
 else
 
 
+$(H2_SOCKPAIR_BINARY_METADATA_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_binary_metadata_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair.a $(LIBDIR)/$(CONFIG)/libend2end_test_binary_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -23101,6 +23724,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_call_creds_test: openssl_dep_error
 else
 
 
+$(H2_SOCKPAIR_CALL_CREDS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_call_creds_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair.a $(LIBDIR)/$(CONFIG)/libend2end_test_call_creds.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -23121,6 +23745,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_cancel_after_accept_test: openssl_dep_error
 else
 
 
+$(H2_SOCKPAIR_CANCEL_AFTER_ACCEPT_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_cancel_after_accept_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_accept.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -23141,6 +23766,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_cancel_after_client_done_test: openssl_dep_error
 else
 
 
+$(H2_SOCKPAIR_CANCEL_AFTER_CLIENT_DONE_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_cancel_after_client_done_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_client_done.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -23161,6 +23787,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_cancel_after_invoke_test: openssl_dep_error
 else
 
 
+$(H2_SOCKPAIR_CANCEL_AFTER_INVOKE_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_cancel_after_invoke_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_invoke.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -23181,6 +23808,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_cancel_before_invoke_test: openssl_dep_error
 else
 
 
+$(H2_SOCKPAIR_CANCEL_BEFORE_INVOKE_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_cancel_before_invoke_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_before_invoke.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -23201,6 +23829,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_cancel_in_a_vacuum_test: openssl_dep_error
 else
 
 
+$(H2_SOCKPAIR_CANCEL_IN_A_VACUUM_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_cancel_in_a_vacuum_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_in_a_vacuum.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -23221,6 +23850,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_cancel_with_status_test: openssl_dep_error
 else
 
 
+$(H2_SOCKPAIR_CANCEL_WITH_STATUS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_cancel_with_status_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_with_status.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -23241,6 +23871,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_compressed_payload_test: openssl_dep_error
 else
 
 
+$(H2_SOCKPAIR_COMPRESSED_PAYLOAD_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_compressed_payload_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair.a $(LIBDIR)/$(CONFIG)/libend2end_test_compressed_payload.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -23261,6 +23892,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_empty_batch_test: openssl_dep_error
 else
 
 
+$(H2_SOCKPAIR_EMPTY_BATCH_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_empty_batch_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair.a $(LIBDIR)/$(CONFIG)/libend2end_test_empty_batch.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -23281,6 +23913,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_graceful_server_shutdown_test: openssl_dep_error
 else
 
 
+$(H2_SOCKPAIR_GRACEFUL_SERVER_SHUTDOWN_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_graceful_server_shutdown_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair.a $(LIBDIR)/$(CONFIG)/libend2end_test_graceful_server_shutdown.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -23301,6 +23934,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_high_initial_seqno_test: openssl_dep_error
 else
 
 
+$(H2_SOCKPAIR_HIGH_INITIAL_SEQNO_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_high_initial_seqno_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair.a $(LIBDIR)/$(CONFIG)/libend2end_test_high_initial_seqno.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -23321,6 +23955,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_hpack_size_test: openssl_dep_error
 else
 
 
+$(H2_SOCKPAIR_HPACK_SIZE_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_hpack_size_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair.a $(LIBDIR)/$(CONFIG)/libend2end_test_hpack_size.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -23341,6 +23976,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_invoke_large_request_test: openssl_dep_error
 else
 
 
+$(H2_SOCKPAIR_INVOKE_LARGE_REQUEST_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_invoke_large_request_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair.a $(LIBDIR)/$(CONFIG)/libend2end_test_invoke_large_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -23361,6 +23997,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_large_metadata_test: openssl_dep_error
 else
 
 
+$(H2_SOCKPAIR_LARGE_METADATA_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_large_metadata_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair.a $(LIBDIR)/$(CONFIG)/libend2end_test_large_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -23381,6 +24018,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_max_concurrent_streams_test: openssl_dep_error
 else
 
 
+$(H2_SOCKPAIR_MAX_CONCURRENT_STREAMS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_max_concurrent_streams_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair.a $(LIBDIR)/$(CONFIG)/libend2end_test_max_concurrent_streams.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -23401,6 +24039,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_max_message_length_test: openssl_dep_error
 else
 
 
+$(H2_SOCKPAIR_MAX_MESSAGE_LENGTH_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_max_message_length_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair.a $(LIBDIR)/$(CONFIG)/libend2end_test_max_message_length.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -23421,6 +24060,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_metadata_test: openssl_dep_error
 else
 
 
+$(H2_SOCKPAIR_METADATA_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_metadata_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair.a $(LIBDIR)/$(CONFIG)/libend2end_test_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -23441,6 +24081,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_negative_deadline_test: openssl_dep_error
 else
 
 
+$(H2_SOCKPAIR_NEGATIVE_DEADLINE_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_negative_deadline_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair.a $(LIBDIR)/$(CONFIG)/libend2end_test_negative_deadline.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -23461,6 +24102,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_no_op_test: openssl_dep_error
 else
 
 
+$(H2_SOCKPAIR_NO_OP_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_no_op_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair.a $(LIBDIR)/$(CONFIG)/libend2end_test_no_op.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -23481,6 +24123,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_payload_test: openssl_dep_error
 else
 
 
+$(H2_SOCKPAIR_PAYLOAD_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_payload_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair.a $(LIBDIR)/$(CONFIG)/libend2end_test_payload.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -23501,6 +24144,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_ping_pong_streaming_test: openssl_dep_error
 else
 
 
+$(H2_SOCKPAIR_PING_PONG_STREAMING_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_ping_pong_streaming_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair.a $(LIBDIR)/$(CONFIG)/libend2end_test_ping_pong_streaming.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -23521,6 +24165,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_registered_call_test: openssl_dep_error
 else
 
 
+$(H2_SOCKPAIR_REGISTERED_CALL_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_registered_call_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair.a $(LIBDIR)/$(CONFIG)/libend2end_test_registered_call.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -23541,6 +24186,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_request_with_flags_test: openssl_dep_error
 else
 
 
+$(H2_SOCKPAIR_REQUEST_WITH_FLAGS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_request_with_flags_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair.a $(LIBDIR)/$(CONFIG)/libend2end_test_request_with_flags.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -23561,6 +24207,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_request_with_payload_test: openssl_dep_error
 else
 
 
+$(H2_SOCKPAIR_REQUEST_WITH_PAYLOAD_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_request_with_payload_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair.a $(LIBDIR)/$(CONFIG)/libend2end_test_request_with_payload.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -23581,6 +24228,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_server_finishes_request_test: openssl_dep_error
 else
 
 
+$(H2_SOCKPAIR_SERVER_FINISHES_REQUEST_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_server_finishes_request_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair.a $(LIBDIR)/$(CONFIG)/libend2end_test_server_finishes_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -23601,6 +24249,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_shutdown_finishes_calls_test: openssl_dep_error
 else
 
 
+$(H2_SOCKPAIR_SHUTDOWN_FINISHES_CALLS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_shutdown_finishes_calls_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair.a $(LIBDIR)/$(CONFIG)/libend2end_test_shutdown_finishes_calls.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -23621,6 +24270,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_shutdown_finishes_tags_test: openssl_dep_error
 else
 
 
+$(H2_SOCKPAIR_SHUTDOWN_FINISHES_TAGS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_shutdown_finishes_tags_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair.a $(LIBDIR)/$(CONFIG)/libend2end_test_shutdown_finishes_tags.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -23641,6 +24291,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_simple_request_test: openssl_dep_error
 else
 
 
+$(H2_SOCKPAIR_SIMPLE_REQUEST_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_simple_request_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair.a $(LIBDIR)/$(CONFIG)/libend2end_test_simple_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -23661,6 +24312,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_trailing_metadata_test: openssl_dep_error
 else
 
 
+$(H2_SOCKPAIR_TRAILING_METADATA_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_trailing_metadata_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair.a $(LIBDIR)/$(CONFIG)/libend2end_test_trailing_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -23681,6 +24333,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair+trace_bad_hostname_test: openssl_dep_error
 else
 
 
+$(H2_SOCKPAIR+TRACE_BAD_HOSTNAME_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair+trace_bad_hostname_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair+trace.a $(LIBDIR)/$(CONFIG)/libend2end_test_bad_hostname.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -23701,6 +24354,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair+trace_binary_metadata_test: openssl_dep_error
 else
 
 
+$(H2_SOCKPAIR+TRACE_BINARY_METADATA_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair+trace_binary_metadata_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair+trace.a $(LIBDIR)/$(CONFIG)/libend2end_test_binary_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -23721,6 +24375,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair+trace_call_creds_test: openssl_dep_error
 else
 
 
+$(H2_SOCKPAIR+TRACE_CALL_CREDS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair+trace_call_creds_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair+trace.a $(LIBDIR)/$(CONFIG)/libend2end_test_call_creds.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -23741,6 +24396,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair+trace_cancel_after_accept_test: openssl_dep_erro
 else
 
 
+$(H2_SOCKPAIR+TRACE_CANCEL_AFTER_ACCEPT_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair+trace_cancel_after_accept_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair+trace.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_accept.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -23761,6 +24417,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair+trace_cancel_after_client_done_test: openssl_dep
 else
 
 
+$(H2_SOCKPAIR+TRACE_CANCEL_AFTER_CLIENT_DONE_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair+trace_cancel_after_client_done_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair+trace.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_client_done.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -23781,6 +24438,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair+trace_cancel_after_invoke_test: openssl_dep_erro
 else
 
 
+$(H2_SOCKPAIR+TRACE_CANCEL_AFTER_INVOKE_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair+trace_cancel_after_invoke_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair+trace.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_invoke.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -23801,6 +24459,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair+trace_cancel_before_invoke_test: openssl_dep_err
 else
 
 
+$(H2_SOCKPAIR+TRACE_CANCEL_BEFORE_INVOKE_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair+trace_cancel_before_invoke_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair+trace.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_before_invoke.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -23821,6 +24480,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair+trace_cancel_in_a_vacuum_test: openssl_dep_error
 else
 
 
+$(H2_SOCKPAIR+TRACE_CANCEL_IN_A_VACUUM_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair+trace_cancel_in_a_vacuum_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair+trace.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_in_a_vacuum.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -23841,6 +24501,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair+trace_cancel_with_status_test: openssl_dep_error
 else
 
 
+$(H2_SOCKPAIR+TRACE_CANCEL_WITH_STATUS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair+trace_cancel_with_status_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair+trace.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_with_status.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -23861,6 +24522,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair+trace_compressed_payload_test: openssl_dep_error
 else
 
 
+$(H2_SOCKPAIR+TRACE_COMPRESSED_PAYLOAD_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair+trace_compressed_payload_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair+trace.a $(LIBDIR)/$(CONFIG)/libend2end_test_compressed_payload.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -23881,6 +24543,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair+trace_empty_batch_test: openssl_dep_error
 else
 
 
+$(H2_SOCKPAIR+TRACE_EMPTY_BATCH_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair+trace_empty_batch_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair+trace.a $(LIBDIR)/$(CONFIG)/libend2end_test_empty_batch.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -23901,6 +24564,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair+trace_graceful_server_shutdown_test: openssl_dep
 else
 
 
+$(H2_SOCKPAIR+TRACE_GRACEFUL_SERVER_SHUTDOWN_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair+trace_graceful_server_shutdown_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair+trace.a $(LIBDIR)/$(CONFIG)/libend2end_test_graceful_server_shutdown.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -23921,6 +24585,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair+trace_high_initial_seqno_test: openssl_dep_error
 else
 
 
+$(H2_SOCKPAIR+TRACE_HIGH_INITIAL_SEQNO_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair+trace_high_initial_seqno_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair+trace.a $(LIBDIR)/$(CONFIG)/libend2end_test_high_initial_seqno.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -23941,6 +24606,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair+trace_invoke_large_request_test: openssl_dep_err
 else
 
 
+$(H2_SOCKPAIR+TRACE_INVOKE_LARGE_REQUEST_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair+trace_invoke_large_request_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair+trace.a $(LIBDIR)/$(CONFIG)/libend2end_test_invoke_large_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -23961,6 +24627,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair+trace_large_metadata_test: openssl_dep_error
 else
 
 
+$(H2_SOCKPAIR+TRACE_LARGE_METADATA_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair+trace_large_metadata_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair+trace.a $(LIBDIR)/$(CONFIG)/libend2end_test_large_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -23981,6 +24648,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair+trace_max_concurrent_streams_test: openssl_dep_e
 else
 
 
+$(H2_SOCKPAIR+TRACE_MAX_CONCURRENT_STREAMS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair+trace_max_concurrent_streams_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair+trace.a $(LIBDIR)/$(CONFIG)/libend2end_test_max_concurrent_streams.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -24001,6 +24669,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair+trace_max_message_length_test: openssl_dep_error
 else
 
 
+$(H2_SOCKPAIR+TRACE_MAX_MESSAGE_LENGTH_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair+trace_max_message_length_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair+trace.a $(LIBDIR)/$(CONFIG)/libend2end_test_max_message_length.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -24021,6 +24690,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair+trace_metadata_test: openssl_dep_error
 else
 
 
+$(H2_SOCKPAIR+TRACE_METADATA_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair+trace_metadata_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair+trace.a $(LIBDIR)/$(CONFIG)/libend2end_test_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -24041,6 +24711,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair+trace_negative_deadline_test: openssl_dep_error
 else
 
 
+$(H2_SOCKPAIR+TRACE_NEGATIVE_DEADLINE_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair+trace_negative_deadline_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair+trace.a $(LIBDIR)/$(CONFIG)/libend2end_test_negative_deadline.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -24061,6 +24732,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair+trace_no_op_test: openssl_dep_error
 else
 
 
+$(H2_SOCKPAIR+TRACE_NO_OP_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair+trace_no_op_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair+trace.a $(LIBDIR)/$(CONFIG)/libend2end_test_no_op.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -24081,6 +24753,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair+trace_payload_test: openssl_dep_error
 else
 
 
+$(H2_SOCKPAIR+TRACE_PAYLOAD_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair+trace_payload_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair+trace.a $(LIBDIR)/$(CONFIG)/libend2end_test_payload.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -24101,6 +24774,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair+trace_ping_pong_streaming_test: openssl_dep_erro
 else
 
 
+$(H2_SOCKPAIR+TRACE_PING_PONG_STREAMING_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair+trace_ping_pong_streaming_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair+trace.a $(LIBDIR)/$(CONFIG)/libend2end_test_ping_pong_streaming.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -24121,6 +24795,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair+trace_registered_call_test: openssl_dep_error
 else
 
 
+$(H2_SOCKPAIR+TRACE_REGISTERED_CALL_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair+trace_registered_call_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair+trace.a $(LIBDIR)/$(CONFIG)/libend2end_test_registered_call.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -24141,6 +24816,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair+trace_request_with_flags_test: openssl_dep_error
 else
 
 
+$(H2_SOCKPAIR+TRACE_REQUEST_WITH_FLAGS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair+trace_request_with_flags_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair+trace.a $(LIBDIR)/$(CONFIG)/libend2end_test_request_with_flags.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -24161,6 +24837,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair+trace_request_with_payload_test: openssl_dep_err
 else
 
 
+$(H2_SOCKPAIR+TRACE_REQUEST_WITH_PAYLOAD_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair+trace_request_with_payload_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair+trace.a $(LIBDIR)/$(CONFIG)/libend2end_test_request_with_payload.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -24181,6 +24858,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair+trace_server_finishes_request_test: openssl_dep_
 else
 
 
+$(H2_SOCKPAIR+TRACE_SERVER_FINISHES_REQUEST_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair+trace_server_finishes_request_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair+trace.a $(LIBDIR)/$(CONFIG)/libend2end_test_server_finishes_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -24201,6 +24879,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair+trace_shutdown_finishes_calls_test: openssl_dep_
 else
 
 
+$(H2_SOCKPAIR+TRACE_SHUTDOWN_FINISHES_CALLS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair+trace_shutdown_finishes_calls_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair+trace.a $(LIBDIR)/$(CONFIG)/libend2end_test_shutdown_finishes_calls.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -24221,6 +24900,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair+trace_shutdown_finishes_tags_test: openssl_dep_e
 else
 
 
+$(H2_SOCKPAIR+TRACE_SHUTDOWN_FINISHES_TAGS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair+trace_shutdown_finishes_tags_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair+trace.a $(LIBDIR)/$(CONFIG)/libend2end_test_shutdown_finishes_tags.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -24241,6 +24921,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair+trace_simple_request_test: openssl_dep_error
 else
 
 
+$(H2_SOCKPAIR+TRACE_SIMPLE_REQUEST_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair+trace_simple_request_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair+trace.a $(LIBDIR)/$(CONFIG)/libend2end_test_simple_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -24261,6 +24942,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair+trace_trailing_metadata_test: openssl_dep_error
 else
 
 
+$(H2_SOCKPAIR+TRACE_TRAILING_METADATA_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair+trace_trailing_metadata_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair+trace.a $(LIBDIR)/$(CONFIG)/libend2end_test_trailing_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -24281,6 +24963,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_bad_hostname_test: openssl_dep_error
 else
 
 
+$(H2_SOCKPAIR_1BYTE_BAD_HOSTNAME_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_bad_hostname_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair_1byte.a $(LIBDIR)/$(CONFIG)/libend2end_test_bad_hostname.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -24301,6 +24984,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_binary_metadata_test: openssl_dep_error
 else
 
 
+$(H2_SOCKPAIR_1BYTE_BINARY_METADATA_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_binary_metadata_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair_1byte.a $(LIBDIR)/$(CONFIG)/libend2end_test_binary_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -24321,6 +25005,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_call_creds_test: openssl_dep_error
 else
 
 
+$(H2_SOCKPAIR_1BYTE_CALL_CREDS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_call_creds_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair_1byte.a $(LIBDIR)/$(CONFIG)/libend2end_test_call_creds.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -24341,6 +25026,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_cancel_after_accept_test: openssl_dep_erro
 else
 
 
+$(H2_SOCKPAIR_1BYTE_CANCEL_AFTER_ACCEPT_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_cancel_after_accept_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair_1byte.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_accept.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -24361,6 +25047,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_cancel_after_client_done_test: openssl_dep
 else
 
 
+$(H2_SOCKPAIR_1BYTE_CANCEL_AFTER_CLIENT_DONE_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_cancel_after_client_done_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair_1byte.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_client_done.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -24381,6 +25068,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_cancel_after_invoke_test: openssl_dep_erro
 else
 
 
+$(H2_SOCKPAIR_1BYTE_CANCEL_AFTER_INVOKE_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_cancel_after_invoke_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair_1byte.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_invoke.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -24401,6 +25089,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_cancel_before_invoke_test: openssl_dep_err
 else
 
 
+$(H2_SOCKPAIR_1BYTE_CANCEL_BEFORE_INVOKE_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_cancel_before_invoke_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair_1byte.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_before_invoke.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -24421,6 +25110,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_cancel_in_a_vacuum_test: openssl_dep_error
 else
 
 
+$(H2_SOCKPAIR_1BYTE_CANCEL_IN_A_VACUUM_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_cancel_in_a_vacuum_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair_1byte.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_in_a_vacuum.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -24441,6 +25131,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_cancel_with_status_test: openssl_dep_error
 else
 
 
+$(H2_SOCKPAIR_1BYTE_CANCEL_WITH_STATUS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_cancel_with_status_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair_1byte.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_with_status.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -24461,6 +25152,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_compressed_payload_test: openssl_dep_error
 else
 
 
+$(H2_SOCKPAIR_1BYTE_COMPRESSED_PAYLOAD_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_compressed_payload_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair_1byte.a $(LIBDIR)/$(CONFIG)/libend2end_test_compressed_payload.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -24481,6 +25173,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_empty_batch_test: openssl_dep_error
 else
 
 
+$(H2_SOCKPAIR_1BYTE_EMPTY_BATCH_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_empty_batch_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair_1byte.a $(LIBDIR)/$(CONFIG)/libend2end_test_empty_batch.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -24501,6 +25194,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_graceful_server_shutdown_test: openssl_dep
 else
 
 
+$(H2_SOCKPAIR_1BYTE_GRACEFUL_SERVER_SHUTDOWN_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_graceful_server_shutdown_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair_1byte.a $(LIBDIR)/$(CONFIG)/libend2end_test_graceful_server_shutdown.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -24521,6 +25215,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_high_initial_seqno_test: openssl_dep_error
 else
 
 
+$(H2_SOCKPAIR_1BYTE_HIGH_INITIAL_SEQNO_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_high_initial_seqno_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair_1byte.a $(LIBDIR)/$(CONFIG)/libend2end_test_high_initial_seqno.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -24541,6 +25236,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_hpack_size_test: openssl_dep_error
 else
 
 
+$(H2_SOCKPAIR_1BYTE_HPACK_SIZE_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_hpack_size_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair_1byte.a $(LIBDIR)/$(CONFIG)/libend2end_test_hpack_size.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -24561,6 +25257,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_invoke_large_request_test: openssl_dep_err
 else
 
 
+$(H2_SOCKPAIR_1BYTE_INVOKE_LARGE_REQUEST_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_invoke_large_request_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair_1byte.a $(LIBDIR)/$(CONFIG)/libend2end_test_invoke_large_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -24581,6 +25278,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_large_metadata_test: openssl_dep_error
 else
 
 
+$(H2_SOCKPAIR_1BYTE_LARGE_METADATA_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_large_metadata_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair_1byte.a $(LIBDIR)/$(CONFIG)/libend2end_test_large_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -24601,6 +25299,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_max_concurrent_streams_test: openssl_dep_e
 else
 
 
+$(H2_SOCKPAIR_1BYTE_MAX_CONCURRENT_STREAMS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_max_concurrent_streams_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair_1byte.a $(LIBDIR)/$(CONFIG)/libend2end_test_max_concurrent_streams.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -24621,6 +25320,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_max_message_length_test: openssl_dep_error
 else
 
 
+$(H2_SOCKPAIR_1BYTE_MAX_MESSAGE_LENGTH_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_max_message_length_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair_1byte.a $(LIBDIR)/$(CONFIG)/libend2end_test_max_message_length.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -24641,6 +25341,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_metadata_test: openssl_dep_error
 else
 
 
+$(H2_SOCKPAIR_1BYTE_METADATA_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_metadata_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair_1byte.a $(LIBDIR)/$(CONFIG)/libend2end_test_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -24661,6 +25362,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_negative_deadline_test: openssl_dep_error
 else
 
 
+$(H2_SOCKPAIR_1BYTE_NEGATIVE_DEADLINE_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_negative_deadline_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair_1byte.a $(LIBDIR)/$(CONFIG)/libend2end_test_negative_deadline.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -24681,6 +25383,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_no_op_test: openssl_dep_error
 else
 
 
+$(H2_SOCKPAIR_1BYTE_NO_OP_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_no_op_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair_1byte.a $(LIBDIR)/$(CONFIG)/libend2end_test_no_op.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -24701,6 +25404,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_payload_test: openssl_dep_error
 else
 
 
+$(H2_SOCKPAIR_1BYTE_PAYLOAD_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_payload_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair_1byte.a $(LIBDIR)/$(CONFIG)/libend2end_test_payload.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -24721,6 +25425,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_ping_pong_streaming_test: openssl_dep_erro
 else
 
 
+$(H2_SOCKPAIR_1BYTE_PING_PONG_STREAMING_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_ping_pong_streaming_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair_1byte.a $(LIBDIR)/$(CONFIG)/libend2end_test_ping_pong_streaming.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -24741,6 +25446,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_registered_call_test: openssl_dep_error
 else
 
 
+$(H2_SOCKPAIR_1BYTE_REGISTERED_CALL_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_registered_call_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair_1byte.a $(LIBDIR)/$(CONFIG)/libend2end_test_registered_call.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -24761,6 +25467,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_request_with_flags_test: openssl_dep_error
 else
 
 
+$(H2_SOCKPAIR_1BYTE_REQUEST_WITH_FLAGS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_request_with_flags_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair_1byte.a $(LIBDIR)/$(CONFIG)/libend2end_test_request_with_flags.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -24781,6 +25488,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_request_with_payload_test: openssl_dep_err
 else
 
 
+$(H2_SOCKPAIR_1BYTE_REQUEST_WITH_PAYLOAD_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_request_with_payload_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair_1byte.a $(LIBDIR)/$(CONFIG)/libend2end_test_request_with_payload.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -24801,6 +25509,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_server_finishes_request_test: openssl_dep_
 else
 
 
+$(H2_SOCKPAIR_1BYTE_SERVER_FINISHES_REQUEST_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_server_finishes_request_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair_1byte.a $(LIBDIR)/$(CONFIG)/libend2end_test_server_finishes_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -24821,6 +25530,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_shutdown_finishes_calls_test: openssl_dep_
 else
 
 
+$(H2_SOCKPAIR_1BYTE_SHUTDOWN_FINISHES_CALLS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_shutdown_finishes_calls_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair_1byte.a $(LIBDIR)/$(CONFIG)/libend2end_test_shutdown_finishes_calls.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -24841,6 +25551,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_shutdown_finishes_tags_test: openssl_dep_e
 else
 
 
+$(H2_SOCKPAIR_1BYTE_SHUTDOWN_FINISHES_TAGS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_shutdown_finishes_tags_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair_1byte.a $(LIBDIR)/$(CONFIG)/libend2end_test_shutdown_finishes_tags.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -24861,6 +25572,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_simple_request_test: openssl_dep_error
 else
 
 
+$(H2_SOCKPAIR_1BYTE_SIMPLE_REQUEST_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_simple_request_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair_1byte.a $(LIBDIR)/$(CONFIG)/libend2end_test_simple_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -24881,6 +25593,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_trailing_metadata_test: openssl_dep_error
 else
 
 
+$(H2_SOCKPAIR_1BYTE_TRAILING_METADATA_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_trailing_metadata_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_sockpair_1byte.a $(LIBDIR)/$(CONFIG)/libend2end_test_trailing_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -24901,6 +25614,7 @@ $(BINDIR)/$(CONFIG)/h2_ssl_bad_hostname_test: openssl_dep_error
 else
 
 
+$(H2_SSL_BAD_HOSTNAME_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_ssl_bad_hostname_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl.a $(LIBDIR)/$(CONFIG)/libend2end_test_bad_hostname.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -24921,6 +25635,7 @@ $(BINDIR)/$(CONFIG)/h2_ssl_binary_metadata_test: openssl_dep_error
 else
 
 
+$(H2_SSL_BINARY_METADATA_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_ssl_binary_metadata_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl.a $(LIBDIR)/$(CONFIG)/libend2end_test_binary_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -24941,6 +25656,7 @@ $(BINDIR)/$(CONFIG)/h2_ssl_call_creds_test: openssl_dep_error
 else
 
 
+$(H2_SSL_CALL_CREDS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_ssl_call_creds_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl.a $(LIBDIR)/$(CONFIG)/libend2end_test_call_creds.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -24961,6 +25677,7 @@ $(BINDIR)/$(CONFIG)/h2_ssl_cancel_after_accept_test: openssl_dep_error
 else
 
 
+$(H2_SSL_CANCEL_AFTER_ACCEPT_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_ssl_cancel_after_accept_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_accept.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -24981,6 +25698,7 @@ $(BINDIR)/$(CONFIG)/h2_ssl_cancel_after_client_done_test: openssl_dep_error
 else
 
 
+$(H2_SSL_CANCEL_AFTER_CLIENT_DONE_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_ssl_cancel_after_client_done_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_client_done.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -25001,6 +25719,7 @@ $(BINDIR)/$(CONFIG)/h2_ssl_cancel_after_invoke_test: openssl_dep_error
 else
 
 
+$(H2_SSL_CANCEL_AFTER_INVOKE_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_ssl_cancel_after_invoke_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_invoke.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -25021,6 +25740,7 @@ $(BINDIR)/$(CONFIG)/h2_ssl_cancel_before_invoke_test: openssl_dep_error
 else
 
 
+$(H2_SSL_CANCEL_BEFORE_INVOKE_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_ssl_cancel_before_invoke_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_before_invoke.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -25041,6 +25761,7 @@ $(BINDIR)/$(CONFIG)/h2_ssl_cancel_in_a_vacuum_test: openssl_dep_error
 else
 
 
+$(H2_SSL_CANCEL_IN_A_VACUUM_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_ssl_cancel_in_a_vacuum_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_in_a_vacuum.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -25061,6 +25782,7 @@ $(BINDIR)/$(CONFIG)/h2_ssl_cancel_with_status_test: openssl_dep_error
 else
 
 
+$(H2_SSL_CANCEL_WITH_STATUS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_ssl_cancel_with_status_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_with_status.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -25081,6 +25803,7 @@ $(BINDIR)/$(CONFIG)/h2_ssl_channel_connectivity_test: openssl_dep_error
 else
 
 
+$(H2_SSL_CHANNEL_CONNECTIVITY_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_ssl_channel_connectivity_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl.a $(LIBDIR)/$(CONFIG)/libend2end_test_channel_connectivity.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -25101,6 +25824,7 @@ $(BINDIR)/$(CONFIG)/h2_ssl_channel_ping_test: openssl_dep_error
 else
 
 
+$(H2_SSL_CHANNEL_PING_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_ssl_channel_ping_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl.a $(LIBDIR)/$(CONFIG)/libend2end_test_channel_ping.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -25121,6 +25845,7 @@ $(BINDIR)/$(CONFIG)/h2_ssl_compressed_payload_test: openssl_dep_error
 else
 
 
+$(H2_SSL_COMPRESSED_PAYLOAD_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_ssl_compressed_payload_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl.a $(LIBDIR)/$(CONFIG)/libend2end_test_compressed_payload.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -25141,6 +25866,7 @@ $(BINDIR)/$(CONFIG)/h2_ssl_default_host_test: openssl_dep_error
 else
 
 
+$(H2_SSL_DEFAULT_HOST_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_ssl_default_host_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl.a $(LIBDIR)/$(CONFIG)/libend2end_test_default_host.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -25161,6 +25887,7 @@ $(BINDIR)/$(CONFIG)/h2_ssl_disappearing_server_test: openssl_dep_error
 else
 
 
+$(H2_SSL_DISAPPEARING_SERVER_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_ssl_disappearing_server_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl.a $(LIBDIR)/$(CONFIG)/libend2end_test_disappearing_server.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -25181,6 +25908,7 @@ $(BINDIR)/$(CONFIG)/h2_ssl_empty_batch_test: openssl_dep_error
 else
 
 
+$(H2_SSL_EMPTY_BATCH_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_ssl_empty_batch_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl.a $(LIBDIR)/$(CONFIG)/libend2end_test_empty_batch.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -25201,6 +25929,7 @@ $(BINDIR)/$(CONFIG)/h2_ssl_graceful_server_shutdown_test: openssl_dep_error
 else
 
 
+$(H2_SSL_GRACEFUL_SERVER_SHUTDOWN_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_ssl_graceful_server_shutdown_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl.a $(LIBDIR)/$(CONFIG)/libend2end_test_graceful_server_shutdown.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -25221,6 +25950,7 @@ $(BINDIR)/$(CONFIG)/h2_ssl_high_initial_seqno_test: openssl_dep_error
 else
 
 
+$(H2_SSL_HIGH_INITIAL_SEQNO_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_ssl_high_initial_seqno_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl.a $(LIBDIR)/$(CONFIG)/libend2end_test_high_initial_seqno.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -25241,6 +25971,7 @@ $(BINDIR)/$(CONFIG)/h2_ssl_hpack_size_test: openssl_dep_error
 else
 
 
+$(H2_SSL_HPACK_SIZE_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_ssl_hpack_size_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl.a $(LIBDIR)/$(CONFIG)/libend2end_test_hpack_size.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -25261,6 +25992,7 @@ $(BINDIR)/$(CONFIG)/h2_ssl_invoke_large_request_test: openssl_dep_error
 else
 
 
+$(H2_SSL_INVOKE_LARGE_REQUEST_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_ssl_invoke_large_request_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl.a $(LIBDIR)/$(CONFIG)/libend2end_test_invoke_large_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -25281,6 +26013,7 @@ $(BINDIR)/$(CONFIG)/h2_ssl_large_metadata_test: openssl_dep_error
 else
 
 
+$(H2_SSL_LARGE_METADATA_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_ssl_large_metadata_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl.a $(LIBDIR)/$(CONFIG)/libend2end_test_large_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -25301,6 +26034,7 @@ $(BINDIR)/$(CONFIG)/h2_ssl_max_concurrent_streams_test: openssl_dep_error
 else
 
 
+$(H2_SSL_MAX_CONCURRENT_STREAMS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_ssl_max_concurrent_streams_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl.a $(LIBDIR)/$(CONFIG)/libend2end_test_max_concurrent_streams.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -25321,6 +26055,7 @@ $(BINDIR)/$(CONFIG)/h2_ssl_max_message_length_test: openssl_dep_error
 else
 
 
+$(H2_SSL_MAX_MESSAGE_LENGTH_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_ssl_max_message_length_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl.a $(LIBDIR)/$(CONFIG)/libend2end_test_max_message_length.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -25341,6 +26076,7 @@ $(BINDIR)/$(CONFIG)/h2_ssl_metadata_test: openssl_dep_error
 else
 
 
+$(H2_SSL_METADATA_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_ssl_metadata_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl.a $(LIBDIR)/$(CONFIG)/libend2end_test_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -25361,6 +26097,7 @@ $(BINDIR)/$(CONFIG)/h2_ssl_negative_deadline_test: openssl_dep_error
 else
 
 
+$(H2_SSL_NEGATIVE_DEADLINE_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_ssl_negative_deadline_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl.a $(LIBDIR)/$(CONFIG)/libend2end_test_negative_deadline.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -25381,6 +26118,7 @@ $(BINDIR)/$(CONFIG)/h2_ssl_no_op_test: openssl_dep_error
 else
 
 
+$(H2_SSL_NO_OP_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_ssl_no_op_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl.a $(LIBDIR)/$(CONFIG)/libend2end_test_no_op.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -25401,6 +26139,7 @@ $(BINDIR)/$(CONFIG)/h2_ssl_payload_test: openssl_dep_error
 else
 
 
+$(H2_SSL_PAYLOAD_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_ssl_payload_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl.a $(LIBDIR)/$(CONFIG)/libend2end_test_payload.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -25421,6 +26160,7 @@ $(BINDIR)/$(CONFIG)/h2_ssl_ping_pong_streaming_test: openssl_dep_error
 else
 
 
+$(H2_SSL_PING_PONG_STREAMING_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_ssl_ping_pong_streaming_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl.a $(LIBDIR)/$(CONFIG)/libend2end_test_ping_pong_streaming.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -25441,6 +26181,7 @@ $(BINDIR)/$(CONFIG)/h2_ssl_registered_call_test: openssl_dep_error
 else
 
 
+$(H2_SSL_REGISTERED_CALL_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_ssl_registered_call_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl.a $(LIBDIR)/$(CONFIG)/libend2end_test_registered_call.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -25461,6 +26202,7 @@ $(BINDIR)/$(CONFIG)/h2_ssl_request_with_flags_test: openssl_dep_error
 else
 
 
+$(H2_SSL_REQUEST_WITH_FLAGS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_ssl_request_with_flags_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl.a $(LIBDIR)/$(CONFIG)/libend2end_test_request_with_flags.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -25481,6 +26223,7 @@ $(BINDIR)/$(CONFIG)/h2_ssl_request_with_payload_test: openssl_dep_error
 else
 
 
+$(H2_SSL_REQUEST_WITH_PAYLOAD_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_ssl_request_with_payload_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl.a $(LIBDIR)/$(CONFIG)/libend2end_test_request_with_payload.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -25501,6 +26244,7 @@ $(BINDIR)/$(CONFIG)/h2_ssl_server_finishes_request_test: openssl_dep_error
 else
 
 
+$(H2_SSL_SERVER_FINISHES_REQUEST_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_ssl_server_finishes_request_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl.a $(LIBDIR)/$(CONFIG)/libend2end_test_server_finishes_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -25521,6 +26265,7 @@ $(BINDIR)/$(CONFIG)/h2_ssl_shutdown_finishes_calls_test: openssl_dep_error
 else
 
 
+$(H2_SSL_SHUTDOWN_FINISHES_CALLS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_ssl_shutdown_finishes_calls_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl.a $(LIBDIR)/$(CONFIG)/libend2end_test_shutdown_finishes_calls.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -25541,6 +26286,7 @@ $(BINDIR)/$(CONFIG)/h2_ssl_shutdown_finishes_tags_test: openssl_dep_error
 else
 
 
+$(H2_SSL_SHUTDOWN_FINISHES_TAGS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_ssl_shutdown_finishes_tags_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl.a $(LIBDIR)/$(CONFIG)/libend2end_test_shutdown_finishes_tags.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -25561,6 +26307,7 @@ $(BINDIR)/$(CONFIG)/h2_ssl_simple_delayed_request_test: openssl_dep_error
 else
 
 
+$(H2_SSL_SIMPLE_DELAYED_REQUEST_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_ssl_simple_delayed_request_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl.a $(LIBDIR)/$(CONFIG)/libend2end_test_simple_delayed_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -25581,6 +26328,7 @@ $(BINDIR)/$(CONFIG)/h2_ssl_simple_request_test: openssl_dep_error
 else
 
 
+$(H2_SSL_SIMPLE_REQUEST_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_ssl_simple_request_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl.a $(LIBDIR)/$(CONFIG)/libend2end_test_simple_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -25601,6 +26349,7 @@ $(BINDIR)/$(CONFIG)/h2_ssl_trailing_metadata_test: openssl_dep_error
 else
 
 
+$(H2_SSL_TRAILING_METADATA_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_ssl_trailing_metadata_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl.a $(LIBDIR)/$(CONFIG)/libend2end_test_trailing_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -25621,6 +26370,7 @@ $(BINDIR)/$(CONFIG)/h2_ssl+poll_bad_hostname_test: openssl_dep_error
 else
 
 
+$(H2_SSL+POLL_BAD_HOSTNAME_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_ssl+poll_bad_hostname_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_bad_hostname.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -25641,6 +26391,7 @@ $(BINDIR)/$(CONFIG)/h2_ssl+poll_binary_metadata_test: openssl_dep_error
 else
 
 
+$(H2_SSL+POLL_BINARY_METADATA_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_ssl+poll_binary_metadata_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_binary_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -25661,6 +26412,7 @@ $(BINDIR)/$(CONFIG)/h2_ssl+poll_call_creds_test: openssl_dep_error
 else
 
 
+$(H2_SSL+POLL_CALL_CREDS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_ssl+poll_call_creds_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_call_creds.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -25681,6 +26433,7 @@ $(BINDIR)/$(CONFIG)/h2_ssl+poll_cancel_after_accept_test: openssl_dep_error
 else
 
 
+$(H2_SSL+POLL_CANCEL_AFTER_ACCEPT_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_ssl+poll_cancel_after_accept_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_accept.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -25701,6 +26454,7 @@ $(BINDIR)/$(CONFIG)/h2_ssl+poll_cancel_after_client_done_test: openssl_dep_error
 else
 
 
+$(H2_SSL+POLL_CANCEL_AFTER_CLIENT_DONE_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_ssl+poll_cancel_after_client_done_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_client_done.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -25721,6 +26475,7 @@ $(BINDIR)/$(CONFIG)/h2_ssl+poll_cancel_after_invoke_test: openssl_dep_error
 else
 
 
+$(H2_SSL+POLL_CANCEL_AFTER_INVOKE_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_ssl+poll_cancel_after_invoke_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_invoke.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -25741,6 +26496,7 @@ $(BINDIR)/$(CONFIG)/h2_ssl+poll_cancel_before_invoke_test: openssl_dep_error
 else
 
 
+$(H2_SSL+POLL_CANCEL_BEFORE_INVOKE_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_ssl+poll_cancel_before_invoke_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_before_invoke.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -25761,6 +26517,7 @@ $(BINDIR)/$(CONFIG)/h2_ssl+poll_cancel_in_a_vacuum_test: openssl_dep_error
 else
 
 
+$(H2_SSL+POLL_CANCEL_IN_A_VACUUM_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_ssl+poll_cancel_in_a_vacuum_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_in_a_vacuum.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -25781,6 +26538,7 @@ $(BINDIR)/$(CONFIG)/h2_ssl+poll_cancel_with_status_test: openssl_dep_error
 else
 
 
+$(H2_SSL+POLL_CANCEL_WITH_STATUS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_ssl+poll_cancel_with_status_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_with_status.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -25801,6 +26559,7 @@ $(BINDIR)/$(CONFIG)/h2_ssl+poll_channel_connectivity_test: openssl_dep_error
 else
 
 
+$(H2_SSL+POLL_CHANNEL_CONNECTIVITY_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_ssl+poll_channel_connectivity_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_channel_connectivity.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -25821,6 +26580,7 @@ $(BINDIR)/$(CONFIG)/h2_ssl+poll_channel_ping_test: openssl_dep_error
 else
 
 
+$(H2_SSL+POLL_CHANNEL_PING_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_ssl+poll_channel_ping_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_channel_ping.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -25841,6 +26601,7 @@ $(BINDIR)/$(CONFIG)/h2_ssl+poll_compressed_payload_test: openssl_dep_error
 else
 
 
+$(H2_SSL+POLL_COMPRESSED_PAYLOAD_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_ssl+poll_compressed_payload_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_compressed_payload.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -25861,6 +26622,7 @@ $(BINDIR)/$(CONFIG)/h2_ssl+poll_default_host_test: openssl_dep_error
 else
 
 
+$(H2_SSL+POLL_DEFAULT_HOST_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_ssl+poll_default_host_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_default_host.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -25881,6 +26643,7 @@ $(BINDIR)/$(CONFIG)/h2_ssl+poll_disappearing_server_test: openssl_dep_error
 else
 
 
+$(H2_SSL+POLL_DISAPPEARING_SERVER_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_ssl+poll_disappearing_server_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_disappearing_server.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -25901,6 +26664,7 @@ $(BINDIR)/$(CONFIG)/h2_ssl+poll_empty_batch_test: openssl_dep_error
 else
 
 
+$(H2_SSL+POLL_EMPTY_BATCH_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_ssl+poll_empty_batch_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_empty_batch.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -25921,6 +26685,7 @@ $(BINDIR)/$(CONFIG)/h2_ssl+poll_graceful_server_shutdown_test: openssl_dep_error
 else
 
 
+$(H2_SSL+POLL_GRACEFUL_SERVER_SHUTDOWN_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_ssl+poll_graceful_server_shutdown_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_graceful_server_shutdown.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -25941,6 +26706,7 @@ $(BINDIR)/$(CONFIG)/h2_ssl+poll_high_initial_seqno_test: openssl_dep_error
 else
 
 
+$(H2_SSL+POLL_HIGH_INITIAL_SEQNO_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_ssl+poll_high_initial_seqno_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_high_initial_seqno.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -25961,6 +26727,7 @@ $(BINDIR)/$(CONFIG)/h2_ssl+poll_hpack_size_test: openssl_dep_error
 else
 
 
+$(H2_SSL+POLL_HPACK_SIZE_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_ssl+poll_hpack_size_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_hpack_size.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -25981,6 +26748,7 @@ $(BINDIR)/$(CONFIG)/h2_ssl+poll_invoke_large_request_test: openssl_dep_error
 else
 
 
+$(H2_SSL+POLL_INVOKE_LARGE_REQUEST_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_ssl+poll_invoke_large_request_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_invoke_large_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -26001,6 +26769,7 @@ $(BINDIR)/$(CONFIG)/h2_ssl+poll_large_metadata_test: openssl_dep_error
 else
 
 
+$(H2_SSL+POLL_LARGE_METADATA_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_ssl+poll_large_metadata_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_large_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -26021,6 +26790,7 @@ $(BINDIR)/$(CONFIG)/h2_ssl+poll_max_concurrent_streams_test: openssl_dep_error
 else
 
 
+$(H2_SSL+POLL_MAX_CONCURRENT_STREAMS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_ssl+poll_max_concurrent_streams_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_max_concurrent_streams.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -26041,6 +26811,7 @@ $(BINDIR)/$(CONFIG)/h2_ssl+poll_max_message_length_test: openssl_dep_error
 else
 
 
+$(H2_SSL+POLL_MAX_MESSAGE_LENGTH_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_ssl+poll_max_message_length_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_max_message_length.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -26061,6 +26832,7 @@ $(BINDIR)/$(CONFIG)/h2_ssl+poll_metadata_test: openssl_dep_error
 else
 
 
+$(H2_SSL+POLL_METADATA_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_ssl+poll_metadata_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -26081,6 +26853,7 @@ $(BINDIR)/$(CONFIG)/h2_ssl+poll_negative_deadline_test: openssl_dep_error
 else
 
 
+$(H2_SSL+POLL_NEGATIVE_DEADLINE_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_ssl+poll_negative_deadline_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_negative_deadline.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -26101,6 +26874,7 @@ $(BINDIR)/$(CONFIG)/h2_ssl+poll_no_op_test: openssl_dep_error
 else
 
 
+$(H2_SSL+POLL_NO_OP_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_ssl+poll_no_op_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_no_op.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -26121,6 +26895,7 @@ $(BINDIR)/$(CONFIG)/h2_ssl+poll_payload_test: openssl_dep_error
 else
 
 
+$(H2_SSL+POLL_PAYLOAD_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_ssl+poll_payload_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_payload.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -26141,6 +26916,7 @@ $(BINDIR)/$(CONFIG)/h2_ssl+poll_ping_pong_streaming_test: openssl_dep_error
 else
 
 
+$(H2_SSL+POLL_PING_PONG_STREAMING_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_ssl+poll_ping_pong_streaming_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_ping_pong_streaming.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -26161,6 +26937,7 @@ $(BINDIR)/$(CONFIG)/h2_ssl+poll_registered_call_test: openssl_dep_error
 else
 
 
+$(H2_SSL+POLL_REGISTERED_CALL_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_ssl+poll_registered_call_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_registered_call.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -26181,6 +26958,7 @@ $(BINDIR)/$(CONFIG)/h2_ssl+poll_request_with_flags_test: openssl_dep_error
 else
 
 
+$(H2_SSL+POLL_REQUEST_WITH_FLAGS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_ssl+poll_request_with_flags_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_request_with_flags.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -26201,6 +26979,7 @@ $(BINDIR)/$(CONFIG)/h2_ssl+poll_request_with_payload_test: openssl_dep_error
 else
 
 
+$(H2_SSL+POLL_REQUEST_WITH_PAYLOAD_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_ssl+poll_request_with_payload_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_request_with_payload.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -26221,6 +27000,7 @@ $(BINDIR)/$(CONFIG)/h2_ssl+poll_server_finishes_request_test: openssl_dep_error
 else
 
 
+$(H2_SSL+POLL_SERVER_FINISHES_REQUEST_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_ssl+poll_server_finishes_request_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_server_finishes_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -26241,6 +27021,7 @@ $(BINDIR)/$(CONFIG)/h2_ssl+poll_shutdown_finishes_calls_test: openssl_dep_error
 else
 
 
+$(H2_SSL+POLL_SHUTDOWN_FINISHES_CALLS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_ssl+poll_shutdown_finishes_calls_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_shutdown_finishes_calls.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -26261,6 +27042,7 @@ $(BINDIR)/$(CONFIG)/h2_ssl+poll_shutdown_finishes_tags_test: openssl_dep_error
 else
 
 
+$(H2_SSL+POLL_SHUTDOWN_FINISHES_TAGS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_ssl+poll_shutdown_finishes_tags_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_shutdown_finishes_tags.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -26281,6 +27063,7 @@ $(BINDIR)/$(CONFIG)/h2_ssl+poll_simple_delayed_request_test: openssl_dep_error
 else
 
 
+$(H2_SSL+POLL_SIMPLE_DELAYED_REQUEST_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_ssl+poll_simple_delayed_request_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_simple_delayed_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -26301,6 +27084,7 @@ $(BINDIR)/$(CONFIG)/h2_ssl+poll_simple_request_test: openssl_dep_error
 else
 
 
+$(H2_SSL+POLL_SIMPLE_REQUEST_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_ssl+poll_simple_request_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_simple_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -26321,6 +27105,7 @@ $(BINDIR)/$(CONFIG)/h2_ssl+poll_trailing_metadata_test: openssl_dep_error
 else
 
 
+$(H2_SSL+POLL_TRAILING_METADATA_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_ssl+poll_trailing_metadata_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_trailing_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -26341,6 +27126,7 @@ $(BINDIR)/$(CONFIG)/h2_ssl_proxy_bad_hostname_test: openssl_dep_error
 else
 
 
+$(H2_SSL_PROXY_BAD_HOSTNAME_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_ssl_proxy_bad_hostname_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_test_bad_hostname.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -26361,6 +27147,7 @@ $(BINDIR)/$(CONFIG)/h2_ssl_proxy_binary_metadata_test: openssl_dep_error
 else
 
 
+$(H2_SSL_PROXY_BINARY_METADATA_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_ssl_proxy_binary_metadata_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_test_binary_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -26381,6 +27168,7 @@ $(BINDIR)/$(CONFIG)/h2_ssl_proxy_call_creds_test: openssl_dep_error
 else
 
 
+$(H2_SSL_PROXY_CALL_CREDS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_ssl_proxy_call_creds_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_test_call_creds.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -26401,6 +27189,7 @@ $(BINDIR)/$(CONFIG)/h2_ssl_proxy_cancel_after_accept_test: openssl_dep_error
 else
 
 
+$(H2_SSL_PROXY_CANCEL_AFTER_ACCEPT_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_ssl_proxy_cancel_after_accept_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_accept.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -26421,6 +27210,7 @@ $(BINDIR)/$(CONFIG)/h2_ssl_proxy_cancel_after_client_done_test: openssl_dep_erro
 else
 
 
+$(H2_SSL_PROXY_CANCEL_AFTER_CLIENT_DONE_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_ssl_proxy_cancel_after_client_done_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_client_done.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -26441,6 +27231,7 @@ $(BINDIR)/$(CONFIG)/h2_ssl_proxy_cancel_after_invoke_test: openssl_dep_error
 else
 
 
+$(H2_SSL_PROXY_CANCEL_AFTER_INVOKE_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_ssl_proxy_cancel_after_invoke_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_invoke.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -26461,6 +27252,7 @@ $(BINDIR)/$(CONFIG)/h2_ssl_proxy_cancel_before_invoke_test: openssl_dep_error
 else
 
 
+$(H2_SSL_PROXY_CANCEL_BEFORE_INVOKE_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_ssl_proxy_cancel_before_invoke_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_before_invoke.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -26481,6 +27273,7 @@ $(BINDIR)/$(CONFIG)/h2_ssl_proxy_cancel_in_a_vacuum_test: openssl_dep_error
 else
 
 
+$(H2_SSL_PROXY_CANCEL_IN_A_VACUUM_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_ssl_proxy_cancel_in_a_vacuum_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_in_a_vacuum.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -26501,6 +27294,7 @@ $(BINDIR)/$(CONFIG)/h2_ssl_proxy_cancel_with_status_test: openssl_dep_error
 else
 
 
+$(H2_SSL_PROXY_CANCEL_WITH_STATUS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_ssl_proxy_cancel_with_status_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_with_status.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -26521,6 +27315,7 @@ $(BINDIR)/$(CONFIG)/h2_ssl_proxy_default_host_test: openssl_dep_error
 else
 
 
+$(H2_SSL_PROXY_DEFAULT_HOST_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_ssl_proxy_default_host_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_test_default_host.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -26541,6 +27336,7 @@ $(BINDIR)/$(CONFIG)/h2_ssl_proxy_disappearing_server_test: openssl_dep_error
 else
 
 
+$(H2_SSL_PROXY_DISAPPEARING_SERVER_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_ssl_proxy_disappearing_server_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_test_disappearing_server.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -26561,6 +27357,7 @@ $(BINDIR)/$(CONFIG)/h2_ssl_proxy_empty_batch_test: openssl_dep_error
 else
 
 
+$(H2_SSL_PROXY_EMPTY_BATCH_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_ssl_proxy_empty_batch_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_test_empty_batch.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -26581,6 +27378,7 @@ $(BINDIR)/$(CONFIG)/h2_ssl_proxy_graceful_server_shutdown_test: openssl_dep_erro
 else
 
 
+$(H2_SSL_PROXY_GRACEFUL_SERVER_SHUTDOWN_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_ssl_proxy_graceful_server_shutdown_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_test_graceful_server_shutdown.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -26601,6 +27399,7 @@ $(BINDIR)/$(CONFIG)/h2_ssl_proxy_high_initial_seqno_test: openssl_dep_error
 else
 
 
+$(H2_SSL_PROXY_HIGH_INITIAL_SEQNO_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_ssl_proxy_high_initial_seqno_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_test_high_initial_seqno.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -26621,6 +27420,7 @@ $(BINDIR)/$(CONFIG)/h2_ssl_proxy_invoke_large_request_test: openssl_dep_error
 else
 
 
+$(H2_SSL_PROXY_INVOKE_LARGE_REQUEST_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_ssl_proxy_invoke_large_request_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_test_invoke_large_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -26641,6 +27441,7 @@ $(BINDIR)/$(CONFIG)/h2_ssl_proxy_large_metadata_test: openssl_dep_error
 else
 
 
+$(H2_SSL_PROXY_LARGE_METADATA_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_ssl_proxy_large_metadata_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_test_large_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -26661,6 +27462,7 @@ $(BINDIR)/$(CONFIG)/h2_ssl_proxy_max_message_length_test: openssl_dep_error
 else
 
 
+$(H2_SSL_PROXY_MAX_MESSAGE_LENGTH_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_ssl_proxy_max_message_length_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_test_max_message_length.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -26681,6 +27483,7 @@ $(BINDIR)/$(CONFIG)/h2_ssl_proxy_metadata_test: openssl_dep_error
 else
 
 
+$(H2_SSL_PROXY_METADATA_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_ssl_proxy_metadata_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_test_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -26701,6 +27504,7 @@ $(BINDIR)/$(CONFIG)/h2_ssl_proxy_negative_deadline_test: openssl_dep_error
 else
 
 
+$(H2_SSL_PROXY_NEGATIVE_DEADLINE_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_ssl_proxy_negative_deadline_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_test_negative_deadline.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -26721,6 +27525,7 @@ $(BINDIR)/$(CONFIG)/h2_ssl_proxy_no_op_test: openssl_dep_error
 else
 
 
+$(H2_SSL_PROXY_NO_OP_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_ssl_proxy_no_op_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_test_no_op.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -26741,6 +27546,7 @@ $(BINDIR)/$(CONFIG)/h2_ssl_proxy_payload_test: openssl_dep_error
 else
 
 
+$(H2_SSL_PROXY_PAYLOAD_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_ssl_proxy_payload_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_test_payload.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -26761,6 +27567,7 @@ $(BINDIR)/$(CONFIG)/h2_ssl_proxy_ping_pong_streaming_test: openssl_dep_error
 else
 
 
+$(H2_SSL_PROXY_PING_PONG_STREAMING_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_ssl_proxy_ping_pong_streaming_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_test_ping_pong_streaming.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -26781,6 +27588,7 @@ $(BINDIR)/$(CONFIG)/h2_ssl_proxy_registered_call_test: openssl_dep_error
 else
 
 
+$(H2_SSL_PROXY_REGISTERED_CALL_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_ssl_proxy_registered_call_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_test_registered_call.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -26801,6 +27609,7 @@ $(BINDIR)/$(CONFIG)/h2_ssl_proxy_request_with_payload_test: openssl_dep_error
 else
 
 
+$(H2_SSL_PROXY_REQUEST_WITH_PAYLOAD_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_ssl_proxy_request_with_payload_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_test_request_with_payload.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -26821,6 +27630,7 @@ $(BINDIR)/$(CONFIG)/h2_ssl_proxy_server_finishes_request_test: openssl_dep_error
 else
 
 
+$(H2_SSL_PROXY_SERVER_FINISHES_REQUEST_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_ssl_proxy_server_finishes_request_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_test_server_finishes_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -26841,6 +27651,7 @@ $(BINDIR)/$(CONFIG)/h2_ssl_proxy_shutdown_finishes_calls_test: openssl_dep_error
 else
 
 
+$(H2_SSL_PROXY_SHUTDOWN_FINISHES_CALLS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_ssl_proxy_shutdown_finishes_calls_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_test_shutdown_finishes_calls.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -26861,6 +27672,7 @@ $(BINDIR)/$(CONFIG)/h2_ssl_proxy_shutdown_finishes_tags_test: openssl_dep_error
 else
 
 
+$(H2_SSL_PROXY_SHUTDOWN_FINISHES_TAGS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_ssl_proxy_shutdown_finishes_tags_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_test_shutdown_finishes_tags.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -26881,6 +27693,7 @@ $(BINDIR)/$(CONFIG)/h2_ssl_proxy_simple_delayed_request_test: openssl_dep_error
 else
 
 
+$(H2_SSL_PROXY_SIMPLE_DELAYED_REQUEST_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_ssl_proxy_simple_delayed_request_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_test_simple_delayed_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -26901,6 +27714,7 @@ $(BINDIR)/$(CONFIG)/h2_ssl_proxy_simple_request_test: openssl_dep_error
 else
 
 
+$(H2_SSL_PROXY_SIMPLE_REQUEST_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_ssl_proxy_simple_request_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_test_simple_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -26921,6 +27735,7 @@ $(BINDIR)/$(CONFIG)/h2_ssl_proxy_trailing_metadata_test: openssl_dep_error
 else
 
 
+$(H2_SSL_PROXY_TRAILING_METADATA_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_ssl_proxy_trailing_metadata_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_ssl_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_test_trailing_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -26941,6 +27756,7 @@ $(BINDIR)/$(CONFIG)/h2_uchannel_bad_hostname_test: openssl_dep_error
 else
 
 
+$(H2_UCHANNEL_BAD_HOSTNAME_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uchannel_bad_hostname_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_test_bad_hostname.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -26961,6 +27777,7 @@ $(BINDIR)/$(CONFIG)/h2_uchannel_binary_metadata_test: openssl_dep_error
 else
 
 
+$(H2_UCHANNEL_BINARY_METADATA_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uchannel_binary_metadata_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_test_binary_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -26981,6 +27798,7 @@ $(BINDIR)/$(CONFIG)/h2_uchannel_call_creds_test: openssl_dep_error
 else
 
 
+$(H2_UCHANNEL_CALL_CREDS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uchannel_call_creds_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_test_call_creds.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -27001,6 +27819,7 @@ $(BINDIR)/$(CONFIG)/h2_uchannel_cancel_after_accept_test: openssl_dep_error
 else
 
 
+$(H2_UCHANNEL_CANCEL_AFTER_ACCEPT_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uchannel_cancel_after_accept_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_accept.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -27021,6 +27840,7 @@ $(BINDIR)/$(CONFIG)/h2_uchannel_cancel_after_client_done_test: openssl_dep_error
 else
 
 
+$(H2_UCHANNEL_CANCEL_AFTER_CLIENT_DONE_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uchannel_cancel_after_client_done_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_client_done.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -27041,6 +27861,7 @@ $(BINDIR)/$(CONFIG)/h2_uchannel_cancel_after_invoke_test: openssl_dep_error
 else
 
 
+$(H2_UCHANNEL_CANCEL_AFTER_INVOKE_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uchannel_cancel_after_invoke_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_invoke.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -27061,6 +27882,7 @@ $(BINDIR)/$(CONFIG)/h2_uchannel_cancel_before_invoke_test: openssl_dep_error
 else
 
 
+$(H2_UCHANNEL_CANCEL_BEFORE_INVOKE_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uchannel_cancel_before_invoke_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_before_invoke.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -27081,6 +27903,7 @@ $(BINDIR)/$(CONFIG)/h2_uchannel_cancel_in_a_vacuum_test: openssl_dep_error
 else
 
 
+$(H2_UCHANNEL_CANCEL_IN_A_VACUUM_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uchannel_cancel_in_a_vacuum_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_in_a_vacuum.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -27101,6 +27924,7 @@ $(BINDIR)/$(CONFIG)/h2_uchannel_cancel_with_status_test: openssl_dep_error
 else
 
 
+$(H2_UCHANNEL_CANCEL_WITH_STATUS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uchannel_cancel_with_status_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_with_status.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -27121,6 +27945,7 @@ $(BINDIR)/$(CONFIG)/h2_uchannel_compressed_payload_test: openssl_dep_error
 else
 
 
+$(H2_UCHANNEL_COMPRESSED_PAYLOAD_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uchannel_compressed_payload_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_test_compressed_payload.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -27141,6 +27966,7 @@ $(BINDIR)/$(CONFIG)/h2_uchannel_empty_batch_test: openssl_dep_error
 else
 
 
+$(H2_UCHANNEL_EMPTY_BATCH_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uchannel_empty_batch_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_test_empty_batch.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -27161,6 +27987,7 @@ $(BINDIR)/$(CONFIG)/h2_uchannel_graceful_server_shutdown_test: openssl_dep_error
 else
 
 
+$(H2_UCHANNEL_GRACEFUL_SERVER_SHUTDOWN_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uchannel_graceful_server_shutdown_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_test_graceful_server_shutdown.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -27181,6 +28008,7 @@ $(BINDIR)/$(CONFIG)/h2_uchannel_high_initial_seqno_test: openssl_dep_error
 else
 
 
+$(H2_UCHANNEL_HIGH_INITIAL_SEQNO_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uchannel_high_initial_seqno_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_test_high_initial_seqno.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -27201,6 +28029,7 @@ $(BINDIR)/$(CONFIG)/h2_uchannel_hpack_size_test: openssl_dep_error
 else
 
 
+$(H2_UCHANNEL_HPACK_SIZE_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uchannel_hpack_size_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_test_hpack_size.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -27221,6 +28050,7 @@ $(BINDIR)/$(CONFIG)/h2_uchannel_invoke_large_request_test: openssl_dep_error
 else
 
 
+$(H2_UCHANNEL_INVOKE_LARGE_REQUEST_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uchannel_invoke_large_request_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_test_invoke_large_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -27241,6 +28071,7 @@ $(BINDIR)/$(CONFIG)/h2_uchannel_large_metadata_test: openssl_dep_error
 else
 
 
+$(H2_UCHANNEL_LARGE_METADATA_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uchannel_large_metadata_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_test_large_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -27261,6 +28092,7 @@ $(BINDIR)/$(CONFIG)/h2_uchannel_max_concurrent_streams_test: openssl_dep_error
 else
 
 
+$(H2_UCHANNEL_MAX_CONCURRENT_STREAMS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uchannel_max_concurrent_streams_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_test_max_concurrent_streams.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -27281,6 +28113,7 @@ $(BINDIR)/$(CONFIG)/h2_uchannel_max_message_length_test: openssl_dep_error
 else
 
 
+$(H2_UCHANNEL_MAX_MESSAGE_LENGTH_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uchannel_max_message_length_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_test_max_message_length.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -27301,6 +28134,7 @@ $(BINDIR)/$(CONFIG)/h2_uchannel_metadata_test: openssl_dep_error
 else
 
 
+$(H2_UCHANNEL_METADATA_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uchannel_metadata_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_test_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -27321,6 +28155,7 @@ $(BINDIR)/$(CONFIG)/h2_uchannel_negative_deadline_test: openssl_dep_error
 else
 
 
+$(H2_UCHANNEL_NEGATIVE_DEADLINE_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uchannel_negative_deadline_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_test_negative_deadline.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -27341,6 +28176,7 @@ $(BINDIR)/$(CONFIG)/h2_uchannel_no_op_test: openssl_dep_error
 else
 
 
+$(H2_UCHANNEL_NO_OP_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uchannel_no_op_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_test_no_op.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -27361,6 +28197,7 @@ $(BINDIR)/$(CONFIG)/h2_uchannel_payload_test: openssl_dep_error
 else
 
 
+$(H2_UCHANNEL_PAYLOAD_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uchannel_payload_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_test_payload.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -27381,6 +28218,7 @@ $(BINDIR)/$(CONFIG)/h2_uchannel_ping_pong_streaming_test: openssl_dep_error
 else
 
 
+$(H2_UCHANNEL_PING_PONG_STREAMING_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uchannel_ping_pong_streaming_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_test_ping_pong_streaming.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -27401,6 +28239,7 @@ $(BINDIR)/$(CONFIG)/h2_uchannel_registered_call_test: openssl_dep_error
 else
 
 
+$(H2_UCHANNEL_REGISTERED_CALL_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uchannel_registered_call_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_test_registered_call.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -27421,6 +28260,7 @@ $(BINDIR)/$(CONFIG)/h2_uchannel_request_with_flags_test: openssl_dep_error
 else
 
 
+$(H2_UCHANNEL_REQUEST_WITH_FLAGS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uchannel_request_with_flags_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_test_request_with_flags.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -27441,6 +28281,7 @@ $(BINDIR)/$(CONFIG)/h2_uchannel_request_with_payload_test: openssl_dep_error
 else
 
 
+$(H2_UCHANNEL_REQUEST_WITH_PAYLOAD_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uchannel_request_with_payload_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_test_request_with_payload.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -27461,6 +28302,7 @@ $(BINDIR)/$(CONFIG)/h2_uchannel_server_finishes_request_test: openssl_dep_error
 else
 
 
+$(H2_UCHANNEL_SERVER_FINISHES_REQUEST_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uchannel_server_finishes_request_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_test_server_finishes_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -27481,6 +28323,7 @@ $(BINDIR)/$(CONFIG)/h2_uchannel_shutdown_finishes_calls_test: openssl_dep_error
 else
 
 
+$(H2_UCHANNEL_SHUTDOWN_FINISHES_CALLS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uchannel_shutdown_finishes_calls_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_test_shutdown_finishes_calls.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -27501,6 +28344,7 @@ $(BINDIR)/$(CONFIG)/h2_uchannel_shutdown_finishes_tags_test: openssl_dep_error
 else
 
 
+$(H2_UCHANNEL_SHUTDOWN_FINISHES_TAGS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uchannel_shutdown_finishes_tags_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_test_shutdown_finishes_tags.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -27521,6 +28365,7 @@ $(BINDIR)/$(CONFIG)/h2_uchannel_simple_request_test: openssl_dep_error
 else
 
 
+$(H2_UCHANNEL_SIMPLE_REQUEST_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uchannel_simple_request_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_test_simple_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -27541,6 +28386,7 @@ $(BINDIR)/$(CONFIG)/h2_uchannel_trailing_metadata_test: openssl_dep_error
 else
 
 
+$(H2_UCHANNEL_TRAILING_METADATA_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uchannel_trailing_metadata_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_test_trailing_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -27561,6 +28407,7 @@ $(BINDIR)/$(CONFIG)/h2_uds_bad_hostname_test: openssl_dep_error
 else
 
 
+$(H2_UDS_BAD_HOSTNAME_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds_bad_hostname_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_bad_hostname.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -27581,6 +28428,7 @@ $(BINDIR)/$(CONFIG)/h2_uds_binary_metadata_test: openssl_dep_error
 else
 
 
+$(H2_UDS_BINARY_METADATA_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds_binary_metadata_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_binary_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -27601,6 +28449,7 @@ $(BINDIR)/$(CONFIG)/h2_uds_call_creds_test: openssl_dep_error
 else
 
 
+$(H2_UDS_CALL_CREDS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds_call_creds_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_call_creds.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -27621,6 +28470,7 @@ $(BINDIR)/$(CONFIG)/h2_uds_cancel_after_accept_test: openssl_dep_error
 else
 
 
+$(H2_UDS_CANCEL_AFTER_ACCEPT_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds_cancel_after_accept_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_accept.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -27641,6 +28491,7 @@ $(BINDIR)/$(CONFIG)/h2_uds_cancel_after_client_done_test: openssl_dep_error
 else
 
 
+$(H2_UDS_CANCEL_AFTER_CLIENT_DONE_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds_cancel_after_client_done_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_client_done.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -27661,6 +28512,7 @@ $(BINDIR)/$(CONFIG)/h2_uds_cancel_after_invoke_test: openssl_dep_error
 else
 
 
+$(H2_UDS_CANCEL_AFTER_INVOKE_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds_cancel_after_invoke_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_invoke.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -27681,6 +28533,7 @@ $(BINDIR)/$(CONFIG)/h2_uds_cancel_before_invoke_test: openssl_dep_error
 else
 
 
+$(H2_UDS_CANCEL_BEFORE_INVOKE_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds_cancel_before_invoke_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_before_invoke.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -27701,6 +28554,7 @@ $(BINDIR)/$(CONFIG)/h2_uds_cancel_in_a_vacuum_test: openssl_dep_error
 else
 
 
+$(H2_UDS_CANCEL_IN_A_VACUUM_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds_cancel_in_a_vacuum_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_in_a_vacuum.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -27721,6 +28575,7 @@ $(BINDIR)/$(CONFIG)/h2_uds_cancel_with_status_test: openssl_dep_error
 else
 
 
+$(H2_UDS_CANCEL_WITH_STATUS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds_cancel_with_status_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_with_status.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -27741,6 +28596,7 @@ $(BINDIR)/$(CONFIG)/h2_uds_channel_connectivity_test: openssl_dep_error
 else
 
 
+$(H2_UDS_CHANNEL_CONNECTIVITY_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds_channel_connectivity_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_channel_connectivity.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -27761,6 +28617,7 @@ $(BINDIR)/$(CONFIG)/h2_uds_channel_ping_test: openssl_dep_error
 else
 
 
+$(H2_UDS_CHANNEL_PING_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds_channel_ping_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_channel_ping.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -27781,6 +28638,7 @@ $(BINDIR)/$(CONFIG)/h2_uds_compressed_payload_test: openssl_dep_error
 else
 
 
+$(H2_UDS_COMPRESSED_PAYLOAD_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds_compressed_payload_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_compressed_payload.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -27801,6 +28659,7 @@ $(BINDIR)/$(CONFIG)/h2_uds_disappearing_server_test: openssl_dep_error
 else
 
 
+$(H2_UDS_DISAPPEARING_SERVER_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds_disappearing_server_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_disappearing_server.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -27821,6 +28680,7 @@ $(BINDIR)/$(CONFIG)/h2_uds_empty_batch_test: openssl_dep_error
 else
 
 
+$(H2_UDS_EMPTY_BATCH_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds_empty_batch_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_empty_batch.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -27841,6 +28701,7 @@ $(BINDIR)/$(CONFIG)/h2_uds_graceful_server_shutdown_test: openssl_dep_error
 else
 
 
+$(H2_UDS_GRACEFUL_SERVER_SHUTDOWN_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds_graceful_server_shutdown_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_graceful_server_shutdown.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -27861,6 +28722,7 @@ $(BINDIR)/$(CONFIG)/h2_uds_high_initial_seqno_test: openssl_dep_error
 else
 
 
+$(H2_UDS_HIGH_INITIAL_SEQNO_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds_high_initial_seqno_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_high_initial_seqno.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -27881,6 +28743,7 @@ $(BINDIR)/$(CONFIG)/h2_uds_hpack_size_test: openssl_dep_error
 else
 
 
+$(H2_UDS_HPACK_SIZE_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds_hpack_size_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_hpack_size.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -27901,6 +28764,7 @@ $(BINDIR)/$(CONFIG)/h2_uds_invoke_large_request_test: openssl_dep_error
 else
 
 
+$(H2_UDS_INVOKE_LARGE_REQUEST_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds_invoke_large_request_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_invoke_large_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -27921,6 +28785,7 @@ $(BINDIR)/$(CONFIG)/h2_uds_large_metadata_test: openssl_dep_error
 else
 
 
+$(H2_UDS_LARGE_METADATA_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds_large_metadata_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_large_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -27941,6 +28806,7 @@ $(BINDIR)/$(CONFIG)/h2_uds_max_concurrent_streams_test: openssl_dep_error
 else
 
 
+$(H2_UDS_MAX_CONCURRENT_STREAMS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds_max_concurrent_streams_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_max_concurrent_streams.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -27961,6 +28827,7 @@ $(BINDIR)/$(CONFIG)/h2_uds_max_message_length_test: openssl_dep_error
 else
 
 
+$(H2_UDS_MAX_MESSAGE_LENGTH_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds_max_message_length_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_max_message_length.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -27981,6 +28848,7 @@ $(BINDIR)/$(CONFIG)/h2_uds_metadata_test: openssl_dep_error
 else
 
 
+$(H2_UDS_METADATA_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds_metadata_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -28001,6 +28869,7 @@ $(BINDIR)/$(CONFIG)/h2_uds_negative_deadline_test: openssl_dep_error
 else
 
 
+$(H2_UDS_NEGATIVE_DEADLINE_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds_negative_deadline_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_negative_deadline.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -28021,6 +28890,7 @@ $(BINDIR)/$(CONFIG)/h2_uds_no_op_test: openssl_dep_error
 else
 
 
+$(H2_UDS_NO_OP_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds_no_op_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_no_op.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -28041,6 +28911,7 @@ $(BINDIR)/$(CONFIG)/h2_uds_payload_test: openssl_dep_error
 else
 
 
+$(H2_UDS_PAYLOAD_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds_payload_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_payload.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -28061,6 +28932,7 @@ $(BINDIR)/$(CONFIG)/h2_uds_ping_pong_streaming_test: openssl_dep_error
 else
 
 
+$(H2_UDS_PING_PONG_STREAMING_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds_ping_pong_streaming_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_ping_pong_streaming.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -28081,6 +28953,7 @@ $(BINDIR)/$(CONFIG)/h2_uds_registered_call_test: openssl_dep_error
 else
 
 
+$(H2_UDS_REGISTERED_CALL_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds_registered_call_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_registered_call.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -28101,6 +28974,7 @@ $(BINDIR)/$(CONFIG)/h2_uds_request_with_flags_test: openssl_dep_error
 else
 
 
+$(H2_UDS_REQUEST_WITH_FLAGS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds_request_with_flags_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_request_with_flags.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -28121,6 +28995,7 @@ $(BINDIR)/$(CONFIG)/h2_uds_request_with_payload_test: openssl_dep_error
 else
 
 
+$(H2_UDS_REQUEST_WITH_PAYLOAD_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds_request_with_payload_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_request_with_payload.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -28141,6 +29016,7 @@ $(BINDIR)/$(CONFIG)/h2_uds_server_finishes_request_test: openssl_dep_error
 else
 
 
+$(H2_UDS_SERVER_FINISHES_REQUEST_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds_server_finishes_request_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_server_finishes_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -28161,6 +29037,7 @@ $(BINDIR)/$(CONFIG)/h2_uds_shutdown_finishes_calls_test: openssl_dep_error
 else
 
 
+$(H2_UDS_SHUTDOWN_FINISHES_CALLS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds_shutdown_finishes_calls_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_shutdown_finishes_calls.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -28181,6 +29058,7 @@ $(BINDIR)/$(CONFIG)/h2_uds_shutdown_finishes_tags_test: openssl_dep_error
 else
 
 
+$(H2_UDS_SHUTDOWN_FINISHES_TAGS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds_shutdown_finishes_tags_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_shutdown_finishes_tags.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -28201,6 +29079,7 @@ $(BINDIR)/$(CONFIG)/h2_uds_simple_delayed_request_test: openssl_dep_error
 else
 
 
+$(H2_UDS_SIMPLE_DELAYED_REQUEST_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds_simple_delayed_request_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_simple_delayed_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -28221,6 +29100,7 @@ $(BINDIR)/$(CONFIG)/h2_uds_simple_request_test: openssl_dep_error
 else
 
 
+$(H2_UDS_SIMPLE_REQUEST_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds_simple_request_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_simple_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -28241,6 +29121,7 @@ $(BINDIR)/$(CONFIG)/h2_uds_trailing_metadata_test: openssl_dep_error
 else
 
 
+$(H2_UDS_TRAILING_METADATA_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds_trailing_metadata_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_trailing_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -28261,6 +29142,7 @@ $(BINDIR)/$(CONFIG)/h2_uds+poll_bad_hostname_test: openssl_dep_error
 else
 
 
+$(H2_UDS+POLL_BAD_HOSTNAME_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds+poll_bad_hostname_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uds+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_bad_hostname.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -28281,6 +29163,7 @@ $(BINDIR)/$(CONFIG)/h2_uds+poll_binary_metadata_test: openssl_dep_error
 else
 
 
+$(H2_UDS+POLL_BINARY_METADATA_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds+poll_binary_metadata_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uds+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_binary_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -28301,6 +29184,7 @@ $(BINDIR)/$(CONFIG)/h2_uds+poll_call_creds_test: openssl_dep_error
 else
 
 
+$(H2_UDS+POLL_CALL_CREDS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds+poll_call_creds_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uds+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_call_creds.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -28321,6 +29205,7 @@ $(BINDIR)/$(CONFIG)/h2_uds+poll_cancel_after_accept_test: openssl_dep_error
 else
 
 
+$(H2_UDS+POLL_CANCEL_AFTER_ACCEPT_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds+poll_cancel_after_accept_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uds+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_accept.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -28341,6 +29226,7 @@ $(BINDIR)/$(CONFIG)/h2_uds+poll_cancel_after_client_done_test: openssl_dep_error
 else
 
 
+$(H2_UDS+POLL_CANCEL_AFTER_CLIENT_DONE_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds+poll_cancel_after_client_done_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uds+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_client_done.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -28361,6 +29247,7 @@ $(BINDIR)/$(CONFIG)/h2_uds+poll_cancel_after_invoke_test: openssl_dep_error
 else
 
 
+$(H2_UDS+POLL_CANCEL_AFTER_INVOKE_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds+poll_cancel_after_invoke_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uds+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_invoke.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -28381,6 +29268,7 @@ $(BINDIR)/$(CONFIG)/h2_uds+poll_cancel_before_invoke_test: openssl_dep_error
 else
 
 
+$(H2_UDS+POLL_CANCEL_BEFORE_INVOKE_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds+poll_cancel_before_invoke_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uds+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_before_invoke.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -28401,6 +29289,7 @@ $(BINDIR)/$(CONFIG)/h2_uds+poll_cancel_in_a_vacuum_test: openssl_dep_error
 else
 
 
+$(H2_UDS+POLL_CANCEL_IN_A_VACUUM_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds+poll_cancel_in_a_vacuum_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uds+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_in_a_vacuum.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -28421,6 +29310,7 @@ $(BINDIR)/$(CONFIG)/h2_uds+poll_cancel_with_status_test: openssl_dep_error
 else
 
 
+$(H2_UDS+POLL_CANCEL_WITH_STATUS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds+poll_cancel_with_status_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uds+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_with_status.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -28441,6 +29331,7 @@ $(BINDIR)/$(CONFIG)/h2_uds+poll_channel_connectivity_test: openssl_dep_error
 else
 
 
+$(H2_UDS+POLL_CHANNEL_CONNECTIVITY_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds+poll_channel_connectivity_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uds+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_channel_connectivity.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -28461,6 +29352,7 @@ $(BINDIR)/$(CONFIG)/h2_uds+poll_channel_ping_test: openssl_dep_error
 else
 
 
+$(H2_UDS+POLL_CHANNEL_PING_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds+poll_channel_ping_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uds+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_channel_ping.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -28481,6 +29373,7 @@ $(BINDIR)/$(CONFIG)/h2_uds+poll_compressed_payload_test: openssl_dep_error
 else
 
 
+$(H2_UDS+POLL_COMPRESSED_PAYLOAD_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds+poll_compressed_payload_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uds+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_compressed_payload.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -28501,6 +29394,7 @@ $(BINDIR)/$(CONFIG)/h2_uds+poll_disappearing_server_test: openssl_dep_error
 else
 
 
+$(H2_UDS+POLL_DISAPPEARING_SERVER_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds+poll_disappearing_server_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uds+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_disappearing_server.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -28521,6 +29415,7 @@ $(BINDIR)/$(CONFIG)/h2_uds+poll_empty_batch_test: openssl_dep_error
 else
 
 
+$(H2_UDS+POLL_EMPTY_BATCH_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds+poll_empty_batch_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uds+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_empty_batch.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -28541,6 +29436,7 @@ $(BINDIR)/$(CONFIG)/h2_uds+poll_graceful_server_shutdown_test: openssl_dep_error
 else
 
 
+$(H2_UDS+POLL_GRACEFUL_SERVER_SHUTDOWN_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds+poll_graceful_server_shutdown_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uds+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_graceful_server_shutdown.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -28561,6 +29457,7 @@ $(BINDIR)/$(CONFIG)/h2_uds+poll_high_initial_seqno_test: openssl_dep_error
 else
 
 
+$(H2_UDS+POLL_HIGH_INITIAL_SEQNO_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds+poll_high_initial_seqno_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uds+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_high_initial_seqno.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -28581,6 +29478,7 @@ $(BINDIR)/$(CONFIG)/h2_uds+poll_hpack_size_test: openssl_dep_error
 else
 
 
+$(H2_UDS+POLL_HPACK_SIZE_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds+poll_hpack_size_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uds+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_hpack_size.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -28601,6 +29499,7 @@ $(BINDIR)/$(CONFIG)/h2_uds+poll_invoke_large_request_test: openssl_dep_error
 else
 
 
+$(H2_UDS+POLL_INVOKE_LARGE_REQUEST_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds+poll_invoke_large_request_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uds+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_invoke_large_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -28621,6 +29520,7 @@ $(BINDIR)/$(CONFIG)/h2_uds+poll_large_metadata_test: openssl_dep_error
 else
 
 
+$(H2_UDS+POLL_LARGE_METADATA_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds+poll_large_metadata_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uds+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_large_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -28641,6 +29541,7 @@ $(BINDIR)/$(CONFIG)/h2_uds+poll_max_concurrent_streams_test: openssl_dep_error
 else
 
 
+$(H2_UDS+POLL_MAX_CONCURRENT_STREAMS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds+poll_max_concurrent_streams_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uds+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_max_concurrent_streams.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -28661,6 +29562,7 @@ $(BINDIR)/$(CONFIG)/h2_uds+poll_max_message_length_test: openssl_dep_error
 else
 
 
+$(H2_UDS+POLL_MAX_MESSAGE_LENGTH_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds+poll_max_message_length_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uds+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_max_message_length.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -28681,6 +29583,7 @@ $(BINDIR)/$(CONFIG)/h2_uds+poll_metadata_test: openssl_dep_error
 else
 
 
+$(H2_UDS+POLL_METADATA_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds+poll_metadata_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uds+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -28701,6 +29604,7 @@ $(BINDIR)/$(CONFIG)/h2_uds+poll_negative_deadline_test: openssl_dep_error
 else
 
 
+$(H2_UDS+POLL_NEGATIVE_DEADLINE_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds+poll_negative_deadline_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uds+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_negative_deadline.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -28721,6 +29625,7 @@ $(BINDIR)/$(CONFIG)/h2_uds+poll_no_op_test: openssl_dep_error
 else
 
 
+$(H2_UDS+POLL_NO_OP_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds+poll_no_op_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uds+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_no_op.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -28741,6 +29646,7 @@ $(BINDIR)/$(CONFIG)/h2_uds+poll_payload_test: openssl_dep_error
 else
 
 
+$(H2_UDS+POLL_PAYLOAD_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds+poll_payload_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uds+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_payload.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -28761,6 +29667,7 @@ $(BINDIR)/$(CONFIG)/h2_uds+poll_ping_pong_streaming_test: openssl_dep_error
 else
 
 
+$(H2_UDS+POLL_PING_PONG_STREAMING_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds+poll_ping_pong_streaming_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uds+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_ping_pong_streaming.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -28781,6 +29688,7 @@ $(BINDIR)/$(CONFIG)/h2_uds+poll_registered_call_test: openssl_dep_error
 else
 
 
+$(H2_UDS+POLL_REGISTERED_CALL_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds+poll_registered_call_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uds+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_registered_call.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -28801,6 +29709,7 @@ $(BINDIR)/$(CONFIG)/h2_uds+poll_request_with_flags_test: openssl_dep_error
 else
 
 
+$(H2_UDS+POLL_REQUEST_WITH_FLAGS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds+poll_request_with_flags_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uds+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_request_with_flags.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -28821,6 +29730,7 @@ $(BINDIR)/$(CONFIG)/h2_uds+poll_request_with_payload_test: openssl_dep_error
 else
 
 
+$(H2_UDS+POLL_REQUEST_WITH_PAYLOAD_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds+poll_request_with_payload_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uds+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_request_with_payload.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -28841,6 +29751,7 @@ $(BINDIR)/$(CONFIG)/h2_uds+poll_server_finishes_request_test: openssl_dep_error
 else
 
 
+$(H2_UDS+POLL_SERVER_FINISHES_REQUEST_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds+poll_server_finishes_request_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uds+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_server_finishes_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -28861,6 +29772,7 @@ $(BINDIR)/$(CONFIG)/h2_uds+poll_shutdown_finishes_calls_test: openssl_dep_error
 else
 
 
+$(H2_UDS+POLL_SHUTDOWN_FINISHES_CALLS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds+poll_shutdown_finishes_calls_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uds+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_shutdown_finishes_calls.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -28881,6 +29793,7 @@ $(BINDIR)/$(CONFIG)/h2_uds+poll_shutdown_finishes_tags_test: openssl_dep_error
 else
 
 
+$(H2_UDS+POLL_SHUTDOWN_FINISHES_TAGS_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds+poll_shutdown_finishes_tags_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uds+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_shutdown_finishes_tags.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -28901,6 +29814,7 @@ $(BINDIR)/$(CONFIG)/h2_uds+poll_simple_delayed_request_test: openssl_dep_error
 else
 
 
+$(H2_UDS+POLL_SIMPLE_DELAYED_REQUEST_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds+poll_simple_delayed_request_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uds+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_simple_delayed_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -28921,6 +29835,7 @@ $(BINDIR)/$(CONFIG)/h2_uds+poll_simple_request_test: openssl_dep_error
 else
 
 
+$(H2_UDS+POLL_SIMPLE_REQUEST_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds+poll_simple_request_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uds+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_simple_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -28941,6 +29856,7 @@ $(BINDIR)/$(CONFIG)/h2_uds+poll_trailing_metadata_test: openssl_dep_error
 else
 
 
+$(H2_UDS+POLL_TRAILING_METADATA_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds+poll_trailing_metadata_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uds+poll.a $(LIBDIR)/$(CONFIG)/libend2end_test_trailing_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -28953,6 +29869,7 @@ endif
 
 
 
+$(H2_CENSUS_BAD_HOSTNAME_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_census_bad_hostname_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_bad_hostname.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -28963,6 +29880,7 @@ $(BINDIR)/$(CONFIG)/h2_census_bad_hostname_nosec_test:  $(LIBDIR)/$(CONFIG)/libe
 
 
 
+$(H2_CENSUS_BINARY_METADATA_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_census_binary_metadata_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_binary_metadata.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -28973,6 +29891,7 @@ $(BINDIR)/$(CONFIG)/h2_census_binary_metadata_nosec_test:  $(LIBDIR)/$(CONFIG)/l
 
 
 
+$(H2_CENSUS_CANCEL_AFTER_ACCEPT_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_census_cancel_after_accept_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_after_accept.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -28983,6 +29902,7 @@ $(BINDIR)/$(CONFIG)/h2_census_cancel_after_accept_nosec_test:  $(LIBDIR)/$(CONFI
 
 
 
+$(H2_CENSUS_CANCEL_AFTER_CLIENT_DONE_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_census_cancel_after_client_done_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_after_client_done.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -28993,6 +29913,7 @@ $(BINDIR)/$(CONFIG)/h2_census_cancel_after_client_done_nosec_test:  $(LIBDIR)/$(
 
 
 
+$(H2_CENSUS_CANCEL_AFTER_INVOKE_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_census_cancel_after_invoke_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_after_invoke.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -29003,6 +29924,7 @@ $(BINDIR)/$(CONFIG)/h2_census_cancel_after_invoke_nosec_test:  $(LIBDIR)/$(CONFI
 
 
 
+$(H2_CENSUS_CANCEL_BEFORE_INVOKE_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_census_cancel_before_invoke_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_before_invoke.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -29013,6 +29935,7 @@ $(BINDIR)/$(CONFIG)/h2_census_cancel_before_invoke_nosec_test:  $(LIBDIR)/$(CONF
 
 
 
+$(H2_CENSUS_CANCEL_IN_A_VACUUM_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_census_cancel_in_a_vacuum_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_in_a_vacuum.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -29023,6 +29946,7 @@ $(BINDIR)/$(CONFIG)/h2_census_cancel_in_a_vacuum_nosec_test:  $(LIBDIR)/$(CONFIG
 
 
 
+$(H2_CENSUS_CANCEL_WITH_STATUS_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_census_cancel_with_status_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_with_status.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -29033,6 +29957,7 @@ $(BINDIR)/$(CONFIG)/h2_census_cancel_with_status_nosec_test:  $(LIBDIR)/$(CONFIG
 
 
 
+$(H2_CENSUS_CHANNEL_CONNECTIVITY_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_census_channel_connectivity_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_channel_connectivity.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -29043,6 +29968,7 @@ $(BINDIR)/$(CONFIG)/h2_census_channel_connectivity_nosec_test:  $(LIBDIR)/$(CONF
 
 
 
+$(H2_CENSUS_CHANNEL_PING_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_census_channel_ping_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_channel_ping.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -29053,6 +29979,7 @@ $(BINDIR)/$(CONFIG)/h2_census_channel_ping_nosec_test:  $(LIBDIR)/$(CONFIG)/libe
 
 
 
+$(H2_CENSUS_COMPRESSED_PAYLOAD_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_census_compressed_payload_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_compressed_payload.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -29063,6 +29990,7 @@ $(BINDIR)/$(CONFIG)/h2_census_compressed_payload_nosec_test:  $(LIBDIR)/$(CONFIG
 
 
 
+$(H2_CENSUS_DEFAULT_HOST_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_census_default_host_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_default_host.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -29073,6 +30001,7 @@ $(BINDIR)/$(CONFIG)/h2_census_default_host_nosec_test:  $(LIBDIR)/$(CONFIG)/libe
 
 
 
+$(H2_CENSUS_DISAPPEARING_SERVER_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_census_disappearing_server_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_disappearing_server.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -29083,6 +30012,7 @@ $(BINDIR)/$(CONFIG)/h2_census_disappearing_server_nosec_test:  $(LIBDIR)/$(CONFI
 
 
 
+$(H2_CENSUS_EMPTY_BATCH_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_census_empty_batch_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_empty_batch.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -29093,6 +30023,7 @@ $(BINDIR)/$(CONFIG)/h2_census_empty_batch_nosec_test:  $(LIBDIR)/$(CONFIG)/liben
 
 
 
+$(H2_CENSUS_GRACEFUL_SERVER_SHUTDOWN_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_census_graceful_server_shutdown_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_graceful_server_shutdown.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -29103,6 +30034,7 @@ $(BINDIR)/$(CONFIG)/h2_census_graceful_server_shutdown_nosec_test:  $(LIBDIR)/$(
 
 
 
+$(H2_CENSUS_HIGH_INITIAL_SEQNO_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_census_high_initial_seqno_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_high_initial_seqno.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -29113,6 +30045,7 @@ $(BINDIR)/$(CONFIG)/h2_census_high_initial_seqno_nosec_test:  $(LIBDIR)/$(CONFIG
 
 
 
+$(H2_CENSUS_HPACK_SIZE_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_census_hpack_size_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_hpack_size.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -29123,6 +30056,7 @@ $(BINDIR)/$(CONFIG)/h2_census_hpack_size_nosec_test:  $(LIBDIR)/$(CONFIG)/libend
 
 
 
+$(H2_CENSUS_INVOKE_LARGE_REQUEST_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_census_invoke_large_request_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_invoke_large_request.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -29133,6 +30067,7 @@ $(BINDIR)/$(CONFIG)/h2_census_invoke_large_request_nosec_test:  $(LIBDIR)/$(CONF
 
 
 
+$(H2_CENSUS_LARGE_METADATA_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_census_large_metadata_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_large_metadata.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -29143,6 +30078,7 @@ $(BINDIR)/$(CONFIG)/h2_census_large_metadata_nosec_test:  $(LIBDIR)/$(CONFIG)/li
 
 
 
+$(H2_CENSUS_MAX_CONCURRENT_STREAMS_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_census_max_concurrent_streams_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_max_concurrent_streams.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -29153,6 +30089,7 @@ $(BINDIR)/$(CONFIG)/h2_census_max_concurrent_streams_nosec_test:  $(LIBDIR)/$(CO
 
 
 
+$(H2_CENSUS_MAX_MESSAGE_LENGTH_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_census_max_message_length_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_max_message_length.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -29163,6 +30100,7 @@ $(BINDIR)/$(CONFIG)/h2_census_max_message_length_nosec_test:  $(LIBDIR)/$(CONFIG
 
 
 
+$(H2_CENSUS_METADATA_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_census_metadata_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_metadata.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -29173,6 +30111,7 @@ $(BINDIR)/$(CONFIG)/h2_census_metadata_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2e
 
 
 
+$(H2_CENSUS_NEGATIVE_DEADLINE_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_census_negative_deadline_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_negative_deadline.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -29183,6 +30122,7 @@ $(BINDIR)/$(CONFIG)/h2_census_negative_deadline_nosec_test:  $(LIBDIR)/$(CONFIG)
 
 
 
+$(H2_CENSUS_NO_OP_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_census_no_op_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_no_op.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -29193,6 +30133,7 @@ $(BINDIR)/$(CONFIG)/h2_census_no_op_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_
 
 
 
+$(H2_CENSUS_PAYLOAD_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_census_payload_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_payload.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -29203,6 +30144,7 @@ $(BINDIR)/$(CONFIG)/h2_census_payload_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2en
 
 
 
+$(H2_CENSUS_PING_PONG_STREAMING_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_census_ping_pong_streaming_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_ping_pong_streaming.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -29213,6 +30155,7 @@ $(BINDIR)/$(CONFIG)/h2_census_ping_pong_streaming_nosec_test:  $(LIBDIR)/$(CONFI
 
 
 
+$(H2_CENSUS_REGISTERED_CALL_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_census_registered_call_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_registered_call.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -29223,6 +30166,7 @@ $(BINDIR)/$(CONFIG)/h2_census_registered_call_nosec_test:  $(LIBDIR)/$(CONFIG)/l
 
 
 
+$(H2_CENSUS_REQUEST_WITH_FLAGS_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_census_request_with_flags_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_request_with_flags.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -29233,6 +30177,7 @@ $(BINDIR)/$(CONFIG)/h2_census_request_with_flags_nosec_test:  $(LIBDIR)/$(CONFIG
 
 
 
+$(H2_CENSUS_REQUEST_WITH_PAYLOAD_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_census_request_with_payload_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_request_with_payload.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -29243,6 +30188,7 @@ $(BINDIR)/$(CONFIG)/h2_census_request_with_payload_nosec_test:  $(LIBDIR)/$(CONF
 
 
 
+$(H2_CENSUS_SERVER_FINISHES_REQUEST_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_census_server_finishes_request_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_server_finishes_request.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -29253,6 +30199,7 @@ $(BINDIR)/$(CONFIG)/h2_census_server_finishes_request_nosec_test:  $(LIBDIR)/$(C
 
 
 
+$(H2_CENSUS_SHUTDOWN_FINISHES_CALLS_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_census_shutdown_finishes_calls_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_shutdown_finishes_calls.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -29263,6 +30210,7 @@ $(BINDIR)/$(CONFIG)/h2_census_shutdown_finishes_calls_nosec_test:  $(LIBDIR)/$(C
 
 
 
+$(H2_CENSUS_SHUTDOWN_FINISHES_TAGS_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_census_shutdown_finishes_tags_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_shutdown_finishes_tags.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -29273,6 +30221,7 @@ $(BINDIR)/$(CONFIG)/h2_census_shutdown_finishes_tags_nosec_test:  $(LIBDIR)/$(CO
 
 
 
+$(H2_CENSUS_SIMPLE_DELAYED_REQUEST_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_census_simple_delayed_request_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_simple_delayed_request.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -29283,6 +30232,7 @@ $(BINDIR)/$(CONFIG)/h2_census_simple_delayed_request_nosec_test:  $(LIBDIR)/$(CO
 
 
 
+$(H2_CENSUS_SIMPLE_REQUEST_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_census_simple_request_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_simple_request.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -29293,6 +30243,7 @@ $(BINDIR)/$(CONFIG)/h2_census_simple_request_nosec_test:  $(LIBDIR)/$(CONFIG)/li
 
 
 
+$(H2_CENSUS_TRAILING_METADATA_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_census_trailing_metadata_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_census.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_trailing_metadata.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -29303,6 +30254,7 @@ $(BINDIR)/$(CONFIG)/h2_census_trailing_metadata_nosec_test:  $(LIBDIR)/$(CONFIG)
 
 
 
+$(H2_COMPRESS_BAD_HOSTNAME_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_compress_bad_hostname_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_compress.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_bad_hostname.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -29313,6 +30265,7 @@ $(BINDIR)/$(CONFIG)/h2_compress_bad_hostname_nosec_test:  $(LIBDIR)/$(CONFIG)/li
 
 
 
+$(H2_COMPRESS_BINARY_METADATA_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_compress_binary_metadata_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_compress.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_binary_metadata.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -29323,6 +30276,7 @@ $(BINDIR)/$(CONFIG)/h2_compress_binary_metadata_nosec_test:  $(LIBDIR)/$(CONFIG)
 
 
 
+$(H2_COMPRESS_CANCEL_AFTER_ACCEPT_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_compress_cancel_after_accept_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_compress.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_after_accept.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -29333,6 +30287,7 @@ $(BINDIR)/$(CONFIG)/h2_compress_cancel_after_accept_nosec_test:  $(LIBDIR)/$(CON
 
 
 
+$(H2_COMPRESS_CANCEL_AFTER_CLIENT_DONE_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_compress_cancel_after_client_done_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_compress.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_after_client_done.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -29343,6 +30298,7 @@ $(BINDIR)/$(CONFIG)/h2_compress_cancel_after_client_done_nosec_test:  $(LIBDIR)/
 
 
 
+$(H2_COMPRESS_CANCEL_AFTER_INVOKE_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_compress_cancel_after_invoke_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_compress.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_after_invoke.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -29353,6 +30309,7 @@ $(BINDIR)/$(CONFIG)/h2_compress_cancel_after_invoke_nosec_test:  $(LIBDIR)/$(CON
 
 
 
+$(H2_COMPRESS_CANCEL_BEFORE_INVOKE_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_compress_cancel_before_invoke_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_compress.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_before_invoke.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -29363,6 +30320,7 @@ $(BINDIR)/$(CONFIG)/h2_compress_cancel_before_invoke_nosec_test:  $(LIBDIR)/$(CO
 
 
 
+$(H2_COMPRESS_CANCEL_IN_A_VACUUM_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_compress_cancel_in_a_vacuum_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_compress.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_in_a_vacuum.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -29373,6 +30331,7 @@ $(BINDIR)/$(CONFIG)/h2_compress_cancel_in_a_vacuum_nosec_test:  $(LIBDIR)/$(CONF
 
 
 
+$(H2_COMPRESS_CANCEL_WITH_STATUS_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_compress_cancel_with_status_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_compress.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_with_status.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -29383,6 +30342,7 @@ $(BINDIR)/$(CONFIG)/h2_compress_cancel_with_status_nosec_test:  $(LIBDIR)/$(CONF
 
 
 
+$(H2_COMPRESS_CHANNEL_CONNECTIVITY_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_compress_channel_connectivity_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_compress.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_channel_connectivity.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -29393,6 +30353,7 @@ $(BINDIR)/$(CONFIG)/h2_compress_channel_connectivity_nosec_test:  $(LIBDIR)/$(CO
 
 
 
+$(H2_COMPRESS_CHANNEL_PING_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_compress_channel_ping_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_compress.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_channel_ping.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -29403,6 +30364,7 @@ $(BINDIR)/$(CONFIG)/h2_compress_channel_ping_nosec_test:  $(LIBDIR)/$(CONFIG)/li
 
 
 
+$(H2_COMPRESS_COMPRESSED_PAYLOAD_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_compress_compressed_payload_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_compress.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_compressed_payload.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -29413,6 +30375,7 @@ $(BINDIR)/$(CONFIG)/h2_compress_compressed_payload_nosec_test:  $(LIBDIR)/$(CONF
 
 
 
+$(H2_COMPRESS_DEFAULT_HOST_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_compress_default_host_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_compress.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_default_host.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -29423,6 +30386,7 @@ $(BINDIR)/$(CONFIG)/h2_compress_default_host_nosec_test:  $(LIBDIR)/$(CONFIG)/li
 
 
 
+$(H2_COMPRESS_DISAPPEARING_SERVER_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_compress_disappearing_server_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_compress.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_disappearing_server.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -29433,6 +30397,7 @@ $(BINDIR)/$(CONFIG)/h2_compress_disappearing_server_nosec_test:  $(LIBDIR)/$(CON
 
 
 
+$(H2_COMPRESS_EMPTY_BATCH_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_compress_empty_batch_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_compress.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_empty_batch.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -29443,6 +30408,7 @@ $(BINDIR)/$(CONFIG)/h2_compress_empty_batch_nosec_test:  $(LIBDIR)/$(CONFIG)/lib
 
 
 
+$(H2_COMPRESS_GRACEFUL_SERVER_SHUTDOWN_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_compress_graceful_server_shutdown_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_compress.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_graceful_server_shutdown.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -29453,6 +30419,7 @@ $(BINDIR)/$(CONFIG)/h2_compress_graceful_server_shutdown_nosec_test:  $(LIBDIR)/
 
 
 
+$(H2_COMPRESS_HIGH_INITIAL_SEQNO_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_compress_high_initial_seqno_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_compress.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_high_initial_seqno.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -29463,6 +30430,7 @@ $(BINDIR)/$(CONFIG)/h2_compress_high_initial_seqno_nosec_test:  $(LIBDIR)/$(CONF
 
 
 
+$(H2_COMPRESS_HPACK_SIZE_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_compress_hpack_size_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_compress.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_hpack_size.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -29473,6 +30441,7 @@ $(BINDIR)/$(CONFIG)/h2_compress_hpack_size_nosec_test:  $(LIBDIR)/$(CONFIG)/libe
 
 
 
+$(H2_COMPRESS_INVOKE_LARGE_REQUEST_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_compress_invoke_large_request_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_compress.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_invoke_large_request.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -29483,6 +30452,7 @@ $(BINDIR)/$(CONFIG)/h2_compress_invoke_large_request_nosec_test:  $(LIBDIR)/$(CO
 
 
 
+$(H2_COMPRESS_LARGE_METADATA_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_compress_large_metadata_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_compress.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_large_metadata.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -29493,6 +30463,7 @@ $(BINDIR)/$(CONFIG)/h2_compress_large_metadata_nosec_test:  $(LIBDIR)/$(CONFIG)/
 
 
 
+$(H2_COMPRESS_MAX_CONCURRENT_STREAMS_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_compress_max_concurrent_streams_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_compress.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_max_concurrent_streams.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -29503,6 +30474,7 @@ $(BINDIR)/$(CONFIG)/h2_compress_max_concurrent_streams_nosec_test:  $(LIBDIR)/$(
 
 
 
+$(H2_COMPRESS_MAX_MESSAGE_LENGTH_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_compress_max_message_length_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_compress.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_max_message_length.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -29513,6 +30485,7 @@ $(BINDIR)/$(CONFIG)/h2_compress_max_message_length_nosec_test:  $(LIBDIR)/$(CONF
 
 
 
+$(H2_COMPRESS_METADATA_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_compress_metadata_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_compress.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_metadata.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -29523,6 +30496,7 @@ $(BINDIR)/$(CONFIG)/h2_compress_metadata_nosec_test:  $(LIBDIR)/$(CONFIG)/libend
 
 
 
+$(H2_COMPRESS_NEGATIVE_DEADLINE_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_compress_negative_deadline_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_compress.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_negative_deadline.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -29533,6 +30507,7 @@ $(BINDIR)/$(CONFIG)/h2_compress_negative_deadline_nosec_test:  $(LIBDIR)/$(CONFI
 
 
 
+$(H2_COMPRESS_NO_OP_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_compress_no_op_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_compress.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_no_op.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -29543,6 +30518,7 @@ $(BINDIR)/$(CONFIG)/h2_compress_no_op_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2en
 
 
 
+$(H2_COMPRESS_PAYLOAD_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_compress_payload_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_compress.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_payload.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -29553,6 +30529,7 @@ $(BINDIR)/$(CONFIG)/h2_compress_payload_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2
 
 
 
+$(H2_COMPRESS_PING_PONG_STREAMING_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_compress_ping_pong_streaming_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_compress.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_ping_pong_streaming.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -29563,6 +30540,7 @@ $(BINDIR)/$(CONFIG)/h2_compress_ping_pong_streaming_nosec_test:  $(LIBDIR)/$(CON
 
 
 
+$(H2_COMPRESS_REGISTERED_CALL_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_compress_registered_call_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_compress.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_registered_call.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -29573,6 +30551,7 @@ $(BINDIR)/$(CONFIG)/h2_compress_registered_call_nosec_test:  $(LIBDIR)/$(CONFIG)
 
 
 
+$(H2_COMPRESS_REQUEST_WITH_FLAGS_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_compress_request_with_flags_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_compress.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_request_with_flags.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -29583,6 +30562,7 @@ $(BINDIR)/$(CONFIG)/h2_compress_request_with_flags_nosec_test:  $(LIBDIR)/$(CONF
 
 
 
+$(H2_COMPRESS_REQUEST_WITH_PAYLOAD_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_compress_request_with_payload_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_compress.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_request_with_payload.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -29593,6 +30573,7 @@ $(BINDIR)/$(CONFIG)/h2_compress_request_with_payload_nosec_test:  $(LIBDIR)/$(CO
 
 
 
+$(H2_COMPRESS_SERVER_FINISHES_REQUEST_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_compress_server_finishes_request_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_compress.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_server_finishes_request.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -29603,6 +30584,7 @@ $(BINDIR)/$(CONFIG)/h2_compress_server_finishes_request_nosec_test:  $(LIBDIR)/$
 
 
 
+$(H2_COMPRESS_SHUTDOWN_FINISHES_CALLS_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_compress_shutdown_finishes_calls_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_compress.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_shutdown_finishes_calls.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -29613,6 +30595,7 @@ $(BINDIR)/$(CONFIG)/h2_compress_shutdown_finishes_calls_nosec_test:  $(LIBDIR)/$
 
 
 
+$(H2_COMPRESS_SHUTDOWN_FINISHES_TAGS_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_compress_shutdown_finishes_tags_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_compress.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_shutdown_finishes_tags.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -29623,6 +30606,7 @@ $(BINDIR)/$(CONFIG)/h2_compress_shutdown_finishes_tags_nosec_test:  $(LIBDIR)/$(
 
 
 
+$(H2_COMPRESS_SIMPLE_DELAYED_REQUEST_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_compress_simple_delayed_request_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_compress.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_simple_delayed_request.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -29633,6 +30617,7 @@ $(BINDIR)/$(CONFIG)/h2_compress_simple_delayed_request_nosec_test:  $(LIBDIR)/$(
 
 
 
+$(H2_COMPRESS_SIMPLE_REQUEST_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_compress_simple_request_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_compress.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_simple_request.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -29643,6 +30628,7 @@ $(BINDIR)/$(CONFIG)/h2_compress_simple_request_nosec_test:  $(LIBDIR)/$(CONFIG)/
 
 
 
+$(H2_COMPRESS_TRAILING_METADATA_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_compress_trailing_metadata_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_compress.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_trailing_metadata.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -29653,6 +30639,7 @@ $(BINDIR)/$(CONFIG)/h2_compress_trailing_metadata_nosec_test:  $(LIBDIR)/$(CONFI
 
 
 
+$(H2_FULL_BAD_HOSTNAME_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full_bad_hostname_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_bad_hostname.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -29663,6 +30650,7 @@ $(BINDIR)/$(CONFIG)/h2_full_bad_hostname_nosec_test:  $(LIBDIR)/$(CONFIG)/libend
 
 
 
+$(H2_FULL_BINARY_METADATA_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full_binary_metadata_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_binary_metadata.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -29673,6 +30661,7 @@ $(BINDIR)/$(CONFIG)/h2_full_binary_metadata_nosec_test:  $(LIBDIR)/$(CONFIG)/lib
 
 
 
+$(H2_FULL_CANCEL_AFTER_ACCEPT_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full_cancel_after_accept_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_after_accept.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -29683,6 +30672,7 @@ $(BINDIR)/$(CONFIG)/h2_full_cancel_after_accept_nosec_test:  $(LIBDIR)/$(CONFIG)
 
 
 
+$(H2_FULL_CANCEL_AFTER_CLIENT_DONE_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full_cancel_after_client_done_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_after_client_done.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -29693,6 +30683,7 @@ $(BINDIR)/$(CONFIG)/h2_full_cancel_after_client_done_nosec_test:  $(LIBDIR)/$(CO
 
 
 
+$(H2_FULL_CANCEL_AFTER_INVOKE_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full_cancel_after_invoke_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_after_invoke.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -29703,6 +30694,7 @@ $(BINDIR)/$(CONFIG)/h2_full_cancel_after_invoke_nosec_test:  $(LIBDIR)/$(CONFIG)
 
 
 
+$(H2_FULL_CANCEL_BEFORE_INVOKE_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full_cancel_before_invoke_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_before_invoke.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -29713,6 +30705,7 @@ $(BINDIR)/$(CONFIG)/h2_full_cancel_before_invoke_nosec_test:  $(LIBDIR)/$(CONFIG
 
 
 
+$(H2_FULL_CANCEL_IN_A_VACUUM_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full_cancel_in_a_vacuum_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_in_a_vacuum.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -29723,6 +30716,7 @@ $(BINDIR)/$(CONFIG)/h2_full_cancel_in_a_vacuum_nosec_test:  $(LIBDIR)/$(CONFIG)/
 
 
 
+$(H2_FULL_CANCEL_WITH_STATUS_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full_cancel_with_status_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_with_status.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -29733,6 +30727,7 @@ $(BINDIR)/$(CONFIG)/h2_full_cancel_with_status_nosec_test:  $(LIBDIR)/$(CONFIG)/
 
 
 
+$(H2_FULL_CHANNEL_CONNECTIVITY_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full_channel_connectivity_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_channel_connectivity.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -29743,6 +30738,7 @@ $(BINDIR)/$(CONFIG)/h2_full_channel_connectivity_nosec_test:  $(LIBDIR)/$(CONFIG
 
 
 
+$(H2_FULL_CHANNEL_PING_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full_channel_ping_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_channel_ping.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -29753,6 +30749,7 @@ $(BINDIR)/$(CONFIG)/h2_full_channel_ping_nosec_test:  $(LIBDIR)/$(CONFIG)/libend
 
 
 
+$(H2_FULL_COMPRESSED_PAYLOAD_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full_compressed_payload_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_compressed_payload.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -29763,6 +30760,7 @@ $(BINDIR)/$(CONFIG)/h2_full_compressed_payload_nosec_test:  $(LIBDIR)/$(CONFIG)/
 
 
 
+$(H2_FULL_DEFAULT_HOST_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full_default_host_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_default_host.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -29773,6 +30771,7 @@ $(BINDIR)/$(CONFIG)/h2_full_default_host_nosec_test:  $(LIBDIR)/$(CONFIG)/libend
 
 
 
+$(H2_FULL_DISAPPEARING_SERVER_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full_disappearing_server_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_disappearing_server.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -29783,6 +30782,7 @@ $(BINDIR)/$(CONFIG)/h2_full_disappearing_server_nosec_test:  $(LIBDIR)/$(CONFIG)
 
 
 
+$(H2_FULL_EMPTY_BATCH_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full_empty_batch_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_empty_batch.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -29793,6 +30793,7 @@ $(BINDIR)/$(CONFIG)/h2_full_empty_batch_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2
 
 
 
+$(H2_FULL_GRACEFUL_SERVER_SHUTDOWN_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full_graceful_server_shutdown_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_graceful_server_shutdown.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -29803,6 +30804,7 @@ $(BINDIR)/$(CONFIG)/h2_full_graceful_server_shutdown_nosec_test:  $(LIBDIR)/$(CO
 
 
 
+$(H2_FULL_HIGH_INITIAL_SEQNO_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full_high_initial_seqno_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_high_initial_seqno.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -29813,6 +30815,7 @@ $(BINDIR)/$(CONFIG)/h2_full_high_initial_seqno_nosec_test:  $(LIBDIR)/$(CONFIG)/
 
 
 
+$(H2_FULL_HPACK_SIZE_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full_hpack_size_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_hpack_size.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -29823,6 +30826,7 @@ $(BINDIR)/$(CONFIG)/h2_full_hpack_size_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2e
 
 
 
+$(H2_FULL_INVOKE_LARGE_REQUEST_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full_invoke_large_request_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_invoke_large_request.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -29833,6 +30837,7 @@ $(BINDIR)/$(CONFIG)/h2_full_invoke_large_request_nosec_test:  $(LIBDIR)/$(CONFIG
 
 
 
+$(H2_FULL_LARGE_METADATA_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full_large_metadata_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_large_metadata.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -29843,6 +30848,7 @@ $(BINDIR)/$(CONFIG)/h2_full_large_metadata_nosec_test:  $(LIBDIR)/$(CONFIG)/libe
 
 
 
+$(H2_FULL_MAX_CONCURRENT_STREAMS_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full_max_concurrent_streams_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_max_concurrent_streams.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -29853,6 +30859,7 @@ $(BINDIR)/$(CONFIG)/h2_full_max_concurrent_streams_nosec_test:  $(LIBDIR)/$(CONF
 
 
 
+$(H2_FULL_MAX_MESSAGE_LENGTH_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full_max_message_length_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_max_message_length.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -29863,6 +30870,7 @@ $(BINDIR)/$(CONFIG)/h2_full_max_message_length_nosec_test:  $(LIBDIR)/$(CONFIG)/
 
 
 
+$(H2_FULL_METADATA_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full_metadata_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_metadata.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -29873,6 +30881,7 @@ $(BINDIR)/$(CONFIG)/h2_full_metadata_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end
 
 
 
+$(H2_FULL_NEGATIVE_DEADLINE_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full_negative_deadline_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_negative_deadline.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -29883,6 +30892,7 @@ $(BINDIR)/$(CONFIG)/h2_full_negative_deadline_nosec_test:  $(LIBDIR)/$(CONFIG)/l
 
 
 
+$(H2_FULL_NO_OP_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full_no_op_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_no_op.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -29893,6 +30903,7 @@ $(BINDIR)/$(CONFIG)/h2_full_no_op_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_no
 
 
 
+$(H2_FULL_PAYLOAD_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full_payload_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_payload.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -29903,6 +30914,7 @@ $(BINDIR)/$(CONFIG)/h2_full_payload_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_
 
 
 
+$(H2_FULL_PING_PONG_STREAMING_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full_ping_pong_streaming_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_ping_pong_streaming.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -29913,6 +30925,7 @@ $(BINDIR)/$(CONFIG)/h2_full_ping_pong_streaming_nosec_test:  $(LIBDIR)/$(CONFIG)
 
 
 
+$(H2_FULL_REGISTERED_CALL_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full_registered_call_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_registered_call.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -29923,6 +30936,7 @@ $(BINDIR)/$(CONFIG)/h2_full_registered_call_nosec_test:  $(LIBDIR)/$(CONFIG)/lib
 
 
 
+$(H2_FULL_REQUEST_WITH_FLAGS_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full_request_with_flags_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_request_with_flags.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -29933,6 +30947,7 @@ $(BINDIR)/$(CONFIG)/h2_full_request_with_flags_nosec_test:  $(LIBDIR)/$(CONFIG)/
 
 
 
+$(H2_FULL_REQUEST_WITH_PAYLOAD_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full_request_with_payload_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_request_with_payload.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -29943,6 +30958,7 @@ $(BINDIR)/$(CONFIG)/h2_full_request_with_payload_nosec_test:  $(LIBDIR)/$(CONFIG
 
 
 
+$(H2_FULL_SERVER_FINISHES_REQUEST_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full_server_finishes_request_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_server_finishes_request.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -29953,6 +30969,7 @@ $(BINDIR)/$(CONFIG)/h2_full_server_finishes_request_nosec_test:  $(LIBDIR)/$(CON
 
 
 
+$(H2_FULL_SHUTDOWN_FINISHES_CALLS_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full_shutdown_finishes_calls_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_shutdown_finishes_calls.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -29963,6 +30980,7 @@ $(BINDIR)/$(CONFIG)/h2_full_shutdown_finishes_calls_nosec_test:  $(LIBDIR)/$(CON
 
 
 
+$(H2_FULL_SHUTDOWN_FINISHES_TAGS_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full_shutdown_finishes_tags_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_shutdown_finishes_tags.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -29973,6 +30991,7 @@ $(BINDIR)/$(CONFIG)/h2_full_shutdown_finishes_tags_nosec_test:  $(LIBDIR)/$(CONF
 
 
 
+$(H2_FULL_SIMPLE_DELAYED_REQUEST_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full_simple_delayed_request_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_simple_delayed_request.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -29983,6 +31002,7 @@ $(BINDIR)/$(CONFIG)/h2_full_simple_delayed_request_nosec_test:  $(LIBDIR)/$(CONF
 
 
 
+$(H2_FULL_SIMPLE_REQUEST_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full_simple_request_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_simple_request.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -29993,6 +31013,7 @@ $(BINDIR)/$(CONFIG)/h2_full_simple_request_nosec_test:  $(LIBDIR)/$(CONFIG)/libe
 
 
 
+$(H2_FULL_TRAILING_METADATA_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full_trailing_metadata_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_trailing_metadata.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -30003,6 +31024,7 @@ $(BINDIR)/$(CONFIG)/h2_full_trailing_metadata_nosec_test:  $(LIBDIR)/$(CONFIG)/l
 
 
 
+$(H2_FULL+PIPE_BAD_HOSTNAME_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+pipe_bad_hostname_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_bad_hostname.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -30013,6 +31035,7 @@ $(BINDIR)/$(CONFIG)/h2_full+pipe_bad_hostname_nosec_test:  $(LIBDIR)/$(CONFIG)/l
 
 
 
+$(H2_FULL+PIPE_BINARY_METADATA_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+pipe_binary_metadata_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_binary_metadata.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -30023,6 +31046,7 @@ $(BINDIR)/$(CONFIG)/h2_full+pipe_binary_metadata_nosec_test:  $(LIBDIR)/$(CONFIG
 
 
 
+$(H2_FULL+PIPE_CANCEL_AFTER_ACCEPT_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+pipe_cancel_after_accept_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_after_accept.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -30033,6 +31057,7 @@ $(BINDIR)/$(CONFIG)/h2_full+pipe_cancel_after_accept_nosec_test:  $(LIBDIR)/$(CO
 
 
 
+$(H2_FULL+PIPE_CANCEL_AFTER_CLIENT_DONE_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+pipe_cancel_after_client_done_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_after_client_done.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -30043,6 +31068,7 @@ $(BINDIR)/$(CONFIG)/h2_full+pipe_cancel_after_client_done_nosec_test:  $(LIBDIR)
 
 
 
+$(H2_FULL+PIPE_CANCEL_AFTER_INVOKE_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+pipe_cancel_after_invoke_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_after_invoke.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -30053,6 +31079,7 @@ $(BINDIR)/$(CONFIG)/h2_full+pipe_cancel_after_invoke_nosec_test:  $(LIBDIR)/$(CO
 
 
 
+$(H2_FULL+PIPE_CANCEL_BEFORE_INVOKE_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+pipe_cancel_before_invoke_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_before_invoke.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -30063,6 +31090,7 @@ $(BINDIR)/$(CONFIG)/h2_full+pipe_cancel_before_invoke_nosec_test:  $(LIBDIR)/$(C
 
 
 
+$(H2_FULL+PIPE_CANCEL_IN_A_VACUUM_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+pipe_cancel_in_a_vacuum_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_in_a_vacuum.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -30073,6 +31101,7 @@ $(BINDIR)/$(CONFIG)/h2_full+pipe_cancel_in_a_vacuum_nosec_test:  $(LIBDIR)/$(CON
 
 
 
+$(H2_FULL+PIPE_CANCEL_WITH_STATUS_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+pipe_cancel_with_status_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_with_status.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -30083,6 +31112,7 @@ $(BINDIR)/$(CONFIG)/h2_full+pipe_cancel_with_status_nosec_test:  $(LIBDIR)/$(CON
 
 
 
+$(H2_FULL+PIPE_CHANNEL_CONNECTIVITY_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+pipe_channel_connectivity_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_channel_connectivity.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -30093,6 +31123,7 @@ $(BINDIR)/$(CONFIG)/h2_full+pipe_channel_connectivity_nosec_test:  $(LIBDIR)/$(C
 
 
 
+$(H2_FULL+PIPE_CHANNEL_PING_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+pipe_channel_ping_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_channel_ping.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -30103,6 +31134,7 @@ $(BINDIR)/$(CONFIG)/h2_full+pipe_channel_ping_nosec_test:  $(LIBDIR)/$(CONFIG)/l
 
 
 
+$(H2_FULL+PIPE_COMPRESSED_PAYLOAD_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+pipe_compressed_payload_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_compressed_payload.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -30113,6 +31145,7 @@ $(BINDIR)/$(CONFIG)/h2_full+pipe_compressed_payload_nosec_test:  $(LIBDIR)/$(CON
 
 
 
+$(H2_FULL+PIPE_DEFAULT_HOST_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+pipe_default_host_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_default_host.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -30123,6 +31156,7 @@ $(BINDIR)/$(CONFIG)/h2_full+pipe_default_host_nosec_test:  $(LIBDIR)/$(CONFIG)/l
 
 
 
+$(H2_FULL+PIPE_DISAPPEARING_SERVER_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+pipe_disappearing_server_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_disappearing_server.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -30133,6 +31167,7 @@ $(BINDIR)/$(CONFIG)/h2_full+pipe_disappearing_server_nosec_test:  $(LIBDIR)/$(CO
 
 
 
+$(H2_FULL+PIPE_EMPTY_BATCH_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+pipe_empty_batch_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_empty_batch.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -30143,6 +31178,7 @@ $(BINDIR)/$(CONFIG)/h2_full+pipe_empty_batch_nosec_test:  $(LIBDIR)/$(CONFIG)/li
 
 
 
+$(H2_FULL+PIPE_GRACEFUL_SERVER_SHUTDOWN_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+pipe_graceful_server_shutdown_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_graceful_server_shutdown.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -30153,6 +31189,7 @@ $(BINDIR)/$(CONFIG)/h2_full+pipe_graceful_server_shutdown_nosec_test:  $(LIBDIR)
 
 
 
+$(H2_FULL+PIPE_HIGH_INITIAL_SEQNO_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+pipe_high_initial_seqno_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_high_initial_seqno.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -30163,6 +31200,7 @@ $(BINDIR)/$(CONFIG)/h2_full+pipe_high_initial_seqno_nosec_test:  $(LIBDIR)/$(CON
 
 
 
+$(H2_FULL+PIPE_HPACK_SIZE_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+pipe_hpack_size_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_hpack_size.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -30173,6 +31211,7 @@ $(BINDIR)/$(CONFIG)/h2_full+pipe_hpack_size_nosec_test:  $(LIBDIR)/$(CONFIG)/lib
 
 
 
+$(H2_FULL+PIPE_INVOKE_LARGE_REQUEST_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+pipe_invoke_large_request_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_invoke_large_request.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -30183,6 +31222,7 @@ $(BINDIR)/$(CONFIG)/h2_full+pipe_invoke_large_request_nosec_test:  $(LIBDIR)/$(C
 
 
 
+$(H2_FULL+PIPE_LARGE_METADATA_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+pipe_large_metadata_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_large_metadata.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -30193,6 +31233,7 @@ $(BINDIR)/$(CONFIG)/h2_full+pipe_large_metadata_nosec_test:  $(LIBDIR)/$(CONFIG)
 
 
 
+$(H2_FULL+PIPE_MAX_CONCURRENT_STREAMS_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+pipe_max_concurrent_streams_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_max_concurrent_streams.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -30203,6 +31244,7 @@ $(BINDIR)/$(CONFIG)/h2_full+pipe_max_concurrent_streams_nosec_test:  $(LIBDIR)/$
 
 
 
+$(H2_FULL+PIPE_MAX_MESSAGE_LENGTH_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+pipe_max_message_length_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_max_message_length.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -30213,6 +31255,7 @@ $(BINDIR)/$(CONFIG)/h2_full+pipe_max_message_length_nosec_test:  $(LIBDIR)/$(CON
 
 
 
+$(H2_FULL+PIPE_METADATA_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+pipe_metadata_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_metadata.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -30223,6 +31266,7 @@ $(BINDIR)/$(CONFIG)/h2_full+pipe_metadata_nosec_test:  $(LIBDIR)/$(CONFIG)/liben
 
 
 
+$(H2_FULL+PIPE_NEGATIVE_DEADLINE_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+pipe_negative_deadline_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_negative_deadline.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -30233,6 +31277,7 @@ $(BINDIR)/$(CONFIG)/h2_full+pipe_negative_deadline_nosec_test:  $(LIBDIR)/$(CONF
 
 
 
+$(H2_FULL+PIPE_NO_OP_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+pipe_no_op_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_no_op.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -30243,6 +31288,7 @@ $(BINDIR)/$(CONFIG)/h2_full+pipe_no_op_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2e
 
 
 
+$(H2_FULL+PIPE_PAYLOAD_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+pipe_payload_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_payload.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -30253,6 +31299,7 @@ $(BINDIR)/$(CONFIG)/h2_full+pipe_payload_nosec_test:  $(LIBDIR)/$(CONFIG)/libend
 
 
 
+$(H2_FULL+PIPE_PING_PONG_STREAMING_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+pipe_ping_pong_streaming_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_ping_pong_streaming.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -30263,6 +31310,7 @@ $(BINDIR)/$(CONFIG)/h2_full+pipe_ping_pong_streaming_nosec_test:  $(LIBDIR)/$(CO
 
 
 
+$(H2_FULL+PIPE_REGISTERED_CALL_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+pipe_registered_call_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_registered_call.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -30273,6 +31321,7 @@ $(BINDIR)/$(CONFIG)/h2_full+pipe_registered_call_nosec_test:  $(LIBDIR)/$(CONFIG
 
 
 
+$(H2_FULL+PIPE_REQUEST_WITH_FLAGS_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+pipe_request_with_flags_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_request_with_flags.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -30283,6 +31332,7 @@ $(BINDIR)/$(CONFIG)/h2_full+pipe_request_with_flags_nosec_test:  $(LIBDIR)/$(CON
 
 
 
+$(H2_FULL+PIPE_REQUEST_WITH_PAYLOAD_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+pipe_request_with_payload_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_request_with_payload.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -30293,6 +31343,7 @@ $(BINDIR)/$(CONFIG)/h2_full+pipe_request_with_payload_nosec_test:  $(LIBDIR)/$(C
 
 
 
+$(H2_FULL+PIPE_SERVER_FINISHES_REQUEST_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+pipe_server_finishes_request_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_server_finishes_request.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -30303,6 +31354,7 @@ $(BINDIR)/$(CONFIG)/h2_full+pipe_server_finishes_request_nosec_test:  $(LIBDIR)/
 
 
 
+$(H2_FULL+PIPE_SHUTDOWN_FINISHES_CALLS_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+pipe_shutdown_finishes_calls_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_shutdown_finishes_calls.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -30313,6 +31365,7 @@ $(BINDIR)/$(CONFIG)/h2_full+pipe_shutdown_finishes_calls_nosec_test:  $(LIBDIR)/
 
 
 
+$(H2_FULL+PIPE_SHUTDOWN_FINISHES_TAGS_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+pipe_shutdown_finishes_tags_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_shutdown_finishes_tags.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -30323,6 +31376,7 @@ $(BINDIR)/$(CONFIG)/h2_full+pipe_shutdown_finishes_tags_nosec_test:  $(LIBDIR)/$
 
 
 
+$(H2_FULL+PIPE_SIMPLE_DELAYED_REQUEST_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+pipe_simple_delayed_request_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_simple_delayed_request.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -30333,6 +31387,7 @@ $(BINDIR)/$(CONFIG)/h2_full+pipe_simple_delayed_request_nosec_test:  $(LIBDIR)/$
 
 
 
+$(H2_FULL+PIPE_SIMPLE_REQUEST_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+pipe_simple_request_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_simple_request.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -30343,6 +31398,7 @@ $(BINDIR)/$(CONFIG)/h2_full+pipe_simple_request_nosec_test:  $(LIBDIR)/$(CONFIG)
 
 
 
+$(H2_FULL+PIPE_TRAILING_METADATA_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+pipe_trailing_metadata_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_trailing_metadata.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -30353,6 +31409,7 @@ $(BINDIR)/$(CONFIG)/h2_full+pipe_trailing_metadata_nosec_test:  $(LIBDIR)/$(CONF
 
 
 
+$(H2_FULL+POLL_BAD_HOSTNAME_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll_bad_hostname_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_bad_hostname.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -30363,6 +31420,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll_bad_hostname_nosec_test:  $(LIBDIR)/$(CONFIG)/l
 
 
 
+$(H2_FULL+POLL_BINARY_METADATA_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll_binary_metadata_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_binary_metadata.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -30373,6 +31431,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll_binary_metadata_nosec_test:  $(LIBDIR)/$(CONFIG
 
 
 
+$(H2_FULL+POLL_CANCEL_AFTER_ACCEPT_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll_cancel_after_accept_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_after_accept.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -30383,6 +31442,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll_cancel_after_accept_nosec_test:  $(LIBDIR)/$(CO
 
 
 
+$(H2_FULL+POLL_CANCEL_AFTER_CLIENT_DONE_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll_cancel_after_client_done_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_after_client_done.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -30393,6 +31453,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll_cancel_after_client_done_nosec_test:  $(LIBDIR)
 
 
 
+$(H2_FULL+POLL_CANCEL_AFTER_INVOKE_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll_cancel_after_invoke_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_after_invoke.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -30403,6 +31464,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll_cancel_after_invoke_nosec_test:  $(LIBDIR)/$(CO
 
 
 
+$(H2_FULL+POLL_CANCEL_BEFORE_INVOKE_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll_cancel_before_invoke_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_before_invoke.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -30413,6 +31475,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll_cancel_before_invoke_nosec_test:  $(LIBDIR)/$(C
 
 
 
+$(H2_FULL+POLL_CANCEL_IN_A_VACUUM_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll_cancel_in_a_vacuum_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_in_a_vacuum.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -30423,6 +31486,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll_cancel_in_a_vacuum_nosec_test:  $(LIBDIR)/$(CON
 
 
 
+$(H2_FULL+POLL_CANCEL_WITH_STATUS_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll_cancel_with_status_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_with_status.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -30433,6 +31497,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll_cancel_with_status_nosec_test:  $(LIBDIR)/$(CON
 
 
 
+$(H2_FULL+POLL_CHANNEL_CONNECTIVITY_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll_channel_connectivity_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_channel_connectivity.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -30443,6 +31508,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll_channel_connectivity_nosec_test:  $(LIBDIR)/$(C
 
 
 
+$(H2_FULL+POLL_CHANNEL_PING_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll_channel_ping_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_channel_ping.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -30453,6 +31519,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll_channel_ping_nosec_test:  $(LIBDIR)/$(CONFIG)/l
 
 
 
+$(H2_FULL+POLL_COMPRESSED_PAYLOAD_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll_compressed_payload_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_compressed_payload.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -30463,6 +31530,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll_compressed_payload_nosec_test:  $(LIBDIR)/$(CON
 
 
 
+$(H2_FULL+POLL_DEFAULT_HOST_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll_default_host_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_default_host.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -30473,6 +31541,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll_default_host_nosec_test:  $(LIBDIR)/$(CONFIG)/l
 
 
 
+$(H2_FULL+POLL_DISAPPEARING_SERVER_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll_disappearing_server_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_disappearing_server.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -30483,6 +31552,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll_disappearing_server_nosec_test:  $(LIBDIR)/$(CO
 
 
 
+$(H2_FULL+POLL_EMPTY_BATCH_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll_empty_batch_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_empty_batch.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -30493,6 +31563,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll_empty_batch_nosec_test:  $(LIBDIR)/$(CONFIG)/li
 
 
 
+$(H2_FULL+POLL_GRACEFUL_SERVER_SHUTDOWN_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll_graceful_server_shutdown_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_graceful_server_shutdown.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -30503,6 +31574,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll_graceful_server_shutdown_nosec_test:  $(LIBDIR)
 
 
 
+$(H2_FULL+POLL_HIGH_INITIAL_SEQNO_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll_high_initial_seqno_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_high_initial_seqno.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -30513,6 +31585,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll_high_initial_seqno_nosec_test:  $(LIBDIR)/$(CON
 
 
 
+$(H2_FULL+POLL_HPACK_SIZE_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll_hpack_size_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_hpack_size.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -30523,6 +31596,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll_hpack_size_nosec_test:  $(LIBDIR)/$(CONFIG)/lib
 
 
 
+$(H2_FULL+POLL_INVOKE_LARGE_REQUEST_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll_invoke_large_request_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_invoke_large_request.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -30533,6 +31607,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll_invoke_large_request_nosec_test:  $(LIBDIR)/$(C
 
 
 
+$(H2_FULL+POLL_LARGE_METADATA_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll_large_metadata_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_large_metadata.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -30543,6 +31618,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll_large_metadata_nosec_test:  $(LIBDIR)/$(CONFIG)
 
 
 
+$(H2_FULL+POLL_MAX_CONCURRENT_STREAMS_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll_max_concurrent_streams_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_max_concurrent_streams.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -30553,6 +31629,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll_max_concurrent_streams_nosec_test:  $(LIBDIR)/$
 
 
 
+$(H2_FULL+POLL_MAX_MESSAGE_LENGTH_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll_max_message_length_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_max_message_length.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -30563,6 +31640,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll_max_message_length_nosec_test:  $(LIBDIR)/$(CON
 
 
 
+$(H2_FULL+POLL_METADATA_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll_metadata_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_metadata.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -30573,6 +31651,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll_metadata_nosec_test:  $(LIBDIR)/$(CONFIG)/liben
 
 
 
+$(H2_FULL+POLL_NEGATIVE_DEADLINE_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll_negative_deadline_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_negative_deadline.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -30583,6 +31662,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll_negative_deadline_nosec_test:  $(LIBDIR)/$(CONF
 
 
 
+$(H2_FULL+POLL_NO_OP_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll_no_op_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_no_op.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -30593,6 +31673,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll_no_op_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2e
 
 
 
+$(H2_FULL+POLL_PAYLOAD_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll_payload_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_payload.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -30603,6 +31684,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll_payload_nosec_test:  $(LIBDIR)/$(CONFIG)/libend
 
 
 
+$(H2_FULL+POLL_PING_PONG_STREAMING_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll_ping_pong_streaming_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_ping_pong_streaming.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -30613,6 +31695,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll_ping_pong_streaming_nosec_test:  $(LIBDIR)/$(CO
 
 
 
+$(H2_FULL+POLL_REGISTERED_CALL_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll_registered_call_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_registered_call.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -30623,6 +31706,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll_registered_call_nosec_test:  $(LIBDIR)/$(CONFIG
 
 
 
+$(H2_FULL+POLL_REQUEST_WITH_FLAGS_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll_request_with_flags_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_request_with_flags.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -30633,6 +31717,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll_request_with_flags_nosec_test:  $(LIBDIR)/$(CON
 
 
 
+$(H2_FULL+POLL_REQUEST_WITH_PAYLOAD_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll_request_with_payload_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_request_with_payload.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -30643,6 +31728,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll_request_with_payload_nosec_test:  $(LIBDIR)/$(C
 
 
 
+$(H2_FULL+POLL_SERVER_FINISHES_REQUEST_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll_server_finishes_request_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_server_finishes_request.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -30653,6 +31739,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll_server_finishes_request_nosec_test:  $(LIBDIR)/
 
 
 
+$(H2_FULL+POLL_SHUTDOWN_FINISHES_CALLS_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll_shutdown_finishes_calls_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_shutdown_finishes_calls.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -30663,6 +31750,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll_shutdown_finishes_calls_nosec_test:  $(LIBDIR)/
 
 
 
+$(H2_FULL+POLL_SHUTDOWN_FINISHES_TAGS_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll_shutdown_finishes_tags_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_shutdown_finishes_tags.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -30673,6 +31761,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll_shutdown_finishes_tags_nosec_test:  $(LIBDIR)/$
 
 
 
+$(H2_FULL+POLL_SIMPLE_DELAYED_REQUEST_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll_simple_delayed_request_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_simple_delayed_request.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -30683,6 +31772,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll_simple_delayed_request_nosec_test:  $(LIBDIR)/$
 
 
 
+$(H2_FULL+POLL_SIMPLE_REQUEST_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll_simple_request_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_simple_request.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -30693,6 +31783,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll_simple_request_nosec_test:  $(LIBDIR)/$(CONFIG)
 
 
 
+$(H2_FULL+POLL_TRAILING_METADATA_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll_trailing_metadata_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_trailing_metadata.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -30703,6 +31794,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll_trailing_metadata_nosec_test:  $(LIBDIR)/$(CONF
 
 
 
+$(H2_FULL+POLL+PIPE_BAD_HOSTNAME_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_bad_hostname_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_bad_hostname.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -30713,6 +31805,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_bad_hostname_nosec_test:  $(LIBDIR)/$(CONF
 
 
 
+$(H2_FULL+POLL+PIPE_BINARY_METADATA_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_binary_metadata_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_binary_metadata.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -30723,6 +31816,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_binary_metadata_nosec_test:  $(LIBDIR)/$(C
 
 
 
+$(H2_FULL+POLL+PIPE_CANCEL_AFTER_ACCEPT_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_cancel_after_accept_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_after_accept.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -30733,6 +31827,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_cancel_after_accept_nosec_test:  $(LIBDIR)
 
 
 
+$(H2_FULL+POLL+PIPE_CANCEL_AFTER_CLIENT_DONE_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_cancel_after_client_done_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_after_client_done.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -30743,6 +31838,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_cancel_after_client_done_nosec_test:  $(LI
 
 
 
+$(H2_FULL+POLL+PIPE_CANCEL_AFTER_INVOKE_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_cancel_after_invoke_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_after_invoke.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -30753,6 +31849,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_cancel_after_invoke_nosec_test:  $(LIBDIR)
 
 
 
+$(H2_FULL+POLL+PIPE_CANCEL_BEFORE_INVOKE_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_cancel_before_invoke_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_before_invoke.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -30763,6 +31860,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_cancel_before_invoke_nosec_test:  $(LIBDIR
 
 
 
+$(H2_FULL+POLL+PIPE_CANCEL_IN_A_VACUUM_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_cancel_in_a_vacuum_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_in_a_vacuum.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -30773,6 +31871,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_cancel_in_a_vacuum_nosec_test:  $(LIBDIR)/
 
 
 
+$(H2_FULL+POLL+PIPE_CANCEL_WITH_STATUS_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_cancel_with_status_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_with_status.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -30783,6 +31882,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_cancel_with_status_nosec_test:  $(LIBDIR)/
 
 
 
+$(H2_FULL+POLL+PIPE_CHANNEL_CONNECTIVITY_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_channel_connectivity_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_channel_connectivity.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -30793,6 +31893,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_channel_connectivity_nosec_test:  $(LIBDIR
 
 
 
+$(H2_FULL+POLL+PIPE_CHANNEL_PING_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_channel_ping_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_channel_ping.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -30803,6 +31904,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_channel_ping_nosec_test:  $(LIBDIR)/$(CONF
 
 
 
+$(H2_FULL+POLL+PIPE_COMPRESSED_PAYLOAD_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_compressed_payload_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_compressed_payload.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -30813,6 +31915,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_compressed_payload_nosec_test:  $(LIBDIR)/
 
 
 
+$(H2_FULL+POLL+PIPE_DEFAULT_HOST_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_default_host_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_default_host.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -30823,6 +31926,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_default_host_nosec_test:  $(LIBDIR)/$(CONF
 
 
 
+$(H2_FULL+POLL+PIPE_DISAPPEARING_SERVER_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_disappearing_server_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_disappearing_server.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -30833,6 +31937,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_disappearing_server_nosec_test:  $(LIBDIR)
 
 
 
+$(H2_FULL+POLL+PIPE_EMPTY_BATCH_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_empty_batch_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_empty_batch.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -30843,6 +31948,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_empty_batch_nosec_test:  $(LIBDIR)/$(CONFI
 
 
 
+$(H2_FULL+POLL+PIPE_GRACEFUL_SERVER_SHUTDOWN_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_graceful_server_shutdown_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_graceful_server_shutdown.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -30853,6 +31959,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_graceful_server_shutdown_nosec_test:  $(LI
 
 
 
+$(H2_FULL+POLL+PIPE_HIGH_INITIAL_SEQNO_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_high_initial_seqno_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_high_initial_seqno.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -30863,6 +31970,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_high_initial_seqno_nosec_test:  $(LIBDIR)/
 
 
 
+$(H2_FULL+POLL+PIPE_HPACK_SIZE_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_hpack_size_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_hpack_size.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -30873,6 +31981,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_hpack_size_nosec_test:  $(LIBDIR)/$(CONFIG
 
 
 
+$(H2_FULL+POLL+PIPE_INVOKE_LARGE_REQUEST_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_invoke_large_request_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_invoke_large_request.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -30883,6 +31992,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_invoke_large_request_nosec_test:  $(LIBDIR
 
 
 
+$(H2_FULL+POLL+PIPE_LARGE_METADATA_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_large_metadata_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_large_metadata.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -30893,6 +32003,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_large_metadata_nosec_test:  $(LIBDIR)/$(CO
 
 
 
+$(H2_FULL+POLL+PIPE_MAX_CONCURRENT_STREAMS_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_max_concurrent_streams_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_max_concurrent_streams.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -30903,6 +32014,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_max_concurrent_streams_nosec_test:  $(LIBD
 
 
 
+$(H2_FULL+POLL+PIPE_MAX_MESSAGE_LENGTH_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_max_message_length_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_max_message_length.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -30913,6 +32025,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_max_message_length_nosec_test:  $(LIBDIR)/
 
 
 
+$(H2_FULL+POLL+PIPE_METADATA_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_metadata_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_metadata.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -30923,6 +32036,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_metadata_nosec_test:  $(LIBDIR)/$(CONFIG)/
 
 
 
+$(H2_FULL+POLL+PIPE_NEGATIVE_DEADLINE_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_negative_deadline_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_negative_deadline.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -30933,6 +32047,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_negative_deadline_nosec_test:  $(LIBDIR)/$
 
 
 
+$(H2_FULL+POLL+PIPE_NO_OP_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_no_op_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_no_op.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -30943,6 +32058,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_no_op_nosec_test:  $(LIBDIR)/$(CONFIG)/lib
 
 
 
+$(H2_FULL+POLL+PIPE_PAYLOAD_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_payload_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_payload.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -30953,6 +32069,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_payload_nosec_test:  $(LIBDIR)/$(CONFIG)/l
 
 
 
+$(H2_FULL+POLL+PIPE_PING_PONG_STREAMING_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_ping_pong_streaming_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_ping_pong_streaming.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -30963,6 +32080,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_ping_pong_streaming_nosec_test:  $(LIBDIR)
 
 
 
+$(H2_FULL+POLL+PIPE_REGISTERED_CALL_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_registered_call_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_registered_call.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -30973,6 +32091,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_registered_call_nosec_test:  $(LIBDIR)/$(C
 
 
 
+$(H2_FULL+POLL+PIPE_REQUEST_WITH_FLAGS_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_request_with_flags_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_request_with_flags.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -30983,6 +32102,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_request_with_flags_nosec_test:  $(LIBDIR)/
 
 
 
+$(H2_FULL+POLL+PIPE_REQUEST_WITH_PAYLOAD_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_request_with_payload_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_request_with_payload.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -30993,6 +32113,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_request_with_payload_nosec_test:  $(LIBDIR
 
 
 
+$(H2_FULL+POLL+PIPE_SERVER_FINISHES_REQUEST_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_server_finishes_request_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_server_finishes_request.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -31003,6 +32124,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_server_finishes_request_nosec_test:  $(LIB
 
 
 
+$(H2_FULL+POLL+PIPE_SHUTDOWN_FINISHES_CALLS_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_shutdown_finishes_calls_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_shutdown_finishes_calls.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -31013,6 +32135,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_shutdown_finishes_calls_nosec_test:  $(LIB
 
 
 
+$(H2_FULL+POLL+PIPE_SHUTDOWN_FINISHES_TAGS_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_shutdown_finishes_tags_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_shutdown_finishes_tags.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -31023,6 +32146,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_shutdown_finishes_tags_nosec_test:  $(LIBD
 
 
 
+$(H2_FULL+POLL+PIPE_SIMPLE_DELAYED_REQUEST_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_simple_delayed_request_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_simple_delayed_request.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -31033,6 +32157,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_simple_delayed_request_nosec_test:  $(LIBD
 
 
 
+$(H2_FULL+POLL+PIPE_SIMPLE_REQUEST_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_simple_request_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_simple_request.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -31043,6 +32168,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_simple_request_nosec_test:  $(LIBDIR)/$(CO
 
 
 
+$(H2_FULL+POLL+PIPE_TRAILING_METADATA_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_trailing_metadata_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_full+poll+pipe.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_trailing_metadata.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -31053,6 +32179,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_trailing_metadata_nosec_test:  $(LIBDIR)/$
 
 
 
+$(H2_PROXY_BAD_HOSTNAME_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_proxy_bad_hostname_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_bad_hostname.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -31063,6 +32190,7 @@ $(BINDIR)/$(CONFIG)/h2_proxy_bad_hostname_nosec_test:  $(LIBDIR)/$(CONFIG)/liben
 
 
 
+$(H2_PROXY_BINARY_METADATA_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_proxy_binary_metadata_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_binary_metadata.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -31073,6 +32201,7 @@ $(BINDIR)/$(CONFIG)/h2_proxy_binary_metadata_nosec_test:  $(LIBDIR)/$(CONFIG)/li
 
 
 
+$(H2_PROXY_CANCEL_AFTER_ACCEPT_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_proxy_cancel_after_accept_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_after_accept.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -31083,6 +32212,7 @@ $(BINDIR)/$(CONFIG)/h2_proxy_cancel_after_accept_nosec_test:  $(LIBDIR)/$(CONFIG
 
 
 
+$(H2_PROXY_CANCEL_AFTER_CLIENT_DONE_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_proxy_cancel_after_client_done_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_after_client_done.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -31093,6 +32223,7 @@ $(BINDIR)/$(CONFIG)/h2_proxy_cancel_after_client_done_nosec_test:  $(LIBDIR)/$(C
 
 
 
+$(H2_PROXY_CANCEL_AFTER_INVOKE_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_proxy_cancel_after_invoke_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_after_invoke.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -31103,6 +32234,7 @@ $(BINDIR)/$(CONFIG)/h2_proxy_cancel_after_invoke_nosec_test:  $(LIBDIR)/$(CONFIG
 
 
 
+$(H2_PROXY_CANCEL_BEFORE_INVOKE_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_proxy_cancel_before_invoke_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_before_invoke.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -31113,6 +32245,7 @@ $(BINDIR)/$(CONFIG)/h2_proxy_cancel_before_invoke_nosec_test:  $(LIBDIR)/$(CONFI
 
 
 
+$(H2_PROXY_CANCEL_IN_A_VACUUM_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_proxy_cancel_in_a_vacuum_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_in_a_vacuum.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -31123,6 +32256,7 @@ $(BINDIR)/$(CONFIG)/h2_proxy_cancel_in_a_vacuum_nosec_test:  $(LIBDIR)/$(CONFIG)
 
 
 
+$(H2_PROXY_CANCEL_WITH_STATUS_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_proxy_cancel_with_status_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_with_status.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -31133,6 +32267,7 @@ $(BINDIR)/$(CONFIG)/h2_proxy_cancel_with_status_nosec_test:  $(LIBDIR)/$(CONFIG)
 
 
 
+$(H2_PROXY_DEFAULT_HOST_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_proxy_default_host_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_default_host.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -31143,6 +32278,7 @@ $(BINDIR)/$(CONFIG)/h2_proxy_default_host_nosec_test:  $(LIBDIR)/$(CONFIG)/liben
 
 
 
+$(H2_PROXY_DISAPPEARING_SERVER_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_proxy_disappearing_server_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_disappearing_server.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -31153,6 +32289,7 @@ $(BINDIR)/$(CONFIG)/h2_proxy_disappearing_server_nosec_test:  $(LIBDIR)/$(CONFIG
 
 
 
+$(H2_PROXY_EMPTY_BATCH_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_proxy_empty_batch_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_empty_batch.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -31163,6 +32300,7 @@ $(BINDIR)/$(CONFIG)/h2_proxy_empty_batch_nosec_test:  $(LIBDIR)/$(CONFIG)/libend
 
 
 
+$(H2_PROXY_GRACEFUL_SERVER_SHUTDOWN_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_proxy_graceful_server_shutdown_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_graceful_server_shutdown.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -31173,6 +32311,7 @@ $(BINDIR)/$(CONFIG)/h2_proxy_graceful_server_shutdown_nosec_test:  $(LIBDIR)/$(C
 
 
 
+$(H2_PROXY_HIGH_INITIAL_SEQNO_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_proxy_high_initial_seqno_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_high_initial_seqno.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -31183,6 +32322,7 @@ $(BINDIR)/$(CONFIG)/h2_proxy_high_initial_seqno_nosec_test:  $(LIBDIR)/$(CONFIG)
 
 
 
+$(H2_PROXY_INVOKE_LARGE_REQUEST_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_proxy_invoke_large_request_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_invoke_large_request.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -31193,6 +32333,7 @@ $(BINDIR)/$(CONFIG)/h2_proxy_invoke_large_request_nosec_test:  $(LIBDIR)/$(CONFI
 
 
 
+$(H2_PROXY_LARGE_METADATA_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_proxy_large_metadata_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_large_metadata.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -31203,6 +32344,7 @@ $(BINDIR)/$(CONFIG)/h2_proxy_large_metadata_nosec_test:  $(LIBDIR)/$(CONFIG)/lib
 
 
 
+$(H2_PROXY_MAX_MESSAGE_LENGTH_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_proxy_max_message_length_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_max_message_length.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -31213,6 +32355,7 @@ $(BINDIR)/$(CONFIG)/h2_proxy_max_message_length_nosec_test:  $(LIBDIR)/$(CONFIG)
 
 
 
+$(H2_PROXY_METADATA_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_proxy_metadata_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_metadata.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -31223,6 +32366,7 @@ $(BINDIR)/$(CONFIG)/h2_proxy_metadata_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2en
 
 
 
+$(H2_PROXY_NEGATIVE_DEADLINE_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_proxy_negative_deadline_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_negative_deadline.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -31233,6 +32377,7 @@ $(BINDIR)/$(CONFIG)/h2_proxy_negative_deadline_nosec_test:  $(LIBDIR)/$(CONFIG)/
 
 
 
+$(H2_PROXY_NO_OP_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_proxy_no_op_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_no_op.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -31243,6 +32388,7 @@ $(BINDIR)/$(CONFIG)/h2_proxy_no_op_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_n
 
 
 
+$(H2_PROXY_PAYLOAD_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_proxy_payload_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_payload.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -31253,6 +32399,7 @@ $(BINDIR)/$(CONFIG)/h2_proxy_payload_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end
 
 
 
+$(H2_PROXY_PING_PONG_STREAMING_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_proxy_ping_pong_streaming_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_ping_pong_streaming.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -31263,6 +32410,7 @@ $(BINDIR)/$(CONFIG)/h2_proxy_ping_pong_streaming_nosec_test:  $(LIBDIR)/$(CONFIG
 
 
 
+$(H2_PROXY_REGISTERED_CALL_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_proxy_registered_call_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_registered_call.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -31273,6 +32421,7 @@ $(BINDIR)/$(CONFIG)/h2_proxy_registered_call_nosec_test:  $(LIBDIR)/$(CONFIG)/li
 
 
 
+$(H2_PROXY_REQUEST_WITH_PAYLOAD_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_proxy_request_with_payload_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_request_with_payload.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -31283,6 +32432,7 @@ $(BINDIR)/$(CONFIG)/h2_proxy_request_with_payload_nosec_test:  $(LIBDIR)/$(CONFI
 
 
 
+$(H2_PROXY_SERVER_FINISHES_REQUEST_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_proxy_server_finishes_request_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_server_finishes_request.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -31293,6 +32443,7 @@ $(BINDIR)/$(CONFIG)/h2_proxy_server_finishes_request_nosec_test:  $(LIBDIR)/$(CO
 
 
 
+$(H2_PROXY_SHUTDOWN_FINISHES_CALLS_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_proxy_shutdown_finishes_calls_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_shutdown_finishes_calls.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -31303,6 +32454,7 @@ $(BINDIR)/$(CONFIG)/h2_proxy_shutdown_finishes_calls_nosec_test:  $(LIBDIR)/$(CO
 
 
 
+$(H2_PROXY_SHUTDOWN_FINISHES_TAGS_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_proxy_shutdown_finishes_tags_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_shutdown_finishes_tags.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -31313,6 +32465,7 @@ $(BINDIR)/$(CONFIG)/h2_proxy_shutdown_finishes_tags_nosec_test:  $(LIBDIR)/$(CON
 
 
 
+$(H2_PROXY_SIMPLE_DELAYED_REQUEST_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_proxy_simple_delayed_request_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_simple_delayed_request.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -31323,6 +32476,7 @@ $(BINDIR)/$(CONFIG)/h2_proxy_simple_delayed_request_nosec_test:  $(LIBDIR)/$(CON
 
 
 
+$(H2_PROXY_SIMPLE_REQUEST_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_proxy_simple_request_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_simple_request.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -31333,6 +32487,7 @@ $(BINDIR)/$(CONFIG)/h2_proxy_simple_request_nosec_test:  $(LIBDIR)/$(CONFIG)/lib
 
 
 
+$(H2_PROXY_TRAILING_METADATA_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_proxy_trailing_metadata_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_proxy.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_trailing_metadata.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -31343,6 +32498,7 @@ $(BINDIR)/$(CONFIG)/h2_proxy_trailing_metadata_nosec_test:  $(LIBDIR)/$(CONFIG)/
 
 
 
+$(H2_SOCKPAIR_BAD_HOSTNAME_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_bad_hostname_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_bad_hostname.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -31353,6 +32509,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_bad_hostname_nosec_test:  $(LIBDIR)/$(CONFIG)/li
 
 
 
+$(H2_SOCKPAIR_BINARY_METADATA_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_binary_metadata_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_binary_metadata.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -31363,6 +32520,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_binary_metadata_nosec_test:  $(LIBDIR)/$(CONFIG)
 
 
 
+$(H2_SOCKPAIR_CANCEL_AFTER_ACCEPT_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_cancel_after_accept_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_after_accept.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -31373,6 +32531,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_cancel_after_accept_nosec_test:  $(LIBDIR)/$(CON
 
 
 
+$(H2_SOCKPAIR_CANCEL_AFTER_CLIENT_DONE_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_cancel_after_client_done_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_after_client_done.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -31383,6 +32542,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_cancel_after_client_done_nosec_test:  $(LIBDIR)/
 
 
 
+$(H2_SOCKPAIR_CANCEL_AFTER_INVOKE_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_cancel_after_invoke_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_after_invoke.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -31393,6 +32553,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_cancel_after_invoke_nosec_test:  $(LIBDIR)/$(CON
 
 
 
+$(H2_SOCKPAIR_CANCEL_BEFORE_INVOKE_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_cancel_before_invoke_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_before_invoke.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -31403,6 +32564,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_cancel_before_invoke_nosec_test:  $(LIBDIR)/$(CO
 
 
 
+$(H2_SOCKPAIR_CANCEL_IN_A_VACUUM_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_cancel_in_a_vacuum_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_in_a_vacuum.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -31413,6 +32575,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_cancel_in_a_vacuum_nosec_test:  $(LIBDIR)/$(CONF
 
 
 
+$(H2_SOCKPAIR_CANCEL_WITH_STATUS_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_cancel_with_status_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_with_status.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -31423,6 +32586,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_cancel_with_status_nosec_test:  $(LIBDIR)/$(CONF
 
 
 
+$(H2_SOCKPAIR_COMPRESSED_PAYLOAD_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_compressed_payload_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_compressed_payload.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -31433,6 +32597,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_compressed_payload_nosec_test:  $(LIBDIR)/$(CONF
 
 
 
+$(H2_SOCKPAIR_EMPTY_BATCH_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_empty_batch_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_empty_batch.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -31443,6 +32608,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_empty_batch_nosec_test:  $(LIBDIR)/$(CONFIG)/lib
 
 
 
+$(H2_SOCKPAIR_GRACEFUL_SERVER_SHUTDOWN_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_graceful_server_shutdown_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_graceful_server_shutdown.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -31453,6 +32619,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_graceful_server_shutdown_nosec_test:  $(LIBDIR)/
 
 
 
+$(H2_SOCKPAIR_HIGH_INITIAL_SEQNO_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_high_initial_seqno_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_high_initial_seqno.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -31463,6 +32630,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_high_initial_seqno_nosec_test:  $(LIBDIR)/$(CONF
 
 
 
+$(H2_SOCKPAIR_HPACK_SIZE_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_hpack_size_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_hpack_size.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -31473,6 +32641,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_hpack_size_nosec_test:  $(LIBDIR)/$(CONFIG)/libe
 
 
 
+$(H2_SOCKPAIR_INVOKE_LARGE_REQUEST_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_invoke_large_request_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_invoke_large_request.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -31483,6 +32652,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_invoke_large_request_nosec_test:  $(LIBDIR)/$(CO
 
 
 
+$(H2_SOCKPAIR_LARGE_METADATA_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_large_metadata_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_large_metadata.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -31493,6 +32663,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_large_metadata_nosec_test:  $(LIBDIR)/$(CONFIG)/
 
 
 
+$(H2_SOCKPAIR_MAX_CONCURRENT_STREAMS_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_max_concurrent_streams_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_max_concurrent_streams.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -31503,6 +32674,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_max_concurrent_streams_nosec_test:  $(LIBDIR)/$(
 
 
 
+$(H2_SOCKPAIR_MAX_MESSAGE_LENGTH_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_max_message_length_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_max_message_length.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -31513,6 +32685,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_max_message_length_nosec_test:  $(LIBDIR)/$(CONF
 
 
 
+$(H2_SOCKPAIR_METADATA_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_metadata_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_metadata.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -31523,6 +32696,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_metadata_nosec_test:  $(LIBDIR)/$(CONFIG)/libend
 
 
 
+$(H2_SOCKPAIR_NEGATIVE_DEADLINE_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_negative_deadline_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_negative_deadline.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -31533,6 +32707,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_negative_deadline_nosec_test:  $(LIBDIR)/$(CONFI
 
 
 
+$(H2_SOCKPAIR_NO_OP_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_no_op_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_no_op.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -31543,6 +32718,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_no_op_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2en
 
 
 
+$(H2_SOCKPAIR_PAYLOAD_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_payload_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_payload.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -31553,6 +32729,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_payload_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2
 
 
 
+$(H2_SOCKPAIR_PING_PONG_STREAMING_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_ping_pong_streaming_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_ping_pong_streaming.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -31563,6 +32740,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_ping_pong_streaming_nosec_test:  $(LIBDIR)/$(CON
 
 
 
+$(H2_SOCKPAIR_REGISTERED_CALL_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_registered_call_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_registered_call.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -31573,6 +32751,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_registered_call_nosec_test:  $(LIBDIR)/$(CONFIG)
 
 
 
+$(H2_SOCKPAIR_REQUEST_WITH_FLAGS_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_request_with_flags_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_request_with_flags.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -31583,6 +32762,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_request_with_flags_nosec_test:  $(LIBDIR)/$(CONF
 
 
 
+$(H2_SOCKPAIR_REQUEST_WITH_PAYLOAD_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_request_with_payload_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_request_with_payload.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -31593,6 +32773,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_request_with_payload_nosec_test:  $(LIBDIR)/$(CO
 
 
 
+$(H2_SOCKPAIR_SERVER_FINISHES_REQUEST_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_server_finishes_request_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_server_finishes_request.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -31603,6 +32784,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_server_finishes_request_nosec_test:  $(LIBDIR)/$
 
 
 
+$(H2_SOCKPAIR_SHUTDOWN_FINISHES_CALLS_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_shutdown_finishes_calls_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_shutdown_finishes_calls.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -31613,6 +32795,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_shutdown_finishes_calls_nosec_test:  $(LIBDIR)/$
 
 
 
+$(H2_SOCKPAIR_SHUTDOWN_FINISHES_TAGS_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_shutdown_finishes_tags_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_shutdown_finishes_tags.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -31623,6 +32806,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_shutdown_finishes_tags_nosec_test:  $(LIBDIR)/$(
 
 
 
+$(H2_SOCKPAIR_SIMPLE_REQUEST_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_simple_request_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_simple_request.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -31633,6 +32817,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_simple_request_nosec_test:  $(LIBDIR)/$(CONFIG)/
 
 
 
+$(H2_SOCKPAIR_TRAILING_METADATA_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_trailing_metadata_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_trailing_metadata.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -31643,6 +32828,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_trailing_metadata_nosec_test:  $(LIBDIR)/$(CONFI
 
 
 
+$(H2_SOCKPAIR+TRACE_BAD_HOSTNAME_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair+trace_bad_hostname_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair+trace.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_bad_hostname.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -31653,6 +32839,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair+trace_bad_hostname_nosec_test:  $(LIBDIR)/$(CONF
 
 
 
+$(H2_SOCKPAIR+TRACE_BINARY_METADATA_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair+trace_binary_metadata_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair+trace.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_binary_metadata.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -31663,6 +32850,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair+trace_binary_metadata_nosec_test:  $(LIBDIR)/$(C
 
 
 
+$(H2_SOCKPAIR+TRACE_CANCEL_AFTER_ACCEPT_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair+trace_cancel_after_accept_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair+trace.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_after_accept.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -31673,6 +32861,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair+trace_cancel_after_accept_nosec_test:  $(LIBDIR)
 
 
 
+$(H2_SOCKPAIR+TRACE_CANCEL_AFTER_CLIENT_DONE_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair+trace_cancel_after_client_done_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair+trace.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_after_client_done.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -31683,6 +32872,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair+trace_cancel_after_client_done_nosec_test:  $(LI
 
 
 
+$(H2_SOCKPAIR+TRACE_CANCEL_AFTER_INVOKE_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair+trace_cancel_after_invoke_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair+trace.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_after_invoke.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -31693,6 +32883,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair+trace_cancel_after_invoke_nosec_test:  $(LIBDIR)
 
 
 
+$(H2_SOCKPAIR+TRACE_CANCEL_BEFORE_INVOKE_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair+trace_cancel_before_invoke_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair+trace.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_before_invoke.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -31703,6 +32894,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair+trace_cancel_before_invoke_nosec_test:  $(LIBDIR
 
 
 
+$(H2_SOCKPAIR+TRACE_CANCEL_IN_A_VACUUM_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair+trace_cancel_in_a_vacuum_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair+trace.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_in_a_vacuum.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -31713,6 +32905,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair+trace_cancel_in_a_vacuum_nosec_test:  $(LIBDIR)/
 
 
 
+$(H2_SOCKPAIR+TRACE_CANCEL_WITH_STATUS_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair+trace_cancel_with_status_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair+trace.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_with_status.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -31723,6 +32916,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair+trace_cancel_with_status_nosec_test:  $(LIBDIR)/
 
 
 
+$(H2_SOCKPAIR+TRACE_COMPRESSED_PAYLOAD_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair+trace_compressed_payload_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair+trace.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_compressed_payload.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -31733,6 +32927,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair+trace_compressed_payload_nosec_test:  $(LIBDIR)/
 
 
 
+$(H2_SOCKPAIR+TRACE_EMPTY_BATCH_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair+trace_empty_batch_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair+trace.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_empty_batch.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -31743,6 +32938,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair+trace_empty_batch_nosec_test:  $(LIBDIR)/$(CONFI
 
 
 
+$(H2_SOCKPAIR+TRACE_GRACEFUL_SERVER_SHUTDOWN_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair+trace_graceful_server_shutdown_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair+trace.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_graceful_server_shutdown.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -31753,6 +32949,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair+trace_graceful_server_shutdown_nosec_test:  $(LI
 
 
 
+$(H2_SOCKPAIR+TRACE_HIGH_INITIAL_SEQNO_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair+trace_high_initial_seqno_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair+trace.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_high_initial_seqno.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -31763,6 +32960,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair+trace_high_initial_seqno_nosec_test:  $(LIBDIR)/
 
 
 
+$(H2_SOCKPAIR+TRACE_INVOKE_LARGE_REQUEST_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair+trace_invoke_large_request_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair+trace.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_invoke_large_request.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -31773,6 +32971,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair+trace_invoke_large_request_nosec_test:  $(LIBDIR
 
 
 
+$(H2_SOCKPAIR+TRACE_LARGE_METADATA_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair+trace_large_metadata_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair+trace.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_large_metadata.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -31783,6 +32982,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair+trace_large_metadata_nosec_test:  $(LIBDIR)/$(CO
 
 
 
+$(H2_SOCKPAIR+TRACE_MAX_CONCURRENT_STREAMS_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair+trace_max_concurrent_streams_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair+trace.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_max_concurrent_streams.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -31793,6 +32993,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair+trace_max_concurrent_streams_nosec_test:  $(LIBD
 
 
 
+$(H2_SOCKPAIR+TRACE_MAX_MESSAGE_LENGTH_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair+trace_max_message_length_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair+trace.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_max_message_length.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -31803,6 +33004,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair+trace_max_message_length_nosec_test:  $(LIBDIR)/
 
 
 
+$(H2_SOCKPAIR+TRACE_METADATA_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair+trace_metadata_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair+trace.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_metadata.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -31813,6 +33015,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair+trace_metadata_nosec_test:  $(LIBDIR)/$(CONFIG)/
 
 
 
+$(H2_SOCKPAIR+TRACE_NEGATIVE_DEADLINE_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair+trace_negative_deadline_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair+trace.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_negative_deadline.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -31823,6 +33026,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair+trace_negative_deadline_nosec_test:  $(LIBDIR)/$
 
 
 
+$(H2_SOCKPAIR+TRACE_NO_OP_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair+trace_no_op_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair+trace.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_no_op.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -31833,6 +33037,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair+trace_no_op_nosec_test:  $(LIBDIR)/$(CONFIG)/lib
 
 
 
+$(H2_SOCKPAIR+TRACE_PAYLOAD_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair+trace_payload_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair+trace.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_payload.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -31843,6 +33048,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair+trace_payload_nosec_test:  $(LIBDIR)/$(CONFIG)/l
 
 
 
+$(H2_SOCKPAIR+TRACE_PING_PONG_STREAMING_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair+trace_ping_pong_streaming_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair+trace.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_ping_pong_streaming.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -31853,6 +33059,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair+trace_ping_pong_streaming_nosec_test:  $(LIBDIR)
 
 
 
+$(H2_SOCKPAIR+TRACE_REGISTERED_CALL_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair+trace_registered_call_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair+trace.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_registered_call.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -31863,6 +33070,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair+trace_registered_call_nosec_test:  $(LIBDIR)/$(C
 
 
 
+$(H2_SOCKPAIR+TRACE_REQUEST_WITH_FLAGS_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair+trace_request_with_flags_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair+trace.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_request_with_flags.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -31873,6 +33081,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair+trace_request_with_flags_nosec_test:  $(LIBDIR)/
 
 
 
+$(H2_SOCKPAIR+TRACE_REQUEST_WITH_PAYLOAD_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair+trace_request_with_payload_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair+trace.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_request_with_payload.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -31883,6 +33092,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair+trace_request_with_payload_nosec_test:  $(LIBDIR
 
 
 
+$(H2_SOCKPAIR+TRACE_SERVER_FINISHES_REQUEST_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair+trace_server_finishes_request_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair+trace.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_server_finishes_request.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -31893,6 +33103,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair+trace_server_finishes_request_nosec_test:  $(LIB
 
 
 
+$(H2_SOCKPAIR+TRACE_SHUTDOWN_FINISHES_CALLS_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair+trace_shutdown_finishes_calls_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair+trace.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_shutdown_finishes_calls.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -31903,6 +33114,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair+trace_shutdown_finishes_calls_nosec_test:  $(LIB
 
 
 
+$(H2_SOCKPAIR+TRACE_SHUTDOWN_FINISHES_TAGS_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair+trace_shutdown_finishes_tags_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair+trace.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_shutdown_finishes_tags.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -31913,6 +33125,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair+trace_shutdown_finishes_tags_nosec_test:  $(LIBD
 
 
 
+$(H2_SOCKPAIR+TRACE_SIMPLE_REQUEST_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair+trace_simple_request_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair+trace.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_simple_request.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -31923,6 +33136,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair+trace_simple_request_nosec_test:  $(LIBDIR)/$(CO
 
 
 
+$(H2_SOCKPAIR+TRACE_TRAILING_METADATA_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair+trace_trailing_metadata_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair+trace.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_trailing_metadata.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -31933,6 +33147,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair+trace_trailing_metadata_nosec_test:  $(LIBDIR)/$
 
 
 
+$(H2_SOCKPAIR_1BYTE_BAD_HOSTNAME_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_bad_hostname_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair_1byte.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_bad_hostname.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -31943,6 +33158,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_bad_hostname_nosec_test:  $(LIBDIR)/$(CONF
 
 
 
+$(H2_SOCKPAIR_1BYTE_BINARY_METADATA_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_binary_metadata_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair_1byte.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_binary_metadata.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -31953,6 +33169,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_binary_metadata_nosec_test:  $(LIBDIR)/$(C
 
 
 
+$(H2_SOCKPAIR_1BYTE_CANCEL_AFTER_ACCEPT_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_cancel_after_accept_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair_1byte.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_after_accept.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -31963,6 +33180,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_cancel_after_accept_nosec_test:  $(LIBDIR)
 
 
 
+$(H2_SOCKPAIR_1BYTE_CANCEL_AFTER_CLIENT_DONE_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_cancel_after_client_done_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair_1byte.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_after_client_done.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -31973,6 +33191,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_cancel_after_client_done_nosec_test:  $(LI
 
 
 
+$(H2_SOCKPAIR_1BYTE_CANCEL_AFTER_INVOKE_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_cancel_after_invoke_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair_1byte.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_after_invoke.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -31983,6 +33202,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_cancel_after_invoke_nosec_test:  $(LIBDIR)
 
 
 
+$(H2_SOCKPAIR_1BYTE_CANCEL_BEFORE_INVOKE_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_cancel_before_invoke_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair_1byte.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_before_invoke.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -31993,6 +33213,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_cancel_before_invoke_nosec_test:  $(LIBDIR
 
 
 
+$(H2_SOCKPAIR_1BYTE_CANCEL_IN_A_VACUUM_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_cancel_in_a_vacuum_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair_1byte.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_in_a_vacuum.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -32003,6 +33224,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_cancel_in_a_vacuum_nosec_test:  $(LIBDIR)/
 
 
 
+$(H2_SOCKPAIR_1BYTE_CANCEL_WITH_STATUS_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_cancel_with_status_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair_1byte.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_with_status.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -32013,6 +33235,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_cancel_with_status_nosec_test:  $(LIBDIR)/
 
 
 
+$(H2_SOCKPAIR_1BYTE_COMPRESSED_PAYLOAD_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_compressed_payload_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair_1byte.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_compressed_payload.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -32023,6 +33246,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_compressed_payload_nosec_test:  $(LIBDIR)/
 
 
 
+$(H2_SOCKPAIR_1BYTE_EMPTY_BATCH_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_empty_batch_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair_1byte.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_empty_batch.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -32033,6 +33257,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_empty_batch_nosec_test:  $(LIBDIR)/$(CONFI
 
 
 
+$(H2_SOCKPAIR_1BYTE_GRACEFUL_SERVER_SHUTDOWN_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_graceful_server_shutdown_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair_1byte.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_graceful_server_shutdown.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -32043,6 +33268,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_graceful_server_shutdown_nosec_test:  $(LI
 
 
 
+$(H2_SOCKPAIR_1BYTE_HIGH_INITIAL_SEQNO_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_high_initial_seqno_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair_1byte.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_high_initial_seqno.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -32053,6 +33279,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_high_initial_seqno_nosec_test:  $(LIBDIR)/
 
 
 
+$(H2_SOCKPAIR_1BYTE_HPACK_SIZE_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_hpack_size_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair_1byte.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_hpack_size.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -32063,6 +33290,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_hpack_size_nosec_test:  $(LIBDIR)/$(CONFIG
 
 
 
+$(H2_SOCKPAIR_1BYTE_INVOKE_LARGE_REQUEST_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_invoke_large_request_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair_1byte.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_invoke_large_request.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -32073,6 +33301,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_invoke_large_request_nosec_test:  $(LIBDIR
 
 
 
+$(H2_SOCKPAIR_1BYTE_LARGE_METADATA_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_large_metadata_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair_1byte.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_large_metadata.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -32083,6 +33312,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_large_metadata_nosec_test:  $(LIBDIR)/$(CO
 
 
 
+$(H2_SOCKPAIR_1BYTE_MAX_CONCURRENT_STREAMS_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_max_concurrent_streams_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair_1byte.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_max_concurrent_streams.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -32093,6 +33323,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_max_concurrent_streams_nosec_test:  $(LIBD
 
 
 
+$(H2_SOCKPAIR_1BYTE_MAX_MESSAGE_LENGTH_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_max_message_length_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair_1byte.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_max_message_length.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -32103,6 +33334,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_max_message_length_nosec_test:  $(LIBDIR)/
 
 
 
+$(H2_SOCKPAIR_1BYTE_METADATA_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_metadata_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair_1byte.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_metadata.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -32113,6 +33345,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_metadata_nosec_test:  $(LIBDIR)/$(CONFIG)/
 
 
 
+$(H2_SOCKPAIR_1BYTE_NEGATIVE_DEADLINE_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_negative_deadline_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair_1byte.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_negative_deadline.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -32123,6 +33356,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_negative_deadline_nosec_test:  $(LIBDIR)/$
 
 
 
+$(H2_SOCKPAIR_1BYTE_NO_OP_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_no_op_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair_1byte.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_no_op.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -32133,6 +33367,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_no_op_nosec_test:  $(LIBDIR)/$(CONFIG)/lib
 
 
 
+$(H2_SOCKPAIR_1BYTE_PAYLOAD_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_payload_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair_1byte.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_payload.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -32143,6 +33378,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_payload_nosec_test:  $(LIBDIR)/$(CONFIG)/l
 
 
 
+$(H2_SOCKPAIR_1BYTE_PING_PONG_STREAMING_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_ping_pong_streaming_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair_1byte.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_ping_pong_streaming.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -32153,6 +33389,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_ping_pong_streaming_nosec_test:  $(LIBDIR)
 
 
 
+$(H2_SOCKPAIR_1BYTE_REGISTERED_CALL_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_registered_call_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair_1byte.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_registered_call.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -32163,6 +33400,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_registered_call_nosec_test:  $(LIBDIR)/$(C
 
 
 
+$(H2_SOCKPAIR_1BYTE_REQUEST_WITH_FLAGS_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_request_with_flags_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair_1byte.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_request_with_flags.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -32173,6 +33411,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_request_with_flags_nosec_test:  $(LIBDIR)/
 
 
 
+$(H2_SOCKPAIR_1BYTE_REQUEST_WITH_PAYLOAD_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_request_with_payload_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair_1byte.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_request_with_payload.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -32183,6 +33422,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_request_with_payload_nosec_test:  $(LIBDIR
 
 
 
+$(H2_SOCKPAIR_1BYTE_SERVER_FINISHES_REQUEST_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_server_finishes_request_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair_1byte.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_server_finishes_request.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -32193,6 +33433,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_server_finishes_request_nosec_test:  $(LIB
 
 
 
+$(H2_SOCKPAIR_1BYTE_SHUTDOWN_FINISHES_CALLS_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_shutdown_finishes_calls_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair_1byte.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_shutdown_finishes_calls.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -32203,6 +33444,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_shutdown_finishes_calls_nosec_test:  $(LIB
 
 
 
+$(H2_SOCKPAIR_1BYTE_SHUTDOWN_FINISHES_TAGS_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_shutdown_finishes_tags_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair_1byte.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_shutdown_finishes_tags.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -32213,6 +33455,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_shutdown_finishes_tags_nosec_test:  $(LIBD
 
 
 
+$(H2_SOCKPAIR_1BYTE_SIMPLE_REQUEST_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_simple_request_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair_1byte.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_simple_request.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -32223,6 +33466,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_simple_request_nosec_test:  $(LIBDIR)/$(CO
 
 
 
+$(H2_SOCKPAIR_1BYTE_TRAILING_METADATA_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_trailing_metadata_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_sockpair_1byte.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_trailing_metadata.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -32233,6 +33477,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_trailing_metadata_nosec_test:  $(LIBDIR)/$
 
 
 
+$(H2_UCHANNEL_BAD_HOSTNAME_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uchannel_bad_hostname_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_bad_hostname.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -32243,6 +33488,7 @@ $(BINDIR)/$(CONFIG)/h2_uchannel_bad_hostname_nosec_test:  $(LIBDIR)/$(CONFIG)/li
 
 
 
+$(H2_UCHANNEL_BINARY_METADATA_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uchannel_binary_metadata_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_binary_metadata.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -32253,6 +33499,7 @@ $(BINDIR)/$(CONFIG)/h2_uchannel_binary_metadata_nosec_test:  $(LIBDIR)/$(CONFIG)
 
 
 
+$(H2_UCHANNEL_CANCEL_AFTER_ACCEPT_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uchannel_cancel_after_accept_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_after_accept.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -32263,6 +33510,7 @@ $(BINDIR)/$(CONFIG)/h2_uchannel_cancel_after_accept_nosec_test:  $(LIBDIR)/$(CON
 
 
 
+$(H2_UCHANNEL_CANCEL_AFTER_CLIENT_DONE_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uchannel_cancel_after_client_done_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_after_client_done.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -32273,6 +33521,7 @@ $(BINDIR)/$(CONFIG)/h2_uchannel_cancel_after_client_done_nosec_test:  $(LIBDIR)/
 
 
 
+$(H2_UCHANNEL_CANCEL_AFTER_INVOKE_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uchannel_cancel_after_invoke_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_after_invoke.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -32283,6 +33532,7 @@ $(BINDIR)/$(CONFIG)/h2_uchannel_cancel_after_invoke_nosec_test:  $(LIBDIR)/$(CON
 
 
 
+$(H2_UCHANNEL_CANCEL_BEFORE_INVOKE_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uchannel_cancel_before_invoke_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_before_invoke.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -32293,6 +33543,7 @@ $(BINDIR)/$(CONFIG)/h2_uchannel_cancel_before_invoke_nosec_test:  $(LIBDIR)/$(CO
 
 
 
+$(H2_UCHANNEL_CANCEL_IN_A_VACUUM_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uchannel_cancel_in_a_vacuum_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_in_a_vacuum.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -32303,6 +33554,7 @@ $(BINDIR)/$(CONFIG)/h2_uchannel_cancel_in_a_vacuum_nosec_test:  $(LIBDIR)/$(CONF
 
 
 
+$(H2_UCHANNEL_CANCEL_WITH_STATUS_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uchannel_cancel_with_status_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_with_status.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -32313,6 +33565,7 @@ $(BINDIR)/$(CONFIG)/h2_uchannel_cancel_with_status_nosec_test:  $(LIBDIR)/$(CONF
 
 
 
+$(H2_UCHANNEL_COMPRESSED_PAYLOAD_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uchannel_compressed_payload_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_compressed_payload.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -32323,6 +33576,7 @@ $(BINDIR)/$(CONFIG)/h2_uchannel_compressed_payload_nosec_test:  $(LIBDIR)/$(CONF
 
 
 
+$(H2_UCHANNEL_EMPTY_BATCH_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uchannel_empty_batch_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_empty_batch.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -32333,6 +33587,7 @@ $(BINDIR)/$(CONFIG)/h2_uchannel_empty_batch_nosec_test:  $(LIBDIR)/$(CONFIG)/lib
 
 
 
+$(H2_UCHANNEL_GRACEFUL_SERVER_SHUTDOWN_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uchannel_graceful_server_shutdown_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_graceful_server_shutdown.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -32343,6 +33598,7 @@ $(BINDIR)/$(CONFIG)/h2_uchannel_graceful_server_shutdown_nosec_test:  $(LIBDIR)/
 
 
 
+$(H2_UCHANNEL_HIGH_INITIAL_SEQNO_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uchannel_high_initial_seqno_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_high_initial_seqno.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -32353,6 +33609,7 @@ $(BINDIR)/$(CONFIG)/h2_uchannel_high_initial_seqno_nosec_test:  $(LIBDIR)/$(CONF
 
 
 
+$(H2_UCHANNEL_HPACK_SIZE_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uchannel_hpack_size_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_hpack_size.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -32363,6 +33620,7 @@ $(BINDIR)/$(CONFIG)/h2_uchannel_hpack_size_nosec_test:  $(LIBDIR)/$(CONFIG)/libe
 
 
 
+$(H2_UCHANNEL_INVOKE_LARGE_REQUEST_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uchannel_invoke_large_request_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_invoke_large_request.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -32373,6 +33631,7 @@ $(BINDIR)/$(CONFIG)/h2_uchannel_invoke_large_request_nosec_test:  $(LIBDIR)/$(CO
 
 
 
+$(H2_UCHANNEL_LARGE_METADATA_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uchannel_large_metadata_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_large_metadata.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -32383,6 +33642,7 @@ $(BINDIR)/$(CONFIG)/h2_uchannel_large_metadata_nosec_test:  $(LIBDIR)/$(CONFIG)/
 
 
 
+$(H2_UCHANNEL_MAX_CONCURRENT_STREAMS_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uchannel_max_concurrent_streams_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_max_concurrent_streams.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -32393,6 +33653,7 @@ $(BINDIR)/$(CONFIG)/h2_uchannel_max_concurrent_streams_nosec_test:  $(LIBDIR)/$(
 
 
 
+$(H2_UCHANNEL_MAX_MESSAGE_LENGTH_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uchannel_max_message_length_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_max_message_length.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -32403,6 +33664,7 @@ $(BINDIR)/$(CONFIG)/h2_uchannel_max_message_length_nosec_test:  $(LIBDIR)/$(CONF
 
 
 
+$(H2_UCHANNEL_METADATA_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uchannel_metadata_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_metadata.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -32413,6 +33675,7 @@ $(BINDIR)/$(CONFIG)/h2_uchannel_metadata_nosec_test:  $(LIBDIR)/$(CONFIG)/libend
 
 
 
+$(H2_UCHANNEL_NEGATIVE_DEADLINE_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uchannel_negative_deadline_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_negative_deadline.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -32423,6 +33686,7 @@ $(BINDIR)/$(CONFIG)/h2_uchannel_negative_deadline_nosec_test:  $(LIBDIR)/$(CONFI
 
 
 
+$(H2_UCHANNEL_NO_OP_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uchannel_no_op_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_no_op.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -32433,6 +33697,7 @@ $(BINDIR)/$(CONFIG)/h2_uchannel_no_op_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2en
 
 
 
+$(H2_UCHANNEL_PAYLOAD_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uchannel_payload_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_payload.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -32443,6 +33708,7 @@ $(BINDIR)/$(CONFIG)/h2_uchannel_payload_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2
 
 
 
+$(H2_UCHANNEL_PING_PONG_STREAMING_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uchannel_ping_pong_streaming_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_ping_pong_streaming.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -32453,6 +33719,7 @@ $(BINDIR)/$(CONFIG)/h2_uchannel_ping_pong_streaming_nosec_test:  $(LIBDIR)/$(CON
 
 
 
+$(H2_UCHANNEL_REGISTERED_CALL_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uchannel_registered_call_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_registered_call.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -32463,6 +33730,7 @@ $(BINDIR)/$(CONFIG)/h2_uchannel_registered_call_nosec_test:  $(LIBDIR)/$(CONFIG)
 
 
 
+$(H2_UCHANNEL_REQUEST_WITH_FLAGS_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uchannel_request_with_flags_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_request_with_flags.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -32473,6 +33741,7 @@ $(BINDIR)/$(CONFIG)/h2_uchannel_request_with_flags_nosec_test:  $(LIBDIR)/$(CONF
 
 
 
+$(H2_UCHANNEL_REQUEST_WITH_PAYLOAD_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uchannel_request_with_payload_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_request_with_payload.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -32483,6 +33752,7 @@ $(BINDIR)/$(CONFIG)/h2_uchannel_request_with_payload_nosec_test:  $(LIBDIR)/$(CO
 
 
 
+$(H2_UCHANNEL_SERVER_FINISHES_REQUEST_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uchannel_server_finishes_request_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_server_finishes_request.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -32493,6 +33763,7 @@ $(BINDIR)/$(CONFIG)/h2_uchannel_server_finishes_request_nosec_test:  $(LIBDIR)/$
 
 
 
+$(H2_UCHANNEL_SHUTDOWN_FINISHES_CALLS_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uchannel_shutdown_finishes_calls_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_shutdown_finishes_calls.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -32503,6 +33774,7 @@ $(BINDIR)/$(CONFIG)/h2_uchannel_shutdown_finishes_calls_nosec_test:  $(LIBDIR)/$
 
 
 
+$(H2_UCHANNEL_SHUTDOWN_FINISHES_TAGS_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uchannel_shutdown_finishes_tags_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_shutdown_finishes_tags.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -32513,6 +33785,7 @@ $(BINDIR)/$(CONFIG)/h2_uchannel_shutdown_finishes_tags_nosec_test:  $(LIBDIR)/$(
 
 
 
+$(H2_UCHANNEL_SIMPLE_REQUEST_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uchannel_simple_request_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_simple_request.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -32523,6 +33796,7 @@ $(BINDIR)/$(CONFIG)/h2_uchannel_simple_request_nosec_test:  $(LIBDIR)/$(CONFIG)/
 
 
 
+$(H2_UCHANNEL_TRAILING_METADATA_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uchannel_trailing_metadata_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_trailing_metadata.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -32533,6 +33807,7 @@ $(BINDIR)/$(CONFIG)/h2_uchannel_trailing_metadata_nosec_test:  $(LIBDIR)/$(CONFI
 
 
 
+$(H2_UDS_BAD_HOSTNAME_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds_bad_hostname_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uds.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_bad_hostname.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -32543,6 +33818,7 @@ $(BINDIR)/$(CONFIG)/h2_uds_bad_hostname_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2
 
 
 
+$(H2_UDS_BINARY_METADATA_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds_binary_metadata_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uds.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_binary_metadata.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -32553,6 +33829,7 @@ $(BINDIR)/$(CONFIG)/h2_uds_binary_metadata_nosec_test:  $(LIBDIR)/$(CONFIG)/libe
 
 
 
+$(H2_UDS_CANCEL_AFTER_ACCEPT_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds_cancel_after_accept_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uds.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_after_accept.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -32563,6 +33840,7 @@ $(BINDIR)/$(CONFIG)/h2_uds_cancel_after_accept_nosec_test:  $(LIBDIR)/$(CONFIG)/
 
 
 
+$(H2_UDS_CANCEL_AFTER_CLIENT_DONE_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds_cancel_after_client_done_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uds.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_after_client_done.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -32573,6 +33851,7 @@ $(BINDIR)/$(CONFIG)/h2_uds_cancel_after_client_done_nosec_test:  $(LIBDIR)/$(CON
 
 
 
+$(H2_UDS_CANCEL_AFTER_INVOKE_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds_cancel_after_invoke_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uds.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_after_invoke.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -32583,6 +33862,7 @@ $(BINDIR)/$(CONFIG)/h2_uds_cancel_after_invoke_nosec_test:  $(LIBDIR)/$(CONFIG)/
 
 
 
+$(H2_UDS_CANCEL_BEFORE_INVOKE_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds_cancel_before_invoke_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uds.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_before_invoke.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -32593,6 +33873,7 @@ $(BINDIR)/$(CONFIG)/h2_uds_cancel_before_invoke_nosec_test:  $(LIBDIR)/$(CONFIG)
 
 
 
+$(H2_UDS_CANCEL_IN_A_VACUUM_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds_cancel_in_a_vacuum_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uds.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_in_a_vacuum.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -32603,6 +33884,7 @@ $(BINDIR)/$(CONFIG)/h2_uds_cancel_in_a_vacuum_nosec_test:  $(LIBDIR)/$(CONFIG)/l
 
 
 
+$(H2_UDS_CANCEL_WITH_STATUS_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds_cancel_with_status_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uds.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_with_status.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -32613,6 +33895,7 @@ $(BINDIR)/$(CONFIG)/h2_uds_cancel_with_status_nosec_test:  $(LIBDIR)/$(CONFIG)/l
 
 
 
+$(H2_UDS_CHANNEL_CONNECTIVITY_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds_channel_connectivity_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uds.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_channel_connectivity.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -32623,6 +33906,7 @@ $(BINDIR)/$(CONFIG)/h2_uds_channel_connectivity_nosec_test:  $(LIBDIR)/$(CONFIG)
 
 
 
+$(H2_UDS_CHANNEL_PING_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds_channel_ping_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uds.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_channel_ping.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -32633,6 +33917,7 @@ $(BINDIR)/$(CONFIG)/h2_uds_channel_ping_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2
 
 
 
+$(H2_UDS_COMPRESSED_PAYLOAD_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds_compressed_payload_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uds.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_compressed_payload.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -32643,6 +33928,7 @@ $(BINDIR)/$(CONFIG)/h2_uds_compressed_payload_nosec_test:  $(LIBDIR)/$(CONFIG)/l
 
 
 
+$(H2_UDS_DISAPPEARING_SERVER_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds_disappearing_server_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uds.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_disappearing_server.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -32653,6 +33939,7 @@ $(BINDIR)/$(CONFIG)/h2_uds_disappearing_server_nosec_test:  $(LIBDIR)/$(CONFIG)/
 
 
 
+$(H2_UDS_EMPTY_BATCH_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds_empty_batch_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uds.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_empty_batch.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -32663,6 +33950,7 @@ $(BINDIR)/$(CONFIG)/h2_uds_empty_batch_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2e
 
 
 
+$(H2_UDS_GRACEFUL_SERVER_SHUTDOWN_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds_graceful_server_shutdown_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uds.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_graceful_server_shutdown.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -32673,6 +33961,7 @@ $(BINDIR)/$(CONFIG)/h2_uds_graceful_server_shutdown_nosec_test:  $(LIBDIR)/$(CON
 
 
 
+$(H2_UDS_HIGH_INITIAL_SEQNO_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds_high_initial_seqno_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uds.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_high_initial_seqno.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -32683,6 +33972,7 @@ $(BINDIR)/$(CONFIG)/h2_uds_high_initial_seqno_nosec_test:  $(LIBDIR)/$(CONFIG)/l
 
 
 
+$(H2_UDS_HPACK_SIZE_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds_hpack_size_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uds.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_hpack_size.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -32693,6 +33983,7 @@ $(BINDIR)/$(CONFIG)/h2_uds_hpack_size_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2en
 
 
 
+$(H2_UDS_INVOKE_LARGE_REQUEST_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds_invoke_large_request_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uds.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_invoke_large_request.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -32703,6 +33994,7 @@ $(BINDIR)/$(CONFIG)/h2_uds_invoke_large_request_nosec_test:  $(LIBDIR)/$(CONFIG)
 
 
 
+$(H2_UDS_LARGE_METADATA_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds_large_metadata_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uds.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_large_metadata.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -32713,6 +34005,7 @@ $(BINDIR)/$(CONFIG)/h2_uds_large_metadata_nosec_test:  $(LIBDIR)/$(CONFIG)/liben
 
 
 
+$(H2_UDS_MAX_CONCURRENT_STREAMS_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds_max_concurrent_streams_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uds.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_max_concurrent_streams.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -32723,6 +34016,7 @@ $(BINDIR)/$(CONFIG)/h2_uds_max_concurrent_streams_nosec_test:  $(LIBDIR)/$(CONFI
 
 
 
+$(H2_UDS_MAX_MESSAGE_LENGTH_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds_max_message_length_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uds.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_max_message_length.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -32733,6 +34027,7 @@ $(BINDIR)/$(CONFIG)/h2_uds_max_message_length_nosec_test:  $(LIBDIR)/$(CONFIG)/l
 
 
 
+$(H2_UDS_METADATA_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds_metadata_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uds.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_metadata.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -32743,6 +34038,7 @@ $(BINDIR)/$(CONFIG)/h2_uds_metadata_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_
 
 
 
+$(H2_UDS_NEGATIVE_DEADLINE_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds_negative_deadline_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uds.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_negative_deadline.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -32753,6 +34049,7 @@ $(BINDIR)/$(CONFIG)/h2_uds_negative_deadline_nosec_test:  $(LIBDIR)/$(CONFIG)/li
 
 
 
+$(H2_UDS_NO_OP_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds_no_op_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uds.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_no_op.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -32763,6 +34060,7 @@ $(BINDIR)/$(CONFIG)/h2_uds_no_op_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nos
 
 
 
+$(H2_UDS_PAYLOAD_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds_payload_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uds.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_payload.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -32773,6 +34071,7 @@ $(BINDIR)/$(CONFIG)/h2_uds_payload_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_n
 
 
 
+$(H2_UDS_PING_PONG_STREAMING_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds_ping_pong_streaming_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uds.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_ping_pong_streaming.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -32783,6 +34082,7 @@ $(BINDIR)/$(CONFIG)/h2_uds_ping_pong_streaming_nosec_test:  $(LIBDIR)/$(CONFIG)/
 
 
 
+$(H2_UDS_REGISTERED_CALL_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds_registered_call_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uds.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_registered_call.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -32793,6 +34093,7 @@ $(BINDIR)/$(CONFIG)/h2_uds_registered_call_nosec_test:  $(LIBDIR)/$(CONFIG)/libe
 
 
 
+$(H2_UDS_REQUEST_WITH_FLAGS_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds_request_with_flags_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uds.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_request_with_flags.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -32803,6 +34104,7 @@ $(BINDIR)/$(CONFIG)/h2_uds_request_with_flags_nosec_test:  $(LIBDIR)/$(CONFIG)/l
 
 
 
+$(H2_UDS_REQUEST_WITH_PAYLOAD_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds_request_with_payload_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uds.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_request_with_payload.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -32813,6 +34115,7 @@ $(BINDIR)/$(CONFIG)/h2_uds_request_with_payload_nosec_test:  $(LIBDIR)/$(CONFIG)
 
 
 
+$(H2_UDS_SERVER_FINISHES_REQUEST_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds_server_finishes_request_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uds.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_server_finishes_request.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -32823,6 +34126,7 @@ $(BINDIR)/$(CONFIG)/h2_uds_server_finishes_request_nosec_test:  $(LIBDIR)/$(CONF
 
 
 
+$(H2_UDS_SHUTDOWN_FINISHES_CALLS_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds_shutdown_finishes_calls_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uds.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_shutdown_finishes_calls.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -32833,6 +34137,7 @@ $(BINDIR)/$(CONFIG)/h2_uds_shutdown_finishes_calls_nosec_test:  $(LIBDIR)/$(CONF
 
 
 
+$(H2_UDS_SHUTDOWN_FINISHES_TAGS_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds_shutdown_finishes_tags_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uds.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_shutdown_finishes_tags.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -32843,6 +34148,7 @@ $(BINDIR)/$(CONFIG)/h2_uds_shutdown_finishes_tags_nosec_test:  $(LIBDIR)/$(CONFI
 
 
 
+$(H2_UDS_SIMPLE_DELAYED_REQUEST_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds_simple_delayed_request_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uds.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_simple_delayed_request.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -32853,6 +34159,7 @@ $(BINDIR)/$(CONFIG)/h2_uds_simple_delayed_request_nosec_test:  $(LIBDIR)/$(CONFI
 
 
 
+$(H2_UDS_SIMPLE_REQUEST_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds_simple_request_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uds.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_simple_request.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -32863,6 +34170,7 @@ $(BINDIR)/$(CONFIG)/h2_uds_simple_request_nosec_test:  $(LIBDIR)/$(CONFIG)/liben
 
 
 
+$(H2_UDS_TRAILING_METADATA_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds_trailing_metadata_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uds.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_trailing_metadata.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -32873,6 +34181,7 @@ $(BINDIR)/$(CONFIG)/h2_uds_trailing_metadata_nosec_test:  $(LIBDIR)/$(CONFIG)/li
 
 
 
+$(H2_UDS+POLL_BAD_HOSTNAME_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds+poll_bad_hostname_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uds+poll.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_bad_hostname.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -32883,6 +34192,7 @@ $(BINDIR)/$(CONFIG)/h2_uds+poll_bad_hostname_nosec_test:  $(LIBDIR)/$(CONFIG)/li
 
 
 
+$(H2_UDS+POLL_BINARY_METADATA_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds+poll_binary_metadata_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uds+poll.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_binary_metadata.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -32893,6 +34203,7 @@ $(BINDIR)/$(CONFIG)/h2_uds+poll_binary_metadata_nosec_test:  $(LIBDIR)/$(CONFIG)
 
 
 
+$(H2_UDS+POLL_CANCEL_AFTER_ACCEPT_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds+poll_cancel_after_accept_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uds+poll.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_after_accept.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -32903,6 +34214,7 @@ $(BINDIR)/$(CONFIG)/h2_uds+poll_cancel_after_accept_nosec_test:  $(LIBDIR)/$(CON
 
 
 
+$(H2_UDS+POLL_CANCEL_AFTER_CLIENT_DONE_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds+poll_cancel_after_client_done_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uds+poll.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_after_client_done.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -32913,6 +34225,7 @@ $(BINDIR)/$(CONFIG)/h2_uds+poll_cancel_after_client_done_nosec_test:  $(LIBDIR)/
 
 
 
+$(H2_UDS+POLL_CANCEL_AFTER_INVOKE_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds+poll_cancel_after_invoke_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uds+poll.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_after_invoke.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -32923,6 +34236,7 @@ $(BINDIR)/$(CONFIG)/h2_uds+poll_cancel_after_invoke_nosec_test:  $(LIBDIR)/$(CON
 
 
 
+$(H2_UDS+POLL_CANCEL_BEFORE_INVOKE_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds+poll_cancel_before_invoke_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uds+poll.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_before_invoke.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -32933,6 +34247,7 @@ $(BINDIR)/$(CONFIG)/h2_uds+poll_cancel_before_invoke_nosec_test:  $(LIBDIR)/$(CO
 
 
 
+$(H2_UDS+POLL_CANCEL_IN_A_VACUUM_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds+poll_cancel_in_a_vacuum_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uds+poll.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_in_a_vacuum.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -32943,6 +34258,7 @@ $(BINDIR)/$(CONFIG)/h2_uds+poll_cancel_in_a_vacuum_nosec_test:  $(LIBDIR)/$(CONF
 
 
 
+$(H2_UDS+POLL_CANCEL_WITH_STATUS_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds+poll_cancel_with_status_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uds+poll.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_cancel_with_status.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -32953,6 +34269,7 @@ $(BINDIR)/$(CONFIG)/h2_uds+poll_cancel_with_status_nosec_test:  $(LIBDIR)/$(CONF
 
 
 
+$(H2_UDS+POLL_CHANNEL_CONNECTIVITY_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds+poll_channel_connectivity_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uds+poll.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_channel_connectivity.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -32963,6 +34280,7 @@ $(BINDIR)/$(CONFIG)/h2_uds+poll_channel_connectivity_nosec_test:  $(LIBDIR)/$(CO
 
 
 
+$(H2_UDS+POLL_CHANNEL_PING_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds+poll_channel_ping_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uds+poll.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_channel_ping.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -32973,6 +34291,7 @@ $(BINDIR)/$(CONFIG)/h2_uds+poll_channel_ping_nosec_test:  $(LIBDIR)/$(CONFIG)/li
 
 
 
+$(H2_UDS+POLL_COMPRESSED_PAYLOAD_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds+poll_compressed_payload_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uds+poll.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_compressed_payload.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -32983,6 +34302,7 @@ $(BINDIR)/$(CONFIG)/h2_uds+poll_compressed_payload_nosec_test:  $(LIBDIR)/$(CONF
 
 
 
+$(H2_UDS+POLL_DISAPPEARING_SERVER_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds+poll_disappearing_server_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uds+poll.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_disappearing_server.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -32993,6 +34313,7 @@ $(BINDIR)/$(CONFIG)/h2_uds+poll_disappearing_server_nosec_test:  $(LIBDIR)/$(CON
 
 
 
+$(H2_UDS+POLL_EMPTY_BATCH_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds+poll_empty_batch_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uds+poll.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_empty_batch.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -33003,6 +34324,7 @@ $(BINDIR)/$(CONFIG)/h2_uds+poll_empty_batch_nosec_test:  $(LIBDIR)/$(CONFIG)/lib
 
 
 
+$(H2_UDS+POLL_GRACEFUL_SERVER_SHUTDOWN_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds+poll_graceful_server_shutdown_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uds+poll.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_graceful_server_shutdown.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -33013,6 +34335,7 @@ $(BINDIR)/$(CONFIG)/h2_uds+poll_graceful_server_shutdown_nosec_test:  $(LIBDIR)/
 
 
 
+$(H2_UDS+POLL_HIGH_INITIAL_SEQNO_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds+poll_high_initial_seqno_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uds+poll.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_high_initial_seqno.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -33023,6 +34346,7 @@ $(BINDIR)/$(CONFIG)/h2_uds+poll_high_initial_seqno_nosec_test:  $(LIBDIR)/$(CONF
 
 
 
+$(H2_UDS+POLL_HPACK_SIZE_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds+poll_hpack_size_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uds+poll.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_hpack_size.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -33033,6 +34357,7 @@ $(BINDIR)/$(CONFIG)/h2_uds+poll_hpack_size_nosec_test:  $(LIBDIR)/$(CONFIG)/libe
 
 
 
+$(H2_UDS+POLL_INVOKE_LARGE_REQUEST_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds+poll_invoke_large_request_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uds+poll.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_invoke_large_request.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -33043,6 +34368,7 @@ $(BINDIR)/$(CONFIG)/h2_uds+poll_invoke_large_request_nosec_test:  $(LIBDIR)/$(CO
 
 
 
+$(H2_UDS+POLL_LARGE_METADATA_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds+poll_large_metadata_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uds+poll.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_large_metadata.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -33053,6 +34379,7 @@ $(BINDIR)/$(CONFIG)/h2_uds+poll_large_metadata_nosec_test:  $(LIBDIR)/$(CONFIG)/
 
 
 
+$(H2_UDS+POLL_MAX_CONCURRENT_STREAMS_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds+poll_max_concurrent_streams_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uds+poll.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_max_concurrent_streams.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -33063,6 +34390,7 @@ $(BINDIR)/$(CONFIG)/h2_uds+poll_max_concurrent_streams_nosec_test:  $(LIBDIR)/$(
 
 
 
+$(H2_UDS+POLL_MAX_MESSAGE_LENGTH_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds+poll_max_message_length_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uds+poll.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_max_message_length.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -33073,6 +34401,7 @@ $(BINDIR)/$(CONFIG)/h2_uds+poll_max_message_length_nosec_test:  $(LIBDIR)/$(CONF
 
 
 
+$(H2_UDS+POLL_METADATA_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds+poll_metadata_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uds+poll.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_metadata.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -33083,6 +34412,7 @@ $(BINDIR)/$(CONFIG)/h2_uds+poll_metadata_nosec_test:  $(LIBDIR)/$(CONFIG)/libend
 
 
 
+$(H2_UDS+POLL_NEGATIVE_DEADLINE_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds+poll_negative_deadline_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uds+poll.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_negative_deadline.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -33093,6 +34423,7 @@ $(BINDIR)/$(CONFIG)/h2_uds+poll_negative_deadline_nosec_test:  $(LIBDIR)/$(CONFI
 
 
 
+$(H2_UDS+POLL_NO_OP_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds+poll_no_op_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uds+poll.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_no_op.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -33103,6 +34434,7 @@ $(BINDIR)/$(CONFIG)/h2_uds+poll_no_op_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2en
 
 
 
+$(H2_UDS+POLL_PAYLOAD_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds+poll_payload_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uds+poll.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_payload.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -33113,6 +34445,7 @@ $(BINDIR)/$(CONFIG)/h2_uds+poll_payload_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2
 
 
 
+$(H2_UDS+POLL_PING_PONG_STREAMING_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds+poll_ping_pong_streaming_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uds+poll.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_ping_pong_streaming.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -33123,6 +34456,7 @@ $(BINDIR)/$(CONFIG)/h2_uds+poll_ping_pong_streaming_nosec_test:  $(LIBDIR)/$(CON
 
 
 
+$(H2_UDS+POLL_REGISTERED_CALL_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds+poll_registered_call_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uds+poll.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_registered_call.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -33133,6 +34467,7 @@ $(BINDIR)/$(CONFIG)/h2_uds+poll_registered_call_nosec_test:  $(LIBDIR)/$(CONFIG)
 
 
 
+$(H2_UDS+POLL_REQUEST_WITH_FLAGS_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds+poll_request_with_flags_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uds+poll.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_request_with_flags.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -33143,6 +34478,7 @@ $(BINDIR)/$(CONFIG)/h2_uds+poll_request_with_flags_nosec_test:  $(LIBDIR)/$(CONF
 
 
 
+$(H2_UDS+POLL_REQUEST_WITH_PAYLOAD_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds+poll_request_with_payload_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uds+poll.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_request_with_payload.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -33153,6 +34489,7 @@ $(BINDIR)/$(CONFIG)/h2_uds+poll_request_with_payload_nosec_test:  $(LIBDIR)/$(CO
 
 
 
+$(H2_UDS+POLL_SERVER_FINISHES_REQUEST_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds+poll_server_finishes_request_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uds+poll.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_server_finishes_request.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -33163,6 +34500,7 @@ $(BINDIR)/$(CONFIG)/h2_uds+poll_server_finishes_request_nosec_test:  $(LIBDIR)/$
 
 
 
+$(H2_UDS+POLL_SHUTDOWN_FINISHES_CALLS_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds+poll_shutdown_finishes_calls_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uds+poll.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_shutdown_finishes_calls.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -33173,6 +34511,7 @@ $(BINDIR)/$(CONFIG)/h2_uds+poll_shutdown_finishes_calls_nosec_test:  $(LIBDIR)/$
 
 
 
+$(H2_UDS+POLL_SHUTDOWN_FINISHES_TAGS_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds+poll_shutdown_finishes_tags_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uds+poll.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_shutdown_finishes_tags.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -33183,6 +34522,7 @@ $(BINDIR)/$(CONFIG)/h2_uds+poll_shutdown_finishes_tags_nosec_test:  $(LIBDIR)/$(
 
 
 
+$(H2_UDS+POLL_SIMPLE_DELAYED_REQUEST_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds+poll_simple_delayed_request_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uds+poll.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_simple_delayed_request.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -33193,6 +34533,7 @@ $(BINDIR)/$(CONFIG)/h2_uds+poll_simple_delayed_request_nosec_test:  $(LIBDIR)/$(
 
 
 
+$(H2_UDS+POLL_SIMPLE_REQUEST_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds+poll_simple_request_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uds+poll.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_simple_request.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -33203,6 +34544,7 @@ $(BINDIR)/$(CONFIG)/h2_uds+poll_simple_request_nosec_test:  $(LIBDIR)/$(CONFIG)/
 
 
 
+$(H2_UDS+POLL_TRAILING_METADATA_NOSEC_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/h2_uds+poll_trailing_metadata_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uds+poll.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_trailing_metadata.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -33217,6 +34559,7 @@ BADREQ_BAD_CLIENT_TEST_SRC = \
 
 BADREQ_BAD_CLIENT_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BADREQ_BAD_CLIENT_TEST_SRC))))
 
+$(BADREQ_BAD_CLIENT_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/badreq_bad_client_test: $(BADREQ_BAD_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -33236,6 +34579,7 @@ CONNECTION_PREFIX_BAD_CLIENT_TEST_SRC = \
 
 CONNECTION_PREFIX_BAD_CLIENT_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CONNECTION_PREFIX_BAD_CLIENT_TEST_SRC))))
 
+$(CONNECTION_PREFIX_BAD_CLIENT_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/connection_prefix_bad_client_test: $(CONNECTION_PREFIX_BAD_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -33255,6 +34599,7 @@ HEADERS_BAD_CLIENT_TEST_SRC = \
 
 HEADERS_BAD_CLIENT_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(HEADERS_BAD_CLIENT_TEST_SRC))))
 
+$(HEADERS_BAD_CLIENT_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/headers_bad_client_test: $(HEADERS_BAD_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -33274,6 +34619,7 @@ INITIAL_SETTINGS_FRAME_BAD_CLIENT_TEST_SRC = \
 
 INITIAL_SETTINGS_FRAME_BAD_CLIENT_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(INITIAL_SETTINGS_FRAME_BAD_CLIENT_TEST_SRC))))
 
+$(INITIAL_SETTINGS_FRAME_BAD_CLIENT_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/initial_settings_frame_bad_client_test: $(INITIAL_SETTINGS_FRAME_BAD_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -33293,6 +34639,7 @@ SERVER_REGISTERED_METHOD_BAD_CLIENT_TEST_SRC = \
 
 SERVER_REGISTERED_METHOD_BAD_CLIENT_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(SERVER_REGISTERED_METHOD_BAD_CLIENT_TEST_SRC))))
 
+$(SERVER_REGISTERED_METHOD_BAD_CLIENT_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/server_registered_method_bad_client_test: $(SERVER_REGISTERED_METHOD_BAD_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -33312,6 +34659,7 @@ SIMPLE_REQUEST_BAD_CLIENT_TEST_SRC = \
 
 SIMPLE_REQUEST_BAD_CLIENT_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(SIMPLE_REQUEST_BAD_CLIENT_TEST_SRC))))
 
+$(SIMPLE_REQUEST_BAD_CLIENT_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/simple_request_bad_client_test: $(SIMPLE_REQUEST_BAD_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -33331,6 +34679,7 @@ UNKNOWN_FRAME_BAD_CLIENT_TEST_SRC = \
 
 UNKNOWN_FRAME_BAD_CLIENT_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(UNKNOWN_FRAME_BAD_CLIENT_TEST_SRC))))
 
+$(UNKNOWN_FRAME_BAD_CLIENT_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/unknown_frame_bad_client_test: $(UNKNOWN_FRAME_BAD_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -33358,6 +34707,7 @@ $(BINDIR)/$(CONFIG)/bad_ssl_alpn_server: openssl_dep_error
 else
 
 
+$(BAD_SSL_ALPN_SERVER_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/bad_ssl_alpn_server: $(BAD_SSL_ALPN_SERVER_OBJS) $(LIBDIR)/$(CONFIG)/libbad_ssl_test_server.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -33389,6 +34739,7 @@ $(BINDIR)/$(CONFIG)/bad_ssl_cert_server: openssl_dep_error
 else
 
 
+$(BAD_SSL_CERT_SERVER_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/bad_ssl_cert_server: $(BAD_SSL_CERT_SERVER_OBJS) $(LIBDIR)/$(CONFIG)/libbad_ssl_test_server.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -33420,6 +34771,7 @@ $(BINDIR)/$(CONFIG)/bad_ssl_alpn_test: openssl_dep_error
 else
 
 
+$(BAD_SSL_ALPN_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/bad_ssl_alpn_test: $(BAD_SSL_ALPN_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
@@ -33451,6 +34803,7 @@ $(BINDIR)/$(CONFIG)/bad_ssl_cert_test: openssl_dep_error
 else
 
 
+$(BAD_SSL_CERT_TEST_OBJS): CFLAGS := -pedantic $(CFLAGS)
 
 $(BINDIR)/$(CONFIG)/bad_ssl_cert_test: $(BAD_SSL_CERT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
