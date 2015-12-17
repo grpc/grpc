@@ -406,7 +406,7 @@ def summary(result):
               unexpected_successful=len(unexpected_successes),
               interrupted=str(running_names)))
   tracebacks = '\n\n'.join([
-      (_Colors.FAIL + '{test_name}' + _Colors.END + + '\n' +
+      (_Colors.FAIL + '{test_name}' + _Colors.END + '\n' +
        _Colors.BOLD + 'traceback:' + _Colors.END + '\n' +
        '{traceback}\n' +
        _Colors.BOLD + 'stdout:' + _Colors.END + '\n' +
