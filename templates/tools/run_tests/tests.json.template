@@ -9,6 +9,7 @@
                  "platforms": tgt.platforms,
                  "ci_platforms": tgt.ci_platforms,
                  "exclude_configs": tgt.get("exclude_configs", []),
+                 "args": [],
                  "flaky": tgt.flaky}
                 for tgt in targets
                 if tgt.get('run', True) and tgt.build == 'test'] +
