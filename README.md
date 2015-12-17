@@ -35,7 +35,7 @@ Java source code is in the [grpc-java] (http://github.com/grpc/grpc-java) reposi
 Go source code is in the [grpc-go] (http://github.com/grpc/grpc-go) repository.
 </small>
 
-See [INVENTORY.md](INVENTORY.md) for a listing of top-level items in the
+See [MANIFEST.md](MANIFEST.md) for a listing of top-level items in the
 repository.
 
 #Overview
