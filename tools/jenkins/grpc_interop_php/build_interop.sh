@@ -29,7 +29,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 # Builds PHP interop server and client in a base image.
-set -e
+set -ex
 
 mkdir -p /var/local/git
 git clone --recursive /var/local/jenkins/grpc /var/local/git/grpc
@@ -45,17 +45,9 @@ make install-certs
 # gRPC core and protobuf need to be installed
 make install
 
-# Download the patched PHP protobuf so that PHP gRPC clients can be generated
-# from proto3 schemas.
-git clone https://github.com/stanley-cheung/Protobuf-PHP.git /var/local/git/protobuf-php
-
 (cd src/php/ext/grpc && phpize && ./configure && make)
 
 (cd third_party/protobuf && make install)
-
-(cd /var/local/git/protobuf-php \
-  && rvm all do rake pear:package version=1.0 \
-  && pear install Protobuf-1.0.tgz)
 
 (cd src/php && composer install)
 

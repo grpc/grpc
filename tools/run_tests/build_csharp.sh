@@ -30,13 +30,6 @@
 
 set -ex
 
-if [ "$CONFIG" = "dbg" ] || [ "$CONFIG" = "gcov" ]
-then
-  MSBUILD_CONFIG="Debug"
-else
-  MSBUILD_CONFIG="Release"
-fi
-
 cd $(dirname $0)/../../src/csharp
 
 xbuild /p:Configuration=$MSBUILD_CONFIG Grpc.sln

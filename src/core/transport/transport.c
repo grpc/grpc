@@ -40,8 +40,8 @@
 #ifdef GRPC_STREAM_REFCOUNT_DEBUG
 void grpc_stream_ref(grpc_stream_refcount *refcount, const char *reason) {
   gpr_atm val = gpr_atm_no_barrier_load(&refcount->refs.count);
-  gpr_log(GPR_DEBUG, "STREAM %p:%p   REF %d->%d %s", refcount,
-          refcount->destroy.cb_arg, val, val + 1, reason);
+  gpr_log(GPR_DEBUG, "%s %p:%p   REF %d->%d %s", refcount->object_type,
+          refcount, refcount->destroy.cb_arg, val, val + 1, reason);
 #else
 void grpc_stream_ref(grpc_stream_refcount *refcount) {
 #endif
@@ -52,8 +52,8 @@ void grpc_stream_ref(grpc_stream_refcount *refcount) {
 void grpc_stream_unref(grpc_exec_ctx *exec_ctx, grpc_stream_refcount *refcount,
                        const char *reason) {
   gpr_atm val = gpr_atm_no_barrier_load(&refcount->refs.count);
-  gpr_log(GPR_DEBUG, "STREAM %p:%p UNREF %d->%d %s", refcount,
-          refcount->destroy.cb_arg, val, val - 1, reason);
+  gpr_log(GPR_DEBUG, "%s %p:%p UNREF %d->%d %s", refcount->object_type,
+          refcount, refcount->destroy.cb_arg, val, val - 1, reason);
 #else
 void grpc_stream_unref(grpc_exec_ctx *exec_ctx,
                        grpc_stream_refcount *refcount) {
@@ -61,6 +61,19 @@ void grpc_stream_unref(grpc_exec_ctx *exec_ctx,
   if (gpr_unref(&refcount->refs)) {
     grpc_exec_ctx_enqueue(exec_ctx, &refcount->destroy, 1);
   }
+}
+
+#ifdef GRPC_STREAM_REFCOUNT_DEBUG
+void grpc_stream_ref_init(grpc_stream_refcount *refcount, int initial_refs,
+                          grpc_iomgr_cb_func cb, void *cb_arg,
+                          const char *object_type) {
+  refcount->object_type = object_type;
+#else
+void grpc_stream_ref_init(grpc_stream_refcount *refcount, int initial_refs,
+                          grpc_iomgr_cb_func cb, void *cb_arg) {
+#endif
+  gpr_ref_init(&refcount->refs, initial_refs);
+  grpc_closure_init(&refcount->destroy, cb, cb_arg);
 }
 
 size_t grpc_transport_stream_size(grpc_transport *transport) {

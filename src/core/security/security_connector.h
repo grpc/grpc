@@ -67,7 +67,6 @@ typedef void (*grpc_security_check_cb)(grpc_exec_ctx *exec_ctx, void *user_data,
 typedef void (*grpc_security_handshake_done_cb)(grpc_exec_ctx *exec_ctx,
                                                 void *user_data,
                                                 grpc_security_status status,
-                                                grpc_endpoint *wrapped_endpoint,
                                                 grpc_endpoint *secure_endpoint);
 
 typedef struct {
@@ -80,12 +79,22 @@ typedef struct {
                                      void *user_data);
 } grpc_security_connector_vtable;
 
+typedef struct grpc_security_connector_handshake_list {
+  void *handshake;
+  struct grpc_security_connector_handshake_list *next;
+} grpc_security_connector_handshake_list;
+
 struct grpc_security_connector {
   const grpc_security_connector_vtable *vtable;
   gpr_refcount refcount;
   int is_client_side;
   const char *url_scheme;
   grpc_auth_context *auth_context; /* Populated after the peer is checked. */
+  /* Used on server side only. */
+  /* TODO(yangg) maybe create a grpc_server_security_connector with these */
+  gpr_mu mu;
+  grpc_security_connector_handshake_list *handshaking_handshakes;
+  const grpc_channel_args *channel_args;
 };
 
 /* Refcounting. */
@@ -125,6 +134,9 @@ void grpc_security_connector_do_handshake(grpc_exec_ctx *exec_ctx,
 grpc_security_status grpc_security_connector_check_peer(
     grpc_security_connector *sc, tsi_peer peer, grpc_security_check_cb cb,
     void *user_data);
+
+void grpc_security_connector_shutdown(grpc_exec_ctx *exec_ctx,
+                                      grpc_security_connector *connector);
 
 /* Util to encapsulate the connector in a channel arg. */
 grpc_arg grpc_security_connector_to_arg(grpc_security_connector *sc);

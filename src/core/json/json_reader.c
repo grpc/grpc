@@ -35,6 +35,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <grpc/support/log.h>
+
 #include "src/core/json/json_reader.h"
 
 static void json_reader_string_clear(grpc_json_reader *reader) {
@@ -224,13 +226,13 @@ grpc_json_reader_status grpc_json_reader_run(grpc_json_reader *reader) {
                   reader->in_array = 1;
                   break;
                 case GRPC_JSON_TOP_LEVEL:
-                  if (reader->depth != 0) return GRPC_JSON_INTERNAL_ERROR;
+                  GPR_ASSERT(reader->depth == 0);
                   reader->in_object = 0;
                   reader->in_array = 0;
                   reader->state = GRPC_JSON_STATE_END;
                   break;
                 default:
-                  return GRPC_JSON_INTERNAL_ERROR;
+                  GPR_UNREACHABLE_CODE(return GRPC_JSON_INTERNAL_ERROR);
               }
             }
             break;
@@ -279,8 +281,7 @@ grpc_json_reader_status grpc_json_reader_run(grpc_json_reader *reader) {
             break;
 
           case GRPC_JSON_STATE_OBJECT_KEY_STRING:
-            if (reader->unicode_high_surrogate != 0)
-              return GRPC_JSON_PARSE_ERROR;
+            GPR_ASSERT(reader->unicode_high_surrogate == 0);
             if (c == '"') {
               reader->state = GRPC_JSON_STATE_OBJECT_KEY_END;
               json_reader_set_key(reader);
@@ -461,7 +462,7 @@ grpc_json_reader_status grpc_json_reader_run(grpc_json_reader *reader) {
                 }
                 break;
               default:
-                return GRPC_JSON_INTERNAL_ERROR;
+                GPR_UNREACHABLE_CODE(return GRPC_JSON_INTERNAL_ERROR);
             }
             break;
 
@@ -641,7 +642,7 @@ grpc_json_reader_status grpc_json_reader_run(grpc_json_reader *reader) {
               case ',':
               case '}':
               case ']':
-                return GRPC_JSON_INTERNAL_ERROR;
+                GPR_UNREACHABLE_CODE(return GRPC_JSON_INTERNAL_ERROR);
                 break;
 
               default:
@@ -655,5 +656,5 @@ grpc_json_reader_status grpc_json_reader_run(grpc_json_reader *reader) {
     }
   }
 
-  return GRPC_JSON_INTERNAL_ERROR;
+  GPR_UNREACHABLE_CODE(return GRPC_JSON_INTERNAL_ERROR);
 }

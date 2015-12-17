@@ -30,7 +30,7 @@
 
 # Loads the local shared library, and runs all of the test cases in tests/
 # against it
-set -e
+set -ex
 cd $(dirname $0)/../../..
 root=$(pwd)
 cd src/php/bin

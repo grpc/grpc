@@ -65,6 +65,7 @@ typedef enum {
   GRPC_CHTTP2_LIST_WRITTEN,
   GRPC_CHTTP2_LIST_PARSING_SEEN,
   GRPC_CHTTP2_LIST_CLOSED_WAITING_FOR_PARSING,
+  GRPC_CHTTP2_LIST_CLOSED_WAITING_FOR_WRITING,
   GRPC_CHTTP2_LIST_STALLED_BY_TRANSPORT,
   /** streams that are waiting to start because there are too many concurrent
       streams on the connection */
@@ -151,6 +152,7 @@ struct grpc_chttp2_incoming_byte_stream {
   grpc_byte_stream base;
   gpr_refcount refs;
   struct grpc_chttp2_incoming_byte_stream *next_message;
+  int failed;
 
   grpc_chttp2_transport *transport;
   grpc_chttp2_stream *stream;
@@ -238,9 +240,6 @@ struct grpc_chttp2_transport_parsing {
 
   /** data to write later - after parsing */
   gpr_slice_buffer qbuf;
-  /* metadata object cache */
-  grpc_mdstr *str_grpc_timeout;
-  grpc_mdelem *elem_grpc_status_ok;
   /** parser for headers */
   grpc_chttp2_hpack_parser hpack_parser;
   /** simple one shot parsers */
@@ -286,15 +285,11 @@ struct grpc_chttp2_transport_parsing {
   gpr_slice goaway_text;
 
   gpr_int64 outgoing_window;
-
-  /** pings awaiting responses */
-  grpc_chttp2_outstanding_ping pings;
 };
 
 struct grpc_chttp2_transport {
   grpc_transport base; /* must be first */
   grpc_endpoint *ep;
-  grpc_mdctx *metadata_context;
   gpr_refcount refs;
   char *peer_string;
 
@@ -398,8 +393,6 @@ typedef struct {
   gpr_uint8 write_closed;
   /** is this stream reading half-closed (boolean) */
   gpr_uint8 read_closed;
-  /** is this stream finished closing (and reportably closed) */
-  gpr_uint8 finished_close;
   /** is this stream in the stream map? (boolean) */
   gpr_uint8 in_stream_map;
   /** has this stream seen an error? if 1, then pending incoming frames
@@ -516,9 +509,6 @@ void grpc_chttp2_publish_reads(grpc_exec_ctx *exec_ctx,
 void grpc_chttp2_list_add_writable_stream(
     grpc_chttp2_transport_global *transport_global,
     grpc_chttp2_stream_global *stream_global);
-void grpc_chttp2_list_add_first_writable_stream(
-    grpc_chttp2_transport_global *transport_global,
-    grpc_chttp2_stream_global *stream_global);
 int grpc_chttp2_list_pop_writable_stream(
     grpc_chttp2_transport_global *transport_global,
     grpc_chttp2_transport_writing *transport_writing,
@@ -593,6 +583,13 @@ void grpc_chttp2_list_add_closed_waiting_for_parsing(
     grpc_chttp2_transport_global *transport_global,
     grpc_chttp2_stream_global *stream_global);
 int grpc_chttp2_list_pop_closed_waiting_for_parsing(
+    grpc_chttp2_transport_global *transport_global,
+    grpc_chttp2_stream_global **stream_global);
+
+void grpc_chttp2_list_add_closed_waiting_for_writing(
+    grpc_chttp2_transport_global *transport_global,
+    grpc_chttp2_stream_global *stream_global);
+int grpc_chttp2_list_pop_closed_waiting_for_writing(
     grpc_chttp2_transport_global *transport_global,
     grpc_chttp2_stream_global **stream_global);
 
@@ -752,6 +749,11 @@ void grpc_chttp2_incoming_byte_stream_push(grpc_exec_ctx *exec_ctx,
                                            grpc_chttp2_incoming_byte_stream *bs,
                                            gpr_slice slice);
 void grpc_chttp2_incoming_byte_stream_finished(
-    grpc_exec_ctx *exec_ctx, grpc_chttp2_incoming_byte_stream *bs);
+    grpc_exec_ctx *exec_ctx, grpc_chttp2_incoming_byte_stream *bs, int success,
+    int from_parsing_thread);
+
+void grpc_chttp2_ack_ping(grpc_exec_ctx *exec_ctx,
+                          grpc_chttp2_transport_parsing *parsing,
+                          const gpr_uint8 *opaque_8bytes);
 
 #endif

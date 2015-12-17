@@ -93,13 +93,6 @@ def load_test_certs
   files.map { |f| File.open(File.join(data_dir, f)).read }
 end
 
-# loads the certificates used to access the test server securely.
-def load_prod_cert
-  fail 'could not find a production cert' if ENV['SSL_CERT_FILE'].nil?
-  GRPC.logger.info("loading prod certs from #{ENV['SSL_CERT_FILE']}")
-  File.open(ENV['SSL_CERT_FILE']).read
-end
-
 # creates SSL Credentials from the test certificates.
 def test_creds
   certs = load_test_certs
@@ -108,8 +101,7 @@ end
 
 # creates SSL Credentials from the production certificates.
 def prod_creds
-  cert_text = load_prod_cert
-  GRPC::Core::ChannelCredentials.new(cert_text)
+  GRPC::Core::ChannelCredentials.new()
 end
 
 # creates the SSL Credentials.
@@ -132,7 +124,8 @@ def create_stub(opts)
     if wants_creds.include?(opts.test_case)
       unless opts.oauth_scope.nil?
         auth_creds = Google::Auth.get_application_default(opts.oauth_scope)
-        stub_opts[:update_metadata] = auth_creds.updater_proc
+        call_creds = GRPC::Core::CallCredentials.new(auth_creds.updater_proc)
+        stub_opts[:creds] = stub_opts[:creds].compose call_creds
       end
     end
 
@@ -141,12 +134,14 @@ def create_stub(opts)
       kw = auth_creds.updater_proc.call({})  # gives as an auth token
 
       # use a metadata update proc that just adds the auth token.
-      stub_opts[:update_metadata] = proc { |md| md.merge(kw) }
+      call_creds = GRPC::Core::CallCredentials.new(proc { |md| md.merge(kw) })
+      stub_opts[:creds] = stub_opts[:creds].compose call_creds
     end
 
     if opts.test_case == 'jwt_token_creds'  # don't use a scope
       auth_creds = Google::Auth.get_application_default
-      stub_opts[:update_metadata] = auth_creds.updater_proc
+      call_creds = GRPC::Core::CallCredentials.new(auth_creds.updater_proc)
+      stub_opts[:creds] = stub_opts[:creds].compose call_creds
     end
 
     GRPC.logger.info("... connecting securely to #{address}")
@@ -160,7 +155,7 @@ end
 # produces a string of null chars (\0) of length l.
 def nulls(l)
   fail 'requires #{l} to be +ve' if l < 0
-  [].pack('x' * l).force_encoding('utf-8')
+  [].pack('x' * l).force_encoding('ascii-8bit')
 end
 
 # a PingPongPlayer implements the ping pong bidi test.

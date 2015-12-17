@@ -33,6 +33,8 @@ using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Grpc.Core.Profiling;
 
+using Grpc.Core.Utils;
+
 namespace Grpc.Core.Internal
 {
     /// <summary>
@@ -40,15 +42,16 @@ namespace Grpc.Core.Internal
     /// </summary>
     internal class CompletionQueueSafeHandle : SafeHandleZeroIsInvalid
     {
-        static readonly IPlatformInvocation pinvoke = PlatformInvocation.Implementation;
-
+        AtomicCounter shutdownRefcount = new AtomicCounter(1);
+ static readonly IPlatformInvocation pinvoke = PlatformInvocation.Implementation;
+        
         private CompletionQueueSafeHandle()
         {
         }
 
         public static CompletionQueueSafeHandle Create()
         {
-            return pinvoke.grpcsharp_completion_queue_create();
+            return grpcsharp_completion_queue_create();
         }
 
         public CompletionQueueEvent Next()
@@ -64,15 +67,62 @@ namespace Grpc.Core.Internal
             }
         }
 
+        /// <summary>
+        /// Creates a new usage scope for this completion queue. Once successfully created,
+        /// the completion queue won't be shutdown before scope.Dispose() is called.
+        /// </summary>
+        public UsageScope NewScope()
+        {
+            return new UsageScope(this);
+        }
+
         public void Shutdown()
         {
-            pinvoke.grpcsharp_completion_queue_shutdown(this);
+            DecrementShutdownRefcount();
         }
 
         protected override bool ReleaseHandle()
         {
-            pinvoke.grpcsharp_completion_queue_destroy(handle);
+            grpcsharp_completion_queue_destroy(handle);
             return true;
+        }
+
+        private void DecrementShutdownRefcount()
+        {
+            if (shutdownRefcount.Decrement() == 0)
+            {
+                grpcsharp_completion_queue_shutdown(this);
+            }
+        }
+
+        private void BeginOp()
+        {
+            bool success = false;
+            shutdownRefcount.IncrementIfNonzero(ref success);
+            Preconditions.CheckState(success, "Shutdown has already been called");
+        }
+
+        private void EndOp()
+        {
+            DecrementShutdownRefcount();
+        }
+
+        // Allows declaring BeginOp and EndOp of a completion queue with a using statement.
+        // Declared as struct for better performance.
+        public struct UsageScope : IDisposable
+        {
+            readonly CompletionQueueSafeHandle cq;
+
+            public UsageScope(CompletionQueueSafeHandle cq)
+            {
+                this.cq = cq;
+                this.cq.BeginOp();
+            }
+
+            public void Dispose()
+            {
+                cq.EndOp();
+            }
         }
     }
 }

@@ -153,7 +153,7 @@ static void test_connectivity(grpc_end2end_test_config config) {
   cq_verify(cqv);
   state = grpc_channel_check_connectivity_state(f.client, 0);
   GPR_ASSERT(state == GRPC_CHANNEL_TRANSIENT_FAILURE ||
-             state == GRPC_CHANNEL_CONNECTING);
+             state == GRPC_CHANNEL_CONNECTING || state == GRPC_CHANNEL_IDLE);
 
   /* cleanup server */
   grpc_server_destroy(f.server);

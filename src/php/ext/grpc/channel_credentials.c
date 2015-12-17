@@ -169,12 +169,22 @@ PHP_METHOD(ChannelCredentials, createComposite) {
   RETURN_DESTROY_ZVAL(creds_object);
 }
 
+/**
+ * Create insecure channel credentials
+ * @return null
+ */
+PHP_METHOD(ChannelCredentials, createInsecure) {
+  RETURN_NULL();
+}
+
 static zend_function_entry channel_credentials_methods[] = {
   PHP_ME(ChannelCredentials, createDefault, NULL,
          ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
   PHP_ME(ChannelCredentials, createSsl, NULL,
          ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
   PHP_ME(ChannelCredentials, createComposite, NULL,
+         ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
+  PHP_ME(ChannelCredentials, createInsecure, NULL,
          ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
   PHP_FE_END};
 
