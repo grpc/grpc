@@ -51,6 +51,7 @@ RUN apt-get update && apt-get install -y \
   libgtest-dev \
   libtool \
   make \
+  perl \
   strace \
   python-dev \
   python-setuptools \
