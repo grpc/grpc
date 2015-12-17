@@ -1,9 +1,12 @@
 %YAML 1.2
 ---
 foreach: libs
-cond: selected.build == 'all' and selected.language == 'c'
+cond: selected.build == 'all' and selected.language in ('c', 'c++')
 output_name: ${selected.name}.c
 template: |
+  <%!
+    language_extensions = { 'c': 'c', 'c++': 'cc' }
+  %>
   /*
    *
    * Copyright 2015, Google Inc.
@@ -36,15 +39,27 @@ template: |
    * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
    *
    */
-  #ifndef ${selected.name.upper()}_C_
-  #define ${selected.name.upper()}_C_
+  #ifndef ${selected.name.upper()}_${language_extensions[selected.language].upper()}_
+  #define ${selected.name.upper()}_${language_extensions[selected.language].upper()}_
 
-  % for dep in getattr(selected, 'deps', []):
-  #include "src/core/aggregate/${dep}.c"
+  % if selected.language == 'c':
+  #ifdef __cplusplus
+  extern "C" {
+  #endif
+  % endif
+
+  % for dep in selected.resolved_deps:
+  #include "src/core/aggregate/${dep.name}.${language_extensions[dep.language]}"
   %endfor
 
   % for source in selected.src:
   #include "${source}"
   % endfor
 
-  #endif /* ${selected.name.upper()}_C_ */
+  % if selected.language == 'c':
+  #ifdef __cplusplus
+  }
+  #endif
+  % endif
+
+  #endif /* ${selected.name.upper()}_${language_extensions[selected.language].upper()}_ */

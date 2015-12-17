@@ -1,3 +1,4 @@
+
 /*
  *
  * Copyright 2015, Google Inc.
@@ -33,9 +34,17 @@
 #ifndef GRPC_ZOOKEEPER_C_
 #define GRPC_ZOOKEEPER_C_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "src/core/aggregate/gpr.c"
 #include "src/core/aggregate/grpc.c"
 
 #include "src/core/client_config/resolvers/zookeeper_resolver.c"
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRPC_ZOOKEEPER_C_ */

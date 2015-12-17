@@ -1,3 +1,4 @@
+
 /*
  *
  * Copyright 2015, Google Inc.
@@ -32,6 +33,10 @@
  */
 #ifndef GPR_C_
 #define GPR_C_
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 
 #include "src/core/profiling/basic_timers.c"
@@ -75,5 +80,9 @@
 #include "src/core/support/time_precise.c"
 #include "src/core/support/time_win32.c"
 #include "src/core/support/tls_pthread.c"
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GPR_C_ */

@@ -1,3 +1,4 @@
+
 /*
  *
  * Copyright 2015, Google Inc.
@@ -30,12 +31,36 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
-#ifndef GRPC_UNSECURE_C_
-#define GRPC_UNSECURE_C_
+#ifndef GRPC_C_
+#define GRPC_C_
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #include "src/core/aggregate/gpr.c"
 
-#include "src/core/surface/init_unsecure.c"
+#include "src/core/httpcli/httpcli_security_connector.c"
+#include "src/core/security/base64.c"
+#include "src/core/security/client_auth_filter.c"
+#include "src/core/security/credentials.c"
+#include "src/core/security/credentials_metadata.c"
+#include "src/core/security/credentials_posix.c"
+#include "src/core/security/credentials_win32.c"
+#include "src/core/security/google_default_credentials.c"
+#include "src/core/security/handshake.c"
+#include "src/core/security/json_token.c"
+#include "src/core/security/jwt_verifier.c"
+#include "src/core/security/secure_endpoint.c"
+#include "src/core/security/security_connector.c"
+#include "src/core/security/security_context.c"
+#include "src/core/security/server_auth_filter.c"
+#include "src/core/security/server_secure_chttp2.c"
+#include "src/core/surface/init_secure.c"
+#include "src/core/surface/secure_channel_create.c"
+#include "src/core/tsi/fake_transport_security.c"
+#include "src/core/tsi/ssl_transport_security.c"
+#include "src/core/tsi/transport_security.c"
 #include "src/core/census/grpc_context.c"
 #include "src/core/census/grpc_filter.c"
 #include "src/core/channel/channel_args.c"
@@ -166,4 +191,8 @@
 #include "src/core/census/operation.c"
 #include "src/core/census/tracing.c"
 
-#endif /* GRPC_UNSECURE_C_ */
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* GRPC_C_ */
