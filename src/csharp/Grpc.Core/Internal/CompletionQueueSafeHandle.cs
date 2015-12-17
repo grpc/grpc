@@ -51,7 +51,7 @@ namespace Grpc.Core.Internal
 
         public static CompletionQueueSafeHandle Create()
         {
-            return grpcsharp_completion_queue_create();
+            return pinvoke.grpcsharp_completion_queue_create();
         }
 
         public CompletionQueueEvent Next()
@@ -83,7 +83,7 @@ namespace Grpc.Core.Internal
 
         protected override bool ReleaseHandle()
         {
-            grpcsharp_completion_queue_destroy(handle);
+            pinvoke.grpcsharp_completion_queue_destroy(handle);
             return true;
         }
 
@@ -91,7 +91,7 @@ namespace Grpc.Core.Internal
         {
             if (shutdownRefcount.Decrement() == 0)
             {
-                grpcsharp_completion_queue_shutdown(this);
+                pinvoke.grpcsharp_completion_queue_shutdown(this);
             }
         }
 

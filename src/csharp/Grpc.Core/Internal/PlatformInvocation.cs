@@ -219,9 +219,7 @@ namespace Grpc.Core.Internal
 
         // ServerCredentialsSafeHandle
 
-        ServerCredentialsSafeHandle grpcsharp_ssl_server_credentials_create(string pemRootCerts,
-            string[] keyCertPairCertChainArray, string[] keyCertPairPrivateKeyArray, UIntPtr numKeyCertPairs,
-            bool forceClientAuth);
+        ServerCredentialsSafeHandle grpcsharp_ssl_server_credentials_create(string pemRootCerts, string[] keyCertPairCertChainArray, string[] keyCertPairPrivateKeyArray, UIntPtr numKeyCertPairs, bool forceClientAuth);
 
         void grpcsharp_server_credentials_release(IntPtr credentials);
 
