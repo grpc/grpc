@@ -979,7 +979,7 @@ static void receiving_slice_ready(grpc_exec_ctx *exec_ctx, void *bctlp,
                          call->receiving_slice);
     continue_receiving_slices(exec_ctx, bctl);
   } else {
-    grpc_byte_stream_destroy(call->receiving_stream);
+    grpc_byte_stream_destroy(exec_ctx, call->receiving_stream);
     call->receiving_stream = NULL;
     grpc_byte_buffer_destroy(*call->receiving_buffer);
     *call->receiving_buffer = NULL;
