@@ -139,7 +139,7 @@ static void incoming_byte_stream_update_flow_control(
     grpc_chttp2_stream_global *stream_global, size_t max_size_hint,
     size_t have_already);
 
-static void fail_pending_writes(grpc_exec_ctx *exec_ctx, 
+static void fail_pending_writes(grpc_exec_ctx *exec_ctx,
                                 grpc_chttp2_stream_global *stream_global);
 
 /*
@@ -647,7 +647,8 @@ void grpc_chttp2_terminate_writing(grpc_exec_ctx *exec_ctx,
 
   grpc_chttp2_cleanup_writing(exec_ctx, &t->global, &t->writing);
 
-  while (grpc_chttp2_list_pop_closed_waiting_for_writing(&t->global, &stream_global)) {
+  while (grpc_chttp2_list_pop_closed_waiting_for_writing(&t->global,
+                                                         &stream_global)) {
     fail_pending_writes(exec_ctx, stream_global);
     GRPC_CHTTP2_STREAM_UNREF(exec_ctx, stream_global, "finish_writes");
   }
@@ -875,7 +876,9 @@ static void perform_stream_op_locked(
     if (stream_global->id != 0 &&
         (stream_global->incoming_frames.head == NULL ||
          stream_global->incoming_frames.head->is_tail)) {
-      incoming_byte_stream_update_flow_control(transport_global, stream_global, transport_global->stream_lookahead, 0);
+      incoming_byte_stream_update_flow_control(
+          transport_global, stream_global, transport_global->stream_lookahead,
+          0);
     }
     grpc_chttp2_list_add_check_read_ops(transport_global, stream_global);
   }
@@ -1132,7 +1135,7 @@ void grpc_chttp2_fake_status(grpc_exec_ctx *exec_ctx,
   }
 }
 
-static void fail_pending_writes(grpc_exec_ctx *exec_ctx, 
+static void fail_pending_writes(grpc_exec_ctx *exec_ctx,
                                 grpc_chttp2_stream_global *stream_global) {
   grpc_chttp2_complete_closure_step(
       exec_ctx, &stream_global->send_initial_metadata_finished, 0);
@@ -1538,7 +1541,8 @@ static void incoming_byte_stream_unref(grpc_chttp2_incoming_byte_stream *bs) {
   }
 }
 
-static void incoming_byte_stream_destroy(grpc_exec_ctx *exec_ctx, grpc_byte_stream *byte_stream) {
+static void incoming_byte_stream_destroy(grpc_exec_ctx *exec_ctx,
+                                         grpc_byte_stream *byte_stream) {
   incoming_byte_stream_unref((grpc_chttp2_incoming_byte_stream *)byte_stream);
 }
 
