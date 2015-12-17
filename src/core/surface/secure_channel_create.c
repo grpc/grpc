@@ -49,6 +49,7 @@
 #include "src/core/iomgr/tcp_client.h"
 #include "src/core/security/auth_filters.h"
 #include "src/core/security/credentials.h"
+#include "src/core/security/security_context.h"
 #include "src/core/surface/api_trace.h"
 #include "src/core/surface/channel.h"
 #include "src/core/transport/chttp2_transport.h"
@@ -88,7 +89,8 @@ static void connector_unref(grpc_exec_ctx *exec_ctx, grpc_connector *con) {
 
 static void on_secure_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
                                      grpc_security_status status,
-                                     grpc_endpoint *secure_endpoint) {
+                                     grpc_endpoint *secure_endpoint,
+                                     grpc_auth_context *auth_context) {
   connector *c = arg;
   grpc_closure *notify;
   gpr_mu_lock(&c->mu);
@@ -103,8 +105,14 @@ static void on_secure_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
   } else {
     c->connecting_endpoint = NULL;
     gpr_mu_unlock(&c->mu);
-    c->result->transport = grpc_create_chttp2_transport(
-        exec_ctx, c->args.channel_args, secure_endpoint, 1);
+    {
+      grpc_arg auth_context_arg = grpc_auth_context_to_arg(auth_context);
+      grpc_channel_args *args_copy = grpc_channel_args_copy_and_add(
+          c->args.channel_args, &auth_context_arg, 1);
+      c->result->transport = grpc_create_chttp2_transport(
+          exec_ctx, args_copy, secure_endpoint, 1);
+      grpc_channel_args_destroy(args_copy);
+    }
     grpc_chttp2_transport_start_reading(exec_ctx, c->result->transport, NULL,
                                         0);
     c->result->filters = gpr_malloc(sizeof(grpc_channel_filter *) * 2);

@@ -68,7 +68,7 @@ static void httpcli_ssl_do_handshake(grpc_exec_ctx *exec_ctx,
   tsi_result result = TSI_OK;
   tsi_handshaker *handshaker;
   if (c->handshaker_factory == NULL) {
-    cb(exec_ctx, user_data, GRPC_SECURITY_ERROR, NULL);
+    cb(exec_ctx, user_data, GRPC_SECURITY_ERROR, NULL, NULL);
     return;
   }
   result = tsi_ssl_handshaker_factory_create_handshaker(
@@ -76,17 +76,17 @@ static void httpcli_ssl_do_handshake(grpc_exec_ctx *exec_ctx,
   if (result != TSI_OK) {
     gpr_log(GPR_ERROR, "Handshaker creation failed with error %s.",
             tsi_result_to_string(result));
-    cb(exec_ctx, user_data, GRPC_SECURITY_ERROR, NULL);
+    cb(exec_ctx, user_data, GRPC_SECURITY_ERROR, NULL, NULL);
   } else {
     grpc_do_security_handshake(exec_ctx, handshaker, sc, nonsecure_endpoint, cb,
                                user_data);
   }
 }
 
-static grpc_security_status httpcli_ssl_check_peer(grpc_security_connector *sc,
-                                                   tsi_peer peer,
-                                                   grpc_security_check_cb cb,
-                                                   void *user_data) {
+static void httpcli_ssl_check_peer(grpc_exec_ctx *exec_ctx,
+                                   grpc_security_connector *sc, tsi_peer peer,
+                                   grpc_security_peer_check_cb cb,
+                                   void *user_data) {
   grpc_httpcli_ssl_channel_security_connector *c =
       (grpc_httpcli_ssl_channel_security_connector *)sc;
   grpc_security_status status = GRPC_SECURITY_OK;
@@ -99,7 +99,7 @@ static grpc_security_status httpcli_ssl_check_peer(grpc_security_connector *sc,
     status = GRPC_SECURITY_ERROR;
   }
   tsi_peer_destruct(&peer);
-  return status;
+  cb(exec_ctx, user_data, status, NULL);
 }
 
 static grpc_security_connector_vtable httpcli_ssl_vtable = {
@@ -149,7 +149,8 @@ typedef struct {
 
 static void on_secure_transport_setup_done(grpc_exec_ctx *exec_ctx, void *rp,
                                            grpc_security_status status,
-                                           grpc_endpoint *secure_endpoint) {
+                                           grpc_endpoint *secure_endpoint,
+                                           grpc_auth_context *auth_context) {
   on_done_closure *c = rp;
   if (status != GRPC_SECURITY_OK) {
     gpr_log(GPR_ERROR, "Secure transport setup failed with error %d.", status);
