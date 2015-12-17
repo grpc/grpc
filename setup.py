@@ -36,6 +36,10 @@ import sys
 from distutils import core as _core
 from distutils import extension as _extension
 import setuptools
+from setuptools.command import egg_info
+
+# Redirect the manifest template from MANIFEST.in to PYTHON-MANIFEST.in.
+egg_info.manifest_maker.template = 'PYTHON-MANIFEST.in'
 
 PYTHON_STEM = './src/python/grpcio/'
 CORE_INCLUDE = ('./include', './',)
