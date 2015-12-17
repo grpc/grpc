@@ -1537,7 +1537,7 @@
   # boringssl needs an override to ensure that it does not include
   # system openssl headers regardless of other configuration
   # we do so here with a target specific variable assignment
-  $(LIB${lib.name.upper()}_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS)
+  $(LIB${lib.name.upper()}_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -std=c99 -no-pedantic -Wno-sign-conversion -Wno-conversion
   % endif
 
   ## If the library requires OpenSSL, let's add some restrictions.
