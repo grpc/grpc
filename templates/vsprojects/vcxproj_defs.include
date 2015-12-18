@@ -78,6 +78,8 @@ ${gen_package_props(packages, repo_root)}\
     <ProjectGuid>${project_guid if project_guid else project.vs_project_guid}</ProjectGuid>
 ## Silence MSB8029 warning. See #4506
     <IgnoreWarnIntDirInTempDetected>true</IgnoreWarnIntDirInTempDetected>
+## Use different location for intermediate directory to make path shorter than 260 characters.
+    <IntDir>$(SolutionDir)IntDir\$(MSBuildProjectName)\</IntDir>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(VisualStudioVersion)' == '10.0'" Label="Configuration">
