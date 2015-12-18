@@ -115,7 +115,7 @@ TEST_F(CliCallTest, SimpleRpc) {
   EXPECT_EQ(response.message(), request.message());
   EXPECT_TRUE(s.ok());
 
-  const grpc::string kMethod("/grpc.cpp.test.util.TestService/Echo");
+  const grpc::string kMethod("/grpc.testing.TestService/Echo");
   grpc::string request_bin, response_bin, expected_response_bin;
   EXPECT_TRUE(request.SerializeToString(&request_bin));
   EXPECT_TRUE(response.SerializeToString(&expected_response_bin));
