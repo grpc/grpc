@@ -583,11 +583,10 @@
   else
   ifeq ($(HAS_EMBEDDED_OPENSSL_ALPN),true)
   USE_SYSTEM_OPENSSL = false
-  OPENSSL_DEP = $(LIBDIR)/$(CONFIG)/openssl/libssl.a
-  OPENSSL_MERGE_LIBS += $(LIBDIR)/$(CONFIG)/openssl/libssl.a $(LIBDIR)/$(CONFIG)/openssl/libcrypto.a
+  OPENSSL_DEP = $(LIBDIR)/$(CONFIG)/libboringssl.a
+  OPENSSL_MERGE_LIBS += $(LIBDIR)/$(CONFIG)/libboringssl.a
   # need to prefix these to ensure overriding system libraries
-  CPPFLAGS := -Ithird_party/openssl/include $(CPPFLAGS)
-  LDFLAGS := -L$(LIBDIR)/$(CONFIG)/openssl $(LDFLAGS)
+  CPPFLAGS := -Ithird_party/boringssl/include $(CPPFLAGS)
   ifeq ($(OPENSSL_REQUIRES_DL),true)
   LIBS_SECURE = dl
   endif
@@ -840,38 +839,6 @@
   	$(Q)$(MAKE) -C third_party/zlib
   	$(Q)mkdir -p $(LIBDIR)/$(CONFIG)/zlib
   	$(Q)cp third_party/zlib/libz.a $(LIBDIR)/$(CONFIG)/zlib
-
-  $(LIBDIR)/$(CONFIG)/openssl/libssl.a:
-  	$(E) "[MAKE]    Building openssl for $(SYSTEM)"
-  ifeq ($(SYSTEM),Darwin)
-  	$(Q)(cd third_party/openssl ; CC="$(CC) $(PIC_CPPFLAGS) -fvisibility=hidden $(CPPFLAGS_$(CONFIG)) $(OPENSSL_CFLAGS_$(CONFIG)) $(OPENSSL_CFLAGS_EXTRA)" ./Configure darwin64-x86_64-cc)
-  else
-  ifeq ($(SYSTEM),MINGW32)
-  	@echo "We currently don't have a good way to compile OpenSSL in-place under msys."
-  	@echo "Please provide a OpenSSL in your mingw32 system."
-  	@echo
-  	@echo "Note that you can find a compatible version of the libraries here:"
-  	@echo
-  	@echo "http://slproweb.com/products/Win32OpenSSL.html"
-  	@echo
-  	@echo "If you decide to install that one, take the full version. The light"
-  	@echo "version only contains compiled DLLs, without the development files."
-  	@echo
-  	@echo "When installing, chose to copy the OpenSSL dlls to the OpenSSL binaries"
-  	@echo "directory. This way we'll link to them directly."
-  	@echo
-  	@echo "You can then re-start the build the following way:"
-  	@echo
-  	@echo "  CPPFLAGS=-I/c/OpenSSL-Win64/include LDFLAGS=-L/c/OpenSSL-Win64 make"
-  	@false
-  else
-  	$(Q)(cd third_party/openssl ; CC="$(CC) $(PIC_CPPFLAGS) -fvisibility=hidden $(CPPFLAGS_$(CONFIG)) $(OPENSSL_CFLAGS_$(CONFIG)) $(OPENSSL_CFLAGS_EXTRA)" ./config no-asm $(OPENSSL_CONFIG_$(CONFIG)))
-  endif
-  endif
-  	$(Q)$(MAKE) -j 1 -C third_party/openssl clean
-  	$(Q)(unset CPPFLAGS; $(MAKE) -j 1 -C third_party/openssl build_crypto build_ssl)
-  	$(Q)mkdir -p $(LIBDIR)/$(CONFIG)/openssl
-  	$(Q)cp third_party/openssl/libssl.a third_party/openssl/libcrypto.a $(LIBDIR)/$(CONFIG)/openssl
 
   third_party/protobuf/configure:
   	$(E) "[AUTOGEN] Preparing protobuf"
