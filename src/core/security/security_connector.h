@@ -42,7 +42,6 @@
 
 typedef enum {
   GRPC_SECURITY_OK = 0,
-  GRPC_SECURITY_PENDING,
   GRPC_SECURITY_ERROR
 } grpc_security_status;
 
@@ -124,9 +123,8 @@ void grpc_security_connector_do_handshake(grpc_exec_ctx *exec_ctx,
                                           grpc_security_handshake_done_cb cb,
                                           void *user_data);
 
-/* Check the peer.
-   Ownership of the peer is transfered.
-   TODO(jboeuf): Pass the peer by const pointer and do not pass ownership. */
+/* Check the peer. Callee takes ownership of the peer object.
+   The callback will include the resulting auth_context. */
 void grpc_security_connector_check_peer(grpc_exec_ctx *exec_ctx,
                                         grpc_security_connector *sc,
                                         tsi_peer peer,
@@ -160,30 +158,24 @@ typedef void (*grpc_security_call_host_check_cb)(grpc_exec_ctx *exec_ctx,
 struct grpc_channel_security_connector {
   grpc_security_connector base; /* requires is_client_side to be non 0. */
   grpc_call_credentials *request_metadata_creds;
-  grpc_security_status (*check_call_host)(grpc_exec_ctx *exec_ctx,
-                                          grpc_channel_security_connector *sc,
-                                          const char *host,
-                                          grpc_security_call_host_check_cb cb,
-                                          void *user_data);
+  void (*check_call_host)(grpc_exec_ctx *exec_ctx,
+                          grpc_channel_security_connector *sc, const char *host,
+                          grpc_auth_context *auth_context,
+                          grpc_security_call_host_check_cb cb, void *user_data);
 };
 
-/* Checks that the host that will be set for a call is acceptable.
-   Implementations can choose do the check either synchronously or
-   asynchronously. In the first case, a successful call will return
-   GRPC_SECURITY_OK. In the asynchronous case, the call will return
-   GRPC_SECURITY_PENDING unless an error is detected early on.
-   TODO(jboeuf): add a grpc_auth_context param to test against. */
-grpc_security_status grpc_channel_security_connector_check_call_host(
+/* Checks that the host that will be set for a call is acceptable. */
+void grpc_channel_security_connector_check_call_host(
     grpc_exec_ctx *exec_ctx, grpc_channel_security_connector *sc,
-    const char *host, grpc_security_call_host_check_cb cb, void *user_data);
+    const char *host, grpc_auth_context *auth_context,
+    grpc_security_call_host_check_cb cb, void *user_data);
 
 /* --- Creation security connectors. --- */
 
 /* For TESTING ONLY!
    Creates a fake connector that emulates real channel security.  */
 grpc_channel_security_connector *grpc_fake_channel_security_connector_create(
-    grpc_call_credentials *request_metadata_creds,
-    int call_host_check_is_async);
+    grpc_call_credentials *request_metadata_creds);
 
 /* For TESTING ONLY!
    Creates a fake connector that emulates real server security.  */
@@ -247,5 +239,8 @@ const tsi_peer_property *tsi_peer_get_property_by_name(const tsi_peer *peer,
 
 /* Exposed for testing only. */
 grpc_auth_context *tsi_ssl_peer_to_auth_context(const tsi_peer *peer);
+tsi_peer tsi_shallow_peer_from_auth_context(
+    const grpc_auth_context *auth_context);
+void tsi_shallow_peer_destruct(tsi_peer *peer);
 
 #endif /* GRPC_INTERNAL_CORE_SECURITY_SECURITY_CONNECTOR_H */
