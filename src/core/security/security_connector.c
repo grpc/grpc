@@ -130,22 +130,28 @@ void grpc_security_connector_do_handshake(grpc_exec_ctx *exec_ctx,
   }
 }
 
-void grpc_security_connector_check_peer(
-    grpc_exec_ctx *exec_ctx, grpc_security_connector *sc, tsi_peer peer,
-    grpc_security_peer_check_cb cb, void *user_data) {
+void grpc_security_connector_check_peer(grpc_exec_ctx *exec_ctx,
+                                        grpc_security_connector *sc,
+                                        tsi_peer peer,
+                                        grpc_security_peer_check_cb cb,
+                                        void *user_data) {
   if (sc == NULL) {
-    tsi_peer_destruct(&peer);
     cb(exec_ctx, user_data, GRPC_SECURITY_ERROR, NULL);
+    tsi_peer_destruct(&peer);
   } else {
     sc->vtable->check_peer(exec_ctx, sc, peer, cb, user_data);
   }
 }
 
-grpc_security_status grpc_channel_security_connector_check_call_host(
+void grpc_channel_security_connector_check_call_host(
     grpc_exec_ctx *exec_ctx, grpc_channel_security_connector *sc,
-    const char *host, grpc_security_call_host_check_cb cb, void *user_data) {
-  if (sc == NULL || sc->check_call_host == NULL) return GRPC_SECURITY_ERROR;
-  return sc->check_call_host(exec_ctx, sc, host, cb, user_data);
+    const char *host, grpc_auth_context *auth_context,
+    grpc_security_call_host_check_cb cb, void *user_data) {
+  if (sc == NULL || sc->check_call_host == NULL) {
+    cb(exec_ctx, user_data, GRPC_SECURITY_ERROR);
+  } else {
+    sc->check_call_host(exec_ctx, sc, host, auth_context, cb, user_data);
+  }
 }
 
 #ifdef GRPC_SECURITY_CONNECTOR_REFCOUNT_DEBUG
@@ -222,11 +228,6 @@ grpc_security_connector *grpc_find_security_connector_in_args(
 
 /* -- Fake implementation. -- */
 
-typedef struct {
-  grpc_channel_security_connector base;
-  int call_host_check_is_async;
-} grpc_fake_channel_security_connector;
-
 static void fake_channel_destroy(grpc_security_connector *sc) {
   grpc_channel_security_connector *c = (grpc_channel_security_connector *)sc;
   grpc_call_credentials_unref(c->request_metadata_creds);
@@ -270,21 +271,17 @@ static void fake_check_peer(grpc_exec_ctx *exec_ctx,
 
 end:
   cb(exec_ctx, user_data, status, auth_context);
-  tsi_peer_destruct(&peer);
   grpc_auth_context_unref(auth_context);
+  tsi_peer_destruct(&peer);
 }
 
-static grpc_security_status fake_channel_check_call_host(
-    grpc_exec_ctx *exec_ctx, grpc_channel_security_connector *sc,
-    const char *host, grpc_security_call_host_check_cb cb, void *user_data) {
-  grpc_fake_channel_security_connector *c =
-      (grpc_fake_channel_security_connector *)sc;
-  if (c->call_host_check_is_async) {
-    cb(exec_ctx, user_data, GRPC_SECURITY_OK);
-    return GRPC_SECURITY_PENDING;
-  } else {
-    return GRPC_SECURITY_OK;
-  }
+static void fake_channel_check_call_host(grpc_exec_ctx *exec_ctx,
+                                         grpc_channel_security_connector *sc,
+                                         const char *host,
+                                         grpc_auth_context *auth_context,
+                                         grpc_security_call_host_check_cb cb,
+                                         void *user_data) {
+  cb(exec_ctx, user_data, GRPC_SECURITY_OK);
 }
 
 static void fake_channel_do_handshake(grpc_exec_ctx *exec_ctx,
@@ -312,20 +309,17 @@ static grpc_security_connector_vtable fake_server_vtable = {
     fake_server_destroy, fake_server_do_handshake, fake_check_peer};
 
 grpc_channel_security_connector *grpc_fake_channel_security_connector_create(
-    grpc_call_credentials *request_metadata_creds,
-    int call_host_check_is_async) {
-  grpc_fake_channel_security_connector *c =
-      gpr_malloc(sizeof(grpc_fake_channel_security_connector));
-  memset(c, 0, sizeof(grpc_fake_channel_security_connector));
-  gpr_ref_init(&c->base.base.refcount, 1);
-  c->base.base.is_client_side = 1;
-  c->base.base.url_scheme = GRPC_FAKE_SECURITY_URL_SCHEME;
-  c->base.base.vtable = &fake_channel_vtable;
-  c->base.request_metadata_creds =
+    grpc_call_credentials *request_metadata_creds) {
+  grpc_channel_security_connector *c = gpr_malloc(sizeof(*c));
+  memset(c, 0, sizeof(*c));
+  gpr_ref_init(&c->base.refcount, 1);
+  c->base.is_client_side = 1;
+  c->base.url_scheme = GRPC_FAKE_SECURITY_URL_SCHEME;
+  c->base.vtable = &fake_channel_vtable;
+  c->request_metadata_creds =
       grpc_call_credentials_ref(request_metadata_creds);
-  c->base.check_call_host = fake_channel_check_call_host;
-  c->call_host_check_is_async = call_host_check_is_async;
-  return &c->base;
+  c->check_call_host = fake_channel_check_call_host;
+  return c;
 }
 
 grpc_security_connector *grpc_fake_server_security_connector_create(void) {
@@ -346,9 +340,6 @@ typedef struct {
   tsi_ssl_handshaker_factory *handshaker_factory;
   char *target_name;
   char *overridden_target_name;
-  /* TODO(jboeuf): Remove this: the security connector is channel-wide construct
-     as opposed to the peer which is for one transport (or sub-channel). */
-  tsi_peer peer;
 } grpc_ssl_channel_security_connector;
 
 typedef struct {
@@ -365,7 +356,6 @@ static void ssl_channel_destroy(grpc_security_connector *sc) {
   }
   if (c->target_name != NULL) gpr_free(c->target_name);
   if (c->overridden_target_name != NULL) gpr_free(c->overridden_target_name);
-  tsi_peer_destruct(&c->peer);
   gpr_free(sc);
 }
 
@@ -517,14 +507,13 @@ static void ssl_channel_check_peer(
       (grpc_ssl_channel_security_connector *)sc;
   grpc_security_status status;
   grpc_auth_context *auth_context = NULL;
-  tsi_peer_destruct(&c->peer);
-  c->peer = peer;
   status = ssl_check_peer(sc, c->overridden_target_name != NULL
                                   ? c->overridden_target_name
                                   : c->target_name,
                           &peer, &auth_context);
   cb(exec_ctx, user_data, status, auth_context);
   grpc_auth_context_unref(auth_context);
+  tsi_peer_destruct(&peer);
 }
 
 static void ssl_server_check_peer(
@@ -537,22 +526,66 @@ static void ssl_server_check_peer(
   grpc_auth_context_unref(auth_context);
 }
 
-static grpc_security_status ssl_channel_check_call_host(
-    grpc_exec_ctx *exec_ctx, grpc_channel_security_connector *sc,
-    const char *host, grpc_security_call_host_check_cb cb, void *user_data) {
+static void add_shalow_auth_property_to_peer(tsi_peer *peer,
+                                             const grpc_auth_property *prop,
+                                             const char *tsi_prop_name) {
+  tsi_peer_property *tsi_prop = &peer->properties[peer->property_count++];
+  tsi_prop->name = (char *)tsi_prop_name;
+  tsi_prop->value.data = prop->value;
+  tsi_prop->value.length = prop->value_length;
+}
+
+tsi_peer tsi_shallow_peer_from_ssl_auth_context(
+    const grpc_auth_context *auth_context) {
+  size_t max_num_props = 0;
+  grpc_auth_property_iterator it;
+  const grpc_auth_property *prop;
+  tsi_peer peer;
+  memset(&peer, 0, sizeof(peer));
+
+  it = grpc_auth_context_property_iterator(auth_context);
+  while (grpc_auth_property_iterator_next(&it) != NULL) max_num_props++;
+
+  if (max_num_props > 0) {
+    peer.properties = gpr_malloc(max_num_props * sizeof(tsi_peer_property));
+    it = grpc_auth_context_property_iterator(auth_context);
+    while ((prop = grpc_auth_property_iterator_next(&it)) != NULL) {
+      if (strcmp(prop->name, GRPC_X509_SAN_PROPERTY_NAME) == 0) {
+        add_shalow_auth_property_to_peer(
+            &peer, prop, TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY);
+      } else if (strcmp(prop->name, GRPC_X509_CN_PROPERTY_NAME) == 0) {
+        add_shalow_auth_property_to_peer(
+            &peer, prop, TSI_X509_SUBJECT_COMMON_NAME_PEER_PROPERTY);
+      }
+    }
+  }
+  return peer;
+}
+
+void tsi_shallow_peer_destruct(tsi_peer *peer) {
+  if (peer->properties != NULL) gpr_free(peer->properties);
+}
+
+static void ssl_channel_check_call_host(grpc_exec_ctx *exec_ctx,
+                                        grpc_channel_security_connector *sc,
+                                        const char *host,
+                                        grpc_auth_context *auth_context,
+                                        grpc_security_call_host_check_cb cb,
+                                        void *user_data) {
   grpc_ssl_channel_security_connector *c =
       (grpc_ssl_channel_security_connector *)sc;
-
-  if (ssl_host_matches_name(&c->peer, host)) return GRPC_SECURITY_OK;
+  grpc_security_status status = GRPC_SECURITY_ERROR;
+  tsi_peer peer = tsi_shallow_peer_from_ssl_auth_context(auth_context);
+  if (ssl_host_matches_name(&peer, host)) status = GRPC_SECURITY_OK;
 
   /* If the target name was overridden, then the original target_name was
      'checked' transitively during the previous peer check at the end of the
      handshake. */
   if (c->overridden_target_name != NULL && strcmp(host, c->target_name) == 0) {
-    return GRPC_SECURITY_OK;
-  } else {
-    return GRPC_SECURITY_ERROR;
+    status = GRPC_SECURITY_OK;
   }
+  cb(exec_ctx, user_data, status);
+  tsi_shallow_peer_destruct(&peer);
 }
 
 static grpc_security_connector_vtable ssl_channel_vtable = {

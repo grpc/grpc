@@ -250,27 +250,13 @@ static void auth_start_transport_op(grpc_exec_ctx *exec_ctx,
       }
     }
     if (calld->host != NULL) {
-      grpc_security_status status;
       const char *call_host = grpc_mdstr_as_c_string(calld->host);
       calld->op = *op; /* Copy op (originates from the caller's stack). */
-      status = grpc_channel_security_connector_check_call_host(
-          exec_ctx, chand->security_connector, call_host, on_host_checked,
-          elem);
-      if (status != GRPC_SECURITY_OK) {
-        if (status == GRPC_SECURITY_ERROR) {
-          char *error_msg;
-          gpr_asprintf(&error_msg,
-                       "Invalid host %s set in :authority metadata.",
-                       call_host);
-          bubble_up_error(exec_ctx, elem, GRPC_STATUS_INVALID_ARGUMENT,
-                          error_msg);
-          gpr_free(error_msg);
-        }
-        return; /* early exit */
-      }
+      grpc_channel_security_connector_check_call_host(
+          exec_ctx, chand->security_connector, call_host, chand->auth_context,
+          on_host_checked, elem);
+      return; /* early exit */
     }
-    send_security_metadata(exec_ctx, elem, op);
-    return; /* early exit */
   }
 
   /* pass control down the stack */

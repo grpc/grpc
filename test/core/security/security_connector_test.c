@@ -242,6 +242,8 @@ static void test_cn_and_multiple_sans_and_others_ssl_peer_to_auth_context(
   GRPC_AUTH_CONTEXT_UNREF(ctx, "test");
 }
 
+/* TODO(jboeuf): Unit-test tsi_shallow_peer_from_auth_context. */
+
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
   grpc_init();
