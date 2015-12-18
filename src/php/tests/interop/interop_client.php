@@ -438,6 +438,8 @@ if ($use_tls) {
     }
     $opts['credentials'] = $ssl_credentials;
     $opts['grpc.ssl_target_name_override'] = $host_override;
+} else {
+    $opts['credentials'] = Grpc\ChannelCredentials::createInsecure();
 }
 
 if (in_array($test_case, ['service_account_creds',
