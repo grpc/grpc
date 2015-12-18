@@ -240,8 +240,10 @@ grpc_chttp2_parse_error grpc_chttp2_settings_parser_parse(
             transport_parsing->initial_window_update =
                 (gpr_int64)parser->value -
                 parser->incoming_settings[parser->id];
-            gpr_log(GPR_DEBUG, "adding %d for initial_window change",
-                    (int)transport_parsing->initial_window_update);
+            if (grpc_http_trace) {
+              gpr_log(GPR_DEBUG, "adding %d for initial_window change",
+                      (int)transport_parsing->initial_window_update);
+            }
           }
           parser->incoming_settings[parser->id] = parser->value;
           if (grpc_http_trace) {

@@ -16,6 +16,8 @@
       <RuntimeLibrary>${'MultiThreadedDebug' if debug else 'Multithreaded'}</RuntimeLibrary>
       <TreatWarningAsError>${'false' if target.boringssl else 'true'}</TreatWarningAsError>
       <DebugInformationFormat Condition="$(Jenkins)">None</DebugInformationFormat>
+## Silence D9007 warning. See #4508
+      <MinimalRebuild Condition="$(Jenkins)">false</MinimalRebuild>
     </ClCompile>
     <Link>
       <SubSystem>${get_subsystem(project.is_library)}</SubSystem>
@@ -48,12 +50,12 @@
       props.extend(['protoc', 'protobuf'])
     else:
       if target.language == 'c++':
-      	props.extend(['protobuf'])
+        props.extend(['protobuf'])
       props.extend(['winsock', 'zlib'])
       packages.extend(['grpc.dependencies.zlib'])
       if target.get('secure', 'check'):
         props.extend(['openssl'])
-	packages.extend(['grpc.dependencies.openssl'])
+        packages.extend(['grpc.dependencies.openssl'])
   else:
     props.extend(['winsock'])
   props.extend(['global'])
@@ -103,6 +105,8 @@ ${gen_package_props(packages, repo_root)}\
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>${project_guid if project_guid else project.vs_project_guid}</ProjectGuid>
+## Silence MSB8029 warning. See #4506
+    <IgnoreWarnIntDirInTempDetected>true</IgnoreWarnIntDirInTempDetected>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(VisualStudioVersion)' == '10.0'" Label="Configuration">
@@ -159,7 +163,7 @@ ${gen_package_props(packages, repo_root)}\
     %   if package.get('linkage', None) is not None:
     <Linkage-${package.name.replace('.', '_')}>${package.linkage}</Linkage-${package.name.replace('.', '_')}>
     %   endif
-    <Configuration-${package.name.replace('.', '_')}>Debug</Configuration-${package.name.replace('.', '_')}>
+    <Configuration-${package.name.replace('.', '_')}>${config}</Configuration-${package.name.replace('.', '_')}>
     %  endif
     % endfor
   </PropertyGroup>
