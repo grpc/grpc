@@ -1,6 +1,6 @@
 # -*- ruby -*-
 # encoding: utf-8
-$LOAD_PATH.push File.expand_path('../lib', __FILE__)
+$LOAD_PATH.push File.expand_path('../src/ruby/lib', __FILE__)
 require 'grpc/version'
 
 Gem::Specification.new do |s|
@@ -16,17 +16,20 @@ Gem::Specification.new do |s|
   s.required_ruby_version = '>= 2.0.0'
   s.requirements << 'libgrpc ~> 0.11.0 needs to be installed'
 
-  s.files = %w( Rakefile )
-  s.files += Dir.glob('bin/**/*')
-  s.files += Dir.glob('ext/**/*')
-  s.files += Dir.glob('lib/**/*')
-  s.files += Dir.glob('pb/**/*')
-  s.test_files = Dir.glob('spec/**/*')
+  s.files = %w( Rakefile Makefile )
+  s.files += Dir.glob('src/ruby/bin/**/*')
+  s.files += Dir.glob('src/ruby/ext/**/*')
+  s.files += Dir.glob('src/ruby/lib/**/*')
+  s.files += Dir.glob('src/ruby/pb/**/*')
+  s.files += Dir.glob('include/grpc/**/*')
+  s.files += Dir.glob('src/core/**/*')
+  s.test_files = Dir.glob('src/ruby/spec/**/*')
+  s.bindir = 'src/ruby/bin'
   %w(math noproto).each do |b|
     s.executables += ["#{b}_client.rb", "#{b}_server.rb"]
   end
   s.executables += %w(grpc_ruby_interop_client grpc_ruby_interop_server)
-  s.require_paths = %w( bin lib pb )
+  s.require_paths = %w( src/ruby/bin src/ruby/lib src/ruby/pb )
   s.platform      = Gem::Platform::RUBY
 
   s.add_dependency 'google-protobuf', '~> 3.0.0alpha.1.1'
@@ -41,5 +44,5 @@ Gem::Specification.new do |s|
   s.add_development_dependency 'rubocop', '~> 0.30.0'
   s.add_development_dependency 'signet', '~>0.6.0'
 
-  s.extensions = %w(ext/grpc/extconf.rb)
+  s.extensions = %w(src/ruby/ext/grpc/extconf.rb)
 end
