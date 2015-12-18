@@ -17,6 +17,7 @@ Gem::Specification.new do |s|
   s.requirements << 'libgrpc ~> 0.11.0 needs to be installed'
 
   s.files = %w( Rakefile Makefile )
+  s.files += %w( etc/roots.pem )
   s.files += Dir.glob('src/ruby/bin/**/*')
   s.files += Dir.glob('src/ruby/ext/**/*')
   s.files += Dir.glob('src/ruby/lib/**/*')
