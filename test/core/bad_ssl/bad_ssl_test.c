@@ -163,7 +163,7 @@ int main(int argc, char **argv) {
     grpc_shutdown();
   }
   gpr_free(args[2]);
-  
+
   gpr_subprocess_interrupt(svr);
   status = gpr_subprocess_join(svr);
   gpr_subprocess_destroy(svr);
