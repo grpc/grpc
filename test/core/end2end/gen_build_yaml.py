@@ -173,7 +173,7 @@ def main():
                            else END2END_FIXTURES[f].platforms,
               'deps': sec_deps,
               'headers': ['test/core/end2end/end2end_tests.h'],
-              'vs_proj_dir': 'test',
+              'vs_proj_dir': 'test/end2end/fixtures/%s' % f,
           } for f in sorted(END2END_FIXTURES.keys())
       ] + [
           {
@@ -186,7 +186,7 @@ def main():
                            else END2END_FIXTURES[f].platforms,
               'deps': unsec_deps,
               'headers': ['test/core/end2end/end2end_tests.h'],
-              'vs_proj_dir': 'test',
+              'vs_proj_dir': 'test/end2end/fixtures/%s' % f,
           } for f in sorted(END2END_FIXTURES.keys())
             if not END2END_FIXTURES[f].secure
       ] + [
@@ -199,7 +199,7 @@ def main():
               'headers': ['test/core/end2end/tests/cancel_test_helpers.h',
                           'test/core/end2end/end2end_tests.h'],
               'deps': sec_deps,
-              'vs_proj_dir': 'test',
+              'vs_proj_dir': 'test/end2end/tests/%s' % t,
           } for t in sorted(END2END_TESTS.keys())
       ] + [
           {
@@ -211,7 +211,7 @@ def main():
               'headers': ['test/core/end2end/tests/cancel_test_helpers.h',
                           'test/core/end2end/end2end_tests.h'],
               'deps': unsec_deps,
-              'vs_proj_dir': 'test',
+              'vs_proj_dir': 'test/end2end/tests/%s' % t,
           } for t in sorted(END2END_TESTS.keys())
             if not END2END_TESTS[t].secure
       ] + [
@@ -224,7 +224,7 @@ def main():
                   "test/core/end2end/data/server1_cert.c",
                   "test/core/end2end/data/server1_key.c"
               ],
-              'vs_proj_dir': 'test',
+              'vs_proj_dir': 'test/end2end',
           }
       ],
       'targets': [
@@ -241,7 +241,7 @@ def main():
               'deps': [
                   'end2end_fixture_%s' % f, 'end2end_test_%s' % t
               ] + sec_deps,
-              'vs_proj_dir': 'test',
+              'vs_proj_dir': 'test/end2end/tests',
           }
           for f in sorted(END2END_FIXTURES.keys())
           for t in sorted(END2END_TESTS.keys()) if compatible(f, t)
@@ -260,7 +260,7 @@ def main():
               'deps': [
                   'end2end_nosec_fixture_%s' % f, 'end2end_nosec_test_%s' % t
               ] + unsec_deps,
-              'vs_proj_dir': 'test',
+              'vs_proj_dir': 'test/end2end/tests',
           }
           for f in sorted(END2END_FIXTURES.keys())
           if not END2END_FIXTURES[f].secure

@@ -13,7 +13,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
 % endif
       <SDLCheck>true</SDLCheck>
-      <RuntimeLibrary>${'MultiThreadedDebug' if debug else 'Multithreaded'}</RuntimeLibrary>
+      <RuntimeLibrary>${'MultiThreadedDebug' if debug else 'MultiThreaded'}</RuntimeLibrary>
       <TreatWarningAsError>${'false' if target.boringssl else 'true'}</TreatWarningAsError>
       <DebugInformationFormat Condition="$(Jenkins)">None</DebugInformationFormat>
 ## Silence D9007 warning. See #4508
@@ -169,15 +169,15 @@ ${gen_package_props(packages, repo_root)}\
   </PropertyGroup>
 % endfor
 % if dll and dll != 'only':
-  ${item_definition_group(project, target, False, True, False)}
-  ${item_definition_group(project, target, False, True, True)}
   ${item_definition_group(project, target, True, True, False)}
   ${item_definition_group(project, target, True, True, True)}
+  ${item_definition_group(project, target, False, True, False)}
+  ${item_definition_group(project, target, False, True, True)}
 % endif
-  ${item_definition_group(project, target, False, False, False)}
-  ${item_definition_group(project, target, False, False, True)}
   ${item_definition_group(project, target, True, False, False)}
   ${item_definition_group(project, target, True, False, True)}
+  ${item_definition_group(project, target, False, False, False)}
+  ${item_definition_group(project, target, False, False, True)}
   % if project.get('public_headers',[]):
   <ItemGroup>
     % for public_header in project.public_headers:

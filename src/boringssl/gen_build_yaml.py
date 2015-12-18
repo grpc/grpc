@@ -99,7 +99,7 @@ class Grpc(object):
             'secure': 'no',
             'language': 'c' if os.path.splitext(test)[1] == '.c' else 'c++',
             'src': [map_dir(test)],
-            'vs_proj_dir': 'test',
+            'vs_proj_dir': 'test/boringssl',
             'boringssl': True,
             'deps': [
                 'boringssl_test_util',
