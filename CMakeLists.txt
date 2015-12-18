@@ -61,18 +61,18 @@ else()
   set(MATH_LIB)
 endif()
 
-PROTOBUF_GENERATE_CPP(TEST_PROTO_BENCHMARKS_STATS_PROTO_SRCS TEST_PROTO_BENCHMARKS_STATS_PROTO_HDRS test/proto/benchmarks/stats.proto)
-PROTOBUF_GENERATE_CPP(TEST_PROTO_BENCHMARKS_SERVICES_PROTO_SRCS TEST_PROTO_BENCHMARKS_SERVICES_PROTO_HDRS test/proto/benchmarks/services.proto)
-PROTOBUF_GENERATE_CPP(TEST_PROTO_TEST_PROTO_SRCS TEST_PROTO_TEST_PROTO_HDRS test/proto/test.proto)
-PROTOBUF_GENERATE_CPP(TEST_PROTO_BENCHMARKS_PAYLOADS_PROTO_SRCS TEST_PROTO_BENCHMARKS_PAYLOADS_PROTO_HDRS test/proto/benchmarks/payloads.proto)
-PROTOBUF_GENERATE_CPP(TEST_CPP_QPS_PERF_DB_PROTO_SRCS TEST_CPP_QPS_PERF_DB_PROTO_HDRS test/cpp/qps/perf_db.proto)
-PROTOBUF_GENERATE_CPP(TEST_CPP_UTIL_ECHO_DUPLICATE_PROTO_SRCS TEST_CPP_UTIL_ECHO_DUPLICATE_PROTO_HDRS test/cpp/util/echo_duplicate.proto)
-PROTOBUF_GENERATE_CPP(TEST_PROTO_MESSAGES_PROTO_SRCS TEST_PROTO_MESSAGES_PROTO_HDRS test/proto/messages.proto)
-PROTOBUF_GENERATE_CPP(TEST_PROTO_EMPTY_PROTO_SRCS TEST_PROTO_EMPTY_PROTO_HDRS test/proto/empty.proto)
-PROTOBUF_GENERATE_CPP(TEST_PROTO_BENCHMARKS_CONTROL_PROTO_SRCS TEST_PROTO_BENCHMARKS_CONTROL_PROTO_HDRS test/proto/benchmarks/control.proto)
-PROTOBUF_GENERATE_CPP(TEST_CPP_UTIL_MESSAGES_PROTO_SRCS TEST_CPP_UTIL_MESSAGES_PROTO_HDRS test/cpp/util/messages.proto)
-PROTOBUF_GENERATE_CPP(TEST_PROTO_METRICS_PROTO_SRCS TEST_PROTO_METRICS_PROTO_HDRS test/proto/metrics.proto)
-PROTOBUF_GENERATE_CPP(TEST_CPP_UTIL_ECHO_PROTO_SRCS TEST_CPP_UTIL_ECHO_PROTO_HDRS test/cpp/util/echo.proto)
+PROTOBUF_GENERATE_CPP(SRC_PROTO_GRPC_TESTING_ECHO_MESSAGES_PROTO_SRCS SRC_PROTO_GRPC_TESTING_ECHO_MESSAGES_PROTO_HDRS src/proto/grpc/testing/echo_messages.proto)
+PROTOBUF_GENERATE_CPP(SRC_PROTO_GRPC_TESTING_EMPTY_PROTO_SRCS SRC_PROTO_GRPC_TESTING_EMPTY_PROTO_HDRS src/proto/grpc/testing/empty.proto)
+PROTOBUF_GENERATE_CPP(SRC_PROTO_GRPC_TESTING_DUPLICATE_ECHO_DUPLICATE_PROTO_SRCS SRC_PROTO_GRPC_TESTING_DUPLICATE_ECHO_DUPLICATE_PROTO_HDRS src/proto/grpc/testing/duplicate/echo_duplicate.proto)
+PROTOBUF_GENERATE_CPP(SRC_PROTO_GRPC_TESTING_CONTROL_PROTO_SRCS SRC_PROTO_GRPC_TESTING_CONTROL_PROTO_HDRS src/proto/grpc/testing/control.proto)
+PROTOBUF_GENERATE_CPP(SRC_PROTO_GRPC_TESTING_PERF_DB_PROTO_SRCS SRC_PROTO_GRPC_TESTING_PERF_DB_PROTO_HDRS src/proto/grpc/testing/perf_db.proto)
+PROTOBUF_GENERATE_CPP(SRC_PROTO_GRPC_TESTING_MESSAGES_PROTO_SRCS SRC_PROTO_GRPC_TESTING_MESSAGES_PROTO_HDRS src/proto/grpc/testing/messages.proto)
+PROTOBUF_GENERATE_CPP(SRC_PROTO_GRPC_TESTING_ECHO_PROTO_SRCS SRC_PROTO_GRPC_TESTING_ECHO_PROTO_HDRS src/proto/grpc/testing/echo.proto)
+PROTOBUF_GENERATE_CPP(SRC_PROTO_GRPC_TESTING_STATS_PROTO_SRCS SRC_PROTO_GRPC_TESTING_STATS_PROTO_HDRS src/proto/grpc/testing/stats.proto)
+PROTOBUF_GENERATE_CPP(SRC_PROTO_GRPC_TESTING_SERVICES_PROTO_SRCS SRC_PROTO_GRPC_TESTING_SERVICES_PROTO_HDRS src/proto/grpc/testing/services.proto)
+PROTOBUF_GENERATE_CPP(SRC_PROTO_GRPC_TESTING_PAYLOADS_PROTO_SRCS SRC_PROTO_GRPC_TESTING_PAYLOADS_PROTO_HDRS src/proto/grpc/testing/payloads.proto)
+PROTOBUF_GENERATE_CPP(SRC_PROTO_GRPC_TESTING_METRICS_PROTO_SRCS SRC_PROTO_GRPC_TESTING_METRICS_PROTO_HDRS src/proto/grpc/testing/metrics.proto)
+PROTOBUF_GENERATE_CPP(SRC_PROTO_GRPC_TESTING_TEST_PROTO_SRCS SRC_PROTO_GRPC_TESTING_TEST_PROTO_HDRS src/proto/grpc/testing/test.proto)
 
 add_library(gpr
   src/core/profiling/basic_timers.c
@@ -152,7 +152,6 @@ add_library(grpc
   src/core/channel/connected_channel.c
   src/core/channel/http_client_filter.c
   src/core/channel/http_server_filter.c
-  src/core/channel/noop_filter.c
   src/core/channel/subchannel_call_holder.c
   src/core/client_config/client_config.c
   src/core/client_config/connector.c
@@ -170,8 +169,6 @@ add_library(grpc
   src/core/client_config/resolvers/sockaddr_resolver.c
   src/core/client_config/subchannel.c
   src/core/client_config/subchannel_factory.c
-  src/core/client_config/subchannel_factory_decorators/add_channel_arg.c
-  src/core/client_config/subchannel_factory_decorators/merge_channel_args.c
   src/core/client_config/uri_parser.c
   src/core/compression/algorithm.c
   src/core/compression/message_compress.c
@@ -232,6 +229,7 @@ add_library(grpc
   src/core/surface/channel.c
   src/core/surface/channel_connectivity.c
   src/core/surface/channel_create.c
+  src/core/surface/channel_ping.c
   src/core/surface/completion_queue.c
   src/core/surface/event_string.c
   src/core/surface/init.c
@@ -310,7 +308,6 @@ add_library(grpc_unsecure
   src/core/channel/connected_channel.c
   src/core/channel/http_client_filter.c
   src/core/channel/http_server_filter.c
-  src/core/channel/noop_filter.c
   src/core/channel/subchannel_call_holder.c
   src/core/client_config/client_config.c
   src/core/client_config/connector.c
@@ -328,8 +325,6 @@ add_library(grpc_unsecure
   src/core/client_config/resolvers/sockaddr_resolver.c
   src/core/client_config/subchannel.c
   src/core/client_config/subchannel_factory.c
-  src/core/client_config/subchannel_factory_decorators/add_channel_arg.c
-  src/core/client_config/subchannel_factory_decorators/merge_channel_args.c
   src/core/client_config/uri_parser.c
   src/core/compression/algorithm.c
   src/core/compression/message_compress.c
@@ -390,6 +385,7 @@ add_library(grpc_unsecure
   src/core/surface/channel.c
   src/core/surface/channel_connectivity.c
   src/core/surface/channel_create.c
+  src/core/surface/channel_ping.c
   src/core/surface/completion_queue.c
   src/core/surface/event_string.c
   src/core/surface/init.c
@@ -481,9 +477,9 @@ add_library(grpc++_test_config
   test/cpp/util/test_config.cc
 )
 add_library(grpc++_test_util
-  ${TEST_CPP_UTIL_MESSAGES_PROTO_SRCS} ${TEST_CPP_UTIL_MESSAGES_PROTO_HDRS}
-  ${TEST_CPP_UTIL_ECHO_PROTO_SRCS} ${TEST_CPP_UTIL_ECHO_PROTO_HDRS}
-  ${TEST_CPP_UTIL_ECHO_DUPLICATE_PROTO_SRCS} ${TEST_CPP_UTIL_ECHO_DUPLICATE_PROTO_HDRS}
+  ${SRC_PROTO_GRPC_TESTING_ECHO_MESSAGES_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_ECHO_MESSAGES_PROTO_HDRS}
+  ${SRC_PROTO_GRPC_TESTING_ECHO_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_ECHO_PROTO_HDRS}
+  ${SRC_PROTO_GRPC_TESTING_DUPLICATE_ECHO_DUPLICATE_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_DUPLICATE_ECHO_DUPLICATE_PROTO_HDRS}
   test/cpp/util/cli_call.cc
   test/cpp/util/create_test_channel.cc
   test/cpp/util/string_ref_helper.cc
@@ -526,13 +522,13 @@ add_library(grpc_plugin_support
   src/compiler/ruby_generator.cc
 )
 add_library(interop_client_helper
-  ${TEST_PROTO_MESSAGES_PROTO_SRCS} ${TEST_PROTO_MESSAGES_PROTO_HDRS}
+  ${SRC_PROTO_GRPC_TESTING_MESSAGES_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_MESSAGES_PROTO_HDRS}
   test/cpp/interop/client_helper.cc
 )
 add_library(interop_client_main
-  ${TEST_PROTO_EMPTY_PROTO_SRCS} ${TEST_PROTO_EMPTY_PROTO_HDRS}
-  ${TEST_PROTO_MESSAGES_PROTO_SRCS} ${TEST_PROTO_MESSAGES_PROTO_HDRS}
-  ${TEST_PROTO_TEST_PROTO_SRCS} ${TEST_PROTO_TEST_PROTO_HDRS}
+  ${SRC_PROTO_GRPC_TESTING_EMPTY_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_EMPTY_PROTO_HDRS}
+  ${SRC_PROTO_GRPC_TESTING_MESSAGES_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_MESSAGES_PROTO_HDRS}
+  ${SRC_PROTO_GRPC_TESTING_TEST_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_TEST_PROTO_HDRS}
   test/cpp/interop/client.cc
   test/cpp/interop/interop_client.cc
 )
@@ -540,18 +536,18 @@ add_library(interop_server_helper
   test/cpp/interop/server_helper.cc
 )
 add_library(interop_server_main
-  ${TEST_PROTO_EMPTY_PROTO_SRCS} ${TEST_PROTO_EMPTY_PROTO_HDRS}
-  ${TEST_PROTO_MESSAGES_PROTO_SRCS} ${TEST_PROTO_MESSAGES_PROTO_HDRS}
-  ${TEST_PROTO_TEST_PROTO_SRCS} ${TEST_PROTO_TEST_PROTO_HDRS}
+  ${SRC_PROTO_GRPC_TESTING_EMPTY_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_EMPTY_PROTO_HDRS}
+  ${SRC_PROTO_GRPC_TESTING_MESSAGES_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_MESSAGES_PROTO_HDRS}
+  ${SRC_PROTO_GRPC_TESTING_TEST_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_TEST_PROTO_HDRS}
   test/cpp/interop/server.cc
 )
 add_library(qps
-  ${TEST_PROTO_MESSAGES_PROTO_SRCS} ${TEST_PROTO_MESSAGES_PROTO_HDRS}
-  ${TEST_PROTO_BENCHMARKS_CONTROL_PROTO_SRCS} ${TEST_PROTO_BENCHMARKS_CONTROL_PROTO_HDRS}
-  ${TEST_PROTO_BENCHMARKS_PAYLOADS_PROTO_SRCS} ${TEST_PROTO_BENCHMARKS_PAYLOADS_PROTO_HDRS}
-  ${TEST_PROTO_BENCHMARKS_SERVICES_PROTO_SRCS} ${TEST_PROTO_BENCHMARKS_SERVICES_PROTO_HDRS}
-  ${TEST_PROTO_BENCHMARKS_STATS_PROTO_SRCS} ${TEST_PROTO_BENCHMARKS_STATS_PROTO_HDRS}
-  ${TEST_CPP_QPS_PERF_DB_PROTO_SRCS} ${TEST_CPP_QPS_PERF_DB_PROTO_HDRS}
+  ${SRC_PROTO_GRPC_TESTING_MESSAGES_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_MESSAGES_PROTO_HDRS}
+  ${SRC_PROTO_GRPC_TESTING_CONTROL_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_CONTROL_PROTO_HDRS}
+  ${SRC_PROTO_GRPC_TESTING_PAYLOADS_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_PAYLOADS_PROTO_HDRS}
+  ${SRC_PROTO_GRPC_TESTING_SERVICES_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_SERVICES_PROTO_HDRS}
+  ${SRC_PROTO_GRPC_TESTING_STATS_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_STATS_PROTO_HDRS}
+  ${SRC_PROTO_GRPC_TESTING_PERF_DB_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_PERF_DB_PROTO_HDRS}
   test/cpp/qps/client_async.cc
   test/cpp/qps/client_sync.cc
   test/cpp/qps/driver.cc
@@ -566,6 +562,11 @@ add_library(qps
 add_library(grpc_csharp_ext
   src/csharp/ext/grpc_csharp_ext.c
 )
+if ((CMAKE_SYSTEM EQUAL Windows) OR (CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_library(end2end_fixture_h2_census
+  test/core/end2end/fixtures/h2_census.c
+)
+endif()
 if ((CMAKE_SYSTEM EQUAL Windows) OR (CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
 add_library(end2end_fixture_h2_compress
   test/core/end2end/fixtures/h2_compress.c
@@ -582,8 +583,18 @@ add_library(end2end_fixture_h2_full
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
+add_library(end2end_fixture_h2_full+pipe
+  test/core/end2end/fixtures/h2_full+pipe.c
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
 add_library(end2end_fixture_h2_full+poll
   test/core/end2end/fixtures/h2_full+poll.c
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_library(end2end_fixture_h2_full+poll+pipe
+  test/core/end2end/fixtures/h2_full+poll+pipe.c
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Windows) OR (CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
@@ -642,6 +653,11 @@ add_library(end2end_fixture_h2_uds+poll
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Windows) OR (CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_library(end2end_nosec_fixture_h2_census
+  test/core/end2end/fixtures/h2_census.c
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Windows) OR (CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
 add_library(end2end_nosec_fixture_h2_compress
   test/core/end2end/fixtures/h2_compress.c
 )
@@ -652,8 +668,18 @@ add_library(end2end_nosec_fixture_h2_full
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
+add_library(end2end_nosec_fixture_h2_full+pipe
+  test/core/end2end/fixtures/h2_full+pipe.c
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
 add_library(end2end_nosec_fixture_h2_full+poll
   test/core/end2end/fixtures/h2_full+poll.c
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_library(end2end_nosec_fixture_h2_full+poll+pipe
+  test/core/end2end/fixtures/h2_full+poll+pipe.c
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Windows) OR (CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
@@ -718,11 +744,11 @@ add_library(end2end_test_cancel_in_a_vacuum
 add_library(end2end_test_cancel_with_status
   test/core/end2end/tests/cancel_with_status.c
 )
-add_library(end2end_test_census_simple_request
-  test/core/end2end/tests/census_simple_request.c
-)
 add_library(end2end_test_channel_connectivity
   test/core/end2end/tests/channel_connectivity.c
+)
+add_library(end2end_test_channel_ping
+  test/core/end2end/tests/channel_ping.c
 )
 add_library(end2end_test_compressed_payload
   test/core/end2end/tests/compressed_payload.c
@@ -823,11 +849,11 @@ add_library(end2end_nosec_test_cancel_in_a_vacuum
 add_library(end2end_nosec_test_cancel_with_status
   test/core/end2end/tests/cancel_with_status.c
 )
-add_library(end2end_nosec_test_census_simple_request
-  test/core/end2end/tests/census_simple_request.c
-)
 add_library(end2end_nosec_test_channel_connectivity
   test/core/end2end/tests/channel_connectivity.c
+)
+add_library(end2end_nosec_test_channel_ping
+  test/core/end2end/tests/channel_ping.c
 )
 add_library(end2end_nosec_test_compressed_payload
   test/core/end2end/tests/compressed_payload.c
@@ -912,7 +938,42 @@ add_library(end2end_certs
 add_library(bad_client_test
   test/core/bad_client/bad_client.c
 )
+if ((CMAKE_SYSTEM EQUAL Linux) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Darwin))
+add_library(bad_ssl_test_server
+  test/core/bad_ssl/server.c
+)
+endif()
 
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(algorithm_test
+  test/core/compression/algorithm_test.c
+)
+target_link_libraries(algorithm_test
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(alloc_test
+  test/core/support/alloc_test.c
+)
+target_link_libraries(alloc_test
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
 add_executable(alpn_test
   test/core/transport/chttp2/alpn_test.c
@@ -934,6 +995,22 @@ add_executable(bin_encoder_test
   test/core/transport/chttp2/bin_encoder_test.c
 )
 target_link_libraries(bin_encoder_test
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(channel_create_test
+  test/core/surface/channel_create_test.c
+)
+target_link_libraries(channel_create_test
   grpc_test_util
   grpc
   gpr_test_util
@@ -994,10 +1071,42 @@ target_link_libraries(chttp2_stream_map_test
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(chttp2_varint_test
+  test/core/transport/chttp2/varint_test.c
+)
+target_link_libraries(chttp2_varint_test
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
 add_executable(compression_test
   test/core/compression/compression_test.c
 )
 target_link_libraries(compression_test
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(dns_resolver_test
+  test/core/client_config/resolvers/dns_resolver_test.c
+)
+target_link_libraries(dns_resolver_test
   grpc_test_util
   grpc
   gpr_test_util
@@ -1545,6 +1654,22 @@ target_link_libraries(grpc_fetch_oauth2
   ${MATH_LIB}
 )
 endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(grpc_invalid_channel_args_test
+  test/core/surface/invalid_channel_args_test.c
+)
+target_link_libraries(grpc_invalid_channel_args_test
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
 add_executable(grpc_json_token_test
   test/core/security/json_token_test.c
@@ -1705,6 +1830,22 @@ target_link_libraries(httpcli_test
   ${MATH_LIB}
 )
 endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(httpscli_test
+  test/core/httpcli/httpscli_test.c
+)
+target_link_libraries(httpscli_test
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
 add_executable(init_test
   test/core/surface/init_test.c
@@ -1756,6 +1897,22 @@ add_executable(json_rewrite_test
   test/core/json/json_rewrite_test.c
 )
 target_link_libraries(json_rewrite_test
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(json_stream_error_test
+  test/core/json/json_stream_error_test.c
+)
+target_link_libraries(json_stream_error_test
   grpc_test_util
   grpc
   gpr_test_util
@@ -1910,10 +2067,58 @@ target_link_libraries(resolve_address_test
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(secure_channel_create_test
+  test/core/surface/secure_channel_create_test.c
+)
+target_link_libraries(secure_channel_create_test
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
 add_executable(secure_endpoint_test
   test/core/security/secure_endpoint_test.c
 )
 target_link_libraries(secure_endpoint_test
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(server_chttp2_test
+  test/core/surface/server_chttp2_test.c
+)
+target_link_libraries(server_chttp2_test
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(server_test
+  test/core/surface/server_test.c
+)
+target_link_libraries(server_test
   grpc_test_util
   grpc
   gpr_test_util
@@ -1943,10 +2148,42 @@ target_link_libraries(set_initial_connect_string_test
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(sockaddr_resolver_test
+  test/core/client_config/resolvers/sockaddr_resolver_test.c
+)
+target_link_libraries(sockaddr_resolver_test
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
 add_executable(sockaddr_utils_test
   test/core/iomgr/sockaddr_utils_test.c
 )
 target_link_libraries(sockaddr_utils_test
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(socket_utils_test
+  test/core/iomgr/socket_utils_test.c
+)
+target_link_libraries(socket_utils_test
   grpc_test_util
   grpc
   gpr_test_util
@@ -2075,6 +2312,22 @@ add_executable(timers_test
   test/core/profiling/timers_test.c
 )
 target_link_libraries(timers_test
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(transport_connectivity_state_test
+  test/core/transport/connectivity_state_test.c
+)
+target_link_libraries(transport_connectivity_state_test
   grpc_test_util
   grpc
   gpr_test_util
@@ -2563,7 +2816,7 @@ target_link_libraries(interop_test
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
 add_executable(metrics_client
-  ${TEST_PROTO_METRICS_PROTO_SRCS} ${TEST_PROTO_METRICS_PROTO_HDRS}
+  ${SRC_PROTO_GRPC_TESTING_METRICS_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_METRICS_PROTO_HDRS}
   test/cpp/interop/metrics_client.cc
 )
 target_link_libraries(metrics_client
@@ -2697,9 +2950,9 @@ target_link_libraries(qps_worker
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
 add_executable(reconnect_interop_client
-  ${TEST_PROTO_EMPTY_PROTO_SRCS} ${TEST_PROTO_EMPTY_PROTO_HDRS}
-  ${TEST_PROTO_MESSAGES_PROTO_SRCS} ${TEST_PROTO_MESSAGES_PROTO_HDRS}
-  ${TEST_PROTO_TEST_PROTO_SRCS} ${TEST_PROTO_TEST_PROTO_HDRS}
+  ${SRC_PROTO_GRPC_TESTING_EMPTY_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_EMPTY_PROTO_HDRS}
+  ${SRC_PROTO_GRPC_TESTING_MESSAGES_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_MESSAGES_PROTO_HDRS}
+  ${SRC_PROTO_GRPC_TESTING_TEST_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_TEST_PROTO_HDRS}
   test/cpp/interop/reconnect_interop_client.cc
 )
 target_link_libraries(reconnect_interop_client
@@ -2719,9 +2972,9 @@ target_link_libraries(reconnect_interop_client
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
 add_executable(reconnect_interop_server
-  ${TEST_PROTO_EMPTY_PROTO_SRCS} ${TEST_PROTO_EMPTY_PROTO_HDRS}
-  ${TEST_PROTO_MESSAGES_PROTO_SRCS} ${TEST_PROTO_MESSAGES_PROTO_HDRS}
-  ${TEST_PROTO_TEST_PROTO_SRCS} ${TEST_PROTO_TEST_PROTO_HDRS}
+  ${SRC_PROTO_GRPC_TESTING_EMPTY_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_EMPTY_PROTO_HDRS}
+  ${SRC_PROTO_GRPC_TESTING_MESSAGES_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_MESSAGES_PROTO_HDRS}
+  ${SRC_PROTO_GRPC_TESTING_TEST_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_TEST_PROTO_HDRS}
   test/cpp/interop/reconnect_interop_server.cc
 )
 target_link_libraries(reconnect_interop_server
@@ -2869,10 +3122,10 @@ target_link_libraries(streaming_throughput_test
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
 add_executable(stress_test
-  ${TEST_PROTO_EMPTY_PROTO_SRCS} ${TEST_PROTO_EMPTY_PROTO_HDRS}
-  ${TEST_PROTO_MESSAGES_PROTO_SRCS} ${TEST_PROTO_MESSAGES_PROTO_HDRS}
-  ${TEST_PROTO_METRICS_PROTO_SRCS} ${TEST_PROTO_METRICS_PROTO_HDRS}
-  ${TEST_PROTO_TEST_PROTO_SRCS} ${TEST_PROTO_TEST_PROTO_HDRS}
+  ${SRC_PROTO_GRPC_TESTING_EMPTY_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_EMPTY_PROTO_HDRS}
+  ${SRC_PROTO_GRPC_TESTING_MESSAGES_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_MESSAGES_PROTO_HDRS}
+  ${SRC_PROTO_GRPC_TESTING_METRICS_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_METRICS_PROTO_HDRS}
+  ${SRC_PROTO_GRPC_TESTING_TEST_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_TEST_PROTO_HDRS}
   test/cpp/interop/interop_client.cc
   test/cpp/interop/stress_interop_client.cc
   test/cpp/interop/stress_test.cc
@@ -2951,6 +3204,7 @@ target_link_libraries(thread_stress_test
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
 add_executable(zookeeper_test
+  ${SRC_PROTO_GRPC_TESTING_ECHO_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_ECHO_PROTO_HDRS}
   test/cpp/end2end/zookeeper_test.cc
 )
 target_link_libraries(zookeeper_test
@@ -2958,6 +3212,690 @@ target_link_libraries(zookeeper_test
   grpc_test_util
   grpc++
   grpc_zookeeper
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_census_bad_hostname_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_census_bad_hostname_test
+  end2end_fixture_h2_census
+  end2end_test_bad_hostname
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_census_binary_metadata_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_census_binary_metadata_test
+  end2end_fixture_h2_census
+  end2end_test_binary_metadata
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_census_call_creds_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_census_call_creds_test
+  end2end_fixture_h2_census
+  end2end_test_call_creds
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_census_cancel_after_accept_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_census_cancel_after_accept_test
+  end2end_fixture_h2_census
+  end2end_test_cancel_after_accept
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_census_cancel_after_client_done_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_census_cancel_after_client_done_test
+  end2end_fixture_h2_census
+  end2end_test_cancel_after_client_done
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_census_cancel_after_invoke_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_census_cancel_after_invoke_test
+  end2end_fixture_h2_census
+  end2end_test_cancel_after_invoke
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_census_cancel_before_invoke_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_census_cancel_before_invoke_test
+  end2end_fixture_h2_census
+  end2end_test_cancel_before_invoke
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_census_cancel_in_a_vacuum_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_census_cancel_in_a_vacuum_test
+  end2end_fixture_h2_census
+  end2end_test_cancel_in_a_vacuum
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_census_cancel_with_status_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_census_cancel_with_status_test
+  end2end_fixture_h2_census
+  end2end_test_cancel_with_status
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_census_channel_connectivity_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_census_channel_connectivity_test
+  end2end_fixture_h2_census
+  end2end_test_channel_connectivity
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_census_channel_ping_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_census_channel_ping_test
+  end2end_fixture_h2_census
+  end2end_test_channel_ping
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_census_compressed_payload_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_census_compressed_payload_test
+  end2end_fixture_h2_census
+  end2end_test_compressed_payload
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_census_default_host_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_census_default_host_test
+  end2end_fixture_h2_census
+  end2end_test_default_host
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_census_disappearing_server_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_census_disappearing_server_test
+  end2end_fixture_h2_census
+  end2end_test_disappearing_server
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_census_empty_batch_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_census_empty_batch_test
+  end2end_fixture_h2_census
+  end2end_test_empty_batch
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_census_graceful_server_shutdown_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_census_graceful_server_shutdown_test
+  end2end_fixture_h2_census
+  end2end_test_graceful_server_shutdown
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_census_high_initial_seqno_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_census_high_initial_seqno_test
+  end2end_fixture_h2_census
+  end2end_test_high_initial_seqno
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_census_hpack_size_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_census_hpack_size_test
+  end2end_fixture_h2_census
+  end2end_test_hpack_size
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_census_invoke_large_request_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_census_invoke_large_request_test
+  end2end_fixture_h2_census
+  end2end_test_invoke_large_request
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_census_large_metadata_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_census_large_metadata_test
+  end2end_fixture_h2_census
+  end2end_test_large_metadata
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_census_max_concurrent_streams_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_census_max_concurrent_streams_test
+  end2end_fixture_h2_census
+  end2end_test_max_concurrent_streams
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_census_max_message_length_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_census_max_message_length_test
+  end2end_fixture_h2_census
+  end2end_test_max_message_length
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_census_metadata_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_census_metadata_test
+  end2end_fixture_h2_census
+  end2end_test_metadata
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_census_negative_deadline_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_census_negative_deadline_test
+  end2end_fixture_h2_census
+  end2end_test_negative_deadline
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_census_no_op_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_census_no_op_test
+  end2end_fixture_h2_census
+  end2end_test_no_op
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_census_payload_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_census_payload_test
+  end2end_fixture_h2_census
+  end2end_test_payload
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_census_ping_pong_streaming_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_census_ping_pong_streaming_test
+  end2end_fixture_h2_census
+  end2end_test_ping_pong_streaming
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_census_registered_call_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_census_registered_call_test
+  end2end_fixture_h2_census
+  end2end_test_registered_call
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_census_request_with_flags_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_census_request_with_flags_test
+  end2end_fixture_h2_census
+  end2end_test_request_with_flags
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_census_request_with_payload_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_census_request_with_payload_test
+  end2end_fixture_h2_census
+  end2end_test_request_with_payload
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_census_server_finishes_request_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_census_server_finishes_request_test
+  end2end_fixture_h2_census
+  end2end_test_server_finishes_request
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_census_shutdown_finishes_calls_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_census_shutdown_finishes_calls_test
+  end2end_fixture_h2_census
+  end2end_test_shutdown_finishes_calls
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_census_shutdown_finishes_tags_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_census_shutdown_finishes_tags_test
+  end2end_fixture_h2_census
+  end2end_test_shutdown_finishes_tags
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_census_simple_delayed_request_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_census_simple_delayed_request_test
+  end2end_fixture_h2_census
+  end2end_test_simple_delayed_request
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_census_simple_request_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_census_simple_request_test
+  end2end_fixture_h2_census
+  end2end_test_simple_request
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_census_trailing_metadata_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_census_trailing_metadata_test
+  end2end_fixture_h2_census
+  end2end_test_trailing_metadata
+  end2end_certs
+  grpc_test_util
   grpc
   gpr_test_util
   gpr
@@ -3140,12 +4078,12 @@ target_link_libraries(h2_compress_cancel_with_status_test
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
-add_executable(h2_compress_census_simple_request_test
+add_executable(h2_compress_channel_connectivity_test
   vsprojects/dummy.c
 )
-target_link_libraries(h2_compress_census_simple_request_test
+target_link_libraries(h2_compress_channel_connectivity_test
   end2end_fixture_h2_compress
-  end2end_test_census_simple_request
+  end2end_test_channel_connectivity
   end2end_certs
   grpc_test_util
   grpc
@@ -3159,12 +4097,12 @@ target_link_libraries(h2_compress_census_simple_request_test
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
-add_executable(h2_compress_channel_connectivity_test
+add_executable(h2_compress_channel_ping_test
   vsprojects/dummy.c
 )
-target_link_libraries(h2_compress_channel_connectivity_test
+target_link_libraries(h2_compress_channel_ping_test
   end2end_fixture_h2_compress
-  end2end_test_channel_connectivity
+  end2end_test_channel_ping
   end2end_certs
   grpc_test_util
   grpc
@@ -3824,12 +4762,12 @@ target_link_libraries(h2_fakesec_cancel_with_status_test
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
-add_executable(h2_fakesec_census_simple_request_test
+add_executable(h2_fakesec_channel_connectivity_test
   vsprojects/dummy.c
 )
-target_link_libraries(h2_fakesec_census_simple_request_test
+target_link_libraries(h2_fakesec_channel_connectivity_test
   end2end_fixture_h2_fakesec
-  end2end_test_census_simple_request
+  end2end_test_channel_connectivity
   end2end_certs
   grpc_test_util
   grpc
@@ -3843,12 +4781,12 @@ target_link_libraries(h2_fakesec_census_simple_request_test
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
-add_executable(h2_fakesec_channel_connectivity_test
+add_executable(h2_fakesec_channel_ping_test
   vsprojects/dummy.c
 )
-target_link_libraries(h2_fakesec_channel_connectivity_test
+target_link_libraries(h2_fakesec_channel_ping_test
   end2end_fixture_h2_fakesec
-  end2end_test_channel_connectivity
+  end2end_test_channel_ping
   end2end_certs
   grpc_test_util
   grpc
@@ -4508,12 +5446,12 @@ target_link_libraries(h2_full_cancel_with_status_test
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
-add_executable(h2_full_census_simple_request_test
+add_executable(h2_full_channel_connectivity_test
   vsprojects/dummy.c
 )
-target_link_libraries(h2_full_census_simple_request_test
+target_link_libraries(h2_full_channel_connectivity_test
   end2end_fixture_h2_full
-  end2end_test_census_simple_request
+  end2end_test_channel_connectivity
   end2end_certs
   grpc_test_util
   grpc
@@ -4527,12 +5465,12 @@ target_link_libraries(h2_full_census_simple_request_test
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
-add_executable(h2_full_channel_connectivity_test
+add_executable(h2_full_channel_ping_test
   vsprojects/dummy.c
 )
-target_link_libraries(h2_full_channel_connectivity_test
+target_link_libraries(h2_full_channel_ping_test
   end2end_fixture_h2_full
-  end2end_test_channel_connectivity
+  end2end_test_channel_ping
   end2end_certs
   grpc_test_util
   grpc
@@ -5021,6 +5959,690 @@ target_link_libraries(h2_full_trailing_metadata_test
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+pipe_bad_hostname_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+pipe_bad_hostname_test
+  end2end_fixture_h2_full+pipe
+  end2end_test_bad_hostname
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+pipe_binary_metadata_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+pipe_binary_metadata_test
+  end2end_fixture_h2_full+pipe
+  end2end_test_binary_metadata
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+pipe_call_creds_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+pipe_call_creds_test
+  end2end_fixture_h2_full+pipe
+  end2end_test_call_creds
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+pipe_cancel_after_accept_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+pipe_cancel_after_accept_test
+  end2end_fixture_h2_full+pipe
+  end2end_test_cancel_after_accept
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+pipe_cancel_after_client_done_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+pipe_cancel_after_client_done_test
+  end2end_fixture_h2_full+pipe
+  end2end_test_cancel_after_client_done
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+pipe_cancel_after_invoke_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+pipe_cancel_after_invoke_test
+  end2end_fixture_h2_full+pipe
+  end2end_test_cancel_after_invoke
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+pipe_cancel_before_invoke_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+pipe_cancel_before_invoke_test
+  end2end_fixture_h2_full+pipe
+  end2end_test_cancel_before_invoke
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+pipe_cancel_in_a_vacuum_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+pipe_cancel_in_a_vacuum_test
+  end2end_fixture_h2_full+pipe
+  end2end_test_cancel_in_a_vacuum
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+pipe_cancel_with_status_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+pipe_cancel_with_status_test
+  end2end_fixture_h2_full+pipe
+  end2end_test_cancel_with_status
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+pipe_channel_connectivity_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+pipe_channel_connectivity_test
+  end2end_fixture_h2_full+pipe
+  end2end_test_channel_connectivity
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+pipe_channel_ping_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+pipe_channel_ping_test
+  end2end_fixture_h2_full+pipe
+  end2end_test_channel_ping
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+pipe_compressed_payload_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+pipe_compressed_payload_test
+  end2end_fixture_h2_full+pipe
+  end2end_test_compressed_payload
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+pipe_default_host_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+pipe_default_host_test
+  end2end_fixture_h2_full+pipe
+  end2end_test_default_host
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+pipe_disappearing_server_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+pipe_disappearing_server_test
+  end2end_fixture_h2_full+pipe
+  end2end_test_disappearing_server
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+pipe_empty_batch_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+pipe_empty_batch_test
+  end2end_fixture_h2_full+pipe
+  end2end_test_empty_batch
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+pipe_graceful_server_shutdown_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+pipe_graceful_server_shutdown_test
+  end2end_fixture_h2_full+pipe
+  end2end_test_graceful_server_shutdown
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+pipe_high_initial_seqno_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+pipe_high_initial_seqno_test
+  end2end_fixture_h2_full+pipe
+  end2end_test_high_initial_seqno
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+pipe_hpack_size_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+pipe_hpack_size_test
+  end2end_fixture_h2_full+pipe
+  end2end_test_hpack_size
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+pipe_invoke_large_request_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+pipe_invoke_large_request_test
+  end2end_fixture_h2_full+pipe
+  end2end_test_invoke_large_request
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+pipe_large_metadata_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+pipe_large_metadata_test
+  end2end_fixture_h2_full+pipe
+  end2end_test_large_metadata
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+pipe_max_concurrent_streams_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+pipe_max_concurrent_streams_test
+  end2end_fixture_h2_full+pipe
+  end2end_test_max_concurrent_streams
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+pipe_max_message_length_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+pipe_max_message_length_test
+  end2end_fixture_h2_full+pipe
+  end2end_test_max_message_length
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+pipe_metadata_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+pipe_metadata_test
+  end2end_fixture_h2_full+pipe
+  end2end_test_metadata
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+pipe_negative_deadline_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+pipe_negative_deadline_test
+  end2end_fixture_h2_full+pipe
+  end2end_test_negative_deadline
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+pipe_no_op_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+pipe_no_op_test
+  end2end_fixture_h2_full+pipe
+  end2end_test_no_op
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+pipe_payload_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+pipe_payload_test
+  end2end_fixture_h2_full+pipe
+  end2end_test_payload
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+pipe_ping_pong_streaming_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+pipe_ping_pong_streaming_test
+  end2end_fixture_h2_full+pipe
+  end2end_test_ping_pong_streaming
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+pipe_registered_call_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+pipe_registered_call_test
+  end2end_fixture_h2_full+pipe
+  end2end_test_registered_call
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+pipe_request_with_flags_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+pipe_request_with_flags_test
+  end2end_fixture_h2_full+pipe
+  end2end_test_request_with_flags
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+pipe_request_with_payload_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+pipe_request_with_payload_test
+  end2end_fixture_h2_full+pipe
+  end2end_test_request_with_payload
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+pipe_server_finishes_request_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+pipe_server_finishes_request_test
+  end2end_fixture_h2_full+pipe
+  end2end_test_server_finishes_request
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+pipe_shutdown_finishes_calls_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+pipe_shutdown_finishes_calls_test
+  end2end_fixture_h2_full+pipe
+  end2end_test_shutdown_finishes_calls
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+pipe_shutdown_finishes_tags_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+pipe_shutdown_finishes_tags_test
+  end2end_fixture_h2_full+pipe
+  end2end_test_shutdown_finishes_tags
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+pipe_simple_delayed_request_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+pipe_simple_delayed_request_test
+  end2end_fixture_h2_full+pipe
+  end2end_test_simple_delayed_request
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+pipe_simple_request_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+pipe_simple_request_test
+  end2end_fixture_h2_full+pipe
+  end2end_test_simple_request
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+pipe_trailing_metadata_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+pipe_trailing_metadata_test
+  end2end_fixture_h2_full+pipe
+  end2end_test_trailing_metadata
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
 add_executable(h2_full+poll_bad_hostname_test
   vsprojects/dummy.c
 )
@@ -5192,12 +6814,12 @@ target_link_libraries(h2_full+poll_cancel_with_status_test
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
-add_executable(h2_full+poll_census_simple_request_test
+add_executable(h2_full+poll_channel_connectivity_test
   vsprojects/dummy.c
 )
-target_link_libraries(h2_full+poll_census_simple_request_test
+target_link_libraries(h2_full+poll_channel_connectivity_test
   end2end_fixture_h2_full+poll
-  end2end_test_census_simple_request
+  end2end_test_channel_connectivity
   end2end_certs
   grpc_test_util
   grpc
@@ -5211,12 +6833,12 @@ target_link_libraries(h2_full+poll_census_simple_request_test
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
-add_executable(h2_full+poll_channel_connectivity_test
+add_executable(h2_full+poll_channel_ping_test
   vsprojects/dummy.c
 )
-target_link_libraries(h2_full+poll_channel_connectivity_test
+target_link_libraries(h2_full+poll_channel_ping_test
   end2end_fixture_h2_full+poll
-  end2end_test_channel_connectivity
+  end2end_test_channel_ping
   end2end_certs
   grpc_test_util
   grpc
@@ -5704,6 +7326,690 @@ target_link_libraries(h2_full+poll_trailing_metadata_test
   ${MATH_LIB}
 )
 endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll+pipe_bad_hostname_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll+pipe_bad_hostname_test
+  end2end_fixture_h2_full+poll+pipe
+  end2end_test_bad_hostname
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll+pipe_binary_metadata_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll+pipe_binary_metadata_test
+  end2end_fixture_h2_full+poll+pipe
+  end2end_test_binary_metadata
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll+pipe_call_creds_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll+pipe_call_creds_test
+  end2end_fixture_h2_full+poll+pipe
+  end2end_test_call_creds
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll+pipe_cancel_after_accept_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll+pipe_cancel_after_accept_test
+  end2end_fixture_h2_full+poll+pipe
+  end2end_test_cancel_after_accept
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll+pipe_cancel_after_client_done_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll+pipe_cancel_after_client_done_test
+  end2end_fixture_h2_full+poll+pipe
+  end2end_test_cancel_after_client_done
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll+pipe_cancel_after_invoke_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll+pipe_cancel_after_invoke_test
+  end2end_fixture_h2_full+poll+pipe
+  end2end_test_cancel_after_invoke
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll+pipe_cancel_before_invoke_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll+pipe_cancel_before_invoke_test
+  end2end_fixture_h2_full+poll+pipe
+  end2end_test_cancel_before_invoke
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll+pipe_cancel_in_a_vacuum_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll+pipe_cancel_in_a_vacuum_test
+  end2end_fixture_h2_full+poll+pipe
+  end2end_test_cancel_in_a_vacuum
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll+pipe_cancel_with_status_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll+pipe_cancel_with_status_test
+  end2end_fixture_h2_full+poll+pipe
+  end2end_test_cancel_with_status
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll+pipe_channel_connectivity_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll+pipe_channel_connectivity_test
+  end2end_fixture_h2_full+poll+pipe
+  end2end_test_channel_connectivity
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll+pipe_channel_ping_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll+pipe_channel_ping_test
+  end2end_fixture_h2_full+poll+pipe
+  end2end_test_channel_ping
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll+pipe_compressed_payload_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll+pipe_compressed_payload_test
+  end2end_fixture_h2_full+poll+pipe
+  end2end_test_compressed_payload
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll+pipe_default_host_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll+pipe_default_host_test
+  end2end_fixture_h2_full+poll+pipe
+  end2end_test_default_host
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll+pipe_disappearing_server_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll+pipe_disappearing_server_test
+  end2end_fixture_h2_full+poll+pipe
+  end2end_test_disappearing_server
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll+pipe_empty_batch_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll+pipe_empty_batch_test
+  end2end_fixture_h2_full+poll+pipe
+  end2end_test_empty_batch
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll+pipe_graceful_server_shutdown_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll+pipe_graceful_server_shutdown_test
+  end2end_fixture_h2_full+poll+pipe
+  end2end_test_graceful_server_shutdown
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll+pipe_high_initial_seqno_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll+pipe_high_initial_seqno_test
+  end2end_fixture_h2_full+poll+pipe
+  end2end_test_high_initial_seqno
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll+pipe_hpack_size_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll+pipe_hpack_size_test
+  end2end_fixture_h2_full+poll+pipe
+  end2end_test_hpack_size
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll+pipe_invoke_large_request_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll+pipe_invoke_large_request_test
+  end2end_fixture_h2_full+poll+pipe
+  end2end_test_invoke_large_request
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll+pipe_large_metadata_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll+pipe_large_metadata_test
+  end2end_fixture_h2_full+poll+pipe
+  end2end_test_large_metadata
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll+pipe_max_concurrent_streams_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll+pipe_max_concurrent_streams_test
+  end2end_fixture_h2_full+poll+pipe
+  end2end_test_max_concurrent_streams
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll+pipe_max_message_length_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll+pipe_max_message_length_test
+  end2end_fixture_h2_full+poll+pipe
+  end2end_test_max_message_length
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll+pipe_metadata_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll+pipe_metadata_test
+  end2end_fixture_h2_full+poll+pipe
+  end2end_test_metadata
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll+pipe_negative_deadline_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll+pipe_negative_deadline_test
+  end2end_fixture_h2_full+poll+pipe
+  end2end_test_negative_deadline
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll+pipe_no_op_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll+pipe_no_op_test
+  end2end_fixture_h2_full+poll+pipe
+  end2end_test_no_op
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll+pipe_payload_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll+pipe_payload_test
+  end2end_fixture_h2_full+poll+pipe
+  end2end_test_payload
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll+pipe_ping_pong_streaming_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll+pipe_ping_pong_streaming_test
+  end2end_fixture_h2_full+poll+pipe
+  end2end_test_ping_pong_streaming
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll+pipe_registered_call_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll+pipe_registered_call_test
+  end2end_fixture_h2_full+poll+pipe
+  end2end_test_registered_call
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll+pipe_request_with_flags_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll+pipe_request_with_flags_test
+  end2end_fixture_h2_full+poll+pipe
+  end2end_test_request_with_flags
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll+pipe_request_with_payload_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll+pipe_request_with_payload_test
+  end2end_fixture_h2_full+poll+pipe
+  end2end_test_request_with_payload
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll+pipe_server_finishes_request_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll+pipe_server_finishes_request_test
+  end2end_fixture_h2_full+poll+pipe
+  end2end_test_server_finishes_request
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll+pipe_shutdown_finishes_calls_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll+pipe_shutdown_finishes_calls_test
+  end2end_fixture_h2_full+poll+pipe
+  end2end_test_shutdown_finishes_calls
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll+pipe_shutdown_finishes_tags_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll+pipe_shutdown_finishes_tags_test
+  end2end_fixture_h2_full+poll+pipe
+  end2end_test_shutdown_finishes_tags
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll+pipe_simple_delayed_request_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll+pipe_simple_delayed_request_test
+  end2end_fixture_h2_full+poll+pipe
+  end2end_test_simple_delayed_request
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll+pipe_simple_request_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll+pipe_simple_request_test
+  end2end_fixture_h2_full+poll+pipe
+  end2end_test_simple_request
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll+pipe_trailing_metadata_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll+pipe_trailing_metadata_test
+  end2end_fixture_h2_full+poll+pipe
+  end2end_test_trailing_metadata
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
 add_executable(h2_oauth2_bad_hostname_test
   vsprojects/dummy.c
@@ -5876,12 +8182,12 @@ target_link_libraries(h2_oauth2_cancel_with_status_test
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
-add_executable(h2_oauth2_census_simple_request_test
+add_executable(h2_oauth2_channel_connectivity_test
   vsprojects/dummy.c
 )
-target_link_libraries(h2_oauth2_census_simple_request_test
+target_link_libraries(h2_oauth2_channel_connectivity_test
   end2end_fixture_h2_oauth2
-  end2end_test_census_simple_request
+  end2end_test_channel_connectivity
   end2end_certs
   grpc_test_util
   grpc
@@ -5895,12 +8201,12 @@ target_link_libraries(h2_oauth2_census_simple_request_test
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
-add_executable(h2_oauth2_channel_connectivity_test
+add_executable(h2_oauth2_channel_ping_test
   vsprojects/dummy.c
 )
-target_link_libraries(h2_oauth2_channel_connectivity_test
+target_link_libraries(h2_oauth2_channel_ping_test
   end2end_fixture_h2_oauth2
-  end2end_test_channel_connectivity
+  end2end_test_channel_ping
   end2end_certs
   grpc_test_util
   grpc
@@ -6560,25 +8866,6 @@ target_link_libraries(h2_proxy_cancel_with_status_test
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
-add_executable(h2_proxy_census_simple_request_test
-  vsprojects/dummy.c
-)
-target_link_libraries(h2_proxy_census_simple_request_test
-  end2end_fixture_h2_proxy
-  end2end_test_census_simple_request
-  end2end_certs
-  grpc_test_util
-  grpc
-  gpr_test_util
-  gpr
-  ${PROTOBUF_LIBRARIES}
-  ${ZLIB_LIBRARIES}
-  ${OPENSSL_LIBRARIES}
-  ${CMAKE_THREAD_LIBS_INIT}
-  ${MATH_LIB}
-)
-endif()
-if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
 add_executable(h2_proxy_default_host_test
   vsprojects/dummy.c
 )
@@ -7136,25 +9423,6 @@ add_executable(h2_sockpair_cancel_with_status_test
 target_link_libraries(h2_sockpair_cancel_with_status_test
   end2end_fixture_h2_sockpair
   end2end_test_cancel_with_status
-  end2end_certs
-  grpc_test_util
-  grpc
-  gpr_test_util
-  gpr
-  ${PROTOBUF_LIBRARIES}
-  ${ZLIB_LIBRARIES}
-  ${OPENSSL_LIBRARIES}
-  ${CMAKE_THREAD_LIBS_INIT}
-  ${MATH_LIB}
-)
-endif()
-if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
-add_executable(h2_sockpair_census_simple_request_test
-  vsprojects/dummy.c
-)
-target_link_libraries(h2_sockpair_census_simple_request_test
-  end2end_fixture_h2_sockpair
-  end2end_test_census_simple_request
   end2end_certs
   grpc_test_util
   grpc
@@ -7757,25 +10025,6 @@ target_link_libraries(h2_sockpair+trace_cancel_with_status_test
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
-add_executable(h2_sockpair+trace_census_simple_request_test
-  vsprojects/dummy.c
-)
-target_link_libraries(h2_sockpair+trace_census_simple_request_test
-  end2end_fixture_h2_sockpair+trace
-  end2end_test_census_simple_request
-  end2end_certs
-  grpc_test_util
-  grpc
-  gpr_test_util
-  gpr
-  ${PROTOBUF_LIBRARIES}
-  ${ZLIB_LIBRARIES}
-  ${OPENSSL_LIBRARIES}
-  ${CMAKE_THREAD_LIBS_INIT}
-  ${MATH_LIB}
-)
-endif()
-if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
 add_executable(h2_sockpair+trace_compressed_payload_test
   vsprojects/dummy.c
 )
@@ -8333,25 +10582,6 @@ add_executable(h2_sockpair_1byte_cancel_with_status_test
 target_link_libraries(h2_sockpair_1byte_cancel_with_status_test
   end2end_fixture_h2_sockpair_1byte
   end2end_test_cancel_with_status
-  end2end_certs
-  grpc_test_util
-  grpc
-  gpr_test_util
-  gpr
-  ${PROTOBUF_LIBRARIES}
-  ${ZLIB_LIBRARIES}
-  ${OPENSSL_LIBRARIES}
-  ${CMAKE_THREAD_LIBS_INIT}
-  ${MATH_LIB}
-)
-endif()
-if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
-add_executable(h2_sockpair_1byte_census_simple_request_test
-  vsprojects/dummy.c
-)
-target_link_libraries(h2_sockpair_1byte_census_simple_request_test
-  end2end_fixture_h2_sockpair_1byte
-  end2end_test_census_simple_request
   end2end_certs
   grpc_test_util
   grpc
@@ -8954,12 +11184,12 @@ target_link_libraries(h2_ssl_cancel_with_status_test
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
-add_executable(h2_ssl_census_simple_request_test
+add_executable(h2_ssl_channel_connectivity_test
   vsprojects/dummy.c
 )
-target_link_libraries(h2_ssl_census_simple_request_test
+target_link_libraries(h2_ssl_channel_connectivity_test
   end2end_fixture_h2_ssl
-  end2end_test_census_simple_request
+  end2end_test_channel_connectivity
   end2end_certs
   grpc_test_util
   grpc
@@ -8973,12 +11203,12 @@ target_link_libraries(h2_ssl_census_simple_request_test
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
-add_executable(h2_ssl_channel_connectivity_test
+add_executable(h2_ssl_channel_ping_test
   vsprojects/dummy.c
 )
-target_link_libraries(h2_ssl_channel_connectivity_test
+target_link_libraries(h2_ssl_channel_ping_test
   end2end_fixture_h2_ssl
-  end2end_test_channel_connectivity
+  end2end_test_channel_ping
   end2end_certs
   grpc_test_util
   grpc
@@ -9638,12 +11868,12 @@ target_link_libraries(h2_ssl+poll_cancel_with_status_test
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
-add_executable(h2_ssl+poll_census_simple_request_test
+add_executable(h2_ssl+poll_channel_connectivity_test
   vsprojects/dummy.c
 )
-target_link_libraries(h2_ssl+poll_census_simple_request_test
+target_link_libraries(h2_ssl+poll_channel_connectivity_test
   end2end_fixture_h2_ssl+poll
-  end2end_test_census_simple_request
+  end2end_test_channel_connectivity
   end2end_certs
   grpc_test_util
   grpc
@@ -9657,12 +11887,12 @@ target_link_libraries(h2_ssl+poll_census_simple_request_test
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
-add_executable(h2_ssl+poll_channel_connectivity_test
+add_executable(h2_ssl+poll_channel_ping_test
   vsprojects/dummy.c
 )
-target_link_libraries(h2_ssl+poll_channel_connectivity_test
+target_link_libraries(h2_ssl+poll_channel_ping_test
   end2end_fixture_h2_ssl+poll
-  end2end_test_channel_connectivity
+  end2end_test_channel_ping
   end2end_certs
   grpc_test_util
   grpc
@@ -10322,25 +12552,6 @@ target_link_libraries(h2_ssl_proxy_cancel_with_status_test
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
-add_executable(h2_ssl_proxy_census_simple_request_test
-  vsprojects/dummy.c
-)
-target_link_libraries(h2_ssl_proxy_census_simple_request_test
-  end2end_fixture_h2_ssl_proxy
-  end2end_test_census_simple_request
-  end2end_certs
-  grpc_test_util
-  grpc
-  gpr_test_util
-  gpr
-  ${PROTOBUF_LIBRARIES}
-  ${ZLIB_LIBRARIES}
-  ${OPENSSL_LIBRARIES}
-  ${CMAKE_THREAD_LIBS_INIT}
-  ${MATH_LIB}
-)
-endif()
-if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
 add_executable(h2_ssl_proxy_default_host_test
   vsprojects/dummy.c
 )
@@ -10911,88 +13122,12 @@ target_link_libraries(h2_uchannel_cancel_with_status_test
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
-add_executable(h2_uchannel_census_simple_request_test
-  vsprojects/dummy.c
-)
-target_link_libraries(h2_uchannel_census_simple_request_test
-  end2end_fixture_h2_uchannel
-  end2end_test_census_simple_request
-  end2end_certs
-  grpc_test_util
-  grpc
-  gpr_test_util
-  gpr
-  ${PROTOBUF_LIBRARIES}
-  ${ZLIB_LIBRARIES}
-  ${OPENSSL_LIBRARIES}
-  ${CMAKE_THREAD_LIBS_INIT}
-  ${MATH_LIB}
-)
-endif()
-if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
-add_executable(h2_uchannel_channel_connectivity_test
-  vsprojects/dummy.c
-)
-target_link_libraries(h2_uchannel_channel_connectivity_test
-  end2end_fixture_h2_uchannel
-  end2end_test_channel_connectivity
-  end2end_certs
-  grpc_test_util
-  grpc
-  gpr_test_util
-  gpr
-  ${PROTOBUF_LIBRARIES}
-  ${ZLIB_LIBRARIES}
-  ${OPENSSL_LIBRARIES}
-  ${CMAKE_THREAD_LIBS_INIT}
-  ${MATH_LIB}
-)
-endif()
-if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
 add_executable(h2_uchannel_compressed_payload_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_uchannel_compressed_payload_test
   end2end_fixture_h2_uchannel
   end2end_test_compressed_payload
-  end2end_certs
-  grpc_test_util
-  grpc
-  gpr_test_util
-  gpr
-  ${PROTOBUF_LIBRARIES}
-  ${ZLIB_LIBRARIES}
-  ${OPENSSL_LIBRARIES}
-  ${CMAKE_THREAD_LIBS_INIT}
-  ${MATH_LIB}
-)
-endif()
-if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
-add_executable(h2_uchannel_default_host_test
-  vsprojects/dummy.c
-)
-target_link_libraries(h2_uchannel_default_host_test
-  end2end_fixture_h2_uchannel
-  end2end_test_default_host
-  end2end_certs
-  grpc_test_util
-  grpc
-  gpr_test_util
-  gpr
-  ${PROTOBUF_LIBRARIES}
-  ${ZLIB_LIBRARIES}
-  ${OPENSSL_LIBRARIES}
-  ${CMAKE_THREAD_LIBS_INIT}
-  ${MATH_LIB}
-)
-endif()
-if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
-add_executable(h2_uchannel_disappearing_server_test
-  vsprojects/dummy.c
-)
-target_link_libraries(h2_uchannel_disappearing_server_test
-  end2end_fixture_h2_uchannel
-  end2end_test_disappearing_server
   end2end_certs
   grpc_test_util
   grpc
@@ -11367,25 +13502,6 @@ target_link_libraries(h2_uchannel_shutdown_finishes_tags_test
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
-add_executable(h2_uchannel_simple_delayed_request_test
-  vsprojects/dummy.c
-)
-target_link_libraries(h2_uchannel_simple_delayed_request_test
-  end2end_fixture_h2_uchannel
-  end2end_test_simple_delayed_request
-  end2end_certs
-  grpc_test_util
-  grpc
-  gpr_test_util
-  gpr
-  ${PROTOBUF_LIBRARIES}
-  ${ZLIB_LIBRARIES}
-  ${OPENSSL_LIBRARIES}
-  ${CMAKE_THREAD_LIBS_INIT}
-  ${MATH_LIB}
-)
-endif()
-if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
 add_executable(h2_uchannel_simple_request_test
   vsprojects/dummy.c
 )
@@ -11595,12 +13711,12 @@ target_link_libraries(h2_uds_cancel_with_status_test
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
-add_executable(h2_uds_census_simple_request_test
+add_executable(h2_uds_channel_connectivity_test
   vsprojects/dummy.c
 )
-target_link_libraries(h2_uds_census_simple_request_test
+target_link_libraries(h2_uds_channel_connectivity_test
   end2end_fixture_h2_uds
-  end2end_test_census_simple_request
+  end2end_test_channel_connectivity
   end2end_certs
   grpc_test_util
   grpc
@@ -11614,12 +13730,12 @@ target_link_libraries(h2_uds_census_simple_request_test
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
-add_executable(h2_uds_channel_connectivity_test
+add_executable(h2_uds_channel_ping_test
   vsprojects/dummy.c
 )
-target_link_libraries(h2_uds_channel_connectivity_test
+target_link_libraries(h2_uds_channel_ping_test
   end2end_fixture_h2_uds
-  end2end_test_channel_connectivity
+  end2end_test_channel_ping
   end2end_certs
   grpc_test_util
   grpc
@@ -12260,12 +14376,12 @@ target_link_libraries(h2_uds+poll_cancel_with_status_test
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
-add_executable(h2_uds+poll_census_simple_request_test
+add_executable(h2_uds+poll_channel_connectivity_test
   vsprojects/dummy.c
 )
-target_link_libraries(h2_uds+poll_census_simple_request_test
+target_link_libraries(h2_uds+poll_channel_connectivity_test
   end2end_fixture_h2_uds+poll
-  end2end_test_census_simple_request
+  end2end_test_channel_connectivity
   end2end_certs
   grpc_test_util
   grpc
@@ -12279,12 +14395,12 @@ target_link_libraries(h2_uds+poll_census_simple_request_test
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
-add_executable(h2_uds+poll_channel_connectivity_test
+add_executable(h2_uds+poll_channel_ping_test
   vsprojects/dummy.c
 )
-target_link_libraries(h2_uds+poll_channel_connectivity_test
+target_link_libraries(h2_uds+poll_channel_ping_test
   end2end_fixture_h2_uds+poll
-  end2end_test_channel_connectivity
+  end2end_test_channel_ping
   end2end_certs
   grpc_test_util
   grpc
@@ -12754,6 +14870,636 @@ target_link_libraries(h2_uds+poll_trailing_metadata_test
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_census_bad_hostname_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_census_bad_hostname_nosec_test
+  end2end_nosec_fixture_h2_census
+  end2end_nosec_test_bad_hostname
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_census_binary_metadata_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_census_binary_metadata_nosec_test
+  end2end_nosec_fixture_h2_census
+  end2end_nosec_test_binary_metadata
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_census_cancel_after_accept_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_census_cancel_after_accept_nosec_test
+  end2end_nosec_fixture_h2_census
+  end2end_nosec_test_cancel_after_accept
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_census_cancel_after_client_done_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_census_cancel_after_client_done_nosec_test
+  end2end_nosec_fixture_h2_census
+  end2end_nosec_test_cancel_after_client_done
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_census_cancel_after_invoke_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_census_cancel_after_invoke_nosec_test
+  end2end_nosec_fixture_h2_census
+  end2end_nosec_test_cancel_after_invoke
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_census_cancel_before_invoke_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_census_cancel_before_invoke_nosec_test
+  end2end_nosec_fixture_h2_census
+  end2end_nosec_test_cancel_before_invoke
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_census_cancel_in_a_vacuum_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_census_cancel_in_a_vacuum_nosec_test
+  end2end_nosec_fixture_h2_census
+  end2end_nosec_test_cancel_in_a_vacuum
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_census_cancel_with_status_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_census_cancel_with_status_nosec_test
+  end2end_nosec_fixture_h2_census
+  end2end_nosec_test_cancel_with_status
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_census_channel_connectivity_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_census_channel_connectivity_nosec_test
+  end2end_nosec_fixture_h2_census
+  end2end_nosec_test_channel_connectivity
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_census_channel_ping_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_census_channel_ping_nosec_test
+  end2end_nosec_fixture_h2_census
+  end2end_nosec_test_channel_ping
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_census_compressed_payload_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_census_compressed_payload_nosec_test
+  end2end_nosec_fixture_h2_census
+  end2end_nosec_test_compressed_payload
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_census_default_host_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_census_default_host_nosec_test
+  end2end_nosec_fixture_h2_census
+  end2end_nosec_test_default_host
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_census_disappearing_server_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_census_disappearing_server_nosec_test
+  end2end_nosec_fixture_h2_census
+  end2end_nosec_test_disappearing_server
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_census_empty_batch_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_census_empty_batch_nosec_test
+  end2end_nosec_fixture_h2_census
+  end2end_nosec_test_empty_batch
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_census_graceful_server_shutdown_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_census_graceful_server_shutdown_nosec_test
+  end2end_nosec_fixture_h2_census
+  end2end_nosec_test_graceful_server_shutdown
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_census_high_initial_seqno_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_census_high_initial_seqno_nosec_test
+  end2end_nosec_fixture_h2_census
+  end2end_nosec_test_high_initial_seqno
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_census_hpack_size_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_census_hpack_size_nosec_test
+  end2end_nosec_fixture_h2_census
+  end2end_nosec_test_hpack_size
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_census_invoke_large_request_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_census_invoke_large_request_nosec_test
+  end2end_nosec_fixture_h2_census
+  end2end_nosec_test_invoke_large_request
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_census_large_metadata_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_census_large_metadata_nosec_test
+  end2end_nosec_fixture_h2_census
+  end2end_nosec_test_large_metadata
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_census_max_concurrent_streams_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_census_max_concurrent_streams_nosec_test
+  end2end_nosec_fixture_h2_census
+  end2end_nosec_test_max_concurrent_streams
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_census_max_message_length_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_census_max_message_length_nosec_test
+  end2end_nosec_fixture_h2_census
+  end2end_nosec_test_max_message_length
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_census_metadata_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_census_metadata_nosec_test
+  end2end_nosec_fixture_h2_census
+  end2end_nosec_test_metadata
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_census_negative_deadline_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_census_negative_deadline_nosec_test
+  end2end_nosec_fixture_h2_census
+  end2end_nosec_test_negative_deadline
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_census_no_op_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_census_no_op_nosec_test
+  end2end_nosec_fixture_h2_census
+  end2end_nosec_test_no_op
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_census_payload_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_census_payload_nosec_test
+  end2end_nosec_fixture_h2_census
+  end2end_nosec_test_payload
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_census_ping_pong_streaming_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_census_ping_pong_streaming_nosec_test
+  end2end_nosec_fixture_h2_census
+  end2end_nosec_test_ping_pong_streaming
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_census_registered_call_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_census_registered_call_nosec_test
+  end2end_nosec_fixture_h2_census
+  end2end_nosec_test_registered_call
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_census_request_with_flags_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_census_request_with_flags_nosec_test
+  end2end_nosec_fixture_h2_census
+  end2end_nosec_test_request_with_flags
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_census_request_with_payload_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_census_request_with_payload_nosec_test
+  end2end_nosec_fixture_h2_census
+  end2end_nosec_test_request_with_payload
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_census_server_finishes_request_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_census_server_finishes_request_nosec_test
+  end2end_nosec_fixture_h2_census
+  end2end_nosec_test_server_finishes_request
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_census_shutdown_finishes_calls_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_census_shutdown_finishes_calls_nosec_test
+  end2end_nosec_fixture_h2_census
+  end2end_nosec_test_shutdown_finishes_calls
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_census_shutdown_finishes_tags_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_census_shutdown_finishes_tags_nosec_test
+  end2end_nosec_fixture_h2_census
+  end2end_nosec_test_shutdown_finishes_tags
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_census_simple_delayed_request_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_census_simple_delayed_request_nosec_test
+  end2end_nosec_fixture_h2_census
+  end2end_nosec_test_simple_delayed_request
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_census_simple_request_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_census_simple_request_nosec_test
+  end2end_nosec_fixture_h2_census
+  end2end_nosec_test_simple_request
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_census_trailing_metadata_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_census_trailing_metadata_nosec_test
+  end2end_nosec_fixture_h2_census
+  end2end_nosec_test_trailing_metadata
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
 add_executable(h2_compress_bad_hostname_nosec_test
   vsprojects/dummy.c
 )
@@ -12898,12 +15644,12 @@ target_link_libraries(h2_compress_cancel_with_status_nosec_test
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
-add_executable(h2_compress_census_simple_request_nosec_test
+add_executable(h2_compress_channel_connectivity_nosec_test
   vsprojects/dummy.c
 )
-target_link_libraries(h2_compress_census_simple_request_nosec_test
+target_link_libraries(h2_compress_channel_connectivity_nosec_test
   end2end_nosec_fixture_h2_compress
-  end2end_nosec_test_census_simple_request
+  end2end_nosec_test_channel_connectivity
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -12916,12 +15662,12 @@ target_link_libraries(h2_compress_census_simple_request_nosec_test
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
-add_executable(h2_compress_channel_connectivity_nosec_test
+add_executable(h2_compress_channel_ping_nosec_test
   vsprojects/dummy.c
 )
-target_link_libraries(h2_compress_channel_connectivity_nosec_test
+target_link_libraries(h2_compress_channel_ping_nosec_test
   end2end_nosec_fixture_h2_compress
-  end2end_nosec_test_channel_connectivity
+  end2end_nosec_test_channel_ping
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -13528,12 +16274,12 @@ target_link_libraries(h2_full_cancel_with_status_nosec_test
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
-add_executable(h2_full_census_simple_request_nosec_test
+add_executable(h2_full_channel_connectivity_nosec_test
   vsprojects/dummy.c
 )
-target_link_libraries(h2_full_census_simple_request_nosec_test
+target_link_libraries(h2_full_channel_connectivity_nosec_test
   end2end_nosec_fixture_h2_full
-  end2end_nosec_test_census_simple_request
+  end2end_nosec_test_channel_connectivity
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -13546,12 +16292,12 @@ target_link_libraries(h2_full_census_simple_request_nosec_test
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
-add_executable(h2_full_channel_connectivity_nosec_test
+add_executable(h2_full_channel_ping_nosec_test
   vsprojects/dummy.c
 )
-target_link_libraries(h2_full_channel_connectivity_nosec_test
+target_link_libraries(h2_full_channel_ping_nosec_test
   end2end_nosec_fixture_h2_full
-  end2end_nosec_test_channel_connectivity
+  end2end_nosec_test_channel_ping
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -14014,6 +16760,636 @@ target_link_libraries(h2_full_trailing_metadata_nosec_test
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+pipe_bad_hostname_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+pipe_bad_hostname_nosec_test
+  end2end_nosec_fixture_h2_full+pipe
+  end2end_nosec_test_bad_hostname
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+pipe_binary_metadata_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+pipe_binary_metadata_nosec_test
+  end2end_nosec_fixture_h2_full+pipe
+  end2end_nosec_test_binary_metadata
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+pipe_cancel_after_accept_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+pipe_cancel_after_accept_nosec_test
+  end2end_nosec_fixture_h2_full+pipe
+  end2end_nosec_test_cancel_after_accept
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+pipe_cancel_after_client_done_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+pipe_cancel_after_client_done_nosec_test
+  end2end_nosec_fixture_h2_full+pipe
+  end2end_nosec_test_cancel_after_client_done
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+pipe_cancel_after_invoke_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+pipe_cancel_after_invoke_nosec_test
+  end2end_nosec_fixture_h2_full+pipe
+  end2end_nosec_test_cancel_after_invoke
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+pipe_cancel_before_invoke_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+pipe_cancel_before_invoke_nosec_test
+  end2end_nosec_fixture_h2_full+pipe
+  end2end_nosec_test_cancel_before_invoke
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+pipe_cancel_in_a_vacuum_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+pipe_cancel_in_a_vacuum_nosec_test
+  end2end_nosec_fixture_h2_full+pipe
+  end2end_nosec_test_cancel_in_a_vacuum
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+pipe_cancel_with_status_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+pipe_cancel_with_status_nosec_test
+  end2end_nosec_fixture_h2_full+pipe
+  end2end_nosec_test_cancel_with_status
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+pipe_channel_connectivity_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+pipe_channel_connectivity_nosec_test
+  end2end_nosec_fixture_h2_full+pipe
+  end2end_nosec_test_channel_connectivity
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+pipe_channel_ping_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+pipe_channel_ping_nosec_test
+  end2end_nosec_fixture_h2_full+pipe
+  end2end_nosec_test_channel_ping
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+pipe_compressed_payload_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+pipe_compressed_payload_nosec_test
+  end2end_nosec_fixture_h2_full+pipe
+  end2end_nosec_test_compressed_payload
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+pipe_default_host_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+pipe_default_host_nosec_test
+  end2end_nosec_fixture_h2_full+pipe
+  end2end_nosec_test_default_host
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+pipe_disappearing_server_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+pipe_disappearing_server_nosec_test
+  end2end_nosec_fixture_h2_full+pipe
+  end2end_nosec_test_disappearing_server
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+pipe_empty_batch_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+pipe_empty_batch_nosec_test
+  end2end_nosec_fixture_h2_full+pipe
+  end2end_nosec_test_empty_batch
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+pipe_graceful_server_shutdown_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+pipe_graceful_server_shutdown_nosec_test
+  end2end_nosec_fixture_h2_full+pipe
+  end2end_nosec_test_graceful_server_shutdown
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+pipe_high_initial_seqno_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+pipe_high_initial_seqno_nosec_test
+  end2end_nosec_fixture_h2_full+pipe
+  end2end_nosec_test_high_initial_seqno
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+pipe_hpack_size_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+pipe_hpack_size_nosec_test
+  end2end_nosec_fixture_h2_full+pipe
+  end2end_nosec_test_hpack_size
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+pipe_invoke_large_request_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+pipe_invoke_large_request_nosec_test
+  end2end_nosec_fixture_h2_full+pipe
+  end2end_nosec_test_invoke_large_request
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+pipe_large_metadata_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+pipe_large_metadata_nosec_test
+  end2end_nosec_fixture_h2_full+pipe
+  end2end_nosec_test_large_metadata
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+pipe_max_concurrent_streams_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+pipe_max_concurrent_streams_nosec_test
+  end2end_nosec_fixture_h2_full+pipe
+  end2end_nosec_test_max_concurrent_streams
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+pipe_max_message_length_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+pipe_max_message_length_nosec_test
+  end2end_nosec_fixture_h2_full+pipe
+  end2end_nosec_test_max_message_length
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+pipe_metadata_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+pipe_metadata_nosec_test
+  end2end_nosec_fixture_h2_full+pipe
+  end2end_nosec_test_metadata
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+pipe_negative_deadline_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+pipe_negative_deadline_nosec_test
+  end2end_nosec_fixture_h2_full+pipe
+  end2end_nosec_test_negative_deadline
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+pipe_no_op_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+pipe_no_op_nosec_test
+  end2end_nosec_fixture_h2_full+pipe
+  end2end_nosec_test_no_op
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+pipe_payload_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+pipe_payload_nosec_test
+  end2end_nosec_fixture_h2_full+pipe
+  end2end_nosec_test_payload
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+pipe_ping_pong_streaming_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+pipe_ping_pong_streaming_nosec_test
+  end2end_nosec_fixture_h2_full+pipe
+  end2end_nosec_test_ping_pong_streaming
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+pipe_registered_call_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+pipe_registered_call_nosec_test
+  end2end_nosec_fixture_h2_full+pipe
+  end2end_nosec_test_registered_call
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+pipe_request_with_flags_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+pipe_request_with_flags_nosec_test
+  end2end_nosec_fixture_h2_full+pipe
+  end2end_nosec_test_request_with_flags
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+pipe_request_with_payload_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+pipe_request_with_payload_nosec_test
+  end2end_nosec_fixture_h2_full+pipe
+  end2end_nosec_test_request_with_payload
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+pipe_server_finishes_request_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+pipe_server_finishes_request_nosec_test
+  end2end_nosec_fixture_h2_full+pipe
+  end2end_nosec_test_server_finishes_request
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+pipe_shutdown_finishes_calls_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+pipe_shutdown_finishes_calls_nosec_test
+  end2end_nosec_fixture_h2_full+pipe
+  end2end_nosec_test_shutdown_finishes_calls
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+pipe_shutdown_finishes_tags_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+pipe_shutdown_finishes_tags_nosec_test
+  end2end_nosec_fixture_h2_full+pipe
+  end2end_nosec_test_shutdown_finishes_tags
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+pipe_simple_delayed_request_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+pipe_simple_delayed_request_nosec_test
+  end2end_nosec_fixture_h2_full+pipe
+  end2end_nosec_test_simple_delayed_request
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+pipe_simple_request_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+pipe_simple_request_nosec_test
+  end2end_nosec_fixture_h2_full+pipe
+  end2end_nosec_test_simple_request
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+pipe_trailing_metadata_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+pipe_trailing_metadata_nosec_test
+  end2end_nosec_fixture_h2_full+pipe
+  end2end_nosec_test_trailing_metadata
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
 add_executable(h2_full+poll_bad_hostname_nosec_test
   vsprojects/dummy.c
 )
@@ -14158,12 +17534,12 @@ target_link_libraries(h2_full+poll_cancel_with_status_nosec_test
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
-add_executable(h2_full+poll_census_simple_request_nosec_test
+add_executable(h2_full+poll_channel_connectivity_nosec_test
   vsprojects/dummy.c
 )
-target_link_libraries(h2_full+poll_census_simple_request_nosec_test
+target_link_libraries(h2_full+poll_channel_connectivity_nosec_test
   end2end_nosec_fixture_h2_full+poll
-  end2end_nosec_test_census_simple_request
+  end2end_nosec_test_channel_connectivity
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -14176,12 +17552,12 @@ target_link_libraries(h2_full+poll_census_simple_request_nosec_test
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
-add_executable(h2_full+poll_channel_connectivity_nosec_test
+add_executable(h2_full+poll_channel_ping_nosec_test
   vsprojects/dummy.c
 )
-target_link_libraries(h2_full+poll_channel_connectivity_nosec_test
+target_link_libraries(h2_full+poll_channel_ping_nosec_test
   end2end_nosec_fixture_h2_full+poll
-  end2end_nosec_test_channel_connectivity
+  end2end_nosec_test_channel_ping
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -14643,6 +18019,636 @@ target_link_libraries(h2_full+poll_trailing_metadata_nosec_test
   ${MATH_LIB}
 )
 endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll+pipe_bad_hostname_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll+pipe_bad_hostname_nosec_test
+  end2end_nosec_fixture_h2_full+poll+pipe
+  end2end_nosec_test_bad_hostname
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll+pipe_binary_metadata_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll+pipe_binary_metadata_nosec_test
+  end2end_nosec_fixture_h2_full+poll+pipe
+  end2end_nosec_test_binary_metadata
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll+pipe_cancel_after_accept_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll+pipe_cancel_after_accept_nosec_test
+  end2end_nosec_fixture_h2_full+poll+pipe
+  end2end_nosec_test_cancel_after_accept
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll+pipe_cancel_after_client_done_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll+pipe_cancel_after_client_done_nosec_test
+  end2end_nosec_fixture_h2_full+poll+pipe
+  end2end_nosec_test_cancel_after_client_done
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll+pipe_cancel_after_invoke_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll+pipe_cancel_after_invoke_nosec_test
+  end2end_nosec_fixture_h2_full+poll+pipe
+  end2end_nosec_test_cancel_after_invoke
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll+pipe_cancel_before_invoke_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll+pipe_cancel_before_invoke_nosec_test
+  end2end_nosec_fixture_h2_full+poll+pipe
+  end2end_nosec_test_cancel_before_invoke
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll+pipe_cancel_in_a_vacuum_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll+pipe_cancel_in_a_vacuum_nosec_test
+  end2end_nosec_fixture_h2_full+poll+pipe
+  end2end_nosec_test_cancel_in_a_vacuum
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll+pipe_cancel_with_status_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll+pipe_cancel_with_status_nosec_test
+  end2end_nosec_fixture_h2_full+poll+pipe
+  end2end_nosec_test_cancel_with_status
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll+pipe_channel_connectivity_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll+pipe_channel_connectivity_nosec_test
+  end2end_nosec_fixture_h2_full+poll+pipe
+  end2end_nosec_test_channel_connectivity
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll+pipe_channel_ping_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll+pipe_channel_ping_nosec_test
+  end2end_nosec_fixture_h2_full+poll+pipe
+  end2end_nosec_test_channel_ping
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll+pipe_compressed_payload_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll+pipe_compressed_payload_nosec_test
+  end2end_nosec_fixture_h2_full+poll+pipe
+  end2end_nosec_test_compressed_payload
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll+pipe_default_host_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll+pipe_default_host_nosec_test
+  end2end_nosec_fixture_h2_full+poll+pipe
+  end2end_nosec_test_default_host
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll+pipe_disappearing_server_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll+pipe_disappearing_server_nosec_test
+  end2end_nosec_fixture_h2_full+poll+pipe
+  end2end_nosec_test_disappearing_server
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll+pipe_empty_batch_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll+pipe_empty_batch_nosec_test
+  end2end_nosec_fixture_h2_full+poll+pipe
+  end2end_nosec_test_empty_batch
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll+pipe_graceful_server_shutdown_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll+pipe_graceful_server_shutdown_nosec_test
+  end2end_nosec_fixture_h2_full+poll+pipe
+  end2end_nosec_test_graceful_server_shutdown
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll+pipe_high_initial_seqno_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll+pipe_high_initial_seqno_nosec_test
+  end2end_nosec_fixture_h2_full+poll+pipe
+  end2end_nosec_test_high_initial_seqno
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll+pipe_hpack_size_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll+pipe_hpack_size_nosec_test
+  end2end_nosec_fixture_h2_full+poll+pipe
+  end2end_nosec_test_hpack_size
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll+pipe_invoke_large_request_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll+pipe_invoke_large_request_nosec_test
+  end2end_nosec_fixture_h2_full+poll+pipe
+  end2end_nosec_test_invoke_large_request
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll+pipe_large_metadata_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll+pipe_large_metadata_nosec_test
+  end2end_nosec_fixture_h2_full+poll+pipe
+  end2end_nosec_test_large_metadata
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll+pipe_max_concurrent_streams_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll+pipe_max_concurrent_streams_nosec_test
+  end2end_nosec_fixture_h2_full+poll+pipe
+  end2end_nosec_test_max_concurrent_streams
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll+pipe_max_message_length_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll+pipe_max_message_length_nosec_test
+  end2end_nosec_fixture_h2_full+poll+pipe
+  end2end_nosec_test_max_message_length
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll+pipe_metadata_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll+pipe_metadata_nosec_test
+  end2end_nosec_fixture_h2_full+poll+pipe
+  end2end_nosec_test_metadata
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll+pipe_negative_deadline_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll+pipe_negative_deadline_nosec_test
+  end2end_nosec_fixture_h2_full+poll+pipe
+  end2end_nosec_test_negative_deadline
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll+pipe_no_op_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll+pipe_no_op_nosec_test
+  end2end_nosec_fixture_h2_full+poll+pipe
+  end2end_nosec_test_no_op
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll+pipe_payload_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll+pipe_payload_nosec_test
+  end2end_nosec_fixture_h2_full+poll+pipe
+  end2end_nosec_test_payload
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll+pipe_ping_pong_streaming_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll+pipe_ping_pong_streaming_nosec_test
+  end2end_nosec_fixture_h2_full+poll+pipe
+  end2end_nosec_test_ping_pong_streaming
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll+pipe_registered_call_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll+pipe_registered_call_nosec_test
+  end2end_nosec_fixture_h2_full+poll+pipe
+  end2end_nosec_test_registered_call
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll+pipe_request_with_flags_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll+pipe_request_with_flags_nosec_test
+  end2end_nosec_fixture_h2_full+poll+pipe
+  end2end_nosec_test_request_with_flags
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll+pipe_request_with_payload_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll+pipe_request_with_payload_nosec_test
+  end2end_nosec_fixture_h2_full+poll+pipe
+  end2end_nosec_test_request_with_payload
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll+pipe_server_finishes_request_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll+pipe_server_finishes_request_nosec_test
+  end2end_nosec_fixture_h2_full+poll+pipe
+  end2end_nosec_test_server_finishes_request
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll+pipe_shutdown_finishes_calls_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll+pipe_shutdown_finishes_calls_nosec_test
+  end2end_nosec_fixture_h2_full+poll+pipe
+  end2end_nosec_test_shutdown_finishes_calls
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll+pipe_shutdown_finishes_tags_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll+pipe_shutdown_finishes_tags_nosec_test
+  end2end_nosec_fixture_h2_full+poll+pipe
+  end2end_nosec_test_shutdown_finishes_tags
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll+pipe_simple_delayed_request_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll+pipe_simple_delayed_request_nosec_test
+  end2end_nosec_fixture_h2_full+poll+pipe
+  end2end_nosec_test_simple_delayed_request
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll+pipe_simple_request_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll+pipe_simple_request_nosec_test
+  end2end_nosec_fixture_h2_full+poll+pipe
+  end2end_nosec_test_simple_request
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll+pipe_trailing_metadata_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll+pipe_trailing_metadata_nosec_test
+  end2end_nosec_fixture_h2_full+poll+pipe
+  end2end_nosec_test_trailing_metadata
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
 add_executable(h2_proxy_bad_hostname_nosec_test
   vsprojects/dummy.c
@@ -14776,24 +18782,6 @@ add_executable(h2_proxy_cancel_with_status_nosec_test
 target_link_libraries(h2_proxy_cancel_with_status_nosec_test
   end2end_nosec_fixture_h2_proxy
   end2end_nosec_test_cancel_with_status
-  grpc_test_util_unsecure
-  grpc_unsecure
-  gpr_test_util
-  gpr
-  ${PROTOBUF_LIBRARIES}
-  ${ZLIB_LIBRARIES}
-  ${OPENSSL_LIBRARIES}
-  ${CMAKE_THREAD_LIBS_INIT}
-  ${MATH_LIB}
-)
-endif()
-if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
-add_executable(h2_proxy_census_simple_request_nosec_test
-  vsprojects/dummy.c
-)
-target_link_libraries(h2_proxy_census_simple_request_nosec_test
-  end2end_nosec_fixture_h2_proxy
-  end2end_nosec_test_census_simple_request
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -15316,24 +19304,6 @@ add_executable(h2_sockpair_cancel_with_status_nosec_test
 target_link_libraries(h2_sockpair_cancel_with_status_nosec_test
   end2end_nosec_fixture_h2_sockpair
   end2end_nosec_test_cancel_with_status
-  grpc_test_util_unsecure
-  grpc_unsecure
-  gpr_test_util
-  gpr
-  ${PROTOBUF_LIBRARIES}
-  ${ZLIB_LIBRARIES}
-  ${OPENSSL_LIBRARIES}
-  ${CMAKE_THREAD_LIBS_INIT}
-  ${MATH_LIB}
-)
-endif()
-if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
-add_executable(h2_sockpair_census_simple_request_nosec_test
-  vsprojects/dummy.c
-)
-target_link_libraries(h2_sockpair_census_simple_request_nosec_test
-  end2end_nosec_fixture_h2_sockpair
-  end2end_nosec_test_census_simple_request
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -15886,24 +19856,6 @@ target_link_libraries(h2_sockpair+trace_cancel_with_status_nosec_test
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
-add_executable(h2_sockpair+trace_census_simple_request_nosec_test
-  vsprojects/dummy.c
-)
-target_link_libraries(h2_sockpair+trace_census_simple_request_nosec_test
-  end2end_nosec_fixture_h2_sockpair+trace
-  end2end_nosec_test_census_simple_request
-  grpc_test_util_unsecure
-  grpc_unsecure
-  gpr_test_util
-  gpr
-  ${PROTOBUF_LIBRARIES}
-  ${ZLIB_LIBRARIES}
-  ${OPENSSL_LIBRARIES}
-  ${CMAKE_THREAD_LIBS_INIT}
-  ${MATH_LIB}
-)
-endif()
-if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
 add_executable(h2_sockpair+trace_compressed_payload_nosec_test
   vsprojects/dummy.c
 )
@@ -16414,24 +20366,6 @@ add_executable(h2_sockpair_1byte_cancel_with_status_nosec_test
 target_link_libraries(h2_sockpair_1byte_cancel_with_status_nosec_test
   end2end_nosec_fixture_h2_sockpair_1byte
   end2end_nosec_test_cancel_with_status
-  grpc_test_util_unsecure
-  grpc_unsecure
-  gpr_test_util
-  gpr
-  ${PROTOBUF_LIBRARIES}
-  ${ZLIB_LIBRARIES}
-  ${OPENSSL_LIBRARIES}
-  ${CMAKE_THREAD_LIBS_INIT}
-  ${MATH_LIB}
-)
-endif()
-if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
-add_executable(h2_sockpair_1byte_census_simple_request_nosec_test
-  vsprojects/dummy.c
-)
-target_link_libraries(h2_sockpair_1byte_census_simple_request_nosec_test
-  end2end_nosec_fixture_h2_sockpair_1byte
-  end2end_nosec_test_census_simple_request
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -16984,84 +20918,12 @@ target_link_libraries(h2_uchannel_cancel_with_status_nosec_test
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
-add_executable(h2_uchannel_census_simple_request_nosec_test
-  vsprojects/dummy.c
-)
-target_link_libraries(h2_uchannel_census_simple_request_nosec_test
-  end2end_nosec_fixture_h2_uchannel
-  end2end_nosec_test_census_simple_request
-  grpc_test_util_unsecure
-  grpc_unsecure
-  gpr_test_util
-  gpr
-  ${PROTOBUF_LIBRARIES}
-  ${ZLIB_LIBRARIES}
-  ${OPENSSL_LIBRARIES}
-  ${CMAKE_THREAD_LIBS_INIT}
-  ${MATH_LIB}
-)
-endif()
-if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
-add_executable(h2_uchannel_channel_connectivity_nosec_test
-  vsprojects/dummy.c
-)
-target_link_libraries(h2_uchannel_channel_connectivity_nosec_test
-  end2end_nosec_fixture_h2_uchannel
-  end2end_nosec_test_channel_connectivity
-  grpc_test_util_unsecure
-  grpc_unsecure
-  gpr_test_util
-  gpr
-  ${PROTOBUF_LIBRARIES}
-  ${ZLIB_LIBRARIES}
-  ${OPENSSL_LIBRARIES}
-  ${CMAKE_THREAD_LIBS_INIT}
-  ${MATH_LIB}
-)
-endif()
-if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
 add_executable(h2_uchannel_compressed_payload_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_uchannel_compressed_payload_nosec_test
   end2end_nosec_fixture_h2_uchannel
   end2end_nosec_test_compressed_payload
-  grpc_test_util_unsecure
-  grpc_unsecure
-  gpr_test_util
-  gpr
-  ${PROTOBUF_LIBRARIES}
-  ${ZLIB_LIBRARIES}
-  ${OPENSSL_LIBRARIES}
-  ${CMAKE_THREAD_LIBS_INIT}
-  ${MATH_LIB}
-)
-endif()
-if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
-add_executable(h2_uchannel_default_host_nosec_test
-  vsprojects/dummy.c
-)
-target_link_libraries(h2_uchannel_default_host_nosec_test
-  end2end_nosec_fixture_h2_uchannel
-  end2end_nosec_test_default_host
-  grpc_test_util_unsecure
-  grpc_unsecure
-  gpr_test_util
-  gpr
-  ${PROTOBUF_LIBRARIES}
-  ${ZLIB_LIBRARIES}
-  ${OPENSSL_LIBRARIES}
-  ${CMAKE_THREAD_LIBS_INIT}
-  ${MATH_LIB}
-)
-endif()
-if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
-add_executable(h2_uchannel_disappearing_server_nosec_test
-  vsprojects/dummy.c
-)
-target_link_libraries(h2_uchannel_disappearing_server_nosec_test
-  end2end_nosec_fixture_h2_uchannel
-  end2end_nosec_test_disappearing_server
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -17416,24 +21278,6 @@ target_link_libraries(h2_uchannel_shutdown_finishes_tags_nosec_test
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
-add_executable(h2_uchannel_simple_delayed_request_nosec_test
-  vsprojects/dummy.c
-)
-target_link_libraries(h2_uchannel_simple_delayed_request_nosec_test
-  end2end_nosec_fixture_h2_uchannel
-  end2end_nosec_test_simple_delayed_request
-  grpc_test_util_unsecure
-  grpc_unsecure
-  gpr_test_util
-  gpr
-  ${PROTOBUF_LIBRARIES}
-  ${ZLIB_LIBRARIES}
-  ${OPENSSL_LIBRARIES}
-  ${CMAKE_THREAD_LIBS_INIT}
-  ${MATH_LIB}
-)
-endif()
-if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
 add_executable(h2_uchannel_simple_request_nosec_test
   vsprojects/dummy.c
 )
@@ -17614,12 +21458,12 @@ target_link_libraries(h2_uds_cancel_with_status_nosec_test
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
-add_executable(h2_uds_census_simple_request_nosec_test
+add_executable(h2_uds_channel_connectivity_nosec_test
   vsprojects/dummy.c
 )
-target_link_libraries(h2_uds_census_simple_request_nosec_test
+target_link_libraries(h2_uds_channel_connectivity_nosec_test
   end2end_nosec_fixture_h2_uds
-  end2end_nosec_test_census_simple_request
+  end2end_nosec_test_channel_connectivity
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -17632,12 +21476,12 @@ target_link_libraries(h2_uds_census_simple_request_nosec_test
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
-add_executable(h2_uds_channel_connectivity_nosec_test
+add_executable(h2_uds_channel_ping_nosec_test
   vsprojects/dummy.c
 )
-target_link_libraries(h2_uds_channel_connectivity_nosec_test
+target_link_libraries(h2_uds_channel_ping_nosec_test
   end2end_nosec_fixture_h2_uds
-  end2end_nosec_test_channel_connectivity
+  end2end_nosec_test_channel_ping
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -18226,12 +22070,12 @@ target_link_libraries(h2_uds+poll_cancel_with_status_nosec_test
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
-add_executable(h2_uds+poll_census_simple_request_nosec_test
+add_executable(h2_uds+poll_channel_connectivity_nosec_test
   vsprojects/dummy.c
 )
-target_link_libraries(h2_uds+poll_census_simple_request_nosec_test
+target_link_libraries(h2_uds+poll_channel_connectivity_nosec_test
   end2end_nosec_fixture_h2_uds+poll
-  end2end_nosec_test_census_simple_request
+  end2end_nosec_test_channel_connectivity
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -18244,12 +22088,12 @@ target_link_libraries(h2_uds+poll_census_simple_request_nosec_test
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
-add_executable(h2_uds+poll_channel_connectivity_nosec_test
+add_executable(h2_uds+poll_channel_ping_nosec_test
   vsprojects/dummy.c
 )
-target_link_libraries(h2_uds+poll_channel_connectivity_nosec_test
+target_link_libraries(h2_uds+poll_channel_ping_nosec_test
   end2end_nosec_fixture_h2_uds+poll
-  end2end_nosec_test_channel_connectivity
+  end2end_nosec_test_channel_ping
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -18694,6 +22538,23 @@ target_link_libraries(h2_uds+poll_trailing_metadata_nosec_test
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(badreq_bad_client_test
+  test/core/bad_client/tests/badreq.c
+)
+target_link_libraries(badreq_bad_client_test
+  bad_client_test
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
 add_executable(connection_prefix_bad_client_test
   test/core/bad_client/tests/connection_prefix.c
 )
@@ -18735,6 +22596,123 @@ target_link_libraries(initial_settings_frame_bad_client_test
   bad_client_test
   grpc_test_util_unsecure
   grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(server_registered_method_bad_client_test
+  test/core/bad_client/tests/server_registered_method.c
+)
+target_link_libraries(server_registered_method_bad_client_test
+  bad_client_test
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(simple_request_bad_client_test
+  test/core/bad_client/tests/simple_request.c
+)
+target_link_libraries(simple_request_bad_client_test
+  bad_client_test
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(unknown_frame_bad_client_test
+  test/core/bad_client/tests/unknown_frame.c
+)
+target_link_libraries(unknown_frame_bad_client_test
+  bad_client_test
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(bad_ssl_alpn_server
+  test/core/bad_ssl/servers/alpn.c
+)
+target_link_libraries(bad_ssl_alpn_server
+  bad_ssl_test_server
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(bad_ssl_cert_server
+  test/core/bad_ssl/servers/cert.c
+)
+target_link_libraries(bad_ssl_cert_server
+  bad_ssl_test_server
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(bad_ssl_alpn_test
+  test/core/bad_ssl/bad_ssl_test.c
+)
+target_link_libraries(bad_ssl_alpn_test
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(bad_ssl_cert_test
+  test/core/bad_ssl/bad_ssl_test.c
+)
+target_link_libraries(bad_ssl_cert_test
+  grpc_test_util
+  grpc
   gpr_test_util
   gpr
   ${PROTOBUF_LIBRARIES}
