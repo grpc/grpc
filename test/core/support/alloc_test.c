@@ -48,8 +48,8 @@ static void test_custom_allocs() {
   gpr_allocation_functions fns = {fake_malloc, fake_realloc, fake_free};
 
   gpr_set_allocation_functions(fns);
-  GPR_ASSERT((void *)0xdeadbeef == gpr_malloc(0xdeadbeef));
-  GPR_ASSERT((void *)0xcafed00d == gpr_realloc(0, 0xcafed00d));
+  GPR_ASSERT((void*)(size_t)0xdeadbeef == gpr_malloc(0xdeadbeef));
+  GPR_ASSERT((void*)(size_t)0xcafed00d == gpr_realloc(0, 0xcafed00d));
 
   gpr_free(&addr_to_free);
   GPR_ASSERT(addr_to_free == 0xdeadd00d);

@@ -348,7 +348,7 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
           gpr_log(GPR_ERROR, "%s: must be an integer",
                   GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_DECODER);
         } else if (channel_args->args[i].value.integer < 0) {
-          gpr_log(GPR_DEBUG, "%s: must be non-negative",
+          gpr_log(GPR_ERROR, "%s: must be non-negative",
                   GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_DECODER);
         } else {
           push_setting(t, GRPC_CHTTP2_SETTINGS_HEADER_TABLE_SIZE,
@@ -360,7 +360,7 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
           gpr_log(GPR_ERROR, "%s: must be an integer",
                   GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_ENCODER);
         } else if (channel_args->args[i].value.integer < 0) {
-          gpr_log(GPR_DEBUG, "%s: must be non-negative",
+          gpr_log(GPR_ERROR, "%s: must be non-negative",
                   GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_ENCODER);
         } else {
           grpc_chttp2_hpack_compressor_set_max_usable_size(
