@@ -157,10 +157,13 @@
   </ItemDefinitionGroup>
 
   <ItemGroup>
-    <ClCompile Include="..\..\..\..\third_party\boringssl\crypto\poly1305\poly1305_test.cc">
+    <ClCompile Include="..\..\..\..\vsprojects\dummy.c">
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\..\..\vsprojects\vcxproj\test/boringssl\boringssl_poly1305_test_lib\boringssl_poly1305_test_lib.vcxproj">
+      <Project>{58BED892-19DD-2063-C727-BC00A4F2ACD2}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\..\..\..\vsprojects\vcxproj\.\boringssl_test_util\boringssl_test_util.vcxproj">
       <Project>{427037B1-B51B-D6F1-5025-AD12B200266A}</Project>
     </ProjectReference>

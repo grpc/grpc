@@ -1,24 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <ItemGroup>
-    <ClCompile Include="..\..\..\..\third_party\boringssl\crypto\ecdsa\ecdsa_test.cc">
-      <Filter>third_party\boringssl\crypto\ecdsa</Filter>
-    </ClCompile>
-  </ItemGroup>
 
   <ItemGroup>
-    <Filter Include="third_party">
-      <UniqueIdentifier>{29635616-0429-29d9-e57d-68c2353f57dd}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="third_party\boringssl">
-      <UniqueIdentifier>{b3868c06-9432-3356-c7ac-7117d53f9d68}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="third_party\boringssl\crypto">
-      <UniqueIdentifier>{a5a48af1-def0-30bf-47c4-38910e2cee3b}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="third_party\boringssl\crypto\ecdsa">
-      <UniqueIdentifier>{0acb0bc8-560b-6bf0-7fc8-688d555c335c}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
 </Project>
 

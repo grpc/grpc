@@ -90,6 +90,21 @@ class Grpc(object):
               for f in sorted(files['test_support'])
             ],
           }
+      ] + [
+          {
+            'name': 'boringssl_%s_lib' % os.path.splitext(os.path.basename(test))[0],
+            'build': 'private',
+            'secure': 'no',
+            'language': 'c' if os.path.splitext(test)[1] == '.c' else 'c++',
+            'src': [map_dir(test)],
+            'vs_proj_dir': 'test/boringssl',
+            'boringssl': True,
+            'deps': [
+                'boringssl_test_util',
+                'boringssl',
+            ]
+          }
+          for test in sorted(files['test'])
       ],
       'targets': [
           {
@@ -97,11 +112,12 @@ class Grpc(object):
             'build': 'test',
             'run': False,
             'secure': 'no',
-            'language': 'c' if os.path.splitext(test)[1] == '.c' else 'c++',
-            'src': [map_dir(test)],
+            'language': 'c++',
+            'src': [],
             'vs_proj_dir': 'test/boringssl',
             'boringssl': True,
             'deps': [
+                'boringssl_%s_lib' % os.path.splitext(os.path.basename(test))[0],
                 'boringssl_test_util',
                 'boringssl',
             ]
@@ -116,7 +132,7 @@ class Grpc(object):
             'ci_platforms': ['linux', 'mac', 'posix', 'windows'],
             'platforms': ['linux', 'mac', 'posix', 'windows'],
             'flaky': False,
-            'language': 'c' if (test[0] + '.c') in files['test'] else 'c++',
+            'language': 'c++',
             'boringssl': True
           }
           for test in files['tests']

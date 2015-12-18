@@ -52,8 +52,10 @@
   </ImportGroup>
   <ImportGroup Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\..\..\..\vsprojects\cpptest.props" />
     <Import Project="..\..\..\..\vsprojects\global.props" />
     <Import Project="..\..\..\..\vsprojects\openssl.props" />
+    <Import Project="..\..\..\..\vsprojects\protobuf.props" />
     <Import Project="..\..\..\..\vsprojects\winsock.props" />
     <Import Project="..\..\..\..\vsprojects\zlib.props" />
   </ImportGroup>
@@ -155,10 +157,13 @@
   </ItemDefinitionGroup>
 
   <ItemGroup>
-    <ClCompile Include="..\..\..\..\third_party\boringssl\crypto\refcount_test.c">
+    <ClCompile Include="..\..\..\..\vsprojects\dummy.c">
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\..\..\vsprojects\vcxproj\test/boringssl\boringssl_refcount_test_lib\boringssl_refcount_test_lib.vcxproj">
+      <Project>{1CA8E69A-09F6-4FC4-043E-BB7E259F8FC6}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\..\..\..\vsprojects\vcxproj\.\boringssl_test_util\boringssl_test_util.vcxproj">
       <Project>{427037B1-B51B-D6F1-5025-AD12B200266A}</Project>
     </ProjectReference>

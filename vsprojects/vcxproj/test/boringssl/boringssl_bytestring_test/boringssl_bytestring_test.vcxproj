@@ -157,10 +157,13 @@
   </ItemDefinitionGroup>
 
   <ItemGroup>
-    <ClCompile Include="..\..\..\..\third_party\boringssl\crypto\bytestring\bytestring_test.cc">
+    <ClCompile Include="..\..\..\..\vsprojects\dummy.c">
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\..\..\vsprojects\vcxproj\test/boringssl\boringssl_bytestring_test_lib\boringssl_bytestring_test_lib.vcxproj">
+      <Project>{A8D01E8B-537F-96F5-E5C2-43E29027A94E}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\..\..\..\vsprojects\vcxproj\.\boringssl_test_util\boringssl_test_util.vcxproj">
       <Project>{427037B1-B51B-D6F1-5025-AD12B200266A}</Project>
     </ProjectReference>

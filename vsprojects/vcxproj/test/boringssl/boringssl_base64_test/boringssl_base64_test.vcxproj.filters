@@ -1,24 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <ItemGroup>
-    <ClCompile Include="..\..\..\..\third_party\boringssl\crypto\base64\base64_test.cc">
-      <Filter>third_party\boringssl\crypto\base64</Filter>
-    </ClCompile>
-  </ItemGroup>
 
   <ItemGroup>
-    <Filter Include="third_party">
-      <UniqueIdentifier>{fd84a60a-1744-29a0-899a-397eb29222cc}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="third_party\boringssl">
-      <UniqueIdentifier>{46767676-a43c-f620-38f9-bdf165d7b7d5}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="third_party\boringssl\crypto">
-      <UniqueIdentifier>{e9480aba-8156-47ec-1c5f-b0bda675dd3d}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="third_party\boringssl\crypto\base64">
-      <UniqueIdentifier>{b13fa2bf-d7b3-29df-148e-40628f2b3b5c}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
 </Project>
 

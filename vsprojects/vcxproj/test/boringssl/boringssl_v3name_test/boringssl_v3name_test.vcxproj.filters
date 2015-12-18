@@ -1,24 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <ItemGroup>
-    <ClCompile Include="..\..\..\..\third_party\boringssl\crypto\x509v3\v3name_test.c">
-      <Filter>third_party\boringssl\crypto\x509v3</Filter>
-    </ClCompile>
-  </ItemGroup>
 
   <ItemGroup>
-    <Filter Include="third_party">
-      <UniqueIdentifier>{2e76d273-0032-d983-1eff-48d192524e75}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="third_party\boringssl">
-      <UniqueIdentifier>{f1bbdfe3-47df-7861-429b-7904ee4f0ddb}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="third_party\boringssl\crypto">
-      <UniqueIdentifier>{8b5b8a81-7ec4-ea7e-802c-62302c93ce0b}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="third_party\boringssl\crypto\x509v3">
-      <UniqueIdentifier>{93339944-92c8-8c88-e8ff-b778b02bfaa4}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
 </Project>
 
