@@ -31,6 +31,7 @@ else()
 endif()
 
 find_package(Protobuf REQUIRED)
+set(PROTOBUF_IMPORT_DIRS .)
 if (PROTOBUF_FOUND)
   include_directories(${PROTOBUF_INCLUDE_DIRS})
 endif(PROTOBUF_FOUND)

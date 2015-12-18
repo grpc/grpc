@@ -64,6 +64,7 @@
   endif()
 
   find_package(Protobuf REQUIRED)
+  set(PROTOBUF_IMPORT_DIRS .)
   if (PROTOBUF_FOUND)
     include_directories(<%text>${PROTOBUF_INCLUDE_DIRS}</%text>)
   endif(PROTOBUF_FOUND)
