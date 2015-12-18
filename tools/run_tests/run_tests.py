@@ -440,7 +440,7 @@ class ObjCLanguage(object):
 class Sanity(object):
 
   def test_specs(self, config, args):
-    return [config.job_spec(['tools/run_tests/run_sanity.sh'], None),
+    return [config.job_spec(['tools/run_tests/run_sanity.sh'], None, timeout_seconds=15*60),
             config.job_spec(['tools/run_tests/check_sources_and_headers.py'], None)]
 
   def pre_build_steps(self):
