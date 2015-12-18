@@ -101,6 +101,7 @@
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation Condition="!$(Jenkins)">true</GenerateDebugInformation>
       <GenerateDebugInformation Condition="$(Jenkins)">false</GenerateDebugInformation>
+      <OutputFile>$(OutDir)$(TargetName)-x64$(TargetExt)</OutputFile>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -143,6 +144,7 @@
       <GenerateDebugInformation Condition="$(Jenkins)">false</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
+      <OutputFile>$(OutDir)$(TargetName)-x64$(TargetExt)</OutputFile>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -178,4 +180,3 @@
     <Error Condition="!Exists('..\..\..\vsprojects\packages\grpc.dependencies.openssl.1.0.204.1\build\native\grpc.dependencies.openssl.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\vsprojects\packages\grpc.dependencies.openssl.1.0.204.1\build\native\grpc.dependencies.openssl.targets')" />
   </Target>
 </Project>
-

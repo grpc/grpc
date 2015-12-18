@@ -32,6 +32,7 @@
 #endregion
 
 using System;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Grpc.Core.Internal;
@@ -45,16 +46,10 @@ namespace Grpc.Core
     /// </summary>
     public class GrpcEnvironment
     {
-        const int THREAD_POOL_SIZE = 4;
+        const int DefaultThreadPoolSize = 4;
+        static int _threadPoolSize = DefaultThreadPoolSize;
 
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern void grpcsharp_init();
-
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern void grpcsharp_shutdown();
-
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern IntPtr grpcsharp_version_string();  // returns not-owned const char*
+        static readonly IPlatformInvocation pinvoke = PlatformInvocation.Implementation;
 
         static object staticLock = new object();
         static GrpcEnvironment instance;
@@ -66,6 +61,21 @@ namespace Grpc.Core
         readonly CompletionRegistry completionRegistry;
         readonly DebugStats debugStats = new DebugStats();
         bool isClosed;
+
+
+        /// <summary>
+        /// This is provided for advanced use-cases, such as libraries which provide a layer of abstract over grpc.
+        /// Setting this value will not have an effect until after all open channels/servers are shutdown.
+        /// Therefore, an application may change this at anytime but will need to orchastrate restrarting all channels/servers.
+        /// </summary>
+        /// <remarks>The default is 4</remarks>
+        /// <returns>The previous thread pool size</returns>
+        public static int SetThreadPoolSize(int numberOfThreads)
+        {
+            var previousValue = _threadPoolSize;
+            _threadPoolSize = numberOfThreads;
+            return previousValue;
+        }
 
         /// <summary>
         /// Returns a reference-counted instance of initialized gRPC environment.
@@ -132,6 +142,14 @@ namespace Grpc.Core
         }
 
         /// <summary>
+        /// Sets the application-wide logger to an implementation that does nothing.
+        /// </summary>
+        public static void DisableLogging()
+        {
+            logger = new NullLogger();   
+        }
+
+        /// <summary>
         /// Creates gRPC environment.
         /// </summary>
         private GrpcEnvironment()
@@ -139,8 +157,9 @@ namespace Grpc.Core
             NativeLogRedirector.Redirect();
             GrpcNativeInit();
             completionRegistry = new CompletionRegistry(this);
-            threadPool = new GrpcThreadPool(this, THREAD_POOL_SIZE);
+            threadPool = new GrpcThreadPool(this, _threadPoolSize);
             threadPool.Start();
+
         }
 
         /// <summary>
@@ -181,18 +200,18 @@ namespace Grpc.Core
         /// </summary>
         internal static string GetCoreVersionString()
         {
-            var ptr = grpcsharp_version_string();  // the pointer is not owned
+            var ptr = pinvoke.grpcsharp_version_string();  // the pointer is not owned
             return Marshal.PtrToStringAnsi(ptr);
         }
 
         internal static void GrpcNativeInit()
         {
-            grpcsharp_init();
+            pinvoke.grpcsharp_init();
         }
 
         internal static void GrpcNativeShutdown()
         {
-            grpcsharp_shutdown();
+            pinvoke.grpcsharp_shutdown();
         }
 
         /// <summary>

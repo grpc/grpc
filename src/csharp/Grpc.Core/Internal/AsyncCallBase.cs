@@ -157,8 +157,9 @@ namespace Grpc.Core.Internal
                 Preconditions.CheckNotNull(completionDelegate, "Completion delegate cannot be null");
                 CheckReadingAllowed();
 
-                call.StartReceiveMessage(HandleReadFinished);
+                // I feel like a prerequisite variable should be set before entering that code path
                 readCompletionDelegate = completionDelegate;
+                call.StartReceiveMessage(HandleReadFinished);
             }
         }
 

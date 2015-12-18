@@ -127,7 +127,7 @@ void grpc_chttp2_encode_timeout(gpr_timespec timeout, char *buffer) {
                (gpr_int64)(timeout.tv_sec * 1000000) +
                    (timeout.tv_nsec / 1000 + (timeout.tv_nsec % 1000 != 0)));
   } else {
-    enc_seconds(buffer, timeout.tv_sec + (timeout.tv_nsec != 0));
+    enc_seconds(buffer, (long)(timeout.tv_sec) + (timeout.tv_nsec != 0));
   }
 }
 

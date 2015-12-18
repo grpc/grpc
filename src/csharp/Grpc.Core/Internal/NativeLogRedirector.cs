@@ -48,11 +48,10 @@ namespace Grpc.Core.Internal
     /// </summary>
     internal static class NativeLogRedirector
     {
+        static readonly IPlatformInvocation pinvoke = PlatformInvocation.Implementation;
+
         static object staticLock = new object();
         static GprLogDelegate writeCallback;
-
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern void grpcsharp_redirect_log(GprLogDelegate callback);
 
         /// <summary>
         /// Redirects logs from native gRPC C core library to a general logger.
@@ -64,7 +63,7 @@ namespace Grpc.Core.Internal
                 if (writeCallback == null)
                 {
                     writeCallback = new GprLogDelegate(HandleWrite);
-                    grpcsharp_redirect_log(writeCallback);    
+                    pinvoke.grpcsharp_redirect_log(writeCallback);    
                 }
             }
         }
