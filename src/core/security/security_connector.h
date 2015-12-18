@@ -239,7 +239,7 @@ const tsi_peer_property *tsi_peer_get_property_by_name(const tsi_peer *peer,
 
 /* Exposed for testing only. */
 grpc_auth_context *tsi_ssl_peer_to_auth_context(const tsi_peer *peer);
-tsi_peer tsi_shallow_peer_from_auth_context(
+tsi_peer tsi_shallow_peer_from_ssl_auth_context(
     const grpc_auth_context *auth_context);
 void tsi_shallow_peer_destruct(tsi_peer *peer);
 
