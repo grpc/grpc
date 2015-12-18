@@ -487,7 +487,7 @@ HAS_ZOOKEEPER = $(shell $(ZOOKEEPER_CHECK_CMD) 2> /dev/null && echo true || echo
 # Note that for testing purposes, one can do:
 #   make HAS_EMBEDDED_OPENSSL_ALPN=false
 # to emulate the fact we do not have OpenSSL in the third_party folder.
-ifeq ($(wildcard third_party/openssl/ssl/ssl.h),)
+ifeq ($(wildcard third_party/boringssl/include/openssl/ssl.h),)
 HAS_EMBEDDED_OPENSSL_ALPN = false
 else
 HAS_EMBEDDED_OPENSSL_ALPN = true
