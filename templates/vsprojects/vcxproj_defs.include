@@ -134,7 +134,7 @@ ${gen_package_props(packages, repo_root)}\
     %   if package.get('linkage', None) is not None:
     <Linkage-${package.name.replace('.', '_')}>${package.linkage}</Linkage-${package.name.replace('.', '_')}>
     %   endif
-    <Configuration-${package.name.replace('.', '_')}>Debug</Configuration-${package.name.replace('.', '_')}>
+    <Configuration-${package.name.replace('.', '_')}>${config}</Configuration-${package.name.replace('.', '_')}>
     %  endif
     % endfor
   </PropertyGroup>
