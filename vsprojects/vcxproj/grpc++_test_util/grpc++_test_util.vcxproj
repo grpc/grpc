@@ -31,6 +31,9 @@
   <PropertyGroup Condition="'$(VisualStudioVersion)' == '12.0'" Label="Configuration">
     <PlatformToolset>v120</PlatformToolset>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(VisualStudioVersion)' == '14.0'" Label="Configuration">
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)'=='Debug'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
@@ -62,7 +65,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;_USE_32BIT_TIME_T;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <TreatWarningAsError>true</TreatWarningAsError>
@@ -98,7 +101,7 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;_USE_32BIT_TIME_T;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <TreatWarningAsError>true</TreatWarningAsError>
@@ -140,29 +143,29 @@
     <ClInclude Include="..\..\..\test\cpp\util\subprocess.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\test\cpp\util\messages.pb.cc">
+    <ClCompile Include="..\..\..\src\proto\grpc\testing\echo_messages.pb.cc">
     </ClCompile>
-    <ClInclude Include="..\..\..\test\cpp\util\messages.pb.h">
+    <ClInclude Include="..\..\..\src\proto\grpc\testing\echo_messages.pb.h">
     </ClInclude>
-    <ClCompile Include="..\..\..\test\cpp\util\messages.grpc.pb.cc">
+    <ClCompile Include="..\..\..\src\proto\grpc\testing\echo_messages.grpc.pb.cc">
     </ClCompile>
-    <ClInclude Include="..\..\..\test\cpp\util\messages.grpc.pb.h">
+    <ClInclude Include="..\..\..\src\proto\grpc\testing\echo_messages.grpc.pb.h">
     </ClInclude>
-    <ClCompile Include="..\..\..\test\cpp\util\echo.pb.cc">
+    <ClCompile Include="..\..\..\src\proto\grpc\testing\echo.pb.cc">
     </ClCompile>
-    <ClInclude Include="..\..\..\test\cpp\util\echo.pb.h">
+    <ClInclude Include="..\..\..\src\proto\grpc\testing\echo.pb.h">
     </ClInclude>
-    <ClCompile Include="..\..\..\test\cpp\util\echo.grpc.pb.cc">
+    <ClCompile Include="..\..\..\src\proto\grpc\testing\echo.grpc.pb.cc">
     </ClCompile>
-    <ClInclude Include="..\..\..\test\cpp\util\echo.grpc.pb.h">
+    <ClInclude Include="..\..\..\src\proto\grpc\testing\echo.grpc.pb.h">
     </ClInclude>
-    <ClCompile Include="..\..\..\test\cpp\util\echo_duplicate.pb.cc">
+    <ClCompile Include="..\..\..\src\proto\grpc\testing\duplicate\echo_duplicate.pb.cc">
     </ClCompile>
-    <ClInclude Include="..\..\..\test\cpp\util\echo_duplicate.pb.h">
+    <ClInclude Include="..\..\..\src\proto\grpc\testing\duplicate\echo_duplicate.pb.h">
     </ClInclude>
-    <ClCompile Include="..\..\..\test\cpp\util\echo_duplicate.grpc.pb.cc">
+    <ClCompile Include="..\..\..\src\proto\grpc\testing\duplicate\echo_duplicate.grpc.pb.cc">
     </ClCompile>
-    <ClInclude Include="..\..\..\test\cpp\util\echo_duplicate.grpc.pb.h">
+    <ClInclude Include="..\..\..\src\proto\grpc\testing\duplicate\echo_duplicate.grpc.pb.h">
     </ClInclude>
     <ClCompile Include="..\..\..\test\cpp\util\cli_call.cc">
     </ClCompile>

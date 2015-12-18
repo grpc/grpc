@@ -50,10 +50,10 @@
 
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
-#include "test/cpp/util/echo.grpc.pb.h"
+#include "src/proto/grpc/testing/echo.grpc.pb.h"
 
-using grpc::cpp::test::util::EchoRequest;
-using grpc::cpp::test::util::EchoResponse;
+using grpc::testing::EchoRequest;
+using grpc::testing::EchoResponse;
 using std::chrono::system_clock;
 
 namespace grpc {
@@ -101,6 +101,10 @@ class GenericEnd2endTest : public ::testing::Test {
     ServerBuilder builder;
     builder.AddListeningPort(server_address_.str(),
                              InsecureServerCredentials());
+    builder.RegisterAsyncGenericService(&generic_service_);
+    // Include a second call to RegisterAsyncGenericService to make sure that
+    // we get an error in the log, since it is not allowed to have 2 async
+    // generic services
     builder.RegisterAsyncGenericService(&generic_service_);
     srv_cq_ = builder.AddCompletionQueue();
     server_ = builder.BuildAndStart();
@@ -189,7 +193,7 @@ class GenericEnd2endTest : public ::testing::Test {
 
   CompletionQueue cli_cq_;
   std::unique_ptr<ServerCompletionQueue> srv_cq_;
-  std::unique_ptr<grpc::cpp::test::util::TestService::Stub> stub_;
+  std::unique_ptr<grpc::testing::TestService::Stub> stub_;
   std::unique_ptr<grpc::GenericStub> generic_stub_;
   std::unique_ptr<Server> server_;
   AsyncGenericService generic_service_;

@@ -90,11 +90,11 @@ def _stub(args):
     if args.use_test_ca:
       root_certificates = resources.test_root_certificates()
     else:
-      root_certificates = resources.prod_root_certificates()
+      root_certificates = None  # will load default roots.
 
     channel = test_utilities.not_really_secure_channel(
         args.server_host, args.server_port,
-        implementations.ssl_client_credentials(root_certificates, None, None),
+        implementations.ssl_channel_credentials(root_certificates, None, None),
         args.server_host_override)
     stub = test_pb2.beta_create_TestService_stub(
         channel, metadata_transformer=metadata_transformer)

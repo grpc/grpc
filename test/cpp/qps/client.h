@@ -41,8 +41,8 @@
 #include "test/cpp/qps/interarrival.h"
 #include "test/cpp/qps/timer.h"
 #include "test/cpp/util/create_test_channel.h"
-#include "test/proto/benchmarks/payloads.grpc.pb.h"
-#include "test/proto/benchmarks/services.grpc.pb.h"
+#include "src/proto/grpc/testing/payloads.grpc.pb.h"
+#include "src/proto/grpc/testing/services.grpc.pb.h"
 
 namespace grpc {
 

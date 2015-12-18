@@ -1003,27 +1003,27 @@
 
   buildtests: buildtests_c buildtests_cxx buildtests_zookeeper
 
-  buildtests_c: privatelibs_c\
+  buildtests_c: privatelibs_c <%text>\</%text>
   % for tgt in targets:
   % if tgt.build == 'test' and not tgt.language == 'c++' and not tgt.get('external_deps', None):
-   $(BINDIR)/$(CONFIG)/${tgt.name}\
+    $(BINDIR)/$(CONFIG)/${tgt.name} <%text>\</%text>
   % endif
   % endfor
 
 
-  buildtests_cxx: buildtests_zookeeper privatelibs_cxx\
+  buildtests_cxx: buildtests_zookeeper privatelibs_cxx <%text>\</%text>
   % for tgt in targets:
   % if tgt.build == 'test' and tgt.language == 'c++' and not tgt.get('external_deps', None):
-   $(BINDIR)/$(CONFIG)/${tgt.name}\
+    $(BINDIR)/$(CONFIG)/${tgt.name} <%text>\</%text>
   % endif
   % endfor
 
 
   ifeq ($(HAS_ZOOKEEPER),true)
-  buildtests_zookeeper: privatelibs_zookeeper\
+  buildtests_zookeeper: privatelibs_zookeeper <%text>\</%text>
   % for tgt in targets:
   % if tgt.build == 'test' and tgt.language == 'c++' and 'zookeeper' in tgt.get('external_deps', []):
-   $(BINDIR)/$(CONFIG)/${tgt.name}\
+   $(BINDIR)/$(CONFIG)/${tgt.name} <%text>\</%text>
   % endif
   % endfor
 
@@ -1268,12 +1268,12 @@
   $(GENDIR)/${p}.pb.cc: protoc_dep_error
   $(GENDIR)/${p}.grpc.pb.cc: protoc_dep_error
   else
-  $(GENDIR)/${p}.pb.cc: ${p}.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS)
+  $(GENDIR)/${p}.pb.cc: ${p}.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) ${' '.join('$(GENDIR)/%s.pb.cc' % q for q in proto_deps.get(p, []))}
   	$(E) "[PROTOC]  Generating protobuf CC file from $<"
   	$(Q) mkdir -p `dirname $@`
   	$(Q) $(PROTOC) --cpp_out=$(GENDIR) $<
 
-  $(GENDIR)/${p}.grpc.pb.cc: ${p}.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS)
+  $(GENDIR)/${p}.grpc.pb.cc: ${p}.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) ${' '.join('$(GENDIR)/%s.pb.cc $(GENDIR)/%s.grpc.pb.cc' % (q,q) for q in proto_deps.get(p, []))}
   	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
   	$(Q) mkdir -p `dirname $@`
   	$(Q) $(PROTOC) --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(BINDIR)/$(CONFIG)/grpc_cpp_plugin $<

@@ -28,11 +28,24 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import time
+import threading
 import unittest
 
 from grpc._cython import cygrpc
 from tests.unit._cython import test_utilities
 from tests.unit import test_common
+from tests.unit import resources
+
+
+_SSL_HOST_OVERRIDE = 'foo.test.google.fr'
+_CALL_CREDENTIALS_METADATA_KEY = 'call-creds-key'
+_CALL_CREDENTIALS_METADATA_VALUE = 'call-creds-value'
+
+def _metadata_plugin_callback(context, callback):
+  callback(cygrpc.Metadata(
+      [cygrpc.Metadatum(_CALL_CREDENTIALS_METADATA_KEY,
+                        _CALL_CREDENTIALS_METADATA_VALUE)]),
+      cygrpc.StatusCode.ok, '')
 
 
 class TypeSmokeTest(unittest.TestCase):
@@ -89,7 +102,17 @@ class TypeSmokeTest(unittest.TestCase):
     channel = cygrpc.Channel('[::]:0', cygrpc.ChannelArgs([]))
     del channel
 
-  @unittest.skip('TODO(atash): undo skip after #2229 is merged')
+  def testCredentialsMetadataPluginUpDown(self):
+    plugin = cygrpc.CredentialsMetadataPlugin(
+        lambda ignored_a, ignored_b: None, '')
+    del plugin
+
+  def testCallCredentialsFromPluginUpDown(self):
+    plugin = cygrpc.CredentialsMetadataPlugin(_metadata_plugin_callback, '')
+    call_credentials = cygrpc.call_credentials_metadata_plugin(plugin)
+    del plugin
+    del call_credentials
+
   def testServerStartNoExplicitShutdown(self):
     server = cygrpc.Server()
     completion_queue = cygrpc.CompletionQueue()
@@ -99,7 +122,6 @@ class TypeSmokeTest(unittest.TestCase):
     server.start()
     del server
 
-  @unittest.skip('TODO(atash): undo skip after #2229 is merged')
   def testServerStartShutdown(self):
     completion_queue = cygrpc.CompletionQueue()
     server = cygrpc.Server()
@@ -188,6 +210,170 @@ class InsecureServerInsecureClient(unittest.TestCase):
                                          request_event.request_metadata))
     self.assertEqual(METHOD, request_event.request_call_details.method)
     self.assertEqual(HOST, request_event.request_call_details.host)
+    self.assertLess(
+        abs(DEADLINE - float(request_event.request_call_details.deadline)),
+        DEADLINE_TOLERANCE)
+
+    server_call_tag = object()
+    server_call = request_event.operation_call
+    server_initial_metadata = cygrpc.Metadata([
+        cygrpc.Metadatum(SERVER_INITIAL_METADATA_KEY,
+                         SERVER_INITIAL_METADATA_VALUE)])
+    server_trailing_metadata = cygrpc.Metadata([
+        cygrpc.Metadatum(SERVER_TRAILING_METADATA_KEY,
+                         SERVER_TRAILING_METADATA_VALUE)])
+    server_start_batch_result = server_call.start_batch([
+        cygrpc.operation_send_initial_metadata(server_initial_metadata),
+        cygrpc.operation_receive_message(),
+        cygrpc.operation_send_message(RESPONSE),
+        cygrpc.operation_receive_close_on_server(),
+        cygrpc.operation_send_status_from_server(
+            server_trailing_metadata, SERVER_STATUS_CODE, SERVER_STATUS_DETAILS)
+    ], server_call_tag)
+    self.assertEqual(cygrpc.CallError.ok, server_start_batch_result)
+
+    client_event = client_event_future.result()
+    server_event = self.server_completion_queue.poll(cygrpc_deadline)
+
+    self.assertEqual(6, len(client_event.batch_operations))
+    found_client_op_types = set()
+    for client_result in client_event.batch_operations:
+      # we expect each op type to be unique
+      self.assertNotIn(client_result.type, found_client_op_types)
+      found_client_op_types.add(client_result.type)
+      if client_result.type == cygrpc.OperationType.receive_initial_metadata:
+        self.assertTrue(
+            test_common.metadata_transmitted(server_initial_metadata,
+                                             client_result.received_metadata))
+      elif client_result.type == cygrpc.OperationType.receive_message:
+        self.assertEqual(RESPONSE, client_result.received_message.bytes())
+      elif client_result.type == cygrpc.OperationType.receive_status_on_client:
+        self.assertTrue(
+            test_common.metadata_transmitted(server_trailing_metadata,
+                                             client_result.received_metadata))
+        self.assertEqual(SERVER_STATUS_DETAILS,
+                         client_result.received_status_details)
+        self.assertEqual(SERVER_STATUS_CODE, client_result.received_status_code)
+    self.assertEqual(set([
+          cygrpc.OperationType.send_initial_metadata,
+          cygrpc.OperationType.send_message,
+          cygrpc.OperationType.send_close_from_client,
+          cygrpc.OperationType.receive_initial_metadata,
+          cygrpc.OperationType.receive_message,
+          cygrpc.OperationType.receive_status_on_client
+      ]), found_client_op_types)
+
+    self.assertEqual(5, len(server_event.batch_operations))
+    found_server_op_types = set()
+    for server_result in server_event.batch_operations:
+      self.assertNotIn(client_result.type, found_server_op_types)
+      found_server_op_types.add(server_result.type)
+      if server_result.type == cygrpc.OperationType.receive_message:
+        self.assertEqual(REQUEST, server_result.received_message.bytes())
+      elif server_result.type == cygrpc.OperationType.receive_close_on_server:
+        self.assertFalse(server_result.received_cancelled)
+    self.assertEqual(set([
+          cygrpc.OperationType.send_initial_metadata,
+          cygrpc.OperationType.receive_message,
+          cygrpc.OperationType.send_message,
+          cygrpc.OperationType.receive_close_on_server,
+          cygrpc.OperationType.send_status_from_server
+      ]), found_server_op_types)
+
+    del client_call
+    del server_call
+
+
+class SecureServerSecureClient(unittest.TestCase):
+
+  def setUp(self):
+    server_credentials = cygrpc.server_credentials_ssl(
+        None, [cygrpc.SslPemKeyCertPair(resources.private_key(),
+                                        resources.certificate_chain())], False)
+    channel_credentials = cygrpc.channel_credentials_ssl(
+        resources.test_root_certificates(), None)
+    self.server_completion_queue = cygrpc.CompletionQueue()
+    self.server = cygrpc.Server()
+    self.server.register_completion_queue(self.server_completion_queue)
+    self.port = self.server.add_http2_port('[::]:0', server_credentials)
+    self.server.start()
+    self.client_completion_queue = cygrpc.CompletionQueue()
+    client_channel_arguments = cygrpc.ChannelArgs([
+        cygrpc.ChannelArg(cygrpc.ChannelArgKey.ssl_target_name_override,
+                          _SSL_HOST_OVERRIDE)])
+    self.client_channel = cygrpc.Channel(
+        'localhost:{}'.format(self.port), client_channel_arguments,
+        channel_credentials)
+
+  def tearDown(self):
+    del self.server
+    del self.client_completion_queue
+    del self.server_completion_queue
+
+  def testEcho(self):
+    DEADLINE = time.time()+5
+    DEADLINE_TOLERANCE = 0.25
+    CLIENT_METADATA_ASCII_KEY = b'key'
+    CLIENT_METADATA_ASCII_VALUE = b'val'
+    CLIENT_METADATA_BIN_KEY = b'key-bin'
+    CLIENT_METADATA_BIN_VALUE = b'\0'*1000
+    SERVER_INITIAL_METADATA_KEY = b'init_me_me_me'
+    SERVER_INITIAL_METADATA_VALUE = b'whodawha?'
+    SERVER_TRAILING_METADATA_KEY = b'california_is_in_a_drought'
+    SERVER_TRAILING_METADATA_VALUE = b'zomg it is'
+    SERVER_STATUS_CODE = cygrpc.StatusCode.ok
+    SERVER_STATUS_DETAILS = b'our work is never over'
+    REQUEST = b'in death a member of project mayhem has a name'
+    RESPONSE = b'his name is robert paulson'
+    METHOD = b'/twinkies'
+    HOST = None  # Default host
+
+    cygrpc_deadline = cygrpc.Timespec(DEADLINE)
+
+    server_request_tag = object()
+    request_call_result = self.server.request_call(
+        self.server_completion_queue, self.server_completion_queue,
+        server_request_tag)
+
+    self.assertEqual(cygrpc.CallError.ok, request_call_result)
+
+    plugin = cygrpc.CredentialsMetadataPlugin(_metadata_plugin_callback, '')
+    call_credentials = cygrpc.call_credentials_metadata_plugin(plugin)
+
+    client_call_tag = object()
+    client_call = self.client_channel.create_call(
+        None, 0, self.client_completion_queue, METHOD, HOST, cygrpc_deadline)
+    client_call.set_credentials(call_credentials)
+    client_initial_metadata = cygrpc.Metadata([
+        cygrpc.Metadatum(CLIENT_METADATA_ASCII_KEY,
+                         CLIENT_METADATA_ASCII_VALUE),
+        cygrpc.Metadatum(CLIENT_METADATA_BIN_KEY, CLIENT_METADATA_BIN_VALUE)])
+    client_start_batch_result = client_call.start_batch(cygrpc.Operations([
+        cygrpc.operation_send_initial_metadata(client_initial_metadata),
+        cygrpc.operation_send_message(REQUEST),
+        cygrpc.operation_send_close_from_client(),
+        cygrpc.operation_receive_initial_metadata(),
+        cygrpc.operation_receive_message(),
+        cygrpc.operation_receive_status_on_client()
+    ]), client_call_tag)
+    self.assertEqual(cygrpc.CallError.ok, client_start_batch_result)
+    client_event_future = test_utilities.CompletionQueuePollFuture(
+        self.client_completion_queue, cygrpc_deadline)
+
+    request_event = self.server_completion_queue.poll(cygrpc_deadline)
+    self.assertEqual(cygrpc.CompletionType.operation_complete,
+                      request_event.type)
+    self.assertIsInstance(request_event.operation_call, cygrpc.Call)
+    self.assertIs(server_request_tag, request_event.tag)
+    self.assertEqual(0, len(request_event.batch_operations))
+    client_metadata_with_credentials = list(client_initial_metadata) + [
+        (_CALL_CREDENTIALS_METADATA_KEY, _CALL_CREDENTIALS_METADATA_VALUE)]
+    self.assertTrue(
+        test_common.metadata_transmitted(client_metadata_with_credentials,
+                                         request_event.request_metadata))
+    self.assertEqual(METHOD, request_event.request_call_details.method)
+    self.assertEqual(_SSL_HOST_OVERRIDE,
+                     request_event.request_call_details.host)
     self.assertLess(
         abs(DEADLINE - float(request_event.request_call_details.deadline)),
         DEADLINE_TOLERANCE)

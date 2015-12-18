@@ -47,7 +47,7 @@ static void test(int rounds) {
   }
 }
 
-static void test_mixed() {
+static void test_mixed(void) {
   grpc_init();
   grpc_init();
   grpc_shutdown();
@@ -56,8 +56,8 @@ static void test_mixed() {
   grpc_shutdown();
 }
 
-static void plugin_init() { g_flag = 1; }
-static void plugin_destroy() { g_flag = 2; }
+static void plugin_init(void) { g_flag = 1; }
+static void plugin_destroy(void) { g_flag = 2; }
 
 static void test_plugin() {
   grpc_register_plugin(plugin_init, plugin_destroy);

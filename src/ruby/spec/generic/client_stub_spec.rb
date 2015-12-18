@@ -145,34 +145,6 @@ describe 'ClientStub' do
         th.join
       end
 
-      it 'should update the sent metadata with a provided metadata updater' do
-        server_port = create_test_server
-        host = "localhost:#{server_port}"
-        th = run_request_response(@sent_msg, @resp, @pass,
-                                  k1: 'updated-v1', k2: 'v2')
-        update_md = proc do |md|
-          md[:k1] = 'updated-v1'
-          md
-        end
-        stub = GRPC::ClientStub.new(host, @cq, update_metadata: update_md)
-        expect(get_response(stub)).to eq(@resp)
-        th.join
-      end
-
-      it 'should downcase the keys provided by the metadata updater' do
-        server_port = create_test_server
-        host = "localhost:#{server_port}"
-        th = run_request_response(@sent_msg, @resp, @pass,
-                                  k1: 'downcased-key-v1', k2: 'v2')
-        update_md = proc do |md|
-          md[:K1] = 'downcased-key-v1'
-          md
-        end
-        stub = GRPC::ClientStub.new(host, @cq, update_metadata: update_md)
-        expect(get_response(stub)).to eq(@resp)
-        th.join
-      end
-
       it 'should send a request when configured using an override channel' do
         server_port = create_test_server
         alt_host = "localhost:#{server_port}"
@@ -237,20 +209,6 @@ describe 'ClientStub' do
         th = run_client_streamer(@sent_msgs, @resp, @pass,
                                  k1: 'v1', k2: 'v2')
         stub = GRPC::ClientStub.new(host, @cq)
-        expect(get_response(stub)).to eq(@resp)
-        th.join
-      end
-
-      it 'should update the sent metadata with a provided metadata updater' do
-        server_port = create_test_server
-        host = "localhost:#{server_port}"
-        th = run_client_streamer(@sent_msgs, @resp, @pass,
-                                 k1: 'updated-v1', k2: 'v2')
-        update_md = proc do |md|
-          md[:k1] = 'updated-v1'
-          md
-        end
-        stub = GRPC::ClientStub.new(host, @cq, update_metadata: update_md)
         expect(get_response(stub)).to eq(@resp)
         th.join
       end
@@ -321,21 +279,6 @@ describe 'ClientStub' do
         stub = GRPC::ClientStub.new(host, @cq)
         e = get_responses(stub)
         expect { e.collect { |r| r } }.to raise_error(GRPC::BadStatus)
-        th.join
-      end
-
-      it 'should update the sent metadata with a provided metadata updater' do
-        server_port = create_test_server
-        host = "localhost:#{server_port}"
-        th = run_server_streamer(@sent_msg, @replys, @pass,
-                                 k1: 'updated-v1', k2: 'v2')
-        update_md = proc do |md|
-          md[:k1] = 'updated-v1'
-          md
-        end
-        stub = GRPC::ClientStub.new(host, @cq, update_metadata: update_md)
-        e = get_responses(stub)
-        expect(e.collect { |r| r }).to eq(@replys)
         th.join
       end
     end

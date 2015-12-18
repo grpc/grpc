@@ -75,9 +75,10 @@ namespace Grpc.IntegrationTesting
             serverRunner.StopAsync().Wait();
         }
 
-        // Test attribute commented out to prevent running as part of the default test suite.
-        //[Test]
-        //[Category("Performance")]
+
+        [Test]
+        [Category("Performance")]
+        [Ignore("Prevent running on Jenkins")]
         public async Task ClientServerRunner()
         {
             var config = new ClientConfig

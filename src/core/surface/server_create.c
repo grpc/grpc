@@ -32,14 +32,20 @@
  */
 
 #include <grpc/grpc.h>
+#include "src/core/census/grpc_filter.h"
+#include "src/core/channel/channel_args.h"
+#include "src/core/channel/compress_filter.h"
 #include "src/core/surface/api_trace.h"
 #include "src/core/surface/completion_queue.h"
 #include "src/core/surface/server.h"
-#include "src/core/channel/compress_filter.h"
 
 grpc_server *grpc_server_create(const grpc_channel_args *args, void *reserved) {
-  const grpc_channel_filter *filters[] = {&grpc_compress_filter};
+  const grpc_channel_filter *filters[3];
+  size_t num_filters = 0;
+  filters[num_filters++] = &grpc_compress_filter;
+  if (grpc_channel_args_is_census_enabled(args)) {
+    filters[num_filters++] = &grpc_server_census_filter;
+  }
   GRPC_API_TRACE("grpc_server_create(%p, %p)", 2, (args, reserved));
-  return grpc_server_create_from_filters(filters, GPR_ARRAY_SIZE(filters),
-                                         args);
+  return grpc_server_create_from_filters(filters, num_filters, args);
 }

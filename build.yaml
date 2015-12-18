@@ -116,7 +116,6 @@ filegroups:
   - src/core/channel/context.h
   - src/core/channel/http_client_filter.h
   - src/core/channel/http_server_filter.h
-  - src/core/channel/noop_filter.h
   - src/core/channel/subchannel_call_holder.h
   - src/core/client_config/client_config.h
   - src/core/client_config/connector.h
@@ -133,8 +132,6 @@ filegroups:
   - src/core/client_config/resolvers/sockaddr_resolver.h
   - src/core/client_config/subchannel.h
   - src/core/client_config/subchannel_factory.h
-  - src/core/client_config/subchannel_factory_decorators/add_channel_arg.h
-  - src/core/client_config/subchannel_factory_decorators/merge_channel_args.h
   - src/core/client_config/uri_parser.h
   - src/core/compression/algorithm_metadata.h
   - src/core/compression/message_compress.h
@@ -233,7 +230,6 @@ filegroups:
   - src/core/channel/connected_channel.c
   - src/core/channel/http_client_filter.c
   - src/core/channel/http_server_filter.c
-  - src/core/channel/noop_filter.c
   - src/core/channel/subchannel_call_holder.c
   - src/core/client_config/client_config.c
   - src/core/client_config/connector.c
@@ -251,8 +247,6 @@ filegroups:
   - src/core/client_config/resolvers/sockaddr_resolver.c
   - src/core/client_config/subchannel.c
   - src/core/client_config/subchannel_factory.c
-  - src/core/client_config/subchannel_factory_decorators/add_channel_arg.c
-  - src/core/client_config/subchannel_factory_decorators/merge_channel_args.c
   - src/core/client_config/uri_parser.c
   - src/core/compression/algorithm.c
   - src/core/compression/message_compress.c
@@ -313,6 +307,7 @@ filegroups:
   - src/core/surface/channel.c
   - src/core/surface/channel_connectivity.c
   - src/core/surface/channel_create.c
+  - src/core/surface/channel_ping.c
   - src/core/surface/completion_queue.c
   - src/core/surface/event_string.c
   - src/core/surface/init.c
@@ -644,9 +639,9 @@ libs:
   - test/cpp/util/string_ref_helper.h
   - test/cpp/util/subprocess.h
   src:
-  - test/cpp/util/messages.proto
-  - test/cpp/util/echo.proto
-  - test/cpp/util/echo_duplicate.proto
+  - src/proto/grpc/testing/echo_messages.proto
+  - src/proto/grpc/testing/echo.proto
+  - src/proto/grpc/testing/duplicate/echo_duplicate.proto
   - test/cpp/util/cli_call.cc
   - test/cpp/util/create_test_channel.cc
   - test/cpp/util/string_ref_helper.cc
@@ -702,7 +697,7 @@ libs:
   headers:
   - test/cpp/interop/client_helper.h
   src:
-  - test/proto/messages.proto
+  - src/proto/grpc/testing/messages.proto
   - test/cpp/interop/client_helper.cc
   deps:
   - grpc++_test_util
@@ -716,9 +711,9 @@ libs:
   headers:
   - test/cpp/interop/interop_client.h
   src:
-  - test/proto/empty.proto
-  - test/proto/messages.proto
-  - test/proto/test.proto
+  - src/proto/grpc/testing/empty.proto
+  - src/proto/grpc/testing/messages.proto
+  - src/proto/grpc/testing/test.proto
   - test/cpp/interop/client.cc
   - test/cpp/interop/interop_client.cc
   deps:
@@ -746,9 +741,9 @@ libs:
   build: private
   language: c++
   src:
-  - test/proto/empty.proto
-  - test/proto/messages.proto
-  - test/proto/test.proto
+  - src/proto/grpc/testing/empty.proto
+  - src/proto/grpc/testing/messages.proto
+  - src/proto/grpc/testing/test.proto
   - test/cpp/interop/server.cc
   deps:
   - interop_server_helper
@@ -775,12 +770,12 @@ libs:
   - test/cpp/qps/timer.h
   - test/cpp/util/benchmark_config.h
   src:
-  - test/proto/messages.proto
-  - test/proto/benchmarks/control.proto
-  - test/proto/benchmarks/payloads.proto
-  - test/proto/benchmarks/services.proto
-  - test/proto/benchmarks/stats.proto
-  - test/cpp/qps/perf_db.proto
+  - src/proto/grpc/testing/messages.proto
+  - src/proto/grpc/testing/control.proto
+  - src/proto/grpc/testing/payloads.proto
+  - src/proto/grpc/testing/services.proto
+  - src/proto/grpc/testing/stats.proto
+  - src/proto/grpc/testing/perf_db.proto
   - test/cpp/qps/client_async.cc
   - test/cpp/qps/client_sync.cc
   - test/cpp/qps/driver.cc
@@ -815,6 +810,24 @@ libs:
   - winsock
   - global
 targets:
+- name: algorithm_test
+  build: test
+  language: c
+  src:
+  - test/core/compression/algorithm_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: alloc_test
+  build: test
+  language: c
+  src:
+  - test/core/support/alloc_test.c
+  deps:
+  - gpr_test_util
+  - gpr
 - name: alpn_test
   build: test
   language: c
@@ -830,6 +843,16 @@ targets:
   language: c
   src:
   - test/core/transport/chttp2/bin_encoder_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: channel_create_test
+  build: test
+  language: c
+  src:
+  - test/core/surface/channel_create_test.c
   deps:
   - grpc_test_util
   - grpc
@@ -865,11 +888,31 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: chttp2_varint_test
+  build: test
+  language: c
+  src:
+  - test/core/transport/chttp2/varint_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: compression_test
   build: test
   language: c
   src:
   - test/core/compression/compression_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: dns_resolver_test
+  build: test
+  language: c
+  src:
+  - test/core/client_config/resolvers/dns_resolver_test.c
   deps:
   - grpc_test_util
   - grpc
@@ -1217,6 +1260,16 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: grpc_invalid_channel_args_test
+  build: test
+  language: c
+  src:
+  - test/core/surface/invalid_channel_args_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: grpc_json_token_test
   build: test
   language: c
@@ -1325,6 +1378,18 @@ targets:
   - mac
   - linux
   - posix
+- name: httpscli_test
+  build: test
+  language: c
+  src:
+  - test/core/httpcli/httpscli_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  platforms:
+  - linux
 - name: init_test
   build: test
   language: c
@@ -1359,6 +1424,16 @@ targets:
   language: c
   src:
   - test/core/json/json_rewrite_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: json_stream_error_test
+  build: test
+  language: c
+  src:
+  - test/core/json/json_stream_error_test.c
   deps:
   - grpc_test_util
   - grpc
@@ -1456,11 +1531,41 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: secure_channel_create_test
+  build: test
+  language: c
+  src:
+  - test/core/surface/secure_channel_create_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: secure_endpoint_test
   build: test
   language: c
   src:
   - test/core/security/secure_endpoint_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: server_chttp2_test
+  build: test
+  language: c
+  src:
+  - test/core/surface/server_chttp2_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: server_test
+  build: test
+  language: c
+  src:
+  - test/core/surface/server_test.c
   deps:
   - grpc_test_util
   - grpc
@@ -1477,6 +1582,16 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: sockaddr_resolver_test
+  build: test
+  language: c
+  src:
+  - test/core/client_config/resolvers/sockaddr_resolver_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: sockaddr_utils_test
   build: test
   language: c
@@ -1487,6 +1602,20 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: socket_utils_test
+  build: test
+  language: c
+  src:
+  - test/core/iomgr/socket_utils_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  platforms:
+  - mac
+  - linux
+  - posix
 - name: tcp_client_posix_test
   build: test
   language: c
@@ -1574,6 +1703,16 @@ targets:
   language: c
   src:
   - test/core/profiling/timers_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: transport_connectivity_state_test
+  build: test
+  language: c
+  src:
+  - test/core/transport/connectivity_state_test.c
   deps:
   - grpc_test_util
   - grpc
@@ -1945,7 +2084,7 @@ targets:
   headers:
   - test/cpp/util/metrics_server.h
   src:
-  - test/proto/metrics.proto
+  - src/proto/grpc/testing/metrics.proto
   - test/cpp/interop/metrics_client.cc
   deps:
   - grpc++
@@ -2057,9 +2196,9 @@ targets:
   run: false
   language: c++
   src:
-  - test/proto/empty.proto
-  - test/proto/messages.proto
-  - test/proto/test.proto
+  - src/proto/grpc/testing/empty.proto
+  - src/proto/grpc/testing/messages.proto
+  - src/proto/grpc/testing/test.proto
   - test/cpp/interop/reconnect_interop_client.cc
   deps:
   - grpc++_test_util
@@ -2074,9 +2213,9 @@ targets:
   run: false
   language: c++
   src:
-  - test/proto/empty.proto
-  - test/proto/messages.proto
-  - test/proto/test.proto
+  - src/proto/grpc/testing/empty.proto
+  - src/proto/grpc/testing/messages.proto
+  - src/proto/grpc/testing/test.proto
   - test/cpp/interop/reconnect_interop_server.cc
   deps:
   - reconnect_server
@@ -2195,10 +2334,10 @@ targets:
   - test/cpp/interop/stress_interop_client.h
   - test/cpp/util/metrics_server.h
   src:
-  - test/proto/empty.proto
-  - test/proto/messages.proto
-  - test/proto/metrics.proto
-  - test/proto/test.proto
+  - src/proto/grpc/testing/empty.proto
+  - src/proto/grpc/testing/messages.proto
+  - src/proto/grpc/testing/metrics.proto
+  - src/proto/grpc/testing/test.proto
   - test/cpp/interop/interop_client.cc
   - test/cpp/interop/stress_interop_client.cc
   - test/cpp/interop/stress_test.cc
@@ -2262,6 +2401,7 @@ targets:
   run: false
   language: c++
   src:
+  - src/proto/grpc/testing/echo.proto
   - test/cpp/end2end/zookeeper_test.cc
   deps:
   - grpc++_test_util
