@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env python2.7
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -28,11 +28,32 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-gen_build_yaml_dirs="test/core/end2end test/core/bad_client test/core/bad_ssl src/proto"
-gen_build_files=""
-for gen_build_yaml in $gen_build_yaml_dirs
-do
-  output_file=`mktemp /tmp/genXXXXXX`
-  $gen_build_yaml/gen_build_yaml.py > $output_file
-  gen_build_files="$gen_build_files $output_file"
-done
+
+"""Generates the appropriate build.json data for all the proto files."""
+import yaml
+import collections
+import os
+import re
+import sys
+
+def main():
+  deps = {}
+  for root, dirs, files in os.walk(os.path.dirname(sys.argv[0])):
+    for f in files:
+      if f[-6:] != '.proto': continue
+      look_at = os.path.join(root, f)
+      with open(look_at) as inp:
+        for line in inp:
+          imp = re.search(r'import "([^"]*)"', line)
+          if not imp: continue
+          if look_at[:-6] not in deps: deps[look_at[:-6]] = []
+          deps[look_at[:-6]].append(imp.group(1)[:-6])
+
+  json = {
+    'proto_deps': deps
+  }
+
+  print yaml.dump(json)
+
+if __name__ == '__main__':
+  main()

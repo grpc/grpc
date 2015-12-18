@@ -37,7 +37,7 @@ import yaml
 
 TEST = (os.environ.get('TEST', 'false') == 'true')
 
-_TOP_LEVEL_KEYS = ['settings', 'filegroups', 'libs', 'targets', 'vspackages']
+_TOP_LEVEL_KEYS = ['settings', 'proto_deps', 'filegroups', 'libs', 'targets', 'vspackages']
 _VERSION_KEYS = ['major', 'minor', 'micro', 'build']
 _ELEM_KEYS = [
     'name',

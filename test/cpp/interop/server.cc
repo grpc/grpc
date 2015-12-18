@@ -50,9 +50,9 @@
 
 #include "test/cpp/interop/server_helper.h"
 #include "test/cpp/util/test_config.h"
-#include "test/proto/test.grpc.pb.h"
-#include "test/proto/empty.grpc.pb.h"
-#include "test/proto/messages.grpc.pb.h"
+#include "src/proto/grpc/testing/test.grpc.pb.h"
+#include "src/proto/grpc/testing/empty.grpc.pb.h"
+#include "src/proto/grpc/testing/messages.grpc.pb.h"
 
 DEFINE_bool(use_tls, false, "Whether to use tls.");
 DEFINE_int32(port, 0, "Server port.");

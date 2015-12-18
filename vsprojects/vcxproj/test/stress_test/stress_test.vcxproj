@@ -154,37 +154,37 @@
     <ClInclude Include="..\..\..\..\test\cpp\util\metrics_server.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\..\test\proto\empty.pb.cc">
+    <ClCompile Include="..\..\..\..\src\proto\grpc\testing\empty.pb.cc">
     </ClCompile>
-    <ClInclude Include="..\..\..\..\test\proto\empty.pb.h">
+    <ClInclude Include="..\..\..\..\src\proto\grpc\testing\empty.pb.h">
     </ClInclude>
-    <ClCompile Include="..\..\..\..\test\proto\empty.grpc.pb.cc">
+    <ClCompile Include="..\..\..\..\src\proto\grpc\testing\empty.grpc.pb.cc">
     </ClCompile>
-    <ClInclude Include="..\..\..\..\test\proto\empty.grpc.pb.h">
+    <ClInclude Include="..\..\..\..\src\proto\grpc\testing\empty.grpc.pb.h">
     </ClInclude>
-    <ClCompile Include="..\..\..\..\test\proto\messages.pb.cc">
+    <ClCompile Include="..\..\..\..\src\proto\grpc\testing\messages.pb.cc">
     </ClCompile>
-    <ClInclude Include="..\..\..\..\test\proto\messages.pb.h">
+    <ClInclude Include="..\..\..\..\src\proto\grpc\testing\messages.pb.h">
     </ClInclude>
-    <ClCompile Include="..\..\..\..\test\proto\messages.grpc.pb.cc">
+    <ClCompile Include="..\..\..\..\src\proto\grpc\testing\messages.grpc.pb.cc">
     </ClCompile>
-    <ClInclude Include="..\..\..\..\test\proto\messages.grpc.pb.h">
+    <ClInclude Include="..\..\..\..\src\proto\grpc\testing\messages.grpc.pb.h">
     </ClInclude>
-    <ClCompile Include="..\..\..\..\test\proto\metrics.pb.cc">
+    <ClCompile Include="..\..\..\..\src\proto\grpc\testing\metrics.pb.cc">
     </ClCompile>
-    <ClInclude Include="..\..\..\..\test\proto\metrics.pb.h">
+    <ClInclude Include="..\..\..\..\src\proto\grpc\testing\metrics.pb.h">
     </ClInclude>
-    <ClCompile Include="..\..\..\..\test\proto\metrics.grpc.pb.cc">
+    <ClCompile Include="..\..\..\..\src\proto\grpc\testing\metrics.grpc.pb.cc">
     </ClCompile>
-    <ClInclude Include="..\..\..\..\test\proto\metrics.grpc.pb.h">
+    <ClInclude Include="..\..\..\..\src\proto\grpc\testing\metrics.grpc.pb.h">
     </ClInclude>
-    <ClCompile Include="..\..\..\..\test\proto\test.pb.cc">
+    <ClCompile Include="..\..\..\..\src\proto\grpc\testing\test.pb.cc">
     </ClCompile>
-    <ClInclude Include="..\..\..\..\test\proto\test.pb.h">
+    <ClInclude Include="..\..\..\..\src\proto\grpc\testing\test.pb.h">
     </ClInclude>
-    <ClCompile Include="..\..\..\..\test\proto\test.grpc.pb.cc">
+    <ClCompile Include="..\..\..\..\src\proto\grpc\testing\test.grpc.pb.cc">
     </ClCompile>
-    <ClInclude Include="..\..\..\..\test\proto\test.grpc.pb.h">
+    <ClInclude Include="..\..\..\..\src\proto\grpc\testing\test.grpc.pb.h">
     </ClInclude>
     <ClCompile Include="..\..\..\..\test\cpp\interop\interop_client.cc">
     </ClCompile>

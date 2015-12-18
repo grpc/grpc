@@ -140,13 +140,13 @@
     <ClInclude Include="..\..\..\test\cpp\interop\client_helper.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\test\proto\messages.pb.cc">
+    <ClCompile Include="..\..\..\src\proto\grpc\testing\messages.pb.cc">
     </ClCompile>
-    <ClInclude Include="..\..\..\test\proto\messages.pb.h">
+    <ClInclude Include="..\..\..\src\proto\grpc\testing\messages.pb.h">
     </ClInclude>
-    <ClCompile Include="..\..\..\test\proto\messages.grpc.pb.cc">
+    <ClCompile Include="..\..\..\src\proto\grpc\testing\messages.grpc.pb.cc">
     </ClCompile>
-    <ClInclude Include="..\..\..\test\proto\messages.grpc.pb.h">
+    <ClInclude Include="..\..\..\src\proto\grpc\testing\messages.grpc.pb.h">
     </ClInclude>
     <ClCompile Include="..\..\..\test\cpp\interop\client_helper.cc">
     </ClCompile>
