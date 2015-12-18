@@ -154,7 +154,6 @@
   LD_valgrind = $(DEFAULT_CC)
   LDXX_valgrind = $(DEFAULT_CXX)
   CPPFLAGS_valgrind = -O0
-  OPENSSL_CFLAGS_valgrind = -DPURIFY
   LDFLAGS_valgrind = -rdynamic
   DEFINES_valgrind = _DEBUG DEBUG GRPC_TEST_SLOWDOWN_BUILD_FACTOR=20
 
@@ -187,7 +186,6 @@
   LDXX_msan = clang++-libc++
   CFLAGS_msan = -O0 -fsanitize=memory -fsanitize-memory-track-origins -fno-omit-frame-pointer -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1 -Wno-unused-command-line-argument
   CXXFLAGS_msan = -O0 -fsanitize=memory -fsanitize-memory-track-origins -fno-omit-frame-pointer -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1 -Wno-unused-command-line-argument
-  OPENSSL_CFLAGS_msan = -DPURIFY
   LDFLAGS_msan = -fsanitize=memory -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1
   DEFINES_msan = NDEBUG GRPC_TEST_SLOWDOWN_BUILD_FACTOR=4
 
@@ -199,7 +197,6 @@
   LDXX_ubsan = clang++
   CFLAGS_ubsan = -O1 -fsanitize=undefined -fno-omit-frame-pointer -Wno-unused-command-line-argument
   CXXFLAGS_ubsan = -O1 -fsanitize=undefined -fno-omit-frame-pointer -Wno-unused-command-line-argument
-  OPENSSL_CFLAGS_ubsan = -DPURIFY
   LDFLAGS_ubsan = -fsanitize=undefined
   DEFINES_ubsan = NDEBUG GRPC_TEST_SLOWDOWN_BUILD_FACTOR=3
 
