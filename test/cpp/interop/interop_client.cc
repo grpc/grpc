@@ -48,9 +48,9 @@
 
 #include "src/core/transport/byte_stream.h"
 #include "test/cpp/interop/client_helper.h"
-#include "test/proto/test.grpc.pb.h"
-#include "test/proto/empty.grpc.pb.h"
-#include "test/proto/messages.grpc.pb.h"
+#include "src/proto/grpc/testing/test.grpc.pb.h"
+#include "src/proto/grpc/testing/empty.grpc.pb.h"
+#include "src/proto/grpc/testing/messages.grpc.pb.h"
 
 namespace grpc {
 namespace testing {

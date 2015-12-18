@@ -46,16 +46,16 @@
 
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
-#include "test/cpp/util/echo_duplicate.grpc.pb.h"
-#include "test/cpp/util/echo.grpc.pb.h"
+#include "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h"
+#include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/cpp/util/string_ref_helper.h"
 
 #ifdef GPR_POSIX_SOCKET
 #include "src/core/iomgr/pollset_posix.h"
 #endif
 
-using grpc::cpp::test::util::EchoRequest;
-using grpc::cpp::test::util::EchoResponse;
+using grpc::testing::EchoRequest;
+using grpc::testing::EchoResponse;
 using std::chrono::system_clock;
 
 namespace grpc {
@@ -186,7 +186,7 @@ class AsyncEnd2endTest : public ::testing::TestWithParam<bool> {
     build_bad.AddListeningPort(server_address_.str(),
                                grpc::InsecureServerCredentials());
     build_bad.RegisterAsyncService(&service_);
-    grpc::cpp::test::util::TestService::Service sync_service;
+    grpc::testing::TestService::Service sync_service;
     build_bad.RegisterService(&sync_service);
     GPR_ASSERT(build_bad.BuildAndStart() == nullptr);
 
@@ -211,7 +211,7 @@ class AsyncEnd2endTest : public ::testing::TestWithParam<bool> {
   void ResetStub() {
     std::shared_ptr<Channel> channel =
         CreateChannel(server_address_.str(), InsecureChannelCredentials());
-    stub_ = grpc::cpp::test::util::TestService::NewStub(channel);
+    stub_ = grpc::testing::TestService::NewStub(channel);
   }
 
   void SendRpc(int num_rpcs) {
@@ -249,9 +249,9 @@ class AsyncEnd2endTest : public ::testing::TestWithParam<bool> {
   }
 
   std::unique_ptr<ServerCompletionQueue> cq_;
-  std::unique_ptr<grpc::cpp::test::util::TestService::Stub> stub_;
+  std::unique_ptr<grpc::testing::TestService::Stub> stub_;
   std::unique_ptr<Server> server_;
-  grpc::cpp::test::util::TestService::AsyncService service_;
+  grpc::testing::TestService::AsyncService service_;
   std::ostringstream server_address_;
 };
 
@@ -761,8 +761,8 @@ TEST_P(AsyncEnd2endTest, ServerCheckDone) {
 TEST_P(AsyncEnd2endTest, UnimplementedRpc) {
   std::shared_ptr<Channel> channel =
       CreateChannel(server_address_.str(), InsecureChannelCredentials());
-  std::unique_ptr<grpc::cpp::test::util::UnimplementedService::Stub> stub;
-  stub = grpc::cpp::test::util::UnimplementedService::NewStub(channel);
+  std::unique_ptr<grpc::testing::UnimplementedService::Stub> stub;
+  stub = grpc::testing::UnimplementedService::NewStub(channel);
   EchoRequest send_request;
   EchoResponse recv_response;
   Status recv_status;

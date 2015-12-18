@@ -151,13 +151,13 @@
     <ClInclude Include="..\..\..\..\test\cpp\util\metrics_server.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\..\test\proto\metrics.pb.cc">
+    <ClCompile Include="..\..\..\..\src\proto\grpc\testing\metrics.pb.cc">
     </ClCompile>
-    <ClInclude Include="..\..\..\..\test\proto\metrics.pb.h">
+    <ClInclude Include="..\..\..\..\src\proto\grpc\testing\metrics.pb.h">
     </ClInclude>
-    <ClCompile Include="..\..\..\..\test\proto\metrics.grpc.pb.cc">
+    <ClCompile Include="..\..\..\..\src\proto\grpc\testing\metrics.grpc.pb.cc">
     </ClCompile>
-    <ClInclude Include="..\..\..\..\test\proto\metrics.grpc.pb.h">
+    <ClInclude Include="..\..\..\..\src\proto\grpc\testing\metrics.grpc.pb.h">
     </ClInclude>
     <ClCompile Include="..\..\..\..\test\cpp\interop\metrics_client.cc">
     </ClCompile>

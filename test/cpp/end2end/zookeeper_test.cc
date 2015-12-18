@@ -44,17 +44,16 @@
 
 #include "test/core/util/test_config.h"
 #include "test/core/util/port.h"
-#include "test/cpp/util/echo.grpc.pb.h"
+#include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "src/core/support/env.h"
 
-using grpc::cpp::test::util::EchoRequest;
-using grpc::cpp::test::util::EchoResponse;
+using grpc::testing::EchoRequest;
+using grpc::testing::EchoResponse;
 
 namespace grpc {
 namespace testing {
 
-class ZookeeperTestServiceImpl
-    : public ::grpc::cpp::test::util::TestService::Service {
+class ZookeeperTestServiceImpl : public ::grpc::testing::TestService::Service {
  public:
   Status Echo(ServerContext* context, const EchoRequest* request,
               EchoResponse* response) GRPC_OVERRIDE {
@@ -158,7 +157,7 @@ class ZookeeperTest : public ::testing::Test {
   void ResetStub() {
     string target = "zookeeper://" + zookeeper_address_ + "/test";
     channel_ = CreateChannel(target, InsecureChannelCredentials());
-    stub_ = std::move(grpc::cpp::test::util::TestService::NewStub(channel_));
+    stub_ = std::move(grpc::testing::TestService::NewStub(channel_));
   }
 
   string to_string(const int number) {
@@ -168,7 +167,7 @@ class ZookeeperTest : public ::testing::Test {
   }
 
   std::shared_ptr<Channel> channel_;
-  std::unique_ptr<grpc::cpp::test::util::TestService::Stub> stub_;
+  std::unique_ptr<grpc::testing::TestService::Stub> stub_;
   std::unique_ptr<Server> server1_;
   std::unique_ptr<Server> server2_;
   ZookeeperTestServiceImpl service_;
