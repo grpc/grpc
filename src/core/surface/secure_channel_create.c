@@ -93,6 +93,7 @@ static void on_secure_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
                                      grpc_auth_context *auth_context) {
   connector *c = arg;
   grpc_closure *notify;
+  grpc_channel_args *args_copy = NULL;
   gpr_mu_lock(&c->mu);
   if (c->connecting_endpoint == NULL) {
     memset(c->result, 0, sizeof(*c->result));
@@ -103,18 +104,17 @@ static void on_secure_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
     c->connecting_endpoint = NULL;
     gpr_mu_unlock(&c->mu);
   } else {
+    grpc_arg auth_context_arg;
     c->connecting_endpoint = NULL;
     gpr_mu_unlock(&c->mu);
-    {
-      grpc_arg auth_context_arg = grpc_auth_context_to_arg(auth_context);
-      grpc_channel_args *args_copy = grpc_channel_args_copy_and_add(
-          c->args.channel_args, &auth_context_arg, 1);
-      c->result->transport = grpc_create_chttp2_transport(
-          exec_ctx, args_copy, secure_endpoint, 1);
-      grpc_channel_args_destroy(args_copy);
-    }
+    c->result->transport = grpc_create_chttp2_transport(
+        exec_ctx, c->args.channel_args, secure_endpoint, 1);
     grpc_chttp2_transport_start_reading(exec_ctx, c->result->transport, NULL,
                                         0);
+    auth_context_arg = grpc_auth_context_to_arg(auth_context);
+    args_copy = grpc_channel_args_copy_and_add(c->args.channel_args,
+                                               &auth_context_arg, 1);
+    c->result->channel_args = args_copy;
     c->result->filters = gpr_malloc(sizeof(grpc_channel_filter *) * 2);
     c->result->filters[0] = &grpc_http_client_filter;
     c->result->filters[1] = &grpc_client_auth_filter;
@@ -122,7 +122,9 @@ static void on_secure_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
   }
   notify = c->notify;
   c->notify = NULL;
+  /* look at c->args which are connector args. */
   notify->cb(exec_ctx, notify->cb_arg, 1);
+  if (args_copy != NULL) grpc_channel_args_destroy(args_copy);
 }
 
 static void on_initial_connect_string_sent(grpc_exec_ctx *exec_ctx, void *arg,
