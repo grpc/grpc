@@ -179,8 +179,8 @@ void grpc_server_credentials_set_auth_metadata_processor(
   GRPC_API_TRACE(
       "grpc_server_credentials_set_auth_metadata_processor("
       "creds=%p, "
-      "processor=grpc_auth_metadata_processor { process: %lx, state: %p })",
-      3, (creds, (unsigned long)processor.process, processor.state));
+      "processor=grpc_auth_metadata_processor { process: %p, state: %p })",
+      3, (creds, (void*)(gpr_intptr)processor.process, processor.state));
   if (creds == NULL) return;
   if (creds->processor.destroy != NULL && creds->processor.state != NULL) {
     creds->processor.destroy(creds->processor.state);
