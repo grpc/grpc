@@ -111,7 +111,9 @@ abstract class AbstractGeneratedCodeTest extends PHPUnit_Framework_TestCase
      */
     public function testInvalidMethodName()
     {
-        $invalid_client = new DummyInvalidClient('host', []);
+        $invalid_client = new DummyInvalidClient('host', [
+            'credentials' => Grpc\ChannelCredentials::createInsecure(),
+        ]);
         $div_arg = new math\DivArgs();
         $invalid_client->InvalidUnaryCall($div_arg);
     }
