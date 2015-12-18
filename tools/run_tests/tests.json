@@ -19646,7 +19646,9 @@
       "posix", 
       "windows"
     ], 
-    "exclude_configs": [], 
+    "exclude_configs": [
+      "asan"
+    ], 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_aes_test", 
@@ -19666,7 +19668,9 @@
       "posix", 
       "windows"
     ], 
-    "exclude_configs": [], 
+    "exclude_configs": [
+      "asan"
+    ], 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_base64_test", 
@@ -19686,7 +19690,9 @@
       "posix", 
       "windows"
     ], 
-    "exclude_configs": [], 
+    "exclude_configs": [
+      "asan"
+    ], 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_bio_test", 
@@ -19706,7 +19712,9 @@
       "posix", 
       "windows"
     ], 
-    "exclude_configs": [], 
+    "exclude_configs": [
+      "asan"
+    ], 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_bn_test", 
@@ -19726,7 +19734,9 @@
       "posix", 
       "windows"
     ], 
-    "exclude_configs": [], 
+    "exclude_configs": [
+      "asan"
+    ], 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_bytestring_test", 
@@ -19749,7 +19759,9 @@
       "posix", 
       "windows"
     ], 
-    "exclude_configs": [], 
+    "exclude_configs": [
+      "asan"
+    ], 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_aead_test", 
@@ -19772,7 +19784,9 @@
       "posix", 
       "windows"
     ], 
-    "exclude_configs": [], 
+    "exclude_configs": [
+      "asan"
+    ], 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_aead_test", 
@@ -19795,7 +19809,9 @@
       "posix", 
       "windows"
     ], 
-    "exclude_configs": [], 
+    "exclude_configs": [
+      "asan"
+    ], 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_aead_test", 
@@ -19818,7 +19834,9 @@
       "posix", 
       "windows"
     ], 
-    "exclude_configs": [], 
+    "exclude_configs": [
+      "asan"
+    ], 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_aead_test", 
@@ -19841,7 +19859,9 @@
       "posix", 
       "windows"
     ], 
-    "exclude_configs": [], 
+    "exclude_configs": [
+      "asan"
+    ], 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_aead_test", 
@@ -19864,7 +19884,9 @@
       "posix", 
       "windows"
     ], 
-    "exclude_configs": [], 
+    "exclude_configs": [
+      "asan"
+    ], 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_aead_test", 
@@ -19887,7 +19909,9 @@
       "posix", 
       "windows"
     ], 
-    "exclude_configs": [], 
+    "exclude_configs": [
+      "asan"
+    ], 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_aead_test", 
@@ -19910,7 +19934,9 @@
       "posix", 
       "windows"
     ], 
-    "exclude_configs": [], 
+    "exclude_configs": [
+      "asan"
+    ], 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_aead_test", 
@@ -19933,7 +19959,9 @@
       "posix", 
       "windows"
     ], 
-    "exclude_configs": [], 
+    "exclude_configs": [
+      "asan"
+    ], 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_aead_test", 
@@ -19956,7 +19984,9 @@
       "posix", 
       "windows"
     ], 
-    "exclude_configs": [], 
+    "exclude_configs": [
+      "asan"
+    ], 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_aead_test", 
@@ -19979,7 +20009,9 @@
       "posix", 
       "windows"
     ], 
-    "exclude_configs": [], 
+    "exclude_configs": [
+      "asan"
+    ], 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_aead_test", 
@@ -20002,7 +20034,9 @@
       "posix", 
       "windows"
     ], 
-    "exclude_configs": [], 
+    "exclude_configs": [
+      "asan"
+    ], 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_aead_test", 
@@ -20025,7 +20059,9 @@
       "posix", 
       "windows"
     ], 
-    "exclude_configs": [], 
+    "exclude_configs": [
+      "asan"
+    ], 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_aead_test", 
@@ -20048,7 +20084,9 @@
       "posix", 
       "windows"
     ], 
-    "exclude_configs": [], 
+    "exclude_configs": [
+      "asan"
+    ], 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_aead_test", 
@@ -20071,7 +20109,9 @@
       "posix", 
       "windows"
     ], 
-    "exclude_configs": [], 
+    "exclude_configs": [
+      "asan"
+    ], 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_aead_test", 
@@ -20094,7 +20134,9 @@
       "posix", 
       "windows"
     ], 
-    "exclude_configs": [], 
+    "exclude_configs": [
+      "asan"
+    ], 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_aead_test", 
@@ -20117,7 +20159,9 @@
       "posix", 
       "windows"
     ], 
-    "exclude_configs": [], 
+    "exclude_configs": [
+      "asan"
+    ], 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_aead_test", 
@@ -20140,7 +20184,9 @@
       "posix", 
       "windows"
     ], 
-    "exclude_configs": [], 
+    "exclude_configs": [
+      "asan"
+    ], 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_aead_test", 
@@ -20163,7 +20209,9 @@
       "posix", 
       "windows"
     ], 
-    "exclude_configs": [], 
+    "exclude_configs": [
+      "asan"
+    ], 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_aead_test", 
@@ -20186,7 +20234,9 @@
       "posix", 
       "windows"
     ], 
-    "exclude_configs": [], 
+    "exclude_configs": [
+      "asan"
+    ], 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_aead_test", 
@@ -20209,7 +20259,9 @@
       "posix", 
       "windows"
     ], 
-    "exclude_configs": [], 
+    "exclude_configs": [
+      "asan"
+    ], 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_aead_test", 
@@ -20232,7 +20284,9 @@
       "posix", 
       "windows"
     ], 
-    "exclude_configs": [], 
+    "exclude_configs": [
+      "asan"
+    ], 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_aead_test", 
@@ -20255,7 +20309,9 @@
       "posix", 
       "windows"
     ], 
-    "exclude_configs": [], 
+    "exclude_configs": [
+      "asan"
+    ], 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_aead_test", 
@@ -20278,7 +20334,9 @@
       "posix", 
       "windows"
     ], 
-    "exclude_configs": [], 
+    "exclude_configs": [
+      "asan"
+    ], 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_aead_test", 
@@ -20300,7 +20358,9 @@
       "posix", 
       "windows"
     ], 
-    "exclude_configs": [], 
+    "exclude_configs": [
+      "asan"
+    ], 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_cipher_test", 
@@ -20320,7 +20380,9 @@
       "posix", 
       "windows"
     ], 
-    "exclude_configs": [], 
+    "exclude_configs": [
+      "asan"
+    ], 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_cmac_test", 
@@ -20340,7 +20402,9 @@
       "posix", 
       "windows"
     ], 
-    "exclude_configs": [], 
+    "exclude_configs": [
+      "asan"
+    ], 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_constant_time_test", 
@@ -20362,7 +20426,9 @@
       "posix", 
       "windows"
     ], 
-    "exclude_configs": [], 
+    "exclude_configs": [
+      "asan"
+    ], 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_ed25519_test", 
@@ -20382,7 +20448,9 @@
       "posix", 
       "windows"
     ], 
-    "exclude_configs": [], 
+    "exclude_configs": [
+      "asan"
+    ], 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_x25519_test", 
@@ -20402,7 +20470,9 @@
       "posix", 
       "windows"
     ], 
-    "exclude_configs": [], 
+    "exclude_configs": [
+      "asan"
+    ], 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_dh_test", 
@@ -20422,7 +20492,9 @@
       "posix", 
       "windows"
     ], 
-    "exclude_configs": [], 
+    "exclude_configs": [
+      "asan"
+    ], 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_digest_test", 
@@ -20442,7 +20514,9 @@
       "posix", 
       "windows"
     ], 
-    "exclude_configs": [], 
+    "exclude_configs": [
+      "asan"
+    ], 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_dsa_test", 
@@ -20462,7 +20536,9 @@
       "posix", 
       "windows"
     ], 
-    "exclude_configs": [], 
+    "exclude_configs": [
+      "asan"
+    ], 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_ec_test", 
@@ -20482,7 +20558,9 @@
       "posix", 
       "windows"
     ], 
-    "exclude_configs": [], 
+    "exclude_configs": [
+      "asan"
+    ], 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_example_mul", 
@@ -20502,7 +20580,9 @@
       "posix", 
       "windows"
     ], 
-    "exclude_configs": [], 
+    "exclude_configs": [
+      "asan"
+    ], 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_ecdsa_test", 
@@ -20522,7 +20602,9 @@
       "posix", 
       "windows"
     ], 
-    "exclude_configs": [], 
+    "exclude_configs": [
+      "asan"
+    ], 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_err_test", 
@@ -20542,7 +20624,9 @@
       "posix", 
       "windows"
     ], 
-    "exclude_configs": [], 
+    "exclude_configs": [
+      "asan"
+    ], 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_evp_extra_test", 
@@ -20564,7 +20648,9 @@
       "posix", 
       "windows"
     ], 
-    "exclude_configs": [], 
+    "exclude_configs": [
+      "asan"
+    ], 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_evp_test", 
@@ -20584,7 +20670,9 @@
       "posix", 
       "windows"
     ], 
-    "exclude_configs": [], 
+    "exclude_configs": [
+      "asan"
+    ], 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_pbkdf_test", 
@@ -20604,7 +20692,9 @@
       "posix", 
       "windows"
     ], 
-    "exclude_configs": [], 
+    "exclude_configs": [
+      "asan"
+    ], 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_hkdf_test", 
@@ -20626,7 +20716,9 @@
       "posix", 
       "windows"
     ], 
-    "exclude_configs": [], 
+    "exclude_configs": [
+      "asan"
+    ], 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_hmac_test", 
@@ -20646,7 +20738,9 @@
       "posix", 
       "windows"
     ], 
-    "exclude_configs": [], 
+    "exclude_configs": [
+      "asan"
+    ], 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_lhash_test", 
@@ -20666,7 +20760,9 @@
       "posix", 
       "windows"
     ], 
-    "exclude_configs": [], 
+    "exclude_configs": [
+      "asan"
+    ], 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_gcm_test", 
@@ -20686,7 +20782,9 @@
       "posix", 
       "windows"
     ], 
-    "exclude_configs": [], 
+    "exclude_configs": [
+      "asan"
+    ], 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_pkcs8_test", 
@@ -20706,7 +20804,9 @@
       "posix", 
       "windows"
     ], 
-    "exclude_configs": [], 
+    "exclude_configs": [
+      "asan"
+    ], 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_pkcs12_test", 
@@ -20728,7 +20828,9 @@
       "posix", 
       "windows"
     ], 
-    "exclude_configs": [], 
+    "exclude_configs": [
+      "asan"
+    ], 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_poly1305_test", 
@@ -20748,7 +20850,9 @@
       "posix", 
       "windows"
     ], 
-    "exclude_configs": [], 
+    "exclude_configs": [
+      "asan"
+    ], 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_refcount_test", 
@@ -20768,7 +20872,9 @@
       "posix", 
       "windows"
     ], 
-    "exclude_configs": [], 
+    "exclude_configs": [
+      "asan"
+    ], 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_rsa_test", 
@@ -20788,7 +20894,9 @@
       "posix", 
       "windows"
     ], 
-    "exclude_configs": [], 
+    "exclude_configs": [
+      "asan"
+    ], 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_thread_test", 
@@ -20808,7 +20916,9 @@
       "posix", 
       "windows"
     ], 
-    "exclude_configs": [], 
+    "exclude_configs": [
+      "asan"
+    ], 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_pkcs7_test", 
@@ -20828,7 +20938,9 @@
       "posix", 
       "windows"
     ], 
-    "exclude_configs": [], 
+    "exclude_configs": [
+      "asan"
+    ], 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_tab_test", 
@@ -20848,7 +20960,9 @@
       "posix", 
       "windows"
     ], 
-    "exclude_configs": [], 
+    "exclude_configs": [
+      "asan"
+    ], 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_v3name_test", 
@@ -20868,7 +20982,9 @@
       "posix", 
       "windows"
     ], 
-    "exclude_configs": [], 
+    "exclude_configs": [
+      "asan"
+    ], 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_pqueue_test", 
@@ -20888,7 +21004,9 @@
       "posix", 
       "windows"
     ], 
-    "exclude_configs": [], 
+    "exclude_configs": [
+      "asan"
+    ], 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_ssl_test", 
