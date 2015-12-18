@@ -493,7 +493,8 @@ static void publish_transport(grpc_exec_ctx *exec_ctx, grpc_subchannel *c) {
   con = gpr_malloc(channel_stack_size);
   stk = CHANNEL_STACK_FROM_CONNECTION(con);
   grpc_channel_stack_init(exec_ctx, 1, connection_destroy, con, filters,
-                          num_filters, c->args, "CONNECTED_SUBCHANNEL", stk);
+                          num_filters, c->connecting_result.channel_args,
+                          "CONNECTED_SUBCHANNEL", stk);
   grpc_connected_channel_bind_transport(stk, c->connecting_result.transport);
   gpr_free((void *)c->connecting_result.filters);
   memset(&c->connecting_result, 0, sizeof(c->connecting_result));

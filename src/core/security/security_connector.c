@@ -124,25 +124,26 @@ void grpc_security_connector_do_handshake(grpc_exec_ctx *exec_ctx,
                                           grpc_security_handshake_done_cb cb,
                                           void *user_data) {
   if (sc == NULL || nonsecure_endpoint == NULL) {
-    cb(exec_ctx, user_data, GRPC_SECURITY_ERROR, NULL);
+    cb(exec_ctx, user_data, GRPC_SECURITY_ERROR, NULL, NULL);
   } else {
     sc->vtable->do_handshake(exec_ctx, sc, nonsecure_endpoint, cb, user_data);
   }
 }
 
-grpc_security_status grpc_security_connector_check_peer(
-    grpc_security_connector *sc, tsi_peer peer, grpc_security_check_cb cb,
-    void *user_data) {
+void grpc_security_connector_check_peer(
+    grpc_exec_ctx *exec_ctx, grpc_security_connector *sc, tsi_peer peer,
+    grpc_security_peer_check_cb cb, void *user_data) {
   if (sc == NULL) {
     tsi_peer_destruct(&peer);
-    return GRPC_SECURITY_ERROR;
+    cb(exec_ctx, user_data, GRPC_SECURITY_ERROR, NULL);
+  } else {
+    sc->vtable->check_peer(exec_ctx, sc, peer, cb, user_data);
   }
-  return sc->vtable->check_peer(sc, peer, cb, user_data);
 }
 
 grpc_security_status grpc_channel_security_connector_check_call_host(
     grpc_exec_ctx *exec_ctx, grpc_channel_security_connector *sc,
-    const char *host, grpc_security_check_cb cb, void *user_data) {
+    const char *host, grpc_security_call_host_check_cb cb, void *user_data) {
   if (sc == NULL || sc->check_call_host == NULL) return GRPC_SECURITY_ERROR;
   return sc->check_call_host(exec_ctx, sc, host, cb, user_data);
 }
@@ -229,22 +230,20 @@ typedef struct {
 static void fake_channel_destroy(grpc_security_connector *sc) {
   grpc_channel_security_connector *c = (grpc_channel_security_connector *)sc;
   grpc_call_credentials_unref(c->request_metadata_creds);
-  GRPC_AUTH_CONTEXT_UNREF(sc->auth_context, "connector");
   gpr_free(sc);
 }
 
 static void fake_server_destroy(grpc_security_connector *sc) {
-  GRPC_AUTH_CONTEXT_UNREF(sc->auth_context, "connector");
   gpr_mu_destroy(&sc->mu);
   gpr_free(sc);
 }
 
-static grpc_security_status fake_check_peer(grpc_security_connector *sc,
-                                            tsi_peer peer,
-                                            grpc_security_check_cb cb,
-                                            void *user_data) {
+static void fake_check_peer(grpc_exec_ctx *exec_ctx,
+                            grpc_security_connector *sc, tsi_peer peer,
+                            grpc_security_peer_check_cb cb, void *user_data) {
   const char *prop_name;
   grpc_security_status status = GRPC_SECURITY_OK;
+  grpc_auth_context *auth_context = NULL;
   if (peer.property_count != 1) {
     gpr_log(GPR_ERROR, "Fake peers should only have 1 property.");
     status = GRPC_SECURITY_ERROR;
@@ -264,20 +263,20 @@ static grpc_security_status fake_check_peer(grpc_security_connector *sc,
     status = GRPC_SECURITY_ERROR;
     goto end;
   }
-  GRPC_AUTH_CONTEXT_UNREF(sc->auth_context, "connector");
-  sc->auth_context = grpc_auth_context_create(NULL);
+  auth_context = grpc_auth_context_create(NULL);
   grpc_auth_context_add_cstring_property(
-      sc->auth_context, GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME,
+      auth_context, GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME,
       GRPC_FAKE_TRANSPORT_SECURITY_TYPE);
 
 end:
+  cb(exec_ctx, user_data, status, auth_context);
   tsi_peer_destruct(&peer);
-  return status;
+  grpc_auth_context_unref(auth_context);
 }
 
 static grpc_security_status fake_channel_check_call_host(
     grpc_exec_ctx *exec_ctx, grpc_channel_security_connector *sc,
-    const char *host, grpc_security_check_cb cb, void *user_data) {
+    const char *host, grpc_security_call_host_check_cb cb, void *user_data) {
   grpc_fake_channel_security_connector *c =
       (grpc_fake_channel_security_connector *)sc;
   if (c->call_host_check_is_async) {
@@ -347,6 +346,8 @@ typedef struct {
   tsi_ssl_handshaker_factory *handshaker_factory;
   char *target_name;
   char *overridden_target_name;
+  /* TODO(jboeuf): Remove this: the security connector is channel-wide construct
+     as opposed to the peer which is for one transport (or sub-channel). */
   tsi_peer peer;
 } grpc_ssl_channel_security_connector;
 
@@ -365,7 +366,6 @@ static void ssl_channel_destroy(grpc_security_connector *sc) {
   if (c->target_name != NULL) gpr_free(c->target_name);
   if (c->overridden_target_name != NULL) gpr_free(c->overridden_target_name);
   tsi_peer_destruct(&c->peer);
-  GRPC_AUTH_CONTEXT_UNREF(sc->auth_context, "connector");
   gpr_free(sc);
 }
 
@@ -376,7 +376,6 @@ static void ssl_server_destroy(grpc_security_connector *sc) {
   if (c->handshaker_factory != NULL) {
     tsi_ssl_handshaker_factory_destroy(c->handshaker_factory);
   }
-  GRPC_AUTH_CONTEXT_UNREF(sc->auth_context, "connector");
   gpr_mu_destroy(&sc->mu);
   gpr_free(sc);
 }
@@ -410,7 +409,7 @@ static void ssl_channel_do_handshake(grpc_exec_ctx *exec_ctx,
                                         : c->target_name,
       &handshaker);
   if (status != GRPC_SECURITY_OK) {
-    cb(exec_ctx, user_data, status, NULL);
+    cb(exec_ctx, user_data, status, NULL, NULL);
   } else {
     grpc_do_security_handshake(exec_ctx, handshaker, sc, nonsecure_endpoint, cb,
                                user_data);
@@ -428,7 +427,7 @@ static void ssl_server_do_handshake(grpc_exec_ctx *exec_ctx,
   grpc_security_status status =
       ssl_create_handshaker(c->handshaker_factory, 0, NULL, &handshaker);
   if (status != GRPC_SECURITY_OK) {
-    cb(exec_ctx, user_data, status, NULL);
+    cb(exec_ctx, user_data, status, NULL, NULL);
   } else {
     grpc_do_security_handshake(exec_ctx, handshaker, sc, nonsecure_endpoint, cb,
                                user_data);
@@ -488,7 +487,8 @@ grpc_auth_context *tsi_ssl_peer_to_auth_context(const tsi_peer *peer) {
 
 static grpc_security_status ssl_check_peer(grpc_security_connector *sc,
                                            const char *peer_name,
-                                           const tsi_peer *peer) {
+                                           const tsi_peer *peer,
+                                           grpc_auth_context **auth_context) {
   /* Check the ALPN. */
   const tsi_peer_property *p =
       tsi_peer_get_property_by_name(peer, TSI_SSL_ALPN_SELECTED_PROTOCOL);
@@ -506,41 +506,40 @@ static grpc_security_status ssl_check_peer(grpc_security_connector *sc,
     gpr_log(GPR_ERROR, "Peer name %s is not in peer certificate", peer_name);
     return GRPC_SECURITY_ERROR;
   }
-  if (sc->auth_context != NULL) {
-    GRPC_AUTH_CONTEXT_UNREF(sc->auth_context, "connector");
-  }
-  sc->auth_context = tsi_ssl_peer_to_auth_context(peer);
+  *auth_context = tsi_ssl_peer_to_auth_context(peer);
   return GRPC_SECURITY_OK;
 }
 
-static grpc_security_status ssl_channel_check_peer(grpc_security_connector *sc,
-                                                   tsi_peer peer,
-                                                   grpc_security_check_cb cb,
-                                                   void *user_data) {
+static void ssl_channel_check_peer(
+    grpc_exec_ctx *exec_ctx, grpc_security_connector *sc, tsi_peer peer,
+    grpc_security_peer_check_cb cb, void *user_data) {
   grpc_ssl_channel_security_connector *c =
       (grpc_ssl_channel_security_connector *)sc;
   grpc_security_status status;
+  grpc_auth_context *auth_context = NULL;
   tsi_peer_destruct(&c->peer);
   c->peer = peer;
   status = ssl_check_peer(sc, c->overridden_target_name != NULL
                                   ? c->overridden_target_name
                                   : c->target_name,
-                          &peer);
-  return status;
+                          &peer, &auth_context);
+  cb(exec_ctx, user_data, status, auth_context);
+  grpc_auth_context_unref(auth_context);
 }
 
-static grpc_security_status ssl_server_check_peer(grpc_security_connector *sc,
-                                                  tsi_peer peer,
-                                                  grpc_security_check_cb cb,
-                                                  void *user_data) {
-  grpc_security_status status = ssl_check_peer(sc, NULL, &peer);
+static void ssl_server_check_peer(
+    grpc_exec_ctx *exec_ctx, grpc_security_connector *sc, tsi_peer peer,
+    grpc_security_peer_check_cb cb, void *user_data) {
+  grpc_auth_context *auth_context = NULL;
+  grpc_security_status status = ssl_check_peer(sc, NULL, &peer, &auth_context);
   tsi_peer_destruct(&peer);
-  return status;
+  cb(exec_ctx, user_data, status, auth_context);
+  grpc_auth_context_unref(auth_context);
 }
 
 static grpc_security_status ssl_channel_check_call_host(
     grpc_exec_ctx *exec_ctx, grpc_channel_security_connector *sc,
-    const char *host, grpc_security_check_cb cb, void *user_data) {
+    const char *host, grpc_security_call_host_check_cb cb, void *user_data) {
   grpc_ssl_channel_security_connector *c =
       (grpc_ssl_channel_security_connector *)sc;
 
