@@ -84,7 +84,8 @@ static void httpcli_ssl_do_handshake(grpc_exec_ctx *exec_ctx,
 }
 
 static void httpcli_ssl_check_peer(grpc_exec_ctx *exec_ctx,
-                                   grpc_security_connector *sc, tsi_peer peer,
+                                   grpc_security_connector *sc,
+                                   tsi_peer peer,
                                    grpc_security_peer_check_cb cb,
                                    void *user_data) {
   grpc_httpcli_ssl_channel_security_connector *c =
@@ -98,8 +99,8 @@ static void httpcli_ssl_check_peer(grpc_exec_ctx *exec_ctx,
             c->secure_peer_name);
     status = GRPC_SECURITY_ERROR;
   }
-  tsi_peer_destruct(&peer);
   cb(exec_ctx, user_data, status, NULL);
+  tsi_peer_destruct(&peer);
 }
 
 static grpc_security_connector_vtable httpcli_ssl_vtable = {
