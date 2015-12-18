@@ -44,8 +44,9 @@ int grpc_byte_stream_next(grpc_exec_ctx *exec_ctx,
                            on_complete);
 }
 
-void grpc_byte_stream_destroy(grpc_byte_stream *byte_stream) {
-  byte_stream->destroy(byte_stream);
+void grpc_byte_stream_destroy(grpc_exec_ctx *exec_ctx,
+                              grpc_byte_stream *byte_stream) {
+  byte_stream->destroy(exec_ctx, byte_stream);
 }
 
 /* slice_buffer_stream */
@@ -61,7 +62,8 @@ static int slice_buffer_stream_next(grpc_exec_ctx *exec_ctx,
   return 1;
 }
 
-static void slice_buffer_stream_destroy(grpc_byte_stream *byte_stream) {}
+static void slice_buffer_stream_destroy(grpc_exec_ctx *exec_ctx,
+                                        grpc_byte_stream *byte_stream) {}
 
 void grpc_slice_buffer_stream_init(grpc_slice_buffer_stream *stream,
                                    gpr_slice_buffer *slice_buffer,
