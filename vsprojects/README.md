@@ -22,9 +22,6 @@ After that, you can build the solution using one of these options:
 #Making a Project that uses GRPC
 Include zlib/OpenSSL libraries and GRPC headers/libraries in your project in the C/C++ option `Additional Include Directories` and Linker option `Additional Library Directories`.  Open grpc.sln and find "edit..." in the drop down for Additional Include Directories for example settings (under "inherited values" which is what the project gets from its .props file).
 
-Gotcha: GRPC is built with `/D "_USE_32BIT_TIME_T"`.  Building a dependent project without this option will cause some odd behavior.  This option has a conflict on VS 2013 and earlier with std::chrono, so if you need std::chrono a possible workaround is to build both library and dependent project with the option removed.
-
-
 #C++ Test Dependencies
  * open gtest.sln in `/third_party/googletest/msvc`
   * opening this in vs2013 will prompt an upgrade notice
@@ -65,7 +62,7 @@ Gotcha: GRPC is built with `/D "_USE_32BIT_TIME_T"`.  Building a dependent proje
 
 It can be helpful to disable the firewall when running tests so that connection warnings don't pop up.
 
-Individual tests can be run by directly running the executable in `/vsprojects/Relase/` (this is `/bins/opt/` on linux).  Many C tests have no output; they either pass or fail internally and communicate this with their exit code (`0=pass`, `nonzero=fail`)
+Individual tests can be run by directly running the executable in `/vsprojects/Release/` (this is `/bins/opt/` on linux).  Many C tests have no output; they either pass or fail internally and communicate this with their exit code (`0=pass`, `nonzero=fail`)
 
 `run_tests.py` will fail if it can't build something, so not-building tests are disabled for windows in build.yaml.
 
