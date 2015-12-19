@@ -6564,11 +6564,15 @@ $(LIBDIR)/$(CONFIG)/libgrpc.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(LIBGRPC_OBJS)
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc.a
 	$(Q) $(AR) rcs $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBGRPC_OBJS)
 	$(Q) rm -rf $(BUILDDIR_ABSOLUTE)/tmp-merge-grpc
-	$(Q) mkdir $(BUILDDIR_ABSOLUTE)/tmp-merge-grpc
-	$(Q) ( cd $(BUILDDIR_ABSOLUTE)/tmp-merge-grpc ; $(AR) x $(LIBDIR)/$(CONFIG)/libgrpc.a )
-	$(Q) for l in $(OPENSSL_MERGE_LIBS) ; do ( cd $(BUILDDIR_ABSOLUTE)/tmp-merge-grpc ; ar x $${l} ) ; done
-	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc.a $(BUILDDIR_ABSOLUTE)/tmp-merge-grpc/__.SYMDEF*
-	$(Q) ar rcs $(LIBDIR)/$(CONFIG)/libgrpc.a $(BUILDDIR_ABSOLUTE)/tmp-merge-grpc/*
+	$(Q) ( mkdir -p $(BUILDDIR_ABSOLUTE)/tmp-merge-grpc/grpc ; \
+	       cd $(BUILDDIR_ABSOLUTE)/tmp-merge-grpc/grpc ; \
+	       $(AR) x $(LIBDIR)/$(CONFIG)/libgrpc.a )
+	$(Q) for l in $(OPENSSL_MERGE_LIBS) ; do ( \
+	       mkdir -p $(BUILDDIR_ABSOLUTE)/tmp-merge-grpc/ssl ; \
+	       cd $(BUILDDIR_ABSOLUTE)/tmp-merge-grpc/ssl ; \
+	       $(AR) x $${l} ) ; done
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc.a $(BUILDDIR_ABSOLUTE)/tmp-merge-grpc/*/__.SYMDEF*
+	$(Q) ar rcs $(LIBDIR)/$(CONFIG)/libgrpc.a $(BUILDDIR_ABSOLUTE)/tmp-merge-grpc/*/*
 	$(Q) rm -rf $(BUILDDIR_ABSOLUTE)/tmp-merge-grpc
 ifeq ($(SYSTEM),Darwin)
 	$(Q) ranlib $(LIBDIR)/$(CONFIG)/libgrpc.a
