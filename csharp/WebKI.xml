@@ -8,6 +8,7 @@
   </HelpKINode>
   <HelpKINode Title="AddMethod method" Url="html/Overload_Grpc_Core_ServerServiceDefinition_Builder_AddMethod.htm" />
   <HelpKINode Title="AlreadyExists enumeration member" Url="html/T_Grpc_Core_StatusCode.htm" />
+  <HelpKINode Title="AsyncAuthInterceptor delegate" Url="html/T_Grpc_Core_AsyncAuthInterceptor.htm" />
   <HelpKINode Title="AsyncClientStreamingCall(Of TRequest, TResponse) class">
     <HelpKINode Title="AsyncClientStreamingCall(TRequest, TResponse) Class" Url="html/T_Grpc_Core_AsyncClientStreamingCall_2.htm" />
     <HelpKINode Title="about AsyncClientStreamingCall(Of TRequest, TResponse) class" Url="html/T_Grpc_Core_AsyncClientStreamingCall_2.htm" />
@@ -122,13 +123,16 @@
   <HelpKINode Title="AsyncUnaryCall&lt;TResponse&gt;.GetTrailers method" Url="html/M_Grpc_Core_AsyncUnaryCall_1_GetTrailers.htm" />
   <HelpKINode Title="AsyncUnaryCall&lt;TResponse&gt;.ResponseAsync property" Url="html/P_Grpc_Core_AsyncUnaryCall_1_ResponseAsync.htm" />
   <HelpKINode Title="AsyncUnaryCall&lt;TResponse&gt;.ResponseHeadersAsync property" Url="html/P_Grpc_Core_AsyncUnaryCall_1_ResponseHeadersAsync.htm" />
-  <HelpKINode Title="AuthInterceptors class">
-    <HelpKINode Title="AuthInterceptors Class" Url="html/T_Grpc_Auth_AuthInterceptors.htm" />
-    <HelpKINode Title="about AuthInterceptors class" Url="html/T_Grpc_Auth_AuthInterceptors.htm" />
-    <HelpKINode Title="methods" Url="html/Methods_T_Grpc_Auth_AuthInterceptors.htm" />
+  <HelpKINode Title="AuthInterceptorContext class">
+    <HelpKINode Title="AuthInterceptorContext Class" Url="html/T_Grpc_Core_AuthInterceptorContext.htm" />
+    <HelpKINode Title="about AuthInterceptorContext class" Url="html/T_Grpc_Core_AuthInterceptorContext.htm" />
+    <HelpKINode Title="constructor" Url="html/M_Grpc_Core_AuthInterceptorContext__ctor.htm" />
+    <HelpKINode Title="methods" Url="html/Methods_T_Grpc_Core_AuthInterceptorContext.htm" />
+    <HelpKINode Title="properties" Url="html/Properties_T_Grpc_Core_AuthInterceptorContext.htm" />
   </HelpKINode>
-  <HelpKINode Title="AuthInterceptors.FromAccessToken method" Url="html/M_Grpc_Auth_AuthInterceptors_FromAccessToken.htm" />
-  <HelpKINode Title="AuthInterceptors.FromCredential method" Url="html/M_Grpc_Auth_AuthInterceptors_FromCredential.htm" />
+  <HelpKINode Title="AuthInterceptorContext.AuthInterceptorContext constructor" Url="html/M_Grpc_Core_AuthInterceptorContext__ctor.htm" />
+  <HelpKINode Title="AuthInterceptorContext.MethodName property" Url="html/P_Grpc_Core_AuthInterceptorContext_MethodName.htm" />
+  <HelpKINode Title="AuthInterceptorContext.ServiceUrl property" Url="html/P_Grpc_Core_AuthInterceptorContext_ServiceUrl.htm" />
   <HelpKINode Title="BenchmarkUtil class">
     <HelpKINode Title="BenchmarkUtil Class" Url="html/T_Grpc_Core_Utils_BenchmarkUtil.htm" />
     <HelpKINode Title="about BenchmarkUtil class" Url="html/T_Grpc_Core_Utils_BenchmarkUtil.htm" />
@@ -144,6 +148,15 @@
   <HelpKINode Title="Builder class">
     <HelpKINode Title="methods" Url="html/Methods_T_Grpc_Core_ServerServiceDefinition_Builder.htm" />
   </HelpKINode>
+  <HelpKINode Title="CallCredentials class">
+    <HelpKINode Title="CallCredentials Class" Url="html/T_Grpc_Core_CallCredentials.htm" />
+    <HelpKINode Title="about CallCredentials class" Url="html/T_Grpc_Core_CallCredentials.htm" />
+    <HelpKINode Title="constructor" Url="html/M_Grpc_Core_CallCredentials__ctor.htm" />
+    <HelpKINode Title="methods" Url="html/Methods_T_Grpc_Core_CallCredentials.htm" />
+  </HelpKINode>
+  <HelpKINode Title="CallCredentials.CallCredentials constructor" Url="html/M_Grpc_Core_CallCredentials__ctor.htm" />
+  <HelpKINode Title="CallCredentials.Compose method" Url="html/M_Grpc_Core_CallCredentials_Compose.htm" />
+  <HelpKINode Title="CallCredentials.FromInterceptor method" Url="html/M_Grpc_Core_CallCredentials_FromInterceptor.htm" />
   <HelpKINode Title="CallInvocationDetails(Of TRequest, TResponse) structure">
     <HelpKINode Title="CallInvocationDetails(TRequest, TResponse) Structure" Url="html/T_Grpc_Core_CallInvocationDetails_2.htm" />
     <HelpKINode Title="about CallInvocationDetails(Of TRequest, TResponse) structure" Url="html/T_Grpc_Core_CallInvocationDetails_2.htm" />
@@ -183,6 +196,7 @@
   </HelpKINode>
   <HelpKINode Title="CallOptions.CallOptions constructor" Url="html/M_Grpc_Core_CallOptions__ctor.htm" />
   <HelpKINode Title="CallOptions.CancellationToken property" Url="html/P_Grpc_Core_CallOptions_CancellationToken.htm" />
+  <HelpKINode Title="CallOptions.Credentials property" Url="html/P_Grpc_Core_CallOptions_Credentials.htm" />
   <HelpKINode Title="CallOptions.Deadline property" Url="html/P_Grpc_Core_CallOptions_Deadline.htm" />
   <HelpKINode Title="CallOptions.Headers property" Url="html/P_Grpc_Core_CallOptions_Headers.htm" />
   <HelpKINode Title="CallOptions.PropagationToken property" Url="html/P_Grpc_Core_CallOptions_PropagationToken.htm" />
@@ -230,6 +244,16 @@
   <HelpKINode Title="Channel.State property" Url="html/P_Grpc_Core_Channel_State.htm" />
   <HelpKINode Title="Channel.Target property" Url="html/P_Grpc_Core_Channel_Target.htm" />
   <HelpKINode Title="Channel.WaitForStateChangedAsync method" Url="html/M_Grpc_Core_Channel_WaitForStateChangedAsync.htm" />
+  <HelpKINode Title="ChannelCredentials class">
+    <HelpKINode Title="ChannelCredentials Class" Url="html/T_Grpc_Core_ChannelCredentials.htm" />
+    <HelpKINode Title="about ChannelCredentials class" Url="html/T_Grpc_Core_ChannelCredentials.htm" />
+    <HelpKINode Title="constructor" Url="html/M_Grpc_Core_ChannelCredentials__ctor.htm" />
+    <HelpKINode Title="methods" Url="html/Methods_T_Grpc_Core_ChannelCredentials.htm" />
+    <HelpKINode Title="properties" Url="html/Properties_T_Grpc_Core_ChannelCredentials.htm" />
+  </HelpKINode>
+  <HelpKINode Title="ChannelCredentials.ChannelCredentials constructor" Url="html/M_Grpc_Core_ChannelCredentials__ctor.htm" />
+  <HelpKINode Title="ChannelCredentials.Create method" Url="html/M_Grpc_Core_ChannelCredentials_Create.htm" />
+  <HelpKINode Title="ChannelCredentials.Insecure property" Url="html/P_Grpc_Core_ChannelCredentials_Insecure.htm" />
   <HelpKINode Title="ChannelOption class">
     <HelpKINode Title="ChannelOption Class" Url="html/T_Grpc_Core_ChannelOption.htm" />
     <HelpKINode Title="about ChannelOption class" Url="html/T_Grpc_Core_ChannelOption.htm" />
@@ -278,6 +302,7 @@
   <HelpKINode Title="ClientStreamingServerMethod(Of TRequest, TResponse) delegate" Url="html/T_Grpc_Core_ClientStreamingServerMethod_2.htm" />
   <HelpKINode Title="ClientStreamingServerMethod&lt;TRequest, TResponse&gt; delegate" Url="html/T_Grpc_Core_ClientStreamingServerMethod_2.htm" />
   <HelpKINode Title="CompleteAsync method" Url="html/M_Grpc_Core_IClientStreamWriter_1_CompleteAsync.htm" />
+  <HelpKINode Title="Compose method" Url="html/M_Grpc_Core_CallCredentials_Compose.htm" />
   <HelpKINode Title="CompressionLevel enumeration" Url="html/T_Grpc_Core_CompressionLevel.htm" />
   <HelpKINode Title="ConnectAsync method" Url="html/M_Grpc_Core_Channel_ConnectAsync.htm" />
   <HelpKINode Title="Connecting enumeration member" Url="html/T_Grpc_Core_ChannelState.htm" />
@@ -288,11 +313,11 @@
     <HelpKINode Title="methods" Url="html/Methods_T_Grpc_Core_Logging_ConsoleLogger.htm" />
   </HelpKINode>
   <HelpKINode Title="ConsoleLogger.ConsoleLogger constructor" Url="html/M_Grpc_Core_Logging_ConsoleLogger__ctor.htm" />
-  <HelpKINode Title="ConsoleLogger.Debug method" Url="html/M_Grpc_Core_Logging_ConsoleLogger_Debug.htm" />
+  <HelpKINode Title="ConsoleLogger.Debug method" Url="html/Overload_Grpc_Core_Logging_ConsoleLogger_Debug.htm" />
   <HelpKINode Title="ConsoleLogger.Error method" Url="html/Overload_Grpc_Core_Logging_ConsoleLogger_Error.htm" />
   <HelpKINode Title="ConsoleLogger.ForType(Of T) method" Url="html/M_Grpc_Core_Logging_ConsoleLogger_ForType__1.htm" />
   <HelpKINode Title="ConsoleLogger.ForType&lt;T&gt; method" Url="html/M_Grpc_Core_Logging_ConsoleLogger_ForType__1.htm" />
-  <HelpKINode Title="ConsoleLogger.Info method" Url="html/M_Grpc_Core_Logging_ConsoleLogger_Info.htm" />
+  <HelpKINode Title="ConsoleLogger.Info method" Url="html/Overload_Grpc_Core_Logging_ConsoleLogger_Info.htm" />
   <HelpKINode Title="ConsoleLogger.Warning method" Url="html/Overload_Grpc_Core_Logging_ConsoleLogger_Warning.htm" />
   <HelpKINode Title="Contains method" Url="html/M_Grpc_Core_Metadata_Contains.htm" />
   <HelpKINode Title="ContextPropagationOptions class">
@@ -314,22 +339,17 @@
   </HelpKINode>
   <HelpKINode Title="CopyTo method" Url="html/M_Grpc_Core_Metadata_CopyTo.htm" />
   <HelpKINode Title="Count property" Url="html/P_Grpc_Core_Metadata_Count.htm" />
+  <HelpKINode Title="Create method" Url="html/M_Grpc_Core_ChannelCredentials_Create.htm" />
   <HelpKINode Title="Create(Of T) method" Url="html/M_Grpc_Core_Marshallers_Create__1.htm" />
   <HelpKINode Title="Create&lt;T&gt; method" Url="html/M_Grpc_Core_Marshallers_Create__1.htm" />
   <HelpKINode Title="CreateBuilder method" Url="html/M_Grpc_Core_ServerServiceDefinition_CreateBuilder.htm" />
   <HelpKINode Title="CreateCall(Of TRequest, TResponse) method" Url="html/M_Grpc_Core_ClientBase_CreateCall__2.htm" />
   <HelpKINode Title="CreateCall&lt;TRequest, TResponse&gt; method" Url="html/M_Grpc_Core_ClientBase_CreateCall__2.htm" />
   <HelpKINode Title="CreatePropagationToken method" Url="html/M_Grpc_Core_ServerCallContext_CreatePropagationToken.htm" />
-  <HelpKINode Title="Credentials class">
-    <HelpKINode Title="Credentials Class" Url="html/T_Grpc_Core_Credentials.htm" />
-    <HelpKINode Title="about Credentials class" Url="html/T_Grpc_Core_Credentials.htm" />
-    <HelpKINode Title="constructor" Url="html/M_Grpc_Core_Credentials__ctor.htm" />
-    <HelpKINode Title="methods" Url="html/Methods_T_Grpc_Core_Credentials.htm" />
-    <HelpKINode Title="properties" Url="html/Properties_T_Grpc_Core_Credentials.htm" />
+  <HelpKINode Title="Credentials property">
+    <HelpKINode Title="CallOptions.Credentials Property " Url="html/P_Grpc_Core_CallOptions_Credentials.htm" />
+    <HelpKINode Title="ServerPort.Credentials Property " Url="html/P_Grpc_Core_ServerPort_Credentials.htm" />
   </HelpKINode>
-  <HelpKINode Title="Credentials property" Url="html/P_Grpc_Core_ServerPort_Credentials.htm" />
-  <HelpKINode Title="Credentials.Credentials constructor" Url="html/M_Grpc_Core_Credentials__ctor.htm" />
-  <HelpKINode Title="Credentials.Insecure property" Url="html/P_Grpc_Core_Credentials_Insecure.htm" />
   <HelpKINode Title="CurrentVersion field" Url="html/F_Grpc_Core_VersionInfo_CurrentVersion.htm" />
   <HelpKINode Title="DataLoss enumeration member" Url="html/T_Grpc_Core_StatusCode.htm" />
   <HelpKINode Title="Deadline property">
@@ -338,8 +358,8 @@
   </HelpKINode>
   <HelpKINode Title="DeadlineExceeded enumeration member" Url="html/T_Grpc_Core_StatusCode.htm" />
   <HelpKINode Title="Debug method">
-    <HelpKINode Title="ConsoleLogger.Debug Method " Url="html/M_Grpc_Core_Logging_ConsoleLogger_Debug.htm" />
-    <HelpKINode Title="ILogger.Debug Method " Url="html/M_Grpc_Core_Logging_ILogger_Debug.htm" />
+    <HelpKINode Title="ConsoleLogger.Debug Method " Url="html/Overload_Grpc_Core_Logging_ConsoleLogger_Debug.htm" />
+    <HelpKINode Title="ILogger.Debug Method " Url="html/Overload_Grpc_Core_Logging_ILogger_Debug.htm" />
   </HelpKINode>
   <HelpKINode Title="Default field">
     <HelpKINode Title="ContextPropagationOptions.Default Field" Url="html/F_Grpc_Core_ContextPropagationOptions_Default.htm" />
@@ -382,12 +402,17 @@
     <HelpKINode Title="ConsoleLogger.ForType(T) Method " Url="html/M_Grpc_Core_Logging_ConsoleLogger_ForType__1.htm" />
     <HelpKINode Title="ILogger.ForType(T) Method " Url="html/M_Grpc_Core_Logging_ILogger_ForType__1.htm" />
   </HelpKINode>
-  <HelpKINode Title="FromAccessToken method" Url="html/M_Grpc_Auth_AuthInterceptors_FromAccessToken.htm" />
-  <HelpKINode Title="FromCredential method" Url="html/M_Grpc_Auth_AuthInterceptors_FromCredential.htm" />
+  <HelpKINode Title="FromAccessToken method">
+    <HelpKINode Title="GoogleAuthInterceptors.FromAccessToken Method " Url="html/M_Grpc_Auth_GoogleAuthInterceptors_FromAccessToken.htm" />
+    <HelpKINode Title="GoogleGrpcCredentials.FromAccessToken Method " Url="html/M_Grpc_Auth_GoogleGrpcCredentials_FromAccessToken.htm" />
+  </HelpKINode>
+  <HelpKINode Title="FromCredential method" Url="html/M_Grpc_Auth_GoogleAuthInterceptors_FromCredential.htm" />
+  <HelpKINode Title="FromInterceptor method" Url="html/M_Grpc_Core_CallCredentials_FromInterceptor.htm" />
   <HelpKINode Title="FullName property">
     <HelpKINode Title="IMethod.FullName Property " Url="html/P_Grpc_Core_IMethod_FullName.htm" />
     <HelpKINode Title="Method(TRequest, TResponse).FullName Property " Url="html/P_Grpc_Core_Method_2_FullName.htm" />
   </HelpKINode>
+  <HelpKINode Title="GetApplicationDefaultAsync method" Url="html/M_Grpc_Auth_GoogleGrpcCredentials_GetApplicationDefaultAsync.htm" />
   <HelpKINode Title="GetAwaiter method">
     <HelpKINode Title="AsyncClientStreamingCall(TRequest, TResponse).GetAwaiter Method " Url="html/M_Grpc_Core_AsyncClientStreamingCall_2_GetAwaiter.htm" />
     <HelpKINode Title="AsyncUnaryCall(TResponse).GetAwaiter Method " Url="html/M_Grpc_Core_AsyncUnaryCall_1_GetAwaiter.htm" />
@@ -409,9 +434,27 @@
     <HelpKINode Title="AsyncServerStreamingCall(TResponse).GetTrailers Method " Url="html/M_Grpc_Core_AsyncServerStreamingCall_1_GetTrailers.htm" />
     <HelpKINode Title="AsyncUnaryCall(TResponse).GetTrailers Method " Url="html/M_Grpc_Core_AsyncUnaryCall_1_GetTrailers.htm" />
   </HelpKINode>
+  <HelpKINode Title="GoogleAuthInterceptors class">
+    <HelpKINode Title="GoogleAuthInterceptors Class" Url="html/T_Grpc_Auth_GoogleAuthInterceptors.htm" />
+    <HelpKINode Title="about GoogleAuthInterceptors class" Url="html/T_Grpc_Auth_GoogleAuthInterceptors.htm" />
+    <HelpKINode Title="methods" Url="html/Methods_T_Grpc_Auth_GoogleAuthInterceptors.htm" />
+  </HelpKINode>
+  <HelpKINode Title="GoogleAuthInterceptors.FromAccessToken method" Url="html/M_Grpc_Auth_GoogleAuthInterceptors_FromAccessToken.htm" />
+  <HelpKINode Title="GoogleAuthInterceptors.FromCredential method" Url="html/M_Grpc_Auth_GoogleAuthInterceptors_FromCredential.htm" />
+  <HelpKINode Title="GoogleGrpcCredentials class">
+    <HelpKINode Title="GoogleGrpcCredentials Class" Url="html/T_Grpc_Auth_GoogleGrpcCredentials.htm" />
+    <HelpKINode Title="about GoogleGrpcCredentials class" Url="html/T_Grpc_Auth_GoogleGrpcCredentials.htm" />
+    <HelpKINode Title="methods" Url="html/Methods_T_Grpc_Auth_GoogleGrpcCredentials.htm" />
+  </HelpKINode>
+  <HelpKINode Title="GoogleGrpcCredentials.FromAccessToken method" Url="html/M_Grpc_Auth_GoogleGrpcCredentials_FromAccessToken.htm" />
+  <HelpKINode Title="GoogleGrpcCredentials.GetApplicationDefaultAsync method" Url="html/M_Grpc_Auth_GoogleGrpcCredentials_GetApplicationDefaultAsync.htm" />
+  <HelpKINode Title="GoogleGrpcCredentials.ToCallCredentials method" Url="html/M_Grpc_Auth_GoogleGrpcCredentials_ToCallCredentials.htm" />
+  <HelpKINode Title="GoogleGrpcCredentials.ToChannelCredentials method" Url="html/M_Grpc_Auth_GoogleGrpcCredentials_ToChannelCredentials.htm" />
   <HelpKINode Title="Grpc.Auth namespace" Url="html/N_Grpc_Auth.htm" />
-  <HelpKINode Title="Grpc.Auth.AuthInterceptors class" Url="html/T_Grpc_Auth_AuthInterceptors.htm" />
+  <HelpKINode Title="Grpc.Auth.GoogleAuthInterceptors class" Url="html/T_Grpc_Auth_GoogleAuthInterceptors.htm" />
+  <HelpKINode Title="Grpc.Auth.GoogleGrpcCredentials class" Url="html/T_Grpc_Auth_GoogleGrpcCredentials.htm" />
   <HelpKINode Title="Grpc.Core namespace" Url="html/N_Grpc_Core.htm" />
+  <HelpKINode Title="Grpc.Core.AsyncAuthInterceptor delegate" Url="html/T_Grpc_Core_AsyncAuthInterceptor.htm" />
   <HelpKINode Title="Grpc.Core.AsyncClientStreamingCall(Of TRequest, TResponse) class" Url="html/T_Grpc_Core_AsyncClientStreamingCall_2.htm" />
   <HelpKINode Title="Grpc.Core.AsyncClientStreamingCall&lt;TRequest, TResponse&gt; class" Url="html/T_Grpc_Core_AsyncClientStreamingCall_2.htm" />
   <HelpKINode Title="Grpc.Core.AsyncDuplexStreamingCall(Of TRequest, TResponse) class" Url="html/T_Grpc_Core_AsyncDuplexStreamingCall_2.htm" />
@@ -420,11 +463,14 @@
   <HelpKINode Title="Grpc.Core.AsyncServerStreamingCall&lt;TResponse&gt; class" Url="html/T_Grpc_Core_AsyncServerStreamingCall_1.htm" />
   <HelpKINode Title="Grpc.Core.AsyncUnaryCall(Of TResponse) class" Url="html/T_Grpc_Core_AsyncUnaryCall_1.htm" />
   <HelpKINode Title="Grpc.Core.AsyncUnaryCall&lt;TResponse&gt; class" Url="html/T_Grpc_Core_AsyncUnaryCall_1.htm" />
+  <HelpKINode Title="Grpc.Core.AuthInterceptorContext class" Url="html/T_Grpc_Core_AuthInterceptorContext.htm" />
+  <HelpKINode Title="Grpc.Core.CallCredentials class" Url="html/T_Grpc_Core_CallCredentials.htm" />
   <HelpKINode Title="Grpc.Core.CallInvocationDetails(Of TRequest, TResponse) structure" Url="html/T_Grpc_Core_CallInvocationDetails_2.htm" />
   <HelpKINode Title="Grpc.Core.CallInvocationDetails&lt;TRequest, TResponse&gt; structure" Url="html/T_Grpc_Core_CallInvocationDetails_2.htm" />
   <HelpKINode Title="Grpc.Core.CallOptions structure" Url="html/T_Grpc_Core_CallOptions.htm" />
   <HelpKINode Title="Grpc.Core.Calls class" Url="html/T_Grpc_Core_Calls.htm" />
   <HelpKINode Title="Grpc.Core.Channel class" Url="html/T_Grpc_Core_Channel.htm" />
+  <HelpKINode Title="Grpc.Core.ChannelCredentials class" Url="html/T_Grpc_Core_ChannelCredentials.htm" />
   <HelpKINode Title="Grpc.Core.ChannelOption class" Url="html/T_Grpc_Core_ChannelOption.htm" />
   <HelpKINode Title="Grpc.Core.ChannelOption.OptionType enumeration" Url="html/T_Grpc_Core_ChannelOption_OptionType.htm" />
   <HelpKINode Title="Grpc.Core.ChannelOptions class" Url="html/T_Grpc_Core_ChannelOptions.htm" />
@@ -435,7 +481,6 @@
   <HelpKINode Title="Grpc.Core.CompressionLevel enumeration" Url="html/T_Grpc_Core_CompressionLevel.htm" />
   <HelpKINode Title="Grpc.Core.ContextPropagationOptions class" Url="html/T_Grpc_Core_ContextPropagationOptions.htm" />
   <HelpKINode Title="Grpc.Core.ContextPropagationToken class" Url="html/T_Grpc_Core_ContextPropagationToken.htm" />
-  <HelpKINode Title="Grpc.Core.Credentials class" Url="html/T_Grpc_Core_Credentials.htm" />
   <HelpKINode Title="Grpc.Core.DuplexStreamingServerMethod(Of TRequest, TResponse) delegate" Url="html/T_Grpc_Core_DuplexStreamingServerMethod_2.htm" />
   <HelpKINode Title="Grpc.Core.DuplexStreamingServerMethod&lt;TRequest, TResponse&gt; delegate" Url="html/T_Grpc_Core_DuplexStreamingServerMethod_2.htm" />
   <HelpKINode Title="Grpc.Core.GrpcEnvironment class" Url="html/T_Grpc_Core_GrpcEnvironment.htm" />
@@ -454,8 +499,8 @@
   <HelpKINode Title="Grpc.Core.Logging namespace" Url="html/N_Grpc_Core_Logging.htm" />
   <HelpKINode Title="Grpc.Core.Logging.ConsoleLogger class" Url="html/T_Grpc_Core_Logging_ConsoleLogger.htm" />
   <HelpKINode Title="Grpc.Core.Logging.ILogger interface" Url="html/T_Grpc_Core_Logging_ILogger.htm" />
-  <HelpKINode Title="Grpc.Core.Marshaller(Of T) structure" Url="html/T_Grpc_Core_Marshaller_1.htm" />
-  <HelpKINode Title="Grpc.Core.Marshaller&lt;T&gt; structure" Url="html/T_Grpc_Core_Marshaller_1.htm" />
+  <HelpKINode Title="Grpc.Core.Marshaller(Of T) class" Url="html/T_Grpc_Core_Marshaller_1.htm" />
+  <HelpKINode Title="Grpc.Core.Marshaller&lt;T&gt; class" Url="html/T_Grpc_Core_Marshaller_1.htm" />
   <HelpKINode Title="Grpc.Core.Marshallers class" Url="html/T_Grpc_Core_Marshallers.htm" />
   <HelpKINode Title="Grpc.Core.Metadata class" Url="html/T_Grpc_Core_Metadata.htm" />
   <HelpKINode Title="Grpc.Core.Metadata.Entry structure" Url="html/T_Grpc_Core_Metadata_Entry.htm" />
@@ -559,11 +604,11 @@
     <HelpKINode Title="about ILogger interface" Url="html/T_Grpc_Core_Logging_ILogger.htm" />
     <HelpKINode Title="methods" Url="html/Methods_T_Grpc_Core_Logging_ILogger.htm" />
   </HelpKINode>
-  <HelpKINode Title="ILogger.Debug method" Url="html/M_Grpc_Core_Logging_ILogger_Debug.htm" />
+  <HelpKINode Title="ILogger.Debug method" Url="html/Overload_Grpc_Core_Logging_ILogger_Debug.htm" />
   <HelpKINode Title="ILogger.Error method" Url="html/Overload_Grpc_Core_Logging_ILogger_Error.htm" />
   <HelpKINode Title="ILogger.ForType(Of T) method" Url="html/M_Grpc_Core_Logging_ILogger_ForType__1.htm" />
   <HelpKINode Title="ILogger.ForType&lt;T&gt; method" Url="html/M_Grpc_Core_Logging_ILogger_ForType__1.htm" />
-  <HelpKINode Title="ILogger.Info method" Url="html/M_Grpc_Core_Logging_ILogger_Info.htm" />
+  <HelpKINode Title="ILogger.Info method" Url="html/Overload_Grpc_Core_Logging_ILogger_Info.htm" />
   <HelpKINode Title="ILogger.Warning method" Url="html/Overload_Grpc_Core_Logging_ILogger_Warning.htm" />
   <HelpKINode Title="IMethod interface">
     <HelpKINode Title="IMethod Interface" Url="html/T_Grpc_Core_IMethod.htm" />
@@ -576,11 +621,11 @@
   <HelpKINode Title="IMethod.Type property" Url="html/P_Grpc_Core_IMethod_Type.htm" />
   <HelpKINode Title="IndexOf method" Url="html/M_Grpc_Core_Metadata_IndexOf.htm" />
   <HelpKINode Title="Info method">
-    <HelpKINode Title="ConsoleLogger.Info Method " Url="html/M_Grpc_Core_Logging_ConsoleLogger_Info.htm" />
-    <HelpKINode Title="ILogger.Info Method " Url="html/M_Grpc_Core_Logging_ILogger_Info.htm" />
+    <HelpKINode Title="ConsoleLogger.Info Method " Url="html/Overload_Grpc_Core_Logging_ConsoleLogger_Info.htm" />
+    <HelpKINode Title="ILogger.Info Method " Url="html/Overload_Grpc_Core_Logging_ILogger_Info.htm" />
   </HelpKINode>
   <HelpKINode Title="Insecure property">
-    <HelpKINode Title="Credentials.Insecure Property " Url="html/P_Grpc_Core_Credentials_Insecure.htm" />
+    <HelpKINode Title="ChannelCredentials.Insecure Property " Url="html/P_Grpc_Core_ChannelCredentials_Insecure.htm" />
     <HelpKINode Title="ServerCredentials.Insecure Property " Url="html/P_Grpc_Core_ServerCredentials_Insecure.htm" />
   </HelpKINode>
   <HelpKINode Title="Insert method" Url="html/M_Grpc_Core_Metadata_Insert.htm" />
@@ -621,9 +666,9 @@
   <HelpKINode Title="KillAsync method" Url="html/M_Grpc_Core_Server_KillAsync.htm" />
   <HelpKINode Title="Logger property" Url="html/P_Grpc_Core_GrpcEnvironment_Logger.htm" />
   <HelpKINode Title="Low enumeration member" Url="html/T_Grpc_Core_CompressionLevel.htm" />
-  <HelpKINode Title="Marshaller(Of T) structure">
-    <HelpKINode Title="Marshaller(T) Structure" Url="html/T_Grpc_Core_Marshaller_1.htm" />
-    <HelpKINode Title="about Marshaller(Of T) structure" Url="html/T_Grpc_Core_Marshaller_1.htm" />
+  <HelpKINode Title="Marshaller(Of T) class">
+    <HelpKINode Title="Marshaller(T) Class" Url="html/T_Grpc_Core_Marshaller_1.htm" />
+    <HelpKINode Title="about Marshaller(Of T) class" Url="html/T_Grpc_Core_Marshaller_1.htm" />
     <HelpKINode Title="constructor" Url="html/M_Grpc_Core_Marshaller_1__ctor.htm" />
     <HelpKINode Title="methods" Url="html/Methods_T_Grpc_Core_Marshaller_1.htm" />
     <HelpKINode Title="properties" Url="html/Properties_T_Grpc_Core_Marshaller_1.htm" />
@@ -631,9 +676,9 @@
   <HelpKINode Title="Marshaller(Of T).Deserializer property" Url="html/P_Grpc_Core_Marshaller_1_Deserializer.htm" />
   <HelpKINode Title="Marshaller(Of T).Marshaller constructor" Url="html/M_Grpc_Core_Marshaller_1__ctor.htm" />
   <HelpKINode Title="Marshaller(Of T).Serializer property" Url="html/P_Grpc_Core_Marshaller_1_Serializer.htm" />
-  <HelpKINode Title="Marshaller&lt;T&gt; structure">
-    <HelpKINode Title="Marshaller(T) Structure" Url="html/T_Grpc_Core_Marshaller_1.htm" />
-    <HelpKINode Title="about Marshaller&lt;T&gt; structure" Url="html/T_Grpc_Core_Marshaller_1.htm" />
+  <HelpKINode Title="Marshaller&lt;T&gt; class">
+    <HelpKINode Title="Marshaller(T) Class" Url="html/T_Grpc_Core_Marshaller_1.htm" />
+    <HelpKINode Title="about Marshaller&lt;T&gt; class" Url="html/T_Grpc_Core_Marshaller_1.htm" />
     <HelpKINode Title="constructor" Url="html/M_Grpc_Core_Marshaller_1__ctor.htm" />
     <HelpKINode Title="methods" Url="html/Methods_T_Grpc_Core_Marshaller_1.htm" />
     <HelpKINode Title="properties" Url="html/Properties_T_Grpc_Core_Marshaller_1.htm" />
@@ -719,6 +764,7 @@
   <HelpKINode Title="Method&lt;TRequest, TResponse&gt;.ResponseMarshaller property" Url="html/P_Grpc_Core_Method_2_ResponseMarshaller.htm" />
   <HelpKINode Title="Method&lt;TRequest, TResponse&gt;.ServiceName property" Url="html/P_Grpc_Core_Method_2_ServiceName.htm" />
   <HelpKINode Title="Method&lt;TRequest, TResponse&gt;.Type property" Url="html/P_Grpc_Core_Method_2_Type.htm" />
+  <HelpKINode Title="MethodName property" Url="html/P_Grpc_Core_AuthInterceptorContext_MethodName.htm" />
   <HelpKINode Title="MethodType enumeration" Url="html/T_Grpc_Core_MethodType.htm" />
   <HelpKINode Title="Name property">
     <HelpKINode Title="ChannelOption.Name Property " Url="html/P_Grpc_Core_ChannelOption_Name.htm" />
@@ -891,6 +937,7 @@
     <HelpKINode Title="Method(TRequest, TResponse).ServiceName Property " Url="html/P_Grpc_Core_Method_2_ServiceName.htm" />
   </HelpKINode>
   <HelpKINode Title="Services property" Url="html/P_Grpc_Core_Server_Services.htm" />
+  <HelpKINode Title="ServiceUrl property" Url="html/P_Grpc_Core_AuthInterceptorContext_ServiceUrl.htm" />
   <HelpKINode Title="SetLogger method" Url="html/M_Grpc_Core_GrpcEnvironment_SetLogger.htm" />
   <HelpKINode Title="ShutdownAsync method">
     <HelpKINode Title="Channel.ShutdownAsync Method " Url="html/M_Grpc_Core_Channel_ShutdownAsync.htm" />
@@ -945,6 +992,8 @@
   <HelpKINode Title="StringMarshaller property" Url="html/P_Grpc_Core_Marshallers_StringMarshaller.htm" />
   <HelpKINode Title="StringValue property" Url="html/P_Grpc_Core_ChannelOption_StringValue.htm" />
   <HelpKINode Title="Target property" Url="html/P_Grpc_Core_Channel_Target.htm" />
+  <HelpKINode Title="ToCallCredentials method" Url="html/M_Grpc_Auth_GoogleGrpcCredentials_ToCallCredentials.htm" />
+  <HelpKINode Title="ToChannelCredentials method" Url="html/M_Grpc_Auth_GoogleGrpcCredentials_ToChannelCredentials.htm" />
   <HelpKINode Title="ToListAsync(Of T) method" Url="html/M_Grpc_Core_Utils_AsyncStreamExtensions_ToListAsync__1.htm" />
   <HelpKINode Title="ToListAsync&lt;T&gt; method" Url="html/M_Grpc_Core_Utils_AsyncStreamExtensions_ToListAsync__1.htm" />
   <HelpKINode Title="ToString method">

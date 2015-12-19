@@ -3,8 +3,9 @@
 							</th><th>Name</th><th>Description</th></tr><tr data="public;declared;notNetfw;"><td><img src="../icons/pubproperty.gif" alt="Public property" title="Public property" /></td><td><a href="P_Grpc_Core_ClientBase_Channel.htm">Channel</a></td><td><div class="summary">
             Channel associated with this client.
             </div></td></tr><tr data="public;declared;notNetfw;"><td><img src="../icons/pubproperty.gif" alt="Public property" title="Public property" /></td><td><a href="P_Grpc_Core_ClientBase_HeaderInterceptor.htm">HeaderInterceptor</a></td><td><div class="summary">
-            Can be used to register a custom header (request metadata) interceptor.
+            Can be used to register a custom header interceptor.
             The interceptor is invoked each time a new call on this client is started.
+            It is not recommented to use header interceptor to add auth headers to RPC calls.
             </div></td></tr><tr data="public;declared;notNetfw;"><td><img src="../icons/pubproperty.gif" alt="Public property" title="Public property" /></td><td><a href="P_Grpc_Core_ClientBase_Host.htm">Host</a></td><td><div class="summary">
             gRPC supports multiple "hosts" being served by a single server. 
             This property can be used to set the target host explicitly.
