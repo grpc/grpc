@@ -265,7 +265,7 @@
   DEFINES += $(EXTRA_DEFINES)
   endif
 
-  CFLAGS += -std=c89 -Wsign-conversion -Wconversion -Wshadow
+  CFLAGS += -std=c99 -Wsign-conversion -Wconversion -Wshadow
   ifeq ($(HAS_CXX11),true)
   CXXFLAGS += -std=c++11
   else
@@ -562,6 +562,34 @@
   PC_LIBS_SECURE =
 
   ifeq ($(HAS_SYSTEM_OPENSSL_ALPN),true)
+  EMBED_OPENSSL ?= false
+  NO_SECURE ?= false
+  else # HAS_SYSTEM_OPENSSL_ALPN=false
+  ifeq ($(HAS_EMBEDDED_OPENSSL_ALPN),true)
+  EMBED_OPENSSL ?= true
+  NO_SECURE ?= false
+  else # HAS_EMBEDDED_OPENSSL_ALPN=false
+  ifeq ($(HAS_SYSTEM_OPENSSL_NPN),true)
+  EMBED_OPENSSL ?= false
+  NO_SECURE ?= false
+  else
+  NO_SECURE ?= true
+  endif # HAS_SYSTEM_OPENSSL_NPN=true
+  endif # HAS_EMBEDDED_OPENSSL_ALPN
+  endif # HAS_SYSTEM_OPENSSL_ALPN
+
+  OPENSSL_DEP :=
+  OPENSSL_MERGE_LIBS :=
+  ifeq ($(NO_SECURE),false)
+  ifeq ($(EMBED_OPENSSL),true)
+  OPENSSL_DEP += $(LIBDIR)/$(CONFIG)/libboringssl.a
+  OPENSSL_MERGE_LIBS += $(LIBDIR)/$(CONFIG)/libboringssl.a
+  # need to prefix these to ensure overriding system libraries
+  CPPFLAGS := -Ithird_party/boringssl/include $(CPPFLAGS)
+  ifeq ($(OPENSSL_REQUIRES_DL),true)
+  LIBS_SECURE = dl
+  endif # OPENSSL_REQUIRES_DL
+  else # EMBED_OPENSSL=false
   ifeq ($(HAS_PKG_CONFIG),true)
   OPENSSL_PKG_CONFIG = true
   PC_REQUIRES_SECURE = openssl
@@ -570,39 +598,22 @@
   ifeq ($(SYSTEM),Linux)
   ifneq ($(LDFLAGS_OPENSSL_PKG_CONFIG),)
   LDFLAGS_OPENSSL_PKG_CONFIG += $(shell $(PKG_CONFIG) --libs-only-L openssl | sed s/L/Wl,-rpath,/)
-  endif
-  endif
+  endif # LDFLAGS_OPENSSL_PKG_CONFIG=''
+  endif # System=Linux
   LDFLAGS := $(LDFLAGS_OPENSSL_PKG_CONFIG) $(LDFLAGS)
-  else
+  else # HAS_PKG_CONFIG=false
   LIBS_SECURE = $(OPENSSL_LIBS)
+  endif # HAS_PKG_CONFIG
+  ifeq ($(HAS_SYSTEM_OPENSSL_NPN),true)
+  CPPFLAGS += -DTSI_OPENSSL_ALPN_SUPPORT=0
+  LIBS_SECURE = $(OPENSSL_LIBS)
+  endif # HAS_SYSTEM_OPENSSL_NPN
   ifeq ($(OPENSSL_REQUIRES_DL),true)
   LIBS_SECURE += dl
   PC_LIBS_SECURE = $(addprefix -l, $(LIBS_SECURE))
-  endif
-  endif
-  else
-  ifeq ($(HAS_EMBEDDED_OPENSSL_ALPN),true)
-  USE_SYSTEM_OPENSSL = false
-  OPENSSL_DEP = $(LIBDIR)/$(CONFIG)/libboringssl.a
-  OPENSSL_MERGE_LIBS += $(LIBDIR)/$(CONFIG)/libboringssl.a
-  # need to prefix these to ensure overriding system libraries
-  CPPFLAGS := -Ithird_party/boringssl/include $(CPPFLAGS)
-  ifeq ($(OPENSSL_REQUIRES_DL),true)
-  LIBS_SECURE = dl
-  endif
-  else
-  ifeq ($(HAS_SYSTEM_OPENSSL_NPN),true)
-  USE_SYSTEM_OPENSSL = true
-  CPPFLAGS += -DTSI_OPENSSL_ALPN_SUPPORT=0
-  LIBS_SECURE = $(OPENSSL_LIBS)
-  ifeq ($(OPENSSL_REQUIRES_DL),true)
-  LIBS_SECURE += dl
-  endif
-  else
-  NO_SECURE = true
-  endif
-  endif
-  endif
+  endif # OPENSSL_REQUIRES_DL=true
+  endif # EMBED_OPENSSL
+  endif # NO_SECURE
 
   ifeq ($(OPENSSL_PKG_CONFIG),true)
   LDLIBS_SECURE += $(shell $(PKG_CONFIG) --libs-only-l openssl)
@@ -930,7 +941,7 @@
 
   privatelibs_c: \
   % for lib in libs:
-  % if lib.build == 'private' and lib.language == 'c' and not lib.get('external_deps', None):
+  % if lib.build == 'private' and lib.language == 'c' and not lib.get('external_deps', None) and not lib.boringssl:
    $(LIBDIR)/$(CONFIG)/lib${lib.name}.a\
   % endif
   % endfor
@@ -1508,11 +1519,10 @@
   # boringssl needs an override to ensure that it does not include
   # system openssl headers regardless of other configuration
   # we do so here with a target specific variable assignment
-  $(LIB${lib.name.upper()}_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -std=c99 -Wno-sign-conversion -Wno-conversion -Wno-unused-value
+  $(LIB${lib.name.upper()}_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value
   $(LIB${lib.name.upper()}_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
   $(LIB${lib.name.upper()}_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
   % else:
-  $(LIB$(lib.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
   % endif
 
   ## If the library requires OpenSSL, let's add some restrictions.
@@ -1723,11 +1733,10 @@
   # boringssl needs an override to ensure that it does not include
   # system openssl headers regardless of other configuration
   # we do so here with a target specific variable assignment
-  $(${tgt.name.upper()}_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -std=c99 -Wno-sign-conversion -Wno-conversion -Wno-unused-value
+  $(${tgt.name.upper()}_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value
   $(${tgt.name.upper()}_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
   $(${tgt.name.upper()}_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
   % else:
-  $(${tgt.name.upper()}_OBJS): CFLAGS := -pedantic $(CFLAGS)
   % endif
 
   ##
