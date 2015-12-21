@@ -225,7 +225,7 @@ static void test_invoke_simple_request(grpc_end2end_test_config config) {
   config.tear_down_data(&f);
 }
 
-void grpc_end2end_tests(grpc_end2end_test_config config) {
+void default_host(grpc_end2end_test_config config) {
   if ((config.feature_mask & FEATURE_MASK_SUPPORTS_HOSTNAME_VERIFICATION) == 0)
     return;
   if ((config.feature_mask & FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION) == 0)
