@@ -153,7 +153,9 @@ class CLanguage(object):
       else:
         binary = 'bins/%s/%s' % (config.build_config, target['name'])
       if os.path.isfile(binary):
-        out.append(config.job_spec([binary], [binary],
+        cmdline = [binary] + target['args']
+        out.append(config.job_spec(cmdline, [binary],
+                                   shortname=' '.join(cmdline),
                                    environ={'GRPC_DEFAULT_SSL_ROOTS_FILE_PATH':
                                             os.path.abspath(os.path.dirname(
                                                 sys.argv[0]) + '/../../src/core/tsi/test_creds/ca.pem')}))
@@ -438,7 +440,7 @@ class ObjCLanguage(object):
 class Sanity(object):
 
   def test_specs(self, config, args):
-    return [config.job_spec(['tools/run_tests/run_sanity.sh'], None),
+    return [config.job_spec(['tools/run_tests/run_sanity.sh'], None, timeout_seconds=15*60),
             config.job_spec(['tools/run_tests/check_sources_and_headers.py'], None)]
 
   def pre_build_steps(self):
