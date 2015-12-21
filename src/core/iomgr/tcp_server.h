@@ -44,7 +44,7 @@ typedef struct grpc_tcp_listener grpc_tcp_listener;
 
 /* Called for newly connected TCP connections. */
 typedef void (*grpc_tcp_server_cb)(grpc_exec_ctx *exec_ctx, void *arg,
-                                   grpc_endpoint *ep);
+                                   grpc_endpoint *ep, grpc_tcp_listener *from_listener);
 
 /* Create a server, initially not bound to any ports */
 grpc_tcp_server *grpc_tcp_server_create(void);
@@ -79,5 +79,9 @@ void grpc_tcp_server_destroy(grpc_exec_ctx *exec_ctx, grpc_tcp_server *server,
 int grpc_tcp_listener_get_port(grpc_tcp_listener *listener);
 void grpc_tcp_listener_ref(grpc_tcp_listener *listener);
 void grpc_tcp_listener_unref(grpc_tcp_listener *listener);
+
+/* potentially (trivially) implementable: */
+int grpc_tcp_listener_get_fd(grpc_tcp_listener *listener, unsigned index);
+void grpc_tcp_listener_set_on_close(grpc_tcp_listener *listener, void (*on_close)(void *arg), void *arg);
 
 #endif /* GRPC_INTERNAL_CORE_IOMGR_TCP_SERVER_H */
