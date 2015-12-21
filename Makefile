@@ -530,6 +530,7 @@ LDFLAGS += $(shell $(PKG_CONFIG) --libs-only-L zlib)
 PC_REQUIRES_GRPC += zlib
 else
 PC_LIBS_GRPC += -lz
+LDFLAGS += -lz
 endif
 endif
 

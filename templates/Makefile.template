@@ -557,6 +557,7 @@
   PC_REQUIRES_GRPC += zlib
   else
   PC_LIBS_GRPC += -lz
+  LDFLAGS += -lz
   endif
   endif
 
