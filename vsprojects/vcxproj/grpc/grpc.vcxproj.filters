@@ -509,6 +509,9 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\tsi\ssl_transport_security.h">
       <Filter>src\core\tsi</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\tsi\ssl_types.h">
+      <Filter>src\core\tsi</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\tsi\transport_security.h">
       <Filter>src\core\tsi</Filter>
     </ClInclude>

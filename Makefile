@@ -147,7 +147,8 @@ CC_tsan = clang
 CXX_tsan = clang++
 LD_tsan = clang
 LDXX_tsan = clang++
-CPPFLAGS_tsan = -O0 -fsanitize=thread -fno-omit-frame-pointer -Wno-unused-command-line-argument
+CFLAGS_tsan = -O0 -fsanitize=thread -fno-omit-frame-pointer -Wno-unused-command-line-argument
+CXXFLAGS_tsan = -O0 -fsanitize=thread -fno-omit-frame-pointer -Wno-unused-command-line-argument
 LDFLAGS_tsan = -fsanitize=thread
 DEFINES_tsan = NDEBUG GRPC_TEST_SLOWDOWN_BUILD_FACTOR=10
 
@@ -297,12 +298,12 @@ endif
 endif
 
 ifeq ($(SYSTEM),Linux)
-LIBS = rt m z pthread
+LIBS = rt m pthread
 LDFLAGS += -pthread
 endif
 
 ifeq ($(SYSTEM),MINGW32)
-LIBS = m z pthread
+LIBS = m pthread
 LDFLAGS += -pthread
 endif
 
@@ -330,6 +331,8 @@ HOST_CFLAGS = $(CFLAGS)
 HOST_CXXFLAGS = $(CXXFLAGS)
 HOST_LDFLAGS = $(LDFLAGS)
 HOST_LDLIBS = $(LDLIBS)
+
+ZLIB_CFLAGS_EXTRA ?= -std=c89 -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-shift-negative-value -Wno-implicit-function-declaration
 
 
 # These are automatically computed variables.
@@ -514,6 +517,7 @@ PC_LIBS_GRPC =
 ifeq ($(HAS_SYSTEM_ZLIB),false)
 ifeq ($(HAS_EMBEDDED_ZLIB),true)
 ZLIB_DEP = $(LIBDIR)/$(CONFIG)/zlib/libz.a
+ZLIB_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/zlib/libz.a
 CPPFLAGS += -Ithird_party/zlib
 LDFLAGS += -L$(LIBDIR)/$(CONFIG)/zlib
 else
@@ -2030,7 +2034,7 @@ run_dep_checks:
 
 $(LIBDIR)/$(CONFIG)/zlib/libz.a:
 	$(E) "[MAKE]    Building zlib"
-	$(Q)(cd third_party/zlib ; CC="$(CC)" CFLAGS="$(PIC_CPPFLAGS) -fvisibility=hidden $(CPPFLAGS_$(CONFIG)) $(ZLIB_CFLAGS_EXTRA)" ./configure --static)
+	$(Q)(cd third_party/zlib ; CC="$(CC)" CFLAGS="$(CFLAGS) $(PIC_CPPFLAGS) -fvisibility=hidden $(CPPFLAGS_$(CONFIG)) $(ZLIB_CFLAGS_EXTRA)" ./configure --static)
 	$(Q)$(MAKE) -C third_party/zlib clean
 	$(Q)$(MAKE) -C third_party/zlib
 	$(Q)mkdir -p $(LIBDIR)/$(CONFIG)/zlib
@@ -6575,6 +6579,18 @@ $(LIBDIR)/$(CONFIG)/libgrpc.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(LIBGRPC_OBJS)
 	$(Q) ( mkdir -p $(BUILDDIR_ABSOLUTE)/tmp-merge-grpc/grpc ; \
 	       cd $(BUILDDIR_ABSOLUTE)/tmp-merge-grpc/grpc ; \
 	       $(AR) x $(LIBDIR)/$(CONFIG)/libgrpc.a )
+	$(Q) for l in $(ZLIB_MERGE_LIBS) ; do ( \
+	       mkdir -p $(BUILDDIR_ABSOLUTE)/tmp-merge-grpc/zlib ; \
+	       cd $(BUILDDIR_ABSOLUTE)/tmp-merge-grpc/zlib ; \
+	       $(AR) x $${l} ) ; done
+	$(Q) for l in $(ZLIB_MERGE_LIBS) ; do ( \
+	       mkdir -p $(BUILDDIR_ABSOLUTE)/tmp-merge-grpc/zlib ; \
+	       cd $(BUILDDIR_ABSOLUTE)/tmp-merge-grpc/zlib ; \
+	       $(AR) x $${l} ) ; done
+	$(Q) for l in $(OPENSSL_MERGE_LIBS) ; do ( \
+	       mkdir -p $(BUILDDIR_ABSOLUTE)/tmp-merge-grpc/ssl ; \
+	       cd $(BUILDDIR_ABSOLUTE)/tmp-merge-grpc/ssl ; \
+	       $(AR) x $${l} ) ; done
 	$(Q) for l in $(OPENSSL_MERGE_LIBS) ; do ( \
 	       mkdir -p $(BUILDDIR_ABSOLUTE)/tmp-merge-grpc/ssl ; \
 	       cd $(BUILDDIR_ABSOLUTE)/tmp-merge-grpc/ssl ; \
@@ -6845,6 +6861,21 @@ $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a: $(ZLIB_DEP) $(LIBGRPC_UNSECURE_OBJS)
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a
 	$(Q) $(AR) rcs $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBGRPC_UNSECURE_OBJS)
+	$(Q) rm -rf $(BUILDDIR_ABSOLUTE)/tmp-merge-grpc_unsecure
+	$(Q) ( mkdir -p $(BUILDDIR_ABSOLUTE)/tmp-merge-grpc_unsecure/grpc ; \
+	       cd $(BUILDDIR_ABSOLUTE)/tmp-merge-grpc_unsecure/grpc ; \
+	       $(AR) x $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a )
+	$(Q) for l in $(ZLIB_MERGE_LIBS) ; do ( \
+	       mkdir -p $(BUILDDIR_ABSOLUTE)/tmp-merge-grpc_unsecure/zlib ; \
+	       cd $(BUILDDIR_ABSOLUTE)/tmp-merge-grpc_unsecure/zlib ; \
+	       $(AR) x $${l} ) ; done
+	$(Q) for l in $(ZLIB_MERGE_LIBS) ; do ( \
+	       mkdir -p $(BUILDDIR_ABSOLUTE)/tmp-merge-grpc_unsecure/zlib ; \
+	       cd $(BUILDDIR_ABSOLUTE)/tmp-merge-grpc_unsecure/zlib ; \
+	       $(AR) x $${l} ) ; done
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(BUILDDIR_ABSOLUTE)/tmp-merge-grpc_unsecure/*/__.SYMDEF*
+	$(Q) ar rcs $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(BUILDDIR_ABSOLUTE)/tmp-merge-grpc_unsecure/*/*
+	$(Q) rm -rf $(BUILDDIR_ABSOLUTE)/tmp-merge-grpc_unsecure
 ifeq ($(SYSTEM),Darwin)
 	$(Q) ranlib $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a
 endif
@@ -7107,6 +7138,21 @@ $(LIBDIR)/$(CONFIG)/libgrpc++.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(PROTOBUF_DEP) $(LI
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc++.a
 	$(Q) $(AR) rcs $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBGRPC++_OBJS)
+	$(Q) rm -rf $(BUILDDIR_ABSOLUTE)/tmp-merge-grpc++
+	$(Q) ( mkdir -p $(BUILDDIR_ABSOLUTE)/tmp-merge-grpc++/grpc ; \
+	       cd $(BUILDDIR_ABSOLUTE)/tmp-merge-grpc++/grpc ; \
+	       $(AR) x $(LIBDIR)/$(CONFIG)/libgrpc++.a )
+	$(Q) for l in $(ZLIB_MERGE_LIBS) ; do ( \
+	       mkdir -p $(BUILDDIR_ABSOLUTE)/tmp-merge-grpc++/zlib ; \
+	       cd $(BUILDDIR_ABSOLUTE)/tmp-merge-grpc++/zlib ; \
+	       $(AR) x $${l} ) ; done
+	$(Q) for l in $(ZLIB_MERGE_LIBS) ; do ( \
+	       mkdir -p $(BUILDDIR_ABSOLUTE)/tmp-merge-grpc++/zlib ; \
+	       cd $(BUILDDIR_ABSOLUTE)/tmp-merge-grpc++/zlib ; \
+	       $(AR) x $${l} ) ; done
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc++.a $(BUILDDIR_ABSOLUTE)/tmp-merge-grpc++/*/__.SYMDEF*
+	$(Q) ar rcs $(LIBDIR)/$(CONFIG)/libgrpc++.a $(BUILDDIR_ABSOLUTE)/tmp-merge-grpc++/*/*
+	$(Q) rm -rf $(BUILDDIR_ABSOLUTE)/tmp-merge-grpc++
 ifeq ($(SYSTEM),Darwin)
 	$(Q) ranlib $(LIBDIR)/$(CONFIG)/libgrpc++.a
 endif
@@ -7343,6 +7389,21 @@ $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a: $(ZLIB_DEP) $(PROTOBUF_DEP) $(LIBGRPC+
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a
 	$(Q) $(AR) rcs $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a $(LIBGRPC++_UNSECURE_OBJS)
+	$(Q) rm -rf $(BUILDDIR_ABSOLUTE)/tmp-merge-grpc++_unsecure
+	$(Q) ( mkdir -p $(BUILDDIR_ABSOLUTE)/tmp-merge-grpc++_unsecure/grpc ; \
+	       cd $(BUILDDIR_ABSOLUTE)/tmp-merge-grpc++_unsecure/grpc ; \
+	       $(AR) x $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a )
+	$(Q) for l in $(ZLIB_MERGE_LIBS) ; do ( \
+	       mkdir -p $(BUILDDIR_ABSOLUTE)/tmp-merge-grpc++_unsecure/zlib ; \
+	       cd $(BUILDDIR_ABSOLUTE)/tmp-merge-grpc++_unsecure/zlib ; \
+	       $(AR) x $${l} ) ; done
+	$(Q) for l in $(ZLIB_MERGE_LIBS) ; do ( \
+	       mkdir -p $(BUILDDIR_ABSOLUTE)/tmp-merge-grpc++_unsecure/zlib ; \
+	       cd $(BUILDDIR_ABSOLUTE)/tmp-merge-grpc++_unsecure/zlib ; \
+	       $(AR) x $${l} ) ; done
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a $(BUILDDIR_ABSOLUTE)/tmp-merge-grpc++_unsecure/*/__.SYMDEF*
+	$(Q) ar rcs $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a $(BUILDDIR_ABSOLUTE)/tmp-merge-grpc++_unsecure/*/*
+	$(Q) rm -rf $(BUILDDIR_ABSOLUTE)/tmp-merge-grpc++_unsecure
 ifeq ($(SYSTEM),Darwin)
 	$(Q) ranlib $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a
 endif

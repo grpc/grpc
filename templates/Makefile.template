@@ -163,7 +163,8 @@
   CXX_tsan = clang++
   LD_tsan = clang
   LDXX_tsan = clang++
-  CPPFLAGS_tsan = -O0 -fsanitize=thread -fno-omit-frame-pointer -Wno-unused-command-line-argument
+  CFLAGS_tsan = -O0 -fsanitize=thread -fno-omit-frame-pointer -Wno-unused-command-line-argument
+  CXXFLAGS_tsan = -O0 -fsanitize=thread -fno-omit-frame-pointer -Wno-unused-command-line-argument
   LDFLAGS_tsan = -fsanitize=thread
   DEFINES_tsan = NDEBUG GRPC_TEST_SLOWDOWN_BUILD_FACTOR=10
 
@@ -313,12 +314,12 @@
   endif
 
   ifeq ($(SYSTEM),Linux)
-  LIBS = rt m z pthread
+  LIBS = rt m pthread
   LDFLAGS += -pthread
   endif
 
   ifeq ($(SYSTEM),MINGW32)
-  LIBS = m z pthread
+  LIBS = m pthread
   LDFLAGS += -pthread
   endif
 
@@ -346,6 +347,8 @@
   HOST_CXXFLAGS = $(CXXFLAGS)
   HOST_LDFLAGS = $(LDFLAGS)
   HOST_LDLIBS = $(LDLIBS)
+
+  ZLIB_CFLAGS_EXTRA ?= -std=c89 -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-shift-negative-value -Wno-implicit-function-declaration
 
 
   # These are automatically computed variables.
@@ -541,6 +544,7 @@
   ifeq ($(HAS_SYSTEM_ZLIB),false)
   ifeq ($(HAS_EMBEDDED_ZLIB),true)
   ZLIB_DEP = $(LIBDIR)/$(CONFIG)/zlib/libz.a
+  ZLIB_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/zlib/libz.a
   CPPFLAGS += -Ithird_party/zlib
   LDFLAGS += -L$(LIBDIR)/$(CONFIG)/zlib
   else
@@ -845,7 +849,7 @@
 
   $(LIBDIR)/$(CONFIG)/zlib/libz.a:
   	$(E) "[MAKE]    Building zlib"
-  	$(Q)(cd third_party/zlib ; CC="$(CC)" CFLAGS="$(PIC_CPPFLAGS) -fvisibility=hidden $(CPPFLAGS_$(CONFIG)) $(ZLIB_CFLAGS_EXTRA)" ./configure --static)
+  	$(Q)(cd third_party/zlib ; CC="$(CC)" CFLAGS="$(CFLAGS) $(PIC_CPPFLAGS) -fvisibility=hidden $(CPPFLAGS_$(CONFIG)) $(ZLIB_CFLAGS_EXTRA)" ./configure --static)
   	$(Q)$(MAKE) -C third_party/zlib clean
   	$(Q)$(MAKE) -C third_party/zlib
   	$(Q)mkdir -p $(LIBDIR)/$(CONFIG)/zlib
@@ -1593,19 +1597,31 @@
   	$(Q) rm -f $(LIBDIR)/$(CONFIG)/lib${lib.name}.a
   	$(Q) $(AR) rcs $(LIBDIR)/$(CONFIG)/lib${lib.name}.a $(LIB${lib.name.upper()}_OBJS)
   % if lib.get('baselib', False):
-  % if lib.get('secure', 'check') == True:
   	$(Q) rm -rf $(BUILDDIR_ABSOLUTE)/tmp-merge-${lib.name}
   	$(Q) ( mkdir -p $(BUILDDIR_ABSOLUTE)/tmp-merge-${lib.name}/grpc ; <%text>\</%text>
   	       cd $(BUILDDIR_ABSOLUTE)/tmp-merge-${lib.name}/grpc ; <%text>\</%text>
   	       $(AR) x $(LIBDIR)/$(CONFIG)/lib${lib.name}.a )
+  	$(Q) for l in $(ZLIB_MERGE_LIBS) ; do ( <%text>\</%text>
+  	       mkdir -p $(BUILDDIR_ABSOLUTE)/tmp-merge-${lib.name}/zlib ; <%text>\</%text>
+  	       cd $(BUILDDIR_ABSOLUTE)/tmp-merge-${lib.name}/zlib ; <%text>\</%text>
+  	       <%text>$(AR) x $${l}</%text> ) ; done
+  	$(Q) for l in $(ZLIB_MERGE_LIBS) ; do ( <%text>\</%text>
+  	       mkdir -p $(BUILDDIR_ABSOLUTE)/tmp-merge-${lib.name}/zlib ; <%text>\</%text>
+  	       cd $(BUILDDIR_ABSOLUTE)/tmp-merge-${lib.name}/zlib ; <%text>\</%text>
+  	       <%text>$(AR) x $${l}</%text> ) ; done
+  % if lib.get('secure', 'check') == True:
   	$(Q) for l in $(OPENSSL_MERGE_LIBS) ; do ( <%text>\</%text>
   	       mkdir -p $(BUILDDIR_ABSOLUTE)/tmp-merge-${lib.name}/ssl ; <%text>\</%text>
   	       cd $(BUILDDIR_ABSOLUTE)/tmp-merge-${lib.name}/ssl ; <%text>\</%text>
   	       <%text>$(AR) x $${l}</%text> ) ; done
+  	$(Q) for l in $(OPENSSL_MERGE_LIBS) ; do ( <%text>\</%text>
+  	       mkdir -p $(BUILDDIR_ABSOLUTE)/tmp-merge-${lib.name}/ssl ; <%text>\</%text>
+  	       cd $(BUILDDIR_ABSOLUTE)/tmp-merge-${lib.name}/ssl ; <%text>\</%text>
+  	       <%text>$(AR) x $${l}</%text> ) ; done
+  % endif
   	$(Q) rm -f $(LIBDIR)/$(CONFIG)/lib${lib.name}.a $(BUILDDIR_ABSOLUTE)/tmp-merge-${lib.name}/*/__.SYMDEF*
   	$(Q) ar rcs $(LIBDIR)/$(CONFIG)/lib${lib.name}.a $(BUILDDIR_ABSOLUTE)/tmp-merge-${lib.name}/*/*
   	$(Q) rm -rf $(BUILDDIR_ABSOLUTE)/tmp-merge-${lib.name}
-  % endif
   % endif
   ifeq ($(SYSTEM),Darwin)
   	$(Q) ranlib $(LIBDIR)/$(CONFIG)/lib${lib.name}.a
