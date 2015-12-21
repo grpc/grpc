@@ -524,10 +524,11 @@ else
 ifeq ($(HAS_PKG_CONFIG),true)
 CPPFLAGS += $(shell $(PKG_CONFIG) --cflags zlib)
 LDFLAGS += $(shell $(PKG_CONFIG) --libs-only-L zlib)
+LIBS += $(patsubst -l%,%,$(shell $(PKG_CONFIG) --libs-only-l zlib))
 PC_REQUIRES_GRPC += zlib
 else
 PC_LIBS_GRPC += -lz
-LDFLAGS += -lz
+LIBS += z
 endif
 endif
 
