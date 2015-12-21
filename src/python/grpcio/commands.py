@@ -103,6 +103,11 @@ class BuildProtoModules(setuptools.Command):
         'grpc_python_plugin')
 
   def run(self):
+    if not self.protoc_command:
+      raise Exception('could not find protoc')
+    if not self.grpc_python_plugin_command:
+      raise Exception('could not find grpc_python_plugin '
+                      '(protoc plugin for GRPC Python)')
     include_regex = re.compile(self.include)
     exclude_regex = re.compile(self.exclude) if self.exclude else None
     paths = []
