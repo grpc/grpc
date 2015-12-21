@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="..\..\..\..\test\proto\empty.proto">
+    <ClCompile Include="$(SolutionDir)\..\test\proto\empty.proto">
       <Filter>test\proto</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\test\proto\messages.proto">
+    <ClCompile Include="$(SolutionDir)\..\test\proto\messages.proto">
       <Filter>test\proto</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\test\proto\test.proto">
+    <ClCompile Include="$(SolutionDir)\..\test\proto\test.proto">
       <Filter>test\proto</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\test\cpp\interop\reconnect_interop_server.cc">
+    <ClCompile Include="$(SolutionDir)\..\test\cpp\interop\reconnect_interop_server.cc">
       <Filter>test\cpp\interop</Filter>
     </ClCompile>
   </ItemGroup>

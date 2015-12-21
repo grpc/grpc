@@ -1,1209 +1,1209 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="..\..\..\src\boringssl\err_data.c">
+    <ClCompile Include="$(SolutionDir)\..\src\boringssl\err_data.c">
       <Filter>src\boringssl</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\aes\aes.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\aes\aes.c">
       <Filter>third_party\boringssl\crypto\aes</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\aes\mode_wrappers.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\aes\mode_wrappers.c">
       <Filter>third_party\boringssl\crypto\aes</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\asn1\a_bitstr.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\asn1\a_bitstr.c">
       <Filter>third_party\boringssl\crypto\asn1</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\asn1\a_bool.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\asn1\a_bool.c">
       <Filter>third_party\boringssl\crypto\asn1</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\asn1\a_bytes.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\asn1\a_bytes.c">
       <Filter>third_party\boringssl\crypto\asn1</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\asn1\a_d2i_fp.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\asn1\a_d2i_fp.c">
       <Filter>third_party\boringssl\crypto\asn1</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\asn1\a_dup.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\asn1\a_dup.c">
       <Filter>third_party\boringssl\crypto\asn1</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\asn1\a_enum.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\asn1\a_enum.c">
       <Filter>third_party\boringssl\crypto\asn1</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\asn1\a_gentm.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\asn1\a_gentm.c">
       <Filter>third_party\boringssl\crypto\asn1</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\asn1\a_i2d_fp.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\asn1\a_i2d_fp.c">
       <Filter>third_party\boringssl\crypto\asn1</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\asn1\a_int.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\asn1\a_int.c">
       <Filter>third_party\boringssl\crypto\asn1</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\asn1\a_mbstr.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\asn1\a_mbstr.c">
       <Filter>third_party\boringssl\crypto\asn1</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\asn1\a_object.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\asn1\a_object.c">
       <Filter>third_party\boringssl\crypto\asn1</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\asn1\a_octet.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\asn1\a_octet.c">
       <Filter>third_party\boringssl\crypto\asn1</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\asn1\a_print.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\asn1\a_print.c">
       <Filter>third_party\boringssl\crypto\asn1</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\asn1\a_strnid.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\asn1\a_strnid.c">
       <Filter>third_party\boringssl\crypto\asn1</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\asn1\a_time.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\asn1\a_time.c">
       <Filter>third_party\boringssl\crypto\asn1</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\asn1\a_type.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\asn1\a_type.c">
       <Filter>third_party\boringssl\crypto\asn1</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\asn1\a_utctm.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\asn1\a_utctm.c">
       <Filter>third_party\boringssl\crypto\asn1</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\asn1\a_utf8.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\asn1\a_utf8.c">
       <Filter>third_party\boringssl\crypto\asn1</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\asn1\asn1_lib.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\asn1\asn1_lib.c">
       <Filter>third_party\boringssl\crypto\asn1</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\asn1\asn1_par.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\asn1\asn1_par.c">
       <Filter>third_party\boringssl\crypto\asn1</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\asn1\asn_pack.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\asn1\asn_pack.c">
       <Filter>third_party\boringssl\crypto\asn1</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\asn1\bio_asn1.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\asn1\bio_asn1.c">
       <Filter>third_party\boringssl\crypto\asn1</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\asn1\bio_ndef.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\asn1\bio_ndef.c">
       <Filter>third_party\boringssl\crypto\asn1</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\asn1\f_enum.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\asn1\f_enum.c">
       <Filter>third_party\boringssl\crypto\asn1</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\asn1\f_int.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\asn1\f_int.c">
       <Filter>third_party\boringssl\crypto\asn1</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\asn1\f_string.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\asn1\f_string.c">
       <Filter>third_party\boringssl\crypto\asn1</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\asn1\t_bitst.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\asn1\t_bitst.c">
       <Filter>third_party\boringssl\crypto\asn1</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\asn1\t_pkey.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\asn1\t_pkey.c">
       <Filter>third_party\boringssl\crypto\asn1</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\asn1\tasn_dec.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\asn1\tasn_dec.c">
       <Filter>third_party\boringssl\crypto\asn1</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\asn1\tasn_enc.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\asn1\tasn_enc.c">
       <Filter>third_party\boringssl\crypto\asn1</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\asn1\tasn_fre.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\asn1\tasn_fre.c">
       <Filter>third_party\boringssl\crypto\asn1</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\asn1\tasn_new.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\asn1\tasn_new.c">
       <Filter>third_party\boringssl\crypto\asn1</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\asn1\tasn_prn.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\asn1\tasn_prn.c">
       <Filter>third_party\boringssl\crypto\asn1</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\asn1\tasn_typ.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\asn1\tasn_typ.c">
       <Filter>third_party\boringssl\crypto\asn1</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\asn1\tasn_utl.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\asn1\tasn_utl.c">
       <Filter>third_party\boringssl\crypto\asn1</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\asn1\x_bignum.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\asn1\x_bignum.c">
       <Filter>third_party\boringssl\crypto\asn1</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\asn1\x_long.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\asn1\x_long.c">
       <Filter>third_party\boringssl\crypto\asn1</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\base64\base64.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\base64\base64.c">
       <Filter>third_party\boringssl\crypto\base64</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\bio\bio.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\bio\bio.c">
       <Filter>third_party\boringssl\crypto\bio</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\bio\bio_mem.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\bio\bio_mem.c">
       <Filter>third_party\boringssl\crypto\bio</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\bio\buffer.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\bio\buffer.c">
       <Filter>third_party\boringssl\crypto\bio</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\bio\connect.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\bio\connect.c">
       <Filter>third_party\boringssl\crypto\bio</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\bio\fd.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\bio\fd.c">
       <Filter>third_party\boringssl\crypto\bio</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\bio\file.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\bio\file.c">
       <Filter>third_party\boringssl\crypto\bio</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\bio\hexdump.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\bio\hexdump.c">
       <Filter>third_party\boringssl\crypto\bio</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\bio\pair.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\bio\pair.c">
       <Filter>third_party\boringssl\crypto\bio</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\bio\printf.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\bio\printf.c">
       <Filter>third_party\boringssl\crypto\bio</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\bio\socket.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\bio\socket.c">
       <Filter>third_party\boringssl\crypto\bio</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\bio\socket_helper.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\bio\socket_helper.c">
       <Filter>third_party\boringssl\crypto\bio</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\bn\add.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\bn\add.c">
       <Filter>third_party\boringssl\crypto\bn</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\bn\asm\x86_64-gcc.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\bn\asm\x86_64-gcc.c">
       <Filter>third_party\boringssl\crypto\bn\asm</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\bn\bn.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\bn\bn.c">
       <Filter>third_party\boringssl\crypto\bn</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\bn\bn_asn1.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\bn\bn_asn1.c">
       <Filter>third_party\boringssl\crypto\bn</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\bn\cmp.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\bn\cmp.c">
       <Filter>third_party\boringssl\crypto\bn</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\bn\convert.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\bn\convert.c">
       <Filter>third_party\boringssl\crypto\bn</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\bn\ctx.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\bn\ctx.c">
       <Filter>third_party\boringssl\crypto\bn</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\bn\div.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\bn\div.c">
       <Filter>third_party\boringssl\crypto\bn</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\bn\exponentiation.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\bn\exponentiation.c">
       <Filter>third_party\boringssl\crypto\bn</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\bn\gcd.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\bn\gcd.c">
       <Filter>third_party\boringssl\crypto\bn</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\bn\generic.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\bn\generic.c">
       <Filter>third_party\boringssl\crypto\bn</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\bn\kronecker.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\bn\kronecker.c">
       <Filter>third_party\boringssl\crypto\bn</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\bn\montgomery.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\bn\montgomery.c">
       <Filter>third_party\boringssl\crypto\bn</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\bn\mul.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\bn\mul.c">
       <Filter>third_party\boringssl\crypto\bn</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\bn\prime.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\bn\prime.c">
       <Filter>third_party\boringssl\crypto\bn</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\bn\random.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\bn\random.c">
       <Filter>third_party\boringssl\crypto\bn</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\bn\rsaz_exp.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\bn\rsaz_exp.c">
       <Filter>third_party\boringssl\crypto\bn</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\bn\shift.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\bn\shift.c">
       <Filter>third_party\boringssl\crypto\bn</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\bn\sqrt.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\bn\sqrt.c">
       <Filter>third_party\boringssl\crypto\bn</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\buf\buf.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\buf\buf.c">
       <Filter>third_party\boringssl\crypto\buf</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\bytestring\ber.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\bytestring\ber.c">
       <Filter>third_party\boringssl\crypto\bytestring</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\bytestring\cbb.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\bytestring\cbb.c">
       <Filter>third_party\boringssl\crypto\bytestring</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\bytestring\cbs.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\bytestring\cbs.c">
       <Filter>third_party\boringssl\crypto\bytestring</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\chacha\chacha_generic.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\chacha\chacha_generic.c">
       <Filter>third_party\boringssl\crypto\chacha</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\chacha\chacha_vec.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\chacha\chacha_vec.c">
       <Filter>third_party\boringssl\crypto\chacha</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\cipher\aead.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\cipher\aead.c">
       <Filter>third_party\boringssl\crypto\cipher</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\cipher\cipher.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\cipher\cipher.c">
       <Filter>third_party\boringssl\crypto\cipher</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\cipher\derive_key.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\cipher\derive_key.c">
       <Filter>third_party\boringssl\crypto\cipher</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\cipher\e_aes.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\cipher\e_aes.c">
       <Filter>third_party\boringssl\crypto\cipher</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\cipher\e_chacha20poly1305.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\cipher\e_chacha20poly1305.c">
       <Filter>third_party\boringssl\crypto\cipher</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\cipher\e_des.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\cipher\e_des.c">
       <Filter>third_party\boringssl\crypto\cipher</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\cipher\e_null.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\cipher\e_null.c">
       <Filter>third_party\boringssl\crypto\cipher</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\cipher\e_rc2.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\cipher\e_rc2.c">
       <Filter>third_party\boringssl\crypto\cipher</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\cipher\e_rc4.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\cipher\e_rc4.c">
       <Filter>third_party\boringssl\crypto\cipher</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\cipher\e_ssl3.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\cipher\e_ssl3.c">
       <Filter>third_party\boringssl\crypto\cipher</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\cipher\e_tls.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\cipher\e_tls.c">
       <Filter>third_party\boringssl\crypto\cipher</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\cipher\tls_cbc.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\cipher\tls_cbc.c">
       <Filter>third_party\boringssl\crypto\cipher</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\cmac\cmac.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\cmac\cmac.c">
       <Filter>third_party\boringssl\crypto\cmac</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\conf\conf.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\conf\conf.c">
       <Filter>third_party\boringssl\crypto\conf</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\cpu-arm.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\cpu-arm.c">
       <Filter>third_party\boringssl\crypto</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\cpu-intel.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\cpu-intel.c">
       <Filter>third_party\boringssl\crypto</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\crypto.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\crypto.c">
       <Filter>third_party\boringssl\crypto</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\curve25519\curve25519.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\curve25519\curve25519.c">
       <Filter>third_party\boringssl\crypto\curve25519</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\des\des.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\des\des.c">
       <Filter>third_party\boringssl\crypto\des</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\dh\check.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\dh\check.c">
       <Filter>third_party\boringssl\crypto\dh</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\dh\dh.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\dh\dh.c">
       <Filter>third_party\boringssl\crypto\dh</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\dh\dh_asn1.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\dh\dh_asn1.c">
       <Filter>third_party\boringssl\crypto\dh</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\dh\params.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\dh\params.c">
       <Filter>third_party\boringssl\crypto\dh</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\digest\digest.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\digest\digest.c">
       <Filter>third_party\boringssl\crypto\digest</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\digest\digests.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\digest\digests.c">
       <Filter>third_party\boringssl\crypto\digest</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\directory_posix.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\directory_posix.c">
       <Filter>third_party\boringssl\crypto</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\directory_win.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\directory_win.c">
       <Filter>third_party\boringssl\crypto</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\dsa\dsa.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\dsa\dsa.c">
       <Filter>third_party\boringssl\crypto\dsa</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\dsa\dsa_asn1.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\dsa\dsa_asn1.c">
       <Filter>third_party\boringssl\crypto\dsa</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\ec\ec.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\ec\ec.c">
       <Filter>third_party\boringssl\crypto\ec</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\ec\ec_asn1.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\ec\ec_asn1.c">
       <Filter>third_party\boringssl\crypto\ec</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\ec\ec_key.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\ec\ec_key.c">
       <Filter>third_party\boringssl\crypto\ec</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\ec\ec_montgomery.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\ec\ec_montgomery.c">
       <Filter>third_party\boringssl\crypto\ec</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\ec\oct.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\ec\oct.c">
       <Filter>third_party\boringssl\crypto\ec</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\ec\p224-64.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\ec\p224-64.c">
       <Filter>third_party\boringssl\crypto\ec</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\ec\p256-64.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\ec\p256-64.c">
       <Filter>third_party\boringssl\crypto\ec</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\ec\p256-x86_64.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\ec\p256-x86_64.c">
       <Filter>third_party\boringssl\crypto\ec</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\ec\simple.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\ec\simple.c">
       <Filter>third_party\boringssl\crypto\ec</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\ec\util-64.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\ec\util-64.c">
       <Filter>third_party\boringssl\crypto\ec</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\ec\wnaf.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\ec\wnaf.c">
       <Filter>third_party\boringssl\crypto\ec</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\ecdh\ecdh.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\ecdh\ecdh.c">
       <Filter>third_party\boringssl\crypto\ecdh</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\ecdsa\ecdsa.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\ecdsa\ecdsa.c">
       <Filter>third_party\boringssl\crypto\ecdsa</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\ecdsa\ecdsa_asn1.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\ecdsa\ecdsa_asn1.c">
       <Filter>third_party\boringssl\crypto\ecdsa</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\engine\engine.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\engine\engine.c">
       <Filter>third_party\boringssl\crypto\engine</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\err\err.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\err\err.c">
       <Filter>third_party\boringssl\crypto\err</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\evp\algorithm.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\evp\algorithm.c">
       <Filter>third_party\boringssl\crypto\evp</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\evp\digestsign.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\evp\digestsign.c">
       <Filter>third_party\boringssl\crypto\evp</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\evp\evp.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\evp\evp.c">
       <Filter>third_party\boringssl\crypto\evp</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\evp\evp_asn1.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\evp\evp_asn1.c">
       <Filter>third_party\boringssl\crypto\evp</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\evp\evp_ctx.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\evp\evp_ctx.c">
       <Filter>third_party\boringssl\crypto\evp</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\evp\p_dsa_asn1.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\evp\p_dsa_asn1.c">
       <Filter>third_party\boringssl\crypto\evp</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\evp\p_ec.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\evp\p_ec.c">
       <Filter>third_party\boringssl\crypto\evp</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\evp\p_ec_asn1.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\evp\p_ec_asn1.c">
       <Filter>third_party\boringssl\crypto\evp</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\evp\p_rsa.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\evp\p_rsa.c">
       <Filter>third_party\boringssl\crypto\evp</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\evp\p_rsa_asn1.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\evp\p_rsa_asn1.c">
       <Filter>third_party\boringssl\crypto\evp</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\evp\pbkdf.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\evp\pbkdf.c">
       <Filter>third_party\boringssl\crypto\evp</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\evp\sign.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\evp\sign.c">
       <Filter>third_party\boringssl\crypto\evp</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\ex_data.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\ex_data.c">
       <Filter>third_party\boringssl\crypto</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\hkdf\hkdf.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\hkdf\hkdf.c">
       <Filter>third_party\boringssl\crypto\hkdf</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\hmac\hmac.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\hmac\hmac.c">
       <Filter>third_party\boringssl\crypto\hmac</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\lhash\lhash.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\lhash\lhash.c">
       <Filter>third_party\boringssl\crypto\lhash</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\md4\md4.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\md4\md4.c">
       <Filter>third_party\boringssl\crypto\md4</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\md5\md5.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\md5\md5.c">
       <Filter>third_party\boringssl\crypto\md5</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\mem.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\mem.c">
       <Filter>third_party\boringssl\crypto</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\modes\cbc.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\modes\cbc.c">
       <Filter>third_party\boringssl\crypto\modes</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\modes\cfb.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\modes\cfb.c">
       <Filter>third_party\boringssl\crypto\modes</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\modes\ctr.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\modes\ctr.c">
       <Filter>third_party\boringssl\crypto\modes</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\modes\gcm.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\modes\gcm.c">
       <Filter>third_party\boringssl\crypto\modes</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\modes\ofb.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\modes\ofb.c">
       <Filter>third_party\boringssl\crypto\modes</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\obj\obj.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\obj\obj.c">
       <Filter>third_party\boringssl\crypto\obj</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\obj\obj_xref.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\obj\obj_xref.c">
       <Filter>third_party\boringssl\crypto\obj</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\pem\pem_all.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\pem\pem_all.c">
       <Filter>third_party\boringssl\crypto\pem</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\pem\pem_info.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\pem\pem_info.c">
       <Filter>third_party\boringssl\crypto\pem</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\pem\pem_lib.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\pem\pem_lib.c">
       <Filter>third_party\boringssl\crypto\pem</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\pem\pem_oth.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\pem\pem_oth.c">
       <Filter>third_party\boringssl\crypto\pem</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\pem\pem_pk8.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\pem\pem_pk8.c">
       <Filter>third_party\boringssl\crypto\pem</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\pem\pem_pkey.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\pem\pem_pkey.c">
       <Filter>third_party\boringssl\crypto\pem</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\pem\pem_x509.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\pem\pem_x509.c">
       <Filter>third_party\boringssl\crypto\pem</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\pem\pem_xaux.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\pem\pem_xaux.c">
       <Filter>third_party\boringssl\crypto\pem</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\pkcs8\p5_pbe.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\pkcs8\p5_pbe.c">
       <Filter>third_party\boringssl\crypto\pkcs8</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\pkcs8\p5_pbev2.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\pkcs8\p5_pbev2.c">
       <Filter>third_party\boringssl\crypto\pkcs8</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\pkcs8\p8_pkey.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\pkcs8\p8_pkey.c">
       <Filter>third_party\boringssl\crypto\pkcs8</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\pkcs8\pkcs8.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\pkcs8\pkcs8.c">
       <Filter>third_party\boringssl\crypto\pkcs8</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\poly1305\poly1305.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\poly1305\poly1305.c">
       <Filter>third_party\boringssl\crypto\poly1305</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\poly1305\poly1305_arm.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\poly1305\poly1305_arm.c">
       <Filter>third_party\boringssl\crypto\poly1305</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\poly1305\poly1305_vec.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\poly1305\poly1305_vec.c">
       <Filter>third_party\boringssl\crypto\poly1305</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\rand\rand.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\rand\rand.c">
       <Filter>third_party\boringssl\crypto\rand</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\rand\urandom.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\rand\urandom.c">
       <Filter>third_party\boringssl\crypto\rand</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\rand\windows.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\rand\windows.c">
       <Filter>third_party\boringssl\crypto\rand</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\rc4\rc4.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\rc4\rc4.c">
       <Filter>third_party\boringssl\crypto\rc4</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\refcount_c11.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\refcount_c11.c">
       <Filter>third_party\boringssl\crypto</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\refcount_lock.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\refcount_lock.c">
       <Filter>third_party\boringssl\crypto</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\rsa\blinding.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\rsa\blinding.c">
       <Filter>third_party\boringssl\crypto\rsa</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\rsa\padding.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\rsa\padding.c">
       <Filter>third_party\boringssl\crypto\rsa</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\rsa\rsa.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\rsa\rsa.c">
       <Filter>third_party\boringssl\crypto\rsa</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\rsa\rsa_asn1.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\rsa\rsa_asn1.c">
       <Filter>third_party\boringssl\crypto\rsa</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\rsa\rsa_impl.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\rsa\rsa_impl.c">
       <Filter>third_party\boringssl\crypto\rsa</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\sha\sha1.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\sha\sha1.c">
       <Filter>third_party\boringssl\crypto\sha</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\sha\sha256.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\sha\sha256.c">
       <Filter>third_party\boringssl\crypto\sha</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\sha\sha512.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\sha\sha512.c">
       <Filter>third_party\boringssl\crypto\sha</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\stack\stack.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\stack\stack.c">
       <Filter>third_party\boringssl\crypto\stack</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\thread.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\thread.c">
       <Filter>third_party\boringssl\crypto</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\thread_none.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\thread_none.c">
       <Filter>third_party\boringssl\crypto</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\thread_pthread.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\thread_pthread.c">
       <Filter>third_party\boringssl\crypto</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\thread_win.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\thread_win.c">
       <Filter>third_party\boringssl\crypto</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\time_support.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\time_support.c">
       <Filter>third_party\boringssl\crypto</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\x509\a_digest.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\x509\a_digest.c">
       <Filter>third_party\boringssl\crypto\x509</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\x509\a_sign.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\x509\a_sign.c">
       <Filter>third_party\boringssl\crypto\x509</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\x509\a_strex.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\x509\a_strex.c">
       <Filter>third_party\boringssl\crypto\x509</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\x509\a_verify.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\x509\a_verify.c">
       <Filter>third_party\boringssl\crypto\x509</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\x509\asn1_gen.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\x509\asn1_gen.c">
       <Filter>third_party\boringssl\crypto\x509</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\x509\by_dir.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\x509\by_dir.c">
       <Filter>third_party\boringssl\crypto\x509</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\x509\by_file.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\x509\by_file.c">
       <Filter>third_party\boringssl\crypto\x509</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\x509\i2d_pr.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\x509\i2d_pr.c">
       <Filter>third_party\boringssl\crypto\x509</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\x509\pkcs7.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\x509\pkcs7.c">
       <Filter>third_party\boringssl\crypto\x509</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\x509\t_crl.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\x509\t_crl.c">
       <Filter>third_party\boringssl\crypto\x509</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\x509\t_req.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\x509\t_req.c">
       <Filter>third_party\boringssl\crypto\x509</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\x509\t_x509.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\x509\t_x509.c">
       <Filter>third_party\boringssl\crypto\x509</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\x509\t_x509a.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\x509\t_x509a.c">
       <Filter>third_party\boringssl\crypto\x509</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\x509\x509.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\x509\x509.c">
       <Filter>third_party\boringssl\crypto\x509</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\x509\x509_att.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\x509\x509_att.c">
       <Filter>third_party\boringssl\crypto\x509</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\x509\x509_cmp.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\x509\x509_cmp.c">
       <Filter>third_party\boringssl\crypto\x509</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\x509\x509_d2.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\x509\x509_d2.c">
       <Filter>third_party\boringssl\crypto\x509</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\x509\x509_def.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\x509\x509_def.c">
       <Filter>third_party\boringssl\crypto\x509</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\x509\x509_ext.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\x509\x509_ext.c">
       <Filter>third_party\boringssl\crypto\x509</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\x509\x509_lu.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\x509\x509_lu.c">
       <Filter>third_party\boringssl\crypto\x509</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\x509\x509_obj.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\x509\x509_obj.c">
       <Filter>third_party\boringssl\crypto\x509</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\x509\x509_r2x.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\x509\x509_r2x.c">
       <Filter>third_party\boringssl\crypto\x509</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\x509\x509_req.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\x509\x509_req.c">
       <Filter>third_party\boringssl\crypto\x509</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\x509\x509_set.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\x509\x509_set.c">
       <Filter>third_party\boringssl\crypto\x509</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\x509\x509_trs.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\x509\x509_trs.c">
       <Filter>third_party\boringssl\crypto\x509</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\x509\x509_txt.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\x509\x509_txt.c">
       <Filter>third_party\boringssl\crypto\x509</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\x509\x509_v3.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\x509\x509_v3.c">
       <Filter>third_party\boringssl\crypto\x509</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\x509\x509_vfy.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\x509\x509_vfy.c">
       <Filter>third_party\boringssl\crypto\x509</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\x509\x509_vpm.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\x509\x509_vpm.c">
       <Filter>third_party\boringssl\crypto\x509</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\x509\x509cset.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\x509\x509cset.c">
       <Filter>third_party\boringssl\crypto\x509</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\x509\x509name.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\x509\x509name.c">
       <Filter>third_party\boringssl\crypto\x509</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\x509\x509rset.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\x509\x509rset.c">
       <Filter>third_party\boringssl\crypto\x509</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\x509\x509spki.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\x509\x509spki.c">
       <Filter>third_party\boringssl\crypto\x509</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\x509\x509type.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\x509\x509type.c">
       <Filter>third_party\boringssl\crypto\x509</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\x509\x_algor.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\x509\x_algor.c">
       <Filter>third_party\boringssl\crypto\x509</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\x509\x_all.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\x509\x_all.c">
       <Filter>third_party\boringssl\crypto\x509</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\x509\x_attrib.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\x509\x_attrib.c">
       <Filter>third_party\boringssl\crypto\x509</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\x509\x_crl.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\x509\x_crl.c">
       <Filter>third_party\boringssl\crypto\x509</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\x509\x_exten.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\x509\x_exten.c">
       <Filter>third_party\boringssl\crypto\x509</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\x509\x_info.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\x509\x_info.c">
       <Filter>third_party\boringssl\crypto\x509</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\x509\x_name.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\x509\x_name.c">
       <Filter>third_party\boringssl\crypto\x509</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\x509\x_pkey.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\x509\x_pkey.c">
       <Filter>third_party\boringssl\crypto\x509</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\x509\x_pubkey.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\x509\x_pubkey.c">
       <Filter>third_party\boringssl\crypto\x509</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\x509\x_req.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\x509\x_req.c">
       <Filter>third_party\boringssl\crypto\x509</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\x509\x_sig.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\x509\x_sig.c">
       <Filter>third_party\boringssl\crypto\x509</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\x509\x_spki.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\x509\x_spki.c">
       <Filter>third_party\boringssl\crypto\x509</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\x509\x_val.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\x509\x_val.c">
       <Filter>third_party\boringssl\crypto\x509</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\x509\x_x509.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\x509\x_x509.c">
       <Filter>third_party\boringssl\crypto\x509</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\x509\x_x509a.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\x509\x_x509a.c">
       <Filter>third_party\boringssl\crypto\x509</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\x509v3\pcy_cache.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\x509v3\pcy_cache.c">
       <Filter>third_party\boringssl\crypto\x509v3</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\x509v3\pcy_data.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\x509v3\pcy_data.c">
       <Filter>third_party\boringssl\crypto\x509v3</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\x509v3\pcy_lib.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\x509v3\pcy_lib.c">
       <Filter>third_party\boringssl\crypto\x509v3</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\x509v3\pcy_map.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\x509v3\pcy_map.c">
       <Filter>third_party\boringssl\crypto\x509v3</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\x509v3\pcy_node.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\x509v3\pcy_node.c">
       <Filter>third_party\boringssl\crypto\x509v3</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\x509v3\pcy_tree.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\x509v3\pcy_tree.c">
       <Filter>third_party\boringssl\crypto\x509v3</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\x509v3\v3_akey.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\x509v3\v3_akey.c">
       <Filter>third_party\boringssl\crypto\x509v3</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\x509v3\v3_akeya.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\x509v3\v3_akeya.c">
       <Filter>third_party\boringssl\crypto\x509v3</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\x509v3\v3_alt.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\x509v3\v3_alt.c">
       <Filter>third_party\boringssl\crypto\x509v3</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\x509v3\v3_bcons.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\x509v3\v3_bcons.c">
       <Filter>third_party\boringssl\crypto\x509v3</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\x509v3\v3_bitst.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\x509v3\v3_bitst.c">
       <Filter>third_party\boringssl\crypto\x509v3</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\x509v3\v3_conf.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\x509v3\v3_conf.c">
       <Filter>third_party\boringssl\crypto\x509v3</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\x509v3\v3_cpols.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\x509v3\v3_cpols.c">
       <Filter>third_party\boringssl\crypto\x509v3</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\x509v3\v3_crld.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\x509v3\v3_crld.c">
       <Filter>third_party\boringssl\crypto\x509v3</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\x509v3\v3_enum.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\x509v3\v3_enum.c">
       <Filter>third_party\boringssl\crypto\x509v3</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\x509v3\v3_extku.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\x509v3\v3_extku.c">
       <Filter>third_party\boringssl\crypto\x509v3</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\x509v3\v3_genn.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\x509v3\v3_genn.c">
       <Filter>third_party\boringssl\crypto\x509v3</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\x509v3\v3_ia5.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\x509v3\v3_ia5.c">
       <Filter>third_party\boringssl\crypto\x509v3</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\x509v3\v3_info.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\x509v3\v3_info.c">
       <Filter>third_party\boringssl\crypto\x509v3</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\x509v3\v3_int.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\x509v3\v3_int.c">
       <Filter>third_party\boringssl\crypto\x509v3</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\x509v3\v3_lib.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\x509v3\v3_lib.c">
       <Filter>third_party\boringssl\crypto\x509v3</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\x509v3\v3_ncons.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\x509v3\v3_ncons.c">
       <Filter>third_party\boringssl\crypto\x509v3</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\x509v3\v3_pci.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\x509v3\v3_pci.c">
       <Filter>third_party\boringssl\crypto\x509v3</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\x509v3\v3_pcia.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\x509v3\v3_pcia.c">
       <Filter>third_party\boringssl\crypto\x509v3</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\x509v3\v3_pcons.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\x509v3\v3_pcons.c">
       <Filter>third_party\boringssl\crypto\x509v3</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\x509v3\v3_pku.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\x509v3\v3_pku.c">
       <Filter>third_party\boringssl\crypto\x509v3</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\x509v3\v3_pmaps.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\x509v3\v3_pmaps.c">
       <Filter>third_party\boringssl\crypto\x509v3</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\x509v3\v3_prn.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\x509v3\v3_prn.c">
       <Filter>third_party\boringssl\crypto\x509v3</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\x509v3\v3_purp.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\x509v3\v3_purp.c">
       <Filter>third_party\boringssl\crypto\x509v3</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\x509v3\v3_skey.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\x509v3\v3_skey.c">
       <Filter>third_party\boringssl\crypto\x509v3</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\x509v3\v3_sxnet.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\x509v3\v3_sxnet.c">
       <Filter>third_party\boringssl\crypto\x509v3</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\crypto\x509v3\v3_utl.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\x509v3\v3_utl.c">
       <Filter>third_party\boringssl\crypto\x509v3</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\ssl\custom_extensions.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\ssl\custom_extensions.c">
       <Filter>third_party\boringssl\ssl</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\ssl\d1_both.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\ssl\d1_both.c">
       <Filter>third_party\boringssl\ssl</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\ssl\d1_clnt.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\ssl\d1_clnt.c">
       <Filter>third_party\boringssl\ssl</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\ssl\d1_lib.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\ssl\d1_lib.c">
       <Filter>third_party\boringssl\ssl</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\ssl\d1_meth.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\ssl\d1_meth.c">
       <Filter>third_party\boringssl\ssl</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\ssl\d1_pkt.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\ssl\d1_pkt.c">
       <Filter>third_party\boringssl\ssl</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\ssl\d1_srtp.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\ssl\d1_srtp.c">
       <Filter>third_party\boringssl\ssl</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\ssl\d1_srvr.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\ssl\d1_srvr.c">
       <Filter>third_party\boringssl\ssl</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\ssl\dtls_record.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\ssl\dtls_record.c">
       <Filter>third_party\boringssl\ssl</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\ssl\pqueue\pqueue.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\ssl\pqueue\pqueue.c">
       <Filter>third_party\boringssl\ssl\pqueue</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\ssl\s3_both.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\ssl\s3_both.c">
       <Filter>third_party\boringssl\ssl</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\ssl\s3_clnt.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\ssl\s3_clnt.c">
       <Filter>third_party\boringssl\ssl</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\ssl\s3_enc.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\ssl\s3_enc.c">
       <Filter>third_party\boringssl\ssl</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\ssl\s3_lib.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\ssl\s3_lib.c">
       <Filter>third_party\boringssl\ssl</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\ssl\s3_meth.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\ssl\s3_meth.c">
       <Filter>third_party\boringssl\ssl</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\ssl\s3_pkt.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\ssl\s3_pkt.c">
       <Filter>third_party\boringssl\ssl</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\ssl\s3_srvr.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\ssl\s3_srvr.c">
       <Filter>third_party\boringssl\ssl</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\ssl\ssl_aead_ctx.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\ssl\ssl_aead_ctx.c">
       <Filter>third_party\boringssl\ssl</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\ssl\ssl_asn1.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\ssl\ssl_asn1.c">
       <Filter>third_party\boringssl\ssl</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\ssl\ssl_buffer.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\ssl\ssl_buffer.c">
       <Filter>third_party\boringssl\ssl</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\ssl\ssl_cert.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\ssl\ssl_cert.c">
       <Filter>third_party\boringssl\ssl</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\ssl\ssl_cipher.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\ssl\ssl_cipher.c">
       <Filter>third_party\boringssl\ssl</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\ssl\ssl_file.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\ssl\ssl_file.c">
       <Filter>third_party\boringssl\ssl</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\ssl\ssl_lib.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\ssl\ssl_lib.c">
       <Filter>third_party\boringssl\ssl</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\ssl\ssl_rsa.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\ssl\ssl_rsa.c">
       <Filter>third_party\boringssl\ssl</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\ssl\ssl_session.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\ssl\ssl_session.c">
       <Filter>third_party\boringssl\ssl</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\ssl\ssl_stat.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\ssl\ssl_stat.c">
       <Filter>third_party\boringssl\ssl</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\ssl\t1_enc.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\ssl\t1_enc.c">
       <Filter>third_party\boringssl\ssl</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\ssl\t1_lib.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\ssl\t1_lib.c">
       <Filter>third_party\boringssl\ssl</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\boringssl\ssl\tls_record.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\ssl\tls_record.c">
       <Filter>third_party\boringssl\ssl</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\third_party\boringssl\crypto\aes\internal.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\crypto\aes\internal.h">
       <Filter>third_party\boringssl\crypto\aes</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\crypto\asn1\asn1_locl.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\crypto\asn1\asn1_locl.h">
       <Filter>third_party\boringssl\crypto\asn1</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\crypto\bio\internal.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\crypto\bio\internal.h">
       <Filter>third_party\boringssl\crypto\bio</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\crypto\bn\internal.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\crypto\bn\internal.h">
       <Filter>third_party\boringssl\crypto\bn</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\crypto\bn\rsaz_exp.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\crypto\bn\rsaz_exp.h">
       <Filter>third_party\boringssl\crypto\bn</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\crypto\bytestring\internal.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\crypto\bytestring\internal.h">
       <Filter>third_party\boringssl\crypto\bytestring</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\crypto\cipher\internal.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\crypto\cipher\internal.h">
       <Filter>third_party\boringssl\crypto\cipher</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\crypto\conf\conf_def.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\crypto\conf\conf_def.h">
       <Filter>third_party\boringssl\crypto\conf</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\crypto\conf\internal.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\crypto\conf\internal.h">
       <Filter>third_party\boringssl\crypto\conf</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\crypto\des\internal.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\crypto\des\internal.h">
       <Filter>third_party\boringssl\crypto\des</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\crypto\dh\internal.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\crypto\dh\internal.h">
       <Filter>third_party\boringssl\crypto\dh</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\crypto\digest\internal.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\crypto\digest\internal.h">
       <Filter>third_party\boringssl\crypto\digest</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\crypto\digest\md32_common.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\crypto\digest\md32_common.h">
       <Filter>third_party\boringssl\crypto\digest</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\crypto\directory.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\crypto\directory.h">
       <Filter>third_party\boringssl\crypto</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\crypto\dsa\internal.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\crypto\dsa\internal.h">
       <Filter>third_party\boringssl\crypto\dsa</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\crypto\ec\internal.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\crypto\ec\internal.h">
       <Filter>third_party\boringssl\crypto\ec</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\crypto\ec\p256-x86_64-table.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\crypto\ec\p256-x86_64-table.h">
       <Filter>third_party\boringssl\crypto\ec</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\crypto\evp\internal.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\crypto\evp\internal.h">
       <Filter>third_party\boringssl\crypto\evp</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\crypto\internal.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\crypto\internal.h">
       <Filter>third_party\boringssl\crypto</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\crypto\modes\internal.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\crypto\modes\internal.h">
       <Filter>third_party\boringssl\crypto\modes</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\crypto\obj\obj_dat.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\crypto\obj\obj_dat.h">
       <Filter>third_party\boringssl\crypto\obj</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\crypto\obj\obj_xref.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\crypto\obj\obj_xref.h">
       <Filter>third_party\boringssl\crypto\obj</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\crypto\pkcs8\internal.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\crypto\pkcs8\internal.h">
       <Filter>third_party\boringssl\crypto\pkcs8</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\crypto\rand\internal.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\crypto\rand\internal.h">
       <Filter>third_party\boringssl\crypto\rand</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\crypto\rsa\internal.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\crypto\rsa\internal.h">
       <Filter>third_party\boringssl\crypto\rsa</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\crypto\test\scoped_types.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\crypto\test\scoped_types.h">
       <Filter>third_party\boringssl\crypto\test</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\crypto\test\test_util.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\crypto\test\test_util.h">
       <Filter>third_party\boringssl\crypto\test</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\crypto\x509\charmap.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\crypto\x509\charmap.h">
       <Filter>third_party\boringssl\crypto\x509</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\crypto\x509\vpm_int.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\crypto\x509\vpm_int.h">
       <Filter>third_party\boringssl\crypto\x509</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\crypto\x509v3\ext_dat.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\crypto\x509v3\ext_dat.h">
       <Filter>third_party\boringssl\crypto\x509v3</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\crypto\x509v3\pcy_int.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\crypto\x509v3\pcy_int.h">
       <Filter>third_party\boringssl\crypto\x509v3</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\include\openssl\aead.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\include\openssl\aead.h">
       <Filter>third_party\boringssl\include\openssl</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\include\openssl\aes.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\include\openssl\aes.h">
       <Filter>third_party\boringssl\include\openssl</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\include\openssl\arm_arch.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\include\openssl\arm_arch.h">
       <Filter>third_party\boringssl\include\openssl</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\include\openssl\asn1.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\include\openssl\asn1.h">
       <Filter>third_party\boringssl\include\openssl</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\include\openssl\asn1_mac.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\include\openssl\asn1_mac.h">
       <Filter>third_party\boringssl\include\openssl</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\include\openssl\asn1t.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\include\openssl\asn1t.h">
       <Filter>third_party\boringssl\include\openssl</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\include\openssl\base.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\include\openssl\base.h">
       <Filter>third_party\boringssl\include\openssl</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\include\openssl\base64.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\include\openssl\base64.h">
       <Filter>third_party\boringssl\include\openssl</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\include\openssl\bio.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\include\openssl\bio.h">
       <Filter>third_party\boringssl\include\openssl</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\include\openssl\blowfish.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\include\openssl\blowfish.h">
       <Filter>third_party\boringssl\include\openssl</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\include\openssl\bn.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\include\openssl\bn.h">
       <Filter>third_party\boringssl\include\openssl</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\include\openssl\buf.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\include\openssl\buf.h">
       <Filter>third_party\boringssl\include\openssl</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\include\openssl\buffer.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\include\openssl\buffer.h">
       <Filter>third_party\boringssl\include\openssl</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\include\openssl\bytestring.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\include\openssl\bytestring.h">
       <Filter>third_party\boringssl\include\openssl</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\include\openssl\cast.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\include\openssl\cast.h">
       <Filter>third_party\boringssl\include\openssl</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\include\openssl\chacha.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\include\openssl\chacha.h">
       <Filter>third_party\boringssl\include\openssl</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\include\openssl\cipher.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\include\openssl\cipher.h">
       <Filter>third_party\boringssl\include\openssl</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\include\openssl\cmac.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\include\openssl\cmac.h">
       <Filter>third_party\boringssl\include\openssl</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\include\openssl\conf.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\include\openssl\conf.h">
       <Filter>third_party\boringssl\include\openssl</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\include\openssl\cpu.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\include\openssl\cpu.h">
       <Filter>third_party\boringssl\include\openssl</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\include\openssl\crypto.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\include\openssl\crypto.h">
       <Filter>third_party\boringssl\include\openssl</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\include\openssl\curve25519.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\include\openssl\curve25519.h">
       <Filter>third_party\boringssl\include\openssl</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\include\openssl\des.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\include\openssl\des.h">
       <Filter>third_party\boringssl\include\openssl</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\include\openssl\dh.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\include\openssl\dh.h">
       <Filter>third_party\boringssl\include\openssl</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\include\openssl\digest.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\include\openssl\digest.h">
       <Filter>third_party\boringssl\include\openssl</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\include\openssl\dsa.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\include\openssl\dsa.h">
       <Filter>third_party\boringssl\include\openssl</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\include\openssl\dtls1.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\include\openssl\dtls1.h">
       <Filter>third_party\boringssl\include\openssl</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\include\openssl\ec.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\include\openssl\ec.h">
       <Filter>third_party\boringssl\include\openssl</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\include\openssl\ec_key.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\include\openssl\ec_key.h">
       <Filter>third_party\boringssl\include\openssl</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\include\openssl\ecdh.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\include\openssl\ecdh.h">
       <Filter>third_party\boringssl\include\openssl</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\include\openssl\ecdsa.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\include\openssl\ecdsa.h">
       <Filter>third_party\boringssl\include\openssl</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\include\openssl\engine.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\include\openssl\engine.h">
       <Filter>third_party\boringssl\include\openssl</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\include\openssl\err.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\include\openssl\err.h">
       <Filter>third_party\boringssl\include\openssl</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\include\openssl\evp.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\include\openssl\evp.h">
       <Filter>third_party\boringssl\include\openssl</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\include\openssl\ex_data.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\include\openssl\ex_data.h">
       <Filter>third_party\boringssl\include\openssl</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\include\openssl\hkdf.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\include\openssl\hkdf.h">
       <Filter>third_party\boringssl\include\openssl</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\include\openssl\hmac.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\include\openssl\hmac.h">
       <Filter>third_party\boringssl\include\openssl</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\include\openssl\lhash.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\include\openssl\lhash.h">
       <Filter>third_party\boringssl\include\openssl</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\include\openssl\lhash_macros.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\include\openssl\lhash_macros.h">
       <Filter>third_party\boringssl\include\openssl</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\include\openssl\md4.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\include\openssl\md4.h">
       <Filter>third_party\boringssl\include\openssl</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\include\openssl\md5.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\include\openssl\md5.h">
       <Filter>third_party\boringssl\include\openssl</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\include\openssl\mem.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\include\openssl\mem.h">
       <Filter>third_party\boringssl\include\openssl</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\include\openssl\obj.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\include\openssl\obj.h">
       <Filter>third_party\boringssl\include\openssl</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\include\openssl\obj_mac.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\include\openssl\obj_mac.h">
       <Filter>third_party\boringssl\include\openssl</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\include\openssl\objects.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\include\openssl\objects.h">
       <Filter>third_party\boringssl\include\openssl</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\include\openssl\opensslfeatures.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\include\openssl\opensslfeatures.h">
       <Filter>third_party\boringssl\include\openssl</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\include\openssl\opensslv.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\include\openssl\opensslv.h">
       <Filter>third_party\boringssl\include\openssl</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\include\openssl\ossl_typ.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\include\openssl\ossl_typ.h">
       <Filter>third_party\boringssl\include\openssl</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\include\openssl\pem.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\include\openssl\pem.h">
       <Filter>third_party\boringssl\include\openssl</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\include\openssl\pkcs12.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\include\openssl\pkcs12.h">
       <Filter>third_party\boringssl\include\openssl</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\include\openssl\pkcs7.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\include\openssl\pkcs7.h">
       <Filter>third_party\boringssl\include\openssl</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\include\openssl\pkcs8.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\include\openssl\pkcs8.h">
       <Filter>third_party\boringssl\include\openssl</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\include\openssl\poly1305.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\include\openssl\poly1305.h">
       <Filter>third_party\boringssl\include\openssl</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\include\openssl\pqueue.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\include\openssl\pqueue.h">
       <Filter>third_party\boringssl\include\openssl</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\include\openssl\rand.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\include\openssl\rand.h">
       <Filter>third_party\boringssl\include\openssl</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\include\openssl\rc4.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\include\openssl\rc4.h">
       <Filter>third_party\boringssl\include\openssl</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\include\openssl\rsa.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\include\openssl\rsa.h">
       <Filter>third_party\boringssl\include\openssl</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\include\openssl\safestack.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\include\openssl\safestack.h">
       <Filter>third_party\boringssl\include\openssl</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\include\openssl\sha.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\include\openssl\sha.h">
       <Filter>third_party\boringssl\include\openssl</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\include\openssl\srtp.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\include\openssl\srtp.h">
       <Filter>third_party\boringssl\include\openssl</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\include\openssl\ssl.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\include\openssl\ssl.h">
       <Filter>third_party\boringssl\include\openssl</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\include\openssl\ssl3.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\include\openssl\ssl3.h">
       <Filter>third_party\boringssl\include\openssl</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\include\openssl\stack.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\include\openssl\stack.h">
       <Filter>third_party\boringssl\include\openssl</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\include\openssl\stack_macros.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\include\openssl\stack_macros.h">
       <Filter>third_party\boringssl\include\openssl</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\include\openssl\thread.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\include\openssl\thread.h">
       <Filter>third_party\boringssl\include\openssl</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\include\openssl\time_support.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\include\openssl\time_support.h">
       <Filter>third_party\boringssl\include\openssl</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\include\openssl\tls1.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\include\openssl\tls1.h">
       <Filter>third_party\boringssl\include\openssl</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\include\openssl\type_check.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\include\openssl\type_check.h">
       <Filter>third_party\boringssl\include\openssl</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\include\openssl\x509.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\include\openssl\x509.h">
       <Filter>third_party\boringssl\include\openssl</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\include\openssl\x509_vfy.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\include\openssl\x509_vfy.h">
       <Filter>third_party\boringssl\include\openssl</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\include\openssl\x509v3.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\include\openssl\x509v3.h">
       <Filter>third_party\boringssl\include\openssl</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\ssl\internal.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\ssl\internal.h">
       <Filter>third_party\boringssl\ssl</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\ssl\test\async_bio.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\ssl\test\async_bio.h">
       <Filter>third_party\boringssl\ssl\test</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\ssl\test\packeted_bio.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\ssl\test\packeted_bio.h">
       <Filter>third_party\boringssl\ssl\test</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\ssl\test\scoped_types.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\ssl\test\scoped_types.h">
       <Filter>third_party\boringssl\ssl\test</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\boringssl\ssl\test\test_config.h">
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\ssl\test\test_config.h">
       <Filter>third_party\boringssl\ssl\test</Filter>
     </ClInclude>
   </ItemGroup>

@@ -62,7 +62,7 @@
   props = sorted(list(set(props)))
   packages = sorted(list(set(packages)))
   dll = project.get('dll', False)
-  repo_root = '..\..\..' + ('\..' if project.vs_proj_dir != '.' else '')
+  repo_root = '$(SolutionDir)\..'
 %>\
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">

@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="..\..\..\..\test\core\end2end\tests\registered_call.c">
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\registered_call.c">
       <Filter>test\core\end2end\tests</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\..\test\core\end2end\tests\cancel_test_helpers.h">
+    <ClInclude Include="$(SolutionDir)\..\test\core\end2end\tests\cancel_test_helpers.h">
       <Filter>test\core\end2end\tests</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\test\core\end2end\end2end_tests.h">
+    <ClInclude Include="$(SolutionDir)\..\test\core\end2end\end2end_tests.h">
       <Filter>test\core\end2end</Filter>
     </ClInclude>
   </ItemGroup>

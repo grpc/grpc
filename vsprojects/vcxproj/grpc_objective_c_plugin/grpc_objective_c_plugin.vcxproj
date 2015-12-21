@@ -52,9 +52,9 @@
   </ImportGroup>
   <ImportGroup Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="..\..\..\vsprojects\global.props" />
-    <Import Project="..\..\..\vsprojects\protobuf.props" />
-    <Import Project="..\..\..\vsprojects\protoc.props" />
+    <Import Project="$(SolutionDir)\..\vsprojects\global.props" />
+    <Import Project="$(SolutionDir)\..\vsprojects\protobuf.props" />
+    <Import Project="$(SolutionDir)\..\vsprojects\protoc.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)'=='Debug'">
@@ -148,11 +148,11 @@
   </ItemDefinitionGroup>
 
   <ItemGroup>
-    <ClCompile Include="..\..\..\src\compiler\objective_c_plugin.cc">
+    <ClCompile Include="$(SolutionDir)\..\src\compiler\objective_c_plugin.cc">
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\vsprojects\vcxproj\.\grpc_plugin_support\grpc_plugin_support.vcxproj">
+    <ProjectReference Include="$(SolutionDir)\..\vsprojects\vcxproj\.\grpc_plugin_support\grpc_plugin_support.vcxproj">
       <Project>{B6E81D84-2ACB-41B8-8781-493A944C7817}</Project>
     </ProjectReference>
   </ItemGroup>
