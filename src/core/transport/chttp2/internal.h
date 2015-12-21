@@ -566,6 +566,9 @@ void grpc_chttp2_list_add_stalled_by_transport(
 int grpc_chttp2_list_pop_stalled_by_transport(
     grpc_chttp2_transport_global *transport_global,
     grpc_chttp2_stream_global **stream_global);
+void grpc_chttp2_list_remove_stalled_by_transport(
+    grpc_chttp2_transport_global *transport_global,
+    grpc_chttp2_stream_global *stream_global);
 
 void grpc_chttp2_list_add_unannounced_incoming_window_available(
     grpc_chttp2_transport_global *transport_global,
