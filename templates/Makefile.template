@@ -348,9 +348,6 @@
   HOST_LDFLAGS = $(LDFLAGS)
   HOST_LDLIBS = $(LDLIBS)
 
-  ZLIB_CFLAGS_EXTRA ?= -std=c89 -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-shift-negative-value -Wno-implicit-function-declaration
-
-
   # These are automatically computed variables.
   # There shouldn't be any need to change anything from now on.
 
@@ -850,7 +847,7 @@
 
   $(LIBDIR)/$(CONFIG)/zlib/libz.a:
   	$(E) "[MAKE]    Building zlib"
-  	$(Q)(cd third_party/zlib ; CC="$(CC)" CFLAGS="$(CFLAGS) $(PIC_CPPFLAGS) -fvisibility=hidden $(CPPFLAGS_$(CONFIG)) $(ZLIB_CFLAGS_EXTRA)" ./configure --static)
+  	$(Q)(cd third_party/zlib ; CC="$(CC)" CFLAGS="$(CFLAGS_$(CONFIG)) $(PIC_CPPFLAGS) -fvisibility=hidden $(CPPFLAGS_$(CONFIG)) $(ZLIB_CFLAGS_EXTRA)" ./configure --static)
   	$(Q)$(MAKE) -C third_party/zlib clean
   	$(Q)$(MAKE) -C third_party/zlib
   	$(Q)mkdir -p $(LIBDIR)/$(CONFIG)/zlib
