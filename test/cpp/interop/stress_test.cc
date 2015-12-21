@@ -270,6 +270,5 @@ int main(int argc, char** argv) {
     it->join();
   }
 
-  metrics_server->Wait();
   return 0;
 }
