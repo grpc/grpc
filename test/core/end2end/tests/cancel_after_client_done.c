@@ -230,7 +230,7 @@ static void test_cancel_after_accept_and_writes_closed(
   config.tear_down_data(&f);
 }
 
-void grpc_end2end_tests(grpc_end2end_test_config config) {
+void cancel_after_client_done(grpc_end2end_test_config config) {
   unsigned i;
 
   for (i = 0; i < GPR_ARRAY_SIZE(cancellation_modes); i++) {

@@ -330,7 +330,7 @@ static void test_invoke_request_with_compressed_payload_md_override(
       GRPC_COMPRESS_DEFLATE, GRPC_COMPRESS_NONE, &none_compression_override);
 }
 
-void grpc_end2end_tests(grpc_end2end_test_config config) {
+void compressed_payload(grpc_end2end_test_config config) {
   test_invoke_request_with_exceptionally_uncompressed_payload(config);
   test_invoke_request_with_uncompressed_payload(config);
   test_invoke_request_with_compressed_payload(config);

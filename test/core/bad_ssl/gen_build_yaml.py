@@ -71,7 +71,7 @@ def main():
               'language': 'c',
               'run': False,
               'src': ['test/core/bad_ssl/servers/%s.c' % t],
-              'vs_proj_dir': 'test',
+              'vs_proj_dir': 'test/bad_ssl',
               'platforms': ['linux', 'posix', 'mac'],
               'deps': [
                   'bad_ssl_test_server',
