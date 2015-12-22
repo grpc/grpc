@@ -268,7 +268,7 @@ class ClientContext {
   /// \return The call's peer URI.
   grpc::string peer() const;
 
-  /// Get and set census context
+  /// Get and set census context.
   void set_census_context(struct census_context* ccp) { census_context_ = ccp; }
   struct census_context* census_context() const {
     return census_context_;
@@ -279,6 +279,17 @@ class ClientContext {
   ///
   /// There is no guarantee the call will be cancelled.
   void TryCancel();
+
+  /// Global Callbacks
+  ///
+  /// Can be set exactly once per application to install hooks whenever
+  /// a client context is constructed and destructed.
+  class GlobalCallbacks {
+   public:
+    virtual void DefaultConstructor(ClientContext* context) = 0;
+    virtual void Destructor(ClientContext* context) = 0;
+  };
+  static void SetGlobalCallbacks(GlobalCallbacks* callbacks);
 
  private:
   // Disallow copy and assign.

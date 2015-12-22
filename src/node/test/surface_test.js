@@ -41,7 +41,8 @@ var ProtoBuf = require('protobufjs');
 
 var grpc = require('..');
 
-var math_proto = ProtoBuf.loadProtoFile(__dirname + '/math/math.proto');
+var math_proto = ProtoBuf.loadProtoFile(__dirname +
+    '/../../proto/math/math.proto');
 
 var mathService = math_proto.lookup('math.Math');
 
@@ -309,6 +310,54 @@ describe('Generic client and server', function() {
         assert.strictEqual(response, 'Abc');
         done();
       });
+    });
+  });
+});
+describe('Server-side getPeer', function() {
+  function toString(val) {
+    return val.toString();
+  }
+  function toBuffer(str) {
+    return new Buffer(str);
+  }
+  var string_service_attrs = {
+    'getPeer' : {
+      path: '/string/getPeer',
+      requestStream: false,
+      responseStream: false,
+      requestSerialize: toBuffer,
+      requestDeserialize: toString,
+      responseSerialize: toBuffer,
+      responseDeserialize: toString
+    }
+  };
+  var client;
+  var server;
+  before(function() {
+    server = new grpc.Server();
+    server.addService(string_service_attrs, {
+      getPeer: function(call, callback) {
+        try {
+          callback(null, call.getPeer());
+        } catch (e) {
+          call.emit('error', e);
+        }
+      }
+    });
+    var port = server.bind('localhost:0', server_insecure_creds);
+    server.start();
+    var Client = grpc.makeGenericClientConstructor(string_service_attrs);
+    client = new Client('localhost:' + port,
+                        grpc.credentials.createInsecure());
+  });
+  after(function() {
+    server.forceShutdown();
+  });
+  it('should respond with a string representing the client', function(done) {
+    client.getPeer('', function(err, response) {
+      assert.ifError(err);
+      // We don't expect a specific value, just that it worked without error
+      done();
     });
   });
 });

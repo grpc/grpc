@@ -50,6 +50,12 @@ const char* grpc_call_error_detail_of(grpc_call_error err);
 /* Converts a metadata array to a hash. */
 VALUE grpc_rb_md_ary_to_h(grpc_metadata_array *md_ary);
 
+/* grpc_rb_md_ary_convert converts a ruby metadata hash into
+   a grpc_metadata_array.
+*/
+void grpc_rb_md_ary_convert(VALUE md_ary_hash,
+                            grpc_metadata_array *md_ary);
+
 /* grpc_rb_eCallError is the ruby class of the exception thrown during call
    operations. */
 extern VALUE grpc_rb_eCallError;

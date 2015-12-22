@@ -91,7 +91,7 @@ exports.createSsl = ChannelCredentials.createSsl;
  */
 exports.createFromMetadataGenerator = function(metadata_generator) {
   return CallCredentials.createFromPlugin(function(service_url, callback) {
-    metadata_generator(service_url, function(error, metadata) {
+    metadata_generator({service_url: service_url}, function(error, metadata) {
       var code = grpc.status.OK;
       var message = '';
       if (error) {
@@ -114,7 +114,8 @@ exports.createFromMetadataGenerator = function(metadata_generator) {
  * @return {CallCredentials} The resulting credentials object
  */
 exports.createFromGoogleCredential = function(google_credential) {
-  return exports.createFromMetadataGenerator(function(service_url, callback) {
+  return exports.createFromMetadataGenerator(function(auth_context, callback) {
+    var service_url = auth_context.service_url;
     google_credential.getRequestMetadata(service_url, function(err, header) {
       if (err) {
         callback(err);

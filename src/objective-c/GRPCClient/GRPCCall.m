@@ -221,7 +221,7 @@ NSString * const kGRPCTrailersKey = @"io.grpc.TrailersKey";
 
 #pragma mark Send headers
 
-- (void)sendHeaders:(id<GRPCRequestHeaders>)headers {
+- (void)sendHeaders:(NSDictionary *)headers {
   // TODO(jcanizales): Add error handlers for async failures
   [_wrappedCall startBatchWithOperations:@[[[GRPCOpSendMetadata alloc] initWithMetadata:headers
                                                                                 handler:nil]]];

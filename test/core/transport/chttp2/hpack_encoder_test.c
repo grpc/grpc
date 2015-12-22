@@ -37,6 +37,7 @@
 
 #include "src/core/support/string.h"
 #include "src/core/transport/chttp2/hpack_parser.h"
+#include "src/core/transport/metadata.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
@@ -46,7 +47,6 @@
 
 #define TEST(x) run_test(x, #x)
 
-grpc_mdctx *g_mdctx;
 grpc_chttp2_hpack_compressor g_compressor;
 int g_failure = 0;
 
@@ -76,7 +76,7 @@ static void verify(size_t window_available, int eof, size_t expect_window_used,
       e[i - 1].next = &e[i];
       e[i].prev = &e[i - 1];
     }
-    e[i].md = grpc_mdelem_from_strings(g_mdctx, key, value);
+    e[i].md = grpc_mdelem_from_strings(key, value);
   }
   e[0].prev = NULL;
   e[nheaders - 1].next = NULL;
@@ -181,18 +181,19 @@ static void test_decode_table_overflow(void) {
 
 static void run_test(void (*test)(), const char *name) {
   gpr_log(GPR_INFO, "RUN TEST: %s", name);
-  g_mdctx = grpc_mdctx_create_with_seed(0);
-  grpc_chttp2_hpack_compressor_init(&g_compressor, g_mdctx);
+  grpc_chttp2_hpack_compressor_init(&g_compressor);
   test();
   grpc_chttp2_hpack_compressor_destroy(&g_compressor);
-  grpc_mdctx_unref(g_mdctx);
 }
 
 int main(int argc, char **argv) {
   size_t i;
+  grpc_test_only_set_metadata_hash_seed(0);
   grpc_test_init(argc, argv);
+  grpc_init();
   TEST(test_basic_headers);
   TEST(test_decode_table_overflow);
+  grpc_shutdown();
   for (i = 0; i < num_to_delete; i++) {
     gpr_free(to_delete[i]);
   }

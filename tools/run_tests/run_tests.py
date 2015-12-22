@@ -47,6 +47,7 @@ import tempfile
 import traceback
 import time
 import urllib2
+import uuid
 
 import jobset
 import report_utils
@@ -60,14 +61,7 @@ _FORCE_ENVIRON_FOR_WRAPPERS = {}
 
 
 def platform_string():
-  if platform.system() == 'Windows':
-    return 'windows'
-  elif platform.system() == 'Darwin':
-    return 'mac'
-  elif platform.system() == 'Linux':
-    return 'linux'
-  else:
-    return 'posix'
+  return jobset.platform_string()
 
 
 # SimpleConfig: just compile with CONFIG=config, and run the binary to test
@@ -159,7 +153,10 @@ class CLanguage(object):
       else:
         binary = 'bins/%s/%s' % (config.build_config, target['name'])
       if os.path.isfile(binary):
-        out.append(config.job_spec([binary], [binary]))
+        out.append(config.job_spec([binary], [binary],
+                                   environ={'GRPC_DEFAULT_SSL_ROOTS_FILE_PATH':
+                                            os.path.abspath(os.path.dirname(
+                                                sys.argv[0]) + '/../../src/core/tsi/test_creds/ca.pem')}))
       elif args.regex == '.*' or platform_string() == 'windows':
         print '\nWARNING: binary not found, skipping', binary
     return sorted(out)
@@ -198,6 +195,7 @@ class CLanguage(object):
 
   def __str__(self):
     return self.make_target
+
 
 class NodeLanguage(object):
 
@@ -322,7 +320,7 @@ class RubyLanguage(object):
     return [['tools/run_tests/build_ruby.sh']]
 
   def post_tests_steps(self):
-    return []
+    return [['tools/run_tests/post_tests_ruby.sh']]
 
   def makefile_name(self):
     return 'Makefile'
@@ -339,26 +337,42 @@ class CSharpLanguage(object):
     self.platform = platform_string()
 
   def test_specs(self, config, args):
-    assemblies = ['Grpc.Core.Tests',
-                  'Grpc.Examples.Tests',
-                  'Grpc.HealthCheck.Tests',
-                  'Grpc.IntegrationTesting']
+    with open('src/csharp/tests.json') as f:
+      tests_json = json.load(f)
+    assemblies = tests_json['assemblies']
+    tests = tests_json['tests']
+
+    msbuild_config = _WINDOWS_CONFIG[config.build_config]
+    assembly_files = ['%s/bin/%s/%s.dll' % (a, msbuild_config, a)
+                      for a in assemblies]
+
+    extra_args = ['-labels'] + assembly_files
+
     if self.platform == 'windows':
-      cmd = 'tools\\run_tests\\run_csharp.bat'
+      script_name = 'tools\\run_tests\\run_csharp.bat'
+      extra_args += ['-domain=None']
     else:
-      cmd = 'tools/run_tests/run_csharp.sh'
+      script_name = 'tools/run_tests/run_csharp.sh'
 
     if config.build_config == 'gcov':
       # On Windows, we only collect C# code coverage.
       # On Linux, we only collect coverage for native extension.
       # For code coverage all tests need to run as one suite.
-      return [config.job_spec([cmd], None,
-              environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
+      return [config.job_spec([script_name] + extra_args, None,
+                              shortname='csharp.coverage',
+                              environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
     else:
-      return [config.job_spec([cmd, assembly],
-              None, shortname=assembly,
-              environ=_FORCE_ENVIRON_FOR_WRAPPERS)
-              for assembly in assemblies]
+      specs = []
+      for test in tests:
+        cmdline = [script_name, '-run=%s' % test] + extra_args
+        if self.platform == 'windows':
+          # use different output directory for each test to prevent
+          # TestResult.xml clash between parallel test runs.
+          cmdline += ['-work=test-result/%s' % uuid.uuid4()]
+        specs.append(config.job_spec(cmdline, None,
+                                     shortname='csharp.%s' % test,
+                                     environ=_FORCE_ENVIRON_FOR_WRAPPERS))
+      return specs
 
   def pre_build_steps(self):
     if self.platform == 'windows':
@@ -512,8 +526,46 @@ _LANGUAGES = {
 _WINDOWS_CONFIG = {
     'dbg': 'Debug',
     'opt': 'Release',
+    'gcov': 'Debug',
     }
 
+
+def _windows_arch_option(arch):
+  """Returns msbuild cmdline option for selected architecture."""
+  if arch == 'default' or arch == 'windows_x86':
+    return '/p:Platform=Win32'
+  elif arch == 'windows_x64':
+    return '/p:Platform=x64'
+  else:
+    print 'Architecture %s not supported on current platform.' % arch
+    sys.exit(1)
+
+    
+def _windows_build_bat(compiler):
+  """Returns name of build.bat for selected compiler."""
+  if compiler == 'default' or compiler == 'vs2013':
+    return 'vsprojects\\build_vs2013.bat'
+  elif compiler == 'vs2015':
+    return 'vsprojects\\build_vs2015.bat'
+  elif compiler == 'vs2010':
+    return 'vsprojects\\build_vs2010.bat'
+  else:
+    print 'Compiler %s not supported.' % compiler
+    sys.exit(1)
+    
+    
+def _windows_toolset_option(compiler):
+  """Returns msbuild PlatformToolset for selected compiler."""
+  if compiler == 'default' or compiler == 'vs2013':
+    return '/p:PlatformToolset=v120'
+  elif compiler == 'vs2015':
+    return '/p:PlatformToolset=v140'
+  elif compiler == 'vs2010':
+    return '/p:PlatformToolset=v100'
+  else:
+    print 'Compiler %s not supported.' % compiler
+    sys.exit(1)
+   
 
 def runs_per_test_type(arg_str):
     """Auxilary function to parse the "runs_per_test" flag.
@@ -579,6 +631,19 @@ argp.add_argument('--allow_flakes',
                   action='store_const',
                   const=True,
                   help='Allow flaky tests to show as passing (re-runs failed tests up to five times)')
+argp.add_argument('--arch',
+                  choices=['default', 'windows_x86', 'windows_x64'],
+                  default='default',
+                  help='Selects architecture to target. For some platforms "default" is the only supported choice.')
+argp.add_argument('--compiler',
+                  choices=['default', 'vs2010', 'vs2013', 'vs2015'],
+                  default='default',
+                  help='Selects compiler to use. For some platforms "default" is the only supported choice.')
+argp.add_argument('--build_only',
+                  default=False,
+                  action='store_const',
+                  const=True,
+                  help='Perform all the build steps but dont run any tests.')
 argp.add_argument('-a', '--antagonists', default=0, type=int)
 argp.add_argument('-x', '--xml_report', default=None, type=str,
         help='Generates a JUnit-compatible XML report')
@@ -640,7 +705,15 @@ if len(build_configs) > 1:
       print language, 'does not support multiple build configurations'
       sys.exit(1)
 
-if platform.system() == 'Windows':
+if platform_string() != 'windows':
+  if args.arch != 'default':
+    print 'Architecture %s not supported on current platform.' % args.arch
+    sys.exit(1)
+  if args.compiler != 'default':
+    print 'Compiler %s not supported on current platform.' % args.compiler
+    sys.exit(1)
+
+if platform_string() == 'windows':
   def make_jobspec(cfg, targets, makefile='Makefile'):
     extra_args = []
     # better do parallel compilation
@@ -650,9 +723,11 @@ if platform.system() == 'Windows':
     # disable PDB generation: it's broken, and we don't need it during CI
     extra_args.extend(['/p:Jenkins=true'])
     return [
-      jobset.JobSpec(['vsprojects\\build.bat',
+      jobset.JobSpec([_windows_build_bat(args.compiler),
                       'vsprojects\\%s.sln' % target,
-                      '/p:Configuration=%s' % _WINDOWS_CONFIG[cfg]] +
+                      '/p:Configuration=%s' % _WINDOWS_CONFIG[cfg],
+                      _windows_toolset_option(args.compiler),
+                      _windows_arch_option(args.arch)] +
                       extra_args,
                       shell=True, timeout_seconds=90*60)
       for target in targets]
@@ -674,8 +749,15 @@ for l in languages:
   make_targets[makefile] = make_targets.get(makefile, set()).union(
       set(l.make_targets(args.regex)))
 
+def build_step_environ(cfg):
+  environ = {'CONFIG': cfg}
+  msbuild_cfg = _WINDOWS_CONFIG.get(cfg)
+  if msbuild_cfg:
+    environ['MSBUILD_CONFIG'] = msbuild_cfg
+  return environ
+
 build_steps = list(set(
-                   jobset.JobSpec(cmdline, environ={'CONFIG': cfg}, flake_retries=5)
+                   jobset.JobSpec(cmdline, environ=build_step_environ(cfg), flake_retries=5)
                    for cfg in build_configs
                    for l in languages
                    for cmdline in l.pre_build_steps()))
@@ -683,13 +765,13 @@ if make_targets:
   make_commands = itertools.chain.from_iterable(make_jobspec(cfg, list(targets), makefile) for cfg in build_configs for (makefile, targets) in make_targets.iteritems())
   build_steps.extend(set(make_commands))
 build_steps.extend(set(
-                   jobset.JobSpec(cmdline, environ={'CONFIG': cfg}, timeout_seconds=10*60)
+                   jobset.JobSpec(cmdline, environ=build_step_environ(cfg), timeout_seconds=10*60)
                    for cfg in build_configs
                    for l in languages
                    for cmdline in l.build_steps()))
 
 post_tests_steps = list(set(
-                        jobset.JobSpec(cmdline, environ={'CONFIG': cfg})
+                        jobset.JobSpec(cmdline, environ=build_step_environ(cfg))
                         for cfg in build_configs
                         for l in languages
                         for cmdline in l.post_tests_steps()))
@@ -770,7 +852,7 @@ def _start_port_server(port_server_port):
             '-p', '%d' % port_server_port, '-l', logfile]
     env = dict(os.environ)
     env['BUILD_ID'] = 'pleaseDontKillMeJenkins'
-    if platform.system() == 'Windows':
+    if platform_string() == 'windows':
       # Working directory of port server needs to be outside of Jenkins
       # workspace to prevent file lock issues.
       tempdir = tempfile.mkdtemp()
@@ -847,7 +929,7 @@ def _calculate_num_runs_failures(list_of_results):
 
 
 def _build_and_run(
-    check_cancelled, newline_on_success, cache, xml_report=None):
+    check_cancelled, newline_on_success, cache, xml_report=None, build_only=False):
   """Do one pass of building & running tests."""
   # build latest sequentially
   num_failures, _ = jobset.run(
@@ -855,6 +937,9 @@ def _build_and_run(
       newline_on_success=newline_on_success, travis=args.travis)
   if num_failures:
     return 1
+    
+  if build_only:
+    return 0
 
   # start antagonists
   antagonists = [subprocess.Popen(['tools/run_tests/antagonist.py'])
@@ -862,6 +947,7 @@ def _build_and_run(
   port_server_port = 32767
   _start_port_server(port_server_port)
   resultset = None
+  num_test_failures = 0
   try:
     infinite_runs = runs_per_test == 0
     one_run = set(
@@ -885,7 +971,7 @@ def _build_and_run(
                      else itertools.repeat(massaged_one_run, runs_per_test))
     all_runs = itertools.chain.from_iterable(runs_sequence)
 
-    number_failures, resultset = jobset.run(
+    num_test_failures, resultset = jobset.run(
         all_runs, check_cancelled, newline_on_success=newline_on_success,
         travis=args.travis, infinite_runs=infinite_runs, maxjobs=args.jobs,
         stop_on_failure=args.stop_on_failure,
@@ -902,8 +988,6 @@ def _build_and_run(
               do_newline=True)
         else:
           jobset.message('PASSED', k, do_newline=True)
-    if number_failures:
-      return 2
   finally:
     for antagonist in antagonists:
       antagonist.kill()
@@ -913,8 +997,8 @@ def _build_and_run(
   number_failures, _ = jobset.run(
       post_tests_steps, maxjobs=1, stop_on_failure=True,
       newline_on_success=newline_on_success, travis=args.travis)
-  if number_failures:
-    return 3
+  if num_test_failures or number_failures:
+    return 2
 
   if cache: cache.save()
 
@@ -933,7 +1017,8 @@ if forever:
     previous_success = success
     success = _build_and_run(check_cancelled=have_files_changed,
                              newline_on_success=False,
-                             cache=test_cache) == 0
+                             cache=test_cache,
+                             build_only=args.build_only) == 0
     if not previous_success and success:
       jobset.message('SUCCESS',
                      'All tests are now passing properly',
@@ -945,7 +1030,8 @@ else:
   result = _build_and_run(check_cancelled=lambda: False,
                           newline_on_success=args.newline_on_success,
                           cache=test_cache,
-                          xml_report=args.xml_report)
+                          xml_report=args.xml_report,
+                          build_only=args.build_only)
   if result == 0:
     jobset.message('SUCCESS', 'All tests passed', do_newline=True)
   else:

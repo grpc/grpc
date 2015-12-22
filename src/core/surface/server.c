@@ -54,6 +54,7 @@
 #include "src/core/surface/completion_queue.h"
 #include "src/core/surface/init.h"
 #include "src/core/transport/metadata.h"
+#include "src/core/transport/static_metadata.h"
 
 typedef struct listener {
   void *arg;
@@ -108,8 +109,6 @@ struct channel_data {
   grpc_server *server;
   grpc_connectivity_state connectivity_state;
   grpc_channel *channel;
-  grpc_mdstr *path_key;
-  grpc_mdstr *authority_key;
   /* linked list of all channels on a server */
   channel_data *next;
   channel_data *prev;
@@ -558,12 +557,11 @@ static void maybe_finish_shutdown(grpc_exec_ctx *exec_ctx,
 
 static grpc_mdelem *server_filter(void *user_data, grpc_mdelem *md) {
   grpc_call_element *elem = user_data;
-  channel_data *chand = elem->channel_data;
   call_data *calld = elem->call_data;
-  if (md->key == chand->path_key) {
+  if (md->key == GRPC_MDSTR_PATH) {
     calld->path = GRPC_MDSTR_REF(md->value);
     return NULL;
-  } else if (md->key == chand->authority_key) {
+  } else if (md->key == GRPC_MDSTR_AUTHORITY) {
     calld->host = GRPC_MDSTR_REF(md->value);
     return NULL;
   }
@@ -718,9 +716,6 @@ static void init_channel_elem(grpc_exec_ctx *exec_ctx,
   GPR_ASSERT(!args->is_last);
   chand->server = NULL;
   chand->channel = NULL;
-  chand->path_key = grpc_mdstr_from_string(args->metadata_context, ":path");
-  chand->authority_key =
-      grpc_mdstr_from_string(args->metadata_context, ":authority");
   chand->next = chand->prev = chand;
   chand->registered_methods = NULL;
   chand->connectivity_state = GRPC_CHANNEL_IDLE;
@@ -750,8 +745,6 @@ static void destroy_channel_elem(grpc_exec_ctx *exec_ctx,
     chand->next = chand->prev = chand;
     maybe_finish_shutdown(exec_ctx, chand->server);
     gpr_mu_unlock(&chand->server->mu_global);
-    GRPC_MDSTR_UNREF(chand->path_key);
-    GRPC_MDSTR_UNREF(chand->authority_key);
     server_unref(exec_ctx, chand->server);
   }
 }
@@ -894,7 +887,7 @@ void grpc_server_start(grpc_server *server) {
 void grpc_server_setup_transport(grpc_exec_ctx *exec_ctx, grpc_server *s,
                                  grpc_transport *transport,
                                  grpc_channel_filter const **extra_filters,
-                                 size_t num_extra_filters, grpc_mdctx *mdctx,
+                                 size_t num_extra_filters,
                                  const grpc_channel_args *args) {
   size_t num_filters = s->channel_filter_count + num_extra_filters + 1;
   grpc_channel_filter const **filters =
@@ -929,7 +922,7 @@ void grpc_server_setup_transport(grpc_exec_ctx *exec_ctx, grpc_server *s,
   }
 
   channel = grpc_channel_create_from_filters(exec_ctx, NULL, filters,
-                                             num_filters, args, mdctx, 0);
+                                             num_filters, args, 0);
   chand = (channel_data *)grpc_channel_stack_element(
               grpc_channel_get_channel_stack(channel), 0)->channel_data;
   chand->server = s;
@@ -948,8 +941,8 @@ void grpc_server_setup_transport(grpc_exec_ctx *exec_ctx, grpc_server *s,
     chand->registered_methods = gpr_malloc(alloc);
     memset(chand->registered_methods, 0, alloc);
     for (rm = s->registered_methods; rm; rm = rm->next) {
-      host = rm->host ? grpc_mdstr_from_string(mdctx, rm->host) : NULL;
-      method = grpc_mdstr_from_string(mdctx, rm->method);
+      host = rm->host ? grpc_mdstr_from_string(rm->host) : NULL;
+      method = grpc_mdstr_from_string(rm->method);
       hash = GRPC_MDSTR_KV_HASH(host ? host->hash : 0, method->hash);
       for (probes = 0; chand->registered_methods[(hash + probes) % slots]
                                .server_registered_method != NULL;
@@ -1014,7 +1007,7 @@ void grpc_server_shutdown_and_notify(grpc_server *server,
 
   /* lock, and gather up some stuff to do */
   gpr_mu_lock(&server->mu_global);
-  grpc_cq_begin_op(cq);
+  grpc_cq_begin_op(cq, tag);
   if (server->shutdown_published) {
     grpc_cq_end_op(&exec_ctx, cq, tag, 1, done_published_shutdown, NULL,
                    gpr_malloc(sizeof(grpc_cq_completion)));
@@ -1183,7 +1176,7 @@ grpc_call_error grpc_server_request_call(
     error = GRPC_CALL_ERROR_NOT_SERVER_COMPLETION_QUEUE;
     goto done;
   }
-  grpc_cq_begin_op(cq_for_notification);
+  grpc_cq_begin_op(cq_for_notification, tag);
   details->reserved = NULL;
   rc->type = BATCH_CALL;
   rc->server = server;
@@ -1220,7 +1213,7 @@ grpc_call_error grpc_server_request_registered_call(
     error = GRPC_CALL_ERROR_NOT_SERVER_COMPLETION_QUEUE;
     goto done;
   }
-  grpc_cq_begin_op(cq_for_notification);
+  grpc_cq_begin_op(cq_for_notification, tag);
   rc->type = REGISTERED_CALL;
   rc->server = server;
   rc->tag = tag;

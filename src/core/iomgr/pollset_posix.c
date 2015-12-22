@@ -232,21 +232,7 @@ void grpc_pollset_add_fd(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
   gpr_mu_lock(&pollset->mu);
   pollset->vtable->add_fd(exec_ctx, pollset, fd, 1);
 /* the following (enabled only in debug) will reacquire and then release
-   our lock - meaning that if the unlocking flag passed to del_fd above is
-   not respected, the code will deadlock (in a way that we have a chance of
-   debugging) */
-#ifndef NDEBUG
-  gpr_mu_lock(&pollset->mu);
-  gpr_mu_unlock(&pollset->mu);
-#endif
-}
-
-void grpc_pollset_del_fd(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
-                         grpc_fd *fd) {
-  gpr_mu_lock(&pollset->mu);
-  pollset->vtable->del_fd(exec_ctx, pollset, fd, 1);
-/* the following (enabled only in debug) will reacquire and then release
-   our lock - meaning that if the unlocking flag passed to del_fd above is
+   our lock - meaning that if the unlocking flag passed to add_fd above is
    not respected, the code will deadlock (in a way that we have a chance of
    debugging) */
 #ifndef NDEBUG
@@ -547,19 +533,6 @@ exit:
   }
 }
 
-static void basic_pollset_del_fd(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
-                                 grpc_fd *fd, int and_unlock_pollset) {
-  GPR_ASSERT(fd);
-  if (fd == pollset->data.ptr) {
-    GRPC_FD_UNREF(pollset->data.ptr, "basicpoll");
-    pollset->data.ptr = NULL;
-  }
-
-  if (and_unlock_pollset) {
-    gpr_mu_unlock(&pollset->mu);
-  }
-}
-
 static void basic_pollset_maybe_work_and_unlock(grpc_exec_ctx *exec_ctx,
                                                 grpc_pollset *pollset,
                                                 grpc_pollset_worker *worker,
@@ -613,7 +586,9 @@ static void basic_pollset_maybe_work_and_unlock(grpc_exec_ctx *exec_ctx,
   GPR_TIMER_END("poll", 0);
 
   if (r < 0) {
-    gpr_log(GPR_ERROR, "poll() failed: %s", strerror(errno));
+    if (errno != EINTR) {
+      gpr_log(GPR_ERROR, "poll() failed: %s", strerror(errno));
+    }
     if (fd) {
       grpc_fd_end_poll(exec_ctx, &fd_watcher, 0, 0);
     }
@@ -649,9 +624,8 @@ static void basic_pollset_destroy(grpc_pollset *pollset) {
 }
 
 static const grpc_pollset_vtable basic_pollset = {
-    basic_pollset_add_fd, basic_pollset_del_fd,
-    basic_pollset_maybe_work_and_unlock, basic_pollset_destroy,
-    basic_pollset_destroy};
+    basic_pollset_add_fd, basic_pollset_maybe_work_and_unlock,
+    basic_pollset_destroy, basic_pollset_destroy};
 
 static void become_basic_pollset(grpc_pollset *pollset, grpc_fd *fd_or_null) {
   pollset->vtable = &basic_pollset;

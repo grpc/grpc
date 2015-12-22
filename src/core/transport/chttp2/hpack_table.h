@@ -59,7 +59,6 @@
 
 /* hpack decoder table */
 typedef struct {
-  grpc_mdctx *mdctx;
   /* the first used entry in ents */
   gpr_uint32 first_ent;
   /* how many entries are in the table */
@@ -84,7 +83,7 @@ typedef struct {
 } grpc_chttp2_hptbl;
 
 /* initialize a hpack table */
-void grpc_chttp2_hptbl_init(grpc_chttp2_hptbl *tbl, grpc_mdctx *mdctx);
+void grpc_chttp2_hptbl_init(grpc_chttp2_hptbl *tbl);
 void grpc_chttp2_hptbl_destroy(grpc_chttp2_hptbl *tbl);
 void grpc_chttp2_hptbl_set_max_bytes(grpc_chttp2_hptbl *tbl,
                                      gpr_uint32 max_bytes);

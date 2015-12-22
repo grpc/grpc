@@ -36,6 +36,8 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{46CEDFFF-9692-456A-AA24-38B5D6BCF4C5}</ProjectGuid>
+    <IgnoreWarnIntDirInTempDetected>true</IgnoreWarnIntDirInTempDetected>
+    <IntDir>$(SolutionDir)IntDir\$(MSBuildProjectName)\</IntDir>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(VisualStudioVersion)' == '10.0'" Label="Configuration">
@@ -46,6 +48,9 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(VisualStudioVersion)' == '12.0'" Label="Configuration">
     <PlatformToolset>v120</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(VisualStudioVersion)' == '14.0'" Label="Configuration">
+    <PlatformToolset>v140</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)'=='Debug'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
@@ -89,11 +94,12 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;_USE_32BIT_TIME_T;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <TreatWarningAsError>true</TreatWarningAsError>
       <DebugInformationFormat Condition="$(Jenkins)">None</DebugInformationFormat>
+      <MinimalRebuild Condition="$(Jenkins)">false</MinimalRebuild>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -111,6 +117,7 @@
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <TreatWarningAsError>true</TreatWarningAsError>
       <DebugInformationFormat Condition="$(Jenkins)">None</DebugInformationFormat>
+      <MinimalRebuild Condition="$(Jenkins)">false</MinimalRebuild>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -125,11 +132,12 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;_USE_32BIT_TIME_T;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <TreatWarningAsError>true</TreatWarningAsError>
       <DebugInformationFormat Condition="$(Jenkins)">None</DebugInformationFormat>
+      <MinimalRebuild Condition="$(Jenkins)">false</MinimalRebuild>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -151,6 +159,7 @@
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <TreatWarningAsError>true</TreatWarningAsError>
       <DebugInformationFormat Condition="$(Jenkins)">None</DebugInformationFormat>
+      <MinimalRebuild Condition="$(Jenkins)">false</MinimalRebuild>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -165,11 +174,12 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;_USE_32BIT_TIME_T;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <TreatWarningAsError>true</TreatWarningAsError>
       <DebugInformationFormat Condition="$(Jenkins)">None</DebugInformationFormat>
+      <MinimalRebuild Condition="$(Jenkins)">false</MinimalRebuild>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -187,6 +197,7 @@
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <TreatWarningAsError>true</TreatWarningAsError>
       <DebugInformationFormat Condition="$(Jenkins)">None</DebugInformationFormat>
+      <MinimalRebuild Condition="$(Jenkins)">false</MinimalRebuild>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -201,11 +212,12 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;_USE_32BIT_TIME_T;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <TreatWarningAsError>true</TreatWarningAsError>
       <DebugInformationFormat Condition="$(Jenkins)">None</DebugInformationFormat>
+      <MinimalRebuild Condition="$(Jenkins)">false</MinimalRebuild>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -227,6 +239,7 @@
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <TreatWarningAsError>true</TreatWarningAsError>
       <DebugInformationFormat Condition="$(Jenkins)">None</DebugInformationFormat>
+      <MinimalRebuild Condition="$(Jenkins)">false</MinimalRebuild>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -255,7 +268,6 @@
     <ClInclude Include="..\..\..\src\core\channel\context.h" />
     <ClInclude Include="..\..\..\src\core\channel\http_client_filter.h" />
     <ClInclude Include="..\..\..\src\core\channel\http_server_filter.h" />
-    <ClInclude Include="..\..\..\src\core\channel\noop_filter.h" />
     <ClInclude Include="..\..\..\src\core\channel\subchannel_call_holder.h" />
     <ClInclude Include="..\..\..\src\core\client_config\client_config.h" />
     <ClInclude Include="..\..\..\src\core\client_config\connector.h" />
@@ -272,9 +284,8 @@
     <ClInclude Include="..\..\..\src\core\client_config\resolvers\sockaddr_resolver.h" />
     <ClInclude Include="..\..\..\src\core\client_config\subchannel.h" />
     <ClInclude Include="..\..\..\src\core\client_config\subchannel_factory.h" />
-    <ClInclude Include="..\..\..\src\core\client_config\subchannel_factory_decorators\add_channel_arg.h" />
-    <ClInclude Include="..\..\..\src\core\client_config\subchannel_factory_decorators\merge_channel_args.h" />
     <ClInclude Include="..\..\..\src\core\client_config\uri_parser.h" />
+    <ClInclude Include="..\..\..\src\core\compression\algorithm_metadata.h" />
     <ClInclude Include="..\..\..\src\core\compression\message_compress.h" />
     <ClInclude Include="..\..\..\src\core\debug\trace.h" />
     <ClInclude Include="..\..\..\src\core\httpcli\format_request.h" />
@@ -357,6 +368,7 @@
     <ClInclude Include="..\..\..\src\core\transport\connectivity_state.h" />
     <ClInclude Include="..\..\..\src\core\transport\metadata.h" />
     <ClInclude Include="..\..\..\src\core\transport\metadata_batch.h" />
+    <ClInclude Include="..\..\..\src\core\transport\static_metadata.h" />
     <ClInclude Include="..\..\..\src\core\transport\transport.h" />
     <ClInclude Include="..\..\..\src\core\transport\transport_impl.h" />
     <ClInclude Include="..\..\..\src\core\census\aggregation.h" />
@@ -385,8 +397,6 @@
     <ClCompile Include="..\..\..\src\core\channel\http_client_filter.c">
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\channel\http_server_filter.c">
-    </ClCompile>
-    <ClCompile Include="..\..\..\src\core\channel\noop_filter.c">
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\channel\subchannel_call_holder.c">
     </ClCompile>
@@ -421,10 +431,6 @@
     <ClCompile Include="..\..\..\src\core\client_config\subchannel.c">
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\client_config\subchannel_factory.c">
-    </ClCompile>
-    <ClCompile Include="..\..\..\src\core\client_config\subchannel_factory_decorators\add_channel_arg.c">
-    </ClCompile>
-    <ClCompile Include="..\..\..\src\core\client_config\subchannel_factory_decorators\merge_channel_args.c">
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\client_config\uri_parser.c">
     </ClCompile>
@@ -546,6 +552,8 @@
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\surface\channel_create.c">
     </ClCompile>
+    <ClCompile Include="..\..\..\src\core\surface\channel_ping.c">
+    </ClCompile>
     <ClCompile Include="..\..\..\src\core\surface\completion_queue.c">
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\surface\event_string.c">
@@ -613,6 +621,8 @@
     <ClCompile Include="..\..\..\src\core\transport\metadata.c">
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\transport\metadata_batch.c">
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\transport\static_metadata.c">
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\transport\transport.c">
     </ClCompile>
