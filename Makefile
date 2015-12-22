@@ -1963,6 +1963,7 @@ initial_settings_frame_bad_client_test: $(BINDIR)/$(CONFIG)/initial_settings_fra
 server_registered_method_bad_client_test: $(BINDIR)/$(CONFIG)/server_registered_method_bad_client_test
 simple_request_bad_client_test: $(BINDIR)/$(CONFIG)/simple_request_bad_client_test
 unknown_frame_bad_client_test: $(BINDIR)/$(CONFIG)/unknown_frame_bad_client_test
+window_overflow_bad_client_test: $(BINDIR)/$(CONFIG)/window_overflow_bad_client_test
 bad_ssl_alpn_server: $(BINDIR)/$(CONFIG)/bad_ssl_alpn_server
 bad_ssl_cert_server: $(BINDIR)/$(CONFIG)/bad_ssl_cert_server
 bad_ssl_alpn_test: $(BINDIR)/$(CONFIG)/bad_ssl_alpn_test
@@ -3226,6 +3227,7 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/server_registered_method_bad_client_test \
   $(BINDIR)/$(CONFIG)/simple_request_bad_client_test \
   $(BINDIR)/$(CONFIG)/unknown_frame_bad_client_test \
+  $(BINDIR)/$(CONFIG)/window_overflow_bad_client_test \
   $(BINDIR)/$(CONFIG)/bad_ssl_alpn_server \
   $(BINDIR)/$(CONFIG)/bad_ssl_cert_server \
   $(BINDIR)/$(CONFIG)/bad_ssl_alpn_test \
@@ -5548,6 +5550,8 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/simple_request_bad_client_test || ( echo test simple_request_bad_client_test failed ; exit 1 )
 	$(E) "[RUN]     Testing unknown_frame_bad_client_test"
 	$(Q) $(BINDIR)/$(CONFIG)/unknown_frame_bad_client_test || ( echo test unknown_frame_bad_client_test failed ; exit 1 )
+	$(E) "[RUN]     Testing window_overflow_bad_client_test"
+	$(Q) $(BINDIR)/$(CONFIG)/window_overflow_bad_client_test || ( echo test window_overflow_bad_client_test failed ; exit 1 )
 	$(E) "[RUN]     Testing bad_ssl_alpn_test"
 	$(Q) $(BINDIR)/$(CONFIG)/bad_ssl_alpn_test || ( echo test bad_ssl_alpn_test failed ; exit 1 )
 	$(E) "[RUN]     Testing bad_ssl_cert_test"
@@ -29284,6 +29288,23 @@ deps_unknown_frame_bad_client_test: $(UNKNOWN_FRAME_BAD_CLIENT_TEST_OBJS:.o=.dep
 
 ifneq ($(NO_DEPS),true)
 -include $(UNKNOWN_FRAME_BAD_CLIENT_TEST_OBJS:.o=.dep)
+endif
+
+
+WINDOW_OVERFLOW_BAD_CLIENT_TEST_SRC = \
+    test/core/bad_client/tests/window_overflow.c \
+
+WINDOW_OVERFLOW_BAD_CLIENT_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(WINDOW_OVERFLOW_BAD_CLIENT_TEST_SRC))))
+$(BINDIR)/$(CONFIG)/window_overflow_bad_client_test: $(WINDOW_OVERFLOW_BAD_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(WINDOW_OVERFLOW_BAD_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/window_overflow_bad_client_test
+
+$(OBJDIR)/$(CONFIG)/test/core/bad_client/tests/window_overflow.o:  $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+deps_window_overflow_bad_client_test: $(WINDOW_OVERFLOW_BAD_CLIENT_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(WINDOW_OVERFLOW_BAD_CLIENT_TEST_OBJS:.o=.dep)
 endif
 
 

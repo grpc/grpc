@@ -104,6 +104,7 @@ static void connected(grpc_exec_ctx *exec_ctx, void *arg, int success) {
     grpc_chttp2_transport_start_reading(exec_ctx, c->result->transport, NULL,
                                         0);
     GPR_ASSERT(c->result->transport);
+    c->result->channel_args = c->args.channel_args;
     c->result->filters = gpr_malloc(sizeof(grpc_channel_filter *));
     c->result->filters[0] = &grpc_http_client_filter;
     c->result->num_filters = 1;

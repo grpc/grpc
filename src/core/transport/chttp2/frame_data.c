@@ -58,7 +58,7 @@ void grpc_chttp2_data_parser_destroy(grpc_exec_ctx *exec_ctx,
   }
   while (
       (bs = grpc_chttp2_incoming_frame_queue_pop(&parser->incoming_frames))) {
-    grpc_byte_stream_destroy(bs);
+    grpc_byte_stream_destroy(exec_ctx, bs);
   }
 }
 
