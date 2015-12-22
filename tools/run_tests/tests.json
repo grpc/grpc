@@ -2145,25 +2145,6 @@
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
-    "name": "server_registered_method_bad_client_test", 
-    "platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ]
-  }, 
-  {
-    "args": [], 
-    "ci_platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ], 
-    "exclude_configs": [], 
-    "flaky": false, 
-    "language": "c", 
     "name": "simple_request_bad_client_test", 
     "platforms": [
       "linux", 
@@ -2184,25 +2165,6 @@
     "flaky": false, 
     "language": "c", 
     "name": "unknown_frame_bad_client_test", 
-    "platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ]
-  }, 
-  {
-    "args": [], 
-    "ci_platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ], 
-    "exclude_configs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "window_overflow_bad_client_test", 
     "platforms": [
       "linux", 
       "mac", 

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\x509\pkcs7_test.c">
+      <Filter>third_party\boringssl\crypto\x509</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="third_party">
+      <UniqueIdentifier>{e1d85135-7d93-6a00-029f-3cbd555ab362}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party\boringssl">
+      <UniqueIdentifier>{b1dfede4-7b4f-d7e3-a318-71d3475c53b9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party\boringssl\crypto">
+      <UniqueIdentifier>{3bdb9eac-3803-c782-67d3-6123f25995c3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party\boringssl\crypto\x509">
+      <UniqueIdentifier>{3ef63256-b6b8-a91a-8f75-0683c9ded5c1}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+
