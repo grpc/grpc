@@ -5,7 +5,7 @@
   def calc_to_filter(path):
     return '\\'.join(path.split('/')[:-1])
 %>\
-<%def name="get_repo_root(proj)">${'..\..\..' + ('\..' if proj.vs_proj_dir != '.' else '')}</%def>\
+<%def name="get_repo_root(proj)">${'$(SolutionDir)\..'}</%def>\
 <%def name="to_windows_path(path)">${path.replace('/','\\')}</%def>\
 <%def name="to_filter(path)">${calc_to_filter(path)}</%def>\
 <%def name="filter_to_guid(proj, filter)">${re.sub('(........)(....)(....)(....)', r'\1-\2-\3-\4-', hashlib.md5(''.join([filter, proj])).hexdigest())}</%def>\
