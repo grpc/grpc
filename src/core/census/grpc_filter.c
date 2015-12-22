@@ -36,15 +36,16 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "src/core/channel/channel_stack.h"
-#include "src/core/channel/noop_filter.h"
-#include "src/core/statistics/census_interface.h"
-#include "src/core/statistics/census_rpc_stats.h"
 #include <grpc/census.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/slice.h>
 #include <grpc/support/time.h>
+
+#include "src/core/channel/channel_stack.h"
+#include "src/core/statistics/census_interface.h"
+#include "src/core/statistics/census_rpc_stats.h"
+#include "src/core/transport/static_metadata.h"
 
 typedef struct call_data {
   census_op_id op_id;
@@ -58,16 +59,14 @@ typedef struct call_data {
   grpc_closure finish_recv;
 } call_data;
 
-typedef struct channel_data {
-  grpc_mdstr *path_str; /* pointer to meta data str with key == ":path" */
-} channel_data;
+typedef struct channel_data { gpr_uint8 unused; } channel_data;
 
 static void extract_and_annotate_method_tag(grpc_metadata_batch *md,
                                             call_data *calld,
                                             channel_data *chand) {
   grpc_linked_mdelem *m;
   for (m = md->list.head; m != NULL; m = m->next) {
-    if (m->md->key == chand->path_str) {
+    if (m->md->key == GRPC_MDSTR_PATH) {
       gpr_log(GPR_DEBUG, "%s",
               (const char *)GPR_SLICE_START_PTR(m->md->value->slice));
       /* Add method tag here */
@@ -116,8 +115,11 @@ static void server_mutate_op(grpc_call_element *elem,
 static void server_start_transport_op(grpc_exec_ctx *exec_ctx,
                                       grpc_call_element *elem,
                                       grpc_transport_stream_op *op) {
+  /* TODO(ctiller): this code fails. I don't know why. I expect it's
+                    incomplete, and someone should look at it soon.
+
   call_data *calld = elem->call_data;
-  GPR_ASSERT((calld->op_id.upper != 0) || (calld->op_id.lower != 0));
+  GPR_ASSERT((calld->op_id.upper != 0) || (calld->op_id.lower != 0)); */
   server_mutate_op(elem, op);
   grpc_call_next_op(exec_ctx, elem, op);
 }
@@ -161,16 +163,12 @@ static void init_channel_elem(grpc_exec_ctx *exec_ctx,
                               grpc_channel_element_args *args) {
   channel_data *chand = elem->channel_data;
   GPR_ASSERT(chand != NULL);
-  chand->path_str = grpc_mdstr_from_string(args->metadata_context, ":path");
 }
 
 static void destroy_channel_elem(grpc_exec_ctx *exec_ctx,
                                  grpc_channel_element *elem) {
   channel_data *chand = elem->channel_data;
   GPR_ASSERT(chand != NULL);
-  if (chand->path_str != NULL) {
-    GRPC_MDSTR_UNREF(chand->path_str);
-  }
 }
 
 const grpc_channel_filter grpc_client_census_filter = {

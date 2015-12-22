@@ -32,21 +32,14 @@
  */
 
 #import <Foundation/Foundation.h>
-#include <grpc/grpc.h>
 
 #import "../GRPCCall.h"
 
-@interface GRPCRequestHeaders : NSObject<GRPCRequestHeaders>
-
-@property(nonatomic, readonly) NSUInteger count;
-@property(nonatomic, readonly) grpc_metadata *grpc_metadataArray;
+@interface GRPCRequestHeaders : NSMutableDictionary
 
 - (instancetype)initWithCall:(GRPCCall *)call;
 
-- (id)objectForKeyedSubscript:(NSString *)key;
-- (void)setObject:(id)obj forKeyedSubscript:(NSString *)key;
-
-- (void)removeAllObjects;
-- (void)removeObjectForKey:(NSString *)key;
+- (instancetype)initWithCall:(GRPCCall *)call
+                     storage:(NSMutableDictionary *)storage NS_DESIGNATED_INITIALIZER;
 
 @end

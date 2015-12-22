@@ -59,7 +59,6 @@ typedef enum {
   "FakeTransportSecurity"
 
 #define GRPC_CALL_CREDENTIALS_TYPE_OAUTH2 "Oauth2"
-#define GRPC_CALL_CREDENTIALS_TYPE_METADATA_PLUGIN "Plugin"
 #define GRPC_CALL_CREDENTIALS_TYPE_JWT "Jwt"
 #define GRPC_CALL_CREDENTIALS_TYPE_IAM "Iam"
 #define GRPC_CALL_CREDENTIALS_TYPE_COMPOSITE "Composite"
@@ -93,6 +92,14 @@ typedef enum {
 
 /* It is the caller's responsibility to gpr_free the result if not NULL. */
 char *grpc_get_well_known_google_credentials_file_path(void);
+
+/* Implementation function for the different platforms. */
+char *grpc_get_well_known_google_credentials_file_path_impl(void);
+
+/* Override for testing only. Not thread-safe */
+typedef char *(*grpc_well_known_credentials_path_getter)(void);
+void grpc_override_well_known_credentials_path_getter(
+    grpc_well_known_credentials_path_getter getter);
 
 /* --- grpc_channel_credentials. --- */
 
@@ -162,7 +169,7 @@ typedef struct {
   void (*destruct)(grpc_call_credentials *c);
   void (*get_request_metadata)(grpc_exec_ctx *exec_ctx,
                                grpc_call_credentials *c, grpc_pollset *pollset,
-                               const char *service_url,
+                               grpc_auth_metadata_context context,
                                grpc_credentials_metadata_cb cb,
                                void *user_data);
 } grpc_call_credentials_vtable;
@@ -175,12 +182,10 @@ struct grpc_call_credentials {
 
 grpc_call_credentials *grpc_call_credentials_ref(grpc_call_credentials *creds);
 void grpc_call_credentials_unref(grpc_call_credentials *creds);
-void grpc_call_credentials_get_request_metadata(grpc_exec_ctx *exec_ctx,
-                                                grpc_call_credentials *creds,
-                                                grpc_pollset *pollset,
-                                                const char *service_url,
-                                                grpc_credentials_metadata_cb cb,
-                                                void *user_data);
+void grpc_call_credentials_get_request_metadata(
+    grpc_exec_ctx *exec_ctx, grpc_call_credentials *creds,
+    grpc_pollset *pollset, grpc_auth_metadata_context context,
+    grpc_credentials_metadata_cb cb, void *user_data);
 
 typedef struct {
   grpc_call_credentials **creds_array;
@@ -204,6 +209,7 @@ grpc_credentials_status
 grpc_oauth2_token_fetcher_credentials_parse_server_response(
     const struct grpc_httpcli_response *response,
     grpc_credentials_md_store **token_md, gpr_timespec *token_lifetime);
+
 void grpc_flush_cached_google_default_credentials(void);
 
 /* Metadata-only credentials with the specified key and value where

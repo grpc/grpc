@@ -56,4 +56,10 @@ extern int grpc_tcp_trace;
 grpc_endpoint *grpc_tcp_create(grpc_fd *fd, size_t read_slice_size,
                                const char *peer_string);
 
+/* Destroy the tcp endpoint without closing its fd. *fd will be set and done
+ * will be called when the endpoint is destroyed.
+ * Requires: ep must be a tcp endpoint and fd must not be NULL. */
+void grpc_tcp_destroy_and_release_fd(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
+                                     int *fd, grpc_closure *done);
+
 #endif /* GRPC_INTERNAL_CORE_IOMGR_TCP_POSIX_H */

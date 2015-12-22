@@ -69,13 +69,13 @@ static void on_finish(grpc_exec_ctx *exec_ctx, void *arg,
   gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));
 }
 
-static void test_get(int use_ssl, int port) {
+static void test_get(int port) {
   grpc_httpcli_request req;
   char *host;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
   g_done = 0;
-  gpr_log(GPR_INFO, "running %s with use_ssl=%d.", "test_get", use_ssl);
+  gpr_log(GPR_INFO, "test_get");
 
   gpr_asprintf(&host, "localhost:%d", port);
   gpr_log(GPR_INFO, "requesting from %s", host);
@@ -83,7 +83,7 @@ static void test_get(int use_ssl, int port) {
   memset(&req, 0, sizeof(req));
   req.host = host;
   req.path = "/get";
-  req.handshaker = use_ssl ? &grpc_httpcli_ssl : &grpc_httpcli_plaintext;
+  req.handshaker = &grpc_httpcli_plaintext;
 
   grpc_httpcli_get(&exec_ctx, &g_context, &g_pollset, &req, n_seconds_time(15),
                    on_finish, (void *)42);
@@ -100,13 +100,13 @@ static void test_get(int use_ssl, int port) {
   gpr_free(host);
 }
 
-static void test_post(int use_ssl, int port) {
+static void test_post(int port) {
   grpc_httpcli_request req;
   char *host;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
   g_done = 0;
-  gpr_log(GPR_INFO, "running %s with use_ssl=%d.", "test_post", (int)use_ssl);
+  gpr_log(GPR_INFO, "test_post");
 
   gpr_asprintf(&host, "localhost:%d", port);
   gpr_log(GPR_INFO, "posting to %s", host);
@@ -114,7 +114,7 @@ static void test_post(int use_ssl, int port) {
   memset(&req, 0, sizeof(req));
   req.host = host;
   req.path = "/post";
-  req.handshaker = use_ssl ? &grpc_httpcli_ssl : &grpc_httpcli_plaintext;
+  req.handshaker = &grpc_httpcli_plaintext;
 
   grpc_httpcli_post(&exec_ctx, &g_context, &g_pollset, &req, "hello", 5,
                     n_seconds_time(15), on_finish, (void *)42);
@@ -142,19 +142,26 @@ int main(int argc, char **argv) {
   char *me = argv[0];
   char *lslash = strrchr(me, '/');
   char *args[4];
-  char root[1024];
   int port = grpc_pick_unused_port_or_die();
 
-  /* figure out where we are */
-  if (lslash) {
-    memcpy(root, me, (size_t)(lslash - me));
-    root[lslash - me] = 0;
+  GPR_ASSERT(argc <= 2);
+  if (argc == 2) {
+    args[0] = gpr_strdup(argv[1]);
   } else {
-    strcpy(root, ".");
+    /* figure out where we are */
+    char *root;
+    if (lslash) {
+      root = gpr_malloc((size_t)(lslash - me + 1));
+      memcpy(root, me, (size_t)(lslash - me));
+      root[lslash - me] = 0;
+    } else {
+      root = gpr_strdup(".");
+    }
+    gpr_asprintf(&args[0], "%s/../../test/core/httpcli/test_server.py", root);
+    gpr_free(root);
   }
 
   /* start the server */
-  gpr_asprintf(&args[0], "%s/../../test/core/httpcli/test_server.py", root);
   args[1] = "--port";
   gpr_asprintf(&args[2], "%d", port);
   server = gpr_subprocess_create(3, (const char **)args);
@@ -170,8 +177,8 @@ int main(int argc, char **argv) {
   grpc_httpcli_context_init(&g_context);
   grpc_pollset_init(&g_pollset);
 
-  test_get(0, port);
-  test_post(0, port);
+  test_get(port);
+  test_post(port);
 
   grpc_httpcli_context_destroy(&g_context);
   grpc_closure_init(&destroyed, destroy_pollset, &g_pollset);

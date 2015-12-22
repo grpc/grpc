@@ -49,6 +49,7 @@
 #include "src/core/transport/chttp2/internal.h"
 #include "src/core/transport/chttp2/status_conversion.h"
 #include "src/core/transport/chttp2/timeout_encoding.h"
+#include "src/core/transport/static_metadata.h"
 #include "src/core/transport/transport_impl.h"
 
 #define DEFAULT_WINDOW 65535
@@ -133,6 +134,14 @@ static void connectivity_state_set(
 static void check_read_ops(grpc_exec_ctx *exec_ctx,
                            grpc_chttp2_transport_global *transport_global);
 
+static void incoming_byte_stream_update_flow_control(
+    grpc_chttp2_transport_global *transport_global,
+    grpc_chttp2_stream_global *stream_global, size_t max_size_hint,
+    size_t have_already);
+
+static void fail_pending_writes(grpc_exec_ctx *exec_ctx,
+                                grpc_chttp2_stream_global *stream_global);
+
 /*
  * CONSTRUCTION/DESTRUCTION/REFCOUNTING
  */
@@ -154,9 +163,6 @@ static void destruct_transport(grpc_exec_ctx *exec_ctx,
   gpr_slice_buffer_destroy(&t->read_buffer);
   grpc_chttp2_hpack_parser_destroy(&t->parsing.hpack_parser);
   grpc_chttp2_goaway_parser_destroy(&t->parsing.goaway_parser);
-
-  GRPC_MDSTR_UNREF(t->parsing.str_grpc_timeout);
-  GRPC_MDELEM_UNREF(t->parsing.elem_grpc_status_ok);
 
   for (i = 0; i < STREAM_LIST_COUNT; i++) {
     GPR_ASSERT(t->lists[i].head == NULL);
@@ -182,8 +188,6 @@ static void destruct_transport(grpc_exec_ctx *exec_ctx,
     ping->prev->next = ping->next;
     gpr_free(ping);
   }
-
-  grpc_mdctx_unref(t->metadata_context);
 
   gpr_free(t->peer_string);
   gpr_free(t);
@@ -219,8 +223,7 @@ static void ref_transport(grpc_chttp2_transport *t) { gpr_ref(&t->refs); }
 
 static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
                            const grpc_channel_args *channel_args,
-                           grpc_endpoint *ep, grpc_mdctx *mdctx,
-                           gpr_uint8 is_client) {
+                           grpc_endpoint *ep, gpr_uint8 is_client) {
   size_t i;
   int j;
 
@@ -236,9 +239,7 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   /* ref is dropped at transport close() */
   gpr_ref_init(&t->shutdown_ep_refs, 1);
   gpr_mu_init(&t->mu);
-  grpc_mdctx_ref(mdctx);
   t->peer_string = grpc_endpoint_get_peer(ep);
-  t->metadata_context = mdctx;
   t->endpoint_reading = 1;
   t->global.next_stream_id = is_client ? 1 : 2;
   t->global.is_client = is_client;
@@ -249,10 +250,6 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   t->global.ping_counter = 1;
   t->global.pings.next = t->global.pings.prev = &t->global.pings;
   t->parsing.is_client = is_client;
-  t->parsing.str_grpc_timeout =
-      grpc_mdstr_from_string(t->metadata_context, "grpc-timeout");
-  t->parsing.elem_grpc_status_ok =
-      grpc_mdelem_from_strings(t->metadata_context, "grpc-status", "0");
   t->parsing.deframe_state =
       is_client ? GRPC_DTS_FH_0 : GRPC_DTS_CLIENT_PREFIX_0;
   t->writing.is_client = is_client;
@@ -263,12 +260,12 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   gpr_slice_buffer_init(&t->global.qbuf);
 
   gpr_slice_buffer_init(&t->writing.outbuf);
-  grpc_chttp2_hpack_compressor_init(&t->writing.hpack_compressor, mdctx);
+  grpc_chttp2_hpack_compressor_init(&t->writing.hpack_compressor);
   grpc_closure_init(&t->writing_action, writing_action, t);
 
   gpr_slice_buffer_init(&t->parsing.qbuf);
   grpc_chttp2_goaway_parser_init(&t->parsing.goaway_parser);
-  grpc_chttp2_hpack_parser_init(&t->parsing.hpack_parser, t->metadata_context);
+  grpc_chttp2_hpack_parser_init(&t->parsing.hpack_parser);
 
   grpc_closure_init(&t->writing.done_cb, grpc_chttp2_terminate_writing,
                     &t->writing);
@@ -356,7 +353,7 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
           gpr_log(GPR_ERROR, "%s: must be an integer",
                   GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_DECODER);
         } else if (channel_args->args[i].value.integer < 0) {
-          gpr_log(GPR_DEBUG, "%s: must be non-negative",
+          gpr_log(GPR_ERROR, "%s: must be non-negative",
                   GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_DECODER);
         } else {
           push_setting(t, GRPC_CHTTP2_SETTINGS_HEADER_TABLE_SIZE,
@@ -368,7 +365,7 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
           gpr_log(GPR_ERROR, "%s: must be an integer",
                   GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_ENCODER);
         } else if (channel_args->args[i].value.integer < 0) {
-          gpr_log(GPR_DEBUG, "%s: must be non-negative",
+          gpr_log(GPR_ERROR, "%s: must be non-negative",
                   GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_ENCODER);
         } else {
           grpc_chttp2_hpack_compressor_set_max_usable_size(
@@ -540,7 +537,7 @@ static void destroy_stream(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
 
   while (
       (bs = grpc_chttp2_incoming_frame_queue_pop(&s->global.incoming_frames))) {
-    grpc_byte_stream_destroy(bs);
+    grpc_byte_stream_destroy(exec_ctx, bs);
   }
 
   GPR_ASSERT(s->global.send_initial_metadata_finished == NULL);
@@ -636,6 +633,7 @@ void grpc_chttp2_terminate_writing(grpc_exec_ctx *exec_ctx,
                                    void *transport_writing_ptr, int success) {
   grpc_chttp2_transport_writing *transport_writing = transport_writing_ptr;
   grpc_chttp2_transport *t = TRANSPORT_FROM_WRITING(transport_writing);
+  grpc_chttp2_stream_global *stream_global;
 
   GPR_TIMER_BEGIN("grpc_chttp2_terminate_writing", 0);
 
@@ -648,6 +646,12 @@ void grpc_chttp2_terminate_writing(grpc_exec_ctx *exec_ctx,
   }
 
   grpc_chttp2_cleanup_writing(exec_ctx, &t->global, &t->writing);
+
+  while (grpc_chttp2_list_pop_closed_waiting_for_writing(&t->global,
+                                                         &stream_global)) {
+    fail_pending_writes(exec_ctx, stream_global);
+    GRPC_CHTTP2_STREAM_UNREF(exec_ctx, stream_global, "finish_writes");
+  }
 
   /* leave the writing flag up on shutdown to prevent further writes in unlock()
      from starting */
@@ -762,11 +766,10 @@ void grpc_chttp2_complete_closure_step(grpc_exec_ctx *exec_ctx,
 static int contains_non_ok_status(
     grpc_chttp2_transport_global *transport_global,
     grpc_metadata_batch *batch) {
-  grpc_mdelem *ok_elem =
-      TRANSPORT_FROM_GLOBAL(transport_global)->parsing.elem_grpc_status_ok;
   grpc_linked_mdelem *l;
   for (l = batch->list.head; l; l = l->next) {
-    if (l->md->key == ok_elem->key && l->md != ok_elem) {
+    if (l->md->key == GRPC_MDSTR_GRPC_STATUS &&
+        l->md != GRPC_MDELEM_GRPC_STATUS_0) {
       return 1;
     }
   }
@@ -870,6 +873,13 @@ static void perform_stream_op_locked(
     GPR_ASSERT(stream_global->recv_message_ready == NULL);
     stream_global->recv_message_ready = op->recv_message_ready;
     stream_global->recv_message = op->recv_message;
+    if (stream_global->id != 0 &&
+        (stream_global->incoming_frames.head == NULL ||
+         stream_global->incoming_frames.head->is_tail)) {
+      incoming_byte_stream_update_flow_control(
+          transport_global, stream_global, transport_global->stream_lookahead,
+          0);
+    }
     grpc_chttp2_list_add_check_read_ops(transport_global, stream_global);
   }
 
@@ -913,6 +923,26 @@ static void send_ping_locked(grpc_chttp2_transport *t, grpc_closure *on_recv) {
   gpr_slice_buffer_add(&t->global.qbuf, grpc_chttp2_ping_create(0, p->id));
 }
 
+void grpc_chttp2_ack_ping(grpc_exec_ctx *exec_ctx,
+                          grpc_chttp2_transport_parsing *transport_parsing,
+                          const gpr_uint8 *opaque_8bytes) {
+  grpc_chttp2_outstanding_ping *ping;
+  grpc_chttp2_transport *t = TRANSPORT_FROM_PARSING(transport_parsing);
+  grpc_chttp2_transport_global *transport_global = &t->global;
+  lock(t);
+  for (ping = transport_global->pings.next; ping != &transport_global->pings;
+       ping = ping->next) {
+    if (0 == memcmp(opaque_8bytes, ping->id, 8)) {
+      grpc_exec_ctx_enqueue(exec_ctx, ping->on_recv, 1);
+      ping->next->prev = ping->prev;
+      ping->prev->next = ping->next;
+      gpr_free(ping);
+      break;
+    }
+  }
+  unlock(exec_ctx, t);
+}
+
 static void perform_transport_op(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
                                  grpc_transport_op *op) {
   grpc_chttp2_transport *t = (grpc_chttp2_transport *)gt;
@@ -922,7 +952,7 @@ static void perform_transport_op(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
 
   grpc_exec_ctx_enqueue(exec_ctx, op->on_consumed, 1);
 
-  if (op->on_connectivity_state_change) {
+  if (op->on_connectivity_state_change != NULL) {
     grpc_connectivity_state_notify_on_state_change(
         exec_ctx, &t->channel_callback.state_tracker, op->connectivity_state,
         op->on_connectivity_state_change);
@@ -1004,7 +1034,7 @@ static void check_read_ops(grpc_exec_ctx *exec_ctx,
       while (stream_global->seen_error &&
              (bs = grpc_chttp2_incoming_frame_queue_pop(
                   &stream_global->incoming_frames)) != NULL) {
-        grpc_byte_stream_destroy(bs);
+        grpc_byte_stream_destroy(exec_ctx, bs);
       }
       if (stream_global->incoming_frames.head == NULL) {
         grpc_chttp2_incoming_metadata_buffer_publish(
@@ -1032,6 +1062,12 @@ static void remove_stream(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
     t->parsing.incoming_stream = NULL;
     grpc_chttp2_parsing_become_skip_parser(exec_ctx, &t->parsing);
   }
+  if (s->parsing.data_parser.parsing_frame != NULL) {
+    grpc_chttp2_incoming_byte_stream_finished(
+        exec_ctx, s->parsing.data_parser.parsing_frame, 0, 0);
+    s->parsing.data_parser.parsing_frame = NULL;
+  }
+
   if (grpc_chttp2_unregister_stream(t, s) && t->global.sent_goaway) {
     close_transport_locked(exec_ctx, t);
   }
@@ -1078,19 +1114,18 @@ void grpc_chttp2_fake_status(grpc_exec_ctx *exec_ctx,
      about the metadata yet */
   if (!stream_global->published_trailing_metadata ||
       stream_global->recv_trailing_metadata_finished != NULL) {
-    grpc_mdctx *mdctx =
-        TRANSPORT_FROM_GLOBAL(transport_global)->metadata_context;
     char status_string[GPR_LTOA_MIN_BUFSIZE];
     gpr_ltoa(status, status_string);
     grpc_chttp2_incoming_metadata_buffer_add(
         &stream_global->received_trailing_metadata,
-        grpc_mdelem_from_strings(mdctx, "grpc-status", status_string));
+        grpc_mdelem_from_metadata_strings(
+            GRPC_MDSTR_GRPC_STATUS, grpc_mdstr_from_string(status_string)));
     if (slice) {
       grpc_chttp2_incoming_metadata_buffer_add(
           &stream_global->received_trailing_metadata,
           grpc_mdelem_from_metadata_strings(
-              mdctx, grpc_mdstr_from_string(mdctx, "grpc-message"),
-              grpc_mdstr_from_slice(mdctx, gpr_slice_ref(*slice))));
+              GRPC_MDSTR_GRPC_MESSAGE,
+              grpc_mdstr_from_slice(gpr_slice_ref(*slice))));
     }
     stream_global->published_trailing_metadata = 1;
     grpc_chttp2_list_add_check_read_ops(transport_global, stream_global);
@@ -1098,6 +1133,16 @@ void grpc_chttp2_fake_status(grpc_exec_ctx *exec_ctx,
   if (slice) {
     gpr_slice_unref(*slice);
   }
+}
+
+static void fail_pending_writes(grpc_exec_ctx *exec_ctx,
+                                grpc_chttp2_stream_global *stream_global) {
+  grpc_chttp2_complete_closure_step(
+      exec_ctx, &stream_global->send_initial_metadata_finished, 0);
+  grpc_chttp2_complete_closure_step(
+      exec_ctx, &stream_global->send_trailing_metadata_finished, 0);
+  grpc_chttp2_complete_closure_step(exec_ctx,
+                                    &stream_global->send_message_finished, 0);
 }
 
 void grpc_chttp2_mark_stream_closed(
@@ -1116,6 +1161,13 @@ void grpc_chttp2_mark_stream_closed(
   }
   if (close_writes && !stream_global->write_closed) {
     stream_global->write_closed = 1;
+    if (TRANSPORT_FROM_GLOBAL(transport_global)->writing_active) {
+      GRPC_CHTTP2_STREAM_REF(stream_global, "finish_writes");
+      grpc_chttp2_list_add_closed_waiting_for_writing(transport_global,
+                                                      stream_global);
+    } else {
+      fail_pending_writes(exec_ctx, stream_global);
+    }
   }
   if (stream_global->read_closed && stream_global->write_closed) {
     if (stream_global->id != 0 &&
@@ -1127,7 +1179,6 @@ void grpc_chttp2_mark_stream_closed(
         remove_stream(exec_ctx, TRANSPORT_FROM_GLOBAL(transport_global),
                       stream_global->id);
       }
-      stream_global->finished_close = 1;
       GRPC_CHTTP2_STREAM_UNREF(exec_ctx, stream_global, "chttp2");
     }
   }
@@ -1312,7 +1363,11 @@ static void recv_data(grpc_exec_ctx *exec_ctx, void *tp, int success) {
       ;
     GPR_TIMER_END("recv_data.parse", 0);
     gpr_mu_lock(&t->mu);
+    /* copy parsing qbuf to global qbuf */
+    gpr_slice_buffer_move_into(&t->parsing.qbuf, &t->global.qbuf);
     if (i != t->read_buffer.count) {
+      unlock(exec_ctx, t);
+      lock(t);
       drop_connection(exec_ctx, t);
     }
     /* merge stream lists */
@@ -1337,7 +1392,6 @@ static void recv_data(grpc_exec_ctx *exec_ctx, void *tp, int success) {
       GPR_ASSERT(stream_global->write_closed);
       GPR_ASSERT(stream_global->read_closed);
       remove_stream(exec_ctx, t, stream_global->id);
-      stream_global->finished_close = 1;
       GRPC_CHTTP2_STREAM_UNREF(exec_ctx, stream_global, "chttp2");
     }
   }
@@ -1468,6 +1522,10 @@ static int incoming_byte_stream_next(grpc_exec_ctx *exec_ctx,
     *slice = gpr_slice_buffer_take_first(&bs->slices);
     unlock(exec_ctx, bs->transport);
     return 1;
+  } else if (bs->failed) {
+    grpc_exec_ctx_enqueue(exec_ctx, on_complete, 0);
+    unlock(exec_ctx, bs->transport);
+    return 0;
   } else {
     bs->on_next = on_complete;
     bs->next = slice;
@@ -1483,7 +1541,8 @@ static void incoming_byte_stream_unref(grpc_chttp2_incoming_byte_stream *bs) {
   }
 }
 
-static void incoming_byte_stream_destroy(grpc_byte_stream *byte_stream) {
+static void incoming_byte_stream_destroy(grpc_exec_ctx *exec_ctx,
+                                         grpc_byte_stream *byte_stream) {
   incoming_byte_stream_unref((grpc_chttp2_incoming_byte_stream *)byte_stream);
 }
 
@@ -1502,7 +1561,29 @@ void grpc_chttp2_incoming_byte_stream_push(grpc_exec_ctx *exec_ctx,
 }
 
 void grpc_chttp2_incoming_byte_stream_finished(
-    grpc_exec_ctx *exec_ctx, grpc_chttp2_incoming_byte_stream *bs) {
+    grpc_exec_ctx *exec_ctx, grpc_chttp2_incoming_byte_stream *bs, int success,
+    int from_parsing_thread) {
+  if (!success) {
+    if (from_parsing_thread) {
+      gpr_mu_lock(&bs->transport->mu);
+    }
+    grpc_exec_ctx_enqueue(exec_ctx, bs->on_next, 0);
+    bs->on_next = NULL;
+    bs->failed = 1;
+    if (from_parsing_thread) {
+      gpr_mu_unlock(&bs->transport->mu);
+    }
+  } else {
+#ifndef NDEBUG
+    if (from_parsing_thread) {
+      gpr_mu_lock(&bs->transport->mu);
+    }
+    GPR_ASSERT(bs->on_next == NULL);
+    if (from_parsing_thread) {
+      gpr_mu_unlock(&bs->transport->mu);
+    }
+#endif
+  }
   incoming_byte_stream_unref(bs);
 }
 
@@ -1523,6 +1604,7 @@ grpc_chttp2_incoming_byte_stream *grpc_chttp2_incoming_byte_stream_create(
   gpr_slice_buffer_init(&incoming_byte_stream->slices);
   incoming_byte_stream->on_next = NULL;
   incoming_byte_stream->is_tail = 1;
+  incoming_byte_stream->failed = 0;
   if (add_to_queue->head == NULL) {
     add_to_queue->head = incoming_byte_stream;
   } else {
@@ -1530,13 +1612,6 @@ grpc_chttp2_incoming_byte_stream *grpc_chttp2_incoming_byte_stream_create(
     add_to_queue->tail->next_message = incoming_byte_stream;
   }
   add_to_queue->tail = incoming_byte_stream;
-  if (frame_size == 0) {
-    lock(TRANSPORT_FROM_PARSING(transport_parsing));
-    incoming_byte_stream_update_flow_control(
-        &TRANSPORT_FROM_PARSING(transport_parsing)->global,
-        &STREAM_FROM_PARSING(stream_parsing)->global, 0, 0);
-    unlock(exec_ctx, TRANSPORT_FROM_PARSING(transport_parsing));
-  }
   return incoming_byte_stream;
 }
 
@@ -1641,9 +1716,9 @@ static const grpc_transport_vtable vtable = {
 
 grpc_transport *grpc_create_chttp2_transport(
     grpc_exec_ctx *exec_ctx, const grpc_channel_args *channel_args,
-    grpc_endpoint *ep, grpc_mdctx *mdctx, int is_client) {
+    grpc_endpoint *ep, int is_client) {
   grpc_chttp2_transport *t = gpr_malloc(sizeof(grpc_chttp2_transport));
-  init_transport(exec_ctx, t, channel_args, ep, mdctx, is_client != 0);
+  init_transport(exec_ctx, t, channel_args, ep, is_client != 0);
   return &t->base;
 }
 

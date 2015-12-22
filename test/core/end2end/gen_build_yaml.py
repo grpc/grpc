@@ -37,8 +37,11 @@ import collections
 import hashlib
 
 
-FixtureOptions = collections.namedtuple('FixtureOptions', 'fullstack includes_proxy dns_resolver secure platforms ci_mac tracing')
-default_unsecure_fixture_options = FixtureOptions(True, False, True, False, ['windows', 'linux', 'mac', 'posix'], True, False)
+FixtureOptions = collections.namedtuple(
+    'FixtureOptions',
+    'fullstack includes_proxy dns_resolver secure platforms ci_mac tracing')
+default_unsecure_fixture_options = FixtureOptions(
+    True, False, True, False, ['windows', 'linux', 'mac', 'posix'], True, False)
 socketpair_unsecure_fixture_options = default_unsecure_fixture_options._replace(fullstack=False, dns_resolver=False)
 default_secure_fixture_options = default_unsecure_fixture_options._replace(secure=True)
 uds_fixture_options = default_unsecure_fixture_options._replace(dns_resolver=False, platforms=['linux', 'mac', 'posix'])
@@ -47,23 +50,34 @@ uds_fixture_options = default_unsecure_fixture_options._replace(dns_resolver=Fal
 # maps fixture name to whether it requires the security library
 END2END_FIXTURES = {
     'h2_compress': default_unsecure_fixture_options,
+    'h2_census': default_unsecure_fixture_options,
     'h2_fakesec': default_secure_fixture_options._replace(ci_mac=False),
     'h2_full': default_unsecure_fixture_options,
-    'h2_full+poll': default_unsecure_fixture_options._replace(platforms=['linux']),
+    'h2_full+poll': default_unsecure_fixture_options._replace(
+        platforms=['linux']),
+    'h2_full+pipe': default_unsecure_fixture_options._replace(
+        platforms=['linux']),
+    'h2_full+poll+pipe': default_unsecure_fixture_options._replace(
+        platforms=['linux']),
     'h2_oauth2': default_secure_fixture_options._replace(ci_mac=False),
-    'h2_proxy': default_unsecure_fixture_options._replace(includes_proxy=True, ci_mac=False),
-    'h2_sockpair_1byte': socketpair_unsecure_fixture_options._replace(ci_mac=False),
+    'h2_proxy': default_unsecure_fixture_options._replace(includes_proxy=True,
+                                                          ci_mac=False),
+    'h2_sockpair_1byte': socketpair_unsecure_fixture_options._replace(
+        ci_mac=False),
     'h2_sockpair': socketpair_unsecure_fixture_options._replace(ci_mac=False),
-    'h2_sockpair+trace': socketpair_unsecure_fixture_options._replace(tracing=True),
+    'h2_sockpair+trace': socketpair_unsecure_fixture_options._replace(
+        tracing=True),
     'h2_ssl': default_secure_fixture_options,
     'h2_ssl+poll': default_secure_fixture_options._replace(platforms=['linux']),
-    'h2_ssl_proxy': default_secure_fixture_options._replace(includes_proxy=True, ci_mac=False),
-    'h2_uchannel': default_unsecure_fixture_options,
+    'h2_ssl_proxy': default_secure_fixture_options._replace(includes_proxy=True,
+                                                            ci_mac=False),
+    'h2_uchannel': default_unsecure_fixture_options._replace(fullstack=False),
     'h2_uds+poll': uds_fixture_options._replace(platforms=['linux']),
     'h2_uds': uds_fixture_options,
 }
 
-TestOptions = collections.namedtuple('TestOptions', 'needs_fullstack needs_dns proxyable flaky secure traceable')
+TestOptions = collections.namedtuple(
+    'TestOptions', 'needs_fullstack needs_dns proxyable flaky secure traceable')
 default_test_options = TestOptions(False, False, True, False, False, True)
 connectivity_test_options = default_test_options._replace(needs_fullstack=True)
 
@@ -78,14 +92,16 @@ END2END_TESTS = {
     'cancel_before_invoke': default_test_options,
     'cancel_in_a_vacuum': default_test_options,
     'cancel_with_status': default_test_options,
-    'census_simple_request': default_test_options,
     'channel_connectivity': connectivity_test_options._replace(proxyable=False),
+    'channel_ping': connectivity_test_options._replace(proxyable=False),
     'compressed_payload': default_test_options._replace(proxyable=False),
-    'default_host': default_test_options._replace(needs_fullstack=True, needs_dns=True),
+    'default_host': default_test_options._replace(needs_fullstack=True,
+                                                  needs_dns=True),
     'disappearing_server': connectivity_test_options,
     'empty_batch': default_test_options,
     'graceful_server_shutdown': default_test_options,
-    'hpack_size': default_test_options._replace(proxyable=False, traceable=False),
+    'hpack_size': default_test_options._replace(proxyable=False,
+                                                traceable=False),
     'high_initial_seqno': default_test_options,
     'invoke_large_request': default_test_options,
     'large_metadata': default_test_options,
@@ -153,12 +169,27 @@ def main():
               'language': 'c',
               'secure': 'check' if END2END_FIXTURES[f].secure else False,
               'src': ['test/core/end2end/fixtures/%s.c' % f],
-              'platforms': [ 'linux', 'mac', 'posix' ] if f.endswith('_posix') else END2END_FIXTURES[f].platforms,
-              'deps': sec_deps if END2END_FIXTURES[f].secure else unsec_deps,
+              'platforms': ['linux', 'mac', 'posix'] if f.endswith('_posix')
+                           else END2END_FIXTURES[f].platforms,
+              'deps': sec_deps,
               'headers': ['test/core/end2end/end2end_tests.h'],
               'vs_proj_dir': 'test',
-          }
-          for f in sorted(END2END_FIXTURES.keys())] + [
+          } for f in sorted(END2END_FIXTURES.keys())
+      ] + [
+          {
+              'name': 'end2end_nosec_fixture_%s' % f,
+              'build': 'private',
+              'language': 'c',
+              'secure': False,
+              'src': ['test/core/end2end/fixtures/%s.c' % f],
+              'platforms': ['linux', 'mac', 'posix'] if f.endswith('_posix')
+                           else END2END_FIXTURES[f].platforms,
+              'deps': unsec_deps,
+              'headers': ['test/core/end2end/end2end_tests.h'],
+              'vs_proj_dir': 'test',
+          } for f in sorted(END2END_FIXTURES.keys())
+            if not END2END_FIXTURES[f].secure
+      ] + [
           {
               'name': 'end2end_test_%s' % t,
               'build': 'private',
@@ -167,10 +198,23 @@ def main():
               'src': ['test/core/end2end/tests/%s.c' % t],
               'headers': ['test/core/end2end/tests/cancel_test_helpers.h',
                           'test/core/end2end/end2end_tests.h'],
-              'deps': sec_deps if END2END_TESTS[t].secure else unsec_deps,
+              'deps': sec_deps,
               'vs_proj_dir': 'test',
-          }
-          for t in sorted(END2END_TESTS.keys())] + [
+          } for t in sorted(END2END_TESTS.keys())
+      ] + [
+          {
+              'name': 'end2end_nosec_test_%s' % t,
+              'build': 'private',
+              'language': 'c',
+              'secure': False,
+              'src': ['test/core/end2end/tests/%s.c' % t],
+              'headers': ['test/core/end2end/tests/cancel_test_helpers.h',
+                          'test/core/end2end/end2end_tests.h'],
+              'deps': unsec_deps,
+              'vs_proj_dir': 'test',
+          } for t in sorted(END2END_TESTS.keys())
+            if not END2END_TESTS[t].secure
+      ] + [
           {
               'name': 'end2end_certs',
               'build': 'private',
@@ -182,7 +226,7 @@ def main():
               ],
               'vs_proj_dir': 'test',
           }
-          ],
+      ],
       'targets': [
           {
               'name': '%s_%s_test' % (f, t),
@@ -191,17 +235,17 @@ def main():
               'src': [],
               'flaky': END2END_TESTS[t].flaky,
               'platforms': END2END_FIXTURES[f].platforms,
-              'ci_platforms': (END2END_FIXTURES[f].platforms 
-                               if END2END_FIXTURES[f].ci_mac 
-                               else without(END2END_FIXTURES[f].platforms, 'mac')),
+              'ci_platforms': (END2END_FIXTURES[f].platforms
+                               if END2END_FIXTURES[f].ci_mac else without(
+                                   END2END_FIXTURES[f].platforms, 'mac')),
               'deps': [
-                  'end2end_fixture_%s' % f,
-                  'end2end_test_%s' % t] + sec_deps,
+                  'end2end_fixture_%s' % f, 'end2end_test_%s' % t
+              ] + sec_deps,
               'vs_proj_dir': 'test',
           }
-      for f in sorted(END2END_FIXTURES.keys())
-      for t in sorted(END2END_TESTS.keys())
-      if compatible(f, t)] + [
+          for f in sorted(END2END_FIXTURES.keys())
+          for t in sorted(END2END_TESTS.keys()) if compatible(f, t)
+      ] + [
           {
               'name': '%s_%s_nosec_test' % (f, t),
               'build': 'test',
@@ -210,16 +254,20 @@ def main():
               'src': [],
               'flaky': END2END_TESTS[t].flaky,
               'platforms': END2END_FIXTURES[f].platforms,
-              'ci_platforms': (END2END_FIXTURES[f].platforms 
-                               if END2END_FIXTURES[f].ci_mac 
-                               else without(END2END_FIXTURES[f].platforms, 'mac')),
+              'ci_platforms': (END2END_FIXTURES[f].platforms
+                               if END2END_FIXTURES[f].ci_mac else without(
+                                   END2END_FIXTURES[f].platforms, 'mac')),
               'deps': [
-                  'end2end_fixture_%s' % f,
-                  'end2end_test_%s' % t] + unsec_deps,
+                  'end2end_nosec_fixture_%s' % f, 'end2end_nosec_test_%s' % t
+              ] + unsec_deps,
               'vs_proj_dir': 'test',
           }
-      for f in sorted(END2END_FIXTURES.keys()) if not END2END_FIXTURES[f].secure
-      for t in sorted(END2END_TESTS.keys()) if compatible(f, t) and not END2END_TESTS[t].secure]}
+          for f in sorted(END2END_FIXTURES.keys())
+          if not END2END_FIXTURES[f].secure
+          for t in sorted(END2END_TESTS.keys())
+          if compatible(f, t) and not END2END_TESTS[t].secure
+      ]
+  }
   print yaml.dump(json)
 
 

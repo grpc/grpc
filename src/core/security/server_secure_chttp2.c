@@ -52,17 +52,11 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/useful.h>
 
-typedef struct tcp_endpoint_list {
-  grpc_endpoint *tcp_endpoint;
-  struct tcp_endpoint_list *next;
-} tcp_endpoint_list;
-
 typedef struct grpc_server_secure_state {
   grpc_server *server;
   grpc_tcp_server *tcp;
   grpc_security_connector *sc;
   grpc_server_credentials *creds;
-  tcp_endpoint_list *handshaking_tcp_endpoints;
   int is_shutdown;
   gpr_mu mu;
   gpr_refcount refcount;
@@ -87,70 +81,46 @@ static void state_unref(grpc_server_secure_state *state) {
 }
 
 static void setup_transport(grpc_exec_ctx *exec_ctx, void *statep,
-                            grpc_transport *transport, grpc_mdctx *mdctx) {
+                            grpc_transport *transport,
+                            grpc_auth_context *auth_context) {
   static grpc_channel_filter const *extra_filters[] = {
       &grpc_server_auth_filter, &grpc_http_server_filter};
   grpc_server_secure_state *state = statep;
   grpc_channel_args *args_copy;
   grpc_arg args_to_add[2];
   args_to_add[0] = grpc_server_credentials_to_arg(state->creds);
-  args_to_add[1] = grpc_auth_context_to_arg(state->sc->auth_context);
+  args_to_add[1] = grpc_auth_context_to_arg(auth_context);
   args_copy = grpc_channel_args_copy_and_add(
       grpc_server_get_channel_args(state->server), args_to_add,
       GPR_ARRAY_SIZE(args_to_add));
   grpc_server_setup_transport(exec_ctx, state->server, transport, extra_filters,
-                              GPR_ARRAY_SIZE(extra_filters), mdctx, args_copy);
+                              GPR_ARRAY_SIZE(extra_filters), args_copy);
   grpc_channel_args_destroy(args_copy);
-}
-
-static int remove_tcp_from_list_locked(grpc_server_secure_state *state,
-                                       grpc_endpoint *tcp) {
-  tcp_endpoint_list *node = state->handshaking_tcp_endpoints;
-  tcp_endpoint_list *tmp = NULL;
-  if (node && node->tcp_endpoint == tcp) {
-    state->handshaking_tcp_endpoints = state->handshaking_tcp_endpoints->next;
-    gpr_free(node);
-    return 0;
-  }
-  while (node) {
-    if (node->next->tcp_endpoint == tcp) {
-      tmp = node->next;
-      node->next = node->next->next;
-      gpr_free(tmp);
-      return 0;
-    }
-    node = node->next;
-  }
-  return -1;
 }
 
 static void on_secure_handshake_done(grpc_exec_ctx *exec_ctx, void *statep,
                                      grpc_security_status status,
-                                     grpc_endpoint *wrapped_endpoint,
-                                     grpc_endpoint *secure_endpoint) {
+                                     grpc_endpoint *secure_endpoint,
+                                     grpc_auth_context *auth_context) {
   grpc_server_secure_state *state = statep;
   grpc_transport *transport;
-  grpc_mdctx *mdctx;
   if (status == GRPC_SECURITY_OK) {
-    gpr_mu_lock(&state->mu);
-    remove_tcp_from_list_locked(state, wrapped_endpoint);
-    if (!state->is_shutdown) {
-      mdctx = grpc_mdctx_create();
-      transport = grpc_create_chttp2_transport(
-          exec_ctx, grpc_server_get_channel_args(state->server),
-          secure_endpoint, mdctx, 0);
-      setup_transport(exec_ctx, state, transport, mdctx);
-      grpc_chttp2_transport_start_reading(exec_ctx, transport, NULL, 0);
-    } else {
-      /* We need to consume this here, because the server may already have gone
-       * away. */
-      grpc_endpoint_destroy(exec_ctx, secure_endpoint);
+    if (secure_endpoint) {
+      gpr_mu_lock(&state->mu);
+      if (!state->is_shutdown) {
+        transport = grpc_create_chttp2_transport(
+            exec_ctx, grpc_server_get_channel_args(state->server),
+            secure_endpoint, 0);
+        setup_transport(exec_ctx, state, transport, auth_context);
+        grpc_chttp2_transport_start_reading(exec_ctx, transport, NULL, 0);
+      } else {
+        /* We need to consume this here, because the server may already have
+         * gone away. */
+        grpc_endpoint_destroy(exec_ctx, secure_endpoint);
+      }
+      gpr_mu_unlock(&state->mu);
     }
-    gpr_mu_unlock(&state->mu);
   } else {
-    gpr_mu_lock(&state->mu);
-    remove_tcp_from_list_locked(state, wrapped_endpoint);
-    gpr_mu_unlock(&state->mu);
     gpr_log(GPR_ERROR, "Secure transport failed with error %d", status);
   }
   state_unref(state);
@@ -159,14 +129,7 @@ static void on_secure_handshake_done(grpc_exec_ctx *exec_ctx, void *statep,
 static void on_accept(grpc_exec_ctx *exec_ctx, void *statep,
                       grpc_endpoint *tcp) {
   grpc_server_secure_state *state = statep;
-  tcp_endpoint_list *node;
   state_ref(state);
-  node = gpr_malloc(sizeof(tcp_endpoint_list));
-  node->tcp_endpoint = tcp;
-  gpr_mu_lock(&state->mu);
-  node->next = state->handshaking_tcp_endpoints;
-  state->handshaking_tcp_endpoints = node;
-  gpr_mu_unlock(&state->mu);
   grpc_security_connector_do_handshake(exec_ctx, state->sc, tcp,
                                        on_secure_handshake_done, state);
 }
@@ -183,14 +146,7 @@ static void destroy_done(grpc_exec_ctx *exec_ctx, void *statep, int success) {
   grpc_server_secure_state *state = statep;
   state->destroy_callback->cb(exec_ctx, state->destroy_callback->cb_arg,
                               success);
-  gpr_mu_lock(&state->mu);
-  while (state->handshaking_tcp_endpoints != NULL) {
-    grpc_endpoint_shutdown(exec_ctx,
-                           state->handshaking_tcp_endpoints->tcp_endpoint);
-    remove_tcp_from_list_locked(state,
-                                state->handshaking_tcp_endpoints->tcp_endpoint);
-  }
-  gpr_mu_unlock(&state->mu);
+  grpc_security_connector_shutdown(exec_ctx, state->sc);
   state_unref(state);
 }
 
@@ -236,6 +192,7 @@ int grpc_server_add_secure_http2_port(grpc_server *server, const char *addr,
             creds->type);
     goto error;
   }
+  sc->channel_args = grpc_server_get_channel_args(server);
 
   /* resolve address */
   resolved = grpc_blocking_resolve_address(addr, "https");
@@ -254,7 +211,7 @@ int grpc_server_add_secure_http2_port(grpc_server *server, const char *addr,
         tcp, (struct sockaddr *)&resolved->addrs[i].addr,
         resolved->addrs[i].len);
     port_temp = grpc_tcp_listener_get_port(listener);
-    if (port_temp >= 0) {
+    if (port_temp > 0) {
       if (port_num == -1) {
         port_num = port_temp;
       } else {
@@ -282,7 +239,6 @@ int grpc_server_add_secure_http2_port(grpc_server *server, const char *addr,
   state->sc = sc;
   state->creds = grpc_server_credentials_ref(creds);
 
-  state->handshaking_tcp_endpoints = NULL;
   state->is_shutdown = 0;
   gpr_mu_init(&state->mu);
   gpr_ref_init(&state->refcount, 1);

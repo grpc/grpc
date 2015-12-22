@@ -33,6 +33,8 @@
 
 #include <grpc++/impl/proto_utils.h>
 
+#include <climits>
+
 #include <grpc/grpc.h>
 #include <grpc/byte_buffer.h>
 #include <grpc/byte_buffer_reader.h>
@@ -70,7 +72,9 @@ class GrpcBufferWriter GRPC_FINAL
       slice_ = gpr_slice_malloc(block_size_);
     }
     *data = GPR_SLICE_START_PTR(slice_);
-    byte_count_ += * size = GPR_SLICE_LENGTH(slice_);
+    // On win x64, int is only 32bit
+    GPR_ASSERT(GPR_SLICE_LENGTH(slice_) <= INT_MAX);
+    byte_count_ += * size = (int)GPR_SLICE_LENGTH(slice_);
     gpr_slice_buffer_add(slice_buffer_, slice_);
     return true;
   }
@@ -124,7 +128,9 @@ class GrpcBufferReader GRPC_FINAL
     }
     gpr_slice_unref(slice_);
     *data = GPR_SLICE_START_PTR(slice_);
-    byte_count_ += * size = GPR_SLICE_LENGTH(slice_);
+    // On win x64, int is only 32bit
+    GPR_ASSERT(GPR_SLICE_LENGTH(slice_) <= INT_MAX);
+    byte_count_ += * size = (int)GPR_SLICE_LENGTH(slice_);
     return true;
   }
 

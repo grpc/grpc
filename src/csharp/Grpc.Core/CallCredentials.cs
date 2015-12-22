@@ -41,14 +41,6 @@ using Grpc.Core.Utils;
 namespace Grpc.Core
 {
     /// <summary>
-    /// Asynchronous authentication interceptor for <see cref="CallCredentials"/>.
-    /// </summary>
-    /// <param name="authUri">URL of a service to which current remote call needs to authenticate</param>
-    /// <param name="metadata">Metadata to populate with entries that will be added to outgoing call's headers.</param>
-    /// <returns></returns>
-    public delegate Task AsyncAuthInterceptor(string authUri, Metadata metadata);
-
-    /// <summary>
     /// Client-side call credentials. Provide authorization with per-call granularity.
     /// </summary>
     public abstract class CallCredentials

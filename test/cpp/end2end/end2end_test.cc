@@ -119,10 +119,13 @@ class TestMetadataCredentialsPlugin : public MetadataCredentialsPlugin {
 
   bool IsBlocking() const GRPC_OVERRIDE { return is_blocking_; }
 
-  Status GetMetadata(grpc::string_ref service_url,
+  Status GetMetadata(grpc::string_ref service_url, grpc::string_ref method_name,
+                     const grpc::AuthContext& channel_auth_context,
                      std::multimap<grpc::string, grpc::string>* metadata)
       GRPC_OVERRIDE {
     EXPECT_GT(service_url.length(), 0UL);
+    EXPECT_GT(method_name.length(), 0UL);
+    EXPECT_TRUE(channel_auth_context.IsPeerAuthenticated());
     EXPECT_TRUE(metadata != nullptr);
     if (is_successful_) {
       metadata->insert(std::make_pair(kMetadataKey, metadata_value_));
@@ -539,6 +542,7 @@ TEST_P(End2endTest, BidiStream) {
   EXPECT_EQ(response.message(), request.message());
 
   stream->WritesDone();
+  EXPECT_FALSE(stream->Read(&response));
   EXPECT_FALSE(stream->Read(&response));
 
   Status s = stream->Finish();

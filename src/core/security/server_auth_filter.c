@@ -58,7 +58,6 @@ typedef struct call_data {
 typedef struct channel_data {
   grpc_auth_context *auth_context;
   grpc_server_credentials *creds;
-  grpc_mdctx *mdctx;
 } channel_data;
 
 static grpc_metadata_array metadata_batch_to_md_array(
@@ -141,7 +140,7 @@ static void on_md_processing_done(
     message = gpr_slice_from_copied_string(error_details);
     calld->transport_op.send_initial_metadata = NULL;
     if (calld->transport_op.send_message != NULL) {
-      grpc_byte_stream_destroy(calld->transport_op.send_message);
+      grpc_byte_stream_destroy(&exec_ctx, calld->transport_op.send_message);
       calld->transport_op.send_message = NULL;
     }
     calld->transport_op.send_trailing_metadata = NULL;
@@ -247,7 +246,6 @@ static void init_channel_elem(grpc_exec_ctx *exec_ctx,
   chand->auth_context =
       GRPC_AUTH_CONTEXT_REF(auth_context, "server_auth_filter");
   chand->creds = grpc_server_credentials_ref(creds);
-  chand->mdctx = args->metadata_context;
 }
 
 /* Destructor for channel data */

@@ -46,38 +46,20 @@ cdef class CompletionQueue:
     self.poll_condition = threading.Condition()
     self.is_polling = False
 
-  def poll(self, records.Timespec deadline=None):
-    # We name this 'poll' to avoid problems with CPython's expectations for
-    # 'special' methods (like next and __next__).
-    cdef grpc.gpr_timespec c_deadline = grpc.gpr_inf_future(
-        grpc.GPR_CLOCK_REALTIME)
+  cdef _interpret_event(self, grpc.grpc_event event):
     cdef records.OperationTag tag = None
     cdef object user_tag = None
     cdef call.Call operation_call = None
     cdef records.CallDetails request_call_details = None
     cdef records.Metadata request_metadata = None
     cdef records.Operations batch_operations = None
-    if deadline is not None:
-      c_deadline = deadline.c_time
-    cdef grpc.grpc_event event
-
-    # Poll within a critical section
-    with self.poll_condition:
-      while self.is_polling:
-        self.poll_condition.wait(float(deadline) - time.time())
-      self.is_polling = True
-    with nogil:
-      event = grpc.grpc_completion_queue_next(
-          self.c_completion_queue, c_deadline, NULL)
-    with self.poll_condition:
-      self.is_polling = False
-      self.poll_condition.notify()
-
     if event.type == grpc.GRPC_QUEUE_TIMEOUT:
-      return records.Event(event.type, False, None, None, None, None, None)
+      return records.Event(
+          event.type, False, None, None, None, None, False, None)
     elif event.type == grpc.GRPC_QUEUE_SHUTDOWN:
       self.is_shutdown = True
-      return records.Event(event.type, True, None, None, None, None, None)
+      return records.Event(
+          event.type, True, None, None, None, None, False, None)
     else:
       if event.tag != NULL:
         tag = <records.OperationTag>event.tag
@@ -97,7 +79,56 @@ cdef class CompletionQueue:
           operation_call.references.extend(tag.references)
       return records.Event(
           event.type, event.success, user_tag, operation_call,
-          request_call_details, request_metadata, batch_operations)
+          request_call_details, request_metadata, tag.is_new_request,
+          batch_operations)
+
+  def poll(self, records.Timespec deadline=None):
+    # We name this 'poll' to avoid problems with CPython's expectations for
+    # 'special' methods (like next and __next__).
+    cdef grpc.gpr_timespec c_deadline = grpc.gpr_inf_future(
+        grpc.GPR_CLOCK_REALTIME)
+    if deadline is not None:
+      c_deadline = deadline.c_time
+    cdef grpc.grpc_event event
+
+    # Poll within a critical section
+    # TODO(atash) consider making queue polling contention a hard error to
+    # enable easier bug discovery
+    with self.poll_condition:
+      while self.is_polling:
+        self.poll_condition.wait(float(deadline) - time.time())
+      self.is_polling = True
+    with nogil:
+      event = grpc.grpc_completion_queue_next(
+          self.c_completion_queue, c_deadline, NULL)
+    with self.poll_condition:
+      self.is_polling = False
+      self.poll_condition.notify()
+    return self._interpret_event(event)
+
+  def pluck(self, records.OperationTag tag, records.Timespec deadline=None):
+    # Plucking a 'None' tag is equivalent to passing control to GRPC core until
+    # the deadline.
+    cdef grpc.gpr_timespec c_deadline = grpc.gpr_inf_future(
+        grpc.GPR_CLOCK_REALTIME)
+    if deadline is not None:
+      c_deadline = deadline.c_time
+    cdef grpc.grpc_event event
+
+    # Poll within a critical section
+    # TODO(atash) consider making queue polling contention a hard error to
+    # enable easier bug discovery
+    with self.poll_condition:
+      while self.is_polling:
+        self.poll_condition.wait(float(deadline) - time.time())
+      self.is_polling = True
+    with nogil:
+      event = grpc.grpc_completion_queue_pluck(
+          self.c_completion_queue, <cpython.PyObject *>tag, c_deadline, NULL)
+    with self.poll_condition:
+      self.is_polling = False
+      self.poll_condition.notify()
+    return self._interpret_event(event)
 
   def shutdown(self):
     grpc.grpc_completion_queue_shutdown(self.c_completion_queue)
