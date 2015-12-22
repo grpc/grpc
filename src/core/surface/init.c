@@ -82,8 +82,8 @@ static grpc_plugin g_all_of_the_plugins[MAX_PLUGINS];
 static int g_number_of_plugins = 0;
 
 void grpc_register_plugin(void (*init)(void), void (*destroy)(void)) {
-  GRPC_API_TRACE("grpc_register_plugin(init=%lx, destroy=%lx)", 2,
-                 ((unsigned long)init, (unsigned long)destroy));
+  GRPC_API_TRACE("grpc_register_plugin(init=%p, destroy=%p)", 2,
+      ((void*)(gpr_intptr)init, (void*)(gpr_intptr)destroy));
   GPR_ASSERT(g_number_of_plugins != MAX_PLUGINS);
   g_all_of_the_plugins[g_number_of_plugins].init = init;
   g_all_of_the_plugins[g_number_of_plugins].destroy = destroy;

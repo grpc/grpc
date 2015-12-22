@@ -81,14 +81,15 @@ static void state_unref(grpc_server_secure_state *state) {
 }
 
 static void setup_transport(grpc_exec_ctx *exec_ctx, void *statep,
-                            grpc_transport *transport) {
+                            grpc_transport *transport,
+                            grpc_auth_context *auth_context) {
   static grpc_channel_filter const *extra_filters[] = {
       &grpc_server_auth_filter, &grpc_http_server_filter};
   grpc_server_secure_state *state = statep;
   grpc_channel_args *args_copy;
   grpc_arg args_to_add[2];
   args_to_add[0] = grpc_server_credentials_to_arg(state->creds);
-  args_to_add[1] = grpc_auth_context_to_arg(state->sc->auth_context);
+  args_to_add[1] = grpc_auth_context_to_arg(auth_context);
   args_copy = grpc_channel_args_copy_and_add(
       grpc_server_get_channel_args(state->server), args_to_add,
       GPR_ARRAY_SIZE(args_to_add));
@@ -99,7 +100,8 @@ static void setup_transport(grpc_exec_ctx *exec_ctx, void *statep,
 
 static void on_secure_handshake_done(grpc_exec_ctx *exec_ctx, void *statep,
                                      grpc_security_status status,
-                                     grpc_endpoint *secure_endpoint) {
+                                     grpc_endpoint *secure_endpoint,
+                                     grpc_auth_context *auth_context) {
   grpc_server_secure_state *state = statep;
   grpc_transport *transport;
   if (status == GRPC_SECURITY_OK) {
@@ -109,7 +111,7 @@ static void on_secure_handshake_done(grpc_exec_ctx *exec_ctx, void *statep,
         transport = grpc_create_chttp2_transport(
             exec_ctx, grpc_server_get_channel_args(state->server),
             secure_endpoint, 0);
-        setup_transport(exec_ctx, state, transport);
+        setup_transport(exec_ctx, state, transport, auth_context);
         grpc_chttp2_transport_start_reading(exec_ctx, transport, NULL, 0);
       } else {
         /* We need to consume this here, because the server may already have

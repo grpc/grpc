@@ -1,245 +1,245 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="..\..\..\src\core\profiling\basic_timers.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\profiling\basic_timers.c">
       <Filter>src\core\profiling</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\core\profiling\stap_timers.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\profiling\stap_timers.c">
       <Filter>src\core\profiling</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\core\support\alloc.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\support\alloc.c">
       <Filter>src\core\support</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\core\support\avl.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\support\avl.c">
       <Filter>src\core\support</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\core\support\cmdline.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\support\cmdline.c">
       <Filter>src\core\support</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\core\support\cpu_iphone.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\support\cpu_iphone.c">
       <Filter>src\core\support</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\core\support\cpu_linux.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\support\cpu_linux.c">
       <Filter>src\core\support</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\core\support\cpu_posix.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\support\cpu_posix.c">
       <Filter>src\core\support</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\core\support\cpu_windows.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\support\cpu_windows.c">
       <Filter>src\core\support</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\core\support\env_linux.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\support\env_linux.c">
       <Filter>src\core\support</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\core\support\env_posix.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\support\env_posix.c">
       <Filter>src\core\support</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\core\support\env_win32.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\support\env_win32.c">
       <Filter>src\core\support</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\core\support\file.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\support\file.c">
       <Filter>src\core\support</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\core\support\file_posix.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\support\file_posix.c">
       <Filter>src\core\support</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\core\support\file_win32.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\support\file_win32.c">
       <Filter>src\core\support</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\core\support\histogram.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\support\histogram.c">
       <Filter>src\core\support</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\core\support\host_port.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\support\host_port.c">
       <Filter>src\core\support</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\core\support\log.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\support\log.c">
       <Filter>src\core\support</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\core\support\log_android.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\support\log_android.c">
       <Filter>src\core\support</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\core\support\log_linux.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\support\log_linux.c">
       <Filter>src\core\support</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\core\support\log_posix.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\support\log_posix.c">
       <Filter>src\core\support</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\core\support\log_win32.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\support\log_win32.c">
       <Filter>src\core\support</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\core\support\murmur_hash.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\support\murmur_hash.c">
       <Filter>src\core\support</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\core\support\slice.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\support\slice.c">
       <Filter>src\core\support</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\core\support\slice_buffer.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\support\slice_buffer.c">
       <Filter>src\core\support</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\core\support\stack_lockfree.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\support\stack_lockfree.c">
       <Filter>src\core\support</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\core\support\string.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\support\string.c">
       <Filter>src\core\support</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\core\support\string_posix.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\support\string_posix.c">
       <Filter>src\core\support</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\core\support\string_win32.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\support\string_win32.c">
       <Filter>src\core\support</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\core\support\subprocess_posix.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\support\subprocess_posix.c">
       <Filter>src\core\support</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\core\support\sync.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\support\sync.c">
       <Filter>src\core\support</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\core\support\sync_posix.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\support\sync_posix.c">
       <Filter>src\core\support</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\core\support\sync_win32.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\support\sync_win32.c">
       <Filter>src\core\support</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\core\support\thd.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\support\thd.c">
       <Filter>src\core\support</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\core\support\thd_posix.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\support\thd_posix.c">
       <Filter>src\core\support</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\core\support\thd_win32.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\support\thd_win32.c">
       <Filter>src\core\support</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\core\support\time.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\support\time.c">
       <Filter>src\core\support</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\core\support\time_posix.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\support\time_posix.c">
       <Filter>src\core\support</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\core\support\time_precise.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\support\time_precise.c">
       <Filter>src\core\support</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\core\support\time_win32.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\support\time_win32.c">
       <Filter>src\core\support</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\core\support\tls_pthread.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\support\tls_pthread.c">
       <Filter>src\core\support</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\include\grpc\support\alloc.h">
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\support\alloc.h">
       <Filter>include\grpc\support</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\include\grpc\support\atm.h">
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\support\atm.h">
       <Filter>include\grpc\support</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\include\grpc\support\atm_gcc_atomic.h">
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\support\atm_gcc_atomic.h">
       <Filter>include\grpc\support</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\include\grpc\support\atm_gcc_sync.h">
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\support\atm_gcc_sync.h">
       <Filter>include\grpc\support</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\include\grpc\support\atm_win32.h">
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\support\atm_win32.h">
       <Filter>include\grpc\support</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\include\grpc\support\avl.h">
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\support\avl.h">
       <Filter>include\grpc\support</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\include\grpc\support\cmdline.h">
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\support\cmdline.h">
       <Filter>include\grpc\support</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\include\grpc\support\cpu.h">
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\support\cpu.h">
       <Filter>include\grpc\support</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\include\grpc\support\histogram.h">
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\support\histogram.h">
       <Filter>include\grpc\support</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\include\grpc\support\host_port.h">
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\support\host_port.h">
       <Filter>include\grpc\support</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\include\grpc\support\log.h">
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\support\log.h">
       <Filter>include\grpc\support</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\include\grpc\support\log_win32.h">
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\support\log_win32.h">
       <Filter>include\grpc\support</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\include\grpc\support\port_platform.h">
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\support\port_platform.h">
       <Filter>include\grpc\support</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\include\grpc\support\slice.h">
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\support\slice.h">
       <Filter>include\grpc\support</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\include\grpc\support\slice_buffer.h">
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\support\slice_buffer.h">
       <Filter>include\grpc\support</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\include\grpc\support\string_util.h">
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\support\string_util.h">
       <Filter>include\grpc\support</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\include\grpc\support\subprocess.h">
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\support\subprocess.h">
       <Filter>include\grpc\support</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\include\grpc\support\sync.h">
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\support\sync.h">
       <Filter>include\grpc\support</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\include\grpc\support\sync_generic.h">
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\support\sync_generic.h">
       <Filter>include\grpc\support</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\include\grpc\support\sync_posix.h">
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\support\sync_posix.h">
       <Filter>include\grpc\support</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\include\grpc\support\sync_win32.h">
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\support\sync_win32.h">
       <Filter>include\grpc\support</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\include\grpc\support\thd.h">
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\support\thd.h">
       <Filter>include\grpc\support</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\include\grpc\support\time.h">
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\support\time.h">
       <Filter>include\grpc\support</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\include\grpc\support\tls.h">
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\support\tls.h">
       <Filter>include\grpc\support</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\include\grpc\support\tls_gcc.h">
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\support\tls_gcc.h">
       <Filter>include\grpc\support</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\include\grpc\support\tls_msvc.h">
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\support\tls_msvc.h">
       <Filter>include\grpc\support</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\include\grpc\support\tls_pthread.h">
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\support\tls_pthread.h">
       <Filter>include\grpc\support</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\include\grpc\support\useful.h">
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\support\useful.h">
       <Filter>include\grpc\support</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\src\core\profiling\timers.h">
+    <ClInclude Include="$(SolutionDir)\..\src\core\profiling\timers.h">
       <Filter>src\core\profiling</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\src\core\support\block_annotate.h">
+    <ClInclude Include="$(SolutionDir)\..\src\core\support\block_annotate.h">
       <Filter>src\core\support</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\src\core\support\env.h">
+    <ClInclude Include="$(SolutionDir)\..\src\core\support\env.h">
       <Filter>src\core\support</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\src\core\support\file.h">
+    <ClInclude Include="$(SolutionDir)\..\src\core\support\file.h">
       <Filter>src\core\support</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\src\core\support\murmur_hash.h">
+    <ClInclude Include="$(SolutionDir)\..\src\core\support\murmur_hash.h">
       <Filter>src\core\support</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\src\core\support\stack_lockfree.h">
+    <ClInclude Include="$(SolutionDir)\..\src\core\support\stack_lockfree.h">
       <Filter>src\core\support</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\src\core\support\string.h">
+    <ClInclude Include="$(SolutionDir)\..\src\core\support\string.h">
       <Filter>src\core\support</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\src\core\support\string_win32.h">
+    <ClInclude Include="$(SolutionDir)\..\src\core\support\string_win32.h">
       <Filter>src\core\support</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\src\core\support\thd_internal.h">
+    <ClInclude Include="$(SolutionDir)\..\src\core\support\thd_internal.h">
       <Filter>src\core\support</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\src\core\support\time_precise.h">
+    <ClInclude Include="$(SolutionDir)\..\src\core\support\time_precise.h">
       <Filter>src\core\support</Filter>
     </ClInclude>
   </ItemGroup>

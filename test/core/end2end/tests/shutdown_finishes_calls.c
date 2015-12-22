@@ -189,6 +189,6 @@ static void test_early_server_shutdown_finishes_inflight_calls(
   config.tear_down_data(&f);
 }
 
-void grpc_end2end_tests(grpc_end2end_test_config config) {
+void shutdown_finishes_calls(grpc_end2end_test_config config) {
   test_early_server_shutdown_finishes_inflight_calls(config);
 }

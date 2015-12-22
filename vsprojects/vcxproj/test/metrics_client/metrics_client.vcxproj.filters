@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="..\..\..\..\src\proto\grpc\testing\metrics.proto">
+    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\metrics.proto">
       <Filter>src\proto\grpc\testing</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\test\cpp\interop\metrics_client.cc">
+    <ClCompile Include="$(SolutionDir)\..\test\cpp\interop\metrics_client.cc">
       <Filter>test\cpp\interop</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\..\test\cpp\util\metrics_server.h">
+    <ClInclude Include="$(SolutionDir)\..\test\cpp\util\metrics_server.h">
       <Filter>test\cpp\util</Filter>
     </ClInclude>
   </ItemGroup>

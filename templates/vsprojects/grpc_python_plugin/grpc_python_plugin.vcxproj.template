@@ -1,4 +1,0 @@
-%YAML 1.2
---- |
-  <%namespace file="../vcxproj_defs.include" import="gen_project"/>\
-  ${gen_project('grpc_python_plugin', targets)}
