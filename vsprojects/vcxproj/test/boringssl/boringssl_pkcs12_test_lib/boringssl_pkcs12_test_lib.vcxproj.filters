@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\pkcs8\pkcs12_test.cc">
+      <Filter>third_party\boringssl\crypto\pkcs8</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="third_party">
+      <UniqueIdentifier>{e49d323f-c0fb-a7f8-6660-3b39b5c72ae5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party\boringssl">
+      <UniqueIdentifier>{100ab179-ed6d-6374-7e83-bd3417a8933d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party\boringssl\crypto">
+      <UniqueIdentifier>{4fb3e903-0378-e562-fe12-ad5a56555187}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party\boringssl\crypto\pkcs8">
+      <UniqueIdentifier>{f5a73903-59ca-f276-c6f6-080f4b8e87f9}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

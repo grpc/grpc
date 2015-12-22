@@ -268,7 +268,7 @@ static void test_pingpong_streaming(grpc_end2end_test_config config,
   config.tear_down_data(&f);
 }
 
-void grpc_end2end_tests(grpc_end2end_test_config config) {
+void ping_pong_streaming(grpc_end2end_test_config config) {
   int i;
 
   for (i = 1; i < 10; i++) {

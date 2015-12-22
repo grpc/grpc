@@ -129,6 +129,6 @@ static void test_invoke_empty_body(grpc_end2end_test_config config) {
   config.tear_down_data(&f);
 }
 
-void grpc_end2end_tests(grpc_end2end_test_config config) {
+void empty_batch(grpc_end2end_test_config config) {
   test_invoke_empty_body(config);
 }
