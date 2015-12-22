@@ -141,7 +141,7 @@ typedef enum {
 
 /* Outstanding ping request data */
 typedef struct grpc_chttp2_outstanding_ping {
-  gpr_uint8 id[8];
+  uint8_t id[8];
   grpc_closure *on_recv;
   struct grpc_chttp2_outstanding_ping *next;
   struct grpc_chttp2_outstanding_ping *prev;
@@ -167,46 +167,46 @@ typedef struct {
   gpr_slice_buffer qbuf;
 
   /** window available for us to send to peer */
-  gpr_int64 outgoing_window;
+  int64_t outgoing_window;
   /** window available to announce to peer */
-  gpr_int64 announce_incoming_window;
+  int64_t announce_incoming_window;
   /** how much window would we like to have for incoming_window */
-  gpr_uint32 connection_window_target;
+  uint32_t connection_window_target;
 
   /** have we seen a goaway */
-  gpr_uint8 seen_goaway;
+  uint8_t seen_goaway;
   /** have we sent a goaway */
-  gpr_uint8 sent_goaway;
+  uint8_t sent_goaway;
 
   /** is this transport a client? */
-  gpr_uint8 is_client;
+  uint8_t is_client;
   /** are the local settings dirty and need to be sent? */
-  gpr_uint8 dirtied_local_settings;
+  uint8_t dirtied_local_settings;
   /** have local settings been sent? */
-  gpr_uint8 sent_local_settings;
+  uint8_t sent_local_settings;
   /** bitmask of setting indexes to send out */
-  gpr_uint32 force_send_settings;
+  uint32_t force_send_settings;
   /** settings values */
-  gpr_uint32 settings[GRPC_NUM_SETTING_SETS][GRPC_CHTTP2_NUM_SETTINGS];
+  uint32_t settings[GRPC_NUM_SETTING_SETS][GRPC_CHTTP2_NUM_SETTINGS];
 
   /** what is the next stream id to be allocated by this peer?
       copied to next_stream_id in parsing when parsing commences */
-  gpr_uint32 next_stream_id;
+  uint32_t next_stream_id;
 
   /** how far to lookahead in a stream? */
-  gpr_uint32 stream_lookahead;
+  uint32_t stream_lookahead;
 
   /** last received stream id */
-  gpr_uint32 last_incoming_stream_id;
+  uint32_t last_incoming_stream_id;
 
   /** pings awaiting responses */
   grpc_chttp2_outstanding_ping pings;
   /** next payload for an outgoing ping */
-  gpr_uint64 ping_counter;
+  uint64_t ping_counter;
 
   /** concurrent stream count: updated when not parsing,
       so this is a strict over-estimation on the client */
-  gpr_uint32 concurrent_stream_count;
+  uint32_t concurrent_stream_count;
 } grpc_chttp2_transport_global;
 
 typedef struct {
@@ -214,29 +214,29 @@ typedef struct {
   gpr_slice_buffer outbuf;
   /** hpack encoding */
   grpc_chttp2_hpack_compressor hpack_compressor;
-  gpr_int64 outgoing_window;
+  int64_t outgoing_window;
   /** is this a client? */
-  gpr_uint8 is_client;
+  uint8_t is_client;
   /** callback for when writing is done */
   grpc_closure done_cb;
 } grpc_chttp2_transport_writing;
 
 struct grpc_chttp2_transport_parsing {
   /** is this transport a client? (boolean) */
-  gpr_uint8 is_client;
+  uint8_t is_client;
 
   /** were settings updated? */
-  gpr_uint8 settings_updated;
+  uint8_t settings_updated;
   /** was a settings ack received? */
-  gpr_uint8 settings_ack_received;
+  uint8_t settings_ack_received;
   /** was a goaway frame received? */
-  gpr_uint8 goaway_received;
+  uint8_t goaway_received;
 
   /** the last sent max_table_size setting */
-  gpr_uint32 last_sent_max_table_size;
+  uint32_t last_sent_max_table_size;
 
   /** initial window change */
-  gpr_int64 initial_window_update;
+  int64_t initial_window_update;
 
   /** data to write later - after parsing */
   gpr_slice_buffer qbuf;
@@ -253,20 +253,20 @@ struct grpc_chttp2_transport_parsing {
   grpc_chttp2_goaway_parser goaway_parser;
 
   /** window available for peer to send to us */
-  gpr_int64 incoming_window;
+  int64_t incoming_window;
 
   /** next stream id available at the time of beginning parsing */
-  gpr_uint32 next_stream_id;
-  gpr_uint32 last_incoming_stream_id;
+  uint32_t next_stream_id;
+  uint32_t last_incoming_stream_id;
 
   /* deframing */
   grpc_chttp2_deframe_transport_state deframe_state;
-  gpr_uint8 incoming_frame_type;
-  gpr_uint8 incoming_frame_flags;
-  gpr_uint8 header_eof;
-  gpr_uint32 expect_continuation_stream_id;
-  gpr_uint32 incoming_frame_size;
-  gpr_uint32 incoming_stream_id;
+  uint8_t incoming_frame_type;
+  uint8_t incoming_frame_flags;
+  uint8_t header_eof;
+  uint32_t expect_continuation_stream_id;
+  uint32_t incoming_frame_size;
+  uint32_t incoming_stream_id;
 
   /* active parser */
   void *parser_data;
@@ -277,14 +277,14 @@ struct grpc_chttp2_transport_parsing {
       grpc_chttp2_stream_parsing *stream_parsing, gpr_slice slice, int is_last);
 
   /* received settings */
-  gpr_uint32 settings[GRPC_CHTTP2_NUM_SETTINGS];
+  uint32_t settings[GRPC_CHTTP2_NUM_SETTINGS];
 
   /* goaway data */
   grpc_status_code goaway_error;
-  gpr_uint32 goaway_last_stream_index;
+  uint32_t goaway_last_stream_index;
   gpr_slice goaway_text;
 
-  gpr_int64 outgoing_window;
+  int64_t outgoing_window;
 };
 
 struct grpc_chttp2_transport {
@@ -299,17 +299,17 @@ struct grpc_chttp2_transport {
   gpr_mu mu;
 
   /** is the transport destroying itself? */
-  gpr_uint8 destroying;
+  uint8_t destroying;
   /** has the upper layer closed the transport? */
-  gpr_uint8 closed;
+  uint8_t closed;
 
   /** is a thread currently writing */
-  gpr_uint8 writing_active;
+  uint8_t writing_active;
   /** is a thread currently parsing */
-  gpr_uint8 parsing_active;
+  uint8_t parsing_active;
 
   /** is there a read request to the endpoint outstanding? */
-  gpr_uint8 endpoint_reading;
+  uint8_t endpoint_reading;
 
   /** various lists of streams */
   grpc_chttp2_stream_list lists[STREAM_LIST_COUNT];
@@ -358,20 +358,20 @@ struct grpc_chttp2_transport {
 
 typedef struct {
   /** HTTP2 stream id for this stream, or zero if one has not been assigned */
-  gpr_uint32 id;
+  uint32_t id;
 
   /** window available for us to send to peer */
-  gpr_int64 outgoing_window;
+  int64_t outgoing_window;
   /** The number of bytes the upper layers have offered to receive.
       As the upper layer offers more bytes, this value increases.
       As bytes are read, this value decreases. */
-  gpr_uint32 max_recv_bytes;
+  uint32_t max_recv_bytes;
   /** The number of bytes the upper layer has offered to read but we have
       not yet announced to HTTP2 flow control.
       As the upper layers offer to read more bytes, this value increases.
       As we advertise incoming flow control window, this value decreases. */
-  gpr_uint32 unannounced_incoming_window_for_parse;
-  gpr_uint32 unannounced_incoming_window_for_writing;
+  uint32_t unannounced_incoming_window_for_parse;
+  uint32_t unannounced_incoming_window_for_writing;
   /** things the upper layers would like to send */
   grpc_metadata_batch *send_initial_metadata;
   grpc_closure *send_initial_metadata_finished;
@@ -390,18 +390,18 @@ typedef struct {
   /** when the application requests writes be closed, the write_closed is
       'queued'; when the close is flow controlled into the send path, we are
       'sending' it; when the write has been performed it is 'sent' */
-  gpr_uint8 write_closed;
+  uint8_t write_closed;
   /** is this stream reading half-closed (boolean) */
-  gpr_uint8 read_closed;
+  uint8_t read_closed;
   /** is this stream in the stream map? (boolean) */
-  gpr_uint8 in_stream_map;
+  uint8_t in_stream_map;
   /** has this stream seen an error? if 1, then pending incoming frames
       can be thrown away */
-  gpr_uint8 seen_error;
+  uint8_t seen_error;
 
-  gpr_uint8 published_initial_metadata;
-  gpr_uint8 published_trailing_metadata;
-  gpr_uint8 faked_trailing_metadata;
+  uint8_t published_initial_metadata;
+  uint8_t published_trailing_metadata;
+  uint8_t faked_trailing_metadata;
 
   grpc_chttp2_incoming_metadata_buffer received_initial_metadata;
   grpc_chttp2_incoming_metadata_buffer received_trailing_metadata;
@@ -411,19 +411,19 @@ typedef struct {
 
 typedef struct {
   /** HTTP2 stream id for this stream, or zero if one has not been assigned */
-  gpr_uint32 id;
-  gpr_uint8 fetching;
-  gpr_uint8 sent_initial_metadata;
-  gpr_uint8 sent_message;
-  gpr_uint8 sent_trailing_metadata;
-  gpr_uint8 read_closed;
+  uint32_t id;
+  uint8_t fetching;
+  uint8_t sent_initial_metadata;
+  uint8_t sent_message;
+  uint8_t sent_trailing_metadata;
+  uint8_t read_closed;
   /** send this initial metadata */
   grpc_metadata_batch *send_initial_metadata;
   grpc_byte_stream *send_message;
   grpc_metadata_batch *send_trailing_metadata;
-  gpr_int64 outgoing_window;
+  int64_t outgoing_window;
   /** how much window should we announce? */
-  gpr_uint32 announce_window;
+  uint32_t announce_window;
   gpr_slice_buffer flow_controlled_buffer;
   gpr_slice fetching_slice;
   size_t stream_fetched;
@@ -432,27 +432,27 @@ typedef struct {
 
 struct grpc_chttp2_stream_parsing {
   /** HTTP2 stream id for this stream, or zero if one has not been assigned */
-  gpr_uint32 id;
+  uint32_t id;
   /** has this stream received a close */
-  gpr_uint8 received_close;
+  uint8_t received_close;
   /** saw a rst_stream */
-  gpr_uint8 saw_rst_stream;
+  uint8_t saw_rst_stream;
   /** how many header frames have we received? */
-  gpr_uint8 header_frames_received;
+  uint8_t header_frames_received;
   /** which metadata did we get (on this parse) */
-  gpr_uint8 got_metadata_on_parse[2];
+  uint8_t got_metadata_on_parse[2];
   /** should we raise the seen_error flag in transport_global */
-  gpr_uint8 seen_error;
+  uint8_t seen_error;
   /** window available for peer to send to us */
-  gpr_int64 incoming_window;
+  int64_t incoming_window;
   /** parsing state for data frames */
   grpc_chttp2_data_parser data_parser;
   /** reason give to rst_stream */
-  gpr_uint32 rst_stream_reason;
+  uint32_t rst_stream_reason;
   /** amount of window given */
-  gpr_int64 outgoing_window;
+  int64_t outgoing_window;
   /** number of bytes received - reset at end of parse thread execution */
-  gpr_int64 received_bytes;
+  int64_t received_bytes;
 
   /** incoming metadata */
   grpc_chttp2_incoming_metadata_buffer metadata_buffer[2];
@@ -465,7 +465,7 @@ struct grpc_chttp2_stream {
   grpc_chttp2_stream_parsing parsing;
 
   grpc_chttp2_stream_link links[STREAM_LIST_COUNT];
-  gpr_uint8 included[STREAM_LIST_COUNT];
+  uint8_t included[STREAM_LIST_COUNT];
 };
 
 /** Transport writing call flow:
@@ -594,14 +594,14 @@ int grpc_chttp2_list_pop_closed_waiting_for_writing(
     grpc_chttp2_stream_global **stream_global);
 
 grpc_chttp2_stream_parsing *grpc_chttp2_parsing_lookup_stream(
-    grpc_chttp2_transport_parsing *transport_parsing, gpr_uint32 id);
+    grpc_chttp2_transport_parsing *transport_parsing, uint32_t id);
 grpc_chttp2_stream_parsing *grpc_chttp2_parsing_accept_stream(
     grpc_exec_ctx *exec_ctx, grpc_chttp2_transport_parsing *transport_parsing,
-    gpr_uint32 id);
+    uint32_t id);
 
 void grpc_chttp2_add_incoming_goaway(
     grpc_exec_ctx *exec_ctx, grpc_chttp2_transport_global *transport_global,
-    gpr_uint32 goaway_error, gpr_slice goaway_text);
+    uint32_t goaway_error, gpr_slice goaway_text);
 
 void grpc_chttp2_register_stream(grpc_chttp2_transport *t,
                                  grpc_chttp2_stream *s);
@@ -707,8 +707,7 @@ void grpc_chttp2_flowctl_trace(const char *file, int line, const char *phase,
                                grpc_chttp2_flowctl_op op, const char *context1,
                                const char *var1, const char *context2,
                                const char *var2, int is_client,
-                               gpr_uint32 stream_id, gpr_int64 val1,
-                               gpr_int64 val2);
+                               uint32_t stream_id, int64_t val1, int64_t val2);
 
 void grpc_chttp2_fake_status(grpc_exec_ctx *exec_ctx,
                              grpc_chttp2_transport_global *transport_global,
@@ -743,8 +742,8 @@ void grpc_chttp2_stream_unref(grpc_exec_ctx *exec_ctx,
 
 grpc_chttp2_incoming_byte_stream *grpc_chttp2_incoming_byte_stream_create(
     grpc_exec_ctx *exec_ctx, grpc_chttp2_transport_parsing *transport_parsing,
-    grpc_chttp2_stream_parsing *stream_parsing, gpr_uint32 frame_size,
-    gpr_uint32 flags, grpc_chttp2_incoming_frame_queue *add_to_queue);
+    grpc_chttp2_stream_parsing *stream_parsing, uint32_t frame_size,
+    uint32_t flags, grpc_chttp2_incoming_frame_queue *add_to_queue);
 void grpc_chttp2_incoming_byte_stream_push(grpc_exec_ctx *exec_ctx,
                                            grpc_chttp2_incoming_byte_stream *bs,
                                            gpr_slice slice);
@@ -754,6 +753,6 @@ void grpc_chttp2_incoming_byte_stream_finished(
 
 void grpc_chttp2_ack_ping(grpc_exec_ctx *exec_ctx,
                           grpc_chttp2_transport_parsing *parsing,
-                          const gpr_uint8 *opaque_8bytes);
+                          const uint8_t *opaque_8bytes);
 
 #endif

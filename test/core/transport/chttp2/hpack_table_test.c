@@ -51,7 +51,7 @@ static void assert_str(const grpc_chttp2_hptbl *tbl, grpc_mdstr *mdstr,
   GPR_ASSERT(gpr_slice_str_cmp(mdstr->slice, str) == 0);
 }
 
-static void assert_index(const grpc_chttp2_hptbl *tbl, gpr_uint32 idx,
+static void assert_index(const grpc_chttp2_hptbl *tbl, uint32_t idx,
                          const char *key, const char *value) {
   grpc_mdelem *md = grpc_chttp2_hptbl_lookup(tbl, idx);
   assert_str(tbl, md->key, key);
@@ -172,7 +172,7 @@ static grpc_chttp2_hptbl_find_result find_simple(grpc_chttp2_hptbl *tbl,
 
 static void test_find(void) {
   grpc_chttp2_hptbl tbl;
-  gpr_uint32 i;
+  uint32_t i;
   char buffer[32];
   grpc_mdelem *elem;
   grpc_chttp2_hptbl_find_result r;
@@ -255,7 +255,7 @@ static void test_find(void) {
   GPR_ASSERT(r.has_value == 1);
 
   for (i = 0; i < tbl.num_ents; i++) {
-    gpr_uint32 expect = 9999 - i;
+    uint32_t expect = 9999 - i;
     gpr_ltoa(expect, buffer);
 
     r = find_simple(&tbl, "test", buffer);

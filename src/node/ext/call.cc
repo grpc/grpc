@@ -586,7 +586,7 @@ NAN_METHOD(Call::New) {
         return Nan::ThrowTypeError(
             "Call's fifth argument must be another call, if provided");
       }
-      gpr_uint32 propagate_flags = GRPC_PROPAGATE_DEFAULTS;
+      uint32_t propagate_flags = GRPC_PROPAGATE_DEFAULTS;
       if (info[5]->IsUint32()) {
         propagate_flags = Nan::To<uint32_t>(info[5]).FromJust();
       } else if (!(info[5]->IsUndefined() || info[5]->IsNull())) {

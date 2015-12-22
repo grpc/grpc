@@ -42,9 +42,9 @@ extern "C" {
 #endif
 
 struct census_rpc_stats {
-  gpr_uint64 cnt;
-  gpr_uint64 rpc_error_cnt;
-  gpr_uint64 app_error_cnt;
+  uint64_t cnt;
+  uint64_t rpc_error_cnt;
+  uint64_t app_error_cnt;
   double elapsed_time_ms;
   double api_request_bytes;
   double wire_request_bytes;

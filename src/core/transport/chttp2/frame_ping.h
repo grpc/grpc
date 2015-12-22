@@ -39,15 +39,15 @@
 #include "src/core/transport/chttp2/frame.h"
 
 typedef struct {
-  gpr_uint8 byte;
-  gpr_uint8 is_ack;
-  gpr_uint8 opaque_8bytes[8];
+  uint8_t byte;
+  uint8_t is_ack;
+  uint8_t opaque_8bytes[8];
 } grpc_chttp2_ping_parser;
 
-gpr_slice grpc_chttp2_ping_create(gpr_uint8 ack, gpr_uint8 *opaque_8bytes);
+gpr_slice grpc_chttp2_ping_create(uint8_t ack, uint8_t *opaque_8bytes);
 
 grpc_chttp2_parse_error grpc_chttp2_ping_parser_begin_frame(
-    grpc_chttp2_ping_parser *parser, gpr_uint32 length, gpr_uint8 flags);
+    grpc_chttp2_ping_parser *parser, uint32_t length, uint8_t flags);
 grpc_chttp2_parse_error grpc_chttp2_ping_parser_parse(
     grpc_exec_ctx *exec_ctx, void *parser,
     grpc_chttp2_transport_parsing *transport_parsing,
