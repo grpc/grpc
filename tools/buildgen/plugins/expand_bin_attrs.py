@@ -50,3 +50,8 @@ def mako_plugin(dictionary):
     tgt['flaky'] = tgt.get('flaky', False)
     tgt['platforms'] = sorted(tgt.get('platforms', default_platforms))
     tgt['ci_platforms'] = sorted(tgt.get('ci_platforms', tgt['platforms']))
+    tgt['boringssl'] = tgt.get('boringssl', False)
+
+  libs = dictionary.get('libs')
+  for lib in libs:
+    lib['boringssl'] = lib.get('boringssl', False)

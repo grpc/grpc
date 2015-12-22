@@ -154,7 +154,6 @@
   LD_valgrind = $(DEFAULT_CC)
   LDXX_valgrind = $(DEFAULT_CXX)
   CPPFLAGS_valgrind = -O0
-  OPENSSL_CFLAGS_valgrind = -DPURIFY
   LDFLAGS_valgrind = -rdynamic
   DEFINES_valgrind = _DEBUG DEBUG GRPC_TEST_SLOWDOWN_BUILD_FACTOR=20
 
@@ -164,7 +163,8 @@
   CXX_tsan = clang++
   LD_tsan = clang
   LDXX_tsan = clang++
-  CPPFLAGS_tsan = -O0 -fsanitize=thread -fno-omit-frame-pointer -Wno-unused-command-line-argument
+  CFLAGS_tsan = -O0 -fsanitize=thread -fno-omit-frame-pointer -Wno-unused-command-line-argument
+  CXXFLAGS_tsan = -O0 -fsanitize=thread -fno-omit-frame-pointer -Wno-unused-command-line-argument
   LDFLAGS_tsan = -fsanitize=thread
   DEFINES_tsan = NDEBUG GRPC_TEST_SLOWDOWN_BUILD_FACTOR=10
 
@@ -174,7 +174,8 @@
   CXX_asan = clang++
   LD_asan = clang
   LDXX_asan = clang++
-  CPPFLAGS_asan = -O0 -fsanitize=address -fno-omit-frame-pointer -Wno-unused-command-line-argument
+  CFLAGS_asan = -O0 -fsanitize=address -fno-omit-frame-pointer -Wno-unused-command-line-argument
+  CXXFLAGS_asan = -O0 -fsanitize=address -fno-omit-frame-pointer -Wno-unused-command-line-argument
   LDFLAGS_asan = -fsanitize=address
   DEFINES_asan = GRPC_TEST_SLOWDOWN_BUILD_FACTOR=3
 
@@ -184,8 +185,8 @@
   CXX_msan = clang++-libc++
   LD_msan = clang
   LDXX_msan = clang++-libc++
-  CPPFLAGS_msan = -O0 -fsanitize=memory -fsanitize-memory-track-origins -fno-omit-frame-pointer -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1 -Wno-unused-command-line-argument
-  OPENSSL_CFLAGS_msan = -DPURIFY
+  CFLAGS_msan = -O0 -fsanitize=memory -fsanitize-memory-track-origins -fno-omit-frame-pointer -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1 -Wno-unused-command-line-argument
+  CXXFLAGS_msan = -O0 -fsanitize=memory -fsanitize-memory-track-origins -fno-omit-frame-pointer -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1 -Wno-unused-command-line-argument
   LDFLAGS_msan = -fsanitize=memory -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1
   DEFINES_msan = NDEBUG GRPC_TEST_SLOWDOWN_BUILD_FACTOR=4
 
@@ -195,8 +196,8 @@
   CXX_ubsan = clang++
   LD_ubsan = clang
   LDXX_ubsan = clang++
-  CPPFLAGS_ubsan = -O1 -fsanitize=undefined -fno-omit-frame-pointer -Wno-unused-command-line-argument
-  OPENSSL_CFLAGS_ubsan = -DPURIFY
+  CFLAGS_ubsan = -O1 -fsanitize=undefined -fno-omit-frame-pointer -Wno-unused-command-line-argument
+  CXXFLAGS_ubsan = -O1 -fsanitize=undefined -fno-omit-frame-pointer -Wno-unused-command-line-argument
   LDFLAGS_ubsan = -fsanitize=undefined
   DEFINES_ubsan = NDEBUG GRPC_TEST_SLOWDOWN_BUILD_FACTOR=3
 
@@ -205,7 +206,8 @@
   CXX_gcov = g++
   LD_gcov = gcc
   LDXX_gcov = g++
-  CPPFLAGS_gcov = -O0 -fprofile-arcs -ftest-coverage -Wno-return-type
+  CFLAGS_gcov = -O0 -fprofile-arcs -ftest-coverage -Wno-return-type
+  CXXFLAGS_gcov = -O0 -fprofile-arcs -ftest-coverage -Wno-return-type
   LDFLAGS_gcov = -fprofile-arcs -ftest-coverage -rdynamic
   DEFINES_gcov = _DEBUG DEBUG GPR_GCOV
 
@@ -264,16 +266,19 @@
   DEFINES += $(EXTRA_DEFINES)
   endif
 
-  CFLAGS += -std=c89 -pedantic -Wsign-conversion -Wconversion -Wshadow
+  CFLAGS += -std=c99 -Wsign-conversion -Wconversion -Wshadow
   ifeq ($(HAS_CXX11),true)
   CXXFLAGS += -std=c++11
   else
   CXXFLAGS += -std=c++0x
   endif
-  CPPFLAGS += -g -Wall -Wextra -Werror -Wno-long-long -Wno-unused-parameter
+  CFLAGS += -g -Wall -Wextra -Werror -Wno-long-long -Wno-unused-parameter
+  CXXFLAGS += -g -Wall -Wextra -Werror -Wno-long-long -Wno-unused-parameter
   LDFLAGS += -g
 
   CPPFLAGS += $(CPPFLAGS_$(CONFIG))
+  CFLAGS += $(CFLAGS_$(CONFIG))
+  CXXFLAGS += $(CXXFLAGS_$(CONFIG))
   DEFINES += $(DEFINES_$(CONFIG)) INSTALL_PREFIX=\"$(prefix)\"
   LDFLAGS += $(LDFLAGS_$(CONFIG))
 
@@ -309,12 +314,12 @@
   endif
 
   ifeq ($(SYSTEM),Linux)
-  LIBS = rt m z pthread
+  LIBS = rt m pthread
   LDFLAGS += -pthread
   endif
 
   ifeq ($(SYSTEM),MINGW32)
-  LIBS = m z pthread
+  LIBS = m pthread
   LDFLAGS += -pthread
   endif
 
@@ -342,7 +347,6 @@
   HOST_CXXFLAGS = $(CXXFLAGS)
   HOST_LDFLAGS = $(LDFLAGS)
   HOST_LDLIBS = $(LDLIBS)
-
 
   # These are automatically computed variables.
   # There shouldn't be any need to change anything from now on.
@@ -510,7 +514,7 @@
   # Note that for testing purposes, one can do:
   #   make HAS_EMBEDDED_OPENSSL_ALPN=false
   # to emulate the fact we do not have OpenSSL in the third_party folder.
-  ifeq ($(wildcard third_party/openssl/ssl/ssl.h),)
+  ifeq ($(wildcard third_party/boringssl/include/openssl/ssl.h),)
   HAS_EMBEDDED_OPENSSL_ALPN = false
   else
   HAS_EMBEDDED_OPENSSL_ALPN = true
@@ -537,6 +541,7 @@
   ifeq ($(HAS_SYSTEM_ZLIB),false)
   ifeq ($(HAS_EMBEDDED_ZLIB),true)
   ZLIB_DEP = $(LIBDIR)/$(CONFIG)/zlib/libz.a
+  ZLIB_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/zlib/libz.a
   CPPFLAGS += -Ithird_party/zlib
   LDFLAGS += -L$(LIBDIR)/$(CONFIG)/zlib
   else
@@ -546,9 +551,11 @@
   ifeq ($(HAS_PKG_CONFIG),true)
   CPPFLAGS += $(shell $(PKG_CONFIG) --cflags zlib)
   LDFLAGS += $(shell $(PKG_CONFIG) --libs-only-L zlib)
+  LIBS += $(patsubst -l%,%,$(shell $(PKG_CONFIG) --libs-only-l zlib))
   PC_REQUIRES_GRPC += zlib
   else
   PC_LIBS_GRPC += -lz
+  LIBS += z
   endif
   endif
 
@@ -558,6 +565,34 @@
   PC_LIBS_SECURE =
 
   ifeq ($(HAS_SYSTEM_OPENSSL_ALPN),true)
+  EMBED_OPENSSL ?= false
+  NO_SECURE ?= false
+  else # HAS_SYSTEM_OPENSSL_ALPN=false
+  ifeq ($(HAS_EMBEDDED_OPENSSL_ALPN),true)
+  EMBED_OPENSSL ?= true
+  NO_SECURE ?= false
+  else # HAS_EMBEDDED_OPENSSL_ALPN=false
+  ifeq ($(HAS_SYSTEM_OPENSSL_NPN),true)
+  EMBED_OPENSSL ?= false
+  NO_SECURE ?= false
+  else
+  NO_SECURE ?= true
+  endif # HAS_SYSTEM_OPENSSL_NPN=true
+  endif # HAS_EMBEDDED_OPENSSL_ALPN
+  endif # HAS_SYSTEM_OPENSSL_ALPN
+
+  OPENSSL_DEP :=
+  OPENSSL_MERGE_LIBS :=
+  ifeq ($(NO_SECURE),false)
+  ifeq ($(EMBED_OPENSSL),true)
+  OPENSSL_DEP += $(LIBDIR)/$(CONFIG)/libboringssl.a
+  OPENSSL_MERGE_LIBS += $(LIBDIR)/$(CONFIG)/libboringssl.a
+  # need to prefix these to ensure overriding system libraries
+  CPPFLAGS := -Ithird_party/boringssl/include $(CPPFLAGS)
+  ifeq ($(OPENSSL_REQUIRES_DL),true)
+  LIBS_SECURE = dl
+  endif # OPENSSL_REQUIRES_DL
+  else # EMBED_OPENSSL=false
   ifeq ($(HAS_PKG_CONFIG),true)
   OPENSSL_PKG_CONFIG = true
   PC_REQUIRES_SECURE = openssl
@@ -566,40 +601,22 @@
   ifeq ($(SYSTEM),Linux)
   ifneq ($(LDFLAGS_OPENSSL_PKG_CONFIG),)
   LDFLAGS_OPENSSL_PKG_CONFIG += $(shell $(PKG_CONFIG) --libs-only-L openssl | sed s/L/Wl,-rpath,/)
-  endif
-  endif
+  endif # LDFLAGS_OPENSSL_PKG_CONFIG=''
+  endif # System=Linux
   LDFLAGS := $(LDFLAGS_OPENSSL_PKG_CONFIG) $(LDFLAGS)
-  else
+  else # HAS_PKG_CONFIG=false
   LIBS_SECURE = $(OPENSSL_LIBS)
+  endif # HAS_PKG_CONFIG
+  ifeq ($(HAS_SYSTEM_OPENSSL_NPN),true)
+  CPPFLAGS += -DTSI_OPENSSL_ALPN_SUPPORT=0
+  LIBS_SECURE = $(OPENSSL_LIBS)
+  endif # HAS_SYSTEM_OPENSSL_NPN
   ifeq ($(OPENSSL_REQUIRES_DL),true)
   LIBS_SECURE += dl
   PC_LIBS_SECURE = $(addprefix -l, $(LIBS_SECURE))
-  endif
-  endif
-  else
-  ifeq ($(HAS_EMBEDDED_OPENSSL_ALPN),true)
-  USE_SYSTEM_OPENSSL = false
-  OPENSSL_DEP = $(LIBDIR)/$(CONFIG)/openssl/libssl.a
-  OPENSSL_MERGE_LIBS += $(LIBDIR)/$(CONFIG)/openssl/libssl.a $(LIBDIR)/$(CONFIG)/openssl/libcrypto.a
-  # need to prefix these to ensure overriding system libraries
-  CPPFLAGS := -Ithird_party/openssl/include $(CPPFLAGS)
-  LDFLAGS := -L$(LIBDIR)/$(CONFIG)/openssl $(LDFLAGS)
-  ifeq ($(OPENSSL_REQUIRES_DL),true)
-  LIBS_SECURE = dl
-  endif
-  else
-  ifeq ($(HAS_SYSTEM_OPENSSL_NPN),true)
-  USE_SYSTEM_OPENSSL = true
-  CPPFLAGS += -DTSI_OPENSSL_ALPN_SUPPORT=0
-  LIBS_SECURE = $(OPENSSL_LIBS)
-  ifeq ($(OPENSSL_REQUIRES_DL),true)
-  LIBS_SECURE += dl
-  endif
-  else
-  NO_SECURE = true
-  endif
-  endif
-  endif
+  endif # OPENSSL_REQUIRES_DL=true
+  endif # EMBED_OPENSSL
+  endif # NO_SECURE
 
   ifeq ($(OPENSSL_PKG_CONFIG),true)
   LDLIBS_SECURE += $(shell $(PKG_CONFIG) --libs-only-l openssl)
@@ -831,43 +848,11 @@
 
   $(LIBDIR)/$(CONFIG)/zlib/libz.a:
   	$(E) "[MAKE]    Building zlib"
-  	$(Q)(cd third_party/zlib ; CC="$(CC)" CFLAGS="$(PIC_CPPFLAGS) -fvisibility=hidden $(CPPFLAGS_$(CONFIG)) $(ZLIB_CFLAGS_EXTRA)" ./configure --static)
+  	$(Q)(cd third_party/zlib ; CC="$(CC)" CFLAGS="$(CFLAGS_$(CONFIG)) $(PIC_CPPFLAGS) -fvisibility=hidden $(CPPFLAGS_$(CONFIG)) $(ZLIB_CFLAGS_EXTRA)" ./configure --static)
   	$(Q)$(MAKE) -C third_party/zlib clean
   	$(Q)$(MAKE) -C third_party/zlib
   	$(Q)mkdir -p $(LIBDIR)/$(CONFIG)/zlib
   	$(Q)cp third_party/zlib/libz.a $(LIBDIR)/$(CONFIG)/zlib
-
-  $(LIBDIR)/$(CONFIG)/openssl/libssl.a:
-  	$(E) "[MAKE]    Building openssl for $(SYSTEM)"
-  ifeq ($(SYSTEM),Darwin)
-  	$(Q)(cd third_party/openssl ; CC="$(CC) $(PIC_CPPFLAGS) -fvisibility=hidden $(CPPFLAGS_$(CONFIG)) $(OPENSSL_CFLAGS_$(CONFIG)) $(OPENSSL_CFLAGS_EXTRA)" ./Configure darwin64-x86_64-cc)
-  else
-  ifeq ($(SYSTEM),MINGW32)
-  	@echo "We currently don't have a good way to compile OpenSSL in-place under msys."
-  	@echo "Please provide a OpenSSL in your mingw32 system."
-  	@echo
-  	@echo "Note that you can find a compatible version of the libraries here:"
-  	@echo
-  	@echo "http://slproweb.com/products/Win32OpenSSL.html"
-  	@echo
-  	@echo "If you decide to install that one, take the full version. The light"
-  	@echo "version only contains compiled DLLs, without the development files."
-  	@echo
-  	@echo "When installing, chose to copy the OpenSSL dlls to the OpenSSL binaries"
-  	@echo "directory. This way we'll link to them directly."
-  	@echo
-  	@echo "You can then re-start the build the following way:"
-  	@echo
-  	@echo "  CPPFLAGS=-I/c/OpenSSL-Win64/include LDFLAGS=-L/c/OpenSSL-Win64 make"
-  	@false
-  else
-  	$(Q)(cd third_party/openssl ; CC="$(CC) $(PIC_CPPFLAGS) -fvisibility=hidden $(CPPFLAGS_$(CONFIG)) $(OPENSSL_CFLAGS_$(CONFIG)) $(OPENSSL_CFLAGS_EXTRA)" ./config no-asm $(OPENSSL_CONFIG_$(CONFIG)))
-  endif
-  endif
-  	$(Q)$(MAKE) -j 1 -C third_party/openssl clean
-  	$(Q)(unset CPPFLAGS; $(MAKE) -j 1 -C third_party/openssl build_crypto build_ssl)
-  	$(Q)mkdir -p $(LIBDIR)/$(CONFIG)/openssl
-  	$(Q)cp third_party/openssl/libssl.a third_party/openssl/libcrypto.a $(LIBDIR)/$(CONFIG)/openssl
 
   third_party/protobuf/configure:
   	$(E) "[AUTOGEN] Preparing protobuf"
@@ -959,7 +944,7 @@
 
   privatelibs_c: \
   % for lib in libs:
-  % if lib.build == 'private' and lib.language == 'c' and not lib.get('external_deps', None):
+  % if lib.build == 'private' and lib.language == 'c' and not lib.get('external_deps', None) and not lib.boringssl:
    $(LIBDIR)/$(CONFIG)/lib${lib.name}.a\
   % endif
   % endfor
@@ -1533,6 +1518,16 @@
 
   LIB${lib.name.upper()}_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIB${lib.name.upper()}_SRC))))
 
+  % if lib.boringssl:
+  # boringssl needs an override to ensure that it does not include
+  # system openssl headers regardless of other configuration
+  # we do so here with a target specific variable assignment
+  $(LIB${lib.name.upper()}_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value -fvisibility=hidden
+  $(LIB${lib.name.upper()}_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS) -fvisibility=hidden
+  $(LIB${lib.name.upper()}_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+  % else:
+  % endif
+
   ## If the library requires OpenSSL, let's add some restrictions.
   % if lib.get('secure', 'check') == True or lib.get('secure', 'check') == 'check':
   ifeq ($(NO_SECURE),true)
@@ -1590,7 +1585,7 @@
   else
 
   % endif
-  $(LIBDIR)/$(CONFIG)/lib${lib.name}.a: $(ZLIB_DEP)\
+  $(LIBDIR)/$(CONFIG)/lib${lib.name}.a: $(ZLIB_DEP) $(OPENSSL_DEP) \
   % endif
   % if lib.language == 'c++':
    $(PROTOBUF_DEP)\
@@ -1601,15 +1596,31 @@
   	$(Q) rm -f $(LIBDIR)/$(CONFIG)/lib${lib.name}.a
   	$(Q) $(AR) rcs $(LIBDIR)/$(CONFIG)/lib${lib.name}.a $(LIB${lib.name.upper()}_OBJS)
   % if lib.get('baselib', False):
+  	$(Q) rm -rf $(BUILDDIR_ABSOLUTE)/tmp-merge-${lib.name}
+  	$(Q) ( mkdir -p $(BUILDDIR_ABSOLUTE)/tmp-merge-${lib.name}/grpc ; <%text>\</%text>
+  	       cd $(BUILDDIR_ABSOLUTE)/tmp-merge-${lib.name}/grpc ; <%text>\</%text>
+  	       $(AR) x $(LIBDIR)/$(CONFIG)/lib${lib.name}.a )
+  	$(Q) for l in $(ZLIB_MERGE_LIBS) ; do ( <%text>\</%text>
+  	       mkdir -p $(BUILDDIR_ABSOLUTE)/tmp-merge-${lib.name}/zlib ; <%text>\</%text>
+  	       cd $(BUILDDIR_ABSOLUTE)/tmp-merge-${lib.name}/zlib ; <%text>\</%text>
+  	       <%text>$(AR) x $${l}</%text> ) ; done
+  	$(Q) for l in $(ZLIB_MERGE_LIBS) ; do ( <%text>\</%text>
+  	       mkdir -p $(BUILDDIR_ABSOLUTE)/tmp-merge-${lib.name}/zlib ; <%text>\</%text>
+  	       cd $(BUILDDIR_ABSOLUTE)/tmp-merge-${lib.name}/zlib ; <%text>\</%text>
+  	       <%text>$(AR) x $${l}</%text> ) ; done
   % if lib.get('secure', 'check') == True:
-  	$(Q) rm -rf $(BUILDDIR_ABSOLUTE)/tmp-merge-${lib.name}
-  	$(Q) mkdir $(BUILDDIR_ABSOLUTE)/tmp-merge-${lib.name}
-  	$(Q) ( cd $(BUILDDIR_ABSOLUTE)/tmp-merge-${lib.name} ; $(AR) x $(LIBDIR)/$(CONFIG)/lib${lib.name}.a )
-  	$(Q) for l in $(OPENSSL_MERGE_LIBS) ; do ( cd $(BUILDDIR_ABSOLUTE)/tmp-merge-${lib.name} ; <%text>ar x $${l}</%text> ) ; done
-  	$(Q) rm -f $(LIBDIR)/$(CONFIG)/lib${lib.name}.a $(BUILDDIR_ABSOLUTE)/tmp-merge-${lib.name}/__.SYMDEF*
-  	$(Q) ar rcs $(LIBDIR)/$(CONFIG)/lib${lib.name}.a $(BUILDDIR_ABSOLUTE)/tmp-merge-${lib.name}/*
-  	$(Q) rm -rf $(BUILDDIR_ABSOLUTE)/tmp-merge-${lib.name}
+  	$(Q) for l in $(OPENSSL_MERGE_LIBS) ; do ( <%text>\</%text>
+  	       mkdir -p $(BUILDDIR_ABSOLUTE)/tmp-merge-${lib.name}/ssl ; <%text>\</%text>
+  	       cd $(BUILDDIR_ABSOLUTE)/tmp-merge-${lib.name}/ssl ; <%text>\</%text>
+  	       <%text>$(AR) x $${l}</%text> ) ; done
+  	$(Q) for l in $(OPENSSL_MERGE_LIBS) ; do ( <%text>\</%text>
+  	       mkdir -p $(BUILDDIR_ABSOLUTE)/tmp-merge-${lib.name}/ssl ; <%text>\</%text>
+  	       cd $(BUILDDIR_ABSOLUTE)/tmp-merge-${lib.name}/ssl ; <%text>\</%text>
+  	       <%text>$(AR) x $${l}</%text> ) ; done
   % endif
+  	$(Q) rm -f $(LIBDIR)/$(CONFIG)/lib${lib.name}.a $(BUILDDIR_ABSOLUTE)/tmp-merge-${lib.name}/*/__.SYMDEF*
+  	$(Q) ar rcs $(LIBDIR)/$(CONFIG)/lib${lib.name}.a $(BUILDDIR_ABSOLUTE)/tmp-merge-${lib.name}/*/*
+  	$(Q) rm -rf $(BUILDDIR_ABSOLUTE)/tmp-merge-${lib.name}
   % endif
   ifeq ($(SYSTEM),Darwin)
   	$(Q) ranlib $(LIBDIR)/$(CONFIG)/lib${lib.name}.a
@@ -1643,6 +1654,7 @@
     security = lib.get('secure', 'check')
     if security == True:
       common = common + ' $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE)'
+    common = common + ' $(ZLIB_MERGE_LIBS)'
 
     if security in [True, 'check']:
       for src in lib.src:
@@ -1732,6 +1744,17 @@
   else
 
   % endif
+
+  % if tgt.boringssl:
+  # boringssl needs an override to ensure that it does not include
+  # system openssl headers regardless of other configuration
+  # we do so here with a target specific variable assignment
+  $(${tgt.name.upper()}_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value
+  $(${tgt.name.upper()}_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+  $(${tgt.name.upper()}_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+  % else:
+  % endif
+
   ##
   ## We're not trying to add a dependency on building zlib and openssl here,
   ## as it's already done in the libraries. We're assuming that the build
@@ -1765,7 +1788,7 @@
    $(LIBDIR)/$(CONFIG)/lib${dep}.a\
   % endfor
 
-  % if tgt.language == "c++":
+  % if tgt.language == "c++" or tgt.boringssl:
   ## C++ targets specificies.
   % if tgt.build == 'protoc':
   	$(E) "[HOSTLD]  Linking $@"
