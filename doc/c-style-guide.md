@@ -17,6 +17,19 @@ Header Files
 ------------
 
 - Public header files (those in the include/grpc tree) should compile as pedantic C89
+- Public header files should be includable from C++ programs. That is, they should 
+  include the following:
+  ```c
+  #ifdef __cplusplus
+  extern "C" {
+  # endif
+
+  /* ... body of file ... */
+
+  #ifdef __cplusplus
+  }
+  # endif
+  ```
 - Header files should be self-contained and end in .h.
 - All header files should have a #define guard to prevent multiple inclusion.
   To guarantee uniqueness they should be based on the file's path.
@@ -31,6 +44,17 @@ C99 Features
 
 - Variable sized arrays are not allowed
 - Do not use the 'inline' keyword
+- Flexible array members are allowed (https://en.wikipedia.org/wiki/Flexible_array_member)
+
+Comments
+--------
+
+Within public header files, only `/* */` comments are allowed.
+
+Within implementation files and private headers, either single line `//` 
+or multi line `/* */` comments are allowed. Only one comment style per file is
+allowed however (i.e. if single line comments are used anywhere within a file,
+ALL comments within that file must be single line comments).
 
 Symbol Names
 ------------
