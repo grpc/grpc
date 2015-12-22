@@ -49,7 +49,7 @@ static void to_fp(void *arg, const char *buf, size_t len) {
 
 /* Convert gpr_uintmax x to ascii base b (2..16), and write with
    (*writer)(arg, ...), zero padding to "chars" digits).  */
-static void u_to_s(gpr_uintmax x, unsigned base, int chars,
+static void u_to_s(uintmax_t x, unsigned base, int chars,
                    void (*writer)(void *arg, const char *buf, size_t len),
                    void *arg) {
   char buf[64];
@@ -64,14 +64,14 @@ static void u_to_s(gpr_uintmax x, unsigned base, int chars,
 
 /* Convert gpr_intmax x to ascii base b (2..16), and write with
    (*writer)(arg, ...), zero padding to "chars" digits).  */
-static void i_to_s(gpr_intmax x, unsigned base, int chars,
+static void i_to_s(intmax_t x, unsigned base, int chars,
                    void (*writer)(void *arg, const char *buf, size_t len),
                    void *arg) {
   if (x < 0) {
     (*writer)(arg, "-", 1);
-    u_to_s((gpr_uintmax)-x, base, chars - 1, writer, arg);
+    u_to_s((uintmax_t)-x, base, chars - 1, writer, arg);
   } else {
-    u_to_s((gpr_uintmax)x, base, chars, writer, arg);
+    u_to_s((uintmax_t)x, base, chars, writer, arg);
   }
 }
 
