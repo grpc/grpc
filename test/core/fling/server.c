@@ -73,7 +73,7 @@ static int was_cancelled = 2;
 static grpc_op unary_ops[6];
 static int got_sigint = 0;
 
-static void *tag(gpr_intptr t) { return (void *)t; }
+static void *tag(intptr_t t) { return (void *)t; }
 
 typedef enum {
   FLING_SERVER_NEW_REQUEST = 1,
@@ -87,7 +87,7 @@ typedef enum {
 
 typedef struct {
   gpr_refcount pending_ops;
-  gpr_uint32 flags;
+  uint32_t flags;
 } call_state;
 
 static void request_call(void) {
@@ -256,7 +256,7 @@ int main(int argc, char **argv) {
     s = ev.tag;
     switch (ev.type) {
       case GRPC_OP_COMPLETE:
-        switch ((gpr_intptr)s) {
+        switch ((intptr_t)s) {
           case FLING_SERVER_NEW_REQUEST:
             if (call != NULL) {
               if (0 ==

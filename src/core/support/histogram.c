@@ -66,7 +66,7 @@ struct gpr_histogram {
   /* number of buckets */
   size_t num_buckets;
   /* the buckets themselves */
-  gpr_uint32 *buckets;
+  uint32_t *buckets;
 };
 
 /* determine a bucket index given a value - does no bounds checking */
@@ -102,8 +102,8 @@ gpr_histogram *gpr_histogram_create(double resolution,
   h->num_buckets = bucket_for_unchecked(h, max_bucket_start) + 1;
   GPR_ASSERT(h->num_buckets > 1);
   GPR_ASSERT(h->num_buckets < 100000000);
-  h->buckets = gpr_malloc(sizeof(gpr_uint32) * h->num_buckets);
-  memset(h->buckets, 0, sizeof(gpr_uint32) * h->num_buckets);
+  h->buckets = gpr_malloc(sizeof(uint32_t) * h->num_buckets);
+  memset(h->buckets, 0, sizeof(uint32_t) * h->num_buckets);
   return h;
 }
 
@@ -137,7 +137,7 @@ int gpr_histogram_merge(gpr_histogram *dst, const gpr_histogram *src) {
   return 1;
 }
 
-void gpr_histogram_merge_contents(gpr_histogram *dst, const gpr_uint32 *data,
+void gpr_histogram_merge_contents(gpr_histogram *dst, const uint32_t *data,
                                   size_t data_count, double min_seen,
                                   double max_seen, double sum,
                                   double sum_of_squares, double count) {
@@ -238,7 +238,7 @@ double gpr_histogram_sum_of_squares(gpr_histogram *h) {
   return h->sum_of_squares;
 }
 
-const gpr_uint32 *gpr_histogram_get_contents(gpr_histogram *h, size_t *size) {
+const uint32_t *gpr_histogram_get_contents(gpr_histogram *h, size_t *size) {
   *size = h->num_buckets;
   return h->buckets;
 }

@@ -41,7 +41,7 @@
 #include <grpc/support/port_platform.h>
 #include "test/core/util/test_config.h"
 
-static struct sockaddr_in make_addr4(const gpr_uint8 *data, size_t data_len) {
+static struct sockaddr_in make_addr4(const uint8_t *data, size_t data_len) {
   struct sockaddr_in addr4;
   memset(&addr4, 0, sizeof(addr4));
   addr4.sin_family = AF_INET;
@@ -51,7 +51,7 @@ static struct sockaddr_in make_addr4(const gpr_uint8 *data, size_t data_len) {
   return addr4;
 }
 
-static struct sockaddr_in6 make_addr6(const gpr_uint8 *data, size_t data_len) {
+static struct sockaddr_in6 make_addr6(const uint8_t *data, size_t data_len) {
   struct sockaddr_in6 addr6;
   memset(&addr6, 0, sizeof(addr6));
   addr6.sin6_family = AF_INET6;
@@ -61,15 +61,15 @@ static struct sockaddr_in6 make_addr6(const gpr_uint8 *data, size_t data_len) {
   return addr6;
 }
 
-static const gpr_uint8 kMapped[] = {0, 0, 0,    0,    0,   0, 0, 0,
-                                    0, 0, 0xff, 0xff, 192, 0, 2, 1};
+static const uint8_t kMapped[] = {0, 0, 0,    0,    0,   0, 0, 0,
+                                  0, 0, 0xff, 0xff, 192, 0, 2, 1};
 
-static const gpr_uint8 kNotQuiteMapped[] = {0, 0, 0,    0,    0,   0, 0, 0,
-                                            0, 0, 0xff, 0xfe, 192, 0, 2, 99};
-static const gpr_uint8 kIPv4[] = {192, 0, 2, 1};
+static const uint8_t kNotQuiteMapped[] = {0, 0, 0,    0,    0,   0, 0, 0,
+                                          0, 0, 0xff, 0xfe, 192, 0, 2, 99};
+static const uint8_t kIPv4[] = {192, 0, 2, 1};
 
-static const gpr_uint8 kIPv6[] = {0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
-                                  0,    0,    0,    0,    0, 0, 0, 1};
+static const uint8_t kIPv6[] = {0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+                                0,    0,    0,    0,    0, 0, 0, 1};
 
 static void test_sockaddr_is_v4mapped(void) {
   struct sockaddr_in input4;

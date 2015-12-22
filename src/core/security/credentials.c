@@ -180,7 +180,7 @@ void grpc_server_credentials_set_auth_metadata_processor(
       "grpc_server_credentials_set_auth_metadata_processor("
       "creds=%p, "
       "processor=grpc_auth_metadata_processor { process: %p, state: %p })",
-      3, (creds, (void*)(gpr_intptr)processor.process, processor.state));
+      3, (creds, (void *)(intptr_t)processor.process, processor.state));
   if (creds == NULL) return;
   if (creds->processor.destroy != NULL && creds->processor.state != NULL) {
     creds->processor.destroy(creds->processor.state);

@@ -61,8 +61,8 @@ typedef enum {
 } gpr_clock_type;
 
 typedef struct gpr_timespec {
-  gpr_int64 tv_sec;
-  gpr_int32 tv_nsec;
+  int64_t tv_sec;
+  int32_t tv_nsec;
   /** Against which clock was this time measured? (or GPR_TIMESPAN if
       this is a relative time meaure) */
   gpr_clock_type clock_type;
@@ -110,7 +110,7 @@ gpr_timespec gpr_time_from_seconds(long x, gpr_clock_type clock_type);
 gpr_timespec gpr_time_from_minutes(long x, gpr_clock_type clock_type);
 gpr_timespec gpr_time_from_hours(long x, gpr_clock_type clock_type);
 
-gpr_int32 gpr_time_to_millis(gpr_timespec timespec);
+int32_t gpr_time_to_millis(gpr_timespec timespec);
 
 /* Return 1 if two times are equal or within threshold of each other,
    0 otherwise */
