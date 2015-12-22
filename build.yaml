@@ -479,6 +479,7 @@ libs:
   - src/core/security/security_context.h
   - src/core/tsi/fake_transport_security.h
   - src/core/tsi/ssl_transport_security.h
+  - src/core/tsi/ssl_types.h
   - src/core/tsi/transport_security.h
   - src/core/tsi/transport_security_interface.h
   src:

@@ -433,6 +433,6 @@ static void test_max_concurrent_streams(grpc_end2end_test_config config) {
   config.tear_down_data(&f);
 }
 
-void grpc_end2end_tests(grpc_end2end_test_config config) {
+void max_concurrent_streams(grpc_end2end_test_config config) {
   test_max_concurrent_streams(config);
 }
