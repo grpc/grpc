@@ -83,6 +83,10 @@ LICENSE_FMT = {
   'Dockerfile': '# %s',
 }
 
+KNOWN_BAD = set([
+  'src/php/tests/bootstrap.php',
+])
+
 # pregenerate the actual text that we should have
 LICENSE_TEXT = dict(
     (k, '\n'.join((v % line).rstrip() for line in LICENSE))
@@ -101,6 +105,7 @@ def log(cond, why, filename):
 # scan files, validate the text
 for filename in subprocess.check_output('git ls-tree -r --name-only -r HEAD',
                                         shell=True).splitlines():
+  if filename in KNOWN_BAD: continue
   ext = os.path.splitext(filename)[1]
   base = os.path.basename(filename)
   if ext in LICENSE_TEXT: 
