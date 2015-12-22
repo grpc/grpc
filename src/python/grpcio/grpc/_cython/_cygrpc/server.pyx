@@ -89,6 +89,8 @@ cdef class Server:
     self.register_completion_queue(self.backup_shutdown_queue)
     self.is_started = True
     grpc.grpc_server_start(self.c_server)
+    # Ensure the core has gotten a chance to do the start-up work
+    self.backup_shutdown_queue.pluck(None, records.Timespec(None))
 
   def add_http2_port(self, address,
                      credentials.ServerCredentials server_credentials=None):
