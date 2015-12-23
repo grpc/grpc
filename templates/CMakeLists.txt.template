@@ -13,7 +13,6 @@
   }
 
   def proto_root(src):
-    assert '.proto' in src
     return src.upper().replace('/', '_').replace('\\', '_').replace('.', '_')
 
   def filter_src(src):
@@ -23,16 +22,6 @@
 
   def protovars(src):
     return '%(root)s_SRCS %(root)s_HDRS' % { 'root': proto_root(src) }
-
-  all_protos = set()
-  for lib in libs:
-    for src in lib.src:
-      if '.proto' in src:
-        all_protos.add(src)
-  for tgt in targets:
-    for src in tgt.src:
-      if '.proto' in src:
-        all_protos.add(src)
   %>
 
   set (PACKAGE_NAME      "grpc")
@@ -51,6 +40,7 @@
   set (CMAKE_VERBOSE_MAKEFILE ON)
 
   include_directories(include)
+  include_directories(third_party/googletest/include)
 
   include(CheckCXXCompilerFlag)
   CHECK_CXX_COMPILER_FLAG("-std=c++11" COMPILER_SUPPORTS_CXX11)
@@ -95,8 +85,12 @@
     set(MATH_LIB)
   endif()
 
-  % for proto in all_protos:
-  PROTOBUF_GENERATE_CPP(${protovars(proto)} ${proto})
+  % for protodir in sorted(protodirs):
+  add_subdirectory(tools/cmakelists/${protodir})
+  % endfor
+
+  % for proto in protos:
+  # PROTOBUF_GENERATE_CPP(${protovars(proto)} ${proto})
   % endfor
 
   % for lib in libs:

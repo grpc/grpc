@@ -1,0 +1,20 @@
+%YAML 1.2
+---
+foreach: protodirs
+output_name: ${selected}/CMakeLists.txt
+template: |
+  <%
+  import os
+
+  def proto_root(src):
+    return src.upper().replace('/', '_').replace('\\', '_').replace('.', '_')
+
+  def protovars(src):
+    return '%(root)s_SRCS %(root)s_HDRS' % { 'root': proto_root(src) }
+  %>
+  % for proto in protos:
+  % if os.path.dirname(proto) == selected:
+  PROTOBUF_GENERATE_CPP(${protovars(proto)} <%text>${CMAKE_SOURCE_DIR}</%text>/${proto})
+  % endif
+  % endfor
+ 

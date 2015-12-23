@@ -35,6 +35,7 @@ a list called "protos" that contains all of the proto file names.
 """
 
 
+import os
 import re
 
 
@@ -65,6 +66,12 @@ def mako_plugin(dictionary):
       if m:
         protos.add(m.group(1))
 
+  protodirs = set()
+  for proto in protos:
+    protodirs.add(os.path.dirname(proto))
+
   protos = sorted(protos)
+  protodirs = sorted(protodirs)
 
   dictionary['protos'] = protos
+  dictionary['protodirs'] = protodirs
