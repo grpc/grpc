@@ -179,8 +179,8 @@ void grpc_server_credentials_set_auth_metadata_processor(
   GRPC_API_TRACE(
       "grpc_server_credentials_set_auth_metadata_processor("
       "creds=%p, "
-      "processor=grpc_auth_metadata_processor { process: %lx, state: %p })",
-      3, (creds, (unsigned long)processor.process, processor.state));
+      "processor=grpc_auth_metadata_processor { process: %p, state: %p })",
+      3, (creds, (void*)(gpr_intptr)processor.process, processor.state));
   if (creds == NULL) return;
   if (creds->processor.destroy != NULL && creds->processor.state != NULL) {
     creds->processor.destroy(creds->processor.state);
@@ -881,7 +881,7 @@ static grpc_security_status fake_transport_security_create_security_connector(
     grpc_channel_credentials *c, grpc_call_credentials *call_creds,
     const char *target, const grpc_channel_args *args,
     grpc_channel_security_connector **sc, grpc_channel_args **new_args) {
-  *sc = grpc_fake_channel_security_connector_create(call_creds, 1);
+  *sc = grpc_fake_channel_security_connector_create(call_creds);
   return GRPC_SECURITY_OK;
 }
 
