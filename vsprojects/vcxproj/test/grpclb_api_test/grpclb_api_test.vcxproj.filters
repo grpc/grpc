@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="..\..\..\..\src\core\client_config\lb_policies\proto\load_balancer.proto">
+    <ClCompile Include="$(SolutionDir)\..\src\core\client_config\lb_policies\proto\load_balancer.proto">
       <Filter>src\core\client_config\lb_policies\proto</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\test\cpp\grpclb\grpclb_api_test.cc">
+    <ClCompile Include="$(SolutionDir)\..\test\cpp\grpclb\grpclb_api_test.cc">
       <Filter>test\cpp\grpclb</Filter>
     </ClCompile>
   </ItemGroup>
