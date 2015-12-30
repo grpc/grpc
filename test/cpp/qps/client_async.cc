@@ -47,6 +47,7 @@
 #include <grpc/support/log.h>
 #include <gflags/gflags.h>
 #include <grpc++/client_context.h>
+#include <grpc++/generic/generic_stub.h>
 
 #include "test/cpp/qps/timer.h"
 #include "test/cpp/qps/client.h"
@@ -148,13 +149,20 @@ class ClientRpcContextUnaryImpl : public ClientRpcContext {
 typedef std::forward_list<ClientRpcContext*> context_list;
 
 template <class StubType, class RequestType>
-class AsyncClient : public Client<StubType, RequestType> {
+class AsyncClient : public ClientImpl<StubType, RequestType> {
+  // Specify which protected members we are using since there is no
+  // member name resolution until the template types are fully resolved
  public:
+  using Client::SetupLoadTest;
+  using Client::NextIssueTime;
+  using Client::closed_loop_;
+  using ClientImpl<StubType,RequestType>::channels_;
+  using ClientImpl<StubType,RequestType>::request_;
   AsyncClient(
       const ClientConfig& config,
       std::function<ClientRpcContext*(int, StubType*, const RequestType&)> setup_ctx,
       std::function<std::unique_ptr<StubType>(std::shared_ptr<Channel>)> create_stub)
-    : Client(config, create_stub),
+      : ClientImpl<StubType,RequestType>(config, create_stub),
         channel_lock_(new std::mutex[config.client_channels()]),
         contexts_(config.client_channels()),
         max_outstanding_per_channel_(config.outstanding_rpcs_per_channel()),
@@ -344,7 +352,8 @@ class AsyncClient : public Client<StubType, RequestType> {
   int pref_channel_inc_;
 };
 
-class AsyncUnaryClient GRPC_FINAL : public AsyncClient<BenchmarkService::Stub, SimpleRequest> {
+class AsyncUnaryClient GRPC_FINAL :
+      public AsyncClient<BenchmarkService::Stub, SimpleRequest> {
  public:
   explicit AsyncUnaryClient(const ClientConfig& config)
     : AsyncClient(config, SetupCtx, BenchmarkService::NewStub) {
@@ -559,10 +568,10 @@ class GenericAsyncStreamingClient GRPC_FINAL : public AsyncClient<grpc::GenericS
   };
   static ClientRpcContext* SetupCtx(int channel_id,
                                     grpc::GenericStub* stub,
-                                    const SimpleRequest& req) {
-    return new ClientRpcContextStreamingImpl<SimpleRequest, SimpleResponse>(
-        channel_id, stub, req, AsyncStreamingClient::StartReq,
-        AsyncStreamingClient::CheckDone);
+                                    const ByteBuffer& req) {
+    return new ClientGenericRpcContextStreamingImpl(
+        channel_id, stub, req, GenericAsyncStreamingClient::StartReq,
+        GenericAsyncStreamingClient::CheckDone);
   }
 };
 
