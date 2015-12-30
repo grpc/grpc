@@ -116,6 +116,6 @@ static void test_early_server_shutdown_finishes_tags(
   cq_verifier_destroy(cqv);
 }
 
-void grpc_end2end_tests(grpc_end2end_test_config config) {
+void shutdown_finishes_tags(grpc_end2end_test_config config) {
   test_early_server_shutdown_finishes_tags(config);
 }

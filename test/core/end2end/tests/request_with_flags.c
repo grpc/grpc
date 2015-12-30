@@ -185,7 +185,7 @@ static void test_invoke_request_with_flags(
   config.tear_down_data(&f);
 }
 
-void grpc_end2end_tests(grpc_end2end_test_config config) {
+void request_with_flags(grpc_end2end_test_config config) {
   size_t i;
   gpr_uint32 flags_for_op[GRPC_OP_RECV_CLOSE_ON_SERVER + 1];
 
