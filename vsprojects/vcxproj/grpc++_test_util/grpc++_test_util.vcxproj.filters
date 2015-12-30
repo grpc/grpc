@@ -1,39 +1,39 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="..\..\..\test\cpp\util\messages.proto">
+    <ClCompile Include="$(SolutionDir)\..\test\cpp\util\messages.proto">
       <Filter>test\cpp\util</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\test\cpp\util\echo.proto">
+    <ClCompile Include="$(SolutionDir)\..\test\cpp\util\echo.proto">
       <Filter>test\cpp\util</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\test\cpp\util\echo_duplicate.proto">
+    <ClCompile Include="$(SolutionDir)\..\test\cpp\util\echo_duplicate.proto">
       <Filter>test\cpp\util</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\test\cpp\util\cli_call.cc">
+    <ClCompile Include="$(SolutionDir)\..\test\cpp\util\cli_call.cc">
       <Filter>test\cpp\util</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\test\cpp\util\create_test_channel.cc">
+    <ClCompile Include="$(SolutionDir)\..\test\cpp\util\create_test_channel.cc">
       <Filter>test\cpp\util</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\test\cpp\util\string_ref_helper.cc">
+    <ClCompile Include="$(SolutionDir)\..\test\cpp\util\string_ref_helper.cc">
       <Filter>test\cpp\util</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\test\cpp\util\subprocess.cc">
+    <ClCompile Include="$(SolutionDir)\..\test\cpp\util\subprocess.cc">
       <Filter>test\cpp\util</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\test\cpp\util\cli_call.h">
+    <ClInclude Include="$(SolutionDir)\..\test\cpp\util\cli_call.h">
       <Filter>test\cpp\util</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\test\cpp\util\create_test_channel.h">
+    <ClInclude Include="$(SolutionDir)\..\test\cpp\util\create_test_channel.h">
       <Filter>test\cpp\util</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\test\cpp\util\string_ref_helper.h">
+    <ClInclude Include="$(SolutionDir)\..\test\cpp\util\string_ref_helper.h">
       <Filter>test\cpp\util</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\test\cpp\util\subprocess.h">
+    <ClInclude Include="$(SolutionDir)\..\test\cpp\util\subprocess.h">
       <Filter>test\cpp\util</Filter>
     </ClInclude>
   </ItemGroup>

@@ -1,0 +1,3 @@
+# this is busted in BoringSSL
+leak:CRYPTO_set_thread_local
+leak:err_get_state
