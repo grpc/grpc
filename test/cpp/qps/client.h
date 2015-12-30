@@ -37,6 +37,9 @@
 #include <condition_variable>
 #include <mutex>
 
+#include <grpc++/support/byte_buffer.h>
+#include <grpc++/support/slice.h>
+
 #include "test/cpp/qps/histogram.h"
 #include "test/cpp/qps/interarrival.h"
 #include "test/cpp/qps/timer.h"
@@ -74,7 +77,7 @@ void CreateRequest(RequestType *req, const PayloadConfig&) {
   // check since these only happen at the beginning anyway
   GPR_ASSERT(false);
 }
-    
+
 template <>
 void CreateRequest<SimpleRequest>(SimpleRequest *req, const PayloadConfig& payload_config) {
   if (payload_config.has_bytebuf_params()) {
@@ -96,11 +99,15 @@ void CreateRequest<SimpleRequest>(SimpleRequest *req, const PayloadConfig& paylo
   }
 }
 template <>
-void CreateRequest<ByteBuffer>(ByteBuffer *req, const PayloadConfig& payload_config) {
+void CreateRequest<ByteBuffer>(ByteBuffer *req,
+                               const PayloadConfig& payload_config) {
   if (payload_config.has_bytebuf_params()) {
-    if (payload_config.req_size() > 0) {
-      std::unique_ptr<char> buf(new char[payload_config.req_size()]);
-      gpr_slice_from_copied_buffer(buf.get(), payload_config.req_size());
+    if (payload_config.bytebuf_params().req_size() > 0) {
+      std::unique_ptr<char>
+          buf(new char[payload_config.bytebuf_params().req_size()]);
+      gpr_slice s =
+          gpr_slice_from_copied_buffer(buf.get(),
+                                       payload_config.bytebuf_params().req_size());
       Slice slice(s, Slice::STEAL_REF);
       std::unique_ptr<ByteBuffer> bbuf(new ByteBuffer(&slice, 1));
       req->MoveFrom(bbuf.get());
@@ -110,24 +117,11 @@ void CreateRequest<ByteBuffer>(ByteBuffer *req, const PayloadConfig& payload_con
   }
 }
 }
- 
-template <class StubType, class RequestType>
+
 class Client {
  public:
-   Client(const ClientConfig& config,
-	  std::function<std::unique_ptr<StubType>(std::shared_ptr<Channel>)> create_stub)
-      : channels_(config.client_channels()),
-        create_stub_(create_stub),
-        timer_(new Timer),
-        interarrival_timer_() {
-    for (int i = 0; i < config.client_channels(); i++) {
-      channels_[i].init(config.server_targets(i % config.server_targets_size()),
-                        config);
-    }
-
-    ClientRequestCreation::CreateRequest<RequestType>(&request_, config.payload_config());
-  }
-  virtual ~Client() {}
+  Client() : timer_(new Timer), interarrival_timer_() {}
+  virtual ~Client();
 
   ClientStats Mark(bool reset) {
     Histogram latencies;
@@ -162,39 +156,8 @@ class Client {
     stats.set_time_user(timer_result.user);
     return stats;
   }
-
  protected:
-  RequestType request_;
   bool closed_loop_;
-
-  class ClientChannelInfo {
-   public:
-    ClientChannelInfo() {}
-    ClientChannelInfo(const ClientChannelInfo& i) {
-      // The copy constructor is to satisfy old compilers
-      // that need it for using std::vector . It is only ever
-      // used for empty entries
-      GPR_ASSERT(!i.channel_ && !i.stub_);
-    }
-    void init(const grpc::string& target, const ClientConfig& config) {
-      // We have to use a 2-phase init like this with a default
-      // constructor followed by an initializer function to make
-      // old compilers happy with using this in std::vector
-      channel_ = CreateTestChannel(
-          target, config.security_params().server_host_override(),
-          config.has_security_params(),
-          !config.security_params().use_test_ca());
-      stub_ = create_stub_(channel_);
-    }
-    Channel* get_channel() { return channel_.get(); }
-    StubType* get_stub() { return stub_.get(); }
-
-   private:
-    std::shared_ptr<Channel> channel_;
-    std::unique_ptr<StubType> stub_;
-  };
-  std::vector<ClientChannelInfo> channels_;
-  std::function<std::unique_ptr<StubType>(std::shared_ptr<Channel>)> create_stub_;
 
   void StartThreads(size_t num_threads) {
     for (size_t i = 0; i < num_threads; i++) {
@@ -264,7 +227,6 @@ class Client {
       return true;
     }
   }
-
  private:
   class Thread {
    public:
@@ -326,8 +288,6 @@ class Client {
       }
     }
 
-    BenchmarkService::Stub* stub_;
-    ClientConfig config_;
     std::mutex mu_;
     std::condition_variable cv_;
     bool done_;
@@ -337,12 +297,61 @@ class Client {
     size_t idx_;
     std::thread impl_;
   };
-  
+
   std::vector<std::unique_ptr<Thread>> threads_;
   std::unique_ptr<Timer> timer_;
 
   InterarrivalTimer interarrival_timer_;
   std::vector<grpc_time> next_time_;
+};
+
+template <class StubType, class RequestType>
+class ClientImpl : public Client {
+ public:
+  ClientImpl(const ClientConfig& config,
+             std::function<std::unique_ptr<StubType>(std::shared_ptr<Channel>)> create_stub)
+      : channels_(config.client_channels()),
+        create_stub_(create_stub) {
+    for (int i = 0; i < config.client_channels(); i++) {
+      channels_[i].init(config.server_targets(i % config.server_targets_size()),
+                        config);
+    }
+
+    ClientRequestCreation::CreateRequest<RequestType>(&request_, config.payload_config());
+  }
+  virtual ~ClientImpl() {}
+
+ protected:
+  RequestType request_;
+
+  class ClientChannelInfo {
+   public:
+    ClientChannelInfo() {}
+    ClientChannelInfo(const ClientChannelInfo& i) {
+      // The copy constructor is to satisfy old compilers
+      // that need it for using std::vector . It is only ever
+      // used for empty entries
+      GPR_ASSERT(!i.channel_ && !i.stub_);
+    }
+    void init(const grpc::string& target, const ClientConfig& config) {
+      // We have to use a 2-phase init like this with a default
+      // constructor followed by an initializer function to make
+      // old compilers happy with using this in std::vector
+      channel_ = CreateTestChannel(
+          target, config.security_params().server_host_override(),
+          config.has_security_params(),
+          !config.security_params().use_test_ca());
+      stub_ = create_stub_(channel_);
+    }
+    Channel* get_channel() { return channel_.get(); }
+    StubType* get_stub() { return stub_.get(); }
+
+   private:
+    std::shared_ptr<Channel> channel_;
+    std::unique_ptr<StubType> stub_;
+  };
+  std::vector<ClientChannelInfo> channels_;
+  std::function<std::unique_ptr<StubType>(std::shared_ptr<Channel>)> create_stub_;
 };
 
 std::unique_ptr<Client> CreateSynchronousUnaryClient(const ClientConfig& args);
