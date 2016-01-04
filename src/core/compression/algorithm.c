@@ -141,7 +141,7 @@ grpc_compression_algorithm grpc_compression_algorithm_for_level(
     default:
       break;
   }
-  GPR_UNREACHABLE_CODE(return GRPC_COMPRESS_NONE);
+  return GRPC_COMPRESS_NONE;
 }
 
 void grpc_compression_options_init(grpc_compression_options *opts) {
