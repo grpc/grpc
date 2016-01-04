@@ -52,9 +52,17 @@ if [ "x$TEST" = "x" ]
 then
   echo $files | xargs $CLANG_FORMAT -i
 else
+  ok=yes
   for file in $files
   do
-    $CLANG_FORMAT $file | diff $file -
+    tmp=`mktemp`
+    $CLANG_FORMAT $file > $tmp
+    diff -u $file $tmp || ok=no
+    rm $tmp
   done
+  if [ $ok == no ]
+  then
+    false
+  fi
 fi
 
