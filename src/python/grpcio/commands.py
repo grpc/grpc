@@ -156,6 +156,8 @@ class BuildPy(build_py.build_py):
   """Custom project build command."""
 
   def run(self):
+    # TODO(atash): make this warn if the proto modules couldn't be built rather
+    # than cause build failure
     self.run_command('build_proto_modules')
     self.run_command('build_project_metadata')
     build_py.build_py.run(self)
