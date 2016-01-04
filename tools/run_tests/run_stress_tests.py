@@ -58,8 +58,7 @@ _DEFAULT_NUM_CHANNELS_PER_SERVER = 5
 _DEFAULT_NUM_STUBS_PER_CHANNEL = 10
 
 # 15 mins default
-#_DEFAULT_TEST_DURATION_SECS = 900
-_DEFAULT_TEST_DURATION_SECS = 30
+_DEFAULT_TEST_DURATION_SECS = 900
 
 class CXXLanguage:
 
@@ -197,7 +196,6 @@ def build_interop_stress_image_jobspec(language, tag=None):
     tag = 'grpc_interop_stress_%s:%s' % (language.safename, uuid.uuid4())
   env = {'INTEROP_IMAGE': tag,
          'BASE_NAME': 'grpc_interop_stress_%s' % language.safename}
-  #env['TTY_FLAG'] = '-t'
   build_job = jobset.JobSpec(cmdline=['tools/jenkins/build_interop_stress_image.sh'],
                              environ=env,
                              shortname='build_docker_%s' % (language),
