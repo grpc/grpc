@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -28,18 +28,10 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
-# Builds C++ interop server and client in a base image.
-set -e
+# This script is invoked by Jenkins and runs interop test suite.
+set -ex
 
-mkdir -p /var/local/git
-git clone --recursive /var/local/jenkins/grpc /var/local/git/grpc
+# Enter the gRPC repo root
+cd $(dirname $0)/../..
 
-# copy service account keys if available
-cp -r /var/local/jenkins/service_account $HOME || true
-
-cd /var/local/git/grpc
-
-make install-certs
-
-# build C++ interop client & server
-make interop_client interop_server
+tools/run_tests/run_stress_tests.py -l all -s all -j 12 $@ || true
