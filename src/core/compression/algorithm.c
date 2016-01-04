@@ -139,9 +139,9 @@ grpc_compression_algorithm grpc_compression_algorithm_for_level(
     case GRPC_COMPRESS_LEVEL_HIGH:
       return GRPC_COMPRESS_DEFLATE;
     default:
-      break;
+      gpr_log(GPR_ERROR, "Unknown compression level %d.", (int)level);
+      abort();
   }
-  return GRPC_COMPRESS_NONE;
 }
 
 void grpc_compression_options_init(grpc_compression_options *opts) {
