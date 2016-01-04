@@ -80,7 +80,7 @@ class ChannelCredentials : public GrpcLibrary {
 /// A call credentials object encapsulates the state needed by a client to
 /// authenticate with a server for a given call on a channel.
 ///
-/// \see https://github.com/grpc/grpc/blob/master/doc/grpc-auth-support.md
+/// \see http://www.grpc.io/docs/guides/auth.html
 class CallCredentials : public GrpcLibrary {
  public:
   ~CallCredentials() GRPC_OVERRIDE;
