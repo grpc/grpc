@@ -1860,7 +1860,10 @@
 
   % if tgt.language == 'c89':
   % for src in tgt.src:
-  $(OBJDIR)/$(CONFIG)/${os.path.splitext(src)[0]}.o: CFLAGS := <%text>$(CFLAGS)</%text> -std=c89
+  $(OBJDIR)/$(CONFIG)/${os.path.splitext(src)[0]}.o : ${src}
+  	$(E) "[C]       Compiling $<"
+  	$(Q) mkdir -p `dirname $@`
+  	$(Q) $(CC) $(CFLAGS) $(CPPFLAGS) -std=c89 -pedantic -MMD -MF $(addsuffix .dep, $(basename $@)) -c -o $@ $<
   % endfor
   % endif
 
