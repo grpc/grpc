@@ -17,11 +17,11 @@
 
   def filter_src(src):
     if '.proto' in src:
-      return '${%(root)s_SRCS} ${%(root)s_HDRS}' % { 'root': proto_root(src) }
+      return '${%(root)s_PROTO_SRCS} ${%(root)s_PROTO_HDRS} ${%(root)s_GRPC_SRCS} ${%(root)s_GRPC_HDRS}' % { 'root': proto_root(src) }
     return src
 
-  def protovars(src):
-    return '%(root)s_SRCS %(root)s_HDRS' % { 'root': proto_root(src) }
+  def protovars(src, tag):
+    return '%(root)s_%(tag)s_SRCS %(root)s_%(tag)s_HDRS' % { 'root': proto_root(src), 'tag': tag }
   %>
 
   set (PACKAGE_NAME      "grpc")
@@ -32,6 +32,7 @@
   set (CMAKE_ARCHIVE_OUTPUT_DIRECTORY <%text>${CMAKE_BINARY_DIR}/lib</%text>)
   set (CMAKE_LIBRARY_OUTPUT_DIRECTORY <%text>${CMAKE_BINARY_DIR}/lib</%text>)
   set (CMAKE_RUNTIME_OUTPUT_DIRECTORY <%text>${CMAKE_BINARY_DIR}/bin</%text>)
+  set (CMAKE_MODULE_PATH <%text>${CMAKE_MODULE_PATH} ${CMAKE_BINARY_DIR}/tools/cmake_modules</%text>)
 
   project (<%text>${PACKAGE_NAME}</%text> C CXX)
 
@@ -90,7 +91,8 @@
   % endfor
 
   % for proto in protos:
-  # PROTOBUF_GENERATE_CPP(${protovars(proto)} ${proto})
+  # PROTOBUF_GENERATE_CPP(${protovars(proto, 'PROTO')} ${proto})
+  # PROTOBUF_GENERATE_CPP(${protovars(proto, 'GRPC')} ${proto})
   % endfor
 
   % for lib in libs:

@@ -9,12 +9,14 @@ template: |
   def proto_root(src):
     return src.upper().replace('/', '_').replace('\\', '_').replace('.', '_')
 
-  def protovars(src):
-    return '%(root)s_SRCS %(root)s_HDRS' % { 'root': proto_root(src) }
+  def protovars(src, tag):
+    return '%(root)s_%(tag)s_SRCS %(root)s_%(tag)s_HDRS' % { 'root': proto_root(src), 'tag': tag }
   %>
+  INCLUDE(GRPC_PB)
   % for proto in protos:
   % if os.path.dirname(proto) == selected:
-  PROTOBUF_GENERATE_CPP(${protovars(proto)} <%text>${CMAKE_SOURCE_DIR}</%text>/${proto})
+  PROTOBUF_GENERATE_CPP(${protovars(proto, 'PROTO')} <%text>${CMAKE_SOURCE_DIR}</%text>/${proto})
+  GRPC_PB_GENERATE_CPP(${protovars(proto, 'GRPC')} <%text>${CMAKE_SOURCE_DIR}</%text>/${proto})
   % endif
   % endfor
- 
+
