@@ -232,8 +232,8 @@ static void auth_start_transport_op(grpc_exec_ctx *exec_ctx,
     }
     sec_ctx = op->context[GRPC_CONTEXT_SECURITY].value;
     GRPC_AUTH_CONTEXT_UNREF(sec_ctx->auth_context, "client auth filter");
-    sec_ctx->auth_context = GRPC_AUTH_CONTEXT_REF(
-        chand->auth_context, "client_auth_filter");
+    sec_ctx->auth_context =
+        GRPC_AUTH_CONTEXT_REF(chand->auth_context, "client_auth_filter");
   }
 
   if (op->send_initial_metadata != NULL) {
