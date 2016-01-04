@@ -40,7 +40,6 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/thd.h>
 #include <grpc/support/useful.h>
-#include "src/core/tsi/transport_security.h"
 
 #include <openssl/bio.h>
 #include <openssl/crypto.h> /* For OPENSSL_free */
@@ -48,6 +47,9 @@
 #include <openssl/ssl.h>
 #include <openssl/x509.h>
 #include <openssl/x509v3.h>
+
+#include "src/core/tsi/ssl_types.h"
+#include "src/core/tsi/transport_security.h"
 
 /* --- Constants. ---*/
 
@@ -291,7 +293,7 @@ static tsi_result add_subject_alt_names_properties_to_peer(
 
   for (i = 0; i < subject_alt_name_count; i++) {
     GENERAL_NAME *subject_alt_name =
-        sk_GENERAL_NAME_value(subject_alt_names, (int)i);
+        sk_GENERAL_NAME_value(subject_alt_names, TSI_SIZE_AS_SIZE(i));
     /* Filter out the non-dns entries names. */
     if (subject_alt_name->type == GEN_DNS) {
       unsigned char *dns_name = NULL;

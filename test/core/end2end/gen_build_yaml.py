@@ -77,8 +77,8 @@ END2END_FIXTURES = {
 }
 
 TestOptions = collections.namedtuple(
-    'TestOptions', 'needs_fullstack needs_dns proxyable flaky secure traceable')
-default_test_options = TestOptions(False, False, True, False, False, True)
+    'TestOptions', 'needs_fullstack needs_dns proxyable secure traceable')
+default_test_options = TestOptions(False, False, True, False, True)
 connectivity_test_options = default_test_options._replace(needs_fullstack=True)
 
 # maps test names to options
@@ -164,56 +164,33 @@ def main():
       '#': 'generated with test/end2end/gen_build_json.py',
       'libs': [
           {
-              'name': 'end2end_fixture_%s' % f,
+              'name': 'end2end_tests',
               'build': 'private',
               'language': 'c',
-              'secure': 'check' if END2END_FIXTURES[f].secure else False,
-              'src': ['test/core/end2end/fixtures/%s.c' % f],
-              'platforms': ['linux', 'mac', 'posix'] if f.endswith('_posix')
-                           else END2END_FIXTURES[f].platforms,
-              'deps': sec_deps,
-              'headers': ['test/core/end2end/end2end_tests.h'],
-              'vs_proj_dir': 'test',
-          } for f in sorted(END2END_FIXTURES.keys())
-      ] + [
-          {
-              'name': 'end2end_nosec_fixture_%s' % f,
-              'build': 'private',
-              'language': 'c',
-              'secure': False,
-              'src': ['test/core/end2end/fixtures/%s.c' % f],
-              'platforms': ['linux', 'mac', 'posix'] if f.endswith('_posix')
-                           else END2END_FIXTURES[f].platforms,
-              'deps': unsec_deps,
-              'headers': ['test/core/end2end/end2end_tests.h'],
-              'vs_proj_dir': 'test',
-          } for f in sorted(END2END_FIXTURES.keys())
-            if not END2END_FIXTURES[f].secure
-      ] + [
-          {
-              'name': 'end2end_test_%s' % t,
-              'build': 'private',
-              'language': 'c',
-              'secure': 'check' if END2END_TESTS[t].secure else False,
-              'src': ['test/core/end2end/tests/%s.c' % t],
+              'secure': True,
+              'src': ['test/core/end2end/end2end_tests.c'] + [
+                  'test/core/end2end/tests/%s.c' % t
+                  for t in sorted(END2END_TESTS.keys())],
               'headers': ['test/core/end2end/tests/cancel_test_helpers.h',
                           'test/core/end2end/end2end_tests.h'],
               'deps': sec_deps,
-              'vs_proj_dir': 'test',
-          } for t in sorted(END2END_TESTS.keys())
+              'vs_proj_dir': 'test/end2end/tests',
+          }
       ] + [
           {
-              'name': 'end2end_nosec_test_%s' % t,
+              'name': 'end2end_nosec_tests',
               'build': 'private',
               'language': 'c',
               'secure': False,
-              'src': ['test/core/end2end/tests/%s.c' % t],
+              'src': ['test/core/end2end/end2end_nosec_tests.c'] + [
+                  'test/core/end2end/tests/%s.c' % t
+                  for t in sorted(END2END_TESTS.keys())
+                  if not END2END_TESTS[t].secure],
               'headers': ['test/core/end2end/tests/cancel_test_helpers.h',
                           'test/core/end2end/end2end_tests.h'],
               'deps': unsec_deps,
-              'vs_proj_dir': 'test',
-          } for t in sorted(END2END_TESTS.keys())
-            if not END2END_TESTS[t].secure
+              'vs_proj_dir': 'test/end2end/tests',
+          }
       ] + [
           {
               'name': 'end2end_certs',
@@ -224,49 +201,81 @@ def main():
                   "test/core/end2end/data/server1_cert.c",
                   "test/core/end2end/data/server1_key.c"
               ],
-              'vs_proj_dir': 'test',
+              'vs_proj_dir': 'test/end2end',
           }
       ],
       'targets': [
           {
-              'name': '%s_%s_test' % (f, t),
+              'name': '%s_test' % f,
               'build': 'test',
               'language': 'c',
-              'src': [],
-              'flaky': END2END_TESTS[t].flaky,
+              'run': False,
+              'src': ['test/core/end2end/fixtures/%s.c' % f],
               'platforms': END2END_FIXTURES[f].platforms,
               'ci_platforms': (END2END_FIXTURES[f].platforms
                                if END2END_FIXTURES[f].ci_mac else without(
                                    END2END_FIXTURES[f].platforms, 'mac')),
               'deps': [
-                  'end2end_fixture_%s' % f, 'end2end_test_%s' % t
+                  'end2end_tests'
               ] + sec_deps,
-              'vs_proj_dir': 'test',
+              'vs_proj_dir': 'test/end2end/fixtures',
+          }
+          for f in sorted(END2END_FIXTURES.keys())
+      ] + [
+          {
+              'name': '%s_nosec_test' % f,
+              'build': 'test',
+              'language': 'c',
+              'secure': 'no',
+              'src': ['test/core/end2end/fixtures/%s.c' % f],
+              'run': False,
+              'platforms': END2END_FIXTURES[f].platforms,
+              'ci_platforms': (END2END_FIXTURES[f].platforms
+                               if END2END_FIXTURES[f].ci_mac else without(
+                                   END2END_FIXTURES[f].platforms, 'mac')),
+              'deps': [
+                  'end2end_nosec_tests'
+              ] + unsec_deps,
+              'vs_proj_dir': 'test/end2end/fixtures',
+          }
+          for f in sorted(END2END_FIXTURES.keys())
+          if not END2END_FIXTURES[f].secure
+      ],
+      'tests': [
+          {
+              'name': '%s_test' % f,
+              'args': [t],
+              'exclude_configs': [],
+              'platforms': END2END_FIXTURES[f].platforms,
+              'ci_platforms': (END2END_FIXTURES[f].platforms
+                               if END2END_FIXTURES[f].ci_mac else without(
+                                   END2END_FIXTURES[f].platforms, 'mac')),
+              'flaky': False,
+              'language': 'c',
           }
           for f in sorted(END2END_FIXTURES.keys())
           for t in sorted(END2END_TESTS.keys()) if compatible(f, t)
       ] + [
           {
-              'name': '%s_%s_nosec_test' % (f, t),
-              'build': 'test',
-              'language': 'c',
-              'secure': 'no',
-              'src': [],
-              'flaky': END2END_TESTS[t].flaky,
+              'name': '%s_test' % f,
+              'args': [t],
+              'exclude_configs': [],
               'platforms': END2END_FIXTURES[f].platforms,
               'ci_platforms': (END2END_FIXTURES[f].platforms
                                if END2END_FIXTURES[f].ci_mac else without(
                                    END2END_FIXTURES[f].platforms, 'mac')),
-              'deps': [
-                  'end2end_nosec_fixture_%s' % f, 'end2end_nosec_test_%s' % t
-              ] + unsec_deps,
-              'vs_proj_dir': 'test',
+              'flaky': False,
+              'language': 'c',
           }
           for f in sorted(END2END_FIXTURES.keys())
           if not END2END_FIXTURES[f].secure
           for t in sorted(END2END_TESTS.keys())
           if compatible(f, t) and not END2END_TESTS[t].secure
-      ]
+      ],
+      'core_end2end_tests': dict(
+          (t, END2END_TESTS[t].secure)
+          for t in END2END_TESTS.keys()
+      )
   }
   print yaml.dump(json)
 

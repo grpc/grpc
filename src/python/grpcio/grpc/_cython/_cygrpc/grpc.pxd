@@ -292,6 +292,9 @@ cdef extern from "grpc/grpc.h":
   grpc_event grpc_completion_queue_next(grpc_completion_queue *cq,
                                         gpr_timespec deadline,
                                         void *reserved) nogil
+  grpc_event grpc_completion_queue_pluck(grpc_completion_queue *cq, void *tag,
+                                         gpr_timespec deadline,
+                                         void *reserved) nogil
   void grpc_completion_queue_shutdown(grpc_completion_queue *cq)
   void grpc_completion_queue_destroy(grpc_completion_queue *cq)
 

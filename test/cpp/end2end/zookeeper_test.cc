@@ -158,7 +158,7 @@ class ZookeeperTest : public ::testing::Test {
   void ResetStub() {
     string target = "zookeeper://" + zookeeper_address_ + "/test";
     channel_ = CreateChannel(target, InsecureChannelCredentials());
-    stub_ = std::move(grpc::cpp::test::util::TestService::NewStub(channel_));
+    stub_ = grpc::cpp::test::util::TestService::NewStub(channel_);
   }
 
   string to_string(const int number) {
