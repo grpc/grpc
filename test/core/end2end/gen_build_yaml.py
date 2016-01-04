@@ -164,33 +164,6 @@ def main():
       '#': 'generated with test/end2end/gen_build_json.py',
       'libs': [
           {
-              'name': 'end2end_fixture_%s' % f,
-              'build': 'private',
-              'language': 'c',
-              'secure': 'check' if END2END_FIXTURES[f].secure else False,
-              'src': ['test/core/end2end/fixtures/%s.c' % f],
-              'platforms': ['linux', 'mac', 'posix'] if f.endswith('_posix')
-                           else END2END_FIXTURES[f].platforms,
-              'deps': sec_deps,
-              'headers': ['test/core/end2end/end2end_tests.h'],
-              'vs_proj_dir': 'test/end2end/fixtures/%s' % f,
-          } for f in sorted(END2END_FIXTURES.keys())
-      ] + [
-          {
-              'name': 'end2end_nosec_fixture_%s' % f,
-              'build': 'private',
-              'language': 'c',
-              'secure': False,
-              'src': ['test/core/end2end/fixtures/%s.c' % f],
-              'platforms': ['linux', 'mac', 'posix'] if f.endswith('_posix')
-                           else END2END_FIXTURES[f].platforms,
-              'deps': unsec_deps,
-              'headers': ['test/core/end2end/end2end_tests.h'],
-              'vs_proj_dir': 'test/end2end/fixtures/%s' % f,
-          } for f in sorted(END2END_FIXTURES.keys())
-            if not END2END_FIXTURES[f].secure
-      ] + [
-          {
               'name': 'end2end_tests',
               'build': 'private',
               'language': 'c',
@@ -237,15 +210,15 @@ def main():
               'build': 'test',
               'language': 'c',
               'run': False,
-              'src': [],
+              'src': ['test/core/end2end/fixtures/%s.c' % f],
               'platforms': END2END_FIXTURES[f].platforms,
               'ci_platforms': (END2END_FIXTURES[f].platforms
                                if END2END_FIXTURES[f].ci_mac else without(
                                    END2END_FIXTURES[f].platforms, 'mac')),
               'deps': [
-                  'end2end_fixture_%s' % f, 'end2end_tests'
+                  'end2end_tests'
               ] + sec_deps,
-              'vs_proj_dir': 'test/end2end/tests',
+              'vs_proj_dir': 'test/end2end/fixtures',
           }
           for f in sorted(END2END_FIXTURES.keys())
       ] + [
@@ -254,16 +227,16 @@ def main():
               'build': 'test',
               'language': 'c',
               'secure': 'no',
-              'src': [],
+              'src': ['test/core/end2end/fixtures/%s.c' % f],
               'run': False,
               'platforms': END2END_FIXTURES[f].platforms,
               'ci_platforms': (END2END_FIXTURES[f].platforms
                                if END2END_FIXTURES[f].ci_mac else without(
                                    END2END_FIXTURES[f].platforms, 'mac')),
               'deps': [
-                  'end2end_nosec_fixture_%s' % f, 'end2end_nosec_tests'
+                  'end2end_nosec_tests'
               ] + unsec_deps,
-              'vs_proj_dir': 'test/end2end/tests',
+              'vs_proj_dir': 'test/end2end/fixtures',
           }
           for f in sorted(END2END_FIXTURES.keys())
           if not END2END_FIXTURES[f].secure
