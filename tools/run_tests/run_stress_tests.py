@@ -59,7 +59,7 @@ _DEFAULT_NUM_STUBS_PER_CHANNEL = 10
 
 # 15 mins default
 #_DEFAULT_TEST_DURATION_SECS = 900
-_DEFAULT_TEST_DURATION_SECS = 10
+_DEFAULT_TEST_DURATION_SECS = 30
 
 class CXXLanguage:
 
@@ -258,9 +258,8 @@ argp.add_argument(
     'csharp=localhost:50000',
     default=[])
 argp.add_argument('--test_duration_secs',
-                  action='append',
                   help='The duration of the test in seconds',
-                  default=[_DEFAULT_TEST_DURATION_SECS])
+                  default=_DEFAULT_TEST_DURATION_SECS)
 argp.add_argument(
     '--allow_flakes',
     default=False,
@@ -314,7 +313,7 @@ server_addresses = {}
 try:
   for s in servers:
     lang = str(s)
-    spec = server_jobspec(_LANGUAGES[lang], docker_images.get(lang), _DEFAULT_TEST_DURATION_SECS)
+    spec = server_jobspec(_LANGUAGES[lang], docker_images.get(lang), args.test_duration_secs)
     job = dockerjob.DockerJob(spec)
     server_jobs[lang] = job
     server_addresses[lang] = ('localhost',
@@ -334,7 +333,7 @@ try:
           language,
           _DEFAULT_TEST_CASES,
           ('%s:%s' % (server_host, server_port)),
-          _DEFAULT_TEST_DURATION_SECS,
+          args.test_duration_secs,
           _DEFAULT_NUM_CHANNELS_PER_SERVER,
           _DEFAULT_NUM_STUBS_PER_CHANNEL,
           _DEFAULT_METRICS_PORT,
