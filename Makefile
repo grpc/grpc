@@ -11459,7 +11459,10 @@ $(BINDIR)/$(CONFIG)/public_headers_must_be_c89: $(PUBLIC_HEADERS_MUST_BE_C89_OBJ
 endif
 
 $(OBJDIR)/$(CONFIG)/test/core/surface/public_headers_must_be_c89.o:  $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
-$(OBJDIR)/$(CONFIG)/test/core/surface/public_headers_must_be_c89.o: CFLAGS := $(CFLAGS) -std=c89
+$(OBJDIR)/$(CONFIG)/test/core/surface/public_headers_must_be_c89.o : test/core/surface/public_headers_must_be_c89.c
+	$(E) "[C]       Compiling $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(CC) $(CFLAGS) $(CPPFLAGS) -std=c89 -pedantic -MMD -MF $(addsuffix .dep, $(basename $@)) -c -o $@ $<
 
 deps_public_headers_must_be_c89: $(PUBLIC_HEADERS_MUST_BE_C89_OBJS:.o=.dep)
 

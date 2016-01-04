@@ -53,11 +53,9 @@
 #include <grpc/support/subprocess.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/sync_generic.h>
-#include <grpc/support/sync_posix.h>
 #include <grpc/support/thd.h>
 #include <grpc/support/time.h>
 #include <grpc/support/tls.h>
-#include <grpc/support/tls_msvc.h>
 #include <grpc/support/useful.h>
 
 int main(int argc, char **argv) {
