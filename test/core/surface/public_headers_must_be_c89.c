@@ -37,7 +37,6 @@
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
-#include <grpc/grpc_zookeeper.h>
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
