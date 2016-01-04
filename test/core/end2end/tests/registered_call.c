@@ -227,7 +227,7 @@ static void test_invoke_10_simple_requests(grpc_end2end_test_config config) {
   config.tear_down_data(&f);
 }
 
-void grpc_end2end_tests(grpc_end2end_test_config config) {
+void registered_call(grpc_end2end_test_config config) {
   test_invoke_simple_request(config);
   test_invoke_10_simple_requests(config);
 }
