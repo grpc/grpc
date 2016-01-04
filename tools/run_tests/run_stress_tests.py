@@ -162,8 +162,8 @@ def cloud_to_cloud_jobspec(language,
                             shortname='cloud_to_cloud:%s:%s_server:stress_test' % (
                                 language, server_name),
                             timeout_seconds=test_duration_secs * 2,
-                            flake_retries=5 if args.allow_flakes else 0,
-                            timeout_retries=2 if args.allow_flakes else 0,
+                            flake_retries=0,
+                            timeout_retries=0,
                             kill_handler=_job_kill_handler)
   test_job.container_name = container_name
   return test_job
@@ -191,14 +191,14 @@ def server_jobspec(language, docker_image, test_duration_secs):
   return server_job
 
 
-def build_interop_image_jobspec(language, tag=None):
+def build_interop_stress_image_jobspec(language, tag=None):
   """Creates jobspec for building stress test docker image for a language"""
   if not tag:
-    tag = 'grpc_interop_%s:%s' % (language.safename, uuid.uuid4())
+    tag = 'grpc_interop_stress_%s:%s' % (language.safename, uuid.uuid4())
   env = {'INTEROP_IMAGE': tag,
-         'BASE_NAME': 'grpc_interop_%s' % language.safename}
+         'BASE_NAME': 'grpc_interop_stress_%s' % language.safename}
   env['TTY_FLAG'] = '-t'
-  build_job = jobset.JobSpec(cmdline=['tools/jenkins/build_interop_image.sh'],
+  build_job = jobset.JobSpec(cmdline=['tools/jenkins/build_interop_stress_image.sh'],
                              environ=env,
                              shortname='build_docker_%s' % (language),
                              timeout_seconds=30 * 60)
@@ -286,7 +286,7 @@ languages_to_build = set(
     for k in set([str(l) for l in languages] + [s for s in servers]))
 build_jobs = []
 for l in languages_to_build:
-  job = build_interop_image_jobspec(l)
+  job = build_interop_stress_image_jobspec(l)
   docker_images[str(l)] = job.tag
   build_jobs.append(job)
 
