@@ -197,7 +197,7 @@ def build_interop_stress_image_jobspec(language, tag=None):
     tag = 'grpc_interop_stress_%s:%s' % (language.safename, uuid.uuid4())
   env = {'INTEROP_IMAGE': tag,
          'BASE_NAME': 'grpc_interop_stress_%s' % language.safename}
-  env['TTY_FLAG'] = '-t'
+  #env['TTY_FLAG'] = '-t'
   build_job = jobset.JobSpec(cmdline=['tools/jenkins/build_interop_stress_image.sh'],
                              environ=env,
                              shortname='build_docker_%s' % (language),
