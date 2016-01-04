@@ -31,6 +31,7 @@
 
 import os
 import os.path
+import shutil
 import sys
 
 from distutils import core as _core
@@ -130,6 +131,14 @@ COMMAND_CLASS = {
     'run_interop': commands.RunInterop,
 }
 
+# Ensure that package data is copied over before any commands have been run:
+credentials_dir = os.path.join(PYTHON_STEM, 'grpc/_adapter/credentials')
+try:
+  os.mkdir(credentials_dir)
+except OSError:
+  pass
+shutil.copyfile('etc/roots.pem', os.path.join(credentials_dir, 'roots.pem'))
+
 TEST_PACKAGE_DATA = {
     'tests.interop': [
         'credentials/ca.pem',
@@ -143,6 +152,9 @@ TEST_PACKAGE_DATA = {
         'credentials/ca.pem',
         'credentials/server1.key',
         'credentials/server1.pem',
+    ],
+    'grpc._adapter': [
+        'credentials/roots.pem'
     ],
 }
 
