@@ -228,13 +228,6 @@ argp.add_argument(
 argp.add_argument('--test_duration_secs',
                   help='The duration of the test in seconds',
                   default=_DEFAULT_TEST_DURATION_SECS)
-argp.add_argument(
-    '--allow_flakes',
-    default=False,
-    action='store_const',
-    const=True,
-    help=
-    'Allow flaky tests to show as passing (re-runs failed tests up to five times)')
 
 args = argp.parse_args()
 
