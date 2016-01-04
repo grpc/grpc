@@ -38,7 +38,6 @@ import json
 import multiprocessing
 import os
 import re
-import report_utils
 import subprocess
 import sys
 import tempfile
@@ -203,35 +202,6 @@ def build_interop_stress_image_jobspec(language, tag=None):
   build_job.tag = tag
   return build_job
 
-
-def aggregate_http2_results(stdout):
-  match = re.search(r'\{"cases[^\]]*\]\}', stdout)
-  if not match:
-    return None
-
-  results = json.loads(match.group(0))
-  skipped = 0
-  passed = 0
-  failed = 0
-  failed_cases = []
-  for case in results['cases']:
-    if case.get('skipped', False):
-      skipped += 1
-    else:
-      if case.get('passed', False):
-        passed += 1
-      else:
-        failed += 1
-        failed_cases.append(case.get('name', 'NONAME'))
-  return {
-      'passed': passed,
-      'failed': failed,
-      'skipped': skipped,
-      'failed_cases': ', '.join(failed_cases),
-      'percent': 1.0 * passed / (passed + failed)
-  }
-
-
 argp = argparse.ArgumentParser(description='Run stress tests.')
 argp.add_argument('-l',
                   '--language',
@@ -351,16 +321,6 @@ try:
     jobset.message('FAILED', 'Some tests failed', do_newline=True)
   else:
     jobset.message('SUCCESS', 'All tests passed', do_newline=True)
-
-  report_utils.render_junit_xml_report(resultset, 'report.xml')
-
-  for name, job in resultset.iteritems():
-    if "http2" in name:
-      job[0].http2results = aggregate_http2_results(job[0].message)
-
-  report_utils.render_interop_html_report(
-      set([str(l) for l in languages]), servers, [], [], [], resultset,
-      num_failures, 0, 0)
 
 finally:
   # Check if servers are still running.
