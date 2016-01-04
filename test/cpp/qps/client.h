@@ -69,59 +69,68 @@ namespace testing {
 typedef std::chrono::high_resolution_clock grpc_time_source;
 typedef std::chrono::time_point<grpc_time_source> grpc_time;
 
-namespace ClientRequestCreation {
 template <class RequestType>
-void CreateRequest(RequestType *req, const PayloadConfig&) {
-  // this template must be specialized
-  // fail with an assertion rather than a compile-time
-  // check since these only happen at the beginning anyway
-  GPR_ASSERT(false);
-}
+class ClientRequestCreator {
+ public:
+  ClientRequestCreator(RequestType* req, const PayloadConfig&) {
+    // this template must be specialized
+    // fail with an assertion rather than a compile-time
+    // check since these only happen at the beginning anyway
+    GPR_ASSERT(false);
+  }
+};
 
 template <>
-void CreateRequest<SimpleRequest>(SimpleRequest *req, const PayloadConfig& payload_config) {
-  if (payload_config.has_bytebuf_params()) {
-    GPR_ASSERT(false);  // not appropriate for this specialization
-  } else if (payload_config.has_simple_params()) {
-    req->set_response_type(grpc::testing::PayloadType::COMPRESSABLE);
-    req->set_response_size(payload_config.simple_params().resp_size());
-    req->mutable_payload()->set_type(grpc::testing::PayloadType::COMPRESSABLE);
-    int size = payload_config.simple_params().req_size();
-    std::unique_ptr<char[]> body(new char[size]);
-    req->mutable_payload()->set_body(body.get(), size);
-  } else if (payload_config.has_complex_params()) {
-    GPR_ASSERT(false);  // not appropriate for this specialization
-  } else {
-    // default should be simple proto without payloads
-    req->set_response_type(grpc::testing::PayloadType::COMPRESSABLE);
-    req->set_response_size(0);
-    req->mutable_payload()->set_type(grpc::testing::PayloadType::COMPRESSABLE);
-  }
-}
-template <>
-void CreateRequest<ByteBuffer>(ByteBuffer *req,
-                               const PayloadConfig& payload_config) {
-  if (payload_config.has_bytebuf_params()) {
-    if (payload_config.bytebuf_params().req_size() > 0) {
-      std::unique_ptr<char>
-          buf(new char[payload_config.bytebuf_params().req_size()]);
-      gpr_slice s =
-          gpr_slice_from_copied_buffer(buf.get(),
-                                       payload_config.bytebuf_params().req_size());
-      Slice slice(s, Slice::STEAL_REF);
-      std::unique_ptr<ByteBuffer> bbuf(new ByteBuffer(&slice, 1));
-      req->MoveFrom(bbuf.get());
-    } else {
+class ClientRequestCreator<SimpleRequest> {
+ public:
+  ClientRequestCreator(SimpleRequest* req,
+                       const PayloadConfig& payload_config) {
+    if (payload_config.has_bytebuf_params()) {
       GPR_ASSERT(false);  // not appropriate for this specialization
+    } else if (payload_config.has_simple_params()) {
+      req->set_response_type(grpc::testing::PayloadType::COMPRESSABLE);
+      req->set_response_size(payload_config.simple_params().resp_size());
+      req->mutable_payload()->set_type(
+          grpc::testing::PayloadType::COMPRESSABLE);
+      int size = payload_config.simple_params().req_size();
+      std::unique_ptr<char[]> body(new char[size]);
+      req->mutable_payload()->set_body(body.get(), size);
+    } else if (payload_config.has_complex_params()) {
+      GPR_ASSERT(false);  // not appropriate for this specialization
+    } else {
+      // default should be simple proto without payloads
+      req->set_response_type(grpc::testing::PayloadType::COMPRESSABLE);
+      req->set_response_size(0);
+      req->mutable_payload()->set_type(
+          grpc::testing::PayloadType::COMPRESSABLE);
     }
   }
-}
-}
+};
+
+template <>
+class ClientRequestCreator<ByteBuffer> {
+ public:
+  ClientRequestCreator(ByteBuffer* req, const PayloadConfig& payload_config) {
+    if (payload_config.has_bytebuf_params()) {
+      if (payload_config.bytebuf_params().req_size() > 0) {
+        std::unique_ptr<char> buf(
+            new char[payload_config.bytebuf_params().req_size()]);
+        gpr_slice s = gpr_slice_from_copied_buffer(
+            buf.get(), payload_config.bytebuf_params().req_size());
+        Slice slice(s, Slice::STEAL_REF);
+        std::unique_ptr<ByteBuffer> bbuf(new ByteBuffer(&slice, 1));
+        req->MoveFrom(bbuf.get());
+      } else {
+        GPR_ASSERT(false);  // not appropriate for this specialization
+      }
+    }
+  }
+};
 
 class Client {
  public:
   Client() : timer_(new Timer), interarrival_timer_() {}
-  virtual ~Client();
+  virtual ~Client() {}
 
   ClientStats Mark(bool reset) {
     Histogram latencies;
@@ -156,6 +165,7 @@ class Client {
     stats.set_time_user(timer_result.user);
     return stats;
   }
+
  protected:
   bool closed_loop_;
 
@@ -227,6 +237,7 @@ class Client {
       return true;
     }
   }
+
  private:
   class Thread {
    public:
@@ -309,15 +320,16 @@ template <class StubType, class RequestType>
 class ClientImpl : public Client {
  public:
   ClientImpl(const ClientConfig& config,
-             std::function<std::unique_ptr<StubType>(std::shared_ptr<Channel>)> create_stub)
-      : channels_(config.client_channels()),
-        create_stub_(create_stub) {
+             std::function<std::unique_ptr<StubType>(std::shared_ptr<Channel>)>
+                 create_stub)
+      : channels_(config.client_channels()), create_stub_(create_stub) {
     for (int i = 0; i < config.client_channels(); i++) {
       channels_[i].init(config.server_targets(i % config.server_targets_size()),
-                        config);
+                        config, create_stub_);
     }
 
-    ClientRequestCreation::CreateRequest<RequestType>(&request_, config.payload_config());
+    ClientRequestCreator<RequestType> create_req(&request_,
+                                                 config.payload_config());
   }
   virtual ~ClientImpl() {}
 
@@ -333,7 +345,9 @@ class ClientImpl : public Client {
       // used for empty entries
       GPR_ASSERT(!i.channel_ && !i.stub_);
     }
-    void init(const grpc::string& target, const ClientConfig& config) {
+    void init(const grpc::string& target, const ClientConfig& config,
+              std::function<std::unique_ptr<StubType>(std::shared_ptr<Channel>)>
+                  create_stub) {
       // We have to use a 2-phase init like this with a default
       // constructor followed by an initializer function to make
       // old compilers happy with using this in std::vector
@@ -341,7 +355,7 @@ class ClientImpl : public Client {
           target, config.security_params().server_host_override(),
           config.has_security_params(),
           !config.security_params().use_test_ca());
-      stub_ = create_stub_(channel_);
+      stub_ = create_stub(channel_);
     }
     Channel* get_channel() { return channel_.get(); }
     StubType* get_stub() { return stub_.get(); }
@@ -351,7 +365,8 @@ class ClientImpl : public Client {
     std::unique_ptr<StubType> stub_;
   };
   std::vector<ClientChannelInfo> channels_;
-  std::function<std::unique_ptr<StubType>(std::shared_ptr<Channel>)> create_stub_;
+  std::function<std::unique_ptr<StubType>(const std::shared_ptr<Channel>&)>
+      create_stub_;
 };
 
 std::unique_ptr<Client> CreateSynchronousUnaryClient(const ClientConfig& args);

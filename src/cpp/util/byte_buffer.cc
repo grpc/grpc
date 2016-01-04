@@ -85,4 +85,8 @@ void ByteBuffer::MoveFrom(ByteBuffer* bbuf) {
   bbuf->buffer_ = nullptr;
 }
 
+ByteBuffer::ByteBuffer(const ByteBuffer& buf):
+    buffer_(grpc_byte_buffer_copy(buf.buffer_)) {
+}
+
 }  // namespace grpc
