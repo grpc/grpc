@@ -54,6 +54,17 @@ namespace Grpc.Core.Tests
         }
 
         [Test]
+        public void StartAndKillServer()
+        {
+            Server server = new Server
+            {
+                Ports = { new ServerPort("localhost", ServerPort.PickUnused, ServerCredentials.Insecure) }
+            };
+            server.Start();
+            server.KillAsync().Wait();
+        }
+
+        [Test]
         public void PickUnusedPort()
         {
             Server server = new Server
