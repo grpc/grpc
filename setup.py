@@ -44,6 +44,7 @@ egg_info.manifest_maker.template = 'PYTHON-MANIFEST.in'
 
 PYTHON_STEM = './src/python/grpcio/'
 CORE_INCLUDE = ('./include', './',)
+BORINGSSL_INCLUDE = ('./third_party/boringssl/include',)
 
 # Ensure we're in the proper directory whether or not we're being used by pip.
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
@@ -71,18 +72,24 @@ CYTHON_EXTENSION_PACKAGE_NAMES = ()
 
 CYTHON_EXTENSION_MODULE_NAMES = ('grpc._cython.cygrpc',)
 
-EXTENSION_INCLUDE_DIRECTORIES = (PYTHON_STEM,) + CORE_INCLUDE
+EXTENSION_INCLUDE_DIRECTORIES = (
+    (PYTHON_STEM,) + CORE_INCLUDE + BORINGSSL_INCLUDE)
 
-EXTENSION_LIBRARIES = (
-    'ssl',
-    'crypto',
-)
+EXTENSION_LIBRARIES = ()
 if not "darwin" in sys.platform:
     EXTENSION_LIBRARIES += ('rt',)
 
+EXTRA_COMPILE_ARGS = ()
+if not "win" in sys.platform:
+  EXTRA_COMPILE_ARGS = ('-pthread',)
+
+DEFINE_MACROS = (('OPENSSL_NO_ASM', 1),)
 
 def cython_extensions(package_names, module_names, include_dirs, libraries,
+                      define_macros, extra_compile_args,
                       build_with_cython=False):
+  if ENABLE_CYTHON_TRACING:
+    define_macros = define_macros + [('CYTHON_TRACE_NOGIL', 1)]
   file_extension = 'pyx' if build_with_cython else 'c'
   module_files = [os.path.join(PYTHON_STEM,
                                name.replace('.', '/') + '.' + file_extension)
@@ -92,7 +99,8 @@ def cython_extensions(package_names, module_names, include_dirs, libraries,
           name=module_name,
           sources=[module_file] + grpc_core_dependencies.CORE_SOURCE_FILES,
           include_dirs=include_dirs, libraries=libraries,
-          define_macros=[('CYTHON_TRACE_NOGIL', 1)] if ENABLE_CYTHON_TRACING else []
+          extra_compile_args=extra_compile_args,
+          define_macros=define_macros,
       ) for (module_name, module_file) in zip(module_names, module_files)
   ]
   if build_with_cython:
@@ -107,7 +115,7 @@ def cython_extensions(package_names, module_names, include_dirs, libraries,
 CYTHON_EXTENSION_MODULES = cython_extensions(
     list(CYTHON_EXTENSION_PACKAGE_NAMES), list(CYTHON_EXTENSION_MODULE_NAMES),
     list(EXTENSION_INCLUDE_DIRECTORIES), list(EXTENSION_LIBRARIES),
-    bool(BUILD_WITH_CYTHON))
+    list(DEFINE_MACROS), list(EXTRA_COMPILE_ARGS), bool(BUILD_WITH_CYTHON))
 
 PACKAGE_DIRECTORIES = {
     '': PYTHON_STEM,
