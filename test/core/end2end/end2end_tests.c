@@ -1,5 +1,4 @@
 
-
 /*
  *
  * Copyright 2015-2016, Google Inc.
@@ -269,4 +268,3 @@ void grpc_end2end_tests(int argc, char **argv,
     abort();
   }
 }
-
