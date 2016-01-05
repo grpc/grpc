@@ -2031,7 +2031,6 @@
   {
     "deps": [
       "end2end_certs", 
-      "end2end_fixture_h2_census", 
       "end2end_tests", 
       "gpr", 
       "gpr_test_util", 
@@ -2041,12 +2040,13 @@
     "headers": [], 
     "language": "c", 
     "name": "h2_census_test", 
-    "src": []
+    "src": [
+      "test/core/end2end/fixtures/h2_census.c"
+    ]
   }, 
   {
     "deps": [
       "end2end_certs", 
-      "end2end_fixture_h2_compress", 
       "end2end_tests", 
       "gpr", 
       "gpr_test_util", 
@@ -2056,12 +2056,13 @@
     "headers": [], 
     "language": "c", 
     "name": "h2_compress_test", 
-    "src": []
+    "src": [
+      "test/core/end2end/fixtures/h2_compress.c"
+    ]
   }, 
   {
     "deps": [
       "end2end_certs", 
-      "end2end_fixture_h2_fakesec", 
       "end2end_tests", 
       "gpr", 
       "gpr_test_util", 
@@ -2071,12 +2072,13 @@
     "headers": [], 
     "language": "c", 
     "name": "h2_fakesec_test", 
-    "src": []
+    "src": [
+      "test/core/end2end/fixtures/h2_fakesec.c"
+    ]
   }, 
   {
     "deps": [
       "end2end_certs", 
-      "end2end_fixture_h2_full", 
       "end2end_tests", 
       "gpr", 
       "gpr_test_util", 
@@ -2086,12 +2088,13 @@
     "headers": [], 
     "language": "c", 
     "name": "h2_full_test", 
-    "src": []
+    "src": [
+      "test/core/end2end/fixtures/h2_full.c"
+    ]
   }, 
   {
     "deps": [
       "end2end_certs", 
-      "end2end_fixture_h2_full+pipe", 
       "end2end_tests", 
       "gpr", 
       "gpr_test_util", 
@@ -2101,12 +2104,13 @@
     "headers": [], 
     "language": "c", 
     "name": "h2_full+pipe_test", 
-    "src": []
+    "src": [
+      "test/core/end2end/fixtures/h2_full+pipe.c"
+    ]
   }, 
   {
     "deps": [
       "end2end_certs", 
-      "end2end_fixture_h2_full+poll", 
       "end2end_tests", 
       "gpr", 
       "gpr_test_util", 
@@ -2116,12 +2120,13 @@
     "headers": [], 
     "language": "c", 
     "name": "h2_full+poll_test", 
-    "src": []
+    "src": [
+      "test/core/end2end/fixtures/h2_full+poll.c"
+    ]
   }, 
   {
     "deps": [
       "end2end_certs", 
-      "end2end_fixture_h2_full+poll+pipe", 
       "end2end_tests", 
       "gpr", 
       "gpr_test_util", 
@@ -2131,12 +2136,13 @@
     "headers": [], 
     "language": "c", 
     "name": "h2_full+poll+pipe_test", 
-    "src": []
+    "src": [
+      "test/core/end2end/fixtures/h2_full+poll+pipe.c"
+    ]
   }, 
   {
     "deps": [
       "end2end_certs", 
-      "end2end_fixture_h2_oauth2", 
       "end2end_tests", 
       "gpr", 
       "gpr_test_util", 
@@ -2146,12 +2152,13 @@
     "headers": [], 
     "language": "c", 
     "name": "h2_oauth2_test", 
-    "src": []
+    "src": [
+      "test/core/end2end/fixtures/h2_oauth2.c"
+    ]
   }, 
   {
     "deps": [
       "end2end_certs", 
-      "end2end_fixture_h2_proxy", 
       "end2end_tests", 
       "gpr", 
       "gpr_test_util", 
@@ -2161,12 +2168,13 @@
     "headers": [], 
     "language": "c", 
     "name": "h2_proxy_test", 
-    "src": []
+    "src": [
+      "test/core/end2end/fixtures/h2_proxy.c"
+    ]
   }, 
   {
     "deps": [
       "end2end_certs", 
-      "end2end_fixture_h2_sockpair", 
       "end2end_tests", 
       "gpr", 
       "gpr_test_util", 
@@ -2176,12 +2184,13 @@
     "headers": [], 
     "language": "c", 
     "name": "h2_sockpair_test", 
-    "src": []
+    "src": [
+      "test/core/end2end/fixtures/h2_sockpair.c"
+    ]
   }, 
   {
     "deps": [
       "end2end_certs", 
-      "end2end_fixture_h2_sockpair+trace", 
       "end2end_tests", 
       "gpr", 
       "gpr_test_util", 
@@ -2191,12 +2200,13 @@
     "headers": [], 
     "language": "c", 
     "name": "h2_sockpair+trace_test", 
-    "src": []
+    "src": [
+      "test/core/end2end/fixtures/h2_sockpair+trace.c"
+    ]
   }, 
   {
     "deps": [
       "end2end_certs", 
-      "end2end_fixture_h2_sockpair_1byte", 
       "end2end_tests", 
       "gpr", 
       "gpr_test_util", 
@@ -2206,12 +2216,13 @@
     "headers": [], 
     "language": "c", 
     "name": "h2_sockpair_1byte_test", 
-    "src": []
+    "src": [
+      "test/core/end2end/fixtures/h2_sockpair_1byte.c"
+    ]
   }, 
   {
     "deps": [
       "end2end_certs", 
-      "end2end_fixture_h2_ssl", 
       "end2end_tests", 
       "gpr", 
       "gpr_test_util", 
@@ -2221,12 +2232,13 @@
     "headers": [], 
     "language": "c", 
     "name": "h2_ssl_test", 
-    "src": []
+    "src": [
+      "test/core/end2end/fixtures/h2_ssl.c"
+    ]
   }, 
   {
     "deps": [
       "end2end_certs", 
-      "end2end_fixture_h2_ssl+poll", 
       "end2end_tests", 
       "gpr", 
       "gpr_test_util", 
@@ -2236,12 +2248,13 @@
     "headers": [], 
     "language": "c", 
     "name": "h2_ssl+poll_test", 
-    "src": []
+    "src": [
+      "test/core/end2end/fixtures/h2_ssl+poll.c"
+    ]
   }, 
   {
     "deps": [
       "end2end_certs", 
-      "end2end_fixture_h2_ssl_proxy", 
       "end2end_tests", 
       "gpr", 
       "gpr_test_util", 
@@ -2251,12 +2264,13 @@
     "headers": [], 
     "language": "c", 
     "name": "h2_ssl_proxy_test", 
-    "src": []
+    "src": [
+      "test/core/end2end/fixtures/h2_ssl_proxy.c"
+    ]
   }, 
   {
     "deps": [
       "end2end_certs", 
-      "end2end_fixture_h2_uchannel", 
       "end2end_tests", 
       "gpr", 
       "gpr_test_util", 
@@ -2266,12 +2280,13 @@
     "headers": [], 
     "language": "c", 
     "name": "h2_uchannel_test", 
-    "src": []
+    "src": [
+      "test/core/end2end/fixtures/h2_uchannel.c"
+    ]
   }, 
   {
     "deps": [
       "end2end_certs", 
-      "end2end_fixture_h2_uds", 
       "end2end_tests", 
       "gpr", 
       "gpr_test_util", 
@@ -2281,12 +2296,13 @@
     "headers": [], 
     "language": "c", 
     "name": "h2_uds_test", 
-    "src": []
+    "src": [
+      "test/core/end2end/fixtures/h2_uds.c"
+    ]
   }, 
   {
     "deps": [
       "end2end_certs", 
-      "end2end_fixture_h2_uds+poll", 
       "end2end_tests", 
       "gpr", 
       "gpr_test_util", 
@@ -2296,11 +2312,12 @@
     "headers": [], 
     "language": "c", 
     "name": "h2_uds+poll_test", 
-    "src": []
+    "src": [
+      "test/core/end2end/fixtures/h2_uds+poll.c"
+    ]
   }, 
   {
     "deps": [
-      "end2end_nosec_fixture_h2_census", 
       "end2end_nosec_tests", 
       "gpr", 
       "gpr_test_util", 
@@ -2310,11 +2327,12 @@
     "headers": [], 
     "language": "c", 
     "name": "h2_census_nosec_test", 
-    "src": []
+    "src": [
+      "test/core/end2end/fixtures/h2_census.c"
+    ]
   }, 
   {
     "deps": [
-      "end2end_nosec_fixture_h2_compress", 
       "end2end_nosec_tests", 
       "gpr", 
       "gpr_test_util", 
@@ -2324,11 +2342,12 @@
     "headers": [], 
     "language": "c", 
     "name": "h2_compress_nosec_test", 
-    "src": []
+    "src": [
+      "test/core/end2end/fixtures/h2_compress.c"
+    ]
   }, 
   {
     "deps": [
-      "end2end_nosec_fixture_h2_full", 
       "end2end_nosec_tests", 
       "gpr", 
       "gpr_test_util", 
@@ -2338,11 +2357,12 @@
     "headers": [], 
     "language": "c", 
     "name": "h2_full_nosec_test", 
-    "src": []
+    "src": [
+      "test/core/end2end/fixtures/h2_full.c"
+    ]
   }, 
   {
     "deps": [
-      "end2end_nosec_fixture_h2_full+pipe", 
       "end2end_nosec_tests", 
       "gpr", 
       "gpr_test_util", 
@@ -2352,11 +2372,12 @@
     "headers": [], 
     "language": "c", 
     "name": "h2_full+pipe_nosec_test", 
-    "src": []
+    "src": [
+      "test/core/end2end/fixtures/h2_full+pipe.c"
+    ]
   }, 
   {
     "deps": [
-      "end2end_nosec_fixture_h2_full+poll", 
       "end2end_nosec_tests", 
       "gpr", 
       "gpr_test_util", 
@@ -2366,11 +2387,12 @@
     "headers": [], 
     "language": "c", 
     "name": "h2_full+poll_nosec_test", 
-    "src": []
+    "src": [
+      "test/core/end2end/fixtures/h2_full+poll.c"
+    ]
   }, 
   {
     "deps": [
-      "end2end_nosec_fixture_h2_full+poll+pipe", 
       "end2end_nosec_tests", 
       "gpr", 
       "gpr_test_util", 
@@ -2380,11 +2402,12 @@
     "headers": [], 
     "language": "c", 
     "name": "h2_full+poll+pipe_nosec_test", 
-    "src": []
+    "src": [
+      "test/core/end2end/fixtures/h2_full+poll+pipe.c"
+    ]
   }, 
   {
     "deps": [
-      "end2end_nosec_fixture_h2_proxy", 
       "end2end_nosec_tests", 
       "gpr", 
       "gpr_test_util", 
@@ -2394,11 +2417,12 @@
     "headers": [], 
     "language": "c", 
     "name": "h2_proxy_nosec_test", 
-    "src": []
+    "src": [
+      "test/core/end2end/fixtures/h2_proxy.c"
+    ]
   }, 
   {
     "deps": [
-      "end2end_nosec_fixture_h2_sockpair", 
       "end2end_nosec_tests", 
       "gpr", 
       "gpr_test_util", 
@@ -2408,11 +2432,12 @@
     "headers": [], 
     "language": "c", 
     "name": "h2_sockpair_nosec_test", 
-    "src": []
+    "src": [
+      "test/core/end2end/fixtures/h2_sockpair.c"
+    ]
   }, 
   {
     "deps": [
-      "end2end_nosec_fixture_h2_sockpair+trace", 
       "end2end_nosec_tests", 
       "gpr", 
       "gpr_test_util", 
@@ -2422,11 +2447,12 @@
     "headers": [], 
     "language": "c", 
     "name": "h2_sockpair+trace_nosec_test", 
-    "src": []
+    "src": [
+      "test/core/end2end/fixtures/h2_sockpair+trace.c"
+    ]
   }, 
   {
     "deps": [
-      "end2end_nosec_fixture_h2_sockpair_1byte", 
       "end2end_nosec_tests", 
       "gpr", 
       "gpr_test_util", 
@@ -2436,11 +2462,12 @@
     "headers": [], 
     "language": "c", 
     "name": "h2_sockpair_1byte_nosec_test", 
-    "src": []
+    "src": [
+      "test/core/end2end/fixtures/h2_sockpair_1byte.c"
+    ]
   }, 
   {
     "deps": [
-      "end2end_nosec_fixture_h2_uchannel", 
       "end2end_nosec_tests", 
       "gpr", 
       "gpr_test_util", 
@@ -2450,11 +2477,12 @@
     "headers": [], 
     "language": "c", 
     "name": "h2_uchannel_nosec_test", 
-    "src": []
+    "src": [
+      "test/core/end2end/fixtures/h2_uchannel.c"
+    ]
   }, 
   {
     "deps": [
-      "end2end_nosec_fixture_h2_uds", 
       "end2end_nosec_tests", 
       "gpr", 
       "gpr_test_util", 
@@ -2464,11 +2492,12 @@
     "headers": [], 
     "language": "c", 
     "name": "h2_uds_nosec_test", 
-    "src": []
+    "src": [
+      "test/core/end2end/fixtures/h2_uds.c"
+    ]
   }, 
   {
     "deps": [
-      "end2end_nosec_fixture_h2_uds+poll", 
       "end2end_nosec_tests", 
       "gpr", 
       "gpr_test_util", 
@@ -2478,7 +2507,9 @@
     "headers": [], 
     "language": "c", 
     "name": "h2_uds+poll_nosec_test", 
-    "src": []
+    "src": [
+      "test/core/end2end/fixtures/h2_uds+poll.c"
+    ]
   }, 
   {
     "deps": [
@@ -4268,551 +4299,6 @@
     "name": "grpc_csharp_ext", 
     "src": [
       "src/csharp/ext/grpc_csharp_ext.c"
-    ]
-  }, 
-  {
-    "deps": [
-      "end2end_certs", 
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [
-      "test/core/end2end/end2end_tests.h"
-    ], 
-    "language": "c", 
-    "name": "end2end_fixture_h2_census", 
-    "src": [
-      "test/core/end2end/end2end_tests.h", 
-      "test/core/end2end/fixtures/h2_census.c"
-    ]
-  }, 
-  {
-    "deps": [
-      "end2end_certs", 
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [
-      "test/core/end2end/end2end_tests.h"
-    ], 
-    "language": "c", 
-    "name": "end2end_fixture_h2_compress", 
-    "src": [
-      "test/core/end2end/end2end_tests.h", 
-      "test/core/end2end/fixtures/h2_compress.c"
-    ]
-  }, 
-  {
-    "deps": [
-      "end2end_certs", 
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [
-      "test/core/end2end/end2end_tests.h"
-    ], 
-    "language": "c", 
-    "name": "end2end_fixture_h2_fakesec", 
-    "src": [
-      "test/core/end2end/end2end_tests.h", 
-      "test/core/end2end/fixtures/h2_fakesec.c"
-    ]
-  }, 
-  {
-    "deps": [
-      "end2end_certs", 
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [
-      "test/core/end2end/end2end_tests.h"
-    ], 
-    "language": "c", 
-    "name": "end2end_fixture_h2_full", 
-    "src": [
-      "test/core/end2end/end2end_tests.h", 
-      "test/core/end2end/fixtures/h2_full.c"
-    ]
-  }, 
-  {
-    "deps": [
-      "end2end_certs", 
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [
-      "test/core/end2end/end2end_tests.h"
-    ], 
-    "language": "c", 
-    "name": "end2end_fixture_h2_full+pipe", 
-    "src": [
-      "test/core/end2end/end2end_tests.h", 
-      "test/core/end2end/fixtures/h2_full+pipe.c"
-    ]
-  }, 
-  {
-    "deps": [
-      "end2end_certs", 
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [
-      "test/core/end2end/end2end_tests.h"
-    ], 
-    "language": "c", 
-    "name": "end2end_fixture_h2_full+poll", 
-    "src": [
-      "test/core/end2end/end2end_tests.h", 
-      "test/core/end2end/fixtures/h2_full+poll.c"
-    ]
-  }, 
-  {
-    "deps": [
-      "end2end_certs", 
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [
-      "test/core/end2end/end2end_tests.h"
-    ], 
-    "language": "c", 
-    "name": "end2end_fixture_h2_full+poll+pipe", 
-    "src": [
-      "test/core/end2end/end2end_tests.h", 
-      "test/core/end2end/fixtures/h2_full+poll+pipe.c"
-    ]
-  }, 
-  {
-    "deps": [
-      "end2end_certs", 
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [
-      "test/core/end2end/end2end_tests.h"
-    ], 
-    "language": "c", 
-    "name": "end2end_fixture_h2_oauth2", 
-    "src": [
-      "test/core/end2end/end2end_tests.h", 
-      "test/core/end2end/fixtures/h2_oauth2.c"
-    ]
-  }, 
-  {
-    "deps": [
-      "end2end_certs", 
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [
-      "test/core/end2end/end2end_tests.h"
-    ], 
-    "language": "c", 
-    "name": "end2end_fixture_h2_proxy", 
-    "src": [
-      "test/core/end2end/end2end_tests.h", 
-      "test/core/end2end/fixtures/h2_proxy.c"
-    ]
-  }, 
-  {
-    "deps": [
-      "end2end_certs", 
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [
-      "test/core/end2end/end2end_tests.h"
-    ], 
-    "language": "c", 
-    "name": "end2end_fixture_h2_sockpair", 
-    "src": [
-      "test/core/end2end/end2end_tests.h", 
-      "test/core/end2end/fixtures/h2_sockpair.c"
-    ]
-  }, 
-  {
-    "deps": [
-      "end2end_certs", 
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [
-      "test/core/end2end/end2end_tests.h"
-    ], 
-    "language": "c", 
-    "name": "end2end_fixture_h2_sockpair+trace", 
-    "src": [
-      "test/core/end2end/end2end_tests.h", 
-      "test/core/end2end/fixtures/h2_sockpair+trace.c"
-    ]
-  }, 
-  {
-    "deps": [
-      "end2end_certs", 
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [
-      "test/core/end2end/end2end_tests.h"
-    ], 
-    "language": "c", 
-    "name": "end2end_fixture_h2_sockpair_1byte", 
-    "src": [
-      "test/core/end2end/end2end_tests.h", 
-      "test/core/end2end/fixtures/h2_sockpair_1byte.c"
-    ]
-  }, 
-  {
-    "deps": [
-      "end2end_certs", 
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [
-      "test/core/end2end/end2end_tests.h"
-    ], 
-    "language": "c", 
-    "name": "end2end_fixture_h2_ssl", 
-    "src": [
-      "test/core/end2end/end2end_tests.h", 
-      "test/core/end2end/fixtures/h2_ssl.c"
-    ]
-  }, 
-  {
-    "deps": [
-      "end2end_certs", 
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [
-      "test/core/end2end/end2end_tests.h"
-    ], 
-    "language": "c", 
-    "name": "end2end_fixture_h2_ssl+poll", 
-    "src": [
-      "test/core/end2end/end2end_tests.h", 
-      "test/core/end2end/fixtures/h2_ssl+poll.c"
-    ]
-  }, 
-  {
-    "deps": [
-      "end2end_certs", 
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [
-      "test/core/end2end/end2end_tests.h"
-    ], 
-    "language": "c", 
-    "name": "end2end_fixture_h2_ssl_proxy", 
-    "src": [
-      "test/core/end2end/end2end_tests.h", 
-      "test/core/end2end/fixtures/h2_ssl_proxy.c"
-    ]
-  }, 
-  {
-    "deps": [
-      "end2end_certs", 
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [
-      "test/core/end2end/end2end_tests.h"
-    ], 
-    "language": "c", 
-    "name": "end2end_fixture_h2_uchannel", 
-    "src": [
-      "test/core/end2end/end2end_tests.h", 
-      "test/core/end2end/fixtures/h2_uchannel.c"
-    ]
-  }, 
-  {
-    "deps": [
-      "end2end_certs", 
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [
-      "test/core/end2end/end2end_tests.h"
-    ], 
-    "language": "c", 
-    "name": "end2end_fixture_h2_uds", 
-    "src": [
-      "test/core/end2end/end2end_tests.h", 
-      "test/core/end2end/fixtures/h2_uds.c"
-    ]
-  }, 
-  {
-    "deps": [
-      "end2end_certs", 
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [
-      "test/core/end2end/end2end_tests.h"
-    ], 
-    "language": "c", 
-    "name": "end2end_fixture_h2_uds+poll", 
-    "src": [
-      "test/core/end2end/end2end_tests.h", 
-      "test/core/end2end/fixtures/h2_uds+poll.c"
-    ]
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc_test_util_unsecure", 
-      "grpc_unsecure"
-    ], 
-    "headers": [
-      "test/core/end2end/end2end_tests.h"
-    ], 
-    "language": "c", 
-    "name": "end2end_nosec_fixture_h2_census", 
-    "src": [
-      "test/core/end2end/end2end_tests.h", 
-      "test/core/end2end/fixtures/h2_census.c"
-    ]
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc_test_util_unsecure", 
-      "grpc_unsecure"
-    ], 
-    "headers": [
-      "test/core/end2end/end2end_tests.h"
-    ], 
-    "language": "c", 
-    "name": "end2end_nosec_fixture_h2_compress", 
-    "src": [
-      "test/core/end2end/end2end_tests.h", 
-      "test/core/end2end/fixtures/h2_compress.c"
-    ]
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc_test_util_unsecure", 
-      "grpc_unsecure"
-    ], 
-    "headers": [
-      "test/core/end2end/end2end_tests.h"
-    ], 
-    "language": "c", 
-    "name": "end2end_nosec_fixture_h2_full", 
-    "src": [
-      "test/core/end2end/end2end_tests.h", 
-      "test/core/end2end/fixtures/h2_full.c"
-    ]
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc_test_util_unsecure", 
-      "grpc_unsecure"
-    ], 
-    "headers": [
-      "test/core/end2end/end2end_tests.h"
-    ], 
-    "language": "c", 
-    "name": "end2end_nosec_fixture_h2_full+pipe", 
-    "src": [
-      "test/core/end2end/end2end_tests.h", 
-      "test/core/end2end/fixtures/h2_full+pipe.c"
-    ]
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc_test_util_unsecure", 
-      "grpc_unsecure"
-    ], 
-    "headers": [
-      "test/core/end2end/end2end_tests.h"
-    ], 
-    "language": "c", 
-    "name": "end2end_nosec_fixture_h2_full+poll", 
-    "src": [
-      "test/core/end2end/end2end_tests.h", 
-      "test/core/end2end/fixtures/h2_full+poll.c"
-    ]
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc_test_util_unsecure", 
-      "grpc_unsecure"
-    ], 
-    "headers": [
-      "test/core/end2end/end2end_tests.h"
-    ], 
-    "language": "c", 
-    "name": "end2end_nosec_fixture_h2_full+poll+pipe", 
-    "src": [
-      "test/core/end2end/end2end_tests.h", 
-      "test/core/end2end/fixtures/h2_full+poll+pipe.c"
-    ]
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc_test_util_unsecure", 
-      "grpc_unsecure"
-    ], 
-    "headers": [
-      "test/core/end2end/end2end_tests.h"
-    ], 
-    "language": "c", 
-    "name": "end2end_nosec_fixture_h2_proxy", 
-    "src": [
-      "test/core/end2end/end2end_tests.h", 
-      "test/core/end2end/fixtures/h2_proxy.c"
-    ]
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc_test_util_unsecure", 
-      "grpc_unsecure"
-    ], 
-    "headers": [
-      "test/core/end2end/end2end_tests.h"
-    ], 
-    "language": "c", 
-    "name": "end2end_nosec_fixture_h2_sockpair", 
-    "src": [
-      "test/core/end2end/end2end_tests.h", 
-      "test/core/end2end/fixtures/h2_sockpair.c"
-    ]
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc_test_util_unsecure", 
-      "grpc_unsecure"
-    ], 
-    "headers": [
-      "test/core/end2end/end2end_tests.h"
-    ], 
-    "language": "c", 
-    "name": "end2end_nosec_fixture_h2_sockpair+trace", 
-    "src": [
-      "test/core/end2end/end2end_tests.h", 
-      "test/core/end2end/fixtures/h2_sockpair+trace.c"
-    ]
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc_test_util_unsecure", 
-      "grpc_unsecure"
-    ], 
-    "headers": [
-      "test/core/end2end/end2end_tests.h"
-    ], 
-    "language": "c", 
-    "name": "end2end_nosec_fixture_h2_sockpair_1byte", 
-    "src": [
-      "test/core/end2end/end2end_tests.h", 
-      "test/core/end2end/fixtures/h2_sockpair_1byte.c"
-    ]
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc_test_util_unsecure", 
-      "grpc_unsecure"
-    ], 
-    "headers": [
-      "test/core/end2end/end2end_tests.h"
-    ], 
-    "language": "c", 
-    "name": "end2end_nosec_fixture_h2_uchannel", 
-    "src": [
-      "test/core/end2end/end2end_tests.h", 
-      "test/core/end2end/fixtures/h2_uchannel.c"
-    ]
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc_test_util_unsecure", 
-      "grpc_unsecure"
-    ], 
-    "headers": [
-      "test/core/end2end/end2end_tests.h"
-    ], 
-    "language": "c", 
-    "name": "end2end_nosec_fixture_h2_uds", 
-    "src": [
-      "test/core/end2end/end2end_tests.h", 
-      "test/core/end2end/fixtures/h2_uds.c"
-    ]
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc_test_util_unsecure", 
-      "grpc_unsecure"
-    ], 
-    "headers": [
-      "test/core/end2end/end2end_tests.h"
-    ], 
-    "language": "c", 
-    "name": "end2end_nosec_fixture_h2_uds+poll", 
-    "src": [
-      "test/core/end2end/end2end_tests.h", 
-      "test/core/end2end/fixtures/h2_uds+poll.c"
     ]
   }, 
   {
