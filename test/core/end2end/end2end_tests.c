@@ -33,8 +33,6 @@
  *
  */
 
-
-
 /* This file is auto-generated */
 
 #include "test/core/end2end/end2end_tests.h"
