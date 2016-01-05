@@ -464,7 +464,7 @@ module GRPC
                              method,
                              nil, # host use nil,
                              deadline)
-      call.set_credentials credentials unless credentials.nil?
+      call.set_credentials! credentials unless credentials.nil?
       ActiveCall.new(call, @queue, marshal, unmarshal, deadline, started: false)
     end
   end
