@@ -178,7 +178,7 @@ class JobSpec(object):
 
   def __cmp__(self, other):
     return self.identity() == other.identity()
-    
+
   def __repr__(self):
     return 'JobSpec(shortname=%s, cmdline=%s)' % (self.shortname, self.cmdline)
 
@@ -191,7 +191,7 @@ class JobResult(object):
     self.num_failures = 0
     self.retries = 0
     self.message = ''
-    
+
 
 class Job(object):
   """Manages one job."""
@@ -239,9 +239,11 @@ class Job(object):
 
   def state(self, update_cache):
     """Poll current state of the job. Prints messages at completion."""
-    self._tempfile.seek(0)
-    stdout = self._tempfile.read()
-    self.result.message = stdout[-_MAX_RESULT_SIZE:]
+    def stdout(self=self):
+      self._tempfile.seek(0)
+      stdout = self._tempfile.read()
+      self.result.message = stdout[-_MAX_RESULT_SIZE:]
+      return stdout
     if self._state == _RUNNING and self._process.poll() is not None:
       elapsed = time.time() - self._start
       self.result.elapsed_time = elapsed
@@ -249,7 +251,7 @@ class Job(object):
         if self._retries < self._spec.flake_retries:
           message('FLAKE', '%s [ret=%d, pid=%d]' % (
             self._spec.shortname, self._process.returncode, self._process.pid),
-            stdout, do_newline=True)
+            stdout(), do_newline=True)
           self._retries += 1
           self.result.num_failures += 1
           self.result.retries = self._timeout_retries + self._retries
@@ -259,7 +261,7 @@ class Job(object):
           if not self._suppress_failure_message:
             message('FAILED', '%s [ret=%d, pid=%d]' % (
                 self._spec.shortname, self._process.returncode, self._process.pid),
-                stdout, do_newline=True)
+                stdout(), do_newline=True)
           self.result.state = 'FAILED'
           self.result.num_failures += 1
           self.result.returncode = self._process.returncode
@@ -273,7 +275,7 @@ class Job(object):
           update_cache.finished(self._spec.identity(), self._bin_hash)
     elif self._state == _RUNNING and time.time() - self._start > self._spec.timeout_seconds:
       if self._timeout_retries < self._spec.timeout_retries:
-        message('TIMEOUT_FLAKE', '%s [pid=%d]' % (self._spec.shortname, self._process.pid), stdout, do_newline=True)
+        message('TIMEOUT_FLAKE', '%s [pid=%d]' % (self._spec.shortname, self._process.pid), stdout(), do_newline=True)
         self._timeout_retries += 1
         self.result.num_failures += 1
         self.result.retries = self._timeout_retries + self._retries
@@ -282,7 +284,7 @@ class Job(object):
         self._process.terminate()
         self.start()
       else:
-        message('TIMEOUT', '%s [pid=%d]' % (self._spec.shortname, self._process.pid), stdout, do_newline=True)
+        message('TIMEOUT', '%s [pid=%d]' % (self._spec.shortname, self._process.pid), stdout(), do_newline=True)
         self.kill()
         self.result.state = 'TIMEOUT'
         self.result.num_failures += 1
@@ -297,7 +299,7 @@ class Job(object):
 
   def suppress_failure_message(self):
     self._suppress_failure_message = True
-    
+
 
 class Jobset(object):
   """Manages one run of jobs."""
