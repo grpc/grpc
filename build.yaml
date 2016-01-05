@@ -2478,3 +2478,4 @@ python_dependencies:
   deps:
   - grpc
   - gpr
+  - boringssl
