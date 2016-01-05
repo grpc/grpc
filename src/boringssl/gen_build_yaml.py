@@ -38,7 +38,11 @@ boring_ssl_root = os.path.abspath(os.path.join(
     '../../third_party/boringssl'))
 sys.path.append(os.path.join(boring_ssl_root, 'util'))
 
-import generate_build_files
+try:
+  import generate_build_files
+except ImportError:
+  print yaml.dump({})
+  sys.exit()
 
 def map_dir(filename):
   if filename[0:4] == 'src/':
