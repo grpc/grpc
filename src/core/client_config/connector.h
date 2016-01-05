@@ -65,6 +65,9 @@ typedef struct {
   /** any additional filters (owned by the caller of connect) */
   const grpc_channel_filter **filters;
   size_t num_filters;
+
+  /** channel arguments (to be passed to the filters) */
+  const grpc_channel_args *channel_args;
 } grpc_connect_out_args;
 
 struct grpc_connector_vtable {

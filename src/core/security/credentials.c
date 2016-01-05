@@ -881,7 +881,7 @@ static grpc_security_status fake_transport_security_create_security_connector(
     grpc_channel_credentials *c, grpc_call_credentials *call_creds,
     const char *target, const grpc_channel_args *args,
     grpc_channel_security_connector **sc, grpc_channel_args **new_args) {
-  *sc = grpc_fake_channel_security_connector_create(call_creds, 1);
+  *sc = grpc_fake_channel_security_connector_create(call_creds);
   return GRPC_SECURITY_OK;
 }
 
