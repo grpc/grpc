@@ -524,6 +524,7 @@ static void destroy_stream(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
   grpc_chttp2_list_remove_writable_stream(&t->global, &s->global);
   grpc_chttp2_list_remove_unannounced_incoming_window_available(&t->global,
                                                                 &s->global);
+  grpc_chttp2_list_remove_stalled_by_transport(&t->global, &s->global);
 
   gpr_mu_unlock(&t->mu);
 
