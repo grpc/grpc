@@ -115,6 +115,7 @@ static void grpc_rb_call_credentials_callback_with_gil(void *param) {
   params->callback(params->user_data, md_ary.metadata, md_ary.count, status,
                    error_details);
   grpc_metadata_array_destroy(&md_ary);
+  gpr_free(params);
 }
 
 static void grpc_rb_call_credentials_plugin_get_metadata(
