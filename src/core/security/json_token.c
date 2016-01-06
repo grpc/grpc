@@ -215,8 +215,8 @@ static char *encoded_jwt_claim(const grpc_auth_json_key *json_key,
     gpr_log(GPR_INFO, "Cropping token lifetime to maximum allowed value.");
     expiration = gpr_time_add(now, grpc_max_auth_token_lifetime);
   }
-  gpr_int64toa(now.tv_sec, now_str);
-  gpr_int64toa(expiration.tv_sec, expiration_str);
+  int64_ttoa(now.tv_sec, now_str);
+  int64_ttoa(expiration.tv_sec, expiration_str);
 
   child =
       create_child(NULL, json, "iss", json_key->client_email, GRPC_JSON_STRING);
@@ -251,7 +251,7 @@ static char *dot_concat_and_free_strings(char *str1, char *str2) {
   memcpy(current, str2, str2_len);
   current += str2_len;
   GPR_ASSERT(current >= result);
-  GPR_ASSERT((gpr_uintptr)(current - result) == result_len);
+  GPR_ASSERT((uintptr_t)(current - result) == result_len);
   *current = '\0';
   gpr_free(str1);
   gpr_free(str2);

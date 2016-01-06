@@ -45,7 +45,7 @@
 
 enum { TIMEOUT = 200000 };
 
-static void *tag(gpr_intptr t) { return (void *)t; }
+static void *tag(intptr_t t) { return (void *)t; }
 
 static gpr_timespec n_seconds_time(int n) {
   return GRPC_TIMEOUT_SECONDS_TO_DEADLINE(n);

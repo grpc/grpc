@@ -316,8 +316,7 @@ grpc_channel_security_connector *grpc_fake_channel_security_connector_create(
   c->base.is_client_side = 1;
   c->base.url_scheme = GRPC_FAKE_SECURITY_URL_SCHEME;
   c->base.vtable = &fake_channel_vtable;
-  c->request_metadata_creds =
-      grpc_call_credentials_ref(request_metadata_creds);
+  c->request_metadata_creds = grpc_call_credentials_ref(request_metadata_creds);
   c->check_call_host = fake_channel_check_call_host;
   return c;
 }
@@ -500,9 +499,10 @@ static grpc_security_status ssl_check_peer(grpc_security_connector *sc,
   return GRPC_SECURITY_OK;
 }
 
-static void ssl_channel_check_peer(
-    grpc_exec_ctx *exec_ctx, grpc_security_connector *sc, tsi_peer peer,
-    grpc_security_peer_check_cb cb, void *user_data) {
+static void ssl_channel_check_peer(grpc_exec_ctx *exec_ctx,
+                                   grpc_security_connector *sc, tsi_peer peer,
+                                   grpc_security_peer_check_cb cb,
+                                   void *user_data) {
   grpc_ssl_channel_security_connector *c =
       (grpc_ssl_channel_security_connector *)sc;
   grpc_security_status status;
@@ -516,9 +516,10 @@ static void ssl_channel_check_peer(
   tsi_peer_destruct(&peer);
 }
 
-static void ssl_server_check_peer(
-    grpc_exec_ctx *exec_ctx, grpc_security_connector *sc, tsi_peer peer,
-    grpc_security_peer_check_cb cb, void *user_data) {
+static void ssl_server_check_peer(grpc_exec_ctx *exec_ctx,
+                                  grpc_security_connector *sc, tsi_peer peer,
+                                  grpc_security_peer_check_cb cb,
+                                  void *user_data) {
   grpc_auth_context *auth_context = NULL;
   grpc_security_status status = ssl_check_peer(sc, NULL, &peer, &auth_context);
   tsi_peer_destruct(&peer);

@@ -48,7 +48,7 @@ typedef struct grpc_cq_completion {
                struct grpc_cq_completion *c);
   void *done_arg;
   /** next pointer; low bit is used to indicate success or not */
-  gpr_uintptr next;
+  uintptr_t next;
 } grpc_cq_completion;
 
 #ifdef GRPC_CQ_REF_COUNT_DEBUG

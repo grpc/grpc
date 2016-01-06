@@ -33,8 +33,6 @@
  *
  */
 
-
-
 /* This file is auto-generated */
 
 #include "test/core/end2end/end2end_tests.h"
@@ -77,7 +75,8 @@ extern void simple_delayed_request(grpc_end2end_test_config config);
 extern void simple_request(grpc_end2end_test_config config);
 extern void trailing_metadata(grpc_end2end_test_config config);
 
-void grpc_end2end_tests(int argc, char **argv, grpc_end2end_test_config config) {
+void grpc_end2end_tests(int argc, char **argv,
+                        grpc_end2end_test_config config) {
   int i;
 
   if (argc <= 1) {
@@ -264,4 +263,3 @@ void grpc_end2end_tests(int argc, char **argv, grpc_end2end_test_config config) 
     abort();
   }
 }
-
