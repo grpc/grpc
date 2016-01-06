@@ -51,7 +51,7 @@ grpc_channel_stack *grpc_channel_get_channel_stack(grpc_channel *channel);
     The returned elem is owned by the caller. */
 grpc_mdelem *grpc_channel_get_reffed_status_elem(grpc_channel *channel,
                                                  int status_code);
-gpr_uint32 grpc_channel_get_max_message_length(grpc_channel *channel);
+uint32_t grpc_channel_get_max_message_length(grpc_channel *channel);
 
 #ifdef GRPC_STREAM_REFCOUNT_DEBUG
 void grpc_channel_internal_ref(grpc_channel *channel, const char *reason);

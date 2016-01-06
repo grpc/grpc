@@ -49,7 +49,7 @@ typedef void (*grpc_ioreq_completion_func)(grpc_exec_ctx *exec_ctx,
                                            void *user_data);
 
 grpc_call *grpc_call_create(grpc_channel *channel, grpc_call *parent_call,
-                            gpr_uint32 propagation_mask,
+                            uint32_t propagation_mask,
                             grpc_completion_queue *cq,
                             const void *server_transport_data,
                             grpc_mdelem **add_initial_metadata,
@@ -100,7 +100,7 @@ void *grpc_call_context_get(grpc_call *call, grpc_context_index elem);
 #define GRPC_CALL_LOG_BATCH(sev, call, ops, nops, tag) \
   if (grpc_api_trace) grpc_call_log_batch(sev, call, ops, nops, tag)
 
-gpr_uint8 grpc_call_is_client(grpc_call *call);
+uint8_t grpc_call_is_client(grpc_call *call);
 
 #ifdef __cplusplus
 }

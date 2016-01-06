@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -139,9 +139,9 @@ grpc_compression_algorithm grpc_compression_algorithm_for_level(
     case GRPC_COMPRESS_LEVEL_HIGH:
       return GRPC_COMPRESS_DEFLATE;
     default:
-      break;
+      gpr_log(GPR_ERROR, "Unknown compression level %d.", (int)level);
+      abort();
   }
-  GPR_UNREACHABLE_CODE(return GRPC_COMPRESS_NONE);
 }
 
 void grpc_compression_options_init(grpc_compression_options *opts) {

@@ -78,7 +78,7 @@ static void server_setup_transport(void *ts, grpc_transport *transport) {
 
 void grpc_run_bad_client_test(grpc_bad_client_server_side_validator validator,
                               const char *client_payload,
-                              size_t client_payload_length, gpr_uint32 flags) {
+                              size_t client_payload_length, uint32_t flags) {
   grpc_endpoint_pair sfd;
   thd_args a;
   gpr_thd_id id;

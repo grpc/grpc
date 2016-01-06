@@ -75,8 +75,8 @@ void gpr_precise_clock_now(gpr_timespec *clk) {
   gpr_get_cycle_counter(&counter);
   secs = (double)(counter - start_cycle) / cycles_per_second;
   clk->clock_type = GPR_CLOCK_PRECISE;
-  clk->tv_sec = (gpr_int64)secs;
-  clk->tv_nsec = (gpr_int32)(1e9 * (secs - (double)clk->tv_sec));
+  clk->tv_sec = (int64_t)secs;
+  clk->tv_nsec = (int32_t)(1e9 * (secs - (double)clk->tv_sec));
 }
 
 #else  /* GRPC_TIMERS_RDTSC */
