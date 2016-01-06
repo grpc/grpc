@@ -311,6 +311,20 @@ static int grpc_rb_md_ary_fill_hash_cb(VALUE key, VALUE val, VALUE md_ary_obj) {
   long array_length;
   long i;
 
+  char *key_str;
+  if (TYPE(key) == T_SYMBOL) {
+    key_str = (char *)rb_id2name(SYM2ID(key));
+  } else { /* StringValueCStr does all other type exclusions for us */
+    key_str = StringValueCStr(key);
+  }
+
+  if (!grpc_header_key_is_legal(key_str)) {
+    rb_raise(rb_eArgError,
+             "'%s' is an invalid header key, must match [a-z0-9-_.]+",
+             key_str);
+    return ST_STOP;
+  }
+
   /* Construct a metadata object from key and value and add it */
   TypedData_Get_Struct(md_ary_obj, grpc_metadata_array,
                        &grpc_rb_md_ary_data_type, md_ary);
@@ -319,22 +333,14 @@ static int grpc_rb_md_ary_fill_hash_cb(VALUE key, VALUE val, VALUE md_ary_obj) {
     /* If the value is an array, add capacity for each value in the array */
     array_length = RARRAY_LEN(val);
     for (i = 0; i < array_length; i++) {
-      if (TYPE(key) == T_SYMBOL) {
-        md_ary->metadata[md_ary->count].key = (char *)rb_id2name(SYM2ID(key));
-      } else { /* StringValueCStr does all other type exclusions for us */
-        md_ary->metadata[md_ary->count].key = StringValueCStr(key);
-      }
+      md_ary->metadata[md_ary->count].key = key_str;
       md_ary->metadata[md_ary->count].value = RSTRING_PTR(rb_ary_entry(val, i));
       md_ary->metadata[md_ary->count].value_length =
           RSTRING_LEN(rb_ary_entry(val, i));
       md_ary->count += 1;
     }
   } else {
-    if (TYPE(key) == T_SYMBOL) {
-      md_ary->metadata[md_ary->count].key = (char *)rb_id2name(SYM2ID(key));
-    } else { /* StringValueCStr does all other type exclusions for us */
-      md_ary->metadata[md_ary->count].key = StringValueCStr(key);
-    }
+    md_ary->metadata[md_ary->count].key = key_str;
     md_ary->metadata[md_ary->count].value = RSTRING_PTR(val);
     md_ary->metadata[md_ary->count].value_length = RSTRING_LEN(val);
     md_ary->count += 1;

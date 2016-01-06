@@ -33,7 +33,7 @@ Gem::Specification.new do |s|
   s.platform      = Gem::Platform::RUBY
 
   s.add_dependency 'google-protobuf', '~> 3.0.0alpha.1.1'
-  s.add_dependency 'googleauth', '~> 0.4'
+  s.add_dependency 'googleauth', '~> 0.5.1'
 
   s.add_development_dependency 'bundler', '~> 1.9'
   s.add_development_dependency 'logging', '~> 2.0'
