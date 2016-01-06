@@ -90,12 +90,11 @@ int main(int argc, char **argv) {
 
   addbuf(PFX_STR, sizeof(PFX_STR) - 1);
   for (i = 0; i < NUM_FRAMES; i++) {
-    gpr_uint8 hdr[9] = {(gpr_uint8)(FRAME_SIZE >> 16),
-                        (gpr_uint8)(FRAME_SIZE >> 8), (gpr_uint8)FRAME_SIZE, 0,
-                        0, 0, 0, 0, 1};
+    uint8_t hdr[9] = {(uint8_t)(FRAME_SIZE >> 16), (uint8_t)(FRAME_SIZE >> 8),
+                      (uint8_t)FRAME_SIZE, 0, 0, 0, 0, 0, 1};
     addbuf(hdr, sizeof(hdr));
     for (j = 0; j < MESSAGES_PER_FRAME; j++) {
-      gpr_uint8 message[5] = {0, 0, 0, 0, 0};
+      uint8_t message[5] = {0, 0, 0, 0, 0};
       addbuf(message, sizeof(message));
     }
   }

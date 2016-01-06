@@ -32,8 +32,7 @@
  *
  */
 
-<% tests = sorted(tests) %>
-
+<% tests = sorted(tests) %>\
 /* This file is auto-generated */
 
 #include "test/core/end2end/end2end_tests.h"
@@ -44,7 +43,8 @@
 extern void ${test}(grpc_end2end_test_config config);
 % endfor
 
-void grpc_end2end_tests(int argc, char **argv, grpc_end2end_test_config config) {
+void grpc_end2end_tests(int argc, char **argv,
+                        grpc_end2end_test_config config) {
   int i;
 
   if (argc <= 1) {
@@ -64,6 +64,4 @@ void grpc_end2end_tests(int argc, char **argv, grpc_end2end_test_config config) 
     gpr_log(GPR_DEBUG, "not a test: '%%s'", argv[i]);
     abort();
   }
-}
-</%def>
-
+}</%def>

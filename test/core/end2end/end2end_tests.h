@@ -54,7 +54,7 @@ struct grpc_end2end_test_fixture {
 
 struct grpc_end2end_test_config {
   const char *name;
-  gpr_uint32 feature_mask;
+  uint32_t feature_mask;
   grpc_end2end_test_fixture (*create_fixture)(grpc_channel_args *client_args,
                                               grpc_channel_args *server_args);
   void (*init_client)(grpc_end2end_test_fixture *f,

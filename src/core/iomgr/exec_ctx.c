@@ -45,7 +45,7 @@ int grpc_exec_ctx_flush(grpc_exec_ctx *exec_ctx) {
     exec_ctx->closure_list.head = exec_ctx->closure_list.tail = NULL;
     while (c != NULL) {
       int success = (int)(c->final_data & 1);
-      grpc_closure *next = (grpc_closure *)(c->final_data & ~(gpr_uintptr)1);
+      grpc_closure *next = (grpc_closure *)(c->final_data & ~(uintptr_t)1);
       did_something++;
       GPR_TIMER_BEGIN("grpc_exec_ctx_flush.cb", 0);
       c->cb(exec_ctx, c->cb_arg, success);
