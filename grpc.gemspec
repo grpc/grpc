@@ -378,6 +378,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/surface/server.c )
   s.files += %w( src/core/surface/server_chttp2.c )
   s.files += %w( src/core/surface/server_create.c )
+  s.files += %w( src/core/surface/validate_metadata.c )
   s.files += %w( src/core/surface/version.c )
   s.files += %w( src/core/transport/byte_stream.c )
   s.files += %w( src/core/transport/chttp2/alpn.c )
