@@ -34,7 +34,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "grpc/support/port_platform.h"
+#include <grpc/support/port_platform.h>
 
 static int conforms_to(const char *s, size_t len, const gpr_uint8 *legal_bits) {
   const char *p = s;
