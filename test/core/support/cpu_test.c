@@ -73,13 +73,13 @@ struct cpu_test {
   int is_done;
   gpr_cv done_cv;
   int *used; /* is this core used? */
-  int r;     /* random number */
+  unsigned r;     /* random number */
 };
 
 static void worker_thread(void *arg) {
   struct cpu_test *ct = (struct cpu_test *)arg;
   gpr_uint32 cpu;
-  int r = 12345678;
+  unsigned r = 12345678;
   unsigned i, j;
   for (i = 0; i < 1000 / GRPC_TEST_SLOWDOWN_FACTOR; i++) {
     /* run for a bit - just calculate something random. */
