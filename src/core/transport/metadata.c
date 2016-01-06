@@ -688,37 +688,3 @@ gpr_slice grpc_mdstr_as_base64_encoded_and_huffman_compressed(grpc_mdstr *gs) {
   gpr_mu_unlock(&shard->mu);
   return slice;
 }
-
-static int conforms_to(grpc_mdstr *s, const gpr_uint8 *legal_bits) {
-  const gpr_uint8 *p = GPR_SLICE_START_PTR(s->slice);
-  const gpr_uint8 *e = GPR_SLICE_END_PTR(s->slice);
-  for (; p != e; p++) {
-    int idx = *p;
-    int byte = idx / 8;
-    int bit = idx % 8;
-    if ((legal_bits[byte] & (1 << bit)) == 0) return 0;
-  }
-  return 1;
-}
-
-int grpc_mdstr_is_legal_header(grpc_mdstr *s) {
-  static const gpr_uint8 legal_header_bits[256 / 8] = {
-      0x00, 0x00, 0x00, 0x00, 0x00, 0x20, 0xff, 0x03, 0x00, 0x00, 0x00,
-      0x80, 0xfe, 0xff, 0xff, 0x07, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-  return conforms_to(s, legal_header_bits);
-}
-
-int grpc_mdstr_is_legal_nonbin_header(grpc_mdstr *s) {
-  static const gpr_uint8 legal_header_bits[256 / 8] = {
-      0x00, 0x00, 0x00, 0x00, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-      0xff, 0xff, 0xff, 0xff, 0x7f, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-  return conforms_to(s, legal_header_bits);
-}
-
-int grpc_mdstr_is_bin_suffixed(grpc_mdstr *s) {
-  /* TODO(ctiller): consider caching this */
-  return grpc_is_binary_header((const char *)GPR_SLICE_START_PTR(s->slice),
-                               GPR_SLICE_LENGTH(s->slice));
-}
