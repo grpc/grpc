@@ -101,6 +101,7 @@ static grpc_fd *alloc_fd(int fd) {
   r->read_watcher = r->write_watcher = NULL;
   r->on_done_closure = NULL;
   r->closed = 0;
+  r->released = 0;
   return r;
 }
 
@@ -208,6 +209,14 @@ static void wake_all_watchers_locked(grpc_fd *fd) {
 static int has_watchers(grpc_fd *fd) {
   return fd->read_watcher != NULL || fd->write_watcher != NULL ||
          fd->inactive_watcher_root.next != &fd->inactive_watcher_root;
+}
+
+int grpc_fd_wrapped_fd(grpc_fd *fd) {
+  if (fd->released || fd->closed) {
+    return -1;
+  } else {
+    return fd->fd;
+  }
 }
 
 void grpc_fd_orphan(grpc_exec_ctx *exec_ctx, grpc_fd *fd, grpc_closure *on_done,
