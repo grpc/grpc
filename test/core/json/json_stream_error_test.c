@@ -49,9 +49,7 @@ static void string_clear(void *userdata) {
   g_string_clear_once = 1;
 }
 
-static gpr_uint32 read_char(void *userdata) {
-  return GRPC_JSON_READ_CHAR_ERROR;
-}
+static uint32_t read_char(void *userdata) { return GRPC_JSON_READ_CHAR_ERROR; }
 
 static grpc_json_reader_vtable reader_vtable = {
     string_clear, NULL, NULL, read_char, NULL, NULL,

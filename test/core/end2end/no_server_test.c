@@ -37,7 +37,7 @@
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/util/test_config.h"
 
-static void *tag(gpr_intptr i) { return (void *)i; }
+static void *tag(intptr_t i) { return (void *)i; }
 
 int main(int argc, char **argv) {
   grpc_channel *chan;

@@ -166,8 +166,8 @@ census_timestamp census_start_rpc_op_timestamp(void);
   functions, maybe it should be set once at census initialization.
 */
 typedef struct {
-  const char *(*get_rpc_service_name)(gpr_int64 id);
-  const char *(*get_rpc_method_name)(gpr_int64 id);
+  const char *(*get_rpc_service_name)(int64_t id);
+  const char *(*get_rpc_method_name)(int64_t id);
 } census_rpc_name_info;
 
 /**
@@ -205,7 +205,7 @@ typedef struct {
    @return A new census context.
  */
 census_context *census_start_client_rpc_op(
-    const census_context *context, gpr_int64 rpc_name_id,
+    const census_context *context, int64_t rpc_name_id,
     const census_rpc_name_info *rpc_name_info, const char *peer, int trace_mask,
     const census_timestamp *start_time);
 
@@ -233,7 +233,7 @@ void census_set_rpc_client_peer(census_context *context, const char *peer);
    @return A new census context.
  */
 census_context *census_start_server_rpc_op(
-    const char *buffer, gpr_int64 rpc_name_id,
+    const char *buffer, int64_t rpc_name_id,
     const census_rpc_name_info *rpc_name_info, const char *peer, int trace_mask,
     census_timestamp *start_time);
 
@@ -276,8 +276,8 @@ census_context *census_start_op(census_context *context, const char *family,
 */
 void census_end_op(census_context *context, int status);
 
-#define CENSUS_TRACE_RECORD_START_OP ((gpr_uint32)0)
-#define CENSUS_TRACE_RECORD_END_OP ((gpr_uint32)1)
+#define CENSUS_TRACE_RECORD_START_OP ((uint32_t)0)
+#define CENSUS_TRACE_RECORD_END_OP ((uint32_t)1)
 
 /** Insert a trace record into the trace stream. The record consists of an
     arbitrary size buffer, the size of which is provided in 'n'.
@@ -286,15 +286,15 @@ void census_end_op(census_context *context, int status);
     @param buffer Pointer to buffer to use
     @param n Number of bytes in buffer
 */
-void census_trace_print(census_context *context, gpr_uint32 type,
+void census_trace_print(census_context *context, uint32_t type,
                         const char *buffer, size_t n);
 
 /** Trace record. */
 typedef struct {
   census_timestamp timestamp; /* Time of record creation */
-  gpr_uint64 trace_id;        /* Trace ID associated with record */
-  gpr_uint64 op_id;           /* Operation ID associated with record */
-  gpr_uint32 type;            /* Type (as used in census_trace_print() */
+  uint64_t trace_id;          /* Trace ID associated with record */
+  uint64_t op_id;             /* Operation ID associated with record */
+  uint32_t type;              /* Type (as used in census_trace_print() */
   const char *buffer;         /* Buffer (from census_trace_print() */
   size_t buf_size;            /* Number of bytes inside buffer */
 } census_trace_record;
@@ -403,7 +403,7 @@ void census_tag_set_close(census_tag_set_iterator *it);
 /* A single value to be recorded comprises two parts: an ID for the particular
  * metric and the value to be recorded against it. */
 typedef struct {
-  gpr_uint32 metric_id;
+  uint32_t metric_id;
   double value;
 } census_value;
 
@@ -439,8 +439,7 @@ typedef struct census_view census_view;
 
   @return A new census view
 */
-census_view *census_view_create(gpr_uint32 metric_id,
-                                const census_tag_set *tags,
+census_view *census_view_create(uint32_t metric_id, const census_tag_set *tags,
                                 const census_aggregation *aggregations,
                                 size_t naggregations);
 

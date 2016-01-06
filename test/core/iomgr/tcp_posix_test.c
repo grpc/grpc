@@ -81,7 +81,7 @@ static ssize_t fill_socket(int fd) {
   int i;
   unsigned char buf[256];
   for (i = 0; i < 256; ++i) {
-    buf[i] = (gpr_uint8)i;
+    buf[i] = (uint8_t)i;
   }
   do {
     write_bytes = write(fd, buf, 256);
@@ -99,7 +99,7 @@ static size_t fill_socket_partial(int fd, size_t bytes) {
   unsigned char *buf = malloc(bytes);
   unsigned i;
   for (i = 0; i < bytes; ++i) {
-    buf[i] = (gpr_uint8)(i % 256);
+    buf[i] = (uint8_t)(i % 256);
   }
 
   do {
@@ -257,7 +257,7 @@ struct write_socket_state {
 };
 
 static gpr_slice *allocate_blocks(size_t num_bytes, size_t slice_size,
-                                  size_t *num_blocks, gpr_uint8 *current_data) {
+                                  size_t *num_blocks, uint8_t *current_data) {
   size_t nslices = num_bytes / slice_size + (num_bytes % slice_size ? 1u : 0u);
   gpr_slice *slices = gpr_malloc(sizeof(gpr_slice) * nslices);
   size_t num_bytes_left = num_bytes;
@@ -337,7 +337,7 @@ static void write_test(size_t num_bytes, size_t slice_size) {
   struct write_socket_state state;
   size_t num_blocks;
   gpr_slice *slices;
-  gpr_uint8 current_data = 0;
+  uint8_t current_data = 0;
   gpr_slice_buffer outgoing;
   grpc_closure write_done_closure;
   gpr_timespec deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(20);

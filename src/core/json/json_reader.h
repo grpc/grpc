@@ -84,11 +84,11 @@ typedef struct grpc_json_reader_vtable {
   /* Clears your internal string scratchpad. */
   void (*string_clear)(void *userdata);
   /* Adds a char to the string scratchpad. */
-  void (*string_add_char)(void *userdata, gpr_uint32 c);
+  void (*string_add_char)(void *userdata, uint32_t c);
   /* Adds a utf32 char to the string scratchpad. */
-  void (*string_add_utf32)(void *userdata, gpr_uint32 c);
+  void (*string_add_utf32)(void *userdata, uint32_t c);
   /* Reads a character from your input. May be utf-8, 16 or 32. */
-  gpr_uint32 (*read_char)(void *userdata);
+  uint32_t (*read_char)(void *userdata);
   /* Starts a container of type GRPC_JSON_ARRAY or GRPC_JSON_OBJECT. */
   void (*container_begins)(void *userdata, grpc_json_type type);
   /* Ends the current container. Must return the type of its parent. */
@@ -117,7 +117,7 @@ typedef struct grpc_json_reader {
   int in_array;
   int escaped_string_was_key;
   int container_just_begun;
-  gpr_uint16 unicode_char, unicode_high_surrogate;
+  uint16_t unicode_char, unicode_high_surrogate;
   grpc_json_reader_state state;
 } grpc_json_reader;
 

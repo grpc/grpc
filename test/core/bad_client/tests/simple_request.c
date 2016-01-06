@@ -77,7 +77,7 @@
   "\x10\x0cgrpc-timeout\x02"                                               \
   "5S"
 
-static void *tag(gpr_intptr t) { return (void *)t; }
+static void *tag(intptr_t t) { return (void *)t; }
 
 static void verifier(grpc_server *server, grpc_completion_queue *cq,
                      void *registered_method) {

@@ -93,7 +93,7 @@ gpr_slice grpc_httpcli_format_post_request(const grpc_httpcli_request *request,
   gpr_strvec_add(&out, gpr_strdup("POST "));
   fill_common_header(request, &out);
   if (body_bytes) {
-    gpr_uint8 has_content_type = 0;
+    uint8_t has_content_type = 0;
     for (i = 0; i < request->hdr_count; i++) {
       if (strcmp(request->hdrs[i].key, "Content-Type") == 0) {
         has_content_type = 1;

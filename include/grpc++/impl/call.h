@@ -70,7 +70,7 @@ class WriteOptions {
   inline void Clear() { flags_ = 0; }
 
   /// Returns raw flags bitset.
-  inline gpr_uint32 flags() const { return flags_; }
+  inline uint32_t flags() const { return flags_; }
 
   /// Sets flag for the disabling of compression for the next message write.
   ///
@@ -126,13 +126,13 @@ class WriteOptions {
   }
 
  private:
-  void SetBit(const gpr_uint32 mask) { flags_ |= mask; }
+  void SetBit(const uint32_t mask) { flags_ |= mask; }
 
-  void ClearBit(const gpr_uint32 mask) { flags_ &= ~mask; }
+  void ClearBit(const uint32_t mask) { flags_ &= ~mask; }
 
-  bool GetBit(const gpr_uint32 mask) const { return (flags_ & mask) != 0; }
+  bool GetBit(const uint32_t mask) const { return (flags_ & mask) != 0; }
 
-  gpr_uint32 flags_;
+  uint32_t flags_;
 };
 
 /// Default argument for CallOpSet. I is unused by the class, but can be

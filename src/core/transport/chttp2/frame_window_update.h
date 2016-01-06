@@ -39,17 +39,15 @@
 #include "src/core/transport/chttp2/frame.h"
 
 typedef struct {
-  gpr_uint8 byte;
-  gpr_uint8 is_connection_update;
-  gpr_uint32 amount;
+  uint8_t byte;
+  uint8_t is_connection_update;
+  uint32_t amount;
 } grpc_chttp2_window_update_parser;
 
-gpr_slice grpc_chttp2_window_update_create(gpr_uint32 id,
-                                           gpr_uint32 window_delta);
+gpr_slice grpc_chttp2_window_update_create(uint32_t id, uint32_t window_delta);
 
 grpc_chttp2_parse_error grpc_chttp2_window_update_parser_begin_frame(
-    grpc_chttp2_window_update_parser *parser, gpr_uint32 length,
-    gpr_uint8 flags);
+    grpc_chttp2_window_update_parser *parser, uint32_t length, uint8_t flags);
 grpc_chttp2_parse_error grpc_chttp2_window_update_parser_parse(
     grpc_exec_ctx *exec_ctx, void *parser,
     grpc_chttp2_transport_parsing *transport_parsing,

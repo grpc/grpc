@@ -60,7 +60,7 @@ typedef struct {
      progress */
   grpc_pollset *pollset;
   grpc_transport_stream_op op;
-  gpr_uint8 security_context_set;
+  uint8_t security_context_set;
   grpc_linked_mdelem md_links[MAX_CREDENTIALS_METADATA_COUNT];
   grpc_auth_metadata_context auth_md_context;
 } call_data;

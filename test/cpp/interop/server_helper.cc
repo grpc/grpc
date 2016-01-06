@@ -68,7 +68,7 @@ InteropServerContextInspector::GetCallCompressionAlgorithm() const {
   return grpc_call_test_only_get_compression_algorithm(context_.call_);
 }
 
-gpr_uint32 InteropServerContextInspector::GetEncodingsAcceptedByClient() const {
+uint32_t InteropServerContextInspector::GetEncodingsAcceptedByClient() const {
   return grpc_call_test_only_get_encodings_accepted_by_peer(context_.call_);
 }
 

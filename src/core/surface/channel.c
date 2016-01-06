@@ -63,7 +63,7 @@ typedef struct registered_call {
 
 struct grpc_channel {
   int is_client;
-  gpr_uint32 max_message_length;
+  uint32_t max_message_length;
   grpc_mdelem *default_authority;
 
   gpr_mu registered_call_mu;
@@ -108,7 +108,7 @@ grpc_channel *grpc_channel_create_from_filters(
           gpr_log(GPR_ERROR, "%s ignored: it must be >= 0",
                   GRPC_ARG_MAX_MESSAGE_LENGTH);
         } else {
-          channel->max_message_length = (gpr_uint32)args->args[i].value.integer;
+          channel->max_message_length = (uint32_t)args->args[i].value.integer;
         }
       } else if (0 == strcmp(args->args[i].key, GRPC_ARG_DEFAULT_AUTHORITY)) {
         if (args->args[i].type != GRPC_ARG_STRING) {
@@ -166,7 +166,7 @@ char *grpc_channel_get_target(grpc_channel *channel) {
 }
 
 static grpc_call *grpc_channel_create_call_internal(
-    grpc_channel *channel, grpc_call *parent_call, gpr_uint32 propagation_mask,
+    grpc_channel *channel, grpc_call *parent_call, uint32_t propagation_mask,
     grpc_completion_queue *cq, grpc_mdelem *path_mdelem,
     grpc_mdelem *authority_mdelem, gpr_timespec deadline) {
   grpc_mdelem *send_metadata[2];
@@ -187,7 +187,7 @@ static grpc_call *grpc_channel_create_call_internal(
 
 grpc_call *grpc_channel_create_call(grpc_channel *channel,
                                     grpc_call *parent_call,
-                                    gpr_uint32 propagation_mask,
+                                    uint32_t propagation_mask,
                                     grpc_completion_queue *cq,
                                     const char *method, const char *host,
                                     gpr_timespec deadline, void *reserved) {
@@ -231,7 +231,7 @@ void *grpc_channel_register_call(grpc_channel *channel, const char *method,
 }
 
 grpc_call *grpc_channel_create_registered_call(
-    grpc_channel *channel, grpc_call *parent_call, gpr_uint32 propagation_mask,
+    grpc_channel *channel, grpc_call *parent_call, uint32_t propagation_mask,
     grpc_completion_queue *completion_queue, void *registered_call_handle,
     gpr_timespec deadline, void *reserved) {
   registered_call *rc = registered_call_handle;
@@ -322,6 +322,6 @@ grpc_mdelem *grpc_channel_get_reffed_status_elem(grpc_channel *channel, int i) {
                                            grpc_mdstr_from_string(tmp));
 }
 
-gpr_uint32 grpc_channel_get_max_message_length(grpc_channel *channel) {
+uint32_t grpc_channel_get_max_message_length(grpc_channel *channel) {
   return channel->max_message_length;
 }

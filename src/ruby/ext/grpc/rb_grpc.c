@@ -138,7 +138,7 @@ gpr_timespec grpc_rb_time_timeval(VALUE time, int interval) {
           d += 1;
           f -= 1;
         }
-        t.tv_sec = (gpr_int64)f;
+        t.tv_sec = (int64_t)f;
         if (f != t.tv_sec) {
           rb_raise(rb_eRangeError, "%f out of Time range",
                    RFLOAT_VALUE(time));
