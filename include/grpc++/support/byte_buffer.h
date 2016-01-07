@@ -61,6 +61,8 @@ class ByteBuffer GRPC_FINAL {
 
   ~ByteBuffer();
 
+  ByteBuffer& operator=(const ByteBuffer&);
+
   /// Dump (read) the buffer contents into \a slices.
   void Dump(std::vector<Slice>* slices) const;
 
@@ -75,8 +77,6 @@ class ByteBuffer GRPC_FINAL {
 
  private:
   friend class SerializationTraits<ByteBuffer, void>;
-
-  ByteBuffer& operator=(const ByteBuffer&);
 
   // takes ownership
   void set_buffer(grpc_byte_buffer* buf) {
