@@ -43,17 +43,16 @@ static void json_reader_string_clear(grpc_json_reader *reader) {
   reader->vtable->string_clear(reader->userdata);
 }
 
-static void json_reader_string_add_char(grpc_json_reader *reader,
-                                        gpr_uint32 c) {
+static void json_reader_string_add_char(grpc_json_reader *reader, uint32_t c) {
   reader->vtable->string_add_char(reader->userdata, c);
 }
 
 static void json_reader_string_add_utf32(grpc_json_reader *reader,
-                                         gpr_uint32 utf32) {
+                                         uint32_t utf32) {
   reader->vtable->string_add_utf32(reader->userdata, utf32);
 }
 
-static gpr_uint32 grpc_json_reader_read_char(grpc_json_reader *reader) {
+static uint32_t grpc_json_reader_read_char(grpc_json_reader *reader) {
   return reader->vtable->read_char(reader->userdata);
 }
 
@@ -108,7 +107,7 @@ int grpc_json_reader_is_complete(grpc_json_reader *reader) {
 }
 
 grpc_json_reader_status grpc_json_reader_run(grpc_json_reader *reader) {
-  gpr_uint32 c, success;
+  uint32_t c, success;
 
   /* This state-machine is a strict implementation of ECMA-404 */
   for (;;) {
@@ -154,7 +153,7 @@ grpc_json_reader_status grpc_json_reader_run(grpc_json_reader *reader) {
           case GRPC_JSON_STATE_VALUE_NUMBER_WITH_DECIMAL:
           case GRPC_JSON_STATE_VALUE_NUMBER_ZERO:
           case GRPC_JSON_STATE_VALUE_NUMBER_EPM:
-            success = (gpr_uint32)json_reader_set_number(reader);
+            success = (uint32_t)json_reader_set_number(reader);
             if (!success) return GRPC_JSON_PARSE_ERROR;
             json_reader_string_clear(reader);
             reader->state = GRPC_JSON_STATE_VALUE_END;
@@ -181,7 +180,7 @@ grpc_json_reader_status grpc_json_reader_run(grpc_json_reader *reader) {
           case GRPC_JSON_STATE_VALUE_NUMBER_WITH_DECIMAL:
           case GRPC_JSON_STATE_VALUE_NUMBER_ZERO:
           case GRPC_JSON_STATE_VALUE_NUMBER_EPM:
-            success = (gpr_uint32)json_reader_set_number(reader);
+            success = (uint32_t)json_reader_set_number(reader);
             if (!success) return GRPC_JSON_PARSE_ERROR;
             json_reader_string_clear(reader);
             reader->state = GRPC_JSON_STATE_VALUE_END;
@@ -416,8 +415,8 @@ grpc_json_reader_status grpc_json_reader_run(grpc_json_reader *reader) {
             } else {
               return GRPC_JSON_PARSE_ERROR;
             }
-            reader->unicode_char = (gpr_uint16)(reader->unicode_char << 4);
-            reader->unicode_char = (gpr_uint16)(reader->unicode_char | c);
+            reader->unicode_char = (uint16_t)(reader->unicode_char << 4);
+            reader->unicode_char = (uint16_t)(reader->unicode_char | c);
 
             switch (reader->state) {
               case GRPC_JSON_STATE_STRING_ESCAPE_U1:
@@ -440,13 +439,13 @@ grpc_json_reader_status grpc_json_reader_run(grpc_json_reader *reader) {
                   reader->unicode_high_surrogate = reader->unicode_char;
                 } else if ((reader->unicode_char & 0xfc00) == 0xdc00) {
                   /* low surrogate utf-16 */
-                  gpr_uint32 utf32;
+                  uint32_t utf32;
                   if (reader->unicode_high_surrogate == 0)
                     return GRPC_JSON_PARSE_ERROR;
                   utf32 = 0x10000;
-                  utf32 += (gpr_uint32)(
+                  utf32 += (uint32_t)(
                       (reader->unicode_high_surrogate - 0xd800) * 0x400);
-                  utf32 += (gpr_uint32)(reader->unicode_char - 0xdc00);
+                  utf32 += (uint32_t)(reader->unicode_char - 0xdc00);
                   json_reader_string_add_utf32(reader, utf32);
                   reader->unicode_high_surrogate = 0;
                 } else {

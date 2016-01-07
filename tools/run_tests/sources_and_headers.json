@@ -2030,6 +2030,18 @@
   }, 
   {
     "deps": [
+      "gpr", 
+      "grpc"
+    ], 
+    "headers": [], 
+    "language": "c89", 
+    "name": "public_headers_must_be_c89", 
+    "src": [
+      "test/core/surface/public_headers_must_be_c89.c"
+    ]
+  }, 
+  {
+    "deps": [
       "end2end_certs", 
       "end2end_tests", 
       "gpr", 

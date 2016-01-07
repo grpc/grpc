@@ -1,5 +1,5 @@
 #!/usr/bin/env python2.7
-# Copyright 2015, Google Inc.
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -52,6 +52,7 @@ import uuid
 import jobset
 import report_utils
 import watch_dirs
+
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), '../..'))
 os.chdir(ROOT)
@@ -646,6 +647,9 @@ argp.add_argument('--build_only',
                   action='store_const',
                   const=True,
                   help='Perform all the build steps but dont run any tests.')
+argp.add_argument('--update_submodules', default=[], nargs='*',
+                  help='Update some submodules before building. If any are updated, also run generate_projects. ' +
+                       'Submodules are specified as SUBMODULE_NAME:BRANCH; if BRANCH is omitted, master is assumed.')
 argp.add_argument('-a', '--antagonists', default=0, type=int)
 argp.add_argument('-x', '--xml_report', default=None, type=str,
         help='Generates a JUnit-compatible XML report')
@@ -681,6 +685,33 @@ if args.use_docker:
                         env=env)
   sys.exit(0)
 
+# update submodules if necessary
+need_to_regenerate_projects = False
+for spec in args.update_submodules:
+  spec = spec.split(':', 1)
+  if len(spec) == 1:
+    submodule = spec[0]
+    branch = 'master'
+  elif len(spec) == 2:
+    submodule = spec[0]
+    branch = spec[1]
+  cwd = 'third_party/%s' % submodule
+  def git(cmd, cwd=cwd):
+    print 'in %s: git %s' % (cwd, cmd)
+    subprocess.check_call('git %s' % cmd, cwd=cwd, shell=True)
+  git('fetch')
+  git('checkout %s' % branch)
+  git('pull origin %s' % branch)
+  if os.path.exists('src/%s/gen_build_yaml.py' % submodule):
+    need_to_regenerate_projects = True
+if need_to_regenerate_projects:
+  if jobset.platform_string() == 'linux':
+    subprocess.check_call('tools/buildgen/generate_projects.sh', shell=True)
+  else:
+    print 'WARNING: may need to regenerate projects, but since we are not on'
+    print '         Linux this step is being skipped. Compilation MAY fail.'
+
+
 # grab config
 run_configs = set(_CONFIGS[cfg]
                   for cfg in itertools.chain.from_iterable(
@@ -692,7 +723,7 @@ if args.travis:
   _FORCE_ENVIRON_FOR_WRAPPERS = {'GRPC_TRACE': 'api'}
 
 if 'all' in args.language:
-  lang_list = _LANGUAGES.keys()  
+  lang_list = _LANGUAGES.keys()
 else:
   lang_list = args.language
 # We don't support code coverage on ObjC
@@ -939,7 +970,7 @@ def _build_and_run(
       newline_on_success=newline_on_success, travis=args.travis)
   if num_failures:
     return 1
-    
+
   if build_only:
     return 0
 

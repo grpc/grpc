@@ -55,7 +55,7 @@ typedef struct {
   gpr_timespec queue_deadline_cap;
   gpr_timespec min_deadline;
   /* Index in the g_shard_queue */
-  gpr_uint32 shard_queue_index;
+  uint32_t shard_queue_index;
   /* This holds all timers with deadlines < queue_deadline_cap. Timers in this
      list have the top bit of their deadline set to 0. */
   grpc_timer_heap heap;
@@ -82,7 +82,7 @@ static gpr_timespec compute_min_deadline(shard_type *shard) {
 }
 
 void grpc_timer_list_init(gpr_timespec now) {
-  gpr_uint32 i;
+  uint32_t i;
 
   gpr_mu_init(&g_mu);
   gpr_mu_init(&g_checker_mu);
@@ -126,8 +126,8 @@ static double ts_to_dbl(gpr_timespec ts) {
 
 static gpr_timespec dbl_to_ts(double d) {
   gpr_timespec ts;
-  ts.tv_sec = (gpr_int64)d;
-  ts.tv_nsec = (gpr_int32)(1e9 * (d - (double)ts.tv_sec));
+  ts.tv_sec = (int64_t)d;
+  ts.tv_nsec = (int32_t)(1e9 * (d - (double)ts.tv_sec));
   ts.clock_type = GPR_TIMESPAN;
   return ts;
 }
@@ -143,7 +143,7 @@ static void list_remove(grpc_timer *timer) {
   timer->prev->next = timer->next;
 }
 
-static void swap_adjacent_shards_in_queue(gpr_uint32 first_shard_queue_index) {
+static void swap_adjacent_shards_in_queue(uint32_t first_shard_queue_index) {
   shard_type *temp;
   temp = g_shard_queue[first_shard_queue_index];
   g_shard_queue[first_shard_queue_index] =

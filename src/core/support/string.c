@@ -80,9 +80,9 @@ static void dump_out_append(dump_out *out, char c) {
 static void hexdump(dump_out *out, const char *buf, size_t len) {
   static const char hex[16] = "0123456789abcdef";
 
-  const gpr_uint8 *const beg = (const gpr_uint8 *)buf;
-  const gpr_uint8 *const end = beg + len;
-  const gpr_uint8 *cur;
+  const uint8_t *const beg = (const uint8_t *)buf;
+  const uint8_t *const end = beg + len;
+  const uint8_t *cur;
 
   for (cur = beg; cur != end; ++cur) {
     if (cur != beg) dump_out_append(out, ' ');
@@ -92,9 +92,9 @@ static void hexdump(dump_out *out, const char *buf, size_t len) {
 }
 
 static void asciidump(dump_out *out, const char *buf, size_t len) {
-  const gpr_uint8 *const beg = (const gpr_uint8 *)buf;
-  const gpr_uint8 *const end = beg + len;
-  const gpr_uint8 *cur;
+  const uint8_t *const beg = (const uint8_t *)buf;
+  const uint8_t *const end = beg + len;
+  const uint8_t *cur;
   int out_was_empty = (out->length == 0);
   if (!out_was_empty) {
     dump_out_append(out, ' ');
@@ -108,7 +108,7 @@ static void asciidump(dump_out *out, const char *buf, size_t len) {
   }
 }
 
-char *gpr_dump(const char *buf, size_t len, gpr_uint32 flags) {
+char *gpr_dump(const char *buf, size_t len, uint32_t flags) {
   dump_out out = dump_out_create();
   if (flags & GPR_DUMP_HEX) {
     hexdump(&out, buf, len);
@@ -120,21 +120,21 @@ char *gpr_dump(const char *buf, size_t len, gpr_uint32 flags) {
   return out.data;
 }
 
-char *gpr_dump_slice(gpr_slice s, gpr_uint32 flags) {
+char *gpr_dump_slice(gpr_slice s, uint32_t flags) {
   return gpr_dump((const char *)GPR_SLICE_START_PTR(s), GPR_SLICE_LENGTH(s),
                   flags);
 }
 
-int gpr_parse_bytes_to_uint32(const char *buf, size_t len, gpr_uint32 *result) {
-  gpr_uint32 out = 0;
-  gpr_uint32 new;
+int gpr_parse_bytes_to_uint32(const char *buf, size_t len, uint32_t *result) {
+  uint32_t out = 0;
+  uint32_t new;
   size_t i;
 
   if (len == 0) return 0; /* must have some bytes */
 
   for (i = 0; i < len; i++) {
     if (buf[i] < '0' || buf[i] > '9') return 0; /* bad char */
-    new = 10 * out + (gpr_uint32)(buf[i] - '0');
+    new = 10 * out + (uint32_t)(buf[i] - '0');
     if (new < out) return 0; /* overflow */
     out = new;
   }
@@ -173,8 +173,8 @@ int gpr_ltoa(long value, char *string) {
   return i;
 }
 
-int gpr_int64toa(gpr_int64 value, char *string) {
-  gpr_int64 sign;
+int int64_ttoa(int64_t value, char *string) {
+  int64_t sign;
   int i = 0;
 
   if (value == 0) {
@@ -238,7 +238,7 @@ static int slice_find_separator_offset(const gpr_slice str, const char *sep,
                                        const size_t read_offset, size_t *begin,
                                        size_t *end) {
   size_t i;
-  const gpr_uint8 *str_ptr = GPR_SLICE_START_PTR(str) + read_offset;
+  const uint8_t *str_ptr = GPR_SLICE_START_PTR(str) + read_offset;
   const size_t str_len = GPR_SLICE_LENGTH(str) - read_offset;
   const size_t sep_len = strlen(sep);
   if (str_len < sep_len) {

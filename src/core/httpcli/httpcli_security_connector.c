@@ -84,8 +84,7 @@ static void httpcli_ssl_do_handshake(grpc_exec_ctx *exec_ctx,
 }
 
 static void httpcli_ssl_check_peer(grpc_exec_ctx *exec_ctx,
-                                   grpc_security_connector *sc,
-                                   tsi_peer peer,
+                                   grpc_security_connector *sc, tsi_peer peer,
                                    grpc_security_peer_check_cb cb,
                                    void *user_data) {
   grpc_httpcli_ssl_channel_security_connector *c =

@@ -91,7 +91,7 @@ typedef enum {
 } status_source;
 
 typedef struct {
-  gpr_uint8 is_set;
+  uint8_t is_set;
   grpc_status_code code;
   grpc_mdstr *details;
 } received_status;
@@ -122,14 +122,14 @@ typedef struct batch_control {
   void *notify_tag;
   gpr_refcount steps_to_complete;
 
-  gpr_uint8 send_initial_metadata;
-  gpr_uint8 send_message;
-  gpr_uint8 send_final_op;
-  gpr_uint8 recv_initial_metadata;
-  gpr_uint8 recv_message;
-  gpr_uint8 recv_final_op;
-  gpr_uint8 is_notify_tag_closure;
-  gpr_uint8 success;
+  uint8_t send_initial_metadata;
+  uint8_t send_message;
+  uint8_t send_final_op;
+  uint8_t recv_initial_metadata;
+  uint8_t recv_message;
+  uint8_t recv_final_op;
+  uint8_t is_notify_tag_closure;
+  uint8_t success;
 } batch_control;
 
 struct grpc_call {
@@ -141,22 +141,22 @@ struct grpc_call {
   gpr_mu mu;
 
   /* client or server call */
-  gpr_uint8 is_client;
+  uint8_t is_client;
   /* is the alarm set */
-  gpr_uint8 have_alarm;
+  uint8_t have_alarm;
   /** has grpc_call_destroy been called */
-  gpr_uint8 destroy_called;
+  uint8_t destroy_called;
   /** flag indicating that cancellation is inherited */
-  gpr_uint8 cancellation_is_inherited;
+  uint8_t cancellation_is_inherited;
   /** bitmask of live batches */
-  gpr_uint8 used_batches;
+  uint8_t used_batches;
   /** which ops are in-flight */
-  gpr_uint8 sent_initial_metadata;
-  gpr_uint8 sending_message;
-  gpr_uint8 sent_final_op;
-  gpr_uint8 received_initial_metadata;
-  gpr_uint8 receiving_message;
-  gpr_uint8 received_final_op;
+  uint8_t sent_initial_metadata;
+  uint8_t sending_message;
+  uint8_t sent_final_op;
+  uint8_t received_initial_metadata;
+  uint8_t receiving_message;
+  uint8_t received_final_op;
 
   batch_control active_batches[MAX_CONCURRENT_BATCHES];
 
@@ -173,7 +173,7 @@ struct grpc_call {
   /* Compression algorithm for the call */
   grpc_compression_algorithm compression_algorithm;
   /* Supported encodings (compression algorithms), a bitset */
-  gpr_uint32 encodings_accepted_by_peer;
+  uint32_t encodings_accepted_by_peer;
 
   /* Contexts for various subsystems (security, tracing, ...). */
   grpc_call_context_element context[GRPC_CONTEXT_COUNT];
@@ -199,7 +199,7 @@ struct grpc_call {
   gpr_slice receiving_slice;
   grpc_closure receiving_slice_ready;
   grpc_closure receiving_stream_ready;
-  gpr_uint32 test_only_last_message_flags;
+  uint32_t test_only_last_message_flags;
 
   union {
     struct {
@@ -233,7 +233,7 @@ static void receiving_slice_ready(grpc_exec_ctx *exec_ctx, void *bctlp,
                                   int success);
 
 grpc_call *grpc_call_create(grpc_channel *channel, grpc_call *parent_call,
-                            gpr_uint32 propagation_mask,
+                            uint32_t propagation_mask,
                             grpc_completion_queue *cq,
                             const void *server_transport_data,
                             grpc_mdelem **add_initial_metadata,
@@ -386,7 +386,7 @@ static void destroy_call(grpc_exec_ctx *exec_ctx, void *call, int success) {
 }
 
 static void set_status_code(grpc_call *call, status_source source,
-                            gpr_uint32 status) {
+                            uint32_t status) {
   if (call->status[source].is_set) return;
 
   call->status[source].is_set = 1;
@@ -409,8 +409,8 @@ grpc_compression_algorithm grpc_call_test_only_get_compression_algorithm(
   return algorithm;
 }
 
-gpr_uint32 grpc_call_test_only_get_message_flags(grpc_call *call) {
-  gpr_uint32 flags;
+uint32_t grpc_call_test_only_get_message_flags(grpc_call *call) {
+  uint32_t flags;
   gpr_mu_lock(&call->mu);
   flags = call->test_only_last_message_flags;
   gpr_mu_unlock(&call->mu);
@@ -430,7 +430,7 @@ static void set_encodings_accepted_by_peer(grpc_call *call, grpc_mdelem *mdel) {
       grpc_mdelem_get_user_data(mdel, destroy_encodings_accepted_by_peer);
   if (accepted_user_data != NULL) {
     call->encodings_accepted_by_peer =
-        (gpr_uint32)(((gpr_uintptr)accepted_user_data) - 1);
+        (uint32_t)(((uintptr_t)accepted_user_data) - 1);
     return;
   }
 
@@ -463,11 +463,11 @@ static void set_encodings_accepted_by_peer(grpc_call *call, grpc_mdelem *mdel) {
 
   grpc_mdelem_set_user_data(
       mdel, destroy_encodings_accepted_by_peer,
-      (void *)(((gpr_uintptr)call->encodings_accepted_by_peer) + 1));
+      (void *)(((uintptr_t)call->encodings_accepted_by_peer) + 1));
 }
 
-gpr_uint32 grpc_call_test_only_get_encodings_accepted_by_peer(grpc_call *call) {
-  gpr_uint32 encodings_accepted_by_peer;
+uint32_t grpc_call_test_only_get_encodings_accepted_by_peer(grpc_call *call) {
+  uint32_t encodings_accepted_by_peer;
   gpr_mu_lock(&call->mu);
   encodings_accepted_by_peer = call->encodings_accepted_by_peer;
   gpr_mu_unlock(&call->mu);
@@ -561,7 +561,7 @@ static int prepare_application_metadata(grpc_call *call, int count,
     grpc_linked_mdelem *l = (grpc_linked_mdelem *)&md->internal_data;
     GPR_ASSERT(sizeof(grpc_linked_mdelem) == sizeof(md->internal_data));
     l->md = grpc_mdelem_from_string_and_buffer(
-        md->key, (const gpr_uint8 *)md->value, md->value_length);
+        md->key, (const uint8_t *)md->value, md->value_length);
     if (!grpc_mdstr_is_legal_header(l->md->key)) {
       gpr_log(GPR_ERROR, "attempt to send invalid metadata key: %s",
               grpc_mdstr_as_c_string(l->md->key));
@@ -709,7 +709,7 @@ static grpc_call_error cancel_with_status(grpc_exec_ctx *exec_ctx, grpc_call *c,
 
   GPR_ASSERT(status != GRPC_STATUS_OK);
 
-  set_status_code(c, STATUS_FROM_API_OVERRIDE, (gpr_uint32)status);
+  set_status_code(c, STATUS_FROM_API_OVERRIDE, (uint32_t)status);
   set_status_details(c, STATUS_FROM_API_OVERRIDE, details);
 
   grpc_closure_init(&cc->closure, send_cancel, cc);
@@ -784,15 +784,15 @@ static void set_deadline_alarm(grpc_exec_ctx *exec_ctx, grpc_call *call,
 #define STATUS_OFFSET 1
 static void destroy_status(void *ignored) {}
 
-static gpr_uint32 decode_status(grpc_mdelem *md) {
-  gpr_uint32 status;
+static uint32_t decode_status(grpc_mdelem *md) {
+  uint32_t status;
   void *user_data;
   if (md == GRPC_MDELEM_GRPC_STATUS_0) return 0;
   if (md == GRPC_MDELEM_GRPC_STATUS_1) return 1;
   if (md == GRPC_MDELEM_GRPC_STATUS_2) return 2;
   user_data = grpc_mdelem_get_user_data(md, destroy_status);
   if (user_data != NULL) {
-    status = ((gpr_uint32)(gpr_intptr)user_data) - STATUS_OFFSET;
+    status = ((uint32_t)(intptr_t)user_data) - STATUS_OFFSET;
   } else {
     if (!gpr_parse_bytes_to_uint32(grpc_mdstr_as_c_string(md->value),
                                    GPR_SLICE_LENGTH(md->value->slice),
@@ -800,12 +800,12 @@ static gpr_uint32 decode_status(grpc_mdelem *md) {
       status = GRPC_STATUS_UNKNOWN; /* could not parse status code */
     }
     grpc_mdelem_set_user_data(md, destroy_status,
-                              (void *)(gpr_intptr)(status + STATUS_OFFSET));
+                              (void *)(intptr_t)(status + STATUS_OFFSET));
   }
   return status;
 }
 
-static gpr_uint32 decode_compression(grpc_mdelem *md) {
+static uint32_t decode_compression(grpc_mdelem *md) {
   grpc_compression_algorithm algorithm =
       grpc_compression_algorithm_from_mdstr(md->value);
   if (algorithm == GRPC_COMPRESS_ALGORITHMS_COUNT) {
@@ -895,11 +895,11 @@ static void set_cancelled_value(grpc_status_code status, void *dest) {
   *(int *)dest = (status != GRPC_STATUS_OK);
 }
 
-static int are_write_flags_valid(gpr_uint32 flags) {
+static int are_write_flags_valid(uint32_t flags) {
   /* check that only bits in GRPC_WRITE_(INTERNAL?)_USED_MASK are set */
-  const gpr_uint32 allowed_write_positions =
+  const uint32_t allowed_write_positions =
       (GRPC_WRITE_USED_MASK | GRPC_WRITE_INTERNAL_USED_MASK);
-  const gpr_uint32 invalid_positions = ~allowed_write_positions;
+  const uint32_t invalid_positions = ~allowed_write_positions;
   return !(flags & invalid_positions);
 }
 
@@ -907,8 +907,7 @@ static batch_control *allocate_batch_control(grpc_call *call) {
   size_t i;
   for (i = 0; i < MAX_CONCURRENT_BATCHES; i++) {
     if ((call->used_batches & (1 << i)) == 0) {
-      call->used_batches =
-          (gpr_uint8)(call->used_batches | (gpr_uint8)(1 << i));
+      call->used_batches = (uint8_t)(call->used_batches | (uint8_t)(1 << i));
       return &call->active_batches[i];
     }
   }
@@ -920,8 +919,8 @@ static void finish_batch_completion(grpc_exec_ctx *exec_ctx, void *user_data,
   batch_control *bctl = user_data;
   grpc_call *call = bctl->call;
   gpr_mu_lock(&call->mu);
-  call->used_batches = (gpr_uint8)(
-      call->used_batches & ~(gpr_uint8)(1 << (bctl - call->active_batches)));
+  call->used_batches = (uint8_t)(
+      call->used_batches & ~(uint8_t)(1 << (bctl - call->active_batches)));
   gpr_mu_unlock(&call->mu);
   GRPC_CALL_INTERNAL_UNREF(exec_ctx, call, "completion");
 }
@@ -933,8 +932,8 @@ static void post_batch_completion(grpc_exec_ctx *exec_ctx,
     grpc_exec_ctx_enqueue(exec_ctx, bctl->notify_tag, bctl->success);
     gpr_mu_lock(&call->mu);
     bctl->call->used_batches =
-        (gpr_uint8)(bctl->call->used_batches &
-                    ~(gpr_uint8)(1 << (bctl - bctl->call->active_batches)));
+        (uint8_t)(bctl->call->used_batches &
+                  ~(uint8_t)(1 << (bctl - bctl->call->active_batches)));
     gpr_mu_unlock(&call->mu);
     GRPC_CALL_INTERNAL_UNREF(exec_ctx, call, "completion");
   } else {
@@ -1123,7 +1122,7 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
   memset(bctl, 0, sizeof(*bctl));
   bctl->call = call;
   bctl->notify_tag = notify_tag;
-  bctl->is_notify_tag_closure = (gpr_uint8)(is_notify_tag_closure != 0);
+  bctl->is_notify_tag_closure = (uint8_t)(is_notify_tag_closure != 0);
 
   if (nops == 0) {
     GRPC_CALL_INTERNAL_REF(call, "completion");
@@ -1246,7 +1245,7 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
               GRPC_MDSTR_REF(call->send_extra_metadata[1].md->value));
         }
         set_status_code(call, STATUS_FROM_API_OVERRIDE,
-                        (gpr_uint32)op->data.send_status_from_server.status);
+                        (uint32_t)op->data.send_status_from_server.status);
         if (!prepare_application_metadata(
                 call,
                 (int)op->data.send_status_from_server.trailing_metadata_count,
@@ -1426,4 +1425,4 @@ void *grpc_call_context_get(grpc_call *call, grpc_context_index elem) {
   return call->context[elem].value;
 }
 
-gpr_uint8 grpc_call_is_client(grpc_call *call) { return call->is_client; }
+uint8_t grpc_call_is_client(grpc_call *call) { return call->is_client; }

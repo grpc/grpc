@@ -48,8 +48,8 @@
 
 #include "src/core/support/string.h"
 
-static const gpr_uint8 kV4MappedPrefix[] = {0, 0, 0, 0, 0,    0,
-                                            0, 0, 0, 0, 0xff, 0xff};
+static const uint8_t kV4MappedPrefix[] = {0, 0, 0, 0, 0,    0,
+                                          0, 0, 0, 0, 0xff, 0xff};
 
 int grpc_sockaddr_is_v4mapped(const struct sockaddr *addr,
                               struct sockaddr_in *addr4_out) {
@@ -126,14 +126,14 @@ void grpc_sockaddr_make_wildcard4(int port, struct sockaddr_in *wild_out) {
   GPR_ASSERT(port >= 0 && port < 65536);
   memset(wild_out, 0, sizeof(*wild_out));
   wild_out->sin_family = AF_INET;
-  wild_out->sin_port = htons((gpr_uint16)port);
+  wild_out->sin_port = htons((uint16_t)port);
 }
 
 void grpc_sockaddr_make_wildcard6(int port, struct sockaddr_in6 *wild_out) {
   GPR_ASSERT(port >= 0 && port < 65536);
   memset(wild_out, 0, sizeof(*wild_out));
   wild_out->sin6_family = AF_INET6;
-  wild_out->sin6_port = htons((gpr_uint16)port);
+  wild_out->sin6_port = htons((uint16_t)port);
 }
 
 int grpc_sockaddr_to_string(char **out, const struct sockaddr *addr,
@@ -220,11 +220,11 @@ int grpc_sockaddr_set_port(const struct sockaddr *addr, int port) {
   switch (addr->sa_family) {
     case AF_INET:
       GPR_ASSERT(port >= 0 && port < 65536);
-      ((struct sockaddr_in *)addr)->sin_port = htons((gpr_uint16)port);
+      ((struct sockaddr_in *)addr)->sin_port = htons((uint16_t)port);
       return 1;
     case AF_INET6:
       GPR_ASSERT(port >= 0 && port < 65536);
-      ((struct sockaddr_in6 *)addr)->sin6_port = htons((gpr_uint16)port);
+      ((struct sockaddr_in6 *)addr)->sin6_port = htons((uint16_t)port);
       return 1;
     default:
       gpr_log(GPR_ERROR, "Unknown socket family %d in grpc_sockaddr_set_port",

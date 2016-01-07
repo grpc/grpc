@@ -142,7 +142,7 @@ grpc_completion_queue *grpc_completion_queue_create(void *reserved) {
   /* One for destroy(), one for pollset_shutdown */
   gpr_ref_init(&cc->owning_refs, 2);
   cc->completed_tail = &cc->completed_head;
-  cc->completed_head.next = (gpr_uintptr)cc->completed_tail;
+  cc->completed_head.next = (uintptr_t)cc->completed_tail;
   cc->shutdown = 0;
   cc->shutdown_called = 0;
   cc->is_server_cq = 0;
@@ -183,7 +183,7 @@ void grpc_cq_internal_unref(grpc_completion_queue *cc, const char *reason,
 void grpc_cq_internal_unref(grpc_completion_queue *cc) {
 #endif
   if (gpr_unref(&cc->owning_refs)) {
-    GPR_ASSERT(cc->completed_head.next == (gpr_uintptr)&cc->completed_head);
+    GPR_ASSERT(cc->completed_head.next == (uintptr_t)&cc->completed_head);
     grpc_pollset_reset(&cc->pollset);
     gpr_mu_lock(&g_freelist_mu);
     cc->next_free = g_freelist;
@@ -229,7 +229,7 @@ void grpc_cq_end_op(grpc_exec_ctx *exec_ctx, grpc_completion_queue *cc,
   storage->done = done;
   storage->done_arg = done_arg;
   storage->next =
-      ((gpr_uintptr)&cc->completed_head) | ((gpr_uintptr)(success != 0));
+      ((uintptr_t)&cc->completed_head) | ((uintptr_t)(success != 0));
 
   gpr_mu_lock(GRPC_POLLSET_MU(&cc->pollset));
 #ifndef NDEBUG
@@ -247,7 +247,7 @@ void grpc_cq_end_op(grpc_exec_ctx *exec_ctx, grpc_completion_queue *cc,
   shutdown = gpr_unref(&cc->pending_events);
   if (!shutdown) {
     cc->completed_tail->next =
-        ((gpr_uintptr)storage) | (1u & (gpr_uintptr)cc->completed_tail->next);
+        ((uintptr_t)storage) | (1u & (uintptr_t)cc->completed_tail->next);
     cc->completed_tail = storage;
     pluck_worker = NULL;
     for (i = 0; i < cc->num_pluckers; i++) {
@@ -260,7 +260,7 @@ void grpc_cq_end_op(grpc_exec_ctx *exec_ctx, grpc_completion_queue *cc,
     gpr_mu_unlock(GRPC_POLLSET_MU(&cc->pollset));
   } else {
     cc->completed_tail->next =
-        ((gpr_uintptr)storage) | (1u & (gpr_uintptr)cc->completed_tail->next);
+        ((uintptr_t)storage) | (1u & (uintptr_t)cc->completed_tail->next);
     cc->completed_tail = storage;
     GPR_ASSERT(!cc->shutdown);
     GPR_ASSERT(cc->shutdown_called);
@@ -298,7 +298,7 @@ grpc_event grpc_completion_queue_next(grpc_completion_queue *cc,
   for (;;) {
     if (cc->completed_tail != &cc->completed_head) {
       grpc_cq_completion *c = (grpc_cq_completion *)cc->completed_head.next;
-      cc->completed_head.next = c->next & ~(gpr_uintptr)1;
+      cc->completed_head.next = c->next & ~(uintptr_t)1;
       if (c == cc->completed_tail) {
         cc->completed_tail = &cc->completed_head;
       }
@@ -385,11 +385,10 @@ grpc_event grpc_completion_queue_pluck(grpc_completion_queue *cc, void *tag,
   gpr_mu_lock(GRPC_POLLSET_MU(&cc->pollset));
   for (;;) {
     prev = &cc->completed_head;
-    while ((c = (grpc_cq_completion *)(prev->next & ~(gpr_uintptr)1)) !=
+    while ((c = (grpc_cq_completion *)(prev->next & ~(uintptr_t)1)) !=
            &cc->completed_head) {
       if (c->tag == tag) {
-        prev->next =
-            (prev->next & (gpr_uintptr)1) | (c->next & ~(gpr_uintptr)1);
+        prev->next = (prev->next & (uintptr_t)1) | (c->next & ~(uintptr_t)1);
         if (c == cc->completed_tail) {
           cc->completed_tail = prev;
         }
