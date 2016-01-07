@@ -39,17 +39,17 @@ static void *fake_malloc(size_t size) { return (void *)size; }
 
 static void *fake_realloc(void *addr, size_t size) { return (void *)size; }
 
-static void fake_free(void *addr) { *((gpr_intptr *)addr) = 0xdeadd00d; }
+static void fake_free(void *addr) { *((intptr_t *)addr) = 0xdeadd00d; }
 
 static void test_custom_allocs() {
   const gpr_allocation_functions default_fns = gpr_get_allocation_functions();
-  gpr_intptr addr_to_free = 0;
+  intptr_t addr_to_free = 0;
   int *i;
   gpr_allocation_functions fns = {fake_malloc, fake_realloc, fake_free};
 
   gpr_set_allocation_functions(fns);
-  GPR_ASSERT((void*)(size_t)0xdeadbeef == gpr_malloc(0xdeadbeef));
-  GPR_ASSERT((void*)(size_t)0xcafed00d == gpr_realloc(0, 0xcafed00d));
+  GPR_ASSERT((void *)(size_t)0xdeadbeef == gpr_malloc(0xdeadbeef));
+  GPR_ASSERT((void *)(size_t)0xcafed00d == gpr_realloc(0, 0xcafed00d));
 
   gpr_free(&addr_to_free);
   GPR_ASSERT(addr_to_free == 0xdeadd00d);

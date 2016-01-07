@@ -64,7 +64,7 @@ typedef enum {
 } grpc_compression_level;
 
 typedef struct grpc_compression_options {
-  gpr_uint32 enabled_algorithms_bitset; /**< All algs are enabled by default */
+  uint32_t enabled_algorithms_bitset; /**< All algs are enabled by default */
   grpc_compression_algorithm default_compression_algorithm; /**< for channel */
 } grpc_compression_options;
 

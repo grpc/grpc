@@ -119,7 +119,7 @@ static void test_spec_destroy(test_spec *spec) {
   gpr_free(spec);
 }
 
-static void *tag(gpr_intptr t) { return (void *)t; }
+static void *tag(intptr_t t) { return (void *)t; }
 
 static gpr_timespec n_millis_time(int n) {
   return gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
@@ -306,7 +306,7 @@ static int *perform_request(servers_fixture *f, grpc_channel *client,
                 f->cq, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(1), NULL)).type !=
            GRPC_QUEUE_TIMEOUT) {
       GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
-      read_tag = ((int)(gpr_intptr)ev.tag);
+      read_tag = ((int)(intptr_t)ev.tag);
       gpr_log(GPR_DEBUG, "EVENT: success:%d, type:%d, tag:%d iter:%d",
               ev.success, ev.type, read_tag, iter_num);
       if (ev.success && read_tag >= 1000) {

@@ -143,7 +143,7 @@ class ReconnectServiceImpl : public ReconnectService::Service {
           backoff > max_backoff + kTransmissionDelay) {
         passed = false;
       }
-      response->add_backoff_ms(static_cast<gpr_int32>(backoff));
+      response->add_backoff_ms(static_cast<int32_t>(backoff));
       expected_backoff *= kBackoffMultiplier;
       expected_backoff =
           expected_backoff > kMaxBackoffMs ? kMaxBackoffMs : expected_backoff;

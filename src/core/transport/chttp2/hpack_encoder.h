@@ -49,46 +49,46 @@
 #define GRPC_CHTTP2_HPACKC_MAX_TABLE_SIZE (1024 * 1024)
 
 typedef struct {
-  gpr_uint32 filter_elems_sum;
-  gpr_uint32 max_table_size;
-  gpr_uint32 max_table_elems;
-  gpr_uint32 cap_table_elems;
+  uint32_t filter_elems_sum;
+  uint32_t max_table_size;
+  uint32_t max_table_elems;
+  uint32_t cap_table_elems;
   /** if non-zero, advertise to the decoder that we'll start using a table
       of this size */
-  gpr_uint8 advertise_table_size_change;
+  uint8_t advertise_table_size_change;
   /** maximum number of bytes we'll use for the decode table (to guard against
       peers ooming us by setting decode table size high) */
-  gpr_uint32 max_usable_size;
+  uint32_t max_usable_size;
   /* one before the lowest usable table index */
-  gpr_uint32 tail_remote_index;
-  gpr_uint32 table_size;
-  gpr_uint32 table_elems;
+  uint32_t tail_remote_index;
+  uint32_t table_size;
+  uint32_t table_elems;
 
   /* filter tables for elems: this tables provides an approximate
      popularity count for particular hashes, and are used to determine whether
      a new literal should be added to the compression table or not.
      They track a single integer that counts how often a particular value has
      been seen. When that count reaches max (255), all values are halved. */
-  gpr_uint8 filter_elems[GRPC_CHTTP2_HPACKC_NUM_FILTERS];
+  uint8_t filter_elems[GRPC_CHTTP2_HPACKC_NUM_FILTERS];
 
   /* entry tables for keys & elems: these tables track values that have been
      seen and *may* be in the decompressor table */
   grpc_mdstr *entries_keys[GRPC_CHTTP2_HPACKC_NUM_VALUES];
   grpc_mdelem *entries_elems[GRPC_CHTTP2_HPACKC_NUM_VALUES];
-  gpr_uint32 indices_keys[GRPC_CHTTP2_HPACKC_NUM_VALUES];
-  gpr_uint32 indices_elems[GRPC_CHTTP2_HPACKC_NUM_VALUES];
+  uint32_t indices_keys[GRPC_CHTTP2_HPACKC_NUM_VALUES];
+  uint32_t indices_elems[GRPC_CHTTP2_HPACKC_NUM_VALUES];
 
-  gpr_uint16 *table_elem_size;
+  uint16_t *table_elem_size;
 } grpc_chttp2_hpack_compressor;
 
 void grpc_chttp2_hpack_compressor_init(grpc_chttp2_hpack_compressor *c);
 void grpc_chttp2_hpack_compressor_destroy(grpc_chttp2_hpack_compressor *c);
 void grpc_chttp2_hpack_compressor_set_max_table_size(
-    grpc_chttp2_hpack_compressor *c, gpr_uint32 max_table_size);
+    grpc_chttp2_hpack_compressor *c, uint32_t max_table_size);
 void grpc_chttp2_hpack_compressor_set_max_usable_size(
-    grpc_chttp2_hpack_compressor *c, gpr_uint32 max_table_size);
+    grpc_chttp2_hpack_compressor *c, uint32_t max_table_size);
 
-void grpc_chttp2_encode_header(grpc_chttp2_hpack_compressor *c, gpr_uint32 id,
+void grpc_chttp2_encode_header(grpc_chttp2_hpack_compressor *c, uint32_t id,
                                grpc_metadata_batch *metadata, int is_eof,
                                gpr_slice_buffer *outbuf);
 

@@ -110,7 +110,7 @@ gpr_slice grpc_byte_buffer_reader_readall(grpc_byte_buffer_reader *reader) {
   size_t bytes_read = 0;
   const size_t input_size = grpc_byte_buffer_length(reader->buffer_out);
   gpr_slice out_slice = gpr_slice_malloc(input_size);
-  gpr_uint8 *const outbuf = GPR_SLICE_START_PTR(out_slice); /* just an alias */
+  uint8_t *const outbuf = GPR_SLICE_START_PTR(out_slice); /* just an alias */
 
   while (grpc_byte_buffer_reader_next(reader, &in_slice) != 0) {
     const size_t slice_length = GPR_SLICE_LENGTH(in_slice);

@@ -40,9 +40,9 @@
 #include <grpc/support/useful.h>
 
 static int handle_response_line(grpc_httpcli_parser *parser) {
-  gpr_uint8 *beg = parser->cur_line;
-  gpr_uint8 *cur = beg;
-  gpr_uint8 *end = beg + parser->cur_line_length;
+  uint8_t *beg = parser->cur_line;
+  uint8_t *cur = beg;
+  uint8_t *end = beg + parser->cur_line_length;
 
   if (cur == end || *cur++ != 'H') goto error;
   if (cur == end || *cur++ != 'T') goto error;
@@ -77,9 +77,9 @@ static char *buf2str(void *buffer, size_t length) {
 }
 
 static int add_header(grpc_httpcli_parser *parser) {
-  gpr_uint8 *beg = parser->cur_line;
-  gpr_uint8 *cur = beg;
-  gpr_uint8 *end = beg + parser->cur_line_length;
+  uint8_t *beg = parser->cur_line;
+  uint8_t *cur = beg;
+  uint8_t *end = beg + parser->cur_line_length;
   grpc_httpcli_header hdr = {NULL, NULL};
 
   GPR_ASSERT(cur != end);
@@ -146,7 +146,7 @@ static int finish_line(grpc_httpcli_parser *parser) {
   return 1;
 }
 
-static int addbyte(grpc_httpcli_parser *parser, gpr_uint8 byte) {
+static int addbyte(grpc_httpcli_parser *parser, uint8_t byte) {
   switch (parser->state) {
     case GRPC_HTTPCLI_INITIAL_RESPONSE:
     case GRPC_HTTPCLI_HEADERS:
