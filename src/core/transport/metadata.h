@@ -142,6 +142,8 @@ void grpc_mdelem_unref(grpc_mdelem *md);
    Does not promise that the returned string has no embedded nulls however. */
 const char *grpc_mdstr_as_c_string(grpc_mdstr *s);
 
+#define GRPC_MDSTR_LENGTH(s) (GPR_SLICE_LENGTH(s->slice))
+
 int grpc_mdstr_is_legal_header(grpc_mdstr *s);
 int grpc_mdstr_is_legal_nonbin_header(grpc_mdstr *s);
 int grpc_mdstr_is_bin_suffixed(grpc_mdstr *s);
