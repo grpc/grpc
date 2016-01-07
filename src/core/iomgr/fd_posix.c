@@ -318,10 +318,10 @@ void grpc_fd_notify_on_write(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
   gpr_mu_unlock(&fd->mu);
 }
 
-gpr_uint32 grpc_fd_begin_poll(grpc_fd *fd, grpc_pollset *pollset,
-                              grpc_pollset_worker *worker, gpr_uint32 read_mask,
-                              gpr_uint32 write_mask, grpc_fd_watcher *watcher) {
-  gpr_uint32 mask = 0;
+uint32_t grpc_fd_begin_poll(grpc_fd *fd, grpc_pollset *pollset,
+                            grpc_pollset_worker *worker, uint32_t read_mask,
+                            uint32_t write_mask, grpc_fd_watcher *watcher) {
+  uint32_t mask = 0;
   grpc_closure *cur;
   int requested;
   /* keep track of pollers that have requested our events, in case they change

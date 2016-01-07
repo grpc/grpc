@@ -314,22 +314,6 @@
 #error Must define exactly one of GPR_MSVC_TLS, GPR_GCC_TLS, GPR_PTHREAD_TLS, GPR_CUSTOM_TLS
 #endif
 
-typedef int16_t gpr_int16;
-typedef int32_t gpr_int32;
-typedef int64_t gpr_int64;
-typedef uint8_t gpr_uint8;
-typedef uint16_t gpr_uint16;
-typedef uint32_t gpr_uint32;
-typedef uint64_t gpr_uint64;
-typedef intmax_t gpr_intmax;
-typedef intptr_t gpr_intptr;
-typedef uintmax_t gpr_uintmax;
-typedef uintptr_t gpr_uintptr;
-
-/* INT64_MAX is unavailable on some platforms. */
-#define GPR_INT64_MAX (gpr_int64)(~(gpr_uint64)0 >> 1)
-#define GPR_UINT32_MAX (~(gpr_uint32)0)
-
 /* maximum alignment needed for any type on this platform, rounded up to a
    power of two */
 #define GPR_MAX_ALIGNMENT 16

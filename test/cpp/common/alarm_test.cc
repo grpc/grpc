@@ -43,12 +43,12 @@ namespace {
 class TestTag : public CompletionQueueTag {
  public:
   TestTag() : tag_(0) {}
-  TestTag(gpr_intptr tag) : tag_(tag) {}
+  TestTag(intptr_t tag) : tag_(tag) {}
   bool FinalizeResult(void** tag, bool* status) { return true; }
-  gpr_intptr tag() { return tag_; }
+  intptr_t tag() { return tag_; }
 
  private:
-  gpr_intptr tag_;
+  intptr_t tag_;
 };
 
 TEST(AlarmTest, RegularExpiry) {

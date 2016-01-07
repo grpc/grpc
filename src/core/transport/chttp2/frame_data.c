@@ -63,7 +63,7 @@ void grpc_chttp2_data_parser_destroy(grpc_exec_ctx *exec_ctx,
 }
 
 grpc_chttp2_parse_error grpc_chttp2_data_parser_begin_frame(
-    grpc_chttp2_data_parser *parser, gpr_uint8 flags) {
+    grpc_chttp2_data_parser *parser, uint8_t flags) {
   if (flags & ~GRPC_CHTTP2_DATA_FLAG_END_STREAM) {
     gpr_log(GPR_ERROR, "unsupported data flags: 0x%02x", flags);
     return GRPC_CHTTP2_STREAM_ERROR;
@@ -111,24 +111,24 @@ grpc_byte_stream *grpc_chttp2_incoming_frame_queue_pop(
   return out;
 }
 
-void grpc_chttp2_encode_data(gpr_uint32 id, gpr_slice_buffer *inbuf,
-                             gpr_uint32 write_bytes, int is_eof,
+void grpc_chttp2_encode_data(uint32_t id, gpr_slice_buffer *inbuf,
+                             uint32_t write_bytes, int is_eof,
                              gpr_slice_buffer *outbuf) {
   gpr_slice hdr;
-  gpr_uint8 *p;
+  uint8_t *p;
 
   hdr = gpr_slice_malloc(9);
   p = GPR_SLICE_START_PTR(hdr);
   GPR_ASSERT(write_bytes < (1 << 24));
-  *p++ = (gpr_uint8)(write_bytes >> 16);
-  *p++ = (gpr_uint8)(write_bytes >> 8);
-  *p++ = (gpr_uint8)(write_bytes);
+  *p++ = (uint8_t)(write_bytes >> 16);
+  *p++ = (uint8_t)(write_bytes >> 8);
+  *p++ = (uint8_t)(write_bytes);
   *p++ = GRPC_CHTTP2_FRAME_DATA;
   *p++ = is_eof ? GRPC_CHTTP2_DATA_FLAG_END_STREAM : 0;
-  *p++ = (gpr_uint8)(id >> 24);
-  *p++ = (gpr_uint8)(id >> 16);
-  *p++ = (gpr_uint8)(id >> 8);
-  *p++ = (gpr_uint8)(id);
+  *p++ = (uint8_t)(id >> 24);
+  *p++ = (uint8_t)(id >> 16);
+  *p++ = (uint8_t)(id >> 8);
+  *p++ = (uint8_t)(id);
   gpr_slice_buffer_add(outbuf, hdr);
 
   gpr_slice_buffer_move_first(inbuf, write_bytes, outbuf);
@@ -138,11 +138,11 @@ grpc_chttp2_parse_error grpc_chttp2_data_parser_parse(
     grpc_exec_ctx *exec_ctx, void *parser,
     grpc_chttp2_transport_parsing *transport_parsing,
     grpc_chttp2_stream_parsing *stream_parsing, gpr_slice slice, int is_last) {
-  gpr_uint8 *const beg = GPR_SLICE_START_PTR(slice);
-  gpr_uint8 *const end = GPR_SLICE_END_PTR(slice);
-  gpr_uint8 *cur = beg;
+  uint8_t *const beg = GPR_SLICE_START_PTR(slice);
+  uint8_t *const end = GPR_SLICE_END_PTR(slice);
+  uint8_t *cur = beg;
   grpc_chttp2_data_parser *p = parser;
-  gpr_uint32 message_flags;
+  uint32_t message_flags;
   grpc_chttp2_incoming_byte_stream *incoming_byte_stream;
 
   if (is_last && p->is_last_frame) {
@@ -174,28 +174,28 @@ grpc_chttp2_parse_error grpc_chttp2_data_parser_parse(
       }
     /* fallthrough */
     case GRPC_CHTTP2_DATA_FH_1:
-      p->frame_size = ((gpr_uint32)*cur) << 24;
+      p->frame_size = ((uint32_t)*cur) << 24;
       if (++cur == end) {
         p->state = GRPC_CHTTP2_DATA_FH_2;
         return GRPC_CHTTP2_PARSE_OK;
       }
     /* fallthrough */
     case GRPC_CHTTP2_DATA_FH_2:
-      p->frame_size |= ((gpr_uint32)*cur) << 16;
+      p->frame_size |= ((uint32_t)*cur) << 16;
       if (++cur == end) {
         p->state = GRPC_CHTTP2_DATA_FH_3;
         return GRPC_CHTTP2_PARSE_OK;
       }
     /* fallthrough */
     case GRPC_CHTTP2_DATA_FH_3:
-      p->frame_size |= ((gpr_uint32)*cur) << 8;
+      p->frame_size |= ((uint32_t)*cur) << 8;
       if (++cur == end) {
         p->state = GRPC_CHTTP2_DATA_FH_4;
         return GRPC_CHTTP2_PARSE_OK;
       }
     /* fallthrough */
     case GRPC_CHTTP2_DATA_FH_4:
-      p->frame_size |= ((gpr_uint32)*cur);
+      p->frame_size |= ((uint32_t)*cur);
       p->state = GRPC_CHTTP2_DATA_FRAME;
       ++cur;
       message_flags = 0;
@@ -215,7 +215,7 @@ grpc_chttp2_parse_error grpc_chttp2_data_parser_parse(
       }
       grpc_chttp2_list_add_parsing_seen_stream(transport_parsing,
                                                stream_parsing);
-      if ((gpr_uint32)(end - cur) == p->frame_size) {
+      if ((uint32_t)(end - cur) == p->frame_size) {
         grpc_chttp2_incoming_byte_stream_push(
             exec_ctx, p->parsing_frame,
             gpr_slice_sub(slice, (size_t)(cur - beg), (size_t)(end - beg)));
@@ -224,7 +224,7 @@ grpc_chttp2_parse_error grpc_chttp2_data_parser_parse(
         p->parsing_frame = NULL;
         p->state = GRPC_CHTTP2_DATA_FH_0;
         return GRPC_CHTTP2_PARSE_OK;
-      } else if ((gpr_uint32)(end - cur) > p->frame_size) {
+      } else if ((uint32_t)(end - cur) > p->frame_size) {
         grpc_chttp2_incoming_byte_stream_push(
             exec_ctx, p->parsing_frame,
             gpr_slice_sub(slice, (size_t)(cur - beg),
@@ -239,7 +239,7 @@ grpc_chttp2_parse_error grpc_chttp2_data_parser_parse(
             exec_ctx, p->parsing_frame,
             gpr_slice_sub(slice, (size_t)(cur - beg), (size_t)(end - beg)));
         GPR_ASSERT((size_t)(end - cur) <= p->frame_size);
-        p->frame_size -= (gpr_uint32)(end - cur);
+        p->frame_size -= (uint32_t)(end - cur);
         return GRPC_CHTTP2_PARSE_OK;
       }
   }

@@ -651,7 +651,7 @@ static tsi_result build_alpn_protocol_name_list(
   }
   /* Safety check. */
   if ((current < *protocol_name_list) ||
-      ((gpr_uintptr)(current - *protocol_name_list) !=
+      ((uintptr_t)(current - *protocol_name_list) !=
        *protocol_name_list_length)) {
     return TSI_INTERNAL_ERROR;
   }
@@ -1074,7 +1074,7 @@ static int select_protocol_list(const unsigned char **out,
     unsigned char client_current_len = *(client_current++);
     const unsigned char *server_current = server_list;
     while ((server_current >= server_list) &&
-           (gpr_uintptr)(server_current - server_list) < server_list_len) {
+           (uintptr_t)(server_current - server_list) < server_list_len) {
       unsigned char server_current_len = *(server_current++);
       if ((client_current_len == server_current_len) &&
           !memcmp(client_current, server_current, server_current_len)) {

@@ -61,9 +61,9 @@ typedef struct grpc_chttp2_incoming_frame_queue {
 
 typedef struct {
   grpc_chttp2_stream_state state;
-  gpr_uint8 is_last_frame;
-  gpr_uint8 frame_type;
-  gpr_uint32 frame_size;
+  uint8_t is_last_frame;
+  uint8_t frame_type;
+  uint32_t frame_size;
 
   int is_frame_compressed;
   grpc_chttp2_incoming_frame_queue incoming_frames;
@@ -85,7 +85,7 @@ void grpc_chttp2_data_parser_destroy(grpc_exec_ctx *exec_ctx,
 
 /* start processing a new data frame */
 grpc_chttp2_parse_error grpc_chttp2_data_parser_begin_frame(
-    grpc_chttp2_data_parser *parser, gpr_uint8 flags);
+    grpc_chttp2_data_parser *parser, uint8_t flags);
 
 /* handle a slice of a data frame - is_last indicates the last slice of a
    frame */
@@ -94,8 +94,8 @@ grpc_chttp2_parse_error grpc_chttp2_data_parser_parse(
     grpc_chttp2_transport_parsing *transport_parsing,
     grpc_chttp2_stream_parsing *stream_parsing, gpr_slice slice, int is_last);
 
-void grpc_chttp2_encode_data(gpr_uint32 id, gpr_slice_buffer *inbuf,
-                             gpr_uint32 write_bytes, int is_eof,
+void grpc_chttp2_encode_data(uint32_t id, gpr_slice_buffer *inbuf,
+                             uint32_t write_bytes, int is_eof,
                              gpr_slice_buffer *outbuf);
 
 #endif /* GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_FRAME_DATA_H */
