@@ -55,10 +55,11 @@ typedef struct {
 
   grpc_closure connectivity_changed;
 
-  /** mutex protecting remaining members */
-  gpr_mu mu;
   /** the selected channel (a grpc_connected_subchannel) */
   gpr_atm selected;
+
+  /** mutex protecting remaining members */
+  gpr_mu mu;
   /** have we started picking? */
   int started_picking;
   /** are we shut down? */
@@ -174,11 +175,15 @@ int pf_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol, grpc_pollset *pollset,
             grpc_connected_subchannel **target, grpc_closure *on_complete) {
   pick_first_lb_policy *p = (pick_first_lb_policy *)pol;
   pending_pick *pp;
+
+  /* Check atomically for a selected channel */
   grpc_connected_subchannel *selected = GET_SELECTED(p);
   if (selected != NULL) {
     *target = selected;
     return 1;
   }
+
+  /* No subchannel selected yet, so acquire lock and then attempt again */
   gpr_mu_lock(&p->mu);
   selected = GET_SELECTED(p);
   if (selected) {
