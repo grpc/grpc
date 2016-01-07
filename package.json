@@ -31,7 +31,7 @@
     "protobufjs": "^4.0.0"
   },
   "devDependencies": {
-    "async": "^1.5.1",
+    "async": "^1.5.0",
     "google-auth-library": "^0.9.2",
     "istanbul": "^0.3.21",
     "jsdoc": "^3.3.2",
