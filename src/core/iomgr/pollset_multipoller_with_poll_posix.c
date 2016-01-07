@@ -144,7 +144,9 @@ static void multipoll_with_poll_pollset_maybe_work_and_unlock(
   GRPC_SCHEDULING_END_BLOCKING_REGION;
 
   if (r < 0) {
-    gpr_log(GPR_ERROR, "poll() failed: %s", strerror(errno));
+    if (errno != EINTR) {
+      gpr_log(GPR_ERROR, "poll() failed: %s", strerror(errno));
+    }
     for (i = 2; i < pfd_count; i++) {
       grpc_fd_end_poll(exec_ctx, &watchers[i], 0, 0);
     }
