@@ -488,9 +488,9 @@ class AsyncStreamingClient GRPC_FINAL
   }
 };
 
-class ClientGenericRpcContextStreamingImpl : public ClientRpcContext {
+class ClientRpcContextGenericStreamingImpl : public ClientRpcContext {
  public:
-  ClientGenericRpcContextStreamingImpl(
+  ClientRpcContextGenericStreamingImpl(
       int channel_id, grpc::GenericStub* stub, const ByteBuffer& req,
       std::function<std::unique_ptr<grpc::GenericClientAsyncReaderWriter>(
           grpc::GenericStub*, grpc::ClientContext*,
@@ -502,16 +502,16 @@ class ClientGenericRpcContextStreamingImpl : public ClientRpcContext {
         stub_(stub),
         req_(req),
         response_(),
-        next_state_(&ClientGenericRpcContextStreamingImpl::ReqSent),
+        next_state_(&ClientRpcContextGenericStreamingImpl::ReqSent),
         callback_(on_done),
         start_req_(start_req),
         start_(Timer::Now()) {}
-  ~ClientGenericRpcContextStreamingImpl() GRPC_OVERRIDE {}
+  ~ClientRpcContextGenericStreamingImpl() GRPC_OVERRIDE {}
   bool RunNextState(bool ok, Histogram* hist) GRPC_OVERRIDE {
     return (this->*next_state_)(ok, hist);
   }
   ClientRpcContext* StartNewClone() GRPC_OVERRIDE {
-    return new ClientGenericRpcContextStreamingImpl(channel_id_, stub_, req_,
+    return new ClientRpcContextGenericStreamingImpl(channel_id_, stub_, req_,
                                                     start_req_, callback_);
   }
   void Start(CompletionQueue* cq) GRPC_OVERRIDE {
@@ -528,7 +528,7 @@ class ClientGenericRpcContextStreamingImpl : public ClientRpcContext {
       return (false);
     }
     start_ = Timer::Now();
-    next_state_ = &ClientGenericRpcContextStreamingImpl::WriteDone;
+    next_state_ = &ClientRpcContextGenericStreamingImpl::WriteDone;
     stream_->Write(req_, ClientRpcContext::tag(this));
     return true;
   }
@@ -536,7 +536,7 @@ class ClientGenericRpcContextStreamingImpl : public ClientRpcContext {
     if (!ok) {
       return (false);
     }
-    next_state_ = &ClientGenericRpcContextStreamingImpl::ReadDone;
+    next_state_ = &ClientRpcContextGenericStreamingImpl::ReadDone;
     stream_->Read(&response_, ClientRpcContext::tag(this));
     return true;
   }
@@ -548,7 +548,7 @@ class ClientGenericRpcContextStreamingImpl : public ClientRpcContext {
   grpc::GenericStub* stub_;
   ByteBuffer req_;
   ByteBuffer response_;
-  bool (ClientGenericRpcContextStreamingImpl::*next_state_)(bool, Histogram*);
+  bool (ClientRpcContextGenericStreamingImpl::*next_state_)(bool, Histogram*);
   std::function<void(grpc::Status, ByteBuffer*)> callback_;
   std::function<std::unique_ptr<grpc::GenericClientAsyncReaderWriter>(
       grpc::GenericStub*, grpc::ClientContext*, const grpc::string&,
@@ -587,7 +587,7 @@ class GenericAsyncStreamingClient GRPC_FINAL
   };
   static ClientRpcContext* SetupCtx(int channel_id, grpc::GenericStub* stub,
                                     const ByteBuffer& req) {
-    return new ClientGenericRpcContextStreamingImpl(
+    return new ClientRpcContextGenericStreamingImpl(
         channel_id, stub, req, GenericAsyncStreamingClient::StartReq,
         GenericAsyncStreamingClient::CheckDone);
   }

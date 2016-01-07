@@ -71,7 +71,7 @@ class AsyncQpsServerTest : public Server {
                          ServerAsyncReaderWriter<ResponseType, RequestType> *,
                          CompletionQueue *, ServerCompletionQueue *, void *)>
           request_streaming_function,
-      std::function<grpc::Status(const ServerConfig &, const RequestType *,
+      std::function<grpc::Status(const PayloadConfig &, const RequestType *,
                                  ResponseType *)>
           process_rpc)
       : Server(config) {
@@ -94,7 +94,8 @@ class AsyncQpsServerTest : public Server {
 
     using namespace std::placeholders;
 
-    auto process_rpc_bound = std::bind(process_rpc, config, _1, _2);
+    auto process_rpc_bound = std::bind(process_rpc, config.payload_config(),
+                                       _1, _2);
 
     for (int i = 0; i < 10000 / config.async_server_threads(); i++) {
       for (int j = 0; j < config.async_server_threads(); j++) {
@@ -358,9 +359,10 @@ static void RegisterGenericService(ServerBuilder *builder,
   builder->RegisterAsyncGenericService(service);
 }
 
-template <class RequestType, class ResponseType>
-Status ProcessRPC(const ServerConfig &config, const RequestType *request,
-                  ResponseType *response) {
+
+static Status ProcessSimpleRPC(const PayloadConfig&,
+                               const SimpleRequest *request,
+                               SimpleResponse *response) {
   if (request->response_size() > 0) {
     if (!Server::SetPayload(request->response_type(), request->response_size(),
                             response->mutable_payload())) {
@@ -370,9 +372,14 @@ Status ProcessRPC(const ServerConfig &config, const RequestType *request,
   return Status::OK;
 }
 
-template <>
-Status ProcessRPC(const ServerConfig &config, const ByteBuffer *request,
-                  ByteBuffer *response) {
+static Status ProcessGenericRPC(const PayloadConfig& payload_config,
+                                const ByteBuffer *request,
+                                ByteBuffer *response) {
+  int resp_size = payload_config.bytebuf_params().resp_size();
+  std::unique_ptr<char> buf(new char[resp_size]);
+  gpr_slice s = gpr_slice_from_copied_buffer(buf.get(), resp_size);
+  Slice slice(s, Slice::STEAL_REF);
+  *response = ByteBuffer(&slice, 1);
   return Status::OK;
 }
 
@@ -384,7 +391,7 @@ std::unique_ptr<Server> CreateAsyncServer(const ServerConfig &config) {
           config, RegisterBenchmarkService,
           &BenchmarkService::AsyncService::RequestUnaryCall,
           &BenchmarkService::AsyncService::RequestStreamingCall,
-          ProcessRPC<SimpleRequest, SimpleResponse>));
+          ProcessSimpleRPC));
 }
 std::unique_ptr<Server> CreateAsyncGenericServer(const ServerConfig &config) {
   return std::unique_ptr<Server>(
@@ -392,7 +399,7 @@ std::unique_ptr<Server> CreateAsyncGenericServer(const ServerConfig &config) {
                              grpc::GenericServerContext>(
           config, RegisterGenericService, nullptr,
           &grpc::AsyncGenericService::RequestCall,
-          ProcessRPC<ByteBuffer, ByteBuffer>));
+          ProcessGenericRPC));
 }
 
 }  // namespace testing
