@@ -67,7 +67,7 @@ class AsyncQpsServerTest : public Server {
                              Server::CreateServerCredentials(config));
     gpr_free(server_address);
 
-    builder.RegisterAsyncService(&async_service_);
+    builder.RegisterService(&async_service_);
     for (int i = 0; i < config.async_server_threads(); i++) {
       srv_cqs_.emplace_back(builder.AddCompletionQueue());
     }
