@@ -389,7 +389,8 @@ void on_fd_released(grpc_exec_ctx *exec_ctx, void *arg, int success) {
   grpc_pollset_kick(&g_pollset, NULL);
 }
 
-/* Do a read_test, then release fd and try to read/write again. */
+/* Do a read_test, then release fd and try to read/write again. Verify that
+   grpc_tcp_fd() is available before the fd is released. */
 static void release_fd_test(size_t num_bytes, size_t slice_size) {
   int sv[2];
   grpc_endpoint *ep;
@@ -408,6 +409,7 @@ static void release_fd_test(size_t num_bytes, size_t slice_size) {
   create_sockets(sv);
 
   ep = grpc_tcp_create(grpc_fd_create(sv[1], "read_test"), slice_size, "test");
+  GPR_ASSERT(grpc_tcp_fd(ep) == sv[1] && sv[1] >= 0);
   grpc_endpoint_add_to_pollset(&exec_ctx, ep, &g_pollset);
 
   written_bytes = fill_socket_partial(sv[0], num_bytes);
@@ -435,6 +437,7 @@ static void release_fd_test(size_t num_bytes, size_t slice_size) {
 
   gpr_slice_buffer_destroy(&state.incoming);
   grpc_tcp_destroy_and_release_fd(&exec_ctx, ep, &fd, &fd_released_cb);
+  GPR_ASSERT(grpc_tcp_fd(ep) < 0);
   gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
   while (!fd_released_done) {
     grpc_pollset_worker worker;
@@ -443,6 +446,7 @@ static void release_fd_test(size_t num_bytes, size_t slice_size) {
   }
   gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));
   GPR_ASSERT(fd_released_done == 1);
+  GPR_ASSERT(grpc_tcp_fd(ep) < 0);
   GPR_ASSERT(fd == sv[1]);
   grpc_exec_ctx_finish(&exec_ctx);
 
