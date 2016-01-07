@@ -110,7 +110,7 @@ int contains_metadata(grpc_metadata_array *array, const char *key,
 static gpr_slice merge_slices(gpr_slice *slices, size_t nslices) {
   size_t i;
   size_t len = 0;
-  gpr_uint8 *cursor;
+  uint8_t *cursor;
   gpr_slice out;
 
   for (i = 0; i < nslices; i++) {

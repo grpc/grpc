@@ -39,7 +39,7 @@
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
-static void *tag(gpr_intptr i) { return (void *)i; }
+static void *tag(intptr_t i) { return (void *)i; }
 
 struct test_state {
   int is_client;

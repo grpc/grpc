@@ -67,7 +67,7 @@ struct grpc_closure {
   /** Once enqueued, contains in the lower bit the success of the closure,
       and in the upper bits the pointer to the next closure in the list.
       Before enqueing for execution, this is usable for scratch data. */
-  gpr_uintptr final_data;
+  uintptr_t final_data;
 };
 
 /** Initializes \a closure with \a cb and \a cb_arg. */

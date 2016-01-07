@@ -116,7 +116,7 @@ typedef struct census_log_block {
      simultaneously by reader and writer. */
   gpr_atm bytes_committed;
   /* Bytes already read */
-  gpr_int32 bytes_read;
+  int32_t bytes_read;
   /* Links for list */
   cl_block_list_struct link;
 /* We want this structure to be cacheline aligned. We assume the following
@@ -124,7 +124,7 @@ typedef struct census_log_block {
    type                 32b size    64b size
    char*                   4           8
    3x gpr_atm             12          24
-   gpr_int32               4           8 (assumes padding)
+   int32_t               4           8 (assumes padding)
    cl_block_list_struct   12          24
    TOTAL                  32          64
 
@@ -147,7 +147,7 @@ typedef struct census_log_block {
 
 /* A list of cl_blocks, doubly-linked through cl_block::link. */
 typedef struct census_log_block_list {
-  gpr_int32 count;         /* Number of items in list. */
+  int32_t count;           /* Number of items in list. */
   cl_block_list_struct ht; /* head/tail of linked list. */
 } cl_block_list;
 
@@ -175,7 +175,7 @@ struct census_log {
   /* Number of cores (aka hardware-contexts) */
   unsigned num_cores;
   /* number of CENSUS_LOG_2_MAX_RECORD_SIZE blocks in log */
-  gpr_int32 num_blocks;
+  int32_t num_blocks;
   cl_block *blocks;                       /* Block metadata. */
   cl_core_local_block *core_local_blocks; /* Keeps core to block mappings. */
   gpr_mu lock;
@@ -183,7 +183,7 @@ struct census_log {
   /* Keeps the state of the reader iterator. A value of 0 indicates that
      iterator has reached the end. census_log_init_reader() resets the
      value to num_core to restart iteration. */
-  gpr_uint32 read_iterator_state;
+  uint32_t read_iterator_state;
   /* Points to the block being read. If non-NULL, the block is locked for
      reading (block_being_read_->reader_lock is held). */
   cl_block *block_being_read;
@@ -276,11 +276,11 @@ static void cl_block_initialize(cl_block *block, char *buffer) {
 
 /* Guards against exposing partially written buffer to the reader. */
 static void cl_block_set_bytes_committed(cl_block *block,
-                                         gpr_int32 bytes_committed) {
+                                         int32_t bytes_committed) {
   gpr_atm_rel_store(&block->bytes_committed, bytes_committed);
 }
 
-static gpr_int32 cl_block_get_bytes_committed(cl_block *block) {
+static int32_t cl_block_get_bytes_committed(cl_block *block) {
   return gpr_atm_acq_load(&block->bytes_committed);
 }
 
@@ -317,7 +317,7 @@ static void cl_block_enable_access(cl_block *block) {
 
 /* Returns with writer_lock held. */
 static void *cl_block_start_write(cl_block *block, size_t size) {
-  gpr_int32 bytes_committed;
+  int32_t bytes_committed;
   if (!cl_try_lock(&block->writer_lock)) {
     return NULL;
   }
@@ -395,8 +395,7 @@ static cl_block *cl_allocate_block(void) {
    - allocated a new block OR
    - 'core_id' => 'old_block' mapping changed (another thread allocated a
      block before lock was acquired). */
-static int cl_allocate_core_local_block(gpr_int32 core_id,
-                                        cl_block *old_block) {
+static int cl_allocate_core_local_block(int32_t core_id, cl_block *old_block) {
   /* Now that we have the lock, check if core-local mapping has changed. */
   cl_core_local_block *core_local_block = &g_log.core_local_blocks[core_id];
   cl_block *block = cl_core_local_block_get_block(core_local_block);
@@ -418,8 +417,8 @@ static int cl_allocate_core_local_block(gpr_int32 core_id,
 }
 
 static cl_block *cl_get_block(void *record) {
-  gpr_uintptr p = (gpr_uintptr)((char *)record - g_log.buffer);
-  gpr_uintptr index = p >> CENSUS_LOG_2_MAX_RECORD_SIZE;
+  uintptr_t p = (uintptr_t)((char *)record - g_log.buffer);
+  uintptr_t index = p >> CENSUS_LOG_2_MAX_RECORD_SIZE;
   return &g_log.blocks[index];
 }
 
@@ -460,7 +459,7 @@ static cl_block *cl_next_block_to_read(cl_block *prev) {
 
 /* External functions: primary stats_log interface */
 void census_log_initialize(size_t size_in_mb, int discard_old_records) {
-  gpr_int32 ix;
+  int32_t ix;
   /* Check cacheline alignment. */
   GPR_ASSERT(sizeof(cl_block) % GPR_CACHELINE_SIZE == 0);
   GPR_ASSERT(sizeof(cl_core_local_block) % GPR_CACHELINE_SIZE == 0);
@@ -510,9 +509,9 @@ void census_log_shutdown(void) {
 
 void *census_log_start_write(size_t size) {
   /* Used to bound number of times block allocation is attempted. */
-  gpr_int32 attempts_remaining = g_log.num_blocks;
+  int32_t attempts_remaining = g_log.num_blocks;
   /* TODO(aveitch): move this inside the do loop when current_cpu is fixed */
-  gpr_int32 core_id = gpr_cpu_current_cpu();
+  int32_t core_id = gpr_cpu_current_cpu();
   GPR_ASSERT(g_log.initialized);
   if (size > CENSUS_LOG_MAX_RECORD_SIZE) {
     return NULL;

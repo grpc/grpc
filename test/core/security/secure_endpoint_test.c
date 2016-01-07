@@ -68,12 +68,12 @@ static grpc_endpoint_test_fixture secure_endpoint_create_fixture_tcp_socketpair(
     size_t still_pending_size;
     size_t total_buffer_size = 8192;
     size_t buffer_size = total_buffer_size;
-    gpr_uint8 *encrypted_buffer = gpr_malloc(buffer_size);
-    gpr_uint8 *cur = encrypted_buffer;
+    uint8_t *encrypted_buffer = gpr_malloc(buffer_size);
+    uint8_t *cur = encrypted_buffer;
     gpr_slice encrypted_leftover;
     for (i = 0; i < leftover_nslices; i++) {
       gpr_slice plain = leftover_slices[i];
-      gpr_uint8 *message_bytes = GPR_SLICE_START_PTR(plain);
+      uint8_t *message_bytes = GPR_SLICE_START_PTR(plain);
       size_t message_size = GPR_SLICE_LENGTH(plain);
       while (message_size > 0) {
         size_t protected_buffer_size_to_send = buffer_size;

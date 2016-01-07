@@ -45,13 +45,13 @@
    word that allows for an atomic CAS to set it up. */
 struct lockfree_node_contents {
   /* next thing to look at. Actual index for head, next index otherwise */
-  gpr_uint16 index;
+  uint16_t index;
 #ifdef GPR_ARCH_64
-  gpr_uint16 pad;
-  gpr_uint32 aba_ctr;
+  uint16_t pad;
+  uint32_t aba_ctr;
 #else
 #ifdef GPR_ARCH_32
-  gpr_uint16 aba_ctr;
+  uint16_t aba_ctr;
 #else
 #error Unsupported bit width architecture
 #endif
@@ -114,7 +114,7 @@ int gpr_stack_lockfree_push(gpr_stack_lockfree *stack, int entry) {
   lockfree_node newent;
 
   /* First fill in the entry's index and aba ctr for new head */
-  newhead.contents.index = (gpr_uint16)entry;
+  newhead.contents.index = (uint16_t)entry;
   /* Also post-increment the aba_ctr */
   curent.atm = gpr_atm_no_barrier_load(&stack->entries[entry].atm);
   newhead.contents.aba_ctr = ++curent.contents.aba_ctr;

@@ -9,3 +9,4 @@ test_bin
 *.sdf
 third_party/*.user
 /packages
+/IntDir

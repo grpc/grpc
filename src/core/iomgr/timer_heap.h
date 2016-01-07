@@ -38,8 +38,8 @@
 
 typedef struct {
   grpc_timer **timers;
-  gpr_uint32 timer_count;
-  gpr_uint32 timer_capacity;
+  uint32_t timer_count;
+  uint32_t timer_capacity;
 } grpc_timer_heap;
 
 /* return 1 if the new timer is the first timer in the heap */

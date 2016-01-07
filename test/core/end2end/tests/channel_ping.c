@@ -40,7 +40,7 @@
 
 #include "test/core/end2end/cq_verifier.h"
 
-static void *tag(gpr_intptr t) { return (void *)t; }
+static void *tag(intptr_t t) { return (void *)t; }
 
 static void test_ping(grpc_end2end_test_config config) {
   grpc_end2end_test_fixture f = config.create_fixture(NULL, NULL);
@@ -91,7 +91,7 @@ static void test_ping(grpc_end2end_test_config config) {
   cq_verifier_destroy(cqv);
 }
 
-void grpc_end2end_tests(grpc_end2end_test_config config) {
+void channel_ping(grpc_end2end_test_config config) {
   GPR_ASSERT(config.feature_mask & FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION);
   test_ping(config);
 }

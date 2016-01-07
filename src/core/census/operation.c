@@ -42,14 +42,14 @@ census_timestamp census_start_rpc_op_timestamp(void) {
 }
 
 census_context *census_start_client_rpc_op(
-    const census_context *context, gpr_int64 rpc_name_id,
+    const census_context *context, int64_t rpc_name_id,
     const census_rpc_name_info *rpc_name_info, const char *peer, int trace_mask,
     const census_timestamp *start_time) {
   return NULL;
 }
 
 census_context *census_start_server_rpc_op(
-    const char *buffer, gpr_int64 rpc_name_id,
+    const char *buffer, int64_t rpc_name_id,
     const census_rpc_name_info *rpc_name_info, const char *peer, int trace_mask,
     census_timestamp *start_time) {
   return NULL;
