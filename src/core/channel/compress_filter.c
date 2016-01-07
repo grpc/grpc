@@ -51,7 +51,7 @@ typedef struct call_data {
   gpr_slice_buffer slices; /**< Buffers up input slices to be compressed */
   grpc_linked_mdelem compression_algorithm_storage;
   grpc_linked_mdelem accept_encoding_storage;
-  gpr_uint32 remaining_slice_bytes;
+  uint32_t remaining_slice_bytes;
   /** Compression algorithm we'll try to use. It may be given by incoming
    * metadata, or by the channel's default compression settings. */
   grpc_compression_algorithm compression_algorithm;
@@ -59,8 +59,8 @@ typedef struct call_data {
   int has_compression_algorithm;
 
   grpc_transport_stream_op send_op;
-  gpr_uint32 send_length;
-  gpr_uint32 send_flags;
+  uint32_t send_length;
+  uint32_t send_flags;
   gpr_slice incoming_slice;
   grpc_slice_buffer_stream replacement_stream;
   grpc_closure *post_send;
@@ -74,7 +74,7 @@ typedef struct channel_data {
   /** Compression options for the channel */
   grpc_compression_options compression_options;
   /** Supported compression algorithms */
-  gpr_uint32 supported_compression_algorithms;
+  uint32_t supported_compression_algorithms;
 } channel_data;
 
 /** For each \a md element from the incoming metadata, filter out the entry for
@@ -262,7 +262,7 @@ static void init_channel_elem(grpc_exec_ctx *exec_ctx,
 
   grpc_compression_options_init(&channeld->compression_options);
   channeld->compression_options.enabled_algorithms_bitset =
-      (gpr_uint32)grpc_channel_args_compression_algorithm_get_states(
+      (uint32_t)grpc_channel_args_compression_algorithm_get_states(
           args->channel_args);
 
   channeld->default_compression_algorithm =

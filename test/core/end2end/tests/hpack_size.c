@@ -47,7 +47,7 @@
 #include "src/core/support/string.h"
 #include "test/core/end2end/cq_verifier.h"
 
-static void *tag(gpr_intptr t) { return (void *)t; }
+static void *tag(intptr_t t) { return (void *)t; }
 
 const char *hobbits[][2] = {{"Adaldrida", "Brandybuck"},
                             {"Adamanta", "Took"},
@@ -433,7 +433,7 @@ static void test_size(grpc_end2end_test_config config, int encode_size,
   gpr_free(name);
 }
 
-void grpc_end2end_tests(grpc_end2end_test_config config) {
+void hpack_size(grpc_end2end_test_config config) {
   static const int interesting_sizes[] = {4096, 0,     100,
                                           1000, 32768, 4 * 1024 * 1024};
   size_t i, j;

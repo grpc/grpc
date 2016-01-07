@@ -52,6 +52,11 @@ BUILDING FROM SOURCE
 ---------------------
 - Clone this repository
 
+- Install tox
+```
+$ sudo pip install tox
+```
+
 - Initialize the git submodules
 ```
 $ git submodule update --init
@@ -64,7 +69,7 @@ $ make
 
 - Use build_python.sh to build the Python code and install it into a virtual environment
 ```
-$ CONFIG=opt tools/run_tests/build_python.sh 2.7
+$ CONFIG=opt tools/run_tests/build_python.sh
 ```
 
 TESTING

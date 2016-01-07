@@ -119,7 +119,7 @@ static void test_spec_destroy(test_spec *spec) {
   gpr_free(spec);
 }
 
-static void *tag(gpr_intptr t) { return (void *)t; }
+static void *tag(intptr_t t) { return (void *)t; }
 
 static gpr_timespec n_millis_time(int n) {
   return gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
@@ -137,9 +137,8 @@ static void kill_server(const servers_fixture *f, size_t i) {
   gpr_log(GPR_INFO, "KILLING SERVER %d", i);
   GPR_ASSERT(f->servers[i] != NULL);
   grpc_server_shutdown_and_notify(f->servers[i], f->cq, tag(10000));
-  GPR_ASSERT(
-      grpc_completion_queue_pluck(f->cq, tag(10000), n_millis_time(5000), NULL)
-          .type == GRPC_OP_COMPLETE);
+  GPR_ASSERT(grpc_completion_queue_pluck(f->cq, tag(10000), n_millis_time(5000),
+                                         NULL).type == GRPC_OP_COMPLETE);
   grpc_server_destroy(f->servers[i]);
   f->servers[i] = NULL;
 }
@@ -205,8 +204,8 @@ static void teardown_servers(servers_fixture *f) {
     if (f->servers[i] == NULL) continue;
     grpc_server_shutdown_and_notify(f->servers[i], f->cq, tag(10000));
     GPR_ASSERT(grpc_completion_queue_pluck(f->cq, tag(10000),
-                                           n_millis_time(5000), NULL)
-                   .type == GRPC_OP_COMPLETE);
+                                           n_millis_time(5000),
+                                           NULL).type == GRPC_OP_COMPLETE);
     grpc_server_destroy(f->servers[i]);
   }
   grpc_completion_queue_shutdown(f->cq);
@@ -304,10 +303,10 @@ static int *perform_request(servers_fixture *f, grpc_channel *client,
 
     s_idx = -1;
     while ((ev = grpc_completion_queue_next(
-                f->cq, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(1), NULL))
-               .type != GRPC_QUEUE_TIMEOUT) {
+                f->cq, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(1), NULL)).type !=
+           GRPC_QUEUE_TIMEOUT) {
       GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
-      read_tag = ((int)(gpr_intptr)ev.tag);
+      read_tag = ((int)(intptr_t)ev.tag);
       gpr_log(GPR_DEBUG, "EVENT: success:%d, type:%d, tag:%d iter:%d",
               ev.success, ev.type, read_tag, iter_num);
       if (ev.success && read_tag >= 1000) {
@@ -376,6 +375,10 @@ static int *perform_request(servers_fixture *f, grpc_channel *client,
         cq_verify(cqv);
       }
     }
+
+    GPR_ASSERT(grpc_completion_queue_next(f->cq,
+                                          GRPC_TIMEOUT_MILLIS_TO_DEADLINE(200),
+                                          NULL).type == GRPC_QUEUE_TIMEOUT);
 
     grpc_metadata_array_destroy(&rdata->initial_metadata_recv);
     grpc_metadata_array_destroy(&rdata->trailing_metadata_recv);
@@ -771,6 +774,23 @@ static void verify_partial_carnage_round_robin(
   gpr_free(expected_connection_sequence);
 }
 
+static void dump_array(const char *desc, const int *data, const size_t count) {
+  gpr_strvec s;
+  char *tmp;
+  size_t i;
+  gpr_strvec_init(&s);
+  gpr_strvec_add(&s, gpr_strdup(desc));
+  gpr_strvec_add(&s, gpr_strdup(":"));
+  for (i = 0; i < count; i++) {
+    gpr_asprintf(&tmp, " %d", data[i]);
+    gpr_strvec_add(&s, tmp);
+  }
+  tmp = gpr_strvec_flatten(&s, NULL);
+  gpr_strvec_destroy(&s);
+  gpr_log(GPR_DEBUG, "%s", tmp);
+  gpr_free(tmp);
+}
+
 static void verify_rebirth_round_robin(const servers_fixture *f,
                                        grpc_channel *client,
                                        const int *actual_connection_sequence,
@@ -778,7 +798,10 @@ static void verify_rebirth_round_robin(const servers_fixture *f,
   int *expected_connection_sequence;
   size_t i, j, unique_seq_last_idx, unique_seq_first_idx;
   const size_t expected_seq_length = f->num_servers;
-  uint8_t *seen_elements;
+  int *seen_elements;
+
+  dump_array("actual_connection_sequence", actual_connection_sequence,
+             num_iters);
 
   /* verify conn. seq. expectation */
   /* get the first unique run of length "num_servers". */
@@ -787,12 +810,12 @@ static void verify_rebirth_round_robin(const servers_fixture *f,
 
   unique_seq_last_idx = ~(size_t)0;
 
-  memset(seen_elements, 0, sizeof(uint8_t) * expected_seq_length);
+  memset(seen_elements, 0, sizeof(int) * expected_seq_length);
   for (i = 0; i < num_iters; i++) {
     if (actual_connection_sequence[i] < 0 ||
         seen_elements[actual_connection_sequence[i]] != 0) {
       /* if anything breaks the uniqueness of the run, back to square zero */
-      memset(seen_elements, 0, sizeof(uint8_t) * expected_seq_length);
+      memset(seen_elements, 0, sizeof(int) * expected_seq_length);
       continue;
     }
     seen_elements[actual_connection_sequence[i]] = 1;
@@ -805,6 +828,7 @@ static void verify_rebirth_round_robin(const servers_fixture *f,
     }
   }
   /* make sure we found a valid run */
+  dump_array("seen_elements", seen_elements, expected_seq_length);
   for (j = 0; j < expected_seq_length; j++) {
     GPR_ASSERT(seen_elements[j] != 0);
   }

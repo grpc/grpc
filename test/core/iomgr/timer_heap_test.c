@@ -102,7 +102,7 @@ static size_t *all_top(grpc_timer_heap *pq, size_t *n) {
 }
 
 static void check_pq_top(grpc_timer *elements, grpc_timer_heap *pq,
-                         gpr_uint8 *inpq, size_t num_elements) {
+                         uint8_t *inpq, size_t num_elements) {
   gpr_timespec max_deadline = gpr_inf_past(GPR_CLOCK_REALTIME);
   size_t *max_deadline_indices =
       gpr_malloc(num_elements * sizeof(*max_deadline_indices));
@@ -160,7 +160,7 @@ static void test1(void) {
   const size_t num_test_operations = 10000;
   size_t i;
   grpc_timer *test_elements = create_test_elements(num_test_elements);
-  gpr_uint8 *inpq = gpr_malloc(num_test_elements);
+  uint8_t *inpq = gpr_malloc(num_test_elements);
 
   grpc_timer_heap_init(&pq);
   memset(inpq, 0, num_test_elements);

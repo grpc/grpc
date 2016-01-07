@@ -59,7 +59,7 @@ typedef struct call_data {
   grpc_closure finish_recv;
 } call_data;
 
-typedef struct channel_data { gpr_uint8 unused; } channel_data;
+typedef struct channel_data { uint8_t unused; } channel_data;
 
 static void extract_and_annotate_method_tag(grpc_metadata_batch *md,
                                             call_data *calld,

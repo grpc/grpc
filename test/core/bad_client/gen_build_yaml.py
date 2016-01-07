@@ -46,6 +46,7 @@ BAD_CLIENT_TESTS = {
     'initial_settings_frame': default_test_options,
     'server_registered_method': default_test_options,
     'simple_request': default_test_options,
+    'window_overflow': default_test_options,
     'unknown_frame': default_test_options,
 }
 
@@ -63,7 +64,7 @@ def main():
             'headers': [
               'test/core/bad_client/bad_client.h'
             ],
-            'vs_proj_dir': 'test',
+            'vs_proj_dir': 'test/bad_client',
             'deps': [
               'grpc_test_util_unsecure',
               'grpc_unsecure',

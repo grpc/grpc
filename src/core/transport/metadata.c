@@ -81,12 +81,12 @@ typedef void (*destroy_user_data_func)(void *user_data);
 typedef struct internal_string {
   /* must be byte compatible with grpc_mdstr */
   gpr_slice slice;
-  gpr_uint32 hash;
+  uint32_t hash;
 
   /* private only data */
   gpr_atm refcnt;
 
-  gpr_uint8 has_base64_and_huffman_encoded;
+  uint8_t has_base64_and_huffman_encoded;
   gpr_slice_refcount refcount;
 
   gpr_slice base64_and_huffman;
@@ -131,7 +131,7 @@ typedef struct mdtab_shard {
 #define MDTAB_SHARD_COUNT ((size_t)(1 << LOG2_MDTAB_SHARD_COUNT))
 
 /* hash seed: decided at initialization time */
-static gpr_uint32 g_hash_seed;
+static uint32_t g_hash_seed;
 static int g_forced_hash_seed = 0;
 
 /* linearly probed hash tables for static element lookup */
@@ -145,7 +145,7 @@ static mdtab_shard g_mdtab_shard[MDTAB_SHARD_COUNT];
 
 static void gc_mdtab(mdtab_shard *shard);
 
-void grpc_test_only_set_metadata_hash_seed(gpr_uint32 seed) {
+void grpc_test_only_set_metadata_hash_seed(uint32_t seed) {
   g_hash_seed = seed;
   g_forced_hash_seed = 1;
 }
@@ -153,7 +153,7 @@ void grpc_test_only_set_metadata_hash_seed(gpr_uint32 seed) {
 void grpc_mdctx_global_init(void) {
   size_t i, j;
   if (!g_forced_hash_seed) {
-    g_hash_seed = (gpr_uint32)gpr_now(GPR_CLOCK_REALTIME).tv_nsec;
+    g_hash_seed = (uint32_t)gpr_now(GPR_CLOCK_REALTIME).tv_nsec;
   }
   g_static_strtab_maxprobe = 0;
   g_static_mdtab_maxprobe = 0;
@@ -163,9 +163,9 @@ void grpc_mdctx_global_init(void) {
   for (i = 0; i < GRPC_STATIC_MDSTR_COUNT; i++) {
     grpc_mdstr *elem = &grpc_static_mdstr_table[i];
     const char *str = grpc_static_metadata_strings[i];
-    gpr_uint32 hash = gpr_murmur_hash3(str, strlen(str), g_hash_seed);
+    uint32_t hash = gpr_murmur_hash3(str, strlen(str), g_hash_seed);
     *(gpr_slice *)&elem->slice = gpr_slice_from_static_string(str);
-    *(gpr_uint32 *)&elem->hash = hash;
+    *(uint32_t *)&elem->hash = hash;
     for (j = 0;; j++) {
       size_t idx = (hash + j) % GPR_ARRAY_SIZE(g_static_strtab);
       if (g_static_strtab[idx] == NULL) {
@@ -183,7 +183,7 @@ void grpc_mdctx_global_init(void) {
         &grpc_static_mdstr_table[grpc_static_metadata_elem_indices[2 * i + 0]];
     grpc_mdstr *value =
         &grpc_static_mdstr_table[grpc_static_metadata_elem_indices[2 * i + 1]];
-    gpr_uint32 hash = GRPC_MDSTR_KV_HASH(key->hash, value->hash);
+    uint32_t hash = GRPC_MDSTR_KV_HASH(key->hash, value->hash);
     *(grpc_mdstr **)&elem->key = key;
     *(grpc_mdstr **)&elem->value = value;
     for (j = 0;; j++) {
@@ -327,7 +327,7 @@ static void slice_unref(void *p) {
 }
 
 grpc_mdstr *grpc_mdstr_from_string(const char *str) {
-  return grpc_mdstr_from_buffer((const gpr_uint8 *)str, strlen(str));
+  return grpc_mdstr_from_buffer((const uint8_t *)str, strlen(str));
 }
 
 grpc_mdstr *grpc_mdstr_from_slice(gpr_slice slice) {
@@ -337,8 +337,8 @@ grpc_mdstr *grpc_mdstr_from_slice(gpr_slice slice) {
   return result;
 }
 
-grpc_mdstr *grpc_mdstr_from_buffer(const gpr_uint8 *buf, size_t length) {
-  gpr_uint32 hash = gpr_murmur_hash3(buf, length, g_hash_seed);
+grpc_mdstr *grpc_mdstr_from_buffer(const uint8_t *buf, size_t length) {
+  uint32_t hash = gpr_murmur_hash3(buf, length, g_hash_seed);
   internal_string *s;
   strtab_shard *shard =
       &g_strtab_shard[SHARD_IDX(hash, LOG2_STRTAB_SHARD_COUNT)];
@@ -382,7 +382,7 @@ grpc_mdstr *grpc_mdstr_from_buffer(const gpr_uint8 *buf, size_t length) {
     s->slice.refcount = NULL;
     memcpy(s->slice.data.inlined.bytes, buf, length);
     s->slice.data.inlined.bytes[length] = 0;
-    s->slice.data.inlined.length = (gpr_uint8)length;
+    s->slice.data.inlined.length = (uint8_t)length;
   } else {
     /* string data goes after the internal_string header, and we +1 for null
        terminator */
@@ -391,7 +391,7 @@ grpc_mdstr *grpc_mdstr_from_buffer(const gpr_uint8 *buf, size_t length) {
     s->refcount.ref = slice_ref;
     s->refcount.unref = slice_unref;
     s->slice.refcount = &s->refcount;
-    s->slice.data.refcounted.bytes = (gpr_uint8 *)(s + 1);
+    s->slice.data.refcounted.bytes = (uint8_t *)(s + 1);
     s->slice.data.refcounted.length = length;
     memcpy(s->slice.data.refcounted.bytes, buf, length);
     /* add a null terminator for cheap c string conversion when desired */
@@ -449,7 +449,7 @@ static void grow_mdtab(mdtab_shard *shard) {
   size_t i;
   internal_metadata **mdtab;
   internal_metadata *md, *next;
-  gpr_uint32 hash;
+  uint32_t hash;
 
   GPR_TIMER_BEGIN("grow_mdtab", 0);
 
@@ -486,7 +486,7 @@ grpc_mdelem *grpc_mdelem_from_metadata_strings(grpc_mdstr *mkey,
                                                grpc_mdstr *mvalue) {
   internal_string *key = (internal_string *)mkey;
   internal_string *value = (internal_string *)mvalue;
-  gpr_uint32 hash = GRPC_MDSTR_KV_HASH(mkey->hash, mvalue->hash);
+  uint32_t hash = GRPC_MDSTR_KV_HASH(mkey->hash, mvalue->hash);
   internal_metadata *md;
   mdtab_shard *shard = &g_mdtab_shard[SHARD_IDX(hash, LOG2_MDTAB_SHARD_COUNT)];
   size_t i;
@@ -562,7 +562,7 @@ grpc_mdelem *grpc_mdelem_from_slices(gpr_slice key, gpr_slice value) {
 }
 
 grpc_mdelem *grpc_mdelem_from_string_and_buffer(const char *key,
-                                                const gpr_uint8 *value,
+                                                const uint8_t *value,
                                                 size_t value_length) {
   return grpc_mdelem_from_metadata_strings(
       grpc_mdstr_from_string(key), grpc_mdstr_from_buffer(value, value_length));
@@ -601,7 +601,7 @@ void grpc_mdelem_unref(grpc_mdelem *gmd DEBUG_ARGS) {
           grpc_mdstr_as_c_string((grpc_mdstr *)md->value));
 #endif
   if (2 == gpr_atm_full_fetch_add(&md->refcnt, -1)) {
-    gpr_uint32 hash = GRPC_MDSTR_KV_HASH(md->key->hash, md->value->hash);
+    uint32_t hash = GRPC_MDSTR_KV_HASH(md->key->hash, md->value->hash);
     mdtab_shard *shard =
         &g_mdtab_shard[SHARD_IDX(hash, LOG2_MDTAB_SHARD_COUNT)];
     GPR_TIMER_BEGIN("grpc_mdelem_unref.to_zero", 0);
@@ -689,9 +689,9 @@ gpr_slice grpc_mdstr_as_base64_encoded_and_huffman_compressed(grpc_mdstr *gs) {
   return slice;
 }
 
-static int conforms_to(grpc_mdstr *s, const gpr_uint8 *legal_bits) {
-  const gpr_uint8 *p = GPR_SLICE_START_PTR(s->slice);
-  const gpr_uint8 *e = GPR_SLICE_END_PTR(s->slice);
+static int conforms_to(grpc_mdstr *s, const uint8_t *legal_bits) {
+  const uint8_t *p = GPR_SLICE_START_PTR(s->slice);
+  const uint8_t *e = GPR_SLICE_END_PTR(s->slice);
   for (; p != e; p++) {
     int idx = *p;
     int byte = idx / 8;
@@ -702,7 +702,7 @@ static int conforms_to(grpc_mdstr *s, const gpr_uint8 *legal_bits) {
 }
 
 int grpc_mdstr_is_legal_header(grpc_mdstr *s) {
-  static const gpr_uint8 legal_header_bits[256 / 8] = {
+  static const uint8_t legal_header_bits[256 / 8] = {
       0x00, 0x00, 0x00, 0x00, 0x00, 0x60, 0xff, 0x03, 0x00, 0x00, 0x00,
       0x80, 0xfe, 0xff, 0xff, 0x07, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
@@ -710,7 +710,7 @@ int grpc_mdstr_is_legal_header(grpc_mdstr *s) {
 }
 
 int grpc_mdstr_is_legal_nonbin_header(grpc_mdstr *s) {
-  static const gpr_uint8 legal_header_bits[256 / 8] = {
+  static const uint8_t legal_header_bits[256 / 8] = {
       0x00, 0x00, 0x00, 0x00, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
       0xff, 0xff, 0xff, 0xff, 0x7f, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};

@@ -80,7 +80,7 @@ int grpc_chttp2_unlocking_check_writes(
      (according to available window sizes) and add to the output buffer */
   while (grpc_chttp2_list_pop_writable_stream(
       transport_global, transport_writing, &stream_global, &stream_writing)) {
-    gpr_uint8 sent_initial_metadata;
+    uint8_t sent_initial_metadata;
 
     stream_writing->id = stream_global->id;
     stream_writing->read_closed = stream_global->read_closed;
@@ -103,15 +103,15 @@ int grpc_chttp2_unlocking_check_writes(
     if (sent_initial_metadata) {
       if (stream_global->send_message != NULL) {
         gpr_slice hdr = gpr_slice_malloc(5);
-        gpr_uint8 *p = GPR_SLICE_START_PTR(hdr);
-        gpr_uint32 len = stream_global->send_message->length;
+        uint8_t *p = GPR_SLICE_START_PTR(hdr);
+        uint32_t len = stream_global->send_message->length;
         GPR_ASSERT(stream_writing->send_message == NULL);
         p[0] = (stream_global->send_message->flags &
                 GRPC_WRITE_INTERNAL_COMPRESS) != 0;
-        p[1] = (gpr_uint8)(len >> 24);
-        p[2] = (gpr_uint8)(len >> 16);
-        p[3] = (gpr_uint8)(len >> 8);
-        p[4] = (gpr_uint8)(len);
+        p[1] = (uint8_t)(len >> 24);
+        p[2] = (uint8_t)(len >> 16);
+        p[3] = (uint8_t)(len >> 8);
+        p[4] = (uint8_t)(len);
         gpr_slice_buffer_add(&stream_writing->flow_controlled_buffer, hdr);
         if (stream_global->send_message->length > 0) {
           stream_writing->send_message = stream_global->send_message;
@@ -160,8 +160,8 @@ int grpc_chttp2_unlocking_check_writes(
   /* if the grpc_chttp2_transport is ready to send a window update, do so here
      also; 3/4 is a magic number that will likely get tuned soon */
   if (transport_global->announce_incoming_window > 0) {
-    gpr_uint32 announced = (gpr_uint32)GPR_MIN(
-        transport_global->announce_incoming_window, GPR_UINT32_MAX);
+    uint32_t announced = (uint32_t)GPR_MIN(
+        transport_global->announce_incoming_window, UINT32_MAX);
     GRPC_CHTTP2_FLOW_DEBIT_TRANSPORT("write", transport_global,
                                      announce_incoming_window, announced);
     gpr_slice_buffer_add(&transport_writing->outbuf,
@@ -200,10 +200,10 @@ static void finalize_outbuf(grpc_exec_ctx *exec_ctx,
 
   while (
       grpc_chttp2_list_pop_writing_stream(transport_writing, &stream_writing)) {
-    gpr_uint32 max_outgoing =
-        (gpr_uint32)GPR_MIN(GRPC_CHTTP2_MAX_PAYLOAD_LENGTH,
-                            GPR_MIN(stream_writing->outgoing_window,
-                                    transport_writing->outgoing_window));
+    uint32_t max_outgoing =
+        (uint32_t)GPR_MIN(GRPC_CHTTP2_MAX_PAYLOAD_LENGTH,
+                          GPR_MIN(stream_writing->outgoing_window,
+                                  transport_writing->outgoing_window));
     /* send initial metadata if it's available */
     if (stream_writing->send_initial_metadata != NULL) {
       grpc_chttp2_encode_header(
@@ -215,7 +215,7 @@ static void finalize_outbuf(grpc_exec_ctx *exec_ctx,
     /* send any window updates */
     if (stream_writing->announce_window > 0 &&
         stream_writing->send_initial_metadata == NULL) {
-      gpr_uint32 announce = stream_writing->announce_window;
+      uint32_t announce = stream_writing->announce_window;
       gpr_slice_buffer_add(
           &transport_writing->outbuf,
           grpc_chttp2_window_update_create(stream_writing->id,
@@ -247,7 +247,7 @@ static void finalize_outbuf(grpc_exec_ctx *exec_ctx,
     /* send any body bytes */
     if (stream_writing->flow_controlled_buffer.length > 0) {
       if (max_outgoing > 0) {
-        gpr_uint32 send_bytes = (gpr_uint32)GPR_MIN(
+        uint32_t send_bytes = (uint32_t)GPR_MIN(
             max_outgoing, stream_writing->flow_controlled_buffer.length);
         int is_last_data_frame =
             stream_writing->send_message == NULL &&

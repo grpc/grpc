@@ -60,7 +60,7 @@ class InteropClientContextInspector {
     return grpc_call_test_only_get_compression_algorithm(context_.call_);
   }
 
-  gpr_uint32 GetMessageFlags() const {
+  uint32_t GetMessageFlags() const {
     return grpc_call_test_only_get_message_flags(context_.call_);
   }
 

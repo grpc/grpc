@@ -48,7 +48,7 @@
 extern "C" {
 #endif
 
-typedef gpr_uint64 gpr_thd_id;
+typedef uint64_t gpr_thd_id;
 
 /* Thread creation options. */
 typedef struct {
