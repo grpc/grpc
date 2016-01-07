@@ -67,11 +67,10 @@ const grpc_chttp2_setting_parameters
          GRPC_CHTTP2_PROTOCOL_ERROR},
 };
 
-static gpr_uint8 *fill_header(gpr_uint8 *out, gpr_uint32 length,
-                              gpr_uint8 flags) {
-  *out++ = (gpr_uint8)(length >> 16);
-  *out++ = (gpr_uint8)(length >> 8);
-  *out++ = (gpr_uint8)(length);
+static uint8_t *fill_header(uint8_t *out, uint32_t length, uint8_t flags) {
+  *out++ = (uint8_t)(length >> 16);
+  *out++ = (uint8_t)(length >> 8);
+  *out++ = (uint8_t)(length);
   *out++ = GRPC_CHTTP2_FRAME_SETTINGS;
   *out++ = flags;
   *out++ = 0;
@@ -81,12 +80,12 @@ static gpr_uint8 *fill_header(gpr_uint8 *out, gpr_uint32 length,
   return out;
 }
 
-gpr_slice grpc_chttp2_settings_create(gpr_uint32 *old, const gpr_uint32 *new,
-                                      gpr_uint32 force_mask, size_t count) {
+gpr_slice grpc_chttp2_settings_create(uint32_t *old, const uint32_t *new,
+                                      uint32_t force_mask, size_t count) {
   size_t i;
-  gpr_uint32 n = 0;
+  uint32_t n = 0;
   gpr_slice output;
-  gpr_uint8 *p;
+  uint8_t *p;
 
   for (i = 0; i < count; i++) {
     n += (new[i] != old[i] || (force_mask & (1u << i)) != 0);
@@ -98,12 +97,12 @@ gpr_slice grpc_chttp2_settings_create(gpr_uint32 *old, const gpr_uint32 *new,
   for (i = 0; i < count; i++) {
     if (new[i] != old[i] || (force_mask & (1u << i)) != 0) {
       GPR_ASSERT(i);
-      *p++ = (gpr_uint8)(i >> 8);
-      *p++ = (gpr_uint8)(i);
-      *p++ = (gpr_uint8)(new[i] >> 24);
-      *p++ = (gpr_uint8)(new[i] >> 16);
-      *p++ = (gpr_uint8)(new[i] >> 8);
-      *p++ = (gpr_uint8)(new[i]);
+      *p++ = (uint8_t)(i >> 8);
+      *p++ = (uint8_t)(i);
+      *p++ = (uint8_t)(new[i] >> 24);
+      *p++ = (uint8_t)(new[i] >> 16);
+      *p++ = (uint8_t)(new[i] >> 8);
+      *p++ = (uint8_t)(new[i]);
       old[i] = new[i];
     }
   }
@@ -120,11 +119,11 @@ gpr_slice grpc_chttp2_settings_ack_create(void) {
 }
 
 grpc_chttp2_parse_error grpc_chttp2_settings_parser_begin_frame(
-    grpc_chttp2_settings_parser *parser, gpr_uint32 length, gpr_uint8 flags,
-    gpr_uint32 *settings) {
+    grpc_chttp2_settings_parser *parser, uint32_t length, uint8_t flags,
+    uint32_t *settings) {
   parser->target_settings = settings;
   memcpy(parser->incoming_settings, settings,
-         GRPC_CHTTP2_NUM_SETTINGS * sizeof(gpr_uint32));
+         GRPC_CHTTP2_NUM_SETTINGS * sizeof(uint32_t));
   parser->is_ack = 0;
   parser->state = GRPC_CHTTP2_SPS_ID0;
   if (flags == GRPC_CHTTP2_FLAG_ACK) {
@@ -150,8 +149,8 @@ grpc_chttp2_parse_error grpc_chttp2_settings_parser_parse(
     grpc_chttp2_transport_parsing *transport_parsing,
     grpc_chttp2_stream_parsing *stream_parsing, gpr_slice slice, int is_last) {
   grpc_chttp2_settings_parser *parser = p;
-  const gpr_uint8 *cur = GPR_SLICE_START_PTR(slice);
-  const gpr_uint8 *end = GPR_SLICE_END_PTR(slice);
+  const uint8_t *cur = GPR_SLICE_START_PTR(slice);
+  const uint8_t *end = GPR_SLICE_END_PTR(slice);
 
   if (parser->is_ack) {
     return GRPC_CHTTP2_PARSE_OK;
@@ -165,13 +164,13 @@ grpc_chttp2_parse_error grpc_chttp2_settings_parser_parse(
           if (is_last) {
             transport_parsing->settings_updated = 1;
             memcpy(parser->target_settings, parser->incoming_settings,
-                   GRPC_CHTTP2_NUM_SETTINGS * sizeof(gpr_uint32));
+                   GRPC_CHTTP2_NUM_SETTINGS * sizeof(uint32_t));
             gpr_slice_buffer_add(&transport_parsing->qbuf,
                                  grpc_chttp2_settings_ack_create());
           }
           return GRPC_CHTTP2_PARSE_OK;
         }
-        parser->id = (gpr_uint16)(((gpr_uint16)*cur) << 8);
+        parser->id = (uint16_t)(((uint16_t)*cur) << 8);
         cur++;
       /* fallthrough */
       case GRPC_CHTTP2_SPS_ID1:
@@ -179,7 +178,7 @@ grpc_chttp2_parse_error grpc_chttp2_settings_parser_parse(
           parser->state = GRPC_CHTTP2_SPS_ID1;
           return GRPC_CHTTP2_PARSE_OK;
         }
-        parser->id = (gpr_uint16)(parser->id | (*cur));
+        parser->id = (uint16_t)(parser->id | (*cur));
         cur++;
       /* fallthrough */
       case GRPC_CHTTP2_SPS_VAL0:
@@ -187,7 +186,7 @@ grpc_chttp2_parse_error grpc_chttp2_settings_parser_parse(
           parser->state = GRPC_CHTTP2_SPS_VAL0;
           return GRPC_CHTTP2_PARSE_OK;
         }
-        parser->value = ((gpr_uint32)*cur) << 24;
+        parser->value = ((uint32_t)*cur) << 24;
         cur++;
       /* fallthrough */
       case GRPC_CHTTP2_SPS_VAL1:
@@ -195,7 +194,7 @@ grpc_chttp2_parse_error grpc_chttp2_settings_parser_parse(
           parser->state = GRPC_CHTTP2_SPS_VAL1;
           return GRPC_CHTTP2_PARSE_OK;
         }
-        parser->value |= ((gpr_uint32)*cur) << 16;
+        parser->value |= ((uint32_t)*cur) << 16;
         cur++;
       /* fallthrough */
       case GRPC_CHTTP2_SPS_VAL2:
@@ -203,7 +202,7 @@ grpc_chttp2_parse_error grpc_chttp2_settings_parser_parse(
           parser->state = GRPC_CHTTP2_SPS_VAL2;
           return GRPC_CHTTP2_PARSE_OK;
         }
-        parser->value |= ((gpr_uint32)*cur) << 8;
+        parser->value |= ((uint32_t)*cur) << 8;
         cur++;
       /* fallthrough */
       case GRPC_CHTTP2_SPS_VAL3:
@@ -238,8 +237,7 @@ grpc_chttp2_parse_error grpc_chttp2_settings_parser_parse(
           if (parser->id == GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE &&
               parser->incoming_settings[parser->id] != parser->value) {
             transport_parsing->initial_window_update =
-                (gpr_int64)parser->value -
-                parser->incoming_settings[parser->id];
+                (int64_t)parser->value - parser->incoming_settings[parser->id];
             if (grpc_http_trace) {
               gpr_log(GPR_DEBUG, "adding %d for initial_window change",
                       (int)transport_parsing->initial_window_update);

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -8,9 +8,9 @@
  * met:
  *
  *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimser.
+ * notice, this list of conditions and the following disclaimer.
  *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimser
+ * copyright notice, this list of conditions and the following disclaimer
  * in the documentation and/or other materials provided with the
  * distribution.
  *     * Neither the name of Google Inc. nor the names of its
@@ -443,8 +443,8 @@ static BIGNUM *bignum_from_base64(const char *b64) {
     gpr_log(GPR_ERROR, "Invalid base64 for big num.");
     return NULL;
   }
-  result =
-      BN_bin2bn(GPR_SLICE_START_PTR(bin), TSI_SIZE_AS_SIZE(GPR_SLICE_LENGTH(bin)), NULL);
+  result = BN_bin2bn(GPR_SLICE_START_PTR(bin),
+                     TSI_SIZE_AS_SIZE(GPR_SLICE_LENGTH(bin)), NULL);
   gpr_slice_unref(bin);
   return result;
 }

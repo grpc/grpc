@@ -68,14 +68,14 @@ static const census_ht_option ht_opt = {
 static gpr_once g_init_mutex_once = GPR_ONCE_INIT;
 static gpr_mu g_mu; /* Guards following two static variables. */
 static census_ht *g_trace_store = NULL;
-static gpr_uint64 g_id = 0;
+static uint64_t g_id = 0;
 
 static census_ht_key op_id_as_key(census_op_id *id) {
   return *(census_ht_key *)id;
 }
 
-static gpr_uint64 op_id_2_uint64(census_op_id *id) {
-  gpr_uint64 ret;
+static uint64_t op_id_2_uint64(census_op_id *id) {
+  uint64_t ret;
   memcpy(&ret, id, sizeof(census_op_id));
   return ret;
 }

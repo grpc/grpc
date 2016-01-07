@@ -54,29 +54,29 @@ typedef struct bucket {
   /* NULL if bucket is empty */
   ht_entry *next;
   /* -1 if all buckets are empty. */
-  gpr_int32 prev_non_empty_bucket;
+  int32_t prev_non_empty_bucket;
   /* -1 if all buckets are empty. */
-  gpr_int32 next_non_empty_bucket;
+  int32_t next_non_empty_bucket;
 } bucket;
 
 struct unresizable_hash_table {
   /* Number of entries in the table */
   size_t size;
   /* Number of buckets */
-  gpr_uint32 num_buckets;
+  uint32_t num_buckets;
   /* Array of buckets initialized at creation time. Memory consumption is
      16 bytes per bucket on a 64-bit platform. */
   bucket *buckets;
   /* Index of the first non-empty bucket. -1 iff size == 0. */
-  gpr_int32 first_non_empty_bucket;
+  int32_t first_non_empty_bucket;
   /* Index of the last non_empty bucket. -1 iff size == 0. */
-  gpr_int32 last_non_empty_bucket;
+  int32_t last_non_empty_bucket;
   /* Immutable options of this hash table, initialized at creation time. */
   census_ht_option options;
 };
 
 typedef struct entry_locator {
-  gpr_int32 bucket_idx;
+  int32_t bucket_idx;
   int is_first_in_chain;
   int found;
   ht_entry *prev_entry;
@@ -113,7 +113,7 @@ static void delete_entry(const census_ht_option *opt, ht_entry *p) {
   gpr_free(p);
 }
 
-static gpr_uint64 hash(const census_ht_option *opt, census_ht_key key) {
+static uint64_t hash(const census_ht_option *opt, census_ht_key key) {
   return opt->key_type == CENSUS_HT_UINT64 ? key.val : opt->hash(key.ptr);
 }
 
@@ -135,7 +135,7 @@ census_ht *census_ht_create(const census_ht_option *option) {
   return ret;
 }
 
-static gpr_int32 find_bucket_idx(const census_ht *ht, census_ht_key key) {
+static int32_t find_bucket_idx(const census_ht *ht, census_ht_key key) {
   return hash(&ht->options, key) % ht->num_buckets;
 }
 
@@ -149,7 +149,7 @@ static int keys_match(const census_ht_option *opt, const ht_entry *p,
 
 static entry_locator ht_find(const census_ht *ht, census_ht_key key) {
   entry_locator loc = {0, 0, 0, NULL};
-  gpr_int32 idx = 0;
+  int32_t idx = 0;
   ht_entry *ptr = NULL;
   GPR_ASSERT(ht != NULL);
   idx = find_bucket_idx(ht, key);
@@ -188,7 +188,7 @@ void *census_ht_find(const census_ht *ht, census_ht_key key) {
 }
 
 void census_ht_insert(census_ht *ht, census_ht_key key, void *data) {
-  gpr_int32 idx = find_bucket_idx(ht, key);
+  int32_t idx = find_bucket_idx(ht, key);
   ht_entry *ptr = NULL;
   entry_locator loc = ht_find(ht, key);
   if (loc.found) {
@@ -259,7 +259,7 @@ void census_ht_erase(census_ht *ht, census_ht_key key) {
 census_ht_kv *census_ht_get_all_elements(const census_ht *ht, size_t *num) {
   census_ht_kv *ret = NULL;
   int i = 0;
-  gpr_int32 idx = -1;
+  int32_t idx = -1;
   GPR_ASSERT(ht != NULL && num != NULL);
   *num = ht->size;
   if (*num == 0) {

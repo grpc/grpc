@@ -60,7 +60,7 @@ typedef struct {
      progress */
   grpc_pollset *pollset;
   grpc_transport_stream_op op;
-  gpr_uint8 security_context_set;
+  uint8_t security_context_set;
   grpc_linked_mdelem md_links[MAX_CREDENTIALS_METADATA_COUNT];
   grpc_auth_metadata_context auth_md_context;
 } call_data;
@@ -232,8 +232,8 @@ static void auth_start_transport_op(grpc_exec_ctx *exec_ctx,
     }
     sec_ctx = op->context[GRPC_CONTEXT_SECURITY].value;
     GRPC_AUTH_CONTEXT_UNREF(sec_ctx->auth_context, "client auth filter");
-    sec_ctx->auth_context = GRPC_AUTH_CONTEXT_REF(
-        chand->auth_context, "client_auth_filter");
+    sec_ctx->auth_context =
+        GRPC_AUTH_CONTEXT_REF(chand->auth_context, "client_auth_filter");
   }
 
   if (op->send_initial_metadata != NULL) {
