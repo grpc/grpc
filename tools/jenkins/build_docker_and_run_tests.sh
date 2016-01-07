@@ -79,7 +79,7 @@ docker run \
 
 if [ "$XML_REPORT" != "" ]
 then
-  docker cp "$CONTAINER_NAME:/var/local/git/grpc/$XML_REPORT" $git_root
+  docker cp "$CONTAINER_NAME:/var/local/git/grpc/$XML_REPORT" $git_root || true
 fi
 
 docker cp "$CONTAINER_NAME:/var/local/git/grpc/reports.zip" $git_root || true
