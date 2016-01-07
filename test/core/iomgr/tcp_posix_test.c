@@ -437,7 +437,6 @@ static void release_fd_test(size_t num_bytes, size_t slice_size) {
 
   gpr_slice_buffer_destroy(&state.incoming);
   grpc_tcp_destroy_and_release_fd(&exec_ctx, ep, &fd, &fd_released_cb);
-  GPR_ASSERT(grpc_tcp_fd(ep) < 0);
   gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
   while (!fd_released_done) {
     grpc_pollset_worker worker;
@@ -446,7 +445,6 @@ static void release_fd_test(size_t num_bytes, size_t slice_size) {
   }
   gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));
   GPR_ASSERT(fd_released_done == 1);
-  GPR_ASSERT(grpc_tcp_fd(ep) < 0);
   GPR_ASSERT(fd == sv[1]);
   grpc_exec_ctx_finish(&exec_ctx);
 
