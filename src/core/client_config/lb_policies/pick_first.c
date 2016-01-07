@@ -368,13 +368,12 @@ void pf_notify_on_state_change(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
 void pf_ping_one(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
                  grpc_closure *closure) {
   pick_first_lb_policy *p = (pick_first_lb_policy *)pol;
-  gpr_mu_lock(&p->mu);
-  if (p->selected) {
-    grpc_connected_subchannel_ping(exec_ctx, p->selected, closure);
+  grpc_connected_subchannel *selected = GET_SELECTED(p);
+  if (selected) {
+    grpc_connected_subchannel_ping(exec_ctx, selected, closure);
   } else {
     grpc_exec_ctx_enqueue(exec_ctx, closure, 0);
   }
-  gpr_mu_unlock(&p->mu);
 }
 
 static const grpc_lb_policy_vtable pick_first_lb_policy_vtable = {
