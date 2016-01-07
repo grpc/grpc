@@ -72,8 +72,8 @@ struct cpu_test {
   uint32_t ncores;
   int is_done;
   gpr_cv done_cv;
-  int *used; /* is this core used? */
-  unsigned r;     /* random number */
+  int *used;  /* is this core used? */
+  unsigned r; /* random number */
 };
 
 static void worker_thread(void *arg) {
