@@ -621,6 +621,8 @@
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\surface\server_create.c">
     </ClCompile>
+    <ClCompile Include="..\..\..\src\core\surface\validate_metadata.c">
+    </ClCompile>
     <ClCompile Include="..\..\..\src\core\surface\version.c">
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\transport\byte_stream.c">

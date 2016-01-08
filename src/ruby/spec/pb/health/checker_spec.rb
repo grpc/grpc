@@ -47,13 +47,12 @@ describe 'Health protobuf code generation' do
       end
 
       it 'should have the same content as created by code generation' do
-        root_dir = File.dirname(
-          File.dirname(File.dirname(File.dirname(__FILE__))))
-        pb_dir = File.join(root_dir, 'pb')
+        root_dir = File.join(File.dirname(__FILE__), '..', '..', '..', '..')
+        pb_dir = File.join(root_dir, 'proto')
 
         # Get the current content
-        service_path = File.join(pb_dir, 'grpc', 'health', 'v1alpha',
-                                 'health_services.rb')
+        service_path = File.join(root_dir, 'ruby', 'pb', 'grpc',
+                                 'health', 'v1alpha', 'health_services.rb')
         want = nil
         File.open(service_path) { |f| want = f.read }
 
