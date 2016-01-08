@@ -221,6 +221,14 @@ static void close_fd_locked(grpc_exec_ctx *exec_ctx, grpc_fd *fd) {
   grpc_exec_ctx_enqueue(exec_ctx, fd->on_done_closure, 1);
 }
 
+int grpc_fd_wrapped_fd(grpc_fd *fd) {
+  if (fd->released || fd->closed) {
+    return -1;
+  } else {
+    return fd->fd;
+  }
+}
+
 void grpc_fd_orphan(grpc_exec_ctx *exec_ctx, grpc_fd *fd, grpc_closure *on_done,
                     int *release_fd, const char *reason) {
   fd->on_done_closure = on_done;
