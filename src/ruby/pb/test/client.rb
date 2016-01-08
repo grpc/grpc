@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 
-# Copyright 2015, Google Inc.
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -264,11 +264,15 @@ class NamedTests
 
   def per_rpc_creds
     auth_creds = Google::Auth.get_application_default(@args.oauth_scope)
-    kw = auth_creds.updater_proc.call({})
+    update_metadata = proc do |md|
+      kw = auth_creds.updater_proc.call({})
+    end
+
+    call_creds = GRPC::Core::CallCredentials.new(update_metadata)
 
     resp = perform_large_unary(fill_username: true,
                                fill_oauth_scope: true,
-                               **kw)
+                               credentials: call_creds)
     json_key = File.read(ENV[AUTH_ENV])
     wanted_email = MultiJson.load(json_key)['client_email']
     assert("#{__callee__}: bad username") { wanted_email == resp.username }
