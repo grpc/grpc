@@ -726,9 +726,11 @@ if 'all' in args.language:
   lang_list = _LANGUAGES.keys()
 else:
   lang_list = args.language
-# We don't support code coverage on ObjC
-if 'gcov' in args.config and 'objc' in lang_list:
-  lang_list.remove('objc')
+# We don't support code coverage on some languages
+if 'gcov' in args.config:
+  for bad in ['objc', 'sanity', 'build']:
+    if bad in lang_list:
+      lang_list.remove(bad)
 
 languages = set(_LANGUAGES[l] for l in lang_list)
 
