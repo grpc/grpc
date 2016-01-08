@@ -36,7 +36,7 @@
 
 #include <grpc/support/port_platform.h>
 
-static int conforms_to(const char *s, size_t len, const gpr_uint8 *legal_bits) {
+static int conforms_to(const char *s, size_t len, const uint8_t *legal_bits) {
   const char *p = s;
   const char *e = s + len;
   for (; p != e; p++) {
@@ -49,7 +49,7 @@ static int conforms_to(const char *s, size_t len, const gpr_uint8 *legal_bits) {
 }
 
 int grpc_header_key_is_legal(const char *key, size_t length) {
-  static const gpr_uint8 legal_header_bits[256 / 8] = {
+  static const uint8_t legal_header_bits[256 / 8] = {
       0x00, 0x00, 0x00, 0x00, 0x00, 0x20, 0xff, 0x03, 0x00, 0x00, 0x00,
       0x80, 0xfe, 0xff, 0xff, 0x07, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
@@ -60,7 +60,7 @@ int grpc_header_key_is_legal(const char *key, size_t length) {
 }
 
 int grpc_header_nonbin_value_is_legal(const char *value, size_t length) {
-  static const gpr_uint8 legal_header_bits[256 / 8] = {
+  static const uint8_t legal_header_bits[256 / 8] = {
       0x00, 0x00, 0x00, 0x00, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
       0xff, 0xff, 0xff, 0xff, 0x7f, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
