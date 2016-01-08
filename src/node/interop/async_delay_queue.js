@@ -36,8 +36,8 @@
 var _ = require('lodash');
 
 /**
- * This class represents a queue of callbacks that must happen sequentially, each
- * with a specific delay after the previous event.
+ * This class represents a queue of callbacks that must happen sequentially,
+ * each with a specific delay after the previous event.
  */
 function AsyncDelayQueue() {
   this.queue = [];

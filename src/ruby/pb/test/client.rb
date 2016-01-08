@@ -56,8 +56,6 @@ require 'test/proto/empty'
 require 'test/proto/messages'
 require 'test/proto/test_services'
 
-require 'signet/ssl_config'
-
 AUTH_ENV = Google::Auth::CredentialsLoader::ENV_VAR
 
 # RubyLogger defines a logger for gRPC based on the standard ruby logger.
@@ -268,11 +266,6 @@ class NamedTests
     auth_creds = Google::Auth.get_application_default(@args.oauth_scope)
     update_metadata = proc do |md|
       kw = auth_creds.updater_proc.call({})
-
-      # TODO(mlumish): downcase the metadata keys here to make sure
-      # they are not rejected by C core. This is a hotfix that should
-      # be addressed by introducing auto-downcasing logic.
-      Hash[ kw.each_pair.map { |k, v|  [k.downcase, v] }]
     end
 
     call_creds = GRPC::Core::CallCredentials.new(update_metadata)
