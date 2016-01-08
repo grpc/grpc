@@ -165,6 +165,10 @@ class Server GRPC_FINAL : public GrpcLibrary, private CallHook {
   /// Schedule \a RunRpc to run in the threadpool.
   void ScheduleCallback();
 
+  /// Request notification of a new call or cleanup if the server is shutting
+  /// down
+  void PrepareForNextCall(SyncRequest* mrd);
+
   void PerformOpsOnCall(CallOpSetInterface* ops, Call* call) GRPC_OVERRIDE;
 
   void ShutdownInternal(gpr_timespec deadline);

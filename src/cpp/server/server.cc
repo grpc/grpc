@@ -172,6 +172,21 @@ class Server::SyncRequest GRPC_FINAL : public CompletionQueueTag {
     GPR_UNREACHABLE_CODE(return false);
   }
 
+  void Reset() {
+    in_flight_ = false;
+
+    if (call_) {
+      grpc_call_destroy(call_);
+      call_ = nullptr;
+    }
+    request_metadata_.count = 0;
+
+    if (has_request_payload_ && request_payload_) {
+      grpc_byte_buffer_destroy(request_payload_);
+      request_payload_ = nullptr;
+    }
+  }
+
   void SetupRequest() { cq_ = grpc_completion_queue_create(nullptr); }
 
   void TeardownRequest() {
@@ -549,6 +564,18 @@ void Server::ScheduleCallback() {
   thread_pool_->Add(std::bind(&Server::RunRpc, this));
 }
 
+// Request notification for next call (or cleanup if the server is shutting
+// down)
+void Server::PrepareForNextCall(SyncRequest* mrd) {
+  mrd->SetupRequest();
+  grpc::unique_lock<grpc::mutex> lock(mu_);
+  if (!shutdown_) {
+    mrd->Request(server_, cq_.cq());
+  } else {
+    mrd->TeardownRequest();
+  }
+}
+
 void Server::RunRpc() {
   // Wait for one more incoming rpc.
   bool ok;
@@ -558,18 +585,12 @@ void Server::RunRpc() {
     ScheduleCallback();
     if (ok) {
       SyncRequest::CallData cd(this, mrd);
-      {
-        mrd->SetupRequest();
-        grpc::unique_lock<grpc::mutex> lock(mu_);
-        if (!shutdown_) {
-          mrd->Request(server_, cq_.cq());
-        } else {
-          // destroy the structure that was created
-          mrd->TeardownRequest();
-        }
-      }
+      PrepareForNextCall(mrd);
       GPR_TIMER_SCOPE("cd.Run()", 0);
       cd.Run();
+    } else {
+      mrd->Reset();
+      PrepareForNextCall(mrd);
     }
   }
 
