@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2015, Google Inc.
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -64,6 +64,7 @@ docker run \
   -e CCACHE_DIR=/tmp/ccache \
   -e XDG_CACHE_HOME=/tmp/xdg-cache-home \
   -e THIS_IS_REALLY_NEEDED='see https://github.com/docker/docker/issues/14203 for why docker is awful' \
+  -e HOST_GIT_ROOT=$git_root \
   -i $TTY_FLAG \
   -v "$git_root:/var/local/jenkins/grpc" \
   -v /tmp/ccache:/tmp/ccache \
@@ -78,7 +79,7 @@ docker run \
 
 if [ "$XML_REPORT" != "" ]
 then
-  docker cp "$CONTAINER_NAME:/var/local/git/grpc/$XML_REPORT" $git_root
+  docker cp "$CONTAINER_NAME:/var/local/git/grpc/$XML_REPORT" $git_root || true
 fi
 
 docker cp "$CONTAINER_NAME:/var/local/git/grpc/reports.zip" $git_root || true

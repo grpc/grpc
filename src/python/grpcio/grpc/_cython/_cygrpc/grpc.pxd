@@ -28,6 +28,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 cimport libc.time
+from libc.stdint cimport int64_t, uint32_t, int32_t
 
 
 cdef extern from "grpc/support/alloc.h":
@@ -55,15 +56,6 @@ cdef extern from "grpc/support/slice.h":
   size_t gpr_slice_length "GPR_SLICE_LENGTH" (gpr_slice s)
 
 
-cdef extern from "grpc/support/port_platform.h":
-  # As long as the header file gets this type right, we don't need to get this
-  # type exactly; just close enough that the operations will be supported in the
-  # underlying C layers.
-  ctypedef unsigned int gpr_uint32
-  ctypedef int gpr_int32
-  ctypedef long int gpr_int64
-
-
 cdef extern from "grpc/support/time.h":
 
   ctypedef enum gpr_clock_type:
@@ -73,8 +65,8 @@ cdef extern from "grpc/support/time.h":
     GPR_TIMESPAN
 
   ctypedef struct gpr_timespec:
-    gpr_int64 seconds "tv_sec"
-    gpr_int32 nanoseconds "tv_nsec"
+    int64_t seconds "tv_sec"
+    int32_t nanoseconds "tv_nsec"
     gpr_clock_type clock_type
 
   gpr_timespec gpr_time_0(gpr_clock_type type)
@@ -282,7 +274,7 @@ cdef extern from "grpc/grpc.h":
 
   ctypedef struct grpc_op:
     grpc_op_type type "op"
-    gpr_uint32 flags
+    uint32_t flags
     grpc_op_data data
 
   void grpc_init()
@@ -292,6 +284,9 @@ cdef extern from "grpc/grpc.h":
   grpc_event grpc_completion_queue_next(grpc_completion_queue *cq,
                                         gpr_timespec deadline,
                                         void *reserved) nogil
+  grpc_event grpc_completion_queue_pluck(grpc_completion_queue *cq, void *tag,
+                                         gpr_timespec deadline,
+                                         void *reserved) nogil
   void grpc_completion_queue_shutdown(grpc_completion_queue *cq)
   void grpc_completion_queue_destroy(grpc_completion_queue *cq)
 
@@ -310,7 +305,7 @@ cdef extern from "grpc/grpc.h":
                                              void *reserved)
   grpc_call *grpc_channel_create_call(grpc_channel *channel,
                                       grpc_call *parent_call,
-                                      gpr_uint32 propagation_mask,
+                                      uint32_t propagation_mask,
                                       grpc_completion_queue *completion_queue,
                                       const char *method, const char *host,
                                       gpr_timespec deadline, void *reserved)

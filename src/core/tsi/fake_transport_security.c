@@ -112,12 +112,12 @@ static tsi_result tsi_fake_handshake_message_from_string(
   return TSI_DATA_CORRUPTED;
 }
 
-static gpr_uint32 load32_little_endian(const unsigned char *buf) {
-  return ((gpr_uint32)(buf[0]) | (gpr_uint32)(buf[1] << 8) |
-          (gpr_uint32)(buf[2] << 16) | (gpr_uint32)(buf[3] << 24));
+static uint32_t load32_little_endian(const unsigned char *buf) {
+  return ((uint32_t)(buf[0]) | (uint32_t)(buf[1] << 8) |
+          (uint32_t)(buf[2] << 16) | (uint32_t)(buf[3] << 24));
 }
 
-static void store32_little_endian(gpr_uint32 value, unsigned char *buf) {
+static void store32_little_endian(uint32_t value, unsigned char *buf) {
   buf[3] = (unsigned char)((value >> 24) & 0xFF);
   buf[2] = (unsigned char)((value >> 16) & 0xFF);
   buf[1] = (unsigned char)((value >> 8) & 0xFF);
@@ -219,7 +219,7 @@ static tsi_result bytes_to_frame(unsigned char *bytes, size_t bytes_size,
   frame->offset = 0;
   frame->size = bytes_size + TSI_FAKE_FRAME_HEADER_SIZE;
   if (!tsi_fake_frame_ensure_size(frame)) return TSI_OUT_OF_RESOURCES;
-  store32_little_endian((gpr_uint32)frame->size, frame->data);
+  store32_little_endian((uint32_t)frame->size, frame->data);
   memcpy(frame->data + TSI_FAKE_FRAME_HEADER_SIZE, bytes, bytes_size);
   tsi_fake_frame_reset(frame, 1 /* needs draining */);
   return TSI_OK;
@@ -266,7 +266,7 @@ static tsi_result fake_protector_protect(tsi_frame_protector *self,
   if (frame->size == 0) {
     /* New frame, create a header. */
     size_t written_in_frame_size = 0;
-    store32_little_endian((gpr_uint32)impl->max_frame_size, frame_header);
+    store32_little_endian((uint32_t)impl->max_frame_size, frame_header);
     written_in_frame_size = TSI_FAKE_FRAME_HEADER_SIZE;
     result = fill_frame_from_bytes(frame_header, &written_in_frame_size, frame);
     if (result != TSI_INCOMPLETE_DATA) {
@@ -303,7 +303,7 @@ static tsi_result fake_protector_protect_flush(
     frame->size = frame->offset;
     frame->offset = 0;
     frame->needs_draining = 1;
-    store32_little_endian((gpr_uint32)frame->size,
+    store32_little_endian((uint32_t)frame->size,
                           frame->data); /* Overwrite header. */
   }
   result = drain_frame_to_bytes(protected_output_frames,

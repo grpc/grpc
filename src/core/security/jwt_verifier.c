@@ -38,6 +38,7 @@
 
 #include "src/core/httpcli/httpcli.h"
 #include "src/core/security/base64.h"
+#include "src/core/tsi/ssl_types.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -442,8 +443,8 @@ static BIGNUM *bignum_from_base64(const char *b64) {
     gpr_log(GPR_ERROR, "Invalid base64 for big num.");
     return NULL;
   }
-  result =
-      BN_bin2bn(GPR_SLICE_START_PTR(bin), (int)GPR_SLICE_LENGTH(bin), NULL);
+  result = BN_bin2bn(GPR_SLICE_START_PTR(bin),
+                     TSI_SIZE_AS_SIZE(GPR_SLICE_LENGTH(bin)), NULL);
   gpr_slice_unref(bin);
   return result;
 }

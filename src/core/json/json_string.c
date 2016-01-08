@@ -56,10 +56,10 @@ typedef struct {
   grpc_json *top;
   grpc_json *current_container;
   grpc_json *current_value;
-  gpr_uint8 *input;
-  gpr_uint8 *key;
-  gpr_uint8 *string;
-  gpr_uint8 *string_ptr;
+  uint8_t *input;
+  uint8_t *key;
+  uint8_t *string;
+  uint8_t *string_ptr;
   size_t remaining_input;
 } json_reader_userdata;
 
@@ -122,36 +122,36 @@ static void json_reader_string_clear(void *userdata) {
   state->string = state->string_ptr;
 }
 
-static void json_reader_string_add_char(void *userdata, gpr_uint32 c) {
+static void json_reader_string_add_char(void *userdata, uint32_t c) {
   json_reader_userdata *state = userdata;
   GPR_ASSERT(state->string_ptr < state->input);
   GPR_ASSERT(c <= 0xff);
-  *state->string_ptr++ = (gpr_uint8)c;
+  *state->string_ptr++ = (uint8_t)c;
 }
 
 /* We are converting a UTF-32 character into UTF-8 here,
  * as described by RFC3629.
  */
-static void json_reader_string_add_utf32(void *userdata, gpr_uint32 c) {
+static void json_reader_string_add_utf32(void *userdata, uint32_t c) {
   if (c <= 0x7f) {
     json_reader_string_add_char(userdata, c);
   } else if (c <= 0x7ff) {
-    gpr_uint32 b1 = 0xc0 | ((c >> 6) & 0x1f);
-    gpr_uint32 b2 = 0x80 | (c & 0x3f);
+    uint32_t b1 = 0xc0 | ((c >> 6) & 0x1f);
+    uint32_t b2 = 0x80 | (c & 0x3f);
     json_reader_string_add_char(userdata, b1);
     json_reader_string_add_char(userdata, b2);
   } else if (c <= 0xffff) {
-    gpr_uint32 b1 = 0xe0 | ((c >> 12) & 0x0f);
-    gpr_uint32 b2 = 0x80 | ((c >> 6) & 0x3f);
-    gpr_uint32 b3 = 0x80 | (c & 0x3f);
+    uint32_t b1 = 0xe0 | ((c >> 12) & 0x0f);
+    uint32_t b2 = 0x80 | ((c >> 6) & 0x3f);
+    uint32_t b3 = 0x80 | (c & 0x3f);
     json_reader_string_add_char(userdata, b1);
     json_reader_string_add_char(userdata, b2);
     json_reader_string_add_char(userdata, b3);
   } else if (c <= 0x1fffff) {
-    gpr_uint32 b1 = 0xf0 | ((c >> 18) & 0x07);
-    gpr_uint32 b2 = 0x80 | ((c >> 12) & 0x3f);
-    gpr_uint32 b3 = 0x80 | ((c >> 6) & 0x3f);
-    gpr_uint32 b4 = 0x80 | (c & 0x3f);
+    uint32_t b1 = 0xf0 | ((c >> 18) & 0x07);
+    uint32_t b2 = 0x80 | ((c >> 12) & 0x3f);
+    uint32_t b3 = 0x80 | ((c >> 6) & 0x3f);
+    uint32_t b4 = 0x80 | (c & 0x3f);
     json_reader_string_add_char(userdata, b1);
     json_reader_string_add_char(userdata, b2);
     json_reader_string_add_char(userdata, b3);
@@ -162,8 +162,8 @@ static void json_reader_string_add_utf32(void *userdata, gpr_uint32 c) {
 /* We consider that the input may be a zero-terminated string. So we
  * can end up hitting eof before the end of the alleged string length.
  */
-static gpr_uint32 json_reader_read_char(void *userdata) {
-  gpr_uint32 r;
+static uint32_t json_reader_read_char(void *userdata) {
+  uint32_t r;
   json_reader_userdata *state = userdata;
 
   if (state->remaining_input == 0) return GRPC_JSON_READ_CHAR_EOF;
@@ -302,7 +302,7 @@ grpc_json *grpc_json_parse_string_with_len(char *input, size_t size) {
 
   state.top = state.current_container = state.current_value = NULL;
   state.string = state.key = NULL;
-  state.string_ptr = state.input = (gpr_uint8 *)input;
+  state.string_ptr = state.input = (uint8_t *)input;
   state.remaining_input = size;
   grpc_json_reader_init(&reader, &reader_vtable, &state);
 
