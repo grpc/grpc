@@ -41,7 +41,7 @@
 
 typedef struct grpc_timer {
   gpr_timespec deadline;
-  gpr_uint32 heap_index; /* INVALID_HEAP_INDEX if not in heap */
+  uint32_t heap_index; /* INVALID_HEAP_INDEX if not in heap */
   int triggered;
   struct grpc_timer *next;
   struct grpc_timer *prev;

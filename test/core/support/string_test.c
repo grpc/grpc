@@ -59,7 +59,7 @@ static void test_strdup(void) {
   GPR_ASSERT(NULL == gpr_strdup(NULL));
 }
 
-static void expect_dump(const char *buf, size_t len, gpr_uint32 flags,
+static void expect_dump(const char *buf, size_t len, uint32_t flags,
                         const char *result) {
   char *got = gpr_dump(buf, len, flags);
   GPR_ASSERT(0 == strcmp(got, result));
@@ -76,7 +76,7 @@ static void test_dump(void) {
   expect_dump("ab", 2, GPR_DUMP_HEX | GPR_DUMP_ASCII, "61 62 'ab'");
 }
 
-static void expect_slice_dump(gpr_slice slice, gpr_uint32 flags,
+static void expect_slice_dump(gpr_slice slice, uint32_t flags,
                               const char *result) {
   char *got = gpr_dump_slice(slice, flags);
   GPR_ASSERT(0 == strcmp(got, result));
@@ -105,12 +105,12 @@ static void test_dump_slice(void) {
 }
 
 static void test_pu32_fail(const char *s) {
-  gpr_uint32 out;
+  uint32_t out;
   GPR_ASSERT(!gpr_parse_bytes_to_uint32(s, strlen(s), &out));
 }
 
-static void test_pu32_succeed(const char *s, gpr_uint32 want) {
-  gpr_uint32 out;
+static void test_pu32_succeed(const char *s, uint32_t want) {
+  uint32_t out;
   GPR_ASSERT(gpr_parse_bytes_to_uint32(s, strlen(s), &out));
   GPR_ASSERT(out == want);
 }
@@ -318,19 +318,19 @@ static void test_int64toa() {
   LOG_TEST_NAME("test_int64toa");
 
   /* zero */
-  GPR_ASSERT(1 == gpr_int64toa(0, buf));
+  GPR_ASSERT(1 == int64_ttoa(0, buf));
   GPR_ASSERT(0 == strcmp("0", buf));
 
   /* positive */
-  GPR_ASSERT(3 == gpr_int64toa(123, buf));
+  GPR_ASSERT(3 == int64_ttoa(123, buf));
   GPR_ASSERT(0 == strcmp("123", buf));
 
   /* large positive */
-  GPR_ASSERT(19 == gpr_int64toa(9223372036854775807LL, buf));
+  GPR_ASSERT(19 == int64_ttoa(9223372036854775807LL, buf));
   GPR_ASSERT(0 == strcmp("9223372036854775807", buf));
 
   /* large negative */
-  GPR_ASSERT(20 == gpr_int64toa(-9223372036854775807LL - 1, buf));
+  GPR_ASSERT(20 == int64_ttoa(-9223372036854775807LL - 1, buf));
   GPR_ASSERT(0 == strcmp("-9223372036854775808", buf));
 }
 

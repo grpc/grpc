@@ -44,9 +44,9 @@
 #include <grpc/support/time.h>
 #include "test/core/util/test_config.h"
 
-static gpr_uint64 hash64(const void *k) {
+static uint64_t hash64(const void *k) {
   size_t len = strlen(k);
-  gpr_uint64 higher = gpr_murmur_hash3((const char *)k, len / 2, 0);
+  uint64_t higher = gpr_murmur_hash3((const char *)k, len / 2, 0);
   return higher << 32 |
          gpr_murmur_hash3((const char *)(k) + len / 2, len - len / 2, 0);
 }
@@ -55,7 +55,7 @@ static int cmp_str_keys(const void *k1, const void *k2) {
   return strcmp((const char *)k1, (const char *)k2);
 }
 
-static gpr_uint64 force_collision(const void *k) {
+static uint64_t force_collision(const void *k) {
   return (1997 + hash64(k) % 3);
 }
 
@@ -85,8 +85,8 @@ static void test_create_table(void) {
 static void test_table_with_int_key(void) {
   census_ht_option opt = {CENSUS_HT_UINT64, 7, NULL, NULL, NULL, NULL};
   census_ht *ht = census_ht_create(&opt);
-  gpr_uint64 i = 0;
-  gpr_uint64 sum_of_keys = 0;
+  uint64_t i = 0;
+  uint64_t sum_of_keys = 0;
   size_t num_elements;
   census_ht_kv *elements = NULL;
   GPR_ASSERT(ht != NULL);
@@ -97,15 +97,15 @@ static void test_table_with_int_key(void) {
   for (i = 0; i < 20; ++i) {
     census_ht_key key;
     key.val = i;
-    census_ht_insert(ht, key, (void *)(gpr_intptr)i);
+    census_ht_insert(ht, key, (void *)(intptr_t)i);
     GPR_ASSERT(census_ht_get_size(ht) == i + 1);
   }
   for (i = 0; i < 20; i++) {
-    gpr_uint64 *val = NULL;
+    uint64_t *val = NULL;
     census_ht_key key;
     key.val = i;
     val = census_ht_find(ht, key);
-    GPR_ASSERT(val == (void *)(gpr_intptr)i);
+    GPR_ASSERT(val == (void *)(intptr_t)i);
   }
   elements = census_ht_get_all_elements(ht, &num_elements);
   GPR_ASSERT(elements != NULL);
@@ -189,7 +189,7 @@ static void test_insertion_and_deletion_with_high_collision_rate(void) {
                           &cmp_str_keys, NULL, NULL};
   census_ht *ht = census_ht_create(&opt);
   char key_str[1000][GPR_LTOA_MIN_BUFSIZE];
-  gpr_uint64 val = 0;
+  uint64_t val = 0;
   unsigned i = 0;
   for (i = 0; i < 1000; i++) {
     census_ht_key key;
@@ -246,7 +246,7 @@ static void test_table_with_string_key(void) {
   for (i = 0; i < 9; i++) {
     census_ht_key key;
     int *val_ptr;
-    gpr_uint32 expected_tbl_sz = 9 - i;
+    uint32_t expected_tbl_sz = 9 - i;
     GPR_ASSERT(census_ht_get_size(ht) == expected_tbl_sz);
     key.ptr = (void *)(keys[i]);
     val_ptr = census_ht_find(ht, key);

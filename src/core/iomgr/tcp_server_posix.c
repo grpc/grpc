@@ -78,7 +78,7 @@ struct grpc_tcp_listener {
   grpc_fd *emfd;
   grpc_tcp_server *server;
   union {
-    gpr_uint8 untyped[GRPC_MAX_SOCKADDR_SIZE];
+    uint8_t untyped[GRPC_MAX_SOCKADDR_SIZE];
     struct sockaddr sockaddr;
     struct sockaddr_un un;
   } addr;

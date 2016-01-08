@@ -131,7 +131,7 @@ struct grpc_subchannel {
   /** our alarm */
   grpc_timer alarm;
   /** current random value */
-  gpr_uint32 random;
+  uint32_t random;
 };
 
 struct grpc_subchannel_call {
@@ -272,8 +272,8 @@ void grpc_subchannel_weak_unref(grpc_exec_ctx *exec_ctx,
   }
 }
 
-static gpr_uint32 random_seed() {
-  return (gpr_uint32)(gpr_time_to_millis(gpr_now(GPR_CLOCK_MONOTONIC)));
+static uint32_t random_seed() {
+  return (uint32_t)(gpr_time_to_millis(gpr_now(GPR_CLOCK_MONOTONIC)));
 }
 
 grpc_subchannel *grpc_subchannel_create(grpc_connector *connector,
@@ -541,15 +541,15 @@ static void publish_transport(grpc_exec_ctx *exec_ctx, grpc_subchannel *c) {
 
 /* Generate a random number between 0 and 1. */
 static double generate_uniform_random_number(grpc_subchannel *c) {
-  c->random = (1103515245 * c->random + 12345) % ((gpr_uint32)1 << 31);
-  return c->random / (double)((gpr_uint32)1 << 31);
+  c->random = (1103515245 * c->random + 12345) % ((uint32_t)1 << 31);
+  return c->random / (double)((uint32_t)1 << 31);
 }
 
 /* Update backoff_delta and next_attempt in subchannel */
 static void update_reconnect_parameters(grpc_subchannel *c) {
   size_t i;
-  gpr_int32 backoff_delta_millis, jitter;
-  gpr_int32 max_backoff_millis =
+  int32_t backoff_delta_millis, jitter;
+  int32_t max_backoff_millis =
       GRPC_SUBCHANNEL_RECONNECT_MAX_BACKOFF_SECONDS * 1000;
   double jitter_range;
 
@@ -567,8 +567,8 @@ static void update_reconnect_parameters(grpc_subchannel *c) {
   }
 
   backoff_delta_millis =
-      (gpr_int32)(gpr_time_to_millis(c->backoff_delta) *
-                  GRPC_SUBCHANNEL_RECONNECT_BACKOFF_MULTIPLIER);
+      (int32_t)(gpr_time_to_millis(c->backoff_delta) *
+                GRPC_SUBCHANNEL_RECONNECT_BACKOFF_MULTIPLIER);
   if (backoff_delta_millis > max_backoff_millis) {
     backoff_delta_millis = max_backoff_millis;
   }
@@ -578,7 +578,7 @@ static void update_reconnect_parameters(grpc_subchannel *c) {
 
   jitter_range = GRPC_SUBCHANNEL_RECONNECT_JITTER * backoff_delta_millis;
   jitter =
-      (gpr_int32)((2 * generate_uniform_random_number(c) - 1) * jitter_range);
+      (int32_t)((2 * generate_uniform_random_number(c) - 1) * jitter_range);
   c->next_attempt =
       gpr_time_add(c->next_attempt, gpr_time_from_millis(jitter, GPR_TIMESPAN));
 }

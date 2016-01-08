@@ -45,7 +45,7 @@
 
 grpc_closure transport_op_cb;
 
-static void *tag(gpr_intptr x) { return (void *)x; }
+static void *tag(intptr_t x) { return (void *)x; }
 
 void verify_connectivity(grpc_exec_ctx *exec_ctx, void *arg, int success) {
   grpc_transport_op *op = arg;

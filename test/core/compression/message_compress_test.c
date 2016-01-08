@@ -172,7 +172,7 @@ static void test_bad_decompression_data_crc(void) {
   gpr_slice_buffer corrupted;
   gpr_slice_buffer output;
   size_t idx;
-  const gpr_uint32 bad = 0xdeadbeef;
+  const uint32_t bad = 0xdeadbeef;
 
   gpr_slice_buffer_init(&input);
   gpr_slice_buffer_init(&corrupted);

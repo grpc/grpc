@@ -105,6 +105,9 @@ struct grpc_fd {
    This takes ownership of closing fd. */
 grpc_fd *grpc_fd_create(int fd, const char *name);
 
+/* Return the wrapped fd, or -1 if it has been released or closed. */
+int grpc_fd_wrapped_fd(grpc_fd *fd);
+
 /* Releases fd to be asynchronously destroyed.
    on_done is called when the underlying file descriptor is definitely close()d.
    If on_done is NULL, no callback will be made.
@@ -126,9 +129,9 @@ void grpc_fd_orphan(grpc_exec_ctx *exec_ctx, grpc_fd *fd, grpc_closure *on_done,
    Polling strategies that do not need to alter their behavior depending on the
    fd's current interest (such as epoll) do not need to call this function.
    MUST NOT be called with a pollset lock taken */
-gpr_uint32 grpc_fd_begin_poll(grpc_fd *fd, grpc_pollset *pollset,
-                              grpc_pollset_worker *worker, gpr_uint32 read_mask,
-                              gpr_uint32 write_mask, grpc_fd_watcher *rec);
+uint32_t grpc_fd_begin_poll(grpc_fd *fd, grpc_pollset *pollset,
+                            grpc_pollset_worker *worker, uint32_t read_mask,
+                            uint32_t write_mask, grpc_fd_watcher *rec);
 /* Complete polling previously started with grpc_fd_begin_poll
    MUST NOT be called with a pollset lock taken
    if got_read or got_write are 1, also does the become_{readable,writable} as

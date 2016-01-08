@@ -163,9 +163,9 @@
   CXX_tsan = clang++
   LD_tsan = clang
   LDXX_tsan = clang++
-  CFLAGS_tsan = -O0 -fsanitize=thread -fno-omit-frame-pointer -Wno-unused-command-line-argument
-  CXXFLAGS_tsan = -O0 -fsanitize=thread -fno-omit-frame-pointer -Wno-unused-command-line-argument
-  LDFLAGS_tsan = -fsanitize=thread
+  CFLAGS_tsan = -O0 -fsanitize=thread -fno-omit-frame-pointer -Wno-unused-command-line-argument -fPIE
+  CXXFLAGS_tsan = -O0 -fsanitize=thread -fno-omit-frame-pointer -Wno-unused-command-line-argument -fPIE
+  LDFLAGS_tsan = -fsanitize=thread -pie
   DEFINES_tsan = NDEBUG GRPC_TEST_SLOWDOWN_BUILD_FACTOR=10
 
   VALID_CONFIG_asan = 1
@@ -185,9 +185,9 @@
   CXX_msan = clang++-libc++
   LD_msan = clang
   LDXX_msan = clang++-libc++
-  CFLAGS_msan = -O0 -fsanitize=memory -fsanitize-memory-track-origins -fno-omit-frame-pointer -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1 -Wno-unused-command-line-argument
-  CXXFLAGS_msan = -O0 -fsanitize=memory -fsanitize-memory-track-origins -fno-omit-frame-pointer -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1 -Wno-unused-command-line-argument
-  LDFLAGS_msan = -fsanitize=memory -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1
+  CFLAGS_msan = -O0 -fsanitize=memory -fsanitize-memory-track-origins -fno-omit-frame-pointer -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1 -Wno-unused-command-line-argument -fPIE
+  CXXFLAGS_msan = -O0 -fsanitize=memory -fsanitize-memory-track-origins -fno-omit-frame-pointer -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1 -Wno-unused-command-line-argument -fPIE
+  LDFLAGS_msan = -fsanitize=memory -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1 -pie
   DEFINES_msan = NDEBUG GRPC_TEST_SLOWDOWN_BUILD_FACTOR=4
 
   VALID_CONFIG_ubsan = 1
@@ -1857,6 +1857,15 @@
   % for dep in tgt.deps:
    $(LIBDIR)/$(CONFIG)/lib${dep}.a\
   % endfor
+
+  % if tgt.language == 'c89':
+  % for src in tgt.src:
+  $(OBJDIR)/$(CONFIG)/${os.path.splitext(src)[0]}.o : ${src}
+  	$(E) "[C]       Compiling $<"
+  	$(Q) mkdir -p `dirname $@`
+  	$(Q) $(CC) $(CFLAGS) $(CPPFLAGS) -std=c89 -pedantic -MMD -MF $(addsuffix .dep, $(basename $@)) -c -o $@ $<
+  % endfor
+  % endif
 
   % endfor
   % if not has_no_sources:

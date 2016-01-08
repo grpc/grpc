@@ -1,8 +1,7 @@
 
-
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,8 +31,6 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
-
-
 
 /* This file is auto-generated */
 
@@ -78,7 +75,8 @@ extern void simple_delayed_request(grpc_end2end_test_config config);
 extern void simple_request(grpc_end2end_test_config config);
 extern void trailing_metadata(grpc_end2end_test_config config);
 
-void grpc_end2end_tests(int argc, char **argv, grpc_end2end_test_config config) {
+void grpc_end2end_tests(int argc, char **argv,
+                        grpc_end2end_test_config config) {
   int i;
 
   if (argc <= 1) {
@@ -270,4 +268,3 @@ void grpc_end2end_tests(int argc, char **argv, grpc_end2end_test_config config) 
     abort();
   }
 }
-

@@ -54,7 +54,7 @@ if [ "$platform" == "linux" ]
 then
   echo "building $language on Linux"
 
-  ./tools/run_tests/run_tests.py --use_docker -t -l $language -c $config -x report.xml $@ || true
+  ./tools/run_tests/run_tests.py --use_docker -t -l $language -c $config -x report.xml $@ || TESTS_FAILED="true"
 
 elif [ "$platform" == "windows" ]
 then
@@ -63,19 +63,19 @@ then
   # Prevent msbuild from picking up "platform" env variable, which would break the build
   unset platform
 
-  python tools/run_tests/run_tests.py -t -l $language -c $config -x report.xml $@ || true
+  python tools/run_tests/run_tests.py -t -l $language -c $config -x report.xml $@ || TESTS_FAILED="true"
 
 elif [ "$platform" == "macos" ]
 then
   echo "building $language on MacOS"
 
-  ./tools/run_tests/run_tests.py -t -l $language -c $config -x report.xml $@ || true
+  ./tools/run_tests/run_tests.py -t -l $language -c $config -x report.xml $@ || TESTS_FAILED="true"
 
 elif [ "$platform" == "freebsd" ]
 then
   echo "building $language on FreeBSD"
 
-  MAKE=gmake ./tools/run_tests/run_tests.py -t -l $language -c $config -x report.xml $@ || true
+  MAKE=gmake ./tools/run_tests/run_tests.py -t -l $language -c $config -x report.xml $@ || TESTS_FAILED="true"
 
 else
   echo "Unknown platform $platform"
@@ -87,3 +87,9 @@ then
   mkdir -p reports
   echo 'No reports generated.' > reports/index.html
 fi
+
+if [ "$TESTS_FAILED" != "" ]
+then
+  exit 1
+fi
+

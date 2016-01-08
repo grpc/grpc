@@ -70,9 +70,9 @@ static int cmp_str_keys(const void *k1, const void *k2) {
 }
 
 /* TODO(hongyu): replace it with cityhash64 */
-static gpr_uint64 simple_hash(const void *k) {
+static uint64_t simple_hash(const void *k) {
   size_t len = strlen(k);
-  gpr_uint64 higher = gpr_murmur_hash3((const char *)k, len / 2, 0);
+  uint64_t higher = gpr_murmur_hash3((const char *)k, len / 2, 0);
   return higher << 32 |
          gpr_murmur_hash3((const char *)k + len / 2, len - len / 2, 0);
 }
