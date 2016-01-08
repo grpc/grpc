@@ -54,8 +54,8 @@ typedef struct grpc_rb_event_queue {
   grpc_rb_event *head;
   grpc_rb_event *tail;
 
-  gpr_mu *mu;
-  gpr_cv *cv;
+  gpr_mu mu;
+  gpr_cv cv;
 
   // Indicates that the thread should stop waiting
   bool abort;
@@ -69,15 +69,15 @@ void grpc_rb_event_queue_enqueue(void (*callback)(void*),
   event->callback = callback;
   event->argument = argument;
   event->next = NULL;
-  gpr_mu_lock(event_queue.mu);
+  gpr_mu_lock(&event_queue.mu);
   if (event_queue.tail == NULL) {
     event_queue.head = event_queue.tail = event;
   } else {
     event_queue.tail->next = event;
     event_queue.tail = event;
   }
-  gpr_mu_unlock(event_queue.mu);
-  gpr_cv_signal(event_queue.cv);
+  gpr_cv_signal(&event_queue.cv);
+  gpr_mu_unlock(&event_queue.mu);
 }
 
 static grpc_rb_event *grpc_rb_event_queue_dequeue() {
@@ -96,33 +96,31 @@ static grpc_rb_event *grpc_rb_event_queue_dequeue() {
 }
 
 static void grpc_rb_event_queue_destroy() {
-  gpr_mu_destroy(event_queue.mu);
-  gpr_cv_destroy(event_queue.cv);
-  gpr_free(event_queue.mu);
-  gpr_free(event_queue.cv);
+  gpr_mu_destroy(&event_queue.mu);
+  gpr_cv_destroy(&event_queue.cv);
 }
 
 static void *grpc_rb_wait_for_event_no_gil(void *param) {
   grpc_rb_event *event = NULL;
-  gpr_mu_lock(event_queue.mu);
+  gpr_mu_lock(&event_queue.mu);
   while ((event = grpc_rb_event_queue_dequeue()) == NULL) {
-    gpr_cv_wait(event_queue.cv,
-                event_queue.mu,
+    gpr_cv_wait(&event_queue.cv,
+                &event_queue.mu,
                 gpr_inf_future(GPR_CLOCK_REALTIME));
     if (event_queue.abort) {
-      gpr_mu_unlock(event_queue.mu);
+      gpr_mu_unlock(&event_queue.mu);
       return NULL;
     }
   }
-  gpr_mu_unlock(event_queue.mu);
+  gpr_mu_unlock(&event_queue.mu);
   return event;
 }
 
 static void grpc_rb_event_unblocking_func(void *arg) {
-  gpr_mu_lock(event_queue.mu);
+  gpr_mu_lock(&event_queue.mu);
   event_queue.abort = true;
-  gpr_mu_unlock(event_queue.mu);
-  gpr_cv_signal(event_queue.cv);
+  gpr_cv_signal(&event_queue.cv);
+  gpr_mu_unlock(&event_queue.mu);
 }
 
 /* This is the implementation of the thread that handles auth metadata plugin
@@ -146,13 +144,10 @@ static VALUE grpc_rb_event_thread(VALUE arg) {
 }
 
 void grpc_rb_event_queue_thread_start() {
-
-  event_queue.mu = gpr_malloc(sizeof(gpr_mu));
-  event_queue.cv = gpr_malloc(sizeof(gpr_cv));
   event_queue.head = event_queue.tail = NULL;
   event_queue.abort = false;
-  gpr_mu_init(event_queue.mu);
-  gpr_cv_init(event_queue.cv);
+  gpr_mu_init(&event_queue.mu);
+  gpr_cv_init(&event_queue.cv);
 
   rb_thread_create(grpc_rb_event_thread, NULL);
 }
