@@ -499,16 +499,10 @@ static grpc_security_status ssl_check_peer(grpc_security_connector *sc,
   return GRPC_SECURITY_OK;
 }
 
-<<<<<<< HEAD
-static void ssl_channel_check_peer(
-    grpc_exec_ctx *exec_ctx, grpc_security_connector *sc, tsi_peer peer,
-    grpc_security_peer_check_cb cb, void *user_data) {
-=======
 static void ssl_channel_check_peer(grpc_exec_ctx *exec_ctx,
                                    grpc_security_connector *sc, tsi_peer peer,
                                    grpc_security_peer_check_cb cb,
                                    void *user_data) {
->>>>>>> master
   grpc_ssl_channel_security_connector *c =
       (grpc_ssl_channel_security_connector *)sc;
   grpc_security_status status;
@@ -522,16 +516,10 @@ static void ssl_channel_check_peer(grpc_exec_ctx *exec_ctx,
   tsi_peer_destruct(&peer);
 }
 
-<<<<<<< HEAD
-static void ssl_server_check_peer(
-    grpc_exec_ctx *exec_ctx, grpc_security_connector *sc, tsi_peer peer,
-    grpc_security_peer_check_cb cb, void *user_data) {
-=======
 static void ssl_server_check_peer(grpc_exec_ctx *exec_ctx,
                                   grpc_security_connector *sc, tsi_peer peer,
                                   grpc_security_peer_check_cb cb,
                                   void *user_data) {
->>>>>>> master
   grpc_auth_context *auth_context = NULL;
   grpc_security_status status = ssl_check_peer(sc, NULL, &peer, &auth_context);
   tsi_peer_destruct(&peer);
