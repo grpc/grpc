@@ -105,6 +105,9 @@ struct grpc_fd {
    This takes ownership of closing fd. */
 grpc_fd *grpc_fd_create(int fd, const char *name);
 
+/* Return the wrapped fd, or -1 if it has been released or closed. */
+int grpc_fd_wrapped_fd(grpc_fd *fd);
+
 /* Releases fd to be asynchronously destroyed.
    on_done is called when the underlying file descriptor is definitely close()d.
    If on_done is NULL, no callback will be made.
