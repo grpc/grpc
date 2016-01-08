@@ -1085,7 +1085,9 @@ else:
   exit_code = 0
   if BuildAndRunError.BUILD in errors:
     exit_code |= 1
-  if BuildAndRunError.POST_TEST in errors:
+  if BuildAndRunError.TEST in errors and not args.travis:
     exit_code |= 2
-  # BuildAndRunError.TEST does not cause run_tests.py to fail
+  if BuildAndRunError.POST_TEST in errors:
+    exit_code |= 4
   sys.exit(exit_code)
+
