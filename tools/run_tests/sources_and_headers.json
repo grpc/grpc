@@ -1592,8 +1592,8 @@
       "grpc++"
     ], 
     "headers": [
-      "src/core/client_config/lb_policies/proto/load_balancer.grpc.pb.h", 
-      "src/core/client_config/lb_policies/proto/load_balancer.pb.h"
+      "src/proto/grpc/lb/v0/load_balancer.grpc.pb.h", 
+      "src/proto/grpc/lb/v0/load_balancer.pb.h"
     ], 
     "language": "c++", 
     "name": "grpclb_api_test", 
@@ -2947,7 +2947,7 @@
       "src/core/json/json_common.h", 
       "src/core/json/json_reader.h", 
       "src/core/json/json_writer.h", 
-      "src/core/proto/load_balancer.pb.h", 
+      "src/core/proto/grpc/lb/v0/load_balancer.pb.h", 
       "src/core/security/auth_filters.h", 
       "src/core/security/base64.h", 
       "src/core/security/credentials.h", 
@@ -3178,8 +3178,8 @@
       "src/core/json/json_string.c", 
       "src/core/json/json_writer.c", 
       "src/core/json/json_writer.h", 
-      "src/core/proto/load_balancer.pb.c", 
-      "src/core/proto/load_balancer.pb.h", 
+      "src/core/proto/grpc/lb/v0/load_balancer.pb.c", 
+      "src/core/proto/grpc/lb/v0/load_balancer.pb.h", 
       "src/core/security/auth_filters.h", 
       "src/core/security/base64.c", 
       "src/core/security/base64.h", 
@@ -3299,14 +3299,7 @@
       "src/core/tsi/ssl_types.h", 
       "src/core/tsi/transport_security.c", 
       "src/core/tsi/transport_security.h", 
-      "src/core/tsi/transport_security_interface.h", 
-      "third_party/nanopb/pb.h", 
-      "third_party/nanopb/pb_common.c", 
-      "third_party/nanopb/pb_common.h", 
-      "third_party/nanopb/pb_decode.c", 
-      "third_party/nanopb/pb_decode.h", 
-      "third_party/nanopb/pb_encode.c", 
-      "third_party/nanopb/pb_encode.h"
+      "src/core/tsi/transport_security_interface.h"
     ]
   }, 
   {
@@ -3476,7 +3469,7 @@
       "src/core/json/json_common.h", 
       "src/core/json/json_reader.h", 
       "src/core/json/json_writer.h", 
-      "src/core/proto/load_balancer.pb.h", 
+      "src/core/proto/grpc/lb/v0/load_balancer.pb.h", 
       "src/core/statistics/census_interface.h", 
       "src/core/statistics/census_rpc_stats.h", 
       "src/core/surface/api_trace.h", 
@@ -3691,8 +3684,8 @@
       "src/core/json/json_string.c", 
       "src/core/json/json_writer.c", 
       "src/core/json/json_writer.h", 
-      "src/core/proto/load_balancer.pb.c", 
-      "src/core/proto/load_balancer.pb.h", 
+      "src/core/proto/grpc/lb/v0/load_balancer.pb.c", 
+      "src/core/proto/grpc/lb/v0/load_balancer.pb.h", 
       "src/core/statistics/census_interface.h", 
       "src/core/statistics/census_rpc_stats.h", 
       "src/core/surface/api_trace.c", 
@@ -3779,14 +3772,7 @@
       "src/core/transport/transport.c", 
       "src/core/transport/transport.h", 
       "src/core/transport/transport_impl.h", 
-      "src/core/transport/transport_op_string.c", 
-      "third_party/nanopb/pb.h", 
-      "third_party/nanopb/pb_common.c", 
-      "third_party/nanopb/pb_common.h", 
-      "third_party/nanopb/pb_decode.c", 
-      "third_party/nanopb/pb_decode.h", 
-      "third_party/nanopb/pb_encode.c", 
-      "third_party/nanopb/pb_encode.h"
+      "src/core/transport/transport_op_string.c"
     ]
   }, 
   {

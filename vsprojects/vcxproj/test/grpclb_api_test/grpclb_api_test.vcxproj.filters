@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="$(SolutionDir)\..\src\core\client_config\lb_policies\proto\load_balancer.proto">
-      <Filter>src\core\client_config\lb_policies\proto</Filter>
+    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\lb\v0\load_balancer.proto">
+      <Filter>src\proto\grpc\lb\v0</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\cpp\grpclb\grpclb_api_test.cc">
       <Filter>test\cpp\grpclb</Filter>
@@ -13,17 +13,17 @@
     <Filter Include="src">
       <UniqueIdentifier>{a31d21fb-c6ab-75ce-43dc-7d6f506765e6}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\core">
-      <UniqueIdentifier>{1ac58546-6910-9066-c5c0-fe8db59c641f}</UniqueIdentifier>
+    <Filter Include="src\proto">
+      <UniqueIdentifier>{10d49c90-8503-9b10-6678-eed983bc25d9}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\core\client_config">
-      <UniqueIdentifier>{9b998f5c-bc1b-9fc5-d21b-368485aac585}</UniqueIdentifier>
+    <Filter Include="src\proto\grpc">
+      <UniqueIdentifier>{8b6be783-e071-44cc-2096-f1c476012556}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\core\client_config\lb_policies">
-      <UniqueIdentifier>{bb3a28b9-b005-fd49-9cc3-8ee9552226c1}</UniqueIdentifier>
+    <Filter Include="src\proto\grpc\lb">
+      <UniqueIdentifier>{2981699e-c196-c599-bc17-c177770f89ee}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\core\client_config\lb_policies\proto">
-      <UniqueIdentifier>{b555558c-3db4-9746-b58e-40ccc1680c8a}</UniqueIdentifier>
+    <Filter Include="src\proto\grpc\lb\v0">
+      <UniqueIdentifier>{3d04774a-1c2f-e100-435e-08af5d539250}</UniqueIdentifier>
     </Filter>
     <Filter Include="test">
       <UniqueIdentifier>{64736e1d-eb77-664f-34ab-6cf41263d3d8}</UniqueIdentifier>
