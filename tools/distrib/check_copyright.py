@@ -72,6 +72,9 @@ LICENSE_PREFIX = {
   '.php':       r'\s*\*\s*',
   '.js':        r'\s*\*\s*',
   '.py':        r'#\s*',
+  '.pyx':       r'#\s*',
+  '.pxd':       r'#\s*',
+  '.pxi':       r'#\s*',
   '.rb':        r'#\s*',
   '.sh':        r'#\s*',
   '.proto':     r'//\s*',
@@ -140,4 +143,3 @@ for filename in subprocess.check_output('git ls-tree -r --name-only -r HEAD',
     ok = False
 
 sys.exit(0 if ok else 1)
-

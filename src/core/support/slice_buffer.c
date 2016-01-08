@@ -70,9 +70,9 @@ void gpr_slice_buffer_destroy(gpr_slice_buffer *sb) {
   }
 }
 
-gpr_uint8 *gpr_slice_buffer_tiny_add(gpr_slice_buffer *sb, size_t n) {
+uint8_t *gpr_slice_buffer_tiny_add(gpr_slice_buffer *sb, size_t n) {
   gpr_slice *back;
-  gpr_uint8 *out;
+  uint8_t *out;
 
   sb->length += n;
 
@@ -82,7 +82,7 @@ gpr_uint8 *gpr_slice_buffer_tiny_add(gpr_slice_buffer *sb, size_t n) {
   if ((back->data.inlined.length + n) > sizeof(back->data.inlined.bytes))
     goto add_new;
   out = back->data.inlined.bytes + back->data.inlined.length;
-  back->data.inlined.length = (gpr_uint8)(back->data.inlined.length + n);
+  back->data.inlined.length = (uint8_t)(back->data.inlined.length + n);
   return out;
 
 add_new:
@@ -90,7 +90,7 @@ add_new:
   back = &sb->slices[sb->count];
   sb->count++;
   back->refcount = NULL;
-  back->data.inlined.length = (gpr_uint8)n;
+  back->data.inlined.length = (uint8_t)n;
   return back->data.inlined.bytes;
 }
 
@@ -118,7 +118,7 @@ void gpr_slice_buffer_add(gpr_slice_buffer *sb, gpr_slice s) {
         memcpy(back->data.inlined.bytes + back->data.inlined.length,
                s.data.inlined.bytes, s.data.inlined.length);
         back->data.inlined.length =
-            (gpr_uint8)(back->data.inlined.length + s.data.inlined.length);
+            (uint8_t)(back->data.inlined.length + s.data.inlined.length);
       } else {
         size_t cp1 = GPR_SLICE_INLINED_SIZE - back->data.inlined.length;
         memcpy(back->data.inlined.bytes + back->data.inlined.length,
@@ -128,7 +128,7 @@ void gpr_slice_buffer_add(gpr_slice_buffer *sb, gpr_slice s) {
         back = &sb->slices[n];
         sb->count = n + 1;
         back->refcount = NULL;
-        back->data.inlined.length = (gpr_uint8)(s.data.inlined.length - cp1);
+        back->data.inlined.length = (uint8_t)(s.data.inlined.length - cp1);
         memcpy(back->data.inlined.bytes, s.data.inlined.bytes + cp1,
                s.data.inlined.length - cp1);
       }

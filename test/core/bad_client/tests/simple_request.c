@@ -77,9 +77,10 @@
   "\x10\x0cgrpc-timeout\x02"                                               \
   "5S"
 
-static void *tag(gpr_intptr t) { return (void *)t; }
+static void *tag(intptr_t t) { return (void *)t; }
 
-static void verifier(grpc_server *server, grpc_completion_queue *cq) {
+static void verifier(grpc_server *server, grpc_completion_queue *cq,
+                     void *registered_method) {
   grpc_call_error error;
   grpc_call *s;
   grpc_call_details call_details;
@@ -104,7 +105,8 @@ static void verifier(grpc_server *server, grpc_completion_queue *cq) {
   cq_verifier_destroy(cqv);
 }
 
-static void failure_verifier(grpc_server *server, grpc_completion_queue *cq) {
+static void failure_verifier(grpc_server *server, grpc_completion_queue *cq,
+                             void *registered_method) {
   while (grpc_server_has_open_connections(server)) {
     GPR_ASSERT(grpc_completion_queue_next(cq,
                                           GRPC_TIMEOUT_MILLIS_TO_DEADLINE(20),

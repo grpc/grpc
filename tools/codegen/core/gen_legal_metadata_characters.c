@@ -68,6 +68,7 @@ int main(void) {
   for (i = '0'; i <= '9'; i++) legal(i);
   legal('-');
   legal('_');
+  legal('.');
   dump();
 
   clear();

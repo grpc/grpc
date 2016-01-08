@@ -480,6 +480,7 @@ libs:
   - src/core/security/security_context.h
   - src/core/tsi/fake_transport_security.h
   - src/core/tsi/ssl_transport_security.h
+  - src/core/tsi/ssl_types.h
   - src/core/tsi/transport_security.h
   - src/core/tsi/transport_security_interface.h
   src:
@@ -2415,6 +2416,14 @@ targets:
   - zookeeper
   platforms:
   - linux
+- name: public_headers_must_be_c89
+  build: test
+  language: c89
+  src:
+  - test/core/surface/public_headers_must_be_c89.c
+  deps:
+  - grpc
+  - gpr
 vspackages:
 - linkage: static
   name: grpc.dependencies.zlib

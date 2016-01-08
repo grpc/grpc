@@ -49,7 +49,7 @@
 
 enum { TIMEOUT = 200000 };
 
-static void *tag(gpr_intptr t) { return (void *)t; }
+static void *tag(intptr_t t) { return (void *)t; }
 
 static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
                                             const char *test_name,
@@ -231,7 +231,7 @@ static void test_invoke_10_simple_requests(grpc_end2end_test_config config,
   gpr_free(name);
 }
 
-void grpc_end2end_tests(grpc_end2end_test_config config) {
+void high_initial_seqno(grpc_end2end_test_config config) {
   test_invoke_10_simple_requests(config, 16777213);
   if (config.feature_mask & FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION) {
     test_invoke_10_simple_requests(config, 2147483645);

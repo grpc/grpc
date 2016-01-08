@@ -50,7 +50,7 @@
 
 enum { TIMEOUT = 200000 };
 
-static void *tag(gpr_intptr t) { return (void *)t; }
+static void *tag(intptr_t t) { return (void *)t; }
 
 static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
                                             const char *test_name,
@@ -104,7 +104,7 @@ static void end_test(grpc_end2end_test_fixture *f) {
 
 static void request_with_payload_template(
     grpc_end2end_test_config config, const char *test_name,
-    gpr_uint32 send_flags_bitmask,
+    uint32_t send_flags_bitmask,
     grpc_compression_algorithm requested_compression_algorithm,
     grpc_compression_algorithm expected_compression_algorithm,
     grpc_metadata *client_metadata) {
@@ -330,7 +330,7 @@ static void test_invoke_request_with_compressed_payload_md_override(
       GRPC_COMPRESS_DEFLATE, GRPC_COMPRESS_NONE, &none_compression_override);
 }
 
-void grpc_end2end_tests(grpc_end2end_test_config config) {
+void compressed_payload(grpc_end2end_test_config config) {
   test_invoke_request_with_exceptionally_uncompressed_payload(config);
   test_invoke_request_with_uncompressed_payload(config);
   test_invoke_request_with_compressed_payload(config);
