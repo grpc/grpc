@@ -33,7 +33,7 @@ Gem::Specification.new do |s|
   s.platform      = Gem::Platform::RUBY
 
   s.add_dependency 'google-protobuf', '~> 3.0.0alpha.1.1'
-  s.add_dependency 'googleauth', '~> 0.4'
+  s.add_dependency 'googleauth', '~> 0.5.1'
 
   s.add_development_dependency 'bundler', '~> 1.9'
   s.add_development_dependency 'logging', '~> 2.0'
@@ -42,7 +42,7 @@ Gem::Specification.new do |s|
   s.add_development_dependency 'rake-compiler', '~> 0.9'
   s.add_development_dependency 'rspec', '~> 3.2'
   s.add_development_dependency 'rubocop', '~> 0.30.0'
-  s.add_development_dependency 'signet', '~>0.6.0'
+  s.add_development_dependency 'signet', '~>0.7.0'
 
   s.extensions = %w(src/ruby/ext/grpc/extconf.rb)
 
