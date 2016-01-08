@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\poly1305\poly1305_test.cc">
+      <Filter>third_party\boringssl\crypto\poly1305</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="third_party">
+      <UniqueIdentifier>{cf9b9875-85fa-ee2a-11bd-1d0da01e28f8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party\boringssl">
+      <UniqueIdentifier>{0dc3da54-60b8-06dc-14bb-8943d377c364}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party\boringssl\crypto">
+      <UniqueIdentifier>{df4ac648-8554-f973-ace5-841bab0202c7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party\boringssl\crypto\poly1305">
+      <UniqueIdentifier>{32164db2-dcf7-2cbe-310c-921ac88ab3fe}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

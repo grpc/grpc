@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\dh\dh_test.cc">
+      <Filter>third_party\boringssl\crypto\dh</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="third_party">
+      <UniqueIdentifier>{65ed99ff-7fef-84bd-69ac-699784eaa2d5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party\boringssl">
+      <UniqueIdentifier>{20a54707-e604-4830-8245-e0332914fc02}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party\boringssl\crypto">
+      <UniqueIdentifier>{059fef06-fd8b-f6dd-d545-1355d0d6f0fe}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party\boringssl\crypto\dh">
+      <UniqueIdentifier>{909105d9-54df-9980-9131-c9273ab8a135}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+
