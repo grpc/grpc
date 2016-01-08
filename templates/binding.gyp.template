@@ -93,6 +93,11 @@
       % for lib in libs:
       % if lib.name in module.transitive_deps:
       {
+        'cflags': [
+          '-std=c99',
+          '-Wall',
+          '-Werror'
+        ],
         'target_name': '${lib.name}',
         'product_prefix': 'lib',
         'type': 'static_library',
@@ -121,7 +126,7 @@
           "<!(node -e \"require('nan')\")"
         ],
         'cflags': [
-          '-std=c++0x',
+          '-std=c++11',
           '-Wall',
           '-pthread',
           '-g',
