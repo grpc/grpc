@@ -101,6 +101,7 @@ static grpc_fd *alloc_fd(int fd) {
   r->read_watcher = r->write_watcher = NULL;
   r->on_done_closure = NULL;
   r->closed = 0;
+  r->released = 0;
   return r;
 }
 
@@ -210,6 +211,16 @@ static int has_watchers(grpc_fd *fd) {
          fd->inactive_watcher_root.next != &fd->inactive_watcher_root;
 }
 
+static void close_fd_locked(grpc_exec_ctx *exec_ctx, grpc_fd *fd) {
+  fd->closed = 1;
+  if (!fd->released) {
+    close(fd->fd);
+  } else {
+    grpc_remove_fd_from_all_epoll_sets(fd->fd);
+  }
+  grpc_exec_ctx_enqueue(exec_ctx, fd->on_done_closure, 1);
+}
+
 void grpc_fd_orphan(grpc_exec_ctx *exec_ctx, grpc_fd *fd, grpc_closure *on_done,
                     int *release_fd, const char *reason) {
   fd->on_done_closure = on_done;
@@ -222,11 +233,7 @@ void grpc_fd_orphan(grpc_exec_ctx *exec_ctx, grpc_fd *fd, grpc_closure *on_done,
   gpr_mu_lock(&fd->mu);
   REF_BY(fd, 1, reason); /* remove active status, but keep referenced */
   if (!has_watchers(fd)) {
-    fd->closed = 1;
-    if (!fd->released) {
-      close(fd->fd);
-    }
-    grpc_exec_ctx_enqueue(exec_ctx, fd->on_done_closure, 1);
+    close_fd_locked(exec_ctx, fd);
   } else {
     wake_all_watchers_locked(fd);
   }
@@ -416,11 +423,7 @@ void grpc_fd_end_poll(grpc_exec_ctx *exec_ctx, grpc_fd_watcher *watcher,
     maybe_wake_one_watcher_locked(fd);
   }
   if (grpc_fd_is_orphaned(fd) && !has_watchers(fd) && !fd->closed) {
-    fd->closed = 1;
-    if (!fd->released) {
-      close(fd->fd);
-    }
-    grpc_exec_ctx_enqueue(exec_ctx, fd->on_done_closure, 1);
+    close_fd_locked(exec_ctx, fd);
   }
   gpr_mu_unlock(&fd->mu);
 
