@@ -58,7 +58,7 @@
 struct grpc_tcp_listener {
   /* This seemingly magic number comes from AcceptEx's documentation. each
      address buffer needs to have at least 16 more bytes at their end. */
-  gpr_uint8 addresses[(sizeof(struct sockaddr_in6) + 16) * 2];
+  uint8_t addresses[(sizeof(struct sockaddr_in6) + 16) * 2];
   /* This will hold the socket for the next accept. */
   SOCKET new_socket;
   /* The listener winsocket. */

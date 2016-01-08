@@ -63,7 +63,7 @@ namespace testing {
 
 namespace {
 
-void* tag(int i) { return (void*)(gpr_intptr)i; }
+void* tag(int i) { return (void*)(intptr_t)i; }
 
 #ifdef GPR_POSIX_SOCKET
 static int assert_non_blocking_poll(struct pollfd* pfds, nfds_t nfds,

@@ -222,7 +222,7 @@ typedef struct grpc_metadata {
   const char *key;
   const char *value;
   size_t value_length;
-  gpr_uint32 flags;
+  uint32_t flags;
 
   /** The following fields are reserved for grpc internal use.
       There is no need to initialize them, and they will be set to garbage
@@ -326,7 +326,7 @@ typedef struct grpc_op {
   /** Operation type, as defined by grpc_op_type */
   grpc_op_type op;
   /** Write flags bitset for grpc_begin_messages */
-  gpr_uint32 flags;
+  uint32_t flags;
   /** Reserved for future usage */
   void *reserved;
   union {
@@ -408,12 +408,12 @@ void grpc_register_plugin(void (*init)(void), void (*destroy)(void));
 /* Propagation bits: this can be bitwise or-ed to form propagation_mask for
  * grpc_call */
 /** Propagate deadline */
-#define GRPC_PROPAGATE_DEADLINE ((gpr_uint32)1)
+#define GRPC_PROPAGATE_DEADLINE ((uint32_t)1)
 /** Propagate census context */
-#define GRPC_PROPAGATE_CENSUS_STATS_CONTEXT ((gpr_uint32)2)
-#define GRPC_PROPAGATE_CENSUS_TRACING_CONTEXT ((gpr_uint32)4)
+#define GRPC_PROPAGATE_CENSUS_STATS_CONTEXT ((uint32_t)2)
+#define GRPC_PROPAGATE_CENSUS_TRACING_CONTEXT ((uint32_t)4)
 /** Propagate cancellation */
-#define GRPC_PROPAGATE_CANCELLATION ((gpr_uint32)8)
+#define GRPC_PROPAGATE_CANCELLATION ((uint32_t)8)
 
 /* Default propagation mask: clients of the core API are encouraged to encode
    deltas from this in their implementations... ie write:
@@ -421,7 +421,7 @@ void grpc_register_plugin(void (*init)(void), void (*destroy)(void));
    propagation. Doing so gives flexibility in the future to define new
    propagation types that are default inherited or not. */
 #define GRPC_PROPAGATE_DEFAULTS                                                \
-  ((gpr_uint32)((                                                              \
+  ((uint32_t)((                                                                \
       0xffff | GRPC_PROPAGATE_DEADLINE | GRPC_PROPAGATE_CENSUS_STATS_CONTEXT | \
       GRPC_PROPAGATE_CENSUS_TRACING_CONTEXT | GRPC_PROPAGATE_CANCELLATION)))
 
@@ -526,7 +526,7 @@ void grpc_channel_watch_connectivity_state(
     */
 grpc_call *grpc_channel_create_call(grpc_channel *channel,
                                     grpc_call *parent_call,
-                                    gpr_uint32 propagation_mask,
+                                    uint32_t propagation_mask,
                                     grpc_completion_queue *completion_queue,
                                     const char *method, const char *host,
                                     gpr_timespec deadline, void *reserved);
@@ -542,7 +542,7 @@ void *grpc_channel_register_call(grpc_channel *channel, const char *method,
 
 /** Create a call given a handle returned from grpc_channel_register_call */
 grpc_call *grpc_channel_create_registered_call(
-    grpc_channel *channel, grpc_call *parent_call, gpr_uint32 propagation_mask,
+    grpc_channel *channel, grpc_call *parent_call, uint32_t propagation_mask,
     grpc_completion_queue *completion_queue, void *registered_call_handle,
     gpr_timespec deadline, void *reserved);
 

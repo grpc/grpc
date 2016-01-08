@@ -50,7 +50,7 @@
 
 enum { TIMEOUT = 200000 };
 
-static void *tag(gpr_intptr t) { return (void *)t; }
+static void *tag(intptr_t t) { return (void *)t; }
 
 static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
                                             const char *test_name,
@@ -104,7 +104,7 @@ static void end_test(grpc_end2end_test_fixture *f) {
 
 static void request_with_payload_template(
     grpc_end2end_test_config config, const char *test_name,
-    gpr_uint32 send_flags_bitmask,
+    uint32_t send_flags_bitmask,
     grpc_compression_algorithm requested_compression_algorithm,
     grpc_compression_algorithm expected_compression_algorithm,
     grpc_metadata *client_metadata) {

@@ -47,7 +47,7 @@
 #include "src/core/support/string.h"
 #include "test/core/end2end/cq_verifier.h"
 
-static void *tag(gpr_intptr t) { return (void *)t; }
+static void *tag(intptr_t t) { return (void *)t; }
 
 const char *hobbits[][2] = {{"Adaldrida", "Brandybuck"},
                             {"Adamanta", "Took"},

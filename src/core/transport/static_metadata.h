@@ -1,18 +1,19 @@
 /*
- * Copyright 2015, Google Inc.
+ *
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
  * met:
  *
- * * Redistributions of source code must retain the above copyright
+ *     * Redistributions of source code must retain the above copyright
  * notice, this list of conditions and the following disclaimer.
- * * Redistributions in binary form must reproduce the above
+ *     * Redistributions in binary form must reproduce the above
  * copyright notice, this list of conditions and the following disclaimer
  * in the documentation and/or other materials provided with the
  * distribution.
- * * Neither the name of Google Inc. nor the names of its
+ *     * Neither the name of Google Inc. nor the names of its
  * contributors may be used to endorse or promote products derived from
  * this software without specific prior written permission.
  *
@@ -27,6 +28,7 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
  */
 
 /*
@@ -230,7 +232,7 @@ extern grpc_mdstr grpc_static_mdstr_table[GRPC_STATIC_MDSTR_COUNT];
 
 #define GRPC_STATIC_MDELEM_COUNT 78
 extern grpc_mdelem grpc_static_mdelem_table[GRPC_STATIC_MDELEM_COUNT];
-extern gpr_uintptr grpc_static_mdelem_user_data[GRPC_STATIC_MDELEM_COUNT];
+extern uintptr_t grpc_static_mdelem_user_data[GRPC_STATIC_MDELEM_COUNT];
 /* "accept-charset": "" */
 #define GRPC_MDELEM_ACCEPT_CHARSET_EMPTY (&grpc_static_mdelem_table[0])
 /* "accept": "" */
@@ -397,10 +399,10 @@ extern gpr_uintptr grpc_static_mdelem_user_data[GRPC_STATIC_MDELEM_COUNT];
 /* "www-authenticate": "" */
 #define GRPC_MDELEM_WWW_AUTHENTICATE_EMPTY (&grpc_static_mdelem_table[77])
 
-extern const gpr_uint8
+extern const uint8_t
     grpc_static_metadata_elem_indices[GRPC_STATIC_MDELEM_COUNT * 2];
 extern const char *const grpc_static_metadata_strings[GRPC_STATIC_MDSTR_COUNT];
-extern const gpr_uint8 grpc_static_accept_encoding_metadata[8];
+extern const uint8_t grpc_static_accept_encoding_metadata[8];
 #define GRPC_MDELEM_ACCEPT_ENCODING_FOR_ALGORITHMS(algs) \
   (&grpc_static_mdelem_table[grpc_static_accept_encoding_metadata[(algs)]])
 #endif /* GRPC_INTERNAL_CORE_TRANSPORT_STATIC_METADATA_H */

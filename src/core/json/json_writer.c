@@ -100,8 +100,7 @@ static void json_writer_value_end(grpc_json_writer *writer) {
   }
 }
 
-static void json_writer_escape_utf16(grpc_json_writer *writer,
-                                     gpr_uint16 utf16) {
+static void json_writer_escape_utf16(grpc_json_writer *writer, uint16_t utf16) {
   static const char hex[] = "0123456789abcdef";
 
   json_writer_output_string_with_len(writer, "\\u", 2);
@@ -116,7 +115,7 @@ static void json_writer_escape_string(grpc_json_writer *writer,
   json_writer_output_char(writer, '"');
 
   for (;;) {
-    gpr_uint8 c = (gpr_uint8)*string++;
+    uint8_t c = (uint8_t)*string++;
     if (c == 0) {
       break;
     } else if ((c >= 32) && (c <= 126)) {
@@ -144,7 +143,7 @@ static void json_writer_escape_string(grpc_json_writer *writer,
           break;
       }
     } else {
-      gpr_uint32 utf32 = 0;
+      uint32_t utf32 = 0;
       int extra = 0;
       int i;
       int valid = 1;
@@ -162,7 +161,7 @@ static void json_writer_escape_string(grpc_json_writer *writer,
       }
       for (i = 0; i < extra; i++) {
         utf32 <<= 6;
-        c = (gpr_uint8)(*string++);
+        c = (uint8_t)(*string++);
         /* Breaks out and bail on any invalid UTF-8 sequence, including \0. */
         if ((c & 0xc0) != 0x80) {
           valid = 0;
@@ -195,11 +194,10 @@ static void json_writer_escape_string(grpc_json_writer *writer,
          * That range is exactly 20 bits.
          */
         utf32 -= 0x10000;
-        json_writer_escape_utf16(writer, (gpr_uint16)(0xd800 | (utf32 >> 10)));
-        json_writer_escape_utf16(writer,
-                                 (gpr_uint16)(0xdc00 | (utf32 & 0x3ff)));
+        json_writer_escape_utf16(writer, (uint16_t)(0xd800 | (utf32 >> 10)));
+        json_writer_escape_utf16(writer, (uint16_t)(0xdc00 | (utf32 & 0x3ff)));
       } else {
-        json_writer_escape_utf16(writer, (gpr_uint16)utf32);
+        json_writer_escape_utf16(writer, (uint16_t)utf32);
       }
     }
   }
