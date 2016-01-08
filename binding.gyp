@@ -88,6 +88,11 @@
   },
   'targets': [
     {
+      'cflags': [
+        '-std=c99',
+        '-Wall',
+        '-Werror'
+      ],
       'target_name': 'gpr',
       'product_prefix': 'lib',
       'type': 'static_library',
@@ -145,6 +150,11 @@
       ],
     },
     {
+      'cflags': [
+        '-std=c99',
+        '-Wall',
+        '-Werror'
+      ],
       'target_name': 'grpc',
       'product_prefix': 'lib',
       'type': 'static_library',
@@ -316,7 +326,7 @@
         "<!(node -e \"require('nan')\")"
       ],
       'cflags': [
-        '-std=c++0x',
+        '-std=c++11',
         '-Wall',
         '-pthread',
         '-g',
