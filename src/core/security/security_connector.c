@@ -316,12 +316,7 @@ grpc_channel_security_connector *grpc_fake_channel_security_connector_create(
   c->base.is_client_side = 1;
   c->base.url_scheme = GRPC_FAKE_SECURITY_URL_SCHEME;
   c->base.vtable = &fake_channel_vtable;
-<<<<<<< HEAD
-  c->request_metadata_creds =
-      grpc_call_credentials_ref(request_metadata_creds);
-=======
   c->request_metadata_creds = grpc_call_credentials_ref(request_metadata_creds);
->>>>>>> master
   c->check_call_host = fake_channel_check_call_host;
   return c;
 }
