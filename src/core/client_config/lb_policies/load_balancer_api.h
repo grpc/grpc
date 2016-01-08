@@ -37,7 +37,7 @@
 #include <grpc/support/slice_buffer.h>
 
 #include "src/core/client_config/lb_policy_factory.h"
-#include "src/core/proto/load_balancer.pb.h"
+#include "src/core/proto/grpc/lb/v0/load_balancer.pb.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -56,10 +56,10 @@ typedef struct grpc_grpclb_serverlist {
 } grpc_grpclb_serverlist;
 
 /** Create a request for a gRPC LB service under \a lb_service_name */
-grpc_grpclb_request *grpc_grpclb_request_create(const char* lb_service_name);
+grpc_grpclb_request *grpc_grpclb_request_create(const char *lb_service_name);
 
 /** Protocol Buffers v3-encode \a request */
-gpr_slice grpc_grpclb_request_encode(const grpc_grpclb_request* request);
+gpr_slice grpc_grpclb_request_encode(const grpc_grpclb_request *request);
 
 /** Destroy \a request */
 void grpc_grpclb_request_destroy(grpc_grpclb_request *request);

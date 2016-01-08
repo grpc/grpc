@@ -181,7 +181,7 @@ filegroups:
   - src/core/json/json_common.h
   - src/core/json/json_reader.h
   - src/core/json/json_writer.h
-  - src/core/proto/load_balancer.pb.h
+  - src/core/proto/grpc/lb/v0/load_balancer.pb.h
   - src/core/statistics/census_interface.h
   - src/core/statistics/census_rpc_stats.h
   - src/core/surface/api_trace.h
@@ -221,10 +221,6 @@ filegroups:
   - src/core/transport/static_metadata.h
   - src/core/transport/transport.h
   - src/core/transport/transport_impl.h
-  - third_party/nanopb/pb.h
-  - third_party/nanopb/pb_common.h
-  - third_party/nanopb/pb_decode.h
-  - third_party/nanopb/pb_encode.h
   src:
   - src/core/census/grpc_context.c
   - src/core/census/grpc_filter.c
@@ -305,7 +301,7 @@ filegroups:
   - src/core/json/json_reader.c
   - src/core/json/json_string.c
   - src/core/json/json_writer.c
-  - src/core/proto/load_balancer.pb.c
+  - src/core/proto/grpc/lb/v0/load_balancer.pb.c
   - src/core/surface/api_trace.c
   - src/core/surface/byte_buffer.c
   - src/core/surface/byte_buffer_reader.c
@@ -353,9 +349,6 @@ filegroups:
   - src/core/transport/static_metadata.c
   - src/core/transport/transport.c
   - src/core/transport/transport_op_string.c
-  - third_party/nanopb/pb_common.c
-  - third_party/nanopb/pb_decode.c
-  - third_party/nanopb/pb_encode.c
 - name: grpc_test_util_base
   headers:
   - test/core/end2end/cq_verifier.h
@@ -374,6 +367,16 @@ filegroups:
   - test/core/util/port_posix.c
   - test/core/util/port_windows.c
   - test/core/util/slice_splitter.c
+- name: nanopb
+  headers:
+  - third_party/nanopb/pb.h
+  - third_party/nanopb/pb_common.h
+  - third_party/nanopb/pb_decode.h
+  - third_party/nanopb/pb_encode.h
+  src:
+  - third_party/nanopb/pb_common.c
+  - third_party/nanopb/pb_decode.c
+  - third_party/nanopb/pb_encode.c
 libs:
 - name: gpr
   build: all
@@ -522,6 +525,7 @@ libs:
   filegroups:
   - grpc_base
   - census
+  - nanopb
   secure: true
   vs_packages:
   - grpc.dependencies.openssl
@@ -568,6 +572,7 @@ libs:
   filegroups:
   - grpc_base
   - census
+  - nanopb
   secure: false
   vs_project_guid: '{46CEDFFF-9692-456A-AA24-38B5D6BCF4C5}'
 - name: grpc_zookeeper
@@ -2041,7 +2046,7 @@ targets:
   build: test
   language: c++
   src:
-  - src/core/client_config/lb_policies/proto/load_balancer.proto
+  - src/proto/grpc/lb/v0/load_balancer.proto
   - test/cpp/grpclb/grpclb_api_test.cc
   deps:
   - grpc++

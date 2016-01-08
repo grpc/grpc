@@ -37,7 +37,6 @@
 
 #include <grpc/support/alloc.h>
 
-
 typedef struct decode_serverlist_arg {
   int first_pass;
   int i;
