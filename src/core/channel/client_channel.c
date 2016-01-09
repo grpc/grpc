@@ -444,7 +444,8 @@ static void cc_set_pollset(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
 const grpc_channel_filter grpc_client_channel_filter = {
     cc_start_transport_stream_op, cc_start_transport_op, sizeof(call_data),
     init_call_elem, cc_set_pollset, destroy_call_elem, sizeof(channel_data),
-    init_channel_elem, destroy_channel_elem, cc_get_peer, compare_channels, "client-channel",
+    init_channel_elem, destroy_channel_elem, cc_get_peer, compare_channels,
+    "client-channel",
 };
 
 void grpc_client_channel_set_resolver(grpc_exec_ctx *exec_ctx,

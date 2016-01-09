@@ -71,10 +71,12 @@ typedef struct {
   grpc_auth_context *auth_context;
 } channel_data;
 
-static int compare_channels(grpc_channel_element *ca, grpc_channel_element *cb) {
+static int compare_channels(grpc_channel_element *ca,
+                            grpc_channel_element *cb) {
   channel_data *a = ca->channel_data;
   channel_data *b = cb->channel_data;
-  /* TODO(ctiller): see if we can get a better ordering by looking inside security_connector, auth_context */
+  /* TODO(ctiller): see if we can get a better ordering by looking inside
+   * security_connector, auth_context */
   int c = GPR_SIMPLIFY_CMP(a->security_connector - b->security_connector);
   if (c != 0) return 0;
   return GPR_SIMPLIFY_CMP(a->auth_context - b->auth_context);
@@ -342,5 +344,5 @@ static void destroy_channel_elem(grpc_exec_ctx *exec_ctx,
 const grpc_channel_filter grpc_client_auth_filter = {
     auth_start_transport_op, grpc_channel_next_op, sizeof(call_data),
     init_call_elem, set_pollset, destroy_call_elem, sizeof(channel_data),
-    init_channel_elem, destroy_channel_elem, grpc_call_next_get_peer, compare_channels,
-    "client-auth"};
+    init_channel_elem, destroy_channel_elem, grpc_call_next_get_peer,
+    compare_channels, "client-auth"};

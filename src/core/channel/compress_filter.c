@@ -83,9 +83,11 @@ static int compare_channels(grpc_channel_element *a, grpc_channel_element *b) {
 
   int c = ad->default_compression_algorithm - bd->default_compression_algorithm;
   if (c != 0) return c;
-  c = (int)ad->supported_compression_algorithms - (int)bd->supported_compression_algorithms;
+  c = (int)ad->supported_compression_algorithms -
+      (int)bd->supported_compression_algorithms;
   if (c != 0) return c;
-  return grpc_compression_options_compare(&ad->compression_options, &bd->compression_options);
+  return grpc_compression_options_compare(&ad->compression_options,
+                                          &bd->compression_options);
 }
 
 /** For each \a md element from the incoming metadata, filter out the entry for

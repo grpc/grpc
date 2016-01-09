@@ -53,7 +53,8 @@ typedef struct {
   const char *error_message;
 } channel_data;
 
-static int compare_channels(grpc_channel_element *ca, grpc_channel_element *cb) {
+static int compare_channels(grpc_channel_element *ca,
+                            grpc_channel_element *cb) {
   channel_data *a = ca->channel_data;
   channel_data *b = ca->channel_data;
   int c = a->error_code - b->error_code;

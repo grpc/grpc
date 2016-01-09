@@ -257,7 +257,8 @@ static void destroy_channel_elem(grpc_exec_ctx *exec_ctx,
   grpc_server_credentials_unref(chand->creds);
 }
 
-static int compare_channels(grpc_channel_element *ca, grpc_channel_element *cb) {
+static int compare_channels(grpc_channel_element *ca,
+                            grpc_channel_element *cb) {
   GPR_ASSERT(!"implemented");
   return 0;
 }
@@ -265,5 +266,5 @@ static int compare_channels(grpc_channel_element *ca, grpc_channel_element *cb) 
 const grpc_channel_filter grpc_server_auth_filter = {
     auth_start_transport_op, grpc_channel_next_op, sizeof(call_data),
     init_call_elem, set_pollset, destroy_call_elem, sizeof(channel_data),
-    init_channel_elem, destroy_channel_elem, grpc_call_next_get_peer, compare_channels,
-    "server-auth"};
+    init_channel_elem, destroy_channel_elem, grpc_call_next_get_peer,
+    compare_channels, "server-auth"};

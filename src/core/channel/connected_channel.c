@@ -143,7 +143,8 @@ static int compare_channels(grpc_channel_element *a, grpc_channel_element *b) {
 const grpc_channel_filter grpc_connected_channel_filter = {
     con_start_transport_stream_op, con_start_transport_op, sizeof(call_data),
     init_call_elem, set_pollset, destroy_call_elem, sizeof(channel_data),
-    init_channel_elem, destroy_channel_elem, con_get_peer, compare_channels, "connected",
+    init_channel_elem, destroy_channel_elem, con_get_peer, compare_channels,
+    "connected",
 };
 
 void grpc_connected_channel_bind_transport(grpc_channel_stack *channel_stack,

@@ -125,7 +125,8 @@ typedef struct {
   /* Implement grpc_call_get_peer() */
   char *(*get_peer)(grpc_exec_ctx *exec_ctx, grpc_call_element *elem);
 
-  /* Compare two filter instances. Return <0 if a < b, ==0 if a==b, >0 if a > b */
+  /* Compare two filter instances. Return <0 if a < b, ==0 if a==b, >0 if a > b
+   */
   int (*compare)(grpc_channel_element *a, grpc_channel_element *b);
 
   /* The name of this filter */

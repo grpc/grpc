@@ -67,13 +67,13 @@ typedef struct {
   grpc_exec_ctx *exec_ctx;
 } client_recv_filter_args;
 
-static int compare_channels(grpc_channel_element *ca, grpc_channel_element *cb) {
+static int compare_channels(grpc_channel_element *ca,
+                            grpc_channel_element *cb) {
   channel_data *a = ca->channel_data;
   channel_data *b = cb->channel_data;
   int c = GPR_SIMPLIFY_CMP(a->static_scheme - b->static_scheme);
   if (c != 0) return c;
   return GPR_SIMPLIFY_CMP(a->user_agent - b->user_agent);
-
 }
 
 static grpc_mdelem *client_recv_filter(void *user_data, grpc_mdelem *md) {
