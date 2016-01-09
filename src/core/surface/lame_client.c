@@ -53,6 +53,14 @@ typedef struct {
   const char *error_message;
 } channel_data;
 
+static int compare_channels(grpc_channel_element *ca, grpc_channel_element *cb) {
+  channel_data *a = ca->channel_data;
+  channel_data *b = ca->channel_data;
+  int c = a->error_code - b->error_code;
+  if (c != 0) return c;
+  return strcmp(a->error_message, b->error_message);
+}
+
 static void fill_metadata(grpc_call_element *elem, grpc_metadata_batch *mdb) {
   call_data *calld = elem->call_data;
   channel_data *chand = elem->channel_data;
@@ -120,7 +128,7 @@ static const grpc_channel_filter lame_filter = {
     lame_start_transport_stream_op, lame_start_transport_op, sizeof(call_data),
     init_call_elem, grpc_call_stack_ignore_set_pollset, destroy_call_elem,
     sizeof(channel_data), init_channel_elem, destroy_channel_elem,
-    lame_get_peer, "lame-client",
+    lame_get_peer, compare_channels, "lame-client",
 };
 
 #define CHANNEL_STACK_FROM_CHANNEL(c) ((grpc_channel_stack *)((c) + 1))

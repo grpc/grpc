@@ -78,6 +78,11 @@ typedef struct client_uchannel_channel_data {
 
 typedef grpc_subchannel_call_holder call_data;
 
+static int compare_channels(grpc_channel_element *a, grpc_channel_element *b) {
+  GPR_ASSERT(!"implemented");
+  return 0;
+}
+
 static void monitor_subchannel(grpc_exec_ctx *exec_ctx, void *arg,
                                int iomgr_success) {
   channel_data *chand = arg;
@@ -186,7 +191,7 @@ const grpc_channel_filter grpc_client_uchannel_filter = {
     cuc_start_transport_stream_op, cuc_start_transport_op, sizeof(call_data),
     cuc_init_call_elem, cuc_set_pollset, cuc_destroy_call_elem,
     sizeof(channel_data), cuc_init_channel_elem, cuc_destroy_channel_elem,
-    cuc_get_peer, "client-uchannel",
+    cuc_get_peer, compare_channels, "client-uchannel",
 };
 
 grpc_connectivity_state grpc_client_uchannel_check_connectivity_state(

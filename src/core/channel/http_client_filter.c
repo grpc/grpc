@@ -67,6 +67,15 @@ typedef struct {
   grpc_exec_ctx *exec_ctx;
 } client_recv_filter_args;
 
+static int compare_channels(grpc_channel_element *ca, grpc_channel_element *cb) {
+  channel_data *a = ca->channel_data;
+  channel_data *b = cb->channel_data;
+  int c = GPR_SIMPLIFY_CMP(a->static_scheme - b->static_scheme);
+  if (c != 0) return c;
+  return GPR_SIMPLIFY_CMP(a->user_agent - b->user_agent);
+
+}
+
 static grpc_mdelem *client_recv_filter(void *user_data, grpc_mdelem *md) {
   client_recv_filter_args *a = user_data;
   if (md == GRPC_MDELEM_STATUS_200) {
@@ -245,4 +254,4 @@ const grpc_channel_filter grpc_http_client_filter = {
     hc_start_transport_op, grpc_channel_next_op, sizeof(call_data),
     init_call_elem, grpc_call_stack_ignore_set_pollset, destroy_call_elem,
     sizeof(channel_data), init_channel_elem, destroy_channel_elem,
-    grpc_call_next_get_peer, "http-client"};
+    grpc_call_next_get_peer, compare_channels, "http-client"};
