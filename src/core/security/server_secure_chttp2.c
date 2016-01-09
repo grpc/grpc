@@ -126,8 +126,10 @@ static void on_secure_handshake_done(grpc_exec_ctx *exec_ctx, void *statep,
   state_unref(state);
 }
 
-static void on_accept(grpc_exec_ctx *exec_ctx, void *statep,
-                      grpc_endpoint *tcp) {
+static void on_accept(grpc_exec_ctx *exec_ctx, void *statep, grpc_endpoint *tcp,
+                      grpc_tcp_server *from_server, unsigned port_index,
+                      unsigned fd_index) {
+  grpc_tcp_server_unref(NULL, from_server);
   grpc_server_secure_state *state = statep;
   state_ref(state);
   grpc_security_connector_do_handshake(exec_ctx, state->sc, tcp,
@@ -144,8 +146,10 @@ static void start(grpc_exec_ctx *exec_ctx, grpc_server *server, void *statep,
 
 static void destroy_done(grpc_exec_ctx *exec_ctx, void *statep, int success) {
   grpc_server_secure_state *state = statep;
-  state->destroy_callback->cb(exec_ctx, state->destroy_callback->cb_arg,
-                              success);
+  if (state->destroy_callback != NULL) {
+    state->destroy_callback->cb(exec_ctx, state->destroy_callback->cb_arg,
+                                success);
+  }
   grpc_security_connector_shutdown(exec_ctx, state->sc);
   state_unref(state);
 }
@@ -161,8 +165,7 @@ static void destroy(grpc_exec_ctx *exec_ctx, grpc_server *server, void *statep,
   state->destroy_callback = callback;
   tcp = state->tcp;
   gpr_mu_unlock(&state->mu);
-  grpc_closure_init(&state->destroy_closure, destroy_done, state);
-  grpc_tcp_server_destroy(exec_ctx, tcp, &state->destroy_closure);
+  grpc_tcp_server_unref(exec_ctx, tcp);
 }
 
 int grpc_server_add_secure_http2_port(grpc_server *server, const char *addr,
@@ -199,18 +202,18 @@ int grpc_server_add_secure_http2_port(grpc_server *server, const char *addr,
   if (!resolved) {
     goto error;
   }
-
-  tcp = grpc_tcp_server_create();
+  state = gpr_malloc(sizeof(*state));
+  memset(state, 0, sizeof(*state));
+  grpc_closure_init(&state->destroy_closure, destroy_done, state);
+  tcp = grpc_tcp_server_create(&state->destroy_closure);
   if (!tcp) {
     goto error;
   }
 
   for (i = 0; i < resolved->naddrs; i++) {
-    grpc_tcp_listener *listener;
-    listener = grpc_tcp_server_add_port(
+    port_temp = grpc_tcp_server_add_port(
         tcp, (struct sockaddr *)&resolved->addrs[i].addr,
         resolved->addrs[i].len);
-    port_temp = grpc_tcp_listener_get_port(listener);
     if (port_temp > 0) {
       if (port_num == -1) {
         port_num = port_temp;
@@ -232,8 +235,6 @@ int grpc_server_add_secure_http2_port(grpc_server *server, const char *addr,
   }
   grpc_resolved_addresses_destroy(resolved);
 
-  state = gpr_malloc(sizeof(*state));
-  memset(state, 0, sizeof(*state));
   state->server = server;
   state->tcp = tcp;
   state->sc = sc;
@@ -258,7 +259,7 @@ error:
     grpc_resolved_addresses_destroy(resolved);
   }
   if (tcp) {
-    grpc_tcp_server_destroy(&exec_ctx, tcp, NULL);
+    grpc_tcp_server_unref(&exec_ctx, tcp);
   }
   if (state) {
     gpr_free(state);

@@ -48,61 +48,70 @@
 static grpc_pollset g_pollset;
 static int g_nconnects = 0;
 
-static void on_connect(grpc_exec_ctx *exec_ctx, void *arg, grpc_endpoint *tcp) {
+struct on_connect_result {
+  int server_fd;
+};
+
+static void on_connect(grpc_exec_ctx *exec_ctx, void *arg, grpc_endpoint *tcp,
+                       grpc_tcp_server *tcp_server, unsigned port_index,
+                       unsigned fd_index) {
+  struct on_connect_result *result = arg;
   grpc_endpoint_shutdown(exec_ctx, tcp);
   grpc_endpoint_destroy(exec_ctx, tcp);
 
   gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
+  result->server_fd = grpc_tcp_server_get_fd(tcp_server, port_index, fd_index);
   g_nconnects++;
   grpc_pollset_kick(&g_pollset, NULL);
   gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));
+  grpc_tcp_server_unref(exec_ctx, tcp_server);
 }
 
 static void test_no_op(void) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_tcp_server *s = grpc_tcp_server_create();
-  grpc_tcp_server_destroy(&exec_ctx, s, NULL);
+  grpc_tcp_server *s = grpc_tcp_server_create(NULL);
+  grpc_tcp_server_unref(&exec_ctx, s);
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
 static void test_no_op_with_start(void) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_tcp_server *s = grpc_tcp_server_create();
+  grpc_tcp_server *s = grpc_tcp_server_create(NULL);
   LOG_TEST("test_no_op_with_start");
   grpc_tcp_server_start(&exec_ctx, s, NULL, 0, on_connect, NULL);
-  grpc_tcp_server_destroy(&exec_ctx, s, NULL);
+  grpc_tcp_server_unref(&exec_ctx, s);
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
 static void test_no_op_with_port(void) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   struct sockaddr_in addr;
-  grpc_tcp_server *s = grpc_tcp_server_create();
+  grpc_tcp_server *s = grpc_tcp_server_create(NULL);
   LOG_TEST("test_no_op_with_port");
 
   memset(&addr, 0, sizeof(addr));
   addr.sin_family = AF_INET;
   GPR_ASSERT(
-      grpc_tcp_server_add_port(s, (struct sockaddr *)&addr, sizeof(addr)));
+      grpc_tcp_server_add_port(s, (struct sockaddr *)&addr, sizeof(addr)) > 0);
 
-  grpc_tcp_server_destroy(&exec_ctx, s, NULL);
+  grpc_tcp_server_unref(&exec_ctx, s);
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
 static void test_no_op_with_port_and_start(void) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   struct sockaddr_in addr;
-  grpc_tcp_server *s = grpc_tcp_server_create();
+  grpc_tcp_server *s = grpc_tcp_server_create(NULL);
   LOG_TEST("test_no_op_with_port_and_start");
 
   memset(&addr, 0, sizeof(addr));
   addr.sin_family = AF_INET;
   GPR_ASSERT(
-      grpc_tcp_server_add_port(s, (struct sockaddr *)&addr, sizeof(addr)));
+      grpc_tcp_server_add_port(s, (struct sockaddr *)&addr, sizeof(addr)) > 0);
 
   grpc_tcp_server_start(&exec_ctx, s, NULL, 0, on_connect, NULL);
 
-  grpc_tcp_server_destroy(&exec_ctx, s, NULL);
+  grpc_tcp_server_unref(&exec_ctx, s);
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
@@ -111,32 +120,40 @@ static void test_connect(int n) {
   struct sockaddr_storage addr;
   socklen_t addr_len = sizeof(addr);
   int svrfd, clifd;
-  grpc_tcp_server *s = grpc_tcp_server_create();
+  grpc_tcp_server *s = grpc_tcp_server_create(NULL);
   int nconnects_before;
   gpr_timespec deadline;
   grpc_pollset *pollsets[1];
   int i;
+  struct on_connect_result result;
   LOG_TEST("test_connect");
   gpr_log(GPR_INFO, "clients=%d", n);
 
   memset(&addr, 0, sizeof(addr));
   addr.ss_family = AF_INET;
-  GPR_ASSERT(grpc_tcp_server_add_port(s, (struct sockaddr *)&addr, addr_len));
-
-  svrfd = grpc_tcp_server_get_fd(s, 0);
+  GPR_ASSERT(grpc_tcp_server_add_port(s, (struct sockaddr *)&addr, addr_len) >
+             0);
+  GPR_ASSERT(grpc_tcp_server_fds_for_port(s, 2) == 0);
+  GPR_ASSERT(grpc_tcp_server_fds_for_port(s, 1) == 0);
+  GPR_ASSERT(grpc_tcp_server_fds_for_port(s, 0) == 1);
+  GPR_ASSERT(grpc_tcp_server_get_fd(s, 0, 1) < 0);
+  GPR_ASSERT(grpc_tcp_server_get_fd(s, 0, 2) < 0);
+  GPR_ASSERT(grpc_tcp_server_get_fd(s, 2, 0) < 0);
+  GPR_ASSERT(grpc_tcp_server_get_fd(s, 1, 0) < 0);
+  svrfd = grpc_tcp_server_get_fd(s, 0, 0);
   GPR_ASSERT(svrfd >= 0);
   GPR_ASSERT(getsockname(svrfd, (struct sockaddr *)&addr, &addr_len) == 0);
   GPR_ASSERT(addr_len <= sizeof(addr));
 
   pollsets[0] = &g_pollset;
-  grpc_tcp_server_start(&exec_ctx, s, pollsets, 1, on_connect, NULL);
+  grpc_tcp_server_start(&exec_ctx, s, pollsets, 1, on_connect, &result);
 
   gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
 
   for (i = 0; i < n; i++) {
     deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(10);
-
     nconnects_before = g_nconnects;
+    result.server_fd = -1;
     clifd = socket(addr.ss_family, SOCK_STREAM, 0);
     GPR_ASSERT(clifd >= 0);
     gpr_log(GPR_DEBUG, "start connect");
@@ -156,11 +173,12 @@ static void test_connect(int n) {
 
     GPR_ASSERT(g_nconnects == nconnects_before + 1);
     close(clifd);
+    GPR_ASSERT(svrfd == result.server_fd);
   }
 
   gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));
 
-  grpc_tcp_server_destroy(&exec_ctx, s, NULL);
+  grpc_tcp_server_unref(&exec_ctx, s);
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
