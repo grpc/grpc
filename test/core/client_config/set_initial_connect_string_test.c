@@ -78,8 +78,11 @@ static void handle_read(grpc_exec_ctx *exec_ctx, void *arg, int success) {
   }
 }
 
-static void on_connect(grpc_exec_ctx *exec_ctx, void *arg, grpc_endpoint *tcp) {
+static void on_connect(grpc_exec_ctx *exec_ctx, void *arg, grpc_endpoint *tcp,
+                       grpc_tcp_server *tcp_server, unsigned port_index,
+                       unsigned fd_index) {
   test_tcp_server *server = arg;
+  grpc_tcp_server_unref(NULL, tcp_server);
   grpc_closure_init(&on_read, handle_read, NULL);
   gpr_slice_buffer_init(&state.incoming_buffer);
   gpr_slice_buffer_init(&state.temp_incoming_buffer);
