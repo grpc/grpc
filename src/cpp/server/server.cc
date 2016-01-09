@@ -35,16 +35,16 @@
 
 #include <utility>
 
-#include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc++/completion_queue.h>
 #include <grpc++/generic/async_generic_service.h>
 #include <grpc++/impl/rpc_service_method.h>
 #include <grpc++/impl/service_type.h>
-#include <grpc++/server_context.h>
 #include <grpc++/security/server_credentials.h>
+#include <grpc++/server_context.h>
 #include <grpc++/support/time.h>
+#include <grpc/grpc.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 
 #include "src/core/profiling/timers.h"
 #include "src/cpp/server/thread_pool_interface.h"
@@ -176,7 +176,9 @@ class Server::SyncRequest GRPC_FINAL : public CompletionQueueTag {
     in_flight_ = false;
 
     if (call_) {
-      grpc_call_destroy(call_);
+      grpc_call_destroy(call_);  // This also takes care of calling
+                                 // grpc_metadata_array_destroy() on
+                                 // request_metadata_
       call_ = nullptr;
     }
     request_metadata_.count = 0;
