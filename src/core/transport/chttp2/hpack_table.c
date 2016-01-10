@@ -171,7 +171,7 @@ static struct {
     {"www-authenticate", ""},
 };
 
-static gpr_uint32 entries_for_bytes(gpr_uint32 bytes) {
+static uint32_t entries_for_bytes(uint32_t bytes) {
   return (bytes + GRPC_CHTTP2_HPACK_ENTRY_OVERHEAD - 1) /
          GRPC_CHTTP2_HPACK_ENTRY_OVERHEAD;
 }
@@ -204,7 +204,7 @@ void grpc_chttp2_hptbl_destroy(grpc_chttp2_hptbl *tbl) {
 }
 
 grpc_mdelem *grpc_chttp2_hptbl_lookup(const grpc_chttp2_hptbl *tbl,
-                                      gpr_uint32 tbl_index) {
+                                      uint32_t tbl_index) {
   /* Static table comes first, just return an entry from it */
   if (tbl_index <= GRPC_CHTTP2_LAST_STATIC_ENTRY) {
     return tbl->static_ents[tbl_index - 1];
@@ -212,7 +212,7 @@ grpc_mdelem *grpc_chttp2_hptbl_lookup(const grpc_chttp2_hptbl *tbl,
   /* Otherwise, find the value in the list of valid entries */
   tbl_index -= (GRPC_CHTTP2_LAST_STATIC_ENTRY + 1);
   if (tbl_index < tbl->num_ents) {
-    gpr_uint32 offset =
+    uint32_t offset =
         (tbl->num_ents - 1u - tbl_index + tbl->first_ent) % tbl->cap_entries;
     return tbl->ents[offset];
   }
@@ -227,15 +227,15 @@ static void evict1(grpc_chttp2_hptbl *tbl) {
                       GPR_SLICE_LENGTH(first_ent->value->slice) +
                       GRPC_CHTTP2_HPACK_ENTRY_OVERHEAD;
   GPR_ASSERT(elem_bytes <= tbl->mem_used);
-  tbl->mem_used -= (gpr_uint32)elem_bytes;
+  tbl->mem_used -= (uint32_t)elem_bytes;
   tbl->first_ent = ((tbl->first_ent + 1) % tbl->cap_entries);
   tbl->num_ents--;
   GRPC_MDELEM_UNREF(first_ent);
 }
 
-static void rebuild_ents(grpc_chttp2_hptbl *tbl, gpr_uint32 new_cap) {
+static void rebuild_ents(grpc_chttp2_hptbl *tbl, uint32_t new_cap) {
   grpc_mdelem **ents = gpr_malloc(sizeof(*ents) * new_cap);
-  gpr_uint32 i;
+  uint32_t i;
 
   for (i = 0; i < tbl->num_ents; i++) {
     ents[i] = tbl->ents[(tbl->first_ent + i) % tbl->cap_entries];
@@ -247,7 +247,7 @@ static void rebuild_ents(grpc_chttp2_hptbl *tbl, gpr_uint32 new_cap) {
 }
 
 void grpc_chttp2_hptbl_set_max_bytes(grpc_chttp2_hptbl *tbl,
-                                     gpr_uint32 max_bytes) {
+                                     uint32_t max_bytes) {
   if (tbl->max_bytes == max_bytes) {
     return;
   }
@@ -259,7 +259,7 @@ void grpc_chttp2_hptbl_set_max_bytes(grpc_chttp2_hptbl *tbl,
 }
 
 int grpc_chttp2_hptbl_set_current_table_size(grpc_chttp2_hptbl *tbl,
-                                             gpr_uint32 bytes) {
+                                             uint32_t bytes) {
   if (tbl->current_table_bytes == bytes) {
     return 1;
   }
@@ -278,7 +278,7 @@ int grpc_chttp2_hptbl_set_current_table_size(grpc_chttp2_hptbl *tbl,
   if (tbl->max_entries > tbl->cap_entries) {
     rebuild_ents(tbl, GPR_MAX(tbl->max_entries, 2 * tbl->cap_entries));
   } else if (tbl->max_entries < tbl->cap_entries / 3) {
-    gpr_uint32 new_cap = GPR_MAX(tbl->max_entries, 16u);
+    uint32_t new_cap = GPR_MAX(tbl->max_entries, 16u);
     if (new_cap != tbl->cap_entries) {
       rebuild_ents(tbl, new_cap);
     }
@@ -328,14 +328,14 @@ int grpc_chttp2_hptbl_add(grpc_chttp2_hptbl *tbl, grpc_mdelem *md) {
 
   /* update accounting values */
   tbl->num_ents++;
-  tbl->mem_used += (gpr_uint32)elem_bytes;
+  tbl->mem_used += (uint32_t)elem_bytes;
   return 1;
 }
 
 grpc_chttp2_hptbl_find_result grpc_chttp2_hptbl_find(
     const grpc_chttp2_hptbl *tbl, grpc_mdelem *md) {
   grpc_chttp2_hptbl_find_result r = {0, 0};
-  gpr_uint32 i;
+  uint32_t i;
 
   /* See if the string is in the static table */
   for (i = 0; i < GRPC_CHTTP2_LAST_STATIC_ENTRY; i++) {
@@ -348,8 +348,8 @@ grpc_chttp2_hptbl_find_result grpc_chttp2_hptbl_find(
 
   /* Scan the dynamic table */
   for (i = 0; i < tbl->num_ents; i++) {
-    gpr_uint32 idx =
-        (gpr_uint32)(tbl->num_ents - i + GRPC_CHTTP2_LAST_STATIC_ENTRY);
+    uint32_t idx =
+        (uint32_t)(tbl->num_ents - i + GRPC_CHTTP2_LAST_STATIC_ENTRY);
     grpc_mdelem *ent = tbl->ents[(tbl->first_ent + i) % tbl->cap_entries];
     if (md->key != ent->key) continue;
     r.index = idx;

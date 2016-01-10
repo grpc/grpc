@@ -160,7 +160,7 @@ void grpc_iocp_add_socket(grpc_winsocket *socket) {
   HANDLE ret;
   if (socket->added_to_iocp) return;
   ret = CreateIoCompletionPort((HANDLE)socket->socket, g_iocp,
-                               (gpr_uintptr)socket, 0);
+                               (uintptr_t)socket, 0);
   if (!ret) {
     char *utf8_message = gpr_format_message(WSAGetLastError());
     gpr_log(GPR_ERROR, "Unable to add socket to iocp: %s", utf8_message);

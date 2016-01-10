@@ -67,9 +67,9 @@ static void slice_buffer_stream_destroy(grpc_exec_ctx *exec_ctx,
 
 void grpc_slice_buffer_stream_init(grpc_slice_buffer_stream *stream,
                                    gpr_slice_buffer *slice_buffer,
-                                   gpr_uint32 flags) {
-  GPR_ASSERT(slice_buffer->length <= GPR_UINT32_MAX);
-  stream->base.length = (gpr_uint32)slice_buffer->length;
+                                   uint32_t flags) {
+  GPR_ASSERT(slice_buffer->length <= UINT32_MAX);
+  stream->base.length = (uint32_t)slice_buffer->length;
   stream->base.flags = flags;
   stream->base.next = slice_buffer_stream_next;
   stream->base.destroy = slice_buffer_stream_destroy;

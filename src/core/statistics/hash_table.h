@@ -60,7 +60,7 @@ typedef struct unresizable_hash_table census_ht;
 /* Currently, the hash_table can take two types of keys. (uint64 for trace
    store and const char* for stats store). */
 typedef union {
-  gpr_uint64 val;
+  uint64_t val;
   void *ptr;
 } census_ht_key;
 
@@ -73,10 +73,10 @@ typedef struct census_ht_option {
   /* Type of hash key */
   census_ht_key_type key_type;
   /* Desired number of buckets, preferably a prime number */
-  gpr_int32 num_buckets;
+  int32_t num_buckets;
   /* Fucntion to calculate uint64 hash value of the key. Only takes effect if
      key_type is POINTER. */
-  gpr_uint64 (*hash)(const void *);
+  uint64_t (*hash)(const void *);
   /* Function to compare two keys, returns 0 iff equal. Only takes effect if
      key_type is POINTER */
   int (*compare_keys)(const void *k1, const void *k2);
@@ -126,6 +126,6 @@ typedef void (*census_ht_itr_cb)(census_ht_key key, const void *val_ptr,
 
 /* Iterates through all key-value pairs in the hash_table. The callback function
    should not invalidate data entries. */
-gpr_uint64 census_ht_for_all(const census_ht *ht, census_ht_itr_cb);
+uint64_t census_ht_for_all(const census_ht *ht, census_ht_itr_cb);
 
 #endif /* GRPC_INTERNAL_CORE_STATISTICS_HASH_TABLE_H */
