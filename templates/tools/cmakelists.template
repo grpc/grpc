@@ -6,11 +6,18 @@ template: |
   <%
   import os
 
+  all_vars = set()
+
   def proto_root(src):
     return src.upper().replace('/', '_').replace('\\', '_').replace('.', '_')
 
-  def protovars(src, tag):
-    return '%(root)s_%(tag)s_SRCS %(root)s_%(tag)s_HDRS' % { 'root': proto_root(src), 'tag': tag }
+  def protovars(src, tag, all_vars=all_vars):
+    args = { 'root': proto_root(src), 'tag': tag }
+    srcs = '%(root)s_%(tag)s_SRCS' % args
+    hdrs = '%(root)s_%(tag)s_HDRS' % args
+    all_vars.add(srcs)
+    all_vars.add(hdrs)
+    return '%s %s' % (srcs, hdrs)
   %>
   INCLUDE(GRPC_PB)
   % for proto in protos:
@@ -19,4 +26,6 @@ template: |
   GRPC_PB_GENERATE_CPP(${protovars(proto, 'GRPC')} <%text>${CMAKE_SOURCE_DIR}</%text>/${proto})
   % endif
   % endfor
-
+  % for var in sorted(list(all_vars)):
+  set(${var} ${"${"}${var}${"}"} PARENT_SCOPE)
+  % endfor

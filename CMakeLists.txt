@@ -10,9 +10,7 @@ set (PACKAGE_BUGREPORT "https://github.com/grpc/grpc/issues/")
 set (CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set (CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
-message(STATUS "CMAKE_MODULE_PATH: " ${CMAKE_MODULE_PATH})
 set (CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_BINARY_DIR}/tools/cmake_modules)
-message(STATUS "CMAKE_MODULE_PATH: " ${CMAKE_MODULE_PATH})
 
 project (${PACKAGE_NAME} C CXX)
 
@@ -69,30 +67,18 @@ endif()
 add_subdirectory(tools/cmakelists/src/proto/grpc/testing)
 add_subdirectory(tools/cmakelists/src/proto/grpc/testing/duplicate)
 
-# PROTOBUF_GENERATE_CPP(SRC_PROTO_GRPC_TESTING_CONTROL_PROTO_SRCS SRC_PROTO_GRPC_TESTING_CONTROL_PROTO_HDRS src/proto/grpc/testing/control)
-# PROTOBUF_GENERATE_CPP(SRC_PROTO_GRPC_TESTING_CONTROL_GRPC_SRCS SRC_PROTO_GRPC_TESTING_CONTROL_GRPC_HDRS src/proto/grpc/testing/control)
-# PROTOBUF_GENERATE_CPP(SRC_PROTO_GRPC_TESTING_DUPLICATE_ECHO_DUPLICATE_PROTO_SRCS SRC_PROTO_GRPC_TESTING_DUPLICATE_ECHO_DUPLICATE_PROTO_HDRS src/proto/grpc/testing/duplicate/echo_duplicate)
-# PROTOBUF_GENERATE_CPP(SRC_PROTO_GRPC_TESTING_DUPLICATE_ECHO_DUPLICATE_GRPC_SRCS SRC_PROTO_GRPC_TESTING_DUPLICATE_ECHO_DUPLICATE_GRPC_HDRS src/proto/grpc/testing/duplicate/echo_duplicate)
-# PROTOBUF_GENERATE_CPP(SRC_PROTO_GRPC_TESTING_ECHO_PROTO_SRCS SRC_PROTO_GRPC_TESTING_ECHO_PROTO_HDRS src/proto/grpc/testing/echo)
-# PROTOBUF_GENERATE_CPP(SRC_PROTO_GRPC_TESTING_ECHO_GRPC_SRCS SRC_PROTO_GRPC_TESTING_ECHO_GRPC_HDRS src/proto/grpc/testing/echo)
-# PROTOBUF_GENERATE_CPP(SRC_PROTO_GRPC_TESTING_ECHO_MESSAGES_PROTO_SRCS SRC_PROTO_GRPC_TESTING_ECHO_MESSAGES_PROTO_HDRS src/proto/grpc/testing/echo_messages)
-# PROTOBUF_GENERATE_CPP(SRC_PROTO_GRPC_TESTING_ECHO_MESSAGES_GRPC_SRCS SRC_PROTO_GRPC_TESTING_ECHO_MESSAGES_GRPC_HDRS src/proto/grpc/testing/echo_messages)
-# PROTOBUF_GENERATE_CPP(SRC_PROTO_GRPC_TESTING_EMPTY_PROTO_SRCS SRC_PROTO_GRPC_TESTING_EMPTY_PROTO_HDRS src/proto/grpc/testing/empty)
-# PROTOBUF_GENERATE_CPP(SRC_PROTO_GRPC_TESTING_EMPTY_GRPC_SRCS SRC_PROTO_GRPC_TESTING_EMPTY_GRPC_HDRS src/proto/grpc/testing/empty)
-# PROTOBUF_GENERATE_CPP(SRC_PROTO_GRPC_TESTING_MESSAGES_PROTO_SRCS SRC_PROTO_GRPC_TESTING_MESSAGES_PROTO_HDRS src/proto/grpc/testing/messages)
-# PROTOBUF_GENERATE_CPP(SRC_PROTO_GRPC_TESTING_MESSAGES_GRPC_SRCS SRC_PROTO_GRPC_TESTING_MESSAGES_GRPC_HDRS src/proto/grpc/testing/messages)
-# PROTOBUF_GENERATE_CPP(SRC_PROTO_GRPC_TESTING_METRICS_PROTO_SRCS SRC_PROTO_GRPC_TESTING_METRICS_PROTO_HDRS src/proto/grpc/testing/metrics)
-# PROTOBUF_GENERATE_CPP(SRC_PROTO_GRPC_TESTING_METRICS_GRPC_SRCS SRC_PROTO_GRPC_TESTING_METRICS_GRPC_HDRS src/proto/grpc/testing/metrics)
-# PROTOBUF_GENERATE_CPP(SRC_PROTO_GRPC_TESTING_PAYLOADS_PROTO_SRCS SRC_PROTO_GRPC_TESTING_PAYLOADS_PROTO_HDRS src/proto/grpc/testing/payloads)
-# PROTOBUF_GENERATE_CPP(SRC_PROTO_GRPC_TESTING_PAYLOADS_GRPC_SRCS SRC_PROTO_GRPC_TESTING_PAYLOADS_GRPC_HDRS src/proto/grpc/testing/payloads)
-# PROTOBUF_GENERATE_CPP(SRC_PROTO_GRPC_TESTING_PERF_DB_PROTO_SRCS SRC_PROTO_GRPC_TESTING_PERF_DB_PROTO_HDRS src/proto/grpc/testing/perf_db)
-# PROTOBUF_GENERATE_CPP(SRC_PROTO_GRPC_TESTING_PERF_DB_GRPC_SRCS SRC_PROTO_GRPC_TESTING_PERF_DB_GRPC_HDRS src/proto/grpc/testing/perf_db)
-# PROTOBUF_GENERATE_CPP(SRC_PROTO_GRPC_TESTING_SERVICES_PROTO_SRCS SRC_PROTO_GRPC_TESTING_SERVICES_PROTO_HDRS src/proto/grpc/testing/services)
-# PROTOBUF_GENERATE_CPP(SRC_PROTO_GRPC_TESTING_SERVICES_GRPC_SRCS SRC_PROTO_GRPC_TESTING_SERVICES_GRPC_HDRS src/proto/grpc/testing/services)
-# PROTOBUF_GENERATE_CPP(SRC_PROTO_GRPC_TESTING_STATS_PROTO_SRCS SRC_PROTO_GRPC_TESTING_STATS_PROTO_HDRS src/proto/grpc/testing/stats)
-# PROTOBUF_GENERATE_CPP(SRC_PROTO_GRPC_TESTING_STATS_GRPC_SRCS SRC_PROTO_GRPC_TESTING_STATS_GRPC_HDRS src/proto/grpc/testing/stats)
-# PROTOBUF_GENERATE_CPP(SRC_PROTO_GRPC_TESTING_TEST_PROTO_SRCS SRC_PROTO_GRPC_TESTING_TEST_PROTO_HDRS src/proto/grpc/testing/test)
-# PROTOBUF_GENERATE_CPP(SRC_PROTO_GRPC_TESTING_TEST_GRPC_SRCS SRC_PROTO_GRPC_TESTING_TEST_GRPC_HDRS src/proto/grpc/testing/test)
+set_source_files_properties(${SRC_PROTO_GRPC_TESTING_CONTROL_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_CONTROL_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_CONTROL_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_CONTROL_GRPC_HDRS} PROPERTIES GENERATED TRUE)
+set_source_files_properties(${SRC_PROTO_GRPC_TESTING_DUPLICATE_ECHO_DUPLICATE_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_DUPLICATE_ECHO_DUPLICATE_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_DUPLICATE_ECHO_DUPLICATE_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_DUPLICATE_ECHO_DUPLICATE_GRPC_HDRS} PROPERTIES GENERATED TRUE)
+set_source_files_properties(${SRC_PROTO_GRPC_TESTING_ECHO_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_ECHO_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_ECHO_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_ECHO_GRPC_HDRS} PROPERTIES GENERATED TRUE)
+set_source_files_properties(${SRC_PROTO_GRPC_TESTING_ECHO_MESSAGES_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_ECHO_MESSAGES_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_ECHO_MESSAGES_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_ECHO_MESSAGES_GRPC_HDRS} PROPERTIES GENERATED TRUE)
+set_source_files_properties(${SRC_PROTO_GRPC_TESTING_EMPTY_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_EMPTY_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_EMPTY_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_EMPTY_GRPC_HDRS} PROPERTIES GENERATED TRUE)
+set_source_files_properties(${SRC_PROTO_GRPC_TESTING_MESSAGES_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_MESSAGES_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_MESSAGES_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_MESSAGES_GRPC_HDRS} PROPERTIES GENERATED TRUE)
+set_source_files_properties(${SRC_PROTO_GRPC_TESTING_METRICS_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_METRICS_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_METRICS_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_METRICS_GRPC_HDRS} PROPERTIES GENERATED TRUE)
+set_source_files_properties(${SRC_PROTO_GRPC_TESTING_PAYLOADS_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_PAYLOADS_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_PAYLOADS_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_PAYLOADS_GRPC_HDRS} PROPERTIES GENERATED TRUE)
+set_source_files_properties(${SRC_PROTO_GRPC_TESTING_PERF_DB_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_PERF_DB_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_PERF_DB_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_PERF_DB_GRPC_HDRS} PROPERTIES GENERATED TRUE)
+set_source_files_properties(${SRC_PROTO_GRPC_TESTING_SERVICES_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_SERVICES_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_SERVICES_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_SERVICES_GRPC_HDRS} PROPERTIES GENERATED TRUE)
+set_source_files_properties(${SRC_PROTO_GRPC_TESTING_STATS_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_STATS_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_STATS_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_STATS_GRPC_HDRS} PROPERTIES GENERATED TRUE)
+set_source_files_properties(${SRC_PROTO_GRPC_TESTING_TEST_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_TEST_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_TEST_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_TEST_GRPC_HDRS} PROPERTIES GENERATED TRUE)
 
 add_library(gpr
   src/core/profiling/basic_timers.c
@@ -139,6 +125,9 @@ add_library(gpr
 )
 add_library(gpr_test_util
   test/core/util/test_config.c
+)
+add_dependencies(gpr_test_util
+  gpr
 )
 add_library(grpc
   src/core/httpcli/httpcli_security_connector.c
@@ -292,6 +281,9 @@ add_library(grpc
   src/core/census/operation.c
   src/core/census/tracing.c
 )
+add_dependencies(grpc
+  gpr
+)
 add_library(grpc_test_util
   test/core/end2end/data/server1_cert.c
   test/core/end2end/data/server1_key.c
@@ -306,6 +298,11 @@ add_library(grpc_test_util
   test/core/util/port_windows.c
   test/core/util/slice_splitter.c
 )
+add_dependencies(grpc_test_util
+  gpr
+  gpr_test_util
+  grpc
+)
 add_library(grpc_test_util_unsecure
   test/core/end2end/cq_verifier.c
   test/core/end2end/fixtures/proxy.c
@@ -315,6 +312,11 @@ add_library(grpc_test_util_unsecure
   test/core/util/port_posix.c
   test/core/util/port_windows.c
   test/core/util/slice_splitter.c
+)
+add_dependencies(grpc_test_util_unsecure
+  gpr
+  gpr_test_util
+  grpc_unsecure
 )
 add_library(grpc_unsecure
   src/core/surface/init_unsecure.c
@@ -448,16 +450,36 @@ add_library(grpc_unsecure
   src/core/census/operation.c
   src/core/census/tracing.c
 )
+add_dependencies(grpc_unsecure
+  gpr
+)
 if ((CMAKE_SYSTEM EQUAL Linux))
 add_library(grpc_zookeeper
   src/core/client_config/resolvers/zookeeper_resolver.c
+)
+add_dependencies(grpc_zookeeper
+  gpr
+  grpc
 )
 endif()
 add_library(reconnect_server
   test/core/util/reconnect_server.c
 )
+add_dependencies(reconnect_server
+  test_tcp_server
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+)
 add_library(test_tcp_server
   test/core/util/test_tcp_server.c
+)
+add_dependencies(test_tcp_server
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
 )
 add_library(grpc++
   src/cpp/client/secure_credentials.cc
@@ -493,17 +515,25 @@ add_library(grpc++
   src/cpp/util/string_ref.cc
   src/cpp/util/time.cc
 )
+add_dependencies(grpc++
+  gpr
+  grpc
+)
 add_library(grpc++_test_config
   test/cpp/util/test_config.cc
 )
 add_library(grpc++_test_util
-  ${SRC_PROTO_GRPC_TESTING_ECHO_MESSAGES_PROTO_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_ECHO_MESSAGES_PROTO_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_ECHO_MESSAGES_PROTO_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_ECHO_MESSAGES_PROTO_GRPC_HDRS}
-  ${SRC_PROTO_GRPC_TESTING_ECHO_PROTO_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_ECHO_PROTO_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_ECHO_PROTO_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_ECHO_PROTO_GRPC_HDRS}
-  ${SRC_PROTO_GRPC_TESTING_DUPLICATE_ECHO_DUPLICATE_PROTO_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_DUPLICATE_ECHO_DUPLICATE_PROTO_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_DUPLICATE_ECHO_DUPLICATE_PROTO_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_DUPLICATE_ECHO_DUPLICATE_PROTO_GRPC_HDRS}
+  ${SRC_PROTO_GRPC_TESTING_ECHO_MESSAGES_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_ECHO_MESSAGES_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_ECHO_MESSAGES_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_ECHO_MESSAGES_GRPC_HDRS}
+  ${SRC_PROTO_GRPC_TESTING_ECHO_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_ECHO_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_ECHO_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_ECHO_GRPC_HDRS}
+  ${SRC_PROTO_GRPC_TESTING_DUPLICATE_ECHO_DUPLICATE_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_DUPLICATE_ECHO_DUPLICATE_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_DUPLICATE_ECHO_DUPLICATE_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_DUPLICATE_ECHO_DUPLICATE_GRPC_HDRS}
   test/cpp/util/cli_call.cc
   test/cpp/util/create_test_channel.cc
   test/cpp/util/string_ref_helper.cc
   test/cpp/util/subprocess.cc
+)
+add_dependencies(grpc++_test_util
+  grpc++
+  grpc_test_util
 )
 add_library(grpc++_unsecure
   src/cpp/common/insecure_create_auth_context.cc
@@ -534,6 +564,10 @@ add_library(grpc++_unsecure
   src/cpp/util/string_ref.cc
   src/cpp/util/time.cc
 )
+add_dependencies(grpc++_unsecure
+  gpr
+  grpc_unsecure
+)
 add_library(grpc_plugin_support
   src/compiler/cpp_generator.cc
   src/compiler/csharp_generator.cc
@@ -542,32 +576,65 @@ add_library(grpc_plugin_support
   src/compiler/ruby_generator.cc
 )
 add_library(interop_client_helper
-  ${SRC_PROTO_GRPC_TESTING_MESSAGES_PROTO_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_MESSAGES_PROTO_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_MESSAGES_PROTO_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_MESSAGES_PROTO_GRPC_HDRS}
+  ${SRC_PROTO_GRPC_TESTING_MESSAGES_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_MESSAGES_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_MESSAGES_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_MESSAGES_GRPC_HDRS}
   test/cpp/interop/client_helper.cc
 )
+add_dependencies(interop_client_helper
+  grpc++_test_util
+  grpc_test_util
+  grpc++
+  grpc
+  gpr
+)
 add_library(interop_client_main
-  ${SRC_PROTO_GRPC_TESTING_EMPTY_PROTO_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_EMPTY_PROTO_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_EMPTY_PROTO_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_EMPTY_PROTO_GRPC_HDRS}
-  ${SRC_PROTO_GRPC_TESTING_MESSAGES_PROTO_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_MESSAGES_PROTO_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_MESSAGES_PROTO_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_MESSAGES_PROTO_GRPC_HDRS}
-  ${SRC_PROTO_GRPC_TESTING_TEST_PROTO_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_TEST_PROTO_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_TEST_PROTO_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_TEST_PROTO_GRPC_HDRS}
+  ${SRC_PROTO_GRPC_TESTING_EMPTY_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_EMPTY_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_EMPTY_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_EMPTY_GRPC_HDRS}
+  ${SRC_PROTO_GRPC_TESTING_MESSAGES_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_MESSAGES_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_MESSAGES_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_MESSAGES_GRPC_HDRS}
+  ${SRC_PROTO_GRPC_TESTING_TEST_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_TEST_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_TEST_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_TEST_GRPC_HDRS}
   test/cpp/interop/client.cc
   test/cpp/interop/interop_client.cc
+)
+add_dependencies(interop_client_main
+  interop_client_helper
+  grpc++_test_util
+  grpc_test_util
+  grpc++
+  grpc
+  gpr_test_util
+  gpr
+  grpc++_test_config
 )
 add_library(interop_server_helper
   test/cpp/interop/server_helper.cc
 )
+add_dependencies(interop_server_helper
+  grpc_test_util
+  grpc++
+  grpc
+  gpr
+)
 add_library(interop_server_main
-  ${SRC_PROTO_GRPC_TESTING_EMPTY_PROTO_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_EMPTY_PROTO_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_EMPTY_PROTO_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_EMPTY_PROTO_GRPC_HDRS}
-  ${SRC_PROTO_GRPC_TESTING_MESSAGES_PROTO_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_MESSAGES_PROTO_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_MESSAGES_PROTO_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_MESSAGES_PROTO_GRPC_HDRS}
-  ${SRC_PROTO_GRPC_TESTING_TEST_PROTO_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_TEST_PROTO_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_TEST_PROTO_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_TEST_PROTO_GRPC_HDRS}
+  ${SRC_PROTO_GRPC_TESTING_EMPTY_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_EMPTY_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_EMPTY_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_EMPTY_GRPC_HDRS}
+  ${SRC_PROTO_GRPC_TESTING_MESSAGES_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_MESSAGES_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_MESSAGES_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_MESSAGES_GRPC_HDRS}
+  ${SRC_PROTO_GRPC_TESTING_TEST_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_TEST_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_TEST_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_TEST_GRPC_HDRS}
   test/cpp/interop/server.cc
 )
+add_dependencies(interop_server_main
+  interop_server_helper
+  grpc++_test_util
+  grpc_test_util
+  grpc++
+  grpc
+  gpr_test_util
+  gpr
+  grpc++_test_config
+)
 add_library(qps
-  ${SRC_PROTO_GRPC_TESTING_MESSAGES_PROTO_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_MESSAGES_PROTO_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_MESSAGES_PROTO_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_MESSAGES_PROTO_GRPC_HDRS}
-  ${SRC_PROTO_GRPC_TESTING_CONTROL_PROTO_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_CONTROL_PROTO_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_CONTROL_PROTO_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_CONTROL_PROTO_GRPC_HDRS}
-  ${SRC_PROTO_GRPC_TESTING_PAYLOADS_PROTO_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_PAYLOADS_PROTO_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_PAYLOADS_PROTO_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_PAYLOADS_PROTO_GRPC_HDRS}
-  ${SRC_PROTO_GRPC_TESTING_SERVICES_PROTO_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_SERVICES_PROTO_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_SERVICES_PROTO_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_SERVICES_PROTO_GRPC_HDRS}
-  ${SRC_PROTO_GRPC_TESTING_STATS_PROTO_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_STATS_PROTO_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_STATS_PROTO_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_STATS_PROTO_GRPC_HDRS}
-  ${SRC_PROTO_GRPC_TESTING_PERF_DB_PROTO_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_PERF_DB_PROTO_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_PERF_DB_PROTO_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_PERF_DB_PROTO_GRPC_HDRS}
+  ${SRC_PROTO_GRPC_TESTING_MESSAGES_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_MESSAGES_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_MESSAGES_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_MESSAGES_GRPC_HDRS}
+  ${SRC_PROTO_GRPC_TESTING_CONTROL_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_CONTROL_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_CONTROL_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_CONTROL_GRPC_HDRS}
+  ${SRC_PROTO_GRPC_TESTING_PAYLOADS_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_PAYLOADS_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_PAYLOADS_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_PAYLOADS_GRPC_HDRS}
+  ${SRC_PROTO_GRPC_TESTING_SERVICES_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_SERVICES_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_SERVICES_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_SERVICES_GRPC_HDRS}
+  ${SRC_PROTO_GRPC_TESTING_STATS_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_STATS_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_STATS_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_STATS_GRPC_HDRS}
+  ${SRC_PROTO_GRPC_TESTING_PERF_DB_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_PERF_DB_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_PERF_DB_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_PERF_DB_GRPC_HDRS}
   test/cpp/qps/client_async.cc
   test/cpp/qps/client_sync.cc
   test/cpp/qps/driver.cc
@@ -579,8 +646,17 @@ add_library(qps
   test/cpp/qps/timer.cc
   test/cpp/util/benchmark_config.cc
 )
+add_dependencies(qps
+  grpc_test_util
+  grpc++_test_util
+  grpc++
+)
 add_library(grpc_csharp_ext
   src/csharp/ext/grpc_csharp_ext.c
+)
+add_dependencies(grpc_csharp_ext
+  gpr
+  grpc
 )
 add_library(boringssl
   src/boringssl/err_data.c
@@ -886,266 +962,255 @@ add_library(boringssl_test_util
 add_library(boringssl_aes_test_lib
   third_party/boringssl/crypto/aes/aes_test.cc
 )
+add_dependencies(boringssl_aes_test_lib
+  boringssl_test_util
+  boringssl
+)
 add_library(boringssl_base64_test_lib
   third_party/boringssl/crypto/base64/base64_test.cc
+)
+add_dependencies(boringssl_base64_test_lib
+  boringssl_test_util
+  boringssl
 )
 add_library(boringssl_bio_test_lib
   third_party/boringssl/crypto/bio/bio_test.cc
 )
+add_dependencies(boringssl_bio_test_lib
+  boringssl_test_util
+  boringssl
+)
 add_library(boringssl_bn_test_lib
   third_party/boringssl/crypto/bn/bn_test.cc
+)
+add_dependencies(boringssl_bn_test_lib
+  boringssl_test_util
+  boringssl
 )
 add_library(boringssl_bytestring_test_lib
   third_party/boringssl/crypto/bytestring/bytestring_test.cc
 )
+add_dependencies(boringssl_bytestring_test_lib
+  boringssl_test_util
+  boringssl
+)
 add_library(boringssl_aead_test_lib
   third_party/boringssl/crypto/cipher/aead_test.cc
+)
+add_dependencies(boringssl_aead_test_lib
+  boringssl_test_util
+  boringssl
 )
 add_library(boringssl_cipher_test_lib
   third_party/boringssl/crypto/cipher/cipher_test.cc
 )
+add_dependencies(boringssl_cipher_test_lib
+  boringssl_test_util
+  boringssl
+)
 add_library(boringssl_cmac_test_lib
   third_party/boringssl/crypto/cmac/cmac_test.cc
+)
+add_dependencies(boringssl_cmac_test_lib
+  boringssl_test_util
+  boringssl
 )
 add_library(boringssl_constant_time_test_lib
   third_party/boringssl/crypto/constant_time_test.c
 )
+add_dependencies(boringssl_constant_time_test_lib
+  boringssl_test_util
+  boringssl
+)
 add_library(boringssl_ed25519_test_lib
   third_party/boringssl/crypto/curve25519/ed25519_test.cc
+)
+add_dependencies(boringssl_ed25519_test_lib
+  boringssl_test_util
+  boringssl
 )
 add_library(boringssl_x25519_test_lib
   third_party/boringssl/crypto/curve25519/x25519_test.cc
 )
+add_dependencies(boringssl_x25519_test_lib
+  boringssl_test_util
+  boringssl
+)
 add_library(boringssl_dh_test_lib
   third_party/boringssl/crypto/dh/dh_test.cc
+)
+add_dependencies(boringssl_dh_test_lib
+  boringssl_test_util
+  boringssl
 )
 add_library(boringssl_digest_test_lib
   third_party/boringssl/crypto/digest/digest_test.cc
 )
+add_dependencies(boringssl_digest_test_lib
+  boringssl_test_util
+  boringssl
+)
 add_library(boringssl_dsa_test_lib
   third_party/boringssl/crypto/dsa/dsa_test.c
+)
+add_dependencies(boringssl_dsa_test_lib
+  boringssl_test_util
+  boringssl
 )
 add_library(boringssl_ec_test_lib
   third_party/boringssl/crypto/ec/ec_test.cc
 )
+add_dependencies(boringssl_ec_test_lib
+  boringssl_test_util
+  boringssl
+)
 add_library(boringssl_example_mul_lib
   third_party/boringssl/crypto/ec/example_mul.c
+)
+add_dependencies(boringssl_example_mul_lib
+  boringssl_test_util
+  boringssl
 )
 add_library(boringssl_ecdsa_test_lib
   third_party/boringssl/crypto/ecdsa/ecdsa_test.cc
 )
+add_dependencies(boringssl_ecdsa_test_lib
+  boringssl_test_util
+  boringssl
+)
 add_library(boringssl_err_test_lib
   third_party/boringssl/crypto/err/err_test.cc
+)
+add_dependencies(boringssl_err_test_lib
+  boringssl_test_util
+  boringssl
 )
 add_library(boringssl_evp_extra_test_lib
   third_party/boringssl/crypto/evp/evp_extra_test.cc
 )
+add_dependencies(boringssl_evp_extra_test_lib
+  boringssl_test_util
+  boringssl
+)
 add_library(boringssl_evp_test_lib
   third_party/boringssl/crypto/evp/evp_test.cc
+)
+add_dependencies(boringssl_evp_test_lib
+  boringssl_test_util
+  boringssl
 )
 add_library(boringssl_pbkdf_test_lib
   third_party/boringssl/crypto/evp/pbkdf_test.cc
 )
+add_dependencies(boringssl_pbkdf_test_lib
+  boringssl_test_util
+  boringssl
+)
 add_library(boringssl_hkdf_test_lib
   third_party/boringssl/crypto/hkdf/hkdf_test.c
+)
+add_dependencies(boringssl_hkdf_test_lib
+  boringssl_test_util
+  boringssl
 )
 add_library(boringssl_hmac_test_lib
   third_party/boringssl/crypto/hmac/hmac_test.cc
 )
+add_dependencies(boringssl_hmac_test_lib
+  boringssl_test_util
+  boringssl
+)
 add_library(boringssl_lhash_test_lib
   third_party/boringssl/crypto/lhash/lhash_test.c
+)
+add_dependencies(boringssl_lhash_test_lib
+  boringssl_test_util
+  boringssl
 )
 add_library(boringssl_gcm_test_lib
   third_party/boringssl/crypto/modes/gcm_test.c
 )
+add_dependencies(boringssl_gcm_test_lib
+  boringssl_test_util
+  boringssl
+)
 add_library(boringssl_pkcs12_test_lib
   third_party/boringssl/crypto/pkcs8/pkcs12_test.cc
+)
+add_dependencies(boringssl_pkcs12_test_lib
+  boringssl_test_util
+  boringssl
 )
 add_library(boringssl_pkcs8_test_lib
   third_party/boringssl/crypto/pkcs8/pkcs8_test.cc
 )
+add_dependencies(boringssl_pkcs8_test_lib
+  boringssl_test_util
+  boringssl
+)
 add_library(boringssl_poly1305_test_lib
   third_party/boringssl/crypto/poly1305/poly1305_test.cc
+)
+add_dependencies(boringssl_poly1305_test_lib
+  boringssl_test_util
+  boringssl
 )
 add_library(boringssl_refcount_test_lib
   third_party/boringssl/crypto/refcount_test.c
 )
+add_dependencies(boringssl_refcount_test_lib
+  boringssl_test_util
+  boringssl
+)
 add_library(boringssl_rsa_test_lib
   third_party/boringssl/crypto/rsa/rsa_test.cc
+)
+add_dependencies(boringssl_rsa_test_lib
+  boringssl_test_util
+  boringssl
 )
 add_library(boringssl_thread_test_lib
   third_party/boringssl/crypto/thread_test.c
 )
+add_dependencies(boringssl_thread_test_lib
+  boringssl_test_util
+  boringssl
+)
 add_library(boringssl_pkcs7_test_lib
   third_party/boringssl/crypto/x509/pkcs7_test.c
+)
+add_dependencies(boringssl_pkcs7_test_lib
+  boringssl_test_util
+  boringssl
 )
 add_library(boringssl_tab_test_lib
   third_party/boringssl/crypto/x509v3/tab_test.c
 )
+add_dependencies(boringssl_tab_test_lib
+  boringssl_test_util
+  boringssl
+)
 add_library(boringssl_v3name_test_lib
   third_party/boringssl/crypto/x509v3/v3name_test.c
+)
+add_dependencies(boringssl_v3name_test_lib
+  boringssl_test_util
+  boringssl
 )
 add_library(boringssl_pqueue_test_lib
   third_party/boringssl/ssl/pqueue/pqueue_test.c
 )
+add_dependencies(boringssl_pqueue_test_lib
+  boringssl_test_util
+  boringssl
+)
 add_library(boringssl_ssl_test_lib
   third_party/boringssl/ssl/ssl_test.cc
 )
-if ((CMAKE_SYSTEM EQUAL Windows) OR (CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
-add_library(end2end_fixture_h2_census
-  test/core/end2end/fixtures/h2_census.c
+add_dependencies(boringssl_ssl_test_lib
+  boringssl_test_util
+  boringssl
 )
-endif()
-if ((CMAKE_SYSTEM EQUAL Windows) OR (CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
-add_library(end2end_fixture_h2_compress
-  test/core/end2end/fixtures/h2_compress.c
-)
-endif()
-if ((CMAKE_SYSTEM EQUAL Windows) OR (CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
-add_library(end2end_fixture_h2_fakesec
-  test/core/end2end/fixtures/h2_fakesec.c
-)
-endif()
-if ((CMAKE_SYSTEM EQUAL Windows) OR (CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
-add_library(end2end_fixture_h2_full
-  test/core/end2end/fixtures/h2_full.c
-)
-endif()
-if ((CMAKE_SYSTEM EQUAL Linux))
-add_library(end2end_fixture_h2_full+pipe
-  test/core/end2end/fixtures/h2_full+pipe.c
-)
-endif()
-if ((CMAKE_SYSTEM EQUAL Linux))
-add_library(end2end_fixture_h2_full+poll
-  test/core/end2end/fixtures/h2_full+poll.c
-)
-endif()
-if ((CMAKE_SYSTEM EQUAL Linux))
-add_library(end2end_fixture_h2_full+poll+pipe
-  test/core/end2end/fixtures/h2_full+poll+pipe.c
-)
-endif()
-if ((CMAKE_SYSTEM EQUAL Windows) OR (CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
-add_library(end2end_fixture_h2_oauth2
-  test/core/end2end/fixtures/h2_oauth2.c
-)
-endif()
-if ((CMAKE_SYSTEM EQUAL Windows) OR (CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
-add_library(end2end_fixture_h2_proxy
-  test/core/end2end/fixtures/h2_proxy.c
-)
-endif()
-if ((CMAKE_SYSTEM EQUAL Windows) OR (CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
-add_library(end2end_fixture_h2_sockpair
-  test/core/end2end/fixtures/h2_sockpair.c
-)
-endif()
-if ((CMAKE_SYSTEM EQUAL Windows) OR (CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
-add_library(end2end_fixture_h2_sockpair+trace
-  test/core/end2end/fixtures/h2_sockpair+trace.c
-)
-endif()
-if ((CMAKE_SYSTEM EQUAL Windows) OR (CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
-add_library(end2end_fixture_h2_sockpair_1byte
-  test/core/end2end/fixtures/h2_sockpair_1byte.c
-)
-endif()
-if ((CMAKE_SYSTEM EQUAL Windows) OR (CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
-add_library(end2end_fixture_h2_ssl
-  test/core/end2end/fixtures/h2_ssl.c
-)
-endif()
-if ((CMAKE_SYSTEM EQUAL Linux))
-add_library(end2end_fixture_h2_ssl+poll
-  test/core/end2end/fixtures/h2_ssl+poll.c
-)
-endif()
-if ((CMAKE_SYSTEM EQUAL Windows) OR (CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
-add_library(end2end_fixture_h2_ssl_proxy
-  test/core/end2end/fixtures/h2_ssl_proxy.c
-)
-endif()
-if ((CMAKE_SYSTEM EQUAL Windows) OR (CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
-add_library(end2end_fixture_h2_uchannel
-  test/core/end2end/fixtures/h2_uchannel.c
-)
-endif()
-if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
-add_library(end2end_fixture_h2_uds
-  test/core/end2end/fixtures/h2_uds.c
-)
-endif()
-if ((CMAKE_SYSTEM EQUAL Linux))
-add_library(end2end_fixture_h2_uds+poll
-  test/core/end2end/fixtures/h2_uds+poll.c
-)
-endif()
-if ((CMAKE_SYSTEM EQUAL Windows) OR (CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
-add_library(end2end_nosec_fixture_h2_census
-  test/core/end2end/fixtures/h2_census.c
-)
-endif()
-if ((CMAKE_SYSTEM EQUAL Windows) OR (CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
-add_library(end2end_nosec_fixture_h2_compress
-  test/core/end2end/fixtures/h2_compress.c
-)
-endif()
-if ((CMAKE_SYSTEM EQUAL Windows) OR (CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
-add_library(end2end_nosec_fixture_h2_full
-  test/core/end2end/fixtures/h2_full.c
-)
-endif()
-if ((CMAKE_SYSTEM EQUAL Linux))
-add_library(end2end_nosec_fixture_h2_full+pipe
-  test/core/end2end/fixtures/h2_full+pipe.c
-)
-endif()
-if ((CMAKE_SYSTEM EQUAL Linux))
-add_library(end2end_nosec_fixture_h2_full+poll
-  test/core/end2end/fixtures/h2_full+poll.c
-)
-endif()
-if ((CMAKE_SYSTEM EQUAL Linux))
-add_library(end2end_nosec_fixture_h2_full+poll+pipe
-  test/core/end2end/fixtures/h2_full+poll+pipe.c
-)
-endif()
-if ((CMAKE_SYSTEM EQUAL Windows) OR (CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
-add_library(end2end_nosec_fixture_h2_proxy
-  test/core/end2end/fixtures/h2_proxy.c
-)
-endif()
-if ((CMAKE_SYSTEM EQUAL Windows) OR (CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
-add_library(end2end_nosec_fixture_h2_sockpair
-  test/core/end2end/fixtures/h2_sockpair.c
-)
-endif()
-if ((CMAKE_SYSTEM EQUAL Windows) OR (CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
-add_library(end2end_nosec_fixture_h2_sockpair+trace
-  test/core/end2end/fixtures/h2_sockpair+trace.c
-)
-endif()
-if ((CMAKE_SYSTEM EQUAL Windows) OR (CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
-add_library(end2end_nosec_fixture_h2_sockpair_1byte
-  test/core/end2end/fixtures/h2_sockpair_1byte.c
-)
-endif()
-if ((CMAKE_SYSTEM EQUAL Windows) OR (CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
-add_library(end2end_nosec_fixture_h2_uchannel
-  test/core/end2end/fixtures/h2_uchannel.c
-)
-endif()
-if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
-add_library(end2end_nosec_fixture_h2_uds
-  test/core/end2end/fixtures/h2_uds.c
-)
-endif()
-if ((CMAKE_SYSTEM EQUAL Linux))
-add_library(end2end_nosec_fixture_h2_uds+poll
-  test/core/end2end/fixtures/h2_uds+poll.c
-)
-endif()
 add_library(end2end_tests
   test/core/end2end/end2end_tests.c
   test/core/end2end/tests/bad_hostname.c
@@ -1185,6 +1250,13 @@ add_library(end2end_tests
   test/core/end2end/tests/simple_request.c
   test/core/end2end/tests/trailing_metadata.c
 )
+add_dependencies(end2end_tests
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+)
 add_library(end2end_nosec_tests
   test/core/end2end/end2end_nosec_tests.c
   test/core/end2end/tests/bad_hostname.c
@@ -1223,6 +1295,12 @@ add_library(end2end_nosec_tests
   test/core/end2end/tests/simple_request.c
   test/core/end2end/tests/trailing_metadata.c
 )
+add_dependencies(end2end_nosec_tests
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+)
 add_library(end2end_certs
   test/core/end2end/data/test_root_cert.c
   test/core/end2end/data/server1_cert.c
@@ -1231,9 +1309,21 @@ add_library(end2end_certs
 add_library(bad_client_test
   test/core/bad_client/bad_client.c
 )
+add_dependencies(bad_client_test
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+)
 if ((CMAKE_SYSTEM EQUAL Linux) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Darwin))
 add_library(bad_ssl_test_server
   test/core/bad_ssl/server.c
+)
+add_dependencies(bad_ssl_test_server
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
 )
 endif()
 
@@ -3109,7 +3199,7 @@ target_link_libraries(interop_test
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
 add_executable(metrics_client
-  ${SRC_PROTO_GRPC_TESTING_METRICS_PROTO_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_METRICS_PROTO_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_METRICS_PROTO_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_METRICS_PROTO_GRPC_HDRS}
+  ${SRC_PROTO_GRPC_TESTING_METRICS_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_METRICS_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_METRICS_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_METRICS_GRPC_HDRS}
   test/cpp/interop/metrics_client.cc
 )
 target_link_libraries(metrics_client
@@ -3243,9 +3333,9 @@ target_link_libraries(qps_worker
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
 add_executable(reconnect_interop_client
-  ${SRC_PROTO_GRPC_TESTING_EMPTY_PROTO_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_EMPTY_PROTO_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_EMPTY_PROTO_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_EMPTY_PROTO_GRPC_HDRS}
-  ${SRC_PROTO_GRPC_TESTING_MESSAGES_PROTO_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_MESSAGES_PROTO_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_MESSAGES_PROTO_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_MESSAGES_PROTO_GRPC_HDRS}
-  ${SRC_PROTO_GRPC_TESTING_TEST_PROTO_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_TEST_PROTO_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_TEST_PROTO_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_TEST_PROTO_GRPC_HDRS}
+  ${SRC_PROTO_GRPC_TESTING_EMPTY_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_EMPTY_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_EMPTY_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_EMPTY_GRPC_HDRS}
+  ${SRC_PROTO_GRPC_TESTING_MESSAGES_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_MESSAGES_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_MESSAGES_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_MESSAGES_GRPC_HDRS}
+  ${SRC_PROTO_GRPC_TESTING_TEST_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_TEST_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_TEST_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_TEST_GRPC_HDRS}
   test/cpp/interop/reconnect_interop_client.cc
 )
 target_link_libraries(reconnect_interop_client
@@ -3265,9 +3355,9 @@ target_link_libraries(reconnect_interop_client
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
 add_executable(reconnect_interop_server
-  ${SRC_PROTO_GRPC_TESTING_EMPTY_PROTO_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_EMPTY_PROTO_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_EMPTY_PROTO_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_EMPTY_PROTO_GRPC_HDRS}
-  ${SRC_PROTO_GRPC_TESTING_MESSAGES_PROTO_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_MESSAGES_PROTO_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_MESSAGES_PROTO_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_MESSAGES_PROTO_GRPC_HDRS}
-  ${SRC_PROTO_GRPC_TESTING_TEST_PROTO_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_TEST_PROTO_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_TEST_PROTO_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_TEST_PROTO_GRPC_HDRS}
+  ${SRC_PROTO_GRPC_TESTING_EMPTY_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_EMPTY_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_EMPTY_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_EMPTY_GRPC_HDRS}
+  ${SRC_PROTO_GRPC_TESTING_MESSAGES_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_MESSAGES_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_MESSAGES_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_MESSAGES_GRPC_HDRS}
+  ${SRC_PROTO_GRPC_TESTING_TEST_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_TEST_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_TEST_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_TEST_GRPC_HDRS}
   test/cpp/interop/reconnect_interop_server.cc
 )
 target_link_libraries(reconnect_interop_server
@@ -3415,10 +3505,10 @@ target_link_libraries(streaming_throughput_test
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
 add_executable(stress_test
-  ${SRC_PROTO_GRPC_TESTING_EMPTY_PROTO_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_EMPTY_PROTO_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_EMPTY_PROTO_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_EMPTY_PROTO_GRPC_HDRS}
-  ${SRC_PROTO_GRPC_TESTING_MESSAGES_PROTO_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_MESSAGES_PROTO_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_MESSAGES_PROTO_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_MESSAGES_PROTO_GRPC_HDRS}
-  ${SRC_PROTO_GRPC_TESTING_METRICS_PROTO_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_METRICS_PROTO_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_METRICS_PROTO_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_METRICS_PROTO_GRPC_HDRS}
-  ${SRC_PROTO_GRPC_TESTING_TEST_PROTO_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_TEST_PROTO_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_TEST_PROTO_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_TEST_PROTO_GRPC_HDRS}
+  ${SRC_PROTO_GRPC_TESTING_EMPTY_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_EMPTY_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_EMPTY_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_EMPTY_GRPC_HDRS}
+  ${SRC_PROTO_GRPC_TESTING_MESSAGES_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_MESSAGES_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_MESSAGES_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_MESSAGES_GRPC_HDRS}
+  ${SRC_PROTO_GRPC_TESTING_METRICS_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_METRICS_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_METRICS_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_METRICS_GRPC_HDRS}
+  ${SRC_PROTO_GRPC_TESTING_TEST_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_TEST_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_TEST_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_TEST_GRPC_HDRS}
   test/cpp/interop/interop_client.cc
   test/cpp/interop/stress_interop_client.cc
   test/cpp/interop/stress_test.cc
@@ -3497,7 +3587,7 @@ target_link_libraries(thread_stress_test
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
 add_executable(zookeeper_test
-  ${SRC_PROTO_GRPC_TESTING_ECHO_PROTO_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_ECHO_PROTO_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_ECHO_PROTO_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_ECHO_PROTO_GRPC_HDRS}
+  ${SRC_PROTO_GRPC_TESTING_ECHO_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_ECHO_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_ECHO_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_ECHO_GRPC_HDRS}
   test/cpp/end2end/zookeeper_test.cc
 )
 target_link_libraries(zookeeper_test
@@ -3507,6 +3597,20 @@ target_link_libraries(zookeeper_test
   grpc_zookeeper
   grpc
   gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(public_headers_must_be_c89
+  test/core/surface/public_headers_must_be_c89.c
+)
+target_link_libraries(public_headers_must_be_c89
+  grpc
   gpr
   ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
@@ -4057,10 +4161,9 @@ target_link_libraries(boringssl_ssl_test
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
 add_executable(h2_census_test
-  vsprojects/dummy.c
+  test/core/end2end/fixtures/h2_census.c
 )
 target_link_libraries(h2_census_test
-  end2end_fixture_h2_census
   end2end_tests
   end2end_certs
   grpc_test_util
@@ -4076,10 +4179,9 @@ target_link_libraries(h2_census_test
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
 add_executable(h2_compress_test
-  vsprojects/dummy.c
+  test/core/end2end/fixtures/h2_compress.c
 )
 target_link_libraries(h2_compress_test
-  end2end_fixture_h2_compress
   end2end_tests
   end2end_certs
   grpc_test_util
@@ -4095,10 +4197,9 @@ target_link_libraries(h2_compress_test
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
 add_executable(h2_fakesec_test
-  vsprojects/dummy.c
+  test/core/end2end/fixtures/h2_fakesec.c
 )
 target_link_libraries(h2_fakesec_test
-  end2end_fixture_h2_fakesec
   end2end_tests
   end2end_certs
   grpc_test_util
@@ -4114,10 +4215,9 @@ target_link_libraries(h2_fakesec_test
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
 add_executable(h2_full_test
-  vsprojects/dummy.c
+  test/core/end2end/fixtures/h2_full.c
 )
 target_link_libraries(h2_full_test
-  end2end_fixture_h2_full
   end2end_tests
   end2end_certs
   grpc_test_util
@@ -4133,10 +4233,9 @@ target_link_libraries(h2_full_test
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
 add_executable(h2_full+pipe_test
-  vsprojects/dummy.c
+  test/core/end2end/fixtures/h2_full+pipe.c
 )
 target_link_libraries(h2_full+pipe_test
-  end2end_fixture_h2_full+pipe
   end2end_tests
   end2end_certs
   grpc_test_util
@@ -4152,10 +4251,9 @@ target_link_libraries(h2_full+pipe_test
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
 add_executable(h2_full+poll_test
-  vsprojects/dummy.c
+  test/core/end2end/fixtures/h2_full+poll.c
 )
 target_link_libraries(h2_full+poll_test
-  end2end_fixture_h2_full+poll
   end2end_tests
   end2end_certs
   grpc_test_util
@@ -4171,10 +4269,9 @@ target_link_libraries(h2_full+poll_test
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
 add_executable(h2_full+poll+pipe_test
-  vsprojects/dummy.c
+  test/core/end2end/fixtures/h2_full+poll+pipe.c
 )
 target_link_libraries(h2_full+poll+pipe_test
-  end2end_fixture_h2_full+poll+pipe
   end2end_tests
   end2end_certs
   grpc_test_util
@@ -4190,10 +4287,9 @@ target_link_libraries(h2_full+poll+pipe_test
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
 add_executable(h2_oauth2_test
-  vsprojects/dummy.c
+  test/core/end2end/fixtures/h2_oauth2.c
 )
 target_link_libraries(h2_oauth2_test
-  end2end_fixture_h2_oauth2
   end2end_tests
   end2end_certs
   grpc_test_util
@@ -4209,10 +4305,9 @@ target_link_libraries(h2_oauth2_test
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
 add_executable(h2_proxy_test
-  vsprojects/dummy.c
+  test/core/end2end/fixtures/h2_proxy.c
 )
 target_link_libraries(h2_proxy_test
-  end2end_fixture_h2_proxy
   end2end_tests
   end2end_certs
   grpc_test_util
@@ -4228,10 +4323,9 @@ target_link_libraries(h2_proxy_test
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
 add_executable(h2_sockpair_test
-  vsprojects/dummy.c
+  test/core/end2end/fixtures/h2_sockpair.c
 )
 target_link_libraries(h2_sockpair_test
-  end2end_fixture_h2_sockpair
   end2end_tests
   end2end_certs
   grpc_test_util
@@ -4247,10 +4341,9 @@ target_link_libraries(h2_sockpair_test
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
 add_executable(h2_sockpair+trace_test
-  vsprojects/dummy.c
+  test/core/end2end/fixtures/h2_sockpair+trace.c
 )
 target_link_libraries(h2_sockpair+trace_test
-  end2end_fixture_h2_sockpair+trace
   end2end_tests
   end2end_certs
   grpc_test_util
@@ -4266,10 +4359,9 @@ target_link_libraries(h2_sockpair+trace_test
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
 add_executable(h2_sockpair_1byte_test
-  vsprojects/dummy.c
+  test/core/end2end/fixtures/h2_sockpair_1byte.c
 )
 target_link_libraries(h2_sockpair_1byte_test
-  end2end_fixture_h2_sockpair_1byte
   end2end_tests
   end2end_certs
   grpc_test_util
@@ -4285,10 +4377,9 @@ target_link_libraries(h2_sockpair_1byte_test
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
 add_executable(h2_ssl_test
-  vsprojects/dummy.c
+  test/core/end2end/fixtures/h2_ssl.c
 )
 target_link_libraries(h2_ssl_test
-  end2end_fixture_h2_ssl
   end2end_tests
   end2end_certs
   grpc_test_util
@@ -4304,10 +4395,9 @@ target_link_libraries(h2_ssl_test
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
 add_executable(h2_ssl+poll_test
-  vsprojects/dummy.c
+  test/core/end2end/fixtures/h2_ssl+poll.c
 )
 target_link_libraries(h2_ssl+poll_test
-  end2end_fixture_h2_ssl+poll
   end2end_tests
   end2end_certs
   grpc_test_util
@@ -4323,10 +4413,9 @@ target_link_libraries(h2_ssl+poll_test
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
 add_executable(h2_ssl_proxy_test
-  vsprojects/dummy.c
+  test/core/end2end/fixtures/h2_ssl_proxy.c
 )
 target_link_libraries(h2_ssl_proxy_test
-  end2end_fixture_h2_ssl_proxy
   end2end_tests
   end2end_certs
   grpc_test_util
@@ -4342,10 +4431,9 @@ target_link_libraries(h2_ssl_proxy_test
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
 add_executable(h2_uchannel_test
-  vsprojects/dummy.c
+  test/core/end2end/fixtures/h2_uchannel.c
 )
 target_link_libraries(h2_uchannel_test
-  end2end_fixture_h2_uchannel
   end2end_tests
   end2end_certs
   grpc_test_util
@@ -4361,10 +4449,9 @@ target_link_libraries(h2_uchannel_test
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
 add_executable(h2_uds_test
-  vsprojects/dummy.c
+  test/core/end2end/fixtures/h2_uds.c
 )
 target_link_libraries(h2_uds_test
-  end2end_fixture_h2_uds
   end2end_tests
   end2end_certs
   grpc_test_util
@@ -4380,10 +4467,9 @@ target_link_libraries(h2_uds_test
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
 add_executable(h2_uds+poll_test
-  vsprojects/dummy.c
+  test/core/end2end/fixtures/h2_uds+poll.c
 )
 target_link_libraries(h2_uds+poll_test
-  end2end_fixture_h2_uds+poll
   end2end_tests
   end2end_certs
   grpc_test_util
@@ -4399,10 +4485,9 @@ target_link_libraries(h2_uds+poll_test
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
 add_executable(h2_census_nosec_test
-  vsprojects/dummy.c
+  test/core/end2end/fixtures/h2_census.c
 )
 target_link_libraries(h2_census_nosec_test
-  end2end_nosec_fixture_h2_census
   end2end_nosec_tests
   grpc_test_util_unsecure
   grpc_unsecure
@@ -4417,10 +4502,9 @@ target_link_libraries(h2_census_nosec_test
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
 add_executable(h2_compress_nosec_test
-  vsprojects/dummy.c
+  test/core/end2end/fixtures/h2_compress.c
 )
 target_link_libraries(h2_compress_nosec_test
-  end2end_nosec_fixture_h2_compress
   end2end_nosec_tests
   grpc_test_util_unsecure
   grpc_unsecure
@@ -4435,10 +4519,9 @@ target_link_libraries(h2_compress_nosec_test
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
 add_executable(h2_full_nosec_test
-  vsprojects/dummy.c
+  test/core/end2end/fixtures/h2_full.c
 )
 target_link_libraries(h2_full_nosec_test
-  end2end_nosec_fixture_h2_full
   end2end_nosec_tests
   grpc_test_util_unsecure
   grpc_unsecure
@@ -4453,10 +4536,9 @@ target_link_libraries(h2_full_nosec_test
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
 add_executable(h2_full+pipe_nosec_test
-  vsprojects/dummy.c
+  test/core/end2end/fixtures/h2_full+pipe.c
 )
 target_link_libraries(h2_full+pipe_nosec_test
-  end2end_nosec_fixture_h2_full+pipe
   end2end_nosec_tests
   grpc_test_util_unsecure
   grpc_unsecure
@@ -4471,10 +4553,9 @@ target_link_libraries(h2_full+pipe_nosec_test
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
 add_executable(h2_full+poll_nosec_test
-  vsprojects/dummy.c
+  test/core/end2end/fixtures/h2_full+poll.c
 )
 target_link_libraries(h2_full+poll_nosec_test
-  end2end_nosec_fixture_h2_full+poll
   end2end_nosec_tests
   grpc_test_util_unsecure
   grpc_unsecure
@@ -4489,10 +4570,9 @@ target_link_libraries(h2_full+poll_nosec_test
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
 add_executable(h2_full+poll+pipe_nosec_test
-  vsprojects/dummy.c
+  test/core/end2end/fixtures/h2_full+poll+pipe.c
 )
 target_link_libraries(h2_full+poll+pipe_nosec_test
-  end2end_nosec_fixture_h2_full+poll+pipe
   end2end_nosec_tests
   grpc_test_util_unsecure
   grpc_unsecure
@@ -4507,10 +4587,9 @@ target_link_libraries(h2_full+poll+pipe_nosec_test
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
 add_executable(h2_proxy_nosec_test
-  vsprojects/dummy.c
+  test/core/end2end/fixtures/h2_proxy.c
 )
 target_link_libraries(h2_proxy_nosec_test
-  end2end_nosec_fixture_h2_proxy
   end2end_nosec_tests
   grpc_test_util_unsecure
   grpc_unsecure
@@ -4525,10 +4604,9 @@ target_link_libraries(h2_proxy_nosec_test
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
 add_executable(h2_sockpair_nosec_test
-  vsprojects/dummy.c
+  test/core/end2end/fixtures/h2_sockpair.c
 )
 target_link_libraries(h2_sockpair_nosec_test
-  end2end_nosec_fixture_h2_sockpair
   end2end_nosec_tests
   grpc_test_util_unsecure
   grpc_unsecure
@@ -4543,10 +4621,9 @@ target_link_libraries(h2_sockpair_nosec_test
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
 add_executable(h2_sockpair+trace_nosec_test
-  vsprojects/dummy.c
+  test/core/end2end/fixtures/h2_sockpair+trace.c
 )
 target_link_libraries(h2_sockpair+trace_nosec_test
-  end2end_nosec_fixture_h2_sockpair+trace
   end2end_nosec_tests
   grpc_test_util_unsecure
   grpc_unsecure
@@ -4561,10 +4638,9 @@ target_link_libraries(h2_sockpair+trace_nosec_test
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
 add_executable(h2_sockpair_1byte_nosec_test
-  vsprojects/dummy.c
+  test/core/end2end/fixtures/h2_sockpair_1byte.c
 )
 target_link_libraries(h2_sockpair_1byte_nosec_test
-  end2end_nosec_fixture_h2_sockpair_1byte
   end2end_nosec_tests
   grpc_test_util_unsecure
   grpc_unsecure
@@ -4579,10 +4655,9 @@ target_link_libraries(h2_sockpair_1byte_nosec_test
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
 add_executable(h2_uchannel_nosec_test
-  vsprojects/dummy.c
+  test/core/end2end/fixtures/h2_uchannel.c
 )
 target_link_libraries(h2_uchannel_nosec_test
-  end2end_nosec_fixture_h2_uchannel
   end2end_nosec_tests
   grpc_test_util_unsecure
   grpc_unsecure
@@ -4597,10 +4672,9 @@ target_link_libraries(h2_uchannel_nosec_test
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
 add_executable(h2_uds_nosec_test
-  vsprojects/dummy.c
+  test/core/end2end/fixtures/h2_uds.c
 )
 target_link_libraries(h2_uds_nosec_test
-  end2end_nosec_fixture_h2_uds
   end2end_nosec_tests
   grpc_test_util_unsecure
   grpc_unsecure
@@ -4615,10 +4689,9 @@ target_link_libraries(h2_uds_nosec_test
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
 add_executable(h2_uds+poll_nosec_test
-  vsprojects/dummy.c
+  test/core/end2end/fixtures/h2_uds+poll.c
 )
 target_link_libraries(h2_uds+poll_nosec_test
-  end2end_nosec_fixture_h2_uds+poll
   end2end_nosec_tests
   grpc_test_util_unsecure
   grpc_unsecure

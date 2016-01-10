@@ -17,11 +17,11 @@
 
   def filter_src(src):
     if '.proto' in src:
-      return '${%(root)s_PROTO_SRCS} ${%(root)s_PROTO_HDRS} ${%(root)s_GRPC_SRCS} ${%(root)s_GRPC_HDRS}' % { 'root': proto_root(src) }
+      return '${%(root)s_PROTO_SRCS} ${%(root)s_PROTO_HDRS} ${%(root)s_GRPC_SRCS} ${%(root)s_GRPC_HDRS}' % { 'root': proto_root(src[:-6]) }
     return src
 
   def protovars(src, tag):
-    return '%(root)s_%(tag)s_SRCS %(root)s_%(tag)s_HDRS' % { 'root': proto_root(src), 'tag': tag }
+    return '${%(root)s_%(tag)s_SRCS} ${%(root)s_%(tag)s_HDRS}' % { 'root': proto_root(src), 'tag': tag }
   %>
 
   set (PACKAGE_NAME      "grpc")
@@ -91,8 +91,7 @@
   % endfor
 
   % for proto in protos:
-  # PROTOBUF_GENERATE_CPP(${protovars(proto, 'PROTO')} ${proto})
-  # PROTOBUF_GENERATE_CPP(${protovars(proto, 'GRPC')} ${proto})
+  set_source_files_properties(${protovars(proto, 'PROTO')} ${protovars(proto, 'GRPC')} PROPERTIES GENERATED TRUE)
   % endfor
 
   % for lib in libs:
@@ -104,6 +103,13 @@
     ${filter_src(src)}
   %  endfor
   )
+  %  if lib.get('deps', []):
+  add_dependencies(${lib.name}
+  %  for dep in lib.deps:
+    ${dep}
+  %  endfor
+  )
+  %  endif
   %  if lib.get('platforms', None) is not None:
   endif()
   %  endif
