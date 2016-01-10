@@ -14,14 +14,6 @@
 
   def proto_root(src):
     return src.upper().replace('/', '_').replace('\\', '_').replace('.', '_')
-
-  def filter_src(src):
-    if '.proto' in src:
-      return '${%(root)s_PROTO_SRCS} ${%(root)s_PROTO_HDRS} ${%(root)s_GRPC_SRCS} ${%(root)s_GRPC_HDRS}' % { 'root': proto_root(src[:-6]) }
-    return src
-
-  def protovars(src, tag):
-    return '${%(root)s_%(tag)s_SRCS} ${%(root)s_%(tag)s_HDRS}' % { 'root': proto_root(src), 'tag': tag }
   %>
 
   set (PACKAGE_NAME      "grpc")
@@ -38,10 +30,10 @@
 
   set (PACKAGE_SOVERSION <%text>${PACKAGE_VERSION_MAJOR}</%text>)
   set (CMAKE_INCLUDE_CURRENT_DIR ON)
-  set (CMAKE_VERBOSE_MAKEFILE ON)
 
   include_directories(include)
   include_directories(third_party/googletest/include)
+  include_directories(tools/cmakelists)
 
   include(CheckCXXCompilerFlag)
   CHECK_CXX_COMPILER_FLAG("-std=c++11" COMPILER_SUPPORTS_CXX11)
@@ -55,7 +47,7 @@
   endif()
 
   find_package(Protobuf REQUIRED)
-  set(PROTOBUF_IMPORT_DIRS .)
+  set(PROTOBUF_IMPORT_DIRS <%text>${CMAKE_BINARY_DIR}</%text>)
   if (PROTOBUF_FOUND)
     include_directories(<%text>${PROTOBUF_INCLUDE_DIRS}</%text>)
   endif(PROTOBUF_FOUND)
@@ -90,17 +82,15 @@
   add_subdirectory(tools/cmakelists/${protodir})
   % endfor
 
-  % for proto in protos:
-  set_source_files_properties(${protovars(proto, 'PROTO')} ${protovars(proto, 'GRPC')} PROPERTIES GENERATED TRUE)
-  % endfor
-
   % for lib in libs:
   %  if lib.get('platforms', None) is not None:
   if (${' OR '.join(PLATFORM_CHECK[chk] for chk in lib.platforms)})
   %  endif
   add_library(${lib.name}
-  %  for src in lib.src:
-    ${filter_src(src)}
+  %  for src in (lib.src if lib.src else ['vsprojects/dummy.c']):
+  %   if '.proto' not in src:
+    ${src}
+  %   endif
   %  endfor
   )
   %  if lib.get('deps', []):
@@ -110,6 +100,13 @@
   %  endfor
   )
   %  endif
+  target_link_libraries(${lib.name}
+  %  for src in lib.src:
+  %   if '.proto' in src:
+     ${proto_root(src[0:-6]).lower()}
+  %   endif
+  %  endfor
+  )
   %  if lib.get('platforms', None) is not None:
   endif()
   %  endif
@@ -119,10 +116,17 @@
   if (${' OR '.join(PLATFORM_CHECK[chk] for chk in tgt.platforms)})
   add_executable(${tgt.name}
   %  for src in (tgt.src if tgt.src else ['vsprojects/dummy.c']):
-    ${filter_src(src)}
+  %   if '.proto' not in src:
+    ${src}
+  %   endif
   %  endfor
   )
   target_link_libraries(${tgt.name}
+  %  for src in tgt.src:
+  %   if '.proto' in src:
+     ${proto_root(src[0:-6]).lower()}
+  %   endif
+  %  endfor
   %  for dep in tgt.deps:
     ${dep}
   %  endfor

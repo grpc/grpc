@@ -16,10 +16,10 @@ project (${PACKAGE_NAME} C CXX)
 
 set (PACKAGE_SOVERSION ${PACKAGE_VERSION_MAJOR})
 set (CMAKE_INCLUDE_CURRENT_DIR ON)
-set (CMAKE_VERBOSE_MAKEFILE ON)
 
 include_directories(include)
 include_directories(third_party/googletest/include)
+include_directories(tools/cmakelists)
 
 include(CheckCXXCompilerFlag)
 CHECK_CXX_COMPILER_FLAG("-std=c++11" COMPILER_SUPPORTS_CXX11)
@@ -33,7 +33,7 @@ else()
 endif()
 
 find_package(Protobuf REQUIRED)
-set(PROTOBUF_IMPORT_DIRS .)
+set(PROTOBUF_IMPORT_DIRS ${CMAKE_BINARY_DIR})
 if (PROTOBUF_FOUND)
   include_directories(${PROTOBUF_INCLUDE_DIRS})
 endif(PROTOBUF_FOUND)
@@ -66,19 +66,6 @@ endif()
 
 add_subdirectory(tools/cmakelists/src/proto/grpc/testing)
 add_subdirectory(tools/cmakelists/src/proto/grpc/testing/duplicate)
-
-set_source_files_properties(${SRC_PROTO_GRPC_TESTING_CONTROL_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_CONTROL_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_CONTROL_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_CONTROL_GRPC_HDRS} PROPERTIES GENERATED TRUE)
-set_source_files_properties(${SRC_PROTO_GRPC_TESTING_DUPLICATE_ECHO_DUPLICATE_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_DUPLICATE_ECHO_DUPLICATE_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_DUPLICATE_ECHO_DUPLICATE_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_DUPLICATE_ECHO_DUPLICATE_GRPC_HDRS} PROPERTIES GENERATED TRUE)
-set_source_files_properties(${SRC_PROTO_GRPC_TESTING_ECHO_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_ECHO_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_ECHO_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_ECHO_GRPC_HDRS} PROPERTIES GENERATED TRUE)
-set_source_files_properties(${SRC_PROTO_GRPC_TESTING_ECHO_MESSAGES_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_ECHO_MESSAGES_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_ECHO_MESSAGES_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_ECHO_MESSAGES_GRPC_HDRS} PROPERTIES GENERATED TRUE)
-set_source_files_properties(${SRC_PROTO_GRPC_TESTING_EMPTY_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_EMPTY_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_EMPTY_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_EMPTY_GRPC_HDRS} PROPERTIES GENERATED TRUE)
-set_source_files_properties(${SRC_PROTO_GRPC_TESTING_MESSAGES_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_MESSAGES_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_MESSAGES_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_MESSAGES_GRPC_HDRS} PROPERTIES GENERATED TRUE)
-set_source_files_properties(${SRC_PROTO_GRPC_TESTING_METRICS_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_METRICS_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_METRICS_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_METRICS_GRPC_HDRS} PROPERTIES GENERATED TRUE)
-set_source_files_properties(${SRC_PROTO_GRPC_TESTING_PAYLOADS_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_PAYLOADS_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_PAYLOADS_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_PAYLOADS_GRPC_HDRS} PROPERTIES GENERATED TRUE)
-set_source_files_properties(${SRC_PROTO_GRPC_TESTING_PERF_DB_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_PERF_DB_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_PERF_DB_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_PERF_DB_GRPC_HDRS} PROPERTIES GENERATED TRUE)
-set_source_files_properties(${SRC_PROTO_GRPC_TESTING_SERVICES_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_SERVICES_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_SERVICES_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_SERVICES_GRPC_HDRS} PROPERTIES GENERATED TRUE)
-set_source_files_properties(${SRC_PROTO_GRPC_TESTING_STATS_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_STATS_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_STATS_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_STATS_GRPC_HDRS} PROPERTIES GENERATED TRUE)
-set_source_files_properties(${SRC_PROTO_GRPC_TESTING_TEST_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_TEST_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_TEST_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_TEST_GRPC_HDRS} PROPERTIES GENERATED TRUE)
 
 add_library(gpr
   src/core/profiling/basic_timers.c
@@ -123,11 +110,15 @@ add_library(gpr
   src/core/support/time_win32.c
   src/core/support/tls_pthread.c
 )
+target_link_libraries(gpr
+)
 add_library(gpr_test_util
   test/core/util/test_config.c
 )
 add_dependencies(gpr_test_util
   gpr
+)
+target_link_libraries(gpr_test_util
 )
 add_library(grpc
   src/core/httpcli/httpcli_security_connector.c
@@ -284,6 +275,8 @@ add_library(grpc
 add_dependencies(grpc
   gpr
 )
+target_link_libraries(grpc
+)
 add_library(grpc_test_util
   test/core/end2end/data/server1_cert.c
   test/core/end2end/data/server1_key.c
@@ -303,6 +296,8 @@ add_dependencies(grpc_test_util
   gpr_test_util
   grpc
 )
+target_link_libraries(grpc_test_util
+)
 add_library(grpc_test_util_unsecure
   test/core/end2end/cq_verifier.c
   test/core/end2end/fixtures/proxy.c
@@ -317,6 +312,8 @@ add_dependencies(grpc_test_util_unsecure
   gpr
   gpr_test_util
   grpc_unsecure
+)
+target_link_libraries(grpc_test_util_unsecure
 )
 add_library(grpc_unsecure
   src/core/surface/init_unsecure.c
@@ -453,6 +450,8 @@ add_library(grpc_unsecure
 add_dependencies(grpc_unsecure
   gpr
 )
+target_link_libraries(grpc_unsecure
+)
 if ((CMAKE_SYSTEM EQUAL Linux))
 add_library(grpc_zookeeper
   src/core/client_config/resolvers/zookeeper_resolver.c
@@ -460,6 +459,8 @@ add_library(grpc_zookeeper
 add_dependencies(grpc_zookeeper
   gpr
   grpc
+)
+target_link_libraries(grpc_zookeeper
 )
 endif()
 add_library(reconnect_server
@@ -472,6 +473,8 @@ add_dependencies(reconnect_server
   gpr_test_util
   gpr
 )
+target_link_libraries(reconnect_server
+)
 add_library(test_tcp_server
   test/core/util/test_tcp_server.c
 )
@@ -480,6 +483,8 @@ add_dependencies(test_tcp_server
   grpc
   gpr_test_util
   gpr
+)
+target_link_libraries(test_tcp_server
 )
 add_library(grpc++
   src/cpp/client/secure_credentials.cc
@@ -519,13 +524,14 @@ add_dependencies(grpc++
   gpr
   grpc
 )
+target_link_libraries(grpc++
+)
 add_library(grpc++_test_config
   test/cpp/util/test_config.cc
 )
+target_link_libraries(grpc++_test_config
+)
 add_library(grpc++_test_util
-  ${SRC_PROTO_GRPC_TESTING_ECHO_MESSAGES_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_ECHO_MESSAGES_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_ECHO_MESSAGES_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_ECHO_MESSAGES_GRPC_HDRS}
-  ${SRC_PROTO_GRPC_TESTING_ECHO_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_ECHO_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_ECHO_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_ECHO_GRPC_HDRS}
-  ${SRC_PROTO_GRPC_TESTING_DUPLICATE_ECHO_DUPLICATE_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_DUPLICATE_ECHO_DUPLICATE_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_DUPLICATE_ECHO_DUPLICATE_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_DUPLICATE_ECHO_DUPLICATE_GRPC_HDRS}
   test/cpp/util/cli_call.cc
   test/cpp/util/create_test_channel.cc
   test/cpp/util/string_ref_helper.cc
@@ -534,6 +540,11 @@ add_library(grpc++_test_util
 add_dependencies(grpc++_test_util
   grpc++
   grpc_test_util
+)
+target_link_libraries(grpc++_test_util
+   src_proto_grpc_testing_echo_messages
+   src_proto_grpc_testing_echo
+   src_proto_grpc_testing_duplicate_echo_duplicate
 )
 add_library(grpc++_unsecure
   src/cpp/common/insecure_create_auth_context.cc
@@ -568,6 +579,8 @@ add_dependencies(grpc++_unsecure
   gpr
   grpc_unsecure
 )
+target_link_libraries(grpc++_unsecure
+)
 add_library(grpc_plugin_support
   src/compiler/cpp_generator.cc
   src/compiler/csharp_generator.cc
@@ -575,8 +588,9 @@ add_library(grpc_plugin_support
   src/compiler/python_generator.cc
   src/compiler/ruby_generator.cc
 )
+target_link_libraries(grpc_plugin_support
+)
 add_library(interop_client_helper
-  ${SRC_PROTO_GRPC_TESTING_MESSAGES_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_MESSAGES_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_MESSAGES_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_MESSAGES_GRPC_HDRS}
   test/cpp/interop/client_helper.cc
 )
 add_dependencies(interop_client_helper
@@ -586,10 +600,10 @@ add_dependencies(interop_client_helper
   grpc
   gpr
 )
+target_link_libraries(interop_client_helper
+   src_proto_grpc_testing_messages
+)
 add_library(interop_client_main
-  ${SRC_PROTO_GRPC_TESTING_EMPTY_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_EMPTY_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_EMPTY_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_EMPTY_GRPC_HDRS}
-  ${SRC_PROTO_GRPC_TESTING_MESSAGES_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_MESSAGES_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_MESSAGES_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_MESSAGES_GRPC_HDRS}
-  ${SRC_PROTO_GRPC_TESTING_TEST_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_TEST_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_TEST_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_TEST_GRPC_HDRS}
   test/cpp/interop/client.cc
   test/cpp/interop/interop_client.cc
 )
@@ -603,6 +617,11 @@ add_dependencies(interop_client_main
   gpr
   grpc++_test_config
 )
+target_link_libraries(interop_client_main
+   src_proto_grpc_testing_empty
+   src_proto_grpc_testing_messages
+   src_proto_grpc_testing_test
+)
 add_library(interop_server_helper
   test/cpp/interop/server_helper.cc
 )
@@ -612,10 +631,9 @@ add_dependencies(interop_server_helper
   grpc
   gpr
 )
+target_link_libraries(interop_server_helper
+)
 add_library(interop_server_main
-  ${SRC_PROTO_GRPC_TESTING_EMPTY_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_EMPTY_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_EMPTY_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_EMPTY_GRPC_HDRS}
-  ${SRC_PROTO_GRPC_TESTING_MESSAGES_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_MESSAGES_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_MESSAGES_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_MESSAGES_GRPC_HDRS}
-  ${SRC_PROTO_GRPC_TESTING_TEST_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_TEST_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_TEST_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_TEST_GRPC_HDRS}
   test/cpp/interop/server.cc
 )
 add_dependencies(interop_server_main
@@ -628,13 +646,12 @@ add_dependencies(interop_server_main
   gpr
   grpc++_test_config
 )
+target_link_libraries(interop_server_main
+   src_proto_grpc_testing_empty
+   src_proto_grpc_testing_messages
+   src_proto_grpc_testing_test
+)
 add_library(qps
-  ${SRC_PROTO_GRPC_TESTING_MESSAGES_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_MESSAGES_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_MESSAGES_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_MESSAGES_GRPC_HDRS}
-  ${SRC_PROTO_GRPC_TESTING_CONTROL_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_CONTROL_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_CONTROL_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_CONTROL_GRPC_HDRS}
-  ${SRC_PROTO_GRPC_TESTING_PAYLOADS_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_PAYLOADS_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_PAYLOADS_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_PAYLOADS_GRPC_HDRS}
-  ${SRC_PROTO_GRPC_TESTING_SERVICES_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_SERVICES_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_SERVICES_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_SERVICES_GRPC_HDRS}
-  ${SRC_PROTO_GRPC_TESTING_STATS_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_STATS_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_STATS_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_STATS_GRPC_HDRS}
-  ${SRC_PROTO_GRPC_TESTING_PERF_DB_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_PERF_DB_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_PERF_DB_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_PERF_DB_GRPC_HDRS}
   test/cpp/qps/client_async.cc
   test/cpp/qps/client_sync.cc
   test/cpp/qps/driver.cc
@@ -651,12 +668,22 @@ add_dependencies(qps
   grpc++_test_util
   grpc++
 )
+target_link_libraries(qps
+   src_proto_grpc_testing_messages
+   src_proto_grpc_testing_control
+   src_proto_grpc_testing_payloads
+   src_proto_grpc_testing_services
+   src_proto_grpc_testing_stats
+   src_proto_grpc_testing_perf_db
+)
 add_library(grpc_csharp_ext
   src/csharp/ext/grpc_csharp_ext.c
 )
 add_dependencies(grpc_csharp_ext
   gpr
   grpc
+)
+target_link_libraries(grpc_csharp_ext
 )
 add_library(boringssl
   src/boringssl/err_data.c
@@ -954,10 +981,14 @@ add_library(boringssl
   third_party/boringssl/ssl/t1_lib.c
   third_party/boringssl/ssl/tls_record.c
 )
+target_link_libraries(boringssl
+)
 add_library(boringssl_test_util
   third_party/boringssl/crypto/test/file_test.cc
   third_party/boringssl/crypto/test/malloc.cc
   third_party/boringssl/crypto/test/test_util.cc
+)
+target_link_libraries(boringssl_test_util
 )
 add_library(boringssl_aes_test_lib
   third_party/boringssl/crypto/aes/aes_test.cc
@@ -966,12 +997,16 @@ add_dependencies(boringssl_aes_test_lib
   boringssl_test_util
   boringssl
 )
+target_link_libraries(boringssl_aes_test_lib
+)
 add_library(boringssl_base64_test_lib
   third_party/boringssl/crypto/base64/base64_test.cc
 )
 add_dependencies(boringssl_base64_test_lib
   boringssl_test_util
   boringssl
+)
+target_link_libraries(boringssl_base64_test_lib
 )
 add_library(boringssl_bio_test_lib
   third_party/boringssl/crypto/bio/bio_test.cc
@@ -980,12 +1015,16 @@ add_dependencies(boringssl_bio_test_lib
   boringssl_test_util
   boringssl
 )
+target_link_libraries(boringssl_bio_test_lib
+)
 add_library(boringssl_bn_test_lib
   third_party/boringssl/crypto/bn/bn_test.cc
 )
 add_dependencies(boringssl_bn_test_lib
   boringssl_test_util
   boringssl
+)
+target_link_libraries(boringssl_bn_test_lib
 )
 add_library(boringssl_bytestring_test_lib
   third_party/boringssl/crypto/bytestring/bytestring_test.cc
@@ -994,12 +1033,16 @@ add_dependencies(boringssl_bytestring_test_lib
   boringssl_test_util
   boringssl
 )
+target_link_libraries(boringssl_bytestring_test_lib
+)
 add_library(boringssl_aead_test_lib
   third_party/boringssl/crypto/cipher/aead_test.cc
 )
 add_dependencies(boringssl_aead_test_lib
   boringssl_test_util
   boringssl
+)
+target_link_libraries(boringssl_aead_test_lib
 )
 add_library(boringssl_cipher_test_lib
   third_party/boringssl/crypto/cipher/cipher_test.cc
@@ -1008,12 +1051,16 @@ add_dependencies(boringssl_cipher_test_lib
   boringssl_test_util
   boringssl
 )
+target_link_libraries(boringssl_cipher_test_lib
+)
 add_library(boringssl_cmac_test_lib
   third_party/boringssl/crypto/cmac/cmac_test.cc
 )
 add_dependencies(boringssl_cmac_test_lib
   boringssl_test_util
   boringssl
+)
+target_link_libraries(boringssl_cmac_test_lib
 )
 add_library(boringssl_constant_time_test_lib
   third_party/boringssl/crypto/constant_time_test.c
@@ -1022,12 +1069,16 @@ add_dependencies(boringssl_constant_time_test_lib
   boringssl_test_util
   boringssl
 )
+target_link_libraries(boringssl_constant_time_test_lib
+)
 add_library(boringssl_ed25519_test_lib
   third_party/boringssl/crypto/curve25519/ed25519_test.cc
 )
 add_dependencies(boringssl_ed25519_test_lib
   boringssl_test_util
   boringssl
+)
+target_link_libraries(boringssl_ed25519_test_lib
 )
 add_library(boringssl_x25519_test_lib
   third_party/boringssl/crypto/curve25519/x25519_test.cc
@@ -1036,12 +1087,16 @@ add_dependencies(boringssl_x25519_test_lib
   boringssl_test_util
   boringssl
 )
+target_link_libraries(boringssl_x25519_test_lib
+)
 add_library(boringssl_dh_test_lib
   third_party/boringssl/crypto/dh/dh_test.cc
 )
 add_dependencies(boringssl_dh_test_lib
   boringssl_test_util
   boringssl
+)
+target_link_libraries(boringssl_dh_test_lib
 )
 add_library(boringssl_digest_test_lib
   third_party/boringssl/crypto/digest/digest_test.cc
@@ -1050,12 +1105,16 @@ add_dependencies(boringssl_digest_test_lib
   boringssl_test_util
   boringssl
 )
+target_link_libraries(boringssl_digest_test_lib
+)
 add_library(boringssl_dsa_test_lib
   third_party/boringssl/crypto/dsa/dsa_test.c
 )
 add_dependencies(boringssl_dsa_test_lib
   boringssl_test_util
   boringssl
+)
+target_link_libraries(boringssl_dsa_test_lib
 )
 add_library(boringssl_ec_test_lib
   third_party/boringssl/crypto/ec/ec_test.cc
@@ -1064,12 +1123,16 @@ add_dependencies(boringssl_ec_test_lib
   boringssl_test_util
   boringssl
 )
+target_link_libraries(boringssl_ec_test_lib
+)
 add_library(boringssl_example_mul_lib
   third_party/boringssl/crypto/ec/example_mul.c
 )
 add_dependencies(boringssl_example_mul_lib
   boringssl_test_util
   boringssl
+)
+target_link_libraries(boringssl_example_mul_lib
 )
 add_library(boringssl_ecdsa_test_lib
   third_party/boringssl/crypto/ecdsa/ecdsa_test.cc
@@ -1078,12 +1141,16 @@ add_dependencies(boringssl_ecdsa_test_lib
   boringssl_test_util
   boringssl
 )
+target_link_libraries(boringssl_ecdsa_test_lib
+)
 add_library(boringssl_err_test_lib
   third_party/boringssl/crypto/err/err_test.cc
 )
 add_dependencies(boringssl_err_test_lib
   boringssl_test_util
   boringssl
+)
+target_link_libraries(boringssl_err_test_lib
 )
 add_library(boringssl_evp_extra_test_lib
   third_party/boringssl/crypto/evp/evp_extra_test.cc
@@ -1092,12 +1159,16 @@ add_dependencies(boringssl_evp_extra_test_lib
   boringssl_test_util
   boringssl
 )
+target_link_libraries(boringssl_evp_extra_test_lib
+)
 add_library(boringssl_evp_test_lib
   third_party/boringssl/crypto/evp/evp_test.cc
 )
 add_dependencies(boringssl_evp_test_lib
   boringssl_test_util
   boringssl
+)
+target_link_libraries(boringssl_evp_test_lib
 )
 add_library(boringssl_pbkdf_test_lib
   third_party/boringssl/crypto/evp/pbkdf_test.cc
@@ -1106,12 +1177,16 @@ add_dependencies(boringssl_pbkdf_test_lib
   boringssl_test_util
   boringssl
 )
+target_link_libraries(boringssl_pbkdf_test_lib
+)
 add_library(boringssl_hkdf_test_lib
   third_party/boringssl/crypto/hkdf/hkdf_test.c
 )
 add_dependencies(boringssl_hkdf_test_lib
   boringssl_test_util
   boringssl
+)
+target_link_libraries(boringssl_hkdf_test_lib
 )
 add_library(boringssl_hmac_test_lib
   third_party/boringssl/crypto/hmac/hmac_test.cc
@@ -1120,12 +1195,16 @@ add_dependencies(boringssl_hmac_test_lib
   boringssl_test_util
   boringssl
 )
+target_link_libraries(boringssl_hmac_test_lib
+)
 add_library(boringssl_lhash_test_lib
   third_party/boringssl/crypto/lhash/lhash_test.c
 )
 add_dependencies(boringssl_lhash_test_lib
   boringssl_test_util
   boringssl
+)
+target_link_libraries(boringssl_lhash_test_lib
 )
 add_library(boringssl_gcm_test_lib
   third_party/boringssl/crypto/modes/gcm_test.c
@@ -1134,12 +1213,16 @@ add_dependencies(boringssl_gcm_test_lib
   boringssl_test_util
   boringssl
 )
+target_link_libraries(boringssl_gcm_test_lib
+)
 add_library(boringssl_pkcs12_test_lib
   third_party/boringssl/crypto/pkcs8/pkcs12_test.cc
 )
 add_dependencies(boringssl_pkcs12_test_lib
   boringssl_test_util
   boringssl
+)
+target_link_libraries(boringssl_pkcs12_test_lib
 )
 add_library(boringssl_pkcs8_test_lib
   third_party/boringssl/crypto/pkcs8/pkcs8_test.cc
@@ -1148,12 +1231,16 @@ add_dependencies(boringssl_pkcs8_test_lib
   boringssl_test_util
   boringssl
 )
+target_link_libraries(boringssl_pkcs8_test_lib
+)
 add_library(boringssl_poly1305_test_lib
   third_party/boringssl/crypto/poly1305/poly1305_test.cc
 )
 add_dependencies(boringssl_poly1305_test_lib
   boringssl_test_util
   boringssl
+)
+target_link_libraries(boringssl_poly1305_test_lib
 )
 add_library(boringssl_refcount_test_lib
   third_party/boringssl/crypto/refcount_test.c
@@ -1162,12 +1249,16 @@ add_dependencies(boringssl_refcount_test_lib
   boringssl_test_util
   boringssl
 )
+target_link_libraries(boringssl_refcount_test_lib
+)
 add_library(boringssl_rsa_test_lib
   third_party/boringssl/crypto/rsa/rsa_test.cc
 )
 add_dependencies(boringssl_rsa_test_lib
   boringssl_test_util
   boringssl
+)
+target_link_libraries(boringssl_rsa_test_lib
 )
 add_library(boringssl_thread_test_lib
   third_party/boringssl/crypto/thread_test.c
@@ -1176,12 +1267,16 @@ add_dependencies(boringssl_thread_test_lib
   boringssl_test_util
   boringssl
 )
+target_link_libraries(boringssl_thread_test_lib
+)
 add_library(boringssl_pkcs7_test_lib
   third_party/boringssl/crypto/x509/pkcs7_test.c
 )
 add_dependencies(boringssl_pkcs7_test_lib
   boringssl_test_util
   boringssl
+)
+target_link_libraries(boringssl_pkcs7_test_lib
 )
 add_library(boringssl_tab_test_lib
   third_party/boringssl/crypto/x509v3/tab_test.c
@@ -1190,12 +1285,16 @@ add_dependencies(boringssl_tab_test_lib
   boringssl_test_util
   boringssl
 )
+target_link_libraries(boringssl_tab_test_lib
+)
 add_library(boringssl_v3name_test_lib
   third_party/boringssl/crypto/x509v3/v3name_test.c
 )
 add_dependencies(boringssl_v3name_test_lib
   boringssl_test_util
   boringssl
+)
+target_link_libraries(boringssl_v3name_test_lib
 )
 add_library(boringssl_pqueue_test_lib
   third_party/boringssl/ssl/pqueue/pqueue_test.c
@@ -1204,12 +1303,16 @@ add_dependencies(boringssl_pqueue_test_lib
   boringssl_test_util
   boringssl
 )
+target_link_libraries(boringssl_pqueue_test_lib
+)
 add_library(boringssl_ssl_test_lib
   third_party/boringssl/ssl/ssl_test.cc
 )
 add_dependencies(boringssl_ssl_test_lib
   boringssl_test_util
   boringssl
+)
+target_link_libraries(boringssl_ssl_test_lib
 )
 add_library(end2end_tests
   test/core/end2end/end2end_tests.c
@@ -1257,6 +1360,8 @@ add_dependencies(end2end_tests
   gpr_test_util
   gpr
 )
+target_link_libraries(end2end_tests
+)
 add_library(end2end_nosec_tests
   test/core/end2end/end2end_nosec_tests.c
   test/core/end2end/tests/bad_hostname.c
@@ -1301,10 +1406,14 @@ add_dependencies(end2end_nosec_tests
   gpr_test_util
   gpr
 )
+target_link_libraries(end2end_nosec_tests
+)
 add_library(end2end_certs
   test/core/end2end/data/test_root_cert.c
   test/core/end2end/data/server1_cert.c
   test/core/end2end/data/server1_key.c
+)
+target_link_libraries(end2end_certs
 )
 add_library(bad_client_test
   test/core/bad_client/bad_client.c
@@ -1315,6 +1424,8 @@ add_dependencies(bad_client_test
   gpr_test_util
   gpr
 )
+target_link_libraries(bad_client_test
+)
 if ((CMAKE_SYSTEM EQUAL Linux) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Darwin))
 add_library(bad_ssl_test_server
   test/core/bad_ssl/server.c
@@ -1324,6 +1435,8 @@ add_dependencies(bad_ssl_test_server
   grpc
   gpr_test_util
   gpr
+)
+target_link_libraries(bad_ssl_test_server
 )
 endif()
 
@@ -3199,10 +3312,10 @@ target_link_libraries(interop_test
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
 add_executable(metrics_client
-  ${SRC_PROTO_GRPC_TESTING_METRICS_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_METRICS_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_METRICS_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_METRICS_GRPC_HDRS}
   test/cpp/interop/metrics_client.cc
 )
 target_link_libraries(metrics_client
+   src_proto_grpc_testing_metrics
   grpc++
   grpc
   gpr
@@ -3333,12 +3446,12 @@ target_link_libraries(qps_worker
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
 add_executable(reconnect_interop_client
-  ${SRC_PROTO_GRPC_TESTING_EMPTY_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_EMPTY_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_EMPTY_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_EMPTY_GRPC_HDRS}
-  ${SRC_PROTO_GRPC_TESTING_MESSAGES_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_MESSAGES_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_MESSAGES_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_MESSAGES_GRPC_HDRS}
-  ${SRC_PROTO_GRPC_TESTING_TEST_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_TEST_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_TEST_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_TEST_GRPC_HDRS}
   test/cpp/interop/reconnect_interop_client.cc
 )
 target_link_libraries(reconnect_interop_client
+   src_proto_grpc_testing_empty
+   src_proto_grpc_testing_messages
+   src_proto_grpc_testing_test
   grpc++_test_util
   grpc_test_util
   grpc++
@@ -3355,12 +3468,12 @@ target_link_libraries(reconnect_interop_client
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
 add_executable(reconnect_interop_server
-  ${SRC_PROTO_GRPC_TESTING_EMPTY_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_EMPTY_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_EMPTY_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_EMPTY_GRPC_HDRS}
-  ${SRC_PROTO_GRPC_TESTING_MESSAGES_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_MESSAGES_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_MESSAGES_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_MESSAGES_GRPC_HDRS}
-  ${SRC_PROTO_GRPC_TESTING_TEST_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_TEST_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_TEST_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_TEST_GRPC_HDRS}
   test/cpp/interop/reconnect_interop_server.cc
 )
 target_link_libraries(reconnect_interop_server
+   src_proto_grpc_testing_empty
+   src_proto_grpc_testing_messages
+   src_proto_grpc_testing_test
   reconnect_server
   test_tcp_server
   grpc++_test_util
@@ -3505,16 +3618,16 @@ target_link_libraries(streaming_throughput_test
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
 add_executable(stress_test
-  ${SRC_PROTO_GRPC_TESTING_EMPTY_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_EMPTY_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_EMPTY_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_EMPTY_GRPC_HDRS}
-  ${SRC_PROTO_GRPC_TESTING_MESSAGES_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_MESSAGES_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_MESSAGES_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_MESSAGES_GRPC_HDRS}
-  ${SRC_PROTO_GRPC_TESTING_METRICS_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_METRICS_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_METRICS_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_METRICS_GRPC_HDRS}
-  ${SRC_PROTO_GRPC_TESTING_TEST_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_TEST_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_TEST_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_TEST_GRPC_HDRS}
   test/cpp/interop/interop_client.cc
   test/cpp/interop/stress_interop_client.cc
   test/cpp/interop/stress_test.cc
   test/cpp/util/metrics_server.cc
 )
 target_link_libraries(stress_test
+   src_proto_grpc_testing_empty
+   src_proto_grpc_testing_messages
+   src_proto_grpc_testing_metrics
+   src_proto_grpc_testing_test
   grpc++_test_util
   grpc_test_util
   grpc++
@@ -3587,10 +3700,10 @@ target_link_libraries(thread_stress_test
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
 add_executable(zookeeper_test
-  ${SRC_PROTO_GRPC_TESTING_ECHO_PROTO_SRCS} ${SRC_PROTO_GRPC_TESTING_ECHO_PROTO_HDRS} ${SRC_PROTO_GRPC_TESTING_ECHO_GRPC_SRCS} ${SRC_PROTO_GRPC_TESTING_ECHO_GRPC_HDRS}
   test/cpp/end2end/zookeeper_test.cc
 )
 target_link_libraries(zookeeper_test
+   src_proto_grpc_testing_echo
   grpc++_test_util
   grpc_test_util
   grpc++

@@ -6,26 +6,29 @@ template: |
   <%
   import os
 
-  all_vars = set()
-
   def proto_root(src):
     return src.upper().replace('/', '_').replace('\\', '_').replace('.', '_')
 
-  def protovars(src, tag, all_vars=all_vars):
+  def protovars(src, tag, escape):
     args = { 'root': proto_root(src), 'tag': tag }
     srcs = '%(root)s_%(tag)s_SRCS' % args
     hdrs = '%(root)s_%(tag)s_HDRS' % args
-    all_vars.add(srcs)
-    all_vars.add(hdrs)
-    return '%s %s' % (srcs, hdrs)
+    return ('${%s} ${%s}' if escape else '%s %s') % (srcs, hdrs)
   %>
   INCLUDE(GRPC_PB)
   % for proto in protos:
   % if os.path.dirname(proto) == selected:
-  PROTOBUF_GENERATE_CPP(${protovars(proto, 'PROTO')} <%text>${CMAKE_SOURCE_DIR}</%text>/${proto})
-  GRPC_PB_GENERATE_CPP(${protovars(proto, 'GRPC')} <%text>${CMAKE_SOURCE_DIR}</%text>/${proto})
+  PROTOBUF_GENERATE_CPP(${protovars(proto, 'PROTO', False)} <%text>${CMAKE_SOURCE_DIR}</%text>/${proto}.proto)
+  GRPC_PB_GENERATE_CPP(${protovars(proto, 'GRPC', False)} <%text>${CMAKE_SOURCE_DIR}</%text>/${proto}.proto)
+  add_library(${proto_root(proto).lower()}
+    ${protovars(proto, 'PROTO', True)}
+    ${protovars(proto, 'GRPC', True)})
+  %  if proto in proto_deps:
+  target_link_libraries(${proto_root(proto).lower()}
+  %   for dep in proto_deps[proto]:
+    ${proto_root(dep).lower()}
+  %   endfor
+    )
+  %  endif
   % endif
-  % endfor
-  % for var in sorted(list(all_vars)):
-  set(${var} ${"${"}${var}${"}"} PARENT_SCOPE)
   % endfor
