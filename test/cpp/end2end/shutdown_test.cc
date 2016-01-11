@@ -46,15 +46,15 @@
 #include "src/core/support/env.h"
 #include "test/core/util/test_config.h"
 #include "test/core/util/port.h"
-#include "test/cpp/util/echo.grpc.pb.h"
+#include "src/proto/grpc/testing/echo.grpc.pb.h"
 
-using grpc::cpp::test::util::EchoRequest;
-using grpc::cpp::test::util::EchoResponse;
+using grpc::testing::EchoRequest;
+using grpc::testing::EchoResponse;
 
 namespace grpc {
 namespace testing {
 
-class TestServiceImpl : public ::grpc::cpp::test::util::TestService::Service {
+class TestServiceImpl : public ::grpc::testing::TestService::Service {
  public:
   explicit TestServiceImpl(gpr_event* ev) : ev_(ev) {}
 
@@ -94,7 +94,7 @@ class ShutdownTest : public ::testing::Test {
   void ResetStub() {
     string target = "dns:localhost:" + to_string(port_);
     channel_ = CreateChannel(target, InsecureChannelCredentials());
-    stub_ = grpc::cpp::test::util::TestService::NewStub(channel_);
+    stub_ = grpc::testing::TestService::NewStub(channel_);
   }
 
   string to_string(const int number) {
@@ -115,7 +115,7 @@ class ShutdownTest : public ::testing::Test {
 
  protected:
   std::shared_ptr<Channel> channel_;
-  std::unique_ptr<grpc::cpp::test::util::TestService::Stub> stub_;
+  std::unique_ptr<grpc::testing::TestService::Stub> stub_;
   std::unique_ptr<Server> server_;
   bool shutdown_;
   int port_;

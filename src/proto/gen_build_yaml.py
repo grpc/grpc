@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env python2.7
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -28,21 +28,32 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# Regenerates gRPC service stubs from proto files.
-set +e
-cd $(dirname $0)/../..
 
-PROTOC=bins/opt/protobuf/protoc
-PLUGIN=protoc-gen-grpc=bins/opt/grpc_csharp_plugin
-EXAMPLES_DIR=src/csharp/Grpc.Examples
-HEALTHCHECK_DIR=src/csharp/Grpc.HealthCheck
-TESTING_DIR=src/csharp/Grpc.IntegrationTesting
+"""Generates the appropriate build.json data for all the proto files."""
+import yaml
+import collections
+import os
+import re
+import sys
 
-$PROTOC --plugin=$PLUGIN --csharp_out=$EXAMPLES_DIR --grpc_out=$EXAMPLES_DIR \
-    -I src/proto/math src/proto/math/math.proto
+def main():
+  deps = {}
+  for root, dirs, files in os.walk(os.path.dirname(sys.argv[0])):
+    for f in files:
+      if f[-6:] != '.proto': continue
+      look_at = os.path.join(root, f)
+      with open(look_at) as inp:
+        for line in inp:
+          imp = re.search(r'import "([^"]*)"', line)
+          if not imp: continue
+          if look_at[:-6] not in deps: deps[look_at[:-6]] = []
+          deps[look_at[:-6]].append(imp.group(1)[:-6])
 
-$PROTOC --plugin=$PLUGIN --csharp_out=$HEALTHCHECK_DIR --grpc_out=$HEALTHCHECK_DIR \
-    -I src/proto/grpc/health/v1alpha src/proto/grpc/health/v1alpha/health.proto
+  json = {
+    'proto_deps': deps
+  }
 
-$PROTOC --plugin=$PLUGIN --csharp_out=$TESTING_DIR --grpc_out=$TESTING_DIR \
-    -I . src/proto/grpc/testing/{empty,messages,test}.proto test/proto/benchmarks/*.proto
+  print yaml.dump(json)
+
+if __name__ == '__main__':
+  main()
