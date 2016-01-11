@@ -55,7 +55,7 @@
 #include "test/cpp/qps/client.h"
 #include "test/cpp/qps/server.h"
 #include "test/cpp/util/create_test_channel.h"
-#include "test/proto/benchmarks/services.pb.h"
+#include "src/proto/grpc/testing/services.pb.h"
 
 namespace grpc {
 namespace testing {

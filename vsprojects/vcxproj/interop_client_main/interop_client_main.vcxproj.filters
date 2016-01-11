@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="$(SolutionDir)\..\test\proto\empty.proto">
-      <Filter>test\proto</Filter>
+    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\empty.proto">
+      <Filter>src\proto\grpc\testing</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\test\proto\messages.proto">
-      <Filter>test\proto</Filter>
+    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\messages.proto">
+      <Filter>src\proto\grpc\testing</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\test\proto\test.proto">
-      <Filter>test\proto</Filter>
+    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\test.proto">
+      <Filter>src\proto\grpc\testing</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\cpp\interop\client.cc">
       <Filter>test\cpp\interop</Filter>
@@ -24,6 +24,18 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Filter Include="src">
+      <UniqueIdentifier>{14f6df92-cbdd-4e46-2357-47b6ad60530a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\proto">
+      <UniqueIdentifier>{5c42148f-df9d-b35f-748d-30c00eb3be96}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\proto\grpc">
+      <UniqueIdentifier>{049f0174-42f7-6e52-a411-146353ad7e89}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\proto\grpc\testing">
+      <UniqueIdentifier>{02f16533-e225-b418-f5b0-d118ad8534ad}</UniqueIdentifier>
+    </Filter>
     <Filter Include="test">
       <UniqueIdentifier>{bd02b37c-f3ec-86c0-0511-d2e1feeae251}</UniqueIdentifier>
     </Filter>
@@ -32,9 +44,6 @@
     </Filter>
     <Filter Include="test\cpp\interop">
       <UniqueIdentifier>{7b56f732-09fc-3a65-4d2e-bcdd9ce4309d}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="test\proto">
-      <UniqueIdentifier>{243fbb01-7396-5edc-5680-2aed26221188}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

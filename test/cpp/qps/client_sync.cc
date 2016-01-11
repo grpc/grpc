@@ -52,14 +52,12 @@
 #include <grpc/support/time.h>
 #include <gtest/gtest.h>
 
+#include "src/core/profiling/timers.h"
+#include "src/proto/grpc/testing/services.grpc.pb.h"
 #include "test/cpp/qps/client.h"
 #include "test/cpp/qps/histogram.h"
 #include "test/cpp/qps/interarrival.h"
 #include "test/cpp/qps/timer.h"
-#include "test/cpp/util/create_test_channel.h"
-#include "test/proto/benchmarks/services.grpc.pb.h"
-
-#include "src/core/profiling/timers.h"
 
 namespace grpc {
 namespace testing {
