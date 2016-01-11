@@ -373,7 +373,8 @@ std::unique_ptr<Client> CreateSynchronousStreamingClient(
     const ClientConfig& args);
 std::unique_ptr<Client> CreateAsyncUnaryClient(const ClientConfig& args);
 std::unique_ptr<Client> CreateAsyncStreamingClient(const ClientConfig& args);
-std::unique_ptr<Client> CreateGenericAsyncStreamingClient(const ClientConfig& args);
+std::unique_ptr<Client> CreateGenericAsyncStreamingClient(
+    const ClientConfig& args);
 
 }  // namespace testing
 }  // namespace grpc

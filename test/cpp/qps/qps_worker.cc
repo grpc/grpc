@@ -36,20 +36,20 @@
 #include <cassert>
 #include <memory>
 #include <mutex>
+#include <sstream>
 #include <string>
 #include <thread>
 #include <vector>
-#include <sstream>
 
+#include <grpc++/client_context.h>
+#include <grpc++/security/server_credentials.h>
+#include <grpc++/server.h>
+#include <grpc++/server_builder.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/histogram.h>
-#include <grpc/support/log.h>
 #include <grpc/support/host_port.h>
-#include <grpc++/client_context.h>
-#include <grpc++/server.h>
-#include <grpc++/server_builder.h>
-#include <grpc++/security/server_credentials.h>
+#include <grpc/support/log.h>
 
 #include "test/core/util/grpc_profiler.h"
 #include "test/cpp/qps/client.h"
@@ -70,8 +70,8 @@ static std::unique_ptr<Client> CreateClient(const ClientConfig& config) {
       return (config.rpc_type() == RpcType::UNARY)
                  ? CreateAsyncUnaryClient(config)
                  : (config.payload_config().has_bytebuf_params()
-                       ? CreateGenericAsyncStreamingClient(config)
-                       : CreateAsyncStreamingClient(config));
+                        ? CreateGenericAsyncStreamingClient(config)
+                        : CreateAsyncStreamingClient(config));
     default:
       abort();
   }
