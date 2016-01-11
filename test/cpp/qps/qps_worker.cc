@@ -69,7 +69,9 @@ static std::unique_ptr<Client> CreateClient(const ClientConfig& config) {
     case ClientType::ASYNC_CLIENT:
       return (config.rpc_type() == RpcType::UNARY)
                  ? CreateAsyncUnaryClient(config)
-                 : CreateAsyncStreamingClient(config);
+                 : (config.payload_config().has_bytebuf_params()
+                       ? CreateGenericAsyncStreamingClient(config)
+                       : CreateAsyncStreamingClient(config));
     default:
       abort();
   }

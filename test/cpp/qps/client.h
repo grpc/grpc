@@ -112,18 +112,16 @@ class ClientRequestCreator<ByteBuffer> {
  public:
   ClientRequestCreator(ByteBuffer* req, const PayloadConfig& payload_config) {
     if (payload_config.has_bytebuf_params()) {
-      if (payload_config.bytebuf_params().req_size() > 0) {
-        std::unique_ptr<char> buf(
-            new char[payload_config.bytebuf_params().req_size()]);
-        gpr_slice s = gpr_slice_from_copied_buffer(
-            buf.get(), payload_config.bytebuf_params().req_size());
-        Slice slice(s, Slice::STEAL_REF);
-        *req = ByteBuffer(&slice, 1);
-        // std::unique_ptr<ByteBuffer> bbuf(new ByteBuffer(&slice, 1));
-        // req->MoveFrom(bbuf.get());
-      } else {
-        GPR_ASSERT(false);  // not appropriate for this specialization
-      }
+      std::unique_ptr<char> buf(
+          new char[payload_config.bytebuf_params().req_size()]);
+      gpr_slice s = gpr_slice_from_copied_buffer(
+          buf.get(), payload_config.bytebuf_params().req_size());
+      Slice slice(s, Slice::STEAL_REF);
+      *req = ByteBuffer(&slice, 1);
+      // std::unique_ptr<ByteBuffer> bbuf(new ByteBuffer(&slice, 1));
+      // req->MoveFrom(bbuf.get());
+    } else {
+      GPR_ASSERT(false);  // not appropriate for this specialization
     }
   }
 };
@@ -375,6 +373,7 @@ std::unique_ptr<Client> CreateSynchronousStreamingClient(
     const ClientConfig& args);
 std::unique_ptr<Client> CreateAsyncUnaryClient(const ClientConfig& args);
 std::unique_ptr<Client> CreateAsyncStreamingClient(const ClientConfig& args);
+std::unique_ptr<Client> CreateGenericAsyncStreamingClient(const ClientConfig& args);
 
 }  // namespace testing
 }  // namespace grpc
