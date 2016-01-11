@@ -146,7 +146,7 @@ TEST_PACKAGE_DATA = {
 
 TESTS_REQUIRE = (
     'oauth2client>=1.4.7',
-    'protobuf==3.0.0a3',
+    'protobuf>=3.0.0a3',
     'coverage>=4.0',
 ) + INSTALL_REQUIRES
 

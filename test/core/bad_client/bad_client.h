@@ -53,7 +53,7 @@ typedef void (*grpc_bad_client_server_side_validator)(grpc_server *server,
    handled as expected. */
 void grpc_run_bad_client_test(grpc_bad_client_server_side_validator validator,
                               const char *client_payload,
-                              size_t client_payload_length, gpr_uint32 flags);
+                              size_t client_payload_length, uint32_t flags);
 
 #define GRPC_RUN_BAD_CLIENT_TEST(validator, payload, flags) \
   grpc_run_bad_client_test(validator, payload, sizeof(payload) - 1, flags)

@@ -86,7 +86,7 @@ static grpc_endpoint_test_fixture begin_test(grpc_endpoint_test_config config,
 static void end_test(grpc_endpoint_test_config config) { config.clean_up(); }
 
 static gpr_slice *allocate_blocks(size_t num_bytes, size_t slice_size,
-                                  size_t *num_blocks, gpr_uint8 *current_data) {
+                                  size_t *num_blocks, uint8_t *current_data) {
   size_t nslices = num_bytes / slice_size + (num_bytes % slice_size ? 1 : 0);
   gpr_slice *slices = malloc(sizeof(gpr_slice) * nslices);
   size_t num_bytes_left = num_bytes;
@@ -117,7 +117,7 @@ struct read_and_write_test_state {
   size_t current_write_size;
   size_t bytes_written;
   int current_read_data;
-  gpr_uint8 current_write_data;
+  uint8_t current_write_data;
   int read_done;
   int write_done;
   gpr_slice_buffer incoming;

@@ -51,7 +51,7 @@ typedef struct {
   size_t body_capacity;
   size_t hdr_capacity;
 
-  gpr_uint8 cur_line[GRPC_HTTPCLI_MAX_HEADER_LENGTH];
+  uint8_t cur_line[GRPC_HTTPCLI_MAX_HEADER_LENGTH];
   size_t cur_line_length;
 } grpc_httpcli_parser;
 

@@ -49,7 +49,7 @@
 
 /* This test exercises IPv4, IPv6, and dualstack sockets in various ways. */
 
-static void *tag(gpr_intptr i) { return (void *)i; }
+static void *tag(intptr_t i) { return (void *)i; }
 
 static gpr_timespec ms_from_now(int ms) {
   return GRPC_TIMEOUT_MILLIS_TO_DEADLINE(ms);

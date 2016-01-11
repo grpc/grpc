@@ -2085,6 +2085,25 @@
     ], 
     "exclude_configs": [], 
     "flaky": false, 
+    "language": "c89", 
+    "name": "public_headers_must_be_c89", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ]
+  }, 
+  {
+    "args": [], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ], 
+    "exclude_configs": [], 
+    "flaky": false, 
     "language": "c", 
     "name": "badreq_bad_client_test", 
     "platforms": [
