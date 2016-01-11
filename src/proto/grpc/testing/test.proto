@@ -33,8 +33,8 @@
 
 syntax = "proto3";
 
-import "test/proto/empty.proto";
-import "test/proto/messages.proto";
+import "src/proto/grpc/testing/empty.proto";
+import "src/proto/grpc/testing/messages.proto";
 
 package grpc.testing;
 
@@ -71,12 +71,11 @@ service TestService {
       returns (stream StreamingOutputCallResponse);
 }
 
-
 // A simple service NOT implemented at servers so clients can test for
 // that case.
 service UnimplementedService {
   // A call that no server should implement
-  rpc UnimplementedCall(grpc.testing.Empty) returns(grpc.testing.Empty);  
+  rpc UnimplementedCall(grpc.testing.Empty) returns (grpc.testing.Empty);
 }
 
 // A service used to control reconnect server.
