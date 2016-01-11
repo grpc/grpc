@@ -139,6 +139,8 @@ void grpc_poll_become_multipoller(grpc_exec_ctx *exec_ctx,
  * be locked) */
 int grpc_pollset_has_workers(grpc_pollset *pollset);
 
+void grpc_remove_fd_from_all_epoll_sets(int fd);
+
 /* override to allow tests to hook poll() usage */
 typedef int (*grpc_poll_function_type)(struct pollfd *, nfds_t, int);
 extern grpc_poll_function_type grpc_poll_function;
