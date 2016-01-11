@@ -197,13 +197,13 @@ int gpr_unref(gpr_refcount *r);
    synchronize other events.  */
 
 /* Initialize *c to the value n. */
-void gpr_stats_init(gpr_stats_counter *c, gpr_intptr n);
+void gpr_stats_init(gpr_stats_counter *c, intptr_t n);
 
 /* *c += inc.  Requires: *c initialized. */
-void gpr_stats_inc(gpr_stats_counter *c, gpr_intptr inc);
+void gpr_stats_inc(gpr_stats_counter *c, intptr_t inc);
 
 /* Return *c.  Requires: *c initialized. */
-gpr_intptr gpr_stats_read(const gpr_stats_counter *c);
+intptr_t gpr_stats_read(const gpr_stats_counter *c);
 
 /* ==================Example use of interface===================
    A producer-consumer queue of up to N integers,

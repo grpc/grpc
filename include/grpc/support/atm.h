@@ -53,7 +53,7 @@
 
    // Atomic operations act on an intergral_type gpr_atm that is guaranteed to
    // be the same size as a pointer.
-   typedef gpr_intptr gpr_atm;
+   typedef intptr_t gpr_atm;
 
    // A memory barrier, providing both acquire and release semantics, but not
    // otherwise acting on memory.

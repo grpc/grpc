@@ -74,7 +74,7 @@ typedef struct grpc_mdelem grpc_mdelem;
 /* if changing this, make identical changes in internal_string in metadata.c */
 struct grpc_mdstr {
   const gpr_slice slice;
-  const gpr_uint32 hash;
+  const uint32_t hash;
   /* there is a private part to this in metadata.c */
 };
 
@@ -86,14 +86,14 @@ struct grpc_mdelem {
   /* there is a private part to this in metadata.c */
 };
 
-void grpc_test_only_set_metadata_hash_seed(gpr_uint32 seed);
+void grpc_test_only_set_metadata_hash_seed(uint32_t seed);
 
 /* Constructors for grpc_mdstr instances; take a variety of data types that
    clients may have handy */
 grpc_mdstr *grpc_mdstr_from_string(const char *str);
 /* Unrefs the slice. */
 grpc_mdstr *grpc_mdstr_from_slice(gpr_slice slice);
-grpc_mdstr *grpc_mdstr_from_buffer(const gpr_uint8 *str, size_t length);
+grpc_mdstr *grpc_mdstr_from_buffer(const uint8_t *str, size_t length);
 
 /* Returns a borrowed slice from the mdstr with its contents base64 encoded
    and huffman compressed */
@@ -107,7 +107,7 @@ grpc_mdelem *grpc_mdelem_from_strings(const char *key, const char *value);
 /* Unrefs the slices. */
 grpc_mdelem *grpc_mdelem_from_slices(gpr_slice key, gpr_slice value);
 grpc_mdelem *grpc_mdelem_from_string_and_buffer(const char *key,
-                                                const gpr_uint8 *value,
+                                                const uint8_t *value,
                                                 size_t value_length);
 
 /* Mutator and accessor for grpc_mdelem user data. The destructor function

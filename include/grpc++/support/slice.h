@@ -72,10 +72,10 @@ class Slice GRPC_FINAL {
   size_t size() const { return GPR_SLICE_LENGTH(slice_); }
 
   /// Raw pointer to the beginning (first element) of the slice.
-  const gpr_uint8* begin() const { return GPR_SLICE_START_PTR(slice_); }
+  const uint8_t* begin() const { return GPR_SLICE_START_PTR(slice_); }
 
   /// Raw pointer to the end (one byte \em past the last element) of the slice.
-  const gpr_uint8* end() const { return GPR_SLICE_END_PTR(slice_); }
+  const uint8_t* end() const { return GPR_SLICE_END_PTR(slice_); }
 
  private:
   friend class ByteBuffer;

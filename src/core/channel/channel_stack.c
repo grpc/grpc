@@ -137,7 +137,7 @@ void grpc_channel_stack_init(grpc_exec_ctx *exec_ctx, int initial_refs,
   }
 
   GPR_ASSERT(user_data > (char *)stack);
-  GPR_ASSERT((gpr_uintptr)(user_data - (char *)stack) ==
+  GPR_ASSERT((uintptr_t)(user_data - (char *)stack) ==
              grpc_channel_stack_size(filters, filter_count));
 
   stack->call_stack_size = call_size;
