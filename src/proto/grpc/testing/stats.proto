@@ -27,39 +27,44 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// An integration test service that covers all the method signature permutations
-// of unary/streaming requests/responses.
 syntax = "proto3";
-
-import "test/proto/messages.proto";
-import "test/proto/benchmarks/control.proto";
 
 package grpc.testing;
 
-service BenchmarkService {
-  // One request followed by one response.
-  // The server returns the client payload as-is.
-  rpc UnaryCall(SimpleRequest) returns (SimpleResponse);
+message ServerStats {
+  // wall clock time change in seconds since last reset
+  double time_elapsed = 1;
 
-  // One request followed by one response.
-  // The server returns the client payload as-is.
-  rpc StreamingCall(stream SimpleRequest) returns (stream SimpleResponse);
+  // change in user time (in seconds) used by the server since last reset
+  double time_user = 2;
+
+  // change in server time (in seconds) used by the server process and all
+  // threads since last reset
+  double time_system = 3;
 }
 
-service WorkerService {
-  // Start server with specified workload.
-  // First request sent specifies the ServerConfig followed by ServerStatus
-  // response. After that, a "Mark" can be sent anytime to request the latest
-  // stats. Closing the stream will initiate shutdown of the test server
-  // and once the shutdown has finished, the OK status is sent to terminate
-  // this RPC.
-  rpc RunServer(stream ServerArgs) returns (stream ServerStatus);
+// Histogram params based on grpc/support/histogram.c
+message HistogramParams {
+  double resolution = 1;   // first bucket is [0, 1 + resolution)
+  double max_possible = 2; // use enough buckets to allow this value
+}
 
-  // Start client with specified workload.
-  // First request sent specifies the ClientConfig followed by ClientStatus
-  // response. After that, a "Mark" can be sent anytime to request the latest
-  // stats. Closing the stream will initiate shutdown of the test client
-  // and once the shutdown has finished, the OK status is sent to terminate
-  // this RPC.
-  rpc RunClient(stream ClientArgs) returns (stream ClientStatus);
+// Histogram data based on grpc/support/histogram.c
+message HistogramData {
+  repeated uint32 bucket = 1;
+  double min_seen = 2;
+  double max_seen = 3;
+  double sum = 4;
+  double sum_of_squares = 5;
+  double count = 6;
+}
+
+message ClientStats {
+  // Latency histogram. Data points are in nanoseconds.
+  HistogramData latencies = 1;
+
+  // See ServerStats for details.
+  double time_elapsed = 2;
+  double time_user = 3;
+  double time_system = 4;
 }

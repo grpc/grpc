@@ -28,20 +28,26 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+// An integration test service that covers all the method signature permutations
+// of unary/streaming requests/responses.
 syntax = "proto3";
 
-import "test/cpp/util/messages.proto";
+package grpc.testing;
 
-package grpc.cpp.test.util;
-
-service TestService {
-  rpc Echo(EchoRequest) returns (EchoResponse);
-  rpc RequestStream(stream EchoRequest) returns (EchoResponse);
-  rpc ResponseStream(EchoRequest) returns (stream EchoResponse);
-  rpc BidiStream(stream EchoRequest) returns (stream EchoResponse);
-  rpc Unimplemented(EchoRequest) returns (EchoResponse);
+message GaugeResponse {
+  string name = 1;
+  oneof value {
+    int64 long_value = 2;
+    double double_vale = 3;
+    string string_value = 4;
+  }
 }
 
-service UnimplementedService {
-  rpc Unimplemented(EchoRequest) returns (EchoResponse);
+message GaugeRequest { string name = 1; }
+
+message EmptyMessage {}
+
+service MetricsService {
+  rpc GetAllGauges(EmptyMessage) returns (stream GaugeResponse);
+  rpc GetGauge(GaugeRequest) returns (GaugeResponse);
 }

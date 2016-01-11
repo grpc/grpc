@@ -28,7 +28,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-gen_build_yaml_dirs="src/boringssl test/core/end2end test/core/bad_client test/core/bad_ssl"
+gen_build_yaml_dirs="src/boringssl test/core/end2end test/core/bad_client test/core/bad_ssl src/proto"
 gen_build_files=""
 for gen_build_yaml in $gen_build_yaml_dirs
 do

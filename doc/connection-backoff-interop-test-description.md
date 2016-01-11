@@ -18,7 +18,7 @@ which translates to about 13 retries.
 are conforming the spec or do its own check on the backoffs in the response.
 
 Client and server use
-[test.proto](https://github.com/grpc/grpc/blob/master/test/proto/test.proto).
+[test.proto](https://github.com/grpc/grpc/blob/master/src/proto/grpc/testing/test.proto).
 Each language should implement its own client. The C++ server is shared among
 languages.
 

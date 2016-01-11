@@ -264,7 +264,7 @@ void grpc_end2end_tests(int argc, char **argv,
       trailing_metadata(config);
       continue;
     }
-    gpr_log(GPR_DEBUG, "not a test: '%%s'", argv[i]);
+    gpr_log(GPR_DEBUG, "not a test: '%s'", argv[i]);
     abort();
   }
 }
