@@ -40,8 +40,8 @@
 #include "test/core/end2end/data/ssl_test_data.h"
 #include "test/core/util/port.h"
 #include "test/cpp/qps/timer.h"
-#include "test/proto/messages.grpc.pb.h"
-#include "test/proto/benchmarks/control.grpc.pb.h"
+#include "src/proto/grpc/testing/messages.grpc.pb.h"
+#include "src/proto/grpc/testing/control.grpc.pb.h"
 
 namespace grpc {
 namespace testing {

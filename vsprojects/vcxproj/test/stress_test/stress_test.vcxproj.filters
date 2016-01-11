@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="$(SolutionDir)\..\test\proto\empty.proto">
-      <Filter>test\proto</Filter>
+    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\empty.proto">
+      <Filter>src\proto\grpc\testing</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\test\proto\messages.proto">
-      <Filter>test\proto</Filter>
+    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\messages.proto">
+      <Filter>src\proto\grpc\testing</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\test\proto\metrics.proto">
-      <Filter>test\proto</Filter>
+    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\metrics.proto">
+      <Filter>src\proto\grpc\testing</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\test\proto\test.proto">
-      <Filter>test\proto</Filter>
+    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\test.proto">
+      <Filter>src\proto\grpc\testing</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\cpp\interop\interop_client.cc">
       <Filter>test\cpp\interop</Filter>
@@ -42,6 +42,18 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Filter Include="src">
+      <UniqueIdentifier>{2240848e-b50a-4076-464a-786310b2d6be}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\proto">
+      <UniqueIdentifier>{aaad45c2-b399-83f4-5950-6d90d3ee1c32}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\proto\grpc">
+      <UniqueIdentifier>{1a3222d0-0e47-792c-188e-207fcd8286c5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\proto\grpc\testing">
+      <UniqueIdentifier>{7f2f0ad6-9e60-abd3-c178-d82a346be435}</UniqueIdentifier>
+    </Filter>
     <Filter Include="test">
       <UniqueIdentifier>{0fddcdfd-8fd7-bb4b-e21d-f53728f4a766}</UniqueIdentifier>
     </Filter>
@@ -53,9 +65,6 @@
     </Filter>
     <Filter Include="test\cpp\util">
       <UniqueIdentifier>{e4704307-621e-0e9c-08c2-3c698c1b827f}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="test\proto">
-      <UniqueIdentifier>{7172a335-47bf-8284-380d-a28a05c07311}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>
