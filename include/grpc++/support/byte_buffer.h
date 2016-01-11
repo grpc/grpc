@@ -72,9 +72,6 @@ class ByteBuffer GRPC_FINAL {
   /// Buffer size in bytes.
   size_t Length() const;
 
-  /// Move contents from \a bbuf and clear \a bbuf
-  void MoveFrom(ByteBuffer* bbuf);
-
  private:
   friend class SerializationTraits<ByteBuffer, void>;
 

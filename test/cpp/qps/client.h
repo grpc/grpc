@@ -118,8 +118,6 @@ class ClientRequestCreator<ByteBuffer> {
           buf.get(), payload_config.bytebuf_params().req_size());
       Slice slice(s, Slice::STEAL_REF);
       *req = ByteBuffer(&slice, 1);
-      // std::unique_ptr<ByteBuffer> bbuf(new ByteBuffer(&slice, 1));
-      // req->MoveFrom(bbuf.get());
     } else {
       GPR_ASSERT(false);  // not appropriate for this specialization
     }

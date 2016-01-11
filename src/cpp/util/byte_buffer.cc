@@ -79,12 +79,6 @@ size_t ByteBuffer::Length() const {
   }
 }
 
-void ByteBuffer::MoveFrom(ByteBuffer* bbuf) {
-  Clear(); // in case we already had something, but we shouldn't use this then
-  buffer_ = bbuf->buffer_;
-  bbuf->buffer_ = nullptr;
-}
-
 ByteBuffer::ByteBuffer(const ByteBuffer& buf):
     buffer_(grpc_byte_buffer_copy(buf.buffer_)) {
 }
