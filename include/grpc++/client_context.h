@@ -286,6 +286,7 @@ class ClientContext {
   /// a client context is constructed and destructed.
   class GlobalCallbacks {
    public:
+    virtual GlobalCallbacks() {}
     virtual void DefaultConstructor(ClientContext* context) = 0;
     virtual void Destructor(ClientContext* context) = 0;
   };
