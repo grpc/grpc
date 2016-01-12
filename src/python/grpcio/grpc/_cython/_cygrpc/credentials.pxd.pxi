@@ -27,11 +27,45 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from grpc._cython._cygrpc cimport grpc
+cimport cpython
 
 
-cdef class Call:
+cdef class ChannelCredentials:
 
-  cdef grpc.grpc_call *c_call
+  cdef grpc_channel_credentials *c_credentials
+  cdef grpc_ssl_pem_key_cert_pair c_ssl_pem_key_cert_pair
   cdef list references
 
+
+cdef class CallCredentials:
+
+  cdef grpc_call_credentials *c_credentials
+  cdef list references
+
+
+cdef class ServerCredentials:
+
+  cdef grpc_server_credentials *c_credentials
+  cdef grpc_ssl_pem_key_cert_pair *c_ssl_pem_key_cert_pairs
+  cdef size_t c_ssl_pem_key_cert_pairs_count
+  cdef list references
+
+
+cdef class CredentialsMetadataPlugin:
+
+  cdef object plugin_callback
+  cdef str plugin_name
+
+  cdef grpc_metadata_credentials_plugin make_c_plugin(self)
+
+
+cdef class AuthMetadataContext:
+
+  cdef grpc_auth_metadata_context context
+
+
+cdef void plugin_get_metadata(
+    void *state, grpc_auth_metadata_context context,
+    grpc_credentials_plugin_metadata_cb cb, void *user_data) with gil
+
+cdef void plugin_destroy_c_plugin_state(void *state)
