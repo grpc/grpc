@@ -34,14 +34,15 @@
 #ifndef TEST_QPS_SERVER_H
 #define TEST_QPS_SERVER_H
 
-#include <grpc/support/cpu.h>
 #include <grpc++/security/server_credentials.h>
+#include <grpc/support/cpu.h>
 
+#include "src/proto/grpc/testing/control.grpc.pb.h"
+#include "src/proto/grpc/testing/messages.grpc.pb.h"
 #include "test/core/end2end/data/ssl_test_data.h"
 #include "test/core/util/port.h"
+#include "test/cpp/qps/coresched.h"
 #include "test/cpp/qps/timer.h"
-#include "src/proto/grpc/testing/messages.grpc.pb.h"
-#include "src/proto/grpc/testing/control.grpc.pb.h"
 
 namespace grpc {
 namespace testing {
@@ -54,6 +55,8 @@ class Server {
     } else {
       port_ = grpc_pick_unused_port_or_die();
     }
+    cores_ = (config.core_limit() > 0) ? LimitCores(config.core_limit())
+                                       : gpr_cpu_num_cores();
   }
   virtual ~Server() {}
 
@@ -87,7 +90,7 @@ class Server {
   }
 
   int port() const { return port_; }
-  int cores() const { return gpr_cpu_num_cores(); }
+  int cores() const { return cores_; }
   static std::shared_ptr<ServerCredentials> CreateServerCredentials(
       const ServerConfig& config) {
     if (config.has_security_params()) {
@@ -104,6 +107,7 @@ class Server {
 
  private:
   int port_;
+  int cores_;
   std::unique_ptr<Timer> timer_;
 };
 

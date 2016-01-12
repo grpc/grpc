@@ -52,6 +52,7 @@ DEFINE_int32(local_workers, 0, "Number of local workers to start");
 DEFINE_string(rpc_type, "UNARY", "Type of RPC: UNARY or STREAMING");
 
 // Server config
+DEFINE_int32(server_core_limit, -1, "Maximum number of cores for server");
 DEFINE_int32(async_server_threads, 1, "Number of threads for async servers");
 DEFINE_string(server_type, "SYNC_SERVER", "Server type");
 
