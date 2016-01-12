@@ -148,6 +148,10 @@ static void QpsDriver() {
   server_config.set_host("localhost");
   server_config.set_async_server_threads(FLAGS_async_server_threads);
 
+  if (FLAGS_server_core_limit > 0) {
+    server_config.set_core_limit(FLAGS_server_core_limit);
+  }
+
   if (FLAGS_secure_test) {
     // Set up security params
     SecurityParams security;
