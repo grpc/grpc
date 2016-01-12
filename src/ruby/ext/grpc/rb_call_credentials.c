@@ -256,6 +256,7 @@ static VALUE grpc_rb_call_credentials_init(VALUE self, VALUE proc) {
   }
   plugin.state = (void*)proc;
   plugin.type = "";
+  plugin.reserved = NULL;
 
   creds = grpc_metadata_credentials_create_from_plugin(plugin, NULL);
   if (creds == NULL) {

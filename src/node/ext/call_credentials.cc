@@ -165,6 +165,7 @@ NAN_METHOD(CallCredentials::CreateFromPlugin) {
   plugin.destroy = plugin_destroy_state;
   plugin.state = reinterpret_cast<void*>(state);
   plugin.type = "";
+  plugin.reserved = NULL;
   grpc_call_credentials *creds = grpc_metadata_credentials_create_from_plugin(
       plugin, NULL);
   info.GetReturnValue().Set(WrapStruct(creds));

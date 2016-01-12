@@ -1208,6 +1208,7 @@ grpc_call_credentials *grpc_metadata_credentials_create_from_plugin(
   GRPC_API_TRACE("grpc_metadata_credentials_create_from_plugin(reserved=%p)", 1,
                  (reserved));
   GPR_ASSERT(reserved == NULL);
+  GPR_ASSERT(plugin.reserved == NULL);
   memset(c, 0, sizeof(*c));
   c->base.type = plugin.type;
   c->base.vtable = &plugin_vtable;
