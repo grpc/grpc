@@ -2501,3 +2501,8 @@ node_modules:
   - src/node/ext/server.cc
   - src/node/ext/server_credentials.cc
   - src/node/ext/timeval.cc
+python_dependencies:
+  deps:
+  - grpc
+  - gpr
+  - boringssl

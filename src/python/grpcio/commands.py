@@ -40,6 +40,8 @@ import setuptools
 from setuptools.command import build_py
 from setuptools.command import test
 
+PYTHON_STEM = os.path.dirname(os.path.abspath(__file__))
+
 CONF_PY_ADDENDUM = """
 extensions.append('sphinx.ext.napoleon')
 napoleon_google_docstring = True
@@ -68,7 +70,7 @@ class SphinxDocumentation(setuptools.Command):
     import sphinx.apidoc
     metadata = self.distribution.metadata
     src_dir = os.path.join(
-        os.getcwd(), self.distribution.package_dir[''], 'grpc')
+        PYTHON_STEM, self.distribution.package_dir[''], 'grpc')
     sys.path.append(src_dir)
     sphinx.apidoc.main([
         '', '--force', '--full', '-H', metadata.name, '-A', metadata.author,
@@ -101,10 +103,15 @@ class BuildProtoModules(setuptools.Command):
         'grpc_python_plugin')
 
   def run(self):
+    if not self.protoc_command:
+      raise Exception('could not find protoc')
+    if not self.grpc_python_plugin_command:
+      raise Exception('could not find grpc_python_plugin '
+                      '(protoc plugin for GRPC Python)')
     include_regex = re.compile(self.include)
     exclude_regex = re.compile(self.exclude) if self.exclude else None
     paths = []
-    root_directory = os.getcwd()
+    root_directory = PYTHON_STEM
     for walk_root, directories, filenames in os.walk(root_directory):
       for filename in filenames:
         path = os.path.join(walk_root, filename)
@@ -140,7 +147,7 @@ class BuildProjectMetadata(setuptools.Command):
     pass
 
   def run(self):
-    with open('grpc/_grpcio_metadata.py', 'w') as module_file:
+    with open(os.path.join(PYTHON_STEM, 'grpc/_grpcio_metadata.py'), 'w') as module_file:
       module_file.write('__version__ = """{}"""'.format(
           self.distribution.get_version()))
 
@@ -149,6 +156,8 @@ class BuildPy(build_py.build_py):
   """Custom project build command."""
 
   def run(self):
+    # TODO(atash): make this warn if the proto modules couldn't be built rather
+    # than cause build failure
     self.run_command('build_proto_modules')
     self.run_command('build_project_metadata')
     build_py.build_py.run(self)

@@ -58,6 +58,10 @@ def mako_plugin(dictionary):
   node_modules = dictionary.get('node_modules')
   targets = dictionary.get('targets')
 
-  for target_list in (libs, node_modules, targets):
+  for target_list in (libs, targets, node_modules):
     for target in target_list:
       target['transitive_deps'] = transitive_deps(target, libs)
+
+  python_dependencies = dictionary.get('python_dependencies')
+  python_dependencies['transitive_deps'] = (
+      transitive_deps(python_dependencies, libs))
