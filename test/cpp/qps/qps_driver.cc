@@ -52,6 +52,7 @@ DEFINE_int32(local_workers, 0, "Number of local workers to start");
 DEFINE_string(rpc_type, "UNARY", "Type of RPC: UNARY or STREAMING");
 
 // Server config
+DEFINE_int32(server_core_limit, -1, "Maximum number of cores for server");
 DEFINE_int32(async_server_threads, 1, "Number of threads for async servers");
 DEFINE_string(server_type, "SYNC_SERVER", "Server type");
 
@@ -146,6 +147,10 @@ static void QpsDriver() {
   server_config.set_server_type(server_type);
   server_config.set_host("localhost");
   server_config.set_async_server_threads(FLAGS_async_server_threads);
+
+  if (FLAGS_server_core_limit > 0) {
+    server_config.set_core_limit(FLAGS_server_core_limit);
+  }
 
   if (FLAGS_secure_test) {
     // Set up security params
