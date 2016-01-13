@@ -4,16 +4,16 @@
     <ClCompile Include="..\..\..\test\proto\messages.proto">
       <Filter>test\proto</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\test\proto\benchmarks\control.proto">
-      <Filter>test\proto\benchmarks</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\test\proto\benchmarks\payloads.proto">
       <Filter>test\proto\benchmarks</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\test\proto\benchmarks\services.proto">
+    <ClCompile Include="..\..\..\test\proto\benchmarks\stats.proto">
       <Filter>test\proto\benchmarks</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\test\proto\benchmarks\stats.proto">
+    <ClCompile Include="..\..\..\test\proto\benchmarks\control.proto">
+      <Filter>test\proto\benchmarks</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\test\proto\benchmarks\services.proto">
       <Filter>test\proto\benchmarks</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\test\cpp\qps\perf_db.proto">
