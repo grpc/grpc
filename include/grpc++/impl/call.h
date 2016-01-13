@@ -186,9 +186,6 @@ class CallOpSendMessage {
   Status SendMessage(const M& message,
                      const WriteOptions& options) GRPC_MUST_USE_RESULT;
 
-  template <class M>
-  Status SendMessage(const M& message) GRPC_MUST_USE_RESULT;
-
  protected:
   void AddOp(grpc_op* ops, size_t* nops) {
     if (send_buf_ == nullptr) return;
@@ -216,11 +213,6 @@ Status CallOpSendMessage::SendMessage(const M& message,
                                       const WriteOptions& options) {
   write_options_ = options;
   return SerializationTraits<M>::Serialize(message, &send_buf_, &own_buf_);
-}
-
-template <class M>
-Status CallOpSendMessage::SendMessage(const M& message) {
-  return SendMessage(message, WriteOptions());
 }
 
 template <class R>

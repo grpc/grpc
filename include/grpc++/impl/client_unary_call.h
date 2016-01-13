@@ -55,7 +55,7 @@ Status BlockingUnaryCall(Channel* channel, const RpcMethod& method,
   CallOpSet<CallOpSendInitialMetadata, CallOpSendMessage,
             CallOpRecvInitialMetadata, CallOpRecvMessage<OutputMessage>,
             CallOpClientSendClose, CallOpClientRecvStatus> ops;
-  Status status = ops.SendMessage(request);
+  Status status = ops.SendMessage(request, WriteOptions());
   if (!status.ok()) {
     return status;
   }

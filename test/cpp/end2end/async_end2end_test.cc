@@ -122,8 +122,13 @@ class Verifier : public PollingCheckRegion {
       }
       auto it = expectations_.find(got_tag);
       EXPECT_TRUE(it != expectations_.end());
-      EXPECT_EQ(it->second, ok);
-      expectations_.erase(it);
+      if (it != expectations_.end()) {
+        EXPECT_EQ(ok, it->second);
+        expectations_.erase(it);
+      } else {
+        expectations_.clear();
+        return;
+      }
     }
   }
   void Verify(CompletionQueue* cq,
@@ -161,8 +166,13 @@ class Verifier : public PollingCheckRegion {
         }
         auto it = expectations_.find(got_tag);
         EXPECT_TRUE(it != expectations_.end());
-        EXPECT_EQ(it->second, ok);
-        expectations_.erase(it);
+        if (it != expectations_.end()) {
+          EXPECT_EQ(ok, it->second);
+          expectations_.erase(it);
+        } else {
+          expectations_.clear();
+          return;
+        }
       }
     }
   }
@@ -377,7 +387,7 @@ TEST_P(AsyncEnd2endTest, SimpleServerStreaming) {
   ServerContext srv_ctx;
   ServerAsyncWriter<EchoResponse> srv_stream(&srv_ctx);
 
-  send_request.set_message("Hello");
+  send_request.set_message(std::string(10 * 1024 * 1024, 'a'));
   std::unique_ptr<ClientAsyncReader<EchoResponse> > cli_stream(
       stub_->AsyncResponseStream(&cli_ctx, send_request, cq_.get(), tag(1)));
 
@@ -389,24 +399,70 @@ TEST_P(AsyncEnd2endTest, SimpleServerStreaming) {
 
   send_response.set_message(recv_request.message());
   srv_stream.Write(send_response, tag(3));
-  Verifier(GetParam()).Expect(3, true).Verify(cq_.get());
-
   cli_stream->Read(&recv_response, tag(4));
-  Verifier(GetParam()).Expect(4, true).Verify(cq_.get());
+  Verifier(GetParam()).Expect(3, true).Expect(4, true).Verify(cq_.get());
+
   EXPECT_EQ(send_response.message(), recv_response.message());
 
   srv_stream.Write(send_response, tag(5));
-  Verifier(GetParam()).Expect(5, true).Verify(cq_.get());
-
   cli_stream->Read(&recv_response, tag(6));
-  Verifier(GetParam()).Expect(6, true).Verify(cq_.get());
+  Verifier(GetParam()).Expect(5, true).Expect(6, true).Verify(cq_.get());
+
   EXPECT_EQ(send_response.message(), recv_response.message());
 
   srv_stream.Finish(Status::OK, tag(7));
-  Verifier(GetParam()).Expect(7, true).Verify(cq_.get());
-
   cli_stream->Read(&recv_response, tag(8));
-  Verifier(GetParam()).Expect(8, false).Verify(cq_.get());
+  Verifier(GetParam()).Expect(7, true).Expect(8, false).Verify(cq_.get());
+
+  cli_stream->Finish(&recv_status, tag(9));
+  Verifier(GetParam()).Expect(9, true).Verify(cq_.get());
+
+  EXPECT_TRUE(recv_status.ok());
+}
+
+// One ping, two pongs - with the first buffered.
+TEST_P(AsyncEnd2endTest, BufferedServerStreaming) {
+  ResetStub();
+
+  EchoRequest send_request;
+  EchoRequest recv_request;
+  EchoResponse send_response;
+  EchoResponse recv_response;
+  Status recv_status;
+  ClientContext cli_ctx;
+  ServerContext srv_ctx;
+  ServerAsyncWriter<EchoResponse> srv_stream(&srv_ctx);
+
+  send_request.set_message(std::string(10 * 1024 * 1024, 'a'));
+  std::unique_ptr<ClientAsyncReader<EchoResponse> > cli_stream(
+      stub_->AsyncResponseStream(&cli_ctx, send_request, cq_.get(), tag(1)));
+
+  service_.RequestResponseStream(&srv_ctx, &recv_request, &srv_stream,
+                                 cq_.get(), cq_.get(), tag(2));
+
+  Verifier(GetParam()).Expect(1, true).Expect(2, true).Verify(cq_.get());
+  EXPECT_EQ(send_request.message(), recv_request.message());
+
+  send_response.set_message(recv_request.message());
+  srv_stream.Write(send_response, tag(3), WriteOptions().set_buffer_hint());
+  Verifier(GetParam())
+      .Expect(3, true)
+      .Verify(cq_.get(), std::chrono::system_clock::now());
+
+  cli_stream->Read(&recv_response, tag(4));
+  Verifier(GetParam()).Expect(4, true).Verify(cq_.get());
+
+  EXPECT_EQ(send_response.message(), recv_response.message());
+
+  srv_stream.Write(send_response, tag(5));
+  cli_stream->Read(&recv_response, tag(6));
+  Verifier(GetParam()).Expect(5, true).Expect(6, true).Verify(cq_.get());
+
+  EXPECT_EQ(send_response.message(), recv_response.message());
+
+  srv_stream.Finish(Status::OK, tag(7));
+  cli_stream->Read(&recv_response, tag(8));
+  Verifier(GetParam()).Expect(7, true).Expect(8, false).Verify(cq_.get());
 
   cli_stream->Finish(&recv_status, tag(9));
   Verifier(GetParam()).Expect(9, true).Verify(cq_.get());
