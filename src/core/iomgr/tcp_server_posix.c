@@ -509,11 +509,9 @@ int grpc_tcp_server_add_port(grpc_tcp_server *s, const void *addr,
     addr_len = sizeof(addr4_copy);
   }
   sp = add_socket_to_server(s, fd, addr, addr_len, port_index, fd_index);
-  if (sp2 != NULL) {
-    if (sp != NULL) {
-      sp->sibling = sp2;
-    }
-    sp2->is_sibling = 1;
+  if (sp2 != NULL && sp != NULL) {
+    sp2->sibling = sp;
+    sp->is_sibling = 1;
   }
 
 done:
