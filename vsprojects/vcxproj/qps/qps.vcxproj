@@ -148,6 +148,7 @@
 
   <ItemGroup>
     <ClInclude Include="$(SolutionDir)\..\test\cpp\qps\client.h" />
+    <ClInclude Include="$(SolutionDir)\..\test\cpp\qps\coresched.h" />
     <ClInclude Include="$(SolutionDir)\..\test\cpp\qps\driver.h" />
     <ClInclude Include="$(SolutionDir)\..\test\cpp\qps\histogram.h" />
     <ClInclude Include="$(SolutionDir)\..\test\cpp\qps\interarrival.h" />
@@ -211,6 +212,8 @@
     <ClCompile Include="$(SolutionDir)\..\test\cpp\qps\client_async.cc">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\cpp\qps\client_sync.cc">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\cpp\qps\coresched.cc">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\cpp\qps\driver.cc">
     </ClCompile>

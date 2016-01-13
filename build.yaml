@@ -760,6 +760,7 @@ libs:
   language: c++
   headers:
   - test/cpp/qps/client.h
+  - test/cpp/qps/coresched.h
   - test/cpp/qps/driver.h
   - test/cpp/qps/histogram.h
   - test/cpp/qps/interarrival.h
@@ -779,6 +780,7 @@ libs:
   - src/proto/grpc/testing/perf_db.proto
   - test/cpp/qps/client_async.cc
   - test/cpp/qps/client_sync.cc
+  - test/cpp/qps/coresched.cc
   - test/cpp/qps/driver.cc
   - test/cpp/qps/perf_db_client.cc
   - test/cpp/qps/qps_worker.cc

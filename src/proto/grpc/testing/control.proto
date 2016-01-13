@@ -106,6 +106,9 @@ message ClientConfig {
   LoadParams load_params = 10;
   PayloadConfig payload_config = 11;
   HistogramParams histogram_params = 12;
+
+  // Specify the cores we should run the client on, if desired
+  repeated int32 core_list = 13;
 }
 
 message ClientStatus { ClientStats stats = 1; }
@@ -135,6 +138,9 @@ message ServerConfig {
   // restrict core usage, currently unused
   int32 core_limit = 8;
   PayloadConfig payload_config = 9;
+
+  // Specify the cores we should run the server on, if desired
+  repeated int32 core_list = 10;
 }
 
 message ServerArgs {

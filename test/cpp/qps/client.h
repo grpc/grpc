@@ -36,9 +36,13 @@
 
 #include <condition_variable>
 #include <mutex>
+#include <vector>
+
+#include <grpc/support/log.h>
 
 #include "test/cpp/qps/histogram.h"
 #include "test/cpp/qps/interarrival.h"
+#include "test/cpp/qps/coresched.h"
 #include "test/cpp/qps/timer.h"
 #include "test/cpp/util/create_test_channel.h"
 #include "src/proto/grpc/testing/payloads.grpc.pb.h"
@@ -72,6 +76,15 @@ class Client {
       : channels_(config.client_channels()),
         timer_(new Timer),
         interarrival_timer_() {
+    int clsize = config.core_list_size();
+    if (clsize > 0) {
+      std::vector<int> core_list;
+      for (int i = 0; i < clsize; i++) {
+        core_list.push_back(config.core_list(i));
+      }
+      LimitCores(core_list);
+    }
+
     for (int i = 0; i < config.client_channels(); i++) {
       channels_[i].init(config.server_targets(i % config.server_targets_size()),
                         config);
