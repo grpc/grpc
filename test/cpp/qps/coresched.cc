@@ -33,10 +33,10 @@
 
 #include "test/cpp/qps/coresched.h"
 
-#include <vector>
 #include <grpc/support/cpu.h>
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
+#include <vector>
 
 namespace grpc {
 namespace testing {
@@ -66,7 +66,7 @@ int LimitCores(std::vector<int> cores) {
 }
 #else
 // LimitCores is not currently supported for non-Linux platforms
-int LimitCores(std::vector<int> core_vec) {return gpr_cpu_num_cores();}
+int LimitCores(std::vector<int> core_vec) { return gpr_cpu_num_cores(); }
 #endif
 }  // namespace testing
 }  // namespace grpc

@@ -40,13 +40,13 @@
 
 #include <grpc/support/log.h>
 
-#include "test/cpp/qps/histogram.h"
-#include "test/cpp/qps/interarrival.h"
-#include "test/cpp/qps/coresched.h"
-#include "test/cpp/qps/timer.h"
-#include "test/cpp/util/create_test_channel.h"
 #include "src/proto/grpc/testing/payloads.grpc.pb.h"
 #include "src/proto/grpc/testing/services.grpc.pb.h"
+#include "test/cpp/qps/coresched.h"
+#include "test/cpp/qps/histogram.h"
+#include "test/cpp/qps/interarrival.h"
+#include "test/cpp/qps/timer.h"
+#include "test/cpp/util/create_test_channel.h"
 
 namespace grpc {
 

@@ -96,7 +96,7 @@ static std::vector<int> IntParse(const std::string& s) {
       res.push_back(std::stoi(s.substr(pos)));
       break;
     } else {
-      res.push_back(std::stoi(s.substr(pos, comma-pos), nullptr));
+      res.push_back(std::stoi(s.substr(pos, comma - pos), nullptr));
       pos = comma + 1;
     }
   }
@@ -161,7 +161,7 @@ static void QpsDriver() {
 
   if (FLAGS_client_core_list.size() > 0) {
     auto v = IntParse(FLAGS_client_core_list);
-    for (size_t i=0; i<v.size(); i++) {
+    for (size_t i = 0; i < v.size(); i++) {
       client_config.add_core_list(v[i]);
     }
   }
@@ -173,7 +173,7 @@ static void QpsDriver() {
 
   if (FLAGS_server_core_list.size() > 0) {
     auto v = IntParse(FLAGS_server_core_list);
-    for (size_t i=0; i<v.size(); i++) {
+    for (size_t i = 0; i < v.size(); i++) {
       server_config.add_core_list(v[i]);
     }
   }
