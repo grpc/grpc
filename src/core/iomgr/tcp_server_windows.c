@@ -125,7 +125,7 @@ static void finish_shutdown(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s) {
     s->head = sp->next;
     sp->next = NULL;
     grpc_winsocket_destroy(sp->socket);
-    grpc_tcp_listener_unref(sp);
+    gpr_free(sp);
   }
   gpr_free(s);
 }
@@ -417,7 +417,6 @@ static grpc_tcp_listener *add_socket_to_server(grpc_tcp_server *s, SOCKET sock,
     sp->new_socket = INVALID_SOCKET;
     sp->port = port;
     sp->port_index = port_index;
-    gpr_ref_init(&sp->refs, 1);
     grpc_closure_init(&sp->on_accept, on_accept, sp);
     GPR_ASSERT(sp->socket);
     gpr_mu_unlock(&s->mu);
@@ -491,7 +490,8 @@ int grpc_tcp_server_add_port(grpc_tcp_server *s, const void *addr,
   }
 }
 
-unsigned grpc_tcp_server_port_fd_count(grpc_tcp_server *s, int port_index) {
+unsigned grpc_tcp_server_port_fd_count(grpc_tcp_server *s,
+                                       unsigned port_index) {
   grpc_tcp_listener *sp;
   for (sp = s->head; sp && port_index != 0; sp = sp->next, --port_index)
     ;
