@@ -31,58 +31,52 @@
  *
  */
 
-#ifndef GRPCXX_SUPPORT_SLICE_H
-#define GRPCXX_SUPPORT_SLICE_H
+#include <set>
 
-#include <grpc/support/slice.h>
-#include <grpc++/support/config.h>
+#include <grpc/support/log.h>
+
+#include "test/cpp/qps/driver.h"
+#include "test/cpp/qps/report.h"
+#include "test/cpp/util/benchmark_config.h"
 
 namespace grpc {
+namespace testing {
 
-/// A wrapper around \a gpr_slice.
-///
-/// A slice represents a contiguous reference counted array of bytes.
-/// It is cheap to take references to a slice, and it is cheap to create a
-/// slice pointing to a subset of another slice.
-class Slice GRPC_FINAL {
- public:
-  /// Construct an empty slice.
-  Slice();
-  // Destructor - drops one reference.
-  ~Slice();
+static const int WARMUP = 5;
+static const int BENCHMARK = 10;
 
-  enum AddRef { ADD_REF };
-  /// Construct a slice from \a slice, adding a reference.
-  Slice(gpr_slice slice, AddRef);
+static void RunGenericAsyncStreamingPingPong() {
+  gpr_log(GPR_INFO, "Running Generic Async Streaming Ping Pong");
 
-  enum StealRef { STEAL_REF };
-  /// Construct a slice from \a slice, stealing a reference.
-  Slice(gpr_slice slice, StealRef);
+  ClientConfig client_config;
+  client_config.set_client_type(ASYNC_CLIENT);
+  client_config.set_outstanding_rpcs_per_channel(1);
+  client_config.set_client_channels(1);
+  client_config.set_async_client_threads(1);
+  client_config.set_rpc_type(STREAMING);
+  client_config.mutable_load_params()->mutable_closed_loop();
+  auto bbuf = client_config.mutable_payload_config()->mutable_bytebuf_params();
+  bbuf->set_resp_size(0);
+  bbuf->set_req_size(0);
 
-  /// Copy constructor, adds a reference.
-  Slice(const Slice& other);
+  ServerConfig server_config;
+  server_config.set_server_type(ASYNC_SERVER);
+  server_config.set_host("localhost");
+  server_config.set_async_server_threads(1);
 
-  /// Assignment, reference count is unchanged.
-  Slice& operator=(Slice other) {
-    std::swap(slice_, other.slice_);
-    return *this;
-  }
+  const auto result =
+      RunScenario(client_config, 1, server_config, 1, WARMUP, BENCHMARK, -2);
 
-  /// Byte size.
-  size_t size() const { return GPR_SLICE_LENGTH(slice_); }
+  GetReporter()->ReportQPS(*result);
+  GetReporter()->ReportLatency(*result);
+}
 
-  /// Raw pointer to the beginning (first element) of the slice.
-  const uint8_t* begin() const { return GPR_SLICE_START_PTR(slice_); }
-
-  /// Raw pointer to the end (one byte \em past the last element) of the slice.
-  const uint8_t* end() const { return GPR_SLICE_END_PTR(slice_); }
-
- private:
-  friend class ByteBuffer;
-
-  gpr_slice slice_;
-};
-
+}  // namespace testing
 }  // namespace grpc
 
-#endif  // GRPCXX_SUPPORT_SLICE_H
+int main(int argc, char** argv) {
+  grpc::testing::InitBenchmark(&argc, &argv, true);
+
+  grpc::testing::RunGenericAsyncStreamingPingPong();
+  return 0;
+}
