@@ -27,10 +27,8 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from grpc._cython._cygrpc cimport grpc
-
 
 cdef class Channel:
 
-  cdef grpc.grpc_channel *c_channel
+  cdef grpc_channel *c_channel
   cdef list references

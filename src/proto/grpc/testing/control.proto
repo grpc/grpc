@@ -29,8 +29,8 @@
 
 syntax = "proto3";
 
-import "test/proto/benchmarks/payloads.proto";
-import "test/proto/benchmarks/stats.proto";
+import "src/proto/grpc/testing/payloads.proto";
+import "src/proto/grpc/testing/stats.proto";
 
 package grpc.testing;
 
@@ -61,9 +61,7 @@ message UniformParams {
   double interarrival_hi = 2;
 }
 
-message DeterministicParams {
-  double offered_load = 1;
-}
+message DeterministicParams { double offered_load = 1; }
 
 message ParetoParams {
   double interarrival_base = 1;
@@ -72,8 +70,7 @@ message ParetoParams {
 
 // Once an RPC finishes, immediately start a new one.
 // No configuration parameters needed.
-message ClosedLoopParams {
-}
+message ClosedLoopParams {}
 
 message LoadParams {
   oneof load {
@@ -111,9 +108,7 @@ message ClientConfig {
   HistogramParams histogram_params = 12;
 }
 
-message ClientStatus {
-  ClientStats stats = 1;
-}
+message ClientStatus { ClientStats stats = 1; }
 
 // Request current stats
 message Mark {

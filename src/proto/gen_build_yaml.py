@@ -1,3 +1,4 @@
+#!/usr/bin/env python2.7
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -27,19 +28,32 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from grpc._cython._cygrpc cimport grpc
-from grpc._cython._cygrpc cimport completion_queue
 
+"""Generates the appropriate build.json data for all the proto files."""
+import yaml
+import collections
+import os
+import re
+import sys
 
-cdef class Server:
+def main():
+  deps = {}
+  for root, dirs, files in os.walk(os.path.dirname(sys.argv[0])):
+    for f in files:
+      if f[-6:] != '.proto': continue
+      look_at = os.path.join(root, f)
+      with open(look_at) as inp:
+        for line in inp:
+          imp = re.search(r'import "([^"]*)"', line)
+          if not imp: continue
+          if look_at[:-6] not in deps: deps[look_at[:-6]] = []
+          deps[look_at[:-6]].append(imp.group(1)[:-6])
 
-  cdef grpc.grpc_server *c_server
-  cdef bint is_started  # start has been called
-  cdef bint is_shutting_down  # shutdown has been called
-  cdef bint is_shutdown  # notification of complete shutdown received
-  # used at dealloc when user forgets to shutdown
-  cdef completion_queue.CompletionQueue backup_shutdown_queue
-  cdef list references
-  cdef list registered_completion_queues
+  json = {
+    'proto_deps': deps
+  }
 
-  cdef notify_shutdown_complete(self)
+  print yaml.dump(json)
+
+if __name__ == '__main__':
+  main()

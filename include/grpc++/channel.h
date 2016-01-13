@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -54,13 +54,13 @@ template <class R>
 class ClientReader;
 template <class W>
 class ClientWriter;
-template <class R, class W>
+template <class W, class R>
 class ClientReaderWriter;
 template <class R>
 class ClientAsyncReader;
 template <class W>
 class ClientAsyncWriter;
-template <class R, class W>
+template <class W, class R>
 class ClientAsyncReaderWriter;
 template <class R>
 class ClientAsyncResponseReader;
@@ -98,13 +98,13 @@ class Channel GRPC_FINAL : public GrpcLibrary,
   friend class ::grpc::ClientReader;
   template <class W>
   friend class ::grpc::ClientWriter;
-  template <class R, class W>
+  template <class W, class R>
   friend class ::grpc::ClientReaderWriter;
   template <class R>
   friend class ::grpc::ClientAsyncReader;
   template <class W>
   friend class ::grpc::ClientAsyncWriter;
-  template <class R, class W>
+  template <class W, class R>
   friend class ::grpc::ClientAsyncReaderWriter;
   template <class R>
   friend class ::grpc::ClientAsyncResponseReader;

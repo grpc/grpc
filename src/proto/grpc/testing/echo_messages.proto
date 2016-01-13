@@ -28,29 +28,33 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// An integration test service that covers all the method signature permutations
-// of unary/streaming requests/responses.
 syntax = "proto3";
 
 package grpc.testing;
 
-message GaugeResponse {
-  string name = 1;
-  oneof value {
-    int64 long_value = 2;
-    double double_vale = 3;
-    string string_value = 4;
-  }
+message RequestParams {
+  bool echo_deadline = 1;
+  int32 client_cancel_after_us = 2;
+  int32 server_cancel_after_us = 3;
+  bool echo_metadata = 4;
+  bool check_auth_context = 5;
+  int32 response_message_length = 6;
+  bool echo_peer = 7;
+  string expected_client_identity = 8; // will force check_auth_context.
 }
 
-message GaugeRequest {
-  string name = 1;
+message EchoRequest {
+  string message = 1;
+  RequestParams param = 2;
 }
 
-message EmptyMessage {
+message ResponseParams {
+  int64 request_deadline = 1;
+  string host = 2;
+  string peer = 3;
 }
 
-service MetricsService {
-  rpc GetAllGauges(EmptyMessage) returns (stream GaugeResponse);
-  rpc GetGauge(GaugeRequest) returns (GaugeResponse);
+message EchoResponse {
+  string message = 1;
+  ResponseParams param = 2;
 }
