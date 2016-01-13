@@ -76,12 +76,7 @@ static std::unique_ptr<Client> CreateClient(const ClientConfig& config) {
   abort();
 }
 
-static void LimitCores(int cores) {}
-
 static std::unique_ptr<Server> CreateServer(const ServerConfig& config) {
-  if (config.core_limit() > 0) {
-    LimitCores(config.core_limit());
-  }
   switch (config.server_type()) {
     case ServerType::SYNC_SERVER:
       return CreateSynchronousServer(config);
