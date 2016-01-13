@@ -55,6 +55,7 @@
 #define MIN_SAFE_ACCEPT_QUEUE_SIZE 100
 
 /* one listening port */
+typedef struct grpc_tcp_listener grpc_tcp_listener;
 struct grpc_tcp_listener {
   /* This seemingly magic number comes from AcceptEx's documentation. each
      address buffer needs to have at least 16 more bytes at their end. */
@@ -134,8 +135,7 @@ grpc_tcp_server *grpc_tcp_server_ref(grpc_tcp_server *s) {
   return s;
 }
 
-static void grpc_tcp_server_destroy(grpc_exec_ctx *exec_ctx,
-                                    grpc_tcp_server *s) {
+static void tcp_server_destroy(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s) {
   int immediately_done = 0;
   grpc_tcp_listener *sp;
   gpr_mu_lock(&s->mu);
@@ -156,19 +156,14 @@ static void grpc_tcp_server_destroy(grpc_exec_ctx *exec_ctx,
   }
 }
 
-void grpc_tcp_server_set_shutdown_complete(grpc_tcp_server *s,
-                                           grpc_closure *shutdown_complete) {
-  s->shutdown_complete = shutdown_complete;
-}
-
 void grpc_tcp_server_unref(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s) {
   if (gpr_unref(&s->refs)) {
     if (exec_ctx == NULL) {
       grpc_exec_ctx local_exec_ctx = GRPC_EXEC_CTX_INIT;
-      grpc_tcp_server_destroy(&local_exec_ctx, s);
+      tcp_server_destroy(&local_exec_ctx, s);
       grpc_exec_ctx_finish(&local_exec_ctx);
     } else {
-      grpc_tcp_server_destroy(exec_ctx, s);
+      tcp_server_destroy(exec_ctx, s);
     }
   }
 }
@@ -300,6 +295,7 @@ failure:
 /* Event manager callback when reads are ready. */
 static void on_accept(grpc_exec_ctx *exec_ctx, void *arg, int from_iocp) {
   grpc_tcp_listener *sp = arg;
+  grpc_tcp_server_acceptor acceptor = {sp->server, sp->port_index, 0};
   SOCKET sock = sp->new_socket;
   grpc_winsocket_callback_info *info = &sp->socket->read_info;
   grpc_endpoint *ep = NULL;
@@ -367,7 +363,7 @@ static void on_accept(grpc_exec_ctx *exec_ctx, void *arg, int from_iocp) {
   /* The only time we should call our callback, is where we successfully
      managed to accept a connection, and created an endpoint. */
   if (ep) sp->server->on_accept_cb(exec_ctx, sp->server->on_accept_cb_arg, ep,
-                                   sp->server, sp->port_index, 0);
+                                   &acceptor);
   /* As we were notified from the IOCP of one and exactly one accept,
      the former socked we created has now either been destroy or assigned
      to the new connection. We need to create a new one for the next
@@ -495,7 +491,7 @@ int grpc_tcp_server_add_port(grpc_tcp_server *s, const void *addr,
   }
 }
 
-unsigned grpc_tcp_server_fds_for_port(grpc_tcp_server *s, int port_index) {
+unsigned grpc_tcp_server_port_fd_count(grpc_tcp_server *s, int port_index) {
   grpc_tcp_listener *sp;
   for (sp = s->head; sp && port_index != 0; sp = sp->next, --port_index)
     ;
@@ -506,8 +502,8 @@ unsigned grpc_tcp_server_fds_for_port(grpc_tcp_server *s, int port_index) {
   }
 }
 
-int grpc_tcp_server_get_fd(grpc_tcp_server *s, unsigned port_index,
-                           unsigned fd_index) {
+int grpc_tcp_server_port_fd(grpc_tcp_server *s, unsigned port_index,
+                            unsigned fd_index) {
   grpc_tcp_listener *sp;
   if (fd_index != 0) {
     /* Windows implementation has only one fd per port_index. */

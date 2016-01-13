@@ -39,12 +39,20 @@
 /* Forward decl of grpc_tcp_server */
 typedef struct grpc_tcp_server grpc_tcp_server;
 
-/* Called for newly connected TCP connections. Callee owns a ref on
-   from_server. */
+typedef struct grpc_tcp_server_acceptor grpc_tcp_server_acceptor;
+struct grpc_tcp_server_acceptor {
+  /* grpc_tcp_server_cb functions share a ref on from_server that is valid
+     until the function returns. */
+  grpc_tcp_server *from_server;
+  /* Indices that may be passed to grpc_tcp_server_port_fd(). */
+  unsigned port_index;
+  unsigned fd_index;
+};
+
+/* Called for newly connected TCP connections. */
 typedef void (*grpc_tcp_server_cb)(grpc_exec_ctx *exec_ctx, void *arg,
                                    grpc_endpoint *ep,
-                                   grpc_tcp_server *from_server,
-                                   unsigned port_index, unsigned fd_index);
+                                   grpc_tcp_server_acceptor *acceptor);
 
 /* Create a server, initially not bound to any ports. The caller owns one ref.
    If shutdown_complete is not NULL, it will be used by
@@ -70,21 +78,17 @@ int grpc_tcp_server_add_port(grpc_tcp_server *s, const void *addr,
 
 /* Number of fds at the given port_index, or 0 if port_index is out of
    bounds. */
-unsigned grpc_tcp_server_fds_for_port(grpc_tcp_server *s, unsigned port_index);
+unsigned grpc_tcp_server_port_fd_count(grpc_tcp_server *s, unsigned port_index);
 
 /* Returns the file descriptor of the Mth (fd_index) listening socket of the Nth
    (port_index) call to add_port() on this server, or -1 if the indices are out
    of bounds. The file descriptor remains owned by the server, and will be
    cleaned up when grpc_tcp_server_destroy is called. */
-int grpc_tcp_server_get_fd(grpc_tcp_server *s, unsigned port_index,
-                           unsigned fd_index);
+int grpc_tcp_server_port_fd(grpc_tcp_server *s, unsigned port_index,
+                            unsigned fd_index);
 
 /* Ref s and return s. */
 grpc_tcp_server *grpc_tcp_server_ref(grpc_tcp_server *s);
-
-/* Set or reset the shutdown_complete closure. shutdown_complete may be NULL. */
-void grpc_tcp_server_set_shutdown_complete(grpc_tcp_server *s,
-                                           grpc_closure *shutdown_complete);
 
 /* If the recount drops to zero, delete s, and call (exec_ctx==NULL) or enqueue
    a call (exec_ctx!=NULL) to shutdown_complete. */

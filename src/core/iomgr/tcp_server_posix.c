@@ -212,8 +212,7 @@ static void deactivated_all_ports(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s) {
   }
 }
 
-static void grpc_tcp_server_destroy(grpc_exec_ctx *exec_ctx,
-                                    grpc_tcp_server *s) {
+static void tcp_server_destroy(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s) {
   gpr_mu_lock(&s->mu);
 
   GPR_ASSERT(!s->shutdown);
@@ -315,6 +314,8 @@ error:
 /* event manager callback when reads are ready */
 static void on_read(grpc_exec_ctx *exec_ctx, void *arg, int success) {
   grpc_tcp_listener *sp = arg;
+  grpc_tcp_server_acceptor acceptor = {sp->server, sp->port_index,
+                                       sp->fd_index};
   grpc_fd *fdobj;
   size_t i;
 
@@ -363,7 +364,7 @@ static void on_read(grpc_exec_ctx *exec_ctx, void *arg, int success) {
     sp->server->on_accept_cb(
         exec_ctx, sp->server->on_accept_cb_arg,
         grpc_tcp_create(fdobj, GRPC_TCP_DEFAULT_READ_SLICE_SIZE, addr_str),
-        grpc_tcp_server_ref(sp->server), sp->port_index, sp->fd_index);
+        &acceptor);
 
     gpr_free(name);
     gpr_free(addr_str);
@@ -524,7 +525,8 @@ done:
   }
 }
 
-unsigned grpc_tcp_server_fds_for_port(grpc_tcp_server *s, unsigned port_index) {
+unsigned grpc_tcp_server_port_fd_count(grpc_tcp_server *s,
+                                       unsigned port_index) {
   unsigned num_fds = 0;
   grpc_tcp_listener *sp;
   for (sp = s->head; sp && port_index != 0; sp = sp->next) {
@@ -537,8 +539,8 @@ unsigned grpc_tcp_server_fds_for_port(grpc_tcp_server *s, unsigned port_index) {
   return num_fds;
 }
 
-int grpc_tcp_server_get_fd(grpc_tcp_server *s, unsigned port_index,
-                           unsigned fd_index) {
+int grpc_tcp_server_port_fd(grpc_tcp_server *s, unsigned port_index,
+                            unsigned fd_index) {
   grpc_tcp_listener *sp;
   for (sp = s->head; sp && port_index != 0; sp = sp->next) {
     if (!sp->is_sibling) {
@@ -585,19 +587,14 @@ grpc_tcp_server *grpc_tcp_server_ref(grpc_tcp_server *s) {
   return s;
 }
 
-void grpc_tcp_server_set_shutdown_complete(grpc_tcp_server *s,
-                                           grpc_closure *shutdown_complete) {
-  s->shutdown_complete = shutdown_complete;
-}
-
 void grpc_tcp_server_unref(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s) {
   if (gpr_unref(&s->refs)) {
     if (exec_ctx == NULL) {
       grpc_exec_ctx local_exec_ctx = GRPC_EXEC_CTX_INIT;
-      grpc_tcp_server_destroy(&local_exec_ctx, s);
+      tcp_server_destroy(&local_exec_ctx, s);
       grpc_exec_ctx_finish(&local_exec_ctx);
     } else {
-      grpc_tcp_server_destroy(exec_ctx, s);
+      tcp_server_destroy(exec_ctx, s);
     }
   }
 }
