@@ -1,4 +1,4 @@
-# Copyright 2015, Google Inc.
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -378,7 +378,7 @@ class UnaryUnaryMultiCallable(object):
       metadata: A metadata value to be passed to the service-side of
         the RPC.
       with_call: Whether or not to include return a Call for the RPC in addition
-        to the reponse.
+        to the response.
       protocol_options: A value specified by the provider of a Face interface
         implementation affording custom state and behavior.
 
@@ -496,7 +496,7 @@ class StreamUnaryMultiCallable(object):
       metadata: A metadata value to be passed to the service-side of
         the RPC.
       with_call: Whether or not to include return a Call for the RPC in addition
-        to the reponse.
+        to the response.
       protocol_options: A value specified by the provider of a Face interface
         implementation affording custom state and behavior.
 
@@ -699,7 +699,7 @@ class GenericStub(object):
       timeout: A duration of time in seconds to allow for the RPC.
       metadata: A metadata value to be passed to the service-side of the RPC.
       with_call: Whether or not to include return a Call for the RPC in addition
-        to the reponse.
+        to the response.
       protocol_options: A value specified by the provider of a Face interface
         implementation affording custom state and behavior.
 
@@ -774,7 +774,7 @@ class GenericStub(object):
       timeout: A duration of time in seconds to allow for the RPC.
       metadata: A metadata value to be passed to the service-side of the RPC.
       with_call: Whether or not to include return a Call for the RPC in addition
-        to the reponse.
+        to the response.
       protocol_options: A value specified by the provider of a Face interface
         implementation affording custom state and behavior.
 

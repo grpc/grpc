@@ -45,13 +45,13 @@
 typedef struct grpc_chttp2_hpack_parser grpc_chttp2_hpack_parser;
 
 typedef int (*grpc_chttp2_hpack_parser_state)(grpc_chttp2_hpack_parser *p,
-                                              const gpr_uint8 *beg,
-                                              const gpr_uint8 *end);
+                                              const uint8_t *beg,
+                                              const uint8_t *end);
 
 typedef struct {
   char *str;
-  gpr_uint32 length;
-  gpr_uint32 capacity;
+  uint32_t length;
+  uint32_t capacity;
 } grpc_chttp2_hpack_parser_string;
 
 struct grpc_chttp2_hpack_parser {
@@ -67,31 +67,31 @@ struct grpc_chttp2_hpack_parser {
   grpc_chttp2_hpack_parser_state after_prioritization;
   /* the value we're currently parsing */
   union {
-    gpr_uint32 *value;
+    uint32_t *value;
     grpc_chttp2_hpack_parser_string *str;
   } parsing;
   /* string parameters for each chunk */
   grpc_chttp2_hpack_parser_string key;
   grpc_chttp2_hpack_parser_string value;
   /* parsed index */
-  gpr_uint32 index;
+  uint32_t index;
   /* length of source bytes for the currently parsing string */
-  gpr_uint32 strlen;
+  uint32_t strlen;
   /* number of source bytes read for the currently parsing string */
-  gpr_uint32 strgot;
+  uint32_t strgot;
   /* huffman decoding state */
-  gpr_int16 huff_state;
+  int16_t huff_state;
   /* is the string being decoded binary? */
-  gpr_uint8 binary;
+  uint8_t binary;
   /* is the current string huffman encoded? */
-  gpr_uint8 huff;
+  uint8_t huff;
   /* is a dynamic table update allowed? */
-  gpr_uint8 dynamic_table_update_allowed;
+  uint8_t dynamic_table_update_allowed;
   /* set by higher layers, used by grpc_chttp2_header_parser_parse to signal
      it should append a metadata boundary at the end of frame */
-  gpr_uint8 is_boundary;
-  gpr_uint8 is_eof;
-  gpr_uint32 base64_buffer;
+  uint8_t is_boundary;
+  uint8_t is_eof;
+  uint32_t base64_buffer;
 
   /* hpack table */
   grpc_chttp2_hptbl table;
@@ -104,7 +104,7 @@ void grpc_chttp2_hpack_parser_set_has_priority(grpc_chttp2_hpack_parser *p);
 
 /* returns 1 on success, 0 on error */
 int grpc_chttp2_hpack_parser_parse(grpc_chttp2_hpack_parser *p,
-                                   const gpr_uint8 *beg, const gpr_uint8 *end);
+                                   const uint8_t *beg, const uint8_t *end);
 
 /* wraps grpc_chttp2_hpack_parser_parse to provide a frame level parser for
    the transport */

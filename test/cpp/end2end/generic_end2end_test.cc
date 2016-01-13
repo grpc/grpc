@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -50,17 +50,17 @@
 
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
-#include "test/cpp/util/echo.grpc.pb.h"
+#include "src/proto/grpc/testing/echo.grpc.pb.h"
 
-using grpc::cpp::test::util::EchoRequest;
-using grpc::cpp::test::util::EchoResponse;
+using grpc::testing::EchoRequest;
+using grpc::testing::EchoResponse;
 using std::chrono::system_clock;
 
 namespace grpc {
 namespace testing {
 namespace {
 
-void* tag(int i) { return (void*)(gpr_intptr)i; }
+void* tag(int i) { return (void*)(intptr_t)i; }
 
 void verify_ok(CompletionQueue* cq, int i, bool expect_ok) {
   bool ok;
@@ -193,7 +193,7 @@ class GenericEnd2endTest : public ::testing::Test {
 
   CompletionQueue cli_cq_;
   std::unique_ptr<ServerCompletionQueue> srv_cq_;
-  std::unique_ptr<grpc::cpp::test::util::TestService::Stub> stub_;
+  std::unique_ptr<grpc::testing::TestService::Stub> stub_;
   std::unique_ptr<grpc::GenericStub> generic_stub_;
   std::unique_ptr<Server> server_;
   AsyncGenericService generic_service_;

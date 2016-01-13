@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2015, Google Inc.
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -37,5 +37,5 @@ cd $(dirname $0)/../..
 docker build -t grpc_clang_format tools/dockerfile/grpc_clang_format
 
 # run clang-format against the checked out codebase
-docker run -e TEST=$TEST --rm=true -v `pwd`:/local-code -t grpc_clang_format /clang_format_all_the_things.sh
+docker run -e TEST=$TEST --rm=true -v ${HOST_GIT_ROOT:-`pwd`}:/local-code -t grpc_clang_format /clang_format_all_the_things.sh
 

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -81,7 +81,7 @@ static ssize_t fill_socket(int fd) {
   int i;
   unsigned char buf[256];
   for (i = 0; i < 256; ++i) {
-    buf[i] = (gpr_uint8)i;
+    buf[i] = (uint8_t)i;
   }
   do {
     write_bytes = write(fd, buf, 256);
@@ -99,7 +99,7 @@ static size_t fill_socket_partial(int fd, size_t bytes) {
   unsigned char *buf = malloc(bytes);
   unsigned i;
   for (i = 0; i < bytes; ++i) {
-    buf[i] = (gpr_uint8)(i % 256);
+    buf[i] = (uint8_t)(i % 256);
   }
 
   do {
@@ -257,7 +257,7 @@ struct write_socket_state {
 };
 
 static gpr_slice *allocate_blocks(size_t num_bytes, size_t slice_size,
-                                  size_t *num_blocks, gpr_uint8 *current_data) {
+                                  size_t *num_blocks, uint8_t *current_data) {
   size_t nslices = num_bytes / slice_size + (num_bytes % slice_size ? 1u : 0u);
   gpr_slice *slices = gpr_malloc(sizeof(gpr_slice) * nslices);
   size_t num_bytes_left = num_bytes;
@@ -337,7 +337,7 @@ static void write_test(size_t num_bytes, size_t slice_size) {
   struct write_socket_state state;
   size_t num_blocks;
   gpr_slice *slices;
-  gpr_uint8 current_data = 0;
+  uint8_t current_data = 0;
   gpr_slice_buffer outgoing;
   grpc_closure write_done_closure;
   gpr_timespec deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(20);
@@ -389,7 +389,8 @@ void on_fd_released(grpc_exec_ctx *exec_ctx, void *arg, int success) {
   grpc_pollset_kick(&g_pollset, NULL);
 }
 
-/* Do a read_test, then release fd and try to read/write again. */
+/* Do a read_test, then release fd and try to read/write again. Verify that
+   grpc_tcp_fd() is available before the fd is released. */
 static void release_fd_test(size_t num_bytes, size_t slice_size) {
   int sv[2];
   grpc_endpoint *ep;
@@ -408,6 +409,7 @@ static void release_fd_test(size_t num_bytes, size_t slice_size) {
   create_sockets(sv);
 
   ep = grpc_tcp_create(grpc_fd_create(sv[1], "read_test"), slice_size, "test");
+  GPR_ASSERT(grpc_tcp_fd(ep) == sv[1] && sv[1] >= 0);
   grpc_endpoint_add_to_pollset(&exec_ctx, ep, &g_pollset);
 
   written_bytes = fill_socket_partial(sv[0], num_bytes);

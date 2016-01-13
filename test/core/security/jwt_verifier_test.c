@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -487,7 +487,7 @@ static void test_jwt_verifier_bad_json_key(void) {
 static void corrupt_jwt_sig(char *jwt) {
   gpr_slice sig;
   char *bad_b64_sig;
-  gpr_uint8 *sig_bytes;
+  uint8_t *sig_bytes;
   char *last_dot = strrchr(jwt, '.');
   GPR_ASSERT(last_dot != NULL);
   sig = grpc_base64_decode(last_dot + 1, 1);

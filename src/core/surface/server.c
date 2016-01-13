@@ -113,8 +113,8 @@ struct channel_data {
   channel_data *next;
   channel_data *prev;
   channel_registered_method *registered_methods;
-  gpr_uint32 registered_method_slots;
-  gpr_uint32 registered_method_max_probes;
+  uint32_t registered_method_slots;
+  uint32_t registered_method_max_probes;
   grpc_closure finish_destroy_channel_closure;
   grpc_closure channel_connectivity_changed;
 };
@@ -209,7 +209,7 @@ struct grpc_server {
   size_t max_requested_calls;
 
   gpr_atm shutdown_flag;
-  gpr_uint8 shutdown_published;
+  uint8_t shutdown_published;
   size_t num_shutdown_tags;
   shutdown_tag *shutdown_tags;
 
@@ -450,8 +450,8 @@ static void start_new_rpc(grpc_exec_ctx *exec_ctx, grpc_call_element *elem) {
   channel_data *chand = elem->channel_data;
   call_data *calld = elem->call_data;
   grpc_server *server = chand->server;
-  gpr_uint32 i;
-  gpr_uint32 hash;
+  uint32_t i;
+  uint32_t hash;
   channel_registered_method *rm;
 
   if (chand->registered_methods && calld->path && calld->host) {
@@ -901,10 +901,10 @@ void grpc_server_setup_transport(grpc_exec_ctx *exec_ctx, grpc_server *s,
   channel_data *chand;
   grpc_mdstr *host;
   grpc_mdstr *method;
-  gpr_uint32 hash;
+  uint32_t hash;
   size_t slots;
-  gpr_uint32 probes;
-  gpr_uint32 max_probes = 0;
+  uint32_t probes;
+  uint32_t max_probes = 0;
   grpc_transport_op op;
 
   for (i = 0; i < s->channel_filter_count; i++) {
@@ -954,8 +954,8 @@ void grpc_server_setup_transport(grpc_exec_ctx *exec_ctx, grpc_server *s,
       crm->host = host;
       crm->method = method;
     }
-    GPR_ASSERT(slots <= GPR_UINT32_MAX);
-    chand->registered_method_slots = (gpr_uint32)slots;
+    GPR_ASSERT(slots <= UINT32_MAX);
+    chand->registered_method_slots = (uint32_t)slots;
     chand->registered_method_max_probes = max_probes;
   }
 

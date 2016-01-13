@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -122,7 +122,7 @@ int grpc_poll_deadline_to_millis_timeout(gpr_timespec deadline,
    -- mostly for fd_posix's use. */
 void grpc_pollset_kick_ext(grpc_pollset *p,
                            grpc_pollset_worker *specific_worker,
-                           gpr_uint32 flags);
+                           uint32_t flags);
 
 /* turn a pollset into a multipoller: platform specific */
 typedef void (*grpc_platform_become_multipoller_type)(grpc_exec_ctx *exec_ctx,
@@ -138,6 +138,8 @@ void grpc_poll_become_multipoller(grpc_exec_ctx *exec_ctx,
 /* Return 1 if the pollset has active threads in grpc_pollset_work (pollset must
  * be locked) */
 int grpc_pollset_has_workers(grpc_pollset *pollset);
+
+void grpc_remove_fd_from_all_epoll_sets(int fd);
 
 /* override to allow tests to hook poll() usage */
 typedef int (*grpc_poll_function_type)(struct pollfd *, nfds_t, int);

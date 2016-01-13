@@ -46,7 +46,7 @@
 
 enum { TIMEOUT = 200000 };
 
-static void *tag(gpr_intptr t) { return (void *)t; }
+static void *tag(intptr_t t) { return (void *)t; }
 
 static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
                                             const char *test_name,
@@ -99,7 +99,7 @@ static void end_test(grpc_end2end_test_fixture *f) {
 }
 
 static void test_invoke_request_with_flags(
-    grpc_end2end_test_config config, gpr_uint32 *flags_for_op,
+    grpc_end2end_test_config config, uint32_t *flags_for_op,
     grpc_call_error call_start_batch_expected_result) {
   grpc_call *c;
   gpr_slice request_payload_slice = gpr_slice_from_copied_string("hello world");
@@ -187,7 +187,7 @@ static void test_invoke_request_with_flags(
 
 void request_with_flags(grpc_end2end_test_config config) {
   size_t i;
-  gpr_uint32 flags_for_op[GRPC_OP_RECV_CLOSE_ON_SERVER + 1];
+  uint32_t flags_for_op[GRPC_OP_RECV_CLOSE_ON_SERVER + 1];
 
   {
     /* check that all grpc_op_types fail when their flag value is set to an
@@ -205,8 +205,8 @@ void request_with_flags(grpc_end2end_test_config config) {
   }
   {
     /* check valid operation with allowed flags for GRPC_OP_SEND_BUFFER */
-    gpr_uint32 flags[] = {GRPC_WRITE_BUFFER_HINT, GRPC_WRITE_NO_COMPRESS,
-                          GRPC_WRITE_INTERNAL_COMPRESS};
+    uint32_t flags[] = {GRPC_WRITE_BUFFER_HINT, GRPC_WRITE_NO_COMPRESS,
+                        GRPC_WRITE_INTERNAL_COMPRESS};
     for (i = 0; i < GPR_ARRAY_SIZE(flags); ++i) {
       memset(flags_for_op, 0, sizeof(flags_for_op));
       flags_for_op[GRPC_OP_SEND_MESSAGE] = flags[i];
