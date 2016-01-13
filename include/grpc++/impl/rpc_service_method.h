@@ -48,8 +48,6 @@ namespace grpc {
 class ServerContext;
 class StreamContextInterface;
 
-// TODO(rocking): we might need to split this file into multiple ones.
-
 // Base class for running an RPC handler.
 class MethodHandler {
  public:
@@ -82,6 +80,7 @@ class RpcServiceMethod : public RpcMethod {
   void* server_tag() const { return server_tag_; }
   // if MethodHandler is nullptr, then this is an async method
   MethodHandler* handler() const { return handler_.get(); }
+  void ResetHandler() { handler_.reset(); }
 
  private:
   void* server_tag_;

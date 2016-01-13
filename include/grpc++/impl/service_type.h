@@ -61,6 +61,7 @@ class ServerAsyncStreamingInterface {
 
 class Service {
  public:
+  Service() : server_(nullptr) {}
   virtual ~Service() {}
 
   bool has_async_methods() const {
@@ -115,6 +116,18 @@ class Service {
                                  void* tag) {
     server_->RequestAsyncCall(methods_[index].get(), context, stream, call_cq,
                               notification_cq, tag);
+  }
+
+  void AddMethod(RpcServiceMethod* method) { methods_.emplace_back(method); }
+
+  void MarkMethodAsync(const grpc::string& method_name) {
+    for (auto it = methods_.begin(); it != methods_.end(); ++it) {
+      if ((*it)->name() == method_name) {
+        (*it)->ResetHandler();
+        return;
+      }
+    }
+    abort();
   }
 
  private:
