@@ -382,7 +382,6 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\census\aggregation.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\census\context.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\census\rpc_metric_id.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\census\tag_set.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(SolutionDir)\..\src\core\surface\init_unsecure.c">

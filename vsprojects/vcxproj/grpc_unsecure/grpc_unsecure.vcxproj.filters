@@ -764,9 +764,6 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\census\rpc_metric_id.h">
       <Filter>src\core\census</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\census\tag_set.h">
-      <Filter>src\core\census</Filter>
-    </ClInclude>
   </ItemGroup>
 
   <ItemGroup>

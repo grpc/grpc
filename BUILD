@@ -268,7 +268,6 @@ cc_library(
     "src/core/census/aggregation.h",
     "src/core/census/context.h",
     "src/core/census/rpc_metric_id.h",
-    "src/core/census/tag_set.h",
     "src/core/httpcli/httpcli_security_connector.c",
     "src/core/security/base64.c",
     "src/core/security/client_auth_filter.c",
@@ -561,7 +560,6 @@ cc_library(
     "src/core/census/aggregation.h",
     "src/core/census/context.h",
     "src/core/census/rpc_metric_id.h",
-    "src/core/census/tag_set.h",
     "src/core/surface/init_unsecure.c",
     "src/core/census/grpc_context.c",
     "src/core/census/grpc_filter.c",
@@ -1367,7 +1365,6 @@ objc_library(
     "src/core/census/aggregation.h",
     "src/core/census/context.h",
     "src/core/census/rpc_metric_id.h",
-    "src/core/census/tag_set.h",
   ],
   includes = [
     "include",
