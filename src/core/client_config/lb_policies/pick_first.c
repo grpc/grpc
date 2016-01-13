@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -75,7 +75,8 @@ typedef struct {
   grpc_connectivity_state_tracker state_tracker;
 } pick_first_lb_policy;
 
-#define GET_SELECTED(p) ((grpc_connected_subchannel *)gpr_atm_no_barrier_load(&(p)->selected))
+#define GET_SELECTED(p) \
+  ((grpc_connected_subchannel *)gpr_atm_no_barrier_load(&(p)->selected))
 
 void pf_destroy(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
   pick_first_lb_policy *p = (pick_first_lb_policy *)pol;
@@ -264,7 +265,8 @@ static void pf_connectivity_changed(grpc_exec_ctx *exec_ctx, void *arg,
         grpc_connectivity_state_set(exec_ctx, &p->state_tracker,
                                     GRPC_CHANNEL_READY, "connecting_ready");
         selected_subchannel = p->subchannels[p->checking_subchannel];
-        selected = grpc_subchannel_get_connected_subchannel(selected_subchannel);
+        selected =
+            grpc_subchannel_get_connected_subchannel(selected_subchannel);
         GPR_ASSERT(selected != NULL);
         gpr_atm_no_barrier_store(&p->selected, (gpr_atm)selected);
         GRPC_CONNECTED_SUBCHANNEL_REF(selected, "picked_first");
