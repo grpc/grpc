@@ -875,6 +875,7 @@ set_initial_connect_string_test: $(BINDIR)/$(CONFIG)/set_initial_connect_string_
 sockaddr_resolver_test: $(BINDIR)/$(CONFIG)/sockaddr_resolver_test
 sockaddr_utils_test: $(BINDIR)/$(CONFIG)/sockaddr_utils_test
 socket_utils_test: $(BINDIR)/$(CONFIG)/socket_utils_test
+tag_set_test: $(BINDIR)/$(CONFIG)/tag_set_test
 tcp_client_posix_test: $(BINDIR)/$(CONFIG)/tcp_client_posix_test
 tcp_posix_test: $(BINDIR)/$(CONFIG)/tcp_posix_test
 tcp_server_posix_test: $(BINDIR)/$(CONFIG)/tcp_server_posix_test
@@ -1180,6 +1181,7 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/sockaddr_resolver_test \
   $(BINDIR)/$(CONFIG)/sockaddr_utils_test \
   $(BINDIR)/$(CONFIG)/socket_utils_test \
+  $(BINDIR)/$(CONFIG)/tag_set_test \
   $(BINDIR)/$(CONFIG)/tcp_client_posix_test \
   $(BINDIR)/$(CONFIG)/tcp_posix_test \
   $(BINDIR)/$(CONFIG)/tcp_server_posix_test \
@@ -1471,6 +1473,8 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/sockaddr_utils_test || ( echo test sockaddr_utils_test failed ; exit 1 )
 	$(E) "[RUN]     Testing socket_utils_test"
 	$(Q) $(BINDIR)/$(CONFIG)/socket_utils_test || ( echo test socket_utils_test failed ; exit 1 )
+	$(E) "[RUN]     Testing tag_set_test"
+	$(Q) $(BINDIR)/$(CONFIG)/tag_set_test || ( echo test tag_set_test failed ; exit 1 )
 	$(E) "[RUN]     Testing tcp_client_posix_test"
 	$(Q) $(BINDIR)/$(CONFIG)/tcp_client_posix_test || ( echo test tcp_client_posix_test failed ; exit 1 )
 	$(E) "[RUN]     Testing tcp_posix_test"
@@ -2446,6 +2450,7 @@ LIBGRPC_SRC = \
     src/core/census/context.c \
     src/core/census/initialize.c \
     src/core/census/operation.c \
+    src/core/census/tag_set.c \
     src/core/census/tracing.c \
 
 PUBLIC_HEADERS_C += \
@@ -2748,6 +2753,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/census/context.c \
     src/core/census/initialize.c \
     src/core/census/operation.c \
+    src/core/census/tag_set.c \
     src/core/census/tracing.c \
 
 PUBLIC_HEADERS_C += \
@@ -8186,6 +8192,37 @@ deps_socket_utils_test: $(SOCKET_UTILS_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(SOCKET_UTILS_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+TAG_SET_TEST_SRC = \
+    test/core/census/tag_set_test.c \
+
+TAG_SET_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(TAG_SET_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/tag_set_test: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/tag_set_test: $(TAG_SET_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(TAG_SET_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/tag_set_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/census/tag_set_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+deps_tag_set_test: $(TAG_SET_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(TAG_SET_TEST_OBJS:.o=.dep)
 endif
 endif
 
