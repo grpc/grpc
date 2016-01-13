@@ -42,4 +42,4 @@ int LimitCores(std::vector<int> core_vec);
 }  // namespace testing
 }  // namespace grpc
 
-#endif // TEST_QPS_CORESCHED_H
+#endif  // TEST_QPS_CORESCHED_H
