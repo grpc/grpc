@@ -53,18 +53,17 @@ struct on_connect_result {
 };
 
 static void on_connect(grpc_exec_ctx *exec_ctx, void *arg, grpc_endpoint *tcp,
-                       grpc_tcp_server *tcp_server, unsigned port_index,
-                       unsigned fd_index) {
+                       grpc_tcp_server_acceptor *acceptor) {
   struct on_connect_result *result = arg;
   grpc_endpoint_shutdown(exec_ctx, tcp);
   grpc_endpoint_destroy(exec_ctx, tcp);
 
   gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
-  result->server_fd = grpc_tcp_server_get_fd(tcp_server, port_index, fd_index);
+  result->server_fd = grpc_tcp_server_port_fd(
+      acceptor->from_server, acceptor->port_index, acceptor->fd_index);
   g_nconnects++;
   grpc_pollset_kick(&g_pollset, NULL);
   gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));
-  grpc_tcp_server_unref(exec_ctx, tcp_server);
 }
 
 static void test_no_op(void) {
@@ -133,14 +132,14 @@ static void test_connect(int n) {
   addr.ss_family = AF_INET;
   GPR_ASSERT(grpc_tcp_server_add_port(s, (struct sockaddr *)&addr, addr_len) >
              0);
-  GPR_ASSERT(grpc_tcp_server_fds_for_port(s, 2) == 0);
-  GPR_ASSERT(grpc_tcp_server_fds_for_port(s, 1) == 0);
-  GPR_ASSERT(grpc_tcp_server_fds_for_port(s, 0) == 1);
-  GPR_ASSERT(grpc_tcp_server_get_fd(s, 0, 1) < 0);
-  GPR_ASSERT(grpc_tcp_server_get_fd(s, 0, 2) < 0);
-  GPR_ASSERT(grpc_tcp_server_get_fd(s, 2, 0) < 0);
-  GPR_ASSERT(grpc_tcp_server_get_fd(s, 1, 0) < 0);
-  svrfd = grpc_tcp_server_get_fd(s, 0, 0);
+  GPR_ASSERT(grpc_tcp_server_port_fd_count(s, 2) == 0);
+  GPR_ASSERT(grpc_tcp_server_port_fd_count(s, 1) == 0);
+  GPR_ASSERT(grpc_tcp_server_port_fd_count(s, 0) == 1);
+  GPR_ASSERT(grpc_tcp_server_port_fd(s, 0, 1) < 0);
+  GPR_ASSERT(grpc_tcp_server_port_fd(s, 0, 2) < 0);
+  GPR_ASSERT(grpc_tcp_server_port_fd(s, 2, 0) < 0);
+  GPR_ASSERT(grpc_tcp_server_port_fd(s, 1, 0) < 0);
+  svrfd = grpc_tcp_server_port_fd(s, 0, 0);
   GPR_ASSERT(svrfd >= 0);
   GPR_ASSERT(getsockname(svrfd, (struct sockaddr *)&addr, &addr_len) == 0);
   GPR_ASSERT(addr_len <= sizeof(addr));

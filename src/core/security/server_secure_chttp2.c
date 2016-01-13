@@ -127,9 +127,7 @@ static void on_secure_handshake_done(grpc_exec_ctx *exec_ctx, void *statep,
 }
 
 static void on_accept(grpc_exec_ctx *exec_ctx, void *statep, grpc_endpoint *tcp,
-                      grpc_tcp_server *from_server, unsigned port_index,
-                      unsigned fd_index) {
-  grpc_tcp_server_unref(NULL, from_server);
+                      grpc_tcp_server_acceptor *acceptor) {
   grpc_server_secure_state *state = statep;
   state_ref(state);
   grpc_security_connector_do_handshake(exec_ctx, state->sc, tcp,

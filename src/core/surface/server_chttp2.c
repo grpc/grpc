@@ -53,8 +53,8 @@ static void setup_transport(grpc_exec_ctx *exec_ctx, void *server,
 }
 
 static void new_transport(grpc_exec_ctx *exec_ctx, void *server,
-                          grpc_endpoint *tcp, grpc_tcp_server *tcp_server,
-                          unsigned port_index, unsigned fd_index) {
+                          grpc_endpoint *tcp,
+                          grpc_tcp_server_acceptor *acceptor) {
   /*
    * Beware that the call to grpc_create_chttp2_transport() has to happen before
    * grpc_tcp_server_destroy(). This is fine here, but similar code
@@ -66,7 +66,6 @@ static void new_transport(grpc_exec_ctx *exec_ctx, void *server,
       exec_ctx, grpc_server_get_channel_args(server), tcp, 0);
   setup_transport(exec_ctx, server, transport);
   grpc_chttp2_transport_start_reading(exec_ctx, transport, NULL, 0);
-  grpc_tcp_server_unref(exec_ctx, tcp_server);
 }
 
 /* Server callback: start listening on our ports */
@@ -82,8 +81,8 @@ static void start(grpc_exec_ctx *exec_ctx, grpc_server *server, void *tcpp,
 static void destroy(grpc_exec_ctx *exec_ctx, grpc_server *server, void *tcpp,
                     grpc_closure *destroy_done) {
   grpc_tcp_server *tcp = tcpp;
-  grpc_tcp_server_set_shutdown_complete(tcp, destroy_done);
   grpc_tcp_server_unref(exec_ctx, tcp);
+  grpc_exec_ctx_enqueue(exec_ctx, destroy_done, 1);
 }
 
 int grpc_server_add_insecure_http2_port(grpc_server *server, const char *addr) {
