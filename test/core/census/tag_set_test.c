@@ -33,7 +33,7 @@
 
 // Test census_tag_set functions, including encoding/decoding
 
-#include "src/core/census/tag_set.h"
+#include <grpc/census.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 #include <stdbool.h>

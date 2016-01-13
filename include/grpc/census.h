@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -339,7 +339,7 @@ typedef struct {
   const char *key;
   const char *value;
   size_t value_len;
-  gpr_uint8 flags;
+  uint8_t flags;
 } census_tag;
 
 /* Tag flags. */
@@ -385,6 +385,22 @@ int census_tag_set_get_tag_by_index(const census_tag_set *tags, int index,
    set. */
 int census_tag_set_get_tag_by_key(const census_tag_set *tags, const char *key,
                                   census_tag *tag);
+
+/* Encode to-be-propagated non-binary tags from a tag set into a memory
+   buffer. The total number of bytes used in the buffer is returned. If the
+   buffer is too small to contain the encoded tag set, then 0 is returned. */
+size_t census_tag_set_encode_propagated(const census_tag_set *tags,
+                                        char *buffer, size_t buf_size);
+
+/* Encode to-be-propagated binary tags from a tag set into a memory
+   buffer. The total number of bytes used in the buffer is returned. If the
+   buffer is too small to contain the encoded tag set, then 0 is returned. */
+size_t census_tag_set_encode_propagated_binary(const census_tag_set *tags,
+                                               char *buffer, size_t buf_size);
+
+/* Decode tag set buffers encoded with census_tag_set_encode_*(). */
+census_tag_set *census_tag_set_decode(const char *buffer, size_t size,
+                                      const char *bin_buffer, size_t bin_size);
 
 /* Get a contexts tag set. */
 census_tag_set *census_context_tag_set(census_context *context);
