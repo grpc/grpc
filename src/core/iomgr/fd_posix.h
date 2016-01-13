@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -104,6 +104,9 @@ struct grpc_fd {
    Requires fd is a non-blocking file descriptor.
    This takes ownership of closing fd. */
 grpc_fd *grpc_fd_create(int fd, const char *name);
+
+/* Return the wrapped fd, or -1 if it has been released or closed. */
+int grpc_fd_wrapped_fd(grpc_fd *fd);
 
 /* Releases fd to be asynchronously destroyed.
    on_done is called when the underlying file descriptor is definitely close()d.

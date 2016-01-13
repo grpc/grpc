@@ -27,11 +27,16 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from grpc._cython._cygrpc cimport grpc
 
+cdef class Server:
 
-cdef class Call:
-
-  cdef grpc.grpc_call *c_call
+  cdef grpc_server *c_server
+  cdef bint is_started  # start has been called
+  cdef bint is_shutting_down  # shutdown has been called
+  cdef bint is_shutdown  # notification of complete shutdown received
+  # used at dealloc when user forgets to shutdown
+  cdef CompletionQueue backup_shutdown_queue
   cdef list references
+  cdef list registered_completion_queues
 
+  cdef notify_shutdown_complete(self)

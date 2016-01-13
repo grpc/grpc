@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2015, Google Inc.
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -28,6 +28,8 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+set -e
+
 # directories to run against
 DIRS="src/core src/cpp test/core test/cpp include"
 
@@ -50,9 +52,17 @@ if [ "x$TEST" = "x" ]
 then
   echo $files | xargs $CLANG_FORMAT -i
 else
+  ok=yes
   for file in $files
   do
-    $CLANG_FORMAT $file | diff $file -
+    tmp=`mktemp`
+    $CLANG_FORMAT $file > $tmp
+    diff -u $file $tmp || ok=no
+    rm $tmp
   done
+  if [ $ok == no ]
+  then
+    false
+  fi
 fi
 

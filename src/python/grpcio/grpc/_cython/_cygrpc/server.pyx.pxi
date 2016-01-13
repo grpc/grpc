@@ -29,45 +29,39 @@
 
 cimport cpython
 
-from grpc._cython._cygrpc cimport call
-from grpc._cython._cygrpc cimport completion_queue
-from grpc._cython._cygrpc cimport credentials
-from grpc._cython._cygrpc cimport grpc
-from grpc._cython._cygrpc cimport records
-
 import time
 
 
 cdef class Server:
 
-  def __cinit__(self, records.ChannelArgs arguments=None):
-    cdef grpc.grpc_channel_args *c_arguments = NULL
+  def __cinit__(self, ChannelArgs arguments=None):
+    cdef grpc_channel_args *c_arguments = NULL
     self.references = []
     self.registered_completion_queues = []
     if arguments is not None:
       c_arguments = &arguments.c_args
       self.references.append(arguments)
-    self.c_server = grpc.grpc_server_create(c_arguments, NULL)
+    self.c_server = grpc_server_create(c_arguments, NULL)
     self.is_started = False
     self.is_shutting_down = False
     self.is_shutdown = False
 
   def request_call(
-      self, completion_queue.CompletionQueue call_queue not None,
-      completion_queue.CompletionQueue server_queue not None, tag):
+      self, CompletionQueue call_queue not None,
+      CompletionQueue server_queue not None, tag):
     if not self.is_started or self.is_shutting_down:
       raise ValueError("server must be started and not shutting down")
     if server_queue not in self.registered_completion_queues:
       raise ValueError("server_queue must be a registered completion queue")
-    cdef records.OperationTag operation_tag = records.OperationTag(tag)
-    operation_tag.operation_call = call.Call()
-    operation_tag.request_call_details = records.CallDetails()
-    operation_tag.request_metadata = records.Metadata([])
+    cdef OperationTag operation_tag = OperationTag(tag)
+    operation_tag.operation_call = Call()
+    operation_tag.request_call_details = CallDetails()
+    operation_tag.request_metadata = Metadata([])
     operation_tag.references.extend([self, call_queue, server_queue])
     operation_tag.is_new_request = True
-    operation_tag.batch_operations = records.Operations([])
+    operation_tag.batch_operations = Operations([])
     cpython.Py_INCREF(operation_tag)
-    return grpc.grpc_server_request_call(
+    return grpc_server_request_call(
         self.c_server, &operation_tag.operation_call.c_call,
         &operation_tag.request_call_details.c_details,
         &operation_tag.request_metadata.c_metadata_array,
@@ -75,25 +69,25 @@ cdef class Server:
         <cpython.PyObject *>operation_tag)
 
   def register_completion_queue(
-      self, completion_queue.CompletionQueue queue not None):
+      self, CompletionQueue queue not None):
     if self.is_started:
       raise ValueError("cannot register completion queues after start")
-    grpc.grpc_server_register_completion_queue(
+    grpc_server_register_completion_queue(
         self.c_server, queue.c_completion_queue, NULL)
     self.registered_completion_queues.append(queue)
 
   def start(self):
     if self.is_started:
       raise ValueError("the server has already started")
-    self.backup_shutdown_queue = completion_queue.CompletionQueue()
+    self.backup_shutdown_queue = CompletionQueue()
     self.register_completion_queue(self.backup_shutdown_queue)
     self.is_started = True
-    grpc.grpc_server_start(self.c_server)
+    grpc_server_start(self.c_server)
     # Ensure the core has gotten a chance to do the start-up work
-    self.backup_shutdown_queue.pluck(None, records.Timespec(None))
+    self.backup_shutdown_queue.pluck(None, Timespec(None))
 
   def add_http2_port(self, address,
-                     credentials.ServerCredentials server_credentials=None):
+                     ServerCredentials server_credentials=None):
     if isinstance(address, bytes):
       pass
     elif isinstance(address, basestring):
@@ -103,13 +97,13 @@ cdef class Server:
     self.references.append(address)
     if server_credentials is not None:
       self.references.append(server_credentials)
-      return grpc.grpc_server_add_secure_http2_port(
+      return grpc_server_add_secure_http2_port(
           self.c_server, address, server_credentials.c_credentials)
     else:
-      return grpc.grpc_server_add_insecure_http2_port(self.c_server, address)
+      return grpc_server_add_insecure_http2_port(self.c_server, address)
 
-  def shutdown(self, completion_queue.CompletionQueue queue not None, tag):
-    cdef records.OperationTag operation_tag
+  def shutdown(self, CompletionQueue queue not None, tag):
+    cdef OperationTag operation_tag
     if queue.is_shutting_down:
       raise ValueError("queue must be live")
     elif not self.is_started:
@@ -120,11 +114,11 @@ cdef class Server:
       raise ValueError("expected registered completion queue")
     else:
       self.is_shutting_down = True
-      operation_tag = records.OperationTag(tag)
+      operation_tag = OperationTag(tag)
       operation_tag.shutting_down_server = self
       operation_tag.references.extend([self, queue])
       cpython.Py_INCREF(operation_tag)
-      grpc.grpc_server_shutdown_and_notify(
+      grpc_server_shutdown_and_notify(
           self.c_server, queue.c_completion_queue,
           <cpython.PyObject *>operation_tag)
 
@@ -138,7 +132,7 @@ cdef class Server:
     elif self.is_shutdown:
       return
     else:
-      grpc.grpc_server_cancel_all_calls(self.c_server)
+      grpc_server_cancel_all_calls(self.c_server)
 
   def __dealloc__(self):
     if self.c_server != NULL:
@@ -157,5 +151,5 @@ cdef class Server:
         # much but repeatedly release the GIL and wait
         while not self.is_shutdown:
           time.sleep(0)
-      grpc.grpc_server_destroy(self.c_server)
+      grpc_server_destroy(self.c_server)
 

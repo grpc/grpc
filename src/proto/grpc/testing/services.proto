@@ -1,4 +1,3 @@
-
 // Copyright 2015, Google Inc.
 // All rights reserved.
 //
@@ -28,15 +27,39 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// This is a partial copy of echo.proto with a different package name.
-
+// An integration test service that covers all the method signature permutations
+// of unary/streaming requests/responses.
 syntax = "proto3";
 
-import "test/cpp/util/messages.proto";
+import "src/proto/grpc/testing/messages.proto";
+import "src/proto/grpc/testing/control.proto";
 
-package grpc.cpp.test.util.duplicate;
+package grpc.testing;
 
-service TestService {
-  rpc Echo(grpc.cpp.test.util.EchoRequest)
-      returns (grpc.cpp.test.util.EchoResponse);
+service BenchmarkService {
+  // One request followed by one response.
+  // The server returns the client payload as-is.
+  rpc UnaryCall(SimpleRequest) returns (SimpleResponse);
+
+  // One request followed by one response.
+  // The server returns the client payload as-is.
+  rpc StreamingCall(stream SimpleRequest) returns (stream SimpleResponse);
+}
+
+service WorkerService {
+  // Start server with specified workload.
+  // First request sent specifies the ServerConfig followed by ServerStatus
+  // response. After that, a "Mark" can be sent anytime to request the latest
+  // stats. Closing the stream will initiate shutdown of the test server
+  // and once the shutdown has finished, the OK status is sent to terminate
+  // this RPC.
+  rpc RunServer(stream ServerArgs) returns (stream ServerStatus);
+
+  // Start client with specified workload.
+  // First request sent specifies the ClientConfig followed by ClientStatus
+  // response. After that, a "Mark" can be sent anytime to request the latest
+  // stats. Closing the stream will initiate shutdown of the test client
+  // and once the shutdown has finished, the OK status is sent to terminate
+  // this RPC.
+  rpc RunClient(stream ClientArgs) returns (stream ClientStatus);
 }

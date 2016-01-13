@@ -35,8 +35,8 @@
 
 #include <grpc++/server_builder.h>
 
-#include "test/proto/metrics.grpc.pb.h"
-#include "test/proto/metrics.pb.h"
+#include "src/proto/grpc/testing/metrics.grpc.pb.h"
+#include "src/proto/grpc/testing/metrics.pb.h"
 
 namespace grpc {
 namespace testing {

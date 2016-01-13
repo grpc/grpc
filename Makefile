@@ -5,7 +5,7 @@
 # This file can be regenerated from the template by running
 # tools/buildgen/generate_projects.sh
 
-# Copyright 2015, Google Inc.
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -147,9 +147,9 @@ CC_tsan = clang
 CXX_tsan = clang++
 LD_tsan = clang
 LDXX_tsan = clang++
-CFLAGS_tsan = -O0 -fsanitize=thread -fno-omit-frame-pointer -Wno-unused-command-line-argument
-CXXFLAGS_tsan = -O0 -fsanitize=thread -fno-omit-frame-pointer -Wno-unused-command-line-argument
-LDFLAGS_tsan = -fsanitize=thread
+CFLAGS_tsan = -O0 -fsanitize=thread -fno-omit-frame-pointer -Wno-unused-command-line-argument -fPIE
+CXXFLAGS_tsan = -O0 -fsanitize=thread -fno-omit-frame-pointer -Wno-unused-command-line-argument -fPIE
+LDFLAGS_tsan = -fsanitize=thread -pie
 DEFINES_tsan = NDEBUG GRPC_TEST_SLOWDOWN_BUILD_FACTOR=10
 
 VALID_CONFIG_asan = 1
@@ -169,9 +169,9 @@ CC_msan = clang
 CXX_msan = clang++-libc++
 LD_msan = clang
 LDXX_msan = clang++-libc++
-CFLAGS_msan = -O0 -fsanitize=memory -fsanitize-memory-track-origins -fno-omit-frame-pointer -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1 -Wno-unused-command-line-argument
-CXXFLAGS_msan = -O0 -fsanitize=memory -fsanitize-memory-track-origins -fno-omit-frame-pointer -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1 -Wno-unused-command-line-argument
-LDFLAGS_msan = -fsanitize=memory -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1
+CFLAGS_msan = -O0 -fsanitize=memory -fsanitize-memory-track-origins -fno-omit-frame-pointer -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1 -Wno-unused-command-line-argument -fPIE
+CXXFLAGS_msan = -O0 -fsanitize=memory -fsanitize-memory-track-origins -fno-omit-frame-pointer -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1 -Wno-unused-command-line-argument -fPIE
+LDFLAGS_msan = -fsanitize=memory -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1 -pie
 DEFINES_msan = NDEBUG GRPC_TEST_SLOWDOWN_BUILD_FACTOR=4
 
 VALID_CONFIG_ubsan = 1
@@ -1710,180 +1710,180 @@ $(LIBDIR)/$(CONFIG)/pkgconfig/grpc++_unsecure.pc:
 	$(Q) echo "$(GRPCXX_UNSECURE_PC_FILE)" | tr , '\n' >$@
 
 ifeq ($(NO_PROTOC),true)
-$(GENDIR)/test/cpp/qps/perf_db.pb.cc: protoc_dep_error
-$(GENDIR)/test/cpp/qps/perf_db.grpc.pb.cc: protoc_dep_error
+$(GENDIR)/src/proto/grpc/testing/control.pb.cc: protoc_dep_error
+$(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc: protoc_dep_error
 else
-$(GENDIR)/test/cpp/qps/perf_db.pb.cc: test/cpp/qps/perf_db.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS)
+$(GENDIR)/src/proto/grpc/testing/control.pb.cc: src/proto/grpc/testing/control.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/testing/payloads.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.pb.cc
 	$(E) "[PROTOC]  Generating protobuf CC file from $<"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(PROTOC) --cpp_out=$(GENDIR) $<
 
-$(GENDIR)/test/cpp/qps/perf_db.grpc.pb.cc: test/cpp/qps/perf_db.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS)
+$(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc: src/proto/grpc/testing/control.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/testing/payloads.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc
 	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(PROTOC) --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(BINDIR)/$(CONFIG)/grpc_cpp_plugin $<
 endif
 
 ifeq ($(NO_PROTOC),true)
-$(GENDIR)/test/cpp/util/echo.pb.cc: protoc_dep_error
-$(GENDIR)/test/cpp/util/echo.grpc.pb.cc: protoc_dep_error
+$(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc: protoc_dep_error
+$(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc: protoc_dep_error
 else
-$(GENDIR)/test/cpp/util/echo.pb.cc: test/cpp/util/echo.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS)
+$(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc: src/proto/grpc/testing/duplicate/echo_duplicate.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/testing/echo_messages.pb.cc
 	$(E) "[PROTOC]  Generating protobuf CC file from $<"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(PROTOC) --cpp_out=$(GENDIR) $<
 
-$(GENDIR)/test/cpp/util/echo.grpc.pb.cc: test/cpp/util/echo.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS)
+$(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc: src/proto/grpc/testing/duplicate/echo_duplicate.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/testing/echo_messages.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.grpc.pb.cc
 	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(PROTOC) --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(BINDIR)/$(CONFIG)/grpc_cpp_plugin $<
 endif
 
 ifeq ($(NO_PROTOC),true)
-$(GENDIR)/test/cpp/util/echo_duplicate.pb.cc: protoc_dep_error
-$(GENDIR)/test/cpp/util/echo_duplicate.grpc.pb.cc: protoc_dep_error
+$(GENDIR)/src/proto/grpc/testing/echo.pb.cc: protoc_dep_error
+$(GENDIR)/src/proto/grpc/testing/echo.grpc.pb.cc: protoc_dep_error
 else
-$(GENDIR)/test/cpp/util/echo_duplicate.pb.cc: test/cpp/util/echo_duplicate.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS)
+$(GENDIR)/src/proto/grpc/testing/echo.pb.cc: src/proto/grpc/testing/echo.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/testing/echo_messages.pb.cc
 	$(E) "[PROTOC]  Generating protobuf CC file from $<"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(PROTOC) --cpp_out=$(GENDIR) $<
 
-$(GENDIR)/test/cpp/util/echo_duplicate.grpc.pb.cc: test/cpp/util/echo_duplicate.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS)
+$(GENDIR)/src/proto/grpc/testing/echo.grpc.pb.cc: src/proto/grpc/testing/echo.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/testing/echo_messages.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.grpc.pb.cc
 	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(PROTOC) --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(BINDIR)/$(CONFIG)/grpc_cpp_plugin $<
 endif
 
 ifeq ($(NO_PROTOC),true)
-$(GENDIR)/test/cpp/util/messages.pb.cc: protoc_dep_error
-$(GENDIR)/test/cpp/util/messages.grpc.pb.cc: protoc_dep_error
+$(GENDIR)/src/proto/grpc/testing/echo_messages.pb.cc: protoc_dep_error
+$(GENDIR)/src/proto/grpc/testing/echo_messages.grpc.pb.cc: protoc_dep_error
 else
-$(GENDIR)/test/cpp/util/messages.pb.cc: test/cpp/util/messages.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS)
+$(GENDIR)/src/proto/grpc/testing/echo_messages.pb.cc: src/proto/grpc/testing/echo_messages.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) 
 	$(E) "[PROTOC]  Generating protobuf CC file from $<"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(PROTOC) --cpp_out=$(GENDIR) $<
 
-$(GENDIR)/test/cpp/util/messages.grpc.pb.cc: test/cpp/util/messages.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS)
+$(GENDIR)/src/proto/grpc/testing/echo_messages.grpc.pb.cc: src/proto/grpc/testing/echo_messages.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) 
 	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(PROTOC) --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(BINDIR)/$(CONFIG)/grpc_cpp_plugin $<
 endif
 
 ifeq ($(NO_PROTOC),true)
-$(GENDIR)/test/proto/benchmarks/control.pb.cc: protoc_dep_error
-$(GENDIR)/test/proto/benchmarks/control.grpc.pb.cc: protoc_dep_error
+$(GENDIR)/src/proto/grpc/testing/empty.pb.cc: protoc_dep_error
+$(GENDIR)/src/proto/grpc/testing/empty.grpc.pb.cc: protoc_dep_error
 else
-$(GENDIR)/test/proto/benchmarks/control.pb.cc: test/proto/benchmarks/control.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS)
+$(GENDIR)/src/proto/grpc/testing/empty.pb.cc: src/proto/grpc/testing/empty.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) 
 	$(E) "[PROTOC]  Generating protobuf CC file from $<"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(PROTOC) --cpp_out=$(GENDIR) $<
 
-$(GENDIR)/test/proto/benchmarks/control.grpc.pb.cc: test/proto/benchmarks/control.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS)
+$(GENDIR)/src/proto/grpc/testing/empty.grpc.pb.cc: src/proto/grpc/testing/empty.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) 
 	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(PROTOC) --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(BINDIR)/$(CONFIG)/grpc_cpp_plugin $<
 endif
 
 ifeq ($(NO_PROTOC),true)
-$(GENDIR)/test/proto/benchmarks/payloads.pb.cc: protoc_dep_error
-$(GENDIR)/test/proto/benchmarks/payloads.grpc.pb.cc: protoc_dep_error
+$(GENDIR)/src/proto/grpc/testing/messages.pb.cc: protoc_dep_error
+$(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc: protoc_dep_error
 else
-$(GENDIR)/test/proto/benchmarks/payloads.pb.cc: test/proto/benchmarks/payloads.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS)
+$(GENDIR)/src/proto/grpc/testing/messages.pb.cc: src/proto/grpc/testing/messages.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) 
 	$(E) "[PROTOC]  Generating protobuf CC file from $<"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(PROTOC) --cpp_out=$(GENDIR) $<
 
-$(GENDIR)/test/proto/benchmarks/payloads.grpc.pb.cc: test/proto/benchmarks/payloads.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS)
+$(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc: src/proto/grpc/testing/messages.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) 
 	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(PROTOC) --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(BINDIR)/$(CONFIG)/grpc_cpp_plugin $<
 endif
 
 ifeq ($(NO_PROTOC),true)
-$(GENDIR)/test/proto/benchmarks/services.pb.cc: protoc_dep_error
-$(GENDIR)/test/proto/benchmarks/services.grpc.pb.cc: protoc_dep_error
+$(GENDIR)/src/proto/grpc/testing/metrics.pb.cc: protoc_dep_error
+$(GENDIR)/src/proto/grpc/testing/metrics.grpc.pb.cc: protoc_dep_error
 else
-$(GENDIR)/test/proto/benchmarks/services.pb.cc: test/proto/benchmarks/services.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS)
+$(GENDIR)/src/proto/grpc/testing/metrics.pb.cc: src/proto/grpc/testing/metrics.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) 
 	$(E) "[PROTOC]  Generating protobuf CC file from $<"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(PROTOC) --cpp_out=$(GENDIR) $<
 
-$(GENDIR)/test/proto/benchmarks/services.grpc.pb.cc: test/proto/benchmarks/services.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS)
+$(GENDIR)/src/proto/grpc/testing/metrics.grpc.pb.cc: src/proto/grpc/testing/metrics.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) 
 	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(PROTOC) --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(BINDIR)/$(CONFIG)/grpc_cpp_plugin $<
 endif
 
 ifeq ($(NO_PROTOC),true)
-$(GENDIR)/test/proto/benchmarks/stats.pb.cc: protoc_dep_error
-$(GENDIR)/test/proto/benchmarks/stats.grpc.pb.cc: protoc_dep_error
+$(GENDIR)/src/proto/grpc/testing/payloads.pb.cc: protoc_dep_error
+$(GENDIR)/src/proto/grpc/testing/payloads.grpc.pb.cc: protoc_dep_error
 else
-$(GENDIR)/test/proto/benchmarks/stats.pb.cc: test/proto/benchmarks/stats.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS)
+$(GENDIR)/src/proto/grpc/testing/payloads.pb.cc: src/proto/grpc/testing/payloads.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) 
 	$(E) "[PROTOC]  Generating protobuf CC file from $<"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(PROTOC) --cpp_out=$(GENDIR) $<
 
-$(GENDIR)/test/proto/benchmarks/stats.grpc.pb.cc: test/proto/benchmarks/stats.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS)
+$(GENDIR)/src/proto/grpc/testing/payloads.grpc.pb.cc: src/proto/grpc/testing/payloads.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) 
 	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(PROTOC) --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(BINDIR)/$(CONFIG)/grpc_cpp_plugin $<
 endif
 
 ifeq ($(NO_PROTOC),true)
-$(GENDIR)/test/proto/empty.pb.cc: protoc_dep_error
-$(GENDIR)/test/proto/empty.grpc.pb.cc: protoc_dep_error
+$(GENDIR)/src/proto/grpc/testing/perf_db.pb.cc: protoc_dep_error
+$(GENDIR)/src/proto/grpc/testing/perf_db.grpc.pb.cc: protoc_dep_error
 else
-$(GENDIR)/test/proto/empty.pb.cc: test/proto/empty.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS)
+$(GENDIR)/src/proto/grpc/testing/perf_db.pb.cc: src/proto/grpc/testing/perf_db.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/testing/control.pb.cc
 	$(E) "[PROTOC]  Generating protobuf CC file from $<"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(PROTOC) --cpp_out=$(GENDIR) $<
 
-$(GENDIR)/test/proto/empty.grpc.pb.cc: test/proto/empty.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS)
+$(GENDIR)/src/proto/grpc/testing/perf_db.grpc.pb.cc: src/proto/grpc/testing/perf_db.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc
 	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(PROTOC) --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(BINDIR)/$(CONFIG)/grpc_cpp_plugin $<
 endif
 
 ifeq ($(NO_PROTOC),true)
-$(GENDIR)/test/proto/messages.pb.cc: protoc_dep_error
-$(GENDIR)/test/proto/messages.grpc.pb.cc: protoc_dep_error
+$(GENDIR)/src/proto/grpc/testing/services.pb.cc: protoc_dep_error
+$(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc: protoc_dep_error
 else
-$(GENDIR)/test/proto/messages.pb.cc: test/proto/messages.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS)
+$(GENDIR)/src/proto/grpc/testing/services.pb.cc: src/proto/grpc/testing/services.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/control.pb.cc
 	$(E) "[PROTOC]  Generating protobuf CC file from $<"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(PROTOC) --cpp_out=$(GENDIR) $<
 
-$(GENDIR)/test/proto/messages.grpc.pb.cc: test/proto/messages.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS)
+$(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc: src/proto/grpc/testing/services.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc
 	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(PROTOC) --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(BINDIR)/$(CONFIG)/grpc_cpp_plugin $<
 endif
 
 ifeq ($(NO_PROTOC),true)
-$(GENDIR)/test/proto/metrics.pb.cc: protoc_dep_error
-$(GENDIR)/test/proto/metrics.grpc.pb.cc: protoc_dep_error
+$(GENDIR)/src/proto/grpc/testing/stats.pb.cc: protoc_dep_error
+$(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc: protoc_dep_error
 else
-$(GENDIR)/test/proto/metrics.pb.cc: test/proto/metrics.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS)
+$(GENDIR)/src/proto/grpc/testing/stats.pb.cc: src/proto/grpc/testing/stats.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) 
 	$(E) "[PROTOC]  Generating protobuf CC file from $<"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(PROTOC) --cpp_out=$(GENDIR) $<
 
-$(GENDIR)/test/proto/metrics.grpc.pb.cc: test/proto/metrics.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS)
+$(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc: src/proto/grpc/testing/stats.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) 
 	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(PROTOC) --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(BINDIR)/$(CONFIG)/grpc_cpp_plugin $<
 endif
 
 ifeq ($(NO_PROTOC),true)
-$(GENDIR)/test/proto/test.pb.cc: protoc_dep_error
-$(GENDIR)/test/proto/test.grpc.pb.cc: protoc_dep_error
+$(GENDIR)/src/proto/grpc/testing/test.pb.cc: protoc_dep_error
+$(GENDIR)/src/proto/grpc/testing/test.grpc.pb.cc: protoc_dep_error
 else
-$(GENDIR)/test/proto/test.pb.cc: test/proto/test.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS)
+$(GENDIR)/src/proto/grpc/testing/test.pb.cc: src/proto/grpc/testing/test.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/testing/empty.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.pb.cc
 	$(E) "[PROTOC]  Generating protobuf CC file from $<"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(PROTOC) --cpp_out=$(GENDIR) $<
 
-$(GENDIR)/test/proto/test.grpc.pb.cc: test/proto/test.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS)
+$(GENDIR)/src/proto/grpc/testing/test.grpc.pb.cc: src/proto/grpc/testing/test.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/testing/empty.pb.cc $(GENDIR)/src/proto/grpc/testing/empty.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc
 	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(PROTOC) --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(BINDIR)/$(CONFIG)/grpc_cpp_plugin $<
@@ -3146,9 +3146,9 @@ endif
 
 
 LIBGRPC++_TEST_UTIL_SRC = \
-    $(GENDIR)/test/cpp/util/messages.pb.cc $(GENDIR)/test/cpp/util/messages.grpc.pb.cc \
-    $(GENDIR)/test/cpp/util/echo.pb.cc $(GENDIR)/test/cpp/util/echo.grpc.pb.cc \
-    $(GENDIR)/test/cpp/util/echo_duplicate.pb.cc $(GENDIR)/test/cpp/util/echo_duplicate.grpc.pb.cc \
+    $(GENDIR)/src/proto/grpc/testing/echo_messages.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.grpc.pb.cc \
+    $(GENDIR)/src/proto/grpc/testing/echo.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.grpc.pb.cc \
+    $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc \
     test/cpp/util/cli_call.cc \
     test/cpp/util/create_test_channel.cc \
     test/cpp/util/string_ref_helper.cc \
@@ -3197,10 +3197,10 @@ ifneq ($(NO_DEPS),true)
 -include $(LIBGRPC++_TEST_UTIL_OBJS:.o=.dep)
 endif
 endif
-$(OBJDIR)/$(CONFIG)/test/cpp/util/cli_call.o: $(GENDIR)/test/cpp/util/messages.pb.cc $(GENDIR)/test/cpp/util/messages.grpc.pb.cc $(GENDIR)/test/cpp/util/echo.pb.cc $(GENDIR)/test/cpp/util/echo.grpc.pb.cc $(GENDIR)/test/cpp/util/echo_duplicate.pb.cc $(GENDIR)/test/cpp/util/echo_duplicate.grpc.pb.cc
-$(OBJDIR)/$(CONFIG)/test/cpp/util/create_test_channel.o: $(GENDIR)/test/cpp/util/messages.pb.cc $(GENDIR)/test/cpp/util/messages.grpc.pb.cc $(GENDIR)/test/cpp/util/echo.pb.cc $(GENDIR)/test/cpp/util/echo.grpc.pb.cc $(GENDIR)/test/cpp/util/echo_duplicate.pb.cc $(GENDIR)/test/cpp/util/echo_duplicate.grpc.pb.cc
-$(OBJDIR)/$(CONFIG)/test/cpp/util/string_ref_helper.o: $(GENDIR)/test/cpp/util/messages.pb.cc $(GENDIR)/test/cpp/util/messages.grpc.pb.cc $(GENDIR)/test/cpp/util/echo.pb.cc $(GENDIR)/test/cpp/util/echo.grpc.pb.cc $(GENDIR)/test/cpp/util/echo_duplicate.pb.cc $(GENDIR)/test/cpp/util/echo_duplicate.grpc.pb.cc
-$(OBJDIR)/$(CONFIG)/test/cpp/util/subprocess.o: $(GENDIR)/test/cpp/util/messages.pb.cc $(GENDIR)/test/cpp/util/messages.grpc.pb.cc $(GENDIR)/test/cpp/util/echo.pb.cc $(GENDIR)/test/cpp/util/echo.grpc.pb.cc $(GENDIR)/test/cpp/util/echo_duplicate.pb.cc $(GENDIR)/test/cpp/util/echo_duplicate.grpc.pb.cc
+$(OBJDIR)/$(CONFIG)/test/cpp/util/cli_call.o: $(GENDIR)/src/proto/grpc/testing/echo_messages.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc
+$(OBJDIR)/$(CONFIG)/test/cpp/util/create_test_channel.o: $(GENDIR)/src/proto/grpc/testing/echo_messages.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc
+$(OBJDIR)/$(CONFIG)/test/cpp/util/string_ref_helper.o: $(GENDIR)/src/proto/grpc/testing/echo_messages.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc
+$(OBJDIR)/$(CONFIG)/test/cpp/util/subprocess.o: $(GENDIR)/src/proto/grpc/testing/echo_messages.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc
 
 
 LIBGRPC++_UNSECURE_SRC = \
@@ -3384,7 +3384,7 @@ endif
 
 
 LIBINTEROP_CLIENT_HELPER_SRC = \
-    $(GENDIR)/test/proto/messages.pb.cc $(GENDIR)/test/proto/messages.grpc.pb.cc \
+    $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc \
     test/cpp/interop/client_helper.cc \
 
 
@@ -3430,13 +3430,13 @@ ifneq ($(NO_DEPS),true)
 -include $(LIBINTEROP_CLIENT_HELPER_OBJS:.o=.dep)
 endif
 endif
-$(OBJDIR)/$(CONFIG)/test/cpp/interop/client_helper.o: $(GENDIR)/test/proto/messages.pb.cc $(GENDIR)/test/proto/messages.grpc.pb.cc
+$(OBJDIR)/$(CONFIG)/test/cpp/interop/client_helper.o: $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc
 
 
 LIBINTEROP_CLIENT_MAIN_SRC = \
-    $(GENDIR)/test/proto/empty.pb.cc $(GENDIR)/test/proto/empty.grpc.pb.cc \
-    $(GENDIR)/test/proto/messages.pb.cc $(GENDIR)/test/proto/messages.grpc.pb.cc \
-    $(GENDIR)/test/proto/test.pb.cc $(GENDIR)/test/proto/test.grpc.pb.cc \
+    $(GENDIR)/src/proto/grpc/testing/empty.pb.cc $(GENDIR)/src/proto/grpc/testing/empty.grpc.pb.cc \
+    $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc \
+    $(GENDIR)/src/proto/grpc/testing/test.pb.cc $(GENDIR)/src/proto/grpc/testing/test.grpc.pb.cc \
     test/cpp/interop/client.cc \
     test/cpp/interop/interop_client.cc \
 
@@ -3483,8 +3483,8 @@ ifneq ($(NO_DEPS),true)
 -include $(LIBINTEROP_CLIENT_MAIN_OBJS:.o=.dep)
 endif
 endif
-$(OBJDIR)/$(CONFIG)/test/cpp/interop/client.o: $(GENDIR)/test/proto/empty.pb.cc $(GENDIR)/test/proto/empty.grpc.pb.cc $(GENDIR)/test/proto/messages.pb.cc $(GENDIR)/test/proto/messages.grpc.pb.cc $(GENDIR)/test/proto/test.pb.cc $(GENDIR)/test/proto/test.grpc.pb.cc
-$(OBJDIR)/$(CONFIG)/test/cpp/interop/interop_client.o: $(GENDIR)/test/proto/empty.pb.cc $(GENDIR)/test/proto/empty.grpc.pb.cc $(GENDIR)/test/proto/messages.pb.cc $(GENDIR)/test/proto/messages.grpc.pb.cc $(GENDIR)/test/proto/test.pb.cc $(GENDIR)/test/proto/test.grpc.pb.cc
+$(OBJDIR)/$(CONFIG)/test/cpp/interop/client.o: $(GENDIR)/src/proto/grpc/testing/empty.pb.cc $(GENDIR)/src/proto/grpc/testing/empty.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/test.pb.cc $(GENDIR)/src/proto/grpc/testing/test.grpc.pb.cc
+$(OBJDIR)/$(CONFIG)/test/cpp/interop/interop_client.o: $(GENDIR)/src/proto/grpc/testing/empty.pb.cc $(GENDIR)/src/proto/grpc/testing/empty.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/test.pb.cc $(GENDIR)/src/proto/grpc/testing/test.grpc.pb.cc
 
 
 LIBINTEROP_SERVER_HELPER_SRC = \
@@ -3536,9 +3536,9 @@ endif
 
 
 LIBINTEROP_SERVER_MAIN_SRC = \
-    $(GENDIR)/test/proto/empty.pb.cc $(GENDIR)/test/proto/empty.grpc.pb.cc \
-    $(GENDIR)/test/proto/messages.pb.cc $(GENDIR)/test/proto/messages.grpc.pb.cc \
-    $(GENDIR)/test/proto/test.pb.cc $(GENDIR)/test/proto/test.grpc.pb.cc \
+    $(GENDIR)/src/proto/grpc/testing/empty.pb.cc $(GENDIR)/src/proto/grpc/testing/empty.grpc.pb.cc \
+    $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc \
+    $(GENDIR)/src/proto/grpc/testing/test.pb.cc $(GENDIR)/src/proto/grpc/testing/test.grpc.pb.cc \
     test/cpp/interop/server.cc \
 
 
@@ -3584,16 +3584,16 @@ ifneq ($(NO_DEPS),true)
 -include $(LIBINTEROP_SERVER_MAIN_OBJS:.o=.dep)
 endif
 endif
-$(OBJDIR)/$(CONFIG)/test/cpp/interop/server.o: $(GENDIR)/test/proto/empty.pb.cc $(GENDIR)/test/proto/empty.grpc.pb.cc $(GENDIR)/test/proto/messages.pb.cc $(GENDIR)/test/proto/messages.grpc.pb.cc $(GENDIR)/test/proto/test.pb.cc $(GENDIR)/test/proto/test.grpc.pb.cc
+$(OBJDIR)/$(CONFIG)/test/cpp/interop/server.o: $(GENDIR)/src/proto/grpc/testing/empty.pb.cc $(GENDIR)/src/proto/grpc/testing/empty.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/test.pb.cc $(GENDIR)/src/proto/grpc/testing/test.grpc.pb.cc
 
 
 LIBQPS_SRC = \
-    $(GENDIR)/test/proto/messages.pb.cc $(GENDIR)/test/proto/messages.grpc.pb.cc \
-    $(GENDIR)/test/proto/benchmarks/control.pb.cc $(GENDIR)/test/proto/benchmarks/control.grpc.pb.cc \
-    $(GENDIR)/test/proto/benchmarks/payloads.pb.cc $(GENDIR)/test/proto/benchmarks/payloads.grpc.pb.cc \
-    $(GENDIR)/test/proto/benchmarks/services.pb.cc $(GENDIR)/test/proto/benchmarks/services.grpc.pb.cc \
-    $(GENDIR)/test/proto/benchmarks/stats.pb.cc $(GENDIR)/test/proto/benchmarks/stats.grpc.pb.cc \
-    $(GENDIR)/test/cpp/qps/perf_db.pb.cc $(GENDIR)/test/cpp/qps/perf_db.grpc.pb.cc \
+    $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc \
+    $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc \
+    $(GENDIR)/src/proto/grpc/testing/payloads.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.grpc.pb.cc \
+    $(GENDIR)/src/proto/grpc/testing/services.pb.cc $(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc \
+    $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc \
+    $(GENDIR)/src/proto/grpc/testing/perf_db.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.grpc.pb.cc \
     test/cpp/qps/client_async.cc \
     test/cpp/qps/client_sync.cc \
     test/cpp/qps/driver.cc \
@@ -3648,16 +3648,16 @@ ifneq ($(NO_DEPS),true)
 -include $(LIBQPS_OBJS:.o=.dep)
 endif
 endif
-$(OBJDIR)/$(CONFIG)/test/cpp/qps/client_async.o: $(GENDIR)/test/proto/messages.pb.cc $(GENDIR)/test/proto/messages.grpc.pb.cc $(GENDIR)/test/proto/benchmarks/control.pb.cc $(GENDIR)/test/proto/benchmarks/control.grpc.pb.cc $(GENDIR)/test/proto/benchmarks/payloads.pb.cc $(GENDIR)/test/proto/benchmarks/payloads.grpc.pb.cc $(GENDIR)/test/proto/benchmarks/services.pb.cc $(GENDIR)/test/proto/benchmarks/services.grpc.pb.cc $(GENDIR)/test/proto/benchmarks/stats.pb.cc $(GENDIR)/test/proto/benchmarks/stats.grpc.pb.cc $(GENDIR)/test/cpp/qps/perf_db.pb.cc $(GENDIR)/test/cpp/qps/perf_db.grpc.pb.cc
-$(OBJDIR)/$(CONFIG)/test/cpp/qps/client_sync.o: $(GENDIR)/test/proto/messages.pb.cc $(GENDIR)/test/proto/messages.grpc.pb.cc $(GENDIR)/test/proto/benchmarks/control.pb.cc $(GENDIR)/test/proto/benchmarks/control.grpc.pb.cc $(GENDIR)/test/proto/benchmarks/payloads.pb.cc $(GENDIR)/test/proto/benchmarks/payloads.grpc.pb.cc $(GENDIR)/test/proto/benchmarks/services.pb.cc $(GENDIR)/test/proto/benchmarks/services.grpc.pb.cc $(GENDIR)/test/proto/benchmarks/stats.pb.cc $(GENDIR)/test/proto/benchmarks/stats.grpc.pb.cc $(GENDIR)/test/cpp/qps/perf_db.pb.cc $(GENDIR)/test/cpp/qps/perf_db.grpc.pb.cc
-$(OBJDIR)/$(CONFIG)/test/cpp/qps/driver.o: $(GENDIR)/test/proto/messages.pb.cc $(GENDIR)/test/proto/messages.grpc.pb.cc $(GENDIR)/test/proto/benchmarks/control.pb.cc $(GENDIR)/test/proto/benchmarks/control.grpc.pb.cc $(GENDIR)/test/proto/benchmarks/payloads.pb.cc $(GENDIR)/test/proto/benchmarks/payloads.grpc.pb.cc $(GENDIR)/test/proto/benchmarks/services.pb.cc $(GENDIR)/test/proto/benchmarks/services.grpc.pb.cc $(GENDIR)/test/proto/benchmarks/stats.pb.cc $(GENDIR)/test/proto/benchmarks/stats.grpc.pb.cc $(GENDIR)/test/cpp/qps/perf_db.pb.cc $(GENDIR)/test/cpp/qps/perf_db.grpc.pb.cc
-$(OBJDIR)/$(CONFIG)/test/cpp/qps/perf_db_client.o: $(GENDIR)/test/proto/messages.pb.cc $(GENDIR)/test/proto/messages.grpc.pb.cc $(GENDIR)/test/proto/benchmarks/control.pb.cc $(GENDIR)/test/proto/benchmarks/control.grpc.pb.cc $(GENDIR)/test/proto/benchmarks/payloads.pb.cc $(GENDIR)/test/proto/benchmarks/payloads.grpc.pb.cc $(GENDIR)/test/proto/benchmarks/services.pb.cc $(GENDIR)/test/proto/benchmarks/services.grpc.pb.cc $(GENDIR)/test/proto/benchmarks/stats.pb.cc $(GENDIR)/test/proto/benchmarks/stats.grpc.pb.cc $(GENDIR)/test/cpp/qps/perf_db.pb.cc $(GENDIR)/test/cpp/qps/perf_db.grpc.pb.cc
-$(OBJDIR)/$(CONFIG)/test/cpp/qps/qps_worker.o: $(GENDIR)/test/proto/messages.pb.cc $(GENDIR)/test/proto/messages.grpc.pb.cc $(GENDIR)/test/proto/benchmarks/control.pb.cc $(GENDIR)/test/proto/benchmarks/control.grpc.pb.cc $(GENDIR)/test/proto/benchmarks/payloads.pb.cc $(GENDIR)/test/proto/benchmarks/payloads.grpc.pb.cc $(GENDIR)/test/proto/benchmarks/services.pb.cc $(GENDIR)/test/proto/benchmarks/services.grpc.pb.cc $(GENDIR)/test/proto/benchmarks/stats.pb.cc $(GENDIR)/test/proto/benchmarks/stats.grpc.pb.cc $(GENDIR)/test/cpp/qps/perf_db.pb.cc $(GENDIR)/test/cpp/qps/perf_db.grpc.pb.cc
-$(OBJDIR)/$(CONFIG)/test/cpp/qps/report.o: $(GENDIR)/test/proto/messages.pb.cc $(GENDIR)/test/proto/messages.grpc.pb.cc $(GENDIR)/test/proto/benchmarks/control.pb.cc $(GENDIR)/test/proto/benchmarks/control.grpc.pb.cc $(GENDIR)/test/proto/benchmarks/payloads.pb.cc $(GENDIR)/test/proto/benchmarks/payloads.grpc.pb.cc $(GENDIR)/test/proto/benchmarks/services.pb.cc $(GENDIR)/test/proto/benchmarks/services.grpc.pb.cc $(GENDIR)/test/proto/benchmarks/stats.pb.cc $(GENDIR)/test/proto/benchmarks/stats.grpc.pb.cc $(GENDIR)/test/cpp/qps/perf_db.pb.cc $(GENDIR)/test/cpp/qps/perf_db.grpc.pb.cc
-$(OBJDIR)/$(CONFIG)/test/cpp/qps/server_async.o: $(GENDIR)/test/proto/messages.pb.cc $(GENDIR)/test/proto/messages.grpc.pb.cc $(GENDIR)/test/proto/benchmarks/control.pb.cc $(GENDIR)/test/proto/benchmarks/control.grpc.pb.cc $(GENDIR)/test/proto/benchmarks/payloads.pb.cc $(GENDIR)/test/proto/benchmarks/payloads.grpc.pb.cc $(GENDIR)/test/proto/benchmarks/services.pb.cc $(GENDIR)/test/proto/benchmarks/services.grpc.pb.cc $(GENDIR)/test/proto/benchmarks/stats.pb.cc $(GENDIR)/test/proto/benchmarks/stats.grpc.pb.cc $(GENDIR)/test/cpp/qps/perf_db.pb.cc $(GENDIR)/test/cpp/qps/perf_db.grpc.pb.cc
-$(OBJDIR)/$(CONFIG)/test/cpp/qps/server_sync.o: $(GENDIR)/test/proto/messages.pb.cc $(GENDIR)/test/proto/messages.grpc.pb.cc $(GENDIR)/test/proto/benchmarks/control.pb.cc $(GENDIR)/test/proto/benchmarks/control.grpc.pb.cc $(GENDIR)/test/proto/benchmarks/payloads.pb.cc $(GENDIR)/test/proto/benchmarks/payloads.grpc.pb.cc $(GENDIR)/test/proto/benchmarks/services.pb.cc $(GENDIR)/test/proto/benchmarks/services.grpc.pb.cc $(GENDIR)/test/proto/benchmarks/stats.pb.cc $(GENDIR)/test/proto/benchmarks/stats.grpc.pb.cc $(GENDIR)/test/cpp/qps/perf_db.pb.cc $(GENDIR)/test/cpp/qps/perf_db.grpc.pb.cc
-$(OBJDIR)/$(CONFIG)/test/cpp/qps/timer.o: $(GENDIR)/test/proto/messages.pb.cc $(GENDIR)/test/proto/messages.grpc.pb.cc $(GENDIR)/test/proto/benchmarks/control.pb.cc $(GENDIR)/test/proto/benchmarks/control.grpc.pb.cc $(GENDIR)/test/proto/benchmarks/payloads.pb.cc $(GENDIR)/test/proto/benchmarks/payloads.grpc.pb.cc $(GENDIR)/test/proto/benchmarks/services.pb.cc $(GENDIR)/test/proto/benchmarks/services.grpc.pb.cc $(GENDIR)/test/proto/benchmarks/stats.pb.cc $(GENDIR)/test/proto/benchmarks/stats.grpc.pb.cc $(GENDIR)/test/cpp/qps/perf_db.pb.cc $(GENDIR)/test/cpp/qps/perf_db.grpc.pb.cc
-$(OBJDIR)/$(CONFIG)/test/cpp/util/benchmark_config.o: $(GENDIR)/test/proto/messages.pb.cc $(GENDIR)/test/proto/messages.grpc.pb.cc $(GENDIR)/test/proto/benchmarks/control.pb.cc $(GENDIR)/test/proto/benchmarks/control.grpc.pb.cc $(GENDIR)/test/proto/benchmarks/payloads.pb.cc $(GENDIR)/test/proto/benchmarks/payloads.grpc.pb.cc $(GENDIR)/test/proto/benchmarks/services.pb.cc $(GENDIR)/test/proto/benchmarks/services.grpc.pb.cc $(GENDIR)/test/proto/benchmarks/stats.pb.cc $(GENDIR)/test/proto/benchmarks/stats.grpc.pb.cc $(GENDIR)/test/cpp/qps/perf_db.pb.cc $(GENDIR)/test/cpp/qps/perf_db.grpc.pb.cc
+$(OBJDIR)/$(CONFIG)/test/cpp/qps/client_async.o: $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/services.pb.cc $(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.grpc.pb.cc
+$(OBJDIR)/$(CONFIG)/test/cpp/qps/client_sync.o: $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/services.pb.cc $(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.grpc.pb.cc
+$(OBJDIR)/$(CONFIG)/test/cpp/qps/driver.o: $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/services.pb.cc $(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.grpc.pb.cc
+$(OBJDIR)/$(CONFIG)/test/cpp/qps/perf_db_client.o: $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/services.pb.cc $(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.grpc.pb.cc
+$(OBJDIR)/$(CONFIG)/test/cpp/qps/qps_worker.o: $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/services.pb.cc $(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.grpc.pb.cc
+$(OBJDIR)/$(CONFIG)/test/cpp/qps/report.o: $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/services.pb.cc $(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.grpc.pb.cc
+$(OBJDIR)/$(CONFIG)/test/cpp/qps/server_async.o: $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/services.pb.cc $(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.grpc.pb.cc
+$(OBJDIR)/$(CONFIG)/test/cpp/qps/server_sync.o: $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/services.pb.cc $(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.grpc.pb.cc
+$(OBJDIR)/$(CONFIG)/test/cpp/qps/timer.o: $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/services.pb.cc $(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.grpc.pb.cc
+$(OBJDIR)/$(CONFIG)/test/cpp/util/benchmark_config.o: $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/services.pb.cc $(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.grpc.pb.cc
 
 
 LIBGRPC_CSHARP_EXT_SRC = \
@@ -9672,7 +9672,7 @@ endif
 
 
 METRICS_CLIENT_SRC = \
-    $(GENDIR)/test/proto/metrics.pb.cc $(GENDIR)/test/proto/metrics.grpc.pb.cc \
+    $(GENDIR)/src/proto/grpc/testing/metrics.pb.cc $(GENDIR)/src/proto/grpc/testing/metrics.grpc.pb.cc \
     test/cpp/interop/metrics_client.cc \
 
 METRICS_CLIENT_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(METRICS_CLIENT_SRC))))
@@ -9704,7 +9704,7 @@ endif
 
 endif
 
-$(OBJDIR)/$(CONFIG)/test/proto/metrics.o:  $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
+$(OBJDIR)/$(CONFIG)/src/proto/grpc/testing/metrics.o:  $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
 
 $(OBJDIR)/$(CONFIG)/test/cpp/interop/metrics_client.o:  $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
 
@@ -9715,7 +9715,7 @@ ifneq ($(NO_DEPS),true)
 -include $(METRICS_CLIENT_OBJS:.o=.dep)
 endif
 endif
-$(OBJDIR)/$(CONFIG)/test/cpp/interop/metrics_client.o: $(GENDIR)/test/proto/metrics.pb.cc $(GENDIR)/test/proto/metrics.grpc.pb.cc
+$(OBJDIR)/$(CONFIG)/test/cpp/interop/metrics_client.o: $(GENDIR)/src/proto/grpc/testing/metrics.pb.cc $(GENDIR)/src/proto/grpc/testing/metrics.grpc.pb.cc
 
 
 MOCK_TEST_SRC = \
@@ -9977,9 +9977,9 @@ endif
 
 
 RECONNECT_INTEROP_CLIENT_SRC = \
-    $(GENDIR)/test/proto/empty.pb.cc $(GENDIR)/test/proto/empty.grpc.pb.cc \
-    $(GENDIR)/test/proto/messages.pb.cc $(GENDIR)/test/proto/messages.grpc.pb.cc \
-    $(GENDIR)/test/proto/test.pb.cc $(GENDIR)/test/proto/test.grpc.pb.cc \
+    $(GENDIR)/src/proto/grpc/testing/empty.pb.cc $(GENDIR)/src/proto/grpc/testing/empty.grpc.pb.cc \
+    $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc \
+    $(GENDIR)/src/proto/grpc/testing/test.pb.cc $(GENDIR)/src/proto/grpc/testing/test.grpc.pb.cc \
     test/cpp/interop/reconnect_interop_client.cc \
 
 RECONNECT_INTEROP_CLIENT_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(RECONNECT_INTEROP_CLIENT_SRC))))
@@ -10011,11 +10011,11 @@ endif
 
 endif
 
-$(OBJDIR)/$(CONFIG)/test/proto/empty.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
+$(OBJDIR)/$(CONFIG)/src/proto/grpc/testing/empty.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
 
-$(OBJDIR)/$(CONFIG)/test/proto/messages.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
+$(OBJDIR)/$(CONFIG)/src/proto/grpc/testing/messages.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
 
-$(OBJDIR)/$(CONFIG)/test/proto/test.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
+$(OBJDIR)/$(CONFIG)/src/proto/grpc/testing/test.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
 
 $(OBJDIR)/$(CONFIG)/test/cpp/interop/reconnect_interop_client.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
 
@@ -10026,13 +10026,13 @@ ifneq ($(NO_DEPS),true)
 -include $(RECONNECT_INTEROP_CLIENT_OBJS:.o=.dep)
 endif
 endif
-$(OBJDIR)/$(CONFIG)/test/cpp/interop/reconnect_interop_client.o: $(GENDIR)/test/proto/empty.pb.cc $(GENDIR)/test/proto/empty.grpc.pb.cc $(GENDIR)/test/proto/messages.pb.cc $(GENDIR)/test/proto/messages.grpc.pb.cc $(GENDIR)/test/proto/test.pb.cc $(GENDIR)/test/proto/test.grpc.pb.cc
+$(OBJDIR)/$(CONFIG)/test/cpp/interop/reconnect_interop_client.o: $(GENDIR)/src/proto/grpc/testing/empty.pb.cc $(GENDIR)/src/proto/grpc/testing/empty.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/test.pb.cc $(GENDIR)/src/proto/grpc/testing/test.grpc.pb.cc
 
 
 RECONNECT_INTEROP_SERVER_SRC = \
-    $(GENDIR)/test/proto/empty.pb.cc $(GENDIR)/test/proto/empty.grpc.pb.cc \
-    $(GENDIR)/test/proto/messages.pb.cc $(GENDIR)/test/proto/messages.grpc.pb.cc \
-    $(GENDIR)/test/proto/test.pb.cc $(GENDIR)/test/proto/test.grpc.pb.cc \
+    $(GENDIR)/src/proto/grpc/testing/empty.pb.cc $(GENDIR)/src/proto/grpc/testing/empty.grpc.pb.cc \
+    $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc \
+    $(GENDIR)/src/proto/grpc/testing/test.pb.cc $(GENDIR)/src/proto/grpc/testing/test.grpc.pb.cc \
     test/cpp/interop/reconnect_interop_server.cc \
 
 RECONNECT_INTEROP_SERVER_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(RECONNECT_INTEROP_SERVER_SRC))))
@@ -10064,11 +10064,11 @@ endif
 
 endif
 
-$(OBJDIR)/$(CONFIG)/test/proto/empty.o:  $(LIBDIR)/$(CONFIG)/libreconnect_server.a $(LIBDIR)/$(CONFIG)/libtest_tcp_server.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
+$(OBJDIR)/$(CONFIG)/src/proto/grpc/testing/empty.o:  $(LIBDIR)/$(CONFIG)/libreconnect_server.a $(LIBDIR)/$(CONFIG)/libtest_tcp_server.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
 
-$(OBJDIR)/$(CONFIG)/test/proto/messages.o:  $(LIBDIR)/$(CONFIG)/libreconnect_server.a $(LIBDIR)/$(CONFIG)/libtest_tcp_server.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
+$(OBJDIR)/$(CONFIG)/src/proto/grpc/testing/messages.o:  $(LIBDIR)/$(CONFIG)/libreconnect_server.a $(LIBDIR)/$(CONFIG)/libtest_tcp_server.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
 
-$(OBJDIR)/$(CONFIG)/test/proto/test.o:  $(LIBDIR)/$(CONFIG)/libreconnect_server.a $(LIBDIR)/$(CONFIG)/libtest_tcp_server.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
+$(OBJDIR)/$(CONFIG)/src/proto/grpc/testing/test.o:  $(LIBDIR)/$(CONFIG)/libreconnect_server.a $(LIBDIR)/$(CONFIG)/libtest_tcp_server.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
 
 $(OBJDIR)/$(CONFIG)/test/cpp/interop/reconnect_interop_server.o:  $(LIBDIR)/$(CONFIG)/libreconnect_server.a $(LIBDIR)/$(CONFIG)/libtest_tcp_server.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
 
@@ -10079,7 +10079,7 @@ ifneq ($(NO_DEPS),true)
 -include $(RECONNECT_INTEROP_SERVER_OBJS:.o=.dep)
 endif
 endif
-$(OBJDIR)/$(CONFIG)/test/cpp/interop/reconnect_interop_server.o: $(GENDIR)/test/proto/empty.pb.cc $(GENDIR)/test/proto/empty.grpc.pb.cc $(GENDIR)/test/proto/messages.pb.cc $(GENDIR)/test/proto/messages.grpc.pb.cc $(GENDIR)/test/proto/test.pb.cc $(GENDIR)/test/proto/test.grpc.pb.cc
+$(OBJDIR)/$(CONFIG)/test/cpp/interop/reconnect_interop_server.o: $(GENDIR)/src/proto/grpc/testing/empty.pb.cc $(GENDIR)/src/proto/grpc/testing/empty.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/test.pb.cc $(GENDIR)/src/proto/grpc/testing/test.grpc.pb.cc
 
 
 SECURE_AUTH_CONTEXT_TEST_SRC = \
@@ -10384,10 +10384,10 @@ endif
 
 
 STRESS_TEST_SRC = \
-    $(GENDIR)/test/proto/empty.pb.cc $(GENDIR)/test/proto/empty.grpc.pb.cc \
-    $(GENDIR)/test/proto/messages.pb.cc $(GENDIR)/test/proto/messages.grpc.pb.cc \
-    $(GENDIR)/test/proto/metrics.pb.cc $(GENDIR)/test/proto/metrics.grpc.pb.cc \
-    $(GENDIR)/test/proto/test.pb.cc $(GENDIR)/test/proto/test.grpc.pb.cc \
+    $(GENDIR)/src/proto/grpc/testing/empty.pb.cc $(GENDIR)/src/proto/grpc/testing/empty.grpc.pb.cc \
+    $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc \
+    $(GENDIR)/src/proto/grpc/testing/metrics.pb.cc $(GENDIR)/src/proto/grpc/testing/metrics.grpc.pb.cc \
+    $(GENDIR)/src/proto/grpc/testing/test.pb.cc $(GENDIR)/src/proto/grpc/testing/test.grpc.pb.cc \
     test/cpp/interop/interop_client.cc \
     test/cpp/interop/stress_interop_client.cc \
     test/cpp/interop/stress_test.cc \
@@ -10422,13 +10422,13 @@ endif
 
 endif
 
-$(OBJDIR)/$(CONFIG)/test/proto/empty.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
+$(OBJDIR)/$(CONFIG)/src/proto/grpc/testing/empty.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
 
-$(OBJDIR)/$(CONFIG)/test/proto/messages.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
+$(OBJDIR)/$(CONFIG)/src/proto/grpc/testing/messages.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
 
-$(OBJDIR)/$(CONFIG)/test/proto/metrics.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
+$(OBJDIR)/$(CONFIG)/src/proto/grpc/testing/metrics.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
 
-$(OBJDIR)/$(CONFIG)/test/proto/test.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
+$(OBJDIR)/$(CONFIG)/src/proto/grpc/testing/test.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
 
 $(OBJDIR)/$(CONFIG)/test/cpp/interop/interop_client.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
 
@@ -10445,10 +10445,10 @@ ifneq ($(NO_DEPS),true)
 -include $(STRESS_TEST_OBJS:.o=.dep)
 endif
 endif
-$(OBJDIR)/$(CONFIG)/test/cpp/interop/interop_client.o: $(GENDIR)/test/proto/empty.pb.cc $(GENDIR)/test/proto/empty.grpc.pb.cc $(GENDIR)/test/proto/messages.pb.cc $(GENDIR)/test/proto/messages.grpc.pb.cc $(GENDIR)/test/proto/metrics.pb.cc $(GENDIR)/test/proto/metrics.grpc.pb.cc $(GENDIR)/test/proto/test.pb.cc $(GENDIR)/test/proto/test.grpc.pb.cc
-$(OBJDIR)/$(CONFIG)/test/cpp/interop/stress_interop_client.o: $(GENDIR)/test/proto/empty.pb.cc $(GENDIR)/test/proto/empty.grpc.pb.cc $(GENDIR)/test/proto/messages.pb.cc $(GENDIR)/test/proto/messages.grpc.pb.cc $(GENDIR)/test/proto/metrics.pb.cc $(GENDIR)/test/proto/metrics.grpc.pb.cc $(GENDIR)/test/proto/test.pb.cc $(GENDIR)/test/proto/test.grpc.pb.cc
-$(OBJDIR)/$(CONFIG)/test/cpp/interop/stress_test.o: $(GENDIR)/test/proto/empty.pb.cc $(GENDIR)/test/proto/empty.grpc.pb.cc $(GENDIR)/test/proto/messages.pb.cc $(GENDIR)/test/proto/messages.grpc.pb.cc $(GENDIR)/test/proto/metrics.pb.cc $(GENDIR)/test/proto/metrics.grpc.pb.cc $(GENDIR)/test/proto/test.pb.cc $(GENDIR)/test/proto/test.grpc.pb.cc
-$(OBJDIR)/$(CONFIG)/test/cpp/util/metrics_server.o: $(GENDIR)/test/proto/empty.pb.cc $(GENDIR)/test/proto/empty.grpc.pb.cc $(GENDIR)/test/proto/messages.pb.cc $(GENDIR)/test/proto/messages.grpc.pb.cc $(GENDIR)/test/proto/metrics.pb.cc $(GENDIR)/test/proto/metrics.grpc.pb.cc $(GENDIR)/test/proto/test.pb.cc $(GENDIR)/test/proto/test.grpc.pb.cc
+$(OBJDIR)/$(CONFIG)/test/cpp/interop/interop_client.o: $(GENDIR)/src/proto/grpc/testing/empty.pb.cc $(GENDIR)/src/proto/grpc/testing/empty.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/metrics.pb.cc $(GENDIR)/src/proto/grpc/testing/metrics.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/test.pb.cc $(GENDIR)/src/proto/grpc/testing/test.grpc.pb.cc
+$(OBJDIR)/$(CONFIG)/test/cpp/interop/stress_interop_client.o: $(GENDIR)/src/proto/grpc/testing/empty.pb.cc $(GENDIR)/src/proto/grpc/testing/empty.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/metrics.pb.cc $(GENDIR)/src/proto/grpc/testing/metrics.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/test.pb.cc $(GENDIR)/src/proto/grpc/testing/test.grpc.pb.cc
+$(OBJDIR)/$(CONFIG)/test/cpp/interop/stress_test.o: $(GENDIR)/src/proto/grpc/testing/empty.pb.cc $(GENDIR)/src/proto/grpc/testing/empty.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/metrics.pb.cc $(GENDIR)/src/proto/grpc/testing/metrics.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/test.pb.cc $(GENDIR)/src/proto/grpc/testing/test.grpc.pb.cc
+$(OBJDIR)/$(CONFIG)/test/cpp/util/metrics_server.o: $(GENDIR)/src/proto/grpc/testing/empty.pb.cc $(GENDIR)/src/proto/grpc/testing/empty.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/metrics.pb.cc $(GENDIR)/src/proto/grpc/testing/metrics.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/test.pb.cc $(GENDIR)/src/proto/grpc/testing/test.grpc.pb.cc
 
 
 SYNC_STREAMING_PING_PONG_TEST_SRC = \
@@ -10581,6 +10581,7 @@ endif
 
 
 ZOOKEEPER_TEST_SRC = \
+    $(GENDIR)/src/proto/grpc/testing/echo.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.grpc.pb.cc \
     test/cpp/end2end/zookeeper_test.cc \
 
 ZOOKEEPER_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(ZOOKEEPER_TEST_SRC))))
@@ -10612,6 +10613,8 @@ endif
 
 endif
 
+$(OBJDIR)/$(CONFIG)/src/proto/grpc/testing/echo.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc_zookeeper.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
 $(OBJDIR)/$(CONFIG)/test/cpp/end2end/zookeeper_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc_zookeeper.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
 deps_zookeeper_test: $(ZOOKEEPER_TEST_OBJS:.o=.dep)
@@ -10621,6 +10624,7 @@ ifneq ($(NO_DEPS),true)
 -include $(ZOOKEEPER_TEST_OBJS:.o=.dep)
 endif
 endif
+$(OBJDIR)/$(CONFIG)/test/cpp/end2end/zookeeper_test.o: $(GENDIR)/src/proto/grpc/testing/echo.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.grpc.pb.cc
 
 
 PUBLIC_HEADERS_MUST_BE_C89_SRC = \
@@ -11653,6 +11657,7 @@ $(BINDIR)/$(CONFIG)/h2_census_test: $(H2_CENSUS_TEST_OBJS) $(LIBDIR)/$(CONFIG)/l
 endif
 
 $(OBJDIR)/$(CONFIG)/test/core/end2end/fixtures/h2_census.o:  $(LIBDIR)/$(CONFIG)/libend2end_tests.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
 deps_h2_census_test: $(H2_CENSUS_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
@@ -11684,6 +11689,7 @@ $(BINDIR)/$(CONFIG)/h2_compress_test: $(H2_COMPRESS_TEST_OBJS) $(LIBDIR)/$(CONFI
 endif
 
 $(OBJDIR)/$(CONFIG)/test/core/end2end/fixtures/h2_compress.o:  $(LIBDIR)/$(CONFIG)/libend2end_tests.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
 deps_h2_compress_test: $(H2_COMPRESS_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
@@ -11715,6 +11721,7 @@ $(BINDIR)/$(CONFIG)/h2_fakesec_test: $(H2_FAKESEC_TEST_OBJS) $(LIBDIR)/$(CONFIG)
 endif
 
 $(OBJDIR)/$(CONFIG)/test/core/end2end/fixtures/h2_fakesec.o:  $(LIBDIR)/$(CONFIG)/libend2end_tests.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
 deps_h2_fakesec_test: $(H2_FAKESEC_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
@@ -11746,6 +11753,7 @@ $(BINDIR)/$(CONFIG)/h2_full_test: $(H2_FULL_TEST_OBJS) $(LIBDIR)/$(CONFIG)/liben
 endif
 
 $(OBJDIR)/$(CONFIG)/test/core/end2end/fixtures/h2_full.o:  $(LIBDIR)/$(CONFIG)/libend2end_tests.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
 deps_h2_full_test: $(H2_FULL_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
@@ -11777,6 +11785,7 @@ $(BINDIR)/$(CONFIG)/h2_full+pipe_test: $(H2_FULL+PIPE_TEST_OBJS) $(LIBDIR)/$(CON
 endif
 
 $(OBJDIR)/$(CONFIG)/test/core/end2end/fixtures/h2_full+pipe.o:  $(LIBDIR)/$(CONFIG)/libend2end_tests.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
 deps_h2_full+pipe_test: $(H2_FULL+PIPE_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
@@ -11808,6 +11817,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll_test: $(H2_FULL+POLL_TEST_OBJS) $(LIBDIR)/$(CON
 endif
 
 $(OBJDIR)/$(CONFIG)/test/core/end2end/fixtures/h2_full+poll.o:  $(LIBDIR)/$(CONFIG)/libend2end_tests.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
 deps_h2_full+poll_test: $(H2_FULL+POLL_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
@@ -11839,6 +11849,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_test: $(H2_FULL+POLL+PIPE_TEST_OBJS) $(LIB
 endif
 
 $(OBJDIR)/$(CONFIG)/test/core/end2end/fixtures/h2_full+poll+pipe.o:  $(LIBDIR)/$(CONFIG)/libend2end_tests.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
 deps_h2_full+poll+pipe_test: $(H2_FULL+POLL+PIPE_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
@@ -11870,6 +11881,7 @@ $(BINDIR)/$(CONFIG)/h2_oauth2_test: $(H2_OAUTH2_TEST_OBJS) $(LIBDIR)/$(CONFIG)/l
 endif
 
 $(OBJDIR)/$(CONFIG)/test/core/end2end/fixtures/h2_oauth2.o:  $(LIBDIR)/$(CONFIG)/libend2end_tests.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
 deps_h2_oauth2_test: $(H2_OAUTH2_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
@@ -11901,6 +11913,7 @@ $(BINDIR)/$(CONFIG)/h2_proxy_test: $(H2_PROXY_TEST_OBJS) $(LIBDIR)/$(CONFIG)/lib
 endif
 
 $(OBJDIR)/$(CONFIG)/test/core/end2end/fixtures/h2_proxy.o:  $(LIBDIR)/$(CONFIG)/libend2end_tests.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
 deps_h2_proxy_test: $(H2_PROXY_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
@@ -11932,6 +11945,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_test: $(H2_SOCKPAIR_TEST_OBJS) $(LIBDIR)/$(CONFI
 endif
 
 $(OBJDIR)/$(CONFIG)/test/core/end2end/fixtures/h2_sockpair.o:  $(LIBDIR)/$(CONFIG)/libend2end_tests.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
 deps_h2_sockpair_test: $(H2_SOCKPAIR_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
@@ -11963,6 +11977,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair+trace_test: $(H2_SOCKPAIR+TRACE_TEST_OBJS) $(LIB
 endif
 
 $(OBJDIR)/$(CONFIG)/test/core/end2end/fixtures/h2_sockpair+trace.o:  $(LIBDIR)/$(CONFIG)/libend2end_tests.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
 deps_h2_sockpair+trace_test: $(H2_SOCKPAIR+TRACE_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
@@ -11994,6 +12009,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_test: $(H2_SOCKPAIR_1BYTE_TEST_OBJS) $(LIB
 endif
 
 $(OBJDIR)/$(CONFIG)/test/core/end2end/fixtures/h2_sockpair_1byte.o:  $(LIBDIR)/$(CONFIG)/libend2end_tests.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
 deps_h2_sockpair_1byte_test: $(H2_SOCKPAIR_1BYTE_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
@@ -12025,6 +12041,7 @@ $(BINDIR)/$(CONFIG)/h2_ssl_test: $(H2_SSL_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2
 endif
 
 $(OBJDIR)/$(CONFIG)/test/core/end2end/fixtures/h2_ssl.o:  $(LIBDIR)/$(CONFIG)/libend2end_tests.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
 deps_h2_ssl_test: $(H2_SSL_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
@@ -12056,6 +12073,7 @@ $(BINDIR)/$(CONFIG)/h2_ssl+poll_test: $(H2_SSL+POLL_TEST_OBJS) $(LIBDIR)/$(CONFI
 endif
 
 $(OBJDIR)/$(CONFIG)/test/core/end2end/fixtures/h2_ssl+poll.o:  $(LIBDIR)/$(CONFIG)/libend2end_tests.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
 deps_h2_ssl+poll_test: $(H2_SSL+POLL_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
@@ -12087,6 +12105,7 @@ $(BINDIR)/$(CONFIG)/h2_ssl_proxy_test: $(H2_SSL_PROXY_TEST_OBJS) $(LIBDIR)/$(CON
 endif
 
 $(OBJDIR)/$(CONFIG)/test/core/end2end/fixtures/h2_ssl_proxy.o:  $(LIBDIR)/$(CONFIG)/libend2end_tests.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
 deps_h2_ssl_proxy_test: $(H2_SSL_PROXY_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
@@ -12118,6 +12137,7 @@ $(BINDIR)/$(CONFIG)/h2_uchannel_test: $(H2_UCHANNEL_TEST_OBJS) $(LIBDIR)/$(CONFI
 endif
 
 $(OBJDIR)/$(CONFIG)/test/core/end2end/fixtures/h2_uchannel.o:  $(LIBDIR)/$(CONFIG)/libend2end_tests.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
 deps_h2_uchannel_test: $(H2_UCHANNEL_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
@@ -12149,6 +12169,7 @@ $(BINDIR)/$(CONFIG)/h2_uds_test: $(H2_UDS_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2
 endif
 
 $(OBJDIR)/$(CONFIG)/test/core/end2end/fixtures/h2_uds.o:  $(LIBDIR)/$(CONFIG)/libend2end_tests.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
 deps_h2_uds_test: $(H2_UDS_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
@@ -12180,6 +12201,7 @@ $(BINDIR)/$(CONFIG)/h2_uds+poll_test: $(H2_UDS+POLL_TEST_OBJS) $(LIBDIR)/$(CONFI
 endif
 
 $(OBJDIR)/$(CONFIG)/test/core/end2end/fixtures/h2_uds+poll.o:  $(LIBDIR)/$(CONFIG)/libend2end_tests.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
 deps_h2_uds+poll_test: $(H2_UDS+POLL_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
@@ -12201,6 +12223,7 @@ $(BINDIR)/$(CONFIG)/h2_census_nosec_test: $(H2_CENSUS_NOSEC_TEST_OBJS) $(LIBDIR)
 	$(Q) $(LD) $(LDFLAGS) $(H2_CENSUS_NOSEC_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_nosec_tests.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_census_nosec_test
 
 $(OBJDIR)/$(CONFIG)/test/core/end2end/fixtures/h2_census.o:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_tests.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
 deps_h2_census_nosec_test: $(H2_CENSUS_NOSEC_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_DEPS),true)
@@ -12220,6 +12243,7 @@ $(BINDIR)/$(CONFIG)/h2_compress_nosec_test: $(H2_COMPRESS_NOSEC_TEST_OBJS) $(LIB
 	$(Q) $(LD) $(LDFLAGS) $(H2_COMPRESS_NOSEC_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_nosec_tests.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_compress_nosec_test
 
 $(OBJDIR)/$(CONFIG)/test/core/end2end/fixtures/h2_compress.o:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_tests.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
 deps_h2_compress_nosec_test: $(H2_COMPRESS_NOSEC_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_DEPS),true)
@@ -12239,6 +12263,7 @@ $(BINDIR)/$(CONFIG)/h2_full_nosec_test: $(H2_FULL_NOSEC_TEST_OBJS) $(LIBDIR)/$(C
 	$(Q) $(LD) $(LDFLAGS) $(H2_FULL_NOSEC_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_nosec_tests.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_full_nosec_test
 
 $(OBJDIR)/$(CONFIG)/test/core/end2end/fixtures/h2_full.o:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_tests.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
 deps_h2_full_nosec_test: $(H2_FULL_NOSEC_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_DEPS),true)
@@ -12258,6 +12283,7 @@ $(BINDIR)/$(CONFIG)/h2_full+pipe_nosec_test: $(H2_FULL+PIPE_NOSEC_TEST_OBJS) $(L
 	$(Q) $(LD) $(LDFLAGS) $(H2_FULL+PIPE_NOSEC_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_nosec_tests.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_full+pipe_nosec_test
 
 $(OBJDIR)/$(CONFIG)/test/core/end2end/fixtures/h2_full+pipe.o:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_tests.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
 deps_h2_full+pipe_nosec_test: $(H2_FULL+PIPE_NOSEC_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_DEPS),true)
@@ -12277,6 +12303,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll_nosec_test: $(H2_FULL+POLL_NOSEC_TEST_OBJS) $(L
 	$(Q) $(LD) $(LDFLAGS) $(H2_FULL+POLL_NOSEC_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_nosec_tests.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_full+poll_nosec_test
 
 $(OBJDIR)/$(CONFIG)/test/core/end2end/fixtures/h2_full+poll.o:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_tests.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
 deps_h2_full+poll_nosec_test: $(H2_FULL+POLL_NOSEC_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_DEPS),true)
@@ -12296,6 +12323,7 @@ $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_nosec_test: $(H2_FULL+POLL+PIPE_NOSEC_TEST
 	$(Q) $(LD) $(LDFLAGS) $(H2_FULL+POLL+PIPE_NOSEC_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_nosec_tests.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_full+poll+pipe_nosec_test
 
 $(OBJDIR)/$(CONFIG)/test/core/end2end/fixtures/h2_full+poll+pipe.o:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_tests.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
 deps_h2_full+poll+pipe_nosec_test: $(H2_FULL+POLL+PIPE_NOSEC_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_DEPS),true)
@@ -12315,6 +12343,7 @@ $(BINDIR)/$(CONFIG)/h2_proxy_nosec_test: $(H2_PROXY_NOSEC_TEST_OBJS) $(LIBDIR)/$
 	$(Q) $(LD) $(LDFLAGS) $(H2_PROXY_NOSEC_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_nosec_tests.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_proxy_nosec_test
 
 $(OBJDIR)/$(CONFIG)/test/core/end2end/fixtures/h2_proxy.o:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_tests.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
 deps_h2_proxy_nosec_test: $(H2_PROXY_NOSEC_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_DEPS),true)
@@ -12334,6 +12363,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_nosec_test: $(H2_SOCKPAIR_NOSEC_TEST_OBJS) $(LIB
 	$(Q) $(LD) $(LDFLAGS) $(H2_SOCKPAIR_NOSEC_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_nosec_tests.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_sockpair_nosec_test
 
 $(OBJDIR)/$(CONFIG)/test/core/end2end/fixtures/h2_sockpair.o:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_tests.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
 deps_h2_sockpair_nosec_test: $(H2_SOCKPAIR_NOSEC_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_DEPS),true)
@@ -12353,6 +12383,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair+trace_nosec_test: $(H2_SOCKPAIR+TRACE_NOSEC_TEST
 	$(Q) $(LD) $(LDFLAGS) $(H2_SOCKPAIR+TRACE_NOSEC_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_nosec_tests.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_sockpair+trace_nosec_test
 
 $(OBJDIR)/$(CONFIG)/test/core/end2end/fixtures/h2_sockpair+trace.o:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_tests.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
 deps_h2_sockpair+trace_nosec_test: $(H2_SOCKPAIR+TRACE_NOSEC_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_DEPS),true)
@@ -12372,6 +12403,7 @@ $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_nosec_test: $(H2_SOCKPAIR_1BYTE_NOSEC_TEST
 	$(Q) $(LD) $(LDFLAGS) $(H2_SOCKPAIR_1BYTE_NOSEC_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_nosec_tests.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_nosec_test
 
 $(OBJDIR)/$(CONFIG)/test/core/end2end/fixtures/h2_sockpair_1byte.o:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_tests.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
 deps_h2_sockpair_1byte_nosec_test: $(H2_SOCKPAIR_1BYTE_NOSEC_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_DEPS),true)
@@ -12391,6 +12423,7 @@ $(BINDIR)/$(CONFIG)/h2_uchannel_nosec_test: $(H2_UCHANNEL_NOSEC_TEST_OBJS) $(LIB
 	$(Q) $(LD) $(LDFLAGS) $(H2_UCHANNEL_NOSEC_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_nosec_tests.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_uchannel_nosec_test
 
 $(OBJDIR)/$(CONFIG)/test/core/end2end/fixtures/h2_uchannel.o:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_tests.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
 deps_h2_uchannel_nosec_test: $(H2_UCHANNEL_NOSEC_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_DEPS),true)
@@ -12410,6 +12443,7 @@ $(BINDIR)/$(CONFIG)/h2_uds_nosec_test: $(H2_UDS_NOSEC_TEST_OBJS) $(LIBDIR)/$(CON
 	$(Q) $(LD) $(LDFLAGS) $(H2_UDS_NOSEC_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_nosec_tests.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_uds_nosec_test
 
 $(OBJDIR)/$(CONFIG)/test/core/end2end/fixtures/h2_uds.o:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_tests.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
 deps_h2_uds_nosec_test: $(H2_UDS_NOSEC_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_DEPS),true)
@@ -12429,6 +12463,7 @@ $(BINDIR)/$(CONFIG)/h2_uds+poll_nosec_test: $(H2_UDS+POLL_NOSEC_TEST_OBJS) $(LIB
 	$(Q) $(LD) $(LDFLAGS) $(H2_UDS+POLL_NOSEC_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_nosec_tests.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_uds+poll_nosec_test
 
 $(OBJDIR)/$(CONFIG)/test/core/end2end/fixtures/h2_uds+poll.o:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_tests.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
 deps_h2_uds+poll_nosec_test: $(H2_UDS+POLL_NOSEC_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_DEPS),true)

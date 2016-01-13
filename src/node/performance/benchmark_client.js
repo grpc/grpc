@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -48,7 +48,7 @@ var Histogram = require('./histogram');
 var grpc = require('../../../');
 var serviceProto = grpc.load({
   root: __dirname + '/../../..',
-  file: 'test/proto/benchmarks/services.proto'}).grpc.testing;
+  file: 'src/proto/grpc/testing/services.proto'}).grpc.testing;
 
 /**
  * Create a buffer filled with size zeroes
