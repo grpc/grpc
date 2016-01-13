@@ -61,6 +61,8 @@ DEFINE_int32(client_channels, 1, "Number of client channels");
 
 DEFINE_int32(simple_req_size, -1, "Simple proto request payload size");
 DEFINE_int32(simple_resp_size, -1, "Simple proto response payload size");
+DEFINE_int32(bbuf_req_size, -1, "Byte-buffer request payload size");
+DEFINE_int32(bbuf_resp_size, -1, "Byte-buffer response payload size");
 
 DEFINE_string(client_type, "SYNC_CLIENT", "Client type");
 DEFINE_int32(async_client_threads, 1, "Async client threads");
@@ -126,6 +128,13 @@ static void QpsDriver() {
     if (FLAGS_simple_req_size >= 0) {
       params->set_req_size(FLAGS_simple_req_size);
     }
+  } else if (FLAGS_bbuf_resp_size >= 0) {
+    auto params =
+      client_config.mutable_payload_config()->mutable_bytebuf_params();
+    params->set_resp_size(FLAGS_bbuf_resp_size);
+    if (FLAGS_bbuf_req_size >= 0) {
+      params->set_req_size(FLAGS_bbuf_req_size);
+    }    
   } else {
     // set a reasonable default: proto but no payload
     client_config.mutable_payload_config()->mutable_simple_params();

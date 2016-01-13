@@ -87,12 +87,11 @@ class Server {
   }
 
   static bool SetPayload(PayloadType type, int size, Payload* payload) {
-    PayloadType response_type = type;
     // TODO(yangg): Support UNCOMPRESSABLE payload.
     if (type != PayloadType::COMPRESSABLE) {
       return false;
     }
-    payload->set_type(response_type);
+    payload->set_type(type);
     std::unique_ptr<char[]> body(new char[size]());
     payload->set_body(body.get(), size);
     return true;
