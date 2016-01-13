@@ -46,22 +46,8 @@ namespace Grpc.Core.Internal
         const long NanosPerTick = 100;
         const long TicksPerSecond = NanosPerSecond / NanosPerTick;
 
+        static readonly NativeMethods Native = NativeMethods.Get();
         static readonly DateTime UnixEpoch = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
-
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern Timespec gprsharp_now(GPRClockType clockType);
-
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern Timespec gprsharp_inf_future(GPRClockType clockType);
-
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern Timespec gprsharp_inf_past(GPRClockType clockType);
-
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern Timespec gprsharp_convert_clock_type(Timespec t, GPRClockType targetClock);
-
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern int gprsharp_sizeof_timespec();
 
         public Timespec(long tv_sec, int tv_nsec) : this(tv_sec, tv_nsec, GPRClockType.Realtime)
         {
@@ -85,7 +71,7 @@ namespace Grpc.Core.Internal
         {
             get
             {
-                return gprsharp_inf_future(GPRClockType.Realtime);
+                return Native.gprsharp_inf_future(GPRClockType.Realtime);
             }
         }
 
@@ -96,7 +82,7 @@ namespace Grpc.Core.Internal
         {
             get
             {
-                return gprsharp_inf_past(GPRClockType.Realtime);
+                return Native.gprsharp_inf_past(GPRClockType.Realtime);
             }
         }
 
@@ -107,7 +93,7 @@ namespace Grpc.Core.Internal
         {
             get
             {
-                return gprsharp_now(GPRClockType.Realtime);
+                return Native.gprsharp_now(GPRClockType.Realtime);
             }
         }
 
@@ -138,7 +124,7 @@ namespace Grpc.Core.Internal
         /// </summary>
         public Timespec ToClockType(GPRClockType targetClock)
         {
-            return gprsharp_convert_clock_type(this, targetClock);
+            return Native.gprsharp_convert_clock_type(this, targetClock);
         }
             
         /// <summary>
@@ -241,7 +227,7 @@ namespace Grpc.Core.Internal
         {
             get
             {
-                return gprsharp_now(GPRClockType.Precise);
+                return Native.gprsharp_now(GPRClockType.Precise);
             }
         }
 
@@ -249,7 +235,7 @@ namespace Grpc.Core.Internal
         {
             get
             {
-                return gprsharp_sizeof_timespec();
+                return Native.gprsharp_sizeof_timespec();
             }
         }
     }
