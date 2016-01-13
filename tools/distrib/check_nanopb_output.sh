@@ -45,15 +45,31 @@ pip install protobuf==3.0.0b2
 # change to root directory
 cd $(dirname $0)/../..
 
+# install protoc version 3
+pushd third_party/protobuf
+apt-get install -y autoconf automake libtool curl
+./autogen.sh
+./configure
+make
+sudo make install
+sudo ldconfig
+popd
+
+if [ ! -x "/usr/local/bin/protoc" ]; then
+  echo "Error: protoc not found in path"
+  exit 1
+fi
+readonly PROTOC_PATH='/usr/local/bin'
 # stack up and change to nanopb's proto generator directory
 pushd third_party/nanopb/generator/proto
-make
+PATH="$PROTOC_PATH:$PATH" make
 
 # back to the root directory
 popd
 
+
 # nanopb-compile the proto to a temp location
-./tools/codegen/core/gen_load_balancing_proto.sh \
+PATH="$PROTOC_PATH:$PATH" ./tools/codegen/core/gen_load_balancing_proto.sh \
   src/proto/grpc/lb/v0/load_balancer.proto \
   $NANOPB_TMP_OUTPUT
 
