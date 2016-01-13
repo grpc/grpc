@@ -88,8 +88,9 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
   std::unique_ptr<ThreadPoolInterface> thread_pool;
   for (auto it = services_.begin(); it != services_.end(); ++it) {
     if ((*it)->service->has_synchronous_methods()) {
-      if (thread_pool == nullptr && !services_.empty()) {
+      if (thread_pool == nullptr) {
         thread_pool.reset(CreateDefaultThreadPool());
+        break;
       }
     }
   }
