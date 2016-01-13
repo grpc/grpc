@@ -50,7 +50,7 @@
 #include <gtest/gtest.h>
 
 #include "test/cpp/qps/server.h"
-#include "test/proto/benchmarks/services.grpc.pb.h"
+#include "src/proto/grpc/testing/services.grpc.pb.h"
 
 namespace grpc {
 namespace testing {

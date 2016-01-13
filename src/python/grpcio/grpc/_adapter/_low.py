@@ -1,4 +1,4 @@
-# Copyright 2015, Google Inc.
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -27,6 +27,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+import pkg_resources
 import threading
 
 from grpc import _grpcio_metadata
@@ -34,6 +35,7 @@ from grpc._cython import cygrpc
 from grpc._adapter import _implementations
 from grpc._adapter import _types
 
+_ROOT_CERTIFICATES_RESOURCE_PATH = 'credentials/roots.pem'
 _USER_AGENT = 'Python-gRPC-{}'.format(_grpcio_metadata.__version__)
 
 ChannelCredentials = cygrpc.ChannelCredentials
@@ -54,6 +56,9 @@ def channel_credentials_ssl(
   pair = None
   if private_key is not None or certificate_chain is not None:
     pair = cygrpc.SslPemKeyCertPair(private_key, certificate_chain)
+  if root_certificates is None:
+    root_certificates = pkg_resources.resource_string(
+      __name__, _ROOT_CERTIFICATES_RESOURCE_PATH)
   return cygrpc.channel_credentials_ssl(root_certificates, pair)
 
 

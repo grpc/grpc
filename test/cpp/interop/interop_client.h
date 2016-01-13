@@ -38,8 +38,8 @@
 
 #include <grpc/grpc.h>
 #include <grpc++/channel.h>
-#include "test/proto/messages.grpc.pb.h"
-#include "test/proto/test.grpc.pb.h"
+#include "src/proto/grpc/testing/messages.grpc.pb.h"
+#include "src/proto/grpc/testing/test.grpc.pb.h"
 
 namespace grpc {
 namespace testing {

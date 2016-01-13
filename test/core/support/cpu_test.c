@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -72,15 +72,15 @@ struct cpu_test {
   uint32_t ncores;
   int is_done;
   gpr_cv done_cv;
-  int *used; /* is this core used? */
-  int r;     /* random number */
+  int *used;  /* is this core used? */
+  unsigned r; /* random number */
 };
 
 static void worker_thread(void *arg) {
   struct cpu_test *ct = (struct cpu_test *)arg;
   uint32_t cpu;
-  int r = 12345678;
-  int i, j;
+  unsigned r = 12345678;
+  unsigned i, j;
   for (i = 0; i < 1000 / GRPC_TEST_SLOWDOWN_FACTOR; i++) {
     /* run for a bit - just calculate something random. */
     for (j = 0; j < 1000000 / GRPC_TEST_SLOWDOWN_FACTOR; j++) {
@@ -90,7 +90,13 @@ static void worker_thread(void *arg) {
     GPR_ASSERT(cpu < ct->ncores);
     gpr_mu_lock(&ct->mu);
     ct->used[cpu] = 1;
+    for (j = 0; j < ct->ncores; j++) {
+      if (!ct->used[j]) break;
+    }
     gpr_mu_unlock(&ct->mu);
+    if (j == ct->ncores) {
+      break; /* all cpus have been used - no further use in running this test */
+    }
   }
   gpr_mu_lock(&ct->mu);
   ct->r = r; /* make it look like we care about r's value... */

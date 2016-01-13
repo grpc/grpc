@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -55,6 +55,12 @@ extern int grpc_tcp_trace;
    Takes ownership of fd. */
 grpc_endpoint *grpc_tcp_create(grpc_fd *fd, size_t read_slice_size,
                                const char *peer_string);
+
+/* Return the tcp endpoint's fd, or -1 if this is not available. Does not
+   release the fd.
+   Requires: ep must be a tcp endpoint.
+ */
+int grpc_tcp_fd(grpc_endpoint *ep);
 
 /* Destroy the tcp endpoint without closing its fd. *fd will be set and done
  * will be called when the endpoint is destroyed.

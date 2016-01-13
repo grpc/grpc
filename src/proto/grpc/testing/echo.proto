@@ -1,3 +1,4 @@
+
 // Copyright 2015, Google Inc.
 // All rights reserved.
 //
@@ -29,42 +30,18 @@
 
 syntax = "proto3";
 
+import "src/proto/grpc/testing/echo_messages.proto";
+
 package grpc.testing;
 
-message ServerStats {
-  // wall clock time change in seconds since last reset
-  double time_elapsed = 1;
-
-  // change in user time (in seconds) used by the server since last reset
-  double time_user = 2;
-
-  // change in server time (in seconds) used by the server process and all
-  // threads since last reset
-  double time_system = 3;
+service TestService {
+  rpc Echo(EchoRequest) returns (EchoResponse);
+  rpc RequestStream(stream EchoRequest) returns (EchoResponse);
+  rpc ResponseStream(EchoRequest) returns (stream EchoResponse);
+  rpc BidiStream(stream EchoRequest) returns (stream EchoResponse);
+  rpc Unimplemented(EchoRequest) returns (EchoResponse);
 }
 
-// Histogram params based on grpc/support/histogram.c
-message HistogramParams {
-  double resolution = 1;    // first bucket is [0, 1 + resolution)
-  double max_possible = 2;  // use enough buckets to allow this value
-}
-
-// Histogram data based on grpc/support/histogram.c
-message HistogramData {
-  repeated uint32 bucket = 1;
-  double min_seen = 2;
-  double max_seen = 3;
-  double sum = 4;
-  double sum_of_squares = 5;
-  double count = 6;
-}
-
-message ClientStats {
-  // Latency histogram. Data points are in nanoseconds.
-  HistogramData latencies = 1;
-
-  // See ServerStats for details.
-  double time_elapsed = 2;
-  double time_user = 3;
-  double time_system = 4;
+service UnimplementedService {
+  rpc Unimplemented(EchoRequest) returns (EchoResponse);
 }

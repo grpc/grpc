@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -471,6 +471,12 @@ grpc_endpoint *grpc_tcp_create(grpc_fd *em_fd, size_t slice_size,
   gpr_slice_buffer_init(&tcp->last_read_buffer);
 
   return &tcp->base;
+}
+
+int grpc_tcp_fd(grpc_endpoint *ep) {
+  grpc_tcp *tcp = (grpc_tcp *)ep;
+  GPR_ASSERT(ep->vtable == &vtable);
+  return grpc_fd_wrapped_fd(tcp->em_fd);
 }
 
 void grpc_tcp_destroy_and_release_fd(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,

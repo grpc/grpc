@@ -153,29 +153,29 @@
     <ClInclude Include="$(SolutionDir)\..\test\cpp\util\subprocess.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="$(SolutionDir)\..\test\cpp\util\messages.pb.cc">
+    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\echo_messages.pb.cc">
     </ClCompile>
-    <ClInclude Include="$(SolutionDir)\..\test\cpp\util\messages.pb.h">
+    <ClInclude Include="$(SolutionDir)\..\src\proto\grpc\testing\echo_messages.pb.h">
     </ClInclude>
-    <ClCompile Include="$(SolutionDir)\..\test\cpp\util\messages.grpc.pb.cc">
+    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\echo_messages.grpc.pb.cc">
     </ClCompile>
-    <ClInclude Include="$(SolutionDir)\..\test\cpp\util\messages.grpc.pb.h">
+    <ClInclude Include="$(SolutionDir)\..\src\proto\grpc\testing\echo_messages.grpc.pb.h">
     </ClInclude>
-    <ClCompile Include="$(SolutionDir)\..\test\cpp\util\echo.pb.cc">
+    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\echo.pb.cc">
     </ClCompile>
-    <ClInclude Include="$(SolutionDir)\..\test\cpp\util\echo.pb.h">
+    <ClInclude Include="$(SolutionDir)\..\src\proto\grpc\testing\echo.pb.h">
     </ClInclude>
-    <ClCompile Include="$(SolutionDir)\..\test\cpp\util\echo.grpc.pb.cc">
+    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\echo.grpc.pb.cc">
     </ClCompile>
-    <ClInclude Include="$(SolutionDir)\..\test\cpp\util\echo.grpc.pb.h">
+    <ClInclude Include="$(SolutionDir)\..\src\proto\grpc\testing\echo.grpc.pb.h">
     </ClInclude>
-    <ClCompile Include="$(SolutionDir)\..\test\cpp\util\echo_duplicate.pb.cc">
+    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\duplicate\echo_duplicate.pb.cc">
     </ClCompile>
-    <ClInclude Include="$(SolutionDir)\..\test\cpp\util\echo_duplicate.pb.h">
+    <ClInclude Include="$(SolutionDir)\..\src\proto\grpc\testing\duplicate\echo_duplicate.pb.h">
     </ClInclude>
-    <ClCompile Include="$(SolutionDir)\..\test\cpp\util\echo_duplicate.grpc.pb.cc">
+    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\duplicate\echo_duplicate.grpc.pb.cc">
     </ClCompile>
-    <ClInclude Include="$(SolutionDir)\..\test\cpp\util\echo_duplicate.grpc.pb.h">
+    <ClInclude Include="$(SolutionDir)\..\src\proto\grpc\testing\duplicate\echo_duplicate.grpc.pb.h">
     </ClInclude>
     <ClCompile Include="$(SolutionDir)\..\test\cpp\util\cli_call.cc">
     </ClCompile>

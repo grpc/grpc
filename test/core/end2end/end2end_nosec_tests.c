@@ -1,8 +1,7 @@
 
-
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -259,7 +258,7 @@ void grpc_end2end_tests(int argc, char **argv,
       trailing_metadata(config);
       continue;
     }
-    gpr_log(GPR_DEBUG, "not a test: '%%s'", argv[i]);
+    gpr_log(GPR_DEBUG, "not a test: '%s'", argv[i]);
     abort();
   }
 }
