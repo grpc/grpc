@@ -39,14 +39,14 @@
 #include "src/core/iomgr/exec_ctx.h"
 
 typedef struct {
-  gpr_uint8 byte;
-  gpr_uint8 reason_bytes[4];
+  uint8_t byte;
+  uint8_t reason_bytes[4];
 } grpc_chttp2_rst_stream_parser;
 
-gpr_slice grpc_chttp2_rst_stream_create(gpr_uint32 stream_id, gpr_uint32 code);
+gpr_slice grpc_chttp2_rst_stream_create(uint32_t stream_id, uint32_t code);
 
 grpc_chttp2_parse_error grpc_chttp2_rst_stream_parser_begin_frame(
-    grpc_chttp2_rst_stream_parser *parser, gpr_uint32 length, gpr_uint8 flags);
+    grpc_chttp2_rst_stream_parser *parser, uint32_t length, uint8_t flags);
 grpc_chttp2_parse_error grpc_chttp2_rst_stream_parser_parse(
     grpc_exec_ctx *exec_ctx, void *parser,
     grpc_chttp2_transport_parsing *transport_parsing,

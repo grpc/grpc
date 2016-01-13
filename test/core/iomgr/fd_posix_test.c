@@ -84,7 +84,7 @@ static void create_test_socket(int port, int *socket_fd,
   sin->sin_family = AF_INET;
   sin->sin_addr.s_addr = htonl(0x7f000001);
   GPR_ASSERT(port >= 0 && port < 65536);
-  sin->sin_port = htons((gpr_uint16)port);
+  sin->sin_port = htons((uint16_t)port);
 }
 
 /* Dummy gRPC callback */

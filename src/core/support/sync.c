@@ -59,7 +59,7 @@ static void event_initialize(void) {
 
 /* Hash ev into an element of sync_array[]. */
 static struct sync_array_s *hash(gpr_event *ev) {
-  return &sync_array[((gpr_uintptr)ev) % event_sync_partitions];
+  return &sync_array[((uintptr_t)ev) % event_sync_partitions];
 }
 
 void gpr_event_init(gpr_event *ev) {
@@ -108,15 +108,15 @@ int gpr_unref(gpr_refcount *r) {
   return prior == 1;
 }
 
-void gpr_stats_init(gpr_stats_counter *c, gpr_intptr n) {
+void gpr_stats_init(gpr_stats_counter *c, intptr_t n) {
   gpr_atm_rel_store(&c->value, n);
 }
 
-void gpr_stats_inc(gpr_stats_counter *c, gpr_intptr inc) {
+void gpr_stats_inc(gpr_stats_counter *c, intptr_t inc) {
   gpr_atm_no_barrier_fetch_add(&c->value, inc);
 }
 
-gpr_intptr gpr_stats_read(const gpr_stats_counter *c) {
+intptr_t gpr_stats_read(const gpr_stats_counter *c) {
   /* don't need acquire-load, but we have no no-barrier load yet */
   return gpr_atm_acq_load(&c->value);
 }

@@ -38,7 +38,7 @@
    #include tls.h to use this - and see that file for documentation */
 
 struct gpr_gcc_thread_local {
-  gpr_intptr value;
+  intptr_t value;
 };
 
 #define GPR_TLS_DECL(name) \

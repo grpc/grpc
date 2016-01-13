@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -38,7 +38,7 @@ var path = require('path');
 var grpc = require('..');
 var testProto = grpc.load({
   root: __dirname + '/../../..',
-  file: 'test/proto/test.proto'}).grpc.testing;
+  file: 'src/proto/grpc/testing/test.proto'}).grpc.testing;
 var GoogleAuth = require('google-auth-library');
 
 var assert = require('assert');

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -47,8 +47,12 @@
 #include "test/cpp/interop/stress_interop_client.h"
 #include "test/cpp/util/metrics_server.h"
 #include "test/cpp/util/test_config.h"
-#include "test/proto/metrics.grpc.pb.h"
-#include "test/proto/metrics.pb.h"
+#include "src/proto/grpc/testing/metrics.grpc.pb.h"
+#include "src/proto/grpc/testing/metrics.pb.h"
+
+extern "C" {
+extern void gpr_default_log(gpr_log_func_args* args);
+}
 
 DEFINE_int32(metrics_port, 8081, "The metrics server port.");
 
@@ -94,6 +98,12 @@ DEFINE_string(test_cases, "",
               " 'large_unary', 10% of the time and 'empty_stream' the remaining"
               " 70% of the time");
 
+DEFINE_int32(log_level, GPR_LOG_SEVERITY_DEBUG,
+             "Severity level of messages that should be logged. Any messages "
+             "greater than or equal to the level set here will be logged. "
+             "The choices are: 0 (GPR_LOG_SEVERITY_DEBUG), 1 "
+             "(GPR_LOG_SEVERITY_INFO) and 2 (GPR_LOG_SEVERITY_ERROR.");
+
 using grpc::testing::kTestCaseList;
 using grpc::testing::MetricsService;
 using grpc::testing::MetricsServiceImpl;
@@ -101,6 +111,16 @@ using grpc::testing::StressTestInteropClient;
 using grpc::testing::TestCaseType;
 using grpc::testing::UNKNOWN_TEST;
 using grpc::testing::WeightedRandomTestSelector;
+
+static int log_level = GPR_LOG_SEVERITY_DEBUG;
+
+// A simple wrapper to grp_default_log() function. This only logs messages at or
+// above the current log level (set in 'log_level' variable)
+void TestLogFunction(gpr_log_func_args* args) {
+  if (args->severity >= log_level) {
+    gpr_default_log(args);
+  }
+}
 
 TestCaseType GetTestTypeFromName(const grpc::string& test_name) {
   TestCaseType test_case = UNKNOWN_TEST;
@@ -190,6 +210,18 @@ void LogParameterInfo(const std::vector<grpc::string>& addresses,
 int main(int argc, char** argv) {
   grpc::testing::InitTest(&argc, &argv, true);
 
+  if (FLAGS_log_level > GPR_LOG_SEVERITY_ERROR ||
+      FLAGS_log_level < GPR_LOG_SEVERITY_DEBUG) {
+    gpr_log(GPR_ERROR, "log_level should be an integer between %d and %d",
+            GPR_LOG_SEVERITY_DEBUG, GPR_LOG_SEVERITY_ERROR);
+    return 1;
+  }
+
+  // Change the default log function to TestLogFunction which respects the
+  // log_level setting.
+  log_level = FLAGS_log_level;
+  gpr_set_log_function(TestLogFunction);
+
   srand(time(NULL));
 
   // Parse the server addresses
@@ -198,7 +230,7 @@ int main(int argc, char** argv) {
 
   // Parse test cases and weights
   if (FLAGS_test_cases.length() == 0) {
-    gpr_log(GPR_INFO, "Not running tests. The 'test_cases' string is empty");
+    gpr_log(GPR_ERROR, "Not running tests. The 'test_cases' string is empty");
     return 1;
   }
 
@@ -270,6 +302,5 @@ int main(int argc, char** argv) {
     it->join();
   }
 
-  metrics_server->Wait();
   return 0;
 }

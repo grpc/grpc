@@ -96,7 +96,7 @@ class GrpcBufferWriter GRPC_FINAL
 
  private:
   const int block_size_;
-  gpr_int64 byte_count_;
+  int64_t byte_count_;
   gpr_slice_buffer* slice_buffer_;
   bool have_backup_;
   gpr_slice backup_slice_;
@@ -156,8 +156,8 @@ class GrpcBufferReader GRPC_FINAL
   }
 
  private:
-  gpr_int64 byte_count_;
-  gpr_int64 backup_count_;
+  int64_t byte_count_;
+  int64_t backup_count_;
   grpc_byte_buffer_reader reader_;
   gpr_slice slice_;
 };

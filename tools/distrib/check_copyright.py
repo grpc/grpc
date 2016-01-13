@@ -117,6 +117,7 @@ def log(cond, why, filename):
 
 
 # scan files, validate the text
+ok = True
 for filename in subprocess.check_output('git ls-tree -r --name-only -r HEAD',
                                         shell=True).splitlines():
   if filename in KNOWN_BAD: continue
@@ -130,7 +131,6 @@ for filename in subprocess.check_output('git ls-tree -r --name-only -r HEAD',
     log(args.skips, 'skip', filename)
     continue
   text = load(filename)
-  ok = True
   m = re.search(re_license, text)
   if m:
     last_modified = int(subprocess.check_output('git log -1 --format="%ad" --date=short -- ' + filename, shell=True)[0:4])

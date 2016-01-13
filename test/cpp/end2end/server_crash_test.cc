@@ -44,12 +44,12 @@
 
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
-#include "test/cpp/util/echo.grpc.pb.h"
-#include "test/cpp/util/echo_duplicate.grpc.pb.h"
+#include "src/proto/grpc/testing/echo.grpc.pb.h"
+#include "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h"
 #include "test/cpp/util/subprocess.h"
 
-using grpc::cpp::test::util::EchoRequest;
-using grpc::cpp::test::util::EchoResponse;
+using grpc::testing::EchoRequest;
+using grpc::testing::EchoResponse;
 using std::chrono::system_clock;
 
 static std::string g_root;
@@ -59,8 +59,7 @@ namespace testing {
 
 namespace {
 
-class ServiceImpl GRPC_FINAL
-    : public ::grpc::cpp::test::util::TestService::Service {
+class ServiceImpl GRPC_FINAL : public ::grpc::testing::TestService::Service {
  public:
   ServiceImpl() : bidi_stream_count_(0), response_stream_count_(0) {}
 

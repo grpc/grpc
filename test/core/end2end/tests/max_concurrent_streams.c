@@ -45,7 +45,7 @@
 
 enum { TIMEOUT = 200000 };
 
-static void *tag(gpr_intptr t) { return (void *)t; }
+static void *tag(intptr_t t) { return (void *)t; }
 
 static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
                                             const char *test_name,
@@ -348,7 +348,7 @@ static void test_max_concurrent_streams(grpc_end2end_test_config config) {
        * both);
        * check this here */
       /* We'll get tag 303 or 403, we want 300, 400 */
-      live_call = ((int)(gpr_intptr)ev.tag) - 1;
+      live_call = ((int)(intptr_t)ev.tag) - 1;
       got_client_start = 1;
     }
   }

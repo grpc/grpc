@@ -36,10 +36,10 @@
 
 #include <grpc/support/log.h>
 
-gpr_slice grpc_chttp2_window_update_create(gpr_uint32 id,
-                                           gpr_uint32 window_update) {
+gpr_slice grpc_chttp2_window_update_create(uint32_t id,
+                                           uint32_t window_update) {
   gpr_slice slice = gpr_slice_malloc(13);
-  gpr_uint8 *p = GPR_SLICE_START_PTR(slice);
+  uint8_t *p = GPR_SLICE_START_PTR(slice);
 
   GPR_ASSERT(window_update);
 
@@ -48,21 +48,20 @@ gpr_slice grpc_chttp2_window_update_create(gpr_uint32 id,
   *p++ = 4;
   *p++ = GRPC_CHTTP2_FRAME_WINDOW_UPDATE;
   *p++ = 0;
-  *p++ = (gpr_uint8)(id >> 24);
-  *p++ = (gpr_uint8)(id >> 16);
-  *p++ = (gpr_uint8)(id >> 8);
-  *p++ = (gpr_uint8)(id);
-  *p++ = (gpr_uint8)(window_update >> 24);
-  *p++ = (gpr_uint8)(window_update >> 16);
-  *p++ = (gpr_uint8)(window_update >> 8);
-  *p++ = (gpr_uint8)(window_update);
+  *p++ = (uint8_t)(id >> 24);
+  *p++ = (uint8_t)(id >> 16);
+  *p++ = (uint8_t)(id >> 8);
+  *p++ = (uint8_t)(id);
+  *p++ = (uint8_t)(window_update >> 24);
+  *p++ = (uint8_t)(window_update >> 16);
+  *p++ = (uint8_t)(window_update >> 8);
+  *p++ = (uint8_t)(window_update);
 
   return slice;
 }
 
 grpc_chttp2_parse_error grpc_chttp2_window_update_parser_begin_frame(
-    grpc_chttp2_window_update_parser *parser, gpr_uint32 length,
-    gpr_uint8 flags) {
+    grpc_chttp2_window_update_parser *parser, uint32_t length, uint8_t flags) {
   if (flags || length != 4) {
     gpr_log(GPR_ERROR, "invalid window update: length=%d, flags=%02x", length,
             flags);
@@ -77,19 +76,19 @@ grpc_chttp2_parse_error grpc_chttp2_window_update_parser_parse(
     grpc_exec_ctx *exec_ctx, void *parser,
     grpc_chttp2_transport_parsing *transport_parsing,
     grpc_chttp2_stream_parsing *stream_parsing, gpr_slice slice, int is_last) {
-  gpr_uint8 *const beg = GPR_SLICE_START_PTR(slice);
-  gpr_uint8 *const end = GPR_SLICE_END_PTR(slice);
-  gpr_uint8 *cur = beg;
+  uint8_t *const beg = GPR_SLICE_START_PTR(slice);
+  uint8_t *const end = GPR_SLICE_END_PTR(slice);
+  uint8_t *cur = beg;
   grpc_chttp2_window_update_parser *p = parser;
 
   while (p->byte != 4 && cur != end) {
-    p->amount |= ((gpr_uint32)*cur) << (8 * (3 - p->byte));
+    p->amount |= ((uint32_t)*cur) << (8 * (3 - p->byte));
     cur++;
     p->byte++;
   }
 
   if (p->byte == 4) {
-    gpr_uint32 received_update = p->amount;
+    uint32_t received_update = p->amount;
     if (received_update == 0 || (received_update & 0x80000000u)) {
       gpr_log(GPR_ERROR, "invalid window update bytes: %d", p->amount);
       return GRPC_CHTTP2_CONNECTION_ERROR;

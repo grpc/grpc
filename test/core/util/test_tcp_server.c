@@ -63,7 +63,7 @@ void test_tcp_server_start(test_tcp_server *server, int port) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
   addr.sin_family = AF_INET;
-  addr.sin_port = htons((gpr_uint16)port);
+  addr.sin_port = htons((uint16_t)port);
   memset(&addr.sin_addr, 0, sizeof(addr.sin_addr));
 
   server->tcp_server = grpc_tcp_server_create();
