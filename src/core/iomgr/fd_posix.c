@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -211,6 +211,16 @@ static int has_watchers(grpc_fd *fd) {
          fd->inactive_watcher_root.next != &fd->inactive_watcher_root;
 }
 
+static void close_fd_locked(grpc_exec_ctx *exec_ctx, grpc_fd *fd) {
+  fd->closed = 1;
+  if (!fd->released) {
+    close(fd->fd);
+  } else {
+    grpc_remove_fd_from_all_epoll_sets(fd->fd);
+  }
+  grpc_exec_ctx_enqueue(exec_ctx, fd->on_done_closure, 1);
+}
+
 int grpc_fd_wrapped_fd(grpc_fd *fd) {
   if (fd->released || fd->closed) {
     return -1;
@@ -231,11 +241,7 @@ void grpc_fd_orphan(grpc_exec_ctx *exec_ctx, grpc_fd *fd, grpc_closure *on_done,
   gpr_mu_lock(&fd->mu);
   REF_BY(fd, 1, reason); /* remove active status, but keep referenced */
   if (!has_watchers(fd)) {
-    fd->closed = 1;
-    if (!fd->released) {
-      close(fd->fd);
-    }
-    grpc_exec_ctx_enqueue(exec_ctx, fd->on_done_closure, 1);
+    close_fd_locked(exec_ctx, fd);
   } else {
     wake_all_watchers_locked(fd);
   }
@@ -425,11 +431,7 @@ void grpc_fd_end_poll(grpc_exec_ctx *exec_ctx, grpc_fd_watcher *watcher,
     maybe_wake_one_watcher_locked(fd);
   }
   if (grpc_fd_is_orphaned(fd) && !has_watchers(fd) && !fd->closed) {
-    fd->closed = 1;
-    if (!fd->released) {
-      close(fd->fd);
-    }
-    grpc_exec_ctx_enqueue(exec_ctx, fd->on_done_closure, 1);
+    close_fd_locked(exec_ctx, fd);
   }
   gpr_mu_unlock(&fd->mu);
 

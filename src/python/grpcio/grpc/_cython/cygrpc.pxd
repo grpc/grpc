@@ -27,44 +27,11 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""Buildgen transitive dependencies
+include "grpc/_cython/_cygrpc/grpc.pxi"
 
-This takes the list of libs, node_modules, and targets from our
-yaml dictionary, and adds to each the transitive closure
-of the list of dependencies.
-
-"""
-
-def get_lib(libs, name):
-  try:
-    return next(lib for lib in libs if lib['name']==name)
-  except StopIteration:
-    return None
-
-def transitive_deps(lib, libs):
-  if lib is not None and 'deps' in lib:
-    # Recursively call transitive_deps on each dependency, and take the union
-    return set.union(set(lib['deps']),
-                     *[set(transitive_deps(get_lib(libs, dep), libs))
-                       for dep in lib['deps']])
-  else:
-    return set()
-
-def mako_plugin(dictionary):
-  """The exported plugin code for transitive_dependencies.
-
-  Each item in libs, node_modules, and targets can have a deps list.
-  We add a transitive_deps property to each with the transitive closure
-  of those dependency lists.
-  """
-  libs = dictionary.get('libs')
-  node_modules = dictionary.get('node_modules')
-  targets = dictionary.get('targets')
-
-  for target_list in (libs, targets, node_modules):
-    for target in target_list:
-      target['transitive_deps'] = transitive_deps(target, libs)
-
-  python_dependencies = dictionary.get('python_dependencies')
-  python_dependencies['transitive_deps'] = (
-      transitive_deps(python_dependencies, libs))
+include "grpc/_cython/_cygrpc/call.pxd.pxi"
+include "grpc/_cython/_cygrpc/channel.pxd.pxi"
+include "grpc/_cython/_cygrpc/credentials.pxd.pxi"
+include "grpc/_cython/_cygrpc/completion_queue.pxd.pxi"
+include "grpc/_cython/_cygrpc/records.pxd.pxi"
+include "grpc/_cython/_cygrpc/server.pxd.pxi"

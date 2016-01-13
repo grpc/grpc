@@ -1,4 +1,4 @@
-# Copyright 2015, Google Inc.
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -450,4 +450,3 @@ def run(cmdlines,
       js.set_remaining(remaining)
   js.finish()
   return js.get_num_failures(), js.resultset
-
