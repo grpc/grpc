@@ -62,9 +62,7 @@ ChannelArguments::ChannelArguments(const ChannelArguments& other)
         break;
       case GRPC_ARG_POINTER:
         ap.value.pointer = a->value.pointer;
-        ap.value.pointer.p = a->value.pointer.copy
-                                 ? a->value.pointer.copy(ap.value.pointer.p)
-                                 : ap.value.pointer.p;
+        ap.value.pointer.p = a->value.pointer.vtable->copy(ap.value.pointer.p);
         break;
     }
     args_.push_back(ap);
@@ -92,13 +90,27 @@ void ChannelArguments::SetInt(const grpc::string& key, int value) {
 }
 
 void ChannelArguments::SetPointer(const grpc::string& key, void* value) {
+  struct VtableMembers {
+    static void* Copy(void* in) { return in; }
+    static void Destroy(void* in) {}
+    static int Compare(void* a, void *b) {
+      if (a < b) return -1;
+      if (a > b) return 1;
+      return 0;
+    }
+  };
+  static const grpc_arg_pointer_vtable vtable = {
+    &VtableMembers::Copy,
+    &VtableMembers::Destroy,
+    &VtableMembers::Compare
+  };
+
   grpc_arg arg;
   arg.type = GRPC_ARG_POINTER;
   strings_.push_back(key);
   arg.key = const_cast<char*>(strings_.back().c_str());
   arg.value.pointer.p = value;
-  arg.value.pointer.copy = nullptr;
-  arg.value.pointer.destroy = nullptr;
+  arg.value.pointer.vtable = &vtable;
   args_.push_back(arg);
 }
 

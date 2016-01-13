@@ -40,6 +40,9 @@
 /* Copy some arguments */
 grpc_channel_args *grpc_channel_args_copy(const grpc_channel_args *src);
 
+/* Copy some arguments, stably sorting keys */
+grpc_channel_args *grpc_channel_args_normalize(const grpc_channel_args *a);
+
 /** Copy some arguments and add the to_add parameter in the end.
    If to_add is NULL, it is equivalent to call grpc_channel_args_copy. */
 grpc_channel_args *grpc_channel_args_copy_and_add(const grpc_channel_args *src,
@@ -84,5 +87,7 @@ grpc_channel_args *grpc_channel_args_compression_algorithm_set_state(
  * grpc_compression_algorithm enum. */
 int grpc_channel_args_compression_algorithm_get_states(
     const grpc_channel_args *a);
+
+int grpc_channel_args_compare(const grpc_channel_args *a, const grpc_channel_args *b);
 
 #endif /* GRPC_INTERNAL_CORE_CHANNEL_CHANNEL_ARGS_H */
