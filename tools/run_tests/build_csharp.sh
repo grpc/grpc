@@ -32,4 +32,5 @@ set -ex
 
 cd $(dirname $0)/../../src/csharp
 
-xbuild /p:Configuration=$MSBUILD_CONFIG Grpc.sln
+# overriding NativeDependenciesConfigurationUnix is needed to make gcov code coverage work.
+xbuild /p:Configuration=$MSBUILD_CONFIG /p:NativeDependenciesConfigurationUnix=$CONFIG Grpc.sln

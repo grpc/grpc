@@ -39,8 +39,7 @@ namespace Grpc.Core.Internal
     /// </summary>
     internal class CStringSafeHandle : SafeHandleZeroIsInvalid
     {
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern void gprsharp_free(IntPtr ptr);
+        static readonly NativeMethods Native = NativeMethods.Get();
 
         private CStringSafeHandle()
         {
@@ -53,7 +52,7 @@ namespace Grpc.Core.Internal
 
         protected override bool ReleaseHandle()
         {
-            gprsharp_free(handle);
+            Native.gprsharp_free(handle);
             return true;
         }
     }

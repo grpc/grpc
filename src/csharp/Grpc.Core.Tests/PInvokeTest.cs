@@ -45,13 +45,9 @@ namespace Grpc.Core.Tests
 {
     public class PInvokeTest
     {
+        static readonly NativeMethods Native = NativeMethods.Get();
+
         int counter;
-
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern GRPCCallError grpcsharp_test_callback([MarshalAs(UnmanagedType.FunctionPtr)] OpCompletionDelegate callback);
-
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern IntPtr grpcsharp_test_nop(IntPtr ptr);
 
         /// <summary>
         /// (~1.26us .NET Windows)
@@ -87,7 +83,7 @@ namespace Grpc.Core.Tests
                 1000000, 10000000,
                 () =>
                 {
-                    grpcsharp_test_callback(handler);
+                    Native.grpcsharp_test_callback(handler);
                 });
             Assert.AreNotEqual(0, counter);
         }
@@ -106,7 +102,7 @@ namespace Grpc.Core.Tests
                 10000, 10000,
                 () =>
                 {
-                    grpcsharp_test_callback(new OpCompletionDelegate(Handler));
+                    Native.grpcsharp_test_callback(new OpCompletionDelegate(Handler));
                 });
             Assert.AreNotEqual(0, counter);
         }
@@ -122,7 +118,7 @@ namespace Grpc.Core.Tests
                 1000000, 100000000,
                 () =>
                 {
-                    grpcsharp_test_nop(IntPtr.Zero);
+                    Native.grpcsharp_test_nop(IntPtr.Zero);
                 });
         }
 

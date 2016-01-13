@@ -1,4 +1,5 @@
 #region Copyright notice and license
+
 // Copyright 2015, Google Inc.
 // All rights reserved.
 //
@@ -27,48 +28,83 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 #endregion
+
 using System;
+using System.Collections.Concurrent;
+using System.Diagnostics;
+using System.IO;
+using System.Reflection;
 using System.Runtime.InteropServices;
-using System.Threading.Tasks;
+using System.Threading;
 
 namespace Grpc.Core.Internal
 {
     /// <summary>
-    /// grpc_channel_args from <c>grpc/grpc.h</c>
+    /// Utility methods for detecting platform and architecture.
     /// </summary>
-    internal class ChannelArgsSafeHandle : SafeHandleZeroIsInvalid
+    internal static class PlatformApis
     {
-        static readonly NativeMethods Native = NativeMethods.Get();
+        static readonly bool isLinux;
+        static readonly bool isMacOSX;
+        static readonly bool isWindows;
 
-        private ChannelArgsSafeHandle()
+        static PlatformApis()
         {
+            var platform = Environment.OSVersion.Platform;
+
+            // PlatformID.MacOSX is never returned, commonly used trick is to identify Mac is by using uname.
+            isMacOSX = (platform == PlatformID.Unix && GetUname() == "Darwin");
+            isLinux = (platform == PlatformID.Unix && !isMacOSX);
+            isWindows = (platform == PlatformID.Win32NT || platform == PlatformID.Win32S || platform == PlatformID.Win32Windows);
         }
 
-        public static ChannelArgsSafeHandle CreateNull()
+        public static bool IsLinux
         {
-            return new ChannelArgsSafeHandle();
+            get { return isLinux; }
         }
 
-        public static ChannelArgsSafeHandle Create(int size)
+        public static bool IsMacOSX
         {
-            return Native.grpcsharp_channel_args_create(new UIntPtr((uint)size));
+            get { return isMacOSX; }
         }
 
-        public void SetString(int index, string key, string value)
+        public static bool IsWindows
         {
-            Native.grpcsharp_channel_args_set_string(this, new UIntPtr((uint)index), key, value);
+            get { return isWindows; }
         }
 
-        public void SetInteger(int index, string key, int value)
+        public static bool Is64Bit
         {
-            Native.grpcsharp_channel_args_set_integer(this, new UIntPtr((uint)index), key, value);
+            get { return IntPtr.Size == 8; }
         }
 
-        protected override bool ReleaseHandle()
+        [DllImport("libc")]
+        static extern int uname(IntPtr buf);
+
+        static string GetUname()
         {
-            Native.grpcsharp_channel_args_destroy(handle);
-            return true;
+            var buffer = Marshal.AllocHGlobal(8192);
+            try
+            {
+                if (uname(buffer) == 0)
+                {
+                    return Marshal.PtrToStringAnsi(buffer);
+                }
+                return string.Empty;
+            }
+            catch
+            {
+                return string.Empty;
+            }
+            finally
+            {
+                if (buffer != IntPtr.Zero)
+                {
+                    Marshal.FreeHGlobal(buffer);
+                }
+            }
         }
     }
 }

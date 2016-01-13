@@ -42,6 +42,6 @@ cd /var/local/git/grpc
 make install-certs
 
 # build C# interop client & server
-make install_grpc_csharp_ext
+make CONFIG=dbg grpc_csharp_ext
 (cd src/csharp && mono /var/local/NuGet.exe restore Grpc.sln)
 (cd src/csharp && xbuild Grpc.sln)

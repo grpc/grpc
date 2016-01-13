@@ -36,9 +36,6 @@ NUNIT_CONSOLE="mono packages/NUnit.Runners.2.6.4/tools/nunit-console.exe"
 # change to gRPC repo root
 cd $(dirname $0)/../..
 
-# path needs to be absolute
-export LD_LIBRARY_PATH=$(pwd)/libs/$CONFIG
-
 (cd src/csharp; $NUNIT_CONSOLE $@)
 
 if [ "$CONFIG" = "gcov" ]

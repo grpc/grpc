@@ -40,26 +40,7 @@ namespace Grpc.Core.Internal
     /// </summary>
     internal class MetadataArraySafeHandle : SafeHandleZeroIsInvalid
     {
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern MetadataArraySafeHandle grpcsharp_metadata_array_create(UIntPtr capacity);
-
-        [DllImport("grpc_csharp_ext.dll", CharSet = CharSet.Ansi)]
-        static extern void grpcsharp_metadata_array_add(MetadataArraySafeHandle array, string key, byte[] value, UIntPtr valueLength);
-
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern UIntPtr grpcsharp_metadata_array_count(IntPtr metadataArray);
-
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern IntPtr grpcsharp_metadata_array_get_key(IntPtr metadataArray, UIntPtr index);
-
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern IntPtr grpcsharp_metadata_array_get_value(IntPtr metadataArray, UIntPtr index);
-
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern UIntPtr grpcsharp_metadata_array_get_value_length(IntPtr metadataArray, UIntPtr index);
-
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern void grpcsharp_metadata_array_destroy_full(IntPtr array);
+        static readonly NativeMethods Native = NativeMethods.Get();
 
         private MetadataArraySafeHandle()
         {
@@ -70,11 +51,11 @@ namespace Grpc.Core.Internal
             using (Profilers.ForCurrentThread().NewScope("MetadataArraySafeHandle.Create"))
             {
                 // TODO(jtattermusch): we might wanna check that the metadata is readonly 
-                var metadataArray = grpcsharp_metadata_array_create(new UIntPtr((ulong)metadata.Count));
+                var metadataArray = Native.grpcsharp_metadata_array_create(new UIntPtr((ulong)metadata.Count));
                 for (int i = 0; i < metadata.Count; i++)
                 {
                     var valueBytes = metadata[i].GetSerializedValueUnsafe();
-                    grpcsharp_metadata_array_add(metadataArray, metadata[i].Key, valueBytes, new UIntPtr((ulong)valueBytes.Length));
+                    Native.grpcsharp_metadata_array_add(metadataArray, metadata[i].Key, valueBytes, new UIntPtr((ulong)valueBytes.Length));
                 }
                 return metadataArray;
             }
@@ -90,15 +71,15 @@ namespace Grpc.Core.Internal
                 return null;
             }
 
-            ulong count = grpcsharp_metadata_array_count(metadataArray).ToUInt64();
+            ulong count = Native.grpcsharp_metadata_array_count(metadataArray).ToUInt64();
 
             var metadata = new Metadata();
             for (ulong i = 0; i < count; i++)
             {
                 var index = new UIntPtr(i);
-                string key = Marshal.PtrToStringAnsi(grpcsharp_metadata_array_get_key(metadataArray, index));
-                var bytes = new byte[grpcsharp_metadata_array_get_value_length(metadataArray, index).ToUInt64()];
-                Marshal.Copy(grpcsharp_metadata_array_get_value(metadataArray, index), bytes, 0, bytes.Length);
+                string key = Marshal.PtrToStringAnsi(Native.grpcsharp_metadata_array_get_key(metadataArray, index));
+                var bytes = new byte[Native.grpcsharp_metadata_array_get_value_length(metadataArray, index).ToUInt64()];
+                Marshal.Copy(Native.grpcsharp_metadata_array_get_value(metadataArray, index), bytes, 0, bytes.Length);
                 metadata.Add(Metadata.Entry.CreateUnsafe(key, bytes));
             }
             return metadata;
@@ -114,7 +95,7 @@ namespace Grpc.Core.Internal
 
         protected override bool ReleaseHandle()
         {
-            grpcsharp_metadata_array_destroy_full(handle);
+            Native.grpcsharp_metadata_array_destroy_full(handle);
             return true;
         }
     }
