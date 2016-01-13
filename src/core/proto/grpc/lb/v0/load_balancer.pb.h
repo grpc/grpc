@@ -129,8 +129,14 @@ typedef struct _grpc_lb_v0_LoadBalanceResponse {
   }
 #define grpc_lb_v0_InitialLoadBalanceResponse_init_default \
   { false, "", false, "", false, grpc_lb_v0_Duration_init_default }
-#define grpc_lb_v0_ServerList_init_default \
-  { {{NULL}, NULL}, false, grpc_lb_v0_Duration_init_default }
+#define grpc_lb_v0_ServerList_init_default    \
+  {                                           \
+    {                                         \
+      { NULL }                                \
+      , NULL                                  \
+    }                                         \
+    , false, grpc_lb_v0_Duration_init_default \
+  }
 #define grpc_lb_v0_Server_init_default \
   { false, "", false, 0, false, {0, {0}}, false, 0 }
 #define grpc_lb_v0_Duration_init_zero \
@@ -151,8 +157,14 @@ typedef struct _grpc_lb_v0_LoadBalanceResponse {
   }
 #define grpc_lb_v0_InitialLoadBalanceResponse_init_zero \
   { false, "", false, "", false, grpc_lb_v0_Duration_init_zero }
-#define grpc_lb_v0_ServerList_init_zero \
-  { {{NULL}, NULL}, false, grpc_lb_v0_Duration_init_zero }
+#define grpc_lb_v0_ServerList_init_zero    \
+  {                                        \
+    {                                      \
+      { NULL }                             \
+      , NULL                               \
+    }                                      \
+    , false, grpc_lb_v0_Duration_init_zero \
+  }
 #define grpc_lb_v0_Server_init_zero \
   { false, "", false, 0, false, {0, {0}}, false, 0 }
 
