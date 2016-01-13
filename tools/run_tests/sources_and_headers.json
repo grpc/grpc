@@ -1098,6 +1098,20 @@
     ], 
     "headers": [], 
     "language": "c", 
+    "name": "tag_set_test", 
+    "src": [
+      "test/core/census/tag_set_test.c"
+    ]
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
     "name": "tcp_client_posix_test", 
     "src": [
       "test/core/iomgr/tcp_client_posix_test.c"
@@ -2845,6 +2859,7 @@
       "src/core/census/context.h", 
       "src/core/census/grpc_filter.h", 
       "src/core/census/rpc_metric_id.h", 
+      "src/core/census/tag_set.h", 
       "src/core/channel/channel_args.h", 
       "src/core/channel/channel_stack.h", 
       "src/core/channel/client_channel.h", 
@@ -2991,6 +3006,8 @@
       "src/core/census/initialize.c", 
       "src/core/census/operation.c", 
       "src/core/census/rpc_metric_id.h", 
+      "src/core/census/tag_set.c", 
+      "src/core/census/tag_set.h", 
       "src/core/census/tracing.c", 
       "src/core/channel/channel_args.c", 
       "src/core/channel/channel_args.h", 
@@ -3357,6 +3374,7 @@
       "src/core/census/context.h", 
       "src/core/census/grpc_filter.h", 
       "src/core/census/rpc_metric_id.h", 
+      "src/core/census/tag_set.h", 
       "src/core/channel/channel_args.h", 
       "src/core/channel/channel_stack.h", 
       "src/core/channel/client_channel.h", 
@@ -3488,6 +3506,8 @@
       "src/core/census/initialize.c", 
       "src/core/census/operation.c", 
       "src/core/census/rpc_metric_id.h", 
+      "src/core/census/tag_set.c", 
+      "src/core/census/tag_set.h", 
       "src/core/census/tracing.c", 
       "src/core/channel/channel_args.c", 
       "src/core/channel/channel_args.h", 
