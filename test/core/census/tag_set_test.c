@@ -367,19 +367,6 @@ static void complex_encode_decode_test(void) {
   GPR_ASSERT(census_tag_set_ntags(cts3) == 2);
   GPR_ASSERT(validate_tag(cts3, &basic_tags[4]));
   GPR_ASSERT(validate_tag(cts3, &modify_tags[8]));
-  // Now force tag set to be in smaller space
-  census_tag_set_destroy(cts3);
-  size_t nb1 = census_tag_set_encode_propagated(cts2, buf1, b1 - 1);
-  GPR_ASSERT(nb1 != 0);
-  GPR_ASSERT(nb1 < b1);
-  size_t nb2 = census_tag_set_encode_propagated_binary(cts2, buf2, b2 - 1);
-  GPR_ASSERT(nb2 != 0);
-  GPR_ASSERT(nb2 < b2);
-  cts3 = census_tag_set_decode(buf1, nb1, buf2, nb2);
-  GPR_ASSERT(cts3 != NULL);
-  GPR_ASSERT(census_tag_set_ntags(cts3) == 2);
-  GPR_ASSERT(validate_tag(cts3, &basic_tags[4]));
-  GPR_ASSERT(validate_tag(cts3, &modify_tags[8]));
   census_tag_set_destroy(cts3);
   census_tag_set_destroy(cts2);
   census_tag_set_destroy(cts);
