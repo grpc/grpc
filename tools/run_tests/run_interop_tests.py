@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Copyright 2015, Google Inc.
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -549,7 +549,7 @@ def aggregate_http2_results(stdout):
   match = re.search(r'\{"cases[^\]]*\]\}', stdout)
   if not match:
     return None
-    
+
   results = json.loads(match.group(0))
   skipped = 0
   passed = 0
@@ -742,7 +742,7 @@ try:
       for test_case in _HTTP2_TEST_CASES:
         if server_name == "go":
           # TODO(carl-mastrangelo): Reenable after https://github.com/grpc/grpc-go/issues/434
-          continue 
+          continue
         test_job = cloud_to_cloud_jobspec(http2Interop,
                                           test_case,
                                           server_name,
@@ -771,7 +771,7 @@ try:
       job[0].http2results = aggregate_http2_results(job[0].message)
 
   report_utils.render_interop_html_report(
-      set([str(l) for l in languages]), servers, _TEST_CASES, _AUTH_TEST_CASES, 
+      set([str(l) for l in languages]), servers, _TEST_CASES, _AUTH_TEST_CASES,
       _HTTP2_TEST_CASES, resultset, num_failures,
       args.cloud_to_prod_auth or args.cloud_to_prod, args.http2_interop)
 
