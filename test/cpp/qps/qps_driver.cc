@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -117,7 +117,7 @@ static void QpsDriver() {
     params->set_resp_size(FLAGS_bbuf_resp_size);
     if (FLAGS_bbuf_req_size >= 0) {
       params->set_req_size(FLAGS_bbuf_req_size);
-    }    
+    }
   } else {
     // set a reasonable default: proto but no payload
     client_config.mutable_payload_config()->mutable_simple_params();
