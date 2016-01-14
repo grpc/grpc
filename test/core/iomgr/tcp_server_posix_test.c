@@ -237,8 +237,8 @@ static void test_connect(unsigned n) {
     tcp_connect(&exec_ctx, (struct sockaddr *)&addr, addr_len, &result);
     GPR_ASSERT(result.server_fd >= 0);
     svr_fd = result.server_fd;
-    GPR_ASSERT(grpc_tcp_server_port_fd(s, result.port_index, result.fd_index)
-               == result.server_fd);
+    GPR_ASSERT(grpc_tcp_server_port_fd(s, result.port_index, result.fd_index) ==
+               result.server_fd);
     GPR_ASSERT(result.port_index == 0);
     GPR_ASSERT(result.fd_index < svr_fd_count);
 
@@ -248,8 +248,8 @@ static void test_connect(unsigned n) {
     tcp_connect(&exec_ctx, (struct sockaddr *)&addr1, addr_len, &result);
     GPR_ASSERT(result.server_fd >= 0);
     GPR_ASSERT(result.server_fd != svr_fd);
-    GPR_ASSERT(grpc_tcp_server_port_fd(s, result.port_index, result.fd_index)
-               == result.server_fd);
+    GPR_ASSERT(grpc_tcp_server_port_fd(s, result.port_index, result.fd_index) ==
+               result.server_fd);
     GPR_ASSERT(result.port_index == 1);
     GPR_ASSERT(result.fd_index < svr_fd_count);
   }
