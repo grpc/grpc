@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">0.11.0.0</span>
+   &#160;<span id="projectnumber">0.12.0.0</span>
    </div>
   </td>
  </tr>
@@ -138,8 +138,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;<span class="keyword">class </span><a class="code" href="classgrpc_1_1_call_op_set_interface.html">CallOpSetInterface</a>;</div>
 <div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;<span class="keyword">class </span><a class="code" href="classgrpc_1_1_channel_arguments.html">ChannelArguments</a>;</div>
 <div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;<span class="keyword">class </span><a class="code" href="classgrpc_1_1_completion_queue.html">CompletionQueue</a>;</div>
-<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;<span class="keyword">class </span><a class="code" href="classgrpc_1_1_credentials.html">Credentials</a>;</div>
-<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;<span class="keyword">class </span>SecureCredentials;</div>
+<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;<span class="keyword">class </span><a class="code" href="classgrpc_1_1_channel_credentials.html">ChannelCredentials</a>;</div>
+<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;<span class="keyword">class </span>SecureChannelCredentials;</div>
 <div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;</div>
 <div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;<span class="keyword">template</span> &lt;<span class="keyword">class</span> R&gt;</div>
 <div class="line"><a name="l00054"></a><span class="lineno"><a class="line" href="classgrpc_1_1_client_reader.html">   54</a></span>&#160;<span class="keyword">class </span><a class="code" href="classgrpc_1_1_client_reader.html">ClientReader</a>;</div>
@@ -226,36 +226,36 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="ttc" id="classgrpc_1_1_channel_html_a90afcb9ab2a6893632987ab925168929"><div class="ttname"><a href="classgrpc_1_1_channel.html#a90afcb9ab2a6893632987ab925168929">grpc::Channel::NotifyOnStateChange</a></div><div class="ttdeci">void NotifyOnStateChange(grpc_connectivity_state last_observed, T deadline, CompletionQueue *cq, void *tag)</div><div class="ttdoc">Return the tag on cq when the channel state is changed or deadline expires. </div><div class="ttdef"><b>Definition:</b> channel.h:82</div></div>
 <div class="ttc" id="classgrpc_1_1_channel_html_a4c54940cb0c353033cb86a004b1fa338"><div class="ttname"><a href="classgrpc_1_1_channel.html#a4c54940cb0c353033cb86a004b1fa338">grpc::Channel::WaitForStateChange</a></div><div class="ttdeci">bool WaitForStateChange(grpc_connectivity_state last_observed, T deadline)</div><div class="ttdoc">Blocking wait for channel state change or deadline expiration. </div><div class="ttdef"><b>Definition:</b> channel.h:91</div></div>
 <div class="ttc" id="namespacegrpc_html_ab04a87625da3bf85cdaf5e7856b00203"><div class="ttname"><a href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a></div><div class="ttdeci">std::string string</div><div class="ttdef"><b>Definition:</b> config.h:112</div></div>
-<div class="ttc" id="classgrpc_1_1_call_op_set_interface_html"><div class="ttname"><a href="classgrpc_1_1_call_op_set_interface.html">grpc::CallOpSetInterface</a></div><div class="ttdoc">An abstract collection of call ops, used to generate the grpc_call_op structure to pass down to the l...</div><div class="ttdef"><b>Definition:</b> call.h:478</div></div>
+<div class="ttc" id="classgrpc_1_1_call_op_set_interface_html"><div class="ttname"><a href="classgrpc_1_1_call_op_set_interface.html">grpc::CallOpSetInterface</a></div><div class="ttdoc">An abstract collection of call ops, used to generate the grpc_call_op structure to pass down to the l...</div><div class="ttdef"><b>Definition:</b> call.h:477</div></div>
 <div class="ttc" id="classgrpc_1_1_channel_arguments_html"><div class="ttname"><a href="classgrpc_1_1_channel_arguments.html">grpc::ChannelArguments</a></div><div class="ttdoc">Options for channel creation. </div><div class="ttdef"><b>Definition:</b> channel_arguments.h:52</div></div>
 <div class="ttc" id="grpc__library_8h_html"><div class="ttname"><a href="grpc__library_8h.html">grpc_library.h</a></div></div>
 <div class="ttc" id="classgrpc_1_1_channel_html_af12754677a599351077d6f68cc0c9159"><div class="ttname"><a href="classgrpc_1_1_channel.html#af12754677a599351077d6f68cc0c9159">grpc::Channel::~Channel</a></div><div class="ttdeci">~Channel()</div></div>
 <div class="ttc" id="config_8h_html"><div class="ttname"><a href="config_8h.html">config.h</a></div></div>
 <div class="ttc" id="classgrpc_1_1_channel_html_a3070c1bf22839a01d80db4dfb7199c81"><div class="ttname"><a href="classgrpc_1_1_channel.html#a3070c1bf22839a01d80db4dfb7199c81">grpc::Channel::GetState</a></div><div class="ttdeci">grpc_connectivity_state GetState(bool try_to_connect)</div><div class="ttdoc">Get the current channel state. </div></div>
 <div class="ttc" id="config_8h_html_ab2216aa6e0ffe505e1ec362a9621a7f9"><div class="ttname"><a href="config_8h.html#ab2216aa6e0ffe505e1ec362a9621a7f9">GRPC_FINAL</a></div><div class="ttdeci">#define GRPC_FINAL</div><div class="ttdef"><b>Definition:</b> config.h:71</div></div>
-<div class="ttc" id="classgrpc_1_1_time_point_html_adb76465d3bf0fef9ad5b918f0ea6a9b6"><div class="ttname"><a href="classgrpc_1_1_time_point.html#adb76465d3bf0fef9ad5b918f0ea6a9b6">grpc::TimePoint::raw_time</a></div><div class="ttdeci">gpr_timespec raw_time()</div><div class="ttdef"><b>Definition:</b> time.h:56</div></div>
-<div class="ttc" id="classgrpc_1_1_time_point_html"><div class="ttname"><a href="classgrpc_1_1_time_point.html">grpc::TimePoint</a></div><div class="ttdef"><b>Definition:</b> time.h:53</div></div>
+<div class="ttc" id="classgrpc_1_1_time_point_html_adb76465d3bf0fef9ad5b918f0ea6a9b6"><div class="ttname"><a href="classgrpc_1_1_time_point.html#adb76465d3bf0fef9ad5b918f0ea6a9b6">grpc::TimePoint::raw_time</a></div><div class="ttdeci">gpr_timespec raw_time()</div><div class="ttdef"><b>Definition:</b> time.h:57</div></div>
+<div class="ttc" id="classgrpc_1_1_time_point_html"><div class="ttname"><a href="classgrpc_1_1_time_point.html">grpc::TimePoint</a></div><div class="ttdef"><b>Definition:</b> time.h:54</div></div>
 <div class="ttc" id="classgrpc_1_1_client_async_response_reader_html"><div class="ttname"><a href="classgrpc_1_1_client_async_response_reader.html">grpc::ClientAsyncResponseReader</a></div><div class="ttdef"><b>Definition:</b> channel.h:66</div></div>
-<div class="ttc" id="classgrpc_1_1_client_context_html"><div class="ttname"><a href="classgrpc_1_1_client_context.html">grpc::ClientContext</a></div><div class="ttdef"><b>Definition:</b> client_context.h:149</div></div>
+<div class="ttc" id="classgrpc_1_1_client_context_html"><div class="ttname"><a href="classgrpc_1_1_client_context.html">grpc::ClientContext</a></div><div class="ttdef"><b>Definition:</b> client_context.h:150</div></div>
 <div class="ttc" id="classgrpc_1_1_grpc_library_html"><div class="ttname"><a href="classgrpc_1_1_grpc_library.html">grpc::GrpcLibrary</a></div><div class="ttdef"><b>Definition:</b> grpc_library.h:41</div></div>
 <div class="ttc" id="classgrpc_1_1_channel_html_acac59a2ab862b1c60832640b741e6440"><div class="ttname"><a href="classgrpc_1_1_channel.html#acac59a2ab862b1c60832640b741e6440">grpc::Channel::CreateChannelInternal</a></div><div class="ttdeci">friend std::shared_ptr&lt; Channel &gt; CreateChannelInternal(const grpc::string &amp;host, grpc_channel *c_channel)</div></div>
-<div class="ttc" id="classgrpc_1_1_call_html"><div class="ttname"><a href="classgrpc_1_1_call.html">grpc::Call</a></div><div class="ttdef"><b>Definition:</b> call.h:560</div></div>
-<div class="ttc" id="classgrpc_1_1_credentials_html"><div class="ttname"><a href="classgrpc_1_1_credentials.html">grpc::Credentials</a></div><div class="ttdoc">A credentials object encapsulates all the state needed by a client to authenticate with a server and ...</div><div class="ttdef"><b>Definition:</b> credentials.h:53</div></div>
+<div class="ttc" id="classgrpc_1_1_call_html"><div class="ttname"><a href="classgrpc_1_1_call.html">grpc::Call</a></div><div class="ttdef"><b>Definition:</b> call.h:559</div></div>
 <div class="ttc" id="call_8h_html"><div class="ttname"><a href="call_8h.html">call.h</a></div></div>
 <div class="ttc" id="classgrpc_1_1_client_async_writer_html"><div class="ttname"><a href="classgrpc_1_1_client_async_writer.html">grpc::ClientAsyncWriter</a></div><div class="ttdef"><b>Definition:</b> channel.h:62</div></div>
 <div class="ttc" id="classgrpc_1_1_channel_html_ac574143322bf2bc6bd324ccb22d40756"><div class="ttname"><a href="classgrpc_1_1_channel.html#ac574143322bf2bc6bd324ccb22d40756">grpc::Channel::BlockingUnaryCall</a></div><div class="ttdeci">friend Status BlockingUnaryCall(Channel *channel, const RpcMethod &amp;method, ClientContext *context, const InputMessage &amp;request, OutputMessage *result)</div><div class="ttdef"><b>Definition:</b> client_unary_call.h:50</div></div>
 <div class="ttc" id="classgrpc_1_1_completion_queue_html"><div class="ttname"><a href="classgrpc_1_1_completion_queue.html">grpc::CompletionQueue</a></div><div class="ttdoc">A thin wrapper around grpc_completion_queue (see / src/core/surface/completion_queue.h). </div><div class="ttdef"><b>Definition:</b> completion_queue.h:81</div></div>
 <div class="ttc" id="classgrpc_1_1_rpc_method_html"><div class="ttname"><a href="classgrpc_1_1_rpc_method.html">grpc::RpcMethod</a></div><div class="ttdef"><b>Definition:</b> rpc_method.h:43</div></div>
+<div class="ttc" id="classgrpc_1_1_channel_credentials_html"><div class="ttname"><a href="classgrpc_1_1_channel_credentials.html">grpc::ChannelCredentials</a></div><div class="ttdoc">A channel credentials object encapsulates all the state needed by a client to authenticate with a ser...</div><div class="ttdef"><b>Definition:</b> credentials.h:59</div></div>
 <div class="ttc" id="classgrpc_1_1_status_html"><div class="ttname"><a href="classgrpc_1_1_status.html">grpc::Status</a></div><div class="ttdoc">Did it work? If it didn&#39;t, why? </div><div class="ttdef"><b>Definition:</b> status.h:45</div></div>
 <div class="ttc" id="classgrpc_1_1_client_reader_writer_html"><div class="ttname"><a href="classgrpc_1_1_client_reader_writer.html">grpc::ClientReaderWriter</a></div><div class="ttdef"><b>Definition:</b> channel.h:58</div></div>
 <div class="ttc" id="classgrpc_1_1_client_async_reader_html"><div class="ttname"><a href="classgrpc_1_1_client_async_reader.html">grpc::ClientAsyncReader</a></div><div class="ttdef"><b>Definition:</b> channel.h:60</div></div>
 <div class="ttc" id="classgrpc_1_1_client_writer_html"><div class="ttname"><a href="classgrpc_1_1_client_writer.html">grpc::ClientWriter</a></div><div class="ttdef"><b>Definition:</b> channel.h:56</div></div>
-<div class="ttc" id="classgrpc_1_1_call_hook_html"><div class="ttname"><a href="classgrpc_1_1_call_hook.html">grpc::CallHook</a></div><div class="ttdef"><b>Definition:</b> call.h:553</div></div>
+<div class="ttc" id="classgrpc_1_1_call_hook_html"><div class="ttname"><a href="classgrpc_1_1_call_hook.html">grpc::CallHook</a></div><div class="ttdef"><b>Definition:</b> call.h:552</div></div>
 <div class="ttc" id="classgrpc_1_1_channel_html"><div class="ttname"><a href="classgrpc_1_1_channel.html">grpc::Channel</a></div><div class="ttdoc">Channels represent a connection to an endpoint. Created by CreateChannel. </div><div class="ttdef"><b>Definition:</b> channel.h:69</div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Oct 27 2015 21:07:30 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Jan 15 2016 00:21:23 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

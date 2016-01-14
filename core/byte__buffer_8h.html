@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">0.11.0.0</span>
+   &#160;<span id="projectnumber">0.12.0.0</span>
    </div>
   </td>
  </tr>
@@ -143,6 +143,9 @@ Functions</h2></td></tr>
 <tr class="memitem:aff713900a0177997a0be49a40781bcc9"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="byte__buffer_8h.html#aff713900a0177997a0be49a40781bcc9">grpc_byte_buffer_reader_next</a> (<a class="el" href="structgrpc__byte__buffer__reader.html">grpc_byte_buffer_reader</a> *reader, <a class="el" href="structgpr__slice.html">gpr_slice</a> *slice)</td></tr>
 <tr class="memdesc:aff713900a0177997a0be49a40781bcc9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Updates <em>slice</em> with the next piece of data from from <em>reader</em> and returns.  <a href="#aff713900a0177997a0be49a40781bcc9">More...</a><br/></td></tr>
 <tr class="separator:aff713900a0177997a0be49a40781bcc9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a106600f57e703770ae2574a138605958"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgpr__slice.html">gpr_slice</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="byte__buffer_8h.html#a106600f57e703770ae2574a138605958">grpc_byte_buffer_reader_readall</a> (<a class="el" href="structgrpc__byte__buffer__reader.html">grpc_byte_buffer_reader</a> *reader)</td></tr>
+<tr class="memdesc:a106600f57e703770ae2574a138605958"><td class="mdescLeft">&#160;</td><td class="mdescRight">Merge all data from <em>reader</em> into single slice.  <a href="#a106600f57e703770ae2574a138605958">More...</a><br/></td></tr>
+<tr class="separator:a106600f57e703770ae2574a138605958"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9b4f877e32f45e0e704970e89582e0df"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgrpc__byte__buffer.html">grpc_byte_buffer</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="byte__buffer_8h.html#a9b4f877e32f45e0e704970e89582e0df">grpc_raw_byte_buffer_from_reader</a> (<a class="el" href="structgrpc__byte__buffer__reader.html">grpc_byte_buffer_reader</a> *reader)</td></tr>
 <tr class="memdesc:a9b4f877e32f45e0e704970e89582e0df"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns a RAW byte buffer instance from the output of <em>reader</em>.  <a href="#a9b4f877e32f45e0e704970e89582e0df">More...</a><br/></td></tr>
 <tr class="separator:a9b4f877e32f45e0e704970e89582e0df"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -322,6 +325,24 @@ Functions</h2></td></tr>
 
 </div>
 </div>
+<a class="anchor" id="a106600f57e703770ae2574a138605958"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="structgpr__slice.html">gpr_slice</a> grpc_byte_buffer_reader_readall </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="structgrpc__byte__buffer__reader.html">grpc_byte_buffer_reader</a> *&#160;</td>
+          <td class="paramname"><em>reader</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Merge all data from <em>reader</em> into single slice. </p>
+
+</div>
+</div>
 <a class="anchor" id="a1aaaa0d8a1609166e0b0bb2b42332618"></a>
 <div class="memitem">
 <div class="memproto">
@@ -408,7 +429,7 @@ Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Oct 27 2015 21:07:30 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Jan 15 2016 00:21:22 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

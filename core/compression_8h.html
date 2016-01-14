@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">0.11.0.0</span>
+   &#160;<span id="projectnumber">0.12.0.0</span>
    </div>
   </td>
  </tr>
@@ -145,9 +145,6 @@ Functions</h2></td></tr>
 <tr class="memitem:adce0341ab8fd560dc39e9e96daf7cb14"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="compression_8h.html#adce0341ab8fd560dc39e9e96daf7cb14">grpc_compression_algorithm_name</a> (<a class="el" href="compression_8h.html#ab9de0f68bfb1ef8ed09bd00643db14c9">grpc_compression_algorithm</a> algorithm, char **name)</td></tr>
 <tr class="memdesc:adce0341ab8fd560dc39e9e96daf7cb14"><td class="mdescLeft">&#160;</td><td class="mdescRight">Updates <em>name</em> with the encoding name corresponding to a valid <em>algorithm</em>.  <a href="#adce0341ab8fd560dc39e9e96daf7cb14">More...</a><br/></td></tr>
 <tr class="separator:adce0341ab8fd560dc39e9e96daf7cb14"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ace80040d9c2a916ddd4d2f2d2ec44dba"><td class="memItemLeft" align="right" valign="top"><a class="el" href="compression_8h.html#a14a79ed6b5ebd7e1dda7c2684f499cc7">grpc_compression_level</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="compression_8h.html#ace80040d9c2a916ddd4d2f2d2ec44dba">grpc_compression_level_for_algorithm</a> (<a class="el" href="compression_8h.html#ab9de0f68bfb1ef8ed09bd00643db14c9">grpc_compression_algorithm</a> algorithm)</td></tr>
-<tr class="memdesc:ace80040d9c2a916ddd4d2f2d2ec44dba"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the compression level corresponding to <em>algorithm</em>.  <a href="#ace80040d9c2a916ddd4d2f2d2ec44dba">More...</a><br/></td></tr>
-<tr class="separator:ace80040d9c2a916ddd4d2f2d2ec44dba"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a382cce802b53a6f85deb706caf1dccd6"><td class="memItemLeft" align="right" valign="top"><a class="el" href="compression_8h.html#ab9de0f68bfb1ef8ed09bd00643db14c9">grpc_compression_algorithm</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="compression_8h.html#a382cce802b53a6f85deb706caf1dccd6">grpc_compression_algorithm_for_level</a> (<a class="el" href="compression_8h.html#a14a79ed6b5ebd7e1dda7c2684f499cc7">grpc_compression_level</a> level)</td></tr>
 <tr class="memdesc:a382cce802b53a6f85deb706caf1dccd6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the compression algorithm corresponding to <em>level</em>.  <a href="#a382cce802b53a6f85deb706caf1dccd6">More...</a><br/></td></tr>
 <tr class="separator:a382cce802b53a6f85deb706caf1dccd6"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -334,25 +331,6 @@ Functions</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="ace80040d9c2a916ddd4d2f2d2ec44dba"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname"><a class="el" href="compression_8h.html#a14a79ed6b5ebd7e1dda7c2684f499cc7">grpc_compression_level</a> grpc_compression_level_for_algorithm </td>
-          <td>(</td>
-          <td class="paramtype"><a class="el" href="compression_8h.html#ab9de0f68bfb1ef8ed09bd00643db14c9">grpc_compression_algorithm</a>&#160;</td>
-          <td class="paramname"><em>algorithm</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Returns the compression level corresponding to <em>algorithm</em>. </p>
-<p>It abort()s for unknown algorithms. </p>
-
-</div>
-</div>
 <a class="anchor" id="abc2ff820072cb6021e6a59190b35d754"></a>
 <div class="memitem">
 <div class="memproto">
@@ -456,7 +434,7 @@ Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Oct 27 2015 21:07:30 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Jan 15 2016 00:21:22 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

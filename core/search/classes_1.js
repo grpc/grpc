@@ -1,5 +1,9 @@
 var searchData=
 [
+  ['gpr_5fallocation_5ffunctions',['gpr_allocation_functions',['../structgpr__allocation__functions.html',1,'']]],
+  ['gpr_5favl',['gpr_avl',['../structgpr__avl.html',1,'']]],
+  ['gpr_5favl_5fnode',['gpr_avl_node',['../structgpr__avl__node.html',1,'']]],
+  ['gpr_5favl_5fvtable',['gpr_avl_vtable',['../structgpr__avl__vtable.html',1,'']]],
   ['gpr_5fevent',['gpr_event',['../structgpr__event.html',1,'']]],
   ['gpr_5fgcc_5fthread_5flocal',['gpr_gcc_thread_local',['../structgpr__gcc__thread__local.html',1,'']]],
   ['gpr_5flog_5ffunc_5fargs',['gpr_log_func_args',['../structgpr__log__func__args.html',1,'']]],
@@ -14,6 +18,7 @@ var searchData=
   ['gpr_5fthd_5foptions',['gpr_thd_options',['../structgpr__thd__options.html',1,'']]],
   ['gpr_5ftimespec',['gpr_timespec',['../structgpr__timespec.html',1,'']]],
   ['grpc_5farg',['grpc_arg',['../structgrpc__arg.html',1,'']]],
+  ['grpc_5fauth_5fmetadata_5fcontext',['grpc_auth_metadata_context',['../structgrpc__auth__metadata__context.html',1,'']]],
   ['grpc_5fauth_5fmetadata_5fprocessor',['grpc_auth_metadata_processor',['../structgrpc__auth__metadata__processor.html',1,'']]],
   ['grpc_5fauth_5fproperty',['grpc_auth_property',['../structgrpc__auth__property.html',1,'']]],
   ['grpc_5fauth_5fproperty_5fiterator',['grpc_auth_property_iterator',['../structgrpc__auth__property__iterator.html',1,'']]],
@@ -25,6 +30,7 @@ var searchData=
   ['grpc_5fevent',['grpc_event',['../structgrpc__event.html',1,'']]],
   ['grpc_5fmetadata',['grpc_metadata',['../structgrpc__metadata.html',1,'']]],
   ['grpc_5fmetadata_5farray',['grpc_metadata_array',['../structgrpc__metadata__array.html',1,'']]],
+  ['grpc_5fmetadata_5fcredentials_5fplugin',['grpc_metadata_credentials_plugin',['../structgrpc__metadata__credentials__plugin.html',1,'']]],
   ['grpc_5fop',['grpc_op',['../structgrpc__op.html',1,'']]],
   ['grpc_5fssl_5fpem_5fkey_5fcert_5fpair',['grpc_ssl_pem_key_cert_pair',['../structgrpc__ssl__pem__key__cert__pair.html',1,'']]]
 ];

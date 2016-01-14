@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">0.11.0.0</span>
+   &#160;<span id="projectnumber">0.12.0.0</span>
    </div>
   </td>
  </tr>
@@ -102,8 +102,13 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a02b103e08092d24bf65e1a7b5b384269"><td class="memTemplParams" colspan="2">template&lt;class T &gt; </td></tr>
 <tr class="memitem:a02b103e08092d24bf65e1a7b5b384269"><td class="memTemplItemLeft" align="right" valign="top">&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1thread.html#a02b103e08092d24bf65e1a7b5b384269">thread</a> (void(T::*fptr)(), T *obj)</td></tr>
 <tr class="separator:a02b103e08092d24bf65e1a7b5b384269"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a29d6af6625e856cff70ae7c408754306"><td class="memTemplParams" colspan="2">template&lt;class T , class U &gt; </td></tr>
+<tr class="memitem:a29d6af6625e856cff70ae7c408754306"><td class="memTemplItemLeft" align="right" valign="top">&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1thread.html#a29d6af6625e856cff70ae7c408754306">thread</a> (void(T::*fptr)(U arg), T *obj, U arg)</td></tr>
+<tr class="separator:a29d6af6625e856cff70ae7c408754306"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a821416c0e9319e93ae8b8e5cdaa9f52f"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1thread.html#a821416c0e9319e93ae8b8e5cdaa9f52f">~thread</a> ()</td></tr>
 <tr class="separator:a821416c0e9319e93ae8b8e5cdaa9f52f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1745625af6d7f8c1a9c473b2bfc77ccf"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1thread.html#a1745625af6d7f8c1a9c473b2bfc77ccf">thread</a> (<a class="el" href="classgrpc_1_1thread.html">thread</a> &amp;&amp;other)</td></tr>
+<tr class="separator:a1745625af6d7f8c1a9c473b2bfc77ccf"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2d1d3437f2ff58bb1eacb5417a85c29f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1thread.html#a2d1d3437f2ff58bb1eacb5417a85c29f">join</a> ()</td></tr>
 <tr class="separator:a2d1d3437f2ff58bb1eacb5417a85c29f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
@@ -144,6 +149,48 @@ template&lt;class T &gt; </div>
 
 </div>
 </div>
+<a class="anchor" id="a29d6af6625e856cff70ae7c408754306"></a>
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;class T , class U &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">grpc::thread::thread </td>
+          <td>(</td>
+          <td class="paramtype">void(T::*)(U arg)&#160;</td>
+          <td class="paramname"><em>fptr</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">T *&#160;</td>
+          <td class="paramname"><em>obj</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">U&#160;</td>
+          <td class="paramname"><em>arg</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <a class="anchor" id="a821416c0e9319e93ae8b8e5cdaa9f52f"></a>
 <div class="memitem">
 <div class="memproto">
@@ -155,6 +202,30 @@ template&lt;class T &gt; </div>
           <td class="memname">grpc::thread::~thread </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a class="anchor" id="a1745625af6d7f8c1a9c473b2bfc77ccf"></a>
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">grpc::thread::thread </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classgrpc_1_1thread.html">thread</a> &amp;&amp;&#160;</td>
+          <td class="paramname"><em>other</em></td><td>)</td>
           <td></td>
         </tr>
       </table>
@@ -197,7 +268,7 @@ template&lt;class T &gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Oct 27 2015 21:07:30 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Jan 15 2016 00:21:23 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

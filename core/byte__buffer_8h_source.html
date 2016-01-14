@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">0.11.0.0</span>
+   &#160;<span id="projectnumber">0.12.0.0</span>
    </div>
   </td>
  </tr>
@@ -174,14 +174,16 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;<span class="keywordtype">int</span> <a class="code" href="byte__buffer_8h.html#aff713900a0177997a0be49a40781bcc9">grpc_byte_buffer_reader_next</a>(<a class="code" href="structgrpc__byte__buffer__reader.html">grpc_byte_buffer_reader</a> *reader,</div>
 <div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;                                 <a class="code" href="structgpr__slice.html">gpr_slice</a> *slice);</div>
 <div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;</div>
-<div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;<a class="code" href="structgrpc__byte__buffer.html">grpc_byte_buffer</a> *<a class="code" href="byte__buffer_8h.html#a9b4f877e32f45e0e704970e89582e0df">grpc_raw_byte_buffer_from_reader</a>(</div>
-<div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;    <a class="code" href="structgrpc__byte__buffer__reader.html">grpc_byte_buffer_reader</a> *reader);</div>
-<div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;</div>
-<div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;<span class="preprocessor">#ifdef __cplusplus</span></div>
-<div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160;<span class="preprocessor"></span>}</div>
-<div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00116"></a><span class="lineno">  116</span>&#160;<span class="preprocessor"></span></div>
-<div class="line"><a name="l00117"></a><span class="lineno">  117</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* GRPC_BYTE_BUFFER_H */</span><span class="preprocessor"></span></div>
+<div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;<a class="code" href="structgpr__slice.html">gpr_slice</a> <a class="code" href="byte__buffer_8h.html#a106600f57e703770ae2574a138605958">grpc_byte_buffer_reader_readall</a>(<a class="code" href="structgrpc__byte__buffer__reader.html">grpc_byte_buffer_reader</a> *reader);</div>
+<div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;</div>
+<div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;<a class="code" href="structgrpc__byte__buffer.html">grpc_byte_buffer</a> *<a class="code" href="byte__buffer_8h.html#a9b4f877e32f45e0e704970e89582e0df">grpc_raw_byte_buffer_from_reader</a>(</div>
+<div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160;    <a class="code" href="structgrpc__byte__buffer__reader.html">grpc_byte_buffer_reader</a> *reader);</div>
+<div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160;</div>
+<div class="line"><a name="l00116"></a><span class="lineno">  116</span>&#160;<span class="preprocessor">#ifdef __cplusplus</span></div>
+<div class="line"><a name="l00117"></a><span class="lineno">  117</span>&#160;<span class="preprocessor"></span>}</div>
+<div class="line"><a name="l00118"></a><span class="lineno">  118</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00119"></a><span class="lineno">  119</span>&#160;<span class="preprocessor"></span></div>
+<div class="line"><a name="l00120"></a><span class="lineno">  120</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* GRPC_BYTE_BUFFER_H */</span><span class="preprocessor"></span></div>
 <div class="ttc" id="compression_8h_html"><div class="ttname"><a href="compression_8h.html">compression.h</a></div></div>
 <div class="ttc" id="compression_8h_html_ab9de0f68bfb1ef8ed09bd00643db14c9"><div class="ttname"><a href="compression_8h.html#ab9de0f68bfb1ef8ed09bd00643db14c9">grpc_compression_algorithm</a></div><div class="ttdeci">grpc_compression_algorithm</div><div class="ttdef"><b>Definition:</b> compression.h:50</div></div>
 <div class="ttc" id="byte__buffer_8h_html_aff713900a0177997a0be49a40781bcc9"><div class="ttname"><a href="byte__buffer_8h.html#aff713900a0177997a0be49a40781bcc9">grpc_byte_buffer_reader_next</a></div><div class="ttdeci">int grpc_byte_buffer_reader_next(grpc_byte_buffer_reader *reader, gpr_slice *slice)</div><div class="ttdoc">Updates slice with the next piece of data from from reader and returns. </div></div>
@@ -202,6 +204,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="ttc" id="byte__buffer_8h_html_a61b6ac03d6a50664786e45d616ba435d"><div class="ttname"><a href="byte__buffer_8h.html#a61b6ac03d6a50664786e45d616ba435d">grpc_byte_buffer_length</a></div><div class="ttdeci">size_t grpc_byte_buffer_length(grpc_byte_buffer *bb)</div><div class="ttdoc">Returns the size of the given byte buffer, in bytes. </div></div>
 <div class="ttc" id="slice__buffer_8h_html"><div class="ttname"><a href="slice__buffer_8h.html">slice_buffer.h</a></div></div>
 <div class="ttc" id="structgrpc__byte__buffer_html_a8b691e1bd1db502421fcdf741c49b482"><div class="ttname"><a href="structgrpc__byte__buffer.html#a8b691e1bd1db502421fcdf741c49b482">grpc_byte_buffer::raw</a></div><div class="ttdeci">struct grpc_byte_buffer::@0::@2 raw</div></div>
+<div class="ttc" id="byte__buffer_8h_html_a106600f57e703770ae2574a138605958"><div class="ttname"><a href="byte__buffer_8h.html#a106600f57e703770ae2574a138605958">grpc_byte_buffer_reader_readall</a></div><div class="ttdeci">gpr_slice grpc_byte_buffer_reader_readall(grpc_byte_buffer_reader *reader)</div><div class="ttdoc">Merge all data from reader into single slice. </div></div>
 <div class="ttc" id="byte__buffer_8h_html_a1aaaa0d8a1609166e0b0bb2b42332618"><div class="ttname"><a href="byte__buffer_8h.html#a1aaaa0d8a1609166e0b0bb2b42332618">grpc_raw_byte_buffer_create</a></div><div class="ttdeci">grpc_byte_buffer * grpc_raw_byte_buffer_create(gpr_slice *slices, size_t nslices)</div><div class="ttdoc">Returns a RAW byte buffer instance over the given slices (up to nslices). </div></div>
 <div class="ttc" id="structgrpc__byte__buffer__reader_html"><div class="ttname"><a href="structgrpc__byte__buffer__reader.html">grpc_byte_buffer_reader</a></div><div class="ttdef"><b>Definition:</b> byte_buffer_reader.h:44</div></div>
 <div class="ttc" id="structgpr__slice_html"><div class="ttname"><a href="structgpr__slice.html">gpr_slice</a></div><div class="ttdef"><b>Definition:</b> slice.h:79</div></div>
@@ -209,7 +212,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Oct 27 2015 21:07:30 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Jan 15 2016 00:21:22 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

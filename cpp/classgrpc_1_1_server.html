@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">0.11.0.0</span>
+   &#160;<span id="projectnumber">0.12.0.0</span>
    </div>
   </td>
  </tr>
@@ -90,6 +90,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
   <div class="summary">
 <a href="#nested-classes">Data Structures</a> &#124;
 <a href="#pub-methods">Public Member Functions</a> &#124;
+<a href="#pub-static-methods">Static Public Member Functions</a> &#124;
 <a href="#friends">Friends</a>  </div>
   <div class="headertitle">
 <div class="title">grpc::Server Class Reference</div>  </div>
@@ -101,6 +102,12 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 
 <p><code>#include &lt;<a class="el" href="server_8h_source.html">server.h</a>&gt;</code></p>
 <table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
+Data Structures</h2></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_1_1_global_callbacks.html">GlobalCallbacks</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Global Callbacks.  <a href="classgrpc_1_1_server_1_1_global_callbacks.html#details">More...</a><br/></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:aa13591ff1bb2c5d871778189b391feb2"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server.html#aa13591ff1bb2c5d871778189b391feb2">~Server</a> ()</td></tr>
@@ -120,6 +127,12 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:af026f86430cf235d7eaf532231a44528 inherit pub_methods_classgrpc_1_1_grpc_library"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:adadb2fbc794175c8c4578bf283b009a8 inherit pub_methods_classgrpc_1_1_grpc_library"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_grpc_library.html#adadb2fbc794175c8c4578bf283b009a8">~GrpcLibrary</a> ()</td></tr>
 <tr class="separator:adadb2fbc794175c8c4578bf283b009a8 inherit pub_methods_classgrpc_1_1_grpc_library"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
+Static Public Member Functions</h2></td></tr>
+<tr class="memitem:a929329bdc505ebb7968132b2c34ffc78"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server.html#a929329bdc505ebb7968132b2c34ffc78">SetGlobalCallbacks</a> (<a class="el" href="classgrpc_1_1_server_1_1_global_callbacks.html">GlobalCallbacks</a> *callbacks)</td></tr>
+<tr class="memdesc:a929329bdc505ebb7968132b2c34ffc78"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the global callback object.  <a href="#a929329bdc505ebb7968132b2c34ffc78">More...</a><br/></td></tr>
+<tr class="separator:a929329bdc505ebb7968132b2c34ffc78"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="friends"></a>
 Friends</h2></td></tr>
@@ -150,6 +163,33 @@ Friends</h2></td></tr>
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
+<a class="anchor" id="a929329bdc505ebb7968132b2c34ffc78"></a>
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">static void grpc::Server::SetGlobalCallbacks </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classgrpc_1_1_server_1_1_global_callbacks.html">GlobalCallbacks</a> *&#160;</td>
+          <td class="paramname"><em>callbacks</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Set the global callback object. </p>
+<p>Can only be called once. Does not take ownership of callbacks, and expects the pointed to object to be alive until all server objects in the process have been destroyed. </p>
+
+</div>
+</div>
 <a class="anchor" id="aeadfd93954df3fdfe1ddcccc4e681f17"></a>
 <div class="memitem">
 <div class="memproto">
@@ -295,7 +335,7 @@ template&lt;class T &gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Oct 27 2015 21:07:30 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Jan 15 2016 00:21:23 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

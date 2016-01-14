@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">0.11.0.0</span>
+   &#160;<span id="projectnumber">0.12.0.0</span>
    </div>
   </td>
  </tr>
@@ -234,42 +234,45 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00144"></a><span class="lineno">  144</span>&#160;<span class="comment">     memcpy(slice-&gt;data, source, len); */</span></div>
 <div class="line"><a name="l00145"></a><span class="lineno">  145</span>&#160;<a class="code" href="structgpr__slice.html">gpr_slice</a> <a class="code" href="slice_8h.html#a83e8110a7a98132963f01eb9c7f7418e">gpr_slice_from_copied_buffer</a>(<span class="keyword">const</span> <span class="keywordtype">char</span> *source, <span class="keywordtype">size_t</span> len);</div>
 <div class="line"><a name="l00146"></a><span class="lineno">  146</span>&#160;</div>
-<div class="line"><a name="l00147"></a><span class="lineno">  147</span>&#160;<span class="comment">/* Return a result slice derived from s, which shares a ref count with s, where</span></div>
-<div class="line"><a name="l00148"></a><span class="lineno">  148</span>&#160;<span class="comment">   result.data==s.data+begin, and result.length==end-begin.</span></div>
-<div class="line"><a name="l00149"></a><span class="lineno">  149</span>&#160;<span class="comment">   The ref count of s is increased by one.</span></div>
-<div class="line"><a name="l00150"></a><span class="lineno">  150</span>&#160;<span class="comment">   Requires s initialized, begin &lt;= end, begin &lt;= s.length, and</span></div>
-<div class="line"><a name="l00151"></a><span class="lineno">  151</span>&#160;<span class="comment">   end &lt;= source-&gt;length. */</span></div>
-<div class="line"><a name="l00152"></a><span class="lineno">  152</span>&#160;<a class="code" href="structgpr__slice.html">gpr_slice</a> <a class="code" href="slice_8h.html#ac9d4e6e264e22c6c6d3748f522da91eb">gpr_slice_sub</a>(<a class="code" href="structgpr__slice.html">gpr_slice</a> s, <span class="keywordtype">size_t</span> begin, <span class="keywordtype">size_t</span> end);</div>
-<div class="line"><a name="l00153"></a><span class="lineno">  153</span>&#160;</div>
-<div class="line"><a name="l00154"></a><span class="lineno">  154</span>&#160;<span class="comment">/* The same as gpr_slice_sub, but without altering the ref count */</span></div>
-<div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160;<a class="code" href="structgpr__slice.html">gpr_slice</a> <a class="code" href="slice_8h.html#accf08ddad530a5f1cca82c834dc70965">gpr_slice_sub_no_ref</a>(<a class="code" href="structgpr__slice.html">gpr_slice</a> s, <span class="keywordtype">size_t</span> begin, <span class="keywordtype">size_t</span> end);</div>
+<div class="line"><a name="l00147"></a><span class="lineno">  147</span>&#160;<span class="comment">/* Create a slice pointing to constant memory */</span></div>
+<div class="line"><a name="l00148"></a><span class="lineno">  148</span>&#160;<a class="code" href="structgpr__slice.html">gpr_slice</a> <a class="code" href="slice_8h.html#ad4a351c5a826133346e90dd3237b4b87">gpr_slice_from_static_string</a>(<span class="keyword">const</span> <span class="keywordtype">char</span> *source);</div>
+<div class="line"><a name="l00149"></a><span class="lineno">  149</span>&#160;</div>
+<div class="line"><a name="l00150"></a><span class="lineno">  150</span>&#160;<span class="comment">/* Return a result slice derived from s, which shares a ref count with s, where</span></div>
+<div class="line"><a name="l00151"></a><span class="lineno">  151</span>&#160;<span class="comment">   result.data==s.data+begin, and result.length==end-begin.</span></div>
+<div class="line"><a name="l00152"></a><span class="lineno">  152</span>&#160;<span class="comment">   The ref count of s is increased by one.</span></div>
+<div class="line"><a name="l00153"></a><span class="lineno">  153</span>&#160;<span class="comment">   Requires s initialized, begin &lt;= end, begin &lt;= s.length, and</span></div>
+<div class="line"><a name="l00154"></a><span class="lineno">  154</span>&#160;<span class="comment">   end &lt;= source-&gt;length. */</span></div>
+<div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160;<a class="code" href="structgpr__slice.html">gpr_slice</a> <a class="code" href="slice_8h.html#ac9d4e6e264e22c6c6d3748f522da91eb">gpr_slice_sub</a>(<a class="code" href="structgpr__slice.html">gpr_slice</a> s, <span class="keywordtype">size_t</span> begin, <span class="keywordtype">size_t</span> end);</div>
 <div class="line"><a name="l00156"></a><span class="lineno">  156</span>&#160;</div>
-<div class="line"><a name="l00157"></a><span class="lineno">  157</span>&#160;<span class="comment">/* Splits s into two: modifies s to be s[0:split], and returns a new slice,</span></div>
-<div class="line"><a name="l00158"></a><span class="lineno">  158</span>&#160;<span class="comment">   sharing a refcount with s, that contains s[split:s.length].</span></div>
-<div class="line"><a name="l00159"></a><span class="lineno">  159</span>&#160;<span class="comment">   Requires s intialized, split &lt;= s.length */</span></div>
-<div class="line"><a name="l00160"></a><span class="lineno">  160</span>&#160;<a class="code" href="structgpr__slice.html">gpr_slice</a> <a class="code" href="slice_8h.html#a51315f2a9217a1d42711f48bfec9d39e">gpr_slice_split_tail</a>(<a class="code" href="structgpr__slice.html">gpr_slice</a> *s, <span class="keywordtype">size_t</span> split);</div>
-<div class="line"><a name="l00161"></a><span class="lineno">  161</span>&#160;</div>
-<div class="line"><a name="l00162"></a><span class="lineno">  162</span>&#160;<span class="comment">/* Splits s into two: modifies s to be s[split:s.length], and returns a new</span></div>
-<div class="line"><a name="l00163"></a><span class="lineno">  163</span>&#160;<span class="comment">   slice, sharing a refcount with s, that contains s[0:split].</span></div>
-<div class="line"><a name="l00164"></a><span class="lineno">  164</span>&#160;<span class="comment">   Requires s intialized, split &lt;= s.length */</span></div>
-<div class="line"><a name="l00165"></a><span class="lineno">  165</span>&#160;<a class="code" href="structgpr__slice.html">gpr_slice</a> <a class="code" href="slice_8h.html#a842ea6b4a9ab4d0d3becd6fda03bbc24">gpr_slice_split_head</a>(<a class="code" href="structgpr__slice.html">gpr_slice</a> *s, <span class="keywordtype">size_t</span> split);</div>
-<div class="line"><a name="l00166"></a><span class="lineno">  166</span>&#160;</div>
-<div class="line"><a name="l00167"></a><span class="lineno">  167</span>&#160;<a class="code" href="structgpr__slice.html">gpr_slice</a> <a class="code" href="slice_8h.html#a1a8906400c956fb8c508326a072b0662">gpr_empty_slice</a>(<span class="keywordtype">void</span>);</div>
-<div class="line"><a name="l00168"></a><span class="lineno">  168</span>&#160;</div>
-<div class="line"><a name="l00169"></a><span class="lineno">  169</span>&#160;<span class="comment">/* Returns &lt;0 if a &lt; b, ==0 if a == b, &gt;0 if a &gt; b</span></div>
-<div class="line"><a name="l00170"></a><span class="lineno">  170</span>&#160;<span class="comment">   The order is arbitrary, and is not guaranteed to be stable across different</span></div>
-<div class="line"><a name="l00171"></a><span class="lineno">  171</span>&#160;<span class="comment">   versions of the API. */</span></div>
-<div class="line"><a name="l00172"></a><span class="lineno">  172</span>&#160;<span class="keywordtype">int</span> <a class="code" href="slice_8h.html#add3c8736c46bea7517991f178c82ba3c">gpr_slice_cmp</a>(<a class="code" href="structgpr__slice.html">gpr_slice</a> a, <a class="code" href="structgpr__slice.html">gpr_slice</a> b);</div>
-<div class="line"><a name="l00173"></a><span class="lineno">  173</span>&#160;<span class="keywordtype">int</span> <a class="code" href="slice_8h.html#aef752203db50c932010a74c6845872c2">gpr_slice_str_cmp</a>(<a class="code" href="structgpr__slice.html">gpr_slice</a> a, <span class="keyword">const</span> <span class="keywordtype">char</span> *b);</div>
-<div class="line"><a name="l00174"></a><span class="lineno">  174</span>&#160;</div>
-<div class="line"><a name="l00175"></a><span class="lineno">  175</span>&#160;<span class="preprocessor">#ifdef __cplusplus</span></div>
-<div class="line"><a name="l00176"></a><span class="lineno">  176</span>&#160;<span class="preprocessor"></span>}</div>
-<div class="line"><a name="l00177"></a><span class="lineno">  177</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00178"></a><span class="lineno">  178</span>&#160;<span class="preprocessor"></span></div>
-<div class="line"><a name="l00179"></a><span class="lineno">  179</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* GRPC_SUPPORT_SLICE_H */</span><span class="preprocessor"></span></div>
+<div class="line"><a name="l00157"></a><span class="lineno">  157</span>&#160;<span class="comment">/* The same as gpr_slice_sub, but without altering the ref count */</span></div>
+<div class="line"><a name="l00158"></a><span class="lineno">  158</span>&#160;<a class="code" href="structgpr__slice.html">gpr_slice</a> <a class="code" href="slice_8h.html#accf08ddad530a5f1cca82c834dc70965">gpr_slice_sub_no_ref</a>(<a class="code" href="structgpr__slice.html">gpr_slice</a> s, <span class="keywordtype">size_t</span> begin, <span class="keywordtype">size_t</span> end);</div>
+<div class="line"><a name="l00159"></a><span class="lineno">  159</span>&#160;</div>
+<div class="line"><a name="l00160"></a><span class="lineno">  160</span>&#160;<span class="comment">/* Splits s into two: modifies s to be s[0:split], and returns a new slice,</span></div>
+<div class="line"><a name="l00161"></a><span class="lineno">  161</span>&#160;<span class="comment">   sharing a refcount with s, that contains s[split:s.length].</span></div>
+<div class="line"><a name="l00162"></a><span class="lineno">  162</span>&#160;<span class="comment">   Requires s intialized, split &lt;= s.length */</span></div>
+<div class="line"><a name="l00163"></a><span class="lineno">  163</span>&#160;<a class="code" href="structgpr__slice.html">gpr_slice</a> <a class="code" href="slice_8h.html#a51315f2a9217a1d42711f48bfec9d39e">gpr_slice_split_tail</a>(<a class="code" href="structgpr__slice.html">gpr_slice</a> *s, <span class="keywordtype">size_t</span> split);</div>
+<div class="line"><a name="l00164"></a><span class="lineno">  164</span>&#160;</div>
+<div class="line"><a name="l00165"></a><span class="lineno">  165</span>&#160;<span class="comment">/* Splits s into two: modifies s to be s[split:s.length], and returns a new</span></div>
+<div class="line"><a name="l00166"></a><span class="lineno">  166</span>&#160;<span class="comment">   slice, sharing a refcount with s, that contains s[0:split].</span></div>
+<div class="line"><a name="l00167"></a><span class="lineno">  167</span>&#160;<span class="comment">   Requires s intialized, split &lt;= s.length */</span></div>
+<div class="line"><a name="l00168"></a><span class="lineno">  168</span>&#160;<a class="code" href="structgpr__slice.html">gpr_slice</a> <a class="code" href="slice_8h.html#a842ea6b4a9ab4d0d3becd6fda03bbc24">gpr_slice_split_head</a>(<a class="code" href="structgpr__slice.html">gpr_slice</a> *s, <span class="keywordtype">size_t</span> split);</div>
+<div class="line"><a name="l00169"></a><span class="lineno">  169</span>&#160;</div>
+<div class="line"><a name="l00170"></a><span class="lineno">  170</span>&#160;<a class="code" href="structgpr__slice.html">gpr_slice</a> <a class="code" href="slice_8h.html#a1a8906400c956fb8c508326a072b0662">gpr_empty_slice</a>(<span class="keywordtype">void</span>);</div>
+<div class="line"><a name="l00171"></a><span class="lineno">  171</span>&#160;</div>
+<div class="line"><a name="l00172"></a><span class="lineno">  172</span>&#160;<span class="comment">/* Returns &lt;0 if a &lt; b, ==0 if a == b, &gt;0 if a &gt; b</span></div>
+<div class="line"><a name="l00173"></a><span class="lineno">  173</span>&#160;<span class="comment">   The order is arbitrary, and is not guaranteed to be stable across different</span></div>
+<div class="line"><a name="l00174"></a><span class="lineno">  174</span>&#160;<span class="comment">   versions of the API. */</span></div>
+<div class="line"><a name="l00175"></a><span class="lineno">  175</span>&#160;<span class="keywordtype">int</span> <a class="code" href="slice_8h.html#add3c8736c46bea7517991f178c82ba3c">gpr_slice_cmp</a>(<a class="code" href="structgpr__slice.html">gpr_slice</a> a, <a class="code" href="structgpr__slice.html">gpr_slice</a> b);</div>
+<div class="line"><a name="l00176"></a><span class="lineno">  176</span>&#160;<span class="keywordtype">int</span> <a class="code" href="slice_8h.html#aef752203db50c932010a74c6845872c2">gpr_slice_str_cmp</a>(<a class="code" href="structgpr__slice.html">gpr_slice</a> a, <span class="keyword">const</span> <span class="keywordtype">char</span> *b);</div>
+<div class="line"><a name="l00177"></a><span class="lineno">  177</span>&#160;</div>
+<div class="line"><a name="l00178"></a><span class="lineno">  178</span>&#160;<span class="preprocessor">#ifdef __cplusplus</span></div>
+<div class="line"><a name="l00179"></a><span class="lineno">  179</span>&#160;<span class="preprocessor"></span>}</div>
+<div class="line"><a name="l00180"></a><span class="lineno">  180</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00181"></a><span class="lineno">  181</span>&#160;<span class="preprocessor"></span></div>
+<div class="line"><a name="l00182"></a><span class="lineno">  182</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* GRPC_SUPPORT_SLICE_H */</span><span class="preprocessor"></span></div>
 <div class="ttc" id="structgpr__slice_html_aaa1ee51fc801f64cc75b3b98050253ae"><div class="ttname"><a href="structgpr__slice.html#aaa1ee51fc801f64cc75b3b98050253ae">gpr_slice::refcounted</a></div><div class="ttdeci">struct gpr_slice::@13::@14 refcounted</div></div>
 <div class="ttc" id="slice_8h_html_ac9d4e6e264e22c6c6d3748f522da91eb"><div class="ttname"><a href="slice_8h.html#ac9d4e6e264e22c6c6d3748f522da91eb">gpr_slice_sub</a></div><div class="ttdeci">gpr_slice gpr_slice_sub(gpr_slice s, size_t begin, size_t end)</div></div>
-<div class="ttc" id="port__platform_8h_html_aeeb41e29e7c7a916a4e0fb6cfb9f92e0"><div class="ttname"><a href="port__platform_8h.html#aeeb41e29e7c7a916a4e0fb6cfb9f92e0">gpr_uint8</a></div><div class="ttdeci">uint8_t gpr_uint8</div><div class="ttdef"><b>Definition:</b> port_platform.h:308</div></div>
+<div class="ttc" id="port__platform_8h_html_aeeb41e29e7c7a916a4e0fb6cfb9f92e0"><div class="ttname"><a href="port__platform_8h.html#aeeb41e29e7c7a916a4e0fb6cfb9f92e0">gpr_uint8</a></div><div class="ttdeci">uint8_t gpr_uint8</div><div class="ttdef"><b>Definition:</b> port_platform.h:320</div></div>
 <div class="ttc" id="slice_8h_html_affd1fef2ffaca67e0b2e7b60923da812"><div class="ttname"><a href="slice_8h.html#affd1fef2ffaca67e0b2e7b60923da812">gpr_slice_new_with_len</a></div><div class="ttdeci">gpr_slice gpr_slice_new_with_len(void *p, size_t len, void(*destroy)(void *, size_t))</div></div>
 <div class="ttc" id="slice_8h_html_a842ea6b4a9ab4d0d3becd6fda03bbc24"><div class="ttname"><a href="slice_8h.html#a842ea6b4a9ab4d0d3becd6fda03bbc24">gpr_slice_split_head</a></div><div class="ttdeci">gpr_slice gpr_slice_split_head(gpr_slice *s, size_t split)</div></div>
 <div class="ttc" id="structgpr__slice_html_a8867b2d660a87061534be9c8098d4fa5"><div class="ttname"><a href="structgpr__slice.html#a8867b2d660a87061534be9c8098d4fa5">gpr_slice::length</a></div><div class="ttdeci">size_t length</div><div class="ttdef"><b>Definition:</b> slice.h:84</div></div>
@@ -287,6 +290,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="ttc" id="structgpr__slice_html_a04d0bcc8331409fa3b3af29ee0b86a24"><div class="ttname"><a href="structgpr__slice.html#a04d0bcc8331409fa3b3af29ee0b86a24">gpr_slice::refcount</a></div><div class="ttdeci">struct gpr_slice_refcount * refcount</div><div class="ttdef"><b>Definition:</b> slice.h:80</div></div>
 <div class="ttc" id="slice_8h_html_ab57463740ccedc00b50721dce66ebd7b"><div class="ttname"><a href="slice_8h.html#ab57463740ccedc00b50721dce66ebd7b">gpr_slice_malloc</a></div><div class="ttdeci">gpr_slice gpr_slice_malloc(size_t length)</div></div>
 <div class="ttc" id="slice_8h_html_a51315f2a9217a1d42711f48bfec9d39e"><div class="ttname"><a href="slice_8h.html#a51315f2a9217a1d42711f48bfec9d39e">gpr_slice_split_tail</a></div><div class="ttdeci">gpr_slice gpr_slice_split_tail(gpr_slice *s, size_t split)</div></div>
+<div class="ttc" id="slice_8h_html_ad4a351c5a826133346e90dd3237b4b87"><div class="ttname"><a href="slice_8h.html#ad4a351c5a826133346e90dd3237b4b87">gpr_slice_from_static_string</a></div><div class="ttdeci">gpr_slice gpr_slice_from_static_string(const char *source)</div></div>
 <div class="ttc" id="sync_8h_html"><div class="ttname"><a href="sync_8h.html">sync.h</a></div></div>
 <div class="ttc" id="slice_8h_html_a4063c3d8d4820472a4cf2655dd662a31"><div class="ttname"><a href="slice_8h.html#a4063c3d8d4820472a4cf2655dd662a31">GPR_SLICE_INLINED_SIZE</a></div><div class="ttdeci">#define GPR_SLICE_INLINED_SIZE</div><div class="ttdef"><b>Definition:</b> slice.h:68</div></div>
 <div class="ttc" id="slice_8h_html_a024429b0dd15e43a09e48e35ca8810d7"><div class="ttname"><a href="slice_8h.html#a024429b0dd15e43a09e48e35ca8810d7">gpr_slice_unref</a></div><div class="ttdeci">void gpr_slice_unref(gpr_slice s)</div></div>
@@ -300,7 +304,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Oct 27 2015 21:07:30 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Jan 15 2016 00:21:22 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

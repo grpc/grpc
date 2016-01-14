@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">0.11.0.0</span>
+   &#160;<span id="projectnumber">0.12.0.0</span>
    </div>
   </td>
  </tr>
@@ -163,28 +163,25 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;<span class="keywordtype">int</span> <a class="code" href="compression_8h.html#adce0341ab8fd560dc39e9e96daf7cb14">grpc_compression_algorithm_name</a>(<a class="code" href="compression_8h.html#ab9de0f68bfb1ef8ed09bd00643db14c9">grpc_compression_algorithm</a> algorithm,</div>
 <div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;                                    <span class="keywordtype">char</span> **name);</div>
 <div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;</div>
-<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;<a class="code" href="compression_8h.html#a14a79ed6b5ebd7e1dda7c2684f499cc7">grpc_compression_level</a> <a class="code" href="compression_8h.html#ace80040d9c2a916ddd4d2f2d2ec44dba">grpc_compression_level_for_algorithm</a>(</div>
-<div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;    <a class="code" href="compression_8h.html#ab9de0f68bfb1ef8ed09bd00643db14c9">grpc_compression_algorithm</a> algorithm);</div>
+<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;<a class="code" href="compression_8h.html#ab9de0f68bfb1ef8ed09bd00643db14c9">grpc_compression_algorithm</a> <a class="code" href="compression_8h.html#a382cce802b53a6f85deb706caf1dccd6">grpc_compression_algorithm_for_level</a>(</div>
+<div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;    <a class="code" href="compression_8h.html#a14a79ed6b5ebd7e1dda7c2684f499cc7">grpc_compression_level</a> level);</div>
 <div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;</div>
-<div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;<a class="code" href="compression_8h.html#ab9de0f68bfb1ef8ed09bd00643db14c9">grpc_compression_algorithm</a> <a class="code" href="compression_8h.html#a382cce802b53a6f85deb706caf1dccd6">grpc_compression_algorithm_for_level</a>(</div>
-<div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;    <a class="code" href="compression_8h.html#a14a79ed6b5ebd7e1dda7c2684f499cc7">grpc_compression_level</a> level);</div>
+<div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;<span class="keywordtype">void</span> <a class="code" href="compression_8h.html#ad8a9895538c2352a9a0067f87c651c07">grpc_compression_options_init</a>(<a class="code" href="structgrpc__compression__options.html">grpc_compression_options</a> *opts);</div>
+<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;</div>
+<div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;<span class="keywordtype">void</span> <a class="code" href="compression_8h.html#a045af026403d638b397749de2e15bedd">grpc_compression_options_enable_algorithm</a>(</div>
+<div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;    <a class="code" href="structgrpc__compression__options.html">grpc_compression_options</a> *opts, <a class="code" href="compression_8h.html#ab9de0f68bfb1ef8ed09bd00643db14c9">grpc_compression_algorithm</a> algorithm);</div>
 <div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;</div>
-<div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;<span class="keywordtype">void</span> <a class="code" href="compression_8h.html#ad8a9895538c2352a9a0067f87c651c07">grpc_compression_options_init</a>(<a class="code" href="structgrpc__compression__options.html">grpc_compression_options</a> *opts);</div>
-<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;</div>
-<div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;<span class="keywordtype">void</span> <a class="code" href="compression_8h.html#a045af026403d638b397749de2e15bedd">grpc_compression_options_enable_algorithm</a>(</div>
-<div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;     <a class="code" href="structgrpc__compression__options.html">grpc_compression_options</a> *opts, <a class="code" href="compression_8h.html#ab9de0f68bfb1ef8ed09bd00643db14c9">grpc_compression_algorithm</a> algorithm);</div>
-<div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;</div>
-<div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;<span class="keywordtype">void</span> <a class="code" href="compression_8h.html#abc2ff820072cb6021e6a59190b35d754">grpc_compression_options_disable_algorithm</a>(</div>
-<div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;    <a class="code" href="structgrpc__compression__options.html">grpc_compression_options</a> *opts, <a class="code" href="compression_8h.html#ab9de0f68bfb1ef8ed09bd00643db14c9">grpc_compression_algorithm</a> algorithm);</div>
-<div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;</div>
-<div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;<span class="keywordtype">int</span> <a class="code" href="compression_8h.html#abc6e77f12fa3efa896260144ae6b859f">grpc_compression_options_is_algorithm_enabled</a>(</div>
-<div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;    <span class="keyword">const</span> <a class="code" href="structgrpc__compression__options.html">grpc_compression_options</a> *opts, <a class="code" href="compression_8h.html#ab9de0f68bfb1ef8ed09bd00643db14c9">grpc_compression_algorithm</a> algorithm);</div>
-<div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;</div>
-<div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;<span class="preprocessor">#ifdef __cplusplus</span></div>
-<div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;<span class="preprocessor"></span>}</div>
-<div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;<span class="preprocessor"></span></div>
-<div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* GRPC_COMPRESSION_H */</span><span class="preprocessor"></span></div>
+<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;<span class="keywordtype">void</span> <a class="code" href="compression_8h.html#abc2ff820072cb6021e6a59190b35d754">grpc_compression_options_disable_algorithm</a>(</div>
+<div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;    <a class="code" href="structgrpc__compression__options.html">grpc_compression_options</a> *opts, <a class="code" href="compression_8h.html#ab9de0f68bfb1ef8ed09bd00643db14c9">grpc_compression_algorithm</a> algorithm);</div>
+<div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;</div>
+<div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;<span class="keywordtype">int</span> <a class="code" href="compression_8h.html#abc6e77f12fa3efa896260144ae6b859f">grpc_compression_options_is_algorithm_enabled</a>(</div>
+<div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;    <span class="keyword">const</span> <a class="code" href="structgrpc__compression__options.html">grpc_compression_options</a> *opts, <a class="code" href="compression_8h.html#ab9de0f68bfb1ef8ed09bd00643db14c9">grpc_compression_algorithm</a> algorithm);</div>
+<div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;</div>
+<div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;<span class="preprocessor">#ifdef __cplusplus</span></div>
+<div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;<span class="preprocessor"></span>}</div>
+<div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;<span class="preprocessor"></span></div>
+<div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* GRPC_COMPRESSION_H */</span><span class="preprocessor"></span></div>
 <div class="ttc" id="port__platform_8h_html"><div class="ttname"><a href="port__platform_8h.html">port_platform.h</a></div></div>
 <div class="ttc" id="compression_8h_html_ab9de0f68bfb1ef8ed09bd00643db14c9a94d7fc0a8e4a05546d462d53c2b53b8d"><div class="ttname"><a href="compression_8h.html#ab9de0f68bfb1ef8ed09bd00643db14c9a94d7fc0a8e4a05546d462d53c2b53b8d">GRPC_COMPRESS_ALGORITHMS_COUNT</a></div><div class="ttdef"><b>Definition:</b> compression.h:55</div></div>
 <div class="ttc" id="compression_8h_html_ab9de0f68bfb1ef8ed09bd00643db14c9"><div class="ttname"><a href="compression_8h.html#ab9de0f68bfb1ef8ed09bd00643db14c9">grpc_compression_algorithm</a></div><div class="ttdeci">grpc_compression_algorithm</div><div class="ttdef"><b>Definition:</b> compression.h:50</div></div>
@@ -193,10 +190,9 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="ttc" id="compression_8h_html_ad8a9895538c2352a9a0067f87c651c07"><div class="ttname"><a href="compression_8h.html#ad8a9895538c2352a9a0067f87c651c07">grpc_compression_options_init</a></div><div class="ttdeci">void grpc_compression_options_init(grpc_compression_options *opts)</div></div>
 <div class="ttc" id="compression_8h_html_ab9de0f68bfb1ef8ed09bd00643db14c9a50de256d5abe80daff7e1372e29dd913"><div class="ttname"><a href="compression_8h.html#ab9de0f68bfb1ef8ed09bd00643db14c9a50de256d5abe80daff7e1372e29dd913">GRPC_COMPRESS_DEFLATE</a></div><div class="ttdef"><b>Definition:</b> compression.h:52</div></div>
 <div class="ttc" id="compression_8h_html_a045af026403d638b397749de2e15bedd"><div class="ttname"><a href="compression_8h.html#a045af026403d638b397749de2e15bedd">grpc_compression_options_enable_algorithm</a></div><div class="ttdeci">void grpc_compression_options_enable_algorithm(grpc_compression_options *opts, grpc_compression_algorithm algorithm)</div><div class="ttdoc">Mark algorithm as enabled in opts. </div></div>
-<div class="ttc" id="port__platform_8h_html_aa6abd4df815a5498d1a04b5e691a74a9"><div class="ttname"><a href="port__platform_8h.html#aa6abd4df815a5498d1a04b5e691a74a9">gpr_uint32</a></div><div class="ttdeci">uint32_t gpr_uint32</div><div class="ttdef"><b>Definition:</b> port_platform.h:310</div></div>
+<div class="ttc" id="port__platform_8h_html_aa6abd4df815a5498d1a04b5e691a74a9"><div class="ttname"><a href="port__platform_8h.html#aa6abd4df815a5498d1a04b5e691a74a9">gpr_uint32</a></div><div class="ttdeci">uint32_t gpr_uint32</div><div class="ttdef"><b>Definition:</b> port_platform.h:322</div></div>
 <div class="ttc" id="compression_8h_html_a14a79ed6b5ebd7e1dda7c2684f499cc7ab67efe04f58b0939b963e51a5b8f772c"><div class="ttname"><a href="compression_8h.html#a14a79ed6b5ebd7e1dda7c2684f499cc7ab67efe04f58b0939b963e51a5b8f772c">GRPC_COMPRESS_LEVEL_NONE</a></div><div class="ttdef"><b>Definition:</b> compression.h:59</div></div>
 <div class="ttc" id="compression_8h_html_a14a79ed6b5ebd7e1dda7c2684f499cc7afd436e21be4f897ca939b3b4d9a44673"><div class="ttname"><a href="compression_8h.html#a14a79ed6b5ebd7e1dda7c2684f499cc7afd436e21be4f897ca939b3b4d9a44673">GRPC_COMPRESS_LEVEL_LOW</a></div><div class="ttdef"><b>Definition:</b> compression.h:60</div></div>
-<div class="ttc" id="compression_8h_html_ace80040d9c2a916ddd4d2f2d2ec44dba"><div class="ttname"><a href="compression_8h.html#ace80040d9c2a916ddd4d2f2d2ec44dba">grpc_compression_level_for_algorithm</a></div><div class="ttdeci">grpc_compression_level grpc_compression_level_for_algorithm(grpc_compression_algorithm algorithm)</div><div class="ttdoc">Returns the compression level corresponding to algorithm. </div></div>
 <div class="ttc" id="compression_8h_html_a14a79ed6b5ebd7e1dda7c2684f499cc7"><div class="ttname"><a href="compression_8h.html#a14a79ed6b5ebd7e1dda7c2684f499cc7">grpc_compression_level</a></div><div class="ttdeci">grpc_compression_level</div><div class="ttdef"><b>Definition:</b> compression.h:58</div></div>
 <div class="ttc" id="compression_8h_html_ab9de0f68bfb1ef8ed09bd00643db14c9a3135cac7e854adb16358c53e97df9cd8"><div class="ttname"><a href="compression_8h.html#ab9de0f68bfb1ef8ed09bd00643db14c9a3135cac7e854adb16358c53e97df9cd8">GRPC_COMPRESS_NONE</a></div><div class="ttdef"><b>Definition:</b> compression.h:51</div></div>
 <div class="ttc" id="compression_8h_html_a14a79ed6b5ebd7e1dda7c2684f499cc7a4319a32cdd0b59a7ecc977f8612214ce"><div class="ttname"><a href="compression_8h.html#a14a79ed6b5ebd7e1dda7c2684f499cc7a4319a32cdd0b59a7ecc977f8612214ce">GRPC_COMPRESS_LEVEL_MED</a></div><div class="ttdef"><b>Definition:</b> compression.h:61</div></div>
@@ -213,7 +209,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Oct 27 2015 21:07:30 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Jan 15 2016 00:21:22 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

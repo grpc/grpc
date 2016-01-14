@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">0.11.0.0</span>
+   &#160;<span id="projectnumber">0.12.0.0</span>
    </div>
   </td>
  </tr>
@@ -85,6 +85,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!-- top -->
 <div class="header">
   <div class="summary">
+<a href="#nested-classes">Data Structures</a> &#124;
+<a href="#typedef-members">Typedefs</a> &#124;
 <a href="#func-members">Functions</a>  </div>
   <div class="headertitle">
 <div class="title">alloc.h File Reference</div>  </div>
@@ -94,6 +96,17 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div>
 <p><a href="alloc_8h_source.html">Go to the source code of this file.</a></p>
 <table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
+Data Structures</h2></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgpr__allocation__functions.html">gpr_allocation_functions</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="typedef-members"></a>
+Typedefs</h2></td></tr>
+<tr class="memitem:a54bbd527f303da4b618adb37ae44efd7"><td class="memItemLeft" align="right" valign="top">typedef struct <br class="typebreak"/>
+<a class="el" href="structgpr__allocation__functions.html">gpr_allocation_functions</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="alloc_8h.html#a54bbd527f303da4b618adb37ae44efd7">gpr_allocation_functions</a></td></tr>
+<tr class="separator:a54bbd527f303da4b618adb37ae44efd7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions</h2></td></tr>
 <tr class="memitem:af5896bb446b6179f35651730357149bb"><td class="memItemLeft" align="right" valign="top">void *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="alloc_8h.html#af5896bb446b6179f35651730357149bb">gpr_malloc</a> (size_t size)</td></tr>
@@ -106,7 +119,26 @@ Functions</h2></td></tr>
 <tr class="separator:a73551a6249ae9b0a73ad75733c67ead4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af9b603aefd33752e1b473856af77cbc9"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="alloc_8h.html#af9b603aefd33752e1b473856af77cbc9">gpr_free_aligned</a> (void *ptr)</td></tr>
 <tr class="separator:af9b603aefd33752e1b473856af77cbc9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aed45943720126a020307baf81b88148b"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="alloc_8h.html#aed45943720126a020307baf81b88148b">gpr_set_allocation_functions</a> (<a class="el" href="structgpr__allocation__functions.html">gpr_allocation_functions</a> functions)</td></tr>
+<tr class="memdesc:aed45943720126a020307baf81b88148b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Request the family of allocation functions in <em>functions</em> be used.  <a href="#aed45943720126a020307baf81b88148b">More...</a><br/></td></tr>
+<tr class="separator:aed45943720126a020307baf81b88148b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6027f3f79725d8bc880443787b611a62"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgpr__allocation__functions.html">gpr_allocation_functions</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="alloc_8h.html#a6027f3f79725d8bc880443787b611a62">gpr_get_allocation_functions</a> ()</td></tr>
+<tr class="memdesc:a6027f3f79725d8bc880443787b611a62"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the family of allocation functions currently in effect.  <a href="#a6027f3f79725d8bc880443787b611a62">More...</a><br/></td></tr>
+<tr class="separator:a6027f3f79725d8bc880443787b611a62"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
+<h2 class="groupheader">Typedef Documentation</h2>
+<a class="anchor" id="a54bbd527f303da4b618adb37ae44efd7"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">typedef struct <a class="el" href="structgpr__allocation__functions.html">gpr_allocation_functions</a>  <a class="el" href="structgpr__allocation__functions.html">gpr_allocation_functions</a></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <h2 class="groupheader">Function Documentation</h2>
 <a class="anchor" id="ae0d621b472031a64c77bd2e9fea495e8"></a>
 <div class="memitem">
@@ -137,6 +169,23 @@ Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+</div>
+</div>
+<a class="anchor" id="a6027f3f79725d8bc880443787b611a62"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="structgpr__allocation__functions.html">gpr_allocation_functions</a> gpr_get_allocation_functions </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Return the family of allocation functions currently in effect. </p>
 
 </div>
 </div>
@@ -208,10 +257,29 @@ Functions</h2></td></tr>
 
 </div>
 </div>
+<a class="anchor" id="aed45943720126a020307baf81b88148b"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void gpr_set_allocation_functions </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="structgpr__allocation__functions.html">gpr_allocation_functions</a>&#160;</td>
+          <td class="paramname"><em>functions</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Request the family of allocation functions in <em>functions</em> be used. </p>
+<p>NOTE that this request will be honored in a <em>best effort</em> basis and that no guarantees are made about the default functions (eg, malloc) being called. </p>
+
+</div>
+</div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Oct 27 2015 21:07:30 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Jan 15 2016 00:21:22 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

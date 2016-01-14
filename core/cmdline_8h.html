@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">0.11.0.0</span>
+   &#160;<span id="projectnumber">0.12.0.0</span>
    </div>
   </td>
  </tr>
@@ -111,8 +111,10 @@ Functions</h2></td></tr>
 <tr class="separator:a34568676c089f3284dc8f7d8d706b1d3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:afcf023a5eb082034a650a0f0177d1fe9"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="cmdline_8h.html#afcf023a5eb082034a650a0f0177d1fe9">gpr_cmdline_on_extra_arg</a> (<a class="el" href="cmdline_8h.html#aaad93cd9bfc32c54fc89f7c2f3b74eb6">gpr_cmdline</a> *cl, const char *name, const char *help, void(*on_extra_arg)(void *user_data, const char *arg), void *user_data)</td></tr>
 <tr class="separator:afcf023a5eb082034a650a0f0177d1fe9"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a34b66021bbbb9f6a6e8a60c0ae34f8a4"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="cmdline_8h.html#a34b66021bbbb9f6a6e8a60c0ae34f8a4">gpr_cmdline_parse</a> (<a class="el" href="cmdline_8h.html#aaad93cd9bfc32c54fc89f7c2f3b74eb6">gpr_cmdline</a> *cl, int argc, char **argv)</td></tr>
-<tr class="separator:a34b66021bbbb9f6a6e8a60c0ae34f8a4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa85c002541277838249914eeff500f4b"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="cmdline_8h.html#aa85c002541277838249914eeff500f4b">gpr_cmdline_set_survive_failure</a> (<a class="el" href="cmdline_8h.html#aaad93cd9bfc32c54fc89f7c2f3b74eb6">gpr_cmdline</a> *cl)</td></tr>
+<tr class="separator:aa85c002541277838249914eeff500f4b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab2d345de98143036a0b9fe31b6fa2cd7"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="cmdline_8h.html#ab2d345de98143036a0b9fe31b6fa2cd7">gpr_cmdline_parse</a> (<a class="el" href="cmdline_8h.html#aaad93cd9bfc32c54fc89f7c2f3b74eb6">gpr_cmdline</a> *cl, int argc, char **argv)</td></tr>
+<tr class="separator:ab2d345de98143036a0b9fe31b6fa2cd7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a018f826ce313b02d2773ef97b8df5f98"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="cmdline_8h.html#a018f826ce313b02d2773ef97b8df5f98">gpr_cmdline_destroy</a> (<a class="el" href="cmdline_8h.html#aaad93cd9bfc32c54fc89f7c2f3b74eb6">gpr_cmdline</a> *cl)</td></tr>
 <tr class="separator:a018f826ce313b02d2773ef97b8df5f98"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4eac81d047bdc6e679079309bf60f030"><td class="memItemLeft" align="right" valign="top">char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="cmdline_8h.html#a4eac81d047bdc6e679079309bf60f030">gpr_cmdline_usage_string</a> (<a class="el" href="cmdline_8h.html#aaad93cd9bfc32c54fc89f7c2f3b74eb6">gpr_cmdline</a> *cl, const char *argv0)</td></tr>
@@ -322,12 +324,12 @@ Functions</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="a34b66021bbbb9f6a6e8a60c0ae34f8a4"></a>
+<a class="anchor" id="ab2d345de98143036a0b9fe31b6fa2cd7"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">void gpr_cmdline_parse </td>
+          <td class="memname">int gpr_cmdline_parse </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="cmdline_8h.html#aaad93cd9bfc32c54fc89f7c2f3b74eb6">gpr_cmdline</a> *&#160;</td>
           <td class="paramname"><em>cl</em>, </td>
@@ -348,6 +350,22 @@ Functions</h2></td></tr>
           <td></td>
           <td>)</td>
           <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a class="anchor" id="aa85c002541277838249914eeff500f4b"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void gpr_cmdline_set_survive_failure </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="cmdline_8h.html#aaad93cd9bfc32c54fc89f7c2f3b74eb6">gpr_cmdline</a> *&#160;</td>
+          <td class="paramname"><em>cl</em></td><td>)</td>
+          <td></td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -383,7 +401,7 @@ Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Oct 27 2015 21:07:30 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Jan 15 2016 00:21:22 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>
