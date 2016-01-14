@@ -48,7 +48,7 @@ namespace grpc {
 class DefaultGlobalClientCallbacks GRPC_FINAL
     : public ClientContext::GlobalCallbacks {
  public:
-  ~DefaultGlobalClientCallbacks GRPC_OVERRIDE {}
+  ~DefaultGlobalClientCallbacks() GRPC_OVERRIDE {}
   void DefaultConstructor(ClientContext* context) GRPC_OVERRIDE {}
   void Destructor(ClientContext* context) GRPC_OVERRIDE {}
 };
