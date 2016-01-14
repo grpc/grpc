@@ -51,7 +51,7 @@
 
 using grpc::testing::EchoRequest;
 using grpc::testing::EchoResponse;
-using grpc::testing::TestService;
+using grpc::testing::EchoTestService;
 using std::chrono::system_clock;
 
 namespace grpc {
@@ -98,7 +98,7 @@ class MockClientReaderWriter<EchoRequest, EchoResponse> GRPC_FINAL
 };
 
 // Mocked stub.
-class MockStub : public TestService::StubInterface {
+class MockStub : public EchoTestService::StubInterface {
  public:
   MockStub() {}
   ~MockStub() {}
@@ -154,7 +154,7 @@ class MockStub : public TestService::StubInterface {
 
 class FakeClient {
  public:
-  explicit FakeClient(TestService::StubInterface* stub) : stub_(stub) {}
+  explicit FakeClient(EchoTestService::StubInterface* stub) : stub_(stub) {}
 
   void DoEcho() {
     ClientContext context;
@@ -197,13 +197,13 @@ class FakeClient {
     EXPECT_TRUE(s.ok());
   }
 
-  void ResetStub(TestService::StubInterface* stub) { stub_ = stub; }
+  void ResetStub(EchoTestService::StubInterface* stub) { stub_ = stub; }
 
  private:
-  TestService::StubInterface* stub_;
+  EchoTestService::StubInterface* stub_;
 };
 
-class TestServiceImpl : public TestService::Service {
+class TestServiceImpl : public EchoTestService::Service {
  public:
   Status Echo(ServerContext* context, const EchoRequest* request,
               EchoResponse* response) GRPC_OVERRIDE {
@@ -245,10 +245,10 @@ class MockTest : public ::testing::Test {
   void ResetStub() {
     std::shared_ptr<Channel> channel =
         CreateChannel(server_address_.str(), InsecureChannelCredentials());
-    stub_ = grpc::testing::TestService::NewStub(channel);
+    stub_ = grpc::testing::EchoTestService::NewStub(channel);
   }
 
-  std::unique_ptr<grpc::testing::TestService::Stub> stub_;
+  std::unique_ptr<grpc::testing::EchoTestService::Stub> stub_;
   std::unique_ptr<Server> server_;
   std::ostringstream server_address_;
   TestServiceImpl service_;

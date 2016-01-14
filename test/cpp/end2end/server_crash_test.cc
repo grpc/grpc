@@ -31,21 +31,21 @@
  *
  */
 
-#include <grpc/grpc.h>
-#include <grpc/support/thd.h>
-#include <grpc/support/time.h>
 #include <grpc++/channel.h>
 #include <grpc++/client_context.h>
 #include <grpc++/create_channel.h>
 #include <grpc++/server.h>
 #include <grpc++/server_builder.h>
 #include <grpc++/server_context.h>
+#include <grpc/grpc.h>
+#include <grpc/support/thd.h>
+#include <grpc/support/time.h>
 #include <gtest/gtest.h>
 
+#include "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h"
+#include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
-#include "src/proto/grpc/testing/echo.grpc.pb.h"
-#include "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h"
 #include "test/cpp/util/subprocess.h"
 
 using grpc::testing::EchoRequest;
@@ -59,7 +59,8 @@ namespace testing {
 
 namespace {
 
-class ServiceImpl GRPC_FINAL : public ::grpc::testing::TestService::Service {
+class ServiceImpl GRPC_FINAL
+    : public ::grpc::testing::EchoTestService::Service {
  public:
   ServiceImpl() : bidi_stream_count_(0), response_stream_count_(0) {}
 

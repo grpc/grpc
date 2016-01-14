@@ -74,7 +74,7 @@ void MaybeEchoDeadline(ServerContext* context, const EchoRequest* request,
 
 }  // namespace
 
-class TestServiceImpl : public ::grpc::testing::TestService::Service {
+class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
  public:
   TestServiceImpl() : signal_client_(false) {}
 
@@ -159,7 +159,7 @@ class TestServiceImpl : public ::grpc::testing::TestService::Service {
 };
 
 class TestServiceImplDupPkg
-    : public ::grpc::testing::duplicate::TestService::Service {
+    : public ::grpc::testing::duplicate::EchoTestService::Service {
  public:
   Status Echo(ServerContext* context, const EchoRequest* request,
               EchoResponse* response) GRPC_OVERRIDE {
@@ -191,10 +191,10 @@ class End2endTest : public ::testing::Test {
   void ResetStub() {
     std::shared_ptr<Channel> channel =
         CreateChannel(server_address_.str(), InsecureChannelCredentials());
-    stub_ = grpc::testing::TestService::NewStub(channel);
+    stub_ = grpc::testing::EchoTestService::NewStub(channel);
   }
 
-  std::unique_ptr<grpc::testing::TestService::Stub> stub_;
+  std::unique_ptr<grpc::testing::EchoTestService::Stub> stub_;
   std::unique_ptr<Server> server_;
   std::ostringstream server_address_;
   const int kMaxMessageSize_;
@@ -202,7 +202,7 @@ class End2endTest : public ::testing::Test {
   TestServiceImplDupPkg dup_pkg_service_;
 };
 
-static void SendRpc(grpc::testing::TestService::Stub* stub, int num_rpcs) {
+static void SendRpc(grpc::testing::EchoTestService::Stub* stub, int num_rpcs) {
   EchoRequest request;
   EchoResponse response;
   request.set_message("Hello");

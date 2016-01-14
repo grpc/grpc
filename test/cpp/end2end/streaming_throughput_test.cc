@@ -99,7 +99,7 @@ const char* kLargeString =
 namespace grpc {
 namespace testing {
 
-class TestServiceImpl : public ::grpc::testing::TestService::Service {
+class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
  public:
   static void BidiStream_Sender(
       ServerReaderWriter<EchoResponse, EchoRequest>* stream,
@@ -161,10 +161,10 @@ class End2endTest : public ::testing::Test {
   void ResetStub() {
     std::shared_ptr<Channel> channel =
         CreateChannel(server_address_.str(), InsecureChannelCredentials());
-    stub_ = grpc::testing::TestService::NewStub(channel);
+    stub_ = grpc::testing::EchoTestService::NewStub(channel);
   }
 
-  std::unique_ptr<grpc::testing::TestService::Stub> stub_;
+  std::unique_ptr<grpc::testing::EchoTestService::Stub> stub_;
   std::unique_ptr<Server> server_;
   std::ostringstream server_address_;
   TestServiceImpl service_;
