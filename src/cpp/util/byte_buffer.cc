@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -77,6 +77,15 @@ size_t ByteBuffer::Length() const {
   } else {
     return 0;
   }
+}
+
+ByteBuffer::ByteBuffer(const ByteBuffer& buf)
+    : buffer_(grpc_byte_buffer_copy(buf.buffer_)) {}
+
+ByteBuffer& ByteBuffer::operator=(const ByteBuffer& buf) {
+  Clear();                                       // first remove existing data
+  buffer_ = grpc_byte_buffer_copy(buf.buffer_);  // then copy
+  return *this;
 }
 
 }  // namespace grpc
