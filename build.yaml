@@ -772,10 +772,10 @@ libs:
   - test/cpp/util/benchmark_config.h
   src:
   - test/proto/messages.proto
-  - test/proto/benchmarks/control.proto
   - test/proto/benchmarks/payloads.proto
-  - test/proto/benchmarks/services.proto
   - test/proto/benchmarks/stats.proto
+  - test/proto/benchmarks/control.proto
+  - test/proto/benchmarks/services.proto
   - test/cpp/qps/perf_db.proto
   - test/cpp/qps/client_async.cc
   - test/cpp/qps/client_sync.cc
