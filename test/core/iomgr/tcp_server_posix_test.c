@@ -37,6 +37,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
+#include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
 #include <errno.h>
@@ -151,29 +152,9 @@ static void tcp_connect(grpc_exec_ctx *exec_ctx, const struct sockaddr *remote,
   gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));
 }
 
-/* grpc_tcp_server_add_port() will not pick a second port randomly. We must find
-   one by binding one randomly, closing the socket, and returning the port
-   number. This might fail because of races. */
-static int unused_port() {
-  int s = socket(AF_INET, SOCK_STREAM, 0);
-  struct sockaddr_storage addr;
-  socklen_t addr_len = sizeof(addr);
-  GPR_ASSERT(s >= 0);
-  memset(&addr, 0, sizeof(addr));
-  addr.ss_family = AF_INET;
-  if (bind(s, (struct sockaddr *)&addr, sizeof(addr)) != 0) {
-    gpr_log(GPR_ERROR, "bind: %s", strerror(errno));
-    abort();
-  }
-  GPR_ASSERT(getsockname(s, (struct sockaddr *)&addr, &addr_len) == 0);
-  GPR_ASSERT(addr_len <= sizeof(addr));
-  close(s);
-  return ntohs(((struct sockaddr_in *)&addr)->sin_port);
-}
-
 /* Tests a tcp server with multiple ports. TODO(daniel-j-born): Multiple fds for
    the same port should be tested. */
-static void test_connect(unsigned n) {
+static void test_connect(int svr1_port, unsigned n) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   struct sockaddr_storage addr;
   struct sockaddr_storage addr1;
@@ -181,7 +162,6 @@ static void test_connect(unsigned n) {
   unsigned svr_fd_count;
   int svr_port;
   unsigned svr1_fd_count;
-  int svr1_port;
   grpc_tcp_server *s = grpc_tcp_server_create(NULL);
   grpc_pollset *pollsets[1];
   unsigned i;
@@ -192,7 +172,6 @@ static void test_connect(unsigned n) {
   addr.ss_family = addr1.ss_family = AF_INET;
   svr_port = grpc_tcp_server_add_port(s, (struct sockaddr *)&addr, addr_len);
   GPR_ASSERT(svr_port > 0);
-  svr1_port = unused_port();
   grpc_sockaddr_set_port((struct sockaddr *)&addr1, svr1_port);
   GPR_ASSERT(grpc_tcp_server_add_port(s, (struct sockaddr *)&addr1, addr_len) ==
              svr1_port);
@@ -265,6 +244,7 @@ static void destroy_pollset(grpc_exec_ctx *exec_ctx, void *p, int success) {
 int main(int argc, char **argv) {
   grpc_closure destroyed;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  int svr1_port = grpc_pick_unused_port_or_die();
   grpc_test_init(argc, argv);
   grpc_iomgr_init();
   grpc_pollset_init(&g_pollset);
@@ -273,8 +253,8 @@ int main(int argc, char **argv) {
   test_no_op_with_start();
   test_no_op_with_port();
   test_no_op_with_port_and_start();
-  test_connect(1);
-  test_connect(10);
+  test_connect(svr1_port, 1);
+  test_connect(svr1_port, 10);
 
   grpc_closure_init(&destroyed, destroy_pollset, &g_pollset);
   grpc_pollset_shutdown(&exec_ctx, &g_pollset, &destroyed);
