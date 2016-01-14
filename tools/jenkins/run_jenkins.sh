@@ -54,6 +54,9 @@ if [ "$platform" == "linux" ]
 then
   echo "building $language on Linux"
 
+  echo randomization value
+  cat /proc/sys/kernel/randomize_va_space
+
   ./tools/run_tests/run_tests.py --use_docker -t -l $language -c $config -x report.xml $@ || TESTS_FAILED="true"
 
 elif [ "$platform" == "windows" ]
