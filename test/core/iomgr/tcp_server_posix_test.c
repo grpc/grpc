@@ -60,15 +60,24 @@ typedef struct on_connect_result {
   int server_fd;
 } on_connect_result;
 
-void on_connect_result_init(on_connect_result *result) {
+typedef struct server_weak_ref {
+  grpc_tcp_server *server;
+
+  /* arg is this server_weak_ref. */
+  grpc_closure server_shutdown;
+} server_weak_ref;
+
+static on_connect_result g_result = {NULL, 0, 0, -1};
+
+static void on_connect_result_init(on_connect_result *result) {
   result->server = NULL;
   result->port_index = 0;
   result->fd_index = 0;
   result->server_fd = -1;
 }
 
-void on_connect_result_set(on_connect_result *result,
-                           const grpc_tcp_server_acceptor *acceptor) {
+static void on_connect_result_set(on_connect_result *result,
+                                  const grpc_tcp_server_acceptor *acceptor) {
   result->server = grpc_tcp_server_ref(acceptor->from_server);
   result->port_index = acceptor->port_index;
   result->fd_index = acceptor->fd_index;
@@ -76,7 +85,29 @@ void on_connect_result_set(on_connect_result *result,
       result->server, acceptor->port_index, acceptor->fd_index);
 }
 
-static on_connect_result g_result = {NULL, 0, 0, -1};
+
+static void server_weak_ref_shutdown(grpc_exec_ctx *exec_ctx, void *arg,
+                                     int success) {
+  server_weak_ref *weak_ref = arg;
+  weak_ref->server = NULL;
+}
+
+static void server_weak_ref_init(server_weak_ref *weak_ref) {
+  weak_ref->server = NULL;
+  grpc_closure_init(&weak_ref->server_shutdown, server_weak_ref_shutdown,
+                    weak_ref);
+}
+
+/* Make weak_ref->server_shutdown a shutdown_starting cb on server.
+   grpc_tcp_server promises that the server object will live until
+   weak_ref->server_shutdown has returned. A strong ref on grpc_tcp_server
+   should be held until server_weak_ref_set() returns to avoid a race where the
+   server is deleted before the shutdown_starting cb is added. */
+static void server_weak_ref_set(server_weak_ref *weak_ref,
+                                grpc_tcp_server *server) {
+  grpc_tcp_server_shutdown_starting_add(server, &weak_ref->server_shutdown);
+  weak_ref->server = server;
+}
 
 static void on_connect(grpc_exec_ctx *exec_ctx, void *arg, grpc_endpoint *tcp,
                        grpc_tcp_server_acceptor *acceptor) {
@@ -182,6 +213,8 @@ static void test_connect(unsigned n) {
   grpc_tcp_server *s = grpc_tcp_server_create(NULL);
   grpc_pollset *pollsets[1];
   unsigned i;
+  server_weak_ref weak_ref;
+  server_weak_ref_init(&weak_ref);
   LOG_TEST("test_connect");
   gpr_log(GPR_INFO, "clients=%d", n);
   memset(&addr, 0, sizeof(addr));
@@ -242,6 +275,9 @@ static void test_connect(unsigned n) {
     GPR_ASSERT(result.port_index == 0);
     GPR_ASSERT(result.fd_index < svr_fd_count);
     GPR_ASSERT(result.server == s);
+    if (weak_ref.server == NULL) {
+      server_weak_ref_set(&weak_ref, result.server);
+    }
     grpc_tcp_server_unref(&exec_ctx, result.server);
 
     on_connect_result_init(&result);
@@ -256,7 +292,15 @@ static void test_connect(unsigned n) {
     grpc_tcp_server_unref(&exec_ctx, result.server);
   }
 
+  /* Weak ref to server valid until final unref. */
+  GPR_ASSERT(weak_ref.server != NULL);
+  GPR_ASSERT(grpc_tcp_server_port_fd(s, 0, 0) >= 0);
+
   grpc_tcp_server_unref(&exec_ctx, s);
+
+  /* Weak ref lost. */
+  GPR_ASSERT(weak_ref.server == NULL);
+
   grpc_exec_ctx_finish(&exec_ctx);
 }
 

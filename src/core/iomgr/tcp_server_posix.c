@@ -128,6 +128,9 @@ struct grpc_tcp_server {
   grpc_tcp_listener *tail;
   unsigned nports;
 
+  /* List of closures passed to shutdown_starting_add(). */
+  grpc_closure_list shutdown_starting;
+
   /* shutdown callback */
   grpc_closure *shutdown_complete;
 
@@ -144,6 +147,8 @@ grpc_tcp_server *grpc_tcp_server_create(grpc_closure *shutdown_complete) {
   s->active_ports = 0;
   s->destroyed_ports = 0;
   s->shutdown = 0;
+  s->shutdown_starting.head = NULL;
+  s->shutdown_starting.tail = NULL;
   s->shutdown_complete = shutdown_complete;
   s->on_accept_cb = NULL;
   s->on_accept_cb_arg = NULL;
@@ -585,13 +590,26 @@ grpc_tcp_server *grpc_tcp_server_ref(grpc_tcp_server *s) {
   return s;
 }
 
+void grpc_tcp_server_shutdown_starting_add(grpc_tcp_server *s,
+                                           grpc_closure *shutdown_starting) {
+  gpr_mu_lock(&s->mu);
+  grpc_closure_list_add(&s->shutdown_starting, shutdown_starting, 1);
+  gpr_mu_unlock(&s->mu);
+}
+
 void grpc_tcp_server_unref(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s) {
   if (gpr_unref(&s->refs)) {
+    /* Complete shutdown_starting work before destroying. */
+    grpc_exec_ctx local_exec_ctx = GRPC_EXEC_CTX_INIT;
+    gpr_mu_lock(&s->mu);
+    grpc_exec_ctx_enqueue_list(&local_exec_ctx, &s->shutdown_starting);
+    gpr_mu_unlock(&s->mu);
     if (exec_ctx == NULL) {
-      grpc_exec_ctx local_exec_ctx = GRPC_EXEC_CTX_INIT;
+      grpc_exec_ctx_flush(&local_exec_ctx);
       tcp_server_destroy(&local_exec_ctx, s);
       grpc_exec_ctx_finish(&local_exec_ctx);
     } else {
+      grpc_exec_ctx_finish(&local_exec_ctx);
       tcp_server_destroy(exec_ctx, s);
     }
   }

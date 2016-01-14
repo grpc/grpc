@@ -34,6 +34,7 @@
 #ifndef GRPC_INTERNAL_CORE_IOMGR_TCP_SERVER_H
 #define GRPC_INTERNAL_CORE_IOMGR_TCP_SERVER_H
 
+#include "src/core/iomgr/closure.h"
 #include "src/core/iomgr/endpoint.h"
 
 /* Forward decl of grpc_tcp_server */
@@ -89,6 +90,12 @@ int grpc_tcp_server_port_fd(grpc_tcp_server *s, unsigned port_index,
 
 /* Ref s and return s. */
 grpc_tcp_server *grpc_tcp_server_ref(grpc_tcp_server *s);
+
+/* shutdown_starting is called when ref count has reached zero and the server is
+   about to be destroyed. The server will be deleted after it returns. Calling
+   grpc_tcp_server_ref() from it has no effect. */
+void grpc_tcp_server_shutdown_starting_add(grpc_tcp_server *s,
+                                           grpc_closure *shutdown_starting);
 
 /* If the recount drops to zero, delete s, and call (exec_ctx==NULL) or enqueue
    a call (exec_ctx!=NULL) to shutdown_complete. */
