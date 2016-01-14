@@ -51,8 +51,8 @@ apt-get install -y autoconf automake libtool curl
 ./autogen.sh
 ./configure
 make
-sudo make install
-sudo ldconfig
+make install
+ldconfig
 popd
 
 if [ ! -x "/usr/local/bin/protoc" ]; then
