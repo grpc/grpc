@@ -36,9 +36,9 @@
 #include "src/core/channel/channel_stack.h"
 #include "src/core/channel/http_server_filter.h"
 #include "src/core/iomgr/endpoint_pair.h"
+#include "src/core/support/string.h"
 #include "src/core/surface/completion_queue.h"
 #include "src/core/surface/server.h"
-#include "src/core/support/string.h"
 #include "src/core/transport/chttp2_transport.h"
 
 #include <grpc/support/alloc.h>
@@ -139,8 +139,7 @@ void grpc_run_bad_client_test(grpc_bad_client_server_side_validator validator,
   grpc_exec_ctx_finish(&exec_ctx);
 
   /* Await completion */
-  GPR_ASSERT(
-      gpr_event_wait(&a.done_write, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5)));
+  gpr_event_wait(&a.done_write, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5000));
 
   if (flags & GRPC_BAD_CLIENT_DISCONNECT) {
     grpc_endpoint_shutdown(&exec_ctx, sfd.client);
@@ -149,7 +148,7 @@ void grpc_run_bad_client_test(grpc_bad_client_server_side_validator validator,
     sfd.client = NULL;
   }
 
-  GPR_ASSERT(gpr_event_wait(&a.done_thd, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5)));
+  gpr_event_wait(&a.done_thd, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5000));
 
   /* Shutdown */
   if (sfd.client) {
@@ -158,9 +157,9 @@ void grpc_run_bad_client_test(grpc_bad_client_server_side_validator validator,
     grpc_exec_ctx_finish(&exec_ctx);
   }
   grpc_server_shutdown_and_notify(a.server, a.cq, NULL);
-  GPR_ASSERT(grpc_completion_queue_pluck(a.cq, NULL,
-                                         GRPC_TIMEOUT_SECONDS_TO_DEADLINE(1),
-                                         NULL).type == GRPC_OP_COMPLETE);
+  GPR_ASSERT(grpc_completion_queue_pluck(
+                 a.cq, NULL, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5000), NULL)
+                 .type == GRPC_OP_COMPLETE);
   grpc_server_destroy(a.server);
   grpc_completion_queue_destroy(a.cq);
   gpr_slice_buffer_destroy(&outgoing);

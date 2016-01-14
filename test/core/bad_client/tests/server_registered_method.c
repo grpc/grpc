@@ -35,8 +35,8 @@
 
 #include <string.h>
 
-#include "test/core/end2end/cq_verifier.h"
 #include "src/core/surface/server.h"
+#include "test/core/end2end/cq_verifier.h"
 
 #define PFX_STR                                               \
   "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"                          \
@@ -107,49 +107,102 @@ static void verifier_fails(grpc_server *server, grpc_completion_queue *cq,
 }
 
 int main(int argc, char **argv) {
+  int test_case = 0;
   grpc_test_init(argc, argv);
 
-  /* body generated with
-   * tools/codegen/core/gen_server_registered_method_bad_client_test_body.py */
-  GRPC_RUN_BAD_CLIENT_TEST(verifier_fails,
-                           PFX_STR "\x00\x00\x00\x00\x00\x00\x00\x00\x01",
-                           GRPC_BAD_CLIENT_DISCONNECT);
-  GRPC_RUN_BAD_CLIENT_TEST(verifier_fails,
-                           PFX_STR "\x00\x00\x01\x00\x00\x00\x00\x00\x01\x00",
-                           GRPC_BAD_CLIENT_DISCONNECT);
-  GRPC_RUN_BAD_CLIENT_TEST(verifier_fails, PFX_STR
-                           "\x00\x00\x02\x00\x00\x00\x00\x00\x01\x00\x00",
-                           GRPC_BAD_CLIENT_DISCONNECT);
-  GRPC_RUN_BAD_CLIENT_TEST(verifier_fails, PFX_STR
-                           "\x00\x00\x03\x00\x00\x00\x00\x00\x01\x00\x00\x00",
-                           GRPC_BAD_CLIENT_DISCONNECT);
-  GRPC_RUN_BAD_CLIENT_TEST(
-      verifier_fails,
-      PFX_STR "\x00\x00\x04\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00",
-      GRPC_BAD_CLIENT_DISCONNECT);
-  GRPC_RUN_BAD_CLIENT_TEST(
-      verifier_succeeds,
-      PFX_STR "\x00\x00\x05\x00\x01\x00\x00\x00\x01\x00\x00\x00\x00\x00", 0);
-  GRPC_RUN_BAD_CLIENT_TEST(
-      verifier_fails,
-      PFX_STR "\x00\x00\x05\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00\x01",
-      GRPC_BAD_CLIENT_DISCONNECT);
-  GRPC_RUN_BAD_CLIENT_TEST(
-      verifier_succeeds,
-      PFX_STR "\x00\x00\x06\x00\x01\x00\x00\x00\x01\x00\x00\x00\x00\x01\x00",
-      0);
-  GRPC_RUN_BAD_CLIENT_TEST(
-      verifier_fails,
-      PFX_STR "\x00\x00\x05\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00\x02",
-      GRPC_BAD_CLIENT_DISCONNECT);
-  GRPC_RUN_BAD_CLIENT_TEST(
-      verifier_fails,
-      PFX_STR "\x00\x00\x06\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00\x02\x00",
-      GRPC_BAD_CLIENT_DISCONNECT);
-  GRPC_RUN_BAD_CLIENT_TEST(
-      verifier_succeeds, PFX_STR
-      "\x00\x00\x07\x00\x01\x00\x00\x00\x01\x00\x00\x00\x00\x02\x00\x00",
-      0);
+  if (argc > 1) {
+    test_case = argv[1][0] - '0';
+  }
+
+  switch (test_case) {
+    case 0: {
+      /* body generated with
+       * tools/codegen/core/gen_server_registered_method_bad_client_test_body.py
+       */
+      GRPC_RUN_BAD_CLIENT_TEST(verifier_fails,
+                               PFX_STR "\x00\x00\x00\x00\x00\x00\x00\x00\x01",
+                               GRPC_BAD_CLIENT_DISCONNECT);
+      break;
+    }
+
+    case 1: {
+      GRPC_RUN_BAD_CLIENT_TEST(verifier_fails, PFX_STR
+                               "\x00\x00\x01\x00\x00\x00\x00\x00\x01\x00",
+                               GRPC_BAD_CLIENT_DISCONNECT);
+      break;
+    }
+
+    case 2: {
+      GRPC_RUN_BAD_CLIENT_TEST(verifier_fails, PFX_STR
+                               "\x00\x00\x02\x00\x00\x00\x00\x00\x01\x00\x00",
+                               GRPC_BAD_CLIENT_DISCONNECT);
+      break;
+    }
+
+    case 3: {
+      GRPC_RUN_BAD_CLIENT_TEST(
+          verifier_fails,
+          PFX_STR "\x00\x00\x03\x00\x00\x00\x00\x00\x01\x00\x00\x00",
+          GRPC_BAD_CLIENT_DISCONNECT);
+      break;
+    }
+
+    case 4: {
+      GRPC_RUN_BAD_CLIENT_TEST(
+          verifier_fails,
+          PFX_STR "\x00\x00\x04\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00",
+          GRPC_BAD_CLIENT_DISCONNECT);
+      break;
+    }
+
+    case 5: {
+      GRPC_RUN_BAD_CLIENT_TEST(
+          verifier_succeeds,
+          PFX_STR "\x00\x00\x05\x00\x01\x00\x00\x00\x01\x00\x00\x00\x00\x00",
+          0);
+      break;
+    }
+
+    case 6: {
+      GRPC_RUN_BAD_CLIENT_TEST(
+          verifier_fails,
+          PFX_STR "\x00\x00\x05\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00\x01",
+          GRPC_BAD_CLIENT_DISCONNECT);
+      break;
+    }
+
+    case 7: {
+      GRPC_RUN_BAD_CLIENT_TEST(
+          verifier_succeeds, PFX_STR
+          "\x00\x00\x06\x00\x01\x00\x00\x00\x01\x00\x00\x00\x00\x01\x00",
+          0);
+      break;
+    }
+
+    case 8: {
+      GRPC_RUN_BAD_CLIENT_TEST(
+          verifier_fails,
+          PFX_STR "\x00\x00\x05\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00\x02",
+          GRPC_BAD_CLIENT_DISCONNECT);
+      break;
+    }
+
+    case 9: {
+      GRPC_RUN_BAD_CLIENT_TEST(
+          verifier_fails, PFX_STR
+          "\x00\x00\x06\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00\x02\x00",
+          GRPC_BAD_CLIENT_DISCONNECT);
+      break;
+    }
+
+    case 10: {
+      GRPC_RUN_BAD_CLIENT_TEST(
+          verifier_succeeds, PFX_STR
+          "\x00\x00\x07\x00\x01\x00\x00\x00\x01\x00\x00\x00\x00\x02\x00\x00",
+          0);
+      break;
+    }
+  }
 
   return 0;
 }
