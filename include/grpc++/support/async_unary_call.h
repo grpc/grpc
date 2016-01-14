@@ -36,6 +36,7 @@
 
 #include <grpc/support/log.h>
 #include <grpc++/channel.h>
+#include <grpc++/impl/codegen/channel_interface.h>
 #include <grpc++/client_context.h>
 #include <grpc++/completion_queue.h>
 #include <grpc++/server_context.h>
@@ -58,7 +59,7 @@ class ClientAsyncResponseReader GRPC_FINAL
     : public ClientAsyncResponseReaderInterface<R> {
  public:
   template <class W>
-  ClientAsyncResponseReader(Channel* channel, CompletionQueue* cq,
+  ClientAsyncResponseReader(ChannelInterface* channel, CompletionQueue* cq,
                             const RpcMethod& method, ClientContext* context,
                             const W& request)
       : context_(context), call_(channel->CreateCall(method, context, cq)) {

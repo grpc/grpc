@@ -36,6 +36,7 @@
 
 #include <grpc/support/log.h>
 #include <grpc++/channel.h>
+#include <grpc++/impl/codegen/channel_interface.h>
 #include <grpc++/client_context.h>
 #include <grpc++/completion_queue.h>
 #include <grpc++/impl/call.h>
@@ -103,7 +104,7 @@ class ClientAsyncReader GRPC_FINAL : public ClientAsyncReaderInterface<R> {
  public:
   /// Create a stream and write the first request out.
   template <class W>
-  ClientAsyncReader(Channel* channel, CompletionQueue* cq,
+  ClientAsyncReader(ChannelInterface* channel, CompletionQueue* cq,
                     const RpcMethod& method, ClientContext* context,
                     const W& request, void* tag)
       : context_(context), call_(channel->CreateCall(method, context, cq)) {
@@ -166,7 +167,7 @@ template <class W>
 class ClientAsyncWriter GRPC_FINAL : public ClientAsyncWriterInterface<W> {
  public:
   template <class R>
-  ClientAsyncWriter(Channel* channel, CompletionQueue* cq,
+  ClientAsyncWriter(ChannelInterface* channel, CompletionQueue* cq,
                     const RpcMethod& method, ClientContext* context,
                     R* response, void* tag)
       : context_(context), call_(channel->CreateCall(method, context, cq)) {
@@ -234,7 +235,7 @@ template <class W, class R>
 class ClientAsyncReaderWriter GRPC_FINAL
     : public ClientAsyncReaderWriterInterface<W, R> {
  public:
-  ClientAsyncReaderWriter(Channel* channel, CompletionQueue* cq,
+  ClientAsyncReaderWriter(ChannelInterface* channel, CompletionQueue* cq,
                           const RpcMethod& method, ClientContext* context,
                           void* tag)
       : context_(context), call_(channel->CreateCall(method, context, cq)) {
