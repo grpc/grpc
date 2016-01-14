@@ -33,20 +33,20 @@
 
 #include <thread>
 
-#include <grpc/grpc.h>
-#include <grpc/support/sync.h>
 #include <grpc++/channel.h>
 #include <grpc++/client_context.h>
 #include <grpc++/create_channel.h>
 #include <grpc++/server.h>
 #include <grpc++/server_builder.h>
 #include <grpc++/server_context.h>
+#include <grpc/grpc.h>
+#include <grpc/support/sync.h>
 #include <gtest/gtest.h>
 
 #include "src/core/support/env.h"
-#include "test/core/util/test_config.h"
-#include "test/core/util/port.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
+#include "test/core/util/port.h"
+#include "test/core/util/test_config.h"
 
 using grpc::testing::EchoRequest;
 using grpc::testing::EchoResponse;
@@ -54,7 +54,7 @@ using grpc::testing::EchoResponse;
 namespace grpc {
 namespace testing {
 
-class TestServiceImpl : public ::grpc::testing::TestService::Service {
+class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
  public:
   explicit TestServiceImpl(gpr_event* ev) : ev_(ev) {}
 
@@ -94,7 +94,7 @@ class ShutdownTest : public ::testing::Test {
   void ResetStub() {
     string target = "dns:localhost:" + to_string(port_);
     channel_ = CreateChannel(target, InsecureChannelCredentials());
-    stub_ = grpc::testing::TestService::NewStub(channel_);
+    stub_ = grpc::testing::EchoTestService::NewStub(channel_);
   }
 
   string to_string(const int number) {
@@ -115,7 +115,7 @@ class ShutdownTest : public ::testing::Test {
 
  protected:
   std::shared_ptr<Channel> channel_;
-  std::unique_ptr<grpc::testing::TestService::Stub> stub_;
+  std::unique_ptr<grpc::testing::EchoTestService::Stub> stub_;
   std::unique_ptr<Server> server_;
   bool shutdown_;
   int port_;

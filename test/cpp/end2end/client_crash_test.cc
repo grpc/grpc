@@ -31,21 +31,21 @@
  *
  */
 
-#include <grpc/grpc.h>
-#include <grpc/support/thd.h>
-#include <grpc/support/time.h>
 #include <grpc++/channel.h>
 #include <grpc++/client_context.h>
 #include <grpc++/create_channel.h>
 #include <grpc++/server.h>
 #include <grpc++/server_builder.h>
 #include <grpc++/server_context.h>
+#include <grpc/grpc.h>
+#include <grpc/support/thd.h>
+#include <grpc/support/time.h>
 #include <gtest/gtest.h>
 
-#include "test/core/util/port.h"
-#include "test/core/util/test_config.h"
 #include "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
+#include "test/core/util/port.h"
+#include "test/core/util/test_config.h"
 #include "test/cpp/util/subprocess.h"
 
 using grpc::testing::EchoRequest;
@@ -63,7 +63,7 @@ class CrashTest : public ::testing::Test {
  protected:
   CrashTest() {}
 
-  std::unique_ptr<grpc::testing::TestService::Stub> CreateServerAndStub() {
+  std::unique_ptr<grpc::testing::EchoTestService::Stub> CreateServerAndStub() {
     auto port = grpc_pick_unused_port_or_die();
     std::ostringstream addr_stream;
     addr_stream << "localhost:" << port;
@@ -72,7 +72,7 @@ class CrashTest : public ::testing::Test {
         g_root + "/client_crash_test_server", "--address=" + addr,
     }));
     GPR_ASSERT(server_);
-    return grpc::testing::TestService::NewStub(
+    return grpc::testing::EchoTestService::NewStub(
         CreateChannel(addr, InsecureChannelCredentials()));
   }
 

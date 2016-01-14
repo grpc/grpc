@@ -31,11 +31,11 @@
  *
  */
 
+#include <gflags/gflags.h>
 #include <iostream>
 #include <memory>
 #include <sstream>
 #include <string>
-#include <gflags/gflags.h>
 
 #include <grpc++/channel.h>
 #include <grpc++/client_context.h>
@@ -57,7 +57,7 @@ using namespace gflags;
 
 int main(int argc, char** argv) {
   ParseCommandLineFlags(&argc, &argv, true);
-  auto stub = grpc::testing::TestService::NewStub(
+  auto stub = grpc::testing::EchoTestService::NewStub(
       grpc::CreateChannel(FLAGS_address, grpc::InsecureChannelCredentials()));
 
   EchoRequest request;

@@ -33,26 +33,22 @@
 
 #include <memory>
 
+#include <grpc/grpc.h>
+#include <grpc/support/thd.h>
+#include <grpc/support/time.h>
 #include <grpc++/channel.h>
 #include <grpc++/client_context.h>
 #include <grpc++/create_channel.h>
 #include <grpc++/server.h>
 #include <grpc++/server_builder.h>
 #include <grpc++/server_context.h>
-#include <grpc/grpc.h>
-#include <grpc/support/thd.h>
-#include <grpc/support/time.h>
 #include <gtest/gtest.h>
 
-#include "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h"
-#include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
+#include "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h"
+#include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/cpp/util/string_ref_helper.h"
-
-#ifdef GPR_POSIX_SOCKET
-#include "src/core/iomgr/pollset_posix.h"
-#endif
 
 using grpc::testing::EchoRequest;
 using grpc::testing::EchoResponse;
@@ -65,41 +61,9 @@ namespace {
 
 void* tag(int i) { return (void*)(intptr_t)i; }
 
-#ifdef GPR_POSIX_SOCKET
-static int assert_non_blocking_poll(struct pollfd* pfds, nfds_t nfds,
-                                    int timeout) {
-  GPR_ASSERT(timeout == 0);
-  return poll(pfds, nfds, timeout);
-}
-
-class PollOverride {
+class Verifier {
  public:
-  PollOverride(grpc_poll_function_type f) {
-    prev_ = grpc_poll_function;
-    grpc_poll_function = f;
-  }
-
-  ~PollOverride() { grpc_poll_function = prev_; }
-
- private:
-  grpc_poll_function_type prev_;
-};
-
-class PollingCheckRegion : public PollOverride {
- public:
-  explicit PollingCheckRegion(bool allow_blocking)
-      : PollOverride(allow_blocking ? poll : assert_non_blocking_poll) {}
-};
-#else
-class PollingCheckRegion {
- public:
-  explicit PollingCheckRegion(bool allow_blocking) {}
-};
-#endif
-
-class Verifier : public PollingCheckRegion {
- public:
-  explicit Verifier(bool spin) : PollingCheckRegion(!spin), spin_(spin) {}
+  explicit Verifier(bool spin) : spin_(spin) {}
   Verifier& Expect(int i, bool expect_ok) {
     expectations_[tag(i)] = expect_ok;
     return *this;
@@ -201,7 +165,7 @@ class AsyncEnd2endTest : public ::testing::TestWithParam<bool> {
   void ResetStub() {
     std::shared_ptr<Channel> channel =
         CreateChannel(server_address_.str(), InsecureChannelCredentials());
-    stub_ = grpc::testing::EchoTestService::NewStub(channel);
+    stub_ = grpc::testing::TestService::NewStub(channel);
   }
 
   void SendRpc(int num_rpcs) {
@@ -239,9 +203,9 @@ class AsyncEnd2endTest : public ::testing::TestWithParam<bool> {
   }
 
   std::unique_ptr<ServerCompletionQueue> cq_;
-  std::unique_ptr<grpc::testing::EchoTestService::Stub> stub_;
+  std::unique_ptr<grpc::testing::TestService::Stub> stub_;
   std::unique_ptr<Server> server_;
-  grpc::testing::EchoTestService::AsyncService service_;
+  grpc::testing::TestService::AsyncService service_;
   std::ostringstream server_address_;
 };
 

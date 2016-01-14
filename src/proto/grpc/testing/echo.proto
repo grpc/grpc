@@ -34,7 +34,7 @@ import "src/proto/grpc/testing/echo_messages.proto";
 
 package grpc.testing;
 
-service TestService {
+service EchoTestService {
   rpc Echo(EchoRequest) returns (EchoResponse);
   rpc RequestStream(stream EchoRequest) returns (EchoResponse);
   rpc ResponseStream(EchoRequest) returns (stream EchoResponse);
