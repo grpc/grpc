@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -49,6 +49,8 @@
 
 var _ = require('lodash');
 
+var grpc = require('bindings')('grpc_node');
+
 /**
  * Class for storing metadata. Keys are normalized to lowercase ASCII.
  * @constructor
@@ -58,15 +60,16 @@ function Metadata() {
 }
 
 function normalizeKey(key) {
-  if (!(/^[A-Za-z\d_-]+$/.test(key))) {
-    throw new Error('Metadata keys must be nonempty strings containing only ' +
-        'alphanumeric characters and hyphens');
+  key = key.toLowerCase();
+  if (grpc.metadataKeyIsLegal(key)) {
+    return key;
+  } else {
+    throw new Error('Metadata key contains illegal characters');
   }
-  return key.toLowerCase();
 }
 
 function validate(key, value) {
-  if (_.endsWith(key, '-bin')) {
+  if (grpc.metadataKeyIsBinary(key)) {
     if (!(value instanceof Buffer)) {
       throw new Error('keys that end with \'-bin\' must have Buffer values');
     }
@@ -75,9 +78,8 @@ function validate(key, value) {
       throw new Error(
           'keys that don\'t end with \'-bin\' must have String values');
     }
-    if (!(/^[\x20-\x7E]*$/.test(value))) {
-      throw new Error('Metadata string values can only contain printable ' +
-          'ASCII characters and space');
+    if (!grpc.metadataNonbinValueIsLegal(value)) {
+      throw new Error('Metadata string value contains illegal characters');
     }
   }
 }

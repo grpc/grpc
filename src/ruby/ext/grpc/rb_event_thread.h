@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,24 +31,7 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_BIN_ENCODER_H
-#define GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_BIN_ENCODER_H
+void grpc_rb_event_queue_thread_start();
 
-#include <grpc/support/slice.h>
-
-/* base64 encode a slice. Returns a new slice, does not take ownership of the
-   input */
-gpr_slice grpc_chttp2_base64_encode(gpr_slice input);
-
-/* Compress a slice with the static huffman encoder detailed in the hpack
-   standard. Returns a new slice, does not take ownership of the input */
-gpr_slice grpc_chttp2_huffman_compress(gpr_slice input);
-
-/* equivalent to:
-   gpr_slice x = grpc_chttp2_base64_encode(input);
-   gpr_slice y = grpc_chttp2_huffman_compress(x);
-   gpr_slice_unref(x);
-   return y; */
-gpr_slice grpc_chttp2_base64_encode_and_huffman_compress(gpr_slice input);
-
-#endif /* GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_BIN_ENCODER_H */
+void grpc_rb_event_queue_enqueue(void (*callback)(void*),
+                                 void *argument);
