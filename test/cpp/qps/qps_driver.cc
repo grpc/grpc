@@ -113,7 +113,7 @@ static void QpsDriver() {
     }
   } else if (FLAGS_bbuf_resp_size >= 0) {
     auto params =
-      client_config.mutable_payload_config()->mutable_bytebuf_params();
+        client_config.mutable_payload_config()->mutable_bytebuf_params();
     params->set_resp_size(FLAGS_bbuf_resp_size);
     if (FLAGS_bbuf_req_size >= 0) {
       params->set_req_size(FLAGS_bbuf_req_size);

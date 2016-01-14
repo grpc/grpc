@@ -57,7 +57,7 @@ class ByteBuffer GRPC_FINAL {
 
   /// Constuct a byte buffer by referencing elements of existing buffer
   /// \a buf. Wrapper of core function grpc_byte_buffer_copy
-  ByteBuffer(const ByteBuffer&buf);
+  ByteBuffer(const ByteBuffer& buf);
 
   ~ByteBuffer();
 
