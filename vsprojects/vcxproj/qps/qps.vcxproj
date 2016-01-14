@@ -158,14 +158,6 @@
     </ClCompile>
     <ClInclude Include="..\..\..\test\proto\messages.grpc.pb.h">
     </ClInclude>
-    <ClCompile Include="..\..\..\test\proto\benchmarks\control.pb.cc">
-    </ClCompile>
-    <ClInclude Include="..\..\..\test\proto\benchmarks\control.pb.h">
-    </ClInclude>
-    <ClCompile Include="..\..\..\test\proto\benchmarks\control.grpc.pb.cc">
-    </ClCompile>
-    <ClInclude Include="..\..\..\test\proto\benchmarks\control.grpc.pb.h">
-    </ClInclude>
     <ClCompile Include="..\..\..\test\proto\benchmarks\payloads.pb.cc">
     </ClCompile>
     <ClInclude Include="..\..\..\test\proto\benchmarks\payloads.pb.h">
@@ -174,14 +166,6 @@
     </ClCompile>
     <ClInclude Include="..\..\..\test\proto\benchmarks\payloads.grpc.pb.h">
     </ClInclude>
-    <ClCompile Include="..\..\..\test\proto\benchmarks\services.pb.cc">
-    </ClCompile>
-    <ClInclude Include="..\..\..\test\proto\benchmarks\services.pb.h">
-    </ClInclude>
-    <ClCompile Include="..\..\..\test\proto\benchmarks\services.grpc.pb.cc">
-    </ClCompile>
-    <ClInclude Include="..\..\..\test\proto\benchmarks\services.grpc.pb.h">
-    </ClInclude>
     <ClCompile Include="..\..\..\test\proto\benchmarks\stats.pb.cc">
     </ClCompile>
     <ClInclude Include="..\..\..\test\proto\benchmarks\stats.pb.h">
@@ -189,6 +173,22 @@
     <ClCompile Include="..\..\..\test\proto\benchmarks\stats.grpc.pb.cc">
     </ClCompile>
     <ClInclude Include="..\..\..\test\proto\benchmarks\stats.grpc.pb.h">
+    </ClInclude>
+    <ClCompile Include="..\..\..\test\proto\benchmarks\control.pb.cc">
+    </ClCompile>
+    <ClInclude Include="..\..\..\test\proto\benchmarks\control.pb.h">
+    </ClInclude>
+    <ClCompile Include="..\..\..\test\proto\benchmarks\control.grpc.pb.cc">
+    </ClCompile>
+    <ClInclude Include="..\..\..\test\proto\benchmarks\control.grpc.pb.h">
+    </ClInclude>
+    <ClCompile Include="..\..\..\test\proto\benchmarks\services.pb.cc">
+    </ClCompile>
+    <ClInclude Include="..\..\..\test\proto\benchmarks\services.pb.h">
+    </ClInclude>
+    <ClCompile Include="..\..\..\test\proto\benchmarks\services.grpc.pb.cc">
+    </ClCompile>
+    <ClInclude Include="..\..\..\test\proto\benchmarks\services.grpc.pb.h">
     </ClInclude>
     <ClCompile Include="..\..\..\test\cpp\qps\perf_db.pb.cc">
     </ClCompile>
