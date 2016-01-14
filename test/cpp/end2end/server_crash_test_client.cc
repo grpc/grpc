@@ -31,11 +31,11 @@
  *
  */
 
+#include <gflags/gflags.h>
 #include <iostream>
 #include <memory>
 #include <sstream>
 #include <string>
-#include <gflags/gflags.h>
 
 #include <grpc++/channel.h>
 #include <grpc++/client_context.h>
