@@ -1966,6 +1966,23 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: generic_async_streaming_ping_pong_test
+  build: test
+  language: c++
+  src:
+  - test/cpp/qps/generic_async_streaming_ping_pong_test.cc
+  deps:
+  - qps
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
+  platforms:
+  - mac
+  - linux
+  - posix
 - name: generic_end2end_test
   build: test
   language: c++
