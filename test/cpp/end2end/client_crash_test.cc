@@ -63,7 +63,7 @@ class CrashTest : public ::testing::Test {
  protected:
   CrashTest() {}
 
-  std::unique_ptr<grpc::testing::TestService::Stub> CreateServerAndStub() {
+  std::unique_ptr<grpc::testing::EchoTestService::Stub> CreateServerAndStub() {
     auto port = grpc_pick_unused_port_or_die();
     std::ostringstream addr_stream;
     addr_stream << "localhost:" << port;
@@ -72,7 +72,7 @@ class CrashTest : public ::testing::Test {
         g_root + "/client_crash_test_server", "--address=" + addr,
     }));
     GPR_ASSERT(server_);
-    return grpc::testing::TestService::NewStub(
+    return grpc::testing::EchoTestService::NewStub(
         CreateChannel(addr, InsecureChannelCredentials()));
   }
 
