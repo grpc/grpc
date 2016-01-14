@@ -55,7 +55,7 @@ def main():
 
   deps = {}
   deps_trans = {}
-  for root, dirs, files in os.walk(proto_dir):
+  for root, dirs, files in os.walk('src/proto'):
     for f in files:
       if f[-6:] != '.proto': continue
       look_at = os.path.join(root, f)
