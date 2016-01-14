@@ -149,7 +149,7 @@ LD_tsan = clang
 LDXX_tsan = clang++
 CFLAGS_tsan = -O0 -fsanitize=thread -fno-omit-frame-pointer -Wno-unused-command-line-argument -fPIE
 CXXFLAGS_tsan = -O0 -fsanitize=thread -fno-omit-frame-pointer -Wno-unused-command-line-argument -fPIE
-LDFLAGS_tsan = -fsanitize=thread -pie
+LDFLAGS_tsan = -fsanitize=thread -pie -Wl,-Ttext-segment=0x855555000000
 DEFINES_tsan = NDEBUG GRPC_TEST_SLOWDOWN_BUILD_FACTOR=10
 
 VALID_CONFIG_asan = 1
