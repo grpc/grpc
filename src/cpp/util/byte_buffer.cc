@@ -79,13 +79,12 @@ size_t ByteBuffer::Length() const {
   }
 }
 
-ByteBuffer::ByteBuffer(const ByteBuffer& buf):
-    buffer_(grpc_byte_buffer_copy(buf.buffer_)) {
-}
+ByteBuffer::ByteBuffer(const ByteBuffer& buf)
+    : buffer_(grpc_byte_buffer_copy(buf.buffer_)) {}
 
 ByteBuffer& ByteBuffer::operator=(const ByteBuffer& buf) {
-  Clear(); // first remove existing data
-  buffer_ = grpc_byte_buffer_copy(buf.buffer_); // then copy
+  Clear();                                       // first remove existing data
+  buffer_ = grpc_byte_buffer_copy(buf.buffer_);  // then copy
   return *this;
 }
 
