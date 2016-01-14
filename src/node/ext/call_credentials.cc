@@ -32,6 +32,8 @@
  */
 
 #include <node.h>
+#include <nan.h>
+#include <uv.h>
 
 #include "grpc/grpc.h"
 #include "grpc/grpc_security.h"
