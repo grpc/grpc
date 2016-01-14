@@ -33,21 +33,21 @@
 
 #include <memory>
 
-#include <grpc/grpc.h>
-#include <grpc/support/thd.h>
-#include <grpc/support/time.h>
 #include <grpc++/channel.h>
 #include <grpc++/client_context.h>
 #include <grpc++/create_channel.h>
 #include <grpc++/server.h>
 #include <grpc++/server_builder.h>
 #include <grpc++/server_context.h>
+#include <grpc/grpc.h>
+#include <grpc/support/thd.h>
+#include <grpc/support/time.h>
 #include <gtest/gtest.h>
 
-#include "test/core/util/port.h"
-#include "test/core/util/test_config.h"
 #include "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
+#include "test/core/util/port.h"
+#include "test/core/util/test_config.h"
 #include "test/cpp/util/string_ref_helper.h"
 
 #ifdef GPR_POSIX_SOCKET
@@ -186,7 +186,7 @@ class AsyncEnd2endTest : public ::testing::TestWithParam<bool> {
     build_bad.AddListeningPort(server_address_.str(),
                                grpc::InsecureServerCredentials());
     build_bad.RegisterAsyncService(&service_);
-    grpc::testing::TestService::Service sync_service;
+    grpc::testing::EchoTestService::Service sync_service;
     build_bad.RegisterService(&sync_service);
     GPR_ASSERT(build_bad.BuildAndStart() == nullptr);
 
@@ -211,7 +211,7 @@ class AsyncEnd2endTest : public ::testing::TestWithParam<bool> {
   void ResetStub() {
     std::shared_ptr<Channel> channel =
         CreateChannel(server_address_.str(), InsecureChannelCredentials());
-    stub_ = grpc::testing::TestService::NewStub(channel);
+    stub_ = grpc::testing::EchoTestService::NewStub(channel);
   }
 
   void SendRpc(int num_rpcs) {
@@ -249,9 +249,9 @@ class AsyncEnd2endTest : public ::testing::TestWithParam<bool> {
   }
 
   std::unique_ptr<ServerCompletionQueue> cq_;
-  std::unique_ptr<grpc::testing::TestService::Stub> stub_;
+  std::unique_ptr<grpc::testing::EchoTestService::Stub> stub_;
   std::unique_ptr<Server> server_;
-  grpc::testing::TestService::AsyncService service_;
+  grpc::testing::EchoTestService::AsyncService service_;
   std::ostringstream server_address_;
 };
 

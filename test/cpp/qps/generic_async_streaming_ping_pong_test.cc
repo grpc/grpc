@@ -31,62 +31,52 @@
  *
  */
 
-#include <grpc/byte_buffer_reader.h>
-#include <grpc++/support/byte_buffer.h>
+#include <set>
+
+#include <grpc/support/log.h>
+
+#include "test/cpp/qps/driver.h"
+#include "test/cpp/qps/report.h"
+#include "test/cpp/util/benchmark_config.h"
 
 namespace grpc {
+namespace testing {
 
-ByteBuffer::ByteBuffer(const Slice* slices, size_t nslices) {
-  // TODO(yangg) maybe expose some core API to simplify this
-  std::vector<gpr_slice> c_slices(nslices);
-  for (size_t i = 0; i < nslices; i++) {
-    c_slices[i] = slices[i].slice_;
-  }
-  buffer_ = grpc_raw_byte_buffer_create(c_slices.data(), nslices);
+static const int WARMUP = 5;
+static const int BENCHMARK = 10;
+
+static void RunGenericAsyncStreamingPingPong() {
+  gpr_log(GPR_INFO, "Running Generic Async Streaming Ping Pong");
+
+  ClientConfig client_config;
+  client_config.set_client_type(ASYNC_CLIENT);
+  client_config.set_outstanding_rpcs_per_channel(1);
+  client_config.set_client_channels(1);
+  client_config.set_async_client_threads(1);
+  client_config.set_rpc_type(STREAMING);
+  client_config.mutable_load_params()->mutable_closed_loop();
+  auto bbuf = client_config.mutable_payload_config()->mutable_bytebuf_params();
+  bbuf->set_resp_size(0);
+  bbuf->set_req_size(0);
+
+  ServerConfig server_config;
+  server_config.set_server_type(ASYNC_SERVER);
+  server_config.set_host("localhost");
+  server_config.set_async_server_threads(1);
+
+  const auto result =
+      RunScenario(client_config, 1, server_config, 1, WARMUP, BENCHMARK, -2);
+
+  GetReporter()->ReportQPS(*result);
+  GetReporter()->ReportLatency(*result);
 }
 
-ByteBuffer::~ByteBuffer() {
-  if (buffer_) {
-    grpc_byte_buffer_destroy(buffer_);
-  }
-}
-
-void ByteBuffer::Clear() {
-  if (buffer_) {
-    grpc_byte_buffer_destroy(buffer_);
-    buffer_ = nullptr;
-  }
-}
-
-void ByteBuffer::Dump(std::vector<Slice>* slices) const {
-  slices->clear();
-  if (!buffer_) {
-    return;
-  }
-  grpc_byte_buffer_reader reader;
-  grpc_byte_buffer_reader_init(&reader, buffer_);
-  gpr_slice s;
-  while (grpc_byte_buffer_reader_next(&reader, &s)) {
-    slices->push_back(Slice(s, Slice::STEAL_REF));
-  }
-  grpc_byte_buffer_reader_destroy(&reader);
-}
-
-size_t ByteBuffer::Length() const {
-  if (buffer_) {
-    return grpc_byte_buffer_length(buffer_);
-  } else {
-    return 0;
-  }
-}
-
-ByteBuffer::ByteBuffer(const ByteBuffer& buf)
-    : buffer_(grpc_byte_buffer_copy(buf.buffer_)) {}
-
-ByteBuffer& ByteBuffer::operator=(const ByteBuffer& buf) {
-  Clear();                                       // first remove existing data
-  buffer_ = grpc_byte_buffer_copy(buf.buffer_);  // then copy
-  return *this;
-}
-
+}  // namespace testing
 }  // namespace grpc
+
+int main(int argc, char** argv) {
+  grpc::testing::InitBenchmark(&argc, &argv, true);
+
+  grpc::testing::RunGenericAsyncStreamingPingPong();
+  return 0;
+}
