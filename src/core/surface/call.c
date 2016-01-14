@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -37,6 +37,7 @@
 #include <string.h>
 
 #include <grpc/compression.h>
+#include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
@@ -562,12 +563,16 @@ static int prepare_application_metadata(grpc_call *call, int count,
     GPR_ASSERT(sizeof(grpc_linked_mdelem) == sizeof(md->internal_data));
     l->md = grpc_mdelem_from_string_and_buffer(
         md->key, (const uint8_t *)md->value, md->value_length);
-    if (!grpc_mdstr_is_legal_header(l->md->key)) {
+    if (!grpc_header_key_is_legal(grpc_mdstr_as_c_string(l->md->key),
+                                  GRPC_MDSTR_LENGTH(l->md->key))) {
       gpr_log(GPR_ERROR, "attempt to send invalid metadata key: %s",
               grpc_mdstr_as_c_string(l->md->key));
       return 0;
-    } else if (!grpc_mdstr_is_bin_suffixed(l->md->key) &&
-               !grpc_mdstr_is_legal_nonbin_header(l->md->value)) {
+    } else if (!grpc_is_binary_header(grpc_mdstr_as_c_string(l->md->key),
+                                      GRPC_MDSTR_LENGTH(l->md->key)) &&
+               !grpc_header_nonbin_value_is_legal(
+                   grpc_mdstr_as_c_string(l->md->value),
+                   GRPC_MDSTR_LENGTH(l->md->value))) {
       gpr_log(GPR_ERROR, "attempt to send invalid metadata value");
       return 0;
     }
