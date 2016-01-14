@@ -35,13 +35,13 @@
 
 #include <iostream>
 
-#include <grpc/grpc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/slice.h>
-#include <grpc++/support/byte_buffer.h>
 #include <grpc++/channel.h>
 #include <grpc++/client_context.h>
 #include <grpc++/generic/generic_stub.h>
+#include <grpc++/support/byte_buffer.h>
+#include <grpc/grpc.h>
+#include <grpc/support/log.h>
+#include <grpc/support/slice.h>
 
 namespace grpc {
 namespace testing {

@@ -33,20 +33,20 @@
 
 #include <thread>
 
-#include <grpc/grpc.h>
-#include <grpc/support/sync.h>
 #include <grpc++/channel.h>
 #include <grpc++/client_context.h>
 #include <grpc++/create_channel.h>
 #include <grpc++/server.h>
 #include <grpc++/server_builder.h>
 #include <grpc++/server_context.h>
+#include <grpc/grpc.h>
+#include <grpc/support/sync.h>
 #include <gtest/gtest.h>
 
 #include "src/core/support/env.h"
-#include "test/core/util/test_config.h"
-#include "test/core/util/port.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
+#include "test/core/util/port.h"
+#include "test/core/util/test_config.h"
 
 using grpc::testing::EchoRequest;
 using grpc::testing::EchoResponse;
