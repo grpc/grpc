@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -72,8 +72,7 @@ class AsyncQpsServerTest : public Server {
                          CompletionQueue *, ServerCompletionQueue *, void *)>
           request_streaming_function,
       std::function<grpc::Status(const PayloadConfig &, const RequestType *,
-                                 ResponseType *)>
-          process_rpc)
+                                 ResponseType *)> process_rpc)
       : Server(config) {
     char *server_address = NULL;
 
@@ -94,8 +93,8 @@ class AsyncQpsServerTest : public Server {
 
     using namespace std::placeholders;
 
-    auto process_rpc_bound = std::bind(process_rpc, config.payload_config(),
-                                       _1, _2);
+    auto process_rpc_bound =
+        std::bind(process_rpc, config.payload_config(), _1, _2);
 
     for (int i = 0; i < 10000 / config.async_server_threads(); i++) {
       for (int j = 0; j < config.async_server_threads(); j++) {
@@ -185,8 +184,7 @@ class AsyncQpsServerTest : public Server {
     ServerRpcContextUnaryImpl(
         std::function<void(ServerContextType *, RequestType *,
                            grpc::ServerAsyncResponseWriter<ResponseType> *,
-                           void *)>
-            request_method,
+                           void *)> request_method,
         std::function<grpc::Status(const RequestType *, ResponseType *)>
             invoke_method)
         : srv_ctx_(new ServerContextType),
@@ -359,8 +357,7 @@ static void RegisterGenericService(ServerBuilder *builder,
   builder->RegisterAsyncGenericService(service);
 }
 
-
-static Status ProcessSimpleRPC(const PayloadConfig&,
+static Status ProcessSimpleRPC(const PayloadConfig &,
                                const SimpleRequest *request,
                                SimpleResponse *response) {
   if (request->response_size() > 0) {
@@ -372,7 +369,7 @@ static Status ProcessSimpleRPC(const PayloadConfig&,
   return Status::OK;
 }
 
-static Status ProcessGenericRPC(const PayloadConfig& payload_config,
+static Status ProcessGenericRPC(const PayloadConfig &payload_config,
                                 const ByteBuffer *request,
                                 ByteBuffer *response) {
   int resp_size = payload_config.bytebuf_params().resp_size();
@@ -384,22 +381,19 @@ static Status ProcessGenericRPC(const PayloadConfig& payload_config,
 }
 
 std::unique_ptr<Server> CreateAsyncServer(const ServerConfig &config) {
-  return std::unique_ptr<Server>(
-      new AsyncQpsServerTest<SimpleRequest, SimpleResponse,
-                             BenchmarkService::AsyncService,
-                             grpc::ServerContext>(
-          config, RegisterBenchmarkService,
-          &BenchmarkService::AsyncService::RequestUnaryCall,
-          &BenchmarkService::AsyncService::RequestStreamingCall,
-          ProcessSimpleRPC));
+  return std::unique_ptr<Server>(new AsyncQpsServerTest<
+      SimpleRequest, SimpleResponse, BenchmarkService::AsyncService,
+      grpc::ServerContext>(
+      config, RegisterBenchmarkService,
+      &BenchmarkService::AsyncService::RequestUnaryCall,
+      &BenchmarkService::AsyncService::RequestStreamingCall, ProcessSimpleRPC));
 }
 std::unique_ptr<Server> CreateAsyncGenericServer(const ServerConfig &config) {
   return std::unique_ptr<Server>(
       new AsyncQpsServerTest<ByteBuffer, ByteBuffer, grpc::AsyncGenericService,
                              grpc::GenericServerContext>(
           config, RegisterGenericService, nullptr,
-          &grpc::AsyncGenericService::RequestCall,
-          ProcessGenericRPC));
+          &grpc::AsyncGenericService::RequestCall, ProcessGenericRPC));
 }
 
 }  // namespace testing
