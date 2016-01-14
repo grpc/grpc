@@ -30,23 +30,17 @@
 
 set -ex
 
-CONFIG=${CONFIG:-opt}
+if [ "$CONFIG" != "gcov" ] ; then exit ; fi
 
-# change to grpc repo root
-cd $(dirname $0)/../..
+root=$(readlink -f $(dirname $0)/../..)
+out=$root/reports/php_ext_coverage
+tmp1=$(mktemp)
+tmp2=$(mktemp)
+cd $root
+lcov --capture --directory . --output-file $tmp1
+lcov --extract $tmp1 "$root/src/php/ext/grpc/*" --output-file $tmp2
+genhtml $tmp2 --output-directory $out
+rm $tmp2
+rm $tmp1
 
-root=`pwd`
-export GRPC_LIB_SUBDIR=libs/$CONFIG
-export CFLAGS="-Wno-parentheses-equality"
-
-# build php
-cd src/php
-
-cd ext/grpc
-phpize
-if [ "$CONFIG" != "gcov" ] ; then
-  ./configure --enable-grpc=$root
-else
-  ./configure --enable-grpc=$root --enable-coverage
-fi
-make
+cp -rv $root/src/php/coverage $root/reports/php
