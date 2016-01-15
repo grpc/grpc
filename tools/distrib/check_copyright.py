@@ -54,6 +54,9 @@ argp.add_argument('-a', '--ancient',
                   default=0,
                   action='store_const',
                   const=1)
+argp.add_argument('-f', '--fix',
+                  default=False,
+                  action='store_true');
 args = argp.parse_args()
 
 # open the license text
@@ -90,7 +93,7 @@ KNOWN_BAD = set([
 ])
 
 
-RE_YEAR = r'Copyright (?:[0-9]+\-)?([0-9]+), Google Inc\.'
+RE_YEAR = r'Copyright (?P<first_year>[0-9]+\-)?(?P<last_year>[0-9]+), Google Inc\.'
 RE_LICENSE = dict(
     (k, r'\n'.join(
         LICENSE_PREFIX[k] +
@@ -101,8 +104,11 @@ RE_LICENSE = dict(
 
 def load(name):
   with open(name) as f:
-    return '\n'.join(line.rstrip() for line in f.read().splitlines())
+    return f.read()
 
+def save(name, text):
+  with open(name, 'w') as f:
+    f.write(text)
 
 assert(re.search(RE_LICENSE['LICENSE'], load('LICENSE')))
 assert(re.search(RE_LICENSE['Makefile'], load('Makefile')))
@@ -133,14 +139,25 @@ for filename in subprocess.check_output('git ls-tree -r --name-only -r HEAD',
   text = load(filename)
   m = re.search(re_license, text)
   if m:
+    gdict = m.groupdict()
     last_modified = int(subprocess.check_output('git log -1 --format="%ad" --date=short -- ' + filename, shell=True)[0:4])
-    latest_claimed = int(m.group(1))
+    latest_claimed = int(gdict['last_year'])
     if last_modified > latest_claimed:
       print '%s modified %d but copyright only extends to %d' % (filename, last_modified, latest_claimed)
       ok = False
+      if args.fix:
+        span_start, span_end = m.span(2)
+        if not gdict['first_year']:
+          # prepend the old year to the current one.
+          text = '{}-{}{}'.format(text[:span_end], last_modified, text[span_end:])
+        else:  # already a year range
+          # simply update the last year
+          text = '{}{}{}'.format(text[:span_start], last_modified, text[span_end:])
+        save(filename, text)
+        print 'Fixed!'
+        ok = True
   elif 'DO NOT EDIT' not in text and 'AssemblyInfo.cs' not in filename and filename != 'src/boringssl/err_data.c':
     log(1, 'copyright missing', filename)
     ok = False
 
 sys.exit(0 if ok else 1)
-
