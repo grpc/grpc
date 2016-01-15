@@ -798,8 +798,9 @@ libs:
   src:
   - src/csharp/ext/grpc_csharp_ext.c
   deps:
-  - gpr
   - grpc
+  - gpr
+  deps_linkage: static
   dll: only
   vs_config_type: DynamicLibrary
   vs_packages:
@@ -2448,7 +2449,8 @@ vspackages:
   props: false
   redist: true
   version: 1.2.8.10
-- name: grpc.dependencies.openssl
+- linkage: static
+  name: grpc.dependencies.openssl
   props: true
   redist: true
   version: 1.0.204.1
