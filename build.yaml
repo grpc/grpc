@@ -320,6 +320,7 @@ filegroups:
   - src/core/surface/server.c
   - src/core/surface/server_chttp2.c
   - src/core/surface/server_create.c
+  - src/core/surface/validate_metadata.c
   - src/core/surface/version.c
   - src/core/transport/byte_stream.c
   - src/core/transport/chttp2/alpn.c
@@ -813,8 +814,9 @@ libs:
   src:
   - src/csharp/ext/grpc_csharp_ext.c
   deps:
-  - gpr
   - grpc
+  - gpr
+  deps_linkage: static
   dll: only
   vs_config_type: DynamicLibrary
   vs_packages:
@@ -2473,7 +2475,8 @@ vspackages:
   props: false
   redist: true
   version: 1.2.8.10
-- name: grpc.dependencies.openssl
+- linkage: static
+  name: grpc.dependencies.openssl
   props: true
   redist: true
   version: 1.0.204.1

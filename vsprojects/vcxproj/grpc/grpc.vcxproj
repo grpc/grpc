@@ -88,12 +88,14 @@
     <TargetName>grpc</TargetName>
     <Linkage-grpc_dependencies_zlib>static</Linkage-grpc_dependencies_zlib>
     <Configuration-grpc_dependencies_zlib>Debug</Configuration-grpc_dependencies_zlib>
+    <Linkage-grpc_dependencies_openssl>static</Linkage-grpc_dependencies_openssl>
     <Configuration-grpc_dependencies_openssl>Debug</Configuration-grpc_dependencies_openssl>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)'=='Release'">
     <TargetName>grpc</TargetName>
     <Linkage-grpc_dependencies_zlib>static</Linkage-grpc_dependencies_zlib>
     <Configuration-grpc_dependencies_zlib>Release</Configuration-grpc_dependencies_zlib>
+    <Linkage-grpc_dependencies_openssl>static</Linkage-grpc_dependencies_openssl>
     <Configuration-grpc_dependencies_openssl>Release</Configuration-grpc_dependencies_openssl>
   </PropertyGroup>
     <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug-DLL|Win32'">
@@ -649,6 +651,8 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\surface\server_chttp2.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\surface\server_create.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\surface\validate_metadata.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\surface\version.c">
     </ClCompile>
