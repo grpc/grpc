@@ -129,6 +129,9 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\grpc_library.h">
       <Filter>include\grpc++\impl</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\method_handler_impl.h">
+      <Filter>include\grpc++\impl</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\proto_utils.h">
       <Filter>include\grpc++\impl</Filter>
     </ClInclude>
