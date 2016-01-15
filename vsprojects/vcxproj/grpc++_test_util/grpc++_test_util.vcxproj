@@ -148,6 +148,7 @@
 
   <ItemGroup>
     <ClInclude Include="$(SolutionDir)\..\test\cpp\end2end\test_service_impl.h" />
+    <ClInclude Include="$(SolutionDir)\..\test\cpp\util\byte_buffer_proto_helper.h" />
     <ClInclude Include="$(SolutionDir)\..\test\cpp\util\cli_call.h" />
     <ClInclude Include="$(SolutionDir)\..\test\cpp\util\create_test_channel.h" />
     <ClInclude Include="$(SolutionDir)\..\test\cpp\util\string_ref_helper.h" />
@@ -179,6 +180,8 @@
     <ClInclude Include="$(SolutionDir)\..\src\proto\grpc\testing\duplicate\echo_duplicate.grpc.pb.h">
     </ClInclude>
     <ClCompile Include="$(SolutionDir)\..\test\cpp\end2end\test_service_impl.cc">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\cpp\util\byte_buffer_proto_helper.cc">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\cpp\util\cli_call.cc">
     </ClCompile>

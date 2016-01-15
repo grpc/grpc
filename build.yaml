@@ -638,6 +638,7 @@ libs:
   language: c++
   headers:
   - test/cpp/end2end/test_service_impl.h
+  - test/cpp/util/byte_buffer_proto_helper.h
   - test/cpp/util/cli_call.h
   - test/cpp/util/create_test_channel.h
   - test/cpp/util/string_ref_helper.h
@@ -647,6 +648,7 @@ libs:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/duplicate/echo_duplicate.proto
   - test/cpp/end2end/test_service_impl.cc
+  - test/cpp/util/byte_buffer_proto_helper.cc
   - test/cpp/util/cli_call.cc
   - test/cpp/util/create_test_channel.cc
   - test/cpp/util/string_ref_helper.cc
