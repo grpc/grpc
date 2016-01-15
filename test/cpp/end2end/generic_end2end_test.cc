@@ -51,6 +51,7 @@
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
+#include "test/cpp/util/byte_buffer_proto_helper.h"
 
 using grpc::testing::EchoRequest;
 using grpc::testing::EchoResponse;
@@ -68,26 +69,6 @@ void verify_ok(CompletionQueue* cq, int i, bool expect_ok) {
   EXPECT_TRUE(cq->Next(&got_tag, &ok));
   EXPECT_EQ(expect_ok, ok);
   EXPECT_EQ(tag(i), got_tag);
-}
-
-bool ParseFromByteBuffer(ByteBuffer* buffer, grpc::protobuf::Message* message) {
-  std::vector<Slice> slices;
-  buffer->Dump(&slices);
-  grpc::string buf;
-  buf.reserve(buffer->Length());
-  for (auto s = slices.begin(); s != slices.end(); s++) {
-    buf.append(reinterpret_cast<const char*>(s->begin()), s->size());
-  }
-  return message->ParseFromString(buf);
-}
-
-std::unique_ptr<ByteBuffer> SerializeToByteBuffer(
-    grpc::protobuf::Message* message) {
-  grpc::string buf;
-  message->SerializeToString(&buf);
-  gpr_slice s = gpr_slice_from_copied_string(buf.c_str());
-  Slice slice(s, Slice::STEAL_REF);
-  return std::unique_ptr<ByteBuffer>(new ByteBuffer(&slice, 1));
 }
 
 class GenericEnd2endTest : public ::testing::Test {
