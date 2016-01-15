@@ -34,6 +34,7 @@
 #include "src/core/iomgr/tcp_server.h"
 #include "src/core/iomgr/iomgr.h"
 #include "src/core/iomgr/sockaddr_utils.h"
+#include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
@@ -52,12 +53,30 @@ static grpc_pollset g_pollset;
 static int g_nconnects = 0;
 
 typedef struct on_connect_result {
+  /* Owns a ref to server. */
+  grpc_tcp_server *server;
   unsigned port_index;
   unsigned fd_index;
   int server_fd;
 } on_connect_result;
 
-static on_connect_result g_result = {0, 0, -1};
+void on_connect_result_init(on_connect_result *result) {
+  result->server = NULL;
+  result->port_index = 0;
+  result->fd_index = 0;
+  result->server_fd = -1;
+}
+
+void on_connect_result_set(on_connect_result *result,
+                           const grpc_tcp_server_acceptor *acceptor) {
+  result->server = grpc_tcp_server_ref(acceptor->from_server);
+  result->port_index = acceptor->port_index;
+  result->fd_index = acceptor->fd_index;
+  result->server_fd = grpc_tcp_server_port_fd(
+      result->server, acceptor->port_index, acceptor->fd_index);
+}
+
+static on_connect_result g_result = {NULL, 0, 0, -1};
 
 static void on_connect(grpc_exec_ctx *exec_ctx, void *arg, grpc_endpoint *tcp,
                        grpc_tcp_server_acceptor *acceptor) {
@@ -65,10 +84,7 @@ static void on_connect(grpc_exec_ctx *exec_ctx, void *arg, grpc_endpoint *tcp,
   grpc_endpoint_destroy(exec_ctx, tcp);
 
   gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
-  g_result.port_index = acceptor->port_index;
-  g_result.fd_index = acceptor->fd_index;
-  g_result.server_fd = grpc_tcp_server_port_fd(
-      acceptor->from_server, acceptor->port_index, acceptor->fd_index);
+  on_connect_result_set(&g_result, acceptor);
   g_nconnects++;
   grpc_pollset_kick(&g_pollset, NULL);
   gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));
@@ -130,7 +146,7 @@ static void tcp_connect(grpc_exec_ctx *exec_ctx, const struct sockaddr *remote,
 
   gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
   nconnects_before = g_nconnects;
-  g_result.server_fd = -1;
+  on_connect_result_init(&g_result);
   GPR_ASSERT(clifd >= 0);
   gpr_log(GPR_DEBUG, "start connect");
   GPR_ASSERT(connect(clifd, remote, remote_len) == 0);
@@ -154,7 +170,7 @@ static void tcp_connect(grpc_exec_ctx *exec_ctx, const struct sockaddr *remote,
 
 /* Tests a tcp server with multiple ports. TODO(daniel-j-born): Multiple fds for
    the same port should be tested. */
-static void test_connect(int svr1_port, unsigned n) {
+static void test_connect(unsigned n) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   struct sockaddr_storage addr;
   struct sockaddr_storage addr1;
@@ -162,6 +178,7 @@ static void test_connect(int svr1_port, unsigned n) {
   unsigned svr_fd_count;
   int svr_port;
   unsigned svr1_fd_count;
+  int svr1_port;
   grpc_tcp_server *s = grpc_tcp_server_create(NULL);
   grpc_pollset *pollsets[1];
   unsigned i;
@@ -172,6 +189,9 @@ static void test_connect(int svr1_port, unsigned n) {
   addr.ss_family = addr1.ss_family = AF_INET;
   svr_port = grpc_tcp_server_add_port(s, (struct sockaddr *)&addr, addr_len);
   GPR_ASSERT(svr_port > 0);
+  /* Cannot use wildcard (port==0), because add_port() will try to reuse the
+     same port as a previous add_port(). */
+  svr1_port = grpc_pick_unused_port_or_die();
   grpc_sockaddr_set_port((struct sockaddr *)&addr1, svr1_port);
   GPR_ASSERT(grpc_tcp_server_add_port(s, (struct sockaddr *)&addr1, addr_len) ==
              svr1_port);
@@ -211,8 +231,9 @@ static void test_connect(int svr1_port, unsigned n) {
   grpc_tcp_server_start(&exec_ctx, s, pollsets, 1, on_connect, NULL);
 
   for (i = 0; i < n; i++) {
-    on_connect_result result = {0, 0, -1};
+    on_connect_result result;
     int svr_fd;
+    on_connect_result_init(&result);
     tcp_connect(&exec_ctx, (struct sockaddr *)&addr, addr_len, &result);
     GPR_ASSERT(result.server_fd >= 0);
     svr_fd = result.server_fd;
@@ -220,10 +241,10 @@ static void test_connect(int svr1_port, unsigned n) {
                result.server_fd);
     GPR_ASSERT(result.port_index == 0);
     GPR_ASSERT(result.fd_index < svr_fd_count);
+    GPR_ASSERT(result.server == s);
+    grpc_tcp_server_unref(&exec_ctx, result.server);
 
-    result.port_index = 0;
-    result.fd_index = 0;
-    result.server_fd = -1;
+    on_connect_result_init(&result);
     tcp_connect(&exec_ctx, (struct sockaddr *)&addr1, addr_len, &result);
     GPR_ASSERT(result.server_fd >= 0);
     GPR_ASSERT(result.server_fd != svr_fd);
@@ -231,6 +252,8 @@ static void test_connect(int svr1_port, unsigned n) {
                result.server_fd);
     GPR_ASSERT(result.port_index == 1);
     GPR_ASSERT(result.fd_index < svr_fd_count);
+    GPR_ASSERT(result.server == s);
+    grpc_tcp_server_unref(&exec_ctx, result.server);
   }
 
   grpc_tcp_server_unref(&exec_ctx, s);
@@ -244,21 +267,20 @@ static void destroy_pollset(grpc_exec_ctx *exec_ctx, void *p, int success) {
 int main(int argc, char **argv) {
   grpc_closure destroyed;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  int svr1_port = grpc_pick_unused_port_or_die();
   grpc_test_init(argc, argv);
-  grpc_iomgr_init();
+  grpc_init();
   grpc_pollset_init(&g_pollset);
 
   test_no_op();
   test_no_op_with_start();
   test_no_op_with_port();
   test_no_op_with_port_and_start();
-  test_connect(svr1_port, 1);
-  test_connect(svr1_port, 10);
+  test_connect(1);
+  test_connect(10);
 
   grpc_closure_init(&destroyed, destroy_pollset, &g_pollset);
   grpc_pollset_shutdown(&exec_ctx, &g_pollset, &destroyed);
   grpc_exec_ctx_finish(&exec_ctx);
-  grpc_iomgr_shutdown();
+  grpc_shutdown();
   return 0;
 }
