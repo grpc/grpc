@@ -66,7 +66,7 @@ class Service {
 
   bool has_async_methods() const {
     for (auto it = methods_.begin(); it != methods_.end(); ++it) {
-      if ((*it)->handler() == nullptr) {
+      if (*it && (*it)->handler() == nullptr) {
         return true;
       }
     }
@@ -75,7 +75,7 @@ class Service {
 
   bool has_synchronous_methods() const {
     for (auto it = methods_.begin(); it != methods_.end(); ++it) {
-      if ((*it)->handler() != nullptr) {
+      if (*it && (*it)->handler() != nullptr) {
         return true;
       }
     }
@@ -120,14 +120,20 @@ class Service {
 
   void AddMethod(RpcServiceMethod* method) { methods_.emplace_back(method); }
 
-  void MarkMethodAsync(const grpc::string& method_name) {
-    for (auto it = methods_.begin(); it != methods_.end(); ++it) {
-      if ((*it)->name() == method_name) {
-        (*it)->ResetHandler();
-        return;
-      }
+  void MarkMethodAsync(int index) {
+    if (methods_[index].get() == nullptr) {
+      gpr_log(GPR_ERROR, "A method cannot be marked async and generic.");
+      abort();
     }
-    abort();
+    methods_[index]->ResetHandler();
+  }
+
+  void MarkMethodGeneric(int index) {
+    if (methods_[index]->handler() == nullptr) {
+      gpr_log(GPR_ERROR, "A method cannot be marked async and generic.");
+      abort();
+    }
+    methods_[index].reset();
   }
 
  private:

@@ -501,8 +501,7 @@ void PrintHeaderServerMethodAsync(
   printer->Indent();
   printer->Print(*vars,
                  "WithAsyncMethod_$Method$() {\n"
-                 "  ::grpc::Service::MarkMethodAsync("
-                 "\"/$Package$$Service$/$Method$\");\n"
+                 "  ::grpc::Service::MarkMethodAsync($Idx$);\n"
                  "}\n");
   printer->Print(*vars,
                  "~WithAsyncMethod_$Method$() GRPC_OVERRIDE {\n"
@@ -601,6 +600,79 @@ void PrintHeaderServerMethodAsync(
   printer->Print(*vars, "};\n");
 }
 
+void PrintHeaderServerMethodGeneric(
+    grpc::protobuf::io::Printer *printer,
+    const grpc::protobuf::MethodDescriptor *method,
+    std::map<grpc::string, grpc::string> *vars) {
+  (*vars)["Method"] = method->name();
+  (*vars)["Request"] =
+      grpc_cpp_generator::ClassName(method->input_type(), true);
+  (*vars)["Response"] =
+      grpc_cpp_generator::ClassName(method->output_type(), true);
+  printer->Print(*vars, "template <class BaseClass>\n");
+  printer->Print(*vars,
+                 "class WithGenericMethod_$Method$ : public BaseClass {\n");
+  printer->Print(
+      " private:\n"
+      "  void BaseClassMustBeDerivedFromService(Service *service) {}\n");
+  printer->Print(" public:\n");
+  printer->Indent();
+  printer->Print(*vars,
+                 "WithGenericMethod_$Method$() {\n"
+                 "  ::grpc::Service::MarkMethodGeneric($Idx$);\n"
+                 "}\n");
+  printer->Print(*vars,
+                 "~WithGenericMethod_$Method$() GRPC_OVERRIDE {\n"
+                 "  BaseClassMustBeDerivedFromService(this);\n"
+                 "}\n");
+  if (NoStreaming(method)) {
+    printer->Print(
+        *vars,
+        "// disable synchronous version of this method\n"
+        "::grpc::Status $Method$("
+        "::grpc::ServerContext* context, const $Request$* request, "
+        "$Response$* response) GRPC_FINAL GRPC_OVERRIDE {\n"
+        "  abort();\n"
+        "  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, \"\");\n"
+        "}\n");
+  } else if (ClientOnlyStreaming(method)) {
+    printer->Print(
+        *vars,
+        "// disable synchronous version of this method\n"
+        "::grpc::Status $Method$("
+        "::grpc::ServerContext* context, "
+        "::grpc::ServerReader< $Request$>* reader, "
+        "$Response$* response) GRPC_FINAL GRPC_OVERRIDE {\n"
+        "  abort();\n"
+        "  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, \"\");\n"
+        "}\n");
+  } else if (ServerOnlyStreaming(method)) {
+    printer->Print(
+        *vars,
+        "// disable synchronous version of this method\n"
+        "::grpc::Status $Method$("
+        "::grpc::ServerContext* context, const $Request$* request, "
+        "::grpc::ServerWriter< $Response$>* writer) GRPC_FINAL GRPC_OVERRIDE "
+        "{\n"
+        "  abort();\n"
+        "  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, \"\");\n"
+        "}\n");
+  } else if (BidiStreaming(method)) {
+    printer->Print(
+        *vars,
+        "// disable synchronous version of this method\n"
+        "::grpc::Status $Method$("
+        "::grpc::ServerContext* context, "
+        "::grpc::ServerReaderWriter< $Response$, $Request$>* stream) "
+        "GRPC_FINAL GRPC_OVERRIDE {\n"
+        "  abort();\n"
+        "  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, \"\");\n"
+        "}\n");
+  }
+  printer->Outdent();
+  printer->Print(*vars, "};\n");
+}
+
 void PrintHeaderService(grpc::protobuf::io::Printer *printer,
                         const grpc::protobuf::ServiceDescriptor *service,
                         std::map<grpc::string, grpc::string> *vars) {
@@ -685,6 +757,12 @@ void PrintHeaderService(grpc::protobuf::io::Printer *printer,
     printer->Print(" >");
   }
   printer->Print(" AsyncService;\n");
+
+  // Server side - Generic
+  for (int i = 0; i < service->method_count(); ++i) {
+    (*vars)["Idx"] = as_string(i);
+    PrintHeaderServerMethodGeneric(printer, service->method(i), vars);
+  }
 
   printer->Outdent();
   printer->Print("};\n");
