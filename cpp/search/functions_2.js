@@ -34,13 +34,14 @@ var searchData=
   ['clientwriter',['ClientWriter',['../classgrpc_1_1_client_writer.html#a6fa4f66cde1b0420533c86452fbdf12b',1,'grpc::ClientWriter']]],
   ['compare',['compare',['../classgrpc_1_1string__ref.html#a1433b87ef94239897b526e0b35a57f3f',1,'grpc::string_ref']]],
   ['completionqueue',['CompletionQueue',['../classgrpc_1_1_completion_queue.html#aea987a15a475923e949934e481fe3566',1,'grpc::CompletionQueue::CompletionQueue()'],['../classgrpc_1_1_completion_queue.html#a081a954044215a7ca8554da4220fb369',1,'grpc::CompletionQueue::CompletionQueue(grpc_completion_queue *take)']]],
-  ['compositecredentials',['CompositeCredentials',['../namespacegrpc.html#a0ffe059f3158d41d0e268fd375a0815c',1,'grpc']]],
+  ['compositecallcredentials',['CompositeCallCredentials',['../namespacegrpc.html#adc351fe5f823440fd2928a7dc65236f4',1,'grpc']]],
+  ['compositechannelcredentials',['CompositeChannelCredentials',['../namespacegrpc.html#a15b2ab0930231bc9142a6e63a9cc8219',1,'grpc']]],
   ['compression_5falgorithm',['compression_algorithm',['../classgrpc_1_1_client_context.html#a91691d52182f45043ce9698424d26a56',1,'grpc::ClientContext::compression_algorithm()'],['../classgrpc_1_1_server_context.html#a825f46891cc7db6c896add746eec8171',1,'grpc::ServerContext::compression_algorithm()']]],
   ['compression_5flevel',['compression_level',['../classgrpc_1_1_server_context.html#a401d5c77fde5cccb13155ccd668787e8',1,'grpc::ServerContext']]],
   ['condition_5fvariable',['condition_variable',['../classgrpc_1_1condition__variable.html#ac254c7b505f7b6e3c5c244f971aef611',1,'grpc::condition_variable']]],
   ['cq',['cq',['../classgrpc_1_1_completion_queue.html#a999c317e716d1e74aca2eb050912302b',1,'grpc::CompletionQueue::cq()'],['../classgrpc_1_1_call.html#a5a7336b857c427aff2a210b89bb4ac14',1,'grpc::Call::cq()']]],
   ['crbegin',['crbegin',['../classgrpc_1_1string__ref.html#ac72a8f2a55fe1388f2b3afa83045200b',1,'grpc::string_ref']]],
-  ['createchannel',['CreateChannel',['../namespacegrpc.html#af51f7653b14c61753813995dd7c7bbf0',1,'grpc']]],
-  ['createcustomchannel',['CreateCustomChannel',['../namespacegrpc.html#a54c098f38a2ac84652d1f2a3681ffa65',1,'grpc']]],
+  ['createchannel',['CreateChannel',['../namespacegrpc.html#ad62b23e19fdcd13898119cd94818616d',1,'grpc']]],
+  ['createcustomchannel',['CreateCustomChannel',['../namespacegrpc.html#a4a5c8a2c77389604feaa5d38cdd7b8d3',1,'grpc']]],
   ['crend',['crend',['../classgrpc_1_1string__ref.html#a0791405cd27fdf491d67cdc57e93d396',1,'grpc::string_ref']]]
 ];

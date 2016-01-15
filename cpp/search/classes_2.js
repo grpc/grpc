@@ -1,6 +1,7 @@
 var searchData=
 [
   ['call',['Call',['../classgrpc_1_1_call.html',1,'grpc']]],
+  ['callcredentials',['CallCredentials',['../classgrpc_1_1_call_credentials.html',1,'grpc']]],
   ['callhook',['CallHook',['../classgrpc_1_1_call_hook.html',1,'grpc']]],
   ['callnoop',['CallNoOp',['../classgrpc_1_1_call_no_op.html',1,'grpc']]],
   ['callnoop_3c_202_20_3e',['CallNoOp&lt; 2 &gt;',['../classgrpc_1_1_call_no_op.html',1,'grpc']]],
@@ -35,6 +36,7 @@ var searchData=
   ['callopsetinterface',['CallOpSetInterface',['../classgrpc_1_1_call_op_set_interface.html',1,'grpc']]],
   ['channel',['Channel',['../classgrpc_1_1_channel.html',1,'grpc']]],
   ['channelarguments',['ChannelArguments',['../classgrpc_1_1_channel_arguments.html',1,'grpc']]],
+  ['channelcredentials',['ChannelCredentials',['../classgrpc_1_1_channel_credentials.html',1,'grpc']]],
   ['clientasyncreader',['ClientAsyncReader',['../classgrpc_1_1_client_async_reader.html',1,'grpc']]],
   ['clientasyncreaderinterface',['ClientAsyncReaderInterface',['../classgrpc_1_1_client_async_reader_interface.html',1,'grpc']]],
   ['clientasyncreaderwriter',['ClientAsyncReaderWriter',['../classgrpc_1_1_client_async_reader_writer.html',1,'grpc']]],
@@ -55,6 +57,5 @@ var searchData=
   ['clientwriterinterface',['ClientWriterInterface',['../classgrpc_1_1_client_writer_interface.html',1,'grpc']]],
   ['completionqueue',['CompletionQueue',['../classgrpc_1_1_completion_queue.html',1,'grpc']]],
   ['completionqueuetag',['CompletionQueueTag',['../classgrpc_1_1_completion_queue_tag.html',1,'grpc']]],
-  ['condition_5fvariable',['condition_variable',['../classgrpc_1_1condition__variable.html',1,'grpc']]],
-  ['credentials',['Credentials',['../classgrpc_1_1_credentials.html',1,'grpc']]]
+  ['condition_5fvariable',['condition_variable',['../classgrpc_1_1condition__variable.html',1,'grpc']]]
 ];

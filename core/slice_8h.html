@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">0.11.0.0</span>
+   &#160;<span id="projectnumber">0.12.0.0</span>
    </div>
   </td>
  </tr>
@@ -143,6 +143,8 @@ Functions</h2></td></tr>
 <tr class="separator:adf4df32e55b1b09d3f11c39447dcc68b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a83e8110a7a98132963f01eb9c7f7418e"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgpr__slice.html">gpr_slice</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="slice_8h.html#a83e8110a7a98132963f01eb9c7f7418e">gpr_slice_from_copied_buffer</a> (const char *source, size_t len)</td></tr>
 <tr class="separator:a83e8110a7a98132963f01eb9c7f7418e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad4a351c5a826133346e90dd3237b4b87"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgpr__slice.html">gpr_slice</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="slice_8h.html#ad4a351c5a826133346e90dd3237b4b87">gpr_slice_from_static_string</a> (const char *source)</td></tr>
+<tr class="separator:ad4a351c5a826133346e90dd3237b4b87"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac9d4e6e264e22c6c6d3748f522da91eb"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgpr__slice.html">gpr_slice</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="slice_8h.html#ac9d4e6e264e22c6c6d3748f522da91eb">gpr_slice_sub</a> (<a class="el" href="structgpr__slice.html">gpr_slice</a> s, size_t begin, size_t end)</td></tr>
 <tr class="separator:ac9d4e6e264e22c6c6d3748f522da91eb"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:accf08ddad530a5f1cca82c834dc70965"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgpr__slice.html">gpr_slice</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="slice_8h.html#accf08ddad530a5f1cca82c834dc70965">gpr_slice_sub_no_ref</a> (<a class="el" href="structgpr__slice.html">gpr_slice</a> s, size_t begin, size_t end)</td></tr>
@@ -246,7 +248,7 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 <b>Value:</b><div class="fragment"><div class="line">((slice).refcount ? ((slice).data.refcounted.length = (size_t)(newlen)) \</div>
 <div class="line">                    : ((slice).data.inlined.length = (<a class="code" href="port__platform_8h.html#aeeb41e29e7c7a916a4e0fb6cfb9f92e0">gpr_uint8</a>)(newlen)))</div>
-<div class="ttc" id="port__platform_8h_html_aeeb41e29e7c7a916a4e0fb6cfb9f92e0"><div class="ttname"><a href="port__platform_8h.html#aeeb41e29e7c7a916a4e0fb6cfb9f92e0">gpr_uint8</a></div><div class="ttdeci">uint8_t gpr_uint8</div><div class="ttdef"><b>Definition:</b> port_platform.h:308</div></div>
+<div class="ttc" id="port__platform_8h_html_aeeb41e29e7c7a916a4e0fb6cfb9f92e0"><div class="ttname"><a href="port__platform_8h.html#aeeb41e29e7c7a916a4e0fb6cfb9f92e0">gpr_uint8</a></div><div class="ttdeci">uint8_t gpr_uint8</div><div class="ttdef"><b>Definition:</b> port_platform.h:320</div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -368,6 +370,22 @@ Functions</h2></td></tr>
       <table class="memname">
         <tr>
           <td class="memname"><a class="el" href="structgpr__slice.html">gpr_slice</a> gpr_slice_from_copied_string </td>
+          <td>(</td>
+          <td class="paramtype">const char *&#160;</td>
+          <td class="paramname"><em>source</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a class="anchor" id="ad4a351c5a826133346e90dd3237b4b87"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="structgpr__slice.html">gpr_slice</a> gpr_slice_from_static_string </td>
           <td>(</td>
           <td class="paramtype">const char *&#160;</td>
           <td class="paramname"><em>source</em></td><td>)</td>
@@ -635,7 +653,7 @@ Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Oct 27 2015 21:07:30 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Jan 15 2016 00:21:22 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

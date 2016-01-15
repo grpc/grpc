@@ -1,7 +1,7 @@
 var searchData=
 [
   ['aborted',['ABORTED',['../namespacegrpc.html#aff1730578c90160528f6a8d67ef5c43ba8387a7175771975bee404def25236b0c',1,'grpc']]],
-  ['accesstokencredentials',['AccessTokenCredentials',['../namespacegrpc.html#a2a08189bab0ce54afb01754bd92ebd7f',1,'grpc']]],
+  ['accesstokencredentials',['AccessTokenCredentials',['../namespacegrpc.html#ad3a80da696ffdaea943f0f858d7a360d',1,'grpc']]],
   ['add_5fref',['ADD_REF',['../classgrpc_1_1_slice.html#ac1e8469bbb6dfa9ab9e646e0b48f5fe2a2ea965f79036dea69221557ec04580b2',1,'grpc::Slice']]],
   ['addcompletionqueue',['AddCompletionQueue',['../classgrpc_1_1_server_builder.html#accbbd95080ca974e84fa1d4cb2ea9518',1,'grpc::ServerBuilder']]],
   ['addinitialmetadata',['AddInitialMetadata',['../classgrpc_1_1_server_context.html#ae3371f0adf8521c7097eee437fc4ca4f',1,'grpc::ServerContext']]],
@@ -13,8 +13,8 @@ var searchData=
   ['addref',['AddRef',['../classgrpc_1_1_slice.html#ac1e8469bbb6dfa9ab9e646e0b48f5fe2',1,'grpc::Slice']]],
   ['addtrailingmetadata',['AddTrailingMetadata',['../classgrpc_1_1_server_context.html#ac30e12c4ee3ca008522b24157f4f886c',1,'grpc::ServerContext']]],
   ['already_5fexists',['ALREADY_EXISTS',['../namespacegrpc.html#aff1730578c90160528f6a8d67ef5c43baf48ac5527afcabd618d8b86f2de45b9b',1,'grpc']]],
-  ['applytocall',['ApplyToCall',['../classgrpc_1_1_credentials.html#a2b3162e0dbb4530ac1c4b81a0339b1e1',1,'grpc::Credentials']]],
-  ['assecurecredentials',['AsSecureCredentials',['../classgrpc_1_1_credentials.html#aefc960d2b52b15f2561946e0f840874f',1,'grpc::Credentials']]],
+  ['applytocall',['ApplyToCall',['../classgrpc_1_1_call_credentials.html#aa9278e08b5c6144247766c78cf4b53d1',1,'grpc::CallCredentials']]],
+  ['assecurecredentials',['AsSecureCredentials',['../classgrpc_1_1_channel_credentials.html#ac32961bb5ef29ba46bddaeb80fafd551',1,'grpc::ChannelCredentials::AsSecureCredentials()'],['../classgrpc_1_1_call_credentials.html#a2452df1e7847eed5e11588a213f41937',1,'grpc::CallCredentials::AsSecureCredentials()']]],
   ['async_5fgeneric_5fservice_2eh',['async_generic_service.h',['../async__generic__service_8h.html',1,'']]],
   ['async_5fstream_2eh',['async_stream.h',['../async__stream_8h.html',1,'']]],
   ['async_5funary_5fcall_2eh',['async_unary_call.h',['../async__unary__call_8h.html',1,'']]],

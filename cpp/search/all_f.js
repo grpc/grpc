@@ -9,9 +9,11 @@ var searchData=
   ['performops',['PerformOps',['../classgrpc_1_1_call.html#a78ca141a1008fbbb122ee4de076edcc4',1,'grpc::Call']]],
   ['performopsoncall',['PerformOpsOnCall',['../classgrpc_1_1_call_hook.html#acf08b6dd7d1faba4efeeb4937bc81d29',1,'grpc::CallHook']]],
   ['permission_5fdenied',['PERMISSION_DENIED',['../namespacegrpc.html#aff1730578c90160528f6a8d67ef5c43ba671e44044d68f82be37c8ec3b0a9c449',1,'grpc']]],
+  ['postsynchronousrequest',['PostSynchronousRequest',['../classgrpc_1_1_server_1_1_global_callbacks.html#a3a20848314924c94c349508e970138e9',1,'grpc::Server::GlobalCallbacks']]],
+  ['presynchronousrequest',['PreSynchronousRequest',['../classgrpc_1_1_server_1_1_global_callbacks.html#a15b846ff19bee0bf9a3b929efc4b7e11',1,'grpc::Server::GlobalCallbacks']]],
   ['private_5fkey',['private_key',['../structgrpc_1_1_ssl_server_credentials_options_1_1_pem_key_cert_pair.html#ad9fa2a2083a40127d264e61cca637050',1,'grpc::SslServerCredentialsOptions::PemKeyCertPair']]],
   ['process',['Process',['../classgrpc_1_1_auth_metadata_processor.html#adc0db66aa261c59bd29f81c53f466303',1,'grpc::AuthMetadataProcessor']]],
-  ['propagationoptions',['PropagationOptions',['../classgrpc_1_1_propagation_options.html',1,'grpc']]],
   ['propagationoptions',['PropagationOptions',['../classgrpc_1_1_propagation_options.html#a450cdedbc72cbda17cb8d93f31c0f878',1,'grpc::PropagationOptions']]],
+  ['propagationoptions',['PropagationOptions',['../classgrpc_1_1_propagation_options.html',1,'grpc']]],
   ['proto_5futils_2eh',['proto_utils.h',['../proto__utils_8h.html',1,'']]]
 ];

@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">0.11.0.0</span>
+   &#160;<span id="projectnumber">0.12.0.0</span>
    </div>
   </td>
  </tr>
@@ -88,6 +88,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!-- top -->
 <div class="header">
   <div class="summary">
+<a href="#nested-classes">Data Structures</a> &#124;
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="#pub-static-methods">Static Public Member Functions</a> &#124;
 <a href="#friends">Friends</a>  </div>
@@ -98,6 +99,12 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 
 <p><code>#include &lt;<a class="el" href="client__context_8h_source.html">client_context.h</a>&gt;</code></p>
 <table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
+Data Structures</h2></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_context_1_1_global_callbacks.html">GlobalCallbacks</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Global Callbacks.  <a href="classgrpc_1_1_client_context_1_1_global_callbacks.html#details">More...</a><br/></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:acabbcf3c160a0628da8a9274b10f54b9"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_context.html#acabbcf3c160a0628da8a9274b10f54b9">ClientContext</a> ()</td></tr>
@@ -134,9 +141,9 @@ Public Member Functions</h2></td></tr>
 <a class="el" href="classgrpc_1_1_auth_context.html">AuthContext</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_context.html#a02f279bf74e26d7c32d0b18dc73dccea">auth_context</a> () const </td></tr>
 <tr class="memdesc:a02f279bf74e26d7c32d0b18dc73dccea"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the authentication context for this client call.  <a href="#a02f279bf74e26d7c32d0b18dc73dccea">More...</a><br/></td></tr>
 <tr class="separator:a02f279bf74e26d7c32d0b18dc73dccea"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac09d9bcb018a58c970adbab7ecd201cb"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_context.html#ac09d9bcb018a58c970adbab7ecd201cb">set_credentials</a> (const std::shared_ptr&lt; <a class="el" href="classgrpc_1_1_credentials.html">Credentials</a> &gt; &amp;creds)</td></tr>
-<tr class="memdesc:ac09d9bcb018a58c970adbab7ecd201cb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set credentials for the client call.  <a href="#ac09d9bcb018a58c970adbab7ecd201cb">More...</a><br/></td></tr>
-<tr class="separator:ac09d9bcb018a58c970adbab7ecd201cb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a768356886d37231b3f0853b3c38e48a9"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_context.html#a768356886d37231b3f0853b3c38e48a9">set_credentials</a> (const std::shared_ptr&lt; <a class="el" href="classgrpc_1_1_call_credentials.html">CallCredentials</a> &gt; &amp;creds)</td></tr>
+<tr class="memdesc:a768356886d37231b3f0853b3c38e48a9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set credentials for the client call.  <a href="#a768356886d37231b3f0853b3c38e48a9">More...</a><br/></td></tr>
+<tr class="separator:a768356886d37231b3f0853b3c38e48a9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a91691d52182f45043ce9698424d26a56"><td class="memItemLeft" align="right" valign="top">grpc_compression_algorithm&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_context.html#a91691d52182f45043ce9698424d26a56">compression_algorithm</a> () const </td></tr>
 <tr class="memdesc:a91691d52182f45043ce9698424d26a56"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the compression algorithm to be used by the client call.  <a href="#a91691d52182f45043ce9698424d26a56">More...</a><br/></td></tr>
 <tr class="separator:a91691d52182f45043ce9698424d26a56"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -161,6 +168,8 @@ Static Public Member Functions</h2></td></tr>
 &lt; <a class="el" href="classgrpc_1_1_client_context.html">ClientContext</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_context.html#a88cbf7ae863d5fcb382c9e22160f4707">FromServerContext</a> (const <a class="el" href="classgrpc_1_1_server_context.html">ServerContext</a> &amp;server_context, <a class="el" href="classgrpc_1_1_propagation_options.html">PropagationOptions</a> options=<a class="el" href="classgrpc_1_1_propagation_options.html">PropagationOptions</a>())</td></tr>
 <tr class="memdesc:a88cbf7ae863d5fcb382c9e22160f4707"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a new <em><a class="el" href="classgrpc_1_1_client_context.html">ClientContext</a></em> as a child of an incoming server call, according to <em>options</em> (.  <a href="#a88cbf7ae863d5fcb382c9e22160f4707">More...</a><br/></td></tr>
 <tr class="separator:a88cbf7ae863d5fcb382c9e22160f4707"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad329c9fdd77093361518ef8ace1ee1f0"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_context.html#ad329c9fdd77093361518ef8ace1ee1f0">SetGlobalCallbacks</a> (<a class="el" href="classgrpc_1_1_client_context_1_1_global_callbacks.html">GlobalCallbacks</a> *callbacks)</td></tr>
+<tr class="separator:ad329c9fdd77093361518ef8ace1ee1f0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="friends"></a>
 Friends</h2></td></tr>
@@ -578,7 +587,7 @@ Friends</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="ac09d9bcb018a58c970adbab7ecd201cb"></a>
+<a class="anchor" id="a768356886d37231b3f0853b3c38e48a9"></a>
 <div class="memitem">
 <div class="memproto">
 <table class="mlabels">
@@ -588,7 +597,7 @@ Friends</h2></td></tr>
         <tr>
           <td class="memname">void grpc::ClientContext::set_credentials </td>
           <td>(</td>
-          <td class="paramtype">const std::shared_ptr&lt; <a class="el" href="classgrpc_1_1_credentials.html">Credentials</a> &gt; &amp;&#160;</td>
+          <td class="paramtype">const std::shared_ptr&lt; <a class="el" href="classgrpc_1_1_call_credentials.html">CallCredentials</a> &gt; &amp;&#160;</td>
           <td class="paramname"><em>creds</em></td><td>)</td>
           <td></td>
         </tr>
@@ -602,7 +611,7 @@ Friends</h2></td></tr>
 
 <p>Set credentials for the client call. </p>
 <p>A credentials object encapsulates all the state needed by a client to authenticate with a server and make various assertions, e.g., about the client’s identity, role, or whether it is authorized to make a particular call.</p>
-<dl class="section see"><dt>See Also</dt><dd><a href="https://github.com/grpc/grpc/blob/master/doc/grpc-auth-support.md">https://github.com/grpc/grpc/blob/master/doc/grpc-auth-support.md</a> </dd></dl>
+<dl class="section see"><dt>See Also</dt><dd><a href="http://www.grpc.io/docs/guides/auth.html">http://www.grpc.io/docs/guides/auth.html</a> </dd></dl>
 
 </div>
 </div>
@@ -638,6 +647,30 @@ template&lt;typename T &gt; </div>
   </table>
   </dd>
 </dl>
+
+</div>
+</div>
+<a class="anchor" id="ad329c9fdd77093361518ef8ace1ee1f0"></a>
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">static void grpc::ClientContext::SetGlobalCallbacks </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classgrpc_1_1_client_context_1_1_global_callbacks.html">GlobalCallbacks</a> *&#160;</td>
+          <td class="paramname"><em>callbacks</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
 
 </div>
 </div>
@@ -955,7 +988,7 @@ template&lt;class InputMessage , class OutputMessage &gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Oct 27 2015 21:07:30 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Jan 15 2016 00:21:23 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

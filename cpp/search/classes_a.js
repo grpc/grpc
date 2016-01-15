@@ -10,6 +10,7 @@ var searchData=
   ['serverasyncstreaminginterface',['ServerAsyncStreamingInterface',['../classgrpc_1_1_server_async_streaming_interface.html',1,'grpc']]],
   ['serverasyncwriter',['ServerAsyncWriter',['../classgrpc_1_1_server_async_writer.html',1,'grpc']]],
   ['serverbuilder',['ServerBuilder',['../classgrpc_1_1_server_builder.html',1,'grpc']]],
+  ['serverbuilderoption',['ServerBuilderOption',['../classgrpc_1_1_server_builder_option.html',1,'grpc']]],
   ['servercompletionqueue',['ServerCompletionQueue',['../classgrpc_1_1_server_completion_queue.html',1,'grpc']]],
   ['servercontext',['ServerContext',['../classgrpc_1_1_server_context.html',1,'grpc']]],
   ['servercredentials',['ServerCredentials',['../classgrpc_1_1_server_credentials.html',1,'grpc']]],

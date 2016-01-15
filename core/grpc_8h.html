@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">0.11.0.0</span>
+   &#160;<span id="projectnumber">0.12.0.0</span>
    </div>
   </td>
  </tr>
@@ -138,6 +138,15 @@ Macros</h2></td></tr>
 <tr class="memitem:aecc45a63163796ca1bc5453938bdfb36"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc_8h.html#aecc45a63163796ca1bc5453938bdfb36">GRPC_ARG_HTTP2_INITIAL_SEQUENCE_NUMBER</a>&#160;&#160;&#160;&quot;grpc.http2.initial_sequence_number&quot;</td></tr>
 <tr class="memdesc:aecc45a63163796ca1bc5453938bdfb36"><td class="mdescLeft">&#160;</td><td class="mdescRight">Initial sequence number for http2 transports.  <a href="#aecc45a63163796ca1bc5453938bdfb36">More...</a><br/></td></tr>
 <tr class="separator:aecc45a63163796ca1bc5453938bdfb36"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac02673f790cd2e8616e03aa010be67d6"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc_8h.html#ac02673f790cd2e8616e03aa010be67d6">GRPC_ARG_HTTP2_STREAM_LOOKAHEAD_BYTES</a>&#160;&#160;&#160;&quot;grpc.http2.lookahead_bytes&quot;</td></tr>
+<tr class="memdesc:ac02673f790cd2e8616e03aa010be67d6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Amount to read ahead on individual streams.  <a href="#ac02673f790cd2e8616e03aa010be67d6">More...</a><br/></td></tr>
+<tr class="separator:ac02673f790cd2e8616e03aa010be67d6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a216089aecb45149441024ffe5542cbaf"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc_8h.html#a216089aecb45149441024ffe5542cbaf">GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_DECODER</a>&#160;&#160;&#160;&quot;grpc.http2.hpack_table_size.decoder&quot;</td></tr>
+<tr class="memdesc:a216089aecb45149441024ffe5542cbaf"><td class="mdescLeft">&#160;</td><td class="mdescRight">How much memory to use for hpack decoding.  <a href="#a216089aecb45149441024ffe5542cbaf">More...</a><br/></td></tr>
+<tr class="separator:a216089aecb45149441024ffe5542cbaf"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aab50fc8faf9f04675a9fefa9d631e362"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc_8h.html#aab50fc8faf9f04675a9fefa9d631e362">GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_ENCODER</a>&#160;&#160;&#160;&quot;grpc.http2.hpack_table_size.encoder&quot;</td></tr>
+<tr class="memdesc:aab50fc8faf9f04675a9fefa9d631e362"><td class="mdescLeft">&#160;</td><td class="mdescRight">How much memory to use for hpack encoding.  <a href="#aab50fc8faf9f04675a9fefa9d631e362">More...</a><br/></td></tr>
+<tr class="separator:aab50fc8faf9f04675a9fefa9d631e362"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:add42f97666fbfc66b7dac253ac3b73ae"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc_8h.html#add42f97666fbfc66b7dac253ac3b73ae">GRPC_ARG_DEFAULT_AUTHORITY</a>&#160;&#160;&#160;&quot;grpc.default_authority&quot;</td></tr>
 <tr class="memdesc:add42f97666fbfc66b7dac253ac3b73ae"><td class="mdescLeft">&#160;</td><td class="mdescRight">Default authority to pass if none specified on call construction.  <a href="#add42f97666fbfc66b7dac253ac3b73ae">More...</a><br/></td></tr>
 <tr class="separator:add42f97666fbfc66b7dac253ac3b73ae"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -181,6 +190,9 @@ Typedefs</h2></td></tr>
 <a class="el" href="grpc_8h.html#a895faab0e6035445750e43482651ba2f">grpc_completion_queue</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc_8h.html#a895faab0e6035445750e43482651ba2f">grpc_completion_queue</a></td></tr>
 <tr class="memdesc:a895faab0e6035445750e43482651ba2f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Completion Queues enable notification of the completion of asynchronous actions.  <a href="#a895faab0e6035445750e43482651ba2f">More...</a><br/></td></tr>
 <tr class="separator:a895faab0e6035445750e43482651ba2f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a09ce3d7fa6473ac1cb39692adf257a13"><td class="memItemLeft" align="right" valign="top">typedef struct <a class="el" href="grpc_8h.html#a09ce3d7fa6473ac1cb39692adf257a13">grpc_alarm</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc_8h.html#a09ce3d7fa6473ac1cb39692adf257a13">grpc_alarm</a></td></tr>
+<tr class="memdesc:a09ce3d7fa6473ac1cb39692adf257a13"><td class="mdescLeft">&#160;</td><td class="mdescRight">An alarm associated with a completion queue.  <a href="#a09ce3d7fa6473ac1cb39692adf257a13">More...</a><br/></td></tr>
+<tr class="separator:a09ce3d7fa6473ac1cb39692adf257a13"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a432bfa6b9f6603643cdf9de8804c254e"><td class="memItemLeft" align="right" valign="top">typedef struct <a class="el" href="grpc_8h.html#a432bfa6b9f6603643cdf9de8804c254e">grpc_channel</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc_8h.html#a432bfa6b9f6603643cdf9de8804c254e">grpc_channel</a></td></tr>
 <tr class="memdesc:a432bfa6b9f6603643cdf9de8804c254e"><td class="mdescLeft">&#160;</td><td class="mdescRight">The Channel interface allows creation of Call objects.  <a href="#a432bfa6b9f6603643cdf9de8804c254e">More...</a><br/></td></tr>
 <tr class="separator:a432bfa6b9f6603643cdf9de8804c254e"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -304,6 +316,15 @@ Functions</h2></td></tr>
 <tr class="memitem:a629a77a358721f1a3bbb8fef34c3996e"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc_8h.html#a629a77a358721f1a3bbb8fef34c3996e">grpc_completion_queue_destroy</a> (<a class="el" href="grpc_8h.html#a895faab0e6035445750e43482651ba2f">grpc_completion_queue</a> *cq)</td></tr>
 <tr class="memdesc:a629a77a358721f1a3bbb8fef34c3996e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Destroy a completion queue.  <a href="#a629a77a358721f1a3bbb8fef34c3996e">More...</a><br/></td></tr>
 <tr class="separator:a629a77a358721f1a3bbb8fef34c3996e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a84e7cbf59a5fe3713ecad7b265f9ec48"><td class="memItemLeft" align="right" valign="top"><a class="el" href="grpc_8h.html#a09ce3d7fa6473ac1cb39692adf257a13">grpc_alarm</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc_8h.html#a84e7cbf59a5fe3713ecad7b265f9ec48">grpc_alarm_create</a> (<a class="el" href="grpc_8h.html#a895faab0e6035445750e43482651ba2f">grpc_completion_queue</a> *cq, <a class="el" href="structgpr__timespec.html">gpr_timespec</a> deadline, void *tag)</td></tr>
+<tr class="memdesc:a84e7cbf59a5fe3713ecad7b265f9ec48"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a completion queue alarm instance associated to <em>cq</em>.  <a href="#a84e7cbf59a5fe3713ecad7b265f9ec48">More...</a><br/></td></tr>
+<tr class="separator:a84e7cbf59a5fe3713ecad7b265f9ec48"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a921e9a2f728d338f42ad586e6d4eaf60"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc_8h.html#a921e9a2f728d338f42ad586e6d4eaf60">grpc_alarm_cancel</a> (<a class="el" href="grpc_8h.html#a09ce3d7fa6473ac1cb39692adf257a13">grpc_alarm</a> *alarm)</td></tr>
+<tr class="memdesc:a921e9a2f728d338f42ad586e6d4eaf60"><td class="mdescLeft">&#160;</td><td class="mdescRight">Cancel a completion queue alarm.  <a href="#a921e9a2f728d338f42ad586e6d4eaf60">More...</a><br/></td></tr>
+<tr class="separator:a921e9a2f728d338f42ad586e6d4eaf60"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6f89e617a33cbf15ea279accec2766a7"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc_8h.html#a6f89e617a33cbf15ea279accec2766a7">grpc_alarm_destroy</a> (<a class="el" href="grpc_8h.html#a09ce3d7fa6473ac1cb39692adf257a13">grpc_alarm</a> *alarm)</td></tr>
+<tr class="memdesc:a6f89e617a33cbf15ea279accec2766a7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Destroy the given completion queue alarm, cancelling it in the process.  <a href="#a6f89e617a33cbf15ea279accec2766a7">More...</a><br/></td></tr>
+<tr class="separator:a6f89e617a33cbf15ea279accec2766a7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9623d8e4df1d17eb26b67d905f1d7cb3"><td class="memItemLeft" align="right" valign="top"><a class="el" href="grpc_8h.html#a065b65f5cdd062a67d82e2b6bcf68cf2">grpc_connectivity_state</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc_8h.html#a9623d8e4df1d17eb26b67d905f1d7cb3">grpc_channel_check_connectivity_state</a> (<a class="el" href="grpc_8h.html#a432bfa6b9f6603643cdf9de8804c254e">grpc_channel</a> *channel, int try_to_connect)</td></tr>
 <tr class="memdesc:a9623d8e4df1d17eb26b67d905f1d7cb3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Check the connectivity state of a channel.  <a href="#a9623d8e4df1d17eb26b67d905f1d7cb3">More...</a><br/></td></tr>
 <tr class="separator:a9623d8e4df1d17eb26b67d905f1d7cb3"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -313,6 +334,9 @@ Functions</h2></td></tr>
 <tr class="memitem:a56c5657c12cb66e5ae4009e1c0f832fc"><td class="memItemLeft" align="right" valign="top"><a class="el" href="grpc_8h.html#a122f8f4f0a585396d993d9b55848f222">grpc_call</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc_8h.html#a56c5657c12cb66e5ae4009e1c0f832fc">grpc_channel_create_call</a> (<a class="el" href="grpc_8h.html#a432bfa6b9f6603643cdf9de8804c254e">grpc_channel</a> *channel, <a class="el" href="grpc_8h.html#a122f8f4f0a585396d993d9b55848f222">grpc_call</a> *parent_call, <a class="el" href="port__platform_8h.html#aa6abd4df815a5498d1a04b5e691a74a9">gpr_uint32</a> propagation_mask, <a class="el" href="grpc_8h.html#a895faab0e6035445750e43482651ba2f">grpc_completion_queue</a> *completion_queue, const char *method, const char *host, <a class="el" href="structgpr__timespec.html">gpr_timespec</a> deadline, void *reserved)</td></tr>
 <tr class="memdesc:a56c5657c12cb66e5ae4009e1c0f832fc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a call given a grpc_channel, in order to call 'method'.  <a href="#a56c5657c12cb66e5ae4009e1c0f832fc">More...</a><br/></td></tr>
 <tr class="separator:a56c5657c12cb66e5ae4009e1c0f832fc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2153ba2fc842541b64a2f467327b691f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc_8h.html#a2153ba2fc842541b64a2f467327b691f">grpc_channel_ping</a> (<a class="el" href="grpc_8h.html#a432bfa6b9f6603643cdf9de8804c254e">grpc_channel</a> *channel, <a class="el" href="grpc_8h.html#a895faab0e6035445750e43482651ba2f">grpc_completion_queue</a> *cq, void *tag, void *reserved)</td></tr>
+<tr class="memdesc:a2153ba2fc842541b64a2f467327b691f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Ping the channels peer (load balanced channels will select one sub-channel to ping); if the channel is not connected, posts a failed.  <a href="#a2153ba2fc842541b64a2f467327b691f">More...</a><br/></td></tr>
+<tr class="separator:a2153ba2fc842541b64a2f467327b691f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8bc360e945fb5f6bacf632c34adbc57f"><td class="memItemLeft" align="right" valign="top">void *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc_8h.html#a8bc360e945fb5f6bacf632c34adbc57f">grpc_channel_register_call</a> (<a class="el" href="grpc_8h.html#a432bfa6b9f6603643cdf9de8804c254e">grpc_channel</a> *channel, const char *method, const char *host, void *reserved)</td></tr>
 <tr class="memdesc:a8bc360e945fb5f6bacf632c34adbc57f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Pre-register a method/host pair on a channel.  <a href="#a8bc360e945fb5f6bacf632c34adbc57f">More...</a><br/></td></tr>
 <tr class="separator:a8bc360e945fb5f6bacf632c34adbc57f"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -383,6 +407,15 @@ Functions</h2></td></tr>
 <tr class="memitem:ae6984d3f0c3b9bc9a47859fd4dddc350"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc_8h.html#ae6984d3f0c3b9bc9a47859fd4dddc350">grpc_tracer_set_enabled</a> (const char *name, int enabled)</td></tr>
 <tr class="memdesc:ae6984d3f0c3b9bc9a47859fd4dddc350"><td class="mdescLeft">&#160;</td><td class="mdescRight">Enable or disable a tracer.  <a href="#ae6984d3f0c3b9bc9a47859fd4dddc350">More...</a><br/></td></tr>
 <tr class="separator:ae6984d3f0c3b9bc9a47859fd4dddc350"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9bf2615ced7ededa09f24e71c4e9e4d8"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc_8h.html#a9bf2615ced7ededa09f24e71c4e9e4d8">grpc_header_key_is_legal</a> (const char *key, size_t length)</td></tr>
+<tr class="memdesc:a9bf2615ced7ededa09f24e71c4e9e4d8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Check whether a metadata key is legal (will be accepted by core)  <a href="#a9bf2615ced7ededa09f24e71c4e9e4d8">More...</a><br/></td></tr>
+<tr class="separator:a9bf2615ced7ededa09f24e71c4e9e4d8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a726e7c2c723e6d28d41a74f4900e2feb"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc_8h.html#a726e7c2c723e6d28d41a74f4900e2feb">grpc_header_nonbin_value_is_legal</a> (const char *value, size_t length)</td></tr>
+<tr class="memdesc:a726e7c2c723e6d28d41a74f4900e2feb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Check whether a non-binary metadata value is legal (will be accepted by core)  <a href="#a726e7c2c723e6d28d41a74f4900e2feb">More...</a><br/></td></tr>
+<tr class="separator:a726e7c2c723e6d28d41a74f4900e2feb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6ce0fde0cf6e820ca0c95dae4653039e"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc_8h.html#a6ce0fde0cf6e820ca0c95dae4653039e">grpc_is_binary_header</a> (const char *key, size_t length)</td></tr>
+<tr class="memdesc:a6ce0fde0cf6e820ca0c95dae4653039e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Check whether a metadata key corresponds to a binary value.  <a href="#a6ce0fde0cf6e820ca0c95dae4653039e">More...</a><br/></td></tr>
+<tr class="separator:a6ce0fde0cf6e820ca0c95dae4653039e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Macro Definition Documentation</h2>
 <a class="anchor" id="add42f97666fbfc66b7dac253ac3b73ae"></a>
@@ -413,6 +446,34 @@ Functions</h2></td></tr>
 
 </div>
 </div>
+<a class="anchor" id="a216089aecb45149441024ffe5542cbaf"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_DECODER&#160;&#160;&#160;&quot;grpc.http2.hpack_table_size.decoder&quot;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>How much memory to use for hpack decoding. </p>
+
+</div>
+</div>
+<a class="anchor" id="aab50fc8faf9f04675a9fefa9d631e362"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_ENCODER&#160;&#160;&#160;&quot;grpc.http2.hpack_table_size.encoder&quot;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>How much memory to use for hpack encoding. </p>
+
+</div>
+</div>
 <a class="anchor" id="aecc45a63163796ca1bc5453938bdfb36"></a>
 <div class="memitem">
 <div class="memproto">
@@ -424,6 +485,21 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Initial sequence number for http2 transports. </p>
+
+</div>
+</div>
+<a class="anchor" id="ac02673f790cd2e8616e03aa010be67d6"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define GRPC_ARG_HTTP2_STREAM_LOOKAHEAD_BYTES&#160;&#160;&#160;&quot;grpc.http2.lookahead_bytes&quot;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Amount to read ahead on individual streams. </p>
+<p>Defaults to 64kb, larger values can help throughput on high-latency connections. NOTE: at some point we'd like to auto-tune this, and this parameter will become a no-op. </p>
 
 </div>
 </div>
@@ -563,11 +639,11 @@ Functions</h2></td></tr>
 <b>Value:</b><div class="fragment"><div class="line">((<a class="code" href="port__platform_8h.html#aa6abd4df815a5498d1a04b5e691a74a9">gpr_uint32</a>)((                                                              \</div>
 <div class="line">      0xffff | <a class="code" href="grpc_8h.html#a8d4d1f2973b2f5e4e3cdb515b7507868">GRPC_PROPAGATE_DEADLINE</a> | <a class="code" href="grpc_8h.html#a1729fbf455d0a10d31246086187bc9b3">GRPC_PROPAGATE_CENSUS_STATS_CONTEXT</a> | \</div>
 <div class="line">      <a class="code" href="grpc_8h.html#ab78096727057fdd2f6794df351e26243">GRPC_PROPAGATE_CENSUS_TRACING_CONTEXT</a> | <a class="code" href="grpc_8h.html#aa87041a20c89c31d27217b22ef79d066">GRPC_PROPAGATE_CANCELLATION</a>)))</div>
-<div class="ttc" id="port__platform_8h_html_aa6abd4df815a5498d1a04b5e691a74a9"><div class="ttname"><a href="port__platform_8h.html#aa6abd4df815a5498d1a04b5e691a74a9">gpr_uint32</a></div><div class="ttdeci">uint32_t gpr_uint32</div><div class="ttdef"><b>Definition:</b> port_platform.h:310</div></div>
-<div class="ttc" id="grpc_8h_html_a1729fbf455d0a10d31246086187bc9b3"><div class="ttname"><a href="grpc_8h.html#a1729fbf455d0a10d31246086187bc9b3">GRPC_PROPAGATE_CENSUS_STATS_CONTEXT</a></div><div class="ttdeci">#define GRPC_PROPAGATE_CENSUS_STATS_CONTEXT</div><div class="ttdoc">Propagate census context. </div><div class="ttdef"><b>Definition:</b> grpc.h:399</div></div>
-<div class="ttc" id="grpc_8h_html_ab78096727057fdd2f6794df351e26243"><div class="ttname"><a href="grpc_8h.html#ab78096727057fdd2f6794df351e26243">GRPC_PROPAGATE_CENSUS_TRACING_CONTEXT</a></div><div class="ttdeci">#define GRPC_PROPAGATE_CENSUS_TRACING_CONTEXT</div><div class="ttdef"><b>Definition:</b> grpc.h:400</div></div>
-<div class="ttc" id="grpc_8h_html_a8d4d1f2973b2f5e4e3cdb515b7507868"><div class="ttname"><a href="grpc_8h.html#a8d4d1f2973b2f5e4e3cdb515b7507868">GRPC_PROPAGATE_DEADLINE</a></div><div class="ttdeci">#define GRPC_PROPAGATE_DEADLINE</div><div class="ttdoc">Propagate deadline. </div><div class="ttdef"><b>Definition:</b> grpc.h:397</div></div>
-<div class="ttc" id="grpc_8h_html_aa87041a20c89c31d27217b22ef79d066"><div class="ttname"><a href="grpc_8h.html#aa87041a20c89c31d27217b22ef79d066">GRPC_PROPAGATE_CANCELLATION</a></div><div class="ttdeci">#define GRPC_PROPAGATE_CANCELLATION</div><div class="ttdoc">Propagate cancellation. </div><div class="ttdef"><b>Definition:</b> grpc.h:402</div></div>
+<div class="ttc" id="port__platform_8h_html_aa6abd4df815a5498d1a04b5e691a74a9"><div class="ttname"><a href="port__platform_8h.html#aa6abd4df815a5498d1a04b5e691a74a9">gpr_uint32</a></div><div class="ttdeci">uint32_t gpr_uint32</div><div class="ttdef"><b>Definition:</b> port_platform.h:322</div></div>
+<div class="ttc" id="grpc_8h_html_a1729fbf455d0a10d31246086187bc9b3"><div class="ttname"><a href="grpc_8h.html#a1729fbf455d0a10d31246086187bc9b3">GRPC_PROPAGATE_CENSUS_STATS_CONTEXT</a></div><div class="ttdeci">#define GRPC_PROPAGATE_CENSUS_STATS_CONTEXT</div><div class="ttdoc">Propagate census context. </div><div class="ttdef"><b>Definition:</b> grpc.h:413</div></div>
+<div class="ttc" id="grpc_8h_html_ab78096727057fdd2f6794df351e26243"><div class="ttname"><a href="grpc_8h.html#ab78096727057fdd2f6794df351e26243">GRPC_PROPAGATE_CENSUS_TRACING_CONTEXT</a></div><div class="ttdeci">#define GRPC_PROPAGATE_CENSUS_TRACING_CONTEXT</div><div class="ttdef"><b>Definition:</b> grpc.h:414</div></div>
+<div class="ttc" id="grpc_8h_html_a8d4d1f2973b2f5e4e3cdb515b7507868"><div class="ttname"><a href="grpc_8h.html#a8d4d1f2973b2f5e4e3cdb515b7507868">GRPC_PROPAGATE_DEADLINE</a></div><div class="ttdeci">#define GRPC_PROPAGATE_DEADLINE</div><div class="ttdoc">Propagate deadline. </div><div class="ttdef"><b>Definition:</b> grpc.h:411</div></div>
+<div class="ttc" id="grpc_8h_html_aa87041a20c89c31d27217b22ef79d066"><div class="ttname"><a href="grpc_8h.html#aa87041a20c89c31d27217b22ef79d066">GRPC_PROPAGATE_CANCELLATION</a></div><div class="ttdeci">#define GRPC_PROPAGATE_CANCELLATION</div><div class="ttdoc">Propagate cancellation. </div><div class="ttdef"><b>Definition:</b> grpc.h:416</div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -628,6 +704,20 @@ Functions</h2></td></tr>
 </div>
 </div>
 <h2 class="groupheader">Typedef Documentation</h2>
+<a class="anchor" id="a09ce3d7fa6473ac1cb39692adf257a13"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">typedef struct <a class="el" href="grpc_8h.html#a09ce3d7fa6473ac1cb39692adf257a13">grpc_alarm</a> <a class="el" href="grpc_8h.html#a09ce3d7fa6473ac1cb39692adf257a13">grpc_alarm</a></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>An alarm associated with a completion queue. </p>
+
+</div>
+</div>
 <a class="anchor" id="a122f8f4f0a585396d993d9b55848f222"></a>
 <div class="memitem">
 <div class="memproto">
@@ -942,6 +1032,78 @@ Functions</h2></td></tr>
 </div>
 </div>
 <h2 class="groupheader">Function Documentation</h2>
+<a class="anchor" id="a921e9a2f728d338f42ad586e6d4eaf60"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void grpc_alarm_cancel </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="grpc_8h.html#a09ce3d7fa6473ac1cb39692adf257a13">grpc_alarm</a> *&#160;</td>
+          <td class="paramname"><em>alarm</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Cancel a completion queue alarm. </p>
+<p>Calling this function over an alarm that has already fired has no effect. </p>
+
+</div>
+</div>
+<a class="anchor" id="a84e7cbf59a5fe3713ecad7b265f9ec48"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="grpc_8h.html#a09ce3d7fa6473ac1cb39692adf257a13">grpc_alarm</a>* grpc_alarm_create </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="grpc_8h.html#a895faab0e6035445750e43482651ba2f">grpc_completion_queue</a> *&#160;</td>
+          <td class="paramname"><em>cq</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="structgpr__timespec.html">gpr_timespec</a>&#160;</td>
+          <td class="paramname"><em>deadline</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">void *&#160;</td>
+          <td class="paramname"><em>tag</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Create a completion queue alarm instance associated to <em>cq</em>. </p>
+<p>Once the alarm expires (at <em>deadline</em>) or it's cancelled (see <em>grpc_alarm_cancel</em>), an event with tag <em>tag</em> will be added to <em>cq</em>. If the alarm expired, the event's success bit will be true, false otherwise (ie, upon cancellation). </p>
+
+</div>
+</div>
+<a class="anchor" id="a6f89e617a33cbf15ea279accec2766a7"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void grpc_alarm_destroy </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="grpc_8h.html#a09ce3d7fa6473ac1cb39692adf257a13">grpc_alarm</a> *&#160;</td>
+          <td class="paramname"><em>alarm</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Destroy the given completion queue alarm, cancelling it in the process. </p>
+
+</div>
+</div>
 <a class="anchor" id="a10277b9c9589903bc26b05444130904d"></a>
 <div class="memitem">
 <div class="memproto">
@@ -1359,6 +1521,46 @@ Functions</h2></td></tr>
 
 </div>
 </div>
+<a class="anchor" id="a2153ba2fc842541b64a2f467327b691f"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void grpc_channel_ping </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="grpc_8h.html#a432bfa6b9f6603643cdf9de8804c254e">grpc_channel</a> *&#160;</td>
+          <td class="paramname"><em>channel</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="grpc_8h.html#a895faab0e6035445750e43482651ba2f">grpc_completion_queue</a> *&#160;</td>
+          <td class="paramname"><em>cq</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">void *&#160;</td>
+          <td class="paramname"><em>tag</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">void *&#160;</td>
+          <td class="paramname"><em>reserved</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Ping the channels peer (load balanced channels will select one sub-channel to ping); if the channel is not connected, posts a failed. </p>
+
+</div>
+</div>
 <a class="anchor" id="a8bc360e945fb5f6bacf632c34adbc57f"></a>
 <div class="memitem">
 <div class="memproto">
@@ -1582,6 +1784,62 @@ Functions</h2></td></tr>
 
 </div>
 </div>
+<a class="anchor" id="a9bf2615ced7ededa09f24e71c4e9e4d8"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int grpc_header_key_is_legal </td>
+          <td>(</td>
+          <td class="paramtype">const char *&#160;</td>
+          <td class="paramname"><em>key</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">size_t&#160;</td>
+          <td class="paramname"><em>length</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Check whether a metadata key is legal (will be accepted by core) </p>
+
+</div>
+</div>
+<a class="anchor" id="a726e7c2c723e6d28d41a74f4900e2feb"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int grpc_header_nonbin_value_is_legal </td>
+          <td>(</td>
+          <td class="paramtype">const char *&#160;</td>
+          <td class="paramname"><em>value</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">size_t&#160;</td>
+          <td class="paramname"><em>length</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Check whether a non-binary metadata value is legal (will be accepted by core) </p>
+
+</div>
+</div>
 <a class="anchor" id="aa78606c93951c49eadd8d83d739798d6"></a>
 <div class="memitem">
 <div class="memproto">
@@ -1633,6 +1891,34 @@ Functions</h2></td></tr>
 
 <p>Create a client channel to 'target'. </p>
 <p>Additional channel level configuration MAY be provided by <a class="el" href="structgrpc__channel__args.html" title="An array of arguments that can be passed around. ">grpc_channel_args</a>, though the expectation is that most clients will want to simply pass NULL. See <a class="el" href="structgrpc__channel__args.html" title="An array of arguments that can be passed around. ">grpc_channel_args</a> definition for more on this. The data in 'args' need only live through the invocation of this function. </p>
+
+</div>
+</div>
+<a class="anchor" id="a6ce0fde0cf6e820ca0c95dae4653039e"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int grpc_is_binary_header </td>
+          <td>(</td>
+          <td class="paramtype">const char *&#160;</td>
+          <td class="paramname"><em>key</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">size_t&#160;</td>
+          <td class="paramname"><em>length</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Check whether a metadata key corresponds to a binary value. </p>
 
 </div>
 </div>
@@ -2150,7 +2436,7 @@ Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Oct 27 2015 21:07:30 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Jan 15 2016 00:21:22 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

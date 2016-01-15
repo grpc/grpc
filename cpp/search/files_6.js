@@ -3,6 +3,7 @@ var searchData=
   ['serialization_5ftraits_2eh',['serialization_traits.h',['../serialization__traits_8h.html',1,'']]],
   ['server_2eh',['server.h',['../server_8h.html',1,'']]],
   ['server_5fbuilder_2eh',['server_builder.h',['../server__builder_8h.html',1,'']]],
+  ['server_5fbuilder_5foption_2eh',['server_builder_option.h',['../server__builder__option_8h.html',1,'']]],
   ['server_5fcontext_2eh',['server_context.h',['../server__context_8h.html',1,'']]],
   ['server_5fcredentials_2eh',['server_credentials.h',['../server__credentials_8h.html',1,'']]],
   ['service_5ftype_2eh',['service_type.h',['../service__type_8h.html',1,'']]],
