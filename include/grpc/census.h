@@ -354,8 +354,21 @@ typedef struct {
 #define CENSUS_TAG_IS_STATS(flags) (flags & CENSUS_TAG_STATS)
 #define CENSUS_TAG_IS_BINARY(flags) (flags & CENSUS_TAG_BINARY)
 
-#define CENSUS_MAX_TAG_KV_LEN 255 /* Maximum length of key/value in a tag. */
-#define CENSUS_MAX_TAGS 255       /* Maximum number of tags in a tag set. */
+/* Maximum length of key/value in a tag. */
+#define CENSUS_MAX_TAG_KV_LEN 255
+/* Maximum number of propagatable tags. */
+#define CENSUS_MAX_PROPAGATED_TAGS 255
+
+typedef struct {
+  int n_propagated_tags;        /* number of propagated printable tags */
+  int n_propagated_binary_tags; /* number of propagated binary tags */
+  int n_local_tags;             /* number of non-propagated (local) tags */
+  int n_deleted_tags;           /* number of tags that were deleted */
+  int n_added_tags;             /* number of tags that were added */
+  int n_modified_tags;          /* number of tags that were modified */
+  int n_invalid_tags;           /* number of tags with bad keys or values (e.g.
+                                   longer than CENSUS_MAX_TAG_KV_LEN) */
+} census_tag_set_create_stats;
 
 /* Create a new tag set, adding and removing tags from an existing tag set.
    @param base Base tag set to build upon. Can be NULL.
@@ -365,9 +378,12 @@ typedef struct {
    both, but with NULL or zero-length values, will be deleted from the
    tag set.
    @param ntags number of tags in 'tags'
+   @param stats Information about the tag set created and actions taken during
+   its creation.
 */
 census_tag_set *census_tag_set_create(const census_tag_set *base,
-                                      const census_tag *tags, int ntags);
+                                      const census_tag *tags, int ntags,
+                                      census_tag_set_create_stats *stats);
 
 /* Destroy a tag set created by census_tag_set_create(). Once this function
    has been called, the tag set cannot be reused. */
@@ -376,10 +392,25 @@ void census_tag_set_destroy(census_tag_set *tags);
 /* Get the number of tags in the tag set. */
 int census_tag_set_ntags(const census_tag_set *tags);
 
-/* Get a tag by it's index in the tag set. Returns 0 if the index is invalid
-   (<0 or >= census_tag_set_ntags). There is no guarantee on tag ordering. */
-int census_tag_set_get_tag_by_index(const census_tag_set *tags, int index,
-                                    census_tag *tag);
+/* Structure used for tag set iteration. API clients should not use or
+   reference internal fields - neither their contents or presence/absence are
+   guaranteed. */
+typedef struct {
+  const census_tag_set *tags;
+  int base;
+  int index;
+  char *kvm;
+} census_tag_set_iterator;
+
+/* Initialize a tag set iterator. Must be called before first use of the
+   iterator. */
+void census_tag_set_initialize_iterator(const census_tag_set *tags,
+                                        census_tag_set_iterator *iterator);
+
+/* Get the contents of the "next" tag in the tag set. If there are no more
+   tags in the tag set, returns 0 (and 'tag' contents will be unchanged),
+   otherwise returns 1. */
+int census_tag_set_next_tag(census_tag_set_iterator *iterator, census_tag *tag);
 
 /* Get a tag by its key. Returns 0 if the key is not present in the tag
    set. */

@@ -108,46 +108,34 @@ static bool validate_tag(const census_tag_set *cts, const census_tag *tag) {
 
 // Create an empty tag_set.
 static void empty_test(void) {
-  struct census_tag_set *cts = census_tag_set_create(NULL, NULL, 0);
+  struct census_tag_set *cts = census_tag_set_create(NULL, NULL, 0, NULL);
   GPR_ASSERT(census_tag_set_ntags(cts) == 0);
   census_tag_set_destroy(cts);
 }
 
-// Create basic tag set, and test that retreiving tag by index works.
+// Test create and iteration over basic tag set.
 static void basic_test(void) {
   struct census_tag_set *cts =
-      census_tag_set_create(NULL, basic_tags, BASIC_TAG_COUNT);
+      census_tag_set_create(NULL, basic_tags, BASIC_TAG_COUNT, NULL);
   GPR_ASSERT(census_tag_set_ntags(cts) == BASIC_TAG_COUNT);
-  for (int i = 0; i < census_tag_set_ntags(cts); i++) {
-    census_tag tag;
-    GPR_ASSERT(census_tag_set_get_tag_by_index(cts, i, &tag) == 1);
+  census_tag_set_iterator it;
+  census_tag_set_initialize_iterator(cts, &it);
+  census_tag tag;
+  while (census_tag_set_next_tag(&it, &tag)) {
     // can't rely on tag return order: make sure it matches exactly one.
     int matches = 0;
-    for (int j = 0; j < BASIC_TAG_COUNT; j++) {
-      if (compare_tag(&tag, &basic_tags[j])) matches++;
+    for (int i = 0; i < BASIC_TAG_COUNT; i++) {
+      if (compare_tag(&tag, &basic_tags[i])) matches++;
     }
     GPR_ASSERT(matches == 1);
   }
   census_tag_set_destroy(cts);
 }
 
-// Try census_tag_set_get_tag_by_index() with bad indices.
-static void bad_index_test(void) {
-  struct census_tag_set *cts =
-      census_tag_set_create(NULL, basic_tags, BASIC_TAG_COUNT);
-  GPR_ASSERT(census_tag_set_ntags(cts) == BASIC_TAG_COUNT);
-  census_tag tag;
-  GPR_ASSERT(census_tag_set_get_tag_by_index(cts, -1, &tag) == 0);
-  GPR_ASSERT(census_tag_set_get_tag_by_index(cts, BASIC_TAG_COUNT, &tag) == 0);
-  GPR_ASSERT(census_tag_set_get_tag_by_index(cts, BASIC_TAG_COUNT + 1, &tag) ==
-             0);
-  census_tag_set_destroy(cts);
-}
-
 // Test that census_tag_set_get_tag_by_key().
 static void lookup_by_key_test(void) {
   struct census_tag_set *cts =
-      census_tag_set_create(NULL, basic_tags, BASIC_TAG_COUNT);
+      census_tag_set_create(NULL, basic_tags, BASIC_TAG_COUNT, NULL);
   GPR_ASSERT(census_tag_set_ntags(cts) == BASIC_TAG_COUNT);
   census_tag tag;
   for (int i = 0; i < census_tag_set_ntags(cts); i++) {
@@ -175,35 +163,35 @@ static void invalid_test(void) {
   // long keys, short value. Key lengths (including terminator) should be
   // <= 255 (CENSUS_MAX_TAG_KV_LEN)
   GPR_ASSERT(strlen(key) == 299);
-  struct census_tag_set *cts = census_tag_set_create(NULL, &tag, 1);
+  struct census_tag_set *cts = census_tag_set_create(NULL, &tag, 1, NULL);
   GPR_ASSERT(census_tag_set_ntags(cts) == 0);
   census_tag_set_destroy(cts);
   key[CENSUS_MAX_TAG_KV_LEN] = 0;
   GPR_ASSERT(strlen(key) == CENSUS_MAX_TAG_KV_LEN);
-  cts = census_tag_set_create(NULL, &tag, 1);
+  cts = census_tag_set_create(NULL, &tag, 1, NULL);
   GPR_ASSERT(census_tag_set_ntags(cts) == 0);
   census_tag_set_destroy(cts);
   key[CENSUS_MAX_TAG_KV_LEN - 1] = 0;
   GPR_ASSERT(strlen(key) == CENSUS_MAX_TAG_KV_LEN - 1);
-  cts = census_tag_set_create(NULL, &tag, 1);
+  cts = census_tag_set_create(NULL, &tag, 1, NULL);
   GPR_ASSERT(census_tag_set_ntags(cts) == 1);
   census_tag_set_destroy(cts);
   // now try with long values
   tag.value_len = 300;
-  cts = census_tag_set_create(NULL, &tag, 1);
+  cts = census_tag_set_create(NULL, &tag, 1, NULL);
   GPR_ASSERT(census_tag_set_ntags(cts) == 0);
   census_tag_set_destroy(cts);
   tag.value_len = CENSUS_MAX_TAG_KV_LEN + 1;
-  cts = census_tag_set_create(NULL, &tag, 1);
+  cts = census_tag_set_create(NULL, &tag, 1, NULL);
   GPR_ASSERT(census_tag_set_ntags(cts) == 0);
   census_tag_set_destroy(cts);
   tag.value_len = CENSUS_MAX_TAG_KV_LEN;
-  cts = census_tag_set_create(NULL, &tag, 1);
+  cts = census_tag_set_create(NULL, &tag, 1, NULL);
   GPR_ASSERT(census_tag_set_ntags(cts) == 1);
   census_tag_set_destroy(cts);
   // 0 length key.
   key[0] = 0;
-  cts = census_tag_set_create(NULL, &tag, 1);
+  cts = census_tag_set_create(NULL, &tag, 1, NULL);
   GPR_ASSERT(census_tag_set_ntags(cts) == 0);
   census_tag_set_destroy(cts);
 }
@@ -211,9 +199,9 @@ static void invalid_test(void) {
 // Make a copy of a tag set
 static void copy_test(void) {
   struct census_tag_set *cts =
-      census_tag_set_create(NULL, basic_tags, BASIC_TAG_COUNT);
+      census_tag_set_create(NULL, basic_tags, BASIC_TAG_COUNT, NULL);
   GPR_ASSERT(census_tag_set_ntags(cts) == BASIC_TAG_COUNT);
-  struct census_tag_set *cts2 = census_tag_set_create(cts, NULL, 0);
+  struct census_tag_set *cts2 = census_tag_set_create(cts, NULL, 0, NULL);
   GPR_ASSERT(census_tag_set_ntags(cts2) == BASIC_TAG_COUNT);
   for (int i = 0; i < census_tag_set_ntags(cts2); i++) {
     census_tag tag;
@@ -228,10 +216,10 @@ static void copy_test(void) {
 // replace a single tag value
 static void replace_value_test(void) {
   struct census_tag_set *cts =
-      census_tag_set_create(NULL, basic_tags, BASIC_TAG_COUNT);
+      census_tag_set_create(NULL, basic_tags, BASIC_TAG_COUNT, NULL);
   GPR_ASSERT(census_tag_set_ntags(cts) == BASIC_TAG_COUNT);
   struct census_tag_set *cts2 =
-      census_tag_set_create(cts, modify_tags + REPLACE_VALUE_OFFSET, 1);
+      census_tag_set_create(cts, modify_tags + REPLACE_VALUE_OFFSET, 1, NULL);
   GPR_ASSERT(census_tag_set_ntags(cts2) == BASIC_TAG_COUNT);
   census_tag tag;
   GPR_ASSERT(census_tag_set_get_tag_by_key(
@@ -244,10 +232,10 @@ static void replace_value_test(void) {
 // replace a single tags flags
 static void replace_flags_test(void) {
   struct census_tag_set *cts =
-      census_tag_set_create(NULL, basic_tags, BASIC_TAG_COUNT);
+      census_tag_set_create(NULL, basic_tags, BASIC_TAG_COUNT, NULL);
   GPR_ASSERT(census_tag_set_ntags(cts) == BASIC_TAG_COUNT);
   struct census_tag_set *cts2 =
-      census_tag_set_create(cts, modify_tags + REPLACE_FLAG_OFFSET, 1);
+      census_tag_set_create(cts, modify_tags + REPLACE_FLAG_OFFSET, 1, NULL);
   GPR_ASSERT(census_tag_set_ntags(cts2) == BASIC_TAG_COUNT);
   census_tag tag;
   GPR_ASSERT(census_tag_set_get_tag_by_key(
@@ -260,10 +248,10 @@ static void replace_flags_test(void) {
 // delete a single tag.
 static void delete_tag_test(void) {
   struct census_tag_set *cts =
-      census_tag_set_create(NULL, basic_tags, BASIC_TAG_COUNT);
+      census_tag_set_create(NULL, basic_tags, BASIC_TAG_COUNT, NULL);
   GPR_ASSERT(census_tag_set_ntags(cts) == BASIC_TAG_COUNT);
   struct census_tag_set *cts2 =
-      census_tag_set_create(cts, modify_tags + DELETE_TAG_OFFSET, 1);
+      census_tag_set_create(cts, modify_tags + DELETE_TAG_OFFSET, 1, NULL);
   GPR_ASSERT(census_tag_set_ntags(cts2) == BASIC_TAG_COUNT - 1);
   census_tag tag;
   GPR_ASSERT(census_tag_set_get_tag_by_key(
@@ -275,10 +263,10 @@ static void delete_tag_test(void) {
 // add a single new tag.
 static void add_tag_test(void) {
   struct census_tag_set *cts =
-      census_tag_set_create(NULL, basic_tags, BASIC_TAG_COUNT);
+      census_tag_set_create(NULL, basic_tags, BASIC_TAG_COUNT, NULL);
   GPR_ASSERT(census_tag_set_ntags(cts) == BASIC_TAG_COUNT);
   struct census_tag_set *cts2 =
-      census_tag_set_create(cts, modify_tags + ADD_TAG_OFFSET, 1);
+      census_tag_set_create(cts, modify_tags + ADD_TAG_OFFSET, 1, NULL);
   GPR_ASSERT(census_tag_set_ntags(cts2) == BASIC_TAG_COUNT + 1);
   census_tag tag;
   GPR_ASSERT(census_tag_set_get_tag_by_key(
@@ -291,10 +279,10 @@ static void add_tag_test(void) {
 // test many changes at once.
 static void replace_add_delete_test(void) {
   struct census_tag_set *cts =
-      census_tag_set_create(NULL, basic_tags, BASIC_TAG_COUNT);
+      census_tag_set_create(NULL, basic_tags, BASIC_TAG_COUNT, NULL);
   GPR_ASSERT(census_tag_set_ntags(cts) == BASIC_TAG_COUNT);
   struct census_tag_set *cts2 =
-      census_tag_set_create(cts, modify_tags, MODIFY_TAG_COUNT);
+      census_tag_set_create(cts, modify_tags, MODIFY_TAG_COUNT, NULL);
   GPR_ASSERT(census_tag_set_ntags(cts2) == 8);
   // validate tag set contents. Use specific indices into the two arrays
   // holding tag values.
@@ -321,7 +309,7 @@ static void simple_encode_decode_test(void) {
   char buf1[1000];
   char buf2[1000];
   struct census_tag_set *cts =
-      census_tag_set_create(NULL, basic_tags, BASIC_TAG_COUNT);
+      census_tag_set_create(NULL, basic_tags, BASIC_TAG_COUNT, NULL);
   GPR_ASSERT(census_tag_set_ntags(cts) == BASIC_TAG_COUNT);
   GPR_ASSERT(census_tag_set_encode_propagated(cts, buf1, 1) == 0);
   size_t b1 = census_tag_set_encode_propagated(cts, buf1, 1000);
@@ -352,10 +340,10 @@ static void complex_encode_decode_test(void) {
   char buf1[500];
   char buf2[500];
   struct census_tag_set *cts =
-      census_tag_set_create(NULL, basic_tags, BASIC_TAG_COUNT);
+      census_tag_set_create(NULL, basic_tags, BASIC_TAG_COUNT, NULL);
   GPR_ASSERT(census_tag_set_ntags(cts) == BASIC_TAG_COUNT);
   struct census_tag_set *cts2 =
-      census_tag_set_create(cts, modify_tags, MODIFY_TAG_COUNT);
+      census_tag_set_create(cts, modify_tags, MODIFY_TAG_COUNT, NULL);
   GPR_ASSERT(census_tag_set_ntags(cts2) == 8);
 
   size_t b1 = census_tag_set_encode_propagated(cts2, buf1, 500);
@@ -376,7 +364,6 @@ int main(int argc, char *argv[]) {
   grpc_test_init(argc, argv);
   empty_test();
   basic_test();
-  bad_index_test();
   lookup_by_key_test();
   invalid_test();
   copy_test();
