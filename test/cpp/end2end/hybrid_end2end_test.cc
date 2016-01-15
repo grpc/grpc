@@ -41,135 +41,18 @@
 #include <grpc++/server_builder.h>
 #include <grpc++/server_context.h>
 #include <grpc/grpc.h>
-#include <grpc/support/thd.h>
-#include <grpc/support/time.h>
 #include <gtest/gtest.h>
 
-#include "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
-#include "test/cpp/util/string_ref_helper.h"
+#include "test/cpp/end2end/test_service_impl.h"
+// #include "test/cpp/util/string_ref_helper.h"
 
 namespace grpc {
 namespace testing {
 
 namespace {
-
-class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
- public:
-  TestServiceImpl() : signal_client_(false), host_() {}
-  explicit TestServiceImpl(const grpc::string& host)
-      : signal_client_(false), host_(new grpc::string(host)) {}
-
-  Status Echo(ServerContext* context, const EchoRequest* request,
-              EchoResponse* response) GRPC_OVERRIDE {
-    response->set_message(request->message());
-    if (host_) {
-      response->mutable_param()->set_host(*host_);
-    }
-    if (request->has_param() && request->param().client_cancel_after_us()) {
-      {
-        std::unique_lock<std::mutex> lock(mu_);
-        signal_client_ = true;
-      }
-      while (!context->IsCancelled()) {
-        gpr_sleep_until(gpr_time_add(
-            gpr_now(GPR_CLOCK_REALTIME),
-            gpr_time_from_micros(request->param().client_cancel_after_us(),
-                                 GPR_TIMESPAN)));
-      }
-      return Status::CANCELLED;
-    } else if (request->has_param() &&
-               request->param().server_cancel_after_us()) {
-      gpr_sleep_until(gpr_time_add(
-          gpr_now(GPR_CLOCK_REALTIME),
-          gpr_time_from_micros(request->param().server_cancel_after_us(),
-                               GPR_TIMESPAN)));
-      return Status::CANCELLED;
-    } else {
-      EXPECT_FALSE(context->IsCancelled());
-    }
-
-    if (request->has_param() && request->param().echo_metadata()) {
-      const std::multimap<grpc::string_ref, grpc::string_ref>& client_metadata =
-          context->client_metadata();
-      for (std::multimap<grpc::string_ref, grpc::string_ref>::const_iterator
-               iter = client_metadata.begin();
-           iter != client_metadata.end(); ++iter) {
-        context->AddTrailingMetadata(ToString(iter->first),
-                                     ToString(iter->second));
-      }
-    }
-    if (request->has_param() &&
-        request->param().response_message_length() > 0) {
-      response->set_message(
-          grpc::string(request->param().response_message_length(), '\0'));
-    }
-    if (request->has_param() && request->param().echo_peer()) {
-      response->mutable_param()->set_peer(context->peer());
-    }
-    return Status::OK;
-  }
-
-  // Unimplemented is left unimplemented to test the returned error.
-
-  Status RequestStream(ServerContext* context,
-                       ServerReader<EchoRequest>* reader,
-                       EchoResponse* response) GRPC_OVERRIDE {
-    EchoRequest request;
-    response->set_message("");
-    int cancel_after_reads = 0;
-    while (reader->Read(&request)) {
-      if (cancel_after_reads == 1) {
-        gpr_log(GPR_INFO, "return cancel status");
-        return Status::CANCELLED;
-      } else if (cancel_after_reads > 0) {
-        cancel_after_reads--;
-      }
-      response->mutable_message()->append(request.message());
-    }
-    return Status::OK;
-  }
-
-  // Return 3 messages.
-  // TODO(yangg) make it generic by adding a parameter into EchoRequest
-  Status ResponseStream(ServerContext* context, const EchoRequest* request,
-                        ServerWriter<EchoResponse>* writer) GRPC_OVERRIDE {
-    EchoResponse response;
-    response.set_message(request->message() + "0");
-    writer->Write(response);
-    response.set_message(request->message() + "1");
-    writer->Write(response);
-    response.set_message(request->message() + "2");
-    writer->Write(response);
-
-    return Status::OK;
-  }
-
-  Status BidiStream(ServerContext* context,
-                    ServerReaderWriter<EchoResponse, EchoRequest>* stream)
-      GRPC_OVERRIDE {
-    EchoRequest request;
-    EchoResponse response;
-    while (stream->Read(&request)) {
-      gpr_log(GPR_INFO, "recv msg %s", request.message().c_str());
-      response.set_message(request.message());
-      stream->Write(response);
-    }
-    return Status::OK;
-  }
-
-  bool signal_client() {
-    std::unique_lock<std::mutex> lock(mu_);
-    return signal_client_;
-  }
-
- private:
-  bool signal_client_;
-  std::mutex mu_;
-  std::unique_ptr<grpc::string> host_;
-};
 
 void* tag(int i) { return (void*)(intptr_t)i; }
 
@@ -207,12 +90,36 @@ void HandleClientStreaming(Service* service, ServerCompletionQueue* cq) {
   ServerAsyncReader<EchoResponse, EchoRequest> srv_stream(&srv_ctx);
   service->RequestRequestStream(&srv_ctx, &srv_stream, cq, cq, tag(1));
   Verify(cq, 1, true);
+  int i = 1;
   do {
+    i++;
     send_response.mutable_message()->append(recv_request.message());
-    srv_stream.Read(&recv_request, tag(2));
-  } while (VerifyReturnSuccess(cq, 2));
-  srv_stream.Finish(send_response, Status::OK, tag(3));
+    srv_stream.Read(&recv_request, tag(i));
+  } while (VerifyReturnSuccess(cq, i));
+  srv_stream.Finish(send_response, Status::OK, tag(100));
+  Verify(cq, 100, true);
+}
+
+template <class Service>
+void HandleServerStreaming(Service* service, ServerCompletionQueue* cq) {
+  ServerContext srv_ctx;
+  EchoRequest recv_request;
+  EchoResponse send_response;
+  ServerAsyncWriter<EchoResponse> srv_stream(&srv_ctx);
+  service->RequestResponseStream(&srv_ctx, &recv_request, &srv_stream, cq, cq,
+                                 tag(1));
+  Verify(cq, 1, true);
+  send_response.set_message(recv_request.message() + "0");
+  srv_stream.Write(send_response, tag(2));
+  Verify(cq, 2, true);
+  send_response.set_message(recv_request.message() + "1");
+  srv_stream.Write(send_response, tag(3));
   Verify(cq, 3, true);
+  send_response.set_message(recv_request.message() + "2");
+  srv_stream.Write(send_response, tag(4));
+  Verify(cq, 4, true);
+  srv_stream.Finish(Status::OK, tag(5));
+  Verify(cq, 5, true);
 }
 
 class HybridEnd2endTest : public ::testing::Test {
@@ -228,7 +135,10 @@ class HybridEnd2endTest : public ::testing::Test {
     builder.AddListeningPort(server_address_.str(),
                              grpc::InsecureServerCredentials());
     builder.RegisterService(service);
-    cq_ = builder.AddCompletionQueue();
+    // Create a separate cq for each potential handler.
+    for (int i = 0; i < 5; i++) {
+      cqs_.push_back(std::move(builder.AddCompletionQueue()));
+    }
     server_ = builder.BuildAndStart();
   }
 
@@ -236,9 +146,11 @@ class HybridEnd2endTest : public ::testing::Test {
     server_->Shutdown();
     void* ignored_tag;
     bool ignored_ok;
-    cq_->Shutdown();
-    while (cq_->Next(&ignored_tag, &ignored_ok))
-      ;
+    for (auto it = cqs_.begin(); it != cqs_.end(); ++it) {
+      (*it)->Shutdown();
+      while ((*it)->Next(&ignored_tag, &ignored_ok))
+        ;
+    }
   }
 
   void ResetStub() {
@@ -250,6 +162,8 @@ class HybridEnd2endTest : public ::testing::Test {
   void TestAllMethods() {
     SendEcho();
     SendSimpleClientStreaming();
+    SendSimpleServerStreaming();
+    SendBidiStreaming();
   }
 
   void SendEcho() {
@@ -279,7 +193,57 @@ class HybridEnd2endTest : public ::testing::Test {
     EXPECT_TRUE(recv_status.ok());
   }
 
-  std::unique_ptr<ServerCompletionQueue> cq_;
+  void SendSimpleServerStreaming() {
+    EchoRequest request;
+    EchoResponse response;
+    ClientContext context;
+    request.set_message("hello");
+
+    auto stream = stub_->ResponseStream(&context, request);
+    EXPECT_TRUE(stream->Read(&response));
+    EXPECT_EQ(response.message(), request.message() + "0");
+    EXPECT_TRUE(stream->Read(&response));
+    EXPECT_EQ(response.message(), request.message() + "1");
+    EXPECT_TRUE(stream->Read(&response));
+    EXPECT_EQ(response.message(), request.message() + "2");
+    EXPECT_FALSE(stream->Read(&response));
+
+    Status s = stream->Finish();
+    EXPECT_TRUE(s.ok());
+  }
+
+  void SendBidiStreaming() {
+    EchoRequest request;
+    EchoResponse response;
+    ClientContext context;
+    grpc::string msg("hello");
+
+    auto stream = stub_->BidiStream(&context);
+
+    request.set_message(msg + "0");
+    EXPECT_TRUE(stream->Write(request));
+    EXPECT_TRUE(stream->Read(&response));
+    EXPECT_EQ(response.message(), request.message());
+
+    request.set_message(msg + "1");
+    EXPECT_TRUE(stream->Write(request));
+    EXPECT_TRUE(stream->Read(&response));
+    EXPECT_EQ(response.message(), request.message());
+
+    request.set_message(msg + "2");
+    EXPECT_TRUE(stream->Write(request));
+    EXPECT_TRUE(stream->Read(&response));
+    EXPECT_EQ(response.message(), request.message());
+
+    stream->WritesDone();
+    EXPECT_FALSE(stream->Read(&response));
+    EXPECT_FALSE(stream->Read(&response));
+
+    Status s = stream->Finish();
+    EXPECT_TRUE(s.ok());
+  }
+
+  std::vector<std::unique_ptr<ServerCompletionQueue> > cqs_;
   std::unique_ptr<grpc::testing::EchoTestService::Stub> stub_;
   std::unique_ptr<Server> server_;
   std::ostringstream server_address_;
@@ -289,7 +253,8 @@ TEST_F(HybridEnd2endTest, AsyncEcho) {
   EchoTestService::WithAsyncMethod_Echo<TestServiceImpl> service;
   SetUpServer(&service);
   ResetStub();
-  std::thread echo_handler_thread([this, &service] { HandleEcho(&service, cq_.get()); });
+  std::thread echo_handler_thread(
+      [this, &service] { HandleEcho(&service, cqs_[0].get()); });
   TestAllMethods();
   echo_handler_thread.join();
 }
@@ -298,8 +263,25 @@ TEST_F(HybridEnd2endTest, AsyncEchoRequestStream) {
   EchoTestService::WithAsyncMethod_RequestStream<EchoTestService::WithAsyncMethod_Echo<TestServiceImpl> > service;
   SetUpServer(&service);
   ResetStub();
-  std::thread echo_handler_thread([this, &service] { HandleEcho(&service, cq_.get()); });
-  std::thread request_stream_handler_thread([this, &service] { HandleClientStreaming(&service, cq_.get()); });
+  std::thread echo_handler_thread(
+      [this, &service] { HandleEcho(&service, cqs_[0].get()); });
+  std::thread request_stream_handler_thread(
+      [this, &service] { HandleClientStreaming(&service, cqs_[1].get()); });
+  TestAllMethods();
+  echo_handler_thread.join();
+  request_stream_handler_thread.join();
+}
+
+TEST_F(HybridEnd2endTest, AsyncRequestStreamResponseStream) {
+  EchoTestService::WithAsyncMethod_RequestStream<
+      EchoTestService::WithAsyncMethod_ResponseStream<TestServiceImpl> >
+      service;
+  SetUpServer(&service);
+  ResetStub();
+  std::thread echo_handler_thread(
+      [this, &service] { HandleServerStreaming(&service, cqs_[0].get()); });
+  std::thread request_stream_handler_thread(
+      [this, &service] { HandleClientStreaming(&service, cqs_[1].get()); });
   TestAllMethods();
   echo_handler_thread.join();
   request_stream_handler_thread.join();
