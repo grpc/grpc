@@ -324,6 +324,9 @@ bool Server::RegisterService(const grpc::string* host, Service* service) {
   }
   for (auto it = service->methods_.begin(); it != service->methods_.end();
        ++it) {
+    if (it->get() == nullptr) {  // Handled by generic service if any.
+      continue;
+    }
     RpcServiceMethod* method = it->get();
     void* tag = grpc_server_register_method(server_, method->name(),
                                             host ? host->c_str() : nullptr);
