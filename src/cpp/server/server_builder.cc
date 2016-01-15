@@ -117,6 +117,15 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
   }
   if (generic_service_) {
     server->RegisterAsyncGenericService(generic_service_);
+  } else {
+    for (auto it = services_.begin(); it != services_.end(); ++it) {
+      if ((*it)->service->has_generic_methods()) {
+        gpr_log(GPR_ERROR,
+                "Some methods were marked generic but there is no "
+                "generic service registered.");
+        return nullptr;
+      }
+    }
   }
   for (auto port = ports_.begin(); port != ports_.end(); port++) {
     int r = server->AddListeningPort(port->addr, port->creds.get());
