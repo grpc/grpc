@@ -329,7 +329,7 @@ void census_trace_scan_end();
    a tag set. All contexts have an associated tag set. */
 typedef struct census_tag_set census_tag_set;
 
-/* A tag is a key:value pair. The key is a printable, nil-terminate
+/* A tag is a key:value pair. The key is a non-empty, printable, nil-terminated
    string. The value is a binary string, that may be printable. There are no
    limits on the sizes of either keys or values, but code authors should
    remember that systems may have inbuilt limits (e.g. for propagated tags,
@@ -421,6 +421,10 @@ int census_tag_set_next_tag(census_tag_set_iterator *iterator, census_tag *tag);
    set. */
 int census_tag_set_get_tag_by_key(const census_tag_set *tags, const char *key,
                                   census_tag *tag);
+
+/* Tag set encode/decode functionality. These functionas are intended
+   for use by RPC systems only, for purposes of transmitting/receiving tag
+   sets. */
 
 /* Encode to-be-propagated non-binary tags from a tag set into a memory
    buffer. The total number of bytes used in the buffer is returned. If the
