@@ -60,7 +60,7 @@
       % for dep in module.transitive_deps:
       % for lib in libs:
       % if lib.name == dep:
-      % for file in lib.public_headers + lib.headers + lib.src:
+      % for file in lib.get('public_headers', []) + lib.headers + lib.src:
       "${file}",
       % endfor
       % endif
