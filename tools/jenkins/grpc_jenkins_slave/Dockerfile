@@ -38,6 +38,7 @@ RUN apt-get update && apt-get install -y \
   autotools-dev \
   build-essential \
   bzip2 \
+  cmake \
   curl \
   gcc \
   gcc-multilib \
@@ -63,7 +64,31 @@ RUN apt-get update && apt-get install -y \
 
 ##################
 # C++ dependencies
-RUN apt-get update && apt-get -y install libgflags-dev libgtest-dev libc++-dev clang
+RUN echo "deb http://llvm.org/apt/jessie/     llvm-toolchain-jessie main" >  /etc/apt/sources.list.d/llvm.list
+RUN echo "deb-src http://llvm.org/apt/jessie/ llvm-toolchain-jessie main" >> /etc/apt/sources.list.d/llvm.list
+RUN wget -O - http://llvm.org/apt/llvm-snapshot.gpg.key | apt-key add -
+
+RUN apt-get update && apt-get -y install libgflags-dev libgtest-dev libc++-dev 
+
+RUN git clone -b release_38 http://llvm.org/git/llvm.git
+RUN git clone -b release_38 http://llvm.org/git/clang.git
+RUN git clone -b release_38 http://llvm.org/git/compiler-rt.git
+RUN git clone -b release_38 http://llvm.org/git/clang-tools-extra.git
+RUN git clone -b release_38 http://llvm.org/git/libcxx.git
+RUN git clone -b release_38 http://llvm.org/git/libcxxabi.git
+
+RUN mv clang llvm/tools
+RUN mv compiler-rt llvm/projects
+RUN mv clang-tools-extra llvm/tools/clang/tools
+RUN mv libcxx llvm/projects
+RUN mv libcxxabi llvm/projects
+
+RUN mkdir llvm-build
+RUN cd llvm-build && cmake \
+  -DCMAKE_BUILD_TYPE:STRING=Release \
+  -DLLVM_TARGETS_TO_BUILD:STRING=X86 \
+  ../llvm
+RUN make -C llvm-build -j `python -c 'import multiprocessing; print 1+multiprocessing.cpu_count()'` && make -C llvm-build install && rm -rf llvm-build
 
 #################
 # C# dependencies
