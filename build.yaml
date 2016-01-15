@@ -32,7 +32,6 @@ filegroups:
   - include/grpc++/grpc++.h
   - include/grpc++/impl/call.h
   - include/grpc++/impl/client_unary_call.h
-  - include/grpc++/impl/codegen/channel_interface.h
   - include/grpc++/impl/grpc_library.h
   - include/grpc++/impl/proto_utils.h
   - include/grpc++/impl/rpc_method.h
@@ -121,6 +120,7 @@ filegroups:
   - src/core/client_config/client_config.h
   - src/core/client_config/connector.h
   - src/core/client_config/initial_connect_string.h
+  - src/core/client_config/lb_policies/load_balancer_api.h
   - src/core/client_config/lb_policies/pick_first.h
   - src/core/client_config/lb_policies/round_robin.h
   - src/core/client_config/lb_policy.h
@@ -181,6 +181,7 @@ filegroups:
   - src/core/json/json_common.h
   - src/core/json/json_reader.h
   - src/core/json/json_writer.h
+  - src/core/proto/grpc/lb/v0/load_balancer.pb.h
   - src/core/statistics/census_interface.h
   - src/core/statistics/census_rpc_stats.h
   - src/core/surface/api_trace.h
@@ -236,6 +237,7 @@ filegroups:
   - src/core/client_config/connector.c
   - src/core/client_config/default_initial_connect_string.c
   - src/core/client_config/initial_connect_string.c
+  - src/core/client_config/lb_policies/load_balancer_api.c
   - src/core/client_config/lb_policies/pick_first.c
   - src/core/client_config/lb_policies/round_robin.c
   - src/core/client_config/lb_policy.c
@@ -299,6 +301,7 @@ filegroups:
   - src/core/json/json_reader.c
   - src/core/json/json_string.c
   - src/core/json/json_writer.c
+  - src/core/proto/grpc/lb/v0/load_balancer.pb.c
   - src/core/surface/api_trace.c
   - src/core/surface/byte_buffer.c
   - src/core/surface/byte_buffer_reader.c
@@ -365,6 +368,16 @@ filegroups:
   - test/core/util/port_posix.c
   - test/core/util/port_windows.c
   - test/core/util/slice_splitter.c
+- name: nanopb
+  headers:
+  - third_party/nanopb/pb.h
+  - third_party/nanopb/pb_common.h
+  - third_party/nanopb/pb_decode.h
+  - third_party/nanopb/pb_encode.h
+  src:
+  - third_party/nanopb/pb_common.c
+  - third_party/nanopb/pb_decode.c
+  - third_party/nanopb/pb_encode.c
 libs:
 - name: gpr
   build: all
@@ -513,6 +526,7 @@ libs:
   filegroups:
   - grpc_base
   - census
+  - nanopb
   secure: true
   vs_packages:
   - grpc.dependencies.openssl
@@ -559,6 +573,7 @@ libs:
   filegroups:
   - grpc_base
   - census
+  - nanopb
   secure: false
   vs_project_guid: '{46CEDFFF-9692-456A-AA24-38B5D6BCF4C5}'
 - name: grpc_zookeeper
@@ -799,8 +814,9 @@ libs:
   src:
   - src/csharp/ext/grpc_csharp_ext.c
   deps:
-  - gpr
   - grpc
+  - gpr
+  deps_linkage: static
   dll: only
   vs_config_type: DynamicLibrary
   vs_packages:
@@ -2045,6 +2061,16 @@ targets:
   secure: false
   vs_config_type: Application
   vs_project_guid: '{069E9D05-B78B-4751-9252-D21EBAE7DE8E}'
+- name: grpclb_api_test
+  build: test
+  language: c++
+  src:
+  - src/proto/grpc/lb/v0/load_balancer.proto
+  - test/cpp/grpclb/grpclb_api_test.cc
+  deps:
+  - grpc++
+  - grpc
+  - gpr
 - name: interop_client
   build: test
   run: false
@@ -2449,7 +2475,8 @@ vspackages:
   props: false
   redist: true
   version: 1.2.8.10
-- name: grpc.dependencies.openssl
+- linkage: static
+  name: grpc.dependencies.openssl
   props: true
   redist: true
   version: 1.0.204.1

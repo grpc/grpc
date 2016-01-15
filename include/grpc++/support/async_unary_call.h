@@ -35,7 +35,6 @@
 #define GRPCXX_SUPPORT_ASYNC_UNARY_CALL_H
 
 #include <grpc/support/log.h>
-#include <grpc++/channel.h>
 #include <grpc++/impl/codegen/channel_interface.h>
 #include <grpc++/client_context.h>
 #include <grpc++/completion_queue.h>

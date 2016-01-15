@@ -123,7 +123,6 @@ grpc::string GetHeaderIncludes(const grpc::protobuf::FileDescriptor *file,
       "\n"
       "namespace grpc {\n"
       "class CompletionQueue;\n"
-      "class Channel;\n"
       "class RpcService;\n"
       "class ServerCompletionQueue;\n"
       "class ServerContext;\n"

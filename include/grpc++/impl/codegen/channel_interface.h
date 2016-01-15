@@ -34,19 +34,16 @@
 #ifndef GRPCXX_CHANNEL_INTERFACE_H
 #define GRPCXX_CHANNEL_INTERFACE_H
 
-#include <memory>
-
-#include <grpc/grpc.h>
-#include <grpc++/impl/call.h>
 #include <grpc++/impl/grpc_library.h>
-#include <grpc++/support/config.h>
+#include <grpc++/support/status.h>
+#include <grpc++/support/time.h>
 
 namespace grpc {
+class Call;
+class ClientContext;
+class RpcMethod;
 class CallOpSetInterface;
-class ChannelArguments;
 class CompletionQueue;
-class ChannelCredentials;
-class SecureChannelCredentials;
 
 template <class R>
 class ClientReader;
