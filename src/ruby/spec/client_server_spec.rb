@@ -397,7 +397,7 @@ describe 'the http client/server' do
     @server = GRPC::Core::Server.new(@server_queue, nil)
     server_port = @server.add_http2_port(server_host, :this_port_is_insecure)
     @server.start
-    @ch = Channel.new("0.0.0.0:#{server_port}", nil)
+    @ch = Channel.new("0.0.0.0:#{server_port}", nil, :this_channel_is_insecure)
   end
 
   after(:example) do
