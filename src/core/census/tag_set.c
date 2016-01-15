@@ -31,9 +31,6 @@
  *
  */
 /*
-- ability to add extra tags in encode?
-- add drops error count to create_ts
-- add mask to ntags?
 - comment about key/value ptrs being to mem
 - add comment about encode/decode being for RPC use only.
 */
@@ -175,9 +172,13 @@ static bool cts_delete_tag(census_tag_set *tags, const census_tag *tag,
                              key_len));
 }
 
-// Add a tag to a tag set.
-static void tag_set_add_tag(struct tag_set *tags, const census_tag *tag,
+// Add a tag to a tag set. Return true on sucess, false if the tag could
+// not be added because of tag size constraints.
+static bool tag_set_add_tag(struct tag_set *tags, const census_tag *tag,
                             size_t key_len) {
+  if (tags->ntags == CENSUS_MAX_PROPAGATED_TAGS) {
+    return false;
+  }
   const size_t tag_size = key_len + tag->value_len + TAG_HEADER_SIZE;
   if (tags->kvm_used + tag_size > tags->kvm_size) {
     // allocate new memory if needed
@@ -199,22 +200,41 @@ static void tag_set_add_tag(struct tag_set *tags, const census_tag *tag,
   tags->kvm_used += tag_size;
   tags->ntags++;
   tags->ntags_alloc++;
+  return true;
 }
 
-// Add a tag to a census_tag_set
+// Add a tag to a census_tag_set.
 static void cts_add_tag(census_tag_set *tags, const census_tag *tag,
-                        size_t key_len) {
+                        size_t key_len, census_tag_set_create_status *status) {
   // first delete the tag if it is already present
-  cts_delete_tag(tags, tag, key_len);
-  if (tag->value != NULL && tag->value_len != 0) {
+  bool deleted = cts_delete_tag(tags, tag, key_len);
+  bool call_add = tag->value != NULL && tag->value_len != 0;
+  bool added = false;
+  if (call_add) {
     if (CENSUS_TAG_IS_PROPAGATED(tag->flags)) {
       if (CENSUS_TAG_IS_BINARY(tag->flags)) {
-        tag_set_add_tag(&tags->tags[PROPAGATED_BINARY_TAGS], tag, key_len);
+        added =
+            tag_set_add_tag(&tags->tags[PROPAGATED_BINARY_TAGS], tag, key_len);
       } else {
-        tag_set_add_tag(&tags->tags[PROPAGATED_TAGS], tag, key_len);
+        added = tag_set_add_tag(&tags->tags[PROPAGATED_TAGS], tag, key_len);
       }
     } else {
-      tag_set_add_tag(&tags->tags[LOCAL_TAGS], tag, key_len);
+      added = tag_set_add_tag(&tags->tags[LOCAL_TAGS], tag, key_len);
+    }
+  }
+  if (status) {
+    if (deleted) {
+      if (call_add) {
+        status->n_modified_tags++;
+      } else {
+        status->n_deleted_tags++;
+      }
+    } else {
+      if (added) {
+        status->n_added_tags++;
+      } else {
+        status->n_ignored_tags++;
+      }
     }
   }
 }
@@ -263,8 +283,11 @@ static void tag_set_flatten(struct tag_set *tags) {
 
 census_tag_set *census_tag_set_create(const census_tag_set *base,
                                       const census_tag *tags, int ntags,
-                                      census_tag_set_create_stats *stats) {
+                                      census_tag_set_create_status *status) {
   int n_invalid_tags = 0;
+  if (status) {
+    memset(status, 0, sizeof(*status));
+  }
   census_tag_set *new_ts = gpr_malloc(sizeof(census_tag_set));
   if (base == NULL) {
     memset(new_ts, 0, sizeof(census_tag_set));
@@ -280,7 +303,7 @@ census_tag_set *census_tag_set_create(const census_tag_set *base,
     // ignore the tag if it is too long/short.
     if (key_len != 1 && key_len <= CENSUS_MAX_TAG_KV_LEN &&
         tag->value_len <= CENSUS_MAX_TAG_KV_LEN) {
-      cts_add_tag(new_ts, tag, key_len);
+      cts_add_tag(new_ts, tag, key_len, status);
     } else {
       n_invalid_tags++;
     }
@@ -288,12 +311,12 @@ census_tag_set *census_tag_set_create(const census_tag_set *base,
   tag_set_flatten(&new_ts->tags[PROPAGATED_TAGS]);
   tag_set_flatten(&new_ts->tags[PROPAGATED_BINARY_TAGS]);
   tag_set_flatten(&new_ts->tags[LOCAL_TAGS]);
-  if (stats != NULL) {
-    stats->n_propagated_tags = new_ts->tags[PROPAGATED_TAGS].ntags;
-    stats->n_propagated_binary_tags =
+  if (status != NULL) {
+    status->n_propagated_tags = new_ts->tags[PROPAGATED_TAGS].ntags;
+    status->n_propagated_binary_tags =
         new_ts->tags[PROPAGATED_BINARY_TAGS].ntags;
-    stats->n_local_tags = new_ts->tags[LOCAL_TAGS].ntags;
-    stats->n_invalid_tags = n_invalid_tags;
+    status->n_local_tags = new_ts->tags[LOCAL_TAGS].ntags;
+    status->n_invalid_tags = n_invalid_tags;
   }
   return new_ts;
 }
@@ -480,7 +503,11 @@ static void tag_set_decode(struct tag_set *tags, const char *buffer,
 }
 
 census_tag_set *census_tag_set_decode(const char *buffer, size_t size,
-                                      const char *bin_buffer, size_t bin_size) {
+                                      const char *bin_buffer, size_t bin_size,
+                                      census_tag_set_create_status *status) {
+  if (status) {
+    memset(status, 0, sizeof(*status));
+  }
   census_tag_set *new_ts = gpr_malloc(sizeof(census_tag_set));
   memset(&new_ts->tags[LOCAL_TAGS], 0, sizeof(struct tag_set));
   if (buffer == NULL) {
@@ -492,6 +519,11 @@ census_tag_set *census_tag_set_decode(const char *buffer, size_t size,
     memset(&new_ts->tags[PROPAGATED_BINARY_TAGS], 0, sizeof(struct tag_set));
   } else {
     tag_set_decode(&new_ts->tags[PROPAGATED_BINARY_TAGS], bin_buffer, bin_size);
+  }
+  if (status) {
+    status->n_propagated_tags = new_ts->tags[PROPAGATED_TAGS].ntags;
+    status->n_propagated_binary_tags =
+        new_ts->tags[PROPAGATED_BINARY_TAGS].ntags;
   }
   // TODO(aveitch): check that BINARY flag is correct for each type.
   return new_ts;

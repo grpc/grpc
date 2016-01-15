@@ -368,22 +368,27 @@ typedef struct {
   int n_modified_tags;          /* number of tags that were modified */
   int n_invalid_tags;           /* number of tags with bad keys or values (e.g.
                                    longer than CENSUS_MAX_TAG_KV_LEN) */
-} census_tag_set_create_stats;
+  int n_ignored_tags;           /* number of tags ignored because of
+                                   CENSUS_MAX_PROPAGATED_TAGS limit. */
+} census_tag_set_create_status;
 
 /* Create a new tag set, adding and removing tags from an existing tag set.
    @param base Base tag set to build upon. Can be NULL.
    @param tags A set of tags to be added/changed/deleted. Tags with keys that
    are in 'tags', but not 'base', are added to the tag set. Keys that are in
-   both 'tags' and 'base' will have their value replaced. Tags with keys in
-   both, but with NULL or zero-length values, will be deleted from the
-   tag set.
+   both 'tags' and 'base' will have their value/flags modified. Tags with keys
+   in both, but with NULL or zero-length values, will be deleted from the tag
+   set. Tags with invalid (too long or short) keys or values will be ignored.
+   If adding a tag will result in more than CENSUS_MAX_PROPAGATED_TAGS in either
+   binary or non-binary tags, they will be ignored, as will deletions of
+   tags that don't exist.
    @param ntags number of tags in 'tags'
    @param stats Information about the tag set created and actions taken during
    its creation.
 */
 census_tag_set *census_tag_set_create(const census_tag_set *base,
                                       const census_tag *tags, int ntags,
-                                      census_tag_set_create_stats *stats);
+                                      census_tag_set_create_status *status);
 
 /* Destroy a tag set created by census_tag_set_create(). Once this function
    has been called, the tag set cannot be reused. */
@@ -429,9 +434,12 @@ size_t census_tag_set_encode_propagated(const census_tag_set *tags,
 size_t census_tag_set_encode_propagated_binary(const census_tag_set *tags,
                                                char *buffer, size_t buf_size);
 
-/* Decode tag set buffers encoded with census_tag_set_encode_*(). */
+/* Decode tag set buffers encoded with census_tag_set_encode_*(). Returns NULL
+   if there is an error in parsing either buffer. The number of tags in the
+   decoded tag set will be returned in status, if it is non-NULL. */
 census_tag_set *census_tag_set_decode(const char *buffer, size_t size,
-                                      const char *bin_buffer, size_t bin_size);
+                                      const char *bin_buffer, size_t bin_size,
+                                      census_tag_set_create_status *status);
 
 /* Get a contexts tag set. */
 census_tag_set *census_context_tag_set(census_context *context);
