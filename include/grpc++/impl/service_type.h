@@ -82,6 +82,15 @@ class Service {
     return false;
   }
 
+  bool has_generic_methods() const {
+    for (auto it = methods_.begin(); it != methods_.end(); ++it) {
+      if ((*it)->get() == nullptr) {
+        return true;
+      }
+    }
+    return false;
+  }
+
  protected:
   template <class Message>
   void RequestAsyncUnary(int index, ServerContext* context, Message* request,
@@ -122,16 +131,15 @@ class Service {
 
   void MarkMethodAsync(int index) {
     if (methods_[index].get() == nullptr) {
-      gpr_log(GPR_ERROR, "A method cannot be marked async and generic.");
-      abort();
+      gpr_log(GPR_ERROR, "Method already marked generic.");
+      return;
     }
     methods_[index]->ResetHandler();
   }
 
   void MarkMethodGeneric(int index) {
     if (methods_[index]->handler() == nullptr) {
-      gpr_log(GPR_ERROR, "A method cannot be marked async and generic.");
-      abort();
+      gpr_log(GPR_ERROR, "Method already marked async.");
     }
     methods_[index].reset();
   }
