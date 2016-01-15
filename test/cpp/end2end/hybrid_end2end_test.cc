@@ -318,8 +318,7 @@ TEST_F(HybridEnd2endTest, AsyncEcho) {
 
 TEST_F(HybridEnd2endTest, AsyncEchoRequestStream) {
   EchoTestService::WithAsyncMethod_RequestStream<
-      EchoTestService::WithAsyncMethod_Echo<TestServiceImpl> >
-      service;
+      EchoTestService::WithAsyncMethod_Echo<TestServiceImpl> > service;
   SetUpServer(&service, nullptr);
   ResetStub();
   std::thread echo_handler_thread(
@@ -360,8 +359,7 @@ TEST_F(HybridEnd2endTest, GenericEcho) {
 
 TEST_F(HybridEnd2endTest, GenericEchoAsyncRequestStream) {
   EchoTestService::WithAsyncMethod_RequestStream<
-      EchoTestService::WithGenericMethod_Echo<TestServiceImpl> >
-      service;
+      EchoTestService::WithGenericMethod_Echo<TestServiceImpl> > service;
   AsyncGenericService generic_service;
   SetUpServer(&service, &generic_service);
   ResetStub();
