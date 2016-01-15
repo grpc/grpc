@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -141,6 +141,8 @@ void grpc_mdelem_unref(grpc_mdelem *md);
 /* Recover a char* from a grpc_mdstr. The returned string is null terminated.
    Does not promise that the returned string has no embedded nulls however. */
 const char *grpc_mdstr_as_c_string(grpc_mdstr *s);
+
+#define GRPC_MDSTR_LENGTH(s) (GPR_SLICE_LENGTH(s->slice))
 
 int grpc_mdstr_is_legal_header(grpc_mdstr *s);
 int grpc_mdstr_is_legal_nonbin_header(grpc_mdstr *s);
