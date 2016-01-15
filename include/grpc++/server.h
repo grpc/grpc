@@ -264,6 +264,7 @@ class Server GRPC_FINAL : public GrpcLibrary, private CallHook {
                         CompletionQueue* call_cq,
                         ServerCompletionQueue* notification_cq, void* tag,
                         Message* message) {
+    GPR_ASSERT(method);
     new PayloadAsyncRequest<Message>(method->server_tag(), this, context,
                                      stream, call_cq, notification_cq, tag,
                                      message);
@@ -273,6 +274,7 @@ class Server GRPC_FINAL : public GrpcLibrary, private CallHook {
                         ServerAsyncStreamingInterface* stream,
                         CompletionQueue* call_cq,
                         ServerCompletionQueue* notification_cq, void* tag) {
+    GPR_ASSERT(method);
     new NoPayloadAsyncRequest(method->server_tag(), this, context, stream,
                               call_cq, notification_cq, tag);
   }
