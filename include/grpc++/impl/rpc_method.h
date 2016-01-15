@@ -36,7 +36,6 @@
 
 #include <memory>
 
-#include <grpc++/channel.h>
 #include <grpc++/impl/codegen/channel_interface.h>
 
 namespace grpc {

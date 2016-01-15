@@ -35,7 +35,7 @@
 #define GRPCXX_IMPL_SERVICE_TYPE_H
 
 #include <grpc++/impl/serialization_traits.h>
-#include <grpc++/server.h>
+#include <grpc++/impl/codegen/server_interface.h>
 #include <grpc++/support/config.h>
 #include <grpc++/support/status.h>
 
@@ -45,6 +45,7 @@ class Call;
 class CompletionQueue;
 class RpcService;
 class Server;
+class ServerInterface;
 class ServerCompletionQueue;
 class ServerContext;
 
@@ -61,7 +62,7 @@ class ServerAsyncStreamingInterface {
   virtual void SendInitialMetadata(void* tag) = 0;
 
  private:
-  friend class Server;
+  friend class ServerInterface;
   virtual void BindCall(Call* call) = 0;
 };
 
@@ -112,7 +113,8 @@ class AsynchronousService {
 
  private:
   friend class Server;
-  Server* server_;
+  friend class ServerInterface;
+  ServerInterface* server_;
   const char** const method_names_;
   size_t method_count_;
   void** request_args_;
