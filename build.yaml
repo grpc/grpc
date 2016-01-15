@@ -316,6 +316,7 @@ filegroups:
   - src/core/surface/server.c
   - src/core/surface/server_chttp2.c
   - src/core/surface/server_create.c
+  - src/core/surface/validate_metadata.c
   - src/core/surface/version.c
   - src/core/transport/byte_stream.c
   - src/core/transport/chttp2/alpn.c
@@ -640,9 +641,9 @@ libs:
   - test/cpp/util/string_ref_helper.h
   - test/cpp/util/subprocess.h
   src:
-  - test/cpp/util/messages.proto
-  - test/cpp/util/echo.proto
-  - test/cpp/util/echo_duplicate.proto
+  - src/proto/grpc/testing/echo_messages.proto
+  - src/proto/grpc/testing/echo.proto
+  - src/proto/grpc/testing/duplicate/echo_duplicate.proto
   - test/cpp/util/cli_call.cc
   - test/cpp/util/create_test_channel.cc
   - test/cpp/util/string_ref_helper.cc
@@ -698,7 +699,7 @@ libs:
   headers:
   - test/cpp/interop/client_helper.h
   src:
-  - test/proto/messages.proto
+  - src/proto/grpc/testing/messages.proto
   - test/cpp/interop/client_helper.cc
   deps:
   - grpc++_test_util
@@ -712,9 +713,9 @@ libs:
   headers:
   - test/cpp/interop/interop_client.h
   src:
-  - test/proto/empty.proto
-  - test/proto/messages.proto
-  - test/proto/test.proto
+  - src/proto/grpc/testing/empty.proto
+  - src/proto/grpc/testing/messages.proto
+  - src/proto/grpc/testing/test.proto
   - test/cpp/interop/client.cc
   - test/cpp/interop/interop_client.cc
   deps:
@@ -742,9 +743,9 @@ libs:
   build: private
   language: c++
   src:
-  - test/proto/empty.proto
-  - test/proto/messages.proto
-  - test/proto/test.proto
+  - src/proto/grpc/testing/empty.proto
+  - src/proto/grpc/testing/messages.proto
+  - src/proto/grpc/testing/test.proto
   - test/cpp/interop/server.cc
   deps:
   - interop_server_helper
@@ -771,12 +772,12 @@ libs:
   - test/cpp/qps/timer.h
   - test/cpp/util/benchmark_config.h
   src:
-  - test/proto/messages.proto
-  - test/proto/benchmarks/control.proto
-  - test/proto/benchmarks/payloads.proto
-  - test/proto/benchmarks/services.proto
-  - test/proto/benchmarks/stats.proto
-  - test/cpp/qps/perf_db.proto
+  - src/proto/grpc/testing/messages.proto
+  - src/proto/grpc/testing/control.proto
+  - src/proto/grpc/testing/payloads.proto
+  - src/proto/grpc/testing/services.proto
+  - src/proto/grpc/testing/stats.proto
+  - src/proto/grpc/testing/perf_db.proto
   - test/cpp/qps/client_async.cc
   - test/cpp/qps/client_sync.cc
   - test/cpp/qps/driver.cc
@@ -1950,6 +1951,23 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: generic_async_streaming_ping_pong_test
+  build: test
+  language: c++
+  src:
+  - test/cpp/qps/generic_async_streaming_ping_pong_test.cc
+  deps:
+  - qps
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
+  platforms:
+  - mac
+  - linux
+  - posix
 - name: generic_end2end_test
   build: test
   language: c++
@@ -2085,7 +2103,7 @@ targets:
   headers:
   - test/cpp/util/metrics_server.h
   src:
-  - test/proto/metrics.proto
+  - src/proto/grpc/testing/metrics.proto
   - test/cpp/interop/metrics_client.cc
   deps:
   - grpc++
@@ -2197,9 +2215,9 @@ targets:
   run: false
   language: c++
   src:
-  - test/proto/empty.proto
-  - test/proto/messages.proto
-  - test/proto/test.proto
+  - src/proto/grpc/testing/empty.proto
+  - src/proto/grpc/testing/messages.proto
+  - src/proto/grpc/testing/test.proto
   - test/cpp/interop/reconnect_interop_client.cc
   deps:
   - grpc++_test_util
@@ -2214,9 +2232,9 @@ targets:
   run: false
   language: c++
   src:
-  - test/proto/empty.proto
-  - test/proto/messages.proto
-  - test/proto/test.proto
+  - src/proto/grpc/testing/empty.proto
+  - src/proto/grpc/testing/messages.proto
+  - src/proto/grpc/testing/test.proto
   - test/cpp/interop/reconnect_interop_server.cc
   deps:
   - reconnect_server
@@ -2335,10 +2353,10 @@ targets:
   - test/cpp/interop/stress_interop_client.h
   - test/cpp/util/metrics_server.h
   src:
-  - test/proto/empty.proto
-  - test/proto/messages.proto
-  - test/proto/metrics.proto
-  - test/proto/test.proto
+  - src/proto/grpc/testing/empty.proto
+  - src/proto/grpc/testing/messages.proto
+  - src/proto/grpc/testing/metrics.proto
+  - src/proto/grpc/testing/test.proto
   - test/cpp/interop/interop_client.cc
   - test/cpp/interop/stress_interop_client.cc
   - test/cpp/interop/stress_test.cc
@@ -2402,6 +2420,7 @@ targets:
   run: false
   language: c++
   src:
+  - src/proto/grpc/testing/echo.proto
   - test/cpp/end2end/zookeeper_test.cc
   deps:
   - grpc++_test_util
@@ -2474,3 +2493,8 @@ node_modules:
   - src/node/ext/server.cc
   - src/node/ext/server_credentials.cc
   - src/node/ext/timeval.cc
+python_dependencies:
+  deps:
+  - grpc
+  - gpr
+  - boringssl
