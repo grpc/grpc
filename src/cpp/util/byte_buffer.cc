@@ -69,6 +69,7 @@ void ByteBuffer::Dump(std::vector<Slice>* slices) const {
   while (grpc_byte_buffer_reader_next(&reader, &s)) {
     slices->push_back(Slice(s, Slice::STEAL_REF));
   }
+  grpc_byte_buffer_reader_destroy(&reader);
 }
 
 size_t ByteBuffer::Length() const {
