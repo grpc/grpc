@@ -140,6 +140,28 @@ void HandleGenericEcho(GenericServerAsyncReaderWriter* stream,
   Verify(cq, 4, true);
 }
 
+void HandleGenericRequestStream(GenericServerAsyncReaderWriter* stream,
+                                CompletionQueue* cq) {
+  ByteBuffer recv_buffer;
+  EchoRequest recv_request;
+  EchoResponse send_response;
+  int i = 1;
+  while (true) {
+    i++;
+    stream->Read(&recv_buffer, tag(i));
+    if (!VerifyReturnSuccess(cq, i)) {
+      break;
+    }
+    EXPECT_TRUE(ParseFromByteBuffer(&recv_buffer, &recv_request));
+    send_response.mutable_message()->append(recv_request.message());
+  }
+  auto send_buffer = SerializeToByteBuffer(&send_response);
+  stream->Write(*send_buffer, tag(99));
+  Verify(cq, 99, true);
+  stream->Finish(Status::OK, tag(100));
+  Verify(cq, 100, true);
+}
+
 // Request and handle one generic call.
 void HandleGenericCall(AsyncGenericService* service,
                        ServerCompletionQueue* cq) {
@@ -149,6 +171,9 @@ void HandleGenericCall(AsyncGenericService* service,
   Verify(cq, 1, true);
   if (srv_ctx.method() == "/grpc.testing.EchoTestService/Echo") {
     HandleGenericEcho(&stream, cq);
+  } else if (srv_ctx.method() ==
+             "/grpc.testing.EchoTestService/RequestStream") {
+    HandleGenericRequestStream(&stream, cq);
   } else {  // other methods not handled yet.
     gpr_log(GPR_ERROR, "method: %s", srv_ctx.method().c_str());
     GPR_ASSERT(0);
@@ -331,11 +356,11 @@ TEST_F(HybridEnd2endTest, GenericEcho) {
   AsyncGenericService generic_service;
   SetUpServer(&service, &generic_service);
   ResetStub();
-  std::thread echo_handler_thread([this, &generic_service] {
+  std::thread generic_handler_thread([this, &generic_service] {
     HandleGenericCall(&generic_service, cqs_[0].get());
   });
   TestAllMethods();
-  echo_handler_thread.join();
+  generic_handler_thread.join();
 }
 
 TEST_F(HybridEnd2endTest, GenericEchoAsyncRequestStream) {
@@ -344,13 +369,13 @@ TEST_F(HybridEnd2endTest, GenericEchoAsyncRequestStream) {
   AsyncGenericService generic_service;
   SetUpServer(&service, &generic_service);
   ResetStub();
-  std::thread echo_handler_thread([this, &generic_service] {
+  std::thread generic_handler_thread([this, &generic_service] {
     HandleGenericCall(&generic_service, cqs_[0].get());
   });
   std::thread request_stream_handler_thread(
       [this, &service] { HandleClientStreaming(&service, cqs_[1].get()); });
   TestAllMethods();
-  echo_handler_thread.join();
+  generic_handler_thread.join();
   request_stream_handler_thread.join();
 }
 
@@ -362,7 +387,7 @@ TEST_F(HybridEnd2endTest, GenericEchoAsyncRequestStreamResponseStream) {
   AsyncGenericService generic_service;
   SetUpServer(&service, &generic_service);
   ResetStub();
-  std::thread echo_handler_thread([this, &generic_service] {
+  std::thread generic_handler_thread([this, &generic_service] {
     HandleGenericCall(&generic_service, cqs_[0].get());
   });
   std::thread request_stream_handler_thread(
@@ -370,8 +395,30 @@ TEST_F(HybridEnd2endTest, GenericEchoAsyncRequestStreamResponseStream) {
   std::thread response_stream_handler_thread(
       [this, &service] { HandleServerStreaming(&service, cqs_[2].get()); });
   TestAllMethods();
-  echo_handler_thread.join();
+  generic_handler_thread.join();
   request_stream_handler_thread.join();
+  response_stream_handler_thread.join();
+}
+
+TEST_F(HybridEnd2endTest, GenericEchoRequestStreamAsyncResponseStream) {
+  EchoTestService::WithGenericMethod_RequestStream<
+      EchoTestService::WithGenericMethod_Echo<
+          EchoTestService::WithAsyncMethod_ResponseStream<TestServiceImpl> > >
+      service;
+  AsyncGenericService generic_service;
+  SetUpServer(&service, &generic_service);
+  ResetStub();
+  std::thread generic_handler_thread([this, &generic_service] {
+    HandleGenericCall(&generic_service, cqs_[0].get());
+  });
+  std::thread generic_handler_thread2([this, &generic_service] {
+    HandleGenericCall(&generic_service, cqs_[1].get());
+  });
+  std::thread response_stream_handler_thread(
+      [this, &service] { HandleServerStreaming(&service, cqs_[2].get()); });
+  TestAllMethods();
+  generic_handler_thread.join();
+  generic_handler_thread2.join();
   response_stream_handler_thread.join();
 }
 
