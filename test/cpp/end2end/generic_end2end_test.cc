@@ -73,7 +73,7 @@ void verify_ok(CompletionQueue* cq, int i, bool expect_ok) {
 
 class GenericEnd2endTest : public ::testing::Test {
  protected:
-  GenericEnd2endTest() : generic_service_("*"), server_host_("localhost") {}
+  GenericEnd2endTest() : server_host_("localhost") {}
 
   void SetUp() GRPC_OVERRIDE {
     int port = grpc_pick_unused_port_or_die();

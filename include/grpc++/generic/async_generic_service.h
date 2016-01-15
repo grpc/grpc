@@ -59,7 +59,6 @@ class GenericServerContext GRPC_FINAL : public ServerContext {
 class AsyncGenericService GRPC_FINAL {
  public:
   AsyncGenericService() : server_(nullptr) {}
-  AsyncGenericService(const grpc::string& methods) : server_(nullptr) {}
 
   void RequestCall(GenericServerContext* ctx,
                    GenericServerAsyncReaderWriter* reader_writer,
