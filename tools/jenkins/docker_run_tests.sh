@@ -50,6 +50,9 @@ mkdir -p reports
 
 exit_code=0
 
+echo randomization from within docker
+cat /proc/sys/kernel/randomize_va_space
+
 $RUN_TESTS_COMMAND || exit_code=$?
 
 cd reports
