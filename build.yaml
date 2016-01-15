@@ -798,8 +798,9 @@ libs:
   src:
   - src/csharp/ext/grpc_csharp_ext.c
   deps:
-  - gpr
   - grpc
+  - gpr
+  deps_linkage: static
   dll: only
   vs_config_type: DynamicLibrary
   vs_packages:
