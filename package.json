@@ -22,12 +22,15 @@
     "lint": "node ./node_modules/jshint/bin/jshint src/node/src src/node/test src/node/interop src/node/index.js",
     "test": "./node_modules/.bin/mocha src/node/test && npm run-script lint",
     "gen_docs": "./node_modules/.bin/jsdoc -c src/node/jsdoc_conf.json",
-    "coverage": "./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha src/node/test"
+    "coverage": "./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha src/node/test",
+    "preinstall": "npm install node-pre-gyp",
+    "install": "node -e \"require('node-pre-gyp').install()\""
   },
   "dependencies": {
     "bindings": "^1.2.0",
     "lodash": "^3.9.3",
     "nan": "^2.0.0",
+    "node-pre-gyp": "^0.6.19",
     "protobufjs": "^4.0.0"
   },
   "devDependencies": {
@@ -44,6 +47,13 @@
   },
   "engines": {
     "node": ">=0.10.13"
+  },
+  "binary": {
+    "module_name": "grpc_node",
+    "module_path": "./build/Release/",
+    "host": "https://x20web.corp.google.com/",
+    "remote_path": "~mlumish/node_grpc_bin/{name}/v{version}",
+    "package_name": "{node_abi}-{platform}-{arch}.tar.gz"
   },
   "files": [
     "LICENSE",

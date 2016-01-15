@@ -30,6 +30,7 @@
       "bindings": "^1.2.0",
       "lodash": "^3.9.3",
       "nan": "^2.0.0",
+      "node-pre-gyp": "^0.6.19",
       "protobufjs": "^4.0.0"
     },
     "devDependencies": {
@@ -46,6 +47,11 @@
     },
     "engines": {
       "node": ">=0.10.13"
+    },
+    "binary": {
+      "module_name": "grpc_node",
+      "module_path": "./build/Release/",
+      "host": "localhost"
     },
     "files": [
       "LICENSE",
