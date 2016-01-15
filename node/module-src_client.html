@@ -38,7 +38,17 @@
     <div class="container-overview">
     
         
-            <div class="description">Client module</div>
+            <div class="description">Client module
+
+This module contains the factory method for creating Client classes, and the
+method calling code for all types of methods.
+
+For example, to create a client and call a method on it:
+
+var proto_obj = grpc.load(proto_file_path);
+var Client = proto_obj.package.subpackage.ServiceName;
+var client = new Client(server_address, client_credentials);
+var call = client.unaryMethod(arguments, callback);</div>
         
 
         
@@ -189,7 +199,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line733">line 733</a>
+        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line719">line 719</a>
     </li></ul></dd>
     
 
@@ -251,7 +261,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line728">line 728</a>
+        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line714">line 714</a>
     </li></ul></dd>
     
 
@@ -314,7 +324,7 @@ makeClientConstructor
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line593">line 593</a>
+        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line582">line 582</a>
     </li></ul></dd>
     
 
@@ -441,7 +451,7 @@ makeClientConstructor
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line678">line 678</a>
+        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line663">line 663</a>
     </li></ul></dd>
     
 
@@ -624,7 +634,7 @@ responseDeserialize: function to deserialize response objects
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line613">line 613</a>
+        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line602">line 602</a>
     </li></ul></dd>
     
 
@@ -778,7 +788,7 @@ responseDeserialize: function to deserialize response objects
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line717">line 717</a>
+        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line703">line 703</a>
     </li></ul></dd>
     
 
@@ -986,7 +996,7 @@ start connecting if it has not already done so.
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line694">line 694</a>
+        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line679">line 679</a>
     </li></ul></dd>
     
 
@@ -1068,7 +1078,7 @@ start connecting if it has not already done so.
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line203">line 203</a>
+        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line214">line 214</a>
     </li></ul></dd>
     
 
@@ -1201,7 +1211,7 @@ and overrides the hostname to connect to.
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line231">line 231</a>
+        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line242">line 242</a>
     </li></ul></dd>
     
 
@@ -1283,7 +1293,7 @@ and overrides the hostname to connect to.
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line216">line 216</a>
+        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line227">line 227</a>
     </li></ul></dd>
     
 
@@ -1484,7 +1494,7 @@ method.
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line525">line 525</a>
+        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line521">line 521</a>
     </li></ul></dd>
     
 
@@ -1684,7 +1694,7 @@ method.
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line353">line 353</a>
+        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line363">line 363</a>
     </li></ul></dd>
     
 
@@ -1884,7 +1894,7 @@ method.
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line444">line 444</a>
+        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line447">line 447</a>
     </li></ul></dd>
     
 
@@ -2084,7 +2094,7 @@ method.
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line257">line 257</a>
+        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line274">line 274</a>
     </li></ul></dd>
     
 
@@ -2148,13 +2158,13 @@ method.
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-src_client.html">src/client</a></li><li><a href="module-src_common.html">src/common</a></li><li><a href="module-src_metadata.html">src/metadata</a></li><li><a href="module-src_server.html">src/server</a></li></ul><h3>Classes</h3><ul><li><a href="module-src_client.makeClientConstructor-Client.html">Client</a></li><li><a href="module-src_client-ClientDuplexStream.html">ClientDuplexStream</a></li><li><a href="module-src_client-ClientReadableStream.html">ClientReadableStream</a></li><li><a href="module-src_client-ClientWritableStream.html">ClientWritableStream</a></li><li><a href="module-src_metadata-Metadata.html">Metadata</a></li><li><a href="module-src_server-Server.html">Server</a></li><li><a href="module-src_server-ServerDuplexStream.html">ServerDuplexStream</a></li><li><a href="module-src_server-ServerReadableStream.html">ServerReadableStream</a></li><li><a href="module-src_server-ServerWritableStream.html">ServerWritableStream</a></li></ul><h3>Global</h3><ul><li><a href="global.html#callError">callError</a></li><li><a href="global.html#Credentials">Credentials</a></li><li><a href="global.html#getClientChannel">getClientChannel</a></li><li><a href="global.html#getGoogleAuthDelegate">getGoogleAuthDelegate</a></li><li><a href="global.html#load">load</a></li><li><a href="global.html#loadObject">loadObject</a></li><li><a href="global.html#makeGenericClientConstructor">makeGenericClientConstructor</a></li><li><a href="global.html#Metadata">Metadata</a></li><li><a href="global.html#propagate">propagate</a></li><li><a href="global.html#Server">Server</a></li><li><a href="global.html#ServerCredentials">ServerCredentials</a></li><li><a href="global.html#status">status</a></li><li><a href="global.html#waitForClientReady">waitForClientReady</a></li><li><a href="global.html#writeFlags">writeFlags</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-src_client.html">src/client</a></li><li><a href="module-src_common.html">src/common</a></li><li><a href="module-src_credentials.html">src/credentials</a></li><li><a href="module-src_metadata.html">src/metadata</a></li><li><a href="module-src_server.html">src/server</a></li></ul><h3>Classes</h3><ul><li><a href="module-src_client.makeClientConstructor-Client.html">Client</a></li><li><a href="module-src_client-ClientDuplexStream.html">ClientDuplexStream</a></li><li><a href="module-src_client-ClientReadableStream.html">ClientReadableStream</a></li><li><a href="module-src_client-ClientWritableStream.html">ClientWritableStream</a></li><li><a href="module-src_metadata-Metadata.html">Metadata</a></li><li><a href="module-src_server-Server.html">Server</a></li><li><a href="module-src_server-ServerDuplexStream.html">ServerDuplexStream</a></li><li><a href="module-src_server-ServerReadableStream.html">ServerReadableStream</a></li><li><a href="module-src_server-ServerWritableStream.html">ServerWritableStream</a></li></ul><h3>Global</h3><ul><li><a href="global.html#callError">callError</a></li><li><a href="global.html#credentials">credentials</a></li><li><a href="global.html#getClientChannel">getClientChannel</a></li><li><a href="global.html#load">load</a></li><li><a href="global.html#loadObject">loadObject</a></li><li><a href="global.html#makeGenericClientConstructor">makeGenericClientConstructor</a></li><li><a href="global.html#Metadata">Metadata</a></li><li><a href="global.html#propagate">propagate</a></li><li><a href="global.html#Server">Server</a></li><li><a href="global.html#ServerCredentials">ServerCredentials</a></li><li><a href="global.html#status">status</a></li><li><a href="global.html#waitForClientReady">waitForClientReady</a></li><li><a href="global.html#writeFlags">writeFlags</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.3</a> on Thu Oct 29 2015 13:07:25 GMT-0700 (PDT)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.0</a> on Thu Jan 14 2016 16:17:15 GMT-0800 (PST)
 </footer>
 
 <script> prettyPrint(); </script>
