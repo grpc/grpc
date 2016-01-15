@@ -104,7 +104,7 @@ RE_LICENSE = dict(
 
 def load(name):
   with open(name) as f:
-    return '\n'.join(line.rstrip() for line in f.read().splitlines())
+    return f.read()
 
 def save(name, text):
   with open(name, 'w') as f:
@@ -161,4 +161,3 @@ for filename in subprocess.check_output('git ls-tree -r --name-only -r HEAD',
     ok = False
 
 sys.exit(0 if ok else 1)
-

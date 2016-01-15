@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -38,8 +38,10 @@
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
+#include <grpc/support/alloc.h>
 
 #include "rb_call.h"
+#include "rb_event_thread.h"
 #include "rb_grpc.h"
 
 /* grpc_rb_cCallCredentials is the ruby class that proxies
@@ -87,7 +89,7 @@ static VALUE grpc_rb_call_credentials_callback_rescue(VALUE args,
   return result;
 }
 
-static void *grpc_rb_call_credentials_callback_with_gil(void *param) {
+static void grpc_rb_call_credentials_callback_with_gil(void *param) {
   callback_params *const params = (callback_params *)param;
   VALUE auth_uri = rb_str_new_cstr(params->context.service_url);
   /* Pass the arguments to the proc in a hash, which currently only has they key
@@ -113,21 +115,20 @@ static void *grpc_rb_call_credentials_callback_with_gil(void *param) {
   params->callback(params->user_data, md_ary.metadata, md_ary.count, status,
                    error_details);
   grpc_metadata_array_destroy(&md_ary);
-
-  return NULL;
+  gpr_free(params);
 }
 
 static void grpc_rb_call_credentials_plugin_get_metadata(
     void *state, grpc_auth_metadata_context context,
     grpc_credentials_plugin_metadata_cb cb, void *user_data) {
-  callback_params params;
-  params.get_metadata = (VALUE)state;
-  params.context = context;
-  params.user_data = user_data;
-  params.callback = cb;
+  callback_params *params = gpr_malloc(sizeof(callback_params));
+  params->get_metadata = (VALUE)state;
+  params->context = context;
+  params->user_data = user_data;
+  params->callback = cb;
 
-  rb_thread_call_with_gvl(grpc_rb_call_credentials_callback_with_gil,
-                          (void*)(&params));
+  grpc_rb_event_queue_enqueue(grpc_rb_call_credentials_callback_with_gil,
+                              (void*)(params));
 }
 
 static void grpc_rb_call_credentials_plugin_destroy(void *state) {
@@ -300,6 +301,8 @@ void Init_grpc_call_credentials() {
                    grpc_rb_call_credentials_compose, -1);
 
   id_callback = rb_intern("__callback");
+
+  grpc_rb_event_queue_thread_start();
 }
 
 /* Gets the wrapped grpc_call_credentials from the ruby wrapper */
