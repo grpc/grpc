@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -37,6 +37,11 @@
 #include <stddef.h>
 #include <string.h>
 #include <assert.h>
+
+/* This is here for grpc_is_binary_header
+ * TODO(murgatroid99): Remove this
+ */
+#include <grpc/grpc.h>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>

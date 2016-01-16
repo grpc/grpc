@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -35,38 +35,44 @@
 #include <chrono>
 #include <memory>
 #include <mutex>
+#include <sstream>
 #include <string>
 #include <thread>
 #include <vector>
-#include <sstream>
 
 #include <gflags/gflags.h>
+#include <grpc++/client_context.h>
+#include <grpc++/server.h>
+#include <grpc++/server_builder.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/histogram.h>
 #include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
-#include <grpc++/client_context.h>
-#include <grpc++/server.h>
-#include <grpc++/server_builder.h>
 #include <gtest/gtest.h>
 
-#include "test/cpp/util/create_test_channel.h"
+#include "src/core/profiling/timers.h"
+#include "src/proto/grpc/testing/services.grpc.pb.h"
 #include "test/cpp/qps/client.h"
 #include "test/cpp/qps/histogram.h"
 #include "test/cpp/qps/interarrival.h"
 #include "test/cpp/qps/timer.h"
-#include "src/proto/grpc/testing/services.grpc.pb.h"
-
-#include "src/core/profiling/timers.h"
 
 namespace grpc {
 namespace testing {
 
-class SynchronousClient : public Client {
+static std::unique_ptr<BenchmarkService::Stub> BenchmarkStubCreator(
+    std::shared_ptr<Channel> ch) {
+  return BenchmarkService::NewStub(ch);
+}
+
+class SynchronousClient
+    : public ClientImpl<BenchmarkService::Stub, SimpleRequest> {
  public:
-  SynchronousClient(const ClientConfig& config) : Client(config) {
+  SynchronousClient(const ClientConfig& config)
+      : ClientImpl<BenchmarkService::Stub, SimpleRequest>(
+            config, BenchmarkStubCreator) {
     num_threads_ =
         config.outstanding_rpcs_per_channel() * config.client_channels();
     responses_.resize(num_threads_);

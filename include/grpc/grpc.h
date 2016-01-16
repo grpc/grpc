@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -719,6 +719,16 @@ void grpc_server_destroy(grpc_server *server);
     Use of this function is not strictly thread-safe, but the
     thread-safety issues raised by it should not be of concern. */
 int grpc_tracer_set_enabled(const char *name, int enabled);
+
+/** Check whether a metadata key is legal (will be accepted by core) */
+int grpc_header_key_is_legal(const char *key, size_t length);
+
+/** Check whether a non-binary metadata value is legal (will be accepted by
+    core) */
+int grpc_header_nonbin_value_is_legal(const char *value, size_t length);
+
+/** Check whether a metadata key corresponds to a binary value */
+int grpc_is_binary_header(const char *key, size_t length);
 
 #ifdef __cplusplus
 }

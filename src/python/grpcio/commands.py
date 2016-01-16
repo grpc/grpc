@@ -40,6 +40,17 @@ import setuptools
 from setuptools.command import build_py
 from setuptools.command import test
 
+# Because we need to support building without Cython but simultaneously need to
+# subclass its command class when we need to and because distutils requires a
+# special hook to acquire a command class, we attempt to import Cython's
+# build_ext, and if that fails we import setuptools'.
+try:
+  # Due to the strange way Cython's Distutils module re-imports build_ext, we
+  # import the build_ext class directly.
+  from Cython.Distutils.build_ext import build_ext
+except ImportError:
+  from setuptools.command.build_ext import build_ext
+
 PYTHON_STEM = os.path.dirname(os.path.abspath(__file__))
 
 CONF_PY_ADDENDUM = """
@@ -49,6 +60,10 @@ napoleon_numpy_docstring = True
 
 html_theme = 'sphinx_rtd_theme'
 """
+
+
+class CommandError(Exception):
+  """Simple exception class for GRPC custom commands."""
 
 
 class SphinxDocumentation(setuptools.Command):
@@ -104,10 +119,10 @@ class BuildProtoModules(setuptools.Command):
 
   def run(self):
     if not self.protoc_command:
-      raise Exception('could not find protoc')
+      raise CommandError('could not find protoc')
     if not self.grpc_python_plugin_command:
-      raise Exception('could not find grpc_python_plugin '
-                      '(protoc plugin for GRPC Python)')
+      raise CommandError('could not find grpc_python_plugin '
+                         '(protoc plugin for GRPC Python)')
     include_regex = re.compile(self.include)
     exclude_regex = re.compile(self.exclude) if self.exclude else None
     paths = []
@@ -130,7 +145,7 @@ class BuildProtoModules(setuptools.Command):
       subprocess.check_output(' '.join(command), cwd=root_directory, shell=True,
                               stderr=subprocess.STDOUT)
     except subprocess.CalledProcessError as e:
-      raise Exception('Command:\n{}\nMessage:\n{}\nOutput:\n{}'.format(
+      raise CommandError('Command:\n{}\nMessage:\n{}\nOutput:\n{}'.format(
           command, e.message, e.output))
 
 
@@ -156,11 +171,32 @@ class BuildPy(build_py.build_py):
   """Custom project build command."""
 
   def run(self):
-    # TODO(atash): make this warn if the proto modules couldn't be built rather
-    # than cause build failure
-    self.run_command('build_proto_modules')
+    try:
+      self.run_command('build_proto_modules')
+    except CommandError as error:
+      sys.stderr.write('warning: %s\n' % error.message)
     self.run_command('build_project_metadata')
     build_py.build_py.run(self)
+
+
+class BuildExt(build_ext):
+  """Custom build_ext command to enable compiler-specific flags."""
+
+  C_OPTIONS = {
+      'unix': ('-pthread', '-std=gnu99'),
+      'msvc': (),
+  }
+  LINK_OPTIONS = {}
+
+  def build_extensions(self):
+    compiler = self.compiler.compiler_type
+    if compiler in BuildExt.C_OPTIONS:
+      for extension in self.extensions:
+        extension.extra_compile_args += list(BuildExt.C_OPTIONS[compiler])
+    if compiler in BuildExt.LINK_OPTIONS:
+      for extension in self.extensions:
+        extension.extra_link_args += list(BuildExt.LINK_OPTIONS[compiler])
+    build_ext.build_extensions(self)
 
 
 class Gather(setuptools.Command):
