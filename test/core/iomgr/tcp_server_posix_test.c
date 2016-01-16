@@ -85,7 +85,6 @@ static void on_connect_result_set(on_connect_result *result,
       result->server, acceptor->port_index, acceptor->fd_index);
 }
 
-
 static void server_weak_ref_shutdown(grpc_exec_ctx *exec_ctx, void *arg,
                                      int success) {
   server_weak_ref *weak_ref = arg;
