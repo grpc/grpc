@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -125,7 +125,7 @@ exports.getProtobufServiceAttrs = function getProtobufServiceAttrs(service) {
   var prefix = '/' + fullyQualifiedName(service) + '/';
   return _.object(_.map(service.children, function(method) {
     return [_.camelCase(method.name), {
-      path: prefix + _.capitalize(method.name),
+      path: prefix + method.name,
       requestStream: method.requestStream,
       responseStream: method.responseStream,
       requestSerialize: serializeCls(method.resolvedRequestType.build()),

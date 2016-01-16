@@ -1518,6 +1518,23 @@
       "grpc", 
       "grpc++", 
       "grpc++_test_util", 
+      "grpc_test_util", 
+      "qps"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "generic_async_streaming_ping_pong_test", 
+    "src": [
+      "test/cpp/qps/generic_async_streaming_ping_pong_test.cc"
+    ]
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test_util", 
       "grpc_test_util"
     ], 
     "headers": [], 
@@ -3227,6 +3244,7 @@
       "src/core/surface/server_chttp2.c", 
       "src/core/surface/server_create.c", 
       "src/core/surface/surface_trace.h", 
+      "src/core/surface/validate_metadata.c", 
       "src/core/surface/version.c", 
       "src/core/transport/byte_stream.c", 
       "src/core/transport/byte_stream.h", 
@@ -3699,6 +3717,7 @@
       "src/core/surface/server_chttp2.c", 
       "src/core/surface/server_create.c", 
       "src/core/surface/surface_trace.h", 
+      "src/core/surface/validate_metadata.c", 
       "src/core/surface/version.c", 
       "src/core/transport/byte_stream.c", 
       "src/core/transport/byte_stream.h", 
