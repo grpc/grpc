@@ -24,7 +24,7 @@
     "gen_docs": "./node_modules/.bin/jsdoc -c src/node/jsdoc_conf.json",
     "coverage": "./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha src/node/test",
     "preinstall": "npm install node-pre-gyp",
-    "install": "node -e \"require('node-pre-gyp').install()\""
+    "install": "./node_modules/.bin/node-pre-gyp install"
   },
   "dependencies": {
     "bindings": "^1.2.0",
