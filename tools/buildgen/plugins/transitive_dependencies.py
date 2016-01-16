@@ -1,4 +1,4 @@
-# Copyright 2015, Google Inc.
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -36,10 +36,13 @@ of the list of dependencies.
 """
 
 def get_lib(libs, name):
-  return next(lib for lib in libs if lib['name']==name)
+  try:
+    return next(lib for lib in libs if lib['name']==name)
+  except StopIteration:
+    return None
 
 def transitive_deps(lib, libs):
-  if 'deps' in lib:
+  if lib is not None and 'deps' in lib:
     # Recursively call transitive_deps on each dependency, and take the union
     return set.union(set(lib['deps']),
                      *[set(transitive_deps(get_lib(libs, dep), libs))
