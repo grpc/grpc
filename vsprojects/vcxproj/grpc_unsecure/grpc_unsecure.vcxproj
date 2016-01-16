@@ -292,6 +292,7 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\client_config\resolvers\sockaddr_resolver.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\client_config\subchannel.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\client_config\subchannel_factory.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\client_config\subchannel_index.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\client_config\uri_parser.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\compression\algorithm_metadata.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\compression\message_compress.h" />
@@ -439,6 +440,8 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\client_config\subchannel.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\client_config\subchannel_factory.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\client_config\subchannel_index.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\client_config\uri_parser.c">
     </ClCompile>
