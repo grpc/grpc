@@ -36,6 +36,7 @@
 #include <string.h>
 
 #include <grpc/support/alloc.h>
+#include <grpc/support/avl.h>
 
 #include "src/core/channel/channel_args.h"
 #include "src/core/channel/client_channel.h"

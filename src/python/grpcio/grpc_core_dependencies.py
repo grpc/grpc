@@ -119,6 +119,7 @@ CORE_SOURCE_FILES = [
   'src/core/client_config/resolvers/sockaddr_resolver.c',
   'src/core/client_config/subchannel.c',
   'src/core/client_config/subchannel_factory.c',
+  'src/core/client_config/subchannel_index.c',
   'src/core/client_config/uri_parser.c',
   'src/core/compression/algorithm.c',
   'src/core/compression/message_compress.c',
