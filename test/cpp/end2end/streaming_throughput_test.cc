@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,9 +31,9 @@
  *
  */
 
+#include <time.h>
 #include <mutex>
 #include <thread>
-#include <time.h>
 
 #include <grpc++/channel.h>
 #include <grpc++/client_context.h>
@@ -49,10 +49,10 @@
 #include <grpc/support/time.h>
 #include <gtest/gtest.h>
 
-#include "test/core/util/port.h"
-#include "test/core/util/test_config.h"
 #include "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
+#include "test/core/util/port.h"
+#include "test/core/util/test_config.h"
 
 using grpc::testing::EchoRequest;
 using grpc::testing::EchoResponse;
@@ -99,7 +99,7 @@ const char* kLargeString =
 namespace grpc {
 namespace testing {
 
-class TestServiceImpl : public ::grpc::testing::TestService::Service {
+class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
  public:
   static void BidiStream_Sender(
       ServerReaderWriter<EchoResponse, EchoRequest>* stream,
@@ -161,10 +161,10 @@ class End2endTest : public ::testing::Test {
   void ResetStub() {
     std::shared_ptr<Channel> channel =
         CreateChannel(server_address_.str(), InsecureChannelCredentials());
-    stub_ = grpc::testing::TestService::NewStub(channel);
+    stub_ = grpc::testing::EchoTestService::NewStub(channel);
   }
 
-  std::unique_ptr<grpc::testing::TestService::Stub> stub_;
+  std::unique_ptr<grpc::testing::EchoTestService::Stub> stub_;
   std::unique_ptr<Server> server_;
   std::ostringstream server_address_;
   TestServiceImpl service_;

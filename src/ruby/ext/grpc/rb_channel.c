@@ -59,6 +59,9 @@ static ID id_target;
  * GCed before the channel */
 static ID id_cqueue;
 
+/* id_insecure_channel is used to indicate that a channel is insecure */
+static VALUE id_insecure_channel;
+
 /* grpc_rb_cChannel is the ruby class that proxies grpc_channel. */
 static VALUE grpc_rb_cChannel = Qnil;
 
@@ -126,7 +129,8 @@ static VALUE grpc_rb_channel_alloc(VALUE cls) {
 
 /*
   call-seq:
-    insecure_channel = Channel:new("myhost:8080", {'arg1': 'value1'})
+    insecure_channel = Channel:new("myhost:8080", {'arg1': 'value1'},
+                                   :this_channel_is_insecure)
     creds = ...
     secure_channel = Channel:new("myhost:443", {'arg1': 'value1'}, creds)
 
@@ -142,13 +146,18 @@ static VALUE grpc_rb_channel_init(int argc, VALUE *argv, VALUE self) {
   grpc_channel_args args;
   MEMZERO(&args, grpc_channel_args, 1);
 
-  /* "21" == 2 mandatory args, 1 (credentials) is optional */
-  rb_scan_args(argc, argv, "21", &target, &channel_args, &credentials);
+  /* "3" == 3 mandatory args */
+  rb_scan_args(argc, argv, "3", &target, &channel_args, &credentials);
 
   TypedData_Get_Struct(self, grpc_rb_channel, &grpc_channel_data_type, wrapper);
   target_chars = StringValueCStr(target);
   grpc_rb_hash_convert_to_channel_args(channel_args, &args);
-  if (credentials == Qnil) {
+  if (TYPE(credentials) == T_SYMBOL) {
+    if (id_insecure_channel != SYM2ID(credentials)) {
+      rb_raise(rb_eTypeError,
+               "bad creds symbol, want :this_channel_is_insecure");
+      return Qnil;
+    }
     ch = grpc_insecure_channel_create(target_chars, &args, NULL);
   } else {
     creds = grpc_rb_get_wrapped_channel_credentials(credentials);
@@ -408,6 +417,7 @@ void Init_grpc_channel() {
                   ID2SYM(rb_intern(GRPC_ARG_MAX_CONCURRENT_STREAMS)));
   rb_define_const(grpc_rb_cChannel, "MAX_MESSAGE_LENGTH",
                   ID2SYM(rb_intern(GRPC_ARG_MAX_MESSAGE_LENGTH)));
+  id_insecure_channel = rb_intern("this_channel_is_insecure");
   Init_grpc_propagate_masks();
   Init_grpc_connectivity_states();
 }

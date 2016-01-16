@@ -317,6 +317,7 @@ filegroups:
   - src/core/surface/server.c
   - src/core/surface/server_chttp2.c
   - src/core/surface/server_create.c
+  - src/core/surface/validate_metadata.c
   - src/core/surface/version.c
   - src/core/transport/byte_stream.c
   - src/core/transport/chttp2/alpn.c
@@ -798,8 +799,9 @@ libs:
   src:
   - src/csharp/ext/grpc_csharp_ext.c
   deps:
-  - gpr
   - grpc
+  - gpr
+  deps_linkage: static
   dll: only
   vs_config_type: DynamicLibrary
   vs_packages:
@@ -1961,6 +1963,23 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: generic_async_streaming_ping_pong_test
+  build: test
+  language: c++
+  src:
+  - test/cpp/qps/generic_async_streaming_ping_pong_test.cc
+  deps:
+  - qps
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
+  platforms:
+  - mac
+  - linux
+  - posix
 - name: generic_end2end_test
   build: test
   language: c++
@@ -2441,7 +2460,8 @@ vspackages:
   props: false
   redist: true
   version: 1.2.8.10
-- name: grpc.dependencies.openssl
+- linkage: static
+  name: grpc.dependencies.openssl
   props: true
   redist: true
   version: 1.0.204.1
