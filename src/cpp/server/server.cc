@@ -297,6 +297,8 @@ Server::~Server() {
     if (started_ && !shutdown_) {
       lock.unlock();
       Shutdown();
+    } else if (!started_) {
+      cq_.Shutdown();
     }
   }
   void* got_tag;
