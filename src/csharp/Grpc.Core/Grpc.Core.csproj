@@ -1,7 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="..\packages\grpc.dependencies.zlib.redist.1.2.8.9\build\portable-net45\grpc.dependencies.zlib.redist.props" Condition="Exists('..\packages\grpc.dependencies.zlib.redist.1.2.8.9\build\portable-net45\grpc.dependencies.zlib.redist.props')" />
-  <Import Project="..\packages\grpc.dependencies.openssl.redist.1.0.2.2\build\portable-net45\grpc.dependencies.openssl.redist.props" Condition="Exists('..\packages\grpc.dependencies.openssl.redist.1.0.2.2\build\portable-net45\grpc.dependencies.openssl.redist.props')" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
@@ -10,7 +8,7 @@
     <RootNamespace>Grpc.Core</RootNamespace>
     <AssemblyName>Grpc.Core</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
-    <NuGetPackageImportStamp>8bb563fb</NuGetPackageImportStamp>
+    <NuGetPackageImportStamp>be3e9d03</NuGetPackageImportStamp>
     <DocumentationFile>bin\$(Configuration)\Grpc.Core.Xml</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
@@ -48,7 +46,10 @@
   <ItemGroup>
     <Compile Include="AsyncDuplexStreamingCall.cs" />
     <Compile Include="AsyncServerStreamingCall.cs" />
+    <Compile Include="AsyncAuthInterceptor.cs" />
+    <Compile Include="CallCredentials.cs" />
     <Compile Include="IClientStreamWriter.cs" />
+    <Compile Include="Internal\NativeMetadataCredentialsPlugin.cs" />
     <Compile Include="Internal\INativeCall.cs" />
     <Compile Include="IServerStreamWriter.cs" />
     <Compile Include="IAsyncStreamWriter.cs" />
@@ -78,8 +79,7 @@
     <Compile Include="ServerServiceDefinition.cs" />
     <Compile Include="Utils\AsyncStreamExtensions.cs" />
     <Compile Include="Utils\BenchmarkUtil.cs" />
-    <Compile Include="Internal\CredentialsSafeHandle.cs" />
-    <Compile Include="Credentials.cs" />
+    <Compile Include="ChannelCredentials.cs" />
     <Compile Include="Internal\ChannelArgsSafeHandle.cs" />
     <Compile Include="Internal\AsyncCompletion.cs" />
     <Compile Include="Internal\AsyncCallBase.cs" />
@@ -117,6 +117,12 @@
     <Compile Include="CompressionLevel.cs" />
     <Compile Include="WriteOptions.cs" />
     <Compile Include="ContextPropagationToken.cs" />
+    <Compile Include="Internal\CallCredentialsSafeHandle.cs" />
+    <Compile Include="Internal\ChannelCredentialsSafeHandle.cs" />
+    <Compile Include="Profiling\ProfilerEntry.cs" />
+    <Compile Include="Profiling\ProfilerScope.cs" />
+    <Compile Include="Profiling\IProfiler.cs" />
+    <Compile Include="Profiling\Profilers.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Grpc.Core.nuspec" />
@@ -140,12 +146,11 @@
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Enable NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('..\packages\grpc.dependencies.openssl.redist.1.0.2.2\build\portable-net45\grpc.dependencies.openssl.redist.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\grpc.dependencies.openssl.redist.1.0.2.2\build\portable-net45\grpc.dependencies.openssl.redist.props'))" />
-    <Error Condition="!Exists('..\packages\grpc.dependencies.openssl.redist.1.0.2.2\build\portable-net45\grpc.dependencies.openssl.redist.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\grpc.dependencies.openssl.redist.1.0.2.2\build\portable-net45\grpc.dependencies.openssl.redist.targets'))" />
-    <Error Condition="!Exists('..\packages\grpc.dependencies.zlib.redist.1.2.8.9\build\portable-net45\grpc.dependencies.zlib.redist.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\grpc.dependencies.zlib.redist.1.2.8.9\build\portable-net45\grpc.dependencies.zlib.redist.props'))" />
-    <Error Condition="!Exists('..\packages\grpc.dependencies.zlib.redist.1.2.8.9\build\portable-net45\grpc.dependencies.zlib.redist.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\grpc.dependencies.zlib.redist.1.2.8.9\build\portable-net45\grpc.dependencies.zlib.redist.targets'))" />
+    <Error Condition="!Exists('..\packages\grpc.dependencies.openssl.redist.1.0.204.1\build\portable-net45+netcore45+wpa81+wp8\grpc.dependencies.openssl.redist.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\grpc.dependencies.openssl.redist.1.0.204.1\build\portable-net45+netcore45+wpa81+wp8\grpc.dependencies.openssl.redist.targets'))" />
+    <Error Condition="!Exists('..\packages\grpc.dependencies.zlib.redist.1.2.8.10\build\portable-net45+netcore45+wpa81+wp8\grpc.dependencies.zlib.redist.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\grpc.dependencies.zlib.redist.1.2.8.10\build\portable-net45+netcore45+wpa81+wp8\grpc.dependencies.zlib.redist.targets'))" />
   </Target>
-  <Import Project="..\packages\grpc.dependencies.openssl.redist.1.0.2.2\build\portable-net45\grpc.dependencies.openssl.redist.targets" Condition="Exists('..\packages\grpc.dependencies.openssl.redist.1.0.2.2\build\portable-net45\grpc.dependencies.openssl.redist.targets')" />
-  <Import Project="..\packages\grpc.dependencies.zlib.redist.1.2.8.9\build\portable-net45\grpc.dependencies.zlib.redist.targets" Condition="Exists('..\packages\grpc.dependencies.zlib.redist.1.2.8.9\build\portable-net45\grpc.dependencies.zlib.redist.targets')" />
+  <Import Project="..\packages\grpc.dependencies.openssl.redist.1.0.204.1\build\portable-net45+netcore45+wpa81+wp8\grpc.dependencies.openssl.redist.targets" Condition="Exists('..\packages\grpc.dependencies.openssl.redist.1.0.204.1\build\portable-net45+netcore45+wpa81+wp8\grpc.dependencies.openssl.redist.targets')" />
+  <Import Project="..\packages\grpc.dependencies.zlib.redist.1.2.8.10\build\portable-net45+netcore45+wpa81+wp8\grpc.dependencies.zlib.redist.targets" Condition="Exists('..\packages\grpc.dependencies.zlib.redist.1.2.8.10\build\portable-net45+netcore45+wpa81+wp8\grpc.dependencies.zlib.redist.targets')" />
+  <ItemGroup />
   <ItemGroup />
 </Project>

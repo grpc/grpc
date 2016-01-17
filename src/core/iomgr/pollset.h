@@ -55,9 +55,13 @@
 #endif
 
 void grpc_pollset_init(grpc_pollset *pollset);
-void grpc_pollset_shutdown(grpc_pollset *pollset,
-                           void (*shutdown_done)(void *arg),
-                           void *shutdown_done_arg);
+/* Begin shutting down the pollset, and call closure when done.
+ * GRPC_POLLSET_MU(pollset) must be held */
+void grpc_pollset_shutdown(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
+                           grpc_closure *closure);
+/** Reset the pollset to its initial state (perhaps with some cached objects);
+ *  must have been previously shutdown */
+void grpc_pollset_reset(grpc_pollset *pollset);
 void grpc_pollset_destroy(grpc_pollset *pollset);
 
 /* Do some work on a pollset.
@@ -74,9 +78,13 @@ void grpc_pollset_destroy(grpc_pollset *pollset);
    grpc_pollset_work, and it is guaranteed that GRPC_POLLSET_MU(pollset) will
    not be released by grpc_pollset_work AFTER worker has been destroyed.
 
-   Tries not to block past deadline. */
-void grpc_pollset_work(grpc_pollset *pollset, grpc_pollset_worker *worker,
-                       gpr_timespec now, gpr_timespec deadline);
+   Tries not to block past deadline.
+   May call grpc_closure_list_run on grpc_closure_list, without holding the
+   pollset
+   lock */
+void grpc_pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
+                       grpc_pollset_worker *worker, gpr_timespec now,
+                       gpr_timespec deadline);
 
 /* Break one polling thread out of polling work for this pollset.
    If specific_worker is GRPC_POLLSET_KICK_BROADCAST, kick ALL the workers.

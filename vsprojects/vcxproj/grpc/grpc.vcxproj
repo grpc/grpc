@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="..\..\..\vsprojects\packages\grpc.dependencies.openssl.1.0.2.3\build\native\grpc.dependencies.openssl.props" Condition="Exists('..\..\..\vsprojects\packages\grpc.dependencies.openssl.1.0.2.3\build\native\1.0.2.3.props')" />
+  <Import Project="..\..\..\vsprojects\packages\grpc.dependencies.openssl.1.0.204.1\build\native\grpc.dependencies.openssl.props" Condition="Exists('..\..\..\vsprojects\packages\grpc.dependencies.openssl.1.0.204.1\build\native\1.0.204.1.props')" />
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug-DLL|Win32">
       <Configuration>Debug-DLL</Configuration>
@@ -47,6 +47,9 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(VisualStudioVersion)' == '12.0'" Label="Configuration">
     <PlatformToolset>v120</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(VisualStudioVersion)' == '14.0'" Label="Configuration">
+    <PlatformToolset>v140</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)'=='Debug'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
@@ -96,13 +99,16 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;_USE_32BIT_TIME_T;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <DebugInformationFormat Condition="$(Jenkins)">None</DebugInformationFormat>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <GenerateDebugInformation Condition="!$(Jenkins)">true</GenerateDebugInformation>
+      <GenerateDebugInformation Condition="$(Jenkins)">false</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug-DLL|x64'">
@@ -113,10 +119,13 @@
       <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <DebugInformationFormat Condition="$(Jenkins)">None</DebugInformationFormat>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <GenerateDebugInformation Condition="!$(Jenkins)">true</GenerateDebugInformation>
+      <GenerateDebugInformation Condition="$(Jenkins)">false</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release-DLL|Win32'">
@@ -126,13 +135,16 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;_USE_32BIT_TIME_T;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <DebugInformationFormat Condition="$(Jenkins)">None</DebugInformationFormat>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <GenerateDebugInformation Condition="!$(Jenkins)">true</GenerateDebugInformation>
+      <GenerateDebugInformation Condition="$(Jenkins)">false</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
@@ -147,10 +159,13 @@
       <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <DebugInformationFormat Condition="$(Jenkins)">None</DebugInformationFormat>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <GenerateDebugInformation Condition="!$(Jenkins)">true</GenerateDebugInformation>
+      <GenerateDebugInformation Condition="$(Jenkins)">false</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
@@ -160,13 +175,16 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;_USE_32BIT_TIME_T;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <DebugInformationFormat Condition="$(Jenkins)">None</DebugInformationFormat>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <GenerateDebugInformation Condition="!$(Jenkins)">true</GenerateDebugInformation>
+      <GenerateDebugInformation Condition="$(Jenkins)">false</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -177,10 +195,13 @@
       <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <DebugInformationFormat Condition="$(Jenkins)">None</DebugInformationFormat>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <GenerateDebugInformation Condition="!$(Jenkins)">true</GenerateDebugInformation>
+      <GenerateDebugInformation Condition="$(Jenkins)">false</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -190,13 +211,16 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;_USE_32BIT_TIME_T;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <DebugInformationFormat Condition="$(Jenkins)">None</DebugInformationFormat>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <GenerateDebugInformation Condition="!$(Jenkins)">true</GenerateDebugInformation>
+      <GenerateDebugInformation Condition="$(Jenkins)">false</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
@@ -211,10 +235,13 @@
       <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <DebugInformationFormat Condition="$(Jenkins)">None</DebugInformationFormat>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <GenerateDebugInformation Condition="!$(Jenkins)">true</GenerateDebugInformation>
+      <GenerateDebugInformation Condition="$(Jenkins)">false</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
@@ -232,10 +259,10 @@
     <ClInclude Include="..\..\..\src\core\security\auth_filters.h" />
     <ClInclude Include="..\..\..\src\core\security\base64.h" />
     <ClInclude Include="..\..\..\src\core\security\credentials.h" />
+    <ClInclude Include="..\..\..\src\core\security\handshake.h" />
     <ClInclude Include="..\..\..\src\core\security\json_token.h" />
     <ClInclude Include="..\..\..\src\core\security\jwt_verifier.h" />
     <ClInclude Include="..\..\..\src\core\security\secure_endpoint.h" />
-    <ClInclude Include="..\..\..\src\core\security\secure_transport_setup.h" />
     <ClInclude Include="..\..\..\src\core\security\security_connector.h" />
     <ClInclude Include="..\..\..\src\core\security\security_context.h" />
     <ClInclude Include="..\..\..\src\core\tsi\fake_transport_security.h" />
@@ -246,16 +273,21 @@
     <ClInclude Include="..\..\..\src\core\channel\channel_args.h" />
     <ClInclude Include="..\..\..\src\core\channel\channel_stack.h" />
     <ClInclude Include="..\..\..\src\core\channel\client_channel.h" />
+    <ClInclude Include="..\..\..\src\core\channel\client_uchannel.h" />
     <ClInclude Include="..\..\..\src\core\channel\compress_filter.h" />
     <ClInclude Include="..\..\..\src\core\channel\connected_channel.h" />
     <ClInclude Include="..\..\..\src\core\channel\context.h" />
     <ClInclude Include="..\..\..\src\core\channel\http_client_filter.h" />
     <ClInclude Include="..\..\..\src\core\channel\http_server_filter.h" />
-    <ClInclude Include="..\..\..\src\core\channel\noop_filter.h" />
+    <ClInclude Include="..\..\..\src\core\channel\subchannel_call_holder.h" />
     <ClInclude Include="..\..\..\src\core\client_config\client_config.h" />
     <ClInclude Include="..\..\..\src\core\client_config\connector.h" />
+    <ClInclude Include="..\..\..\src\core\client_config\initial_connect_string.h" />
     <ClInclude Include="..\..\..\src\core\client_config\lb_policies\pick_first.h" />
+    <ClInclude Include="..\..\..\src\core\client_config\lb_policies\round_robin.h" />
     <ClInclude Include="..\..\..\src\core\client_config\lb_policy.h" />
+    <ClInclude Include="..\..\..\src\core\client_config\lb_policy_factory.h" />
+    <ClInclude Include="..\..\..\src\core\client_config\lb_policy_registry.h" />
     <ClInclude Include="..\..\..\src\core\client_config\resolver.h" />
     <ClInclude Include="..\..\..\src\core\client_config\resolver_factory.h" />
     <ClInclude Include="..\..\..\src\core\client_config\resolver_registry.h" />
@@ -263,19 +295,18 @@
     <ClInclude Include="..\..\..\src\core\client_config\resolvers\sockaddr_resolver.h" />
     <ClInclude Include="..\..\..\src\core\client_config\subchannel.h" />
     <ClInclude Include="..\..\..\src\core\client_config\subchannel_factory.h" />
-    <ClInclude Include="..\..\..\src\core\client_config\subchannel_factory_decorators\add_channel_arg.h" />
-    <ClInclude Include="..\..\..\src\core\client_config\subchannel_factory_decorators\merge_channel_args.h" />
     <ClInclude Include="..\..\..\src\core\client_config\uri_parser.h" />
+    <ClInclude Include="..\..\..\src\core\compression\algorithm_metadata.h" />
     <ClInclude Include="..\..\..\src\core\compression\message_compress.h" />
     <ClInclude Include="..\..\..\src\core\debug\trace.h" />
     <ClInclude Include="..\..\..\src\core\httpcli\format_request.h" />
     <ClInclude Include="..\..\..\src\core\httpcli\httpcli.h" />
     <ClInclude Include="..\..\..\src\core\httpcli\parser.h" />
-    <ClInclude Include="..\..\..\src\core\iomgr\alarm.h" />
-    <ClInclude Include="..\..\..\src\core\iomgr\alarm_heap.h" />
-    <ClInclude Include="..\..\..\src\core\iomgr\alarm_internal.h" />
+    <ClInclude Include="..\..\..\src\core\iomgr\closure.h" />
     <ClInclude Include="..\..\..\src\core\iomgr\endpoint.h" />
     <ClInclude Include="..\..\..\src\core\iomgr\endpoint_pair.h" />
+    <ClInclude Include="..\..\..\src\core\iomgr\exec_ctx.h" />
+    <ClInclude Include="..\..\..\src\core\iomgr\executor.h" />
     <ClInclude Include="..\..\..\src\core\iomgr\fd_posix.h" />
     <ClInclude Include="..\..\..\src\core\iomgr\iocp_windows.h" />
     <ClInclude Include="..\..\..\src\core\iomgr\iomgr.h" />
@@ -299,24 +330,31 @@
     <ClInclude Include="..\..\..\src\core\iomgr\tcp_server.h" />
     <ClInclude Include="..\..\..\src\core\iomgr\tcp_windows.h" />
     <ClInclude Include="..\..\..\src\core\iomgr\time_averaged_stats.h" />
+    <ClInclude Include="..\..\..\src\core\iomgr\timer.h" />
+    <ClInclude Include="..\..\..\src\core\iomgr\timer_heap.h" />
+    <ClInclude Include="..\..\..\src\core\iomgr\timer_internal.h" />
     <ClInclude Include="..\..\..\src\core\iomgr\udp_server.h" />
     <ClInclude Include="..\..\..\src\core\iomgr\wakeup_fd_pipe.h" />
     <ClInclude Include="..\..\..\src\core\iomgr\wakeup_fd_posix.h" />
+    <ClInclude Include="..\..\..\src\core\iomgr\workqueue.h" />
+    <ClInclude Include="..\..\..\src\core\iomgr\workqueue_posix.h" />
+    <ClInclude Include="..\..\..\src\core\iomgr\workqueue_windows.h" />
     <ClInclude Include="..\..\..\src\core\json\json.h" />
     <ClInclude Include="..\..\..\src\core\json\json_common.h" />
     <ClInclude Include="..\..\..\src\core\json\json_reader.h" />
     <ClInclude Include="..\..\..\src\core\json\json_writer.h" />
-    <ClInclude Include="..\..\..\src\core\profiling\timers.h" />
     <ClInclude Include="..\..\..\src\core\statistics\census_interface.h" />
     <ClInclude Include="..\..\..\src\core\statistics\census_rpc_stats.h" />
-    <ClInclude Include="..\..\..\src\core\surface\byte_buffer_queue.h" />
+    <ClInclude Include="..\..\..\src\core\surface\api_trace.h" />
     <ClInclude Include="..\..\..\src\core\surface\call.h" />
+    <ClInclude Include="..\..\..\src\core\surface\call_test_only.h" />
     <ClInclude Include="..\..\..\src\core\surface\channel.h" />
     <ClInclude Include="..\..\..\src\core\surface\completion_queue.h" />
     <ClInclude Include="..\..\..\src\core\surface\event_string.h" />
     <ClInclude Include="..\..\..\src\core\surface\init.h" />
     <ClInclude Include="..\..\..\src\core\surface\server.h" />
     <ClInclude Include="..\..\..\src\core\surface\surface_trace.h" />
+    <ClInclude Include="..\..\..\src\core\transport\byte_stream.h" />
     <ClInclude Include="..\..\..\src\core\transport\chttp2\alpn.h" />
     <ClInclude Include="..\..\..\src\core\transport\chttp2\bin_encoder.h" />
     <ClInclude Include="..\..\..\src\core\transport\chttp2\frame.h" />
@@ -326,6 +364,7 @@
     <ClInclude Include="..\..\..\src\core\transport\chttp2\frame_rst_stream.h" />
     <ClInclude Include="..\..\..\src\core\transport\chttp2\frame_settings.h" />
     <ClInclude Include="..\..\..\src\core\transport\chttp2\frame_window_update.h" />
+    <ClInclude Include="..\..\..\src\core\transport\chttp2\hpack_encoder.h" />
     <ClInclude Include="..\..\..\src\core\transport\chttp2\hpack_parser.h" />
     <ClInclude Include="..\..\..\src\core\transport\chttp2\hpack_table.h" />
     <ClInclude Include="..\..\..\src\core\transport\chttp2\http2_errors.h" />
@@ -333,14 +372,14 @@
     <ClInclude Include="..\..\..\src\core\transport\chttp2\incoming_metadata.h" />
     <ClInclude Include="..\..\..\src\core\transport\chttp2\internal.h" />
     <ClInclude Include="..\..\..\src\core\transport\chttp2\status_conversion.h" />
-    <ClInclude Include="..\..\..\src\core\transport\chttp2\stream_encoder.h" />
     <ClInclude Include="..\..\..\src\core\transport\chttp2\stream_map.h" />
     <ClInclude Include="..\..\..\src\core\transport\chttp2\timeout_encoding.h" />
     <ClInclude Include="..\..\..\src\core\transport\chttp2\varint.h" />
     <ClInclude Include="..\..\..\src\core\transport\chttp2_transport.h" />
     <ClInclude Include="..\..\..\src\core\transport\connectivity_state.h" />
     <ClInclude Include="..\..\..\src\core\transport\metadata.h" />
-    <ClInclude Include="..\..\..\src\core\transport\stream_op.h" />
+    <ClInclude Include="..\..\..\src\core\transport\metadata_batch.h" />
+    <ClInclude Include="..\..\..\src\core\transport\static_metadata.h" />
     <ClInclude Include="..\..\..\src\core\transport\transport.h" />
     <ClInclude Include="..\..\..\src\core\transport\transport_impl.h" />
     <ClInclude Include="..\..\..\src\core\census\aggregation.h" />
@@ -364,13 +403,13 @@
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\security\google_default_credentials.c">
     </ClCompile>
+    <ClCompile Include="..\..\..\src\core\security\handshake.c">
+    </ClCompile>
     <ClCompile Include="..\..\..\src\core\security\json_token.c">
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\security\jwt_verifier.c">
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\security\secure_endpoint.c">
-    </ClCompile>
-    <ClCompile Include="..\..\..\src\core\security\secure_transport_setup.c">
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\security\security_connector.c">
     </ClCompile>
@@ -400,6 +439,8 @@
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\channel\client_channel.c">
     </ClCompile>
+    <ClCompile Include="..\..\..\src\core\channel\client_uchannel.c">
+    </ClCompile>
     <ClCompile Include="..\..\..\src\core\channel\compress_filter.c">
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\channel\connected_channel.c">
@@ -408,15 +449,25 @@
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\channel\http_server_filter.c">
     </ClCompile>
-    <ClCompile Include="..\..\..\src\core\channel\noop_filter.c">
+    <ClCompile Include="..\..\..\src\core\channel\subchannel_call_holder.c">
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\client_config\client_config.c">
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\client_config\connector.c">
     </ClCompile>
+    <ClCompile Include="..\..\..\src\core\client_config\default_initial_connect_string.c">
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\client_config\initial_connect_string.c">
+    </ClCompile>
     <ClCompile Include="..\..\..\src\core\client_config\lb_policies\pick_first.c">
     </ClCompile>
+    <ClCompile Include="..\..\..\src\core\client_config\lb_policies\round_robin.c">
+    </ClCompile>
     <ClCompile Include="..\..\..\src\core\client_config\lb_policy.c">
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\client_config\lb_policy_factory.c">
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\client_config\lb_policy_registry.c">
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\client_config\resolver.c">
     </ClCompile>
@@ -432,10 +483,6 @@
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\client_config\subchannel_factory.c">
     </ClCompile>
-    <ClCompile Include="..\..\..\src\core\client_config\subchannel_factory_decorators\add_channel_arg.c">
-    </ClCompile>
-    <ClCompile Include="..\..\..\src\core\client_config\subchannel_factory_decorators\merge_channel_args.c">
-    </ClCompile>
     <ClCompile Include="..\..\..\src\core\client_config\uri_parser.c">
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\compression\algorithm.c">
@@ -450,15 +497,17 @@
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\httpcli\parser.c">
     </ClCompile>
-    <ClCompile Include="..\..\..\src\core\iomgr\alarm.c">
-    </ClCompile>
-    <ClCompile Include="..\..\..\src\core\iomgr\alarm_heap.c">
+    <ClCompile Include="..\..\..\src\core\iomgr\closure.c">
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\iomgr\endpoint.c">
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\iomgr\endpoint_pair_posix.c">
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\iomgr\endpoint_pair_windows.c">
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\iomgr\exec_ctx.c">
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\iomgr\executor.c">
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\iomgr\fd_posix.c">
     </ClCompile>
@@ -510,6 +559,10 @@
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\iomgr\time_averaged_stats.c">
     </ClCompile>
+    <ClCompile Include="..\..\..\src\core\iomgr\timer.c">
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\iomgr\timer_heap.c">
+    </ClCompile>
     <ClCompile Include="..\..\..\src\core\iomgr\udp_server.c">
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\iomgr\wakeup_fd_eventfd.c">
@@ -520,6 +573,10 @@
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\iomgr\wakeup_fd_posix.c">
     </ClCompile>
+    <ClCompile Include="..\..\..\src\core\iomgr\workqueue_posix.c">
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\iomgr\workqueue_windows.c">
+    </ClCompile>
     <ClCompile Include="..\..\..\src\core\json\json.c">
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\json\json_reader.c">
@@ -528,13 +585,9 @@
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\json\json_writer.c">
     </ClCompile>
-    <ClCompile Include="..\..\..\src\core\profiling\basic_timers.c">
-    </ClCompile>
-    <ClCompile Include="..\..\..\src\core\profiling\stap_timers.c">
+    <ClCompile Include="..\..\..\src\core\surface\api_trace.c">
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\surface\byte_buffer.c">
-    </ClCompile>
-    <ClCompile Include="..\..\..\src\core\surface\byte_buffer_queue.c">
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\surface\byte_buffer_reader.c">
     </ClCompile>
@@ -549,6 +602,8 @@
     <ClCompile Include="..\..\..\src\core\surface\channel_connectivity.c">
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\surface\channel_create.c">
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\surface\channel_ping.c">
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\surface\completion_queue.c">
     </ClCompile>
@@ -566,9 +621,11 @@
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\surface\server_create.c">
     </ClCompile>
-    <ClCompile Include="..\..\..\src\core\surface\surface_trace.c">
+    <ClCompile Include="..\..\..\src\core\surface\validate_metadata.c">
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\surface\version.c">
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\transport\byte_stream.c">
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\transport\chttp2\alpn.c">
     </ClCompile>
@@ -586,6 +643,8 @@
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\transport\chttp2\frame_window_update.c">
     </ClCompile>
+    <ClCompile Include="..\..\..\src\core\transport\chttp2\hpack_encoder.c">
+    </ClCompile>
     <ClCompile Include="..\..\..\src\core\transport\chttp2\hpack_parser.c">
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\transport\chttp2\hpack_table.c">
@@ -597,8 +656,6 @@
     <ClCompile Include="..\..\..\src\core\transport\chttp2\parsing.c">
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\transport\chttp2\status_conversion.c">
-    </ClCompile>
-    <ClCompile Include="..\..\..\src\core\transport\chttp2\stream_encoder.c">
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\transport\chttp2\stream_lists.c">
     </ClCompile>
@@ -616,7 +673,9 @@
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\transport\metadata.c">
     </ClCompile>
-    <ClCompile Include="..\..\..\src\core\transport\stream_op.c">
+    <ClCompile Include="..\..\..\src\core\transport\metadata_batch.c">
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\transport\static_metadata.c">
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\transport\transport.c">
     </ClCompile>
@@ -641,20 +700,20 @@
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
-  <Import Project="..\..\..\vsprojects\packages\grpc.dependencies.zlib.redist.1.2.8.9\build\native\grpc.dependencies.zlib.redist.targets" Condition="Exists('..\..\..\vsprojects\packages\grpc.dependencies.zlib.redist.1.2.8.9\build\native\grpc.dependencies\grpc.dependencies.zlib.targets')" />
-  <Import Project="..\..\..\vsprojects\packages\grpc.dependencies.zlib.1.2.8.9\build\native\grpc.dependencies.zlib.targets" Condition="Exists('..\..\..\vsprojects\packages\grpc.dependencies.zlib.1.2.8.9\build\native\grpc.dependencies\grpc.dependencies.zlib.targets')" />
-  <Import Project="..\..\..\vsprojects\packages\grpc.dependencies.openssl.redist.1.0.2.3\build\native\grpc.dependencies.openssl.redist.targets" Condition="Exists('..\..\..\vsprojects\packages\grpc.dependencies.openssl.redist.1.0.2.3\build\native\grpc.dependencies\grpc.dependencies.openssl.targets')" />
-  <Import Project="..\..\..\vsprojects\packages\grpc.dependencies.openssl.1.0.2.3\build\native\grpc.dependencies.openssl.targets" Condition="Exists('..\..\..\vsprojects\packages\grpc.dependencies.openssl.1.0.2.3\build\native\grpc.dependencies\grpc.dependencies.openssl.targets')" />
+  <Import Project="..\..\..\vsprojects\packages\grpc.dependencies.zlib.redist.1.2.8.10\build\native\grpc.dependencies.zlib.redist.targets" Condition="Exists('..\..\..\vsprojects\packages\grpc.dependencies.zlib.redist.1.2.8.10\build\native\grpc.dependencies\grpc.dependencies.zlib.targets')" />
+  <Import Project="..\..\..\vsprojects\packages\grpc.dependencies.zlib.1.2.8.10\build\native\grpc.dependencies.zlib.targets" Condition="Exists('..\..\..\vsprojects\packages\grpc.dependencies.zlib.1.2.8.10\build\native\grpc.dependencies\grpc.dependencies.zlib.targets')" />
+  <Import Project="..\..\..\vsprojects\packages\grpc.dependencies.openssl.redist.1.0.204.1\build\native\grpc.dependencies.openssl.redist.targets" Condition="Exists('..\..\..\vsprojects\packages\grpc.dependencies.openssl.redist.1.0.204.1\build\native\grpc.dependencies\grpc.dependencies.openssl.targets')" />
+  <Import Project="..\..\..\vsprojects\packages\grpc.dependencies.openssl.1.0.204.1\build\native\grpc.dependencies.openssl.targets" Condition="Exists('..\..\..\vsprojects\packages\grpc.dependencies.openssl.1.0.204.1\build\native\grpc.dependencies\grpc.dependencies.openssl.targets')" />
   </ImportGroup>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Enable NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('..\..\..\vsprojects\packages\grpc.dependencies.zlib.redist.1.2.8.9\build\native\grpc.dependencies.zlib.redist.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\vsprojects\packages\grpc.dependencies.zlib.redist.1.2.8.9\build\native\grpc.dependencies.zlib.redist.targets')" />
-    <Error Condition="!Exists('..\..\..\vsprojects\packages\grpc.dependencies.zlib.1.2.8.9\build\native\grpc.dependencies.zlib.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\vsprojects\packages\grpc.dependencies.zlib.1.2.8.9\build\native\grpc.dependencies.zlib.targets')" />
-    <Error Condition="!Exists('..\..\..\vsprojects\packages\grpc.dependencies.openssl.redist.1.0.2.3\build\native\grpc.dependencies.openssl.redist.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\vsprojects\packages\grpc.dependencies.openssl.redist.1.0.2.3\build\native\grpc.dependencies.openssl.redist.targets')" />
-    <Error Condition="!Exists('..\..\..\vsprojects\packages\grpc.dependencies.openssl.1.0.2.3\build\native\grpc.dependencies.openssl.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\vsprojects\packages\grpc.dependencies.openssl.1.0.2.3\build\native\grpc.dependencies.openssl.props')" />
-    <Error Condition="!Exists('..\..\..\vsprojects\packages\grpc.dependencies.openssl.1.0.2.3\build\native\grpc.dependencies.openssl.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\vsprojects\packages\grpc.dependencies.openssl.1.0.2.3\build\native\grpc.dependencies.openssl.targets')" />
+    <Error Condition="!Exists('..\..\..\vsprojects\packages\grpc.dependencies.zlib.redist.1.2.8.10\build\native\grpc.dependencies.zlib.redist.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\vsprojects\packages\grpc.dependencies.zlib.redist.1.2.8.10\build\native\grpc.dependencies.zlib.redist.targets')" />
+    <Error Condition="!Exists('..\..\..\vsprojects\packages\grpc.dependencies.zlib.1.2.8.10\build\native\grpc.dependencies.zlib.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\vsprojects\packages\grpc.dependencies.zlib.1.2.8.10\build\native\grpc.dependencies.zlib.targets')" />
+    <Error Condition="!Exists('..\..\..\vsprojects\packages\grpc.dependencies.openssl.redist.1.0.204.1\build\native\grpc.dependencies.openssl.redist.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\vsprojects\packages\grpc.dependencies.openssl.redist.1.0.204.1\build\native\grpc.dependencies.openssl.redist.targets')" />
+    <Error Condition="!Exists('..\..\..\vsprojects\packages\grpc.dependencies.openssl.1.0.204.1\build\native\grpc.dependencies.openssl.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\vsprojects\packages\grpc.dependencies.openssl.1.0.204.1\build\native\grpc.dependencies.openssl.props')" />
+    <Error Condition="!Exists('..\..\..\vsprojects\packages\grpc.dependencies.openssl.1.0.204.1\build\native\grpc.dependencies.openssl.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\vsprojects\packages\grpc.dependencies.openssl.1.0.204.1\build\native\grpc.dependencies.openssl.targets')" />
   </Target>
 </Project>
 

@@ -31,41 +31,50 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
+
 namespace Grpc;
 
 /**
  * Represents an active call that sends a single message and then gets a single
  * response.
  */
-class UnaryCall extends AbstractCall {
-  /**
-   * Start the call
-   * @param $data The data to send
-   * @param array $metadata Metadata to send with the call, if applicable
-   * @param array $options an array of options, possible keys:
-   *              'flags' => a number
-   */
-  public function start($data, $metadata = array(), $options = array()) {
-    $message_array = ['message' => $data->serialize()];
-    if (isset($options['flags'])) {
-      $message_array['flags'] = $options['flags'];
+class UnaryCall extends AbstractCall
+{
+    /**
+     * Start the call.
+     *
+     * @param $data The data to send
+     * @param array $metadata Metadata to send with the call, if applicable
+     * @param array $options  an array of options, possible keys:
+     *                        'flags' => a number
+     */
+    public function start($data, $metadata = [], $options = [])
+    {
+        $message_array = ['message' => $data->serialize()];
+        if (isset($options['flags'])) {
+            $message_array['flags'] = $options['flags'];
+        }
+        $event = $this->call->startBatch([
+            OP_SEND_INITIAL_METADATA => $metadata,
+            OP_RECV_INITIAL_METADATA => true,
+            OP_SEND_MESSAGE => $message_array,
+            OP_SEND_CLOSE_FROM_CLIENT => true,
+        ]);
+        $this->metadata = $event->metadata;
     }
-    $event = $this->call->startBatch([
-        OP_SEND_INITIAL_METADATA => $metadata,
-        OP_RECV_INITIAL_METADATA => true,
-        OP_SEND_MESSAGE => $message_array,
-        OP_SEND_CLOSE_FROM_CLIENT => true]);
-    $this->metadata = $event->metadata;
-  }
 
-  /**
-   * Wait for the server to respond with data and a status
-   * @return [response data, status]
-   */
-  public function wait() {
-    $event = $this->call->startBatch([
-        OP_RECV_MESSAGE => true,
-        OP_RECV_STATUS_ON_CLIENT => true]);
-    return array($this->deserializeResponse($event->message), $event->status);
-  }
+    /**
+     * Wait for the server to respond with data and a status.
+     *
+     * @return [response data, status]
+     */
+    public function wait()
+    {
+        $event = $this->call->startBatch([
+            OP_RECV_MESSAGE => true,
+            OP_RECV_STATUS_ON_CLIENT => true,
+        ]);
+
+        return [$this->deserializeResponse($event->message), $event->status];
+    }
 }

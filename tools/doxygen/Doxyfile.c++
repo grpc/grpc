@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC C++"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 0.11.0.0
+PROJECT_NUMBER         = 0.12.0.0
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -774,6 +774,7 @@ include/grpc++/impl/proto_utils.h \
 include/grpc++/impl/rpc_method.h \
 include/grpc++/impl/rpc_service_method.h \
 include/grpc++/impl/serialization_traits.h \
+include/grpc++/impl/server_builder_option.h \
 include/grpc++/impl/service_type.h \
 include/grpc++/impl/sync.h \
 include/grpc++/impl/sync_cxx11.h \

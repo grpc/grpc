@@ -40,12 +40,15 @@
 #include "test/core/util/test_config.h"
 
 static void test_succeeds(const char *uri_text, const char *scheme,
-                          const char *authority, const char *path) {
+                          const char *authority, const char *path,
+                          const char *query, const char *fragment) {
   grpc_uri *uri = grpc_uri_parse(uri_text, 0);
   GPR_ASSERT(uri);
   GPR_ASSERT(0 == strcmp(scheme, uri->scheme));
   GPR_ASSERT(0 == strcmp(authority, uri->authority));
   GPR_ASSERT(0 == strcmp(path, uri->path));
+  GPR_ASSERT(0 == strcmp(query, uri->query));
+  GPR_ASSERT(0 == strcmp(fragment, uri->fragment));
   grpc_uri_destroy(uri);
 }
 
@@ -55,17 +58,29 @@ static void test_fails(const char *uri_text) {
 
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
-  test_succeeds("http://www.google.com", "http", "www.google.com", "");
-  test_succeeds("dns:///foo", "dns", "", "/foo");
-  test_succeeds("http://www.google.com:90", "http", "www.google.com:90", "");
-  test_succeeds("a192.4-df:foo.coom", "a192.4-df", "", "foo.coom");
-  test_succeeds("a+b:foo.coom", "a+b", "", "foo.coom");
+  test_succeeds("http://www.google.com", "http", "www.google.com", "", "", "");
+  test_succeeds("dns:///foo", "dns", "", "/foo", "", "");
+  test_succeeds("http://www.google.com:90", "http", "www.google.com:90", "", "",
+                "");
+  test_succeeds("a192.4-df:foo.coom", "a192.4-df", "", "foo.coom", "", "");
+  test_succeeds("a+b:foo.coom", "a+b", "", "foo.coom", "", "");
   test_succeeds("zookeeper://127.0.0.1:2181/foo/bar", "zookeeper",
-                "127.0.0.1:2181", "/foo/bar");
+                "127.0.0.1:2181", "/foo/bar", "", "");
+  test_succeeds("http://www.google.com?yay-i'm-using-queries", "http",
+                "www.google.com", "", "yay-i'm-using-queries", "");
+  test_succeeds("dns:foo.com#fragment-all-the-things", "dns", "", "foo.com", "",
+                "fragment-all-the-things");
+  test_succeeds("http:?legit", "http", "", "", "legit", "");
+  test_succeeds("unix:#this-is-ok-too", "unix", "", "", "", "this-is-ok-too");
+  test_succeeds("http:?legit#twice", "http", "", "", "legit", "twice");
+  test_succeeds("http://foo?bar#lol?", "http", "foo", "", "bar", "lol?");
+  test_succeeds("http://foo?bar#lol?/", "http", "foo", "", "bar", "lol?/");
+
   test_fails("xyz");
-  test_fails("http://www.google.com?why-are-you-using-queries");
-  test_fails("dns:foo.com#fragments-arent-supported-here");
-  test_fails("http:?huh");
-  test_fails("unix:#yeah-right");
+  test_fails("http:?dangling-pct-%0");
+  test_fails("http://foo?[bar]");
+  test_fails("http://foo?x[bar]");
+  test_fails("http://foo?bar#lol#");
+
   return 0;
 }

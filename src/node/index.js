@@ -33,6 +33,14 @@
 
 'use strict';
 
+var path = require('path');
+
+var SSL_ROOTS_PATH = path.resolve(__dirname, '..', '..', 'etc', 'roots.pem');
+
+if (!process.env.GRPC_DEFAULT_SSL_ROOTS_FILE_PATH) {
+  process.env.GRPC_DEFAULT_SSL_ROOTS_FILE_PATH = SSL_ROOTS_PATH;
+}
+
 var _ = require('lodash');
 
 var ProtoBuf = require('protobufjs');
@@ -43,7 +51,7 @@ var server = require('./src/server.js');
 
 var Metadata = require('./src/metadata.js');
 
-var grpc = require('bindings')('grpc');
+var grpc = require('bindings')('grpc_node');
 
 /**
  * Load a gRPC object from an existing ProtoBuf.Reflect object.
@@ -90,34 +98,7 @@ exports.load = function load(filename, format) {
     default:
     throw new Error('Unrecognized format "' + format + '"');
   }
-
   return loadObject(builder.ns);
-};
-
-/**
- * Get a function that a client can use to update metadata with authentication
- * information from a Google Auth credential object, which comes from the
- * google-auth-library.
- * @param {Object} credential The credential object to use
- * @return {function(Object, callback)} Metadata updater function
- */
-exports.getGoogleAuthDelegate = function getGoogleAuthDelegate(credential) {
-  /**
-   * Update a metadata object with authentication information.
-   * @param {string} authURI The uri to authenticate to
-   * @param {Object} metadata Metadata object
-   * @param {function(Error, Object)} callback
-   */
-  return function updateMetadata(authURI, metadata, callback) {
-    credential.getRequestMetadata(authURI, function(err, header) {
-      if (err) {
-        callback(err);
-        return;
-      }
-      metadata.add('authorization', header.Authorization);
-      callback(null, metadata);
-    });
-  };
 };
 
 /**
@@ -153,7 +134,7 @@ exports.writeFlags = grpc.writeFlags;
 /**
  * Credentials factories
  */
-exports.Credentials = grpc.Credentials;
+exports.credentials = require('./src/credentials.js');
 
 /**
  * ServerCredentials factories

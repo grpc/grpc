@@ -42,6 +42,7 @@
 #include "src/core/httpcli/httpcli.h"
 #include "src/core/support/env.h"
 #include "src/core/support/file.h"
+#include "src/core/surface/api_trace.h"
 
 /* -- Constants. -- */
 
@@ -49,7 +50,7 @@
 
 /* -- Default credentials. -- */
 
-static grpc_credentials *default_credentials = NULL;
+static grpc_channel_credentials *default_credentials = NULL;
 static int compute_engine_detection_done = 0;
 static gpr_mu g_mu;
 static gpr_once g_once = GPR_ONCE_INIT;
@@ -63,7 +64,8 @@ typedef struct {
 } compute_engine_detector;
 
 static void on_compute_engine_detection_http_response(
-    void *user_data, const grpc_httpcli_response *response) {
+    grpc_exec_ctx *exec_ctx, void *user_data,
+    const grpc_httpcli_response *response) {
   compute_engine_detector *detector = (compute_engine_detector *)user_data;
   if (response != NULL && response->status == 200 && response->hdr_count > 0) {
     /* Internet providers can return a generic response to all requests, so
@@ -84,12 +86,16 @@ static void on_compute_engine_detection_http_response(
   gpr_mu_unlock(GRPC_POLLSET_MU(&detector->pollset));
 }
 
-static void destroy_pollset(void *p) { grpc_pollset_destroy(p); }
+static void destroy_pollset(grpc_exec_ctx *exec_ctx, void *p, int s) {
+  grpc_pollset_destroy(p);
+}
 
 static int is_stack_running_on_compute_engine(void) {
   compute_engine_detector detector;
   grpc_httpcli_request request;
   grpc_httpcli_context context;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_closure destroy_closure;
 
   /* The http call is local. If it takes more than one sec, it is for sure not
      on compute engine. */
@@ -106,32 +112,37 @@ static int is_stack_running_on_compute_engine(void) {
   grpc_httpcli_context_init(&context);
 
   grpc_httpcli_get(
-      &context, &detector.pollset, &request,
+      &exec_ctx, &context, &detector.pollset, &request,
       gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), max_detection_delay),
       on_compute_engine_detection_http_response, &detector);
+
+  grpc_exec_ctx_finish(&exec_ctx);
 
   /* Block until we get the response. This is not ideal but this should only be
      called once for the lifetime of the process by the default credentials. */
   gpr_mu_lock(GRPC_POLLSET_MU(&detector.pollset));
   while (!detector.is_done) {
     grpc_pollset_worker worker;
-    grpc_pollset_work(&detector.pollset, &worker, gpr_now(GPR_CLOCK_MONOTONIC),
+    grpc_pollset_work(&exec_ctx, &detector.pollset, &worker,
+                      gpr_now(GPR_CLOCK_MONOTONIC),
                       gpr_inf_future(GPR_CLOCK_MONOTONIC));
   }
   gpr_mu_unlock(GRPC_POLLSET_MU(&detector.pollset));
 
   grpc_httpcli_context_destroy(&context);
-  grpc_pollset_shutdown(&detector.pollset, destroy_pollset, &detector.pollset);
+  grpc_closure_init(&destroy_closure, destroy_pollset, &detector.pollset);
+  grpc_pollset_shutdown(&exec_ctx, &detector.pollset, &destroy_closure);
+  grpc_exec_ctx_finish(&exec_ctx);
 
   return detector.success;
 }
 
 /* Takes ownership of creds_path if not NULL. */
-static grpc_credentials *create_default_creds_from_path(char *creds_path) {
+static grpc_call_credentials *create_default_creds_from_path(char *creds_path) {
   grpc_json *json = NULL;
   grpc_auth_json_key key;
   grpc_auth_refresh_token token;
-  grpc_credentials *result = NULL;
+  grpc_call_credentials *result = NULL;
   gpr_slice creds_data = gpr_empty_slice();
   int file_ok = 0;
   if (creds_path == NULL) goto end;
@@ -165,28 +176,30 @@ end:
   return result;
 }
 
-grpc_credentials *grpc_google_default_credentials_create(void) {
-  grpc_credentials *result = NULL;
-  int serving_cached_credentials = 0;
+grpc_channel_credentials *grpc_google_default_credentials_create(void) {
+  grpc_channel_credentials *result = NULL;
+  grpc_call_credentials *call_creds = NULL;
+
+  GRPC_API_TRACE("grpc_google_default_credentials_create(void)", 0, ());
+
   gpr_once_init(&g_once, init_default_credentials);
 
   gpr_mu_lock(&g_mu);
 
   if (default_credentials != NULL) {
-    result = grpc_credentials_ref(default_credentials);
-    serving_cached_credentials = 1;
+    result = grpc_channel_credentials_ref(default_credentials);
     goto end;
   }
 
   /* First, try the environment variable. */
-  result = create_default_creds_from_path(
+  call_creds = create_default_creds_from_path(
       gpr_getenv(GRPC_GOOGLE_CREDENTIALS_ENV_VAR));
-  if (result != NULL) goto end;
+  if (call_creds != NULL) goto end;
 
   /* Then the well-known file. */
-  result = create_default_creds_from_path(
+  call_creds = create_default_creds_from_path(
       grpc_get_well_known_google_credentials_file_path());
-  if (result != NULL) goto end;
+  if (call_creds != NULL) goto end;
 
   /* At last try to see if we're on compute engine (do the detection only once
      since it requires a network test). */
@@ -194,21 +207,28 @@ grpc_credentials *grpc_google_default_credentials_create(void) {
     int need_compute_engine_creds = is_stack_running_on_compute_engine();
     compute_engine_detection_done = 1;
     if (need_compute_engine_creds) {
-      result = grpc_google_compute_engine_credentials_create(NULL);
+      call_creds = grpc_google_compute_engine_credentials_create(NULL);
     }
   }
 
 end:
-  if (!serving_cached_credentials && result != NULL) {
-    /* Blend with default ssl credentials and add a global reference so that it
-       can be cached and re-served. */
-    grpc_credentials *ssl_creds = grpc_ssl_credentials_create(NULL, NULL, NULL);
-    default_credentials = grpc_credentials_ref(
-        grpc_composite_credentials_create(ssl_creds, result, NULL));
-    GPR_ASSERT(default_credentials != NULL);
-    grpc_credentials_unref(ssl_creds);
-    grpc_credentials_unref(result);
-    result = default_credentials;
+  if (result == NULL) {
+    if (call_creds != NULL) {
+      /* Blend with default ssl credentials and add a global reference so that
+         it
+         can be cached and re-served. */
+      grpc_channel_credentials *ssl_creds =
+          grpc_ssl_credentials_create(NULL, NULL, NULL);
+      default_credentials = grpc_channel_credentials_ref(
+          grpc_composite_channel_credentials_create(ssl_creds, call_creds,
+                                                    NULL));
+      GPR_ASSERT(default_credentials != NULL);
+      grpc_channel_credentials_unref(ssl_creds);
+      grpc_call_credentials_unref(call_creds);
+      result = default_credentials;
+    } else {
+      gpr_log(GPR_ERROR, "Could not create google default credentials.");
+    }
   }
   gpr_mu_unlock(&g_mu);
   return result;
@@ -218,8 +238,23 @@ void grpc_flush_cached_google_default_credentials(void) {
   gpr_once_init(&g_once, init_default_credentials);
   gpr_mu_lock(&g_mu);
   if (default_credentials != NULL) {
-    grpc_credentials_unref(default_credentials);
+    grpc_channel_credentials_unref(default_credentials);
     default_credentials = NULL;
   }
+  compute_engine_detection_done = 0;
   gpr_mu_unlock(&g_mu);
+}
+
+/* -- Well known credentials path. -- */
+
+static grpc_well_known_credentials_path_getter creds_path_getter = NULL;
+
+char *grpc_get_well_known_google_credentials_file_path(void) {
+  if (creds_path_getter != NULL) return creds_path_getter();
+  return grpc_get_well_known_google_credentials_file_path_impl();
+}
+
+void grpc_override_well_known_credentials_path_getter(
+    grpc_well_known_credentials_path_getter getter) {
+  creds_path_getter = getter;
 }

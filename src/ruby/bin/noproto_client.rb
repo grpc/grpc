@@ -68,7 +68,7 @@ end
 
 def test_creds
   certs = load_test_certs
-  GRPC::Core::Credentials.new(certs[0])
+  GRPC::Core::ChannelCredentials.new(certs[0])
 end
 
 def main

@@ -44,6 +44,9 @@ from grpc._cython._cygrpc import completion_queue
 from grpc._cython._cygrpc import records
 from grpc._cython._cygrpc import server
 
+ConnectivityState = records.ConnectivityState
+ChannelArgKey = records.ChannelArgKey
+WriteFlag = records.WriteFlag
 StatusCode = records.StatusCode
 CallError = records.CallError
 CompletionType = records.CompletionType
@@ -70,19 +73,27 @@ operation_receive_close_on_server = records.operation_receive_close_on_server
 
 Operations = records.Operations
 
-ClientCredentials = credentials.ClientCredentials
+CallCredentials = credentials.CallCredentials
+ChannelCredentials = credentials.ChannelCredentials
 ServerCredentials = credentials.ServerCredentials
+CredentialsMetadataPlugin = credentials.CredentialsMetadataPlugin
+AuthMetadataContext = credentials.AuthMetadataContext
 
-client_credentials_google_default = (
-    credentials.client_credentials_google_default)
-client_credentials_ssl = credentials.client_credentials_ssl
-client_credentials_composite_credentials = (
-    credentials.client_credentials_composite_credentials)
-client_credentials_compute_engine = (
-    credentials.client_credentials_compute_engine)
-client_credentials_jwt = credentials.client_credentials_jwt
-client_credentials_refresh_token = credentials.client_credentials_refresh_token
-client_credentials_iam = credentials.client_credentials_iam
+channel_credentials_google_default = (
+    credentials.channel_credentials_google_default)
+channel_credentials_ssl = credentials.channel_credentials_ssl
+channel_credentials_composite = (
+    credentials.channel_credentials_composite)
+call_credentials_composite = (
+    credentials.call_credentials_composite)
+call_credentials_google_compute_engine = (
+    credentials.call_credentials_google_compute_engine)
+call_credentials_jwt_access = (
+    credentials.call_credentials_service_account_jwt_access)
+call_credentials_refresh_token = (
+    credentials.call_credentials_google_refresh_token)
+call_credentials_google_iam = credentials.call_credentials_google_iam
+call_credentials_metadata_plugin = credentials.call_credentials_metadata_plugin
 server_credentials_ssl = credentials.server_credentials_ssl
 
 CompletionQueue = completion_queue.CompletionQueue

@@ -3,8 +3,8 @@ Pod::Spec.new do |s|
   s.version  = "0.0.1"
   s.license  = "New BSD"
 
-  s.ios.deployment_target = "6.0"
-  s.osx.deployment_target = "10.8"
+  s.ios.deployment_target = '7.1'
+  s.osx.deployment_target = '10.9'
 
   # Run protoc with the Objective-C and gRPC plugins to generate protocol messages and gRPC clients.
   s.prepare_command = <<-CMD
@@ -22,7 +22,7 @@ Pod::Spec.new do |s|
     ss.source_files = "*.pbrpc.{h,m}"
     ss.header_mappings_dir = "."
     ss.requires_arc = true
-    ss.dependency "gRPC", "~> 0.7"
+    ss.dependency "gRPC", "~> 0.12"
     ss.dependency "#{s.name}/Messages"
   end
 end

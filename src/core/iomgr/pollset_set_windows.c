@@ -37,14 +37,24 @@
 
 #include "src/core/iomgr/pollset_set.h"
 
-void grpc_pollset_set_init(grpc_pollset_set *pollset_set) {}
+void grpc_pollset_set_init(grpc_pollset_set* pollset_set) {}
 
-void grpc_pollset_set_destroy(grpc_pollset_set *pollset_set) {}
+void grpc_pollset_set_destroy(grpc_pollset_set* pollset_set) {}
 
-void grpc_pollset_set_add_pollset(grpc_pollset_set *pollset_set,
-                                  grpc_pollset *pollset) {}
+void grpc_pollset_set_add_pollset(grpc_exec_ctx* exec_ctx,
+                                  grpc_pollset_set* pollset_set,
+                                  grpc_pollset* pollset) {}
 
-void grpc_pollset_set_del_pollset(grpc_pollset_set *pollset_set,
-                                  grpc_pollset *pollset) {}
+void grpc_pollset_set_del_pollset(grpc_exec_ctx* exec_ctx,
+                                  grpc_pollset_set* pollset_set,
+                                  grpc_pollset* pollset) {}
+
+void grpc_pollset_set_add_pollset_set(grpc_exec_ctx* exec_ctx,
+                                      grpc_pollset_set* bag,
+                                      grpc_pollset_set* item) {}
+
+void grpc_pollset_set_del_pollset_set(grpc_exec_ctx* exec_ctx,
+                                      grpc_pollset_set* bag,
+                                      grpc_pollset_set* item) {}
 
 #endif /* GPR_WINSOCK_SOCKET */

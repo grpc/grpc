@@ -43,7 +43,7 @@
 /* Tests census noop stubs in a simulated rpc flow */
 void test_census_stubs(void) {
   census_op_id op_id;
-  census_rpc_stats* stats = census_rpc_stats_create_empty();
+  census_rpc_stats *stats = census_rpc_stats_create_empty();
   census_aggregated_rpc_stats data_map = {0, NULL};
 
   /* Initializes census library at server start up time. */
@@ -70,7 +70,7 @@ void test_census_stubs(void) {
   census_shutdown();
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
   test_census_stubs();
   return 0;

@@ -68,7 +68,7 @@ grpc_byte_buffer *string_to_byte_buffer(const char *buffer, size_t len) {
 /*
  * Helper to maintain lifetime of batch op inputs and store batch op outputs.
  */
-typedef struct gprcsharp_batch_context {
+typedef struct grpcsharp_batch_context {
   grpc_metadata_array send_initial_metadata;
   grpc_byte_buffer *send_message;
   struct {
@@ -252,7 +252,7 @@ GPR_EXPORT gpr_intptr GPR_CALLTYPE grpcsharp_batch_context_recv_message_length(
   if (!ctx->recv_message) {
     return -1;
   }
-  return grpc_byte_buffer_length(ctx->recv_message);
+  return (gpr_intptr)grpc_byte_buffer_length(ctx->recv_message);
 }
 
 /*
@@ -665,16 +665,16 @@ grpcsharp_call_start_duplex_streaming(grpc_call *call,
 }
 
 GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_call_recv_initial_metadata(
-	grpc_call *call, grpcsharp_batch_context *ctx) {
-	/* TODO: don't use magic number */
-	grpc_op ops[1];
-	ops[0].op = GRPC_OP_RECV_INITIAL_METADATA;
-	ops[0].data.recv_initial_metadata = &(ctx->recv_initial_metadata);
-	ops[0].flags = 0;
-	ops[0].reserved = NULL;
+  grpc_call *call, grpcsharp_batch_context *ctx) {
+  /* TODO: don't use magic number */
+  grpc_op ops[1];
+  ops[0].op = GRPC_OP_RECV_INITIAL_METADATA;
+  ops[0].data.recv_initial_metadata = &(ctx->recv_initial_metadata);
+  ops[0].flags = 0;
+  ops[0].reserved = NULL;
 
-	return grpc_call_start_batch(call, ops, sizeof(ops) / sizeof(ops[0]), ctx,
-		NULL);
+  return grpc_call_start_batch(call, ops, sizeof(ops) / sizeof(ops[0]), ctx,
+    NULL);
 }
 
 GPR_EXPORT grpc_call_error GPR_CALLTYPE
@@ -785,6 +785,12 @@ grpcsharp_call_send_initial_metadata(grpc_call *call,
                                NULL);
 }
 
+GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_call_set_credentials(
+    grpc_call *call,
+    grpc_call_credentials *creds) {
+  return grpc_call_set_credentials(call, creds);
+}
+
 /* Server */
 
 GPR_EXPORT grpc_server *GPR_CALLTYPE
@@ -829,7 +835,7 @@ grpcsharp_server_request_call(grpc_server *server, grpc_completion_queue *cq,
 
 /* Security */
 
-GPR_EXPORT grpc_credentials *GPR_CALLTYPE
+GPR_EXPORT grpc_channel_credentials *GPR_CALLTYPE
 grpcsharp_ssl_credentials_create(const char *pem_root_certs,
                                  const char *key_cert_pair_cert_chain,
                                  const char *key_cert_pair_private_key) {
@@ -845,12 +851,19 @@ grpcsharp_ssl_credentials_create(const char *pem_root_certs,
   }
 }
 
-GPR_EXPORT void GPR_CALLTYPE grpcsharp_credentials_release(grpc_credentials *creds) {
-  grpc_credentials_release(creds);
+GPR_EXPORT void GPR_CALLTYPE grpcsharp_channel_credentials_release(
+    grpc_channel_credentials *creds) {
+  grpc_channel_credentials_release(creds);
+}
+
+GPR_EXPORT void GPR_CALLTYPE grpcsharp_call_credentials_release(
+    grpc_call_credentials *creds) {
+  grpc_call_credentials_release(creds);
 }
 
 GPR_EXPORT grpc_channel *GPR_CALLTYPE
-grpcsharp_secure_channel_create(grpc_credentials *creds, const char *target,
+grpcsharp_secure_channel_create(grpc_channel_credentials *creds,
+                                const char *target,
                                 const grpc_channel_args *args) {
   return grpc_secure_channel_create(creds, target, args, NULL);
 }
@@ -890,6 +903,56 @@ GPR_EXPORT gpr_int32 GPR_CALLTYPE
 grpcsharp_server_add_secure_http2_port(grpc_server *server, const char *addr,
                                        grpc_server_credentials *creds) {
   return grpc_server_add_secure_http2_port(server, addr, creds);
+}
+
+GPR_EXPORT grpc_channel_credentials *GPR_CALLTYPE grpcsharp_composite_channel_credentials_create(
+  grpc_channel_credentials *channel_creds,
+  grpc_call_credentials *call_creds) {
+  return grpc_composite_channel_credentials_create(channel_creds, call_creds, NULL);
+}
+
+GPR_EXPORT grpc_call_credentials *GPR_CALLTYPE grpcsharp_composite_call_credentials_create(
+  grpc_call_credentials *creds1,
+  grpc_call_credentials *creds2) {
+  return grpc_composite_call_credentials_create(creds1, creds2, NULL);
+}
+
+/* Metadata credentials plugin */
+
+GPR_EXPORT void GPR_CALLTYPE grpcsharp_metadata_credentials_notify_from_plugin(
+    grpc_credentials_plugin_metadata_cb cb,
+    void *user_data, grpc_metadata_array *metadata,
+  grpc_status_code status, const char *error_details) {
+  cb(user_data, metadata->metadata, metadata->count, status, error_details);
+}
+
+typedef void(GPR_CALLTYPE *grpcsharp_metadata_interceptor_func)(
+  void *state, const char *service_url, const char *method_name,
+  grpc_credentials_plugin_metadata_cb cb,
+  void *user_data, gpr_int32 is_destroy);
+
+static void grpcsharp_get_metadata_handler(
+    void *state, grpc_auth_metadata_context context,
+    grpc_credentials_plugin_metadata_cb cb, void *user_data) {
+  grpcsharp_metadata_interceptor_func interceptor =
+      (grpcsharp_metadata_interceptor_func)(gpr_intptr)state;
+  interceptor(state, context.service_url, context.method_name, cb, user_data, 0);
+}
+
+static void grpcsharp_metadata_credentials_destroy_handler(void *state) {
+  grpcsharp_metadata_interceptor_func interceptor =
+      (grpcsharp_metadata_interceptor_func)(gpr_intptr)state;
+  interceptor(state, NULL, NULL, NULL, NULL, 1);
+}
+
+GPR_EXPORT grpc_call_credentials *GPR_CALLTYPE grpcsharp_metadata_credentials_create_from_plugin(
+  grpcsharp_metadata_interceptor_func metadata_interceptor) {
+  grpc_metadata_credentials_plugin plugin;
+  plugin.get_metadata = grpcsharp_get_metadata_handler;
+  plugin.destroy = grpcsharp_metadata_credentials_destroy_handler;
+  plugin.state = (void*)(gpr_intptr)metadata_interceptor;
+  plugin.type = "";
+  return grpc_metadata_credentials_create_from_plugin(plugin, NULL);
 }
 
 /* Logging */

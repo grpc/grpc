@@ -8,9 +8,9 @@
  * met:
  *
  *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimser.
+ * notice, this list of conditions and the following disclaimer.
  *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimser
+ * copyright notice, this list of conditions and the following disclaimer
  * in the documentation and/or other materials provided with the
  * distribution.
  *     * Neither the name of Google Inc. nor the names of its
@@ -120,7 +120,8 @@ typedef void (*grpc_jwt_verification_done_cb)(void *user_data,
                                               grpc_jwt_claims *claims);
 
 /* Verifies for the JWT for the given expected audience. */
-void grpc_jwt_verifier_verify(grpc_jwt_verifier *verifier,
+void grpc_jwt_verifier_verify(grpc_exec_ctx *exec_ctx,
+                              grpc_jwt_verifier *verifier,
                               grpc_pollset *pollset, const char *jwt,
                               const char *audience,
                               grpc_jwt_verification_done_cb cb,

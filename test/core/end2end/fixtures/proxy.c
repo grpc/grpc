@@ -100,6 +100,10 @@ grpc_end2end_proxy *grpc_end2end_proxy_create(
 
   gpr_join_host_port(&proxy->proxy_port, "localhost", proxy_port);
   gpr_join_host_port(&proxy->server_port, "localhost", server_port);
+
+  gpr_log(GPR_DEBUG, "PROXY ADDR:%s BACKEND:%s", proxy->proxy_port,
+          proxy->server_port);
+
   proxy->cq = grpc_completion_queue_create(NULL);
   proxy->server = def->create_server(proxy->proxy_port);
   proxy->client = def->create_client(proxy->server_port);
@@ -142,8 +146,6 @@ void grpc_end2end_proxy_destroy(grpc_end2end_proxy *proxy) {
 }
 
 static void unrefpc(proxy_call *pc, const char *reason) {
-  gpr_log(GPR_DEBUG, "unref %p: %s %d -> %d", pc, reason, pc->refs.count,
-          pc->refs.count - 1);
   if (gpr_unref(&pc->refs)) {
     grpc_call_destroy(pc->c2p);
     grpc_call_destroy(pc->p2s);
@@ -155,11 +157,7 @@ static void unrefpc(proxy_call *pc, const char *reason) {
   }
 }
 
-static void refpc(proxy_call *pc, const char *reason) {
-  gpr_log(GPR_DEBUG, "ref %p: %s %d -> %d", pc, reason, pc->refs.count,
-          pc->refs.count + 1);
-  gpr_ref(&pc->refs);
-}
+static void refpc(proxy_call *pc, const char *reason) { gpr_ref(&pc->refs); }
 
 static void on_c2p_sent_initial_metadata(void *arg, int success) {
   proxy_call *pc = arg;

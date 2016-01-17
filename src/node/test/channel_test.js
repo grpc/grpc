@@ -34,7 +34,7 @@
 'use strict';
 
 var assert = require('assert');
-var grpc = require('bindings')('grpc.node');
+var grpc = require('bindings')('grpc_node');
 
 /**
  * This is used for testing functions with multiple asynchronous calls that
@@ -56,7 +56,7 @@ function multiDone(done, count) {
     }
   };
 }
-var insecureCreds = grpc.Credentials.createInsecure();
+var insecureCreds = grpc.ChannelCredentials.createInsecure();
 
 describe('channel', function() {
   describe('constructor', function() {
@@ -102,6 +102,12 @@ describe('channel', function() {
       });
       assert.throws(function() {
         new grpc.Channel('hostname', insecureCreds, {'key' : new Date()});
+      });
+    });
+    it('should succeed without the new keyword', function() {
+      assert.doesNotThrow(function() {
+        var channel = grpc.Channel('hostname', insecureCreds);
+        assert(channel instanceof grpc.Channel);
       });
     });
   });

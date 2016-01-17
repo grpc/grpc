@@ -424,8 +424,8 @@ extern census_aggregation_ops census_agg_window;
     construction via census_define_view(). */
 typedef struct {
   const census_aggregation_ops *ops;
-  const void
-      *create_arg; /* Argument to be used for aggregation initialization. */
+  const void *
+      create_arg; /* Argument to be used for aggregation initialization. */
 } census_aggregation;
 
 /** A census view type. Opaque. */

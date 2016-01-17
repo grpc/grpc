@@ -131,7 +131,7 @@ class ClientReader GRPC_FINAL : public ClientReaderInterface<R> {
     cq_.Pluck(&ops);
   }
 
-  void WaitForInitialMetadata() {
+  void WaitForInitialMetadata() GRPC_OVERRIDE {
     GPR_ASSERT(!context_->initial_metadata_received_);
 
     CallOpSet<CallOpRecvInitialMetadata> ops;
@@ -257,7 +257,7 @@ class ClientReaderWriter GRPC_FINAL : public ClientReaderWriterInterface<W, R> {
     cq_.Pluck(&ops);
   }
 
-  void WaitForInitialMetadata() {
+  void WaitForInitialMetadata() GRPC_OVERRIDE {
     GPR_ASSERT(!context_->initial_metadata_received_);
 
     CallOpSet<CallOpRecvInitialMetadata> ops;

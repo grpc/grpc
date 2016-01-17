@@ -38,16 +38,16 @@
 #include <gflags/gflags.h>
 #include <grpc++/security/server_credentials.h>
 
-#include "src/core/surface/call.h"
+#include "src/core/surface/call_test_only.h"
 #include "test/core/end2end/data/ssl_test_data.h"
 
-DECLARE_bool(enable_ssl);
+DECLARE_bool(use_tls);
 
 namespace grpc {
 namespace testing {
 
 std::shared_ptr<ServerCredentials> CreateInteropServerCredentials() {
-  if (FLAGS_enable_ssl) {
+  if (FLAGS_use_tls) {
     SslServerCredentialsOptions::PemKeyCertPair pkcp = {test_server1_key,
                                                         test_server1_cert};
     SslServerCredentialsOptions ssl_opts;
@@ -65,11 +65,11 @@ InteropServerContextInspector::InteropServerContextInspector(
 
 grpc_compression_algorithm
 InteropServerContextInspector::GetCallCompressionAlgorithm() const {
-  return grpc_call_get_compression_algorithm(context_.call_);
+  return grpc_call_test_only_get_compression_algorithm(context_.call_);
 }
 
 gpr_uint32 InteropServerContextInspector::GetEncodingsAcceptedByClient() const {
-  return grpc_call_get_encodings_accepted_by_peer(context_.call_);
+  return grpc_call_test_only_get_encodings_accepted_by_peer(context_.call_);
 }
 
 std::shared_ptr<const AuthContext>

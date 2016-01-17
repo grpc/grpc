@@ -26,3 +26,10 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+import warnings
+
+warnings.simplefilter('always', DeprecationWarning)
+warnings.warn('the alpha API (includes this package) is deprecated, '
+              'unmaintained, and no longer tested. Please migrate to the beta '
+              'API.', DeprecationWarning, stacklevel=2)

@@ -37,8 +37,7 @@ require dirname(__FILE__) . '/route_guide.php';
 
 define('COORD_FACTOR', 1e7);
 
-$client = new routeguide\RouteGuideClient(
-  new Grpc\BaseStub('localhost:50051', []));
+$client = new routeguide\RouteGuideClient('localhost:50051', []);
 
 function printFeature($feature) {
   $name = $feature->getName();
@@ -96,6 +95,7 @@ function runListFeatures() {
   $rectangle->setLo($lo_point);
   $rectangle->setHi($hi_point);
 
+  // start the server streaming call
   $call = $client->ListFeatures($rectangle);
   // an iterator over the server streaming responses
   $features = $call->responses();
@@ -113,28 +113,27 @@ function runRecordRoute() {
   print "Running RecordRoute...\n";
   global $client, $argv;
 
+  // start the client streaming call
+  $call = $client->RecordRoute();
+
   $db = json_decode(file_get_contents($argv[1]), true);
-  $points_iter = function($db) {
-    $num_points_in_db = count($db);
-    $num_points = 10;
-    for ($i = 0; $i < $num_points; $i++) {
-      $point = new routeguide\Point();
-      $index = rand(0, $num_points_in_db - 1);
-      $lat = $db[$index]['location']['latitude'];
-      $long = $db[$index]['location']['longitude'];
-      $feature_name = $db[$index]['name'];
-      $point->setLatitude($lat);
-      $point->setLongitude($long);
-      print sprintf("Visiting point %f, %f,\n  with feature name: %s\n",
-                    $lat / COORD_FACTOR, $long / COORD_FACTOR,
-                    $feature_name ? $feature_name : '<empty>');
-      usleep(rand(300000, 800000));
-      yield $point;
-    }
-  };
-  // $points_iter is an iterator simulating client streaming
-  list($route_summary, $status) =
-    $client->RecordRoute($points_iter($db))->wait();
+  $num_points_in_db = count($db);
+  $num_points = 10;
+  for ($i = 0; $i < $num_points; $i++) {
+    $point = new routeguide\Point();
+    $index = rand(0, $num_points_in_db - 1);
+    $lat = $db[$index]['location']['latitude'];
+    $long = $db[$index]['location']['longitude'];
+    $feature_name = $db[$index]['name'];
+    $point->setLatitude($lat);
+    $point->setLongitude($long);
+    print sprintf("Visiting point %f, %f,\n  with feature name: %s\n",
+                  $lat / COORD_FACTOR, $long / COORD_FACTOR,
+                  $feature_name ? $feature_name : '<empty>');
+    usleep(rand(300000, 800000));
+    $call->write($point);
+  }
+  list($route_summary, $status) = $call->wait();
   print sprintf("Finished trip with %d points\nPassed %d features\n".
                 "Travelled %d meters\nIt took %d seconds\n",
                 $route_summary->getPointCount(),

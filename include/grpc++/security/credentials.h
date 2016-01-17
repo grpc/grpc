@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -34,43 +34,70 @@
 #ifndef GRPCXX_CREDENTIALS_H
 #define GRPCXX_CREDENTIALS_H
 
+#include <map>
 #include <memory>
 
 #include <grpc++/impl/grpc_library.h>
+#include <grpc++/security/auth_context.h>
 #include <grpc++/support/config.h>
+#include <grpc++/support/status.h>
+#include <grpc++/support/string_ref.h>
 
 namespace grpc {
 class ChannelArguments;
 class Channel;
-class SecureCredentials;
+class SecureChannelCredentials;
+class CallCredentials;
+class SecureCallCredentials;
 
-/// A credentials object encapsulates all the state needed by a client to
-/// authenticate with a server and make various assertions, e.g., about the
-/// client’s identity, role, or whether it is authorized to make a particular
-/// call.
+/// A channel credentials object encapsulates all the state needed by a client
+/// to authenticate with a server for a given channel.
+/// It can make various assertions, e.g., about the client’s identity, role
+/// for all the calls on that channel.
 ///
-/// \see https://github.com/grpc/grpc/blob/master/doc/grpc-auth-support.md
-class Credentials : public GrpcLibrary {
+/// \see http://www.grpc.io/docs/guides/auth.html
+class ChannelCredentials : public GrpcLibrary {
  public:
-  ~Credentials() GRPC_OVERRIDE;
+  ~ChannelCredentials() GRPC_OVERRIDE;
+
+ protected:
+  friend std::shared_ptr<ChannelCredentials> CompositeChannelCredentials(
+      const std::shared_ptr<ChannelCredentials>& channel_creds,
+      const std::shared_ptr<CallCredentials>& call_creds);
+
+  virtual SecureChannelCredentials* AsSecureCredentials() = 0;
+
+ private:
+  friend std::shared_ptr<Channel> CreateCustomChannel(
+      const grpc::string& target,
+      const std::shared_ptr<ChannelCredentials>& creds,
+      const ChannelArguments& args);
+
+  virtual std::shared_ptr<Channel> CreateChannel(
+      const grpc::string& target, const ChannelArguments& args) = 0;
+};
+
+/// A call credentials object encapsulates the state needed by a client to
+/// authenticate with a server for a given call on a channel.
+///
+/// \see http://www.grpc.io/docs/guides/auth.html
+class CallCredentials : public GrpcLibrary {
+ public:
+  ~CallCredentials() GRPC_OVERRIDE;
 
   /// Apply this instance's credentials to \a call.
   virtual bool ApplyToCall(grpc_call* call) = 0;
 
  protected:
-  friend std::shared_ptr<Credentials> CompositeCredentials(
-      const std::shared_ptr<Credentials>& creds1,
-      const std::shared_ptr<Credentials>& creds2);
+  friend std::shared_ptr<ChannelCredentials> CompositeChannelCredentials(
+      const std::shared_ptr<ChannelCredentials>& channel_creds,
+      const std::shared_ptr<CallCredentials>& call_creds);
 
-  virtual SecureCredentials* AsSecureCredentials() = 0;
+  friend std::shared_ptr<CallCredentials> CompositeCallCredentials(
+      const std::shared_ptr<CallCredentials>& creds1,
+      const std::shared_ptr<CallCredentials>& creds2);
 
- private:
-  friend std::shared_ptr<Channel> CreateCustomChannel(
-      const grpc::string& target, const std::shared_ptr<Credentials>& creds,
-      const ChannelArguments& args);
-
-  virtual std::shared_ptr<Channel> CreateChannel(
-      const grpc::string& target, const ChannelArguments& args) = 0;
+  virtual SecureCallCredentials* AsSecureCredentials() = 0;
 };
 
 /// Options used to build SslCredentials.
@@ -103,10 +130,10 @@ struct SslCredentialsOptions {
 /// Using these credentials to connect to any other service may result in this
 /// service being able to impersonate your client for requests to Google
 /// services.
-std::shared_ptr<Credentials> GoogleDefaultCredentials();
+std::shared_ptr<ChannelCredentials> GoogleDefaultCredentials();
 
 /// Builds SSL Credentials given SSL specific options
-std::shared_ptr<Credentials> SslCredentials(
+std::shared_ptr<ChannelCredentials> SslCredentials(
     const SslCredentialsOptions& options);
 
 /// Builds credentials for use when running in GCE
@@ -115,14 +142,14 @@ std::shared_ptr<Credentials> SslCredentials(
 /// Using these credentials to connect to any other service may result in this
 /// service being able to impersonate your client for requests to Google
 /// services.
-std::shared_ptr<Credentials> GoogleComputeEngineCredentials();
+std::shared_ptr<CallCredentials> GoogleComputeEngineCredentials();
 
 /// Builds Service Account JWT Access credentials.
 /// json_key is the JSON key string containing the client's private key.
 /// token_lifetime_seconds is the lifetime in seconds of each Json Web Token
 /// (JWT) created with this credentials. It should not exceed
 /// grpc_max_auth_token_lifetime or will be cropped to this value.
-std::shared_ptr<Credentials> ServiceAccountJWTAccessCredentials(
+std::shared_ptr<CallCredentials> ServiceAccountJWTAccessCredentials(
     const grpc::string& json_key, long token_lifetime_seconds);
 
 /// Builds refresh token credentials.
@@ -133,7 +160,7 @@ std::shared_ptr<Credentials> ServiceAccountJWTAccessCredentials(
 /// Using these credentials to connect to any other service may result in this
 /// service being able to impersonate your client for requests to Google
 /// services.
-std::shared_ptr<Credentials> GoogleRefreshTokenCredentials(
+std::shared_ptr<CallCredentials> GoogleRefreshTokenCredentials(
     const grpc::string& json_refresh_token);
 
 /// Builds access token credentials.
@@ -144,7 +171,7 @@ std::shared_ptr<Credentials> GoogleRefreshTokenCredentials(
 /// Using these credentials to connect to any other service may result in this
 /// service being able to impersonate your client for requests to Google
 /// services.
-std::shared_ptr<Credentials> AccessTokenCredentials(
+std::shared_ptr<CallCredentials> AccessTokenCredentials(
     const grpc::string& access_token);
 
 /// Builds IAM credentials.
@@ -153,17 +180,49 @@ std::shared_ptr<Credentials> AccessTokenCredentials(
 /// Using these credentials to connect to any other service may result in this
 /// service being able to impersonate your client for requests to Google
 /// services.
-std::shared_ptr<Credentials> GoogleIAMCredentials(
+std::shared_ptr<CallCredentials> GoogleIAMCredentials(
     const grpc::string& authorization_token,
     const grpc::string& authority_selector);
 
-/// Combines two credentials objects into a composite credentials
-std::shared_ptr<Credentials> CompositeCredentials(
-    const std::shared_ptr<Credentials>& creds1,
-    const std::shared_ptr<Credentials>& creds2);
+/// Combines a channel credentials and a call credentials into a composite
+/// channel credentials.
+std::shared_ptr<ChannelCredentials> CompositeChannelCredentials(
+    const std::shared_ptr<ChannelCredentials>& channel_creds,
+    const std::shared_ptr<CallCredentials>& call_creds);
+
+/// Combines two call credentials objects into a composite call credentials.
+std::shared_ptr<CallCredentials> CompositeCallCredentials(
+    const std::shared_ptr<CallCredentials>& creds1,
+    const std::shared_ptr<CallCredentials>& creds2);
 
 /// Credentials for an unencrypted, unauthenticated channel
-std::shared_ptr<Credentials> InsecureCredentials();
+std::shared_ptr<ChannelCredentials> InsecureChannelCredentials();
+
+// User defined metadata credentials.
+class MetadataCredentialsPlugin {
+ public:
+  virtual ~MetadataCredentialsPlugin() {}
+
+  // If this method returns true, the Process function will be scheduled in
+  // a different thread from the one processing the call.
+  virtual bool IsBlocking() const { return true; }
+
+  // Type of credentials this plugin is implementing.
+  virtual const char* GetType() const { return ""; }
+
+  // Gets the auth metatada produced by this plugin.
+  // The fully qualified method name is:
+  // service_url + "/" + method_name.
+  // The channel_auth_context contains (among other things), the identity of
+  // the server.
+  virtual Status GetMetadata(
+      grpc::string_ref service_url, grpc::string_ref method_name,
+      const AuthContext& channel_auth_context,
+      std::multimap<grpc::string, grpc::string>* metadata) = 0;
+};
+
+std::shared_ptr<CallCredentials> MetadataCredentialsFromPlugin(
+    std::unique_ptr<MetadataCredentialsPlugin> plugin);
 
 }  // namespace grpc
 

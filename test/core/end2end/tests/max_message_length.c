@@ -54,8 +54,8 @@ static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
   grpc_end2end_test_fixture f;
   gpr_log(GPR_INFO, "%s/%s", test_name, config.name);
   f = config.create_fixture(client_args, server_args);
-  config.init_client(&f, client_args);
   config.init_server(&f, server_args);
+  config.init_client(&f, client_args);
   return f;
 }
 
@@ -75,9 +75,9 @@ static void drain_cq(grpc_completion_queue *cq) {
 static void shutdown_server(grpc_end2end_test_fixture *f) {
   if (!f->server) return;
   grpc_server_shutdown_and_notify(f->server, f->cq, tag(1000));
-  GPR_ASSERT(grpc_completion_queue_pluck(
-                 f->cq, tag(1000), GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5), NULL)
-                 .type == GRPC_OP_COMPLETE);
+  GPR_ASSERT(grpc_completion_queue_pluck(f->cq, tag(1000),
+                                         GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5),
+                                         NULL).type == GRPC_OP_COMPLETE);
   grpc_server_destroy(f->server);
   f->server = NULL;
 }
@@ -109,6 +109,7 @@ static void test_max_message_length(grpc_end2end_test_config config) {
   gpr_slice request_payload_slice = gpr_slice_from_copied_string("hello world");
   grpc_byte_buffer *request_payload =
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
+  grpc_byte_buffer *recv_payload;
   grpc_metadata_array initial_metadata_recv;
   grpc_metadata_array trailing_metadata_recv;
   grpc_metadata_array request_metadata_recv;
@@ -167,7 +168,7 @@ static void test_max_message_length(grpc_end2end_test_config config) {
   op->flags = 0;
   op->reserved = NULL;
   op++;
-  error = grpc_call_start_batch(c, ops, op - ops, tag(1), NULL);
+  error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(1), NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   error =
@@ -183,7 +184,12 @@ static void test_max_message_length(grpc_end2end_test_config config) {
   op->flags = 0;
   op->reserved = NULL;
   op++;
-  error = grpc_call_start_batch(s, ops, op - ops, tag(102), NULL);
+  op->op = GRPC_OP_RECV_MESSAGE;
+  op->data.recv_message = &recv_payload;
+  op->flags = 0;
+  op->reserved = NULL;
+  op++;
+  error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(102), NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   cq_expect_completion(cqv, tag(102), 1);
@@ -194,6 +200,7 @@ static void test_max_message_length(grpc_end2end_test_config config) {
   GPR_ASSERT(0 == strcmp(call_details.method, "/foo"));
   GPR_ASSERT(0 == strcmp(call_details.host, "foo.test.google.fr:1234"));
   GPR_ASSERT(was_cancelled == 1);
+  GPR_ASSERT(recv_payload == NULL);
 
   gpr_free(details);
   grpc_metadata_array_destroy(&initial_metadata_recv);

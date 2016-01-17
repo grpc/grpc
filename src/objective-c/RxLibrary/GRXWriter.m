@@ -35,4 +35,14 @@
 
 @implementation GRXWriter
 
+- (void)startWithWriteable:(id<GRXWriteable>)writeable {
+  NSAssert(NO, @"Missing base implementation for %@", NSStringFromSelector(_cmd));
+  [self doesNotRecognizeSelector:_cmd];
+}
+
+- (void)finishWithError:(NSError *)errorOrNil {
+  NSAssert(NO, @"Missing base implementation for %@", NSStringFromSelector(_cmd));
+  [self doesNotRecognizeSelector:_cmd];
+}
+
 @end

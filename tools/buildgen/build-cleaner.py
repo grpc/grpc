@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2.7
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -88,7 +88,7 @@ for filename in sys.argv[1:]:
     if grp not in js: continue
     js[grp] = sorted([clean_elem(x) for x in js[grp]],
                      key=lambda x: (x.get('language', '_'), x['name']))
-  output = yaml.dump(js, indent=2, width=80)
+  output = yaml.dump(js, indent=2, width=80, default_flow_style=False)
   # massage out trailing whitespace
   lines = []
   for line in output.splitlines():

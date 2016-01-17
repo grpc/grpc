@@ -144,6 +144,9 @@ gpr_slice gpr_slice_from_copied_string(const char *source);
      memcpy(slice->data, source, len); */
 gpr_slice gpr_slice_from_copied_buffer(const char *source, size_t len);
 
+/* Create a slice pointing to constant memory */
+gpr_slice gpr_slice_from_static_string(const char *source);
+
 /* Return a result slice derived from s, which shares a ref count with s, where
    result.data==s.data+begin, and result.length==end-begin.
    The ref count of s is increased by one.

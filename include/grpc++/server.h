@@ -42,8 +42,10 @@
 #include <grpc++/impl/grpc_library.h>
 #include <grpc++/impl/sync.h>
 #include <grpc++/security/server_credentials.h>
+#include <grpc++/support/channel_arguments.h>
 #include <grpc++/support/config.h>
 #include <grpc++/support/status.h>
+#include <grpc/compression.h>
 
 struct grpc_server;
 
@@ -55,6 +57,7 @@ class AsyncGenericService;
 class RpcService;
 class RpcServiceMethod;
 class ServerAsyncStreamingInterface;
+class ServerContext;
 class ThreadPoolInterface;
 
 /// Models a gRPC server.
@@ -83,6 +86,23 @@ class Server GRPC_FINAL : public GrpcLibrary, private CallHook {
   /// call \a Shutdown for this function to ever return.
   void Wait();
 
+  /// Global Callbacks
+  ///
+  /// Can be set exactly once per application to install hooks whenever
+  /// a server event occurs
+  class GlobalCallbacks {
+   public:
+    virtual ~GlobalCallbacks() {}
+    /// Called before application callback for each synchronous server request
+    virtual void PreSynchronousRequest(ServerContext* context) = 0;
+    /// Called after application callback for each synchronous server request
+    virtual void PostSynchronousRequest(ServerContext* context) = 0;
+  };
+  /// Set the global callback object. Can only be called once. Does not take
+  /// ownership of callbacks, and expects the pointed to object to be alive
+  /// until all server objects in the process have been destroyed.
+  static void SetGlobalCallbacks(GlobalCallbacks* callbacks);
+
  private:
   friend class AsyncGenericService;
   friend class AsynchronousService;
@@ -99,7 +119,7 @@ class Server GRPC_FINAL : public GrpcLibrary, private CallHook {
   /// \param max_message_size Maximum message length that the channel can
   /// receive.
   Server(ThreadPoolInterface* thread_pool, bool thread_pool_owned,
-         int max_message_size);
+         int max_message_size, const ChannelArguments& args);
 
   /// Register a service. This call does not take ownership of the service.
   /// The service must exist for the lifetime of the Server instance.
@@ -214,11 +234,10 @@ class Server GRPC_FINAL : public GrpcLibrary, private CallHook {
     bool FinalizeResult(void** tag, bool* status) GRPC_OVERRIDE {
       bool serialization_status =
           *status && payload_ &&
-          SerializationTraits<Message>::Deserialize(payload_, request_,
-                                                    server_->max_message_size_)
-              .ok();
+          SerializationTraits<Message>::Deserialize(
+              payload_, request_, server_->max_message_size_).ok();
       bool ret = RegisteredAsyncRequest::FinalizeResult(tag, status);
-      *status = serialization_status && *status;
+      *status = serialization_status&&* status;
       return ret;
     }
 

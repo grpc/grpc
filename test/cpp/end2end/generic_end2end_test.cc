@@ -102,6 +102,10 @@ class GenericEnd2endTest : public ::testing::Test {
     builder.AddListeningPort(server_address_.str(),
                              InsecureServerCredentials());
     builder.RegisterAsyncGenericService(&generic_service_);
+    // Include a second call to RegisterAsyncGenericService to make sure that
+    // we get an error in the log, since it is not allowed to have 2 async
+    // generic services
+    builder.RegisterAsyncGenericService(&generic_service_);
     srv_cq_ = builder.AddCompletionQueue();
     server_ = builder.BuildAndStart();
   }
@@ -120,7 +124,7 @@ class GenericEnd2endTest : public ::testing::Test {
 
   void ResetStub() {
     std::shared_ptr<Channel> channel =
-        CreateChannel(server_address_.str(), InsecureCredentials());
+        CreateChannel(server_address_.str(), InsecureChannelCredentials());
     generic_stub_.reset(new GenericStub(channel));
   }
 

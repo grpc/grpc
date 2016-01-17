@@ -585,7 +585,7 @@ void PrintHeaderService(grpc::protobuf::io::Printer *printer,
       "class Service : public ::grpc::SynchronousService {\n"
       " public:\n");
   printer->Indent();
-  printer->Print("Service() : service_(nullptr) {}\n");
+  printer->Print("Service();\n");
   printer->Print("virtual ~Service();\n");
   for (int i = 0; i < service->method_count(); ++i) {
     PrintHeaderServerMethodSync(printer, service->method(i), vars);
@@ -594,7 +594,7 @@ void PrintHeaderService(grpc::protobuf::io::Printer *printer,
   printer->Outdent();
   printer->Print(
       " private:\n"
-      "  ::grpc::RpcService* service_;\n");
+      "  std::unique_ptr< ::grpc::RpcService> service_;\n");
   printer->Print("};\n");
 
   // Server side - Asynchronous
@@ -1014,8 +1014,10 @@ void PrintSourceService(grpc::protobuf::io::Printer *printer,
                  "{}\n\n");
 
   printer->Print(*vars,
+                 "$ns$$Service$::Service::Service() {\n"
+                 "}\n\n");
+  printer->Print(*vars,
                  "$ns$$Service$::Service::~Service() {\n"
-                 "  delete service_;\n"
                  "}\n\n");
   for (int i = 0; i < service->method_count(); ++i) {
     (*vars)["Idx"] = as_string(i);
@@ -1026,10 +1028,10 @@ void PrintSourceService(grpc::protobuf::io::Printer *printer,
                  "::grpc::RpcService* $ns$$Service$::Service::service() {\n");
   printer->Indent();
   printer->Print(
-      "if (service_ != nullptr) {\n"
-      "  return service_;\n"
+      "if (service_) {\n"
+      "  return service_.get();\n"
       "}\n");
-  printer->Print("service_ = new ::grpc::RpcService();\n");
+  printer->Print("service_ = std::unique_ptr< ::grpc::RpcService>(new ::grpc::RpcService());\n");
   for (int i = 0; i < service->method_count(); ++i) {
     const grpc::protobuf::MethodDescriptor *method = service->method(i);
     (*vars)["Idx"] = as_string(i);
@@ -1077,7 +1079,7 @@ void PrintSourceService(grpc::protobuf::io::Printer *printer,
           "        std::mem_fn(&$ns$$Service$::Service::$Method$), this)));\n");
     }
   }
-  printer->Print("return service_;\n");
+  printer->Print("return service_.get();\n");
   printer->Outdent();
   printer->Print("}\n\n");
 }

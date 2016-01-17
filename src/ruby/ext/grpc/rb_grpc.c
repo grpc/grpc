@@ -41,10 +41,11 @@
 #include <grpc/grpc.h>
 #include <grpc/support/time.h>
 #include "rb_call.h"
+#include "rb_call_credentials.h"
 #include "rb_channel.h"
+#include "rb_channel_credentials.h"
 #include "rb_completion_queue.h"
 #include "rb_server.h"
-#include "rb_credentials.h"
 #include "rb_server_credentials.h"
 
 static VALUE grpc_rb_cTimeVal = Qnil;
@@ -55,7 +56,10 @@ static rb_data_type_t grpc_rb_timespec_data_type = {
      {NULL, NULL}},
     NULL,
     NULL,
-    RUBY_TYPED_FREE_IMMEDIATELY};
+#ifdef RUBY_TYPED_FREE_IMMEDIATELY
+    RUBY_TYPED_FREE_IMMEDIATELY
+#endif
+};
 
 /* Alloc func that blocks allocation of a given object by raising an
  * exception. */
@@ -88,7 +92,7 @@ static ID id_tv_sec;
 static ID id_tv_nsec;
 
 /**
- * grpc_rb_time_timeval creates a time_eval from a ruby time object.
+ * grpc_rb_time_timeval creates a timeval from a ruby time object.
  *
  * This func is copied from ruby source, MRI/source/time.c, which is published
  * under the same license as the ruby.h, on which the entire extensions is
@@ -134,7 +138,7 @@ gpr_timespec grpc_rb_time_timeval(VALUE time, int interval) {
           d += 1;
           f -= 1;
         }
-        t.tv_sec = (time_t)f;
+        t.tv_sec = (gpr_int64)f;
         if (f != t.tv_sec) {
           rb_raise(rb_eRangeError, "%f out of Time range",
                    RFLOAT_VALUE(time));
@@ -262,10 +266,20 @@ static void Init_grpc_time_consts() {
   id_tv_nsec = rb_intern("tv_nsec");
 }
 
+/*
+   TODO: find an alternative to ruby_vm_at_exit that is ok in Ruby 2.0 where
+   RUBY_TYPED_FREE_IMMEDIATELY is not defined.
+
+   At the moment, registering a function using ruby_vm_at_exit segfaults in Ruby
+   2.0.  This is not an issue with the gRPC handler.  More likely, this was an
+   in issue with 2.0 that got resolved in 2.1 and has not been backported.
+*/
+#ifdef RUBY_TYPED_FREE_IMMEDIATELY
 static void grpc_rb_shutdown(ruby_vm_t *vm) {
   (void)vm;
   grpc_shutdown();
 }
+#endif
 
 /* Initialize the GRPC module structs */
 
@@ -285,7 +299,12 @@ VALUE sym_metadata = Qundef;
 
 void Init_grpc() {
   grpc_init();
+
+/* TODO: find alternative to ruby_vm_at_exit that is ok in Ruby 2.0 */
+#ifdef RUBY_TYPED_FREE_IMMEDIATELY
   ruby_vm_at_exit(grpc_rb_shutdown);
+#endif
+
   grpc_rb_mGRPC = rb_define_module("GRPC");
   grpc_rb_mGrpcCore = rb_define_module_under(grpc_rb_mGRPC, "Core");
   grpc_rb_sNewServerRpc =
@@ -300,7 +319,8 @@ void Init_grpc() {
   Init_grpc_channel();
   Init_grpc_completion_queue();
   Init_grpc_call();
-  Init_grpc_credentials();
+  Init_grpc_call_credentials();
+  Init_grpc_channel_credentials();
   Init_grpc_server();
   Init_grpc_server_credentials();
   Init_grpc_status_codes();

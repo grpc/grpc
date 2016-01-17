@@ -41,6 +41,8 @@
 #include <src/core/support/time_precise.h>
 #include <sys/timeb.h>
 
+#include "src/core/support/block_annotate.h"
+
 static LARGE_INTEGER g_start_time;
 static double g_time_scale;
 
@@ -60,17 +62,15 @@ gpr_timespec gpr_now(gpr_clock_type clock) {
   switch (clock) {
     case GPR_CLOCK_REALTIME:
       _ftime_s(&now_tb);
-      now_tv.tv_sec = now_tb.time;
+      now_tv.tv_sec = (gpr_int64)now_tb.time;
       now_tv.tv_nsec = now_tb.millitm * 1000000;
       break;
     case GPR_CLOCK_MONOTONIC:
+    case GPR_CLOCK_PRECISE:
       QueryPerformanceCounter(&timestamp);
       now_dbl = (timestamp.QuadPart - g_start_time.QuadPart) * g_time_scale;
-      now_tv.tv_sec = (time_t)now_dbl;
-      now_tv.tv_nsec = (int)((now_dbl - (double)now_tv.tv_sec) * 1e9);
-      break;
-    case GPR_CLOCK_PRECISE:
-      gpr_precise_clock_now(&now_tv);
+      now_tv.tv_sec = (gpr_int64)now_dbl;
+      now_tv.tv_nsec = (gpr_int32)((now_dbl - (double)now_tv.tv_sec) * 1e9);
       break;
   }
   return now_tv;
@@ -92,7 +92,9 @@ void gpr_sleep_until(gpr_timespec until) {
     delta = gpr_time_sub(until, now);
     sleep_millis =
         (DWORD)delta.tv_sec * GPR_MS_PER_SEC + delta.tv_nsec / GPR_NS_PER_MS;
+    GRPC_SCHEDULING_START_BLOCKING_REGION;
     Sleep(sleep_millis);
+    GRPC_SCHEDULING_END_BLOCKING_REGION;
   }
 }
 

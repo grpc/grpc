@@ -245,7 +245,7 @@ To call service methods, we first need to create a *stub*.
 First we need to create a gRPC *channel* for our stub, specifying the server address and port we want to connect to without SSL:
 
 ```cpp
-grpc::CreateChannel("localhost:50051", grpc::InsecureCredentials());
+grpc::CreateChannel("localhost:50051", grpc::InsecureChannelCredentials());
 ```
 
 Now we can use the channel to create our stub using the `NewStub` method provided in the `RouteGuide` class we generated from our .proto.

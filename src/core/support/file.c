@@ -40,6 +40,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/support/block_annotate.h"
 #include "src/core/support/string.h"
 
 gpr_slice gpr_load_file(const char *filename, int add_null_terminator,
@@ -48,9 +49,11 @@ gpr_slice gpr_load_file(const char *filename, int add_null_terminator,
   size_t contents_size = 0;
   char *error_msg = NULL;
   gpr_slice result = gpr_empty_slice();
-  FILE *file = fopen(filename, "rb");
+  FILE *file;
   size_t bytes_read = 0;
 
+  GRPC_SCHEDULING_START_BLOCKING_REGION;
+  file = fopen(filename, "rb");
   if (file == NULL) {
     gpr_asprintf(&error_msg, "Could not open file %s (error = %s).", filename,
                  strerror(errno));
@@ -83,5 +86,6 @@ end:
     if (success != NULL) *success = 0;
   }
   if (file != NULL) fclose(file);
+  GRPC_SCHEDULING_END_BLOCKING_REGION;
   return result;
 }

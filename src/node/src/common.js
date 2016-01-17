@@ -32,6 +32,8 @@
  */
 
 /**
+ * This module contains functions that are common to client and server
+ * code. None of them should be used directly by gRPC users.
  * @module
  */
 
@@ -87,14 +89,9 @@ exports.fullyQualifiedName = function fullyQualifiedName(value) {
     return '';
   }
   var name = value.name;
-  if (value.className === 'Service.RPCMethod') {
-    name = _.capitalize(name);
-  }
-  if (value.hasOwnProperty('parent')) {
-    var parent_name = fullyQualifiedName(value.parent);
-    if (parent_name !== '') {
-      name = parent_name + '.' + name;
-    }
+  var parent_name = fullyQualifiedName(value.parent);
+  if (parent_name !== '') {
+    name = parent_name + '.' + name;
   }
   return name;
 };

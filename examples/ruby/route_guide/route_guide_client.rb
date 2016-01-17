@@ -40,7 +40,7 @@ $LOAD_PATH.unshift(lib_dir) unless $LOAD_PATH.include?(lib_dir)
 require 'grpc'
 require 'route_guide_services'
 
-include Examples
+include Routeguide
 
 GET_FEATURE_POINTS = [
   Point.new(latitude:  409_146_138, longitude: -746_188_906),

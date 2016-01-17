@@ -34,6 +34,7 @@
 #ifndef GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_FRAME_PING_H
 #define GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_FRAME_PING_H
 
+#include "src/core/iomgr/exec_ctx.h"
 #include <grpc/support/slice.h>
 #include "src/core/transport/chttp2/frame.h"
 
@@ -48,7 +49,8 @@ gpr_slice grpc_chttp2_ping_create(gpr_uint8 ack, gpr_uint8 *opaque_8bytes);
 grpc_chttp2_parse_error grpc_chttp2_ping_parser_begin_frame(
     grpc_chttp2_ping_parser *parser, gpr_uint32 length, gpr_uint8 flags);
 grpc_chttp2_parse_error grpc_chttp2_ping_parser_parse(
-    void *parser, grpc_chttp2_transport_parsing *transport_parsing,
+    grpc_exec_ctx *exec_ctx, void *parser,
+    grpc_chttp2_transport_parsing *transport_parsing,
     grpc_chttp2_stream_parsing *stream_parsing, gpr_slice slice, int is_last);
 
 #endif /* GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_FRAME_PING_H */

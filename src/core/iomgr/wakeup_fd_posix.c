@@ -40,17 +40,15 @@
 #include <stddef.h>
 
 static const grpc_wakeup_fd_vtable *wakeup_fd_vtable = NULL;
+int grpc_allow_specialized_wakeup_fd = 1;
 
 void grpc_wakeup_fd_global_init(void) {
-  if (grpc_specialized_wakeup_fd_vtable.check_availability()) {
+  if (grpc_allow_specialized_wakeup_fd &&
+      grpc_specialized_wakeup_fd_vtable.check_availability()) {
     wakeup_fd_vtable = &grpc_specialized_wakeup_fd_vtable;
   } else {
     wakeup_fd_vtable = &grpc_pipe_wakeup_fd_vtable;
   }
-}
-
-void grpc_wakeup_fd_global_init_force_fallback(void) {
-  wakeup_fd_vtable = &grpc_pipe_wakeup_fd_vtable;
 }
 
 void grpc_wakeup_fd_global_destroy(void) { wakeup_fd_vtable = NULL; }

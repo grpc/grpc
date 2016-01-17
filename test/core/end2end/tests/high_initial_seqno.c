@@ -36,13 +36,15 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "src/core/support/string.h"
 #include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 #include <grpc/support/useful.h>
+
+#include "src/core/support/string.h"
 #include "test/core/end2end/cq_verifier.h"
 
 enum { TIMEOUT = 200000 };
@@ -56,8 +58,8 @@ static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
   grpc_end2end_test_fixture f;
   gpr_log(GPR_INFO, "%s/%s", test_name, config.name);
   f = config.create_fixture(client_args, server_args);
-  config.init_client(&f, client_args);
   config.init_server(&f, server_args);
+  config.init_client(&f, client_args);
   return f;
 }
 
@@ -77,9 +79,9 @@ static void drain_cq(grpc_completion_queue *cq) {
 static void shutdown_server(grpc_end2end_test_fixture *f) {
   if (!f->server) return;
   grpc_server_shutdown_and_notify(f->server, f->cq, tag(1000));
-  GPR_ASSERT(grpc_completion_queue_pluck(
-                 f->cq, tag(1000), GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5), NULL)
-                 .type == GRPC_OP_COMPLETE);
+  GPR_ASSERT(grpc_completion_queue_pluck(f->cq, tag(1000),
+                                         GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5),
+                                         NULL).type == GRPC_OP_COMPLETE);
   grpc_server_destroy(f->server);
   f->server = NULL;
 }
@@ -149,7 +151,7 @@ static void simple_request_body(grpc_end2end_test_fixture f) {
   op->flags = 0;
   op->reserved = NULL;
   op++;
-  error = grpc_call_start_batch(c, ops, op - ops, tag(1), NULL);
+  error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(1), NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   error =
@@ -177,7 +179,7 @@ static void simple_request_body(grpc_end2end_test_fixture f) {
   op->flags = 0;
   op->reserved = NULL;
   op++;
-  error = grpc_call_start_batch(s, ops, op - ops, tag(102), NULL);
+  error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(102), NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   cq_expect_completion(cqv, tag(102), 1);
@@ -208,6 +210,7 @@ static void test_invoke_10_simple_requests(grpc_end2end_test_config config,
   grpc_end2end_test_fixture f;
   grpc_arg client_arg;
   grpc_channel_args client_args;
+  char *name;
 
   client_arg.type = GRPC_ARG_INTEGER;
   client_arg.key = GRPC_ARG_HTTP2_INITIAL_SEQUENCE_NUMBER;
@@ -216,13 +219,16 @@ static void test_invoke_10_simple_requests(grpc_end2end_test_config config,
   client_args.num_args = 1;
   client_args.args = &client_arg;
 
-  f = begin_test(config, "test_invoke_10_simple_requests", &client_args, NULL);
+  gpr_asprintf(&name, "test_invoke_requests first_seqno=%d",
+               initial_sequence_number);
+  f = begin_test(config, name, &client_args, NULL);
   for (i = 0; i < 10; i++) {
     simple_request_body(f);
     gpr_log(GPR_INFO, "Passed simple request %d", i);
   }
   end_test(&f);
   config.tear_down_data(&f);
+  gpr_free(name);
 }
 
 void grpc_end2end_tests(grpc_end2end_test_config config) {

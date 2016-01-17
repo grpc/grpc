@@ -90,7 +90,7 @@ int gpr_cv_wait(gpr_cv *cv, gpr_mu *mu, gpr_timespec abs_deadline) {
     gpr_timespec now = gpr_now(abs_deadline.clock_type);
     gpr_int64 now_ms = (gpr_int64)now.tv_sec * 1000 + now.tv_nsec / 1000000;
     gpr_int64 deadline_ms =
-      (gpr_int64)abs_deadline.tv_sec * 1000 + abs_deadline.tv_nsec / 1000000;
+        (gpr_int64)abs_deadline.tv_sec * 1000 + abs_deadline.tv_nsec / 1000000;
     if (now_ms >= deadline_ms) {
       timeout = 1;
     } else {

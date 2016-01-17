@@ -71,4 +71,3 @@ class AuthMetadataProcessor {
 }  // namespace grpc
 
 #endif  // GRPCXX_AUTH_METADATA_PROCESSOR_H_
-
