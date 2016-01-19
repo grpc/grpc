@@ -46,7 +46,7 @@ class WorkerServiceImpl;
 
 class QpsWorker {
  public:
-  explicit QpsWorker(int driver_port);
+  explicit QpsWorker(int driver_port, int server_port = 0);
   ~QpsWorker();
 
  private:
