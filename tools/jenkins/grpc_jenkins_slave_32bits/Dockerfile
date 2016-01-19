@@ -38,6 +38,7 @@ RUN apt-get update && apt-get install -y \
   autotools-dev \
   build-essential \
   bzip2 \
+  ccache \
   curl \
   gcc \
   gcc-multilib \
@@ -60,6 +61,14 @@ RUN apt-get update && apt-get install -y \
   unzip \
   wget \
   zip && apt-get clean
+
+# Prepare ccache
+RUN ln -s /usr/bin/ccache /usr/local/bin/gcc
+RUN ln -s /usr/bin/ccache /usr/local/bin/g++
+RUN ln -s /usr/bin/ccache /usr/local/bin/cc
+RUN ln -s /usr/bin/ccache /usr/local/bin/c++
+RUN ln -s /usr/bin/ccache /usr/local/bin/clang
+RUN ln -s /usr/bin/ccache /usr/local/bin/clang++
 
 ##################
 # C++ dependencies
