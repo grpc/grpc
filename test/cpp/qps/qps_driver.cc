@@ -51,6 +51,7 @@ DEFINE_int32(local_workers, 0, "Number of local workers to start");
 // Server config
 DEFINE_int32(async_server_threads, 1, "Number of threads for async servers");
 DEFINE_string(server_type, "SYNC_SERVER", "Server type");
+// TODO (vpai): Automatically generate the core list to avoid breakage
 DEFINE_string(server_core_list, "", "Comma-separated list of cores for server");
 
 // Client config
@@ -74,6 +75,7 @@ DEFINE_double(determ_load, -1.0, "Deterministic offered load (qps)");
 DEFINE_double(pareto_base, -1.0, "Pareto base interarrival time (us)");
 DEFINE_double(pareto_alpha, -1.0, "Pareto alpha value");
 
+// TODO (vpai): Automatically generate the core list to avoid breakage
 DEFINE_string(client_core_list, "", "Comma-separated list of cores for client");
 
 DEFINE_bool(secure_test, false, "Run a secure test");
