@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2015-2016, Google Inc.
+# Copyright 2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -28,25 +28,40 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-set -ex
-
-CONFIG=${CONFIG:-opt}
-
-# change to grpc repo root
+# change to root directory
 cd $(dirname $0)/../..
 
-root=`pwd`
-export GRPC_LIB_SUBDIR=libs/$CONFIG
-export CFLAGS="-Wno-parentheses-equality"
+function find_without_newline() {
+  find . -type f -not -path './third_party/*' -and \(  \
+                             -name '*.c'               \
+                         -or -name '*.cc'              \
+                         -or -name '*.proto'           \
+                         -or -name '*.rb'              \
+                         -or -name '*.py'              \
+                         -or -name '*.cs'              \
+                         -or -name '*.sh' \) -print0   \
+                         | while IFS= read -r -d '' f; do
+    if [[ ! -z $f ]]; then
+      if [[ $(tail -c 1 "$f") != $NEWLINE ]]; then
+        echo "Error: file '$f' is missing a trailing newline character."
+        if $2; then  # fix
+          sed -i -e '$a\' $f
+          echo 'Fixed!'
+        fi
+      fi
+    fi
+  done
+}
 
-# build php
-cd src/php
-
-cd ext/grpc
-phpize
-if [ "$CONFIG" != "gcov" ] ; then
-  ./configure --enable-grpc=$root
+if [[ $# == 1 && $1 == '--fix' ]]; then
+  ERRORS=$(find_without_newline true)
 else
-  ./configure --enable-grpc=$root --enable-coverage
+  ERRORS=$(find_without_newline false)
 fi
-make
+
+if [[ "$ERRORS" != '' ]]; then
+  echo "$ERRORS"
+  if ! $FIX; then
+    exit 1
+  fi
+fi

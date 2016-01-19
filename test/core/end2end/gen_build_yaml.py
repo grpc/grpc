@@ -257,7 +257,7 @@ def main():
           for t in sorted(END2END_TESTS.keys()) if compatible(f, t)
       ] + [
           {
-              'name': '%s_test' % f,
+              'name': '%s_nosec_test' % f,
               'args': [t],
               'exclude_configs': [],
               'platforms': END2END_FIXTURES[f].platforms,
