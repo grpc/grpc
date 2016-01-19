@@ -33,6 +33,7 @@
 
 #include "test/cpp/util/metrics_server.h"
 
+#include <grpc++/server.h>
 #include <grpc++/server_builder.h>
 
 #include "src/proto/grpc/testing/metrics.grpc.pb.h"
