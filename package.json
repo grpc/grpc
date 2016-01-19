@@ -51,8 +51,8 @@
   "binary": {
     "module_name": "grpc_node",
     "module_path": "./build/Release/",
-    "host": "https://x20web.corp.google.com/",
-    "remote_path": "~mlumish/node_grpc_bin/{name}/v{version}",
+    "host": "https://storage.googleapis.com/",
+    "remote_path": "tmp-mlumish/v{version}",
     "package_name": "{node_abi}-{platform}-{arch}.tar.gz"
   },
   "files": [
