@@ -42,8 +42,8 @@ from setuptools.command import egg_info
 # Redirect the manifest template from MANIFEST.in to PYTHON-MANIFEST.in.
 egg_info.manifest_maker.template = 'PYTHON-MANIFEST.in'
 
-PYTHON_STEM = './src/python/grpcio/'
-CORE_INCLUDE = ('./include', './',)
+PYTHON_STEM = './src/python/grpcio'
+CORE_INCLUDE = ('./include', '.',)
 BORINGSSL_INCLUDE = ('./third_party/boringssl/include',)
 
 # Ensure we're in the proper directory whether or not we're being used by pip.

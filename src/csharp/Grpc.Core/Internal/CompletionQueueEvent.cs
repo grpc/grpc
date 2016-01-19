@@ -1,6 +1,6 @@
 #region Copyright notice and license
 
-// Copyright 2015, Google Inc.
+// Copyright 2015-2016, Google Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -42,8 +42,7 @@ namespace Grpc.Core.Internal
     [StructLayout(LayoutKind.Sequential)]
     internal struct CompletionQueueEvent
     {
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern int grpcsharp_sizeof_grpc_event();
+        static readonly NativeMethods Native = NativeMethods.Get();
 
         public GRPCCompletionType type;
         public int success;
@@ -53,7 +52,7 @@ namespace Grpc.Core.Internal
         {
             get
             {
-                return grpcsharp_sizeof_grpc_event();
+                return Native.grpcsharp_sizeof_grpc_event();
             }
         }
     }
