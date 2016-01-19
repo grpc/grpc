@@ -45,7 +45,7 @@
 #include "src/proto/grpc/testing/payloads.grpc.pb.h"
 #include "src/proto/grpc/testing/services.grpc.pb.h"
 
-#include "test/cpp/qps/coresched.h"
+#include "test/cpp/qps/limit_cores.h"
 #include "test/cpp/qps/histogram.h"
 #include "test/cpp/qps/interarrival.h"
 #include "test/cpp/qps/timer.h"

@@ -31,7 +31,7 @@
  *
  */
 
-#include "test/cpp/qps/coresched.h"
+#include "test/cpp/qps/limit_cores.h"
 
 #include <grpc/support/cpu.h>
 #include <grpc/support/log.h>
