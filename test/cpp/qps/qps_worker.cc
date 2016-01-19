@@ -197,7 +197,7 @@ class WorkerServiceImpl GRPC_FINAL : public WorkerService::Service {
     if (!args.has_setup()) {
       return Status(StatusCode::INVALID_ARGUMENT, "");
     }
-    if (server_port_) {
+    if (server_port_ != 0) {
       args.mutable_setup()->set_port(server_port_);
     }
     auto server = CreateServer(args.setup());
