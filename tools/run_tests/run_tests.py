@@ -772,9 +772,10 @@ else:
       return [jobset.JobSpec([os.getenv('MAKE', 'make'),
                               '-f', makefile,
                               '-j', '%d' % (multiprocessing.cpu_count() + 1),
-                              'EXTRA_DEFINES=GRPC_TEST_SLOWDOWN_MACHINE_FACTOR=%f' %
-                              args.slowdown,
-                              'CONFIG=%s' % cfg] + targets,
+                              'EXTRA_DEFINES=GRPC_TEST_SLOWDOWN_MACHINE_FACTOR=%f' % args.slowdown,
+                              'CONFIG=%s' % cfg] +
+                             ([] if not args.travis else ['JENKINS_BUILD=1']) +
+                             targets,
                              timeout_seconds=30*60)]
     else:
       return []
