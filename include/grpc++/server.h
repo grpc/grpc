@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -40,6 +40,7 @@
 #include <grpc++/completion_queue.h>
 #include <grpc++/impl/call.h>
 #include <grpc++/impl/grpc_library.h>
+#include <grpc++/impl/rpc_service_method.h>
 #include <grpc++/impl/sync.h>
 #include <grpc++/security/server_credentials.h>
 #include <grpc++/support/channel_arguments.h>
@@ -51,13 +52,11 @@ struct grpc_server;
 
 namespace grpc {
 
-class AsynchronousService;
 class GenericServerContext;
 class AsyncGenericService;
-class RpcService;
-class RpcServiceMethod;
 class ServerAsyncStreamingInterface;
 class ServerContext;
+class Service;
 class ThreadPoolInterface;
 
 /// Models a gRPC server.
@@ -105,7 +104,7 @@ class Server GRPC_FINAL : public GrpcLibrary, private CallHook {
 
  private:
   friend class AsyncGenericService;
-  friend class AsynchronousService;
+  friend class Service;
   friend class ServerBuilder;
 
   class SyncRequest;
@@ -123,12 +122,7 @@ class Server GRPC_FINAL : public GrpcLibrary, private CallHook {
 
   /// Register a service. This call does not take ownership of the service.
   /// The service must exist for the lifetime of the Server instance.
-  bool RegisterService(const grpc::string* host, RpcService* service);
-
-  /// Register an asynchronous service. This call does not take ownership of the
-  /// service. The service must exist for the lifetime of the Server instance.
-  bool RegisterAsyncService(const grpc::string* host,
-                            AsynchronousService* service);
+  bool RegisterService(const grpc::string* host, Service* service);
 
   /// Register a generic service. This call does not take ownership of the
   /// service. The service must exist for the lifetime of the Server instance.
@@ -265,21 +259,24 @@ class Server GRPC_FINAL : public GrpcLibrary, private CallHook {
   class UnimplementedAsyncResponse;
 
   template <class Message>
-  void RequestAsyncCall(void* registered_method, ServerContext* context,
+  void RequestAsyncCall(RpcServiceMethod* method, ServerContext* context,
                         ServerAsyncStreamingInterface* stream,
                         CompletionQueue* call_cq,
                         ServerCompletionQueue* notification_cq, void* tag,
                         Message* message) {
-    new PayloadAsyncRequest<Message>(registered_method, this, context, stream,
-                                     call_cq, notification_cq, tag, message);
+    GPR_ASSERT(method);
+    new PayloadAsyncRequest<Message>(method->server_tag(), this, context,
+                                     stream, call_cq, notification_cq, tag,
+                                     message);
   }
 
-  void RequestAsyncCall(void* registered_method, ServerContext* context,
+  void RequestAsyncCall(RpcServiceMethod* method, ServerContext* context,
                         ServerAsyncStreamingInterface* stream,
                         CompletionQueue* call_cq,
                         ServerCompletionQueue* notification_cq, void* tag) {
-    new NoPayloadAsyncRequest(registered_method, this, context, stream, call_cq,
-                              notification_cq, tag);
+    GPR_ASSERT(method);
+    new NoPayloadAsyncRequest(method->server_tag(), this, context, stream,
+                              call_cq, notification_cq, tag);
   }
 
   void RequestAsyncGenericCall(GenericServerContext* context,

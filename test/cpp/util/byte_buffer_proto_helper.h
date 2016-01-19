@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,45 +31,23 @@
  *
  */
 
-#ifndef GRPCXX_GENERIC_ASYNC_GENERIC_SERVICE_H
-#define GRPCXX_GENERIC_ASYNC_GENERIC_SERVICE_H
+#ifndef GRPC_TEST_CPP_UTIL_BYTE_BUFFER_PROTO_HELPER_H
+#define GRPC_TEST_CPP_UTIL_BYTE_BUFFER_PROTO_HELPER_H
+
+#include <memory>
 
 #include <grpc++/support/byte_buffer.h>
-#include <grpc++/support/async_stream.h>
-
-struct grpc_server;
+#include <grpc++/support/config_protobuf.h>
 
 namespace grpc {
+namespace testing {
 
-typedef ServerAsyncReaderWriter<ByteBuffer, ByteBuffer>
-    GenericServerAsyncReaderWriter;
+bool ParseFromByteBuffer(ByteBuffer* buffer, grpc::protobuf::Message* message);
 
-class GenericServerContext GRPC_FINAL : public ServerContext {
- public:
-  const grpc::string& method() const { return method_; }
-  const grpc::string& host() const { return host_; }
+std::unique_ptr<ByteBuffer> SerializeToByteBuffer(
+    grpc::protobuf::Message* message);
 
- private:
-  friend class Server;
-
-  grpc::string method_;
-  grpc::string host_;
-};
-
-class AsyncGenericService GRPC_FINAL {
- public:
-  AsyncGenericService() : server_(nullptr) {}
-
-  void RequestCall(GenericServerContext* ctx,
-                   GenericServerAsyncReaderWriter* reader_writer,
-                   CompletionQueue* call_cq,
-                   ServerCompletionQueue* notification_cq, void* tag);
-
- private:
-  friend class Server;
-  Server* server_;
-};
-
+}  // namespace testing
 }  // namespace grpc
 
-#endif  // GRPCXX_GENERIC_ASYNC_GENERIC_SERVICE_H
+#endif  // GRPC_TEST_CPP_UTIL_BYTE_BUFFER_PROTO_HELPER_H

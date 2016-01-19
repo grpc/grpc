@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -40,6 +40,7 @@
 #include <grpc/support/log.h>
 #include <grpc++/completion_queue.h>
 #include <grpc++/generic/async_generic_service.h>
+#include <grpc++/impl/method_handler_impl.h>
 #include <grpc++/impl/rpc_service_method.h>
 #include <grpc++/impl/service_type.h>
 #include <grpc++/server_context.h>
@@ -296,6 +297,8 @@ Server::~Server() {
     if (started_ && !shutdown_) {
       lock.unlock();
       Shutdown();
+    } else if (!started_) {
+      cq_.Shutdown();
     }
   }
   void* got_tag;
@@ -314,36 +317,31 @@ void Server::SetGlobalCallbacks(GlobalCallbacks* callbacks) {
   g_callbacks = callbacks;
 }
 
-bool Server::RegisterService(const grpc::string* host, RpcService* service) {
-  for (int i = 0; i < service->GetMethodCount(); ++i) {
-    RpcServiceMethod* method = service->GetMethod(i);
+bool Server::RegisterService(const grpc::string* host, Service* service) {
+  bool has_async_methods = service->has_async_methods();
+  if (has_async_methods) {
+    GPR_ASSERT(service->server_ == nullptr &&
+               "Can only register an asynchronous service against one server.");
+    service->server_ = this;
+  }
+  for (auto it = service->methods_.begin(); it != service->methods_.end();
+       ++it) {
+    if (it->get() == nullptr) {  // Handled by generic service if any.
+      continue;
+    }
+    RpcServiceMethod* method = it->get();
     void* tag = grpc_server_register_method(server_, method->name(),
                                             host ? host->c_str() : nullptr);
-    if (!tag) {
+    if (tag == nullptr) {
       gpr_log(GPR_DEBUG, "Attempt to register %s multiple times",
               method->name());
       return false;
     }
-    sync_methods_->emplace_back(method, tag);
-  }
-  return true;
-}
-
-bool Server::RegisterAsyncService(const grpc::string* host,
-                                  AsynchronousService* service) {
-  GPR_ASSERT(service->server_ == nullptr &&
-             "Can only register an asynchronous service against one server.");
-  service->server_ = this;
-  service->request_args_ = new void* [service->method_count_];
-  for (size_t i = 0; i < service->method_count_; ++i) {
-    void* tag = grpc_server_register_method(server_, service->method_names_[i],
-                                            host ? host->c_str() : nullptr);
-    if (!tag) {
-      gpr_log(GPR_DEBUG, "Attempt to register %s multiple times",
-              service->method_names_[i]);
-      return false;
+    if (method->handler() == nullptr) {
+      method->set_server_tag(tag);
+    } else {
+      sync_methods_->emplace_back(method, tag);
     }
-    service->request_args_[i] = tag;
   }
   return true;
 }
