@@ -8,7 +8,7 @@
     <RootNamespace>Grpc.Core</RootNamespace>
     <AssemblyName>Grpc.Core</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
-    <NuGetPackageImportStamp>be3e9d03</NuGetPackageImportStamp>
+    <NuGetPackageImportStamp>c0512805</NuGetPackageImportStamp>
     <DocumentationFile>bin\$(Configuration)\Grpc.Core.Xml</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
@@ -49,6 +49,10 @@
     <Compile Include="AsyncAuthInterceptor.cs" />
     <Compile Include="CallCredentials.cs" />
     <Compile Include="IClientStreamWriter.cs" />
+    <Compile Include="Internal\NativeMethods.cs" />
+    <Compile Include="Internal\PlatformApis.cs" />
+    <Compile Include="Internal\NativeExtension.cs" />
+    <Compile Include="Internal\UnmanagedLibrary.cs" />
     <Compile Include="Internal\NativeMetadataCredentialsPlugin.cs" />
     <Compile Include="Internal\INativeCall.cs" />
     <Compile Include="IServerStreamWriter.cs" />
@@ -128,29 +132,6 @@
     <None Include="Grpc.Core.nuspec" />
     <None Include="packages.config" />
   </ItemGroup>
-  <Choose>
-    <!-- Under older versions of Monodevelop, Choose is not supported and is just
-         ignored, which gives us the desired effect. -->
-    <When Condition=" '$(OS)' != 'Unix' ">
-      <ItemGroup>
-        <Content Include="..\..\..\vsprojects\Debug\grpc_csharp_ext.dll">
-          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-        </Content>
-      </ItemGroup>
-    </When>
-    <Otherwise />
-  </Choose>
+  <Import Project="NativeDeps.targets" />
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
-  <ItemGroup />
-  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
-    <PropertyGroup>
-      <ErrorText>This project references NuGet package(s) that are missing on this computer. Enable NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
-    </PropertyGroup>
-    <Error Condition="!Exists('..\packages\grpc.dependencies.openssl.redist.1.0.204.1\build\portable-net45+netcore45+wpa81+wp8\grpc.dependencies.openssl.redist.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\grpc.dependencies.openssl.redist.1.0.204.1\build\portable-net45+netcore45+wpa81+wp8\grpc.dependencies.openssl.redist.targets'))" />
-    <Error Condition="!Exists('..\packages\grpc.dependencies.zlib.redist.1.2.8.10\build\portable-net45+netcore45+wpa81+wp8\grpc.dependencies.zlib.redist.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\grpc.dependencies.zlib.redist.1.2.8.10\build\portable-net45+netcore45+wpa81+wp8\grpc.dependencies.zlib.redist.targets'))" />
-  </Target>
-  <Import Project="..\packages\grpc.dependencies.openssl.redist.1.0.204.1\build\portable-net45+netcore45+wpa81+wp8\grpc.dependencies.openssl.redist.targets" Condition="Exists('..\packages\grpc.dependencies.openssl.redist.1.0.204.1\build\portable-net45+netcore45+wpa81+wp8\grpc.dependencies.openssl.redist.targets')" />
-  <Import Project="..\packages\grpc.dependencies.zlib.redist.1.2.8.10\build\portable-net45+netcore45+wpa81+wp8\grpc.dependencies.zlib.redist.targets" Condition="Exists('..\packages\grpc.dependencies.zlib.redist.1.2.8.10\build\portable-net45+netcore45+wpa81+wp8\grpc.dependencies.zlib.redist.targets')" />
-  <ItemGroup />
-  <ItemGroup />
 </Project>

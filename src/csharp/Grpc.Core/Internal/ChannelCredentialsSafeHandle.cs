@@ -1,5 +1,5 @@
 #region Copyright notice and license
-// Copyright 2015, Google Inc.
+// Copyright 2015-2016, Google Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -40,14 +40,7 @@ namespace Grpc.Core.Internal
     /// </summary>
     internal class ChannelCredentialsSafeHandle : SafeHandleZeroIsInvalid
     {
-        [DllImport("grpc_csharp_ext.dll", CharSet = CharSet.Ansi)]
-        static extern ChannelCredentialsSafeHandle grpcsharp_ssl_credentials_create(string pemRootCerts, string keyCertPairCertChain, string keyCertPairPrivateKey);
-
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern ChannelCredentialsSafeHandle grpcsharp_composite_channel_credentials_create(ChannelCredentialsSafeHandle channelCreds, CallCredentialsSafeHandle callCreds);
-
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern void grpcsharp_channel_credentials_release(IntPtr credentials);
+        static readonly NativeMethods Native = NativeMethods.Get();
 
         private ChannelCredentialsSafeHandle()
         {
@@ -64,22 +57,22 @@ namespace Grpc.Core.Internal
         {
             if (keyCertPair != null)
             {
-                return grpcsharp_ssl_credentials_create(pemRootCerts, keyCertPair.CertificateChain, keyCertPair.PrivateKey);
+                return Native.grpcsharp_ssl_credentials_create(pemRootCerts, keyCertPair.CertificateChain, keyCertPair.PrivateKey);
             }
             else
             {
-                return grpcsharp_ssl_credentials_create(pemRootCerts, null, null);
+                return Native.grpcsharp_ssl_credentials_create(pemRootCerts, null, null);
             }
         }
 
         public static ChannelCredentialsSafeHandle CreateComposite(ChannelCredentialsSafeHandle channelCreds, CallCredentialsSafeHandle callCreds)
         {
-            return grpcsharp_composite_channel_credentials_create(channelCreds, callCreds);
+            return Native.grpcsharp_composite_channel_credentials_create(channelCreds, callCreds);
         }
 
         protected override bool ReleaseHandle()
         {
-            grpcsharp_channel_credentials_release(handle);
+            Native.grpcsharp_channel_credentials_release(handle);
             return true;
         }
     }
