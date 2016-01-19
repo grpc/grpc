@@ -1,4 +1,5 @@
 #region Copyright notice and license
+
 // Copyright 2015-2016, Google Inc.
 // All rights reserved.
 //
@@ -27,34 +28,83 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 #endregion
+
 using System;
+using System.Collections.Concurrent;
+using System.Diagnostics;
+using System.IO;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace Grpc.Core.Internal
 {
     /// <summary>
-    /// grpc_call_credentials from <c>grpc/grpc_security.h</c>
+    /// Utility methods for detecting platform and architecture.
     /// </summary>
-    internal class CallCredentialsSafeHandle : SafeHandleZeroIsInvalid
+    internal static class PlatformApis
     {
-        static readonly NativeMethods Native = NativeMethods.Get();
+        static readonly bool isLinux;
+        static readonly bool isMacOSX;
+        static readonly bool isWindows;
 
-        private CallCredentialsSafeHandle()
+        static PlatformApis()
         {
+            var platform = Environment.OSVersion.Platform;
+
+            // PlatformID.MacOSX is never returned, commonly used trick is to identify Mac is by using uname.
+            isMacOSX = (platform == PlatformID.Unix && GetUname() == "Darwin");
+            isLinux = (platform == PlatformID.Unix && !isMacOSX);
+            isWindows = (platform == PlatformID.Win32NT || platform == PlatformID.Win32S || platform == PlatformID.Win32Windows);
         }
 
-        public static CallCredentialsSafeHandle CreateComposite(CallCredentialsSafeHandle creds1, CallCredentialsSafeHandle creds2)
+        public static bool IsLinux
         {
-            return Native.grpcsharp_composite_call_credentials_create(creds1, creds2);
+            get { return isLinux; }
         }
 
-        protected override bool ReleaseHandle()
+        public static bool IsMacOSX
         {
-            Native.grpcsharp_call_credentials_release(handle);
-            return true;
+            get { return isMacOSX; }
+        }
+
+        public static bool IsWindows
+        {
+            get { return isWindows; }
+        }
+
+        public static bool Is64Bit
+        {
+            get { return IntPtr.Size == 8; }
+        }
+
+        [DllImport("libc")]
+        static extern int uname(IntPtr buf);
+
+        static string GetUname()
+        {
+            var buffer = Marshal.AllocHGlobal(8192);
+            try
+            {
+                if (uname(buffer) == 0)
+                {
+                    return Marshal.PtrToStringAnsi(buffer);
+                }
+                return string.Empty;
+            }
+            catch
+            {
+                return string.Empty;
+            }
+            finally
+            {
+                if (buffer != IntPtr.Zero)
+                {
+                    Marshal.FreeHGlobal(buffer);
+                }
+            }
         }
     }
 }

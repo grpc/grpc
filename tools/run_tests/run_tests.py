@@ -245,7 +245,7 @@ class PhpLanguage(object):
     return [['tools/run_tests/build_php.sh']]
 
   def post_tests_steps(self):
-    return []
+    return [['tools/run_tests/post_tests_php.sh']]
 
   def makefile_name(self):
     return 'Makefile'
@@ -772,9 +772,10 @@ else:
       return [jobset.JobSpec([os.getenv('MAKE', 'make'),
                               '-f', makefile,
                               '-j', '%d' % (multiprocessing.cpu_count() + 1),
-                              'EXTRA_DEFINES=GRPC_TEST_SLOWDOWN_MACHINE_FACTOR=%f' %
-                              args.slowdown,
-                              'CONFIG=%s' % cfg] + targets,
+                              'EXTRA_DEFINES=GRPC_TEST_SLOWDOWN_MACHINE_FACTOR=%f' % args.slowdown,
+                              'CONFIG=%s' % cfg] +
+                             ([] if not args.travis else ['JENKINS_BUILD=1']) +
+                             targets,
                              timeout_seconds=30*60)]
     else:
       return []
@@ -1092,4 +1093,3 @@ else:
   if BuildAndRunError.POST_TEST in errors:
     exit_code |= 4
   sys.exit(exit_code)
-
