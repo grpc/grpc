@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -39,12 +39,11 @@ int census_initialize(int features) {
   if (features_enabled != CENSUS_FEATURE_NONE) {
     return 1;
   }
-  if (features != CENSUS_FEATURE_NONE) {
+  if (features == CENSUS_FEATURE_NONE) {
     return 1;
-  } else {
-    features_enabled = features;
-    return 0;
   }
+  features_enabled = features;
+  return 0;
 }
 
 void census_shutdown(void) { features_enabled = CENSUS_FEATURE_NONE; }

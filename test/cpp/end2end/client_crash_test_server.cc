@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,10 +31,10 @@
  *
  */
 
+#include <gflags/gflags.h>
 #include <iostream>
 #include <memory>
 #include <string>
-#include <gflags/gflags.h>
 
 #include <grpc++/server.h>
 #include <grpc++/server_builder.h>
@@ -56,7 +56,8 @@ using namespace gflags;
 namespace grpc {
 namespace testing {
 
-class ServiceImpl GRPC_FINAL : public ::grpc::testing::TestService::Service {
+class ServiceImpl GRPC_FINAL
+    : public ::grpc::testing::EchoTestService::Service {
   Status BidiStream(ServerContext* context,
                     ServerReaderWriter<EchoResponse, EchoRequest>* stream)
       GRPC_OVERRIDE {

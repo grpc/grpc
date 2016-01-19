@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -36,8 +36,8 @@
 var _ = require('lodash');
 
 /**
- * This class represents a queue of callbacks that must happen sequentially, each
- * with a specific delay after the previous event.
+ * This class represents a queue of callbacks that must happen sequentially,
+ * each with a specific delay after the previous event.
  */
 function AsyncDelayQueue() {
   this.queue = [];

@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 
-# Copyright 2015, Google Inc.
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -55,8 +55,6 @@ require 'google/protobuf'
 require 'test/proto/empty'
 require 'test/proto/messages'
 require 'test/proto/test_services'
-
-require 'signet/ssl_config'
 
 AUTH_ENV = Google::Auth::CredentialsLoader::ENV_VAR
 
@@ -114,8 +112,8 @@ end
 def create_stub(opts)
   address = "#{opts.host}:#{opts.port}"
   if opts.secure
+    creds = ssl_creds(opts.use_test_ca)
     stub_opts = {
-      :creds => ssl_creds(opts.use_test_ca),
       GRPC::Core::Channel::SSL_TARGET => opts.host_override
     }
 
@@ -125,7 +123,7 @@ def create_stub(opts)
       unless opts.oauth_scope.nil?
         auth_creds = Google::Auth.get_application_default(opts.oauth_scope)
         call_creds = GRPC::Core::CallCredentials.new(auth_creds.updater_proc)
-        stub_opts[:creds] = stub_opts[:creds].compose call_creds
+        creds = creds.compose call_creds
       end
     end
 
@@ -135,20 +133,20 @@ def create_stub(opts)
 
       # use a metadata update proc that just adds the auth token.
       call_creds = GRPC::Core::CallCredentials.new(proc { |md| md.merge(kw) })
-      stub_opts[:creds] = stub_opts[:creds].compose call_creds
+      creds = creds.compose call_creds
     end
 
     if opts.test_case == 'jwt_token_creds'  # don't use a scope
       auth_creds = Google::Auth.get_application_default
       call_creds = GRPC::Core::CallCredentials.new(auth_creds.updater_proc)
-      stub_opts[:creds] = stub_opts[:creds].compose call_creds
+      creds = creds.compose call_creds
     end
 
     GRPC.logger.info("... connecting securely to #{address}")
-    Grpc::Testing::TestService::Stub.new(address, **stub_opts)
+    Grpc::Testing::TestService::Stub.new(address, creds, **stub_opts)
   else
     GRPC.logger.info("... connecting insecurely to #{address}")
-    Grpc::Testing::TestService::Stub.new(address)
+    Grpc::Testing::TestService::Stub.new(address, :this_channel_is_insecure)
   end
 end
 
@@ -266,16 +264,15 @@ class NamedTests
 
   def per_rpc_creds
     auth_creds = Google::Auth.get_application_default(@args.oauth_scope)
-    kw = auth_creds.updater_proc.call({})
+    update_metadata = proc do |md|
+      kw = auth_creds.updater_proc.call({})
+    end
 
-    # TODO(jtattermusch): downcase the metadata keys here to make sure
-    # they are not rejected by C core. This is a hotfix that should
-    # be addressed by introducing auto-downcasing logic.
-    kw = Hash[ kw.each_pair.map { |k, v|  [k.downcase, v] }]
+    call_creds = GRPC::Core::CallCredentials.new(update_metadata)
 
     resp = perform_large_unary(fill_username: true,
                                fill_oauth_scope: true,
-                               **kw)
+                               credentials: call_creds)
     json_key = File.read(ENV[AUTH_ENV])
     wanted_email = MultiJson.load(json_key)['client_email']
     assert("#{__callee__}: bad username") { wanted_email == resp.username }
