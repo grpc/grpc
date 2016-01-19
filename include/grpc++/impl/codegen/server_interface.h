@@ -54,6 +54,8 @@ class ThreadPoolInterface;
 /// Servers are configured and started via \a grpc::ServerBuilder.
 class ServerInterface : public CallHook {
  public:
+  virtual ~ServerInterface() {}
+
   /// Shutdown the server, blocking until all rpc processing finishes.
   /// Forcefully terminate pending calls after \a deadline expires.
   ///
