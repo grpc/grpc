@@ -51,10 +51,33 @@ ROOT = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), '../..'))
 os.chdir(ROOT)
 
 
+def create_docker_jobspec(name, dockerfile_dir, shell_command, environ={},
+                   flake_retries=0, timeout_retries=0):
+  """Creates jobspec for a task running under docker."""
+  environ = environ.copy()
+  environ['RUN_COMMAND'] = shell_command
+
+  #docker_args = ['-v', '%s/artifacts:/var/local/jenkins/grpc/artifacts' % ROOT]
+  docker_args=[]
+  for k,v in environ.iteritems():
+    docker_args += ['-e', '%s=%s' % (k, v)]
+  docker_env = {'DOCKERFILE_DIR': dockerfile_dir,
+                'DOCKER_RUN_SCRIPT': 'tools/jenkins/docker_run.sh',
+                'OUTPUT_DIR': 'artifacts'}
+  jobspec = jobset.JobSpec(
+          cmdline=['tools/jenkins/build_and_run_docker.sh'] + docker_args,
+          environ=docker_env,
+          shortname='build_artifact.%s' % (name),
+          timeout_seconds=30*60,
+          flake_retries=flake_retries,
+          timeout_retries=timeout_retries)
+  return jobspec
+
+
 def create_jobspec(name, cmdline, environ=None, shell=False,
                    flake_retries=0, timeout_retries=0):
   """Creates jobspec."""
-  test_job = jobset.JobSpec(
+  jobspec = jobset.JobSpec(
           cmdline=cmdline,
           environ=environ,
           shortname='build_artifact.%s' % (name),
@@ -62,7 +85,7 @@ def create_jobspec(name, cmdline, environ=None, shell=False,
           flake_retries=flake_retries,
           timeout_retries=timeout_retries,
           shell=shell)
-  return test_job
+  return jobspec
 
 
 def macos_arch_env(arch):
@@ -74,23 +97,6 @@ def macos_arch_env(arch):
   else:
     raise Exception('Unsupported arch')
   return {'CFLAGS': arch_arg, 'LDFLAGS': arch_arg}
-
-
-class TestDockerArtifact:
-  """Demo artifact that shows that docker-based artifacts work"""
-
-  def __init__(self):
-    self.name = 'test_docker_artifact'
-    self.labels = ['docker', 'linux']
-
-  def pre_build_jobspecs(self):
-    return []
-
-  def build_jobspec(self):
-    return create_jobspec(self.name, ['sleep', '5'])
-
-  def __str__(self):
-    return self.name
 
 
 class CSharpExtArtifact:
@@ -122,12 +128,17 @@ class CSharpExtArtifact:
                              '/p:PlatformToolset=v120',
                              '/p:Platform=%s' % msbuild_platform],
                             shell=True)
+    if self.platform == 'linux':
+      environ = {'CONFIG': 'opt'}
+      return create_docker_jobspec(self.name,
+                            'tools/jenkins/grpc_artifact_linux_%s' % self.arch,
+                            'tools/run_tests/build_artifact_csharp.sh')
     else:
       environ = {'CONFIG': 'opt'}
       if self.platform == 'macos':
         environ.update(macos_arch_env(self.arch))
       return create_jobspec(self.name,
-                            ['make', 'grpc_csharp_ext'],
+                            ['tools/run_tests/build_artifact_csharp.sh'],
                             environ=environ)
 
   def __str__(self):
@@ -135,7 +146,7 @@ class CSharpExtArtifact:
 
 
 _ARTIFACTS = [
-    TestDockerArtifact(),
+    CSharpExtArtifact('linux', 'x86'),
     CSharpExtArtifact('linux', 'x64'),
     CSharpExtArtifact('macos', 'x86'),
     CSharpExtArtifact('macos', 'x64'),
