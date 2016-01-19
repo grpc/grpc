@@ -73,7 +73,7 @@ class Server GRPC_FINAL : public ServerInterface,
   ///
   /// \warning The server must be either shutting down or some other thread must
   /// call \a Shutdown for this function to ever return.
-  void Wait() override;
+  void Wait() GRPC_OVERRIDE;
 
   /// Global Callbacks
   ///
@@ -116,16 +116,16 @@ class Server GRPC_FINAL : public ServerInterface,
 
   /// Register a service. This call does not take ownership of the service.
   /// The service must exist for the lifetime of the Server instance.
-  bool RegisterService(const grpc::string* host, RpcService* service) override;
+  bool RegisterService(const grpc::string* host, RpcService* service) GRPC_OVERRIDE;
 
   /// Register an asynchronous service. This call does not take ownership of the
   /// service. The service must exist for the lifetime of the Server instance.
   bool RegisterAsyncService(const grpc::string* host,
-                            AsynchronousService* service) override;
+                            AsynchronousService* service) GRPC_OVERRIDE;
 
   /// Register a generic service. This call does not take ownership of the
   /// service. The service must exist for the lifetime of the Server instance.
-  void RegisterAsyncGenericService(AsyncGenericService* service) override;
+  void RegisterAsyncGenericService(AsyncGenericService* service) GRPC_OVERRIDE;
 
   /// Tries to bind \a server to the given \a addr.
   ///
@@ -138,7 +138,7 @@ class Server GRPC_FINAL : public ServerInterface,
   /// \return bound port number on sucess, 0 on failure.
   ///
   /// \warning It's an error to call this method on an already started server.
-  int AddListeningPort(const grpc::string& addr, ServerCredentials* creds) override;
+  int AddListeningPort(const grpc::string& addr, ServerCredentials* creds) GRPC_OVERRIDE;
 
   /// Start the server.
   ///
@@ -148,21 +148,21 @@ class Server GRPC_FINAL : public ServerInterface,
   /// \param num_cqs How many completion queues does \a cqs hold.
   ///
   /// \return true on a successful shutdown.
-  bool Start(ServerCompletionQueue** cqs, size_t num_cqs) override;
+  bool Start(ServerCompletionQueue** cqs, size_t num_cqs) GRPC_OVERRIDE;
 
   /// Process one or more incoming calls.
-  void RunRpc() override;
+  void RunRpc() GRPC_OVERRIDE;
 
   /// Schedule \a RunRpc to run in the threadpool.
-  void ScheduleCallback() override;
+  void ScheduleCallback() GRPC_OVERRIDE;
 
   void PerformOpsOnCall(CallOpSetInterface* ops, Call* call) GRPC_OVERRIDE;
 
-  void ShutdownInternal(gpr_timespec deadline) override;
+  void ShutdownInternal(gpr_timespec deadline) GRPC_OVERRIDE;
 
-  int max_message_size() const override { return max_message_size_; };
+  int max_message_size() const GRPC_OVERRIDE { return max_message_size_; };
 
-  grpc_server* server() override { return server_; };
+  grpc_server* server() GRPC_OVERRIDE { return server_; };
 
   const int max_message_size_;
 

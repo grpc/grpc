@@ -63,6 +63,7 @@ class ClientAsyncResponseReader;
 /// Codegen interface for \a grpc::Channel.
 class ChannelInterface {
  public:
+  virtual ~ChannelInterface() {}
   /// Get the current channel state. If the channel is in IDLE and
   /// \a try_to_connect is set to true, try to connect.
   virtual grpc_connectivity_state GetState(bool try_to_connect) = 0;

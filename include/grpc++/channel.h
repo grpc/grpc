@@ -55,7 +55,7 @@ class Channel GRPC_FINAL : public ChannelInterface,
 
   /// Get the current channel state. If the channel is in IDLE and
   /// \a try_to_connect is set to true, try to connect.
-  grpc_connectivity_state GetState(bool try_to_connect) override;
+  grpc_connectivity_state GetState(bool try_to_connect) GRPC_OVERRIDE;
 
  private:
   template <class InputMessage, class OutputMessage>
@@ -68,15 +68,15 @@ class Channel GRPC_FINAL : public ChannelInterface,
   Channel(const grpc::string& host, grpc_channel* c_channel);
 
   Call CreateCall(const RpcMethod& method, ClientContext* context,
-                  CompletionQueue* cq) override;
-  void PerformOpsOnCall(CallOpSetInterface* ops, Call* call) override;
-  void* RegisterMethod(const char* method) override;
+                  CompletionQueue* cq) GRPC_OVERRIDE;
+  void PerformOpsOnCall(CallOpSetInterface* ops, Call* call) GRPC_OVERRIDE;
+  void* RegisterMethod(const char* method) GRPC_OVERRIDE;
 
   void NotifyOnStateChangeImpl(grpc_connectivity_state last_observed,
                                gpr_timespec deadline, CompletionQueue* cq,
-                               void* tag) override;
+                               void* tag) GRPC_OVERRIDE;
   bool WaitForStateChangeImpl(grpc_connectivity_state last_observed,
-                              gpr_timespec deadline) override;
+                              gpr_timespec deadline) GRPC_OVERRIDE;
 
   const grpc::string host_;
   grpc_channel* const c_channel_;  // owned
