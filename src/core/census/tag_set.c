@@ -30,10 +30,6 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
-/*
-- comment about key/value ptrs being to mem
-- add comment about encode/decode being for RPC use only.
-*/
 
 #include <grpc/census.h>
 #include <grpc/support/alloc.h>
@@ -65,10 +61,10 @@
 //   that can be directly copied to the wire. This makes iteration by index
 //   somewhat less efficient. If it becomes a problem, we could consider
 //   building an index at tag_set creation.
-// * Binary tags are encoded seperately from non-binary tags. There are a
-//   primarily because non-binary tags are far more likely to be repeated
-//   across multiple RPC calls, so are more efficiently cached and
-//   compressed in any metadata schemes.
+// * Binary tags share the same structure as, but are encoded seperately from,
+//   non-binary tags. This is primarily because non-binary tags are far more
+//   likely to be repeated across multiple RPC calls, so are more efficiently
+//   cached and compressed in any metadata schemes.
 // * all lengths etc. are restricted to one byte. This eliminates endian
 //   issues.
 
@@ -108,7 +104,7 @@ struct raw_tag {
   char *value;
 };
 
-// use reserved flag bit for indication of deleted tag.
+// Use a reserved flag bit for indication of deleted tag.
 #define CENSUS_TAG_DELETED CENSUS_TAG_RESERVED
 #define CENSUS_TAG_IS_DELETED(flags) (flags & CENSUS_TAG_DELETED)
 
@@ -125,8 +121,8 @@ struct census_tag_set {
 #define LOCAL_TAGS 2
 
 // Extract a raw tag given a pointer (raw) to the tag header. Allow for some
-// extra bytes in the tag header (see encode/decode for usage: allows for
-// future expansion of the tag header).
+// extra bytes in the tag header (see encode/decode functions for usage: this
+// allows for future expansion of the tag header).
 static char *decode_tag(struct raw_tag *tag, char *header, int offset) {
   tag->key_len = (uint8_t)(*header++);
   tag->value_len = (uint8_t)(*header++);
@@ -145,7 +141,7 @@ static void tag_set_copy(struct tag_set *to, const struct tag_set *from) {
   memcpy(to->kvm, from->kvm, to->kvm_used);
 }
 
-// Delete a tag from a tag set, if it exists (returns true it it did).
+// Delete a tag from a tag_set, if it exists (returns true it it did).
 static bool tag_set_delete_tag(struct tag_set *tags, const char *key,
                                size_t key_len) {
   char *kvp = tags->kvm;
@@ -163,7 +159,7 @@ static bool tag_set_delete_tag(struct tag_set *tags, const char *key,
   return false;
 }
 
-// Delete a tag from a tag set, return true if it existed.
+// Delete a tag from a census_tag_set, return true if it existed.
 static bool cts_delete_tag(census_tag_set *tags, const census_tag *tag,
                            size_t key_len) {
   return (tag_set_delete_tag(&tags->tags[LOCAL_TAGS], tag->key, key_len) ||
@@ -172,8 +168,8 @@ static bool cts_delete_tag(census_tag_set *tags, const census_tag *tag,
                              key_len));
 }
 
-// Add a tag to a tag set. Return true on sucess, false if the tag could
-// not be added because of tag size constraints.
+// Add a tag to a tag_set. Return true on sucess, false if the tag could
+// not be added because of constraints on tag set size.
 static bool tag_set_add_tag(struct tag_set *tags, const census_tag *tag,
                             size_t key_len) {
   if (tags->ntags == CENSUS_MAX_PROPAGATED_TAGS) {
@@ -203,11 +199,14 @@ static bool tag_set_add_tag(struct tag_set *tags, const census_tag *tag,
   return true;
 }
 
-// Add a tag to a census_tag_set.
-static void cts_add_tag(census_tag_set *tags, const census_tag *tag,
-                        size_t key_len, census_tag_set_create_status *status) {
-  // first delete the tag if it is already present
+// Add/modify/delete a tag to/in a census_tag_set. Caller must validate that
+// tag key etc. are valid.
+static void cts_modify_tag(census_tag_set *tags, const census_tag *tag,
+                           size_t key_len,
+                           census_tag_set_create_status *status) {
+  // First delete the tag if it is already present.
   bool deleted = cts_delete_tag(tags, tag, key_len);
+  // Determine if we need to add it back.
   bool call_add = tag->value != NULL && tag->value_len != 0;
   bool added = false;
   if (call_add) {
@@ -239,7 +238,7 @@ static void cts_add_tag(census_tag_set *tags, const census_tag *tag,
   }
 }
 
-// Remove any deleted tags from the tag set. Basic algorithm:
+// Remove memory used for deleted tags from the tag set. Basic algorithm:
 // 1) Walk through tag set to find first deleted tag. Record where it is.
 // 2) Find the next not-deleted tag. Copy all of kvm from there to the end
 //    "over" the deleted tags
@@ -289,6 +288,8 @@ census_tag_set *census_tag_set_create(const census_tag_set *base,
     memset(status, 0, sizeof(*status));
   }
   census_tag_set *new_ts = gpr_malloc(sizeof(census_tag_set));
+  // If we are given a base, copy it into our new tag set. Otherwise set it
+  // to zero/NULL everything.
   if (base == NULL) {
     memset(new_ts, 0, sizeof(census_tag_set));
   } else {
@@ -297,17 +298,20 @@ census_tag_set *census_tag_set_create(const census_tag_set *base,
                  &base->tags[PROPAGATED_BINARY_TAGS]);
     tag_set_copy(&new_ts->tags[LOCAL_TAGS], &base->tags[LOCAL_TAGS]);
   }
+  // Walk over the additional tags and, for those that aren't invalid, modify
+  // the tag set to add/replace/delete as required.
   for (int i = 0; i < ntags; i++) {
     const census_tag *tag = &tags[i];
     size_t key_len = strlen(tag->key) + 1;
     // ignore the tag if it is too long/short.
     if (key_len != 1 && key_len <= CENSUS_MAX_TAG_KV_LEN &&
         tag->value_len <= CENSUS_MAX_TAG_KV_LEN) {
-      cts_add_tag(new_ts, tag, key_len, status);
+      cts_modify_tag(new_ts, tag, key_len, status);
     } else {
       n_invalid_tags++;
     }
   }
+  // Remove any deleted tags, update status if needed, and return.
   tag_set_flatten(&new_ts->tags[PROPAGATED_TAGS]);
   tag_set_flatten(&new_ts->tags[PROPAGATED_BINARY_TAGS]);
   tag_set_flatten(&new_ts->tags[LOCAL_TAGS]);
@@ -334,8 +338,8 @@ int census_tag_set_ntags(const census_tag_set *tags) {
          tags->tags[LOCAL_TAGS].ntags;
 }
 
-/* Initialize a tag set iterator. Must be called before first use of the
-   iterator. */
+// Initialize a tag set iterator. Must be called before first use of the
+// iterator.
 void census_tag_set_initialize_iterator(const census_tag_set *tags,
                                         census_tag_set_iterator *iterator) {
   iterator->tags = tags;
@@ -354,9 +358,9 @@ void census_tag_set_initialize_iterator(const census_tag_set *tags,
   }
 }
 
-/* Get the contents of the "next" tag in the tag set. If there are no more
-   tags in the tag set, returns 0 (and 'tag' contents will be unchanged),
-   otherwise returns 1. */
+// Get the contents of the "next" tag in the tag set. If there are no more
+// tags in the tag set, returns 0 (and 'tag' contents will be unchanged),
+// otherwise returns 1. */
 int census_tag_set_next_tag(census_tag_set_iterator *iterator,
                             census_tag *tag) {
   if (iterator->base < 0) {

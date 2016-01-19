@@ -329,18 +329,25 @@ void census_trace_scan_end();
    a tag set. All contexts have an associated tag set. */
 typedef struct census_tag_set census_tag_set;
 
-/* A tag is a key:value pair. The key is a non-empty, printable, nil-terminated
-   string. The value is a binary string, that may be printable. There are no
-   limits on the sizes of either keys or values, but code authors should
-   remember that systems may have inbuilt limits (e.g. for propagated tags,
-   the bytes on the wire) and that larger tags means more memory consumed and
-   time in processing. */
+/* A tag is a key:value pair. The key is a non-empty, printable (UTF-8
+   encoded), nil-terminated string. The value is a binary string, that may be
+   printable. There are limits on the sizes of both keys and values (see
+   CENSUS_MAX_TAG_KB_LEN definition below), and the number of tags that can be
+   propagated (CENSUS_MAX_PROPAGATED_TAGS). Users should also remember that
+   some systems may have limits on, e.g., the number of bytes that can be
+   transmitted as metadata, and that larger tags means more memory consumed
+   and time in processing. */
 typedef struct {
   const char *key;
   const char *value;
   size_t value_len;
   uint8_t flags;
 } census_tag;
+
+/* Maximum length of a tag's key or value. */
+#define CENSUS_MAX_TAG_KV_LEN 255
+/* Maximum number of propagatable tags. */
+#define CENSUS_MAX_PROPAGATED_TAGS 255
 
 /* Tag flags. */
 #define CENSUS_TAG_PROPAGATE 1 /* Tag should be propagated over RPC */
@@ -353,11 +360,6 @@ typedef struct {
 #define CENSUS_TAG_IS_PROPAGATED(flags) (flags & CENSUS_TAG_PROPAGATE)
 #define CENSUS_TAG_IS_STATS(flags) (flags & CENSUS_TAG_STATS)
 #define CENSUS_TAG_IS_BINARY(flags) (flags & CENSUS_TAG_BINARY)
-
-/* Maximum length of key/value in a tag. */
-#define CENSUS_MAX_TAG_KV_LEN 255
-/* Maximum number of propagatable tags. */
-#define CENSUS_MAX_PROPAGATED_TAGS 255
 
 typedef struct {
   int n_propagated_tags;        /* number of propagated printable tags */
