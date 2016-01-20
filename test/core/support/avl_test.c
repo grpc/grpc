@@ -3611,32 +3611,33 @@ static void test_badcase3(void) {
   gpr_avl_unref(avl);
 }
 
-static void test_stress(void) {
+static void test_stress(int amount_of_stress) {
   int added[1024];
   int i, j;
   int deletions = 0;
   gpr_avl avl;
 
-  gpr_log(GPR_DEBUG, "test_stress");
+  unsigned seed = (unsigned)time(NULL);
+
+  gpr_log(GPR_DEBUG, "test_stress amount=%d seed=%u", amount_of_stress, seed);
 
   srand((unsigned)time(NULL));
   avl = gpr_avl_create(&int_int_vtable);
 
   memset(added, 0, sizeof(added));
 
-  for (i = 1; deletions < 1000; i++) {
+  for (i = 1; deletions < amount_of_stress; i++) {
     int idx = rand() % (int)GPR_ARRAY_SIZE(added);
     GPR_ASSERT(i);
     if (rand() < RAND_MAX / 2) {
       added[idx] = i;
-      fprintf(stderr, "avl = gpr_avl_add(avl, box(%d), box(%d)); /* d=%d */\n",
-              idx, i, deletions);
+      printf("avl = gpr_avl_add(avl, box(%d), box(%d)); /* d=%d */\n", idx, i,
+             deletions);
       avl = gpr_avl_add(avl, box(idx), box(i));
     } else {
       deletions += (added[idx] != 0);
       added[idx] = 0;
-      fprintf(stderr, "avl = remove_int(avl, %d); /* d=%d */\n", idx,
-              deletions);
+      printf("avl = remove_int(avl, %d); /* d=%d */\n", idx, deletions);
       avl = remove_int(avl, idx);
     }
     for (j = 0; j < (int)GPR_ARRAY_SIZE(added); j++) {
@@ -3665,7 +3666,7 @@ int main(int argc, char *argv[]) {
   test_badcase1();
   test_badcase2();
   test_badcase3();
-  test_stress();
+  test_stress(10);
 
   return 0;
 }
