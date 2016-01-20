@@ -137,7 +137,7 @@ static int is_all_whitespace(const char *p) {
 }
 
 int grpc_chttp2_decode_timeout(const char *buffer, gpr_timespec *timeout) {
-  uint32_t x = 0;
+  int32_t x = 0;
   const uint8_t *p = (const uint8_t *)buffer;
   int have_digit = 0;
   /* skip whitespace */
@@ -145,13 +145,16 @@ int grpc_chttp2_decode_timeout(const char *buffer, gpr_timespec *timeout) {
     ;
   /* decode numeric part */
   for (; *p >= '0' && *p <= '9'; p++) {
-    uint32_t xp = x * 10u + (uint32_t)*p - (uint32_t)'0';
+    int32_t digit = (int32_t)(*p - (uint8_t)'0');
     have_digit = 1;
-    if (xp < x) {
-      *timeout = gpr_inf_future(GPR_CLOCK_REALTIME);
-      return 1;
+    /* spec allows max. 8 digits, but we allow values up to 1,000,000,000 */
+    if (x >= (100 * 1000 * 1000)) {
+      if (x != (100 * 1000 * 1000) || digit != 0) {
+        *timeout = gpr_inf_future(GPR_CLOCK_REALTIME);
+        return 1;
+      }
     }
-    x = xp;
+    x = x * 10 + digit;
   }
   if (!have_digit) return 0;
   /* skip whitespace */
