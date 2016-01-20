@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -126,8 +126,13 @@ void test_decoding(void) {
   decode_suite('S', gpr_time_from_seconds);
   decode_suite('M', gpr_time_from_minutes);
   decode_suite('H', gpr_time_from_hours);
+  assert_decodes_as("1000000000S",
+                    gpr_time_from_seconds(1000 * 1000 * 1000, GPR_TIMESPAN));
   assert_decodes_as("1000000000000000000000u",
                     gpr_inf_future(GPR_CLOCK_REALTIME));
+  assert_decodes_as("1000000001S", gpr_inf_future(GPR_CLOCK_REALTIME));
+  assert_decodes_as("2000000001S", gpr_inf_future(GPR_CLOCK_REALTIME));
+  assert_decodes_as("9999999999S", gpr_inf_future(GPR_CLOCK_REALTIME));
 }
 
 void test_decoding_fails(void) {
