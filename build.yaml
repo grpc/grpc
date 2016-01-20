@@ -1876,6 +1876,7 @@ targets:
   - gpr_test_util
   - gpr
 - name: client_crash_test
+  cpu_cost: 0.1
   build: test
   language: c++
   src:
@@ -1954,6 +1955,7 @@ targets:
   - gpr_test_util
   - gpr
 - name: end2end_test
+  cpu_cost: 0.5
   build: test
   language: c++
   src:
@@ -2097,6 +2099,7 @@ targets:
   - linux
   - posix
 - name: interop_test
+  cpu_cost: 0.1
   build: test
   language: c++
   src:
@@ -2188,6 +2191,7 @@ targets:
   - linux
   - posix
 - name: qps_test
+  cpu_cost: 10
   build: test
   language: c++
   src:
@@ -2290,6 +2294,7 @@ targets:
   - linux
   - posix
 - name: server_crash_test
+  cpu_cost: 0.1
   build: test
   language: c++
   src:
@@ -2418,6 +2423,7 @@ targets:
   - linux
   - posix
 - name: thread_stress_test
+  cpu_cost: 100
   build: test
   language: c++
   src:
