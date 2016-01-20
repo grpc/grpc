@@ -122,7 +122,7 @@ void grpc_call_credentials_get_request_metadata(
     grpc_credentials_metadata_cb cb, void *user_data) {
   if (creds == NULL || creds->vtable->get_request_metadata == NULL) {
     if (cb != NULL) {
-      cb(exec_ctx, user_data, NULL, 0, GRPC_CREDENTIALS_OK);
+      cb(exec_ctx, user_data, NULL, 0, GRPC_CREDENTIALS_OK, NULL);
     }
     return;
   }
@@ -497,10 +497,10 @@ static void jwt_get_request_metadata(grpc_exec_ctx *exec_ctx,
 
   if (jwt_md != NULL) {
     cb(exec_ctx, user_data, jwt_md->entries, jwt_md->num_entries,
-       GRPC_CREDENTIALS_OK);
+       GRPC_CREDENTIALS_OK, NULL);
     grpc_credentials_md_store_unref(jwt_md);
   } else {
-    cb(exec_ctx, user_data, NULL, 0, GRPC_CREDENTIALS_ERROR);
+    cb(exec_ctx, user_data, NULL, 0, GRPC_CREDENTIALS_ERROR, "");
   }
 }
 
@@ -660,10 +660,10 @@ static void on_oauth2_token_fetcher_http_response(
     c->token_expiration =
         gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), token_lifetime);
     r->cb(exec_ctx, r->user_data, c->access_token_md->entries,
-          c->access_token_md->num_entries, status);
+          c->access_token_md->num_entries, status, NULL);
   } else {
     c->token_expiration = gpr_inf_past(GPR_CLOCK_REALTIME);
-    r->cb(exec_ctx, r->user_data, NULL, 0, status);
+    r->cb(exec_ctx, r->user_data, NULL, 0, status, "");
   }
   gpr_mu_unlock(&c->mu);
   grpc_credentials_metadata_request_destroy(r);
@@ -691,7 +691,7 @@ static void oauth2_token_fetcher_get_request_metadata(
   }
   if (cached_access_token_md != NULL) {
     cb(exec_ctx, user_data, cached_access_token_md->entries,
-       cached_access_token_md->num_entries, GRPC_CREDENTIALS_OK);
+       cached_access_token_md->num_entries, GRPC_CREDENTIALS_OK, NULL);
     grpc_credentials_md_store_unref(cached_access_token_md);
   } else {
     c->fetch_func(
@@ -821,7 +821,7 @@ static void on_simulated_token_fetch_done(grpc_exec_ctx *exec_ctx,
       (grpc_credentials_metadata_request *)user_data;
   grpc_md_only_test_credentials *c = (grpc_md_only_test_credentials *)r->creds;
   r->cb(exec_ctx, r->user_data, c->md_store->entries, c->md_store->num_entries,
-        GRPC_CREDENTIALS_OK);
+        GRPC_CREDENTIALS_OK, NULL);
   grpc_credentials_metadata_request_destroy(r);
 }
 
@@ -837,7 +837,7 @@ static void md_only_test_get_request_metadata(
     grpc_executor_enqueue(
         grpc_closure_create(on_simulated_token_fetch_done, cb_arg), true);
   } else {
-    cb(exec_ctx, user_data, c->md_store->entries, 1, GRPC_CREDENTIALS_OK);
+    cb(exec_ctx, user_data, c->md_store->entries, 1, GRPC_CREDENTIALS_OK, NULL);
   }
 }
 
@@ -870,7 +870,8 @@ static void access_token_get_request_metadata(
     grpc_pollset *pollset, grpc_auth_metadata_context context,
     grpc_credentials_metadata_cb cb, void *user_data) {
   grpc_access_token_credentials *c = (grpc_access_token_credentials *)creds;
-  cb(exec_ctx, user_data, c->access_token_md->entries, 1, GRPC_CREDENTIALS_OK);
+  cb(exec_ctx, user_data, c->access_token_md->entries, 1, GRPC_CREDENTIALS_OK,
+     NULL);
 }
 
 static grpc_call_credentials_vtable access_token_vtable = {
@@ -973,11 +974,12 @@ static void composite_call_md_context_destroy(
 static void composite_call_metadata_cb(grpc_exec_ctx *exec_ctx, void *user_data,
                                        grpc_credentials_md *md_elems,
                                        size_t num_md,
-                                       grpc_credentials_status status) {
+                                       grpc_credentials_status status,
+                                       const char *error_details) {
   grpc_composite_call_credentials_metadata_context *ctx =
       (grpc_composite_call_credentials_metadata_context *)user_data;
   if (status != GRPC_CREDENTIALS_OK) {
-    ctx->cb(exec_ctx, ctx->user_data, NULL, 0, status);
+    ctx->cb(exec_ctx, ctx->user_data, NULL, 0, status, NULL);
     return;
   }
 
@@ -1002,7 +1004,7 @@ static void composite_call_metadata_cb(grpc_exec_ctx *exec_ctx, void *user_data,
 
   /* We're done!. */
   ctx->cb(exec_ctx, ctx->user_data, ctx->md_elems->entries,
-          ctx->md_elems->num_entries, GRPC_CREDENTIALS_OK);
+          ctx->md_elems->num_entries, GRPC_CREDENTIALS_OK, NULL);
   composite_call_md_context_destroy(ctx);
 }
 
@@ -1122,7 +1124,7 @@ static void iam_get_request_metadata(grpc_exec_ctx *exec_ctx,
                                      void *user_data) {
   grpc_google_iam_credentials *c = (grpc_google_iam_credentials *)creds;
   cb(exec_ctx, user_data, c->iam_md->entries, c->iam_md->num_entries,
-     GRPC_CREDENTIALS_OK);
+     GRPC_CREDENTIALS_OK, NULL);
 }
 
 static grpc_call_credentials_vtable iam_vtable = {iam_destruct,
@@ -1178,7 +1180,8 @@ static void plugin_md_request_metadata_ready(void *request,
       gpr_log(GPR_ERROR, "Getting metadata from plugin failed with error: %s",
               error_details);
     }
-    r->cb(&exec_ctx, r->user_data, NULL, 0, GRPC_CREDENTIALS_ERROR);
+    r->cb(&exec_ctx, r->user_data, NULL, 0, GRPC_CREDENTIALS_ERROR,
+          error_details);
   } else {
     size_t i;
     grpc_credentials_md *md_array = NULL;
@@ -1190,7 +1193,7 @@ static void plugin_md_request_metadata_ready(void *request,
             gpr_slice_from_copied_buffer(md[i].value, md[i].value_length);
       }
     }
-    r->cb(&exec_ctx, r->user_data, md_array, num_md, GRPC_CREDENTIALS_OK);
+    r->cb(&exec_ctx, r->user_data, md_array, num_md, GRPC_CREDENTIALS_OK, NULL);
     if (md_array != NULL) {
       for (i = 0; i < num_md; i++) {
         gpr_slice_unref(md_array[i].key);
@@ -1218,7 +1221,7 @@ static void plugin_get_request_metadata(grpc_exec_ctx *exec_ctx,
     c->plugin.get_metadata(c->plugin.state, context,
                            plugin_md_request_metadata_ready, request);
   } else {
-    cb(exec_ctx, user_data, NULL, 0, GRPC_CREDENTIALS_OK);
+    cb(exec_ctx, user_data, NULL, 0, GRPC_CREDENTIALS_OK, NULL);
   }
 }
 

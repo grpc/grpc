@@ -53,7 +53,8 @@ typedef struct {
 
 static void on_oauth2_response(grpc_exec_ctx *exec_ctx, void *user_data,
                                grpc_credentials_md *md_elems, size_t num_md,
-                               grpc_credentials_status status) {
+                               grpc_credentials_status status,
+                               const char *error_details) {
   oauth2_request *request = user_data;
   char *token = NULL;
   gpr_slice token_slice;

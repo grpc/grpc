@@ -98,7 +98,8 @@ static void bubble_up_error(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
 static void on_credentials_metadata(grpc_exec_ctx *exec_ctx, void *user_data,
                                     grpc_credentials_md *md_elems,
                                     size_t num_md,
-                                    grpc_credentials_status status) {
+                                    grpc_credentials_status status,
+                                    const char *error_details) {
   grpc_call_element *elem = (grpc_call_element *)user_data;
   call_data *calld = elem->call_data;
   grpc_transport_stream_op *op = &calld->op;
