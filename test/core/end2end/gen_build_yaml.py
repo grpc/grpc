@@ -1,5 +1,5 @@
 #!/usr/bin/env python2.7
-# Copyright 2015, Google Inc.
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -77,40 +77,42 @@ END2END_FIXTURES = {
 }
 
 TestOptions = collections.namedtuple(
-    'TestOptions', 'needs_fullstack needs_dns proxyable secure traceable')
-default_test_options = TestOptions(False, False, True, False, True)
+    'TestOptions', 'needs_fullstack needs_dns proxyable secure traceable cpu_cost')
+default_test_options = TestOptions(False, False, True, False, True, 1.0)
 connectivity_test_options = default_test_options._replace(needs_fullstack=True)
+
+LOWCPU = 0.1
 
 # maps test names to options
 END2END_TESTS = {
     'bad_hostname': default_test_options,
     'binary_metadata': default_test_options,
     'call_creds': default_test_options._replace(secure=True),
-    'cancel_after_accept': default_test_options,
-    'cancel_after_client_done': default_test_options,
-    'cancel_after_invoke': default_test_options,
-    'cancel_before_invoke': default_test_options,
-    'cancel_in_a_vacuum': default_test_options,
-    'cancel_with_status': default_test_options,
-    'channel_connectivity': connectivity_test_options._replace(proxyable=False),
+    'cancel_after_accept': default_test_options._replace(cpu_cost=LOWCPU),
+    'cancel_after_client_done': default_test_options._replace(cpu_cost=LOWCPU),
+    'cancel_after_invoke': default_test_options._replace(cpu_cost=LOWCPU),
+    'cancel_before_invoke': default_test_options._replace(cpu_cost=LOWCPU),
+    'cancel_in_a_vacuum': default_test_options._replace(cpu_cost=LOWCPU),
+    'cancel_with_status': default_test_options._replace(cpu_cost=LOWCPU),
+    'channel_connectivity': connectivity_test_options._replace(proxyable=False, cpu_cost=LOWCPU),
     'channel_ping': connectivity_test_options._replace(proxyable=False),
-    'compressed_payload': default_test_options._replace(proxyable=False),
+    'compressed_payload': default_test_options._replace(proxyable=False, cpu_cost=LOWCPU),
     'default_host': default_test_options._replace(needs_fullstack=True,
                                                   needs_dns=True),
     'disappearing_server': connectivity_test_options,
     'empty_batch': default_test_options,
-    'graceful_server_shutdown': default_test_options,
+    'graceful_server_shutdown': default_test_options._replace(cpu_cost=LOWCPU),
     'hpack_size': default_test_options._replace(proxyable=False,
                                                 traceable=False),
     'high_initial_seqno': default_test_options,
     'invoke_large_request': default_test_options,
     'large_metadata': default_test_options,
     'max_concurrent_streams': default_test_options._replace(proxyable=False),
-    'max_message_length': default_test_options,
+    'max_message_length': default_test_options._replace(cpu_cost=LOWCPU),
     'metadata': default_test_options,
     'negative_deadline': default_test_options,
     'no_op': default_test_options,
-    'payload': default_test_options,
+    'payload': default_test_options._replace(cpu_cost=LOWCPU),
     'ping_pong_streaming': default_test_options,
     'registered_call': default_test_options,
     'request_with_flags': default_test_options._replace(proxyable=False),
@@ -118,7 +120,7 @@ END2END_TESTS = {
     'server_finishes_request': default_test_options,
     'shutdown_finishes_calls': default_test_options,
     'shutdown_finishes_tags': default_test_options,
-    'simple_delayed_request': connectivity_test_options,
+    'simple_delayed_request': connectivity_test_options._replace(cpu_cost=LOWCPU),
     'simple_request': default_test_options,
     'trailing_metadata': default_test_options,
 }
@@ -252,12 +254,13 @@ def main():
                                    END2END_FIXTURES[f].platforms, 'mac')),
               'flaky': False,
               'language': 'c',
+              'cpu_cost': END2END_TESTS[t].cpu_cost,
           }
           for f in sorted(END2END_FIXTURES.keys())
           for t in sorted(END2END_TESTS.keys()) if compatible(f, t)
       ] + [
           {
-              'name': '%s_test' % f,
+              'name': '%s_nosec_test' % f,
               'args': [t],
               'exclude_configs': [],
               'platforms': END2END_FIXTURES[f].platforms,
@@ -266,6 +269,7 @@ def main():
                                    END2END_FIXTURES[f].platforms, 'mac')),
               'flaky': False,
               'language': 'c',
+              'cpu_cost': END2END_TESTS[t].cpu_cost,
           }
           for f in sorted(END2END_FIXTURES.keys())
           if not END2END_FIXTURES[f].secure

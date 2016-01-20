@@ -150,13 +150,13 @@
     <ClInclude Include="$(SolutionDir)\..\test\cpp\interop\client_helper.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="$(SolutionDir)\..\test\proto\messages.pb.cc">
+    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\messages.pb.cc">
     </ClCompile>
-    <ClInclude Include="$(SolutionDir)\..\test\proto\messages.pb.h">
+    <ClInclude Include="$(SolutionDir)\..\src\proto\grpc\testing\messages.pb.h">
     </ClInclude>
-    <ClCompile Include="$(SolutionDir)\..\test\proto\messages.grpc.pb.cc">
+    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\messages.grpc.pb.cc">
     </ClCompile>
-    <ClInclude Include="$(SolutionDir)\..\test\proto\messages.grpc.pb.h">
+    <ClInclude Include="$(SolutionDir)\..\src\proto\grpc\testing\messages.grpc.pb.h">
     </ClInclude>
     <ClCompile Include="$(SolutionDir)\..\test\cpp\interop\client_helper.cc">
     </ClCompile>
