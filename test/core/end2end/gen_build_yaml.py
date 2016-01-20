@@ -81,7 +81,7 @@ TestOptions = collections.namedtuple(
 default_test_options = TestOptions(False, False, True, False, True, 1.0)
 connectivity_test_options = default_test_options._replace(needs_fullstack=True)
 
-LOWCPU = 0.01
+LOWCPU = 0.1
 
 # maps test names to options
 END2END_TESTS = {
@@ -94,26 +94,25 @@ END2END_TESTS = {
     'cancel_before_invoke': default_test_options._replace(cpu_cost=LOWCPU),
     'cancel_in_a_vacuum': default_test_options._replace(cpu_cost=LOWCPU),
     'cancel_with_status': default_test_options._replace(cpu_cost=LOWCPU),
-    'channel_connectivity': connectivity_test_options._replace(proxyable=False),
+    'channel_connectivity': connectivity_test_options._replace(proxyable=False, cpu_cost=LOWCPU),
     'channel_ping': connectivity_test_options._replace(proxyable=False),
-    'compressed_payload': default_test_options._replace(proxyable=False),
+    'compressed_payload': default_test_options._replace(proxyable=False, cpu_cost=LOWCPU),
     'default_host': default_test_options._replace(needs_fullstack=True,
                                                   needs_dns=True),
     'disappearing_server': connectivity_test_options,
     'empty_batch': default_test_options,
-    'graceful_server_shutdown': default_test_options,
+    'graceful_server_shutdown': default_test_options._replace(cpu_cost=LOWCPU),
     'hpack_size': default_test_options._replace(proxyable=False,
-                                                traceable=False,
-                                                cpu_cost=2.0),
+                                                traceable=False),
     'high_initial_seqno': default_test_options,
     'invoke_large_request': default_test_options,
     'large_metadata': default_test_options,
     'max_concurrent_streams': default_test_options._replace(proxyable=False),
-    'max_message_length': default_test_options,
+    'max_message_length': default_test_options._replace(cpu_cost=LOWCPU),
     'metadata': default_test_options,
     'negative_deadline': default_test_options,
     'no_op': default_test_options,
-    'payload': default_test_options,
+    'payload': default_test_options._replace(cpu_cost=LOWCPU),
     'ping_pong_streaming': default_test_options,
     'registered_call': default_test_options,
     'request_with_flags': default_test_options._replace(proxyable=False),
@@ -121,7 +120,7 @@ END2END_TESTS = {
     'server_finishes_request': default_test_options,
     'shutdown_finishes_calls': default_test_options,
     'shutdown_finishes_tags': default_test_options,
-    'simple_delayed_request': connectivity_test_options,
+    'simple_delayed_request': connectivity_test_options._replace(cpu_cost=LOWCPU),
     'simple_request': default_test_options,
     'trailing_metadata': default_test_options,
 }
