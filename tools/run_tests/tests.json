@@ -539,7 +539,7 @@
       "posix", 
       "windows"
     ], 
-    "cpu_cost": 2, 
+    "cpu_cost": 10, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 

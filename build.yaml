@@ -1121,7 +1121,7 @@ targets:
   - gpr_test_util
   - gpr
 - name: gpr_stack_lockfree_test
-  cpu_cost: 2
+  cpu_cost: 10
   build: test
   language: c
   src:

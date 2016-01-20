@@ -285,7 +285,7 @@ class Job(object):
           sys = float(m.group(3))
           if real > 0.5:
             cores = (user + sys) / real
-            measurement = '; cpu_cost=%.01f' % cores
+            measurement = '; cpu_cost=%.01f; estimated=%.01f' % (cores, self._spec.cpu_cost)
         message('PASSED', '%s [time=%.1fsec; retries=%d:%d%s]' % (
                     self._spec.shortname, elapsed, self._retries, self._timeout_retries, measurement),
             do_newline=self._newline_on_success or self._travis)
