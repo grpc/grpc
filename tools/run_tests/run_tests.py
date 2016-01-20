@@ -97,7 +97,7 @@ class SimpleConfig(object):
                           shortname=shortname,
                           environ=actual_environ,
                           cpu_cost=cpu_cost,
-                          timeout_seconds=self.timeout_multiplier * timeout_seconds,
+                          timeout_seconds=(self.timeout_multiplier * timeout_seconds if timeout_seconds else None),
                           hash_targets=hash_targets
                               if self.allow_hashing else None,
                           flake_retries=5 if args.allow_flakes else 0,
@@ -444,8 +444,10 @@ class ObjCLanguage(object):
 class Sanity(object):
 
   def test_specs(self, config, args):
-    return [config.job_spec(['tools/run_tests/run_sanity.sh'], None, timeout_seconds=15*60),
-            config.job_spec(['tools/run_tests/check_sources_and_headers.py'], None)]
+    import yaml
+    with open('tools/run_tests/sanity_tests.yaml', 'r') as f:
+      return [config.job_spec([cmd['script']], None, timeout_seconds=None, environ={'TEST': 'true'}, cpu_cost=cmd.get('cpu_cost', 1))
+              for cmd in yaml.load(f)]
 
   def pre_build_steps(self):
     return []
