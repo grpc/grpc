@@ -69,6 +69,7 @@ struct census_context;
 namespace grpc {
 
 class Channel;
+class ChannelInterface;
 class CompletionQueue;
 class CallCredentials;
 class RpcMethod;
@@ -315,7 +316,7 @@ class ClientContext {
   template <class R>
   friend class ::grpc::ClientAsyncResponseReader;
   template <class InputMessage, class OutputMessage>
-  friend Status BlockingUnaryCall(Channel* channel, const RpcMethod& method,
+  friend Status BlockingUnaryCall(ChannelInterface* channel, const RpcMethod& method,
                                   ClientContext* context,
                                   const InputMessage& request,
                                   OutputMessage* result);

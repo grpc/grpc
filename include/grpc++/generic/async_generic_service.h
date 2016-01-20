@@ -51,6 +51,7 @@ class GenericServerContext GRPC_FINAL : public ServerContext {
 
  private:
   friend class Server;
+  friend class ServerInterface;
 
   grpc::string method_;
   grpc::string host_;

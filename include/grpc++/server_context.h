@@ -80,6 +80,7 @@ class Call;
 class CallOpBuffer;
 class CompletionQueue;
 class Server;
+class ServerInterface;
 
 namespace testing {
 class InteropServerContextInspector;
@@ -138,6 +139,7 @@ class ServerContext {
 
  private:
   friend class ::grpc::testing::InteropServerContextInspector;
+  friend class ::grpc::ServerInterface;
   friend class ::grpc::Server;
   template <class W, class R>
   friend class ::grpc::ServerAsyncReader;
