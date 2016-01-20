@@ -497,18 +497,18 @@ class Build(object):
 _CONFIGS = {
     'dbg': SimpleConfig('dbg'),
     'opt': SimpleConfig('opt'),
-    'tsan': SimpleConfig('tsan', timeout_multiplier=2, environ={
+    'tsan': SimpleConfig('tsan', timeout_multiplier=10, environ={
         'TSAN_OPTIONS': 'suppressions=tools/tsan_suppressions.txt:halt_on_error=1:second_deadlock_stack=1'}),
-    'msan': SimpleConfig('msan', timeout_multiplier=1.5),
-    'ubsan': SimpleConfig('ubsan'),
-    'asan': SimpleConfig('asan', timeout_multiplier=1.5, environ={
+    'msan': SimpleConfig('msan', timeout_multiplier=4),
+    'ubsan': SimpleConfig('ubsan', timeout_multiplier=3),
+    'asan': SimpleConfig('asan', timeout_multiplier=3, environ={
         'ASAN_OPTIONS': 'suppressions=tools/asan_suppressions.txt:detect_leaks=1:color=always',
         'LSAN_OPTIONS': 'suppressions=tools/asan_suppressions.txt:report_objects=1'}),
     'asan-noleaks': SimpleConfig('asan', environ={
         'ASAN_OPTIONS': 'detect_leaks=0:color=always'}),
     'gcov': SimpleConfig('gcov'),
-    'memcheck': ValgrindConfig('valgrind', 'memcheck', ['--leak-check=full']),
-    'helgrind': ValgrindConfig('dbg', 'helgrind')
+    'memcheck': ValgrindConfig('valgrind', 'memcheck', ['--leak-check=full'], timeout_multiplier=20),
+    'helgrind': ValgrindConfig('dbg', 'helgrind', timeout_multiplier=20)
     }
 
 
