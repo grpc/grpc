@@ -32,6 +32,8 @@ filegroups:
   - include/grpc++/grpc++.h
   - include/grpc++/impl/call.h
   - include/grpc++/impl/client_unary_call.h
+  - include/grpc++/impl/codegen/server_interface.h
+  - include/grpc++/impl/codegen/channel_interface.h
   - include/grpc++/impl/grpc_library.h
   - include/grpc++/impl/method_handler_impl.h
   - include/grpc++/impl/proto_utils.h
@@ -50,8 +52,6 @@ filegroups:
   - include/grpc++/security/auth_metadata_processor.h
   - include/grpc++/security/credentials.h
   - include/grpc++/security/server_credentials.h
-  - include/grpc++/impl/codegen/server_interface.h
-    include/grpc++/impl/codegen/channel_interface.h
   - include/grpc++/server.h
   - include/grpc++/server_builder.h
   - include/grpc++/server_context.h
