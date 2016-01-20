@@ -1790,7 +1790,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c++", 
@@ -1909,7 +1909,7 @@
       "posix", 
       "windows"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.5, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c++", 
@@ -1966,7 +1966,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c++", 
@@ -2004,7 +2004,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 10, 
     "exclude_configs": [
       "tsan"
     ], 
@@ -2062,7 +2062,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c++", 
@@ -2175,7 +2175,7 @@
       "posix", 
       "windows"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 100, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c++", 
@@ -2412,6 +2412,7 @@
       "posix", 
       "windows"
     ], 
+    "cpu_cost": 1.0, 
     "exclude_configs": [
       "asan"
     ], 
@@ -2434,6 +2435,7 @@
       "posix", 
       "windows"
     ], 
+    "cpu_cost": 1.0, 
     "exclude_configs": [
       "asan"
     ], 
@@ -2456,6 +2458,7 @@
       "posix", 
       "windows"
     ], 
+    "cpu_cost": 1.0, 
     "exclude_configs": [
       "asan"
     ], 
@@ -2478,6 +2481,7 @@
       "posix", 
       "windows"
     ], 
+    "cpu_cost": 1.0, 
     "exclude_configs": [
       "asan"
     ], 
@@ -2500,6 +2504,7 @@
       "posix", 
       "windows"
     ], 
+    "cpu_cost": 1.0, 
     "exclude_configs": [
       "asan"
     ], 
@@ -2525,6 +2530,7 @@
       "posix", 
       "windows"
     ], 
+    "cpu_cost": 1.0, 
     "exclude_configs": [
       "asan"
     ], 
@@ -2550,6 +2556,7 @@
       "posix", 
       "windows"
     ], 
+    "cpu_cost": 1.0, 
     "exclude_configs": [
       "asan"
     ], 
@@ -2575,6 +2582,7 @@
       "posix", 
       "windows"
     ], 
+    "cpu_cost": 1.0, 
     "exclude_configs": [
       "asan"
     ], 
@@ -2600,6 +2608,7 @@
       "posix", 
       "windows"
     ], 
+    "cpu_cost": 1.0, 
     "exclude_configs": [
       "asan"
     ], 
@@ -2625,6 +2634,7 @@
       "posix", 
       "windows"
     ], 
+    "cpu_cost": 1.0, 
     "exclude_configs": [
       "asan"
     ], 
@@ -2650,6 +2660,7 @@
       "posix", 
       "windows"
     ], 
+    "cpu_cost": 1.0, 
     "exclude_configs": [
       "asan"
     ], 
@@ -2675,6 +2686,7 @@
       "posix", 
       "windows"
     ], 
+    "cpu_cost": 1.0, 
     "exclude_configs": [
       "asan"
     ], 
@@ -2700,6 +2712,7 @@
       "posix", 
       "windows"
     ], 
+    "cpu_cost": 1.0, 
     "exclude_configs": [
       "asan"
     ], 
@@ -2725,6 +2738,7 @@
       "posix", 
       "windows"
     ], 
+    "cpu_cost": 1.0, 
     "exclude_configs": [
       "asan"
     ], 
@@ -2750,6 +2764,7 @@
       "posix", 
       "windows"
     ], 
+    "cpu_cost": 1.0, 
     "exclude_configs": [
       "asan"
     ], 
@@ -2775,6 +2790,7 @@
       "posix", 
       "windows"
     ], 
+    "cpu_cost": 1.0, 
     "exclude_configs": [
       "asan"
     ], 
@@ -2800,6 +2816,7 @@
       "posix", 
       "windows"
     ], 
+    "cpu_cost": 1.0, 
     "exclude_configs": [
       "asan"
     ], 
@@ -2825,6 +2842,7 @@
       "posix", 
       "windows"
     ], 
+    "cpu_cost": 1.0, 
     "exclude_configs": [
       "asan"
     ], 
@@ -2850,6 +2868,7 @@
       "posix", 
       "windows"
     ], 
+    "cpu_cost": 1.0, 
     "exclude_configs": [
       "asan"
     ], 
@@ -2875,6 +2894,7 @@
       "posix", 
       "windows"
     ], 
+    "cpu_cost": 1.0, 
     "exclude_configs": [
       "asan"
     ], 
@@ -2900,6 +2920,7 @@
       "posix", 
       "windows"
     ], 
+    "cpu_cost": 1.0, 
     "exclude_configs": [
       "asan"
     ], 
@@ -2925,6 +2946,7 @@
       "posix", 
       "windows"
     ], 
+    "cpu_cost": 1.0, 
     "exclude_configs": [
       "asan"
     ], 
@@ -2950,6 +2972,7 @@
       "posix", 
       "windows"
     ], 
+    "cpu_cost": 1.0, 
     "exclude_configs": [
       "asan"
     ], 
@@ -2975,6 +2998,7 @@
       "posix", 
       "windows"
     ], 
+    "cpu_cost": 1.0, 
     "exclude_configs": [
       "asan"
     ], 
@@ -3000,6 +3024,7 @@
       "posix", 
       "windows"
     ], 
+    "cpu_cost": 1.0, 
     "exclude_configs": [
       "asan"
     ], 
@@ -3025,6 +3050,7 @@
       "posix", 
       "windows"
     ], 
+    "cpu_cost": 1.0, 
     "exclude_configs": [
       "asan"
     ], 
@@ -3050,6 +3076,7 @@
       "posix", 
       "windows"
     ], 
+    "cpu_cost": 1.0, 
     "exclude_configs": [
       "asan"
     ], 
@@ -3075,6 +3102,7 @@
       "posix", 
       "windows"
     ], 
+    "cpu_cost": 1.0, 
     "exclude_configs": [
       "asan"
     ], 
@@ -3100,6 +3128,7 @@
       "posix", 
       "windows"
     ], 
+    "cpu_cost": 1.0, 
     "exclude_configs": [
       "asan"
     ], 
@@ -3124,6 +3153,7 @@
       "posix", 
       "windows"
     ], 
+    "cpu_cost": 1.0, 
     "exclude_configs": [
       "asan"
     ], 
@@ -3146,6 +3176,7 @@
       "posix", 
       "windows"
     ], 
+    "cpu_cost": 1.0, 
     "exclude_configs": [
       "asan"
     ], 
@@ -3168,6 +3199,7 @@
       "posix", 
       "windows"
     ], 
+    "cpu_cost": 1.0, 
     "exclude_configs": [
       "asan"
     ], 
@@ -3192,6 +3224,7 @@
       "posix", 
       "windows"
     ], 
+    "cpu_cost": 1.0, 
     "exclude_configs": [
       "asan"
     ], 
@@ -3214,6 +3247,7 @@
       "posix", 
       "windows"
     ], 
+    "cpu_cost": 1.0, 
     "exclude_configs": [
       "asan"
     ], 
@@ -3236,6 +3270,7 @@
       "posix", 
       "windows"
     ], 
+    "cpu_cost": 1.0, 
     "exclude_configs": [
       "asan"
     ], 
@@ -3258,6 +3293,7 @@
       "posix", 
       "windows"
     ], 
+    "cpu_cost": 1.0, 
     "exclude_configs": [
       "asan"
     ], 
@@ -3280,6 +3316,7 @@
       "posix", 
       "windows"
     ], 
+    "cpu_cost": 1.0, 
     "exclude_configs": [
       "asan"
     ], 
@@ -3302,6 +3339,7 @@
       "posix", 
       "windows"
     ], 
+    "cpu_cost": 1.0, 
     "exclude_configs": [
       "asan"
     ], 
@@ -3324,6 +3362,7 @@
       "posix", 
       "windows"
     ], 
+    "cpu_cost": 1.0, 
     "exclude_configs": [
       "asan"
     ], 
@@ -3346,6 +3385,7 @@
       "posix", 
       "windows"
     ], 
+    "cpu_cost": 1.0, 
     "exclude_configs": [
       "asan"
     ], 
@@ -3368,6 +3408,7 @@
       "posix", 
       "windows"
     ], 
+    "cpu_cost": 1.0, 
     "exclude_configs": [
       "asan"
     ], 
@@ -3390,6 +3431,7 @@
       "posix", 
       "windows"
     ], 
+    "cpu_cost": 1.0, 
     "exclude_configs": [
       "asan"
     ], 
@@ -3414,6 +3456,7 @@
       "posix", 
       "windows"
     ], 
+    "cpu_cost": 1.0, 
     "exclude_configs": [
       "asan"
     ], 
@@ -3436,6 +3479,7 @@
       "posix", 
       "windows"
     ], 
+    "cpu_cost": 1.0, 
     "exclude_configs": [
       "asan"
     ], 
@@ -3458,6 +3502,7 @@
       "posix", 
       "windows"
     ], 
+    "cpu_cost": 1.0, 
     "exclude_configs": [
       "asan"
     ], 
@@ -3482,6 +3527,7 @@
       "posix", 
       "windows"
     ], 
+    "cpu_cost": 1.0, 
     "exclude_configs": [
       "asan"
     ], 
@@ -3504,6 +3550,7 @@
       "posix", 
       "windows"
     ], 
+    "cpu_cost": 1.0, 
     "exclude_configs": [
       "asan"
     ], 
@@ -3526,6 +3573,7 @@
       "posix", 
       "windows"
     ], 
+    "cpu_cost": 1.0, 
     "exclude_configs": [
       "asan"
     ], 
@@ -3548,6 +3596,7 @@
       "posix", 
       "windows"
     ], 
+    "cpu_cost": 1.0, 
     "exclude_configs": [
       "asan"
     ], 
@@ -3570,6 +3619,7 @@
       "posix", 
       "windows"
     ], 
+    "cpu_cost": 1.0, 
     "exclude_configs": [
       "asan"
     ], 
@@ -3594,6 +3644,7 @@
       "posix", 
       "windows"
     ], 
+    "cpu_cost": 1.0, 
     "exclude_configs": [
       "asan"
     ], 
@@ -3616,6 +3667,7 @@
       "posix", 
       "windows"
     ], 
+    "cpu_cost": 1.0, 
     "exclude_configs": [
       "asan"
     ], 
@@ -3638,6 +3690,7 @@
       "posix", 
       "windows"
     ], 
+    "cpu_cost": 1.0, 
     "exclude_configs": [
       "asan"
     ], 
@@ -3660,6 +3713,7 @@
       "posix", 
       "windows"
     ], 
+    "cpu_cost": 1.0, 
     "exclude_configs": [
       "asan"
     ], 
@@ -3682,6 +3736,7 @@
       "posix", 
       "windows"
     ], 
+    "cpu_cost": 1.0, 
     "exclude_configs": [
       "asan"
     ], 
@@ -3704,6 +3759,7 @@
       "posix", 
       "windows"
     ], 
+    "cpu_cost": 1.0, 
     "exclude_configs": [
       "asan"
     ], 
@@ -3726,6 +3782,7 @@
       "posix", 
       "windows"
     ], 
+    "cpu_cost": 1.0, 
     "exclude_configs": [
       "asan"
     ], 
@@ -3748,6 +3805,7 @@
       "posix", 
       "windows"
     ], 
+    "cpu_cost": 1.0, 
     "exclude_configs": [
       "asan"
     ], 
@@ -3770,6 +3828,7 @@
       "posix", 
       "windows"
     ], 
+    "cpu_cost": 1.0, 
     "exclude_configs": [
       "asan"
     ], 
