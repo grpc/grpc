@@ -24,10 +24,9 @@
     "gen_docs": "./node_modules/.bin/jsdoc -c src/node/jsdoc_conf.json",
     "coverage": "./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha src/node/test",
     "preinstall": "npm install node-pre-gyp",
-    "install": "./node_modules/.bin/node-pre-gyp install"
+    "install": "./node_modules/.bin/node-pre-gyp install --fallback-to-build"
   },
   "dependencies": {
-    "bindings": "^1.2.0",
     "lodash": "^3.9.3",
     "nan": "^2.0.0",
     "node-pre-gyp": "^0.6.19",
@@ -52,8 +51,9 @@
     "module_name": "grpc_node",
     "module_path": "./build/Release/",
     "host": "https://storage.googleapis.com/",
-    "remote_path": "tmp-mlumish/v{version}",
-    "package_name": "{node_abi}-{platform}-{arch}.tar.gz"
+    "remote_path": "grpc-precompiled-binaries/{name}/v{version}",
+    "package_name": "{node_abi}-{platform}-{arch}.tar.gz",
+    "module_path": "src/node/extension_binary"
   },
   "files": [
     "LICENSE",
