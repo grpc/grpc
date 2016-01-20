@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -47,10 +47,10 @@
 #include <grpc/support/useful.h>
 
 #include "src/core/transport/byte_stream.h"
+#include "src/proto/grpc/testing/empty.grpc.pb.h"
+#include "src/proto/grpc/testing/test.grpc.pb.h"
+#include "src/proto/grpc/testing/messages.grpc.pb.h"
 #include "test/cpp/interop/client_helper.h"
-#include "test/proto/empty.grpc.pb.h"
-#include "test/proto/messages.grpc.pb.h"
-#include "test/proto/test.grpc.pb.h"
 
 namespace grpc {
 namespace testing {

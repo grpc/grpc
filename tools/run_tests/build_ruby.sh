@@ -34,7 +34,7 @@ set -ex
 export GRPC_CONFIG=${CONFIG:-opt}
 
 # change to grpc's ruby directory
-cd $(dirname $0)/../../src/ruby
+cd $(dirname $0)/../..
 
 rm -rf ./tmp
 rake compile:grpc
