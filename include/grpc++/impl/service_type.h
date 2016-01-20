@@ -36,7 +36,7 @@
 
 #include <grpc++/impl/rpc_service_method.h>
 #include <grpc++/impl/serialization_traits.h>
-#include <grpc++/server.h>
+#include <grpc++/impl/codegen/server_interface.h>
 #include <grpc++/support/config.h>
 #include <grpc++/support/status.h>
 
@@ -45,6 +45,7 @@ namespace grpc {
 class Call;
 class CompletionQueue;
 class Server;
+class ServerInterface;
 class ServerCompletionQueue;
 class ServerContext;
 
@@ -55,7 +56,7 @@ class ServerAsyncStreamingInterface {
   virtual void SendInitialMetadata(void* tag) = 0;
 
  private:
-  friend class Server;
+  friend class ServerInterface;
   virtual void BindCall(Call* call) = 0;
 };
 
@@ -146,8 +147,8 @@ class Service {
 
  private:
   friend class Server;
-
-  Server* server_;
+  friend class ServerInterface;
+  ServerInterface* server_;
   std::vector<std::unique_ptr<RpcServiceMethod>> methods_;
 };
 

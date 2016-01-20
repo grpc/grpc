@@ -36,6 +36,7 @@
 
 #include <grpc/support/log.h>
 #include <grpc++/channel.h>
+#include <grpc++/impl/codegen/channel_interface.h>
 #include <grpc++/client_context.h>
 #include <grpc++/completion_queue.h>
 #include <grpc++/impl/call.h>
@@ -118,7 +119,7 @@ class ClientReader GRPC_FINAL : public ClientReaderInterface<R> {
  public:
   /// Blocking create a stream and write the first request out.
   template <class W>
-  ClientReader(Channel* channel, const RpcMethod& method,
+  ClientReader(ChannelInterface* channel, const RpcMethod& method,
                ClientContext* context, const W& request)
       : context_(context), call_(channel->CreateCall(method, context, &cq_)) {
     CallOpSet<CallOpSendInitialMetadata, CallOpSendMessage,
@@ -182,7 +183,7 @@ class ClientWriter : public ClientWriterInterface<W> {
  public:
   /// Blocking create a stream.
   template <class R>
-  ClientWriter(Channel* channel, const RpcMethod& method,
+  ClientWriter(ChannelInterface* channel, const RpcMethod& method,
                ClientContext* context, R* response)
       : context_(context), call_(channel->CreateCall(method, context, &cq_)) {
     finish_ops_.RecvMessage(response);
@@ -248,7 +249,7 @@ template <class W, class R>
 class ClientReaderWriter GRPC_FINAL : public ClientReaderWriterInterface<W, R> {
  public:
   /// Blocking create a stream.
-  ClientReaderWriter(Channel* channel, const RpcMethod& method,
+  ClientReaderWriter(ChannelInterface* channel, const RpcMethod& method,
                      ClientContext* context)
       : context_(context), call_(channel->CreateCall(method, context, &cq_)) {
     CallOpSet<CallOpSendInitialMetadata> ops;
