@@ -130,12 +130,9 @@ void test_decoding(void) {
                     gpr_time_from_seconds(1000 * 1000 * 1000, GPR_TIMESPAN));
   assert_decodes_as("1000000000000000000000u",
                     gpr_inf_future(GPR_CLOCK_REALTIME));
-  assert_decodes_as("1000000001S",
-                    gpr_inf_future(GPR_CLOCK_REALTIME));
-  assert_decodes_as("2000000001S",
-                      gpr_inf_future(GPR_CLOCK_REALTIME));
-  assert_decodes_as("9999999999S",
-                      gpr_inf_future(GPR_CLOCK_REALTIME));
+  assert_decodes_as("1000000001S", gpr_inf_future(GPR_CLOCK_REALTIME));
+  assert_decodes_as("2000000001S", gpr_inf_future(GPR_CLOCK_REALTIME));
+  assert_decodes_as("9999999999S", gpr_inf_future(GPR_CLOCK_REALTIME));
 }
 
 void test_decoding_fails(void) {
