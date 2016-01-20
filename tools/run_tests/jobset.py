@@ -273,7 +273,9 @@ class Job(object):
         self.result.state = 'PASSED'
         if self._bin_hash:
           update_cache.finished(self._spec.identity(), self._bin_hash)
-    elif self._state == _RUNNING and time.time() - self._start > self._spec.timeout_seconds:
+    elif (self._state == _RUNNING and 
+          self._spec.timeout_seconds is not None and 
+          time.time() - self._start > self._spec.timeout_seconds):
       if self._timeout_retries < self._spec.timeout_retries:
         message('TIMEOUT_FLAKE', '%s [pid=%d]' % (self._spec.shortname, self._process.pid), stdout(), do_newline=True)
         self._timeout_retries += 1

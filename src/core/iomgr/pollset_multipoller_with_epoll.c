@@ -90,8 +90,10 @@ static void remove_epoll_fd_from_global_list(int epoll_fd) {
 
 void grpc_remove_fd_from_all_epoll_sets(int fd) {
   int err;
+  gpr_once_init(&init_epoll_fd_list_mu, init_mu);
   gpr_mu_lock(&epoll_fd_list_mu);
   if (epoll_fd_global_list.count == 0) {
+    gpr_mu_unlock(&epoll_fd_list_mu);
     return;
   }
   for (size_t i = 0; i < epoll_fd_global_list.count; i++) {

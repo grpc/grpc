@@ -1,5 +1,4 @@
-#!/bin/bash
-# Copyright 2015-2016, Google Inc.
+# Copyright 2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -28,25 +27,38 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-set -ex
+# Docker file for building gRPC artifacts.
 
-CONFIG=${CONFIG:-opt}
+FROM 32bit/debian:jessie
 
-# change to grpc repo root
-cd $(dirname $0)/../..
+# Install Git and basic packages.
+RUN apt-get update && apt-get install -y \
+  autoconf \
+  autotools-dev \
+  build-essential \
+  bzip2 \
+  curl \
+  gcc \
+  gcc-multilib \
+  git \
+  golang \
+  libc6 \
+  libc6-dbg \
+  libc6-dev \
+  libgtest-dev \
+  libtool \
+  make \
+  perl \
+  strace \
+  python-dev \
+  python-setuptools \
+  python-yaml \
+  telnet \
+  unzip \
+  wget \
+  zip && apt-get clean
 
-root=`pwd`
-export GRPC_LIB_SUBDIR=libs/$CONFIG
-export CFLAGS="-Wno-parentheses-equality"
+RUN mkdir /var/local/jenkins
 
-# build php
-cd src/php
-
-cd ext/grpc
-phpize
-if [ "$CONFIG" != "gcov" ] ; then
-  ./configure --enable-grpc=$root
-else
-  ./configure --enable-grpc=$root --enable-coverage
-fi
-make
+# Define the default command.
+CMD ["bash"]

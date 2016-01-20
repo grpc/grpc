@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2015-2016, Google Inc.
+# Copyright 2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -27,26 +27,15 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+# This script is invoked by build_docker_* inside a docker
+# container. You should never need to call this script on your own.
 
-set -ex
+set -e
 
-CONFIG=${CONFIG:-opt}
+mkdir -p /var/local/git
+git clone --recursive /var/local/jenkins/grpc /var/local/git/grpc
 
-# change to grpc repo root
-cd $(dirname $0)/../..
+cd /var/local/git/grpc
 
-root=`pwd`
-export GRPC_LIB_SUBDIR=libs/$CONFIG
-export CFLAGS="-Wno-parentheses-equality"
-
-# build php
-cd src/php
-
-cd ext/grpc
-phpize
-if [ "$CONFIG" != "gcov" ] ; then
-  ./configure --enable-grpc=$root
-else
-  ./configure --enable-grpc=$root --enable-coverage
-fi
-make
+$RUN_COMMAND
