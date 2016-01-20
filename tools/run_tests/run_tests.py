@@ -78,7 +78,7 @@ class SimpleConfig(object):
     self.timeout_multiplier = timeout_multiplier
 
   def job_spec(self, cmdline, hash_targets, timeout_seconds=5*60,
-               shortname=None, environ={}):
+               shortname=None, environ={}, cpu_cost=1.0):
     """Construct a jobset.JobSpec for a test under this config
 
        Args:
@@ -96,6 +96,7 @@ class SimpleConfig(object):
     return jobset.JobSpec(cmdline=cmdline,
                           shortname=shortname,
                           environ=actual_environ,
+                          cpu_cost=cpu_cost,
                           timeout_seconds=self.timeout_multiplier * timeout_seconds,
                           hash_targets=hash_targets
                               if self.allow_hashing else None,
@@ -114,11 +115,12 @@ class ValgrindConfig(object):
     self.args = args
     self.allow_hashing = False
 
-  def job_spec(self, cmdline, hash_targets):
+  def job_spec(self, cmdline, hash_targets, cpu_cost=1.0):
     return jobset.JobSpec(cmdline=['valgrind', '--tool=%s' % self.tool] +
                           self.args + cmdline,
                           shortname='valgrind %s' % cmdline[0],
                           hash_targets=None,
+                          cpu_cost=cpu_cost,
                           flake_retries=5 if args.allow_flakes else 0,
                           timeout_retries=3 if args.allow_flakes else 0)
 
@@ -157,6 +159,7 @@ class CLanguage(object):
         cmdline = [binary] + target['args']
         out.append(config.job_spec(cmdline, [binary],
                                    shortname=' '.join(cmdline),
+                                   cpu_cost=target['cpu_cost'],
                                    environ={'GRPC_DEFAULT_SSL_ROOTS_FILE_PATH':
                                             os.path.abspath(os.path.dirname(
                                                 sys.argv[0]) + '/../../src/core/tsi/test_creds/ca.pem')}))

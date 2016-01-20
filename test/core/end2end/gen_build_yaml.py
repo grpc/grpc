@@ -77,21 +77,23 @@ END2END_FIXTURES = {
 }
 
 TestOptions = collections.namedtuple(
-    'TestOptions', 'needs_fullstack needs_dns proxyable secure traceable')
-default_test_options = TestOptions(False, False, True, False, True)
+    'TestOptions', 'needs_fullstack needs_dns proxyable secure traceable cpu_cost')
+default_test_options = TestOptions(False, False, True, False, True, 1.0)
 connectivity_test_options = default_test_options._replace(needs_fullstack=True)
+
+LOWCPU = 0.01
 
 # maps test names to options
 END2END_TESTS = {
     'bad_hostname': default_test_options,
     'binary_metadata': default_test_options,
     'call_creds': default_test_options._replace(secure=True),
-    'cancel_after_accept': default_test_options,
-    'cancel_after_client_done': default_test_options,
-    'cancel_after_invoke': default_test_options,
-    'cancel_before_invoke': default_test_options,
-    'cancel_in_a_vacuum': default_test_options,
-    'cancel_with_status': default_test_options,
+    'cancel_after_accept': default_test_options._replace(cpu_cost=LOWCPU),
+    'cancel_after_client_done': default_test_options._replace(cpu_cost=LOWCPU),
+    'cancel_after_invoke': default_test_options._replace(cpu_cost=LOWCPU),
+    'cancel_before_invoke': default_test_options._replace(cpu_cost=LOWCPU),
+    'cancel_in_a_vacuum': default_test_options._replace(cpu_cost=LOWCPU),
+    'cancel_with_status': default_test_options._replace(cpu_cost=LOWCPU),
     'channel_connectivity': connectivity_test_options._replace(proxyable=False),
     'channel_ping': connectivity_test_options._replace(proxyable=False),
     'compressed_payload': default_test_options._replace(proxyable=False),
@@ -101,7 +103,8 @@ END2END_TESTS = {
     'empty_batch': default_test_options,
     'graceful_server_shutdown': default_test_options,
     'hpack_size': default_test_options._replace(proxyable=False,
-                                                traceable=False),
+                                                traceable=False,
+                                                cpu_cost=2.0),
     'high_initial_seqno': default_test_options,
     'invoke_large_request': default_test_options,
     'large_metadata': default_test_options,
@@ -252,6 +255,7 @@ def main():
                                    END2END_FIXTURES[f].platforms, 'mac')),
               'flaky': False,
               'language': 'c',
+              'cpu_cost': END2END_TESTS[t].cpu_cost,
           }
           for f in sorted(END2END_FIXTURES.keys())
           for t in sorted(END2END_TESTS.keys()) if compatible(f, t)
@@ -266,6 +270,7 @@ def main():
                                    END2END_FIXTURES[f].platforms, 'mac')),
               'flaky': False,
               'language': 'c',
+              'cpu_cost': END2END_TESTS[t].cpu_cost,
           }
           for f in sorted(END2END_FIXTURES.keys())
           if not END2END_FIXTURES[f].secure
