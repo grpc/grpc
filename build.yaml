@@ -938,6 +938,7 @@ targets:
   - gpr_test_util
   - gpr
 - name: dualstack_socket_test
+  cpu_cost: 0.1
   build: test
   language: c
   src:
@@ -1012,6 +1013,7 @@ targets:
   - gpr_test_util
   - gpr
 - name: fling_stream_test
+  cpu_cost: 2
   build: test
   language: c
   src:
@@ -1026,6 +1028,7 @@ targets:
   - linux
   - posix
 - name: fling_test
+  cpu_cost: 2
   build: test
   language: c
   src:
@@ -1134,6 +1137,7 @@ targets:
   - gpr_test_util
   - gpr
 - name: gpr_stack_lockfree_test
+  cpu_cost: 10
   build: test
   language: c
   src:
@@ -1150,6 +1154,7 @@ targets:
   - gpr_test_util
   - gpr
 - name: gpr_sync_test
+  cpu_cost: 10
   build: test
   language: c
   src:
@@ -1158,6 +1163,7 @@ targets:
   - gpr_test_util
   - gpr
 - name: gpr_thd_test
+  cpu_cost: 10
   build: test
   language: c
   src:
@@ -1384,6 +1390,7 @@ targets:
   - gpr_test_util
   - gpr
 - name: httpcli_test
+  cpu_cost: 0.5
   build: test
   language: c
   src:
@@ -1398,6 +1405,7 @@ targets:
   - linux
   - posix
 - name: httpscli_test
+  cpu_cost: 0.5
   build: test
   language: c
   src:
@@ -1479,6 +1487,7 @@ targets:
   - gpr_test_util
   - gpr
 - name: lb_policies_test
+  cpu_cost: 0.1
   build: test
   language: c
   src:
@@ -1531,6 +1540,7 @@ targets:
   - gpr_test_util
   - gpr
 - name: no_server_test
+  cpu_cost: 0.1
   build: test
   language: c
   src:
@@ -1591,6 +1601,7 @@ targets:
   - gpr_test_util
   - gpr
 - name: set_initial_connect_string_test
+  cpu_cost: 0.1
   build: test
   language: c
   src:
@@ -1636,6 +1647,7 @@ targets:
   - linux
   - posix
 - name: tcp_client_posix_test
+  cpu_cost: 0.5
   build: test
   language: c
   src:
@@ -1650,6 +1662,7 @@ targets:
   - linux
   - posix
 - name: tcp_posix_test
+  cpu_cost: 0.5
   build: test
   language: c
   src:
@@ -1879,6 +1892,7 @@ targets:
   - gpr_test_util
   - gpr
 - name: client_crash_test
+  cpu_cost: 0.1
   build: test
   language: c++
   src:
@@ -1957,6 +1971,7 @@ targets:
   - gpr_test_util
   - gpr
 - name: end2end_test
+  cpu_cost: 0.5
   build: test
   language: c++
   src:
@@ -2110,6 +2125,7 @@ targets:
   - linux
   - posix
 - name: interop_test
+  cpu_cost: 0.1
   build: test
   language: c++
   src:
@@ -2201,6 +2217,7 @@ targets:
   - linux
   - posix
 - name: qps_test
+  cpu_cost: 10
   build: test
   language: c++
   src:
@@ -2303,6 +2320,7 @@ targets:
   - linux
   - posix
 - name: server_crash_test
+  cpu_cost: 0.1
   build: test
   language: c++
   src:
@@ -2431,6 +2449,7 @@ targets:
   - linux
   - posix
 - name: thread_stress_test
+  cpu_cost: 100
   build: test
   language: c++
   src:
