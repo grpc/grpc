@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -40,8 +40,8 @@
 #include "test/core/end2end/data/ssl_test_data.h"
 #include "test/core/util/port.h"
 #include "test/cpp/qps/timer.h"
-#include "test/proto/messages.grpc.pb.h"
-#include "test/proto/benchmarks/control.grpc.pb.h"
+#include "src/proto/grpc/testing/messages.grpc.pb.h"
+#include "src/proto/grpc/testing/control.grpc.pb.h"
 
 namespace grpc {
 namespace testing {
@@ -75,12 +75,11 @@ class Server {
   }
 
   static bool SetPayload(PayloadType type, int size, Payload* payload) {
-    PayloadType response_type = type;
     // TODO(yangg): Support UNCOMPRESSABLE payload.
     if (type != PayloadType::COMPRESSABLE) {
       return false;
     }
-    payload->set_type(response_type);
+    payload->set_type(type);
     std::unique_ptr<char[]> body(new char[size]());
     payload->set_body(body.get(), size);
     return true;

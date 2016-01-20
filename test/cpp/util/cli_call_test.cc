@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -44,16 +44,16 @@
 
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
-#include "test/cpp/util/echo.grpc.pb.h"
+#include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/cpp/util/string_ref_helper.h"
 
-using grpc::cpp::test::util::EchoRequest;
-using grpc::cpp::test::util::EchoResponse;
+using grpc::testing::EchoRequest;
+using grpc::testing::EchoResponse;
 
 namespace grpc {
 namespace testing {
 
-class TestServiceImpl : public ::grpc::cpp::test::util::TestService::Service {
+class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
  public:
   Status Echo(ServerContext* context, const EchoRequest* request,
               EchoResponse* response) GRPC_OVERRIDE {
@@ -91,11 +91,11 @@ class CliCallTest : public ::testing::Test {
   void ResetStub() {
     channel_ =
         CreateChannel(server_address_.str(), InsecureChannelCredentials());
-    stub_ = grpc::cpp::test::util::TestService::NewStub(channel_);
+    stub_ = grpc::testing::EchoTestService::NewStub(channel_);
   }
 
   std::shared_ptr<Channel> channel_;
-  std::unique_ptr<grpc::cpp::test::util::TestService::Stub> stub_;
+  std::unique_ptr<grpc::testing::EchoTestService::Stub> stub_;
   std::unique_ptr<Server> server_;
   std::ostringstream server_address_;
   TestServiceImpl service_;
@@ -115,7 +115,7 @@ TEST_F(CliCallTest, SimpleRpc) {
   EXPECT_EQ(response.message(), request.message());
   EXPECT_TRUE(s.ok());
 
-  const grpc::string kMethod("/grpc.cpp.test.util.TestService/Echo");
+  const grpc::string kMethod("/grpc.testing.EchoTestService/Echo");
   grpc::string request_bin, response_bin, expected_response_bin;
   EXPECT_TRUE(request.SerializeToString(&request_bin));
   EXPECT_TRUE(response.SerializeToString(&expected_response_bin));

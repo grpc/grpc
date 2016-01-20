@@ -1504,6 +1504,23 @@
       "grpc", 
       "grpc++", 
       "grpc++_test_util", 
+      "grpc_test_util", 
+      "qps"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "generic_async_streaming_ping_pong_test", 
+    "src": [
+      "test/cpp/qps/generic_async_streaming_ping_pong_test.cc"
+    ]
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test_util", 
       "grpc_test_util"
     ], 
     "headers": [], 
@@ -1641,9 +1658,9 @@
       "grpc++_test_config"
     ], 
     "headers": [
-      "test/cpp/util/metrics_server.h", 
-      "test/proto/metrics.grpc.pb.h", 
-      "test/proto/metrics.pb.h"
+      "src/proto/grpc/testing/metrics.grpc.pb.h", 
+      "src/proto/grpc/testing/metrics.pb.h", 
+      "test/cpp/util/metrics_server.h"
     ], 
     "language": "c++", 
     "name": "metrics_client", 
@@ -1773,12 +1790,12 @@
       "grpc_test_util"
     ], 
     "headers": [
-      "test/proto/empty.grpc.pb.h", 
-      "test/proto/empty.pb.h", 
-      "test/proto/messages.grpc.pb.h", 
-      "test/proto/messages.pb.h", 
-      "test/proto/test.grpc.pb.h", 
-      "test/proto/test.pb.h"
+      "src/proto/grpc/testing/empty.grpc.pb.h", 
+      "src/proto/grpc/testing/empty.pb.h", 
+      "src/proto/grpc/testing/messages.grpc.pb.h", 
+      "src/proto/grpc/testing/messages.pb.h", 
+      "src/proto/grpc/testing/test.grpc.pb.h", 
+      "src/proto/grpc/testing/test.pb.h"
     ], 
     "language": "c++", 
     "name": "reconnect_interop_client", 
@@ -1799,12 +1816,12 @@
       "test_tcp_server"
     ], 
     "headers": [
-      "test/proto/empty.grpc.pb.h", 
-      "test/proto/empty.pb.h", 
-      "test/proto/messages.grpc.pb.h", 
-      "test/proto/messages.pb.h", 
-      "test/proto/test.grpc.pb.h", 
-      "test/proto/test.pb.h"
+      "src/proto/grpc/testing/empty.grpc.pb.h", 
+      "src/proto/grpc/testing/empty.pb.h", 
+      "src/proto/grpc/testing/messages.grpc.pb.h", 
+      "src/proto/grpc/testing/messages.pb.h", 
+      "src/proto/grpc/testing/test.grpc.pb.h", 
+      "src/proto/grpc/testing/test.pb.h"
     ], 
     "language": "c++", 
     "name": "reconnect_interop_server", 
@@ -1935,18 +1952,18 @@
       "grpc_test_util"
     ], 
     "headers": [
+      "src/proto/grpc/testing/empty.grpc.pb.h", 
+      "src/proto/grpc/testing/empty.pb.h", 
+      "src/proto/grpc/testing/messages.grpc.pb.h", 
+      "src/proto/grpc/testing/messages.pb.h", 
+      "src/proto/grpc/testing/metrics.grpc.pb.h", 
+      "src/proto/grpc/testing/metrics.pb.h", 
+      "src/proto/grpc/testing/test.grpc.pb.h", 
+      "src/proto/grpc/testing/test.pb.h", 
       "test/cpp/interop/client_helper.h", 
       "test/cpp/interop/interop_client.h", 
       "test/cpp/interop/stress_interop_client.h", 
-      "test/cpp/util/metrics_server.h", 
-      "test/proto/empty.grpc.pb.h", 
-      "test/proto/empty.pb.h", 
-      "test/proto/messages.grpc.pb.h", 
-      "test/proto/messages.pb.h", 
-      "test/proto/metrics.grpc.pb.h", 
-      "test/proto/metrics.pb.h", 
-      "test/proto/test.grpc.pb.h", 
-      "test/proto/test.pb.h"
+      "test/cpp/util/metrics_server.h"
     ], 
     "language": "c++", 
     "name": "stress_test", 
@@ -2021,7 +2038,10 @@
       "grpc_test_util", 
       "grpc_zookeeper"
     ], 
-    "headers": [], 
+    "headers": [
+      "src/proto/grpc/testing/echo.grpc.pb.h", 
+      "src/proto/grpc/testing/echo.pb.h"
+    ], 
     "language": "c++", 
     "name": "zookeeper_test", 
     "src": [
@@ -3209,6 +3229,7 @@
       "src/core/surface/server_chttp2.c", 
       "src/core/surface/server_create.c", 
       "src/core/surface/surface_trace.h", 
+      "src/core/surface/validate_metadata.c", 
       "src/core/surface/version.c", 
       "src/core/transport/byte_stream.c", 
       "src/core/transport/byte_stream.h", 
@@ -3680,6 +3701,7 @@
       "src/core/surface/server_chttp2.c", 
       "src/core/surface/server_create.c", 
       "src/core/surface/surface_trace.h", 
+      "src/core/surface/validate_metadata.c", 
       "src/core/surface/version.c", 
       "src/core/transport/byte_stream.c", 
       "src/core/transport/byte_stream.h", 
@@ -3953,14 +3975,14 @@
       "grpc_test_util"
     ], 
     "headers": [
+      "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h", 
+      "src/proto/grpc/testing/duplicate/echo_duplicate.pb.h", 
+      "src/proto/grpc/testing/echo.grpc.pb.h", 
+      "src/proto/grpc/testing/echo.pb.h", 
+      "src/proto/grpc/testing/echo_messages.grpc.pb.h", 
+      "src/proto/grpc/testing/echo_messages.pb.h", 
       "test/cpp/util/cli_call.h", 
       "test/cpp/util/create_test_channel.h", 
-      "test/cpp/util/echo.grpc.pb.h", 
-      "test/cpp/util/echo.pb.h", 
-      "test/cpp/util/echo_duplicate.grpc.pb.h", 
-      "test/cpp/util/echo_duplicate.pb.h", 
-      "test/cpp/util/messages.grpc.pb.h", 
-      "test/cpp/util/messages.pb.h", 
       "test/cpp/util/string_ref_helper.h", 
       "test/cpp/util/subprocess.h"
     ], 
@@ -4163,9 +4185,9 @@
       "grpc_test_util"
     ], 
     "headers": [
-      "test/cpp/interop/client_helper.h", 
-      "test/proto/messages.grpc.pb.h", 
-      "test/proto/messages.pb.h"
+      "src/proto/grpc/testing/messages.grpc.pb.h", 
+      "src/proto/grpc/testing/messages.pb.h", 
+      "test/cpp/interop/client_helper.h"
     ], 
     "language": "c++", 
     "name": "interop_client_helper", 
@@ -4186,13 +4208,13 @@
       "interop_client_helper"
     ], 
     "headers": [
-      "test/cpp/interop/interop_client.h", 
-      "test/proto/empty.grpc.pb.h", 
-      "test/proto/empty.pb.h", 
-      "test/proto/messages.grpc.pb.h", 
-      "test/proto/messages.pb.h", 
-      "test/proto/test.grpc.pb.h", 
-      "test/proto/test.pb.h"
+      "src/proto/grpc/testing/empty.grpc.pb.h", 
+      "src/proto/grpc/testing/empty.pb.h", 
+      "src/proto/grpc/testing/messages.grpc.pb.h", 
+      "src/proto/grpc/testing/messages.pb.h", 
+      "src/proto/grpc/testing/test.grpc.pb.h", 
+      "src/proto/grpc/testing/test.pb.h", 
+      "test/cpp/interop/interop_client.h"
     ], 
     "language": "c++", 
     "name": "interop_client_main", 
@@ -4231,12 +4253,12 @@
       "interop_server_helper"
     ], 
     "headers": [
-      "test/proto/empty.grpc.pb.h", 
-      "test/proto/empty.pb.h", 
-      "test/proto/messages.grpc.pb.h", 
-      "test/proto/messages.pb.h", 
-      "test/proto/test.grpc.pb.h", 
-      "test/proto/test.pb.h"
+      "src/proto/grpc/testing/empty.grpc.pb.h", 
+      "src/proto/grpc/testing/empty.pb.h", 
+      "src/proto/grpc/testing/messages.grpc.pb.h", 
+      "src/proto/grpc/testing/messages.pb.h", 
+      "src/proto/grpc/testing/test.grpc.pb.h", 
+      "src/proto/grpc/testing/test.pb.h"
     ], 
     "language": "c++", 
     "name": "interop_server_main", 
@@ -4251,29 +4273,29 @@
       "grpc_test_util"
     ], 
     "headers": [
+      "src/proto/grpc/testing/control.grpc.pb.h", 
+      "src/proto/grpc/testing/control.pb.h", 
+      "src/proto/grpc/testing/messages.grpc.pb.h", 
+      "src/proto/grpc/testing/messages.pb.h", 
+      "src/proto/grpc/testing/payloads.grpc.pb.h", 
+      "src/proto/grpc/testing/payloads.pb.h", 
+      "src/proto/grpc/testing/perf_db.grpc.pb.h", 
+      "src/proto/grpc/testing/perf_db.pb.h", 
+      "src/proto/grpc/testing/services.grpc.pb.h", 
+      "src/proto/grpc/testing/services.pb.h", 
+      "src/proto/grpc/testing/stats.grpc.pb.h", 
+      "src/proto/grpc/testing/stats.pb.h", 
       "test/cpp/qps/client.h", 
       "test/cpp/qps/driver.h", 
       "test/cpp/qps/histogram.h", 
       "test/cpp/qps/interarrival.h", 
-      "test/cpp/qps/perf_db.grpc.pb.h", 
-      "test/cpp/qps/perf_db.pb.h", 
       "test/cpp/qps/perf_db_client.h", 
       "test/cpp/qps/qps_worker.h", 
       "test/cpp/qps/report.h", 
       "test/cpp/qps/server.h", 
       "test/cpp/qps/stats.h", 
       "test/cpp/qps/timer.h", 
-      "test/cpp/util/benchmark_config.h", 
-      "test/proto/benchmarks/control.grpc.pb.h", 
-      "test/proto/benchmarks/control.pb.h", 
-      "test/proto/benchmarks/payloads.grpc.pb.h", 
-      "test/proto/benchmarks/payloads.pb.h", 
-      "test/proto/benchmarks/services.grpc.pb.h", 
-      "test/proto/benchmarks/services.pb.h", 
-      "test/proto/benchmarks/stats.grpc.pb.h", 
-      "test/proto/benchmarks/stats.pb.h", 
-      "test/proto/messages.grpc.pb.h", 
-      "test/proto/messages.pb.h"
+      "test/cpp/util/benchmark_config.h"
     ], 
     "language": "c++", 
     "name": "qps", 

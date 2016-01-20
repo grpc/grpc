@@ -48,7 +48,7 @@
 #include "test/cpp/qps/driver.h"
 #include "test/cpp/qps/histogram.h"
 #include "test/cpp/qps/qps_worker.h"
-#include "test/proto/benchmarks/services.grpc.pb.h"
+#include "src/proto/grpc/testing/services.grpc.pb.h"
 
 using std::list;
 using std::thread;

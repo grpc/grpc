@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,28 +33,28 @@
 
 #include <thread>
 
-#include <grpc/grpc.h>
-#include <grpc/support/sync.h>
 #include <grpc++/channel.h>
 #include <grpc++/client_context.h>
 #include <grpc++/create_channel.h>
 #include <grpc++/server.h>
 #include <grpc++/server_builder.h>
 #include <grpc++/server_context.h>
+#include <grpc/grpc.h>
+#include <grpc/support/sync.h>
 #include <gtest/gtest.h>
 
 #include "src/core/support/env.h"
-#include "test/core/util/test_config.h"
+#include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
-#include "test/cpp/util/echo.grpc.pb.h"
+#include "test/core/util/test_config.h"
 
-using grpc::cpp::test::util::EchoRequest;
-using grpc::cpp::test::util::EchoResponse;
+using grpc::testing::EchoRequest;
+using grpc::testing::EchoResponse;
 
 namespace grpc {
 namespace testing {
 
-class TestServiceImpl : public ::grpc::cpp::test::util::TestService::Service {
+class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
  public:
   explicit TestServiceImpl(gpr_event* ev) : ev_(ev) {}
 
@@ -94,7 +94,7 @@ class ShutdownTest : public ::testing::Test {
   void ResetStub() {
     string target = "dns:localhost:" + to_string(port_);
     channel_ = CreateChannel(target, InsecureChannelCredentials());
-    stub_ = grpc::cpp::test::util::TestService::NewStub(channel_);
+    stub_ = grpc::testing::EchoTestService::NewStub(channel_);
   }
 
   string to_string(const int number) {
@@ -115,7 +115,7 @@ class ShutdownTest : public ::testing::Test {
 
  protected:
   std::shared_ptr<Channel> channel_;
-  std::unique_ptr<grpc::cpp::test::util::TestService::Stub> stub_;
+  std::unique_ptr<grpc::testing::EchoTestService::Stub> stub_;
   std::unique_ptr<Server> server_;
   bool shutdown_;
   int port_;

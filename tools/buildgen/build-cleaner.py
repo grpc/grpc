@@ -1,5 +1,5 @@
 #!/usr/bin/env python2.7
-# Copyright 2015, Google Inc.
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -37,10 +37,11 @@ import yaml
 
 TEST = (os.environ.get('TEST', 'false') == 'true')
 
-_TOP_LEVEL_KEYS = ['settings', 'filegroups', 'libs', 'targets', 'vspackages']
+_TOP_LEVEL_KEYS = ['settings', 'proto_deps', 'filegroups', 'libs', 'targets', 'vspackages']
 _VERSION_KEYS = ['major', 'minor', 'micro', 'build']
 _ELEM_KEYS = [
     'name',
+    'cpu_cost',
     'flaky',
     'build',
     'run',

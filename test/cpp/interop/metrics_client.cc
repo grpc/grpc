@@ -39,8 +39,8 @@
 
 #include "test/cpp/util/metrics_server.h"
 #include "test/cpp/util/test_config.h"
-#include "test/proto/metrics.grpc.pb.h"
-#include "test/proto/metrics.pb.h"
+#include "src/proto/grpc/testing/metrics.grpc.pb.h"
+#include "src/proto/grpc/testing/metrics.pb.h"
 
 DEFINE_string(metrics_server_address, "",
               "The metrics server addresses in the fomrat <hostname>:<port>");

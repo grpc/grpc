@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -36,26 +36,26 @@
 #include <cassert>
 #include <memory>
 #include <mutex>
+#include <sstream>
 #include <string>
 #include <thread>
 #include <vector>
-#include <sstream>
 
+#include <grpc++/client_context.h>
+#include <grpc++/security/server_credentials.h>
+#include <grpc++/server.h>
+#include <grpc++/server_builder.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/histogram.h>
-#include <grpc/support/log.h>
 #include <grpc/support/host_port.h>
-#include <grpc++/client_context.h>
-#include <grpc++/server.h>
-#include <grpc++/server_builder.h>
-#include <grpc++/security/server_credentials.h>
+#include <grpc/support/log.h>
 
+#include "src/proto/grpc/testing/services.pb.h"
 #include "test/core/util/grpc_profiler.h"
 #include "test/cpp/qps/client.h"
 #include "test/cpp/qps/server.h"
 #include "test/cpp/util/create_test_channel.h"
-#include "test/proto/benchmarks/services.pb.h"
 
 namespace grpc {
 namespace testing {
@@ -69,7 +69,9 @@ static std::unique_ptr<Client> CreateClient(const ClientConfig& config) {
     case ClientType::ASYNC_CLIENT:
       return (config.rpc_type() == RpcType::UNARY)
                  ? CreateAsyncUnaryClient(config)
-                 : CreateAsyncStreamingClient(config);
+                 : (config.payload_config().has_bytebuf_params()
+                        ? CreateGenericAsyncStreamingClient(config)
+                        : CreateAsyncStreamingClient(config));
     default:
       abort();
   }
@@ -95,7 +97,8 @@ static std::unique_ptr<Server> CreateServer(const ServerConfig& config) {
 
 class WorkerServiceImpl GRPC_FINAL : public WorkerService::Service {
  public:
-  explicit WorkerServiceImpl() : acquired_(false) {}
+  explicit WorkerServiceImpl(int server_port)
+      : acquired_(false), server_port_(server_port) {}
 
   Status RunClient(ServerContext* ctx,
                    ServerReaderWriter<ClientStatus, ClientArgs>* stream)
@@ -194,6 +197,9 @@ class WorkerServiceImpl GRPC_FINAL : public WorkerService::Service {
     if (!args.has_setup()) {
       return Status(StatusCode::INVALID_ARGUMENT, "");
     }
+    if (server_port_ != 0) {
+      args.mutable_setup()->set_port(server_port_);
+    }
     auto server = CreateServer(args.setup());
     if (!server) {
       return Status(StatusCode::INVALID_ARGUMENT, "");
@@ -217,10 +223,11 @@ class WorkerServiceImpl GRPC_FINAL : public WorkerService::Service {
 
   std::mutex mu_;
   bool acquired_;
+  int server_port_;
 };
 
-QpsWorker::QpsWorker(int driver_port) {
-  impl_.reset(new WorkerServiceImpl());
+QpsWorker::QpsWorker(int driver_port, int server_port) {
+  impl_.reset(new WorkerServiceImpl(server_port));
 
   char* server_address = NULL;
   gpr_join_host_port(&server_address, "::", driver_port);
