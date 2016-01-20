@@ -45,4 +45,4 @@ make install-certs
 
 # build Node interop client & server
 npm install -g node-gyp
-(npm install && node-gyp rebuild)
+npm install --unsafe-perm --build-from-source
