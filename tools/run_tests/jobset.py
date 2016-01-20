@@ -146,7 +146,7 @@ class JobSpec(object):
 
   def __init__(self, cmdline, shortname=None, environ=None, hash_targets=None,
                cwd=None, shell=False, timeout_seconds=5*60, flake_retries=0,
-               timeout_retries=0, kill_handler=None):
+               timeout_retries=0, kill_handler=None, cpu_cost=1.0):
     """
     Arguments:
       cmdline: a list of arguments to pass as the command line
@@ -154,6 +154,7 @@ class JobSpec(object):
       hash_targets: which files to include in the hash representing the jobs version
                     (or empty, indicating the job should not be hashed)
       kill_handler: a handler that will be called whenever job.kill() is invoked
+      cpu_cost: number of cores per second this job needs
     """
     if environ is None:
       environ = {}
@@ -169,6 +170,7 @@ class JobSpec(object):
     self.flake_retries = flake_retries
     self.timeout_retries = timeout_retries
     self.kill_handler = kill_handler
+    self.cpu_cost = cpu_cost
 
   def identity(self):
     return '%r %r %r' % (self.cmdline, self.environ, self.hash_targets)
@@ -329,10 +331,19 @@ class Jobset(object):
   def get_num_failures(self):
     return self._failures
 
+  def cpu_cost(self):
+    c = 0
+    for job in self._running:
+      c += job._spec.cpu_cost
+    return c
+
   def start(self, spec):
     """Start a job. Return True on success, False on failure."""
-    while len(self._running) >= self._maxjobs:
+    while True:
       if self.cancelled(): return False
+      current_cpu_cost = self.cpu_cost()
+      if current_cpu_cost == 0: break
+      if current_cpu_cost + spec.cpu_cost < self._maxjobs: break
       self.reap()
     if self.cancelled(): return False
     if spec.hash_targets:

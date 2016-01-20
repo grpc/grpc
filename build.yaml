@@ -1005,6 +1005,7 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  cpu_cost: 2
   platforms:
   - mac
   - linux
@@ -1019,6 +1020,7 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  cpu_cost: 2
   platforms:
   - mac
   - linux
@@ -1141,6 +1143,7 @@ targets:
   deps:
   - gpr_test_util
   - gpr
+  cpu_cost: 10
 - name: gpr_thd_test
   build: test
   language: c
@@ -1149,6 +1152,7 @@ targets:
   deps:
   - gpr_test_util
   - gpr
+  cpu_cost: 10
 - name: gpr_time_test
   build: test
   language: c
