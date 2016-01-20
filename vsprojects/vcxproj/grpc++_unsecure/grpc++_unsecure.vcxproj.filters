@@ -111,8 +111,11 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\client_unary_call.h">
       <Filter>include\grpc++\impl</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\server_interface.h include\grpc++\impl\codegen\channel_interface.h">
-      <Filter>include\grpc++\impl\codegen\server_interface.h include\grpc++\impl\codegen</Filter>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\channel_interface.h">
+      <Filter>include\grpc++\impl\codegen</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\server_interface.h">
+      <Filter>include\grpc++\impl\codegen</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\grpc_library.h">
       <Filter>include\grpc++\impl</Filter>
@@ -250,18 +253,6 @@
     </Filter>
     <Filter Include="include\grpc++\impl\codegen">
       <UniqueIdentifier>{ccc364e2-3f28-8bfc-c26e-800dd6f9a9af}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="include\grpc++\impl\codegen\server_interface.h include">
-      <UniqueIdentifier>{e3fe409b-c3cb-f341-789e-d96b9737d899}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="include\grpc++\impl\codegen\server_interface.h include\grpc++">
-      <UniqueIdentifier>{1c3328a6-193d-8846-6617-5bf6af920936}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="include\grpc++\impl\codegen\server_interface.h include\grpc++\impl">
-      <UniqueIdentifier>{a87212e6-4424-59a8-fccc-1939da7f2a3d}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="include\grpc++\impl\codegen\server_interface.h include\grpc++\impl\codegen">
-      <UniqueIdentifier>{e2d46a3d-3f7b-316d-b1c7-5499922fa7ed}</UniqueIdentifier>
     </Filter>
     <Filter Include="include\grpc++\security">
       <UniqueIdentifier>{64bf60ff-9192-bb59-dcc8-8a0021e1d016}</UniqueIdentifier>
