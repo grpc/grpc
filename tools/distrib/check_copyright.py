@@ -136,7 +136,10 @@ for filename in subprocess.check_output('git ls-tree -r --name-only -r HEAD',
   else:
     log(args.skips, 'skip', filename)
     continue
-  text = load(filename)
+  try:
+    text = load(filename)
+  except:
+    continue
   m = re.search(re_license, text)
   if m:
     gdict = m.groupdict()
