@@ -1,6 +1,6 @@
 #!/usr/bin/env python2.7
 
-# Copyright 2015, Google Inc.
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -85,7 +85,7 @@ for template in templates:
       os.close(tf[0])
       cmd.append(test[out])
     cmd.append(root + '/' + f)
-    jobs.append(jobset.JobSpec(cmd, shortname=out))
+    jobs.append(jobset.JobSpec(cmd, shortname=out, timeout_seconds=None))
 
 jobset.run(jobs, maxjobs=multiprocessing.cpu_count())
 

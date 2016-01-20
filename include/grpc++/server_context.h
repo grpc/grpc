@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -58,13 +58,13 @@ template <class W>
 class ServerAsyncWriter;
 template <class W>
 class ServerAsyncResponseWriter;
-template <class R, class W>
+template <class W, class R>
 class ServerAsyncReaderWriter;
 template <class R>
 class ServerReader;
 template <class W>
 class ServerWriter;
-template <class R, class W>
+template <class W, class R>
 class ServerReaderWriter;
 template <class ServiceType, class RequestType, class ResponseType>
 class RpcMethodHandler;
@@ -145,13 +145,13 @@ class ServerContext {
   friend class ::grpc::ServerAsyncWriter;
   template <class W>
   friend class ::grpc::ServerAsyncResponseWriter;
-  template <class R, class W>
+  template <class W, class R>
   friend class ::grpc::ServerAsyncReaderWriter;
   template <class R>
   friend class ::grpc::ServerReader;
   template <class W>
   friend class ::grpc::ServerWriter;
-  template <class R, class W>
+  template <class W, class R>
   friend class ::grpc::ServerReaderWriter;
   template <class ServiceType, class RequestType, class ResponseType>
   friend class RpcMethodHandler;

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,20 +31,20 @@
  *
  */
 
+#include <gflags/gflags.h>
 #include <iostream>
 #include <memory>
 #include <string>
-#include <gflags/gflags.h>
 
 #include <grpc++/server.h>
 #include <grpc++/server_builder.h>
 #include <grpc++/server_context.h>
-#include "test/cpp/util/echo.grpc.pb.h"
+#include "src/proto/grpc/testing/echo.grpc.pb.h"
 
 DEFINE_string(address, "", "Address to bind to");
 
-using grpc::cpp::test::util::EchoRequest;
-using grpc::cpp::test::util::EchoResponse;
+using grpc::testing::EchoRequest;
+using grpc::testing::EchoResponse;
 
 // In some distros, gflags is in the namespace google, and in some others,
 // in gflags. This hack is enabling us to find both.
@@ -57,7 +57,7 @@ namespace grpc {
 namespace testing {
 
 class ServiceImpl GRPC_FINAL
-    : public ::grpc::cpp::test::util::TestService::Service {
+    : public ::grpc::testing::EchoTestService::Service {
   Status BidiStream(ServerContext* context,
                     ServerReaderWriter<EchoResponse, EchoRequest>* stream)
       GRPC_OVERRIDE {

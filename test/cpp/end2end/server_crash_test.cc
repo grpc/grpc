@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,25 +31,25 @@
  *
  */
 
-#include <grpc/grpc.h>
-#include <grpc/support/thd.h>
-#include <grpc/support/time.h>
 #include <grpc++/channel.h>
 #include <grpc++/client_context.h>
 #include <grpc++/create_channel.h>
 #include <grpc++/server.h>
 #include <grpc++/server_builder.h>
 #include <grpc++/server_context.h>
+#include <grpc/grpc.h>
+#include <grpc/support/thd.h>
+#include <grpc/support/time.h>
 #include <gtest/gtest.h>
 
+#include "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h"
+#include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
-#include "test/cpp/util/echo.grpc.pb.h"
-#include "test/cpp/util/echo_duplicate.grpc.pb.h"
 #include "test/cpp/util/subprocess.h"
 
-using grpc::cpp::test::util::EchoRequest;
-using grpc::cpp::test::util::EchoResponse;
+using grpc::testing::EchoRequest;
+using grpc::testing::EchoResponse;
 using std::chrono::system_clock;
 
 static std::string g_root;
@@ -60,7 +60,7 @@ namespace testing {
 namespace {
 
 class ServiceImpl GRPC_FINAL
-    : public ::grpc::cpp::test::util::TestService::Service {
+    : public ::grpc::testing::EchoTestService::Service {
  public:
   ServiceImpl() : bidi_stream_count_(0), response_stream_count_(0) {}
 

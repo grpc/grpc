@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -43,9 +43,68 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/useful.h>
 #include "src/core/iomgr/fd_posix.h"
-#include "src/core/support/block_annotate.h"
 #include "src/core/profiling/timers.h"
+#include "src/core/support/block_annotate.h"
+
+struct epoll_fd_list {
+  int *epoll_fds;
+  size_t count;
+  size_t capacity;
+};
+
+static struct epoll_fd_list epoll_fd_global_list;
+static gpr_once init_epoll_fd_list_mu = GPR_ONCE_INIT;
+static gpr_mu epoll_fd_list_mu;
+
+static void init_mu(void) { gpr_mu_init(&epoll_fd_list_mu); }
+
+static void add_epoll_fd_to_global_list(int epoll_fd) {
+  gpr_once_init(&init_epoll_fd_list_mu, init_mu);
+
+  gpr_mu_lock(&epoll_fd_list_mu);
+  if (epoll_fd_global_list.count == epoll_fd_global_list.capacity) {
+    epoll_fd_global_list.capacity =
+        GPR_MAX((size_t)8, epoll_fd_global_list.capacity * 2);
+    epoll_fd_global_list.epoll_fds =
+        gpr_realloc(epoll_fd_global_list.epoll_fds,
+                    epoll_fd_global_list.capacity * sizeof(int));
+  }
+  epoll_fd_global_list.epoll_fds[epoll_fd_global_list.count++] = epoll_fd;
+  gpr_mu_unlock(&epoll_fd_list_mu);
+}
+
+static void remove_epoll_fd_from_global_list(int epoll_fd) {
+  gpr_mu_lock(&epoll_fd_list_mu);
+  GPR_ASSERT(epoll_fd_global_list.count > 0);
+  for (size_t i = 0; i < epoll_fd_global_list.count; i++) {
+    if (epoll_fd == epoll_fd_global_list.epoll_fds[i]) {
+      epoll_fd_global_list.epoll_fds[i] =
+          epoll_fd_global_list.epoll_fds[--(epoll_fd_global_list.count)];
+      break;
+    }
+  }
+  gpr_mu_unlock(&epoll_fd_list_mu);
+}
+
+void grpc_remove_fd_from_all_epoll_sets(int fd) {
+  int err;
+  gpr_once_init(&init_epoll_fd_list_mu, init_mu);
+  gpr_mu_lock(&epoll_fd_list_mu);
+  if (epoll_fd_global_list.count == 0) {
+    gpr_mu_unlock(&epoll_fd_list_mu);
+    return;
+  }
+  for (size_t i = 0; i < epoll_fd_global_list.count; i++) {
+    err = epoll_ctl(epoll_fd_global_list.epoll_fds[i], EPOLL_CTL_DEL, fd, NULL);
+    if (err < 0 && errno != ENOENT) {
+      gpr_log(GPR_ERROR, "epoll_ctl del for %d failed: %s", fd,
+              strerror(errno));
+    }
+  }
+  gpr_mu_unlock(&epoll_fd_list_mu);
+}
 
 typedef struct {
   grpc_pollset *pollset;
@@ -211,6 +270,7 @@ static void multipoll_with_epoll_pollset_finish_shutdown(
 static void multipoll_with_epoll_pollset_destroy(grpc_pollset *pollset) {
   pollset_hdr *h = pollset->data.ptr;
   close(h->epoll_fd);
+  remove_epoll_fd_from_global_list(h->epoll_fd);
   gpr_free(h);
 }
 
@@ -236,6 +296,7 @@ static void epoll_become_multipoller(grpc_exec_ctx *exec_ctx,
     gpr_log(GPR_ERROR, "epoll_create1 failed: %s", strerror(errno));
     abort();
   }
+  add_epoll_fd_to_global_list(h->epoll_fd);
 
   ev.events = (uint32_t)(EPOLLIN | EPOLLET);
   ev.data.ptr = NULL;
@@ -254,5 +315,9 @@ static void epoll_become_multipoller(grpc_exec_ctx *exec_ctx,
 
 grpc_platform_become_multipoller_type grpc_platform_become_multipoller =
     epoll_become_multipoller;
+
+#else /* GPR_LINUX_MULTIPOLL_WITH_EPOLL */
+
+void grpc_remove_fd_from_all_epoll_sets(int fd) {}
 
 #endif /* GPR_LINUX_MULTIPOLL_WITH_EPOLL */

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -34,9 +34,6 @@
 #include <mutex>
 #include <thread>
 
-#include <grpc/grpc.h>
-#include <grpc/support/thd.h>
-#include <grpc/support/time.h>
 #include <grpc++/channel.h>
 #include <grpc++/client_context.h>
 #include <grpc++/create_channel.h>
@@ -46,18 +43,21 @@
 #include <grpc++/server.h>
 #include <grpc++/server_builder.h>
 #include <grpc++/server_context.h>
+#include <grpc/grpc.h>
+#include <grpc/support/thd.h>
+#include <grpc/support/time.h>
 #include <gtest/gtest.h>
 
 #include "src/core/security/credentials.h"
+#include "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h"
+#include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/end2end/data/ssl_test_data.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
-#include "test/cpp/util/echo_duplicate.grpc.pb.h"
-#include "test/cpp/util/echo.grpc.pb.h"
 #include "test/cpp/util/string_ref_helper.h"
 
-using grpc::cpp::test::util::EchoRequest;
-using grpc::cpp::test::util::EchoResponse;
+using grpc::testing::EchoRequest;
+using grpc::testing::EchoResponse;
 using std::chrono::system_clock;
 
 namespace grpc {
@@ -196,10 +196,10 @@ class TestAuthMetadataProcessor : public AuthMetadataProcessor {
 const char TestAuthMetadataProcessor::kGoodGuy[] = "Dr Jekyll";
 const char TestAuthMetadataProcessor::kIdentityPropName[] = "novel identity";
 
-class Proxy : public ::grpc::cpp::test::util::TestService::Service {
+class Proxy : public ::grpc::testing::EchoTestService::Service {
  public:
   Proxy(std::shared_ptr<Channel> channel)
-      : stub_(grpc::cpp::test::util::TestService::NewStub(channel)) {}
+      : stub_(grpc::testing::EchoTestService::NewStub(channel)) {}
 
   Status Echo(ServerContext* server_context, const EchoRequest* request,
               EchoResponse* response) GRPC_OVERRIDE {
@@ -209,10 +209,10 @@ class Proxy : public ::grpc::cpp::test::util::TestService::Service {
   }
 
  private:
-  std::unique_ptr< ::grpc::cpp::test::util::TestService::Stub> stub_;
+  std::unique_ptr< ::grpc::testing::EchoTestService::Stub> stub_;
 };
 
-class TestServiceImpl : public ::grpc::cpp::test::util::TestService::Service {
+class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
  public:
   TestServiceImpl() : signal_client_(false), host_() {}
   explicit TestServiceImpl(const grpc::string& host)
@@ -344,7 +344,7 @@ class TestServiceImpl : public ::grpc::cpp::test::util::TestService::Service {
 };
 
 class TestServiceImplDupPkg
-    : public ::grpc::cpp::test::util::duplicate::TestService::Service {
+    : public ::grpc::testing::duplicate::EchoTestService::Service {
  public:
   Status Echo(ServerContext* context, const EchoRequest* request,
               EchoResponse* response) GRPC_OVERRIDE {
@@ -435,12 +435,12 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
       channel_ = CreateChannel(proxyaddr.str(), InsecureChannelCredentials());
     }
 
-    stub_ = grpc::cpp::test::util::TestService::NewStub(channel_);
+    stub_ = grpc::testing::EchoTestService::NewStub(channel_);
   }
 
   bool is_server_started_;
   std::shared_ptr<Channel> channel_;
-  std::unique_ptr<grpc::cpp::test::util::TestService::Stub> stub_;
+  std::unique_ptr<grpc::testing::EchoTestService::Stub> stub_;
   std::unique_ptr<Server> server_;
   std::unique_ptr<Server> proxy_server_;
   std::unique_ptr<Proxy> proxy_service_;
@@ -451,8 +451,7 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
   TestServiceImplDupPkg dup_pkg_service_;
 };
 
-static void SendRpc(grpc::cpp::test::util::TestService::Stub* stub,
-                    int num_rpcs) {
+static void SendRpc(grpc::testing::EchoTestService::Stub* stub, int num_rpcs) {
   EchoRequest request;
   EchoResponse response;
   request.set_message("Hello hello hello hello");
@@ -562,9 +561,8 @@ TEST_P(End2endTest, DiffPackageServices) {
   EXPECT_EQ(response.message(), request.message());
   EXPECT_TRUE(s.ok());
 
-  std::unique_ptr<grpc::cpp::test::util::duplicate::TestService::Stub>
-      dup_pkg_stub(
-          grpc::cpp::test::util::duplicate::TestService::NewStub(channel_));
+  std::unique_ptr<grpc::testing::duplicate::EchoTestService::Stub> dup_pkg_stub(
+      grpc::testing::duplicate::EchoTestService::NewStub(channel_));
   ClientContext context2;
   s = dup_pkg_stub->Echo(&context2, request, &response);
   EXPECT_EQ("no package", response.message());
@@ -783,8 +781,8 @@ TEST_P(End2endTest, ChannelStateTimeout) {
 // Talking to a non-existing service.
 TEST_P(End2endTest, NonExistingService) {
   ResetChannel();
-  std::unique_ptr<grpc::cpp::test::util::UnimplementedService::Stub> stub;
-  stub = grpc::cpp::test::util::UnimplementedService::NewStub(channel_);
+  std::unique_ptr<grpc::testing::UnimplementedService::Stub> stub;
+  stub = grpc::testing::UnimplementedService::NewStub(channel_);
 
   EchoRequest request;
   EchoResponse response;
