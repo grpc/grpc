@@ -1,5 +1,5 @@
 #!/usr/bin/env python2.7
-# Copyright 2015, Google Inc.
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -257,7 +257,7 @@ def main():
           for t in sorted(END2END_TESTS.keys()) if compatible(f, t)
       ] + [
           {
-              'name': '%s_test' % f,
+              'name': '%s_nosec_test' % f,
               'args': [t],
               'exclude_configs': [],
               'platforms': END2END_FIXTURES[f].platforms,
