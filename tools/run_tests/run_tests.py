@@ -603,7 +603,7 @@ argp.add_argument('-n', '--runs_per_test', default=1, type=runs_per_test_type,
         help='A positive integer or "inf". If "inf", all tests will run in an '
              'infinite loop. Especially useful in combination with "-f"')
 argp.add_argument('-r', '--regex', default='.*', type=str)
-argp.add_argument('-j', '--jobs', default=2 * multiprocessing.cpu_count(), type=int)
+argp.add_argument('-j', '--jobs', default=multiprocessing.cpu_count(), type=int)
 argp.add_argument('-s', '--slowdown', default=1.0, type=float)
 argp.add_argument('-f', '--forever',
                   default=False,
@@ -650,6 +650,8 @@ argp.add_argument('--build_only',
                   action='store_const',
                   const=True,
                   help='Perform all the build steps but dont run any tests.')
+argp.add_argument('--measure_cpu_costs', default=False, action='store_const', const=True,
+                  help='Measure the cpu costs of tests')
 argp.add_argument('--update_submodules', default=[], nargs='*',
                   help='Update some submodules before building. If any are updated, also run generate_projects. ' +
                        'Submodules are specified as SUBMODULE_NAME:BRANCH; if BRANCH is omitted, master is assumed.')
@@ -657,6 +659,8 @@ argp.add_argument('-a', '--antagonists', default=0, type=int)
 argp.add_argument('-x', '--xml_report', default=None, type=str,
         help='Generates a JUnit-compatible XML report')
 args = argp.parse_args()
+
+jobset.measure_cpu_costs = args.measure_cpu_costs
 
 if args.use_docker:
   if not args.travis:

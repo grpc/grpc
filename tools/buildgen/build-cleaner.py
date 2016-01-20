@@ -41,6 +41,7 @@ _TOP_LEVEL_KEYS = ['settings', 'proto_deps', 'filegroups', 'libs', 'targets', 'v
 _VERSION_KEYS = ['major', 'minor', 'micro', 'build']
 _ELEM_KEYS = [
     'name',
+    'cpu_cost',
     'flaky',
     'build',
     'run',

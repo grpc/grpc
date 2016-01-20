@@ -33,11 +33,16 @@ import hashlib
 import multiprocessing
 import os
 import platform
+import re
 import signal
 import subprocess
 import sys
 import tempfile
 import time
+
+
+# cpu cost measurement
+measure_cpu_costs = False
 
 
 _DEFAULT_MAX_JOBS = 16 * multiprocessing.cpu_count()
@@ -220,7 +225,10 @@ class Job(object):
     env.update(self._spec.environ)
     env.update(self._add_env)
     self._start = time.time()
-    try_start = lambda: subprocess.Popen(args=self._spec.cmdline,
+    cmdline = self._spec.cmdline
+    if measure_cpu_costs:
+      cmdline = ['time', '--portability'] + cmdline
+    try_start = lambda: subprocess.Popen(args=cmdline,
                                          stderr=subprocess.STDOUT,
                                          stdout=self._tempfile,
                                          cwd=self._spec.cwd,
@@ -269,14 +277,23 @@ class Job(object):
           self.result.returncode = self._process.returncode
       else:
         self._state = _SUCCESS
-        message('PASSED', '%s [time=%.1fsec; retries=%d;%d]' % (
-                    self._spec.shortname, elapsed, self._retries, self._timeout_retries),
+        measurement = ''
+        if measure_cpu_costs:
+          m = re.search(r'real ([0-9.]+)\nuser ([0-9.]+)\nsys ([0-9.]+)', stdout())
+          real = float(m.group(1))
+          user = float(m.group(2))
+          sys = float(m.group(3))
+          if real > 0.5:
+            cores = (user + sys) / real
+            measurement = '; cpu_cost=%.01f' % cores
+        message('PASSED', '%s [time=%.1fsec; retries=%d:%d%s]' % (
+                    self._spec.shortname, elapsed, self._retries, self._timeout_retries, measurement),
             do_newline=self._newline_on_success or self._travis)
         self.result.state = 'PASSED'
         if self._bin_hash:
           update_cache.finished(self._spec.identity(), self._bin_hash)
-    elif (self._state == _RUNNING and 
-          self._spec.timeout_seconds is not None and 
+    elif (self._state == _RUNNING and
+          self._spec.timeout_seconds is not None and
           time.time() - self._start > self._spec.timeout_seconds):
       if self._timeout_retries < self._spec.timeout_retries:
         message('TIMEOUT_FLAKE', '%s [pid=%d]' % (self._spec.shortname, self._process.pid), stdout(), do_newline=True)

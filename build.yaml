@@ -922,6 +922,7 @@ targets:
   - gpr_test_util
   - gpr
 - name: dualstack_socket_test
+  cpu_cost: 0.1
   build: test
   language: c
   src:
@@ -996,6 +997,7 @@ targets:
   - gpr_test_util
   - gpr
 - name: fling_stream_test
+  cpu_cost: 2
   build: test
   language: c
   src:
@@ -1005,12 +1007,12 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
-  cpu_cost: 2
   platforms:
   - mac
   - linux
   - posix
 - name: fling_test
+  cpu_cost: 2
   build: test
   language: c
   src:
@@ -1020,7 +1022,6 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
-  cpu_cost: 2
   platforms:
   - mac
   - linux
@@ -1120,6 +1121,7 @@ targets:
   - gpr_test_util
   - gpr
 - name: gpr_stack_lockfree_test
+  cpu_cost: 2
   build: test
   language: c
   src:
@@ -1136,6 +1138,7 @@ targets:
   - gpr_test_util
   - gpr
 - name: gpr_sync_test
+  cpu_cost: 10
   build: test
   language: c
   src:
@@ -1143,8 +1146,8 @@ targets:
   deps:
   - gpr_test_util
   - gpr
-  cpu_cost: 10
 - name: gpr_thd_test
+  cpu_cost: 10
   build: test
   language: c
   src:
@@ -1152,7 +1155,6 @@ targets:
   deps:
   - gpr_test_util
   - gpr
-  cpu_cost: 10
 - name: gpr_time_test
   build: test
   language: c
@@ -1372,6 +1374,7 @@ targets:
   - gpr_test_util
   - gpr
 - name: httpcli_test
+  cpu_cost: 0.5
   build: test
   language: c
   src:
@@ -1386,6 +1389,7 @@ targets:
   - linux
   - posix
 - name: httpscli_test
+  cpu_cost: 0.5
   build: test
   language: c
   src:
@@ -1467,6 +1471,7 @@ targets:
   - gpr_test_util
   - gpr
 - name: lb_policies_test
+  cpu_cost: 0.1
   build: test
   language: c
   src:
@@ -1519,6 +1524,7 @@ targets:
   - gpr_test_util
   - gpr
 - name: no_server_test
+  cpu_cost: 0.1
   build: test
   language: c
   src:
@@ -1579,6 +1585,7 @@ targets:
   - gpr_test_util
   - gpr
 - name: set_initial_connect_string_test
+  cpu_cost: 0.1
   build: test
   language: c
   src:
@@ -1624,6 +1631,7 @@ targets:
   - linux
   - posix
 - name: tcp_client_posix_test
+  cpu_cost: 0.5
   build: test
   language: c
   src:
@@ -1638,6 +1646,7 @@ targets:
   - linux
   - posix
 - name: tcp_posix_test
+  cpu_cost: 0.5
   build: test
   language: c
   src:
