@@ -53,7 +53,7 @@
       "module_name": "grpc_node",
       "module_path": "./build/Release/",
       "host": "https://storage.googleapis.com/",
-      "remote_path": "grpc-precompiled-binaries/{name}/v{version}",
+      "remote_path": "grpc-precompiled-binaries/node/{name}/v{version}",
       "package_name": "{node_abi}-{platform}-{arch}.tar.gz",
       "module_path": "src/node/extension_binary"
     },
