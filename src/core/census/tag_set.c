@@ -56,7 +56,8 @@
 //   are to aid in efficient parsing and the ability to directly return key
 //   strings. This is more important than saving a single byte/tag on the wire.
 // * The wire encoding uses only single byte values. This eliminates the need
-//   to handle endian-ness conversions.
+//   to handle endian-ness conversions. It also means there is a hard upper
+//   limit of 255 for both CENSUS_MAX_TAG_KV_LEN and CENSUS_MAX_PROPAGATED_TAGS.
 // * Keep all tag information (keys/values/flags) in a single memory buffer,
 //   that can be directly copied to the wire. This makes iteration by index
 //   somewhat less efficient. If it becomes a problem, we could consider

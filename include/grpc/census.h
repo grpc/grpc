@@ -375,6 +375,8 @@ typedef struct {
 } census_tag_set_create_status;
 
 /* Create a new tag set, adding and removing tags from an existing tag set.
+   This will copy all tags from it's input parameters, so it is recommended
+   to add as many tags in a single operation as is practical for the client.
    @param base Base tag set to build upon. Can be NULL.
    @param tags A set of tags to be added/changed/deleted. Tags with keys that
    are in 'tags', but not 'base', are added to the tag set. Keys that are in
@@ -385,8 +387,10 @@ typedef struct {
    binary or non-binary tags, they will be ignored, as will deletions of
    tags that don't exist.
    @param ntags number of tags in 'tags'
-   @param stats Information about the tag set created and actions taken during
-   its creation.
+   @param status If not NULL, the pointed to structure will be filled in with
+   information about the new tag set and status of the tags used in its
+   creation.
+   @return A new, valid census_tag_set.
 */
 census_tag_set *census_tag_set_create(const census_tag_set *base,
                                       const census_tag *tags, int ntags,
@@ -396,7 +400,7 @@ census_tag_set *census_tag_set_create(const census_tag_set *base,
    has been called, the tag set cannot be reused. */
 void census_tag_set_destroy(census_tag_set *tags);
 
-/* Get the number of tags in the tag set. */
+/* Get the total number of tags in the tag set. */
 int census_tag_set_ntags(const census_tag_set *tags);
 
 /* Structure used for tag set iteration. API clients should not use or
