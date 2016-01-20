@@ -203,7 +203,7 @@ int main(int argc, char **argv) {
 
   gpr_timespec end_warmup = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(3);
   gpr_timespec end_profiling = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(30);
-  
+
   while (gpr_time_cmp(gpr_now(end_warmup.clock_type), end_warmup) < 0) {
     sc.do_one_step();
   }
