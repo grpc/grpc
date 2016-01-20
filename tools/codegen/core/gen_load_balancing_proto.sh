@@ -124,15 +124,7 @@ mv $TMPFILE "$OUTPUT_DIR/$PROTO_BASENAME.pb.c"
 cat $COPYRIGHT_FILE "$OUTPUT_DIR/$PROTO_BASENAME.pb.h" > $TMPFILE
 mv $TMPFILE "$OUTPUT_DIR/$PROTO_BASENAME.pb.h"
 
-docker run --rm=true \
-  -v ${HOST_GIT_ROOT:-`pwd`}:/local-code \
-  -t grpc_clang_format \
-  clang-format-3.6 \
-    -style="{BasedOnStyle: Google, Language: Cpp}" \
-    -i "/local-code/src/core/proto/grpc/lb/v0/$PROTO_BASENAME.pb.c" && \
-  clang-format-3.6 \
-    -style="{BasedOnStyle: Google, Language: Cpp}" \
-    -i "/local-code/src/core/proto/grpc/lb/v0/$PROTO_BASENAME.pb.h"
-
+docker run -v $OUTPUT_DIR:/local -t grpc_clang_format \
+  bash -c 'clang-format-3.6 -style="{BasedOnStyle: Google, Language: Cpp}" -i /local/load_balancer.pb.*'
 
 popd > /dev/null
