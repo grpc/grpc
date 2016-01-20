@@ -66,15 +66,16 @@ def platform_string():
 
 
 # SimpleConfig: just compile with CONFIG=config, and run the binary to test
-class SimpleConfig(object):
+class Config(object):
 
-  def __init__(self, config, environ=None, timeout_multiplier=1):
+  def __init__(self, config, environ=None, timeout_multiplier=1, tool_prefix=[]):
     if environ is None:
       environ = {}
     self.build_config = config
     self.allow_hashing = (config != 'gcov')
     self.environ = environ
     self.environ['CONFIG'] = config
+    self.tool_prefix = tool_prefix
     self.timeout_multiplier = timeout_multiplier
 
   def job_spec(self, cmdline, hash_targets, timeout_seconds=5*60,
@@ -93,34 +94,13 @@ class SimpleConfig(object):
     actual_environ = self.environ.copy()
     for k, v in environ.iteritems():
       actual_environ[k] = v
-    return jobset.JobSpec(cmdline=cmdline,
+    return jobset.JobSpec(cmdline=self.tool_prefix + cmdline,
                           shortname=shortname,
                           environ=actual_environ,
                           cpu_cost=cpu_cost,
                           timeout_seconds=(self.timeout_multiplier * timeout_seconds if timeout_seconds else None),
                           hash_targets=hash_targets
                               if self.allow_hashing else None,
-                          flake_retries=5 if args.allow_flakes else 0,
-                          timeout_retries=3 if args.allow_flakes else 0)
-
-
-# ValgrindConfig: compile with some CONFIG=config, but use valgrind to run
-class ValgrindConfig(object):
-
-  def __init__(self, config, tool, args=None):
-    if args is None:
-      args = []
-    self.build_config = config
-    self.tool = tool
-    self.args = args
-    self.allow_hashing = False
-
-  def job_spec(self, cmdline, hash_targets, cpu_cost=1.0):
-    return jobset.JobSpec(cmdline=['valgrind', '--tool=%s' % self.tool] +
-                          self.args + cmdline,
-                          shortname='valgrind %s' % cmdline[0],
-                          hash_targets=None,
-                          cpu_cost=cpu_cost,
                           flake_retries=5 if args.allow_flakes else 0,
                           timeout_retries=3 if args.allow_flakes else 0)
 
@@ -499,22 +479,8 @@ class Build(object):
 
 
 # different configurations we can run under
-_CONFIGS = {
-    'dbg': SimpleConfig('dbg'),
-    'opt': SimpleConfig('opt'),
-    'tsan': SimpleConfig('tsan', timeout_multiplier=2, environ={
-        'TSAN_OPTIONS': 'suppressions=tools/tsan_suppressions.txt:halt_on_error=1:second_deadlock_stack=1'}),
-    'msan': SimpleConfig('msan', timeout_multiplier=1.5),
-    'ubsan': SimpleConfig('ubsan'),
-    'asan': SimpleConfig('asan', timeout_multiplier=1.5, environ={
-        'ASAN_OPTIONS': 'suppressions=tools/asan_suppressions.txt:detect_leaks=1:color=always',
-        'LSAN_OPTIONS': 'suppressions=tools/asan_suppressions.txt:report_objects=1'}),
-    'asan-noleaks': SimpleConfig('asan', environ={
-        'ASAN_OPTIONS': 'detect_leaks=0:color=always'}),
-    'gcov': SimpleConfig('gcov'),
-    'memcheck': ValgrindConfig('valgrind', 'memcheck', ['--leak-check=full']),
-    'helgrind': ValgrindConfig('dbg', 'helgrind')
-    }
+with open('tools/run_tests/configs.json') as f:
+  _CONFIGS = dict((cfg['config'], Config(**cfg)) for cfg in json.loads(f.read()))
 
 
 _DEFAULT = ['opt']
@@ -1102,3 +1068,4 @@ else:
   if BuildAndRunError.POST_TEST in errors:
     exit_code |= 4
   sys.exit(exit_code)
+
