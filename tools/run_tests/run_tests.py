@@ -507,8 +507,8 @@ _CONFIGS = {
     'asan-noleaks': SimpleConfig('asan', environ={
         'ASAN_OPTIONS': 'detect_leaks=0:color=always'}),
     'gcov': SimpleConfig('gcov'),
-    'memcheck': ValgrindConfig('valgrind', 'memcheck', ['--leak-check=full'], timeout_multiplier=20),
-    'helgrind': ValgrindConfig('dbg', 'helgrind', timeout_multiplier=20)
+    'memcheck': ValgrindConfig('valgrind', 'memcheck', ['--leak-check=full']),
+    'helgrind': ValgrindConfig('dbg', 'helgrind')
     }
 
 
