@@ -688,6 +688,7 @@ libs:
   build: protoc
   language: c++
   headers:
+  - include/grpc++/impl/codegen/config.h
   - include/grpc++/support/config.h
   - include/grpc++/support/config_protobuf.h
   - src/compiler/config.h

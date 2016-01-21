@@ -953,6 +953,7 @@ cc_library(
 cc_library(
   name = "grpc_plugin_support",
   srcs = [
+    "include/grpc++/impl/codegen/config.h",
     "include/grpc++/support/config.h",
     "include/grpc++/support/config_protobuf.h",
     "src/compiler/config.h",
