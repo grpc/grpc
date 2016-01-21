@@ -542,14 +542,21 @@
   PC_LIBS_GRPC =
 
   ifeq ($(HAS_SYSTEM_ZLIB),false)
-  ifeq ($(HAS_EMBEDDED_ZLIB),true)
-  ZLIB_DEP = $(LIBDIR)/$(CONFIG)/zlib/libz.a
-  ZLIB_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/zlib/libz.a
-  CPPFLAGS += -Ithird_party/zlib
-  LDFLAGS += -L$(LIBDIR)/$(CONFIG)/zlib
+  ifeq ($(HAS_EMBEDDED_ZLIB), true)
+  EMBED_ZLIB ?= true
   else
   DEP_MISSING += zlib
+  EMBED_ZLIB ?= broken
   endif
+  else
+  EMBED_ZLIB ?= false
+  endif
+
+  ifeq ($(EMBED_ZLIB),true)
+  ZLIB_DEP = $(LIBDIR)/$(CONFIG)/libz.a
+  ZLIB_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/libz.a
+  CPPFLAGS += -Ithird_party/zlib
+  LDFLAGS += -L$(LIBDIR)/$(CONFIG)/zlib
   else
   ifeq ($(HAS_PKG_CONFIG),true)
   CPPFLAGS += $(shell $(PKG_CONFIG) --cflags zlib)
@@ -848,14 +855,6 @@
   	$(PROTOBUF_CHECK_CMD) || true
   	$(PROTOC_CHECK_VERSION_CMD) || true
   	$(ZOOKEEPER_CHECK_CMD) || true
-
-  $(LIBDIR)/$(CONFIG)/zlib/libz.a:
-  	$(E) "[MAKE]    Building zlib"
-  	$(Q)(cd third_party/zlib ; CC="$(CC)" CFLAGS="$(CFLAGS_$(CONFIG)) $(PIC_CPPFLAGS) -fvisibility=hidden $(CPPFLAGS_$(CONFIG)) $(ZLIB_CFLAGS_EXTRA)" ./configure --static)
-  	$(Q)$(MAKE) -C third_party/zlib clean
-  	$(Q)$(MAKE) -C third_party/zlib
-  	$(Q)mkdir -p $(LIBDIR)/$(CONFIG)/zlib
-  	$(Q)cp third_party/zlib/libz.a $(LIBDIR)/$(CONFIG)/zlib
 
   third_party/protobuf/configure:
   	$(E) "[AUTOGEN] Preparing protobuf"
@@ -1528,6 +1527,8 @@
   $(LIB${lib.name.upper()}_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value -fvisibility=hidden
   $(LIB${lib.name.upper()}_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS) -fvisibility=hidden
   $(LIB${lib.name.upper()}_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+  % elif lib.zlib:
+  $(LIB${lib.name.upper()}_OBJS): CFLAGS := $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-implicit-function-declaration -fvisibility=hidden
   % else:
   % endif
 
