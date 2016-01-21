@@ -76,9 +76,11 @@ static void add_epoll_fd_to_global_list(int epoll_fd) {
 }
 
 static void remove_epoll_fd_from_global_list(int epoll_fd) {
+  size_t i;
+
   gpr_mu_lock(&epoll_fd_list_mu);
   GPR_ASSERT(epoll_fd_global_list.count > 0);
-  for (size_t i = 0; i < epoll_fd_global_list.count; i++) {
+  for (i = 0; i < epoll_fd_global_list.count; i++) {
     if (epoll_fd == epoll_fd_global_list.epoll_fds[i]) {
       epoll_fd_global_list.epoll_fds[i] =
           epoll_fd_global_list.epoll_fds[--(epoll_fd_global_list.count)];
@@ -90,13 +92,15 @@ static void remove_epoll_fd_from_global_list(int epoll_fd) {
 
 void grpc_remove_fd_from_all_epoll_sets(int fd) {
   int err;
+  size_t i;
+
   gpr_once_init(&init_epoll_fd_list_mu, init_mu);
   gpr_mu_lock(&epoll_fd_list_mu);
   if (epoll_fd_global_list.count == 0) {
     gpr_mu_unlock(&epoll_fd_list_mu);
     return;
   }
-  for (size_t i = 0; i < epoll_fd_global_list.count; i++) {
+  for (i = 0; i < epoll_fd_global_list.count; i++) {
     err = epoll_ctl(epoll_fd_global_list.epoll_fds[i], EPOLL_CTL_DEL, fd, NULL);
     if (err < 0 && errno != ENOENT) {
       gpr_log(GPR_ERROR, "epoll_ctl del for %d failed: %s", fd,
