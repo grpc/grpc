@@ -120,11 +120,18 @@ sed -i "s:$PROTO_BASENAME.pb.h:src/core/proto/grpc/lb/v0/$PROTO_BASENAME.pb.h:g"
 # prepend copyright
 TMPFILE=$(mktemp)
 cat $COPYRIGHT_FILE "$OUTPUT_DIR/$PROTO_BASENAME.pb.c" > $TMPFILE
-mv $TMPFILE "$OUTPUT_DIR/$PROTO_BASENAME.pb.c"
+mv -v $TMPFILE "$OUTPUT_DIR/$PROTO_BASENAME.pb.c"
 cat $COPYRIGHT_FILE "$OUTPUT_DIR/$PROTO_BASENAME.pb.h" > $TMPFILE
-mv $TMPFILE "$OUTPUT_DIR/$PROTO_BASENAME.pb.h"
+mv -v $TMPFILE "$OUTPUT_DIR/$PROTO_BASENAME.pb.h"
 
-docker run --rm=true -v $OUTPUT_DIR:/local -t grpc_clang_format \
-  bash -c 'clang-format-3.6 -style="{BasedOnStyle: Google, Language: Cpp}" -i /local/load_balancer.pb.*'
+ls -l $OUTPUT_DIR
+
+docker run --rm=false -v $OUTPUT_DIR:/lol -t grpc_clang_format \
+  ls -l /
+docker run --rm=true -v $OUTPUT_DIR:/lol -t grpc_clang_format \
+  ls -l /lol
+
+#  clang-format-3.6 -style="{BasedOnStyle: Google, Language: Cpp}" \
+#    -i /local/load_balancer.pb.c /local/load_balancer.pb.h
 
 popd > /dev/null
