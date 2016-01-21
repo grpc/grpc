@@ -769,8 +769,14 @@ include/grpc++/generic/generic_stub.h \
 include/grpc++/grpc++.h \
 include/grpc++/impl/call.h \
 include/grpc++/impl/client_unary_call.h \
+include/grpc++/impl/codegen/call_hook.h \
 include/grpc++/impl/codegen/channel_interface.h \
+include/grpc++/impl/codegen/completion_queue_tag.h \
+include/grpc++/impl/codegen/config.h \
 include/grpc++/impl/codegen/server_interface.h \
+include/grpc++/impl/codegen/status.h \
+include/grpc++/impl/codegen/status_code_enum.h \
+include/grpc++/impl/codegen/time.h \
 include/grpc++/impl/grpc_library.h \
 include/grpc++/impl/method_handler_impl.h \
 include/grpc++/impl/proto_utils.h \

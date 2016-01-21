@@ -31,12 +31,11 @@
  *
  */
 
-#ifndef GRPCXX_SERVER_INTERFACE_H
-#define GRPCXX_SERVER_INTERFACE_H
+#ifndef GRPCXX_IMPL_CODEGEN_SERVER_INTERFACE_H
+#define GRPCXX_IMPL_CODEGEN_SERVER_INTERFACE_H
 
-#include <grpc++/completion_queue.h>
-#include <grpc++/impl/call.h>
-#include <grpc++/impl/rpc_service_method.h>
+#include <grpc++/impl/codegen/completion_queue_tag.h>
+#include <grpc++/impl/codegen/call_hook.h>
 
 namespace grpc {
 
@@ -251,4 +250,4 @@ class ServerInterface : public CallHook {
 
 }  // namespace grpc
 
-#endif  // GRPCXX_SERVER_INTERFACE_H
+#endif  // GRPCXX_IMPL_CODEGEN_SERVER_INTERFACE_H

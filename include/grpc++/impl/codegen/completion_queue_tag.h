@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,9 +31,22 @@
  *
  */
 
-#ifndef GRPCXX_SUPPORT_TIME_H
-#define GRPCXX_SUPPORT_TIME_H
+#ifndef GRPCXX_COMPLETION_QUEUE_TAG_H
+#define GRPCXX_COMPLETION_QUEUE_TAG_H
 
-#include <grpc++/impl/codegen/time.h>
+namespace grpc {
 
-#endif  // GRPCXX_SUPPORT_TIME_H
+/// An interface allowing implementors to process and filter event tags.
+class CompletionQueueTag {
+ public:
+  virtual ~CompletionQueueTag() {}
+  // Called prior to returning from Next(), return value is the status of the
+  // operation (return status is the default thing to do). If this function
+  // returns false, the tag is dropped and not returned from the completion
+  // queue
+  virtual bool FinalizeResult(void** tag, bool* status) = 0;
+};
+
+}  // namespace grpc
+
+#endif  // GRPCXX_COMPLETION_QUEUE_TAG_H

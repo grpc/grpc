@@ -37,6 +37,9 @@
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
+#include <grpc/impl/codegen/connectivity_state.h>
+#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/impl/codegen/time.h>
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
