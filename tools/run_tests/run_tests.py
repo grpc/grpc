@@ -178,6 +178,9 @@ class CLanguage(object):
       return ['buildtests_%s' % self.make_target]
     return ['buildtests_%s' % self.make_target, 'tools_%s' % self.make_target]
 
+  def make_options(self):
+    return []
+
   def pre_build_steps(self):
     if self.platform == 'windows':
       return [['tools\\run_tests\\pre_build_c.bat']]
@@ -216,6 +219,9 @@ class NodeLanguage(object):
   def make_targets(self, test_regex):
     return []
 
+  def make_options(self):
+    return []
+
   def build_steps(self):
     return [['tools/run_tests/build_node.sh']]
 
@@ -243,6 +249,9 @@ class PhpLanguage(object):
 
   def make_targets(self, test_regex):
     return ['static_c', 'shared_c']
+
+  def make_options(self):
+    return []
 
   def build_steps(self):
     return [['tools/run_tests/build_php.sh']]
@@ -283,6 +292,9 @@ class PythonLanguage(object):
   def make_targets(self, test_regex):
     return ['static_c', 'grpc_python_plugin', 'shared_c']
 
+  def make_options(self):
+    return []
+
   def build_steps(self):
     commands = []
     for python_version in self._build_python_versions:
@@ -321,6 +333,9 @@ class RubyLanguage(object):
 
   def make_targets(self, test_regex):
     return ['static_c']
+
+  def make_options(self):
+    return []
 
   def build_steps(self):
     return [['tools/run_tests/build_ruby.sh']]
@@ -394,6 +409,13 @@ class CSharpLanguage(object):
     else:
       return ['grpc_csharp_ext']
 
+  def make_options(self):
+    if self.platform == 'mac':
+      # On Mac, official distribution of mono is 32bit.
+      return ['CFLAGS=-arch i386', 'LDFLAGS=-arch i386']
+    else:
+      return []
+
   def build_steps(self):
     if self.platform == 'windows':
       return [['src\\csharp\\buildall.bat']]
@@ -425,6 +447,9 @@ class ObjCLanguage(object):
   def make_targets(self, test_regex):
     return ['grpc_objective_c_plugin', 'interop_server']
 
+  def make_options(self):
+    return []
+
   def build_steps(self):
     return [['src/objective-c/tests/build_tests.sh']]
 
@@ -455,6 +480,9 @@ class Sanity(object):
   def make_targets(self, test_regex):
     return ['run_dep_checks']
 
+  def make_options(self):
+    return []
+
   def build_steps(self):
     return []
 
@@ -481,6 +509,9 @@ class Build(object):
 
   def make_targets(self, test_regex):
     return ['static']
+
+  def make_options(self):
+    return []
 
   def build_steps(self):
     return []
@@ -749,6 +780,14 @@ if len(build_configs) > 1:
       print language, 'does not support multiple build configurations'
       sys.exit(1)
 
+language_make_options=[]
+if any(language.make_options() for language in languages):
+  if len(languages) != 1:
+    print 'languages with custom make options cannot be built simultaneously with other languages'
+    sys.exit(1)
+  else:
+    language_make_options = next(iter(languages)).make_options()
+
 if platform_string() != 'windows':
   if args.arch != 'default':
     print 'Architecture %s not supported on current platform.' % args.arch
@@ -772,7 +811,8 @@ if platform_string() == 'windows':
                       '/p:Configuration=%s' % _WINDOWS_CONFIG[cfg],
                       _windows_toolset_option(args.compiler),
                       _windows_arch_option(args.arch)] +
-                      extra_args,
+                      extra_args +
+                      language_make_options,
                       shell=True, timeout_seconds=None)
       for target in targets]
 else:
@@ -783,6 +823,7 @@ else:
                               '-j', '%d' % (multiprocessing.cpu_count() + 1),
                               'EXTRA_DEFINES=GRPC_TEST_SLOWDOWN_MACHINE_FACTOR=%f' % args.slowdown,
                               'CONFIG=%s' % cfg] +
+                              language_make_options +
                              ([] if not args.travis else ['JENKINS_BUILD=1']) +
                              targets,
                              timeout_seconds=None)]
