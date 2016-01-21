@@ -31,6 +31,7 @@
 """Run tests in parallel."""
 
 import argparse
+import ast
 import glob
 import hashlib
 import itertools
@@ -66,19 +67,20 @@ def platform_string():
 
 
 # SimpleConfig: just compile with CONFIG=config, and run the binary to test
-class SimpleConfig(object):
+class Config(object):
 
-  def __init__(self, config, environ=None, timeout_multiplier=1):
+  def __init__(self, config, environ=None, timeout_multiplier=1, tool_prefix=[]):
     if environ is None:
       environ = {}
     self.build_config = config
     self.allow_hashing = (config != 'gcov')
     self.environ = environ
     self.environ['CONFIG'] = config
+    self.tool_prefix = tool_prefix
     self.timeout_multiplier = timeout_multiplier
 
   def job_spec(self, cmdline, hash_targets, timeout_seconds=5*60,
-               shortname=None, environ={}):
+               shortname=None, environ={}, cpu_cost=1.0):
     """Construct a jobset.JobSpec for a test under this config
 
        Args:
@@ -93,32 +95,13 @@ class SimpleConfig(object):
     actual_environ = self.environ.copy()
     for k, v in environ.iteritems():
       actual_environ[k] = v
-    return jobset.JobSpec(cmdline=cmdline,
+    return jobset.JobSpec(cmdline=self.tool_prefix + cmdline,
                           shortname=shortname,
                           environ=actual_environ,
-                          timeout_seconds=self.timeout_multiplier * timeout_seconds,
+                          cpu_cost=cpu_cost,
+                          timeout_seconds=(self.timeout_multiplier * timeout_seconds if timeout_seconds else None),
                           hash_targets=hash_targets
                               if self.allow_hashing else None,
-                          flake_retries=5 if args.allow_flakes else 0,
-                          timeout_retries=3 if args.allow_flakes else 0)
-
-
-# ValgrindConfig: compile with some CONFIG=config, but use valgrind to run
-class ValgrindConfig(object):
-
-  def __init__(self, config, tool, args=None):
-    if args is None:
-      args = []
-    self.build_config = config
-    self.tool = tool
-    self.args = args
-    self.allow_hashing = False
-
-  def job_spec(self, cmdline, hash_targets):
-    return jobset.JobSpec(cmdline=['valgrind', '--tool=%s' % self.tool] +
-                          self.args + cmdline,
-                          shortname='valgrind %s' % cmdline[0],
-                          hash_targets=None,
                           flake_retries=5 if args.allow_flakes else 0,
                           timeout_retries=3 if args.allow_flakes else 0)
 
@@ -157,6 +140,7 @@ class CLanguage(object):
         cmdline = [binary] + target['args']
         out.append(config.job_spec(cmdline, [binary],
                                    shortname=' '.join(cmdline),
+                                   cpu_cost=target['cpu_cost'],
                                    environ={'GRPC_DEFAULT_SSL_ROOTS_FILE_PATH':
                                             os.path.abspath(os.path.dirname(
                                                 sys.argv[0]) + '/../../src/core/tsi/test_creds/ca.pem')}))
@@ -174,6 +158,9 @@ class CLanguage(object):
       # don't build tools on windows just yet
       return ['buildtests_%s' % self.make_target]
     return ['buildtests_%s' % self.make_target, 'tools_%s' % self.make_target]
+
+  def make_options(self):
+    return []
 
   def pre_build_steps(self):
     if self.platform == 'windows':
@@ -213,6 +200,9 @@ class NodeLanguage(object):
   def make_targets(self, test_regex):
     return []
 
+  def make_options(self):
+    return []
+
   def build_steps(self):
     return [['tools/run_tests/build_node.sh']]
 
@@ -240,6 +230,9 @@ class PhpLanguage(object):
 
   def make_targets(self, test_regex):
     return ['static_c', 'shared_c']
+
+  def make_options(self):
+    return []
 
   def build_steps(self):
     return [['tools/run_tests/build_php.sh']]
@@ -280,6 +273,9 @@ class PythonLanguage(object):
   def make_targets(self, test_regex):
     return ['static_c', 'grpc_python_plugin', 'shared_c']
 
+  def make_options(self):
+    return []
+
   def build_steps(self):
     commands = []
     for python_version in self._build_python_versions:
@@ -318,6 +314,9 @@ class RubyLanguage(object):
 
   def make_targets(self, test_regex):
     return ['static_c']
+
+  def make_options(self):
+    return []
 
   def build_steps(self):
     return [['tools/run_tests/build_ruby.sh']]
@@ -391,6 +390,13 @@ class CSharpLanguage(object):
     else:
       return ['grpc_csharp_ext']
 
+  def make_options(self):
+    if self.platform == 'mac':
+      # On Mac, official distribution of mono is 32bit.
+      return ['CFLAGS=-arch i386', 'LDFLAGS=-arch i386']
+    else:
+      return []
+
   def build_steps(self):
     if self.platform == 'windows':
       return [['src\\csharp\\buildall.bat']]
@@ -422,6 +428,9 @@ class ObjCLanguage(object):
   def make_targets(self, test_regex):
     return ['grpc_objective_c_plugin', 'interop_server']
 
+  def make_options(self):
+    return []
+
   def build_steps(self):
     return [['src/objective-c/tests/build_tests.sh']]
 
@@ -441,14 +450,19 @@ class ObjCLanguage(object):
 class Sanity(object):
 
   def test_specs(self, config, args):
-    return [config.job_spec(['tools/run_tests/run_sanity.sh'], None, timeout_seconds=15*60),
-            config.job_spec(['tools/run_tests/check_sources_and_headers.py'], None)]
+    import yaml
+    with open('tools/run_tests/sanity_tests.yaml', 'r') as f:
+      return [config.job_spec([cmd['script']], None, timeout_seconds=None, environ={'TEST': 'true'}, cpu_cost=cmd.get('cpu_cost', 1))
+              for cmd in yaml.load(f)]
 
   def pre_build_steps(self):
     return []
 
   def make_targets(self, test_regex):
     return ['run_dep_checks']
+
+  def make_options(self):
+    return []
 
   def build_steps(self):
     return []
@@ -477,6 +491,9 @@ class Build(object):
   def make_targets(self, test_regex):
     return ['static']
 
+  def make_options(self):
+    return []
+
   def build_steps(self):
     return []
 
@@ -494,22 +511,8 @@ class Build(object):
 
 
 # different configurations we can run under
-_CONFIGS = {
-    'dbg': SimpleConfig('dbg'),
-    'opt': SimpleConfig('opt'),
-    'tsan': SimpleConfig('tsan', timeout_multiplier=2, environ={
-        'TSAN_OPTIONS': 'suppressions=tools/tsan_suppressions.txt:halt_on_error=1:second_deadlock_stack=1'}),
-    'msan': SimpleConfig('msan', timeout_multiplier=1.5),
-    'ubsan': SimpleConfig('ubsan'),
-    'asan': SimpleConfig('asan', timeout_multiplier=1.5, environ={
-        'ASAN_OPTIONS': 'suppressions=tools/asan_suppressions.txt:detect_leaks=1:color=always',
-        'LSAN_OPTIONS': 'suppressions=tools/asan_suppressions.txt:report_objects=1'}),
-    'asan-noleaks': SimpleConfig('asan', environ={
-        'ASAN_OPTIONS': 'detect_leaks=0:color=always'}),
-    'gcov': SimpleConfig('gcov'),
-    'memcheck': ValgrindConfig('valgrind', 'memcheck', ['--leak-check=full']),
-    'helgrind': ValgrindConfig('dbg', 'helgrind')
-    }
+with open('tools/run_tests/configs.json') as f:
+  _CONFIGS = dict((cfg['config'], Config(**cfg)) for cfg in ast.literal_eval(f.read()))
 
 
 _DEFAULT = ['opt']
@@ -600,7 +603,7 @@ argp.add_argument('-n', '--runs_per_test', default=1, type=runs_per_test_type,
         help='A positive integer or "inf". If "inf", all tests will run in an '
              'infinite loop. Especially useful in combination with "-f"')
 argp.add_argument('-r', '--regex', default='.*', type=str)
-argp.add_argument('-j', '--jobs', default=2 * multiprocessing.cpu_count(), type=int)
+argp.add_argument('-j', '--jobs', default=multiprocessing.cpu_count(), type=int)
 argp.add_argument('-s', '--slowdown', default=1.0, type=float)
 argp.add_argument('-f', '--forever',
                   default=False,
@@ -647,6 +650,8 @@ argp.add_argument('--build_only',
                   action='store_const',
                   const=True,
                   help='Perform all the build steps but dont run any tests.')
+argp.add_argument('--measure_cpu_costs', default=False, action='store_const', const=True,
+                  help='Measure the cpu costs of tests')
 argp.add_argument('--update_submodules', default=[], nargs='*',
                   help='Update some submodules before building. If any are updated, also run generate_projects. ' +
                        'Submodules are specified as SUBMODULE_NAME:BRANCH; if BRANCH is omitted, master is assumed.')
@@ -654,6 +659,8 @@ argp.add_argument('-a', '--antagonists', default=0, type=int)
 argp.add_argument('-x', '--xml_report', default=None, type=str,
         help='Generates a JUnit-compatible XML report')
 args = argp.parse_args()
+
+jobset.measure_cpu_costs = args.measure_cpu_costs
 
 if args.use_docker:
   if not args.travis:
@@ -740,6 +747,14 @@ if len(build_configs) > 1:
       print language, 'does not support multiple build configurations'
       sys.exit(1)
 
+language_make_options=[]
+if any(language.make_options() for language in languages):
+  if len(languages) != 1:
+    print 'languages with custom make options cannot be built simultaneously with other languages'
+    sys.exit(1)
+  else:
+    language_make_options = next(iter(languages)).make_options()
+
 if platform_string() != 'windows':
   if args.arch != 'default':
     print 'Architecture %s not supported on current platform.' % args.arch
@@ -763,20 +778,22 @@ if platform_string() == 'windows':
                       '/p:Configuration=%s' % _WINDOWS_CONFIG[cfg],
                       _windows_toolset_option(args.compiler),
                       _windows_arch_option(args.arch)] +
-                      extra_args,
-                      shell=True, timeout_seconds=90*60)
+                      extra_args +
+                      language_make_options,
+                      shell=True, timeout_seconds=None)
       for target in targets]
 else:
   def make_jobspec(cfg, targets, makefile='Makefile'):
     if targets:
       return [jobset.JobSpec([os.getenv('MAKE', 'make'),
                               '-f', makefile,
-                              '-j', '%d' % (multiprocessing.cpu_count() + 1),
+                              '-j', '%d' % args.jobs,
                               'EXTRA_DEFINES=GRPC_TEST_SLOWDOWN_MACHINE_FACTOR=%f' % args.slowdown,
                               'CONFIG=%s' % cfg] +
+                              language_make_options +
                              ([] if not args.travis else ['JENKINS_BUILD=1']) +
                              targets,
-                             timeout_seconds=30*60)]
+                             timeout_seconds=None)]
     else:
       return []
 make_targets = {}
@@ -801,7 +818,7 @@ if make_targets:
   make_commands = itertools.chain.from_iterable(make_jobspec(cfg, list(targets), makefile) for cfg in build_configs for (makefile, targets) in make_targets.iteritems())
   build_steps.extend(set(make_commands))
 build_steps.extend(set(
-                   jobset.JobSpec(cmdline, environ=build_step_environ(cfg), timeout_seconds=10*60)
+                   jobset.JobSpec(cmdline, environ=build_step_environ(cfg), timeout_seconds=None)
                    for cfg in build_configs
                    for l in languages
                    for cmdline in l.build_steps()))
@@ -1093,3 +1110,4 @@ else:
   if BuildAndRunError.POST_TEST in errors:
     exit_code |= 4
   sys.exit(exit_code)
+

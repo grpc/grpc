@@ -1,5 +1,5 @@
-#!/bin/sh
-# Copyright 2015-2016, Google Inc.
+#!/bin/bash
+# Copyright 2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -27,22 +27,53 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+# Builds docker image and runs a command under it.
+# You should never need to call this script on your own.
 
-# Regenerates gRPC service stubs from proto files.
-set +e
+set -ex
+
 cd $(dirname $0)/../..
+git_root=$(pwd)
+cd -
 
-PROTOC=bins/opt/protobuf/protoc
-PLUGIN=protoc-gen-grpc=bins/opt/grpc_csharp_plugin
-EXAMPLES_DIR=src/csharp/Grpc.Examples
-HEALTHCHECK_DIR=src/csharp/Grpc.HealthCheck
-TESTING_DIR=src/csharp/Grpc.IntegrationTesting
+# Create a local branch so the child Docker script won't complain
+git branch -f jenkins-docker
 
-$PROTOC --plugin=$PLUGIN --csharp_out=$EXAMPLES_DIR --grpc_out=$EXAMPLES_DIR \
-    -I src/proto/math src/proto/math/math.proto
+# Inputs
+# DOCKERFILE_DIR - Directory in which Dockerfile file is located.
+# DOCKER_RUN_SCRIPT - Script to run under docker (relative to grpc repo root)
+# $@ - Extra args to pass to docker run
 
-$PROTOC --plugin=$PLUGIN --csharp_out=$HEALTHCHECK_DIR --grpc_out=$HEALTHCHECK_DIR \
-    -I src/proto/grpc/health/v1alpha src/proto/grpc/health/v1alpha/health.proto
+# Use image name based on Dockerfile location checksum
+DOCKER_IMAGE_NAME=$(basename $DOCKERFILE_DIR)_$(sha1sum $DOCKERFILE_DIR/Dockerfile | cut -f1 -d\ )
 
-$PROTOC --plugin=$PLUGIN --csharp_out=$TESTING_DIR --grpc_out=$TESTING_DIR \
-    -I . src/proto/grpc/testing/{control,empty,messages,payloads,services,stats,test}.proto 
+# Make sure docker image has been built. Should be instantaneous if so.
+docker build -t $DOCKER_IMAGE_NAME $DOCKERFILE_DIR
+
+# Choose random name for docker container
+CONTAINER_NAME="build_and_run_docker_$(uuidgen)"
+
+# Run command inside docker
+docker run \
+  "$@" \
+  -e THIS_IS_REALLY_NEEDED='see https://github.com/docker/docker/issues/14203 for why docker is awful' \
+  -v "$git_root:/var/local/jenkins/grpc:ro" \
+  -w /var/local/git/grpc \
+  --name=$CONTAINER_NAME \
+  $DOCKER_IMAGE_NAME \
+  bash -l "/var/local/jenkins/grpc/$DOCKER_RUN_SCRIPT" || FAILED="true"
+
+# Copy output artifacts
+if [ "$OUTPUT_DIR" != "" ]
+then
+  docker cp "$CONTAINER_NAME:/var/local/git/grpc/$OUTPUT_DIR" "$git_root" || FAILED="true"
+fi
+
+# remove the container, possibly killing it first
+docker rm -f $CONTAINER_NAME || true
+
+if [ "$FAILED" != "" ]
+then
+  exit 1
+fi
