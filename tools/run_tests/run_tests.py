@@ -480,7 +480,7 @@ class Build(object):
 
 # different configurations we can run under
 with open('tools/run_tests/configs.json') as f:
-  _CONFIGS = dict((cfg['config'], Config(**cfg)) for cfg in json.loads(f.read()))
+  _CONFIGS = dict((cfg['config'], Config(**cfg)) for cfg in ast.literal_eval(f.read()))
 
 
 _DEFAULT = ['opt']
