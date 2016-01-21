@@ -41,7 +41,7 @@
 #include "src/core/support/string.h"
 
 // Functions in this file support the public tag_set API, as well as
-// encoding/decoding tag_sets as part of context transmission across
+// encoding/decoding tag_sets as part of context propagation across
 // RPC's. The overall requirements (in approximate priority order) for the
 // tag_set representations:
 // 1. Efficient conversion to/from wire format
@@ -59,10 +59,8 @@
 //   to handle endian-ness conversions. It also means there is a hard upper
 //   limit of 255 for both CENSUS_MAX_TAG_KV_LEN and CENSUS_MAX_PROPAGATED_TAGS.
 // * Keep all tag information (keys/values/flags) in a single memory buffer,
-//   that can be directly copied to the wire. This makes iteration by index
-//   somewhat less efficient. If it becomes a problem, we could consider
-//   building an index at tag_set creation.
-// * Binary tags share the same structure as, but are encoded seperately from,
+//   that can be directly copied to the wire.14
+// * Binary tags share the same structure as, but are encoded separately from,
 //   non-binary tags. This is primarily because non-binary tags are far more
 //   likely to be repeated across multiple RPC calls, so are more efficiently
 //   cached and compressed in any metadata schemes.
@@ -111,7 +109,8 @@ struct raw_tag {
 
 // Primary (external) representation of a tag set. Composed of 3 underlying
 // tag_set structs, one for each of the binary/printable propagated tags, and
-// one for everything else.
+// one for everything else. This is to efficiently support tag
+// encoding/decoding.
 struct census_tag_set {
   struct tag_set tags[3];
 };
@@ -139,10 +138,10 @@ static char *decode_tag(struct raw_tag *tag, char *header, int offset) {
 static void tag_set_copy(struct tag_set *to, const struct tag_set *from) {
   memcpy(to, from, sizeof(struct tag_set));
   to->kvm = gpr_malloc(to->kvm_size);
-  memcpy(to->kvm, from->kvm, to->kvm_used);
+  memcpy(to->kvm, from->kvm, from->kvm_used);
 }
 
-// Delete a tag from a tag_set, if it exists (returns true it it did).
+// Delete a tag from a tag_set, if it exists (returns true if it did).
 static bool tag_set_delete_tag(struct tag_set *tags, const char *key,
                                size_t key_len) {
   char *kvp = tags->kvm;
@@ -249,18 +248,13 @@ static void cts_modify_tag(census_tag_set *tags, const census_tag *tag,
 //    appropriate amount.
 static void tag_set_flatten(struct tag_set *tags) {
   if (tags->ntags == tags->ntags_alloc) return;
-  bool find_deleted = true;  // are we looking for deleted tags?
+  bool found_deleted = false;  // found a deleted tag.
   char *kvp = tags->kvm;
   char *dbase;  // record location of deleted tag
   for (int i = 0; i < tags->ntags_alloc; i++) {
     struct raw_tag tag;
     char *next_kvp = decode_tag(&tag, kvp, 0);
-    if (find_deleted) {
-      if (CENSUS_TAG_IS_DELETED(tag.flags)) {
-        dbase = kvp;
-        find_deleted = false;
-      }
-    } else {
+    if (found_deleted) {
       if (!CENSUS_TAG_IS_DELETED(tag.flags)) {
         ptrdiff_t reduce = kvp - dbase;  // #bytes in deleted tags
         GPR_ASSERT(reduce > 0);
@@ -269,12 +263,17 @@ static void tag_set_flatten(struct tag_set *tags) {
         memmove(dbase, kvp, (size_t)copy_size);
         tags->kvm_used -= (size_t)reduce;
         next_kvp -= reduce;
-        find_deleted = true;
+        found_deleted = false;
+      }
+    } else {
+      if (CENSUS_TAG_IS_DELETED(tag.flags)) {
+        dbase = kvp;
+        found_deleted = true;
       }
     }
     kvp = next_kvp;
   }
-  if (!find_deleted) {
+  if (found_deleted) {
     GPR_ASSERT(dbase > tags->kvm);
     tags->kvm_used = (size_t)(dbase - tags->kvm);
   }
