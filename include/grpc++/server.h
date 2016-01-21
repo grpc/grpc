@@ -62,8 +62,7 @@ class ThreadPoolInterface;
 /// Models a gRPC server.
 ///
 /// Servers are configured and started via \a grpc::ServerBuilder.
-class Server GRPC_FINAL : public ServerInterface,
-                          public GrpcLibrary {
+class Server GRPC_FINAL : public ServerInterface, public GrpcLibrary {
  public:
   ~Server();
 
@@ -113,7 +112,8 @@ class Server GRPC_FINAL : public ServerInterface,
 
   /// Register a service. This call does not take ownership of the service.
   /// The service must exist for the lifetime of the Server instance.
-  bool RegisterService(const grpc::string* host, Service* service) GRPC_OVERRIDE;
+  bool RegisterService(const grpc::string* host,
+                       Service* service) GRPC_OVERRIDE;
 
   /// Register a generic service. This call does not take ownership of the
   /// service. The service must exist for the lifetime of the Server instance.
@@ -130,7 +130,8 @@ class Server GRPC_FINAL : public ServerInterface,
   /// \return bound port number on sucess, 0 on failure.
   ///
   /// \warning It's an error to call this method on an already started server.
-  int AddListeningPort(const grpc::string& addr, ServerCredentials* creds) GRPC_OVERRIDE;
+  int AddListeningPort(const grpc::string& addr,
+                       ServerCredentials* creds) GRPC_OVERRIDE;
 
   /// Start the server.
   ///

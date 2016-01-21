@@ -451,7 +451,8 @@ ServerInterface::BaseAsyncRequest::BaseAsyncRequest(
   memset(&initial_metadata_array_, 0, sizeof(initial_metadata_array_));
 }
 
-bool ServerInterface::BaseAsyncRequest::FinalizeResult(void** tag, bool* status) {
+bool ServerInterface::BaseAsyncRequest::FinalizeResult(void** tag,
+                                                       bool* status) {
   if (*status) {
     for (size_t i = 0; i < initial_metadata_array_.count; i++) {
       context_->client_metadata_.insert(
@@ -506,7 +507,8 @@ ServerInterface::GenericAsyncRequest::GenericAsyncRequest(
                            notification_cq->cq(), this);
 }
 
-bool ServerInterface::GenericAsyncRequest::FinalizeResult(void** tag, bool* status) {
+bool ServerInterface::GenericAsyncRequest::FinalizeResult(void** tag,
+                                                          bool* status) {
   // TODO(yangg) remove the copy here.
   if (*status) {
     static_cast<GenericServerContext*>(context_)->method_ =

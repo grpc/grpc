@@ -101,20 +101,21 @@ class ChannelInterface {
   template <class R>
   friend class ::grpc::ClientAsyncResponseReader;
   template <class InputMessage, class OutputMessage>
-  friend Status BlockingUnaryCall(ChannelInterface* channel, const RpcMethod& method,
+  friend Status BlockingUnaryCall(ChannelInterface* channel,
+                                  const RpcMethod& method,
                                   ClientContext* context,
                                   const InputMessage& request,
                                   OutputMessage* result);
   friend class ::grpc::RpcMethod;
   virtual Call CreateCall(const RpcMethod& method, ClientContext* context,
-                  CompletionQueue* cq) = 0;
+                          CompletionQueue* cq) = 0;
   virtual void PerformOpsOnCall(CallOpSetInterface* ops, Call* call) = 0;
   virtual void* RegisterMethod(const char* method) = 0;
   virtual void NotifyOnStateChangeImpl(grpc_connectivity_state last_observed,
-                               gpr_timespec deadline, CompletionQueue* cq,
-                               void* tag) = 0;
+                                       gpr_timespec deadline,
+                                       CompletionQueue* cq, void* tag) = 0;
   virtual bool WaitForStateChangeImpl(grpc_connectivity_state last_observed,
-                              gpr_timespec deadline) = 0;
+                                      gpr_timespec deadline) = 0;
 };
 
 }  // namespace grpc
