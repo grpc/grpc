@@ -1,4 +1,4 @@
-// Copyright 2015, Google Inc.
+// Copyright 2015-2016, Google Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -37,7 +37,7 @@ namespace GreeterClient
     {
         public static void Main(string[] args)
         {
-            Channel channel = new Channel("127.0.0.1:50051", Credentials.Insecure);
+            Channel channel = new Channel("127.0.0.1:50051", ChannelCredentials.Insecure);
 
             var client = Greeter.NewClient(channel);
             String user = "you";
