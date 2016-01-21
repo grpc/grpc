@@ -9,42 +9,41 @@ using pbr = global::Google.Protobuf.Reflection;
 using scg = global::System.Collections.Generic;
 namespace Math {
 
-  namespace Proto {
+  /// <summary>Holder for reflection information generated from math.proto</summary>
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+  public static partial class MathReflection {
 
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-    public static partial class Math {
-
-      #region Descriptor
-      public static pbr::FileDescriptor Descriptor {
-        get { return descriptor; }
-      }
-      private static pbr::FileDescriptor descriptor;
-
-      static Math() {
-        byte[] descriptorData = global::System.Convert.FromBase64String(
-            string.Concat(
-              "CgptYXRoLnByb3RvEgRtYXRoIiwKB0RpdkFyZ3MSEAoIZGl2aWRlbmQYASAB", 
-              "KAMSDwoHZGl2aXNvchgCIAEoAyIvCghEaXZSZXBseRIQCghxdW90aWVudBgB", 
-              "IAEoAxIRCglyZW1haW5kZXIYAiABKAMiGAoHRmliQXJncxINCgVsaW1pdBgB", 
-              "IAEoAyISCgNOdW0SCwoDbnVtGAEgASgDIhkKCEZpYlJlcGx5Eg0KBWNvdW50", 
-              "GAEgASgDMqQBCgRNYXRoEiYKA0RpdhINLm1hdGguRGl2QXJncxoOLm1hdGgu", 
-              "RGl2UmVwbHkiABIuCgdEaXZNYW55Eg0ubWF0aC5EaXZBcmdzGg4ubWF0aC5E", 
-              "aXZSZXBseSIAKAEwARIjCgNGaWISDS5tYXRoLkZpYkFyZ3MaCS5tYXRoLk51", 
-              "bSIAMAESHwoDU3VtEgkubWF0aC5OdW0aCS5tYXRoLk51bSIAKAFiBnByb3Rv", 
-              "Mw=="));
-        descriptor = pbr::FileDescriptor.InternalBuildGeneratedFileFrom(descriptorData,
-            new pbr::FileDescriptor[] { },
-            new pbr::GeneratedCodeInfo(null, new pbr::GeneratedCodeInfo[] {
-              new pbr::GeneratedCodeInfo(typeof(global::Math.DivArgs), new[]{ "Dividend", "Divisor" }, null, null, null),
-              new pbr::GeneratedCodeInfo(typeof(global::Math.DivReply), new[]{ "Quotient", "Remainder" }, null, null, null),
-              new pbr::GeneratedCodeInfo(typeof(global::Math.FibArgs), new[]{ "Limit" }, null, null, null),
-              new pbr::GeneratedCodeInfo(typeof(global::Math.Num), new[]{ "Num_" }, null, null, null),
-              new pbr::GeneratedCodeInfo(typeof(global::Math.FibReply), new[]{ "Count" }, null, null, null)
-            }));
-      }
-      #endregion
-
+    #region Descriptor
+    /// <summary>File descriptor for math.proto</summary>
+    public static pbr::FileDescriptor Descriptor {
+      get { return descriptor; }
     }
+    private static pbr::FileDescriptor descriptor;
+
+    static MathReflection() {
+      byte[] descriptorData = global::System.Convert.FromBase64String(
+          string.Concat(
+            "CgptYXRoLnByb3RvEgRtYXRoIiwKB0RpdkFyZ3MSEAoIZGl2aWRlbmQYASAB",
+            "KAMSDwoHZGl2aXNvchgCIAEoAyIvCghEaXZSZXBseRIQCghxdW90aWVudBgB",
+            "IAEoAxIRCglyZW1haW5kZXIYAiABKAMiGAoHRmliQXJncxINCgVsaW1pdBgB",
+            "IAEoAyISCgNOdW0SCwoDbnVtGAEgASgDIhkKCEZpYlJlcGx5Eg0KBWNvdW50",
+            "GAEgASgDMqQBCgRNYXRoEiYKA0RpdhINLm1hdGguRGl2QXJncxoOLm1hdGgu",
+            "RGl2UmVwbHkiABIuCgdEaXZNYW55Eg0ubWF0aC5EaXZBcmdzGg4ubWF0aC5E",
+            "aXZSZXBseSIAKAEwARIjCgNGaWISDS5tYXRoLkZpYkFyZ3MaCS5tYXRoLk51",
+            "bSIAMAESHwoDU3VtEgkubWF0aC5OdW0aCS5tYXRoLk51bSIAKAFiBnByb3Rv",
+            "Mw=="));
+      descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
+          new pbr::FileDescriptor[] { },
+          new pbr::GeneratedCodeInfo(null, new pbr::GeneratedCodeInfo[] {
+            new pbr::GeneratedCodeInfo(typeof(global::Math.DivArgs), global::Math.DivArgs.Parser, new[]{ "Dividend", "Divisor" }, null, null, null),
+            new pbr::GeneratedCodeInfo(typeof(global::Math.DivReply), global::Math.DivReply.Parser, new[]{ "Quotient", "Remainder" }, null, null, null),
+            new pbr::GeneratedCodeInfo(typeof(global::Math.FibArgs), global::Math.FibArgs.Parser, new[]{ "Limit" }, null, null, null),
+            new pbr::GeneratedCodeInfo(typeof(global::Math.Num), global::Math.Num.Parser, new[]{ "Num_" }, null, null, null),
+            new pbr::GeneratedCodeInfo(typeof(global::Math.FibReply), global::Math.FibReply.Parser, new[]{ "Count" }, null, null, null)
+          }));
+    }
+    #endregion
+
   }
   #region Messages
   [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
@@ -53,7 +52,7 @@ namespace Math {
     public static pb::MessageParser<DivArgs> Parser { get { return _parser; } }
 
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Math.Proto.Math.Descriptor.MessageTypes[0]; }
+      get { return global::Math.MathReflection.Descriptor.MessageTypes[0]; }
     }
 
     pbr::MessageDescriptor pb::IMessage.Descriptor {
@@ -75,6 +74,7 @@ namespace Math {
       return new DivArgs(this);
     }
 
+    /// <summary>Field number for the "dividend" field.</summary>
     public const int DividendFieldNumber = 1;
     private long dividend_;
     public long Dividend {
@@ -84,6 +84,7 @@ namespace Math {
       }
     }
 
+    /// <summary>Field number for the "divisor" field.</summary>
     public const int DivisorFieldNumber = 2;
     private long divisor_;
     public long Divisor {
@@ -117,7 +118,7 @@ namespace Math {
     }
 
     public override string ToString() {
-      return pb::JsonFormatter.Default.Format(this);
+      return pb::JsonFormatter.ToDiagnosticString(this);
     }
 
     public void WriteTo(pb::CodedOutputStream output) {
@@ -181,7 +182,7 @@ namespace Math {
     public static pb::MessageParser<DivReply> Parser { get { return _parser; } }
 
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Math.Proto.Math.Descriptor.MessageTypes[1]; }
+      get { return global::Math.MathReflection.Descriptor.MessageTypes[1]; }
     }
 
     pbr::MessageDescriptor pb::IMessage.Descriptor {
@@ -203,6 +204,7 @@ namespace Math {
       return new DivReply(this);
     }
 
+    /// <summary>Field number for the "quotient" field.</summary>
     public const int QuotientFieldNumber = 1;
     private long quotient_;
     public long Quotient {
@@ -212,6 +214,7 @@ namespace Math {
       }
     }
 
+    /// <summary>Field number for the "remainder" field.</summary>
     public const int RemainderFieldNumber = 2;
     private long remainder_;
     public long Remainder {
@@ -245,7 +248,7 @@ namespace Math {
     }
 
     public override string ToString() {
-      return pb::JsonFormatter.Default.Format(this);
+      return pb::JsonFormatter.ToDiagnosticString(this);
     }
 
     public void WriteTo(pb::CodedOutputStream output) {
@@ -309,7 +312,7 @@ namespace Math {
     public static pb::MessageParser<FibArgs> Parser { get { return _parser; } }
 
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Math.Proto.Math.Descriptor.MessageTypes[2]; }
+      get { return global::Math.MathReflection.Descriptor.MessageTypes[2]; }
     }
 
     pbr::MessageDescriptor pb::IMessage.Descriptor {
@@ -330,6 +333,7 @@ namespace Math {
       return new FibArgs(this);
     }
 
+    /// <summary>Field number for the "limit" field.</summary>
     public const int LimitFieldNumber = 1;
     private long limit_;
     public long Limit {
@@ -361,7 +365,7 @@ namespace Math {
     }
 
     public override string ToString() {
-      return pb::JsonFormatter.Default.Format(this);
+      return pb::JsonFormatter.ToDiagnosticString(this);
     }
 
     public void WriteTo(pb::CodedOutputStream output) {
@@ -411,7 +415,7 @@ namespace Math {
     public static pb::MessageParser<Num> Parser { get { return _parser; } }
 
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Math.Proto.Math.Descriptor.MessageTypes[3]; }
+      get { return global::Math.MathReflection.Descriptor.MessageTypes[3]; }
     }
 
     pbr::MessageDescriptor pb::IMessage.Descriptor {
@@ -432,6 +436,7 @@ namespace Math {
       return new Num(this);
     }
 
+    /// <summary>Field number for the "num" field.</summary>
     public const int Num_FieldNumber = 1;
     private long num_;
     public long Num_ {
@@ -463,7 +468,7 @@ namespace Math {
     }
 
     public override string ToString() {
-      return pb::JsonFormatter.Default.Format(this);
+      return pb::JsonFormatter.ToDiagnosticString(this);
     }
 
     public void WriteTo(pb::CodedOutputStream output) {
@@ -513,7 +518,7 @@ namespace Math {
     public static pb::MessageParser<FibReply> Parser { get { return _parser; } }
 
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Math.Proto.Math.Descriptor.MessageTypes[4]; }
+      get { return global::Math.MathReflection.Descriptor.MessageTypes[4]; }
     }
 
     pbr::MessageDescriptor pb::IMessage.Descriptor {
@@ -534,6 +539,7 @@ namespace Math {
       return new FibReply(this);
     }
 
+    /// <summary>Field number for the "count" field.</summary>
     public const int CountFieldNumber = 1;
     private long count_;
     public long Count {
@@ -565,7 +571,7 @@ namespace Math {
     }
 
     public override string ToString() {
-      return pb::JsonFormatter.Default.Format(this);
+      return pb::JsonFormatter.ToDiagnosticString(this);
     }
 
     public void WriteTo(pb::CodedOutputStream output) {
