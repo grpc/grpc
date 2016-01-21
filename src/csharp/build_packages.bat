@@ -3,7 +3,7 @@
 @rem Current package versions
 set VERSION=0.12.0
 set CORE_VERSION=0.12.0
-set PROTOBUF_VERSION=3.0.0-alpha4
+set PROTOBUF_VERSION=3.0.0-beta2
 
 @rem Packages that depend on prerelease packages (like Google.Protobuf) need to have prerelease suffix as well.
 set VERSION_WITH_BETA=%VERSION%-beta
