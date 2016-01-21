@@ -1,0 +1,240 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup>
+    <OpenSslPath>..\..\..\third_party\openssl</OpenSslPath>
+  </PropertyGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{7E05608D-A775-418F-946A-E9A0B84C6DFF}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>$(LibName)</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Label="ConfigurationSettings">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <PlatformToolset>v110</PlatformToolset>
+    <CallingConvention>Cdecl</CallingConvention>
+    <OutputPath>output\$(PlatformToolset)\$(Platform)\$(Configuration)\$(UsesConfigurationType)\</OutputPath>
+    <OutDir>$(OutputPath)</OutDir>
+  </PropertyGroup>
+  <Import Project="$(CoAppEtcDirectory)vcxproj.inc" Condition="Exists('$(CoAppEtcDirectory)vcxproj.inc')" />
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <Import Condition="exists('.\packages\grpc.dependencies.zlib.1.2.8.10\build\native\grpc.dependencies.zlib.props')" Project=".\packages\grpc.dependencies.zlib.1.2.8.10\build\native\grpc.dependencies.zlib.props" />
+  <Import Condition="exists('.\packages\grpc.dependencies.zlib.redist.1.2.8.10\build\native\grpc.dependencies.zlib.redist.props')" Project=".\packages\grpc.dependencies.zlib.redist.1.2.8.10\build\native\grpc.dependencies.zlib.redist.props" />
+  <ImportGroup Label="ExtensionSettings" />
+  <ImportGroup Label="PropertySheets">
+    <Import Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <LinkIncremental Condition="'$(Configuration)'=='Release'">false</LinkIncremental>
+    <LinkIncremental Condition="'$(Configuration)'=='Debug'">true</LinkIncremental>
+    <CallingConvention-zlib>$(CallingConvention)</CallingConvention-zlib>
+    <Linkage-zlib>$(UsesConfigurationType)</Linkage-zlib>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(OpenSslPath);$(OpenSslPath)\inc32;$(OpenSslPath)\crypto;$(OpenSslPath)\include;$(OutDir);$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <BufferSecurityCheck>true</BufferSecurityCheck>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <!-- <PreprocessorDefinitions>OPENSSL_USE_APPLINK;%(PreprocessorDefinitions)</PreprocessorDefinitions> -->
+      <!-- <PreprocessorDefinitions>BUILDING_V8_SHARED=1;BUILDING_UV_SHARED=1;%(PreprocessorDefinitions)</PreprocessorDefinitions> -->
+      <!-- <PreprocessorDefinitions>OPENSSL_EXPORT_VAR_AS_FUNCTION;PURIFY;%(PreprocessorDefinitions)</PreprocessorDefinitions> -->
+      <PreprocessorDefinitions>_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;L_ENDIAN;MK1MF_BUILD;WIN32_LEAN_AND_MEAN;OPENSSL_THREADS;ZLIB;OPENSSL_SYSNAME_WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>OPENSSL_BUILD_SHLIBSSL;OPENSSL_NO_IDEA;OPENSSL_NO_RC5;OPENSSL_NO_MD2;OPENSSL_NO_KRB5;OPENSSL_NO_JPAKE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>DSO_WIN32;UNICODE;_UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(ConfigurationType)'=='DynamicLibrary'">_WINDLL;_REENTRANT;OPENSSL_NO_STATIC_ENGINE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(ConfigurationType)'=='StaticLibrary'">OPENSSL_NO_DYNAMIC_ENGINE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Linkage-zlib)'=='dynamic'">ZLIB_SHARED;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>OPENSSL_NO_ASM;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <CallingConvention>%(CallingConvention)</CallingConvention>
+      <StringPooling>true</StringPooling>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <TreatWarningAsError>false</TreatWarningAsError>
+      <WarningLevel>Level3</WarningLevel>
+    </ClCompile>
+    <Lib>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <IgnoreAllDefaultLibraries>true</IgnoreAllDefaultLibraries>
+      <!--
+      <IgnoreSpecificDefaultLibraries>zlib$(OutNameSuffix).lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      -->
+    </Lib>
+    <Link>
+      <AllowIsolation>true</AllowIsolation>
+      <DataExecutionPrevention>true</DataExecutionPrevention>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <RandomizedBaseAddress>true</RandomizedBaseAddress>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <AdditionalDependencies>ws2_32.lib;crypt32.lib;libeay32$(OutNameSuffix).lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(OutDir)</AdditionalLibraryDirectories>
+      <ModuleDefinitionFile>.\ssleay32.def</ModuleDefinitionFile>
+    </Link>
+    <ResourceCompile>
+      <AdditionalIncludeDirectories>$(OpenSslPath);$(OpenSslPath)\inc32;$(OpenSslPath)\crypto;$(OpenSslPath)\include;$(OutDir);$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;L_ENDIAN;MK1MF_BUILD;WIN32_LEAN_AND_MEAN;OPENSSL_THREADS;ZLIB;OPENSSL_SYSNAME_WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>OPENSSL_BUILD_SHLIBSSL;OPENSSL_NO_IDEA;OPENSSL_NO_RC5;OPENSSL_NO_MD2;OPENSSL_NO_KRB5;OPENSSL_NO_JPAKE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>DSO_WIN32;UNICODE;_UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(ConfigurationType)'=='DynamicLibrary'">_WINDLL;_REENTRANT;OPENSSL_NO_STATIC_ENGINE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(ConfigurationType)'=='StaticLibrary'">OPENSSL_NO_DYNAMIC_ENGINE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Linkage-zlib)'=='dynamic'">ZLIB_SHARED;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>OPENSSL_NO_ASM;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>SSL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)'=='Debug'">
+    <ClCompile>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <MinimalRebuild>false</MinimalRebuild>
+      <OmitFramePointers>false</OmitFramePointers>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>DEBUG;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>DEBUG;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)'=='Release'">
+    <ClCompile>
+      <AdditionalOptions>/MP %(AdditionalOptions)</AdditionalOptions>
+      <ExceptionHandling>false</ExceptionHandling>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <OmitFramePointers>true</OmitFramePointers>
+      <Optimization>Full</Optimization>
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
+      <WholeProgramOptimization>true</WholeProgramOptimization>
+    </ClCompile>
+    <Link>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+    <ResourceCompile>
+    </ResourceCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Platform)'=='Win32'">
+    <ClCompile>
+      <PreprocessorDefinitions>WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">MultiThreadedDebug</RuntimeLibrary>
+      <RuntimeLibrary Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">MultiThreaded</RuntimeLibrary>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Platform)'=='x64'">
+    <ClCompile>
+      <PreprocessorDefinitions>WIN64;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">MultiThreadedDebug</RuntimeLibrary>
+      <RuntimeLibrary Condition="'$(Configuration)|$(Platform)'=='Release|x64'">MultiThreaded</RuntimeLibrary>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>WIN64;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <None Include="openssl.gyp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="$(OpenSslPath)\ssl\s2_pkt.c" />
+    <ClCompile Include="$(OpenSslPath)\ssl\s3_enc.c" />
+    <ClCompile Include="$(OpenSslPath)\ssl\s23_pkt.c" />
+    <ClCompile Include="$(OpenSslPath)\ssl\t1_meth.c" />
+    <ClCompile Include="$(OpenSslPath)\ssl\ssl_lib.c" />
+    <ClCompile Include="$(OpenSslPath)\ssl\ssl_asn1.c" />
+    <ClCompile Include="$(OpenSslPath)\ssl\s23_lib.c" />
+    <ClCompile Include="$(OpenSslPath)\ssl\tls_srp.c" />
+    <ClCompile Include="$(OpenSslPath)\ssl\ssl_txt.c" />
+    <ClCompile Include="$(OpenSslPath)\ssl\ssl_algs.c" />
+    <ClCompile Include="$(OpenSslPath)\ssl\s23_srvr.c" />
+    <ClCompile Include="$(OpenSslPath)\ssl\d1_both.c" />
+    <ClCompile Include="$(OpenSslPath)\ssl\s3_meth.c" />
+    <ClCompile Include="$(OpenSslPath)\ssl\ssl_err2.c" />
+    <ClCompile Include="$(OpenSslPath)\ssl\bio_ssl.c" />
+    <ClCompile Include="$(OpenSslPath)\ssl\s2_meth.c" />
+    <ClCompile Include="$(OpenSslPath)\ssl\s3_clnt.c" />
+    <ClCompile Include="$(OpenSslPath)\ssl\s3_lib.c" />
+    <ClCompile Include="$(OpenSslPath)\ssl\kssl.c" />
+    <ClCompile Include="$(OpenSslPath)\ssl\t1_enc.c" />
+    <ClCompile Include="$(OpenSslPath)\ssl\d1_clnt.c" />
+    <ClCompile Include="$(OpenSslPath)\ssl\t1_lib.c" />
+    <ClCompile Include="$(OpenSslPath)\ssl\t1_srvr.c" />
+    <ClCompile Include="$(OpenSslPath)\ssl\ssl_cert.c" />
+    <ClCompile Include="$(OpenSslPath)\ssl\t1_clnt.c" />
+    <ClCompile Include="$(OpenSslPath)\ssl\ssl_stat.c" />
+    <ClCompile Include="$(OpenSslPath)\ssl\ssl_sess.c" />
+    <ClCompile Include="$(OpenSslPath)\ssl\s3_both.c" />
+    <ClCompile Include="$(OpenSslPath)\ssl\d1_srtp.c" />
+    <ClCompile Include="$(OpenSslPath)\ssl\d1_pkt.c" />
+    <ClCompile Include="$(OpenSslPath)\ssl\s23_clnt.c" />
+    <ClCompile Include="$(OpenSslPath)\ssl\s2_lib.c" />
+    <ClCompile Include="$(OpenSslPath)\ssl\t1_reneg.c" />
+    <ClCompile Include="$(OpenSslPath)\ssl\s2_enc.c" />
+    <ClCompile Include="$(OpenSslPath)\ssl\ssl_rsa.c" />
+    <ClCompile Include="$(OpenSslPath)\ssl\s23_meth.c" />
+    <ClCompile Include="$(OpenSslPath)\ssl\d1_lib.c" />
+    <ClCompile Include="$(OpenSslPath)\ssl\ssl_ciph.c" />
+    <ClCompile Include="$(OpenSslPath)\ssl\s2_srvr.c" />
+    <ClCompile Include="$(OpenSslPath)\ssl\ssl_err.c" />
+    <ClCompile Include="$(OpenSslPath)\ssl\ssl_utst.c" />
+    <ClCompile Include="$(OpenSslPath)\ssl\s2_clnt.c" />
+    <ClCompile Include="$(OpenSslPath)\ssl\s3_pkt.c" />
+    <ClCompile Include="$(OpenSslPath)\ssl\d1_srvr.c" />
+    <ClCompile Include="$(OpenSslPath)\ssl\s3_srvr.c" />
+    <ClCompile Include="$(OpenSslPath)\ssl\s3_cbc.c" />
+    <ClCompile Include="$(OpenSslPath)\ssl\d1_meth.c" />
+	<ClCompile Include="$(OpenSslPath)\ssl\ssl_conf.c" />
+	<ClCompile Include="$(OpenSslPath)\ssl\t1_ext.c" />
+	<ClCompile Include="$(OpenSslPath)\ssl\t1_trce.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="$(OpenSslPath)\ms\version32.rc" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <Import Condition="exists('.\packages\grpc.dependencies.zlib.1.2.8.10\build\native\grpc.dependencies.zlib.targets')" Project=".\packages\grpc.dependencies.zlib.1.2.8.10\build\native\grpc.dependencies.zlib.targets" />
+  <Import Condition="exists('.\packages\grpc.dependencies.zlib.redist.1.2.8.10\build\native\grpc.dependencies.zlib.redist.targets')" Project=".\packages\grpc.dependencies.zlib.redist.1.2.8.10\build\native\grpc.dependencies.zlib.redist.targets" />
+  <ImportGroup Label="ExtensionTargets" />
+  <PropertyGroup>
+    <Build-Perl-zlib Condition="'$(Linkage-zlib)'=='dynamic'">zlib-dynamic</Build-Perl-zlib>
+    <Build-Perl-zlib Condition="'$(Linkage-zlib)'=='static'">zlib</Build-Perl-zlib>
+    <Build-Perl-asm Condition="'$(NoASM)'=='true'">no-asm</Build-Perl-asm>
+    <Build-Perl-asm Condition="'$(NoASM)'=='false'"></Build-Perl-asm>
+    <Build-Perl-platform Condition="'$(Platform)'=='Win32'">VC-WIN32</Build-Perl-platform>
+    <Build-Perl-platform Condition="'$(Platform)'=='x64'">VC-WIN64A</Build-Perl-platform>
+    <Build-Perl-dll Condition="'$(ConfigurationType)'=='DynamicLibrary'">shared</Build-Perl-dll>
+    <Build-Perl-dll Condition="'$(ConfigurationType)'=='StaticLibrary'">no-shared</Build-Perl-dll>
+  </PropertyGroup>
+  <Target Name="PerlDefs">
+    <Exec 
+        Command="
+            perl Configure no-rc5 no-idea enable-mdc2 threads $(Build-Perl-zlib) $(Build-Perl-dll) $(Build-Perl-asm) $(Build-Perl-platform)
+            perl util\mkfiles.pl >MINFO
+            perl .\util\mkdef.pl 32 ssleay >..\..\vsprojects\coapp\openssl\ssleay32.def
+        "
+        WorkingDirectory="$(MSBuildThisFileDirectory)$(OpenSslPath)\" />
+  </Target>
+  <PropertyGroup>
+    <BuildDependsOn>PerlDefs;$(BuildDependsOn)</BuildDependsOn>
+  </PropertyGroup>
+</Project>

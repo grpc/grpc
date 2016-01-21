@@ -25,8 +25,8 @@ RVM is also useful if you don't have the necessary privileges to update your sys
 
 INSTALL
 -------
+- [Install gRPC Ruby][]
 
-- Clone this repository
 - Use bundler to install the example package's dependencies
 
   ```sh
@@ -35,7 +35,7 @@ INSTALL
   $ bundle install
   ```
 
-Try it! 
+Try it!
 -------
 
 - Run the server
@@ -55,7 +55,9 @@ Try it!
 Tutorial
 --------
 
-You can find a more detailed tutorial in [gRPC Basics: Ruby](route_guide/README.md)
+You can find a more detailed tutorial in [gRPC Basics: Ruby][]
 
 [helloworld.proto]:../protos/helloworld.proto
 [RVM]:https://www.rvm.io/
+[Install gRPC ruby]:../../src/ruby#installation
+[gRPC Basics: Ruby]:http://www.grpc.io/docs/tutorials/basic/ruby.html

@@ -18,7 +18,7 @@ You can find quick start guides for each language, including installation instru
 * [Android Java](https://github.com/grpc/grpc-java/tree/master/examples/android)
 * [Python](python/helloworld)
 * [C#](csharp)
-* [Objective-C](objective-c/route_guide)
+* [Objective-C](objective-c/helloworld)
 * [PHP](php)
 
 ## What's in this repository?

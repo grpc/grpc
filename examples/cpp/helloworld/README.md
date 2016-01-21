@@ -94,7 +94,7 @@ $ protoc -I ../../protos/ --cpp_out=. ../../protos/helloworld.proto
   arguments as follows
 
     ```
-    auto channel = CreateChannel("localhost:50051", InsecureCredentials());
+    auto channel = CreateChannel("localhost:50051", InsecureChannelCredentials());
     ```
 
 - Create a stub. A stub implements the rpc methods of a service and in the

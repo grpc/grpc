@@ -32,6 +32,7 @@ using System;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
+using Grpc.Core.Profiling;
 
 namespace Grpc.Core.Internal
 {
@@ -44,7 +45,7 @@ namespace Grpc.Core.Internal
         static extern ChannelSafeHandle grpcsharp_insecure_channel_create(string target, ChannelArgsSafeHandle channelArgs);
 
         [DllImport("grpc_csharp_ext.dll")]
-        static extern ChannelSafeHandle grpcsharp_secure_channel_create(CredentialsSafeHandle credentials, string target, ChannelArgsSafeHandle channelArgs);
+        static extern ChannelSafeHandle grpcsharp_secure_channel_create(ChannelCredentialsSafeHandle credentials, string target, ChannelArgsSafeHandle channelArgs);
 
         [DllImport("grpc_csharp_ext.dll")]
         static extern CallSafeHandle grpcsharp_channel_create_call(ChannelSafeHandle channel, CallSafeHandle parentCall, ContextPropagationFlags propagationMask, CompletionQueueSafeHandle cq, string method, string host, Timespec deadline);
@@ -74,7 +75,7 @@ namespace Grpc.Core.Internal
             return grpcsharp_insecure_channel_create(target, channelArgs);
         }
 
-        public static ChannelSafeHandle CreateSecure(CredentialsSafeHandle credentials, string target, ChannelArgsSafeHandle channelArgs)
+        public static ChannelSafeHandle CreateSecure(ChannelCredentialsSafeHandle credentials, string target, ChannelArgsSafeHandle channelArgs)
         {
             // Increment reference count for the native gRPC environment to make sure we don't do grpc_shutdown() before destroying the server handle.
             // Doing so would make object finalizer crash if we end up abandoning the handle.
@@ -82,11 +83,18 @@ namespace Grpc.Core.Internal
             return grpcsharp_secure_channel_create(credentials, target, channelArgs);
         }
 
-        public CallSafeHandle CreateCall(CompletionRegistry registry, CallSafeHandle parentCall, ContextPropagationFlags propagationMask, CompletionQueueSafeHandle cq, string method, string host, Timespec deadline)
+        public CallSafeHandle CreateCall(CompletionRegistry registry, CallSafeHandle parentCall, ContextPropagationFlags propagationMask, CompletionQueueSafeHandle cq, string method, string host, Timespec deadline, CallCredentialsSafeHandle credentials)
         {
-            var result = grpcsharp_channel_create_call(this, parentCall, propagationMask, cq, method, host, deadline);
-            result.SetCompletionRegistry(registry);
-            return result;
+            using (Profilers.ForCurrentThread().NewScope("ChannelSafeHandle.CreateCall"))
+            {
+                var result = grpcsharp_channel_create_call(this, parentCall, propagationMask, cq, method, host, deadline);
+                if (credentials != null)
+                {
+                    result.SetCredentials(credentials);
+                }
+                result.SetCompletionRegistry(registry);
+                return result;
+            }
         }
 
         public ChannelState CheckConnectivityState(bool tryToConnect)

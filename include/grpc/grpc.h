@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -55,6 +55,9 @@ extern "C" {
 /** Completion Queues enable notification of the completion of asynchronous
     actions. */
 typedef struct grpc_completion_queue grpc_completion_queue;
+
+/** An alarm associated with a completion queue. */
+typedef struct grpc_alarm grpc_alarm;
 
 /** The Channel interface allows creation of Call objects. */
 typedef struct grpc_channel grpc_channel;
@@ -124,6 +127,17 @@ typedef struct {
 /** Initial sequence number for http2 transports */
 #define GRPC_ARG_HTTP2_INITIAL_SEQUENCE_NUMBER \
   "grpc.http2.initial_sequence_number"
+/** Amount to read ahead on individual streams. Defaults to 64kb, larger
+    values can help throughput on high-latency connections.
+    NOTE: at some point we'd like to auto-tune this, and this parameter
+    will become a no-op. */
+#define GRPC_ARG_HTTP2_STREAM_LOOKAHEAD_BYTES "grpc.http2.lookahead_bytes"
+/** How much memory to use for hpack decoding */
+#define GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_DECODER \
+  "grpc.http2.hpack_table_size.decoder"
+/** How much memory to use for hpack encoding */
+#define GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_ENCODER \
+  "grpc.http2.hpack_table_size.encoder"
 /** Default authority to pass if none specified on call construction */
 #define GRPC_ARG_DEFAULT_AUTHORITY "grpc.default_authority"
 /** Primary user agent: goes at the start of the user-agent metadata
@@ -475,6 +489,22 @@ void grpc_completion_queue_shutdown(grpc_completion_queue *cq);
     drained and no threads are executing grpc_completion_queue_next */
 void grpc_completion_queue_destroy(grpc_completion_queue *cq);
 
+/** Create a completion queue alarm instance associated to \a cq.
+ *
+ * Once the alarm expires (at \a deadline) or it's cancelled (see \a
+ * grpc_alarm_cancel), an event with tag \a tag will be added to \a cq. If the
+ * alarm expired, the event's success bit will be true, false otherwise (ie,
+ * upon cancellation). */
+grpc_alarm *grpc_alarm_create(grpc_completion_queue *cq, gpr_timespec deadline,
+                              void *tag);
+
+/** Cancel a completion queue alarm. Calling this function over an alarm that
+ * has already fired has no effect. */
+void grpc_alarm_cancel(grpc_alarm *alarm);
+
+/** Destroy the given completion queue alarm, cancelling it in the process. */
+void grpc_alarm_destroy(grpc_alarm *alarm);
+
 /** Check the connectivity state of a channel. */
 grpc_connectivity_state grpc_channel_check_connectivity_state(
     grpc_channel *channel, int try_to_connect);
@@ -500,6 +530,11 @@ grpc_call *grpc_channel_create_call(grpc_channel *channel,
                                     grpc_completion_queue *completion_queue,
                                     const char *method, const char *host,
                                     gpr_timespec deadline, void *reserved);
+
+/** Ping the channels peer (load balanced channels will select one sub-channel
+    to ping); if the channel is not connected, posts a failed. */
+void grpc_channel_ping(grpc_channel *channel, grpc_completion_queue *cq,
+                       void *tag, void *reserved);
 
 /** Pre-register a method/host pair on a channel. */
 void *grpc_channel_register_call(grpc_channel *channel, const char *method,
@@ -595,8 +630,8 @@ grpc_call_error grpc_call_cancel_with_status(grpc_call *call,
 void grpc_call_destroy(grpc_call *call);
 
 /** Request notification of a new call.
-    Once a call is received, a notification tagged with \a tag_new is added to 
-    \a cq_for_notification. \a call, \a details and \a request_metadata are 
+    Once a call is received, a notification tagged with \a tag_new is added to
+    \a cq_for_notification. \a call, \a details and \a request_metadata are
     updated with the appropriate call information. \a cq_bound_to_call is bound
     to \a call, and batch operation notifications for that call will be posted
     to \a cq_bound_to_call.
@@ -679,6 +714,16 @@ void grpc_server_destroy(grpc_server *server);
     Use of this function is not strictly thread-safe, but the
     thread-safety issues raised by it should not be of concern. */
 int grpc_tracer_set_enabled(const char *name, int enabled);
+
+/** Check whether a metadata key is legal (will be accepted by core) */
+int grpc_header_key_is_legal(const char *key, size_t length);
+
+/** Check whether a non-binary metadata value is legal (will be accepted by
+    core) */
+int grpc_header_nonbin_value_is_legal(const char *value, size_t length);
+
+/** Check whether a metadata key corresponds to a binary value */
+int grpc_is_binary_header(const char *key, size_t length);
 
 #ifdef __cplusplus
 }

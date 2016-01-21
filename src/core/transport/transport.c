@@ -33,55 +33,100 @@
 
 #include "src/core/transport/transport.h"
 #include <grpc/support/alloc.h>
+#include <grpc/support/atm.h>
 #include <grpc/support/log.h>
 #include "src/core/transport/transport_impl.h"
+
+#ifdef GRPC_STREAM_REFCOUNT_DEBUG
+void grpc_stream_ref(grpc_stream_refcount *refcount, const char *reason) {
+  gpr_atm val = gpr_atm_no_barrier_load(&refcount->refs.count);
+  gpr_log(GPR_DEBUG, "%s %p:%p   REF %d->%d %s", refcount->object_type,
+          refcount, refcount->destroy.cb_arg, val, val + 1, reason);
+#else
+void grpc_stream_ref(grpc_stream_refcount *refcount) {
+#endif
+  gpr_ref(&refcount->refs);
+}
+
+#ifdef GRPC_STREAM_REFCOUNT_DEBUG
+void grpc_stream_unref(grpc_exec_ctx *exec_ctx, grpc_stream_refcount *refcount,
+                       const char *reason) {
+  gpr_atm val = gpr_atm_no_barrier_load(&refcount->refs.count);
+  gpr_log(GPR_DEBUG, "%s %p:%p UNREF %d->%d %s", refcount->object_type,
+          refcount, refcount->destroy.cb_arg, val, val - 1, reason);
+#else
+void grpc_stream_unref(grpc_exec_ctx *exec_ctx,
+                       grpc_stream_refcount *refcount) {
+#endif
+  if (gpr_unref(&refcount->refs)) {
+    grpc_exec_ctx_enqueue(exec_ctx, &refcount->destroy, 1);
+  }
+}
+
+#ifdef GRPC_STREAM_REFCOUNT_DEBUG
+void grpc_stream_ref_init(grpc_stream_refcount *refcount, int initial_refs,
+                          grpc_iomgr_cb_func cb, void *cb_arg,
+                          const char *object_type) {
+  refcount->object_type = object_type;
+#else
+void grpc_stream_ref_init(grpc_stream_refcount *refcount, int initial_refs,
+                          grpc_iomgr_cb_func cb, void *cb_arg) {
+#endif
+  gpr_ref_init(&refcount->refs, initial_refs);
+  grpc_closure_init(&refcount->destroy, cb, cb_arg);
+}
 
 size_t grpc_transport_stream_size(grpc_transport *transport) {
   return transport->vtable->sizeof_stream;
 }
 
-void grpc_transport_destroy(grpc_transport *transport) {
-  transport->vtable->destroy(transport);
+void grpc_transport_destroy(grpc_exec_ctx *exec_ctx,
+                            grpc_transport *transport) {
+  transport->vtable->destroy(exec_ctx, transport);
 }
 
-int grpc_transport_init_stream(grpc_transport *transport, grpc_stream *stream,
-                               const void *server_data,
-                               grpc_transport_stream_op *initial_op) {
-  return transport->vtable->init_stream(transport, stream, server_data,
-                                        initial_op);
+int grpc_transport_init_stream(grpc_exec_ctx *exec_ctx,
+                               grpc_transport *transport, grpc_stream *stream,
+                               grpc_stream_refcount *refcount,
+                               const void *server_data) {
+  return transport->vtable->init_stream(exec_ctx, transport, stream, refcount,
+                                        server_data);
 }
 
-void grpc_transport_perform_stream_op(grpc_transport *transport,
+void grpc_transport_perform_stream_op(grpc_exec_ctx *exec_ctx,
+                                      grpc_transport *transport,
                                       grpc_stream *stream,
                                       grpc_transport_stream_op *op) {
-  transport->vtable->perform_stream_op(transport, stream, op);
+  transport->vtable->perform_stream_op(exec_ctx, transport, stream, op);
 }
 
-void grpc_transport_perform_op(grpc_transport *transport,
+void grpc_transport_perform_op(grpc_exec_ctx *exec_ctx,
+                               grpc_transport *transport,
                                grpc_transport_op *op) {
-  transport->vtable->perform_op(transport, op);
+  transport->vtable->perform_op(exec_ctx, transport, op);
 }
 
-void grpc_transport_destroy_stream(grpc_transport *transport,
+void grpc_transport_set_pollset(grpc_exec_ctx *exec_ctx,
+                                grpc_transport *transport, grpc_stream *stream,
+                                grpc_pollset *pollset) {
+  transport->vtable->set_pollset(exec_ctx, transport, stream, pollset);
+}
+
+void grpc_transport_destroy_stream(grpc_exec_ctx *exec_ctx,
+                                   grpc_transport *transport,
                                    grpc_stream *stream) {
-  transport->vtable->destroy_stream(transport, stream);
+  transport->vtable->destroy_stream(exec_ctx, transport, stream);
 }
 
-char *grpc_transport_get_peer(grpc_transport *transport) {
-  return transport->vtable->get_peer(transport);
+char *grpc_transport_get_peer(grpc_exec_ctx *exec_ctx,
+                              grpc_transport *transport) {
+  return transport->vtable->get_peer(exec_ctx, transport);
 }
 
 void grpc_transport_stream_op_finish_with_failure(
-    grpc_transport_stream_op *op) {
-  if (op->send_ops) {
-    op->on_done_send->cb(op->on_done_send->cb_arg, 0);
-  }
-  if (op->recv_ops) {
-    op->on_done_recv->cb(op->on_done_recv->cb_arg, 0);
-  }
-  if (op->on_consumed) {
-    op->on_consumed->cb(op->on_consumed->cb_arg, 0);
-  }
+    grpc_exec_ctx *exec_ctx, grpc_transport_stream_op *op) {
+  grpc_exec_ctx_enqueue(exec_ctx, op->recv_message_ready, 0);
+  grpc_exec_ctx_enqueue(exec_ctx, op->on_complete, 0);
 }
 
 void grpc_transport_stream_op_add_cancellation(grpc_transport_stream_op *op,
@@ -101,15 +146,15 @@ void grpc_transport_stream_op_add_cancellation(grpc_transport_stream_op *op,
 
 typedef struct {
   gpr_slice message;
-  grpc_iomgr_closure *then_call;
-  grpc_iomgr_closure closure;
+  grpc_closure *then_call;
+  grpc_closure closure;
 } close_message_data;
 
-static void free_message(void *p, int iomgr_success) {
+static void free_message(grpc_exec_ctx *exec_ctx, void *p, int iomgr_success) {
   close_message_data *cmd = p;
   gpr_slice_unref(cmd->message);
   if (cmd->then_call != NULL) {
-    cmd->then_call->cb(cmd->then_call->cb_arg, iomgr_success);
+    cmd->then_call->cb(exec_ctx, cmd->then_call->cb_arg, iomgr_success);
   }
   gpr_free(cmd);
 }
@@ -129,9 +174,9 @@ void grpc_transport_stream_op_add_close(grpc_transport_stream_op *op,
   if (optional_message) {
     cmd = gpr_malloc(sizeof(*cmd));
     cmd->message = *optional_message;
-    cmd->then_call = op->on_consumed;
-    grpc_iomgr_closure_init(&cmd->closure, free_message, cmd);
-    op->on_consumed = &cmd->closure;
+    cmd->then_call = op->on_complete;
+    grpc_closure_init(&cmd->closure, free_message, cmd);
+    op->on_complete = &cmd->closure;
     op->optional_close_message = &cmd->message;
   }
   op->close_with_status = status;

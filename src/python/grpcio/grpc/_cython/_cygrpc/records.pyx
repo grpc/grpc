@@ -32,6 +32,30 @@ from grpc._cython._cygrpc cimport call
 from grpc._cython._cygrpc cimport server
 
 
+class ConnectivityState:
+  idle = grpc.GRPC_CHANNEL_IDLE
+  connecting = grpc.GRPC_CHANNEL_CONNECTING
+  ready = grpc.GRPC_CHANNEL_READY
+  transient_failure = grpc.GRPC_CHANNEL_TRANSIENT_FAILURE
+  fatal_failure = grpc.GRPC_CHANNEL_FATAL_FAILURE
+
+
+class ChannelArgKey:
+  enable_census = grpc.GRPC_ARG_ENABLE_CENSUS
+  max_concurrent_streams = grpc.GRPC_ARG_MAX_CONCURRENT_STREAMS
+  max_message_length = grpc.GRPC_ARG_MAX_MESSAGE_LENGTH
+  http2_initial_sequence_number = grpc.GRPC_ARG_HTTP2_INITIAL_SEQUENCE_NUMBER
+  default_authority = grpc.GRPC_ARG_DEFAULT_AUTHORITY
+  primary_user_agent_string = grpc.GRPC_ARG_PRIMARY_USER_AGENT_STRING
+  secondary_user_agent_string = grpc.GRPC_ARG_SECONDARY_USER_AGENT_STRING
+  ssl_target_name_override = grpc.GRPC_SSL_TARGET_NAME_OVERRIDE_ARG
+
+
+class WriteFlag:
+  buffer_hint = grpc.GRPC_WRITE_BUFFER_HINT
+  no_compress = grpc.GRPC_WRITE_NO_COMPRESS
+
+
 class StatusCode:
   ok = grpc.GRPC_STATUS_OK
   cancelled = grpc.GRPC_STATUS_CANCELLED
@@ -87,28 +111,44 @@ cdef class Timespec:
 
   def __cinit__(self, time):
     if time is None:
-      self.c_time = grpc.gpr_now()
-    elif isinstance(time, float):
+      self.c_time = grpc.gpr_now(grpc.GPR_CLOCK_REALTIME)
+      return
+    if isinstance(time, int):
+      time = float(time)
+    if isinstance(time, float):
       if time == float("+inf"):
-        self.c_time = grpc.gpr_inf_future
+        self.c_time = grpc.gpr_inf_future(grpc.GPR_CLOCK_REALTIME)
       elif time == float("-inf"):
-        self.c_time = grpc.gpr_inf_past
+        self.c_time = grpc.gpr_inf_past(grpc.GPR_CLOCK_REALTIME)
       else:
         self.c_time.seconds = time
         self.c_time.nanoseconds = (time - float(self.c_time.seconds)) * 1e9
+        self.c_time.clock_type = grpc.GPR_CLOCK_REALTIME
+    elif isinstance(time, Timespec):
+      self.c_time = (<Timespec>time).c_time
     else:
-      raise TypeError("expected time to be float")
+      raise TypeError("expected time to be float, int, or Timespec, not {}"
+                          .format(type(time)))
 
   @property
   def seconds(self):
-    return self.c_time.seconds
+    # TODO(atash) ensure that everywhere a Timespec is created that it's
+    # converted to GPR_CLOCK_REALTIME then and not every time someone wants to
+    # read values off in Python.
+    cdef grpc.gpr_timespec real_time = (
+        grpc.gpr_convert_clock_type(self.c_time, grpc.GPR_CLOCK_REALTIME))
+    return real_time.seconds
 
   @property
   def nanoseconds(self):
-    return self.c_time.nanoseconds
+    cdef grpc.gpr_timespec real_time = (
+        grpc.gpr_convert_clock_type(self.c_time, grpc.GPR_CLOCK_REALTIME))
+    return real_time.nanoseconds
 
   def __float__(self):
-    return <double>self.c_time.seconds + <double>self.c_time.nanoseconds / 1e9
+    cdef grpc.gpr_timespec real_time = (
+        grpc.gpr_convert_clock_type(self.c_time, grpc.GPR_CLOCK_REALTIME))
+    return <double>real_time.seconds + <double>real_time.nanoseconds / 1e9
 
   infinite_future = Timespec(float("+inf"))
   infinite_past = Timespec(float("-inf"))
@@ -156,6 +196,7 @@ cdef class Event:
                 object tag, call.Call operation_call,
                 CallDetails request_call_details,
                 Metadata request_metadata,
+                bint is_new_request,
                 Operations batch_operations):
     self.type = type
     self.success = success
@@ -164,6 +205,7 @@ cdef class Event:
     self.request_call_details = request_call_details
     self.request_metadata = request_metadata
     self.batch_operations = batch_operations
+    self.is_new_request = is_new_request
 
 
 cdef class ByteBuffer:
@@ -176,8 +218,14 @@ cdef class ByteBuffer:
       pass
     elif isinstance(data, basestring):
       data = data.encode()
+    elif isinstance(data, ByteBuffer):
+      data = (<ByteBuffer>data).bytes()
+      if data is None:
+        self.c_byte_buffer = NULL
+        return
     else:
-      raise TypeError("expected value to be of type str or bytes")
+      raise TypeError("expected value to be of type str, bytes, or "
+                      "ByteBuffer, not {}".format(type(data)))
 
     cdef char *c_data = data
     data_slice = grpc.gpr_slice_from_copied_buffer(c_data, len(data))
@@ -339,13 +387,16 @@ cdef class _MetadataIterator:
     self.i = 0
     self.metadata = metadata
 
+  def __iter__(self):
+    return self
+
   def __next__(self):
     if self.i < len(self.metadata):
       result = self.metadata[self.i]
       self.i = self.i + 1
       return result
     else:
-      raise StopIteration()
+      raise StopIteration
 
 
 cdef class Metadata:
@@ -397,9 +448,19 @@ cdef class Operation:
     return self.c_op.type
 
   @property
+  def has_status(self):
+    return self.c_op.type == grpc.GRPC_OP_RECV_STATUS_ON_CLIENT
+
+  @property
   def received_message(self):
     if self.c_op.type != grpc.GRPC_OP_RECV_MESSAGE:
       raise TypeError("self must be an operation receiving a message")
+    return self._received_message
+
+  @property
+  def received_message_or_none(self):
+    if self.c_op.type != grpc.GRPC_OP_RECV_MESSAGE:
+      return None
     return self._received_message
 
   @property
@@ -410,9 +471,22 @@ cdef class Operation:
     return self._received_metadata
 
   @property
+  def received_metadata_or_none(self):
+    if (self.c_op.type != grpc.GRPC_OP_RECV_INITIAL_METADATA and
+        self.c_op.type != grpc.GRPC_OP_RECV_STATUS_ON_CLIENT):
+      return None
+    return self._received_metadata
+
+  @property
   def received_status_code(self):
     if self.c_op.type != grpc.GRPC_OP_RECV_STATUS_ON_CLIENT:
       raise TypeError("self must be an operation receiving a status code")
+    return self._received_status_code
+
+  @property
+  def received_status_code_or_none(self):
+    if self.c_op.type != grpc.GRPC_OP_RECV_STATUS_ON_CLIENT:
+      return None
     return self._received_status_code
 
   @property
@@ -425,10 +499,25 @@ cdef class Operation:
       return None
 
   @property
+  def received_status_details_or_none(self):
+    if self.c_op.type != grpc.GRPC_OP_RECV_STATUS_ON_CLIENT:
+      return None
+    if self._received_status_details:
+      return self._received_status_details
+    else:
+      return None
+
+  @property
   def received_cancelled(self):
     if self.c_op.type != grpc.GRPC_OP_RECV_CLOSE_ON_SERVER:
       raise TypeError("self must be an operation receiving cancellation "
                       "information")
+    return False if self._received_cancelled == 0 else True
+
+  @property
+  def received_cancelled_or_none(self):
+    if self.c_op.type != grpc.GRPC_OP_RECV_CLOSE_ON_SERVER:
+      return None
     return False if self._received_cancelled == 0 else True
 
   def __dealloc__(self):
@@ -536,13 +625,16 @@ cdef class _OperationsIterator:
     self.i = 0
     self.operations = operations
 
+  def __iter__(self):
+    return self
+
   def __next__(self):
     if self.i < len(self.operations):
       result = self.operations[self.i]
       self.i = self.i + 1
       return result
     else:
-      raise StopIteration()
+      raise StopIteration
 
 
 cdef class Operations:

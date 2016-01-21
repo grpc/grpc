@@ -101,7 +101,7 @@ describe GRPC::Core::Call do
   let(:fake_host) { 'localhost:10101' }
 
   before(:each) do
-    @ch = GRPC::Core::Channel.new(fake_host, nil)
+    @ch = GRPC::Core::Channel.new(fake_host, nil, :this_channel_is_insecure)
   end
 
   describe '#status' do
@@ -141,6 +141,15 @@ describe GRPC::Core::Call do
     it 'can be set to nil' do
       call = make_test_call
       expect { call.metadata = nil }.not_to raise_error
+    end
+  end
+
+  describe '#set_credentials!' do
+    it 'can set a valid CallCredentials object' do
+      call = make_test_call
+      auth_proc = proc { { 'plugin_key' => 'plugin_value' } }
+      creds = GRPC::Core::CallCredentials.new auth_proc
+      expect { call.set_credentials! creds }.not_to raise_error
     end
   end
 

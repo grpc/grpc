@@ -56,7 +56,7 @@ class string_ref {
   typedef std::reverse_iterator<const_iterator> const_reverse_iterator;
 
   // constants
-  const static size_t npos = size_t(-1);
+  const static size_t npos;
 
   // construct/copy.
   string_ref() : data_(nullptr), length_(0) {}

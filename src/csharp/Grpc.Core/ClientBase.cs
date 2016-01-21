@@ -40,18 +40,17 @@ namespace Grpc.Core
     /// <summary>
     /// Interceptor for call headers.
     /// </summary>
-    public delegate void HeaderInterceptor(IMethod method, string authUri, Metadata metadata);
+    /// <remarks>Header interceptor is no longer to recommented way to perform authentication.
+    /// For header (initial metadata) based auth such as OAuth2 or JWT access token, use <see cref="MetadataCredentials"/>.
+    /// </remarks>
+    public delegate void HeaderInterceptor(IMethod method, Metadata metadata);
 
     /// <summary>
     /// Base class for client-side stubs.
     /// </summary>
     public abstract class ClientBase
     {
-        // Regex for removal of the optional DNS scheme, trailing port, and trailing backslash
-        static readonly Regex ChannelTargetPattern = new Regex(@"^(dns:\/{3})?([^:\/]+)(:\d+)?\/?$");
-
         readonly Channel channel;
-        readonly string authUriBase;
 
         /// <summary>
         /// Initializes a new instance of <c>ClientBase</c> class.
@@ -60,13 +59,14 @@ namespace Grpc.Core
         public ClientBase(Channel channel)
         {
             this.channel = channel;
-            this.authUriBase = GetAuthUriBase(channel.Target);
         }
 
         /// <summary>
-        /// Can be used to register a custom header (request metadata) interceptor.
+        /// Can be used to register a custom header interceptor.
         /// The interceptor is invoked each time a new call on this client is started.
+        /// It is not recommented to use header interceptor to add auth headers to RPC calls.
         /// </summary>
+        /// <seealso cref="HeaderInterceptor"/>
         public HeaderInterceptor HeaderInterceptor
         {
             get;
@@ -115,24 +115,9 @@ namespace Grpc.Core
                 {
                     options = options.WithHeaders(new Metadata());
                 }
-                var authUri = authUriBase != null ? authUriBase + method.ServiceName : null;
-                interceptor(method, authUri, options.Headers);
+                interceptor(method, options.Headers);
             }
             return new CallInvocationDetails<TRequest, TResponse>(channel, method, Host, options);
-        }
-
-        /// <summary>
-        /// Creates Auth URI base from channel's target (the one passed at channel creation).
-        /// Fully-qualified service name is to be appended to this.
-        /// </summary>
-        internal static string GetAuthUriBase(string target)
-        {
-            var match = ChannelTargetPattern.Match(target);
-            if (!match.Success)
-            {
-                return null;
-            }
-            return "https://" + match.Groups[2].Value + "/";
         }
     }
 }

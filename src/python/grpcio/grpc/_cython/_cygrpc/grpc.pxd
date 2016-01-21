@@ -60,19 +60,31 @@ cdef extern from "grpc/support/port_platform.h":
   # type exactly; just close enough that the operations will be supported in the
   # underlying C layers.
   ctypedef unsigned int gpr_uint32
+  ctypedef int gpr_int32
+  ctypedef long int gpr_int64
 
 
 cdef extern from "grpc/support/time.h":
 
+  ctypedef enum gpr_clock_type:
+    GPR_CLOCK_MONOTONIC
+    GPR_CLOCK_REALTIME
+    GPR_CLOCK_PRECISE
+    GPR_TIMESPAN
+
   ctypedef struct gpr_timespec:
-    libc.time.time_t seconds "tv_sec"
-    int nanoseconds "tv_nsec"
+    gpr_int64 seconds "tv_sec"
+    gpr_int32 nanoseconds "tv_nsec"
+    gpr_clock_type clock_type
 
-  cdef gpr_timespec gpr_time_0
-  cdef gpr_timespec gpr_inf_future
-  cdef gpr_timespec gpr_inf_past
+  gpr_timespec gpr_time_0(gpr_clock_type type)
+  gpr_timespec gpr_inf_future(gpr_clock_type type)
+  gpr_timespec gpr_inf_past(gpr_clock_type type)
 
-  gpr_timespec gpr_now()
+  gpr_timespec gpr_now(gpr_clock_type clock)
+
+  gpr_timespec gpr_convert_clock_type(gpr_timespec t,
+                                      gpr_clock_type target_clock)
 
 
 cdef extern from "grpc/status.h":
@@ -122,6 +134,20 @@ cdef extern from "grpc/byte_buffer.h":
 
 cdef extern from "grpc/grpc.h":
 
+  const char *GRPC_ARG_PRIMARY_USER_AGENT_STRING
+  const char *GRPC_ARG_ENABLE_CENSUS
+  const char *GRPC_ARG_MAX_CONCURRENT_STREAMS
+  const char *GRPC_ARG_MAX_MESSAGE_LENGTH
+  const char *GRPC_ARG_HTTP2_INITIAL_SEQUENCE_NUMBER
+  const char *GRPC_ARG_DEFAULT_AUTHORITY
+  const char *GRPC_ARG_PRIMARY_USER_AGENT_STRING
+  const char *GRPC_ARG_SECONDARY_USER_AGENT_STRING
+  const char *GRPC_SSL_TARGET_NAME_OVERRIDE_ARG
+
+  const int GRPC_WRITE_BUFFER_HINT
+  const int GRPC_WRITE_NO_COMPRESS
+  const int GRPC_WRITE_USED_MASK
+
   ctypedef struct grpc_completion_queue:
     # We don't care about the internals (and in fact don't know them)
     pass
@@ -139,9 +165,9 @@ cdef extern from "grpc/grpc.h":
     pass
 
   ctypedef enum grpc_arg_type:
-    grpc_arg_string "GRPC_ARG_STRING"
-    grpc_arg_integer "GRPC_ARG_INTEGER"
-    grpc_arg_pointer "GRPC_ARG_POINTER"
+    GRPC_ARG_STRING
+    GRPC_ARG_INTEGER
+    GRPC_ARG_POINTER
 
   ctypedef struct grpc_arg_value_pointer:
     void *address "p"
@@ -174,6 +200,13 @@ cdef extern from "grpc/grpc.h":
     GRPC_CALL_ERROR_TOO_MANY_OPERATIONS
     GRPC_CALL_ERROR_INVALID_FLAGS
     GRPC_CALL_ERROR_INVALID_METADATA
+
+  ctypedef enum grpc_connectivity_state:
+    GRPC_CHANNEL_IDLE
+    GRPC_CHANNEL_CONNECTING
+    GRPC_CHANNEL_READY
+    GRPC_CHANNEL_TRANSIENT_FAILURE
+    GRPC_CHANNEL_FATAL_FAILURE
 
   ctypedef struct grpc_metadata:
     const char *key
@@ -255,38 +288,50 @@ cdef extern from "grpc/grpc.h":
   void grpc_init()
   void grpc_shutdown()
 
-  grpc_completion_queue *grpc_completion_queue_create()
+  grpc_completion_queue *grpc_completion_queue_create(void *reserved)
   grpc_event grpc_completion_queue_next(grpc_completion_queue *cq,
-                                        gpr_timespec deadline) nogil
+                                        gpr_timespec deadline,
+                                        void *reserved) nogil
   void grpc_completion_queue_shutdown(grpc_completion_queue *cq)
   void grpc_completion_queue_destroy(grpc_completion_queue *cq)
 
   grpc_call_error grpc_call_start_batch(grpc_call *call, const grpc_op *ops,
-                                        size_t nops, void *tag)
-  grpc_call_error grpc_call_cancel(grpc_call *call)
+                                        size_t nops, void *tag, void *reserved)
+  grpc_call_error grpc_call_cancel(grpc_call *call, void *reserved)
   grpc_call_error grpc_call_cancel_with_status(grpc_call *call,
                                                grpc_status_code status,
-                                               const char *description)
+                                               const char *description,
+                                               void *reserved)
+  char *grpc_call_get_peer(grpc_call *call)
   void grpc_call_destroy(grpc_call *call)
 
-
-  grpc_channel *grpc_channel_create(const char *target,
-                                    const grpc_channel_args *args)
+  grpc_channel *grpc_insecure_channel_create(const char *target,
+                                             const grpc_channel_args *args,
+                                             void *reserved)
   grpc_call *grpc_channel_create_call(grpc_channel *channel,
+                                      grpc_call *parent_call,
+                                      gpr_uint32 propagation_mask,
                                       grpc_completion_queue *completion_queue,
                                       const char *method, const char *host,
-                                      gpr_timespec deadline)
+                                      gpr_timespec deadline, void *reserved)
+  grpc_connectivity_state grpc_channel_check_connectivity_state(
+      grpc_channel *channel, int try_to_connect)
+  void grpc_channel_watch_connectivity_state(
+      grpc_channel *channel, grpc_connectivity_state last_observed_state,
+      gpr_timespec deadline, grpc_completion_queue *cq, void *tag)
+  char *grpc_channel_get_target(grpc_channel *channel)
   void grpc_channel_destroy(grpc_channel *channel)
 
-  grpc_server *grpc_server_create(const grpc_channel_args *args)
+  grpc_server *grpc_server_create(const grpc_channel_args *args, void *reserved)
   grpc_call_error grpc_server_request_call(
       grpc_server *server, grpc_call **call, grpc_call_details *details,
       grpc_metadata_array *request_metadata, grpc_completion_queue
       *cq_bound_to_call, grpc_completion_queue *cq_for_notification, void
       *tag_new)
   void grpc_server_register_completion_queue(grpc_server *server,
-                                             grpc_completion_queue *cq)
-  int grpc_server_add_http2_port(grpc_server *server, const char *addr)
+                                             grpc_completion_queue *cq,
+                                             void *reserved)
+  int grpc_server_add_insecure_http2_port(grpc_server *server, const char *addr)
   void grpc_server_start(grpc_server *server)
   void grpc_server_shutdown_and_notify(
       grpc_server *server, grpc_completion_queue *cq, void *tag)
@@ -300,28 +345,41 @@ cdef extern from "grpc/grpc_security.h":
     const char *private_key
     const char *certificate_chain "cert_chain"
 
-  ctypedef struct grpc_credentials:
+  ctypedef struct grpc_channel_credentials:
     # We don't care about the internals (and in fact don't know them)
     pass
 
-  grpc_credentials *grpc_google_default_credentials_create()
-  grpc_credentials *grpc_ssl_credentials_create(
-      const char *pem_root_certs, grpc_ssl_pem_key_cert_pair *pem_key_cert_pair)
+  ctypedef struct grpc_call_credentials:
+    # We don't care about the internals (and in fact don't know them)
+    pass
 
-  grpc_credentials *grpc_composite_credentials_create(grpc_credentials *creds1,
-                                                      grpc_credentials *creds2)
-  grpc_credentials *grpc_compute_engine_credentials_create()
-  grpc_credentials *grpc_service_account_jwt_access_credentials_create(const char *json_key,
-                                                gpr_timespec token_lifetime)
-  grpc_credentials *grpc_refresh_token_credentials_create(
-      const char *json_refresh_token)
-  grpc_credentials *grpc_iam_credentials_create(const char *authorization_token,
-                                                const char *authority_selector)
-  void grpc_credentials_release(grpc_credentials *creds)
+  grpc_channel_credentials *grpc_google_default_credentials_create()
+  grpc_channel_credentials *grpc_ssl_credentials_create(
+      const char *pem_root_certs, grpc_ssl_pem_key_cert_pair *pem_key_cert_pair,
+      void *reserved)
+  grpc_channel_credentials *grpc_composite_channel_credentials_create(
+      grpc_channel_credentials *creds1, grpc_call_credentials *creds2,
+      void *reserved)
+  void grpc_channel_credentials_release(grpc_channel_credentials *creds)
+
+  grpc_call_credentials *grpc_composite_call_credentials_create(
+      grpc_call_credentials *creds1, grpc_call_credentials *creds2,
+      void *reserved)
+  grpc_call_credentials *grpc_google_compute_engine_credentials_create(
+      void *reserved)
+  grpc_call_credentials *grpc_service_account_jwt_access_credentials_create(
+      const char *json_key,
+      gpr_timespec token_lifetime, void *reserved)
+  grpc_call_credentials *grpc_google_refresh_token_credentials_create(
+      const char *json_refresh_token, void *reserved)
+  grpc_call_credentials *grpc_google_iam_credentials_create(
+      const char *authorization_token, const char *authority_selector,
+      void *reserved)
+  void grpc_call_credentials_release(grpc_call_credentials *creds)
 
   grpc_channel *grpc_secure_channel_create(
-      grpc_credentials *creds, const char *target,
-      const grpc_channel_args *args)
+      grpc_channel_credentials *creds, const char *target,
+      const grpc_channel_args *args, void *reserved)
 
   ctypedef struct grpc_server_credentials:
     # We don't care about the internals (and in fact don't know them)
@@ -330,11 +388,35 @@ cdef extern from "grpc/grpc_security.h":
   grpc_server_credentials *grpc_ssl_server_credentials_create(
       const char *pem_root_certs,
       grpc_ssl_pem_key_cert_pair *pem_key_cert_pairs,
-      size_t num_key_cert_pairs)
+      size_t num_key_cert_pairs, int force_client_auth, void *reserved)
   void grpc_server_credentials_release(grpc_server_credentials *creds)
 
   int grpc_server_add_secure_http2_port(grpc_server *server, const char *addr,
                                         grpc_server_credentials *creds)
 
   grpc_call_error grpc_call_set_credentials(grpc_call *call,
-                                            grpc_credentials *creds)
+                                            grpc_call_credentials *creds)
+
+  ctypedef struct grpc_auth_context:
+    # We don't care about the internals (and in fact don't know them)
+    pass
+
+  ctypedef struct grpc_auth_metadata_context:
+    const char *service_url
+    const char *method_name
+    const grpc_auth_context *channel_auth_context
+
+  ctypedef void (*grpc_credentials_plugin_metadata_cb)(
+      void *user_data, const grpc_metadata *creds_md, size_t num_creds_md,
+      grpc_status_code status, const char *error_details)
+
+  ctypedef struct grpc_metadata_credentials_plugin:
+    void (*get_metadata)(
+        void *state, grpc_auth_metadata_context context,
+        grpc_credentials_plugin_metadata_cb cb, void *user_data)
+    void (*destroy)(void *state)
+    void *state
+    const char *type
+
+  grpc_call_credentials *grpc_metadata_credentials_create_from_plugin(
+      grpc_metadata_credentials_plugin plugin, void *reserved)

@@ -123,15 +123,17 @@ void grpc_sockaddr_make_wildcards(int port, struct sockaddr_in *wild4_out,
 }
 
 void grpc_sockaddr_make_wildcard4(int port, struct sockaddr_in *wild_out) {
+  GPR_ASSERT(port >= 0 && port < 65536);
   memset(wild_out, 0, sizeof(*wild_out));
   wild_out->sin_family = AF_INET;
-  wild_out->sin_port = htons(port);
+  wild_out->sin_port = htons((gpr_uint16)port);
 }
 
 void grpc_sockaddr_make_wildcard6(int port, struct sockaddr_in6 *wild_out) {
+  GPR_ASSERT(port >= 0 && port < 65536);
   memset(wild_out, 0, sizeof(*wild_out));
   wild_out->sin6_family = AF_INET6;
-  wild_out->sin6_port = htons(port);
+  wild_out->sin6_port = htons((gpr_uint16)port);
 }
 
 int grpc_sockaddr_to_string(char **out, const struct sockaddr *addr,
@@ -156,8 +158,10 @@ int grpc_sockaddr_to_string(char **out, const struct sockaddr *addr,
     ip = &addr6->sin6_addr;
     port = ntohs(addr6->sin6_port);
   }
+  /* Windows inet_ntop wants a mutable ip pointer */
   if (ip != NULL &&
-      inet_ntop(addr->sa_family, ip, ntop_buf, sizeof(ntop_buf)) != NULL) {
+      inet_ntop(addr->sa_family, (void *)ip, ntop_buf, sizeof(ntop_buf)) !=
+          NULL) {
     ret = gpr_join_host_port(out, ntop_buf, port);
   } else {
     ret = gpr_asprintf(out, "(sockaddr family=%d)", addr->sa_family);
@@ -215,10 +219,12 @@ int grpc_sockaddr_get_port(const struct sockaddr *addr) {
 int grpc_sockaddr_set_port(const struct sockaddr *addr, int port) {
   switch (addr->sa_family) {
     case AF_INET:
-      ((struct sockaddr_in *)addr)->sin_port = htons(port);
+      GPR_ASSERT(port >= 0 && port < 65536);
+      ((struct sockaddr_in *)addr)->sin_port = htons((gpr_uint16)port);
       return 1;
     case AF_INET6:
-      ((struct sockaddr_in6 *)addr)->sin6_port = htons(port);
+      GPR_ASSERT(port >= 0 && port < 65536);
+      ((struct sockaddr_in6 *)addr)->sin6_port = htons((gpr_uint16)port);
       return 1;
     default:
       gpr_log(GPR_ERROR, "Unknown socket family %d in grpc_sockaddr_set_port",

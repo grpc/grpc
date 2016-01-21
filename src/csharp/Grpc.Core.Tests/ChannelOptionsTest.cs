@@ -38,7 +38,7 @@ using Grpc.Core.Internal;
 using Grpc.Core.Utils;
 using NUnit.Framework;
 
-namespace Grpc.Core.Internal.Tests
+namespace Grpc.Core.Tests
 {
     public class ChannelOptionsTest
     {

@@ -37,7 +37,7 @@ cd $(dirname $0)
 
 # Run the tests server.
 ../../../bins/$CONFIG/interop_server --port=5050 &
-../../../bins/$CONFIG/interop_server --port=5051 --enable_ssl &
+../../../bins/$CONFIG/interop_server --port=5051 --use_tls &
 # Kill them when this script exits.
 trap 'kill -9 `jobs -p`' EXIT
 
@@ -51,4 +51,5 @@ xcodebuild \
     -scheme AllTests \
     -destination name="iPhone 6" \
     test \
-    | egrep "$XCODEBUILD_FILTER" -
+    | egrep "$XCODEBUILD_FILTER" \
+    | egrep -v "(GPBDictionary|GPBArray)" -

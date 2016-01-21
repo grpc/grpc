@@ -40,12 +40,15 @@
 #include <sys/types.h>
 #include <string.h>
 
+#include "src/core/iomgr/executor.h"
 #include "src/core/iomgr/iomgr_internal.h"
 #include "src/core/iomgr/sockaddr_utils.h"
+#include "src/core/support/block_annotate.h"
 #include "src/core/support/string.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
+#include <grpc/support/log_win32.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/thd.h>
 #include <grpc/support/time.h>
@@ -54,8 +57,8 @@ typedef struct {
   char *name;
   char *default_port;
   grpc_resolve_cb cb;
+  grpc_closure request_closure;
   void *arg;
-  grpc_iomgr_object iomgr_object;
 } request;
 
 grpc_resolved_addresses *grpc_blocking_resolve_address(
@@ -88,9 +91,13 @@ grpc_resolved_addresses *grpc_blocking_resolve_address(
   hints.ai_socktype = SOCK_STREAM; /* stream socket */
   hints.ai_flags = AI_PASSIVE;     /* for wildcard IP address */
 
+  GRPC_SCHEDULING_START_BLOCKING_REGION;
   s = getaddrinfo(host, port, &hints, &result);
+  GRPC_SCHEDULING_END_BLOCKING_REGION;
   if (s != 0) {
-    gpr_log(GPR_ERROR, "getaddrinfo: %s", gai_strerror(s));
+    char *error_message = gpr_format_message(s);
+    gpr_log(GPR_ERROR, "getaddrinfo: %s", error_message);
+    gpr_free(error_message);
     goto done;
   }
 
@@ -126,8 +133,9 @@ done:
   return addrs;
 }
 
-/* Thread function to asynch-ify grpc_blocking_resolve_address */
-static void do_request(void *rp) {
+/* Callback to be passed to grpc_executor to asynch-ify
+ * grpc_blocking_resolve_address */
+static void do_request_thread(grpc_exec_ctx *exec_ctx, void *rp, int success) {
   request *r = rp;
   grpc_resolved_addresses *resolved =
       grpc_blocking_resolve_address(r->name, r->default_port);
@@ -135,9 +143,8 @@ static void do_request(void *rp) {
   grpc_resolve_cb cb = r->cb;
   gpr_free(r->name);
   gpr_free(r->default_port);
-  grpc_iomgr_unregister_object(&r->iomgr_object);
+  cb(exec_ctx, arg, resolved);
   gpr_free(r);
-  cb(arg, resolved);
 }
 
 void grpc_resolved_addresses_destroy(grpc_resolved_addresses *addrs) {
@@ -148,16 +155,12 @@ void grpc_resolved_addresses_destroy(grpc_resolved_addresses *addrs) {
 void grpc_resolve_address(const char *name, const char *default_port,
                           grpc_resolve_cb cb, void *arg) {
   request *r = gpr_malloc(sizeof(request));
-  gpr_thd_id id;
-  const char *label;
-  gpr_asprintf(&label, "resolve:%s", name);
-  grpc_iomgr_register_object(&r->iomgr_object, label);
-  gpr_free(label);
+  grpc_closure_init(&r->request_closure, do_request_thread, r);
   r->name = gpr_strdup(name);
   r->default_port = gpr_strdup(default_port);
   r->cb = cb;
   r->arg = arg;
-  gpr_thd_new(&id, do_request, r, NULL);
+  grpc_executor_enqueue(&r->request_closure, 1);
 }
 
 #endif

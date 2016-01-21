@@ -1,3 +1,4 @@
+[![Gem](https://img.shields.io/gem/v/grpc.svg)](https://rubygems.org/gems/grpc/)
 gRPC Ruby
 =========
 
@@ -6,7 +7,7 @@ A Ruby implementation of gRPC.
 Status
 ------
 
-Alpha : Ready for early adopters
+Beta
 
 PREREQUISITES
 -------------

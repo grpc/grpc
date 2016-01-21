@@ -44,10 +44,10 @@
 #include <grpc/support/port_platform.h>
 #include <grpc/support/sync.h>
 
-void census_trace_obj_destroy(census_trace_obj* obj) {
-  census_trace_annotation* p = obj->annotations;
+void census_trace_obj_destroy(census_trace_obj *obj) {
+  census_trace_annotation *p = obj->annotations;
   while (p != NULL) {
-    census_trace_annotation* next = p->next;
+    census_trace_annotation *next = p->next;
     gpr_free(p);
     p = next;
   }
@@ -55,29 +55,26 @@ void census_trace_obj_destroy(census_trace_obj* obj) {
   gpr_free(obj);
 }
 
-static void delete_trace_obj(void* obj) {
-  census_trace_obj_destroy((census_trace_obj*)obj);
+static void delete_trace_obj(void *obj) {
+  census_trace_obj_destroy((census_trace_obj *)obj);
 }
 
 static const census_ht_option ht_opt = {
-    CENSUS_HT_UINT64 /* key type*/,
-    571 /* n_of_buckets */,
-    NULL /* hash */,
-    NULL /* compare_keys */,
-    delete_trace_obj /* delete data */,
+    CENSUS_HT_UINT64 /* key type */, 571 /* n_of_buckets */, NULL /* hash */,
+    NULL /* compare_keys */, delete_trace_obj /* delete data */,
     NULL /* delete key */
 };
 
 static gpr_once g_init_mutex_once = GPR_ONCE_INIT;
 static gpr_mu g_mu; /* Guards following two static variables. */
-static census_ht* g_trace_store = NULL;
+static census_ht *g_trace_store = NULL;
 static gpr_uint64 g_id = 0;
 
-static census_ht_key op_id_as_key(census_op_id* id) {
-  return *(census_ht_key*)id;
+static census_ht_key op_id_as_key(census_op_id *id) {
+  return *(census_ht_key *)id;
 }
 
-static gpr_uint64 op_id_2_uint64(census_op_id* id) {
+static gpr_uint64 op_id_2_uint64(census_op_id *id) {
   gpr_uint64 ret;
   memcpy(&ret, id, sizeof(census_op_id));
   return ret;
@@ -92,22 +89,22 @@ static void init_mutex_once(void) {
 census_op_id census_tracing_start_op(void) {
   gpr_mu_lock(&g_mu);
   {
-    census_trace_obj* ret = gpr_malloc(sizeof(census_trace_obj));
+    census_trace_obj *ret = gpr_malloc(sizeof(census_trace_obj));
     memset(ret, 0, sizeof(census_trace_obj));
     g_id++;
     memcpy(&ret->id, &g_id, sizeof(census_op_id));
     ret->rpc_stats.cnt = 1;
     ret->ts = gpr_now(GPR_CLOCK_REALTIME);
-    census_ht_insert(g_trace_store, op_id_as_key(&ret->id), (void*)ret);
+    census_ht_insert(g_trace_store, op_id_as_key(&ret->id), (void *)ret);
     gpr_log(GPR_DEBUG, "Start tracing for id %lu", g_id);
     gpr_mu_unlock(&g_mu);
     return ret->id;
   }
 }
 
-int census_add_method_tag(census_op_id op_id, const char* method) {
+int census_add_method_tag(census_op_id op_id, const char *method) {
   int ret = 0;
-  census_trace_obj* trace = NULL;
+  census_trace_obj *trace = NULL;
   gpr_mu_lock(&g_mu);
   trace = census_ht_find(g_trace_store, op_id_as_key(&op_id));
   if (trace == NULL) {
@@ -119,16 +116,16 @@ int census_add_method_tag(census_op_id op_id, const char* method) {
   return ret;
 }
 
-void census_tracing_print(census_op_id op_id, const char* anno_txt) {
-  census_trace_obj* trace = NULL;
+void census_tracing_print(census_op_id op_id, const char *anno_txt) {
+  census_trace_obj *trace = NULL;
   gpr_mu_lock(&g_mu);
   trace = census_ht_find(g_trace_store, op_id_as_key(&op_id));
   if (trace != NULL) {
-    census_trace_annotation* anno = gpr_malloc(sizeof(census_trace_annotation));
+    census_trace_annotation *anno = gpr_malloc(sizeof(census_trace_annotation));
     anno->ts = gpr_now(GPR_CLOCK_REALTIME);
     {
-      char* d = anno->txt;
-      const char* s = anno_txt;
+      char *d = anno->txt;
+      const char *s = anno_txt;
       int n = 0;
       for (; n < CENSUS_MAX_ANNOTATION_LENGTH && *s != '\0'; ++n) {
         *d++ = *s++;
@@ -142,7 +139,7 @@ void census_tracing_print(census_op_id op_id, const char* anno_txt) {
 }
 
 void census_tracing_end_op(census_op_id op_id) {
-  census_trace_obj* trace = NULL;
+  census_trace_obj *trace = NULL;
   gpr_mu_lock(&g_mu);
   trace = census_ht_find(g_trace_store, op_id_as_key(&op_id));
   if (trace != NULL) {
@@ -183,22 +180,23 @@ void census_internal_lock_trace_store(void) { gpr_mu_lock(&g_mu); }
 
 void census_internal_unlock_trace_store(void) { gpr_mu_unlock(&g_mu); }
 
-census_trace_obj* census_get_trace_obj_locked(census_op_id op_id) {
+census_trace_obj *census_get_trace_obj_locked(census_op_id op_id) {
   if (g_trace_store == NULL) {
     gpr_log(GPR_ERROR, "Census trace store is not initialized.");
     return NULL;
   }
-  return (census_trace_obj*)census_ht_find(g_trace_store, op_id_as_key(&op_id));
+  return (census_trace_obj *)census_ht_find(g_trace_store,
+                                            op_id_as_key(&op_id));
 }
 
-const char* census_get_trace_method_name(const census_trace_obj* trace) {
+const char *census_get_trace_method_name(const census_trace_obj *trace) {
   return trace->method;
 }
 
-static census_trace_annotation* dup_annotation_chain(
-    census_trace_annotation* from) {
-  census_trace_annotation* ret = NULL;
-  census_trace_annotation** to = &ret;
+static census_trace_annotation *dup_annotation_chain(
+    census_trace_annotation *from) {
+  census_trace_annotation *ret = NULL;
+  census_trace_annotation **to = &ret;
   for (; from != NULL; from = from->next) {
     *to = gpr_malloc(sizeof(census_trace_annotation));
     memcpy(*to, from, sizeof(census_trace_annotation));
@@ -207,8 +205,8 @@ static census_trace_annotation* dup_annotation_chain(
   return ret;
 }
 
-static census_trace_obj* trace_obj_dup(census_trace_obj* from) {
-  census_trace_obj* to = NULL;
+static census_trace_obj *trace_obj_dup(census_trace_obj *from) {
+  census_trace_obj *to = NULL;
   GPR_ASSERT(from != NULL);
   to = gpr_malloc(sizeof(census_trace_obj));
   to->id = from->id;
@@ -219,18 +217,18 @@ static census_trace_obj* trace_obj_dup(census_trace_obj* from) {
   return to;
 }
 
-census_trace_obj** census_get_active_ops(int* num_active_ops) {
-  census_trace_obj** ret = NULL;
+census_trace_obj **census_get_active_ops(int *num_active_ops) {
+  census_trace_obj **ret = NULL;
   gpr_mu_lock(&g_mu);
   if (g_trace_store != NULL) {
     size_t n = 0;
-    census_ht_kv* all_kvs = census_ht_get_all_elements(g_trace_store, &n);
+    census_ht_kv *all_kvs = census_ht_get_all_elements(g_trace_store, &n);
     *num_active_ops = (int)n;
     if (n != 0) {
       size_t i = 0;
-      ret = gpr_malloc(sizeof(census_trace_obj*) * n);
+      ret = gpr_malloc(sizeof(census_trace_obj *) * n);
       for (i = 0; i < n; i++) {
-        ret[i] = trace_obj_dup((census_trace_obj*)all_kvs[i].v);
+        ret[i] = trace_obj_dup((census_trace_obj *)all_kvs[i].v);
       }
     }
     gpr_free(all_kvs);

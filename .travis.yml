@@ -1,42 +1,32 @@
-language: cpp
-before_install:
-  - sudo add-apt-repository ppa:yjwong/gflags -y
-  - sudo add-apt-repository ppa:h-rayflood/llvm -y
-  - sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF
-  - echo "deb http://download.mono-project.com/repo/debian wheezy main" | sudo tee /etc/apt/sources.list.d/mono-xamarin.list
-  - echo "deb http://download.mono-project.com/repo/debian wheezy-libtiff-compat main" | sudo tee -a /etc/apt/sources.list.d/mono-xamarin.list
-  - sudo apt-get update -qq
-  - sudo apt-get install -qq libgtest-dev libgflags-dev python-virtualenv python-dev python3-dev clang-3.5
-  - sudo pip install --upgrade virtualenv
-  - sudo pip install cpp-coveralls mako simplejson
-  - sudo apt-get install -qq mono-devel nunit
-  - wget www.nuget.org/NuGet.exe -O nuget.exe
+language: objective-c
+osx_image: xcode7.1
 env:
   global:
-    - RUBY_VERSION=2.1
-    - COVERALLS_PARALLEL=true
-    - CPPFLAGS=-I/tmp/prebuilt/include
-    - NUGET="mono nuget.exe"
-  matrix:
-    - CONFIG=opt TEST=sanity JOBS=1
-    - CONFIG=gcov TEST=c JOBS=16
-    - CONFIG=gcov TEST=c++ JOBS=16
-    - CONFIG=opt TEST=c JOBS=16
-    - CONFIG=opt TEST=c++ JOBS=16
-    - CONFIG=opt TEST=node JOBS=16
-    - CONFIG=opt TEST=ruby JOBS=16
-    - CONFIG=opt TEST=python JOBS=1
-    - CONFIG=opt TEST=csharp JOBS=16
-    - USE_GCC=4.4 CONFIG=opt TEST=build JOBS=16
-script:
-  - rvm use $RUBY_VERSION
-  - gem install bundler
-  - ./tools/run_tests/prepare_travis.sh
-  - if [ ! -z "$USE_GCC" ] ; then export CC=gcc-$USE_GCC ; export CXX=g++-$USE_GCC ; fi
-  - ./tools/run_tests/run_tests.py -l $TEST -t -j $JOBS -c $CONFIG -s 4.0
-after_success:
-  - if [ "$CONFIG" = "gcov" ] ; then coveralls --exclude third_party --exclude gens --exclude test --exclude tools --exclude src/compiler -b. --gcov-options '\-p' ; fi
+    - CONFIG=opt
+    - TEST=objc
+    - JOBS=1
+before_install:
+  - brew install gflags
+  # Pod install does this too, but we don't want the output.
+  - pod repo update --silent
+install:
+  - make grpc_objective_c_plugin
+  - pushd src/objective-c/tests
+  # Needs to be verbose, or otherwise OpenSSL's prepare_command makes Travis
+  # time out:
+  - pod install --verbose
+  - popd
+before_script:
+  - make interop_server
+  - bins/$CONFIG/interop_server --port=5050 &
+  - bins/$CONFIG/interop_server --port=5051 --use_tls &
+xcode_workspace: src/objective-c/tests/Tests.xcworkspace
+xcode_scheme:
+  - RxLibraryUnitTests
+  - InteropTestsLocalSSL
+  - InteropTestsLocalCleartext
+  # TODO(jcanizales): Investigate why they time out:
+  # - InteropTestsRemote
+xcode_sdk: iphonesimulator9.1
 notifications:
   email: false
-  webhooks:
-    - https://coveralls.io/webhook?repo_token=54IxAHPjJNdQJzJAhPU0MFpCtg7KvcydQ

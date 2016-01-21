@@ -19,6 +19,9 @@
     <ClCompile Include="..\..\..\src\core\channel\client_channel.c">
       <Filter>src\core\channel</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\src\core\channel\client_uchannel.c">
+      <Filter>src\core\channel</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\src\core\channel\compress_filter.c">
       <Filter>src\core\channel</Filter>
     </ClCompile>
@@ -31,7 +34,7 @@
     <ClCompile Include="..\..\..\src\core\channel\http_server_filter.c">
       <Filter>src\core\channel</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\core\channel\noop_filter.c">
+    <ClCompile Include="..\..\..\src\core\channel\subchannel_call_holder.c">
       <Filter>src\core\channel</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\client_config\client_config.c">
@@ -40,10 +43,25 @@
     <ClCompile Include="..\..\..\src\core\client_config\connector.c">
       <Filter>src\core\client_config</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\src\core\client_config\default_initial_connect_string.c">
+      <Filter>src\core\client_config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\client_config\initial_connect_string.c">
+      <Filter>src\core\client_config</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\src\core\client_config\lb_policies\pick_first.c">
       <Filter>src\core\client_config\lb_policies</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\src\core\client_config\lb_policies\round_robin.c">
+      <Filter>src\core\client_config\lb_policies</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\src\core\client_config\lb_policy.c">
+      <Filter>src\core\client_config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\client_config\lb_policy_factory.c">
+      <Filter>src\core\client_config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\client_config\lb_policy_registry.c">
       <Filter>src\core\client_config</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\client_config\resolver.c">
@@ -67,12 +85,6 @@
     <ClCompile Include="..\..\..\src\core\client_config\subchannel_factory.c">
       <Filter>src\core\client_config</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\core\client_config\subchannel_factory_decorators\add_channel_arg.c">
-      <Filter>src\core\client_config\subchannel_factory_decorators</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\src\core\client_config\subchannel_factory_decorators\merge_channel_args.c">
-      <Filter>src\core\client_config\subchannel_factory_decorators</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\src\core\client_config\uri_parser.c">
       <Filter>src\core\client_config</Filter>
     </ClCompile>
@@ -94,10 +106,7 @@
     <ClCompile Include="..\..\..\src\core\httpcli\parser.c">
       <Filter>src\core\httpcli</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\core\iomgr\alarm.c">
-      <Filter>src\core\iomgr</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\src\core\iomgr\alarm_heap.c">
+    <ClCompile Include="..\..\..\src\core\iomgr\closure.c">
       <Filter>src\core\iomgr</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\iomgr\endpoint.c">
@@ -107,6 +116,12 @@
       <Filter>src\core\iomgr</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\iomgr\endpoint_pair_windows.c">
+      <Filter>src\core\iomgr</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\iomgr\exec_ctx.c">
+      <Filter>src\core\iomgr</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\iomgr\executor.c">
       <Filter>src\core\iomgr</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\iomgr\fd_posix.c">
@@ -184,6 +199,12 @@
     <ClCompile Include="..\..\..\src\core\iomgr\time_averaged_stats.c">
       <Filter>src\core\iomgr</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\src\core\iomgr\timer.c">
+      <Filter>src\core\iomgr</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\iomgr\timer_heap.c">
+      <Filter>src\core\iomgr</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\src\core\iomgr\udp_server.c">
       <Filter>src\core\iomgr</Filter>
     </ClCompile>
@@ -199,6 +220,12 @@
     <ClCompile Include="..\..\..\src\core\iomgr\wakeup_fd_posix.c">
       <Filter>src\core\iomgr</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\src\core\iomgr\workqueue_posix.c">
+      <Filter>src\core\iomgr</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\iomgr\workqueue_windows.c">
+      <Filter>src\core\iomgr</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\src\core\json\json.c">
       <Filter>src\core\json</Filter>
     </ClCompile>
@@ -211,16 +238,10 @@
     <ClCompile Include="..\..\..\src\core\json\json_writer.c">
       <Filter>src\core\json</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\core\profiling\basic_timers.c">
-      <Filter>src\core\profiling</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\src\core\profiling\stap_timers.c">
-      <Filter>src\core\profiling</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\src\core\surface\byte_buffer.c">
+    <ClCompile Include="..\..\..\src\core\surface\api_trace.c">
       <Filter>src\core\surface</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\core\surface\byte_buffer_queue.c">
+    <ClCompile Include="..\..\..\src\core\surface\byte_buffer.c">
       <Filter>src\core\surface</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\surface\byte_buffer_reader.c">
@@ -242,6 +263,9 @@
       <Filter>src\core\surface</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\surface\channel_create.c">
+      <Filter>src\core\surface</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\surface\channel_ping.c">
       <Filter>src\core\surface</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\surface\completion_queue.c">
@@ -268,11 +292,14 @@
     <ClCompile Include="..\..\..\src\core\surface\server_create.c">
       <Filter>src\core\surface</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\core\surface\surface_trace.c">
+    <ClCompile Include="..\..\..\src\core\surface\validate_metadata.c">
       <Filter>src\core\surface</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\surface\version.c">
       <Filter>src\core\surface</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\transport\byte_stream.c">
+      <Filter>src\core\transport</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\transport\chttp2\alpn.c">
       <Filter>src\core\transport\chttp2</Filter>
@@ -298,6 +325,9 @@
     <ClCompile Include="..\..\..\src\core\transport\chttp2\frame_window_update.c">
       <Filter>src\core\transport\chttp2</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\src\core\transport\chttp2\hpack_encoder.c">
+      <Filter>src\core\transport\chttp2</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\src\core\transport\chttp2\hpack_parser.c">
       <Filter>src\core\transport\chttp2</Filter>
     </ClCompile>
@@ -314,9 +344,6 @@
       <Filter>src\core\transport\chttp2</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\transport\chttp2\status_conversion.c">
-      <Filter>src\core\transport\chttp2</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\src\core\transport\chttp2\stream_encoder.c">
       <Filter>src\core\transport\chttp2</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\transport\chttp2\stream_lists.c">
@@ -343,7 +370,10 @@
     <ClCompile Include="..\..\..\src\core\transport\metadata.c">
       <Filter>src\core\transport</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\core\transport\stream_op.c">
+    <ClCompile Include="..\..\..\src\core\transport\metadata_batch.c">
+      <Filter>src\core\transport</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\transport\static_metadata.c">
       <Filter>src\core\transport</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\transport\transport.c">
@@ -398,6 +428,9 @@
     <ClInclude Include="..\..\..\src\core\channel\client_channel.h">
       <Filter>src\core\channel</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\src\core\channel\client_uchannel.h">
+      <Filter>src\core\channel</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\..\src\core\channel\compress_filter.h">
       <Filter>src\core\channel</Filter>
     </ClInclude>
@@ -413,7 +446,7 @@
     <ClInclude Include="..\..\..\src\core\channel\http_server_filter.h">
       <Filter>src\core\channel</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\src\core\channel\noop_filter.h">
+    <ClInclude Include="..\..\..\src\core\channel\subchannel_call_holder.h">
       <Filter>src\core\channel</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\core\client_config\client_config.h">
@@ -422,10 +455,22 @@
     <ClInclude Include="..\..\..\src\core\client_config\connector.h">
       <Filter>src\core\client_config</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\src\core\client_config\initial_connect_string.h">
+      <Filter>src\core\client_config</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\..\src\core\client_config\lb_policies\pick_first.h">
       <Filter>src\core\client_config\lb_policies</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\src\core\client_config\lb_policies\round_robin.h">
+      <Filter>src\core\client_config\lb_policies</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\..\src\core\client_config\lb_policy.h">
+      <Filter>src\core\client_config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\core\client_config\lb_policy_factory.h">
+      <Filter>src\core\client_config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\core\client_config\lb_policy_registry.h">
       <Filter>src\core\client_config</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\core\client_config\resolver.h">
@@ -449,14 +494,11 @@
     <ClInclude Include="..\..\..\src\core\client_config\subchannel_factory.h">
       <Filter>src\core\client_config</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\src\core\client_config\subchannel_factory_decorators\add_channel_arg.h">
-      <Filter>src\core\client_config\subchannel_factory_decorators</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\src\core\client_config\subchannel_factory_decorators\merge_channel_args.h">
-      <Filter>src\core\client_config\subchannel_factory_decorators</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\src\core\client_config\uri_parser.h">
       <Filter>src\core\client_config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\core\compression\algorithm_metadata.h">
+      <Filter>src\core\compression</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\core\compression\message_compress.h">
       <Filter>src\core\compression</Filter>
@@ -473,19 +515,19 @@
     <ClInclude Include="..\..\..\src\core\httpcli\parser.h">
       <Filter>src\core\httpcli</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\src\core\iomgr\alarm.h">
-      <Filter>src\core\iomgr</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\src\core\iomgr\alarm_heap.h">
-      <Filter>src\core\iomgr</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\src\core\iomgr\alarm_internal.h">
+    <ClInclude Include="..\..\..\src\core\iomgr\closure.h">
       <Filter>src\core\iomgr</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\core\iomgr\endpoint.h">
       <Filter>src\core\iomgr</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\core\iomgr\endpoint_pair.h">
+      <Filter>src\core\iomgr</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\core\iomgr\exec_ctx.h">
+      <Filter>src\core\iomgr</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\core\iomgr\executor.h">
       <Filter>src\core\iomgr</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\core\iomgr\fd_posix.h">
@@ -557,6 +599,15 @@
     <ClInclude Include="..\..\..\src\core\iomgr\time_averaged_stats.h">
       <Filter>src\core\iomgr</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\src\core\iomgr\timer.h">
+      <Filter>src\core\iomgr</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\core\iomgr\timer_heap.h">
+      <Filter>src\core\iomgr</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\core\iomgr\timer_internal.h">
+      <Filter>src\core\iomgr</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\..\src\core\iomgr\udp_server.h">
       <Filter>src\core\iomgr</Filter>
     </ClInclude>
@@ -564,6 +615,15 @@
       <Filter>src\core\iomgr</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\core\iomgr\wakeup_fd_posix.h">
+      <Filter>src\core\iomgr</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\core\iomgr\workqueue.h">
+      <Filter>src\core\iomgr</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\core\iomgr\workqueue_posix.h">
+      <Filter>src\core\iomgr</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\core\iomgr\workqueue_windows.h">
       <Filter>src\core\iomgr</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\core\json\json.h">
@@ -578,19 +638,19 @@
     <ClInclude Include="..\..\..\src\core\json\json_writer.h">
       <Filter>src\core\json</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\src\core\profiling\timers.h">
-      <Filter>src\core\profiling</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\src\core\statistics\census_interface.h">
       <Filter>src\core\statistics</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\core\statistics\census_rpc_stats.h">
       <Filter>src\core\statistics</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\src\core\surface\byte_buffer_queue.h">
+    <ClInclude Include="..\..\..\src\core\surface\api_trace.h">
       <Filter>src\core\surface</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\core\surface\call.h">
+      <Filter>src\core\surface</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\core\surface\call_test_only.h">
       <Filter>src\core\surface</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\core\surface\channel.h">
@@ -610,6 +670,9 @@
     </ClInclude>
     <ClInclude Include="..\..\..\src\core\surface\surface_trace.h">
       <Filter>src\core\surface</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\core\transport\byte_stream.h">
+      <Filter>src\core\transport</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\core\transport\chttp2\alpn.h">
       <Filter>src\core\transport\chttp2</Filter>
@@ -638,6 +701,9 @@
     <ClInclude Include="..\..\..\src\core\transport\chttp2\frame_window_update.h">
       <Filter>src\core\transport\chttp2</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\src\core\transport\chttp2\hpack_encoder.h">
+      <Filter>src\core\transport\chttp2</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\..\src\core\transport\chttp2\hpack_parser.h">
       <Filter>src\core\transport\chttp2</Filter>
     </ClInclude>
@@ -659,9 +725,6 @@
     <ClInclude Include="..\..\..\src\core\transport\chttp2\status_conversion.h">
       <Filter>src\core\transport\chttp2</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\src\core\transport\chttp2\stream_encoder.h">
-      <Filter>src\core\transport\chttp2</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\src\core\transport\chttp2\stream_map.h">
       <Filter>src\core\transport\chttp2</Filter>
     </ClInclude>
@@ -680,7 +743,10 @@
     <ClInclude Include="..\..\..\src\core\transport\metadata.h">
       <Filter>src\core\transport</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\src\core\transport\stream_op.h">
+    <ClInclude Include="..\..\..\src\core\transport\metadata_batch.h">
+      <Filter>src\core\transport</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\core\transport\static_metadata.h">
       <Filter>src\core\transport</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\core\transport\transport.h">
@@ -728,9 +794,6 @@
     <Filter Include="src\core\client_config\resolvers">
       <UniqueIdentifier>{dd617c24-6f07-fdff-80d5-c8610d6f815e}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\core\client_config\subchannel_factory_decorators">
-      <UniqueIdentifier>{64285d1a-ebd0-7637-ae20-15df5ca6cc83}</UniqueIdentifier>
-    </Filter>
     <Filter Include="src\core\compression">
       <UniqueIdentifier>{2e3aca1d-223d-10a1-b282-7f9fc68ee6f5}</UniqueIdentifier>
     </Filter>
@@ -745,9 +808,6 @@
     </Filter>
     <Filter Include="src\core\json">
       <UniqueIdentifier>{443ffc61-1bea-2477-6e54-1ddf8c139264}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="src\core\profiling">
-      <UniqueIdentifier>{7f91d9bf-c9de-835a-d74d-b16f843b89a9}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\core\statistics">
       <UniqueIdentifier>{e084164c-a069-00e3-db35-4e0b1cd6f0b7}</UniqueIdentifier>

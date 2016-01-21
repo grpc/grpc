@@ -46,7 +46,7 @@
 #include "src/core/support/file.h"
 #include "test/core/security/oauth2_utils.h"
 
-static grpc_credentials *create_refresh_token_creds(
+static grpc_call_credentials *create_refresh_token_creds(
     const char *json_refresh_token_file_path) {
   int success;
   gpr_slice refresh_token =
@@ -60,7 +60,7 @@ static grpc_credentials *create_refresh_token_creds(
 }
 
 int main(int argc, char **argv) {
-  grpc_credentials *creds = NULL;
+  grpc_call_credentials *creds = NULL;
   char *json_key_file_path = NULL;
   char *json_refresh_token_file_path = NULL;
   char *token = NULL;
@@ -115,7 +115,7 @@ int main(int argc, char **argv) {
     printf("Got token: %s.\n", token);
     gpr_free(token);
   }
-  grpc_credentials_release(creds);
+  grpc_call_credentials_release(creds);
   gpr_cmdline_destroy(cl);
   grpc_shutdown();
   return 0;

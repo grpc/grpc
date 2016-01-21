@@ -82,9 +82,9 @@ static void test_double_deletion(void) {
 }
 
 /* test add & lookup */
-static void test_basic_add_find(size_t n) {
+static void test_basic_add_find(gpr_uint32 n) {
   grpc_chttp2_stream_map map;
-  size_t i;
+  gpr_uint32 i;
   size_t got;
 
   LOG_TEST("test_basic_add_find");
@@ -107,15 +107,15 @@ static void test_basic_add_find(size_t n) {
 
 /* verify that for_each gets the right values during test_delete_evens_XXX */
 static void verify_for_each(void *user_data, gpr_uint32 stream_id, void *ptr) {
-  size_t *for_each_check = user_data;
+  gpr_uint32 *for_each_check = user_data;
   GPR_ASSERT(ptr);
   GPR_ASSERT(*for_each_check == stream_id);
   *for_each_check += 2;
 }
 
-static void check_delete_evens(grpc_chttp2_stream_map *map, size_t n) {
-  size_t for_each_check = 1;
-  size_t i;
+static void check_delete_evens(grpc_chttp2_stream_map *map, gpr_uint32 n) {
+  gpr_uint32 for_each_check = 1;
+  gpr_uint32 i;
   size_t got;
 
   GPR_ASSERT(NULL == grpc_chttp2_stream_map_find(map, 0));
@@ -139,9 +139,9 @@ static void check_delete_evens(grpc_chttp2_stream_map *map, size_t n) {
 
 /* add a bunch of keys, delete the even ones, and make sure the map is
    consistent */
-static void test_delete_evens_sweep(size_t n) {
+static void test_delete_evens_sweep(gpr_uint32 n) {
   grpc_chttp2_stream_map map;
-  size_t i;
+  gpr_uint32 i;
 
   LOG_TEST("test_delete_evens_sweep");
   gpr_log(GPR_INFO, "n = %d", n);
@@ -152,7 +152,8 @@ static void test_delete_evens_sweep(size_t n) {
   }
   for (i = 1; i <= n; i++) {
     if ((i & 1) == 0) {
-      GPR_ASSERT((void *)i == grpc_chttp2_stream_map_delete(&map, i));
+      GPR_ASSERT((void *)(gpr_uintptr)i ==
+                 grpc_chttp2_stream_map_delete(&map, i));
     }
   }
   check_delete_evens(&map, n);
@@ -161,9 +162,9 @@ static void test_delete_evens_sweep(size_t n) {
 
 /* add a bunch of keys, delete the even ones immediately, and make sure the map
    is consistent */
-static void test_delete_evens_incremental(size_t n) {
+static void test_delete_evens_incremental(gpr_uint32 n) {
   grpc_chttp2_stream_map map;
-  size_t i;
+  gpr_uint32 i;
 
   LOG_TEST("test_delete_evens_incremental");
   gpr_log(GPR_INFO, "n = %d", n);
@@ -181,10 +182,10 @@ static void test_delete_evens_incremental(size_t n) {
 
 /* add a bunch of keys, delete old ones after some time, ensure the
    backing array does not grow */
-static void test_periodic_compaction(size_t n) {
+static void test_periodic_compaction(gpr_uint32 n) {
   grpc_chttp2_stream_map map;
-  size_t i;
-  size_t del;
+  gpr_uint32 i;
+  gpr_uint32 del;
 
   LOG_TEST("test_periodic_compaction");
   gpr_log(GPR_INFO, "n = %d", n);
@@ -192,10 +193,11 @@ static void test_periodic_compaction(size_t n) {
   grpc_chttp2_stream_map_init(&map, 16);
   GPR_ASSERT(map.capacity == 16);
   for (i = 1; i <= n; i++) {
-    grpc_chttp2_stream_map_add(&map, i, (void *)i);
+    grpc_chttp2_stream_map_add(&map, i, (void *)(gpr_uintptr)i);
     if (i > 8) {
       del = i - 8;
-      GPR_ASSERT((void *)del == grpc_chttp2_stream_map_delete(&map, del));
+      GPR_ASSERT((void *)(gpr_uintptr)del ==
+                 grpc_chttp2_stream_map_delete(&map, del));
     }
   }
   GPR_ASSERT(map.capacity == 16);
@@ -203,9 +205,9 @@ static void test_periodic_compaction(size_t n) {
 }
 
 int main(int argc, char **argv) {
-  int n = 1;
-  int prev = 1;
-  int tmp;
+  gpr_uint32 n = 1;
+  gpr_uint32 prev = 1;
+  gpr_uint32 tmp;
 
   grpc_test_init(argc, argv);
 

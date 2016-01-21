@@ -121,6 +121,7 @@
 				6325277A1B1D0395003073D9 /* Frameworks */,
 				6325277B1B1D0395003073D9 /* Resources */,
 				FFE0BCF30339E7A50A989EAB /* Copy Pods Resources */,
+				B5388EC5A25E89021740B916 /* Embed Pods Frameworks */,
 			);
 			buildRules = (
 			);
@@ -177,6 +178,21 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
+		B5388EC5A25E89021740B916 /* Embed Pods Frameworks */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Embed Pods Frameworks";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${SRCROOT}/Pods/Target Support Files/Pods-RouteGuideClient/Pods-RouteGuideClient-frameworks.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
 		C6FC30AD2376EC04317237C5 /* Check Pods Manifest.lock */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;

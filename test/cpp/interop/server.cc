@@ -54,7 +54,7 @@
 #include "test/proto/empty.grpc.pb.h"
 #include "test/proto/messages.grpc.pb.h"
 
-DEFINE_bool(enable_ssl, false, "Whether to use ssl/tls.");
+DEFINE_bool(use_tls, false, "Whether to use tls.");
 DEFINE_int32(port, 0, "Server port.");
 
 using grpc::Server;

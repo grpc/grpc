@@ -67,7 +67,7 @@ typedef union lockfree_node {
 #define ENTRY_ALIGNMENT_BITS 3 /* make sure that entries aligned to 8-bytes */
 #define INVALID_ENTRY_INDEX                        \
   ((1 << 16) - 1) /* reserve this entry as invalid \
-                        */
+                    */
 
 struct gpr_stack_lockfree {
   lockfree_node *entries;
@@ -79,7 +79,7 @@ struct gpr_stack_lockfree {
 #endif
 };
 
-gpr_stack_lockfree *gpr_stack_lockfree_create(int entries) {
+gpr_stack_lockfree *gpr_stack_lockfree_create(size_t entries) {
   gpr_stack_lockfree *stack;
   stack = gpr_malloc(sizeof(*stack));
   /* Since we only allocate 16 bits to represent an entry number,
@@ -123,13 +123,13 @@ int gpr_stack_lockfree_push(gpr_stack_lockfree *stack, int entry) {
 #ifndef NDEBUG
   /* Check for double push */
   {
-    int pushed_index = entry / (8 * sizeof(gpr_atm));
-    int pushed_bit = entry % (8 * sizeof(gpr_atm));
+    int pushed_index = entry / (int)(8 * sizeof(gpr_atm));
+    int pushed_bit = entry % (int)(8 * sizeof(gpr_atm));
     gpr_atm old_val;
 
     old_val = gpr_atm_no_barrier_fetch_add(&stack->pushed[pushed_index],
                                            (gpr_atm)(1UL << pushed_bit));
-    GPR_ASSERT((old_val & (1UL << pushed_bit)) == 0);
+    GPR_ASSERT((old_val & (gpr_atm)(1UL << pushed_bit)) == 0);
   }
 #endif
 
@@ -167,7 +167,7 @@ int gpr_stack_lockfree_pop(gpr_stack_lockfree *stack) {
 
     old_val = gpr_atm_no_barrier_fetch_add(&stack->pushed[pushed_index],
                                            -(gpr_atm)(1UL << pushed_bit));
-    GPR_ASSERT((old_val & (1UL << pushed_bit)) != 0);
+    GPR_ASSERT((old_val & (gpr_atm)(1UL << pushed_bit)) != 0);
   }
 #endif
 

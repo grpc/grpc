@@ -45,16 +45,31 @@
 
 namespace grpc {
 
+class DefaultGlobalClientCallbacks GRPC_FINAL
+    : public ClientContext::GlobalCallbacks {
+ public:
+  void DefaultConstructor(ClientContext* context) GRPC_OVERRIDE {}
+  void Destructor(ClientContext* context) GRPC_OVERRIDE {}
+};
+
+static DefaultGlobalClientCallbacks g_default_client_callbacks;
+static ClientContext::GlobalCallbacks* g_client_callbacks =
+    &g_default_client_callbacks;
+
 ClientContext::ClientContext()
     : initial_metadata_received_(false),
       call_(nullptr),
+      call_canceled_(false),
       deadline_(gpr_inf_future(GPR_CLOCK_REALTIME)),
-      propagate_from_call_(nullptr) {}
+      propagate_from_call_(nullptr) {
+  g_client_callbacks->DefaultConstructor(this);
+}
 
 ClientContext::~ClientContext() {
   if (call_) {
     grpc_call_destroy(call_);
   }
+  g_client_callbacks->Destructor(this);
 }
 
 std::unique_ptr<ClientContext> ClientContext::FromServerContext(
@@ -72,12 +87,16 @@ void ClientContext::AddMetadata(const grpc::string& meta_key,
 
 void ClientContext::set_call(grpc_call* call,
                              const std::shared_ptr<Channel>& channel) {
+  grpc::unique_lock<grpc::mutex> lock(mu_);
   GPR_ASSERT(call_ == nullptr);
   call_ = call;
   channel_ = channel;
   if (creds_ && !creds_->ApplyToCall(call_)) {
     grpc_call_cancel_with_status(call, GRPC_STATUS_CANCELLED,
                                  "Failed to set credentials to rpc.", nullptr);
+  }
+  if (call_canceled_) {
+    grpc_call_cancel(call_, nullptr);
   }
 }
 
@@ -101,8 +120,11 @@ std::shared_ptr<const AuthContext> ClientContext::auth_context() const {
 }
 
 void ClientContext::TryCancel() {
+  grpc::unique_lock<grpc::mutex> lock(mu_);
   if (call_) {
     grpc_call_cancel(call_, nullptr);
+  } else {
+    call_canceled_ = true;
   }
 }
 
@@ -114,6 +136,13 @@ grpc::string ClientContext::peer() const {
     gpr_free(c_peer);
   }
   return peer;
+}
+
+void ClientContext::SetGlobalCallbacks(GlobalCallbacks* client_callbacks) {
+  GPR_ASSERT(g_client_callbacks == &g_default_client_callbacks);
+  GPR_ASSERT(client_callbacks != NULL);
+  GPR_ASSERT(client_callbacks != &g_default_client_callbacks);
+  g_client_callbacks = client_callbacks;
 }
 
 }  // namespace grpc

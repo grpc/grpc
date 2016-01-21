@@ -54,10 +54,12 @@
 
 #include "test/cpp/util/create_test_channel.h"
 #include "test/cpp/qps/client.h"
-#include "test/cpp/qps/qpstest.grpc.pb.h"
 #include "test/cpp/qps/histogram.h"
 #include "test/cpp/qps/interarrival.h"
 #include "test/cpp/qps/timer.h"
+#include "test/proto/benchmarks/services.grpc.pb.h"
+
+#include "src/core/profiling/timers.h"
 
 namespace grpc {
 namespace testing {
@@ -99,6 +101,7 @@ class SynchronousUnaryClient GRPC_FINAL : public SynchronousClient {
     WaitToIssue(thread_idx);
     auto* stub = channels_[thread_idx % channels_.size()].get_stub();
     double start = Timer::Now();
+    GPR_TIMER_SCOPE("SynchronousUnaryClient::ThreadFunc", 0);
     grpc::ClientContext context;
     grpc::Status s =
         stub->UnaryCall(&context, request_, &responses_[thread_idx]);
@@ -135,6 +138,7 @@ class SynchronousStreamingClient GRPC_FINAL : public SynchronousClient {
 
   bool ThreadFunc(Histogram* histogram, size_t thread_idx) GRPC_OVERRIDE {
     WaitToIssue(thread_idx);
+    GPR_TIMER_SCOPE("SynchronousStreamingClient::ThreadFunc", 0);
     double start = Timer::Now();
     if (stream_[thread_idx]->Write(request_) &&
         stream_[thread_idx]->Read(&responses_[thread_idx])) {

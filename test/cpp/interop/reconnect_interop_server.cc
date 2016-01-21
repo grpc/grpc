@@ -75,12 +75,15 @@ static bool got_sigint = false;
 class ReconnectServiceImpl : public ReconnectService::Service {
  public:
   explicit ReconnectServiceImpl(int retry_port)
-      : retry_port_(retry_port), serving_(false), shutdown_(false) {
+      : retry_port_(retry_port),
+        serving_(false),
+        server_started_(false),
+        shutdown_(false) {
     reconnect_server_init(&tcp_server_);
   }
 
   ~ReconnectServiceImpl() {
-    if (tcp_server_.tcp_server) {
+    if (server_started_) {
       reconnect_server_destroy(&tcp_server_);
     }
   }
@@ -88,6 +91,7 @@ class ReconnectServiceImpl : public ReconnectService::Service {
   void Poll(int seconds) { reconnect_server_poll(&tcp_server_, seconds); }
 
   Status Start(ServerContext* context, const Empty* request, Empty* response) {
+    bool start_server = true;
     std::unique_lock<std::mutex> lock(mu_);
     while (serving_ && !shutdown_) {
       cv_.wait(lock);
@@ -96,9 +100,14 @@ class ReconnectServiceImpl : public ReconnectService::Service {
       return Status(grpc::StatusCode::UNAVAILABLE, "shutting down");
     }
     serving_ = true;
+    if (server_started_) {
+      start_server = false;
+    } else {
+      server_started_ = true;
+    }
     lock.unlock();
 
-    if (!tcp_server_.tcp_server) {
+    if (start_server) {
       reconnect_server_start(&tcp_server_, retry_port_);
     } else {
       reconnect_server_clear_timestamps(&tcp_server_);
@@ -152,6 +161,7 @@ class ReconnectServiceImpl : public ReconnectService::Service {
   int retry_port_;
   reconnect_server tcp_server_;
   bool serving_;
+  bool server_started_;
   bool shutdown_;
   std::mutex mu_;
   std::condition_variable cv_;

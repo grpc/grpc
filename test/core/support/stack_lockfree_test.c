@@ -46,9 +46,10 @@
 
 #define MAX_THREADS 32
 
-static void test_serial_sized(int size) {
+static void test_serial_sized(size_t size) {
   gpr_stack_lockfree *stack = gpr_stack_lockfree_create(size);
-  int i;
+  size_t i;
+  size_t j;
 
   /* First try popping empty */
   GPR_ASSERT(gpr_stack_lockfree_pop(stack) == -1);
@@ -60,12 +61,11 @@ static void test_serial_sized(int size) {
 
   /* Now add repeatedly more items and check them */
   for (i = 1; i < size; i *= 2) {
-    int j;
     for (j = 0; j <= i; j++) {
-      GPR_ASSERT(gpr_stack_lockfree_push(stack, j) == (j == 0));
+      GPR_ASSERT(gpr_stack_lockfree_push(stack, (int)j) == (j == 0));
     }
     for (j = 0; j <= i; j++) {
-      GPR_ASSERT(gpr_stack_lockfree_pop(stack) == i - j);
+      GPR_ASSERT(gpr_stack_lockfree_pop(stack) == (int)(i - j));
     }
     GPR_ASSERT(gpr_stack_lockfree_pop(stack) == -1);
   }
@@ -74,7 +74,7 @@ static void test_serial_sized(int size) {
 }
 
 static void test_serial() {
-  int i;
+  size_t i;
   for (i = 128; i < MAX_STACK_SIZE; i *= 2) {
     test_serial_sized(i);
   }
@@ -107,7 +107,7 @@ static void test_mt_body(void *v) {
   }
 }
 
-static void test_mt_sized(int size, int nth) {
+static void test_mt_sized(size_t size, int nth) {
   gpr_stack_lockfree *stack;
   struct test_arg args[MAX_THREADS];
   gpr_thd_id thds[MAX_THREADS];
@@ -118,7 +118,7 @@ static void test_mt_sized(int size, int nth) {
   stack = gpr_stack_lockfree_create(size);
   for (i = 0; i < nth; i++) {
     args[i].stack = stack;
-    args[i].stack_size = size;
+    args[i].stack_size = (int)size;
     args[i].nthreads = nth;
     args[i].rank = i;
     args[i].sum = 0;
@@ -137,7 +137,8 @@ static void test_mt_sized(int size, int nth) {
 }
 
 static void test_mt() {
-  int size, nth;
+  size_t size;
+  int nth;
   for (nth = 1; nth < MAX_THREADS; nth++) {
     for (size = 128; size < MAX_STACK_SIZE; size *= 2) {
       test_mt_sized(size, nth);

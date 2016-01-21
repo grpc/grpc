@@ -119,7 +119,7 @@ namespace Grpc.Core.Tests
         [Test]
         public void RequestParsingError_UnaryRequest()
         {
-            helper.UnaryHandler = new  UnaryServerMethod<string, string>((request, context) =>
+            helper.UnaryHandler = new UnaryServerMethod<string, string>((request, context) =>
             {
                 return Task.FromResult("RESPONSE");
             });
@@ -161,7 +161,7 @@ namespace Grpc.Core.Tests
         {
             helper.ClientStreamingHandler = new ClientStreamingServerMethod<string, string>(async (requestStream, context) =>
             {
-                CollectionAssert.AreEqual(new [] {"A", "B"}, await requestStream.ToListAsync());
+                CollectionAssert.AreEqual(new[] { "A", "B" }, await requestStream.ToListAsync());
                 return "RESPONSE";
             });
             var call = Calls.AsyncClientStreamingCall(helper.CreateClientStreamingCall());

@@ -34,48 +34,16 @@ set -ex
 cd $(dirname $0)/../..
 
 ROOT=`pwd`
-PATH=$ROOT/bins/$CONFIG:$ROOT/bins/$CONFIG/protobuf:$PATH
 GRPCIO=$ROOT/src/python/grpcio
-GRPCIO_TEST=$ROOT/src/python/grpcio_test
-GRPCIO_HEALTH_CHECKING=$ROOT/src/python/grpcio_health_checking
+export LD_LIBRARY_PATH=$ROOT/libs/$CONFIG
+export DYLD_LIBRARY_PATH=$ROOT/libs/$CONFIG
+export PATH=$ROOT/bins/$CONFIG:$ROOT/bins/$CONFIG/protobuf:$PATH
+export CFLAGS="-I$ROOT/include -std=c89"
+export LDFLAGS="-L$ROOT/libs/$CONFIG"
+export GRPC_PYTHON_BUILD_WITH_CYTHON=1
+export GRPC_PYTHON_ENABLE_CYTHON_TRACING=1
 
-make_virtualenv() {
-  virtualenv_name="python"$1"_virtual_environment"
-  if [ ! -d $virtualenv_name ]
-  then
-    # Build the entire virtual environment
-    virtualenv -p `which "python"$1` $virtualenv_name
-    source $virtualenv_name/bin/activate
+cd $GRPCIO
+tox --notest
 
-    # Install grpcio
-    cd $GRPCIO
-    pip install -r requirements.txt
-    CFLAGS="-I$ROOT/include -std=c89" LDFLAGS=-L$ROOT/libs/$CONFIG GRPC_PYTHON_BUILD_WITH_CYTHON=1 pip install $GRPCIO
-
-    # Install grpcio_test
-    cd $GRPCIO_TEST
-    pip install -r requirements.txt
-    pip install $GRPCIO_TEST
-
-    # Install grpcio_health_checking
-    pip install $GRPCIO_HEALTH_CHECKING
-  else
-    source $virtualenv_name/bin/activate
-    # Uninstall and re-install the packages we care about. Don't use
-    # --force-reinstall or --ignore-installed to avoid propagating this
-    # unnecessarily to dependencies. Don't use --no-deps to avoid missing
-    # dependency upgrades.
-    (yes | pip uninstall grpcio) || true
-    (yes | pip uninstall grpcio_test) || true
-    (yes | pip uninstall grpcio_health_checking) || true
-    (CFLAGS="-I$ROOT/include -std=c89" LDFLAGS=-L$ROOT/libs/$CONFIG GRPC_PYTHON_BUILD_WITH_CYTHON=1 pip install $GRPCIO) || (
-      # Fall back to rebuilding the entire environment
-      rm -rf $virtualenv_name
-      make_virtualenv $1
-    )
-    pip install $GRPCIO_TEST
-    pip install $GRPCIO_HEALTH_CHECKING
-  fi
-}
-
-make_virtualenv $1
+$GRPCIO/.tox/py27/bin/python $GRPCIO/setup.py build

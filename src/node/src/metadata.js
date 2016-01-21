@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,12 +33,23 @@
 
 /**
  * Metadata module
+ *
+ * This module defines the Metadata class, which represents header and trailer
+ * metadata for gRPC calls. Here is an example of how to use it:
+ *
+ * var metadata = new metadata_module.Metadata();
+ * metadata.set('key1', 'value1');
+ * metadata.add('key1', 'value2');
+ * metadata.get('key1') // returns ['value1', 'value2']
+ *
  * @module
  */
 
 'use strict';
 
 var _ = require('lodash');
+
+var grpc = require('bindings')('grpc_node');
 
 /**
  * Class for storing metadata. Keys are normalized to lowercase ASCII.
@@ -49,15 +60,16 @@ function Metadata() {
 }
 
 function normalizeKey(key) {
-  if (!(/^[A-Za-z\d_-]+$/.test(key))) {
-    throw new Error('Metadata keys must be nonempty strings containing only ' +
-        'alphanumeric characters and hyphens');
+  key = key.toLowerCase();
+  if (grpc.metadataKeyIsLegal(key)) {
+    return key;
+  } else {
+    throw new Error('Metadata key contains illegal characters');
   }
-  return key.toLowerCase();
 }
 
 function validate(key, value) {
-  if (_.endsWith(key, '-bin')) {
+  if (grpc.metadataKeyIsBinary(key)) {
     if (!(value instanceof Buffer)) {
       throw new Error('keys that end with \'-bin\' must have Buffer values');
     }
@@ -66,9 +78,8 @@ function validate(key, value) {
       throw new Error(
           'keys that don\'t end with \'-bin\' must have String values');
     }
-    if (!(/^[\x20-\x7E]*$/.test(value))) {
-      throw new Error('Metadata string values can only contain printable ' +
-          'ASCII characters and space');
+    if (!grpc.metadataNonbinValueIsLegal(value)) {
+      throw new Error('Metadata string value contains illegal characters');
     }
   }
 }
@@ -173,7 +184,9 @@ Metadata.prototype._getCoreRepresentation = function() {
 Metadata._fromCoreRepresentation = function(metadata) {
   var newMetadata = new Metadata();
   if (metadata) {
-    newMetadata._internal_repr = _.cloneDeep(metadata);
+    _.forOwn(metadata, function(value, key) {
+      newMetadata._internal_repr[key] = _.clone(value);
+    });
   }
   return newMetadata;
 };

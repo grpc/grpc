@@ -27,16 +27,19 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+cimport cpython
+
 from grpc._cython._cygrpc cimport call
 from grpc._cython._cygrpc cimport completion_queue
 from grpc._cython._cygrpc cimport credentials
+from grpc._cython._cygrpc cimport grpc
 from grpc._cython._cygrpc cimport records
 
 
 cdef class Channel:
 
   def __cinit__(self, target, records.ChannelArgs arguments=None,
-                credentials.ClientCredentials client_credentials=None):
+                credentials.ChannelCredentials channel_credentials=None):
     cdef grpc.grpc_channel_args *c_arguments = NULL
     self.c_channel = NULL
     self.references = []
@@ -48,16 +51,18 @@ cdef class Channel:
       target = target.encode()
     else:
       raise TypeError("expected target to be str or bytes")
-    if client_credentials is None:
-      self.c_channel = grpc.grpc_channel_create(target, c_arguments)
+    if channel_credentials is None:
+      self.c_channel = grpc.grpc_insecure_channel_create(target, c_arguments,
+                                                         NULL)
     else:
       self.c_channel = grpc.grpc_secure_channel_create(
-          client_credentials.c_credentials, target, c_arguments)
-      self.references.append(client_credentials)
+          channel_credentials.c_credentials, target, c_arguments, NULL)
+      self.references.append(channel_credentials)
     self.references.append(target)
     self.references.append(arguments)
 
-  def create_call(self, completion_queue.CompletionQueue queue not None,
+  def create_call(self, call.Call parent, int flags,
+                  completion_queue.CompletionQueue queue not None,
                   method, host, records.Timespec deadline not None):
     if queue.is_shutting_down:
       raise ValueError("queue must not be shutting down or shutdown")
@@ -67,17 +72,45 @@ cdef class Channel:
       method = method.encode()
     else:
       raise TypeError("expected method to be str or bytes")
-    if isinstance(host, bytes):
+    cdef char *host_c_string = NULL
+    if host is None:
       pass
+    elif isinstance(host, bytes):
+      host_c_string = host
     elif isinstance(host, basestring):
       host = host.encode()
+      host_c_string = host
     else:
-      raise TypeError("expected host to be str or bytes")
+      raise TypeError("expected host to be str, bytes, or None")
     cdef call.Call operation_call = call.Call()
     operation_call.references = [self, method, host, queue]
+    cdef grpc.grpc_call *parent_call = NULL
+    if parent is not None:
+      parent_call = parent.c_call
     operation_call.c_call = grpc.grpc_channel_create_call(
-        self.c_channel, queue.c_completion_queue, method, host, deadline.c_time)
+        self.c_channel, parent_call, flags,
+        queue.c_completion_queue, method, host_c_string, deadline.c_time,
+        NULL)
     return operation_call
+
+  def check_connectivity_state(self, bint try_to_connect):
+    return grpc.grpc_channel_check_connectivity_state(self.c_channel,
+                                                      try_to_connect)
+
+  def watch_connectivity_state(
+      self, last_observed_state, records.Timespec deadline not None,
+      completion_queue.CompletionQueue queue not None, tag):
+    cdef records.OperationTag operation_tag = records.OperationTag(tag)
+    cpython.Py_INCREF(operation_tag)
+    grpc.grpc_channel_watch_connectivity_state(
+        self.c_channel, last_observed_state, deadline.c_time,
+        queue.c_completion_queue, <cpython.PyObject *>operation_tag)
+
+  def target(self):
+    cdef char * target = grpc.grpc_channel_get_target(self.c_channel)
+    result = <bytes>target
+    grpc.gpr_free(target)
+    return result
 
   def __dealloc__(self):
     if self.c_channel != NULL:

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="..\..\..\..\test\core\end2end\tests\channel_ping.c">
+      <Filter>test\core\end2end\tests</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\..\test\core\end2end\tests\cancel_test_helpers.h">
+      <Filter>test\core\end2end\tests</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\test\core\end2end\end2end_tests.h">
+      <Filter>test\core\end2end</Filter>
+    </ClInclude>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="test">
+      <UniqueIdentifier>{8260ff3e-36f1-dbb5-9ebc-01514717203d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core">
+      <UniqueIdentifier>{2dd87437-ab58-490e-dfab-5fd1f1c493d1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core\end2end">
+      <UniqueIdentifier>{92a26349-c0e5-0446-4336-137c9530172c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core\end2end\tests">
+      <UniqueIdentifier>{bc955ba5-5113-313a-345d-1d0f4b7ddb86}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

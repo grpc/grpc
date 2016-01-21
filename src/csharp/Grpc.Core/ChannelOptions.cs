@@ -169,7 +169,7 @@ namespace Grpc.Core
         /// Creates native object for a collection of channel options.
         /// </summary>
         /// <returns>The native channel arguments.</returns>
-        internal static ChannelArgsSafeHandle CreateChannelArgs(List<ChannelOption> options)
+        internal static ChannelArgsSafeHandle CreateChannelArgs(ICollection<ChannelOption> options)
         {
             if (options == null || options.Count == 0)
             {
@@ -179,9 +179,9 @@ namespace Grpc.Core
             try
             {
                 nativeArgs = ChannelArgsSafeHandle.Create(options.Count);
-                for (int i = 0; i < options.Count; i++)
+                int i = 0;
+                foreach (var option in options)
                 {
-                    var option = options[i];
                     if (option.Type == ChannelOption.OptionType.Integer)
                     {
                         nativeArgs.SetInteger(i, option.Name, option.IntValue);
@@ -194,6 +194,7 @@ namespace Grpc.Core
                     {
                         throw new InvalidOperationException("Unknown option type");
                     }
+                    i++;
                 }
                 return nativeArgs;
             }

@@ -106,6 +106,9 @@ void grpc_byte_buffer_reader_destroy(grpc_byte_buffer_reader *reader);
 int grpc_byte_buffer_reader_next(grpc_byte_buffer_reader *reader,
                                  gpr_slice *slice);
 
+/** Merge all data from \a reader into single slice */
+gpr_slice grpc_byte_buffer_reader_readall(grpc_byte_buffer_reader *reader);
+
 /** Returns a RAW byte buffer instance from the output of \a reader. */
 grpc_byte_buffer *grpc_raw_byte_buffer_from_reader(
     grpc_byte_buffer_reader *reader);

@@ -43,7 +43,9 @@
 namespace grpc {
 
 ServerBuilder::ServerBuilder()
-    : max_message_size_(-1), generic_service_(nullptr), thread_pool_(nullptr) {}
+    : max_message_size_(-1), generic_service_(nullptr), thread_pool_(nullptr) {
+  grpc_compression_options_init(&compression_options_);
+}
 
 std::unique_ptr<ServerCompletionQueue> ServerBuilder::AddCompletionQueue() {
   ServerCompletionQueue* cq = new ServerCompletionQueue();
@@ -82,6 +84,10 @@ void ServerBuilder::RegisterAsyncGenericService(AsyncGenericService* service) {
   generic_service_ = service;
 }
 
+void ServerBuilder::SetOption(std::unique_ptr<ServerBuilderOption> option) {
+  options_.push_back(std::move(option));
+}
+
 void ServerBuilder::AddListeningPort(const grpc::string& addr,
                                      std::shared_ptr<ServerCredentials> creds,
                                      int* selected_port) {
@@ -99,8 +105,17 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
     thread_pool_ = CreateDefaultThreadPool();
     thread_pool_owned = true;
   }
+  ChannelArguments args;
+  for (auto option = options_.begin(); option != options_.end(); ++option) {
+    (*option)->UpdateArguments(&args);
+  }
+  if (max_message_size_ > 0) {
+    args.SetInt(GRPC_ARG_MAX_MESSAGE_LENGTH, max_message_size_);
+  }
+  args.SetInt(GRPC_COMPRESSION_ALGORITHM_STATE_ARG,
+              compression_options_.enabled_algorithms_bitset);
   std::unique_ptr<Server> server(
-      new Server(thread_pool_, thread_pool_owned, max_message_size_));
+      new Server(thread_pool_, thread_pool_owned, max_message_size_, args));
   for (auto cq = cqs_.begin(); cq != cqs_.end(); ++cq) {
     grpc_server_register_completion_queue(server->server_, (*cq)->cq(),
                                           nullptr);

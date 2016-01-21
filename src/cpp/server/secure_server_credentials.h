@@ -46,7 +46,7 @@ namespace grpc {
 
 class AuthMetadataProcessorAyncWrapper GRPC_FINAL {
  public:
-  static void Destroy(void *wrapper);
+  static void Destroy(void* wrapper);
 
   static void Process(void* wrapper, grpc_auth_context* context,
                       const grpc_metadata* md, size_t num_md,

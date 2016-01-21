@@ -34,6 +34,7 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Grpc.Core;
 using Grpc.Core.Utils;
+using Grpc.Core.Profiling;
 
 namespace Grpc.Core.Internal
 {
@@ -99,6 +100,9 @@ namespace Grpc.Core.Internal
             BatchContextSafeHandle ctx, MetadataArraySafeHandle metadataArray);
 
         [DllImport("grpc_csharp_ext.dll")]
+        static extern GRPCCallError grpcsharp_call_set_credentials(CallSafeHandle call, CallCredentialsSafeHandle credentials);
+
+        [DllImport("grpc_csharp_ext.dll")]
         static extern CStringSafeHandle grpcsharp_call_get_peer(CallSafeHandle call);
 
         [DllImport("grpc_csharp_ext.dll")]
@@ -113,6 +117,11 @@ namespace Grpc.Core.Internal
             this.completionRegistry = completionRegistry;
         }
 
+        public void SetCredentials(CallCredentialsSafeHandle credentials)
+        {
+            grpcsharp_call_set_credentials(this, credentials).CheckOk();
+        }
+
         public void StartUnary(UnaryResponseClientHandler callback, byte[] payload, MetadataArraySafeHandle metadataArray, WriteFlags writeFlags)
         {
             var ctx = BatchContextSafeHandle.Create();
@@ -123,8 +132,11 @@ namespace Grpc.Core.Internal
 
         public void StartUnary(BatchContextSafeHandle ctx, byte[] payload, MetadataArraySafeHandle metadataArray, WriteFlags writeFlags)
         {
-            grpcsharp_call_start_unary(this, ctx, payload, new UIntPtr((ulong)payload.Length), metadataArray, writeFlags)
-                .CheckOk();
+            using (Profilers.ForCurrentThread().NewScope("CallSafeHandle.StartUnary"))
+            {
+                grpcsharp_call_start_unary(this, ctx, payload, new UIntPtr((ulong)payload.Length), metadataArray, writeFlags)
+                    .CheckOk();
+            }
         }
 
         public void StartClientStreaming(UnaryResponseClientHandler callback, MetadataArraySafeHandle metadataArray)

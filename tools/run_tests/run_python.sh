@@ -34,20 +34,18 @@ set -ex
 cd $(dirname $0)/../..
 
 ROOT=`pwd`
-GRPCIO_TEST=$ROOT/src/python/grpcio_test
+GRPCIO=$ROOT/src/python/grpcio
 export LD_LIBRARY_PATH=$ROOT/libs/$CONFIG
 export DYLD_LIBRARY_PATH=$ROOT/libs/$CONFIG
 export PATH=$ROOT/bins/$CONFIG:$ROOT/bins/$CONFIG/protobuf:$PATH
-source "python"$PYVER"_virtual_environment"/bin/activate
+export CFLAGS="-I$ROOT/include -std=c89"
+export LDFLAGS="-L$ROOT/libs/$CONFIG"
+export GRPC_PYTHON_BUILD_WITH_CYTHON=1
+export GRPC_PYTHON_ENABLE_CYTHON_TRACING=1
 
-# TODO(atash): These tests don't currently run under py.test and thus don't
-# appear under the coverage report. Find a way to get these tests to work with
-# py.test (or find another tool or *something*) that's acceptable to the rest of
-# the team...
-"python"$PYVER -m grpc_test._core_over_links_base_interface_test
-"python"$PYVER -m grpc_test._crust_over_core_over_links_face_interface_test
-"python"$PYVER -m grpc_test.beta._face_interface_test
-"python"$PYVER -m grpc_test.framework._crust_over_core_face_interface_test
-"python"$PYVER -m grpc_test.framework.core._base_interface_test
+cd $GRPCIO
+tox
 
-"python"$PYVER $GRPCIO_TEST/setup.py test -a "-n8 --cov=grpc --junitxml=./report.xml --timeout=300"
+mkdir -p $ROOT/reports
+rm -rf $ROOT/reports/python-coverage
+(mv -T $GRPCIO/htmlcov $ROOT/reports/python-coverage) || true

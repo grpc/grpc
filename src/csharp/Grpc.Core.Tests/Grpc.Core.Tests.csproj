@@ -63,8 +63,12 @@
     <Compile Include="..\Grpc.Core\Version.cs">
       <Link>Version.cs</Link>
     </Compile>
-    <Compile Include="ClientBaseTest.cs" />
+    <Compile Include="CallCredentialsTest.cs" />
+    <Compile Include="CallOptionsTest.cs" />
+    <Compile Include="UserAgentStringTest.cs" />
+    <Compile Include="FakeCredentials.cs" />
     <Compile Include="MarshallingErrorsTest.cs" />
+    <Compile Include="ChannelCredentialsTest.cs" />
     <Compile Include="ShutdownTest.cs" />
     <Compile Include="Internal\AsyncCallTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -86,6 +90,8 @@
     <Compile Include="CompressionTest.cs" />
     <Compile Include="ContextPropagationTest.cs" />
     <Compile Include="MetadataTest.cs" />
+    <Compile Include="PerformanceTest.cs" />
+    <Compile Include="SanityTest.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>

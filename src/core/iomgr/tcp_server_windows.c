@@ -35,7 +35,8 @@
 
 #ifdef GPR_WINSOCK_SOCKET
 
-#define _GNU_SOURCE
+#include <io.h>
+
 #include "src/core/iomgr/sockaddr_utils.h"
 
 #include <grpc/support/alloc.h>
@@ -51,42 +52,46 @@
 #include "src/core/iomgr/tcp_server.h"
 #include "src/core/iomgr/tcp_windows.h"
 
-#define INIT_PORT_CAP 2
 #define MIN_SAFE_ACCEPT_QUEUE_SIZE 100
 
 /* one listening port */
-typedef struct server_port {
+struct grpc_tcp_listener {
   /* This seemingly magic number comes from AcceptEx's documentation. each
      address buffer needs to have at least 16 more bytes at their end. */
   gpr_uint8 addresses[(sizeof(struct sockaddr_in6) + 16) * 2];
   /* This will hold the socket for the next accept. */
   SOCKET new_socket;
-  /* The listener winsocked. */
+  /* The listener winsocket. */
   grpc_winsocket *socket;
+  /* The actual TCP port number. */
+  int port;
   grpc_tcp_server *server;
   /* The cached AcceptEx for that port. */
   LPFN_ACCEPTEX AcceptEx;
   int shutting_down;
-} server_port;
+  /* closure for socket notification of accept being ready */
+  grpc_closure on_accept;
+  gpr_refcount refs;
+  /* linked list */
+  struct grpc_tcp_listener *next;
+};
 
 /* the overall server */
 struct grpc_tcp_server {
-  grpc_tcp_server_cb cb;
-  void *cb_arg;
+  /* Called whenever accept() succeeds on a server port. */
+  grpc_tcp_server_cb on_accept_cb;
+  void *on_accept_cb_arg;
 
   gpr_mu mu;
 
   /* active port count: how many ports are actually still listening */
   int active_ports;
 
-  /* all listening ports */
-  server_port *ports;
-  size_t nports;
-  size_t port_capacity;
+  /* linked list of server ports */
+  grpc_tcp_listener *head;
 
   /* shutdown callback */
-  void(*shutdown_complete)(void *);
-  void *shutdown_complete_arg;
+  grpc_closure *shutdown_complete;
 };
 
 /* Public function. Allocates the proper data structures to hold a
@@ -95,66 +100,59 @@ grpc_tcp_server *grpc_tcp_server_create(void) {
   grpc_tcp_server *s = gpr_malloc(sizeof(grpc_tcp_server));
   gpr_mu_init(&s->mu);
   s->active_ports = 0;
-  s->cb = NULL;
-  s->cb_arg = NULL;
-  s->ports = gpr_malloc(sizeof(server_port) * INIT_PORT_CAP);
-  s->nports = 0;
-  s->port_capacity = INIT_PORT_CAP;
+  s->on_accept_cb = NULL;
+  s->on_accept_cb_arg = NULL;
+  s->head = NULL;
   s->shutdown_complete = NULL;
   return s;
 }
 
 static void dont_care_about_shutdown_completion(void *arg) {}
 
-static void finish_shutdown(grpc_tcp_server *s) {
-  size_t i;
-
-  s->shutdown_complete(s->shutdown_complete_arg);
+static void finish_shutdown(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s) {
+  grpc_exec_ctx_enqueue(exec_ctx, s->shutdown_complete, 1);
 
   /* Now that the accepts have been aborted, we can destroy the sockets.
-  The IOCP won't get notified on these, so we can flag them as already
-  closed by the system. */
-  for (i = 0; i < s->nports; i++) {
-    server_port *sp = &s->ports[i];
+     The IOCP won't get notified on these, so we can flag them as already
+     closed by the system. */
+  while (s->head) {
+    grpc_tcp_listener *sp = s->head;
+    s->head = sp->next;
+    sp->next = NULL;
     grpc_winsocket_destroy(sp->socket);
+    grpc_tcp_listener_unref(sp);
   }
-  gpr_free(s->ports);
   gpr_free(s);
 }
 
 /* Public function. Stops and destroys a grpc_tcp_server. */
-void grpc_tcp_server_destroy(grpc_tcp_server *s,
-                             void (*shutdown_complete)(void *shutdown_done_arg),
-                             void *shutdown_complete_arg) {
-  size_t i;
+void grpc_tcp_server_destroy(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s,
+                             grpc_closure *shutdown_complete) {
   int immediately_done = 0;
+  grpc_tcp_listener *sp;
   gpr_mu_lock(&s->mu);
 
-  s->shutdown_complete = shutdown_complete
-    ? shutdown_complete
-    : dont_care_about_shutdown_completion;
-  s->shutdown_complete_arg = shutdown_complete_arg;
+  s->shutdown_complete = shutdown_complete;
 
   /* First, shutdown all fd's. This will queue abortion calls for all
      of the pending accepts due to the normal operation mechanism. */
   if (s->active_ports == 0) {
     immediately_done = 1;
   }
-  for (i = 0; i < s->nports; i++) {
-    server_port *sp = &s->ports[i];
+  for (sp = s->head; sp; sp = sp->next) {
     sp->shutting_down = 1;
     grpc_winsocket_shutdown(sp->socket);
   }
   gpr_mu_unlock(&s->mu);
 
   if (immediately_done) {
-    finish_shutdown(s);
+    finish_shutdown(exec_ctx, s);
   }
 }
 
 /* Prepare (bind) a recently-created socket for listening. */
 static int prepare_socket(SOCKET sock, const struct sockaddr *addr,
-                          int addr_len) {
+                          size_t addr_len) {
   struct sockaddr_storage sockname_temp;
   socklen_t sockname_len;
 
@@ -167,7 +165,7 @@ static int prepare_socket(SOCKET sock, const struct sockaddr *addr,
     goto error;
   }
 
-  if (bind(sock, addr, addr_len) == SOCKET_ERROR) {
+  if (bind(sock, addr, (int)addr_len) == SOCKET_ERROR) {
     char *addr_str;
     char *utf8_message = gpr_format_message(WSAGetLastError());
     grpc_sockaddr_to_string(&addr_str, addr, 0);
@@ -200,26 +198,25 @@ error:
   return -1;
 }
 
-static void decrement_active_ports_and_notify(server_port *sp) {
+static void decrement_active_ports_and_notify(grpc_exec_ctx *exec_ctx,
+                                              grpc_tcp_listener *sp) {
   int notify = 0;
   sp->shutting_down = 0;
   gpr_mu_lock(&sp->server->mu);
   GPR_ASSERT(sp->server->active_ports > 0);
-  if (0 == --sp->server->active_ports && sp->server->shutdown_complete != NULL) {
+  if (0 == --sp->server->active_ports &&
+      sp->server->shutdown_complete != NULL) {
     notify = 1;
   }
   gpr_mu_unlock(&sp->server->mu);
   if (notify) {
-    finish_shutdown(sp->server);
+    finish_shutdown(exec_ctx, sp->server);
   }
 }
 
-/* start_accept will reference that for the IOCP notification request. */
-static void on_accept(void *arg, int from_iocp);
-
 /* In order to do an async accept, we need to create a socket first which
    will be the one assigned to the new incoming connection. */
-static void start_accept(server_port *port) {
+static void start_accept(grpc_exec_ctx *exec_ctx, grpc_tcp_listener *port) {
   SOCKET sock = INVALID_SOCKET;
   char *message;
   char *utf8_message;
@@ -258,7 +255,7 @@ static void start_accept(server_port *port) {
   /* We're ready to do the accept. Calling grpc_socket_notify_on_read may
      immediately process an accept that happened in the meantime. */
   port->new_socket = sock;
-  grpc_socket_notify_on_read(port->socket, on_accept, port);
+  grpc_socket_notify_on_read(exec_ctx, port->socket, &port->on_accept);
   return;
 
 failure:
@@ -268,7 +265,7 @@ failure:
        change is not seen by on_accept and we proceed to trying new accept,
        but we fail there because the listening port has been closed in the
        meantime. */
-    decrement_active_ports_and_notify(port);
+    decrement_active_ports_and_notify(exec_ctx, port);
     return;
   }
   utf8_message = gpr_format_message(WSAGetLastError());
@@ -278,8 +275,8 @@ failure:
 }
 
 /* Event manager callback when reads are ready. */
-static void on_accept(void *arg, int from_iocp) {
-  server_port *sp = arg;
+static void on_accept(grpc_exec_ctx *exec_ctx, void *arg, int from_iocp) {
+  grpc_tcp_listener *sp = arg;
   SOCKET sock = sp->new_socket;
   grpc_winsocket_callback_info *info = &sp->socket->read_info;
   grpc_endpoint *ep = NULL;
@@ -300,7 +297,7 @@ static void on_accept(void *arg, int from_iocp) {
   }
 
   /* The IOCP notified us of a completed operation. Let's grab the results,
-      and act accordingly. */
+     and act accordingly. */
   transfered_bytes = 0;
   wsa_success = WSAGetOverlappedResult(sock, &info->overlapped,
                                        &transfered_bytes, FALSE, &flags);
@@ -308,7 +305,7 @@ static void on_accept(void *arg, int from_iocp) {
     if (sp->shutting_down) {
       /* During the shutdown case, we ARE expecting an error. So that's well,
          and we can wake up the shutdown thread. */
-      decrement_active_ports_and_notify(sp);
+      decrement_active_ports_and_notify(exec_ctx, sp);
       return;
     } else {
       char *utf8_message = gpr_format_message(WSAGetLastError());
@@ -339,29 +336,32 @@ static void on_accept(void *arg, int from_iocp) {
                            peer_name_string);
       gpr_free(fd_name);
       gpr_free(peer_name_string);
+    } else {
+      closesocket(sock);
     }
   }
 
   /* The only time we should call our callback, is where we successfully
      managed to accept a connection, and created an endpoint. */
-  if (ep) sp->server->cb(sp->server->cb_arg, ep);
+  if (ep) sp->server->on_accept_cb(exec_ctx, sp->server->on_accept_cb_arg, ep);
   /* As we were notified from the IOCP of one and exactly one accept,
      the former socked we created has now either been destroy or assigned
      to the new connection. We need to create a new one for the next
      connection. */
-  start_accept(sp);
+  start_accept(exec_ctx, sp);
 }
 
-static int add_socket_to_server(grpc_tcp_server *s, SOCKET sock,
-                                const struct sockaddr *addr, int addr_len) {
-  server_port *sp;
+static grpc_tcp_listener *add_socket_to_server(grpc_tcp_server *s, SOCKET sock,
+                                               const struct sockaddr *addr,
+                                               size_t addr_len) {
+  grpc_tcp_listener *sp = NULL;
   int port;
   int status;
   GUID guid = WSAID_ACCEPTEX;
   DWORD ioctl_num_bytes;
   LPFN_ACCEPTEX AcceptEx;
 
-  if (sock == INVALID_SOCKET) return -1;
+  if (sock == INVALID_SOCKET) return NULL;
 
   /* We need to grab the AcceptEx pointer for that port, as it may be
      interface-dependent. We'll cache it to avoid doing that again. */
@@ -374,35 +374,34 @@ static int add_socket_to_server(grpc_tcp_server *s, SOCKET sock,
     gpr_log(GPR_ERROR, "on_connect error: %s", utf8_message);
     gpr_free(utf8_message);
     closesocket(sock);
-    return -1;
+    return NULL;
   }
 
   port = prepare_socket(sock, addr, addr_len);
   if (port >= 0) {
     gpr_mu_lock(&s->mu);
-    GPR_ASSERT(!s->cb && "must add ports before starting server");
-    /* append it to the list under a lock */
-    if (s->nports == s->port_capacity) {
-      s->port_capacity *= 2;
-      s->ports = gpr_realloc(s->ports, sizeof(server_port) * s->port_capacity);
-    }
-    sp = &s->ports[s->nports++];
+    GPR_ASSERT(!s->on_accept_cb && "must add ports before starting server");
+    sp = gpr_malloc(sizeof(grpc_tcp_listener));
+    sp->next = s->head;
+    s->head = sp;
     sp->server = s;
     sp->socket = grpc_winsocket_create(sock, "listener");
     sp->shutting_down = 0;
     sp->AcceptEx = AcceptEx;
     sp->new_socket = INVALID_SOCKET;
+    sp->port = port;
+    gpr_ref_init(&sp->refs, 1);
+    grpc_closure_init(&sp->on_accept, on_accept, sp);
     GPR_ASSERT(sp->socket);
     gpr_mu_unlock(&s->mu);
   }
 
-  return port;
+  return sp;
 }
 
-int grpc_tcp_server_add_port(grpc_tcp_server *s, const void *addr,
-                             int addr_len) {
-  int allocated_port = -1;
-  unsigned i;
+grpc_tcp_listener *grpc_tcp_server_add_port(grpc_tcp_server *s,
+                                            const void *addr, size_t addr_len) {
+  grpc_tcp_listener *sp;
   SOCKET sock;
   struct sockaddr_in6 addr6_v4mapped;
   struct sockaddr_in6 wildcard;
@@ -414,9 +413,9 @@ int grpc_tcp_server_add_port(grpc_tcp_server *s, const void *addr,
   /* Check if this is a wildcard port, and if so, try to keep the port the same
      as some previously created listener. */
   if (grpc_sockaddr_get_port(addr) == 0) {
-    for (i = 0; i < s->nports; i++) {
+    for (sp = s->head; sp; sp = sp->next) {
       sockname_len = sizeof(sockname_temp);
-      if (0 == getsockname(s->ports[i].socket->socket,
+      if (0 == getsockname(sp->socket->socket,
                            (struct sockaddr *)&sockname_temp, &sockname_len)) {
         port = grpc_sockaddr_get_port((struct sockaddr *)&sockname_temp);
         if (port > 0) {
@@ -451,31 +450,60 @@ int grpc_tcp_server_add_port(grpc_tcp_server *s, const void *addr,
     gpr_free(utf8_message);
   }
 
-  allocated_port = add_socket_to_server(s, sock, addr, addr_len);
+  sp = add_socket_to_server(s, sock, addr, addr_len);
   gpr_free(allocated_addr);
 
-  return allocated_port;
+  return sp;
 }
 
-SOCKET grpc_tcp_server_get_socket(grpc_tcp_server *s, unsigned index) {
-  return (index < s->nports) ? s->ports[index].socket->socket : INVALID_SOCKET;
+int grpc_tcp_server_get_fd(grpc_tcp_server *s, unsigned port_index) {
+  grpc_tcp_listener *sp;
+  for (sp = s->head; sp && port_index != 0; sp = sp->next, port_index--)
+    ;
+  if (port_index == 0 && sp) {
+    return _open_osfhandle(sp->socket->socket, 0);
+  } else {
+    return -1;
+  }
 }
 
-void grpc_tcp_server_start(grpc_tcp_server *s, grpc_pollset **pollset,
-                           size_t pollset_count, grpc_tcp_server_cb cb,
-                           void *cb_arg) {
-  size_t i;
-  GPR_ASSERT(cb);
+void grpc_tcp_server_start(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s,
+                           grpc_pollset **pollset, size_t pollset_count,
+                           grpc_tcp_server_cb on_accept_cb,
+                           void *on_accept_cb_arg) {
+  grpc_tcp_listener *sp;
+  GPR_ASSERT(on_accept_cb);
   gpr_mu_lock(&s->mu);
-  GPR_ASSERT(!s->cb);
+  GPR_ASSERT(!s->on_accept_cb);
   GPR_ASSERT(s->active_ports == 0);
-  s->cb = cb;
-  s->cb_arg = cb_arg;
-  for (i = 0; i < s->nports; i++) {
-    start_accept(s->ports + i);
+  s->on_accept_cb = on_accept_cb;
+  s->on_accept_cb_arg = on_accept_cb_arg;
+  for (sp = s->head; sp; sp = sp->next) {
+    start_accept(exec_ctx, sp);
     s->active_ports++;
   }
   gpr_mu_unlock(&s->mu);
+}
+
+int grpc_tcp_listener_get_port(grpc_tcp_listener *listener) {
+  if (listener != NULL) {
+    grpc_tcp_listener *sp = listener;
+    return sp->port;
+  } else {
+    return 0;
+  }
+}
+
+void grpc_tcp_listener_ref(grpc_tcp_listener *listener) {
+  grpc_tcp_listener *sp = listener;
+  gpr_ref(&sp->refs);
+}
+
+void grpc_tcp_listener_unref(grpc_tcp_listener *listener) {
+  grpc_tcp_listener *sp = listener;
+  if (gpr_unref(&sp->refs)) {
+    gpr_free(listener);
+  }
 }
 
 #endif /* GPR_WINSOCK_SOCKET */

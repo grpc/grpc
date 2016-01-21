@@ -38,7 +38,7 @@
 
 #include <grpc++/channel.h>
 
-#include "src/core/surface/call.h"
+#include "src/core/surface/call_test_only.h"
 
 namespace grpc {
 namespace testing {
@@ -53,15 +53,15 @@ std::shared_ptr<Channel> CreateChannelForTestCase(
 class InteropClientContextInspector {
  public:
   InteropClientContextInspector(const ::grpc::ClientContext& context)
-    : context_(context) {}
+      : context_(context) {}
 
   // Inspector methods, able to peek inside ClientContext, follow.
   grpc_compression_algorithm GetCallCompressionAlgorithm() const {
-    return grpc_call_get_compression_algorithm(context_.call_);
+    return grpc_call_test_only_get_compression_algorithm(context_.call_);
   }
 
   gpr_uint32 GetMessageFlags() const {
-    return grpc_call_get_message_flags(context_.call_);
+    return grpc_call_test_only_get_message_flags(context_.call_);
   }
 
  private:

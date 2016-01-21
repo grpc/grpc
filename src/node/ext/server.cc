@@ -182,49 +182,14 @@ NAN_METHOD(Server::New) {
   }
   grpc_server *wrapped_server;
   grpc_completion_queue *queue = CompletionQueueAsyncWorker::GetQueue();
-  if (info[0]->IsUndefined()) {
-    wrapped_server = grpc_server_create(NULL, NULL);
-  } else if (info[0]->IsObject()) {
-    Local<Object> args_hash = Nan::To<Object>(info[0]).ToLocalChecked();
-    Local<Array> keys = Nan::GetOwnPropertyNames(args_hash).ToLocalChecked();
-    grpc_channel_args channel_args;
-    channel_args.num_args = keys->Length();
-    channel_args.args = reinterpret_cast<grpc_arg *>(
-        calloc(channel_args.num_args, sizeof(grpc_arg)));
-    /* These are used to keep all strings until then end of the block, then
-       destroy them */
-    std::vector<Utf8String *> key_strings(keys->Length());
-    std::vector<Utf8String *> value_strings(keys->Length());
-    for (unsigned int i = 0; i < channel_args.num_args; i++) {
-      MaybeLocal<String> maybe_key = Nan::To<String>(
-          Nan::Get(keys, i).ToLocalChecked());
-      if (maybe_key.IsEmpty()) {
-        free(channel_args.args);
-        return Nan::ThrowTypeError("Arg keys must be strings");
-      }
-      Local<String> current_key = maybe_key.ToLocalChecked();
-      Local<Value> current_value = Nan::Get(args_hash,
-                                             current_key).ToLocalChecked();
-      key_strings[i] = new Utf8String(current_key);
-      channel_args.args[i].key = **key_strings[i];
-      if (current_value->IsInt32()) {
-        channel_args.args[i].type = GRPC_ARG_INTEGER;
-        channel_args.args[i].value.integer = Nan::To<int32_t>(
-            current_value).FromJust();
-      } else if (current_value->IsString()) {
-        channel_args.args[i].type = GRPC_ARG_STRING;
-        value_strings[i] = new Utf8String(current_value);
-        channel_args.args[i].value.string = **value_strings[i];
-      } else {
-        free(channel_args.args);
-        return Nan::ThrowTypeError("Arg values must be strings");
-      }
-    }
-    wrapped_server = grpc_server_create(&channel_args, NULL);
-    free(channel_args.args);
-  } else {
-    return Nan::ThrowTypeError("Server expects an object");
+  grpc_channel_args *channel_args;
+  if (!ParseChannelArgs(info[0], &channel_args)) {
+    DeallocateChannelArgs(channel_args);
+    return Nan::ThrowTypeError("Server options must be an object with "
+                               "string keys and integer or string values");
   }
+  wrapped_server = grpc_server_create(channel_args, NULL);
+  DeallocateChannelArgs(channel_args);
   grpc_server_register_completion_queue(wrapped_server, queue, NULL);
   Server *server = new Server(wrapped_server);
   server->Wrap(info.This());

@@ -75,14 +75,14 @@ typedef struct {
 
 /* See the comments on the members above for an explanation of init_avg,
    regress_weight, and persistence_factor. */
-void grpc_time_averaged_stats_init(grpc_time_averaged_stats *stats,
+void grpc_time_averaged_stats_init(grpc_time_averaged_stats* stats,
                                    double init_avg, double regress_weight,
                                    double persistence_factor);
 /* Add a sample to the current batch. */
-void grpc_time_averaged_stats_add_sample(grpc_time_averaged_stats *stats,
+void grpc_time_averaged_stats_add_sample(grpc_time_averaged_stats* stats,
                                          double value);
 /* Complete a batch and compute the new estimate of the average sample
    value. */
-double grpc_time_averaged_stats_update_average(grpc_time_averaged_stats *stats);
+double grpc_time_averaged_stats_update_average(grpc_time_averaged_stats* stats);
 
 #endif /* GRPC_INTERNAL_CORE_IOMGR_TIME_AVERAGED_STATS_H */

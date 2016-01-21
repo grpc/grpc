@@ -61,7 +61,7 @@ typedef struct unresizable_hash_table census_ht;
    store and const char* for stats store). */
 typedef union {
   gpr_uint64 val;
-  void* ptr;
+  void *ptr;
 } census_ht_key;
 
 typedef enum census_ht_key_type {
@@ -76,56 +76,56 @@ typedef struct census_ht_option {
   gpr_int32 num_buckets;
   /* Fucntion to calculate uint64 hash value of the key. Only takes effect if
      key_type is POINTER. */
-  gpr_uint64 (*hash)(const void*);
+  gpr_uint64 (*hash)(const void *);
   /* Function to compare two keys, returns 0 iff equal. Only takes effect if
      key_type is POINTER */
-  int (*compare_keys)(const void* k1, const void* k2);
+  int (*compare_keys)(const void *k1, const void *k2);
   /* Value deleter. NULL if no specialized delete function is needed. */
-  void (*delete_data)(void*);
+  void (*delete_data)(void *);
   /* Key deleter. NULL if table does not own the key. (e.g. key is part of the
      value or key is not owned by the table.) */
-  void (*delete_key)(void*);
+  void (*delete_key)(void *);
 } census_ht_option;
 
 /* Creates a hashtable with fixed number of buckets according to the settings
    specified in 'options' arg. Function pointers "hash" and "compare_keys" must
    be provided if key_type is POINTER. Asserts if fail to create. */
-census_ht* census_ht_create(const census_ht_option* options);
+census_ht *census_ht_create(const census_ht_option *options);
 
 /* Deletes hash table instance. Frees all dynamic memory owned by ht.*/
-void census_ht_destroy(census_ht* ht);
+void census_ht_destroy(census_ht *ht);
 
 /* Inserts the input key-val pair into hash_table. If an entry with the same key
    exists in the table, the corresponding value will be overwritten by the input
    val. */
-void census_ht_insert(census_ht* ht, census_ht_key key, void* val);
+void census_ht_insert(census_ht *ht, census_ht_key key, void *val);
 
 /* Returns pointer to data, returns NULL if not found. */
-void* census_ht_find(const census_ht* ht, census_ht_key key);
+void *census_ht_find(const census_ht *ht, census_ht_key key);
 
 /* Erase hash table entry with input key. Noop if key is not found. */
-void census_ht_erase(census_ht* ht, census_ht_key key);
+void census_ht_erase(census_ht *ht, census_ht_key key);
 
 typedef struct census_ht_kv {
   census_ht_key k;
-  void* v;
+  void *v;
 } census_ht_kv;
 
 /* Returns an array of pointers to all values in the hash table. Order of the
    elements can be arbitrary. Sets 'num' to the size of returned array. Caller
    owns returned array. */
-census_ht_kv* census_ht_get_all_elements(const census_ht* ht, size_t* num);
+census_ht_kv *census_ht_get_all_elements(const census_ht *ht, size_t *num);
 
 /* Returns number of elements kept. */
-size_t census_ht_get_size(const census_ht* ht);
+size_t census_ht_get_size(const census_ht *ht);
 
 /* Functor applied on each key-value pair while iterating through entries in the
    table. The functor should not mutate data. */
-typedef void (*census_ht_itr_cb)(census_ht_key key, const void* val_ptr,
-                                 void* state);
+typedef void (*census_ht_itr_cb)(census_ht_key key, const void *val_ptr,
+                                 void *state);
 
 /* Iterates through all key-value pairs in the hash_table. The callback function
    should not invalidate data entries. */
-gpr_uint64 census_ht_for_all(const census_ht* ht, census_ht_itr_cb);
+gpr_uint64 census_ht_for_all(const census_ht *ht, census_ht_itr_cb);
 
 #endif /* GRPC_INTERNAL_CORE_STATISTICS_HASH_TABLE_H */

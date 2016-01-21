@@ -41,8 +41,8 @@
 #include "rb_grpc.h"
 #include "rb_call.h"
 #include "rb_channel_args.h"
+#include "rb_channel_credentials.h"
 #include "rb_completion_queue.h"
-#include "rb_credentials.h"
 #include "rb_server.h"
 
 /* id_channel is the name of the hidden ivar that preserves a reference to the
@@ -58,6 +58,9 @@ static ID id_target;
  * completion queue used to create the call, preserved so that it does not get
  * GCed before the channel */
 static ID id_cqueue;
+
+/* id_insecure_channel is used to indicate that a channel is insecure */
+static VALUE id_insecure_channel;
 
 /* grpc_rb_cChannel is the ruby class that proxies grpc_channel. */
 static VALUE grpc_rb_cChannel = Qnil;
@@ -111,7 +114,9 @@ static rb_data_type_t grpc_channel_data_type = {
     {grpc_rb_channel_mark, grpc_rb_channel_free, GRPC_RB_MEMSIZE_UNAVAILABLE,
      {NULL, NULL}},
     NULL, NULL,
+#ifdef RUBY_TYPED_FREE_IMMEDIATELY
     RUBY_TYPED_FREE_IMMEDIATELY
+#endif
 };
 
 /* Allocates grpc_rb_channel instances. */
@@ -124,7 +129,8 @@ static VALUE grpc_rb_channel_alloc(VALUE cls) {
 
 /*
   call-seq:
-    insecure_channel = Channel:new("myhost:8080", {'arg1': 'value1'})
+    insecure_channel = Channel:new("myhost:8080", {'arg1': 'value1'},
+                                   :this_channel_is_insecure)
     creds = ...
     secure_channel = Channel:new("myhost:443", {'arg1': 'value1'}, creds)
 
@@ -134,22 +140,27 @@ static VALUE grpc_rb_channel_init(int argc, VALUE *argv, VALUE self) {
   VALUE credentials = Qnil;
   VALUE target = Qnil;
   grpc_rb_channel *wrapper = NULL;
-  grpc_credentials *creds = NULL;
   grpc_channel *ch = NULL;
+  grpc_channel_credentials *creds = NULL;
   char *target_chars = NULL;
   grpc_channel_args args;
   MEMZERO(&args, grpc_channel_args, 1);
 
-  /* "21" == 2 mandatory args, 1 (credentials) is optional */
-  rb_scan_args(argc, argv, "21", &target, &channel_args, &credentials);
+  /* "3" == 3 mandatory args */
+  rb_scan_args(argc, argv, "3", &target, &channel_args, &credentials);
 
   TypedData_Get_Struct(self, grpc_rb_channel, &grpc_channel_data_type, wrapper);
   target_chars = StringValueCStr(target);
   grpc_rb_hash_convert_to_channel_args(channel_args, &args);
-  if (credentials == Qnil) {
+  if (TYPE(credentials) == T_SYMBOL) {
+    if (id_insecure_channel != SYM2ID(credentials)) {
+      rb_raise(rb_eTypeError,
+               "bad creds symbol, want :this_channel_is_insecure");
+      return Qnil;
+    }
     ch = grpc_insecure_channel_create(target_chars, &args, NULL);
   } else {
-    creds = grpc_rb_get_wrapped_credentials(credentials);
+    creds = grpc_rb_get_wrapped_channel_credentials(credentials);
     ch = grpc_secure_channel_create(creds, target_chars, &args, NULL);
   }
   if (args.args != NULL) {
@@ -406,6 +417,7 @@ void Init_grpc_channel() {
                   ID2SYM(rb_intern(GRPC_ARG_MAX_CONCURRENT_STREAMS)));
   rb_define_const(grpc_rb_cChannel, "MAX_MESSAGE_LENGTH",
                   ID2SYM(rb_intern(GRPC_ARG_MAX_MESSAGE_LENGTH)));
+  id_insecure_channel = rb_intern("this_channel_is_insecure");
   Init_grpc_propagate_masks();
   Init_grpc_connectivity_states();
 }

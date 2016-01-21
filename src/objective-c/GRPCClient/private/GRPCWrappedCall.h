@@ -39,13 +39,13 @@
 
 @interface GRPCOperation : NSObject
 @property(nonatomic, readonly) grpc_op op;
-// Guaranteed to be called when the operation has finished.
+/** Guaranteed to be called when the operation has finished. */
 - (void)finish;
 @end
 
 @interface GRPCOpSendMetadata : GRPCOperation
 
-- (instancetype)initWithMetadata:(GRPCRequestHeaders *)metadata
+- (instancetype)initWithMetadata:(NSDictionary *)metadata
                          handler:(void(^)())handler NS_DESIGNATED_INITIALIZER;
 
 @end

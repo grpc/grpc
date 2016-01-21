@@ -203,6 +203,7 @@ void PrintMethodImplementations(Printer *printer,
     printer.Print(
         "- (instancetype)initWithHost:(NSString *)host"
         " NS_DESIGNATED_INITIALIZER;\n");
+    printer.Print("+ (instancetype)serviceWithHost:(NSString *)host;\n");
     printer.Print("@end\n");
   }
   return output;
@@ -239,6 +240,9 @@ void PrintMethodImplementations(Printer *printer,
     printer.Print("                 packageName:(NSString *)packageName\n");
     printer.Print("                 serviceName:(NSString *)serviceName {\n");
     printer.Print("  return [self initWithHost:host];\n");
+    printer.Print("}\n\n");
+    printer.Print("+ (instancetype)serviceWithHost:(NSString *)host {\n");
+    printer.Print("  return [[self alloc] initWithHost:host];\n");
     printer.Print("}\n\n\n");
 
     for (int i = 0; i < service->method_count(); i++) {

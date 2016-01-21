@@ -33,12 +33,12 @@
 
 var PROTO_PATH = __dirname + '/helloworld.proto';
 
-var grpc = require('grpc');
+var grpc = require('../../');
 var hello_proto = grpc.load(PROTO_PATH).helloworld;
 
 function main() {
   var client = new hello_proto.Greeter('localhost:50051',
-                                       grpc.Credentials.createInsecure());
+                                       grpc.credentials.createInsecure());
   var user;
   if (process.argv.length >= 3) {
     user = process.argv[2];

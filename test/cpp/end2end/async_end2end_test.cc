@@ -179,6 +179,17 @@ class AsyncEnd2endTest : public ::testing::TestWithParam<bool> {
   void SetUp() GRPC_OVERRIDE {
     int port = grpc_pick_unused_port_or_die();
     server_address_ << "localhost:" << port;
+
+    // It is currently unsupported to mix sync and async services
+    // in the same server, so first test that (for coverage)
+    ServerBuilder build_bad;
+    build_bad.AddListeningPort(server_address_.str(),
+                               grpc::InsecureServerCredentials());
+    build_bad.RegisterAsyncService(&service_);
+    grpc::cpp::test::util::TestService::Service sync_service;
+    build_bad.RegisterService(&sync_service);
+    GPR_ASSERT(build_bad.BuildAndStart() == nullptr);
+
     // Setup server
     ServerBuilder builder;
     builder.AddListeningPort(server_address_.str(),
@@ -199,8 +210,8 @@ class AsyncEnd2endTest : public ::testing::TestWithParam<bool> {
 
   void ResetStub() {
     std::shared_ptr<Channel> channel =
-        CreateChannel(server_address_.str(), InsecureCredentials());
-    stub_ = std::move(grpc::cpp::test::util::TestService::NewStub(channel));
+        CreateChannel(server_address_.str(), InsecureChannelCredentials());
+    stub_ = grpc::cpp::test::util::TestService::NewStub(channel);
   }
 
   void SendRpc(int num_rpcs) {
@@ -749,10 +760,9 @@ TEST_P(AsyncEnd2endTest, ServerCheckDone) {
 
 TEST_P(AsyncEnd2endTest, UnimplementedRpc) {
   std::shared_ptr<Channel> channel =
-      CreateChannel(server_address_.str(), InsecureCredentials());
+      CreateChannel(server_address_.str(), InsecureChannelCredentials());
   std::unique_ptr<grpc::cpp::test::util::UnimplementedService::Stub> stub;
-  stub =
-      std::move(grpc::cpp::test::util::UnimplementedService::NewStub(channel));
+  stub = grpc::cpp::test::util::UnimplementedService::NewStub(channel);
   EchoRequest send_request;
   EchoResponse recv_response;
   Status recv_status;

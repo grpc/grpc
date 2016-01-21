@@ -45,20 +45,20 @@ gpr_thd_options gpr_thd_options_default(void) {
   return options;
 }
 
-void gpr_thd_options_set_detached(gpr_thd_options *options) {
+void gpr_thd_options_set_detached(gpr_thd_options* options) {
   options->flags &= ~GPR_THD_JOINABLE;
 }
 
-void gpr_thd_options_set_joinable(gpr_thd_options *options) {
+void gpr_thd_options_set_joinable(gpr_thd_options* options) {
   options->flags |= GPR_THD_JOINABLE;
 }
 
-int gpr_thd_options_is_detached(const gpr_thd_options *options) {
+int gpr_thd_options_is_detached(const gpr_thd_options* options) {
   if (!options) return 1;
   return (options->flags & GPR_THD_JOINABLE) == 0;
 }
 
-int gpr_thd_options_is_joinable(const gpr_thd_options *options) {
+int gpr_thd_options_is_joinable(const gpr_thd_options* options) {
   if (!options) return 0;
   return (options->flags & GPR_THD_JOINABLE) == GPR_THD_JOINABLE;
 }

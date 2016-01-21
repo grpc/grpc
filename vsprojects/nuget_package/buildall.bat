@@ -1,6 +1,18 @@
 @echo off
 
 REM setlocal
+REM call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" amd64
+REM call :build x64 Release v140 || goto :eof
+REM call :build x64 Debug v140 || goto :eof
+REM endlocal
+
+setlocal
+call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" x86
+call :build Win32 Release v140 || goto :eof
+call :build Win32 Debug v140 || goto :eof
+endlocal
+
+REM setlocal
 REM call "C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\vcvarsall.bat" amd64
 REM call :build x64 Release v120 || goto :eof
 REM call :build x64 Debug v120 || goto :eof

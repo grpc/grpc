@@ -4,11 +4,13 @@
   <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
     <ImportGroup Label="PropertySheets" />
     <PropertyGroup Label="UserMacros" />
-    <PropertyGroup />
+    <PropertyGroup>
+      <Jenkins>false</Jenkins>
+    </PropertyGroup>
     <ItemDefinitionGroup>
       <ClCompile>
         <AdditionalIncludeDirectories>$(SolutionDir)\..;$(SolutionDir)\..\include;$(SolutionDir)\..\third_party\protobuf\src;${';'.join('$(SolutionDir)\\packages\\%s.%s\\build\\native\\include' % (p.name, p.version) for p in vspackages)};%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-        <PreprocessorDefinitions>_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+        <PreprocessorDefinitions>_WIN32_WINNT=0x600;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
         <WarningLevel>EnableAllWarnings</WarningLevel>
       </ClCompile>
     </ItemDefinitionGroup>

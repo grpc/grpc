@@ -85,7 +85,7 @@ static void test_get_trace_method_name(void) {
   census_add_method_tag(id, write_name);
   census_internal_lock_trace_store();
   {
-    const char* read_name =
+    const char *read_name =
         census_get_trace_method_name(census_get_trace_obj_locked(id));
     GPR_ASSERT(strcmp(read_name, write_name) == 0);
   }
@@ -99,12 +99,12 @@ typedef struct thd_arg {
   gpr_mu mu;
 } thd_arg;
 
-static void mimic_trace_op_sequences(void* arg) {
+static void mimic_trace_op_sequences(void *arg) {
   census_op_id id;
-  const char* method_name = "service_foo/method_bar";
+  const char *method_name = "service_foo/method_bar";
   int i = 0;
   const int num_iter = 200;
-  thd_arg* args = (thd_arg*)arg;
+  thd_arg *args = (thd_arg *)arg;
   GPR_ASSERT(args != NULL);
   gpr_log(GPR_INFO, "Start trace op sequence thread.");
   for (i = 0; i < num_iter; i++) {
@@ -155,7 +155,7 @@ static void test_add_method_tag_to_unknown_op_id(void) {
 static void test_trace_print(void) {
   census_op_id id;
   int i;
-  const char* annotation_txt[4] = {"abc", "", "$%^ *()_"};
+  const char *annotation_txt[4] = {"abc", "", "$%^ *()_"};
   char long_txt[CENSUS_MAX_ANNOTATION_LENGTH + 10];
 
   memset(long_txt, 'a', GPR_ARRAY_SIZE(long_txt));
@@ -181,8 +181,8 @@ static int ids_equal(census_op_id id1, census_op_id id2) {
 
 static void test_get_active_ops(void) {
   census_op_id id_1, id_2, id_3;
-  census_trace_obj** active_ops;
-  const char* annotation_txt[] = {"annotation 1", "a2"};
+  census_trace_obj **active_ops;
+  const char *annotation_txt[] = {"annotation 1", "a2"};
   int i = 0;
   int n = 0;
 
@@ -218,7 +218,7 @@ static void test_get_active_ops(void) {
   gpr_free(active_ops);
   active_ops = NULL;
 
-  /* End the second op  and add annotations to the third ops*/
+  /* End the second op  and add annotations to the third ops */
   census_tracing_end_op(id_2);
   census_tracing_print(id_3, annotation_txt[0]);
   census_tracing_print(id_3, annotation_txt[1]);
@@ -242,7 +242,7 @@ static void test_get_active_ops(void) {
   census_tracing_shutdown();
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
   test_init_shutdown();
   test_start_op_generates_locally_unique_ids();
