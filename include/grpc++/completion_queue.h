@@ -172,7 +172,8 @@ class CompletionQueue : public GrpcLibrary {
   friend class ::grpc::Server;
   friend class ::grpc::ServerContext;
   template <class InputMessage, class OutputMessage>
-  friend Status BlockingUnaryCall(ChannelInterface* channel, const RpcMethod& method,
+  friend Status BlockingUnaryCall(ChannelInterface* channel,
+                                  const RpcMethod& method,
                                   ClientContext* context,
                                   const InputMessage& request,
                                   OutputMessage* result);

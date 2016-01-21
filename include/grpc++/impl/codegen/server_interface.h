@@ -100,7 +100,8 @@ class ServerInterface : public CallHook {
   /// \return bound port number on sucess, 0 on failure.
   ///
   /// \warning It's an error to call this method on an already started server.
-  virtual int AddListeningPort(const grpc::string& addr, ServerCredentials* creds) = 0;
+  virtual int AddListeningPort(const grpc::string& addr,
+                               ServerCredentials* creds) = 0;
 
   /// Start the server.
   ///
