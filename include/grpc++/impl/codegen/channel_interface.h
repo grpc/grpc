@@ -31,12 +31,12 @@
  *
  */
 
-#ifndef GRPCXX_CHANNEL_INTERFACE_H
-#define GRPCXX_CHANNEL_INTERFACE_H
+#ifndef GRPCXX_IMPL_CODEGEN_CHANNEL_INTERFACE_H
+#define GRPCXX_IMPL_CODEGEN_CHANNEL_INTERFACE_H
 
-#include <grpc++/impl/grpc_library.h>
-#include <grpc++/support/status.h>
-#include <grpc++/support/time.h>
+#include <grpc++/impl/codegen/status.h>
+#include <grpc++/impl/codegen/time.h>
+#include <grpc/impl/codegen/connectivity_state.h>
 
 namespace grpc {
 class Call;
@@ -120,4 +120,4 @@ class ChannelInterface {
 
 }  // namespace grpc
 
-#endif  // GRPCXX_CHANNEL_INTERFACE_H
+#endif  // GRPCXX_IMPL_CODEGEN_CHANNEL_INTERFACE_H

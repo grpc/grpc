@@ -37,6 +37,7 @@
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include <grpc++/support/time.h>
+#include <grpc++/impl/codegen/completion_queue_tag.h>
 
 namespace grpc {
 

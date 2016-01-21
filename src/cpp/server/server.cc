@@ -43,6 +43,7 @@
 #include <grpc++/impl/method_handler_impl.h>
 #include <grpc++/impl/rpc_service_method.h>
 #include <grpc++/impl/service_type.h>
+#include <grpc++/impl/codegen/completion_queue_tag.h>
 #include <grpc++/server_context.h>
 #include <grpc++/security/server_credentials.h>
 #include <grpc++/support/time.h>

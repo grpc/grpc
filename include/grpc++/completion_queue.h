@@ -36,7 +36,6 @@
 #ifndef GRPCXX_COMPLETION_QUEUE_H
 #define GRPCXX_COMPLETION_QUEUE_H
 
-#include <grpc/support/time.h>
 #include <grpc++/impl/grpc_library.h>
 #include <grpc++/support/status.h>
 #include <grpc++/support/time.h>
@@ -188,17 +187,6 @@ class CompletionQueue : public GrpcLibrary {
   void TryPluck(CompletionQueueTag* tag);
 
   grpc_completion_queue* cq_;  // owned
-};
-
-/// An interface allowing implementors to process and filter event tags.
-class CompletionQueueTag {
- public:
-  virtual ~CompletionQueueTag() {}
-  // Called prior to returning from Next(), return value is the status of the
-  // operation (return status is the default thing to do). If this function
-  // returns false, the tag is dropped and not returned from the completion
-  // queue
-  virtual bool FinalizeResult(void** tag, bool* status) = 0;
 };
 
 /// A specific type of completion queue used by the processing of notifications

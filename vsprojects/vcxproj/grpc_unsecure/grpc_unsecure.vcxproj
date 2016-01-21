@@ -262,6 +262,9 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc\byte_buffer_reader.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\compression.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\grpc.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\connectivity_state.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\port_platform.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\time.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\status.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\census.h" />
   </ItemGroup>

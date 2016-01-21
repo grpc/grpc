@@ -43,6 +43,7 @@
 #include <grpc++/security/credentials.h>
 #include <grpc++/impl/call.h>
 #include <grpc++/impl/rpc_method.h>
+#include <grpc++/impl/codegen/completion_queue_tag.h>
 #include <grpc++/support/channel_arguments.h>
 #include <grpc++/support/config.h>
 #include <grpc++/support/status.h>

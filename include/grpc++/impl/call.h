@@ -42,6 +42,8 @@
 #include <grpc/support/alloc.h>
 #include <grpc++/client_context.h>
 #include <grpc++/completion_queue.h>
+#include <grpc++/impl/codegen/call_hook.h>
+#include <grpc++/impl/codegen/completion_queue_tag.h>
 #include <grpc++/impl/serialization_traits.h>
 #include <grpc++/support/config.h>
 #include <grpc++/support/status.h>
@@ -53,6 +55,7 @@ namespace grpc {
 
 class ByteBuffer;
 class Call;
+class CallHook;
 
 void FillMetadataMap(
     grpc_metadata_array* arr,
@@ -546,13 +549,6 @@ class SneakyCallOpSet : public CallOpSet<Op1, Op2, Op3, Op4, Op5, Op6> {
     typedef CallOpSet<Op1, Op2, Op3, Op4, Op5, Op6> Base;
     return Base::FinalizeResult(tag, status) && false;
   }
-};
-
-// Channel and Server implement this to allow them to hook performing ops
-class CallHook {
- public:
-  virtual ~CallHook() {}
-  virtual void PerformOpsOnCall(CallOpSetInterface* ops, Call* call) = 0;
 };
 
 // Straightforward wrapping of the C call object

@@ -35,6 +35,7 @@
 #include <grpc++/completion_queue.h>
 #include <gtest/gtest.h>
 
+#include <grpc++/completion_queue.h>
 #include "test/core/util/test_config.h"
 
 namespace grpc {
