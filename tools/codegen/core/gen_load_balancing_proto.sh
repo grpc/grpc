@@ -124,7 +124,7 @@ mv $TMPFILE "$OUTPUT_DIR/$PROTO_BASENAME.pb.c"
 cat $COPYRIGHT_FILE "$OUTPUT_DIR/$PROTO_BASENAME.pb.h" > $TMPFILE
 mv $TMPFILE "$OUTPUT_DIR/$PROTO_BASENAME.pb.h"
 
-docker run -v $OUTPUT_DIR:/local -t grpc_clang_format \
+docker run --rm=true -v $OUTPUT_DIR:/local -t grpc_clang_format \
   bash -c 'clang-format-3.6 -style="{BasedOnStyle: Google, Language: Cpp}" -i /local/load_balancer.pb.*'
 
 popd > /dev/null
