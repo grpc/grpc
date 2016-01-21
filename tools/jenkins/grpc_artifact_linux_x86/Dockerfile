@@ -1,5 +1,4 @@
-#!/bin/sh
-# Copyright 2015-2016, Google Inc.
+# Copyright 2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -28,21 +27,38 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# Regenerates gRPC service stubs from proto files.
-set +e
-cd $(dirname $0)/../..
+# Docker file for building gRPC artifacts.
 
-PROTOC=bins/opt/protobuf/protoc
-PLUGIN=protoc-gen-grpc=bins/opt/grpc_csharp_plugin
-EXAMPLES_DIR=src/csharp/Grpc.Examples
-HEALTHCHECK_DIR=src/csharp/Grpc.HealthCheck
-TESTING_DIR=src/csharp/Grpc.IntegrationTesting
+FROM 32bit/debian:jessie
 
-$PROTOC --plugin=$PLUGIN --csharp_out=$EXAMPLES_DIR --grpc_out=$EXAMPLES_DIR \
-    -I src/proto/math src/proto/math/math.proto
+# Install Git and basic packages.
+RUN apt-get update && apt-get install -y \
+  autoconf \
+  autotools-dev \
+  build-essential \
+  bzip2 \
+  curl \
+  gcc \
+  gcc-multilib \
+  git \
+  golang \
+  libc6 \
+  libc6-dbg \
+  libc6-dev \
+  libgtest-dev \
+  libtool \
+  make \
+  perl \
+  strace \
+  python-dev \
+  python-setuptools \
+  python-yaml \
+  telnet \
+  unzip \
+  wget \
+  zip && apt-get clean
 
-$PROTOC --plugin=$PLUGIN --csharp_out=$HEALTHCHECK_DIR --grpc_out=$HEALTHCHECK_DIR \
-    -I src/proto/grpc/health/v1alpha src/proto/grpc/health/v1alpha/health.proto
+RUN mkdir /var/local/jenkins
 
-$PROTOC --plugin=$PLUGIN --csharp_out=$TESTING_DIR --grpc_out=$TESTING_DIR \
-    -I . src/proto/grpc/testing/{control,empty,messages,payloads,services,stats,test}.proto 
+# Define the default command.
+CMD ["bash"]

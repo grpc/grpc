@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 
 using google::protobuf::compiler::csharp::GetFileNamespace;
 using google::protobuf::compiler::csharp::GetClassName;
-using google::protobuf::compiler::csharp::GetUmbrellaClassName;
+using google::protobuf::compiler::csharp::GetReflectionClassName;
 using grpc::protobuf::FileDescriptor;
 using grpc::protobuf::Descriptor;
 using grpc::protobuf::ServiceDescriptor;
@@ -234,7 +234,7 @@ void GenerateServiceDescriptorProperty(Printer* out, const ServiceDescriptor *se
   out->Print("public static global::Google.Protobuf.Reflection.ServiceDescriptor Descriptor\n");
   out->Print("{\n");
   out->Print("  get { return $umbrella$.Descriptor.Services[$index$]; }\n",
-             "umbrella", GetUmbrellaClassName(service->file()), "index",
+             "umbrella", GetReflectionClassName(service->file()), "index",
              index.str());
   out->Print("}\n");
   out->Print("\n");
