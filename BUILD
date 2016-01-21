@@ -438,6 +438,9 @@ cc_library(
     "//external:zlib",
     ":gpr",
   ],
+  copts = [
+    "-std=gnu99",
+  ],
 )
 
 
@@ -706,6 +709,9 @@ cc_library(
   ],
   deps = [
     ":gpr",
+  ],
+  copts = [
+    "-std=gnu99",
   ],
 )
 
