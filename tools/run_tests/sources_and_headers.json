@@ -4211,6 +4211,7 @@
   {
     "deps": [], 
     "headers": [
+      "include/grpc++/impl/codegen/config.h", 
       "include/grpc++/support/config.h", 
       "include/grpc++/support/config_protobuf.h", 
       "src/compiler/config.h", 
@@ -4230,6 +4231,7 @@
     "language": "c++", 
     "name": "grpc_plugin_support", 
     "src": [
+      "include/grpc++/impl/codegen/config.h", 
       "include/grpc++/support/config.h", 
       "include/grpc++/support/config_protobuf.h", 
       "src/compiler/config.h", 

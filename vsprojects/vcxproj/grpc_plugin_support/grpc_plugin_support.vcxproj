@@ -147,6 +147,7 @@
   </ItemDefinitionGroup>
 
   <ItemGroup>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\config.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\support\config.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\support\config_protobuf.h" />
     <ClInclude Include="$(SolutionDir)\..\src\compiler\config.h" />
