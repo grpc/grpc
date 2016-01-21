@@ -5,6 +5,7 @@ graft include/grpc
 graft third_party/boringssl
 include src/python/grpcio/commands.py
 include src/python/grpcio/grpc_core_dependencies.py
+include src/python/grpcio/support.py
 include src/python/grpcio/README.rst
 include requirements.txt
 include etc/roots.pem
