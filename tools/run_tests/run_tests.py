@@ -820,7 +820,7 @@ else:
     if targets:
       return [jobset.JobSpec([os.getenv('MAKE', 'make'),
                               '-f', makefile,
-                              '-j', '%d' % (multiprocessing.cpu_count() + 1),
+                              '-j', '%d' % args.jobs,
                               'EXTRA_DEFINES=GRPC_TEST_SLOWDOWN_MACHINE_FACTOR=%f' % args.slowdown,
                               'CONFIG=%s' % cfg] +
                               language_make_options +
