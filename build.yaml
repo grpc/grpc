@@ -2494,6 +2494,7 @@ configs:
     test_environ:
       ASAN_OPTIONS: suppressions=tools/asan_suppressions.txt:detect_leaks=1:color=always
       LSAN_OPTIONS: suppressions=tools/asan_suppressions.txt:report_objects=1
+    timeout_multiplier: 1.5
   asan-noleaks:
     CC: clang
     CFLAGS: -O0 -fsanitize=address -fno-omit-frame-pointer -Wno-unused-command-line-argument
@@ -2502,9 +2503,10 @@ configs:
     LD: clang
     LDFLAGS: -fsanitize=address
     LDXX: clang++
-    custom_libraries: true
+    compile_the_world: true
     test_environ:
       ASAN_OPTIONS: detect_leaks=0:color=always
+    timeout_multiplier: 1.5
   basicprof:
     CPPFLAGS: -O2 -DGRPC_BASIC_PROFILER -DGRPC_TIMERS_RDTSC
     DEFINES: NDEBUG

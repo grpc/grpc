@@ -117,6 +117,7 @@ DEFINES_helgrind = _DEBUG DEBUG
 DEFINES_helgrind += GRPC_TEST_SLOWDOWN_BUILD_FACTOR=20
 
 VALID_CONFIG_asan-noleaks = 1
+REQUIRE_CUSTOM_LIBRARIES_asan-noleaks = 1
 CC_asan-noleaks = clang
 CXX_asan-noleaks = clang++
 LD_asan-noleaks = clang
@@ -124,6 +125,7 @@ LDXX_asan-noleaks = clang++
 CFLAGS_asan-noleaks = -O0 -fsanitize=address -fno-omit-frame-pointer -Wno-unused-command-line-argument
 CXXFLAGS_asan-noleaks = -O0 -fsanitize=address -fno-omit-frame-pointer -Wno-unused-command-line-argument
 LDFLAGS_asan-noleaks = -fsanitize=address
+DEFINES_asan-noleaks += GRPC_TEST_SLOWDOWN_BUILD_FACTOR=1.5
 
 VALID_CONFIG_ubsan = 1
 REQUIRE_CUSTOM_LIBRARIES_ubsan = 1
@@ -183,6 +185,7 @@ LDXX_asan = clang++
 CFLAGS_asan = -O0 -fsanitize=address -fno-omit-frame-pointer -Wno-unused-command-line-argument
 CXXFLAGS_asan = -O0 -fsanitize=address -fno-omit-frame-pointer -Wno-unused-command-line-argument
 LDFLAGS_asan = -fsanitize=address
+DEFINES_asan += GRPC_TEST_SLOWDOWN_BUILD_FACTOR=1.5
 
 VALID_CONFIG_tsan = 1
 REQUIRE_CUSTOM_LIBRARIES_tsan = 1

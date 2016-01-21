@@ -17,7 +17,8 @@
     "config": "asan-noleaks", 
     "environ": {
       "ASAN_OPTIONS": "detect_leaks=0:color=always"
-    }
+    }, 
+    "timeout_multiplier": 1.5
   }, 
   {
     "config": "ubsan", 
@@ -46,7 +47,8 @@
     "environ": {
       "ASAN_OPTIONS": "suppressions=tools/asan_suppressions.txt:detect_leaks=1:color=always", 
       "LSAN_OPTIONS": "suppressions=tools/asan_suppressions.txt:report_objects=1"
-    }
+    }, 
+    "timeout_multiplier": 1.5
   }, 
   {
     "config": "tsan", 
