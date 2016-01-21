@@ -31,6 +31,7 @@
 """Run tests in parallel."""
 
 import argparse
+import ast
 import glob
 import hashlib
 import itertools
