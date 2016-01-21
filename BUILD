@@ -97,6 +97,9 @@ cc_library(
     "src/core/support/tls_pthread.c",
   ],
   hdrs = [
+    "include/grpc/impl/codegen/connectivity_state.h",
+    "include/grpc/impl/codegen/port_platform.h",
+    "include/grpc/impl/codegen/time.h",
     "include/grpc/support/alloc.h",
     "include/grpc/support/atm.h",
     "include/grpc/support/atm_gcc_atomic.h",
@@ -1048,6 +1051,9 @@ objc_library(
     "src/core/support/tls_pthread.c",
   ],
   hdrs = [
+    "include/grpc/impl/codegen/connectivity_state.h",
+    "include/grpc/impl/codegen/port_platform.h",
+    "include/grpc/impl/codegen/time.h",
     "include/grpc/support/alloc.h",
     "include/grpc/support/atm.h",
     "include/grpc/support/atm_gcc_atomic.h",

@@ -46,6 +46,9 @@ Gem::Specification.new do |s|
 
   s.extensions = %w(src/ruby/ext/grpc/extconf.rb)
 
+  s.files += %w( include/grpc/impl/codegen/connectivity_state.h )
+  s.files += %w( include/grpc/impl/codegen/port_platform.h )
+  s.files += %w( include/grpc/impl/codegen/time.h )
   s.files += %w( include/grpc/support/alloc.h )
   s.files += %w( include/grpc/support/atm.h )
   s.files += %w( include/grpc/support/atm_gcc_atomic.h )

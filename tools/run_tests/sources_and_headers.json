@@ -2740,6 +2740,9 @@
   {
     "deps": [], 
     "headers": [
+      "include/grpc/impl/codegen/connectivity_state.h", 
+      "include/grpc/impl/codegen/port_platform.h", 
+      "include/grpc/impl/codegen/time.h", 
       "include/grpc/support/alloc.h", 
       "include/grpc/support/atm.h", 
       "include/grpc/support/atm_gcc_atomic.h", 
@@ -2782,6 +2785,9 @@
     "language": "c", 
     "name": "gpr", 
     "src": [
+      "include/grpc/impl/codegen/connectivity_state.h", 
+      "include/grpc/impl/codegen/port_platform.h", 
+      "include/grpc/impl/codegen/time.h", 
       "include/grpc/support/alloc.h", 
       "include/grpc/support/atm.h", 
       "include/grpc/support/atm_gcc_atomic.h", 

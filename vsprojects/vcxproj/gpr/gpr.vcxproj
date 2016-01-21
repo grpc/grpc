@@ -147,6 +147,9 @@
   </ItemDefinitionGroup>
 
   <ItemGroup>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\connectivity_state.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\port_platform.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\time.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\support\alloc.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\support\atm.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\support\atm_gcc_atomic.h" />
