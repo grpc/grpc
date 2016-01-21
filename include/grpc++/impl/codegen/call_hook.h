@@ -48,4 +48,4 @@ class CallHook {
 
 }  // namespace grpc
 
-#endif // GRPCXX_IMPL_CODEGEN_CALL_HOOK_H
+#endif  // GRPCXX_IMPL_CODEGEN_CALL_HOOK_H
