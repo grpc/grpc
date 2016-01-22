@@ -81,7 +81,7 @@ struct grpc_connector_vtable {
                   grpc_connect_out_args *out_args, grpc_closure *notify);
 };
 
-void grpc_connector_ref(grpc_connector *connector);
+grpc_connector *grpc_connector_ref(grpc_connector *connector);
 void grpc_connector_unref(grpc_exec_ctx *exec_ctx, grpc_connector *connector);
 /** Connect using the connector: max one outstanding call at a time */
 void grpc_connector_connect(grpc_exec_ctx *exec_ctx, grpc_connector *connector,

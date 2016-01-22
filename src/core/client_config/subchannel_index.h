@@ -34,6 +34,28 @@
 #ifndef GRPC_INTERNAL_CORE_CLIENT_CONFIG_SUBCHANNEL_INDEX_H
 #define GRPC_INTERNAL_CORE_CLIENT_CONFIG_SUBCHANNEL_INDEX_H
 
+#include "src/core/client_config/connector.h"
+#include "src/core/client_config/subchannel.h"
 
+typedef struct grpc_subchannel_key grpc_subchannel_key;
+
+grpc_subchannel_key *grpc_subchannel_key_create(
+    grpc_connector *con, grpc_subchannel_args *args);
+
+void grpc_subchannel_key_destroy(grpc_subchannel_key *key);
+
+grpc_subchannel *grpc_subchannel_index_find(
+    grpc_exec_ctx *ctx,
+    grpc_subchannel_key *key);
+
+grpc_subchannel *grpc_subchannel_index_register(
+    grpc_exec_ctx *ctx,
+    grpc_subchannel_key *key, 
+    grpc_subchannel *constructed);
+
+void grpc_subchannel_index_unregister(
+    grpc_exec_ctx *ctx,
+    grpc_subchannel_key *key,
+    grpc_subchannel *constructed);
 
 #endif /* GRPC_INTERNAL_CORE_CLIENT_CONFIG_SUBCHANNEL_INDEX_H */

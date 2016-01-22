@@ -48,6 +48,8 @@ typedef struct grpc_subchannel_args grpc_subchannel_args;
 #ifdef GRPC_STREAM_REFCOUNT_DEBUG
 #define GRPC_SUBCHANNEL_REF(p, r) \
   grpc_subchannel_ref((p), __FILE__, __LINE__, (r))
+#define GRPC_SUBCHANNEL_REF_FROM_WEAK_REF(p, r) \
+  grpc_subchannel_ref_from_weak_ref((p), __FILE__, __LINE__, (r))
 #define GRPC_SUBCHANNEL_UNREF(cl, p, r) \
   grpc_subchannel_unref((cl), (p), __FILE__, __LINE__, (r))
 #define GRPC_SUBCHANNEL_WEAK_REF(p, r) \
@@ -66,6 +68,7 @@ typedef struct grpc_subchannel_args grpc_subchannel_args;
   , const char *file, int line, const char *reason
 #else
 #define GRPC_SUBCHANNEL_REF(p, r) grpc_subchannel_ref((p))
+#define GRPC_SUBCHANNEL_REF_FROM_WEAK_REF(p, r) grpc_subchannel_ref_from_weak_ref((p))
 #define GRPC_SUBCHANNEL_UNREF(cl, p, r) grpc_subchannel_unref((cl), (p))
 #define GRPC_SUBCHANNEL_WEAK_REF(p, r) grpc_subchannel_weak_ref((p))
 #define GRPC_SUBCHANNEL_WEAK_UNREF(cl, p, r) \
@@ -146,6 +149,8 @@ grpc_call_stack *grpc_subchannel_call_get_call_stack(
     grpc_subchannel_call *subchannel_call);
 
 struct grpc_subchannel_args {
+  /* When updating this struct, also update subchannel_index.c */
+  
   /** Channel filters for this channel - wrapped factories will likely
       want to mutate this */
   const grpc_channel_filter **filters;
@@ -159,7 +164,8 @@ struct grpc_subchannel_args {
 };
 
 /** create a subchannel given a connector */
-grpc_subchannel *grpc_subchannel_create(grpc_connector *connector,
+grpc_subchannel *grpc_subchannel_create(grpc_exec_ctx *exec_ctx,
+                                        grpc_connector *connector,
                                         grpc_subchannel_args *args);
 
 #endif /* GRPC_INTERNAL_CORE_CLIENT_CONFIG_SUBCHANNEL_H */
