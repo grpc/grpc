@@ -454,19 +454,19 @@ static size_t tag_set_encode(const struct tag_set *tags, char *buffer,
 }
 
 char *census_tag_set_encode(const census_tag_set *tags, char *buffer,
-                            size_t *buf_size, size_t *bin_buf_size) {
-  size_t p_buf_size =
-      tag_set_encode(&tags->tags[PROPAGATED_TAGS], buffer, *buf_size);
-  if (p_buf_size == 0) {
+                            size_t buf_size, size_t *print_buf_size,
+                            size_t *bin_buf_size) {
+  *print_buf_size =
+      tag_set_encode(&tags->tags[PROPAGATED_TAGS], buffer, buf_size);
+  if (*print_buf_size == 0) {
     return NULL;
   }
-  char *b_buffer = buffer + p_buf_size;
+  char *b_buffer = buffer + *print_buf_size;
   *bin_buf_size = tag_set_encode(&tags->tags[PROPAGATED_BINARY_TAGS], b_buffer,
-                                 *buf_size - p_buf_size);
+                                 buf_size - *print_buf_size);
   if (*bin_buf_size == 0) {
     return NULL;
   }
-  *buf_size = p_buf_size;
   return b_buffer;
 }
 
