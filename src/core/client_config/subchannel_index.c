@@ -31,49 +31,83 @@
  *
  */
 
+#include "src/core/client_config/subchannel_index.h"
+
+#include <string.h>
+
+#include <grpc/support/alloc.h>
+#include <grpc/support/avl.h>
+#include <grpc/support/tls.h>
+
+#include "src/core/channel/channel_args.h"
+
 /* a map of subchannel_key --> subchannel, used for detecting connections
    to the same destination in order to share them */
 static gpr_avl g_subchannel_index;
 
 static gpr_mu g_mu;
 
-struct subchannel_key {
-  size_t addr_len;
-  struct sockaddr *addr;
-  grpc_channel_args *normalized_args;
+struct grpc_subchannel_key {
+	grpc_connector *connector;
+	grpc_subchannel_args args;
 };
 
 GPR_TLS_DECL(subchannel_index_exec_ctx);
 
-static subchannel_key *subchannel_key_create(struct sockaddr *sockaddr, size_t addr_len, grpc_channel_args *args) {
-  subchannel_key *k = gpr_malloc(sizeof(*k));
-  k->addr_len = addr_len;
-  k->addr = gpr_malloc(addr_len);
-  memcpy(k->addr, addr, addr_len);
-  k->normalized_args = grpc_channel_args_normalize(args);
+static void enter_ctx(grpc_exec_ctx *exec_ctx) {
+	GPR_ASSERT(gpr_tls_get(&subchannel_index_exec_ctx) == 0);
+	gpr_tls_set(&subchannel_index_exec_ctx, (intptr_t)exec_ctx);
+}
+
+static void leave_ctx(grpc_exec_ctx *exec_ctx) {
+	GPR_ASSERT(gpr_tls_get(&subchannel_index_exec_ctx) == (intptr_t)exec_ctx);
+	gpr_tls_set(&subchannel_index_exec_ctx, 0);
+}
+
+static grpc_exec_ctx *current_ctx() {
+	grpc_exec_ctx *c = (grpc_exec_ctx *)gpr_tls_get(&subchannel_index_exec_ctx);
+	GPR_ASSERT(c != NULL);
+	return c;
+}
+
+static grpc_subchannel_key *create_key(grpc_connector *connector, grpc_subchannel_args *args, grpc_channel_args *(*copy_channel_args)(const grpc_channel_args *args)) {
+  grpc_subchannel_key *k = gpr_malloc(sizeof(*k));
+  k->connector = grpc_connector_ref(connector);
+  k->args.filter_count = args->filter_count;
+  k->args.filters = gpr_malloc(sizeof(*k->args.filters) * k->args.filter_count);
+  memcpy(k->args.filters, args->filters, sizeof(*k->args.filters) * k->args.filter_count);
+  k->args.addr_len = args->addr_len;
+  k->args.addr = gpr_malloc(args->addr_len);
+  memcpy(k->args.addr, args->addr, k->args.addr_len);
+  k->args.args = copy_channel_args(args->args);
   return k;
 }
 
-static subchannel_key *subchannel_key_copy(subchannel_key *k) {
-  subchannel_key *k = gpr_malloc(sizeof(*k));
-  k->addr_len = addr_len;
-  k->addr = gpr_malloc(addr_len);
-  memcpy(k->addr, addr, addr_len);
-  k->normalized_args = grpc_channel_args_copy(args);
-  return k;
+grpc_subchannel_key *grpc_subchannel_key_create(grpc_connector *connector, grpc_subchannel_args *args) {
+	return create_key(connector, args, grpc_channel_args_normalize);
 }
 
-static int subchannel_key_compare(subchannel_key *a, subchannel_key *b) {
-  int c = GPR_ICMP(a->addr_len, b->addr_len);
-  if (c != 0) return c;
-  c = memcmp(a->addr, b->addr, a->addr_len);
-  if (c != 0) return c;
-  return grpc_channel_args_compare(a->normalized_args, b->normalized_args);
+static grpc_subchannel_key *subchannel_key_copy(grpc_subchannel_key *k) {
+	return create_key(k->connector, &k->args, grpc_channel_args_copy);
 }
 
-static void subchannel_key_destroy(subchannel_key *k) {
-  gpr_free(k->addr);
-  grpc_channel_args_destroy(k->normalized_args);
+static int subchannel_key_compare(grpc_subchannel_key *a, grpc_subchannel_key *b) {
+  int c = GPR_ICMP(a->connector, b->connector);
+  if (c != 0) return c;
+  c = GPR_ICMP(a->args.addr_len, b->args.addr_len);
+  if (c != 0) return c;
+  c = GPR_ICMP(a->args.filter_count, b->args.filter_count);
+  if (c != 0) return c;
+  c = memcmp(a->args.addr, b->args.addr, a->args.addr_len);
+  if (c != 0) return c;
+  c = memcmp(a->args.filters, b->args.filters, a->args.filter_count * sizeof(*a->args.filters));
+  return grpc_channel_args_compare(a->args.args, b->args.args);
+}
+
+static void subchannel_key_destroy(grpc_subchannel_key *k) {
+  gpr_free(k->args.addr);
+  gpr_free(k->args.filters);
+  grpc_channel_args_destroy((grpc_channel_args*)k->args.args);
   gpr_free(k);
 }
 
@@ -85,16 +119,17 @@ static void *sck_avl_copy(void *p) {
   return subchannel_key_copy(p);
 }
 
-static void *sck_avl_compare(void *a, void *b) {
+static long sck_avl_compare(void *a, void *b) {
   return subchannel_key_compare(a, b);
 }
 
 static void scv_avl_destroy(void *p) {
-  GRPC_SUBCHANNEL_UNREF(exec_ctx, p, "subchannel_index");
+	grpc_exec_ctx *exec_ctx = current_ctx();
+  GRPC_SUBCHANNEL_WEAK_UNREF(exec_ctx, p, "subchannel_index");
 }
 
 static void *scv_avl_copy(void *p) { 
-  GRPC_SUBCHANNEL_REF(p, "subchannel_index");
+  GRPC_SUBCHANNEL_WEAK_REF(p, "subchannel_index");
   return p; 
 }
 
@@ -107,26 +142,31 @@ static const gpr_avl_vtable subchannel_avl_vtable = {
 };
 
 grpc_subchannel *grpc_subchannel_index_find(
-		grpc_exec_ctx *ctx,
+		grpc_exec_ctx *exec_ctx,
 		grpc_connector *connector,
 		grpc_subchannel_args *args) {
+	enter_ctx(ctx);
+
 	gpr_mu_lock(&g_mu);
 	gpr_avl index = gpr_avl_ref(g_subchannel_index);
 	gpr_mu_unlock(&g_mu);
 
 	subchannel_key *key = subchannel_key_create(connector, args);
-	grpc_subchannel *c = grpc_subchannel_ref(gpr_avl_get(index, key));
+	grpc_subchannel *c = GRPC_SUBCHANNEL_REF_FROM_WEAK_REF(gpr_avl_get(index, key));
 	subchannel_key_destroy(key);
 	gpr_avl_unref(index);
 
+	leave_ctx(ctx);
 	return c;
 }
 
 grpc_subchannel *grpc_subchannel_index_register(
-	  grpc_exec_ctx *ctx,
+	  grpc_exec_ctx *exec_ctx,
 		grpc_connector *connector, 
 		grpc_subchannel_args *args, 
 		grpc_subchannel *constructed) {
+	enter_ctx(ctx);
+
 	subchannel_key *key = subchannel_key_create(connector, args);
 	grpc_subchannel *c = NULL;
 
@@ -137,7 +177,7 @@ grpc_subchannel *grpc_subchannel_index_register(
 
 		c = gpr_avl_get(index, key);
 		if (c != NULL) {
-			GRPC_SUBCHANNEL_UNREF(constructed);
+			GRPC_SUBCHANNEL_WEAK_UNREF(constructed);
 		} else {
 			gpr_avl updated = gpr_avl_add(index, key, constructed);
 
@@ -150,6 +190,8 @@ grpc_subchannel *grpc_subchannel_index_register(
 		}
 		gpr_avl_unref(index);
 	}
+
+	leave_ctx(ctx);
 
 	return c;
 }

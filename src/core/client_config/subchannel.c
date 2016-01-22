@@ -42,10 +42,10 @@
 #include "src/core/channel/client_channel.h"
 #include "src/core/channel/connected_channel.h"
 #include "src/core/client_config/initial_connect_string.h"
+#include "src/core/client_config/subchannel_index.h"
 #include "src/core/iomgr/timer.h"
 #include "src/core/profiling/timers.h"
 #include "src/core/surface/channel.h"
-#include "src/core/transport/connectivity_state.h"
 #include "src/core/transport/connectivity_state.h"
 
 #define INTERNAL_REF_BITS 16
@@ -94,6 +94,8 @@ struct grpc_subchannel {
   /** address to connect to */
   struct sockaddr *addr;
   size_t addr_len;
+
+  grpc_subchannel_key *key;
 
   /** initial string to send to peer */
   gpr_slice initial_connect_string;
@@ -239,6 +241,7 @@ void grpc_subchannel_weak_ref(grpc_subchannel *c
 
 static void disconnect(grpc_exec_ctx *exec_ctx, grpc_subchannel *c) {
   grpc_connected_subchannel *con;
+  grpc_subchannel_index_unregister(exec_ctx, c->key, c);
   gpr_mu_lock(&c->mu);
   GPR_ASSERT(!c->disconnected);
   c->disconnected = 1;
@@ -277,10 +280,19 @@ static uint32_t random_seed() {
   return (uint32_t)(gpr_time_to_millis(gpr_now(GPR_CLOCK_MONOTONIC)));
 }
 
-grpc_subchannel *grpc_subchannel_create(grpc_connector *connector,
+grpc_subchannel *grpc_subchannel_create(grpc_exec_ctx *exec_ctx,
+                                        grpc_connector *connector,
                                         grpc_subchannel_args *args) {
-  grpc_subchannel *c = gpr_malloc(sizeof(*c));
+  grpc_subchannel_key *key = grpc_subchannel_key_create(connector, args);
+  grpc_subchannel *c = grpc_subchannel_index_find(exec_ctx, key);
+  if (c) {
+    grpc_subchannel_key_destroy(key);
+    return c;
+  }
+
+  c = gpr_malloc(sizeof(*c));
   memset(c, 0, sizeof(*c));
+  c->key = key;
   gpr_atm_no_barrier_store(&c->ref_pair, 1 << INTERNAL_REF_BITS);
   c->connector = connector;
   grpc_connector_ref(c->connector);
@@ -302,7 +314,8 @@ grpc_subchannel *grpc_subchannel_create(grpc_connector *connector,
   grpc_connectivity_state_init(&c->state_tracker, GRPC_CHANNEL_IDLE,
                                "subchannel");
   gpr_mu_init(&c->mu);
-  return c;
+
+  return grpc_subchannel_index_register(exec_ctx, key, c);
 }
 
 static void continue_connect(grpc_exec_ctx *exec_ctx, grpc_subchannel *c) {
