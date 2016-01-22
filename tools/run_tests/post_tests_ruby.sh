@@ -43,4 +43,4 @@ genhtml $tmp2 --output-directory $out
 rm $tmp2
 rm $tmp1
 
-cp -rv $root/src/ruby/coverage $root/reports/ruby
+cp -rv $root/coverage $root/reports/ruby
