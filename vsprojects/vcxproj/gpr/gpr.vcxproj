@@ -147,9 +147,6 @@
   </ItemDefinitionGroup>
 
   <ItemGroup>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\connectivity_state.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\port_platform.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\time.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\support\alloc.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\support\atm.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\support\atm_gcc_atomic.h" />
@@ -178,6 +175,9 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc\support\tls_msvc.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\support\tls_pthread.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\support\useful.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\connectivity_state.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\port_platform.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\time.h" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(SolutionDir)\..\src\core\profiling\timers.h" />

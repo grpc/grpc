@@ -408,15 +408,6 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc\grpc.h">
       <Filter>include\grpc</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\connectivity_state.h">
-      <Filter>include\grpc\impl\codegen</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\port_platform.h">
-      <Filter>include\grpc\impl\codegen</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\time.h">
-      <Filter>include\grpc\impl\codegen</Filter>
-    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc\status.h">
       <Filter>include\grpc</Filter>
     </ClInclude>
@@ -781,12 +772,6 @@
     </Filter>
     <Filter Include="include\grpc">
       <UniqueIdentifier>{77b9717b-b8d8-dd5f-14bb-a3e96809a70a}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="include\grpc\impl">
-      <UniqueIdentifier>{10cfa248-c60f-376f-e7ae-2a7d7d8e81f5}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="include\grpc\impl\codegen">
-      <UniqueIdentifier>{03cc6735-c734-7017-4000-a435f29d55c3}</UniqueIdentifier>
     </Filter>
     <Filter Include="src">
       <UniqueIdentifier>{aaf326a1-c884-46ea-875a-cbbd9983e539}</UniqueIdentifier>

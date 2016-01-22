@@ -79,7 +79,7 @@ class TimePoint<gpr_timespec> {
 
 #include <chrono>
 
-#include <grpc/support/time.h>
+#include <grpc/impl/codegen/time.h>
 
 namespace grpc {
 
