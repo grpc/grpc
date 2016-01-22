@@ -31,7 +31,7 @@
 # This script is invoked by build_docker_and_run_tests.sh inside a docker
 # container. You should never need to call this script on your own.
 
-set -e
+set -ex
 
 function cleanup()
 {
