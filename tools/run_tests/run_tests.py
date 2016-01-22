@@ -115,13 +115,10 @@ class ValgrindConfig(object):
     self.args = args
     self.allow_hashing = False
 
-  def job_spec(self, cmdline, hash_targets, cpu_cost=1.0, timeout_seconds=None,
-               shortname=None, environ=None):
-    if shortname is None:
-      shortname = 'valgrind %s' % cmdline[0]
+  def job_spec(self, cmdline, hash_targets, cpu_cost=1.0):
     return jobset.JobSpec(cmdline=['valgrind', '--tool=%s' % self.tool] +
                           self.args + cmdline,
-                          shortname=shortname,
+                          shortname='valgrind %s' % cmdline[0],
                           hash_targets=None,
                           cpu_cost=cpu_cost,
                           flake_retries=5 if args.allow_flakes else 0,
