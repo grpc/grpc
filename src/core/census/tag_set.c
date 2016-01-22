@@ -113,6 +113,7 @@ struct raw_tag {
 // encoding/decoding.
 struct census_tag_set {
   struct tag_set tags[3];
+  census_tag_set_create_status status;
 };
 
 // Indices into the tags member of census_tag_set
@@ -202,8 +203,7 @@ static bool tag_set_add_tag(struct tag_set *tags, const census_tag *tag,
 // Add/modify/delete a tag to/in a census_tag_set. Caller must validate that
 // tag key etc. are valid.
 static void cts_modify_tag(census_tag_set *tags, const census_tag *tag,
-                           size_t key_len,
-                           census_tag_set_create_status *status) {
+                           size_t key_len) {
   // First delete the tag if it is already present.
   bool deleted = cts_delete_tag(tags, tag, key_len);
   // Determine if we need to add it back.
@@ -221,19 +221,17 @@ static void cts_modify_tag(census_tag_set *tags, const census_tag *tag,
       added = tag_set_add_tag(&tags->tags[LOCAL_TAGS], tag, key_len);
     }
   }
-  if (status) {
-    if (deleted) {
-      if (call_add) {
-        status->n_modified_tags++;
-      } else {
-        status->n_deleted_tags++;
-      }
+  if (deleted) {
+    if (call_add) {
+      tags->status.n_modified_tags++;
     } else {
-      if (added) {
-        status->n_added_tags++;
-      } else {
-        status->n_ignored_tags++;
-      }
+      tags->status.n_deleted_tags++;
+    }
+  } else {
+    if (added) {
+      tags->status.n_added_tags++;
+    } else {
+      tags->status.n_ignored_tags++;
     }
   }
 }
@@ -280,13 +278,9 @@ static void tag_set_flatten(struct tag_set *tags) {
   tags->ntags_alloc = tags->ntags;
 }
 
-census_tag_set *census_tag_set_create(const census_tag_set *base,
-                                      const census_tag *tags, int ntags,
-                                      census_tag_set_create_status *status) {
-  int n_invalid_tags = 0;
-  if (status) {
-    memset(status, 0, sizeof(*status));
-  }
+census_tag_set *census_tag_set_create(
+    const census_tag_set *base, const census_tag *tags, int ntags,
+    census_tag_set_create_status const **status) {
   census_tag_set *new_ts = gpr_malloc(sizeof(census_tag_set));
   // If we are given a base, copy it into our new tag set. Otherwise set it
   // to zero/NULL everything.
@@ -297,6 +291,7 @@ census_tag_set *census_tag_set_create(const census_tag_set *base,
     tag_set_copy(&new_ts->tags[PROPAGATED_BINARY_TAGS],
                  &base->tags[PROPAGATED_BINARY_TAGS]);
     tag_set_copy(&new_ts->tags[LOCAL_TAGS], &base->tags[LOCAL_TAGS]);
+    memset(&new_ts->status, 0, sizeof(new_ts->status));
   }
   // Walk over the additional tags and, for those that aren't invalid, modify
   // the tag set to add/replace/delete as required.
@@ -306,23 +301,28 @@ census_tag_set *census_tag_set_create(const census_tag_set *base,
     // ignore the tag if it is too long/short.
     if (key_len != 1 && key_len <= CENSUS_MAX_TAG_KV_LEN &&
         tag->value_len <= CENSUS_MAX_TAG_KV_LEN) {
-      cts_modify_tag(new_ts, tag, key_len, status);
+      cts_modify_tag(new_ts, tag, key_len);
     } else {
-      n_invalid_tags++;
+      new_ts->status.n_invalid_tags++;
     }
   }
   // Remove any deleted tags, update status if needed, and return.
   tag_set_flatten(&new_ts->tags[PROPAGATED_TAGS]);
   tag_set_flatten(&new_ts->tags[PROPAGATED_BINARY_TAGS]);
   tag_set_flatten(&new_ts->tags[LOCAL_TAGS]);
-  if (status != NULL) {
-    status->n_propagated_tags = new_ts->tags[PROPAGATED_TAGS].ntags;
-    status->n_propagated_binary_tags =
-        new_ts->tags[PROPAGATED_BINARY_TAGS].ntags;
-    status->n_local_tags = new_ts->tags[LOCAL_TAGS].ntags;
-    status->n_invalid_tags = n_invalid_tags;
+  new_ts->status.n_propagated_tags = new_ts->tags[PROPAGATED_TAGS].ntags;
+  new_ts->status.n_propagated_binary_tags =
+      new_ts->tags[PROPAGATED_BINARY_TAGS].ntags;
+  new_ts->status.n_local_tags = new_ts->tags[LOCAL_TAGS].ntags;
+  if (status) {
+    *status = &new_ts->status;
   }
   return new_ts;
+}
+
+const census_tag_set_create_status *census_tag_set_get_create_status(
+    const census_tag_set *tags) {
+  return &tags->status;
 }
 
 void census_tag_set_destroy(census_tag_set *tags) {
@@ -330,12 +330,6 @@ void census_tag_set_destroy(census_tag_set *tags) {
   gpr_free(tags->tags[PROPAGATED_BINARY_TAGS].kvm);
   gpr_free(tags->tags[LOCAL_TAGS].kvm);
   gpr_free(tags);
-}
-
-int census_tag_set_ntags(const census_tag_set *tags) {
-  return tags->tags[PROPAGATED_TAGS].ntags +
-         tags->tags[PROPAGATED_BINARY_TAGS].ntags +
-         tags->tags[LOCAL_TAGS].ntags;
 }
 
 // Initialize a tag set iterator. Must be called before first use of the
@@ -507,11 +501,7 @@ static void tag_set_decode(struct tag_set *tags, const char *buffer,
 }
 
 census_tag_set *census_tag_set_decode(const char *buffer, size_t size,
-                                      const char *bin_buffer, size_t bin_size,
-                                      census_tag_set_create_status *status) {
-  if (status) {
-    memset(status, 0, sizeof(*status));
-  }
+                                      const char *bin_buffer, size_t bin_size) {
   census_tag_set *new_ts = gpr_malloc(sizeof(census_tag_set));
   memset(&new_ts->tags[LOCAL_TAGS], 0, sizeof(struct tag_set));
   if (buffer == NULL) {
@@ -524,11 +514,10 @@ census_tag_set *census_tag_set_decode(const char *buffer, size_t size,
   } else {
     tag_set_decode(&new_ts->tags[PROPAGATED_BINARY_TAGS], bin_buffer, bin_size);
   }
-  if (status) {
-    status->n_propagated_tags = new_ts->tags[PROPAGATED_TAGS].ntags;
-    status->n_propagated_binary_tags =
-        new_ts->tags[PROPAGATED_BINARY_TAGS].ntags;
-  }
+  memset(&new_ts->status, 0, sizeof(new_ts->status));
+  new_ts->status.n_propagated_tags = new_ts->tags[PROPAGATED_TAGS].ntags;
+  new_ts->status.n_propagated_binary_tags =
+      new_ts->tags[PROPAGATED_BINARY_TAGS].ntags;
   // TODO(aveitch): check that BINARY flag is correct for each type.
   return new_ts;
 }

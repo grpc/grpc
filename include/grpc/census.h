@@ -392,16 +392,16 @@ typedef struct {
    creation.
    @return A new, valid census_tag_set.
 */
-census_tag_set *census_tag_set_create(const census_tag_set *base,
-                                      const census_tag *tags, int ntags,
-                                      census_tag_set_create_status *status);
+census_tag_set *census_tag_set_create(
+    const census_tag_set *base, const census_tag *tags, int ntags,
+    census_tag_set_create_status const **status);
 
 /* Destroy a tag set created by census_tag_set_create(). Once this function
    has been called, the tag set cannot be reused. */
 void census_tag_set_destroy(census_tag_set *tags);
 
-/* Get the total number of tags in the tag set. */
-int census_tag_set_ntags(const census_tag_set *tags);
+const census_tag_set_create_status *census_tag_set_get_create_status(
+    const census_tag_set *tags);
 
 /* Structure used for tag set iteration. API clients should not use or
    reference internal fields - neither their contents or presence/absence are
@@ -445,11 +445,9 @@ size_t census_tag_set_encode_propagated_binary(const census_tag_set *tags,
                                                char *buffer, size_t buf_size);
 
 /* Decode tag set buffers encoded with census_tag_set_encode_*(). Returns NULL
-   if there is an error in parsing either buffer. The number of tags in the
-   decoded tag set will be returned in status, if it is non-NULL. */
+   if there is an error in parsing either buffer. */
 census_tag_set *census_tag_set_decode(const char *buffer, size_t size,
-                                      const char *bin_buffer, size_t bin_size,
-                                      census_tag_set_create_status *status);
+                                      const char *bin_buffer, size_t bin_size);
 
 /* Get a contexts tag set. */
 census_tag_set *census_context_tag_set(census_context *context);
