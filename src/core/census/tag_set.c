@@ -72,19 +72,22 @@
 struct tag_set {
   int ntags;        // number of tags.
   int ntags_alloc;  // ntags + number of deleted tags (total number of tags
-                    // in all of kvm). This will always be == ntags, except
-                    // during the process of building a new tag set.
+  // in all of kvm). This will always be == ntags, except during the process
+  // of building a new tag set.
   size_t kvm_size;  // number of bytes allocated for key/value storage.
   size_t kvm_used;  // number of bytes of used key/value memory
   char *kvm;        // key/value memory. Consists of repeated entries of:
-                    //   Offset  Size  Description
-                    //     0      1    Key length, including trailing 0. (K)
-                    //     1      1    Value length. (V)
-                    //     2      1    Flags
-                    //     3      K    Key bytes
-                    //     3 + K  V    Value bytes
-                    //
-                    // We refer to the first 3 entries as the 'tag header'.
+  //   Offset  Size  Description
+  //     0      1    Key length, including trailing 0. (K)
+  //     1      1    Value length. (V)
+  //     2      1    Flags
+  //     3      K    Key bytes
+  //     3 + K  V    Value bytes
+  //
+  // We refer to the first 3 entries as the 'tag header'. If extra values are
+  // introduced in the header, you will need to modify the TAG_HEADER_SIZE
+  // constant, the raw_tag structure (and everything that uses it) and the
+  // encode/decode functions appropriately.
 };
 
 // Number of bytes in tag header.
@@ -170,7 +173,9 @@ static bool cts_delete_tag(census_tag_set *tags, const census_tag *tag,
 }
 
 // Add a tag to a tag_set. Return true on sucess, false if the tag could
-// not be added because of constraints on tag set size.
+// not be added because of constraints on tag set size. This function should
+// not be called if the tag may already exist (in a non-deleted state) in
+// the tag_set, as that would result in two tags with the same key.
 static bool tag_set_add_tag(struct tag_set *tags, const census_tag *tag,
                             size_t key_len) {
   if (tags->ntags == CENSUS_MAX_PROPAGATED_TAGS) {
