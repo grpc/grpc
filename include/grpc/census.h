@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -324,60 +324,142 @@ int census_get_trace_record(census_trace_record *trace_record);
 /** End a scan previously started by census_trace_scan_start() */
 void census_trace_scan_end();
 
-/* Max number of characters in tag key */
-#define CENSUS_MAX_TAG_KEY_LENGTH 20
-/* Max number of tag value characters */
-#define CENSUS_MAX_TAG_VALUE_LENGTH 50
-
 /* A Census tag set is a collection of key:value string pairs; these form the
    basis against which Census metrics will be recorded. Keys are unique within
    a tag set. All contexts have an associated tag set. */
 typedef struct census_tag_set census_tag_set;
 
-/* Returns a pointer to a newly created, empty tag set. If size_hint > 0,
-   indicates that the tag set is intended to hold approximately that number
-   of tags. */
-census_tag_set *census_tag_set_create(size_t size_hint);
+/* A tag is a key:value pair. The key is a non-empty, printable (UTF-8
+   encoded), nil-terminated string. The value is a binary string, that may be
+   printable. There are limits on the sizes of both keys and values (see
+   CENSUS_MAX_TAG_KB_LEN definition below), and the number of tags that can be
+   propagated (CENSUS_MAX_PROPAGATED_TAGS). Users should also remember that
+   some systems may have limits on, e.g., the number of bytes that can be
+   transmitted as metadata, and that larger tags means more memory consumed
+   and time in processing. */
+typedef struct {
+  const char *key;
+  const char *value;
+  size_t value_len;
+  uint8_t flags;
+} census_tag;
 
-/* Add a new tag key/value to an existing tag set; if the tag key already exists
-   in the tag set, then its value is overwritten with the new one. Can also be
-   used to delete a tag, by specifying a NULL value. If key is NULL, returns
-   the number of tags in the tag set.
-   Return values:
-   -1: invalid length key or value
-   non-negative value: the number of tags in the tag set. */
-int census_tag_set_add(census_tag_set *tags, const char *key,
-                       const char *value);
+/* Maximum length of a tag's key or value. */
+#define CENSUS_MAX_TAG_KV_LEN 255
+/* Maximum number of propagatable tags. */
+#define CENSUS_MAX_PROPAGATED_TAGS 255
 
-/* Destroys a tag set. This function must be called to prevent memory leaks.
-   Once called, the tag set cannot be used again. */
+/* Tag flags. */
+#define CENSUS_TAG_PROPAGATE 1 /* Tag should be propagated over RPC */
+#define CENSUS_TAG_STATS 2     /* Tag will be used for statistics aggregation */
+#define CENSUS_TAG_BINARY 4    /* Tag value is not printable */
+#define CENSUS_TAG_RESERVED 8  /* Reserved for internal use. */
+/* Flag values 8,16,32,64,128 are reserved for future/internal use. Clients
+   should not use or rely on their values. */
+
+#define CENSUS_TAG_IS_PROPAGATED(flags) (flags & CENSUS_TAG_PROPAGATE)
+#define CENSUS_TAG_IS_STATS(flags) (flags & CENSUS_TAG_STATS)
+#define CENSUS_TAG_IS_BINARY(flags) (flags & CENSUS_TAG_BINARY)
+
+typedef struct {
+  int n_propagated_tags;        /* number of propagated printable tags */
+  int n_propagated_binary_tags; /* number of propagated binary tags */
+  int n_local_tags;             /* number of non-propagated (local) tags */
+  int n_deleted_tags;           /* number of tags that were deleted */
+  int n_added_tags;             /* number of tags that were added */
+  int n_modified_tags;          /* number of tags that were modified */
+  int n_invalid_tags;           /* number of tags with bad keys or values (e.g.
+                                   longer than CENSUS_MAX_TAG_KV_LEN) */
+  int n_ignored_tags;           /* number of tags ignored because of
+                                   CENSUS_MAX_PROPAGATED_TAGS limit. */
+} census_tag_set_create_status;
+
+/* Create a new tag set, adding and removing tags from an existing tag set.
+   This will copy all tags from it's input parameters, so it is recommended
+   to add as many tags in a single operation as is practical for the client.
+   @param base Base tag set to build upon. Can be NULL.
+   @param tags A set of tags to be added/changed/deleted. Tags with keys that
+   are in 'tags', but not 'base', are added to the tag set. Keys that are in
+   both 'tags' and 'base' will have their value/flags modified. Tags with keys
+   in both, but with NULL or zero-length values, will be deleted from the tag
+   set. Tags with invalid (too long or short) keys or values will be ignored.
+   If adding a tag will result in more than CENSUS_MAX_PROPAGATED_TAGS in either
+   binary or non-binary tags, they will be ignored, as will deletions of
+   tags that don't exist.
+   @param ntags number of tags in 'tags'
+   @param status If not NULL, will return a pointer to a
+   census_tag_set_create_status structure containing information about the new
+   tag set and status of the tags used in its creation.
+   @return A new, valid census_tag_set.
+*/
+census_tag_set *census_tag_set_create(
+    const census_tag_set *base, const census_tag *tags, int ntags,
+    census_tag_set_create_status const **status);
+
+/* Destroy a tag set created by census_tag_set_create(). Once this function
+   has been called, the tag set cannot be reused. */
 void census_tag_set_destroy(census_tag_set *tags);
+
+/* Get a pointer to the original status from the creation of this tag set. */
+const census_tag_set_create_status *census_tag_set_get_create_status(
+    const census_tag_set *tags);
+
+/* Structure used for tag set iteration. API clients should not use or
+   reference internal fields - neither their contents or presence/absence are
+   guaranteed. */
+typedef struct {
+  const census_tag_set *tags;
+  int base;
+  int index;
+  char *kvm;
+} census_tag_set_iterator;
+
+/* Initialize a tag set iterator. Must be called before first use of the
+   iterator. */
+void census_tag_set_initialize_iterator(const census_tag_set *tags,
+                                        census_tag_set_iterator *iterator);
+
+/* Get the contents of the "next" tag in the tag set. If there are no more
+   tags in the tag set, returns 0 (and 'tag' contents will be unchanged),
+   otherwise returns 1. */
+int census_tag_set_next_tag(census_tag_set_iterator *iterator, census_tag *tag);
+
+/* Get a tag by its key. Returns 0 if the key is not present in the tag
+   set. */
+int census_tag_set_get_tag_by_key(const census_tag_set *tags, const char *key,
+                                  census_tag *tag);
+
+/* Tag set encode/decode functionality. These functionas are intended
+   for use by RPC systems only, for purposes of transmitting/receiving tag
+   sets. */
+
+/* Encode a tag set into a buffer. The propagated tags are encoded into the
+   buffer in two regions: one for printable tags, and one for binary tags.
+   @param tags tag set to be encoded
+   @param buffer pointer to buffer. This address will be used to encode the
+                 printable tags.
+   @param buf_size number of available bytes in buffer.
+   @param print_buf_size Will be set to the number of bytes consumed by
+                         printable tags.
+   @param bin_buf_size Will be set to the number of bytes used to encode the
+                       binary tags.
+   @return A pointer to the binary tag's encoded, or NULL if the buffer was
+           insufficiently large to hold the encoded tags. Thus, if successful,
+           printable tags are encoded into
+           [buffer, buffer + *print_buf_size) and binary tags into
+           [returned-ptr, returned-ptr + *bin_buf_size) (and the return value
+           should be buffer + *print_buf_size) */
+char *census_tag_set_encode(const census_tag_set *tags, char *buffer,
+                            size_t buf_size, size_t *print_buf_size,
+                            size_t *bin_buf_size);
+
+/* Decode tag set buffers encoded with census_tag_set_encode_*(). Returns NULL
+   if there is an error in parsing either buffer. */
+census_tag_set *census_tag_set_decode(const char *buffer, size_t size,
+                                      const char *bin_buffer, size_t bin_size);
 
 /* Get a contexts tag set. */
 census_tag_set *census_context_tag_set(census_context *context);
-
-/* A read-only representation of a tag for use by census clients. */
-typedef struct {
-  size_t key_len;    /* Number of bytes in tag key. */
-  const char *key;   /* A pointer to the tag key. May not be null-terminated. */
-  size_t value_len;  /* Number of bytes in tag value. */
-  const char *value; /* Pointer to the tag value. May not be null-terminated. */
-} census_tag_const;
-
-/* Used to iterate through a tag sets contents. */
-typedef struct census_tag_set_iterator census_tag_set_iterator;
-
-/* Open a tag set for iteration. The tag set must not be modified while
-   iteration is ongoing. Returns an iterator for use in following functions. */
-census_tag_set_iterator *census_tag_set_open(census_tag_set *tags);
-
-/* Get the next tag in the tag set, by writing into the 'tag' argument. Returns
-   1 if there is a "next" tag, 0 if there are no more tags. */
-int census_tag_set_next(census_tag_set_iterator *it, census_tag_const *tag);
-
-/* Close an iterator opened by census_tag_set_open(). The iterator will be
-   invalidated, and should not be used once close is called. */
-void census_tag_set_close(census_tag_set_iterator *it);
 
 /* Core stats collection API's. The following concepts are used:
    * Aggregation: A collection of values. Census supports the following
@@ -424,8 +506,8 @@ extern census_aggregation_ops census_agg_window;
     construction via census_define_view(). */
 typedef struct {
   const census_aggregation_ops *ops;
-  const void *
-      create_arg; /* Argument to be used for aggregation initialization. */
+  const void
+      *create_arg; /* Argument to be used for aggregation initialization. */
 } census_aggregation;
 
 /** A census view type. Opaque. */
