@@ -232,11 +232,11 @@ class AsyncClientEnd2endTest : public End2endTest {
   AsyncClientEnd2endTest() : rpcs_outstanding_(0) {}
 
   void TearDown() GRPC_OVERRIDE {
-    End2endTest::TearDown();
     void* ignored_tag;
     bool ignored_ok;
     while (cq_.Next(&ignored_tag, &ignored_ok))
       ;
+    End2endTest::TearDown();
   }
 
   void Wait() {
