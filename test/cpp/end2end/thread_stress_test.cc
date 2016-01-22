@@ -301,7 +301,7 @@ TEST_F(AsyncClientEnd2endTest, ThreadStress) {
   std::vector<std::thread*> threads;
   for (int i = 0; i < 100; ++i) {
     threads.push_back(new std::thread(
-        &AsyncClientEnd2endTest_ThreadStress_Test::AsyncSendRpc, this, 100));
+        &AsyncClientEnd2endTest_ThreadStress_Test::AsyncSendRpc, this, 1000));
   }
   for (int i = 0; i < 100; ++i) {
     threads[i]->join();
