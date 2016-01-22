@@ -433,17 +433,24 @@ int census_tag_set_get_tag_by_key(const census_tag_set *tags, const char *key,
    for use by RPC systems only, for purposes of transmitting/receiving tag
    sets. */
 
-/* Encode to-be-propagated non-binary tags from a tag set into a memory
-   buffer. The total number of bytes used in the buffer is returned. If the
-   buffer is too small to contain the encoded tag set, then 0 is returned. */
-size_t census_tag_set_encode_propagated(const census_tag_set *tags,
-                                        char *buffer, size_t buf_size);
-
-/* Encode to-be-propagated binary tags from a tag set into a memory
-   buffer. The total number of bytes used in the buffer is returned. If the
-   buffer is too small to contain the encoded tag set, then 0 is returned. */
-size_t census_tag_set_encode_propagated_binary(const census_tag_set *tags,
-                                               char *buffer, size_t buf_size);
+/* Encode a tag set into a buffer. The propagated tags are encoded into the
+   buffer in two regions: one for printable tags, and one for binary tags.
+   @param tags tag set to be encoded
+   @param buffer pointer to buffer. This address will be used to encode the
+                 printable tags.
+   @param buf_size On input, will be a pointer to total buffer size. On output,
+                   will be set to total number of bytes consumed by printable
+                   tags.
+   @param bin_buf_size on output, will be set to the number of bytes used to
+                       encode the binary tags.
+   @return A pointer to the binary tag's encoded, or NULL if the buffer was
+           insufficiently large to hold the encoded tags. Thus, if successful,
+           printable tags are encoded into
+           [buffer, buffer + *buf_size) and binary tags into
+           [returned-ptr, returned-ptr + *bin_buf_size) (and the return value
+           should be buffer + *buf_size) */
+char *census_tag_set_encode(const census_tag_set *tags, char *buffer,
+                            size_t *buf_size, size_t *bin_buf_size);
 
 /* Decode tag set buffers encoded with census_tag_set_encode_*(). Returns NULL
    if there is an error in parsing either buffer. */
