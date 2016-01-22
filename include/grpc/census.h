@@ -387,9 +387,9 @@ typedef struct {
    binary or non-binary tags, they will be ignored, as will deletions of
    tags that don't exist.
    @param ntags number of tags in 'tags'
-   @param status If not NULL, the pointed to structure will be filled in with
-   information about the new tag set and status of the tags used in its
-   creation.
+   @param status If not NULL, will return a pointer to a
+   census_tag_set_create_status structure containing information about the new
+   tag set and status of the tags used in its creation.
    @return A new, valid census_tag_set.
 */
 census_tag_set *census_tag_set_create(
@@ -400,6 +400,7 @@ census_tag_set *census_tag_set_create(
    has been called, the tag set cannot be reused. */
 void census_tag_set_destroy(census_tag_set *tags);
 
+/* Get a pointer to the original status from the creation of this tag set. */
 const census_tag_set_create_status *census_tag_set_get_create_status(
     const census_tag_set *tags);
 
