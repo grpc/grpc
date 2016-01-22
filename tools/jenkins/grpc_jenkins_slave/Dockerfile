@@ -30,7 +30,7 @@
 # A work-in-progress Dockerfile that allows running gRPC test suites
 # inside a docker container.
 
-FROM debian:jessie
+FROM phusion/baseimage
 
 # Install Git and basic packages.
 RUN apt-get update && apt-get install -y \
