@@ -77,7 +77,7 @@ CYTHON_EXTENSION_MODULE_NAMES = ('grpc._cython.cygrpc',)
 EXTENSION_INCLUDE_DIRECTORIES = (
     (PYTHON_STEM,) + CORE_INCLUDE + BORINGSSL_INCLUDE)
 
-EXTENSION_LIBRARIES = ()
+EXTENSION_LIBRARIES = ('z', 'm',)
 if not "darwin" in sys.platform:
     EXTENSION_LIBRARIES += ('rt',)
 
