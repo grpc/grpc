@@ -33,6 +33,18 @@
 
 set -e
 
+function cleanup()
+{
+  local pids=`jobs -p`
+  if [[ "$pids" != "" ]]
+  then
+    kill -9 $pids
+  fi
+  wait
+}
+
+trap cleanup EXIT
+
 export CONFIG=$config
 export ASAN_SYMBOLIZER_PATH=/usr/bin/llvm-symbolizer-3.5
 
