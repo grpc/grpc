@@ -1,3 +1,5 @@
+#!/usr/bin/env python2.7
+
 # Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
@@ -27,42 +29,39 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""Allows dot-accessible dictionaries."""
+import re
+import os
+import sys
+import yaml
 
+os.chdir(os.path.dirname(sys.argv[0])+'/../..')
 
-class Bunch(dict):
+out = {}
 
-  def __init__(self, d):
-    dict.__init__(self, d)
-    self.__dict__.update(d)
+try:
+  with open('third_party/zlib/CMakeLists.txt') as f:
+    cmake = f.read()
 
+  def cmpath(x):
+    return 'third_party/zlib/%s' % x.replace('${CMAKE_CURRENT_BINARY_DIR}/', '')
 
-# Converts any kind of variable to a Bunch
-def to_bunch(var):
-  if isinstance(var, list):
-    return [to_bunch(i) for i in var]
-  if isinstance(var, dict):
-    ret = {}
-    for k, v in var.items():
-      if isinstance(v, (list, dict)):
-        v = to_bunch(v)
-      ret[k] = v
-    return Bunch(ret)
-  else:
-    return var
+  def cmvar(name):
+    regex = r'set\(\s*'
+    regex += name
+    regex += r'([^)]*)\)'
+    return [cmpath(x) for x in re.search(regex, cmake).group(1).split()]
 
+  out['libs'] = [{
+      'name': 'z',
+      'zlib': True,
+      'build': 'private',
+      'language': 'c',
+      'secure': 'no',
+      'src': sorted(cmvar('ZLIB_SRCS')),
+      'headers': sorted(cmvar('ZLIB_PUBLIC_HDRS') + cmvar('ZLIB_PRIVATE_HDRS')),
+  }]
+except:
+  pass
 
-# Merges JSON 'add' into JSON 'dst'
-def merge_json(dst, add):
-  if isinstance(dst, dict) and isinstance(add, dict):
-    for k, v in add.items():
-      if k in dst:
-        if k == '#': continue
-        merge_json(dst[k], v)
-      else:
-        dst[k] = v
-  elif isinstance(dst, list) and isinstance(add, list):
-    dst.extend(add)
-  else:
-    raise Exception('Tried to merge incompatible objects %s %s\n\n%r\n\n%r' % (type(dst).__name__, type(add).__name__, dst, add))
+print yaml.dump(out)
 
