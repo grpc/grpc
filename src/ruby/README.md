@@ -13,40 +13,15 @@ PREREQUISITES
 -------------
 
 - Ruby 2.x. The gRPC API uses keyword args.
-- [homebrew][] on Mac OS X.  These simplify the installation of the gRPC C core.
 
 INSTALLATION
 ---------------
 
-**Linux (Debian):**
-
-Add [Debian jessie-backports][] to your `sources.list` file. Example:
-
-```sh
-echo "deb http://http.debian.net/debian jessie-backports main" | \
-sudo tee -a /etc/apt/sources.list
-```
-
-Install the gRPC Debian package
-
-```sh
-sudo apt-get update
-sudo apt-get install libgrpc-dev
-```
-
-Install the gRPC Ruby package
+**Linux and Mac OS X:**
 
 ```sh
 gem install grpc
 ```
-
-**Mac OS X**
-
-Install [homebrew][]. Run the following command to install gRPC Ruby.
-```sh
-$ curl -fsSL https://goo.gl/getgrpc | bash -s ruby
-```
-This will download and run the [gRPC install script][], then install the latest version of gRPC Ruby gem.  It also installs Protocol Buffers compiler (_protoc_) and the gRPC _protoc_ plugin for ruby.
 
 BUILD FROM SOURCE
 ---------------------
@@ -95,8 +70,7 @@ Directory structure is the layout for [ruby extensions][]
   resp = stub.div(req)
   GRPC.logger.info("Answer: #{resp.inspect}")
   ```
-[homebrew]:http://brew.sh
-[gRPC install script]:https://raw.githubusercontent.com/grpc/homebrew-grpc/master/scripts/install
+
 [ruby extensions]:http://guides.rubygems.org/gems-with-extensions/
 [rubydoc]: http://www.rubydoc.info/gems/grpc
 [grpc.io]: http://www.grpc.io/docs/installation/ruby.html
