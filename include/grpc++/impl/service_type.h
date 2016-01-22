@@ -132,7 +132,9 @@ class Service {
 
   void MarkMethodAsync(int index) {
     if (methods_[index].get() == nullptr) {
-      gpr_log(GPR_ERROR, "Method already marked generic.");
+      gpr_log(GPR_ERROR,
+              "Cannot mark the method as 'async' because it has already been "
+              "marked as 'generic'.");
       return;
     }
     methods_[index]->ResetHandler();
@@ -140,7 +142,9 @@ class Service {
 
   void MarkMethodGeneric(int index) {
     if (methods_[index]->handler() == nullptr) {
-      gpr_log(GPR_ERROR, "Method already marked async.");
+      gpr_log(GPR_ERROR,
+              "Cannot mark the method as 'generic' because it has already been "
+              "marked as 'async'.");
     }
     methods_[index].reset();
   }
