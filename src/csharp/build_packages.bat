@@ -1,8 +1,7 @@
 @rem Builds gRPC NuGet packages
 
 @rem Current package versions
-set VERSION=0.12.0
-set CORE_VERSION=0.12.0
+set VERSION=0.13.0
 set PROTOBUF_VERSION=3.0.0-beta2
 
 @rem Packages that depend on prerelease packages (like Google.Protobuf) need to have prerelease suffix as well.
@@ -38,9 +37,9 @@ endlocal
 @rem TODO(jtattermusch): re-enable protoc plugin building
 @rem @call ..\..\vsprojects\build_plugins.bat || goto :error
 
-%NUGET% pack grpc.native.csharp\grpc.native.csharp.nuspec -Version %CORE_VERSION% || goto :error
+%NUGET% pack grpc.native.csharp\grpc.native.csharp.nuspec -Version %VERSION% || goto :error
 %NUGET% pack Grpc.Auth\Grpc.Auth.nuspec -Symbols -Version %VERSION% || goto :error
-%NUGET% pack Grpc.Core\Grpc.Core.nuspec -Symbols -Version %VERSION% -Properties GrpcNativeCsharpVersion=%CORE_VERSION% || goto :error
+%NUGET% pack Grpc.Core\Grpc.Core.nuspec -Symbols -Version %VERSION% || goto :error
 %NUGET% pack Grpc.HealthCheck\Grpc.HealthCheck.nuspec -Symbols -Version %VERSION_WITH_BETA% -Properties ProtobufVersion=%PROTOBUF_VERSION% || goto :error
 %NUGET% pack Grpc.nuspec -Version %VERSION% || goto :error
 
