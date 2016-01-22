@@ -120,6 +120,9 @@ PACKAGE_DIRECTORIES = {
 INSTALL_REQUIRES = (
     'enum34>=1.0.4',
     'futures>=2.2.0',
+    # TODO(atash): eventually split the grpcio package into a metapackage
+    # depending on protobuf and the runtime component (independent of protobuf)
+    'protobuf>=3.0.0a3',
 )
 
 SETUP_REQUIRES = (
