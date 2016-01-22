@@ -453,14 +453,21 @@ static size_t tag_set_encode(const struct tag_set *tags, char *buffer,
   return ENCODED_HEADER_SIZE + tags->kvm_used;
 }
 
-size_t census_tag_set_encode_propagated(const census_tag_set *tags,
-                                        char *buffer, size_t buf_size) {
-  return tag_set_encode(&tags->tags[PROPAGATED_TAGS], buffer, buf_size);
-}
-
-size_t census_tag_set_encode_propagated_binary(const census_tag_set *tags,
-                                               char *buffer, size_t buf_size) {
-  return tag_set_encode(&tags->tags[PROPAGATED_BINARY_TAGS], buffer, buf_size);
+char *census_tag_set_encode(const census_tag_set *tags, char *buffer,
+                            size_t *buf_size, size_t *bin_buf_size) {
+  size_t p_buf_size =
+      tag_set_encode(&tags->tags[PROPAGATED_TAGS], buffer, *buf_size);
+  if (p_buf_size == 0) {
+    return NULL;
+  }
+  char *b_buffer = buffer + p_buf_size;
+  *bin_buf_size = tag_set_encode(&tags->tags[PROPAGATED_BINARY_TAGS], b_buffer,
+                                 *buf_size - p_buf_size);
+  if (*bin_buf_size == 0) {
+    return NULL;
+  }
+  *buf_size = p_buf_size;
+  return b_buffer;
 }
 
 // Decode a tag set.
