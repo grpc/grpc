@@ -1825,6 +1825,19 @@ targets:
   - mac
   - linux
   - posix
+- name: async_thread_stress_test
+  cpu_cost: 100
+  build: test
+  language: c++
+  src:
+  - test/cpp/end2end/async_thread_stress_test.cc
+  deps:
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: async_unary_ping_pong_test
   build: test
   language: c++
