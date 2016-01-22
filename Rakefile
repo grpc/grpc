@@ -3,6 +3,11 @@ require 'rake/extensiontask'
 require 'rspec/core/rake_task'
 require 'rubocop/rake_task'
 require 'bundler/gem_tasks'
+require 'fileutils'
+require 'rbconfig'
+require 'grpc/version'
+
+LIB_DIR = File.join('src', 'ruby', 'lib', 'grpc')
 
 # Add rubocop style checking tasks
 RuboCop::RakeTask.new(:rubocop) do |task|
@@ -14,7 +19,21 @@ end
 Rake::ExtensionTask.new 'grpc' do |ext|
   ext.source_pattern = '**/*.{c,h}'
   ext.ext_dir = File.join('src', 'ruby', 'ext', 'grpc')
-  ext.lib_dir = File.join('src', 'ruby', 'lib', 'grpc')
+  ext.lib_dir = LIB_DIR
+end
+
+task :stage_publish_binary => :compile do
+  abi = "#{RbConfig::CONFIG['MAJOR']}.#{RbConfig::CONFIG['MINOR']}.0"
+  local_platform = Gem::Platform.local
+  ext = RbConfig::CONFIG['DLEXT']
+  remote_path = "grpc-precompiled-binaries/ruby/grpc/v#{GRPC::VERSION}"
+  remote_name = "#{abi}-#{RbConfig::CONFIG['target_os']}-#{RbConfig::CONFIG['target_cpu']}.#{ext}"
+  local_path = File.expand_path(File.join(File.dirname(__FILE__), LIB_DIR, "grpc.#{ext}"))
+  publish_stage = File.join(File.dirname(__FILE__), 'tmp', remote_path, remote_name)
+
+  print "Copying binary file from #{local_path} to #{publish_stage}\n"
+  FileUtils.mkdir_p(File.dirname(publish_stage))
+  FileUtils.copy_file(local_path, publish_stage)
 end
 
 # Define the test suites
