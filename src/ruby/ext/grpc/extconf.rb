@@ -58,7 +58,6 @@ LIB_DIRS = [
 ]
 
 build_from_source = ENV['GRPC_RUBY_BUILD_FROM_SOURCE']
-publish_binary = ENV['GRPC_RUBY_PUBLISH_BINARY']
 
 # see https://www.ruby-lang.org/en/news/2013/12/21/ruby-version-policy-changes-with-2-1-0/
 abi = "#{RbConfig::CONFIG['MAJOR']}.#{RbConfig::CONFIG['MINOR']}.0"
