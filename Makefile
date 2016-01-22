@@ -2243,9 +2243,6 @@ LIBGPR_SRC = \
     src/core/support/tls_pthread.c \
 
 PUBLIC_HEADERS_C += \
-    include/grpc/impl/codegen/connectivity_state.h \
-    include/grpc/impl/codegen/port_platform.h \
-    include/grpc/impl/codegen/time.h \
     include/grpc/support/alloc.h \
     include/grpc/support/atm.h \
     include/grpc/support/atm_gcc_atomic.h \
@@ -2274,6 +2271,9 @@ PUBLIC_HEADERS_C += \
     include/grpc/support/tls_msvc.h \
     include/grpc/support/tls_pthread.h \
     include/grpc/support/useful.h \
+    include/grpc/impl/codegen/connectivity_state.h \
+    include/grpc/impl/codegen/port_platform.h \
+    include/grpc/impl/codegen/time.h \
 
 LIBGPR_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGPR_SRC))))
 
@@ -2495,9 +2495,6 @@ PUBLIC_HEADERS_C += \
     include/grpc/byte_buffer_reader.h \
     include/grpc/compression.h \
     include/grpc/grpc.h \
-    include/grpc/impl/codegen/connectivity_state.h \
-    include/grpc/impl/codegen/port_platform.h \
-    include/grpc/impl/codegen/time.h \
     include/grpc/status.h \
     include/grpc/census.h \
 
@@ -2800,9 +2797,6 @@ PUBLIC_HEADERS_C += \
     include/grpc/byte_buffer_reader.h \
     include/grpc/compression.h \
     include/grpc/grpc.h \
-    include/grpc/impl/codegen/connectivity_state.h \
-    include/grpc/impl/codegen/port_platform.h \
-    include/grpc/impl/codegen/time.h \
     include/grpc/status.h \
     include/grpc/census.h \
 
@@ -3021,14 +3015,6 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/grpc++.h \
     include/grpc++/impl/call.h \
     include/grpc++/impl/client_unary_call.h \
-    include/grpc++/impl/codegen/call_hook.h \
-    include/grpc++/impl/codegen/channel_interface.h \
-    include/grpc++/impl/codegen/completion_queue_tag.h \
-    include/grpc++/impl/codegen/config.h \
-    include/grpc++/impl/codegen/server_interface.h \
-    include/grpc++/impl/codegen/status.h \
-    include/grpc++/impl/codegen/status_code_enum.h \
-    include/grpc++/impl/codegen/time.h \
     include/grpc++/impl/grpc_library.h \
     include/grpc++/impl/method_handler_impl.h \
     include/grpc++/impl/proto_utils.h \
@@ -3063,6 +3049,14 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/support/stub_options.h \
     include/grpc++/support/sync_stream.h \
     include/grpc++/support/time.h \
+    include/grpc++/impl/codegen/call_hook.h \
+    include/grpc++/impl/codegen/channel_interface.h \
+    include/grpc++/impl/codegen/completion_queue_tag.h \
+    include/grpc++/impl/codegen/config.h \
+    include/grpc++/impl/codegen/server_interface.h \
+    include/grpc++/impl/codegen/status.h \
+    include/grpc++/impl/codegen/status_code_enum.h \
+    include/grpc++/impl/codegen/time.h \
 
 LIBGRPC++_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC++_SRC))))
 
@@ -3299,14 +3293,6 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/grpc++.h \
     include/grpc++/impl/call.h \
     include/grpc++/impl/client_unary_call.h \
-    include/grpc++/impl/codegen/call_hook.h \
-    include/grpc++/impl/codegen/channel_interface.h \
-    include/grpc++/impl/codegen/completion_queue_tag.h \
-    include/grpc++/impl/codegen/config.h \
-    include/grpc++/impl/codegen/server_interface.h \
-    include/grpc++/impl/codegen/status.h \
-    include/grpc++/impl/codegen/status_code_enum.h \
-    include/grpc++/impl/codegen/time.h \
     include/grpc++/impl/grpc_library.h \
     include/grpc++/impl/method_handler_impl.h \
     include/grpc++/impl/proto_utils.h \
@@ -3341,6 +3327,14 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/support/stub_options.h \
     include/grpc++/support/sync_stream.h \
     include/grpc++/support/time.h \
+    include/grpc++/impl/codegen/call_hook.h \
+    include/grpc++/impl/codegen/channel_interface.h \
+    include/grpc++/impl/codegen/completion_queue_tag.h \
+    include/grpc++/impl/codegen/config.h \
+    include/grpc++/impl/codegen/server_interface.h \
+    include/grpc++/impl/codegen/status.h \
+    include/grpc++/impl/codegen/status_code_enum.h \
+    include/grpc++/impl/codegen/time.h \
 
 LIBGRPC++_UNSECURE_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC++_UNSECURE_SRC))))
 
@@ -3417,6 +3411,18 @@ LIBGRPC_PLUGIN_SUPPORT_SRC = \
     src/compiler/python_generator.cc \
     src/compiler/ruby_generator.cc \
 
+PUBLIC_HEADERS_CXX += \
+    include/grpc++/impl/codegen/call_hook.h \
+    include/grpc++/impl/codegen/channel_interface.h \
+    include/grpc++/impl/codegen/completion_queue_tag.h \
+    include/grpc++/impl/codegen/config.h \
+    include/grpc++/impl/codegen/server_interface.h \
+    include/grpc++/impl/codegen/status.h \
+    include/grpc++/impl/codegen/status_code_enum.h \
+    include/grpc++/impl/codegen/time.h \
+    include/grpc/impl/codegen/connectivity_state.h \
+    include/grpc/impl/codegen/port_platform.h \
+    include/grpc/impl/codegen/time.h \
 
 LIBGRPC_PLUGIN_SUPPORT_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC_PLUGIN_SUPPORT_SRC))))
 
