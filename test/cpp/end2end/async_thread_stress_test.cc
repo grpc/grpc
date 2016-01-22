@@ -107,47 +107,6 @@ class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
     return Status::OK;
   }
 
-  // Unimplemented is left unimplemented to test the returned error.
-
-  Status RequestStream(ServerContext* context,
-                       ServerReader<EchoRequest>* reader,
-                       EchoResponse* response) GRPC_OVERRIDE {
-    EchoRequest request;
-    response->set_message("");
-    while (reader->Read(&request)) {
-      response->mutable_message()->append(request.message());
-    }
-    return Status::OK;
-  }
-
-  // Return 3 messages.
-  // TODO(yangg) make it generic by adding a parameter into EchoRequest
-  Status ResponseStream(ServerContext* context, const EchoRequest* request,
-                        ServerWriter<EchoResponse>* writer) GRPC_OVERRIDE {
-    EchoResponse response;
-    response.set_message(request->message() + "0");
-    writer->Write(response);
-    response.set_message(request->message() + "1");
-    writer->Write(response);
-    response.set_message(request->message() + "2");
-    writer->Write(response);
-
-    return Status::OK;
-  }
-
-  Status BidiStream(ServerContext* context,
-                    ServerReaderWriter<EchoResponse, EchoRequest>* stream)
-      GRPC_OVERRIDE {
-    EchoRequest request;
-    EchoResponse response;
-    while (stream->Read(&request)) {
-      gpr_log(GPR_INFO, "recv msg %s", request.message().c_str());
-      response.set_message(request.message());
-      stream->Write(response);
-    }
-    return Status::OK;
-  }
-
   bool signal_client() {
     std::unique_lock<std::mutex> lock(mu_);
     return signal_client_;
@@ -156,16 +115,6 @@ class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
  private:
   bool signal_client_;
   std::mutex mu_;
-};
-
-class TestServiceImplDupPkg
-    : public ::grpc::testing::duplicate::EchoTestService::Service {
- public:
-  Status Echo(ServerContext* context, const EchoRequest* request,
-              EchoResponse* response) GRPC_OVERRIDE {
-    response->set_message("no package");
-    return Status::OK;
-  }
 };
 
 class AsyncClientEnd2endTest : public ::testing::Test {
