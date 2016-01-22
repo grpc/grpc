@@ -325,15 +325,18 @@ static void encode_decode_test(void) {
   char buffer[BUF_SIZE];
   struct census_tag_set *cts =
       census_tag_set_create(NULL, basic_tags, BASIC_TAG_COUNT, NULL);
-  size_t bsize = 2;  // buffer size too small
-  size_t bin_bsize = 0;
-  GPR_ASSERT(census_tag_set_encode(cts, buffer, &bsize, &bin_bsize) == NULL);
-  bsize = BUF_SIZE;
-  char *b_buffer = census_tag_set_encode(cts, buffer, &bsize, &bin_bsize);
-  GPR_ASSERT(b_buffer != NULL && bsize > 0 && bin_bsize > 0 &&
-             bsize + bin_bsize <= BUF_SIZE && b_buffer == buffer + bsize);
+  size_t print_bsize;
+  size_t bin_bsize;
+  // Test with too small a buffer
+  GPR_ASSERT(census_tag_set_encode(cts, buffer, 2, &print_bsize, &bin_bsize) ==
+             NULL);
+  char *b_buffer =
+      census_tag_set_encode(cts, buffer, BUF_SIZE, &print_bsize, &bin_bsize);
+  GPR_ASSERT(b_buffer != NULL && print_bsize > 0 && bin_bsize > 0 &&
+             print_bsize + bin_bsize <= BUF_SIZE &&
+             b_buffer == buffer + print_bsize);
   census_tag_set *cts2 =
-      census_tag_set_decode(buffer, bsize, b_buffer, bin_bsize);
+      census_tag_set_decode(buffer, print_bsize, b_buffer, bin_bsize);
   GPR_ASSERT(cts2 != NULL);
   const census_tag_set_create_status *status =
       census_tag_set_get_create_status(cts2);
