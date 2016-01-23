@@ -84,6 +84,8 @@ typedef struct grpc_subchannel_args grpc_subchannel_args;
 
 void grpc_subchannel_ref(grpc_subchannel *channel
                              GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
+grpc_subchannel *grpc_subchannel_ref_from_weak_ref(grpc_subchannel *channel
+                             GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
 void grpc_subchannel_unref(grpc_exec_ctx *exec_ctx,
                            grpc_subchannel *channel
                                GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
