@@ -319,9 +319,10 @@ static void replace_add_delete_test(void) {
   census_tag_set_destroy(cts2);
 }
 
+#define BUF_SIZE 200
+
 // test encode/decode.
 static void encode_decode_test(void) {
-  const size_t BUF_SIZE = 200;
   char buffer[BUF_SIZE];
   struct census_tag_set *cts =
       census_tag_set_create(NULL, basic_tags, BASIC_TAG_COUNT, NULL);
