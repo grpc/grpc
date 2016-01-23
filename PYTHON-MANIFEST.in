@@ -3,6 +3,7 @@ graft src/python/grpcio/tests
 graft src/core
 graft include/grpc
 graft third_party/boringssl
+graft third_party/zlib
 include src/python/grpcio/commands.py
 include src/python/grpcio/grpc_core_dependencies.py
 include src/python/grpcio/README.rst
