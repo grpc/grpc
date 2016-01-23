@@ -621,7 +621,8 @@ void grpc_chttp2_parsing_become_skip_parser(
     grpc_exec_ctx *exec_ctx, grpc_chttp2_transport_parsing *transport_parsing);
 
 void grpc_chttp2_complete_closure_step(grpc_exec_ctx *exec_ctx,
-                                       grpc_closure **pclosure, int success);
+                                       grpc_closure **pclosure, int success,
+                                       const char* reason);
 
 #define GRPC_CHTTP2_CLIENT_CONNECT_STRING "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"
 #define GRPC_CHTTP2_CLIENT_CONNECT_STRLEN \
