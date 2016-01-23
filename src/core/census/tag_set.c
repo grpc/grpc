@@ -253,7 +253,7 @@ static void tag_set_flatten(struct tag_set *tags) {
   if (tags->ntags == tags->ntags_alloc) return;
   bool found_deleted = false;  // found a deleted tag.
   char *kvp = tags->kvm;
-  char *dbase;  // record location of deleted tag
+  char *dbase = NULL;  // record location of deleted tag
   for (int i = 0; i < tags->ntags_alloc; i++) {
     struct raw_tag tag;
     char *next_kvp = decode_tag(&tag, kvp, 0);
