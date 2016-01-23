@@ -45,4 +45,4 @@ $PROTOC --plugin=$PLUGIN --csharp_out=$HEALTHCHECK_DIR --grpc_out=$HEALTHCHECK_D
     -I src/proto/grpc/health/v1alpha src/proto/grpc/health/v1alpha/health.proto
 
 $PROTOC --plugin=$PLUGIN --csharp_out=$TESTING_DIR --grpc_out=$TESTING_DIR \
-    -I . src/proto/grpc/testing/{empty,messages,test}.proto test/proto/benchmarks/*.proto
+    -I . src/proto/grpc/testing/{control,empty,messages,payloads,services,stats,test}.proto 

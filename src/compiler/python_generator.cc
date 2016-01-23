@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -148,91 +148,6 @@ class IndentScope {
 // END FORMATTING BOILERPLATE //
 ////////////////////////////////
 
-bool PrintAlphaServicer(const ServiceDescriptor* service,
-                        Printer* out) {
-  grpc::string doc = "<fill me in later!>";
-  map<grpc::string, grpc::string> dict = ListToDict({
-        "Service", service->name(),
-        "Documentation", doc,
-      });
-  out->Print(dict, "class EarlyAdopter$Service$Servicer(object):\n");
-  {
-    IndentScope raii_class_indent(out);
-    out->Print(dict, "\"\"\"$Documentation$\"\"\"\n");
-    out->Print("__metaclass__ = abc.ABCMeta\n");
-    for (int i = 0; i < service->method_count(); ++i) {
-      auto meth = service->method(i);
-      grpc::string arg_name = meth->client_streaming() ?
-          "request_iterator" : "request";
-      out->Print("@abc.abstractmethod\n");
-      out->Print("def $Method$(self, $ArgName$, context):\n",
-                 "Method", meth->name(), "ArgName", arg_name);
-      {
-        IndentScope raii_method_indent(out);
-        out->Print("raise NotImplementedError()\n");
-      }
-    }
-  }
-  return true;
-}
-
-bool PrintAlphaServer(const ServiceDescriptor* service, Printer* out) {
-  grpc::string doc = "<fill me in later!>";
-  map<grpc::string, grpc::string> dict = ListToDict({
-        "Service", service->name(),
-        "Documentation", doc,
-      });
-  out->Print(dict, "class EarlyAdopter$Service$Server(object):\n");
-  {
-    IndentScope raii_class_indent(out);
-    out->Print(dict, "\"\"\"$Documentation$\"\"\"\n");
-    out->Print("__metaclass__ = abc.ABCMeta\n");
-    out->Print("@abc.abstractmethod\n");
-    out->Print("def start(self):\n");
-    {
-      IndentScope raii_method_indent(out);
-      out->Print("raise NotImplementedError()\n");
-    }
-
-    out->Print("@abc.abstractmethod\n");
-    out->Print("def stop(self):\n");
-    {
-      IndentScope raii_method_indent(out);
-      out->Print("raise NotImplementedError()\n");
-    }
-  }
-  return true;
-}
-
-bool PrintAlphaStub(const ServiceDescriptor* service,
-                    Printer* out) {
-  grpc::string doc = "<fill me in later!>";
-  map<grpc::string, grpc::string> dict = ListToDict({
-        "Service", service->name(),
-        "Documentation", doc,
-      });
-  out->Print(dict, "class EarlyAdopter$Service$Stub(object):\n");
-  {
-    IndentScope raii_class_indent(out);
-    out->Print(dict, "\"\"\"$Documentation$\"\"\"\n");
-    out->Print("__metaclass__ = abc.ABCMeta\n");
-    for (int i = 0; i < service->method_count(); ++i) {
-      const MethodDescriptor* meth = service->method(i);
-      grpc::string arg_name = meth->client_streaming() ?
-          "request_iterator" : "request";
-      auto methdict = ListToDict({"Method", meth->name(), "ArgName", arg_name});
-      out->Print("@abc.abstractmethod\n");
-      out->Print(methdict, "def $Method$(self, $ArgName$):\n");
-      {
-        IndentScope raii_method_indent(out);
-        out->Print("raise NotImplementedError()\n");
-      }
-      out->Print(methdict, "$Method$.async = None\n");
-    }
-  }
-  return true;
-}
-
 // TODO(protobuf team): Export `ModuleName` from protobuf's
 // `src/google/protobuf/compiler/python/python_generator.cc` file.
 grpc::string ModuleName(const grpc::string& filename) {
@@ -265,172 +180,6 @@ bool GetModuleAndMessagePath(const Descriptor* type,
   // no pop_back prior to C++11
   message_type.resize(message_type.size() - 1);
   *out = make_pair(module, message_type);
-  return true;
-}
-
-bool PrintAlphaServerFactory(const grpc::string& package_qualified_service_name,
-                             const ServiceDescriptor* service, Printer* out) {
-  out->Print("def early_adopter_create_$Service$_server(servicer, port, "
-             "private_key=None, certificate_chain=None):\n",
-             "Service", service->name());
-  {
-    IndentScope raii_create_server_indent(out);
-    map<grpc::string, grpc::string> method_description_constructors;
-    map<grpc::string, pair<grpc::string, grpc::string>>
-        input_message_modules_and_classes;
-    map<grpc::string, pair<grpc::string, grpc::string>>
-        output_message_modules_and_classes;
-    for (int i = 0; i < service->method_count(); ++i) {
-      const MethodDescriptor* method = service->method(i);
-      const grpc::string method_description_constructor =
-          grpc::string(method->client_streaming() ? "stream_" : "unary_") +
-          grpc::string(method->server_streaming() ? "stream_" : "unary_") +
-          "service_description";
-      pair<grpc::string, grpc::string> input_message_module_and_class;
-      if (!GetModuleAndMessagePath(method->input_type(),
-                                   &input_message_module_and_class)) {
-        return false;
-      }
-      pair<grpc::string, grpc::string> output_message_module_and_class;
-      if (!GetModuleAndMessagePath(method->output_type(),
-                                   &output_message_module_and_class)) {
-        return false;
-      }
-      // Import the modules that define the messages used in RPCs.
-      out->Print("import $Module$\n", "Module",
-                 input_message_module_and_class.first);
-      out->Print("import $Module$\n", "Module",
-                 output_message_module_and_class.first);
-      method_description_constructors.insert(
-          make_pair(method->name(), method_description_constructor));
-      input_message_modules_and_classes.insert(
-          make_pair(method->name(), input_message_module_and_class));
-      output_message_modules_and_classes.insert(
-          make_pair(method->name(), output_message_module_and_class));
-    }
-    out->Print("method_service_descriptions = {\n");
-    for (auto name_and_description_constructor =
-	   method_description_constructors.begin();
-	 name_and_description_constructor !=
-	   method_description_constructors.end();
-	 name_and_description_constructor++) {
-      IndentScope raii_descriptions_indent(out);
-      const grpc::string method_name = name_and_description_constructor->first;
-      auto input_message_module_and_class =
-          input_message_modules_and_classes.find(method_name);
-      auto output_message_module_and_class =
-          output_message_modules_and_classes.find(method_name);
-      out->Print("\"$Method$\": alpha_utilities.$Constructor$(\n", "Method",
-                 method_name, "Constructor",
-                 name_and_description_constructor->second);
-      {
-        IndentScope raii_description_arguments_indent(out);
-        out->Print("servicer.$Method$,\n", "Method", method_name);
-        out->Print(
-            "$InputTypeModule$.$InputTypeClass$.FromString,\n",
-            "InputTypeModule", input_message_module_and_class->second.first,
-            "InputTypeClass", input_message_module_and_class->second.second);
-        out->Print(
-            "$OutputTypeModule$.$OutputTypeClass$.SerializeToString,\n",
-            "OutputTypeModule", output_message_module_and_class->second.first,
-            "OutputTypeClass", output_message_module_and_class->second.second);
-      }
-      out->Print("),\n");
-    }
-    out->Print("}\n");
-    out->Print(
-        "return early_adopter_implementations.server("
-        "\"$PackageQualifiedServiceName$\","
-        " method_service_descriptions, port, private_key=private_key,"
-        " certificate_chain=certificate_chain)\n",
-        "PackageQualifiedServiceName", package_qualified_service_name);
-  }
-  return true;
-}
-
-bool PrintAlphaStubFactory(const grpc::string& package_qualified_service_name,
-                           const ServiceDescriptor* service, Printer* out) {
-  map<grpc::string, grpc::string> dict = ListToDict({
-        "Service", service->name(),
-      });
-  out->Print(dict, "def early_adopter_create_$Service$_stub(host, port,"
-             " metadata_transformer=None,"
-             " secure=False, root_certificates=None, private_key=None,"
-             " certificate_chain=None, server_host_override=None):\n");
-  {
-    IndentScope raii_create_server_indent(out);
-    map<grpc::string, grpc::string> method_description_constructors;
-    map<grpc::string, pair<grpc::string, grpc::string>>
-        input_message_modules_and_classes;
-    map<grpc::string, pair<grpc::string, grpc::string>>
-        output_message_modules_and_classes;
-    for (int i = 0; i < service->method_count(); ++i) {
-      const MethodDescriptor* method = service->method(i);
-      const grpc::string method_description_constructor =
-          grpc::string(method->client_streaming() ? "stream_" : "unary_") +
-          grpc::string(method->server_streaming() ? "stream_" : "unary_") +
-          "invocation_description";
-      pair<grpc::string, grpc::string> input_message_module_and_class;
-      if (!GetModuleAndMessagePath(method->input_type(),
-                                   &input_message_module_and_class)) {
-        return false;
-      }
-      pair<grpc::string, grpc::string> output_message_module_and_class;
-      if (!GetModuleAndMessagePath(method->output_type(),
-                                   &output_message_module_and_class)) {
-        return false;
-      }
-      // Import the modules that define the messages used in RPCs.
-      out->Print("import $Module$\n", "Module",
-                 input_message_module_and_class.first);
-      out->Print("import $Module$\n", "Module",
-                 output_message_module_and_class.first);
-      method_description_constructors.insert(
-          make_pair(method->name(), method_description_constructor));
-      input_message_modules_and_classes.insert(
-          make_pair(method->name(), input_message_module_and_class));
-      output_message_modules_and_classes.insert(
-          make_pair(method->name(), output_message_module_and_class));
-    }
-    out->Print("method_invocation_descriptions = {\n");
-    for (auto name_and_description_constructor =
-	   method_description_constructors.begin();
-	 name_and_description_constructor !=
-	   method_description_constructors.end();
-	 name_and_description_constructor++) {
-      IndentScope raii_descriptions_indent(out);
-      const grpc::string method_name = name_and_description_constructor->first;
-      auto input_message_module_and_class =
-          input_message_modules_and_classes.find(method_name);
-      auto output_message_module_and_class =
-          output_message_modules_and_classes.find(method_name);
-      out->Print("\"$Method$\": alpha_utilities.$Constructor$(\n", "Method",
-                 method_name, "Constructor",
-                 name_and_description_constructor->second);
-      {
-        IndentScope raii_description_arguments_indent(out);
-        out->Print(
-            "$InputTypeModule$.$InputTypeClass$.SerializeToString,\n",
-            "InputTypeModule", input_message_module_and_class->second.first,
-            "InputTypeClass", input_message_module_and_class->second.second);
-        out->Print(
-            "$OutputTypeModule$.$OutputTypeClass$.FromString,\n",
-            "OutputTypeModule", output_message_module_and_class->second.first,
-            "OutputTypeClass", output_message_module_and_class->second.second);
-      }
-      out->Print("),\n");
-    }
-    out->Print("}\n");
-    out->Print(
-        "return early_adopter_implementations.stub("
-        "\"$PackageQualifiedServiceName$\","
-        " method_invocation_descriptions, host, port,"
-        " metadata_transformer=metadata_transformer, secure=secure,"
-        " root_certificates=root_certificates, private_key=private_key,"
-        " certificate_chain=certificate_chain,"
-        " server_host_override=server_host_override)\n",
-        "PackageQualifiedServiceName", package_qualified_service_name);
-  }
   return true;
 }
 
@@ -703,9 +452,6 @@ bool PrintPreamble(const FileDescriptor* file,
   out->Print("import abc\n");
   out->Print("from $Package$ import implementations as beta_implementations\n",
              "Package", config.beta_package_root);
-  out->Print("from $Package$ import implementations as early_adopter_implementations\n",
-             "Package", config.early_adopter_package_root);
-  out->Print("from grpc.framework.alpha import utilities as alpha_utilities\n");
   out->Print("from grpc.framework.common import cardinality\n");
   out->Print("from grpc.framework.interfaces.face import utilities as face_utilities\n");
   return true;
@@ -714,7 +460,7 @@ bool PrintPreamble(const FileDescriptor* file,
 }  // namespace
 
 pair<bool, grpc::string> GetServices(const FileDescriptor* file,
-                                    const GeneratorConfiguration& config) {
+                                     const GeneratorConfiguration& config) {
   grpc::string output;
   {
     // Scope the output stream so it closes and finalizes output to the string.
@@ -730,12 +476,7 @@ pair<bool, grpc::string> GetServices(const FileDescriptor* file,
     for (int i = 0; i < file->service_count(); ++i) {
       auto service = file->service(i);
       auto package_qualified_service_name = package + service->name();
-      if (!(PrintAlphaServicer(service, &out) &&
-            PrintAlphaServer(service, &out) &&
-            PrintAlphaStub(service, &out) &&
-            PrintAlphaServerFactory(package_qualified_service_name, service, &out) &&
-            PrintAlphaStubFactory(package_qualified_service_name, service, &out) &&
-            PrintBetaServicer(service, &out) &&
+      if (!(PrintBetaServicer(service, &out) &&
             PrintBetaStub(service, &out) &&
             PrintBetaServerFactory(package_qualified_service_name, service, &out) &&
             PrintBetaStubFactory(package_qualified_service_name, service, &out))) {

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -45,7 +45,7 @@
 - (void)viewDidLoad {
   [super viewDidLoad];
 
-  NSString * const kRemoteHost = @"grpc-test.sandbox.google.com";
+  NSString * const kRemoteHost = @"grpc-test.sandbox.googleapis.com";
 
   RMTSimpleRequest *request = [[RMTSimpleRequest alloc] init];
   request.responseSize = 10;

@@ -20,6 +20,7 @@ filegroups:
   - src/core/census/context.c
   - src/core/census/initialize.c
   - src/core/census/operation.c
+  - src/core/census/tag_set.c
   - src/core/census/tracing.c
 - name: grpc++_base
   public_headers:
@@ -775,10 +776,10 @@ libs:
   - test/cpp/util/benchmark_config.h
   src:
   - src/proto/grpc/testing/messages.proto
-  - src/proto/grpc/testing/control.proto
   - src/proto/grpc/testing/payloads.proto
-  - src/proto/grpc/testing/services.proto
   - src/proto/grpc/testing/stats.proto
+  - src/proto/grpc/testing/control.proto
+  - src/proto/grpc/testing/services.proto
   - src/proto/grpc/testing/perf_db.proto
   - test/cpp/qps/client_async.cc
   - test/cpp/qps/client_sync.cc
@@ -924,6 +925,7 @@ targets:
   - gpr_test_util
   - gpr
 - name: dualstack_socket_test
+  cpu_cost: 0.1
   build: test
   language: c
   src:
@@ -998,6 +1000,7 @@ targets:
   - gpr_test_util
   - gpr
 - name: fling_stream_test
+  cpu_cost: 2
   build: test
   language: c
   src:
@@ -1012,6 +1015,7 @@ targets:
   - linux
   - posix
 - name: fling_test
+  cpu_cost: 2
   build: test
   language: c
   src:
@@ -1120,6 +1124,7 @@ targets:
   - gpr_test_util
   - gpr
 - name: gpr_stack_lockfree_test
+  cpu_cost: 10
   build: test
   language: c
   src:
@@ -1136,6 +1141,7 @@ targets:
   - gpr_test_util
   - gpr
 - name: gpr_sync_test
+  cpu_cost: 10
   build: test
   language: c
   src:
@@ -1144,6 +1150,7 @@ targets:
   - gpr_test_util
   - gpr
 - name: gpr_thd_test
+  cpu_cost: 10
   build: test
   language: c
   src:
@@ -1370,6 +1377,7 @@ targets:
   - gpr_test_util
   - gpr
 - name: httpcli_test
+  cpu_cost: 0.5
   build: test
   language: c
   src:
@@ -1384,6 +1392,7 @@ targets:
   - linux
   - posix
 - name: httpscli_test
+  cpu_cost: 0.5
   build: test
   language: c
   src:
@@ -1465,6 +1474,7 @@ targets:
   - gpr_test_util
   - gpr
 - name: lb_policies_test
+  cpu_cost: 0.1
   build: test
   language: c
   src:
@@ -1517,6 +1527,7 @@ targets:
   - gpr_test_util
   - gpr
 - name: no_server_test
+  cpu_cost: 0.1
   build: test
   language: c
   src:
@@ -1577,6 +1588,7 @@ targets:
   - gpr_test_util
   - gpr
 - name: set_initial_connect_string_test
+  cpu_cost: 0.1
   build: test
   language: c
   src:
@@ -1621,7 +1633,18 @@ targets:
   - mac
   - linux
   - posix
+- name: tag_set_test
+  build: test
+  language: c
+  src:
+  - test/core/census/tag_set_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: tcp_client_posix_test
+  cpu_cost: 0.5
   build: test
   language: c
   src:
@@ -1636,6 +1659,7 @@ targets:
   - linux
   - posix
 - name: tcp_posix_test
+  cpu_cost: 0.5
   build: test
   language: c
   src:
@@ -1865,6 +1889,7 @@ targets:
   - gpr_test_util
   - gpr
 - name: client_crash_test
+  cpu_cost: 0.1
   build: test
   language: c++
   src:
@@ -1943,6 +1968,7 @@ targets:
   - gpr_test_util
   - gpr
 - name: end2end_test
+  cpu_cost: 0.5
   build: test
   language: c++
   src:
@@ -2086,6 +2112,7 @@ targets:
   - linux
   - posix
 - name: interop_test
+  cpu_cost: 0.1
   build: test
   language: c++
   src:
@@ -2177,6 +2204,7 @@ targets:
   - linux
   - posix
 - name: qps_test
+  cpu_cost: 10
   build: test
   language: c++
   src:
@@ -2279,6 +2307,7 @@ targets:
   - linux
   - posix
 - name: server_crash_test
+  cpu_cost: 0.1
   build: test
   language: c++
   src:
@@ -2407,6 +2436,7 @@ targets:
   - linux
   - posix
 - name: thread_stress_test
+  cpu_cost: 100
   build: test
   language: c++
   src:
@@ -2464,6 +2494,112 @@ vspackages:
   props: false
   redist: false
   version: 1.7.0.1
+configs:
+  asan:
+    CC: clang
+    CFLAGS: -O0 -fsanitize=address -fno-omit-frame-pointer -Wno-unused-command-line-argument
+    CXX: clang++
+    CXXFLAGS: -O0 -fsanitize=address -fno-omit-frame-pointer -Wno-unused-command-line-argument
+    LD: clang
+    LDFLAGS: -fsanitize=address
+    LDXX: clang++
+    compile_the_world: true
+    test_environ:
+      ASAN_OPTIONS: suppressions=tools/asan_suppressions.txt:detect_leaks=1:color=always
+      LSAN_OPTIONS: suppressions=tools/asan_suppressions.txt:report_objects=1
+    timeout_multiplier: 1.5
+  asan-noleaks:
+    CC: clang
+    CFLAGS: -O0 -fsanitize=address -fno-omit-frame-pointer -Wno-unused-command-line-argument
+    CXX: clang++
+    CXXFLAGS: -O0 -fsanitize=address -fno-omit-frame-pointer -Wno-unused-command-line-argument
+    LD: clang
+    LDFLAGS: -fsanitize=address
+    LDXX: clang++
+    compile_the_world: true
+    test_environ:
+      ASAN_OPTIONS: detect_leaks=0:color=always
+    timeout_multiplier: 1.5
+  basicprof:
+    CPPFLAGS: -O2 -DGRPC_BASIC_PROFILER -DGRPC_TIMERS_RDTSC
+    DEFINES: NDEBUG
+  dbg:
+    CPPFLAGS: -O0
+    DEFINES: _DEBUG DEBUG
+    LDFLAGS: -rdynamic
+  gcov:
+    CC: gcc
+    CFLAGS: -O0 -fprofile-arcs -ftest-coverage -Wno-return-type
+    CXX: g++
+    CXXFLAGS: -O0 -fprofile-arcs -ftest-coverage -Wno-return-type
+    DEFINES: _DEBUG DEBUG GPR_GCOV
+    LD: gcc
+    LDFLAGS: -fprofile-arcs -ftest-coverage -rdynamic
+    LDXX: g++
+  helgrind:
+    CPPFLAGS: -O0
+    DEFINES: _DEBUG DEBUG
+    LDFLAGS: -rdynamic
+    timeout_multiplier: 20
+    valgrind: --tool=helgrind
+  memcheck:
+    CPPFLAGS: -O0
+    DEFINES: _DEBUG DEBUG
+    LDFLAGS: -rdynamic
+    timeout_multiplier: 10
+    valgrind: --tool=memcheck --leak-check=full
+  msan:
+    CC: clang
+    CFLAGS: -O0 -fsanitize=memory -fsanitize-memory-track-origins -fno-omit-frame-pointer
+      -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1 -Wno-unused-command-line-argument
+      -fPIE -pie
+    CXX: clang++
+    CXXFLAGS: -O0 -fsanitize=memory -fsanitize-memory-track-origins -fno-omit-frame-pointer
+      -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1 -Wno-unused-command-line-argument
+      -fPIE -pie
+    DEFINES: NDEBUG
+    LD: clang
+    LDFLAGS: -fsanitize=memory -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1
+      -fPIE -pie $(if $(JENKINS_BUILD),-Wl$(comma)-Ttext-segment=0x7e0000000000,)
+    LDXX: clang++
+    compile_the_world: true
+    timeout_multiplier: 1.5
+  mutrace:
+    CPPFLAGS: -O0
+    DEFINES: _DEBUG DEBUG
+    LDFLAGS: -rdynamic
+  opt:
+    CPPFLAGS: -O2
+    DEFINES: NDEBUG
+    LDFLAGS: -rdynamic
+  stapprof:
+    CPPFLAGS: -O2 -DGRPC_STAP_PROFILER
+    DEFINES: NDEBUG
+  tsan:
+    CC: clang
+    CFLAGS: -O0 -fsanitize=thread -fno-omit-frame-pointer -Wno-unused-command-line-argument
+      -fPIE -pie
+    CXX: clang++
+    CXXFLAGS: -O0 -fsanitize=thread -fno-omit-frame-pointer -Wno-unused-command-line-argument
+      -fPIE -pie
+    LD: clang
+    LDFLAGS: -fsanitize=thread -fPIE -pie $(if $(JENKINS_BUILD),-Wl$(comma)-Ttext-segment=0x7e0000000000,)
+    LDXX: clang++
+    compile_the_world: true
+    test_environ:
+      TSAN_OPTIONS: suppressions=tools/tsan_suppressions.txt:halt_on_error=1:second_deadlock_stack=1
+    timeout_multiplier: 2
+  ubsan:
+    CC: clang
+    CFLAGS: -O1 -fsanitize=undefined -fno-omit-frame-pointer -Wno-unused-command-line-argument
+    CXX: clang++
+    CXXFLAGS: -O1 -fsanitize=undefined -fno-omit-frame-pointer -Wno-unused-command-line-argument
+    DEFINES: NDEBUG
+    LD: clang
+    LDFLAGS: -fsanitize=undefined
+    LDXX: clang++
+    compile_the_world: true
+    timeout_multiplier: 1.5
 node_modules:
 - deps:
   - grpc
