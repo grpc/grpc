@@ -45,6 +45,7 @@ egg_info.manifest_maker.template = 'PYTHON-MANIFEST.in'
 PYTHON_STEM = './src/python/grpcio'
 CORE_INCLUDE = ('./include', '.',)
 BORINGSSL_INCLUDE = ('./third_party/boringssl/include',)
+ZLIB_INCLUDE = ('./third_party/zlib',)
 
 # Ensure we're in the proper directory whether or not we're being used by pip.
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
@@ -75,9 +76,9 @@ CYTHON_EXTENSION_PACKAGE_NAMES = ()
 CYTHON_EXTENSION_MODULE_NAMES = ('grpc._cython.cygrpc',)
 
 EXTENSION_INCLUDE_DIRECTORIES = (
-    (PYTHON_STEM,) + CORE_INCLUDE + BORINGSSL_INCLUDE)
+    (PYTHON_STEM,) + CORE_INCLUDE + BORINGSSL_INCLUDE + ZLIB_INCLUDE)
 
-EXTENSION_LIBRARIES = ('z', 'm',)
+EXTENSION_LIBRARIES = ('m',)
 if not "darwin" in sys.platform:
     EXTENSION_LIBRARIES += ('rt',)
 
