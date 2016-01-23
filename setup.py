@@ -42,8 +42,8 @@ from setuptools.command import egg_info
 # Redirect the manifest template from MANIFEST.in to PYTHON-MANIFEST.in.
 egg_info.manifest_maker.template = 'PYTHON-MANIFEST.in'
 
-PYTHON_STEM = './src/python/grpcio/'
-CORE_INCLUDE = ('./include', './',)
+PYTHON_STEM = './src/python/grpcio'
+CORE_INCLUDE = ('./include', '.',)
 BORINGSSL_INCLUDE = ('./third_party/boringssl/include',)
 
 # Ensure we're in the proper directory whether or not we're being used by pip.
@@ -77,7 +77,7 @@ CYTHON_EXTENSION_MODULE_NAMES = ('grpc._cython.cygrpc',)
 EXTENSION_INCLUDE_DIRECTORIES = (
     (PYTHON_STEM,) + CORE_INCLUDE + BORINGSSL_INCLUDE)
 
-EXTENSION_LIBRARIES = ()
+EXTENSION_LIBRARIES = ('z', 'm',)
 if not "darwin" in sys.platform:
     EXTENSION_LIBRARIES += ('rt',)
 
@@ -120,6 +120,9 @@ PACKAGE_DIRECTORIES = {
 INSTALL_REQUIRES = (
     'enum34>=1.0.4',
     'futures>=2.2.0',
+    # TODO(atash): eventually split the grpcio package into a metapackage
+    # depending on protobuf and the runtime component (independent of protobuf)
+    'protobuf>=3.0.0a3',
 )
 
 SETUP_REQUIRES = (

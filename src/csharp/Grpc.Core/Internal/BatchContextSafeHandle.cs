@@ -42,47 +42,7 @@ namespace Grpc.Core.Internal
     /// </summary>
     internal class BatchContextSafeHandle : SafeHandleZeroIsInvalid
     {
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern BatchContextSafeHandle grpcsharp_batch_context_create();
-
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern IntPtr grpcsharp_batch_context_recv_initial_metadata(BatchContextSafeHandle ctx);
-
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern IntPtr grpcsharp_batch_context_recv_message_length(BatchContextSafeHandle ctx);
-
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern void grpcsharp_batch_context_recv_message_to_buffer(BatchContextSafeHandle ctx, byte[] buffer, UIntPtr bufferLen);
-
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern StatusCode grpcsharp_batch_context_recv_status_on_client_status(BatchContextSafeHandle ctx);
-
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern IntPtr grpcsharp_batch_context_recv_status_on_client_details(BatchContextSafeHandle ctx);  // returns const char*
-
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern IntPtr grpcsharp_batch_context_recv_status_on_client_trailing_metadata(BatchContextSafeHandle ctx);
-
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern CallSafeHandle grpcsharp_batch_context_server_rpc_new_call(BatchContextSafeHandle ctx);
-
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern IntPtr grpcsharp_batch_context_server_rpc_new_method(BatchContextSafeHandle ctx);  // returns const char*
-
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern IntPtr grpcsharp_batch_context_server_rpc_new_host(BatchContextSafeHandle ctx);  // returns const char*
-
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern Timespec grpcsharp_batch_context_server_rpc_new_deadline(BatchContextSafeHandle ctx);
-
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern IntPtr grpcsharp_batch_context_server_rpc_new_request_metadata(BatchContextSafeHandle ctx);
-
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern int grpcsharp_batch_context_recv_close_on_server_cancelled(BatchContextSafeHandle ctx);
-
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern void grpcsharp_batch_context_destroy(IntPtr ctx);
+        static readonly NativeMethods Native = NativeMethods.Get();
 
         private BatchContextSafeHandle()
         {
@@ -90,7 +50,7 @@ namespace Grpc.Core.Internal
 
         public static BatchContextSafeHandle Create()
         {
-            return grpcsharp_batch_context_create();
+            return Native.grpcsharp_batch_context_create();
         }
 
         public IntPtr Handle
@@ -104,17 +64,17 @@ namespace Grpc.Core.Internal
         // Gets data of recv_initial_metadata completion.
         public Metadata GetReceivedInitialMetadata()
         {
-            IntPtr metadataArrayPtr = grpcsharp_batch_context_recv_initial_metadata(this);
+            IntPtr metadataArrayPtr = Native.grpcsharp_batch_context_recv_initial_metadata(this);
             return MetadataArraySafeHandle.ReadMetadataFromPtrUnsafe(metadataArrayPtr);
         }
             
         // Gets data of recv_status_on_client completion.
         public ClientSideStatus GetReceivedStatusOnClient()
         {
-            string details = Marshal.PtrToStringAnsi(grpcsharp_batch_context_recv_status_on_client_details(this));
-            var status = new Status(grpcsharp_batch_context_recv_status_on_client_status(this), details);
+            string details = Marshal.PtrToStringAnsi(Native.grpcsharp_batch_context_recv_status_on_client_details(this));
+            var status = new Status(Native.grpcsharp_batch_context_recv_status_on_client_status(this), details);
 
-            IntPtr metadataArrayPtr = grpcsharp_batch_context_recv_status_on_client_trailing_metadata(this);
+            IntPtr metadataArrayPtr = Native.grpcsharp_batch_context_recv_status_on_client_trailing_metadata(this);
             var metadata = MetadataArraySafeHandle.ReadMetadataFromPtrUnsafe(metadataArrayPtr);
 
             return new ClientSideStatus(status, metadata);
@@ -123,26 +83,26 @@ namespace Grpc.Core.Internal
         // Gets data of recv_message completion.
         public byte[] GetReceivedMessage()
         {
-            IntPtr len = grpcsharp_batch_context_recv_message_length(this);
+            IntPtr len = Native.grpcsharp_batch_context_recv_message_length(this);
             if (len == new IntPtr(-1))
             {
                 return null;
             }
             byte[] data = new byte[(int)len];
-            grpcsharp_batch_context_recv_message_to_buffer(this, data, new UIntPtr((ulong)data.Length));
+            Native.grpcsharp_batch_context_recv_message_to_buffer(this, data, new UIntPtr((ulong)data.Length));
             return data;
         }
 
         // Gets data of server_rpc_new completion.
         public ServerRpcNew GetServerRpcNew(Server server)
         {
-            var call = grpcsharp_batch_context_server_rpc_new_call(this);
+            var call = Native.grpcsharp_batch_context_server_rpc_new_call(this);
 
-            var method = Marshal.PtrToStringAnsi(grpcsharp_batch_context_server_rpc_new_method(this));
-            var host = Marshal.PtrToStringAnsi(grpcsharp_batch_context_server_rpc_new_host(this));
-            var deadline = grpcsharp_batch_context_server_rpc_new_deadline(this);
+            var method = Marshal.PtrToStringAnsi(Native.grpcsharp_batch_context_server_rpc_new_method(this));
+            var host = Marshal.PtrToStringAnsi(Native.grpcsharp_batch_context_server_rpc_new_host(this));
+            var deadline = Native.grpcsharp_batch_context_server_rpc_new_deadline(this);
 
-            IntPtr metadataArrayPtr = grpcsharp_batch_context_server_rpc_new_request_metadata(this);
+            IntPtr metadataArrayPtr = Native.grpcsharp_batch_context_server_rpc_new_request_metadata(this);
             var metadata = MetadataArraySafeHandle.ReadMetadataFromPtrUnsafe(metadataArrayPtr);
 
             return new ServerRpcNew(server, call, method, host, deadline, metadata);
@@ -151,12 +111,12 @@ namespace Grpc.Core.Internal
         // Gets data of receive_close_on_server completion.
         public bool GetReceivedCloseOnServerCancelled()
         {
-            return grpcsharp_batch_context_recv_close_on_server_cancelled(this) != 0;
+            return Native.grpcsharp_batch_context_recv_close_on_server_cancelled(this) != 0;
         }
             
         protected override bool ReleaseHandle()
         {
-            grpcsharp_batch_context_destroy(handle);
+            Native.grpcsharp_batch_context_destroy(handle);
             return true;
         }
     }

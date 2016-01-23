@@ -1,5 +1,5 @@
 #region Copyright notice and license
-// Copyright 2015, Google Inc.
+// Copyright 2015-2016, Google Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -41,11 +41,7 @@ namespace Grpc.Core.Internal
     /// </summary>
     internal class ServerCredentialsSafeHandle : SafeHandleZeroIsInvalid
     {
-        [DllImport("grpc_csharp_ext.dll", CharSet = CharSet.Ansi)]
-        static extern ServerCredentialsSafeHandle grpcsharp_ssl_server_credentials_create(string pemRootCerts, string[] keyCertPairCertChainArray, string[] keyCertPairPrivateKeyArray, UIntPtr numKeyCertPairs, bool forceClientAuth);
-
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern void grpcsharp_server_credentials_release(IntPtr credentials);
+        static readonly NativeMethods Native = NativeMethods.Get();
 
         private ServerCredentialsSafeHandle()
         {
@@ -54,15 +50,15 @@ namespace Grpc.Core.Internal
         public static ServerCredentialsSafeHandle CreateSslCredentials(string pemRootCerts, string[] keyCertPairCertChainArray, string[] keyCertPairPrivateKeyArray, bool forceClientAuth)
         {
             Preconditions.CheckArgument(keyCertPairCertChainArray.Length == keyCertPairPrivateKeyArray.Length);
-            return grpcsharp_ssl_server_credentials_create(pemRootCerts,
-                                                           keyCertPairCertChainArray, keyCertPairPrivateKeyArray,
-                                                           new UIntPtr((ulong)keyCertPairCertChainArray.Length),
-                                                           forceClientAuth);
+            return Native.grpcsharp_ssl_server_credentials_create(pemRootCerts,
+                                                                  keyCertPairCertChainArray, keyCertPairPrivateKeyArray,
+                                                                  new UIntPtr((ulong)keyCertPairCertChainArray.Length),
+                                                                  forceClientAuth);
         }
 
         protected override bool ReleaseHandle()
         {
-            grpcsharp_server_credentials_release(handle);
+            Native.grpcsharp_server_credentials_release(handle);
             return true;
         }
     }

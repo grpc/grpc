@@ -65,6 +65,7 @@ docker run \
   -e XDG_CACHE_HOME=/tmp/xdg-cache-home \
   -e THIS_IS_REALLY_NEEDED='see https://github.com/docker/docker/issues/14203 for why docker is awful' \
   -e HOST_GIT_ROOT=$git_root \
+  -e "BUILD_ID=$BUILD_ID" \
   -i $TTY_FLAG \
   -v "$git_root:/var/local/jenkins/grpc" \
   -v /tmp/ccache:/tmp/ccache \
