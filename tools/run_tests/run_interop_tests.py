@@ -422,12 +422,17 @@ def _job_kill_handler(job):
     time.sleep(2)
 
 
-def cloud_to_prod_jobspec(language, test_case, docker_image=None, auth=False):
+def cloud_to_prod_jobspec(language, test_case, is_v2, docker_image=None, 
+                          auth=False):
   """Creates jobspec for cloud-to-prod interop test"""
   container_name = None
+  if is_v2:
+    server_host = 'grpc-test2.sandbox.googleapis.com'
+  else:
+    server_host = 'grpc-test.sandbox.googleapis.com'
   cmdargs = [
-      '--server_host_override=grpc-test.sandbox.googleapis.com',
-      '--server_host=grpc-test.sandbox.googleapis.com',
+      '--server_host_override=%s' % server_host,
+      '--server_host=%s' % server_host,
       '--server_port=443',
       '--use_tls=true',
       '--test_case=%s' % test_case]
@@ -451,6 +456,8 @@ def cloud_to_prod_jobspec(language, test_case, docker_image=None, auth=False):
     environ = None
 
   suite_name='cloud_to_prod_auth' if auth else 'cloud_to_prod'
+  if is_v2:
+    suite_name = '%s_v2' % suite_name
   test_job = jobset.JobSpec(
           cmdline=cmdline,
           cwd=cwd,
@@ -589,6 +596,16 @@ argp.add_argument('--cloud_to_prod_auth',
                   action='store_const',
                   const=True,
                   help='Run cloud_to_prod_auth tests.')
+argp.add_argument('--cloud_to_prod_v2',
+                  default=False,
+                  action='store_const',
+                  const=True,
+                  help='Run cloud_to_prod tests using a grpc-test2.')
+argp.add_argument('--cloud_to_prod_auth_v2',
+                  default=False,
+                  action='store_const',
+                  const=True,
+                  help='Run cloud_to_prod_auth tests using grpc-test2.')
 argp.add_argument('-s', '--server',
                   choices=['all'] + sorted(_SERVERS),
                   action='append',
@@ -695,14 +712,16 @@ try:
       for test_case in _TEST_CASES:
         if not test_case in language.unimplemented_test_cases():
           if not test_case in _SKIP_ADVANCED + _SKIP_COMPRESSION:
-            test_job = cloud_to_prod_jobspec(language, test_case,
-                                             docker_image=docker_images.get(str(language)))
+            test_job = cloud_to_prod_jobspec(
+                language, test_case, is_v2=False,
+                docker_image=docker_images.get(str(language)))
             jobs.append(test_job)
 
     if args.http2_interop:
       for test_case in _HTTP2_TEST_CASES:
-        test_job = cloud_to_prod_jobspec(http2Interop, test_case,
-                                         docker_image=docker_images.get(str(http2Interop)))
+        test_job = cloud_to_prod_jobspec(
+            http2Interop, test_case, is_v2=False,
+            docker_image=docker_images.get(str(http2Interop)))
         jobs.append(test_job)
 
 
@@ -710,9 +729,36 @@ try:
     for language in languages:
       for test_case in _AUTH_TEST_CASES:
         if not test_case in language.unimplemented_test_cases():
-          test_job = cloud_to_prod_jobspec(language, test_case,
-                                           docker_image=docker_images.get(str(language)),
-                                           auth=True)
+          test_job = cloud_to_prod_jobspec(
+              language, test_case, is_v2=False,
+              docker_image=docker_images.get(str(language)), auth=True)
+          jobs.append(test_job)
+
+  if args.cloud_to_prod_v2:
+    for language in languages:
+      for test_case in _TEST_CASES:
+        if not test_case in language.unimplemented_test_cases():
+          if not test_case in _SKIP_ADVANCED + _SKIP_COMPRESSION:
+            test_job = cloud_to_prod_jobspec(
+                language, test_case, is_v2=True,
+                docker_image=docker_images.get(str(language)))
+            jobs.append(test_job)
+
+    if args.http2_interop:
+      for test_case in _HTTP2_TEST_CASES:
+        test_job = cloud_to_prod_jobspec(
+            http2Interop, test_case, is_v2=True,
+            docker_image=docker_images.get(str(http2Interop)))
+        jobs.append(test_job)
+
+
+  if args.cloud_to_prod_auth_v2:
+    for language in languages:
+      for test_case in _AUTH_TEST_CASES:
+        if not test_case in language.unimplemented_test_cases():
+          test_job = cloud_to_prod_jobspec(
+              language, test_case, is_v2=True,
+              docker_image=docker_images.get(str(language)), auth=True)
           jobs.append(test_job)
 
   for server in args.override_server:
@@ -773,7 +819,9 @@ try:
   report_utils.render_interop_html_report(
       set([str(l) for l in languages]), servers, _TEST_CASES, _AUTH_TEST_CASES,
       _HTTP2_TEST_CASES, resultset, num_failures,
-      args.cloud_to_prod_auth or args.cloud_to_prod, args.http2_interop)
+      args.cloud_to_prod_auth or args.cloud_to_prod, 
+      args.cloud_to_prod_auth_v2 or args.cloud_to_prod_v2, 
+      args.http2_interop)
 
 finally:
   # Check if servers are still running.
