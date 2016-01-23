@@ -239,6 +239,21 @@ void grpc_subchannel_weak_ref(grpc_subchannel *c
   GPR_ASSERT(old_refs != 0);
 }
 
+grpc_subchannel *grpc_subchannel_ref_from_weak_ref(grpc_subchannel *c GRPC_SUBCHANNEL_REF_EXTRA_ARGS) {
+  if (!c) return NULL;
+  for (;;) {
+    gpr_atm old_refs = gpr_atm_acq_load(&c->ref_pair);
+    if (old_refs >= (1 << INTERNAL_REF_BITS)) {
+      gpr_atm new_refs = old_refs + (1 << INTERNAL_REF_BITS);
+      if (gpr_atm_rel_cas(&c->ref_pair, old_refs, new_refs)) {
+        return c;
+      }
+    } else {
+      return NULL;
+    }
+  }
+}
+
 static void disconnect(grpc_exec_ctx *exec_ctx, grpc_subchannel *c) {
   grpc_connected_subchannel *con;
   grpc_subchannel_index_unregister(exec_ctx, c->key, c);
