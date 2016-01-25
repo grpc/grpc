@@ -1098,6 +1098,20 @@
     ], 
     "headers": [], 
     "language": "c", 
+    "name": "tag_set_test", 
+    "src": [
+      "test/core/census/tag_set_test.c"
+    ]
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
     "name": "tcp_client_posix_test", 
     "src": [
       "test/core/iomgr/tcp_client_posix_test.c"
@@ -2062,6 +2076,184 @@
   }, 
   {
     "deps": [
+      "bad_client_test", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "badreq_bad_client_test", 
+    "src": [
+      "test/core/bad_client/tests/badreq.c"
+    ]
+  }, 
+  {
+    "deps": [
+      "bad_client_test", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "connection_prefix_bad_client_test", 
+    "src": [
+      "test/core/bad_client/tests/connection_prefix.c"
+    ]
+  }, 
+  {
+    "deps": [
+      "bad_client_test", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "headers_bad_client_test", 
+    "src": [
+      "test/core/bad_client/tests/headers.c"
+    ]
+  }, 
+  {
+    "deps": [
+      "bad_client_test", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "initial_settings_frame_bad_client_test", 
+    "src": [
+      "test/core/bad_client/tests/initial_settings_frame.c"
+    ]
+  }, 
+  {
+    "deps": [
+      "bad_client_test", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "server_registered_method_bad_client_test", 
+    "src": [
+      "test/core/bad_client/tests/server_registered_method.c"
+    ]
+  }, 
+  {
+    "deps": [
+      "bad_client_test", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "simple_request_bad_client_test", 
+    "src": [
+      "test/core/bad_client/tests/simple_request.c"
+    ]
+  }, 
+  {
+    "deps": [
+      "bad_client_test", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "unknown_frame_bad_client_test", 
+    "src": [
+      "test/core/bad_client/tests/unknown_frame.c"
+    ]
+  }, 
+  {
+    "deps": [
+      "bad_client_test", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "window_overflow_bad_client_test", 
+    "src": [
+      "test/core/bad_client/tests/window_overflow.c"
+    ]
+  }, 
+  {
+    "deps": [
+      "bad_ssl_test_server", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "bad_ssl_alpn_server", 
+    "src": [
+      "test/core/bad_ssl/servers/alpn.c"
+    ]
+  }, 
+  {
+    "deps": [
+      "bad_ssl_test_server", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "bad_ssl_cert_server", 
+    "src": [
+      "test/core/bad_ssl/servers/cert.c"
+    ]
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "bad_ssl_alpn_test", 
+    "src": [
+      "test/core/bad_ssl/bad_ssl_test.c"
+    ]
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "bad_ssl_cert_test", 
+    "src": [
+      "test/core/bad_ssl/bad_ssl_test.c"
+    ]
+  }, 
+  {
+    "deps": [
       "end2end_certs", 
       "end2end_tests", 
       "gpr", 
@@ -2544,184 +2736,6 @@
     ]
   }, 
   {
-    "deps": [
-      "bad_client_test", 
-      "gpr", 
-      "gpr_test_util", 
-      "grpc_test_util_unsecure", 
-      "grpc_unsecure"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "badreq_bad_client_test", 
-    "src": [
-      "test/core/bad_client/tests/badreq.c"
-    ]
-  }, 
-  {
-    "deps": [
-      "bad_client_test", 
-      "gpr", 
-      "gpr_test_util", 
-      "grpc_test_util_unsecure", 
-      "grpc_unsecure"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "connection_prefix_bad_client_test", 
-    "src": [
-      "test/core/bad_client/tests/connection_prefix.c"
-    ]
-  }, 
-  {
-    "deps": [
-      "bad_client_test", 
-      "gpr", 
-      "gpr_test_util", 
-      "grpc_test_util_unsecure", 
-      "grpc_unsecure"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "headers_bad_client_test", 
-    "src": [
-      "test/core/bad_client/tests/headers.c"
-    ]
-  }, 
-  {
-    "deps": [
-      "bad_client_test", 
-      "gpr", 
-      "gpr_test_util", 
-      "grpc_test_util_unsecure", 
-      "grpc_unsecure"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "initial_settings_frame_bad_client_test", 
-    "src": [
-      "test/core/bad_client/tests/initial_settings_frame.c"
-    ]
-  }, 
-  {
-    "deps": [
-      "bad_client_test", 
-      "gpr", 
-      "gpr_test_util", 
-      "grpc_test_util_unsecure", 
-      "grpc_unsecure"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "server_registered_method_bad_client_test", 
-    "src": [
-      "test/core/bad_client/tests/server_registered_method.c"
-    ]
-  }, 
-  {
-    "deps": [
-      "bad_client_test", 
-      "gpr", 
-      "gpr_test_util", 
-      "grpc_test_util_unsecure", 
-      "grpc_unsecure"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "simple_request_bad_client_test", 
-    "src": [
-      "test/core/bad_client/tests/simple_request.c"
-    ]
-  }, 
-  {
-    "deps": [
-      "bad_client_test", 
-      "gpr", 
-      "gpr_test_util", 
-      "grpc_test_util_unsecure", 
-      "grpc_unsecure"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "unknown_frame_bad_client_test", 
-    "src": [
-      "test/core/bad_client/tests/unknown_frame.c"
-    ]
-  }, 
-  {
-    "deps": [
-      "bad_client_test", 
-      "gpr", 
-      "gpr_test_util", 
-      "grpc_test_util_unsecure", 
-      "grpc_unsecure"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "window_overflow_bad_client_test", 
-    "src": [
-      "test/core/bad_client/tests/window_overflow.c"
-    ]
-  }, 
-  {
-    "deps": [
-      "bad_ssl_test_server", 
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "bad_ssl_alpn_server", 
-    "src": [
-      "test/core/bad_ssl/servers/alpn.c"
-    ]
-  }, 
-  {
-    "deps": [
-      "bad_ssl_test_server", 
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "bad_ssl_cert_server", 
-    "src": [
-      "test/core/bad_ssl/servers/cert.c"
-    ]
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "bad_ssl_alpn_test", 
-    "src": [
-      "test/core/bad_ssl/bad_ssl_test.c"
-    ]
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "bad_ssl_cert_test", 
-    "src": [
-      "test/core/bad_ssl/bad_ssl_test.c"
-    ]
-  }, 
-  {
     "deps": [], 
     "headers": [
       "include/grpc/support/alloc.h", 
@@ -3023,6 +3037,7 @@
       "src/core/census/initialize.c", 
       "src/core/census/operation.c", 
       "src/core/census/rpc_metric_id.h", 
+      "src/core/census/tag_set.c", 
       "src/core/census/tracing.c", 
       "src/core/channel/channel_args.c", 
       "src/core/channel/channel_args.h", 
@@ -3521,6 +3536,7 @@
       "src/core/census/initialize.c", 
       "src/core/census/operation.c", 
       "src/core/census/rpc_metric_id.h", 
+      "src/core/census/tag_set.c", 
       "src/core/census/tracing.c", 
       "src/core/channel/channel_args.c", 
       "src/core/channel/channel_args.h", 
@@ -4337,6 +4353,40 @@
   }, 
   {
     "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [
+      "test/core/bad_client/bad_client.h"
+    ], 
+    "language": "c", 
+    "name": "bad_client_test", 
+    "src": [
+      "test/core/bad_client/bad_client.c", 
+      "test/core/bad_client/bad_client.h"
+    ]
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [
+      "test/core/bad_ssl/server.h"
+    ], 
+    "language": "c", 
+    "name": "bad_ssl_test_server", 
+    "src": [
+      "test/core/bad_ssl/server.c", 
+      "test/core/bad_ssl/server.h"
+    ]
+  }, 
+  {
+    "deps": [
       "end2end_certs", 
       "gpr", 
       "gpr_test_util", 
@@ -4454,40 +4504,6 @@
       "test/core/end2end/data/server1_cert.c", 
       "test/core/end2end/data/server1_key.c", 
       "test/core/end2end/data/test_root_cert.c"
-    ]
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc_test_util_unsecure", 
-      "grpc_unsecure"
-    ], 
-    "headers": [
-      "test/core/bad_client/bad_client.h"
-    ], 
-    "language": "c", 
-    "name": "bad_client_test", 
-    "src": [
-      "test/core/bad_client/bad_client.c", 
-      "test/core/bad_client/bad_client.h"
-    ]
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [
-      "test/core/bad_ssl/server.h"
-    ], 
-    "language": "c", 
-    "name": "bad_ssl_test_server", 
-    "src": [
-      "test/core/bad_ssl/server.c", 
-      "test/core/bad_ssl/server.h"
     ]
   }
 ]

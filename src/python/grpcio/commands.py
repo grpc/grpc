@@ -39,17 +39,7 @@ import sys
 import setuptools
 from setuptools.command import build_py
 from setuptools.command import test
-
-# Because we need to support building without Cython but simultaneously need to
-# subclass its command class when we need to and because distutils requires a
-# special hook to acquire a command class, we attempt to import Cython's
-# build_ext, and if that fails we import setuptools'.
-try:
-  # Due to the strange way Cython's Distutils module re-imports build_ext, we
-  # import the build_ext class directly.
-  from Cython.Distutils.build_ext import build_ext
-except ImportError:
-  from setuptools.command.build_ext import build_ext
+from setuptools.command import build_ext
 
 PYTHON_STEM = os.path.dirname(os.path.abspath(__file__))
 
@@ -179,7 +169,7 @@ class BuildPy(build_py.build_py):
     build_py.build_py.run(self)
 
 
-class BuildExt(build_ext):
+class BuildExt(build_ext.build_ext):
   """Custom build_ext command to enable compiler-specific flags."""
 
   C_OPTIONS = {
@@ -196,7 +186,7 @@ class BuildExt(build_ext):
     if compiler in BuildExt.LINK_OPTIONS:
       for extension in self.extensions:
         extension.extra_link_args += list(BuildExt.LINK_OPTIONS[compiler])
-    build_ext.build_extensions(self)
+    build_ext.build_ext.build_extensions(self)
 
 
 class Gather(setuptools.Command):
