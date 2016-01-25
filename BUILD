@@ -418,6 +418,7 @@ cc_library(
     "src/core/census/context.c",
     "src/core/census/initialize.c",
     "src/core/census/operation.c",
+    "src/core/census/tag_set.c",
     "src/core/census/tracing.c",
   ],
   hdrs = [
@@ -437,6 +438,9 @@ cc_library(
     "//external:libssl",
     "//external:zlib",
     ":gpr",
+  ],
+  copts = [
+    "-std=gnu99",
   ],
 )
 
@@ -690,6 +694,7 @@ cc_library(
     "src/core/census/context.c",
     "src/core/census/initialize.c",
     "src/core/census/operation.c",
+    "src/core/census/tag_set.c",
     "src/core/census/tracing.c",
   ],
   hdrs = [
@@ -706,6 +711,9 @@ cc_library(
   ],
   deps = [
     ":gpr",
+  ],
+  copts = [
+    "-std=gnu99",
   ],
 )
 
@@ -1225,6 +1233,7 @@ objc_library(
     "src/core/census/context.c",
     "src/core/census/initialize.c",
     "src/core/census/operation.c",
+    "src/core/census/tag_set.c",
     "src/core/census/tracing.c",
   ],
   hdrs = [

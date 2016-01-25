@@ -137,7 +137,8 @@ class Grpc(object):
             'platforms': ['linux', 'mac', 'posix', 'windows'],
             'flaky': False,
             'language': 'c++',
-            'boringssl': True
+            'boringssl': True,
+            'cpu_cost': 1.0
           }
           for test in files['tests']
       ]
