@@ -32,5 +32,5 @@
                      proto_headers(tgt.src)),
                  "deps": sorted(tgt.get('deps', []))}
                 for tgt in (targets + libs)
-                if not tgt.boringssl],
+                if not tgt.boringssl and not tgt.zlib],
                sort_keys=True, indent=2)}

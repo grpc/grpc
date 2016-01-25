@@ -1,4 +1,4 @@
-# Copyright 2015, Google Inc.
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -218,6 +218,24 @@ class TestCase(test_coverage.Coverage, unittest.TestCase):
         second_response = second_response_future.result()
 
         test_messages.verify(second_request, second_response, self)
+
+    for (group, method), test_messages_sequence in (
+        self._digest.unary_unary_messages_sequences.iteritems()):
+      for test_messages in test_messages_sequence:
+        requests = []
+        response_futures = []
+        for _ in range(test_constants.PARALLELISM):
+          request = test_messages.request()
+          response_future = self._invoker.future(group, method)(
+              request, test_constants.LONG_TIMEOUT)
+          requests.append(request)
+          response_futures.append(response_future)
+
+        responses = [
+            response_future.result() for response_future in response_futures]
+
+        for request, response in zip(requests, responses):
+          test_messages.verify(request, response, self)
 
   def testParallelInvocations(self):
     for (group, method), test_messages_sequence in (

@@ -426,8 +426,8 @@ def cloud_to_prod_jobspec(language, test_case, docker_image=None, auth=False):
   """Creates jobspec for cloud-to-prod interop test"""
   container_name = None
   cmdargs = [
-      '--server_host_override=grpc-test.sandbox.google.com',
-      '--server_host=grpc-test.sandbox.google.com',
+      '--server_host_override=grpc-test.sandbox.googleapis.com',
+      '--server_host=grpc-test.sandbox.googleapis.com',
       '--server_port=443',
       '--use_tls=true',
       '--test_case=%s' % test_case]
