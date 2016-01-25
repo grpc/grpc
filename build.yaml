@@ -2602,6 +2602,8 @@ node_modules:
 - deps:
   - grpc
   - gpr
+  - boringssl
+  - z
   headers:
   - src/node/ext/byte_buffer.h
   - src/node/ext/call.h
