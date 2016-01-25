@@ -37,9 +37,9 @@ import subprocess
 import sys
 
 import setuptools
+from setuptools.command import build_ext
 from setuptools.command import build_py
 from setuptools.command import test
-from setuptools.command import build_ext
 
 PYTHON_STEM = os.path.dirname(os.path.abspath(__file__))
 
@@ -186,7 +186,13 @@ class BuildExt(build_ext.build_ext):
     if compiler in BuildExt.LINK_OPTIONS:
       for extension in self.extensions:
         extension.extra_link_args += list(BuildExt.LINK_OPTIONS[compiler])
-    build_ext.build_ext.build_extensions(self)
+    try:
+      build_ext.build_ext.build_extensions(self)
+    except KeyboardInterrupt:
+      raise
+    except Exception as error:
+      support.diagnose_build_ext_error(self, error)
+      raise CommandError("Failed `build_ext` step.")
 
 
 class Gather(setuptools.Command):
