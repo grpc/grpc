@@ -37,6 +37,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <grpc/census.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
@@ -779,9 +780,8 @@ grpc_server *grpc_server_create_from_filters(
     const grpc_channel_filter **filters, size_t filter_count,
     const grpc_channel_args *args) {
   size_t i;
-  /* TODO(census): restore this once we finalize census filter etc.
-     int census_enabled = grpc_channel_args_is_census_enabled(args); */
-  int census_enabled = 0;
+  int enable_census =
+      grpc_channel_args_is_census_enabled(args) || census_enabled();
 
   grpc_server *server = gpr_malloc(sizeof(grpc_server));
 
@@ -815,15 +815,15 @@ grpc_server *grpc_server_create_from_filters(
      grpc_server_census_filter (optional) - for stats collection and tracing
      {passed in filter stack}
      grpc_connected_channel_filter - for interfacing with transports */
-  server->channel_filter_count = filter_count + 1u + (census_enabled ? 1u : 0u);
+  server->channel_filter_count = filter_count + 1u + (enable_census ? 1u : 0u);
   server->channel_filters =
       gpr_malloc(server->channel_filter_count * sizeof(grpc_channel_filter *));
   server->channel_filters[0] = &server_surface_filter;
-  if (census_enabled) {
+  if (enable_census) {
     server->channel_filters[1] = &grpc_server_census_filter;
   }
   for (i = 0; i < filter_count; i++) {
-    server->channel_filters[i + 1u + (census_enabled ? 1u : 0u)] = filters[i];
+    server->channel_filters[i + 1u + (enable_census ? 1u : 0u)] = filters[i];
   }
 
   server->channel_args = grpc_channel_args_copy(args);
