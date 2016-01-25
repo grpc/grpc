@@ -5488,7 +5488,7 @@ LIBZ_SRC = \
 
 LIBZ_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBZ_SRC))))
 
-$(LIBZ_OBJS): CFLAGS := $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-implicit-function-declaration -fvisibility=hidden
+$(LIBZ_OBJS): CFLAGS := $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-implicit-function-declaration -Wno-shift-negative-value -fvisibility=hidden
 
 $(LIBDIR)/$(CONFIG)/libz.a: $(ZLIB_DEP) $(OPENSSL_DEP)  $(LIBZ_OBJS)
 	$(E) "[AR]      Creating $@"

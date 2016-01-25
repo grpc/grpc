@@ -1438,7 +1438,7 @@
   $(LIB${lib.name.upper()}_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS) -fvisibility=hidden
   $(LIB${lib.name.upper()}_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
   % elif lib.zlib:
-  $(LIB${lib.name.upper()}_OBJS): CFLAGS := $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-implicit-function-declaration -fvisibility=hidden
+  $(LIB${lib.name.upper()}_OBJS): CFLAGS := $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-implicit-function-declaration -Wno-shift-negative-value -fvisibility=hidden
   % else:
   % endif
 
