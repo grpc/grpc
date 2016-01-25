@@ -81,7 +81,8 @@ void gpr_avl_unref(gpr_avl avl);
     if key exists in avl, the new tree's key entry updated
     (i.e. a duplicate is not created) */
 gpr_avl gpr_avl_add(gpr_avl avl, void *key, void *value);
-/** return a new tree with key deleted */
+/** return a new tree with key deleted
+    implicitly unrefs avl to allow easy chaining. */
 gpr_avl gpr_avl_remove(gpr_avl avl, void *key);
 /** lookup key, and return the associated value.
     does not mutate avl.

@@ -68,9 +68,9 @@ with open('LICENSE') as f:
 # that given a line of license text, returns what should
 # be in the file
 LICENSE_PREFIX = {
-  '.c':         r'\s*\*\s*',
-  '.cc':        r'\s*\*\s*',
-  '.h':         r'\s*\*\s*',
+  '.c':         r'\s*(//|\*)\s*',
+  '.cc':        r'\s*(//|\*)\s*',
+  '.h':         r'\s*(//|\*)\s*',
   '.m':         r'\s*\*\s*',
   '.php':       r'\s*\*\s*',
   '.js':        r'\s*\*\s*',

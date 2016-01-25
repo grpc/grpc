@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -93,7 +93,7 @@ grpc_channel_args *grpc_channel_args_merge(const grpc_channel_args *a,
 }
 
 static int cmp_arg(const grpc_arg *a, const grpc_arg *b) {
-  int c = a->type - b->type;
+  int c = GPR_ICMP(a->type, b->type);
   if (c != 0) return c;
   c = strcmp(a->key, b->key);
   if (c != 0) return c;

@@ -45,8 +45,8 @@
   {
     "config": "asan", 
     "environ": {
-      "ASAN_OPTIONS": "suppressions=tools/asan_suppressions.txt:detect_leaks=1:color=always", 
-      "LSAN_OPTIONS": "suppressions=tools/asan_suppressions.txt:report_objects=1"
+      "ASAN_OPTIONS": "detect_leaks=1:color=always", 
+      "LSAN_OPTIONS": "suppressions=tools/lsan_suppressions.txt:report_objects=1"
     }, 
     "timeout_multiplier": 1.5
   }, 
