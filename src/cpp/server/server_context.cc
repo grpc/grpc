@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -122,6 +122,7 @@ ServerContext::ServerContext()
     : completion_op_(nullptr),
       has_notify_when_done_tag_(false),
       async_notify_when_done_tag_(nullptr),
+      deadline_(gpr_inf_future(GPR_CLOCK_REALTIME)),
       call_(nullptr),
       cq_(nullptr),
       sent_initial_metadata_(false) {}
