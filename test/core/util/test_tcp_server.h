@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -39,6 +39,7 @@
 
 typedef struct test_tcp_server {
   grpc_tcp_server *tcp_server;
+  grpc_closure shutdown_complete;
   int shutdown;
   grpc_pollset pollset;
   grpc_pollset *pollsets[1];
