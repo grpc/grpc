@@ -167,7 +167,7 @@ static gpr_avl_node *rotate_right_left(const gpr_avl_vtable *vtable, void *key,
       vtable->copy_key(right->left->key),
       vtable->copy_value(right->left->value),
       new_node(key, value, left, ref_node(right->left->left)),
-      new_node(vtable->copy_key(right->key), vtable->copy_key(right->value),
+      new_node(vtable->copy_key(right->key), vtable->copy_value(right->value),
                ref_node(right->left->right), ref_node(right->right)));
   unref_node(vtable, right);
   return n;
