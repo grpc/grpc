@@ -69,6 +69,9 @@ elif [ "$platform" == "macos" ]
 then
   echo "building $language on MacOS"
 
+  # Prevent msbuild from picking up "platform" env variable, which would break the build
+  unset platform
+
   ./tools/run_tests/run_tests.py -t -l $language -c $config -x report.xml -j 3 $@ || TESTS_FAILED="true"
 
 elif [ "$platform" == "freebsd" ]
