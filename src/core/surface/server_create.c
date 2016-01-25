@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -40,7 +40,7 @@
 #include "src/core/surface/server.h"
 
 grpc_server *grpc_server_create(const grpc_channel_args *args, void *reserved) {
-  const grpc_channel_filter *filters[2];
+  const grpc_channel_filter *filters[3];
   size_t num_filters = 0;
   filters[num_filters++] = &grpc_compress_filter;
   GRPC_API_TRACE("grpc_server_create(%p, %p)", 2, (args, reserved));
