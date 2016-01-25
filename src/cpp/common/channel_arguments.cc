@@ -93,17 +93,14 @@ void ChannelArguments::SetPointer(const grpc::string& key, void* value) {
   struct VtableMembers {
     static void* Copy(void* in) { return in; }
     static void Destroy(void* in) {}
-    static int Compare(void* a, void *b) {
+    static int Compare(void* a, void* b) {
       if (a < b) return -1;
       if (a > b) return 1;
       return 0;
     }
   };
   static const grpc_arg_pointer_vtable vtable = {
-    &VtableMembers::Copy,
-    &VtableMembers::Destroy,
-    &VtableMembers::Compare
-  };
+      &VtableMembers::Copy, &VtableMembers::Destroy, &VtableMembers::Compare};
 
   grpc_arg arg;
   arg.type = GRPC_ARG_POINTER;

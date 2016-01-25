@@ -88,6 +88,7 @@ grpc_channel_args *grpc_channel_args_compression_algorithm_set_state(
 int grpc_channel_args_compression_algorithm_get_states(
     const grpc_channel_args *a);
 
-int grpc_channel_args_compare(const grpc_channel_args *a, const grpc_channel_args *b);
+int grpc_channel_args_compare(const grpc_channel_args *a,
+                              const grpc_channel_args *b);
 
 #endif /* GRPC_INTERNAL_CORE_CHANNEL_CHANNEL_ARGS_H */

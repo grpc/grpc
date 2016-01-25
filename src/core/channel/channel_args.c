@@ -54,7 +54,8 @@ static grpc_arg copy_arg(const grpc_arg *src) {
       break;
     case GRPC_ARG_POINTER:
       dst.value.pointer = src->value.pointer;
-      dst.value.pointer.p = src->value.pointer.vtable->copy(src->value.pointer.p);
+      dst.value.pointer.p =
+          src->value.pointer.vtable->copy(src->value.pointer.p);
       break;
   }
   return dst;
@@ -104,11 +105,9 @@ static int cmp_arg(const grpc_arg *a, const grpc_arg *b) {
       c = GPR_ICMP(a->value.integer, b->value.integer);
       break;
     case GRPC_ARG_POINTER:
-      c = GPR_ICMP(a->value.pointer.p, 
-                   b->value.pointer.p);
+      c = GPR_ICMP(a->value.pointer.p, b->value.pointer.p);
       if (c != 0) {
-        c = GPR_ICMP(a->value.pointer.vtable, 
-                     b->value.pointer.vtable);
+        c = GPR_ICMP(a->value.pointer.vtable, b->value.pointer.vtable);
         if (c == 0) {
           c = a->value.pointer.vtable->cmp(a->value.pointer.p,
                                            b->value.pointer.p);
@@ -128,11 +127,11 @@ static int cmp_key_stable(const void *ap, const void *bp) {
 }
 
 grpc_channel_args *grpc_channel_args_normalize(const grpc_channel_args *a) {
-  grpc_arg **args = gpr_malloc(sizeof(grpc_arg*) * a->num_args);
+  grpc_arg **args = gpr_malloc(sizeof(grpc_arg *) * a->num_args);
   for (size_t i = 0; i < a->num_args; i++) {
     args[i] = &a->args[i];
   }
-  qsort(args, a->num_args, sizeof(grpc_arg*), cmp_key_stable);
+  qsort(args, a->num_args, sizeof(grpc_arg *), cmp_key_stable);
 
   grpc_channel_args *b = gpr_malloc(sizeof(grpc_channel_args));
   b->num_args = a->num_args;
@@ -258,7 +257,7 @@ int grpc_channel_args_compression_algorithm_get_states(
   }
 }
 
-int grpc_channel_args_compare(const grpc_channel_args *a, 
+int grpc_channel_args_compare(const grpc_channel_args *a,
                               const grpc_channel_args *b) {
   int c = GPR_ICMP(a->num_args, b->num_args);
   if (c != 0) return c;

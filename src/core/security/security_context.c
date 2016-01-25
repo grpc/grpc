@@ -309,15 +309,11 @@ static void *auth_context_pointer_arg_copy(void *p) {
   return GRPC_AUTH_CONTEXT_REF(p, "auth_context_pointer_arg");
 }
 
-static int auth_context_pointer_cmp(void *a, void *b) {
-  return GPR_ICMP(a, b);
-}
+static int auth_context_pointer_cmp(void *a, void *b) { return GPR_ICMP(a, b); }
 
 static const grpc_arg_pointer_vtable auth_context_pointer_vtable = {
-  auth_context_pointer_arg_copy,
-  auth_context_pointer_arg_destroy,
-  auth_context_pointer_cmp
-};
+    auth_context_pointer_arg_copy, auth_context_pointer_arg_destroy,
+    auth_context_pointer_cmp};
 
 grpc_arg grpc_auth_context_to_arg(grpc_auth_context *p) {
   grpc_arg arg;

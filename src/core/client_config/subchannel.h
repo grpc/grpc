@@ -68,7 +68,8 @@ typedef struct grpc_subchannel_args grpc_subchannel_args;
   , const char *file, int line, const char *reason
 #else
 #define GRPC_SUBCHANNEL_REF(p, r) grpc_subchannel_ref((p))
-#define GRPC_SUBCHANNEL_REF_FROM_WEAK_REF(p, r) grpc_subchannel_ref_from_weak_ref((p))
+#define GRPC_SUBCHANNEL_REF_FROM_WEAK_REF(p, r) \
+  grpc_subchannel_ref_from_weak_ref((p))
 #define GRPC_SUBCHANNEL_UNREF(cl, p, r) grpc_subchannel_unref((cl), (p))
 #define GRPC_SUBCHANNEL_WEAK_REF(p, r) grpc_subchannel_weak_ref((p))
 #define GRPC_SUBCHANNEL_WEAK_UNREF(cl, p, r) \
@@ -84,8 +85,8 @@ typedef struct grpc_subchannel_args grpc_subchannel_args;
 
 void grpc_subchannel_ref(grpc_subchannel *channel
                              GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
-grpc_subchannel *grpc_subchannel_ref_from_weak_ref(grpc_subchannel *channel
-                             GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
+grpc_subchannel *grpc_subchannel_ref_from_weak_ref(
+    grpc_subchannel *channel GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
 void grpc_subchannel_unref(grpc_exec_ctx *exec_ctx,
                            grpc_subchannel *channel
                                GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
@@ -152,7 +153,7 @@ grpc_call_stack *grpc_subchannel_call_get_call_stack(
 
 struct grpc_subchannel_args {
   /* When updating this struct, also update subchannel_index.c */
-  
+
   /** Channel filters for this channel - wrapped factories will likely
       want to mutate this */
   const grpc_channel_filter **filters;
