@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -210,6 +210,7 @@ static void subchannel_destroy(grpc_exec_ctx *exec_ctx, void *arg,
   grpc_connectivity_state_destroy(exec_ctx, &c->state_tracker);
   grpc_connector_unref(exec_ctx, c->connector);
   grpc_pollset_set_destroy(&c->pollset_set);
+  grpc_subchannel_key_destroy(exec_ctx, c->key);
   gpr_free(c);
 }
 
@@ -225,18 +226,21 @@ static gpr_atm ref_mutate(grpc_subchannel *c, gpr_atm delta,
   return old_val;
 }
 
-void grpc_subchannel_ref(grpc_subchannel *c GRPC_SUBCHANNEL_REF_EXTRA_ARGS) {
+grpc_subchannel *grpc_subchannel_ref(grpc_subchannel *c
+                                         GRPC_SUBCHANNEL_REF_EXTRA_ARGS) {
   gpr_atm old_refs;
   old_refs = ref_mutate(c, (1 << INTERNAL_REF_BITS),
                         0 REF_MUTATE_PURPOSE("STRONG_REF"));
   GPR_ASSERT((old_refs & STRONG_REF_MASK) != 0);
+  return c;
 }
 
-void grpc_subchannel_weak_ref(grpc_subchannel *c
-                                  GRPC_SUBCHANNEL_REF_EXTRA_ARGS) {
+grpc_subchannel *grpc_subchannel_weak_ref(grpc_subchannel *c
+                                              GRPC_SUBCHANNEL_REF_EXTRA_ARGS) {
   gpr_atm old_refs;
   old_refs = ref_mutate(c, 1, 0 REF_MUTATE_PURPOSE("WEAK_REF"));
   GPR_ASSERT(old_refs != 0);
+  return c;
 }
 
 grpc_subchannel *grpc_subchannel_ref_from_weak_ref(
@@ -302,7 +306,7 @@ grpc_subchannel *grpc_subchannel_create(grpc_exec_ctx *exec_ctx,
   grpc_subchannel_key *key = grpc_subchannel_key_create(connector, args);
   grpc_subchannel *c = grpc_subchannel_index_find(exec_ctx, key);
   if (c) {
-    grpc_subchannel_key_destroy(key);
+    grpc_subchannel_key_destroy(exec_ctx, key);
     return c;
   }
 
