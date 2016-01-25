@@ -201,10 +201,8 @@ static int server_credentials_pointer_cmp(void *a, void *b) {
 }
 
 static const grpc_arg_pointer_vtable cred_ptr_vtable = {
-  server_credentials_pointer_arg_copy,
-  server_credentials_pointer_arg_destroy,
-  server_credentials_pointer_cmp
-};
+    server_credentials_pointer_arg_copy, server_credentials_pointer_arg_destroy,
+    server_credentials_pointer_cmp};
 
 grpc_arg grpc_server_credentials_to_arg(grpc_server_credentials *p) {
   grpc_arg arg;

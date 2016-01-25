@@ -239,7 +239,8 @@ void grpc_subchannel_weak_ref(grpc_subchannel *c
   GPR_ASSERT(old_refs != 0);
 }
 
-grpc_subchannel *grpc_subchannel_ref_from_weak_ref(grpc_subchannel *c GRPC_SUBCHANNEL_REF_EXTRA_ARGS) {
+grpc_subchannel *grpc_subchannel_ref_from_weak_ref(
+    grpc_subchannel *c GRPC_SUBCHANNEL_REF_EXTRA_ARGS) {
   if (!c) return NULL;
   for (;;) {
     gpr_atm old_refs = gpr_atm_acq_load(&c->ref_pair);
