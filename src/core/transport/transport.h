@@ -81,16 +81,28 @@ void grpc_stream_unref(grpc_exec_ctx *exec_ctx, grpc_stream_refcount *refcount);
 /* Transport stream op: a set of operations to perform on a transport
    against a single stream */
 typedef struct grpc_transport_stream_op {
+  /** Send initial metadata to the peer, from the provided metadata batch. */
   grpc_metadata_batch *send_initial_metadata;
+
+  /** Send trailing metadata to the peer, from the provided metadata batch. */
   grpc_metadata_batch *send_trailing_metadata;
 
+  /** Send message data to the peer, from the provided byte stream. */
   grpc_byte_stream *send_message;
 
+  /** Receive initial metadata from the stream, into provided metadata batch. */
   grpc_metadata_batch *recv_initial_metadata;
+
+  /** Receive message data from the stream, into provided byte stream. */
   grpc_byte_stream **recv_message;
+  /** Should be enqueued when one message is ready to be processed. */
   grpc_closure *recv_message_ready;
+
+  /** Receive trailing metadata from the stream, into provided metadata batch. */
   grpc_metadata_batch *recv_trailing_metadata;
 
+  /** Should be enqueued when all requested operations (excluding recv_message
+     which has its own closure) in a given batch have been completed. */
   grpc_closure *on_complete;
 
   /** If != GRPC_STATUS_OK, cancel this stream */
