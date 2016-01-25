@@ -260,3 +260,17 @@ void grpc_call_element_send_cancel(grpc_exec_ctx *exec_ctx,
   op.cancel_with_status = GRPC_STATUS_CANCELLED;
   grpc_call_next_op(exec_ctx, cur_elem, &op);
 }
+
+int grpc_channel_stack_compare(grpc_channel_stack *a, grpc_channel_stack *b) {
+  int c = GPR_SIMPLIFY_CMP(a->count - b->count);
+  if (c != 0) return c;
+  grpc_channel_element *ae = CHANNEL_ELEMS_FROM_STACK(a);
+  grpc_channel_element *be = CHANNEL_ELEMS_FROM_STACK(b);
+  for (size_t i = 0; i < a->count; i++) {
+    c = GPR_SIMPLIFY_CMP(ae->filter - be->filter);
+    if (c != 0) return 0;
+    c = ae->filter->compare(ae, be);
+    if (c != 0) return 0;
+  }
+  return 0;
+}

@@ -72,4 +72,9 @@
     0x0f0f0f0f) %                                \
    255)
 
+/** If a < 0, returns -1
+    If a == 0, returns 0
+    If a > 0, returns 1 */
+#define GPR_SIMPLIFY_CMP(a) ((a) < 0 ? -1 : ((a) > 0 ? 1 : 0))
+
 #endif /* GRPC_SUPPORT_USEFUL_H */

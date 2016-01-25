@@ -61,6 +61,10 @@ typedef struct call_data {
 
 typedef struct channel_data { uint8_t unused; } channel_data;
 
+static int compare_channel(grpc_channel_element *a, grpc_channel_element *b) {
+  return 0;
+}
+
 static void extract_and_annotate_method_tag(grpc_metadata_batch *md,
                                             call_data *calld,
                                             channel_data *chand) {
@@ -175,10 +179,12 @@ const grpc_channel_filter grpc_client_census_filter = {
     client_start_transport_op, grpc_channel_next_op, sizeof(call_data),
     client_init_call_elem, grpc_call_stack_ignore_set_pollset,
     client_destroy_call_elem, sizeof(channel_data), init_channel_elem,
-    destroy_channel_elem, grpc_call_next_get_peer, "census-client"};
+    destroy_channel_elem, grpc_call_next_get_peer, compare_channel,
+    "census-client"};
 
 const grpc_channel_filter grpc_server_census_filter = {
     server_start_transport_op, grpc_channel_next_op, sizeof(call_data),
     server_init_call_elem, grpc_call_stack_ignore_set_pollset,
     server_destroy_call_elem, sizeof(channel_data), init_channel_elem,
-    destroy_channel_elem, grpc_call_next_get_peer, "census-server"};
+    destroy_channel_elem, grpc_call_next_get_peer, compare_channel,
+    "census-server"};

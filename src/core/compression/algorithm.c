@@ -164,3 +164,11 @@ int grpc_compression_options_is_algorithm_enabled(
     grpc_compression_algorithm algorithm) {
   return GPR_BITGET(opts->enabled_algorithms_bitset, algorithm);
 }
+
+int grpc_compression_options_compare(const grpc_compression_options *a,
+                                     const grpc_compression_options *b) {
+  int c = GPR_SIMPLIFY_CMP(a->enabled_algorithms_bitset -
+                           b->enabled_algorithms_bitset);
+  if (c != 0) return c;
+  return a->default_compression_algorithm - b->default_compression_algorithm;
+}

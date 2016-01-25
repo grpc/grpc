@@ -125,6 +125,10 @@ typedef struct {
   /* Implement grpc_call_get_peer() */
   char *(*get_peer)(grpc_exec_ctx *exec_ctx, grpc_call_element *elem);
 
+  /* Compare two filter instances. Return <0 if a < b, ==0 if a==b, >0 if a > b
+   */
+  int (*compare)(grpc_channel_element *a, grpc_channel_element *b);
+
   /* The name of this filter */
   const char *name;
 } grpc_channel_filter;
@@ -165,6 +169,8 @@ struct grpc_call_stack {
   grpc_stream_refcount refcount;
   size_t count;
 };
+
+int grpc_channel_stack_compare(grpc_channel_stack *a, grpc_channel_stack *b);
 
 /* Get a channel element given a channel stack and its index */
 grpc_channel_element *grpc_channel_stack_element(grpc_channel_stack *stack,

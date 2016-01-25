@@ -99,6 +99,9 @@ void grpc_compression_options_disable_algorithm(
 int grpc_compression_options_is_algorithm_enabled(
     const grpc_compression_options *opts, grpc_compression_algorithm algorithm);
 
+int grpc_compression_options_compare(const grpc_compression_options *a,
+                                     const grpc_compression_options *b);
+
 #ifdef __cplusplus
 }
 #endif

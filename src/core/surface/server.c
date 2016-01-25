@@ -749,11 +749,16 @@ static void destroy_channel_elem(grpc_exec_ctx *exec_ctx,
   }
 }
 
+static int compare_channels(grpc_channel_element *a, grpc_channel_element *b) {
+  GPR_ASSERT(!"implemented");
+  return 0;
+}
+
 static const grpc_channel_filter server_surface_filter = {
     server_start_transport_stream_op, grpc_channel_next_op, sizeof(call_data),
     init_call_elem, grpc_call_stack_ignore_set_pollset, destroy_call_elem,
     sizeof(channel_data), init_channel_elem, destroy_channel_elem,
-    grpc_call_next_get_peer, "server",
+    grpc_call_next_get_peer, compare_channels, "server",
 };
 
 void grpc_server_register_completion_queue(grpc_server *server,

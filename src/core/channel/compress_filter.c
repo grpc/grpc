@@ -77,6 +77,19 @@ typedef struct channel_data {
   uint32_t supported_compression_algorithms;
 } channel_data;
 
+static int compare_channels(grpc_channel_element *a, grpc_channel_element *b) {
+  channel_data *ad = a->channel_data;
+  channel_data *bd = b->channel_data;
+
+  int c = ad->default_compression_algorithm - bd->default_compression_algorithm;
+  if (c != 0) return c;
+  c = (int)ad->supported_compression_algorithms -
+      (int)bd->supported_compression_algorithms;
+  if (c != 0) return c;
+  return grpc_compression_options_compare(&ad->compression_options,
+                                          &bd->compression_options);
+}
+
 /** For each \a md element from the incoming metadata, filter out the entry for
  * "grpc-encoding", using its value to populate the call data's
  * compression_algorithm field. */
@@ -294,4 +307,4 @@ const grpc_channel_filter grpc_compress_filter = {
     compress_start_transport_stream_op, grpc_channel_next_op, sizeof(call_data),
     init_call_elem, grpc_call_stack_ignore_set_pollset, destroy_call_elem,
     sizeof(channel_data), init_channel_elem, destroy_channel_elem,
-    grpc_call_next_get_peer, "compress"};
+    grpc_call_next_get_peer, compare_channels, "compress"};
