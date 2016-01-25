@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -78,7 +78,8 @@ static void handle_read(grpc_exec_ctx *exec_ctx, void *arg, int success) {
   }
 }
 
-static void on_connect(grpc_exec_ctx *exec_ctx, void *arg, grpc_endpoint *tcp) {
+static void on_connect(grpc_exec_ctx *exec_ctx, void *arg, grpc_endpoint *tcp,
+                       grpc_tcp_server_acceptor *acceptor) {
   test_tcp_server *server = arg;
   grpc_closure_init(&on_read, handle_read, NULL);
   gpr_slice_buffer_init(&state.incoming_buffer);
