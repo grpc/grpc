@@ -451,6 +451,9 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\census\operation.c">
       <Filter>src\core\census</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\census\tag_set.c">
+      <Filter>src\core\census</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\census\tracing.c">
       <Filter>src\core\census</Filter>
     </ClCompile>
