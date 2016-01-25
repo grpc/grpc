@@ -68,6 +68,11 @@ grpc::string GetServiceAccountJsonKey() {
   static grpc::string json_key;
   if (json_key.empty()) {
     std::ifstream json_key_file(FLAGS_service_account_key_file);
+    if (json_key_file.fail()) {
+      gpr_log(GPR_ERROR, "Failed to open file at %s",
+              FLAGS_service_account_key_file.c_str());
+      GPR_ASSERT(0);
+    }
     std::stringstream key_stream;
     key_stream << json_key_file.rdbuf();
     json_key = key_stream.str();
