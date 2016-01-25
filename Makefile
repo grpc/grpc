@@ -261,7 +261,7 @@ endif
 CXX11_CHECK_CMD = $(CXX) -std=c++11 -o $(TMPOUT) -c test/build/c++11.cc
 HAS_CXX11 = $(shell $(CXX11_CHECK_CMD) 2> /dev/null && echo true || echo false)
 
-CHECK_NO_SHIFT_NEGATIVE_VALUE_CMD = $(CC) -std=c99 -Wno-shift-negative-value -o $(TMPOUT) -c test/build/empty.c
+CHECK_NO_SHIFT_NEGATIVE_VALUE_CMD = $(CC) -std=c99 -Werror -Wno-shift-negative-value -o $(TMPOUT) -c test/build/empty.c
 HAS_NO_SHIFT_NEGATIVE_VALUE = $(shell $(CHECK_NO_SHIFT_NEGATIVE_VALUE_CMD) 2> /dev/null && echo true || echo false)
 ifeq ($(HAS_NO_SHIFT_NEGATIVE_VALUE),true)
 W_NO_SHIFT_NEGATIVE_VALUE=-Wno-shift-negative-value
