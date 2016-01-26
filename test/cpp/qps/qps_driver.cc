@@ -153,7 +153,7 @@ static void QpsDriver() {
 
   ServerConfig server_config;
   server_config.set_server_type(server_type);
-  server_config.set_host("::"); // Use the wildcard server address
+  server_config.set_host("::");  // Use the wildcard server address
   server_config.set_async_server_threads(FLAGS_async_server_threads);
 
   if (FLAGS_secure_test) {
