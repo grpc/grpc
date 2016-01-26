@@ -27,8 +27,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# A work-in-progress Dockerfile that allows running gRPC test suites
-# inside a docker container.
+# Dockerfile for running gRPC test suites inside a docker container.
 
 FROM debian:jessie
 
@@ -152,17 +151,7 @@ RUN apt-get update && apt-get install -y \
 
 ##################
 # Zookeeper dependencies
-
-# Install dependencies
-
 RUN apt-get install -y libzookeeper-mt-dev
-
-##################
-# Docker "inception".
-# Note this is quite the ugly hack.
-# This makes sure that the docker binary we inject has its dependencies.
-RUN curl https://get.docker.com/ | sh
-RUN apt-get remove --purge -y docker-engine
 
 RUN mkdir /var/local/jenkins
 

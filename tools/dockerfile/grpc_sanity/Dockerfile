@@ -27,8 +27,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# A work-in-progress Dockerfile that allows running gRPC test suites
-# inside a docker container.
+# Dockerfile for running gRPC sanity tests
 
 FROM debian:jessie
 
@@ -61,18 +60,6 @@ RUN apt-get update && apt-get install -y \
   unzip \
   wget \
   zip && apt-get clean
-
-# Prepare ccache
-RUN ln -s /usr/bin/ccache /usr/local/bin/gcc
-RUN ln -s /usr/bin/ccache /usr/local/bin/g++
-RUN ln -s /usr/bin/ccache /usr/local/bin/cc
-RUN ln -s /usr/bin/ccache /usr/local/bin/c++
-RUN ln -s /usr/bin/ccache /usr/local/bin/clang
-RUN ln -s /usr/bin/ccache /usr/local/bin/clang++
-
-##################
-# C++ dependencies
-RUN apt-get update && apt-get -y install libgflags-dev libgtest-dev libc++-dev clang
 
 ##################
 # Sanity test dependencies
