@@ -43,6 +43,7 @@ if [ "$platform" == "linux" ]
 then
   USE_DOCKER_MAYBE="--use_docker"
 elif [ "$platform" == "freebsd" ]
+then
   export MAKE=gmake
 fi
 
