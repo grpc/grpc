@@ -74,6 +74,7 @@ Gem::Specification.new do |s|
   s.files += %w( include/grpc/support/tls_msvc.h )
   s.files += %w( include/grpc/support/tls_pthread.h )
   s.files += %w( include/grpc/support/useful.h )
+  s.files += %w( include/grpc/impl/codegen/alloc.h )
   s.files += %w( include/grpc/impl/codegen/atm.h )
   s.files += %w( include/grpc/impl/codegen/atm_gcc_atomic.h )
   s.files += %w( include/grpc/impl/codegen/atm_gcc_sync.h )

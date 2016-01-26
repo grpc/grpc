@@ -35,9 +35,9 @@
 #define GRPCXX_SUPPORT_ASYNC_STREAM_H
 
 #include <grpc++/impl/codegen/channel_interface.h>
-#include <grpc++/impl/call.h>
-#include <grpc++/impl/service_type.h>
-#include <grpc++/server_context.h>
+#include <grpc++/impl/codegen/call.h>
+#include <grpc++/impl/codegen/service_type.h>
+#include <grpc++/impl/codegen/server_context.h>
 #include <grpc++/impl/codegen/status.h>
 
 namespace grpc {
