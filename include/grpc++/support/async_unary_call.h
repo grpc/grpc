@@ -34,16 +34,17 @@
 #ifndef GRPCXX_SUPPORT_ASYNC_UNARY_CALL_H
 #define GRPCXX_SUPPORT_ASYNC_UNARY_CALL_H
 
-#include <grpc/support/log.h>
+#include <grpc/impl/codegen/log.h>
 #include <grpc++/impl/codegen/channel_interface.h>
-#include <grpc++/client_context.h>
-#include <grpc++/completion_queue.h>
-#include <grpc++/server_context.h>
-#include <grpc++/impl/call.h>
-#include <grpc++/impl/service_type.h>
-#include <grpc++/support/status.h>
+#include <grpc++/impl/codegen/client_context.h>
+#include <grpc++/impl/codegen/server_context.h>
+#include <grpc++/impl/codegen/call.h>
+#include <grpc++/impl/codegen/service_type.h>
+#include <grpc++/impl/codegen/status.h>
 
 namespace grpc {
+
+class CompletionQueue;
 
 template <class R>
 class ClientAsyncResponseReaderInterface {

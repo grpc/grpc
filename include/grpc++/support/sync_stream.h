@@ -34,17 +34,17 @@
 #ifndef GRPCXX_SUPPORT_SYNC_STREAM_H
 #define GRPCXX_SUPPORT_SYNC_STREAM_H
 
-#include <grpc/support/log.h>
-#include <grpc++/channel.h>
+#include <grpc/impl/codegen/log.h>
 #include <grpc++/impl/codegen/channel_interface.h>
-#include <grpc++/client_context.h>
-#include <grpc++/completion_queue.h>
-#include <grpc++/impl/call.h>
-#include <grpc++/impl/service_type.h>
-#include <grpc++/server_context.h>
-#include <grpc++/support/status.h>
+#include <grpc++/impl/codegen/client_context.h>
+#include <grpc++/impl/codegen/call.h>
+#include <grpc++/impl/codegen/service_type.h>
+#include <grpc++/impl/codegen/server_context.h>
+#include <grpc++/impl/codegen/status.h>
 
 namespace grpc {
+
+class CompletionQueue;
 
 /// Common interface for all synchronous client side streaming.
 class ClientStreamingInterface {
@@ -121,7 +121,9 @@ class ClientReader GRPC_FINAL : public ClientReaderInterface<R> {
   template <class W>
   ClientReader(ChannelInterface* channel, const RpcMethod& method,
                ClientContext* context, const W& request)
-      : context_(context), call_(channel->CreateCall(method, context, &cq_)) {
+      : context_(context),
+        cq_(new CompletionQueue),
+        call_(channel->CreateCall(method, context, cq_.get())) {
     CallOpSet<CallOpSendInitialMetadata, CallOpSendMessage,
               CallOpClientSendClose> ops;
     ops.SendInitialMetadata(context->send_initial_metadata_);
@@ -129,7 +131,7 @@ class ClientReader GRPC_FINAL : public ClientReaderInterface<R> {
     GPR_ASSERT(ops.SendMessage(request).ok());
     ops.ClientSendClose();
     call_.PerformOps(&ops);
-    cq_.Pluck(&ops);
+    cq_->Pluck(&ops);
   }
 
   void WaitForInitialMetadata() GRPC_OVERRIDE {
@@ -138,7 +140,7 @@ class ClientReader GRPC_FINAL : public ClientReaderInterface<R> {
     CallOpSet<CallOpRecvInitialMetadata> ops;
     ops.RecvInitialMetadata(context_);
     call_.PerformOps(&ops);
-    cq_.Pluck(&ops);  /// status ignored
+    cq_->Pluck(&ops);  /// status ignored
   }
 
   bool Read(R* msg) GRPC_OVERRIDE {
@@ -148,7 +150,7 @@ class ClientReader GRPC_FINAL : public ClientReaderInterface<R> {
     }
     ops.RecvMessage(msg);
     call_.PerformOps(&ops);
-    return cq_.Pluck(&ops) && ops.got_message;
+    return cq_->Pluck(&ops) && ops.got_message;
   }
 
   Status Finish() GRPC_OVERRIDE {
@@ -156,13 +158,13 @@ class ClientReader GRPC_FINAL : public ClientReaderInterface<R> {
     Status status;
     ops.ClientRecvStatus(context_, &status);
     call_.PerformOps(&ops);
-    GPR_ASSERT(cq_.Pluck(&ops));
+    GPR_ASSERT(cq_->Pluck(&ops));
     return status;
   }
 
  private:
   ClientContext* context_;
-  CompletionQueue cq_;
+  std::unique_ptr<CompletionQueue> cq_;
   Call call_;
 };
 
@@ -185,13 +187,15 @@ class ClientWriter : public ClientWriterInterface<W> {
   template <class R>
   ClientWriter(ChannelInterface* channel, const RpcMethod& method,
                ClientContext* context, R* response)
-      : context_(context), call_(channel->CreateCall(method, context, &cq_)) {
+      : context_(context),
+        cq_(new CompletionQueue),
+        call_(channel->CreateCall(method, context, cq_.get())) {
     finish_ops_.RecvMessage(response);
 
     CallOpSet<CallOpSendInitialMetadata> ops;
     ops.SendInitialMetadata(context->send_initial_metadata_);
     call_.PerformOps(&ops);
-    cq_.Pluck(&ops);
+    cq_->Pluck(&ops);
   }
 
   using WriterInterface<W>::Write;
@@ -201,14 +205,14 @@ class ClientWriter : public ClientWriterInterface<W> {
       return false;
     }
     call_.PerformOps(&ops);
-    return cq_.Pluck(&ops);
+    return cq_->Pluck(&ops);
   }
 
   bool WritesDone() GRPC_OVERRIDE {
     CallOpSet<CallOpClientSendClose> ops;
     ops.ClientSendClose();
     call_.PerformOps(&ops);
-    return cq_.Pluck(&ops);
+    return cq_->Pluck(&ops);
   }
 
   /// Read the final response and wait for the final status.
@@ -216,14 +220,14 @@ class ClientWriter : public ClientWriterInterface<W> {
     Status status;
     finish_ops_.ClientRecvStatus(context_, &status);
     call_.PerformOps(&finish_ops_);
-    GPR_ASSERT(cq_.Pluck(&finish_ops_));
+    GPR_ASSERT(cq_->Pluck(&finish_ops_));
     return status;
   }
 
  private:
   ClientContext* context_;
   CallOpSet<CallOpGenericRecvMessage, CallOpClientRecvStatus> finish_ops_;
-  CompletionQueue cq_;
+  std::unique_ptr<CompletionQueue> cq_;
   Call call_;
 };
 
@@ -251,11 +255,13 @@ class ClientReaderWriter GRPC_FINAL : public ClientReaderWriterInterface<W, R> {
   /// Blocking create a stream.
   ClientReaderWriter(ChannelInterface* channel, const RpcMethod& method,
                      ClientContext* context)
-      : context_(context), call_(channel->CreateCall(method, context, &cq_)) {
+      : context_(context),
+        cq_(new CompletionQueue),
+        call_(channel->CreateCall(method, context, cq_.get())) {
     CallOpSet<CallOpSendInitialMetadata> ops;
     ops.SendInitialMetadata(context->send_initial_metadata_);
     call_.PerformOps(&ops);
-    cq_.Pluck(&ops);
+    cq_->Pluck(&ops);
   }
 
   void WaitForInitialMetadata() GRPC_OVERRIDE {
@@ -264,7 +270,7 @@ class ClientReaderWriter GRPC_FINAL : public ClientReaderWriterInterface<W, R> {
     CallOpSet<CallOpRecvInitialMetadata> ops;
     ops.RecvInitialMetadata(context_);
     call_.PerformOps(&ops);
-    cq_.Pluck(&ops);  // status ignored
+    cq_->Pluck(&ops);  // status ignored
   }
 
   bool Read(R* msg) GRPC_OVERRIDE {
@@ -274,7 +280,7 @@ class ClientReaderWriter GRPC_FINAL : public ClientReaderWriterInterface<W, R> {
     }
     ops.RecvMessage(msg);
     call_.PerformOps(&ops);
-    return cq_.Pluck(&ops) && ops.got_message;
+    return cq_->Pluck(&ops) && ops.got_message;
   }
 
   using WriterInterface<W>::Write;
@@ -282,14 +288,14 @@ class ClientReaderWriter GRPC_FINAL : public ClientReaderWriterInterface<W, R> {
     CallOpSet<CallOpSendMessage> ops;
     if (!ops.SendMessage(msg, options).ok()) return false;
     call_.PerformOps(&ops);
-    return cq_.Pluck(&ops);
+    return cq_->Pluck(&ops);
   }
 
   bool WritesDone() GRPC_OVERRIDE {
     CallOpSet<CallOpClientSendClose> ops;
     ops.ClientSendClose();
     call_.PerformOps(&ops);
-    return cq_.Pluck(&ops);
+    return cq_->Pluck(&ops);
   }
 
   Status Finish() GRPC_OVERRIDE {
@@ -297,13 +303,13 @@ class ClientReaderWriter GRPC_FINAL : public ClientReaderWriterInterface<W, R> {
     Status status;
     ops.ClientRecvStatus(context_, &status);
     call_.PerformOps(&ops);
-    GPR_ASSERT(cq_.Pluck(&ops));
+    GPR_ASSERT(cq_->Pluck(&ops));
     return status;
   }
 
  private:
   ClientContext* context_;
-  CompletionQueue cq_;
+  std::unique_ptr<CompletionQueue> cq_;
   Call call_;
 };
 

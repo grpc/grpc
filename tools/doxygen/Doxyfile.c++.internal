@@ -803,12 +803,15 @@ include/grpc++/support/string_ref.h \
 include/grpc++/support/stub_options.h \
 include/grpc++/support/sync_stream.h \
 include/grpc++/support/time.h \
+include/grpc++/impl/codegen/async_stream.h \
 include/grpc++/impl/codegen/call.h \
 include/grpc++/impl/codegen/call_hook.h \
 include/grpc++/impl/codegen/channel_interface.h \
 include/grpc++/impl/codegen/client_context.h \
 include/grpc++/impl/codegen/completion_queue_tag.h \
 include/grpc++/impl/codegen/config.h \
+include/grpc++/impl/codegen/config_protobuf.h \
+include/grpc++/impl/codegen/proto_utils.h \
 include/grpc++/impl/codegen/security/auth_context.h \
 include/grpc++/impl/codegen/serialization_traits.h \
 include/grpc++/impl/codegen/server_context.h \

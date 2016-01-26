@@ -147,12 +147,15 @@
   </ItemDefinitionGroup>
 
   <ItemGroup>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\async_stream.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\call.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\call_hook.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\channel_interface.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\client_context.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\completion_queue_tag.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\config.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\config_protobuf.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\proto_utils.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\security\auth_context.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\serialization_traits.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\server_context.h" />

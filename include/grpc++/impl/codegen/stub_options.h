@@ -31,9 +31,13 @@
  *
  */
 
-#ifndef GRPCXX_SUPPORT_STUB_OPTIONS_H
-#define GRPCXX_SUPPORT_STUB_OPTIONS_H
+#ifndef GRPCXX_IMPL_CODEGEN_STUB_OPTIONS_H
+#define GRPCXX_IMPL_CODEGEN_STUB_OPTIONS_H
 
-#include <grpc++/impl/codegen/stub_options.h>
+namespace grpc {
 
-#endif  // GRPCXX_SUPPORT_STUB_OPTIONS_H
+class StubOptions {};
+
+}  // namespace grpc
+
+#endif  // GRPCXX_IMPL_CODEGEN_STUB_OPTIONS_H

@@ -18,6 +18,9 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\async_stream.h">
+      <Filter>include\grpc++\impl\codegen</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\call.h">
       <Filter>include\grpc++\impl\codegen</Filter>
     </ClInclude>
@@ -34,6 +37,12 @@
       <Filter>include\grpc++\impl\codegen</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\config.h">
+      <Filter>include\grpc++\impl\codegen</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\config_protobuf.h">
+      <Filter>include\grpc++\impl\codegen</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\proto_utils.h">
       <Filter>include\grpc++\impl\codegen</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\security\auth_context.h">
