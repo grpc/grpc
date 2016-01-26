@@ -69,7 +69,7 @@ Local<Value> ByteBufferToBuffer(grpc_byte_buffer *buffer) {
     return scope.Escape(Nan::Null());
   }
   size_t length = grpc_byte_buffer_length(buffer);
-  char *result = reinterpret_cast<char *>(calloc(length, sizeof(char)));
+  char *result = new char[length];
   size_t offset = 0;
   grpc_byte_buffer_reader reader;
   grpc_byte_buffer_reader_init(&reader, buffer);
