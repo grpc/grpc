@@ -38,9 +38,4 @@
 #include <ws2tcpip.h>
 #include <mswsock.h>
 
-#ifdef __MINGW32__
-/* mingw seems to be missing that definition. */
-const char *inet_ntop(int af, const void *src, char *dst, socklen_t size);
-#endif
-
 #endif /* GRPC_INTERNAL_CORE_IOMGR_SOCKADDR_WIN32_H */
