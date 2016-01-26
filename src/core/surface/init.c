@@ -117,8 +117,10 @@ void grpc_init(void) {
     grpc_iomgr_init();
     grpc_executor_init();
     grpc_tracer_init("GRPC_TRACE");
-    /* Only initialize census if noone else has. */
-    if (census_enabled() == CENSUS_FEATURE_NONE) {
+    /* Only initialize census if none else has and some features are available.
+     */
+    if (census_enabled() == CENSUS_FEATURE_NONE &&
+        census_supported() != CENSUS_FEATURE_NONE) {
       if (census_initialize(census_supported())) { /* enable all features. */
         gpr_log(GPR_ERROR, "Could not initialize census.");
       }
