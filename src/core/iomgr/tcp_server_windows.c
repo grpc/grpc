@@ -531,7 +531,7 @@ int grpc_tcp_server_port_fd(grpc_tcp_server *s, unsigned port_index,
   for (sp = s->head; sp && port_index != 0; sp = sp->next, --port_index)
     ;
   if (sp) {
-    return _open_osfhandle(sp->socket->socket, 0);
+    return _open_osfhandle((intptr_t)sp->socket->socket, 0);
   } else {
     return -1;
   }

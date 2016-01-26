@@ -94,7 +94,11 @@ int gpr_cv_wait(gpr_cv *cv, gpr_mu *mu, gpr_timespec abs_deadline) {
     if (now_ms >= deadline_ms) {
       timeout = 1;
     } else {
-      timeout_max_ms = (DWORD)min(deadline_ms - now_ms, INFINITE - 1);
+      if ((deadline_ms - now_ms) >= INFINITE) {
+        timeout_max_ms = INFINITE - 1;
+      } else {
+        timeout_max_ms = (DWORD)(deadline_ms - now_ms);
+      }
       timeout = (SleepConditionVariableCS(cv, &mu->cs, timeout_max_ms) == 0 &&
                  GetLastError() == ERROR_TIMEOUT);
     }

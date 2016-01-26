@@ -81,15 +81,6 @@ static grpc_pollset_worker *pop_front_worker(
   }
 }
 
-static void push_back_worker(grpc_pollset_worker *root,
-                             grpc_pollset_worker_link_type type,
-                             grpc_pollset_worker *worker) {
-  worker->links[type].next = root;
-  worker->links[type].prev = worker->links[type].next->links[type].prev;
-  worker->links[type].prev->links[type].next =
-      worker->links[type].next->links[type].prev = worker;
-}
-
 static void push_front_worker(grpc_pollset_worker *root,
                               grpc_pollset_worker_link_type type,
                               grpc_pollset_worker *worker) {
