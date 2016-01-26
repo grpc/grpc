@@ -219,6 +219,23 @@ class TestCase(test_coverage.Coverage, unittest.TestCase):
 
         test_messages.verify(second_request, second_response, self)
 
+  def testParallelInvocations(self):
+    for (group, method), test_messages_sequence in (
+        self._digest.unary_unary_messages_sequences.iteritems()):
+      for test_messages in test_messages_sequence:
+        first_request = test_messages.request()
+        second_request = test_messages.request()
+
+        first_response_future = self._invoker.future(group, method)(
+            first_request, test_constants.LONG_TIMEOUT)
+        second_response_future = self._invoker.future(group, method)(
+            second_request, test_constants.LONG_TIMEOUT)
+        first_response = first_response_future.result()
+        second_response = second_response_future.result()
+
+        test_messages.verify(first_request, first_response, self)
+        test_messages.verify(second_request, second_response, self)
+
     for (group, method), test_messages_sequence in (
         self._digest.unary_unary_messages_sequences.iteritems()):
       for test_messages in test_messages_sequence:
@@ -236,23 +253,6 @@ class TestCase(test_coverage.Coverage, unittest.TestCase):
 
         for request, response in zip(requests, responses):
           test_messages.verify(request, response, self)
-
-  def testParallelInvocations(self):
-    for (group, method), test_messages_sequence in (
-        self._digest.unary_unary_messages_sequences.iteritems()):
-      for test_messages in test_messages_sequence:
-        first_request = test_messages.request()
-        second_request = test_messages.request()
-
-        first_response_future = self._invoker.future(group, method)(
-            first_request, test_constants.LONG_TIMEOUT)
-        second_response_future = self._invoker.future(group, method)(
-            second_request, test_constants.LONG_TIMEOUT)
-        first_response = first_response_future.result()
-        second_response = second_response_future.result()
-
-        test_messages.verify(first_request, first_response, self)
-        test_messages.verify(second_request, second_response, self)
 
   @unittest.skip('TODO(nathaniel): implement.')
   def testWaitingForSomeButNotAllParallelInvocations(self):
