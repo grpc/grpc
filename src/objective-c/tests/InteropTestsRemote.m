@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -35,7 +35,7 @@
 
 #import "InteropTests.h"
 
-static NSString * const kRemoteSSLHost = @"grpc-test.sandbox.google.com";
+static NSString * const kRemoteSSLHost = @"grpc-test.sandbox.googleapis.com";
 
 /** Tests in InteropTests.m, sending the RPCs to a remote SSL server. */
 @interface InteropTestsRemote : InteropTests

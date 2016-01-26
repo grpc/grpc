@@ -105,114 +105,24 @@
 
   # Configurations
 
-  VALID_CONFIG_opt = 1
-  CC_opt = $(DEFAULT_CC)
-  CXX_opt = $(DEFAULT_CXX)
-  LD_opt = $(DEFAULT_CC)
-  LDXX_opt = $(DEFAULT_CXX)
-  CPPFLAGS_opt = -O2
-  LDFLAGS_opt = -rdynamic
-  DEFINES_opt = NDEBUG
+  % for name, args in configs.iteritems():
+  VALID_CONFIG_${name} = 1
+  %  if args.get('compile_the_world', False):
+  REQUIRE_CUSTOM_LIBRARIES_${name} = 1
+  %  endif
+  %  for tool, default in [('CC', 'CC'), ('CXX', 'CXX'), ('LD', 'CC'), ('LDXX', 'CXX')]:
+  ${tool}_${name} = ${args.get(tool, '$(DEFAULT_%s)' % default)}
+  %  endfor
+  %  for arg in ['CFLAGS', 'CXXFLAGS', 'CPPFLAGS', 'LDFLAGS', 'DEFINES']:
+  %   if args.get(arg, None) is not None:
+  ${arg}_${name} = ${args.get(arg)}
+  %   endif
+  %  endfor
+  %  if args.get('timeout_multiplier', 1) != 1:
+  DEFINES_${name} += GRPC_TEST_SLOWDOWN_BUILD_FACTOR=${args.timeout_multiplier}
+  %  endif
 
-  VALID_CONFIG_basicprof = 1
-  CC_basicprof = $(DEFAULT_CC)
-  CXX_basicprof = $(DEFAULT_CXX)
-  LD_basicprof = $(DEFAULT_CC)
-  LDXX_basicprof = $(DEFAULT_CXX)
-  CPPFLAGS_basicprof = -O2 -DGRPC_BASIC_PROFILER -DGRPC_TIMERS_RDTSC
-  LDFLAGS_basicprof =
-  DEFINES_basicprof = NDEBUG
-
-  VALID_CONFIG_stapprof = 1
-  CC_stapprof = $(DEFAULT_CC)
-  CXX_stapprof = $(DEFAULT_CXX)
-  LD_stapprof = $(DEFAULT_CC)
-  LDXX_stapprof = $(DEFAULT_CXX)
-  CPPFLAGS_stapprof = -O2 -DGRPC_STAP_PROFILER
-  LDFLAGS_stapprof =
-  DEFINES_stapprof = NDEBUG
-
-  VALID_CONFIG_dbg = 1
-  CC_dbg = $(DEFAULT_CC)
-  CXX_dbg = $(DEFAULT_CXX)
-  LD_dbg = $(DEFAULT_CC)
-  LDXX_dbg = $(DEFAULT_CXX)
-  CPPFLAGS_dbg = -O0
-  LDFLAGS_dbg = -rdynamic
-  DEFINES_dbg = _DEBUG DEBUG
-
-  VALID_CONFIG_mutrace = 1
-  CC_mutrace = $(DEFAULT_CC)
-  CXX_mutrace = $(DEFAULT_CXX)
-  LD_mutrace = $(DEFAULT_CC)
-  LDXX_mutrace = $(DEFAULT_CXX)
-  CPPFLAGS_mutrace = -O0
-  LDFLAGS_mutrace = -rdynamic
-  DEFINES_mutrace = _DEBUG DEBUG
-
-  VALID_CONFIG_valgrind = 1
-  REQUIRE_CUSTOM_LIBRARIES_valgrind = 1
-  CC_valgrind = $(DEFAULT_CC)
-  CXX_valgrind = $(DEFAULT_CXX)
-  LD_valgrind = $(DEFAULT_CC)
-  LDXX_valgrind = $(DEFAULT_CXX)
-  CPPFLAGS_valgrind = -O0
-  LDFLAGS_valgrind = -rdynamic
-  DEFINES_valgrind = _DEBUG DEBUG GRPC_TEST_SLOWDOWN_BUILD_FACTOR=20
-
-  VALID_CONFIG_tsan = 1
-  REQUIRE_CUSTOM_LIBRARIES_tsan = 1
-  CC_tsan = clang
-  CXX_tsan = clang++
-  LD_tsan = clang
-  LDXX_tsan = clang++
-  CFLAGS_tsan = -O0 -fsanitize=thread -fno-omit-frame-pointer -Wno-unused-command-line-argument -fPIE -pie
-  CXXFLAGS_tsan = -O0 -fsanitize=thread -fno-omit-frame-pointer -Wno-unused-command-line-argument -fPIE -pie
-  LDFLAGS_tsan = -fsanitize=thread -fPIE -pie $(if $(JENKINS_BUILD),-Wl$(comma)-Ttext-segment=0x7e0000000000,)
-  DEFINES_tsan = NDEBUG GRPC_TEST_SLOWDOWN_BUILD_FACTOR=10
-
-  VALID_CONFIG_asan = 1
-  REQUIRE_CUSTOM_LIBRARIES_asan = 1
-  CC_asan = clang
-  CXX_asan = clang++
-  LD_asan = clang
-  LDXX_asan = clang++
-  CFLAGS_asan = -O0 -fsanitize=address -fno-omit-frame-pointer -Wno-unused-command-line-argument
-  CXXFLAGS_asan = -O0 -fsanitize=address -fno-omit-frame-pointer -Wno-unused-command-line-argument
-  LDFLAGS_asan = -fsanitize=address
-  DEFINES_asan = GRPC_TEST_SLOWDOWN_BUILD_FACTOR=3
-
-  VALID_CONFIG_msan = 1
-  REQUIRE_CUSTOM_LIBRARIES_msan = 1
-  CC_msan = clang
-  CXX_msan = clang++-libc++
-  LD_msan = clang
-  LDXX_msan = clang++-libc++
-  CFLAGS_msan = -O0 -fsanitize=memory -fsanitize-memory-track-origins -fno-omit-frame-pointer -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1 -Wno-unused-command-line-argument -fPIE -pie
-  CXXFLAGS_msan = -O0 -fsanitize=memory -fsanitize-memory-track-origins -fno-omit-frame-pointer -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1 -Wno-unused-command-line-argument -fPIE -pie
-  LDFLAGS_msan = -fsanitize=memory -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1 -fPIE -pie $(if $(JENKINS_BUILD),-Wl$(comma)-Ttext-segment=0x7e0000000000,)
-  DEFINES_msan = NDEBUG GRPC_TEST_SLOWDOWN_BUILD_FACTOR=4
-
-  VALID_CONFIG_ubsan = 1
-  REQUIRE_CUSTOM_LIBRARIES_ubsan = 1
-  CC_ubsan = clang
-  CXX_ubsan = clang++
-  LD_ubsan = clang
-  LDXX_ubsan = clang++
-  CFLAGS_ubsan = -O1 -fsanitize=undefined -fno-omit-frame-pointer -Wno-unused-command-line-argument
-  CXXFLAGS_ubsan = -O1 -fsanitize=undefined -fno-omit-frame-pointer -Wno-unused-command-line-argument
-  LDFLAGS_ubsan = -fsanitize=undefined
-  DEFINES_ubsan = NDEBUG GRPC_TEST_SLOWDOWN_BUILD_FACTOR=3
-
-  VALID_CONFIG_gcov = 1
-  CC_gcov = gcc
-  CXX_gcov = g++
-  LD_gcov = gcc
-  LDXX_gcov = g++
-  CFLAGS_gcov = -O0 -fprofile-arcs -ftest-coverage -Wno-return-type
-  CXXFLAGS_gcov = -O0 -fprofile-arcs -ftest-coverage -Wno-return-type
-  LDFLAGS_gcov = -fprofile-arcs -ftest-coverage -rdynamic
-  DEFINES_gcov = _DEBUG DEBUG GPR_GCOV
+  % endfor
 
 
   # General settings.
@@ -542,14 +452,21 @@
   PC_LIBS_GRPC =
 
   ifeq ($(HAS_SYSTEM_ZLIB),false)
-  ifeq ($(HAS_EMBEDDED_ZLIB),true)
-  ZLIB_DEP = $(LIBDIR)/$(CONFIG)/zlib/libz.a
-  ZLIB_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/zlib/libz.a
-  CPPFLAGS += -Ithird_party/zlib
-  LDFLAGS += -L$(LIBDIR)/$(CONFIG)/zlib
+  ifeq ($(HAS_EMBEDDED_ZLIB), true)
+  EMBED_ZLIB ?= true
   else
   DEP_MISSING += zlib
+  EMBED_ZLIB ?= broken
   endif
+  else
+  EMBED_ZLIB ?= false
+  endif
+
+  ifeq ($(EMBED_ZLIB),true)
+  ZLIB_DEP = $(LIBDIR)/$(CONFIG)/libz.a
+  ZLIB_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/libz.a
+  CPPFLAGS += -Ithird_party/zlib
+  LDFLAGS += -L$(LIBDIR)/$(CONFIG)/zlib
   else
   ifeq ($(HAS_PKG_CONFIG),true)
   CPPFLAGS += $(shell $(PKG_CONFIG) --cflags zlib)
@@ -848,14 +765,6 @@
   	$(PROTOBUF_CHECK_CMD) || true
   	$(PROTOC_CHECK_VERSION_CMD) || true
   	$(ZOOKEEPER_CHECK_CMD) || true
-
-  $(LIBDIR)/$(CONFIG)/zlib/libz.a:
-  	$(E) "[MAKE]    Building zlib"
-  	$(Q)(cd third_party/zlib ; CC="$(CC)" CFLAGS="$(CFLAGS_$(CONFIG)) $(PIC_CPPFLAGS) -fvisibility=hidden $(CPPFLAGS_$(CONFIG)) $(ZLIB_CFLAGS_EXTRA)" ./configure --static)
-  	$(Q)$(MAKE) -C third_party/zlib clean
-  	$(Q)$(MAKE) -C third_party/zlib
-  	$(Q)mkdir -p $(LIBDIR)/$(CONFIG)/zlib
-  	$(Q)cp third_party/zlib/libz.a $(LIBDIR)/$(CONFIG)/zlib
 
   third_party/protobuf/configure:
   	$(E) "[AUTOGEN] Preparing protobuf"
@@ -1528,6 +1437,8 @@
   $(LIB${lib.name.upper()}_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value -fvisibility=hidden
   $(LIB${lib.name.upper()}_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS) -fvisibility=hidden
   $(LIB${lib.name.upper()}_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+  % elif lib.zlib:
+  $(LIB${lib.name.upper()}_OBJS): CFLAGS := $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-implicit-function-declaration -fvisibility=hidden
   % else:
   % endif
 
