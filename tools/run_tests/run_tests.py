@@ -631,9 +631,9 @@ def _get_dockerfile_dir(language, cfg, arch):
     return custom
   else:
     if arch == 'default' or arch == 'x64':
-      return 'tools/dockerfile/grpc_jenkins_slave_x64'
+      return 'tools/dockerfile/grpc_tests_multilang_x64'
     elif arch == 'x86':
-      return 'tools/dockerfile/grpc_jenkins_slave_x86'
+      return 'tools/dockerfile/grpc_tests_multilang_x86'
     else:
       print 'Architecture %s not supported with current settings.' % arch
       sys.exit(1)
@@ -804,7 +804,7 @@ if args.use_docker:
     time.sleep(5)
 
   child_argv = [ arg for arg in sys.argv if not arg == '--use_docker' ]
-  run_tests_cmd = 'tools/run_tests/run_tests.py %s' % ' '.join(child_argv[1:])
+  run_tests_cmd = 'python tools/run_tests/run_tests.py %s' % ' '.join(child_argv[1:])
 
   env = os.environ.copy()
   env['RUN_TESTS_COMMAND'] = run_tests_cmd
