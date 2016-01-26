@@ -117,8 +117,8 @@ void grpc_init(void) {
     grpc_iomgr_init();
     grpc_executor_init();
     grpc_tracer_init("GRPC_TRACE");
-    /* Only initialize census if none else has and some features are available.
-     */
+    /* Only initialize census if no one else has and some features are
+     * available. */
     if (census_enabled() == CENSUS_FEATURE_NONE &&
         census_supported() != CENSUS_FEATURE_NONE) {
       if (census_initialize(census_supported())) { /* enable all features. */
