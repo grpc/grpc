@@ -553,6 +553,7 @@ def _check_arch_option(arch):
     _windows_arch_option(arch)
   elif platform_string() == 'linux':
     # On linux, we need to be running under docker with the right architecture.
+    runtime_arch = platform.architecture()[0]
     if arch == 'default':
       return
     elif runtime_arch == '64bit' and arch == 'x64':
