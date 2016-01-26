@@ -545,6 +545,27 @@ def _windows_arch_option(arch):
   else:
     print 'Architecture %s not supported.' % arch
     sys.exit(1)
+    
+
+def _check_arch_option(arch):
+  """Checks that architecture option is valid."""
+  if platform_string() == 'windows':
+    _windows_arch_option(arch)
+  elif platform_string() == 'linux':
+    # On linux, we need to be running under docker with the right architecture.
+    if arch == 'default':
+      return
+    elif runtime_arch == '64bit' and arch == 'x64':
+      return
+    elif runtime_arch == '32bit' and arch == 'x86':
+      return
+    else:
+      print 'Architecture %s does not match current runtime architecture.' % arch
+      sys.exit(1)
+  else:
+    if args.arch != 'default':
+      print 'Architecture %s not supported on current platform.' % args.arch
+      sys.exit(1)
 
 
 def _windows_build_bat(compiler):
@@ -735,15 +756,6 @@ if any(language.make_options() for language in languages):
   else:
     language_make_options = next(iter(languages)).make_options()
 
-if platform_string() != 'windows':
-  if args.arch != 'default' and platform_string() != 'linux':
-      # TODO: check if the current arch is correct 
-      print 'Architecture %s not supported on current platform.' % args.arch
-      sys.exit(1)
-  if args.compiler != 'default':
-    print 'Compiler %s not supported on current platform.' % args.compiler
-    sys.exit(1)
-
 if len(languages) != 1 or len(build_configs) != 1:
   print 'Multi-language and multi-config testing is not supported.'
   sys.exit(1)
@@ -773,6 +785,12 @@ if args.use_docker:
                         shell=True,
                         env=env)
   sys.exit(0)
+  
+if platform_string() != 'windows' and args.compiler != 'default':
+    print 'Compiler %s not supported on current platform.' % args.compiler
+    sys.exit(1)
+
+_check_arch_option(args.arch)
 
 def make_jobspec(cfg, targets, makefile='Makefile'):
   if platform_string() == 'windows':
