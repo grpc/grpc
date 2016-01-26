@@ -774,8 +774,8 @@ if args.use_docker:
                         env=env)
   sys.exit(0)
 
-if platform_string() == 'windows':
-  def make_jobspec(cfg, targets, makefile='Makefile'):
+def make_jobspec(cfg, targets, makefile='Makefile'):
+  if platform_string() == 'windows':
     extra_args = []
     # better do parallel compilation
     # empirically /m:2 gives the best performance/price and should prevent
@@ -793,8 +793,7 @@ if platform_string() == 'windows':
                       language_make_options,
                       shell=True, timeout_seconds=None)
       for target in targets]
-else:
-  def make_jobspec(cfg, targets, makefile='Makefile'):
+  else:
     if targets:
       return [jobset.JobSpec([os.getenv('MAKE', 'make'),
                               '-f', makefile,
@@ -807,6 +806,7 @@ else:
                              timeout_seconds=None)]
     else:
       return []
+
 make_targets = {}
 for l in languages:
   makefile = l.makefile_name()
