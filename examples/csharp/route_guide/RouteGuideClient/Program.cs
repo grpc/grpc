@@ -1,4 +1,4 @@
-﻿// Copyright 2015, Google Inc.
+﻿// Copyright 2015-2016, Google Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -230,7 +230,7 @@ namespace Routeguide
 
         static void Main(string[] args)
         {
-            var channel = new Channel("127.0.0.1:50052", Credentials.Insecure);
+            var channel = new Channel("127.0.0.1:50052", ChannelCredentials.Insecure);
             var client = new RouteGuideClient(RouteGuide.NewClient(channel));
 
             // Looking for a valid feature

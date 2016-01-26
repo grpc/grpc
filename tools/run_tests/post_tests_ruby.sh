@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2015, Google Inc.
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -43,4 +43,4 @@ genhtml $tmp2 --output-directory $out
 rm $tmp2
 rm $tmp1
 
-cp -rv $root/src/ruby/coverage $root/reports/ruby
+cp -rv $root/coverage $root/reports/ruby
