@@ -33,6 +33,7 @@
 
 #include <grpc++/server_context.h>
 
+#include <grpc/compression.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>

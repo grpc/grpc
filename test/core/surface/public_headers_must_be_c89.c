@@ -37,6 +37,7 @@
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
+#include <grpc/impl/codegen/alloc.h>
 #include <grpc/impl/codegen/atm.h>
 #include <grpc/impl/codegen/byte_buffer.h>
 #include <grpc/impl/codegen/compression_types.h>

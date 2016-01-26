@@ -2274,6 +2274,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/support/tls_msvc.h \
     include/grpc/support/tls_pthread.h \
     include/grpc/support/useful.h \
+    include/grpc/impl/codegen/alloc.h \
     include/grpc/impl/codegen/atm.h \
     include/grpc/impl/codegen/atm_gcc_atomic.h \
     include/grpc/impl/codegen/atm_gcc_sync.h \
@@ -3070,12 +3071,17 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/support/stub_options.h \
     include/grpc++/support/sync_stream.h \
     include/grpc++/support/time.h \
+    include/grpc++/impl/codegen/call.h \
     include/grpc++/impl/codegen/call_hook.h \
     include/grpc++/impl/codegen/channel_interface.h \
+    include/grpc++/impl/codegen/client_context.h \
     include/grpc++/impl/codegen/completion_queue_tag.h \
     include/grpc++/impl/codegen/config.h \
     include/grpc++/impl/codegen/security/auth_context.h \
+    include/grpc++/impl/codegen/serialization_traits.h \
+    include/grpc++/impl/codegen/server_context.h \
     include/grpc++/impl/codegen/server_interface.h \
+    include/grpc++/impl/codegen/service_type.h \
     include/grpc++/impl/codegen/status.h \
     include/grpc++/impl/codegen/status_code_enum.h \
     include/grpc++/impl/codegen/string_ref.h \
@@ -3353,12 +3359,17 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/support/stub_options.h \
     include/grpc++/support/sync_stream.h \
     include/grpc++/support/time.h \
+    include/grpc++/impl/codegen/call.h \
     include/grpc++/impl/codegen/call_hook.h \
     include/grpc++/impl/codegen/channel_interface.h \
+    include/grpc++/impl/codegen/client_context.h \
     include/grpc++/impl/codegen/completion_queue_tag.h \
     include/grpc++/impl/codegen/config.h \
     include/grpc++/impl/codegen/security/auth_context.h \
+    include/grpc++/impl/codegen/serialization_traits.h \
+    include/grpc++/impl/codegen/server_context.h \
     include/grpc++/impl/codegen/server_interface.h \
+    include/grpc++/impl/codegen/service_type.h \
     include/grpc++/impl/codegen/status.h \
     include/grpc++/impl/codegen/status_code_enum.h \
     include/grpc++/impl/codegen/string_ref.h \
@@ -3443,12 +3454,17 @@ LIBGRPC_PLUGIN_SUPPORT_SRC = \
     src/compiler/ruby_generator.cc \
 
 PUBLIC_HEADERS_CXX += \
+    include/grpc++/impl/codegen/call.h \
     include/grpc++/impl/codegen/call_hook.h \
     include/grpc++/impl/codegen/channel_interface.h \
+    include/grpc++/impl/codegen/client_context.h \
     include/grpc++/impl/codegen/completion_queue_tag.h \
     include/grpc++/impl/codegen/config.h \
     include/grpc++/impl/codegen/security/auth_context.h \
+    include/grpc++/impl/codegen/serialization_traits.h \
+    include/grpc++/impl/codegen/server_context.h \
     include/grpc++/impl/codegen/server_interface.h \
+    include/grpc++/impl/codegen/service_type.h \
     include/grpc++/impl/codegen/status.h \
     include/grpc++/impl/codegen/status_code_enum.h \
     include/grpc++/impl/codegen/string_ref.h \
@@ -3456,6 +3472,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/impl/codegen/sync_cxx11.h \
     include/grpc++/impl/codegen/sync_no_cxx11.h \
     include/grpc++/impl/codegen/time.h \
+    include/grpc/impl/codegen/alloc.h \
     include/grpc/impl/codegen/atm.h \
     include/grpc/impl/codegen/atm_gcc_atomic.h \
     include/grpc/impl/codegen/atm_gcc_sync.h \
