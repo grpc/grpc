@@ -34,12 +34,6 @@
 #ifndef GRPCXX_IMPL_SYNC_H
 #define GRPCXX_IMPL_SYNC_H
 
-#include <grpc++/support/config.h>
-
-#ifdef GRPC_CXX0X_NO_THREAD
-#include <grpc++/impl/sync_no_cxx11.h>
-#else
-#include <grpc++/impl/sync_cxx11.h>
-#endif
+#include <grpc++/impl/codegen/sync.h>
 
 #endif  // GRPCXX_IMPL_SYNC_H

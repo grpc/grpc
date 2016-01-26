@@ -45,6 +45,7 @@ class GenericServerContext;
 class RpcService;
 class RpcServiceMethod;
 class ServerAsyncStreamingInterface;
+class ServerCompletionQueue;
 class ServerContext;
 class ServerCredentials;
 class Service;

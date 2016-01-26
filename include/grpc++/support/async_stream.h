@@ -34,16 +34,15 @@
 #ifndef GRPCXX_SUPPORT_ASYNC_STREAM_H
 #define GRPCXX_SUPPORT_ASYNC_STREAM_H
 
-#include <grpc/support/log.h>
 #include <grpc++/impl/codegen/channel_interface.h>
-#include <grpc++/client_context.h>
-#include <grpc++/completion_queue.h>
 #include <grpc++/impl/call.h>
 #include <grpc++/impl/service_type.h>
 #include <grpc++/server_context.h>
-#include <grpc++/support/status.h>
+#include <grpc++/impl/codegen/status.h>
 
 namespace grpc {
+
+class CompletionQueue;
 
 /// Common interface for all client side asynchronous streaming.
 class ClientAsyncStreamingInterface {
