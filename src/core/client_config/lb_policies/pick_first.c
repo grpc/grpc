@@ -76,7 +76,7 @@ typedef struct {
 } pick_first_lb_policy;
 
 #define GET_SELECTED(p) \
-  ((grpc_connected_subchannel *)gpr_atm_no_barrier_load(&(p)->selected))
+  ((grpc_connected_subchannel *)gpr_atm_acq_load(&(p)->selected))
 
 void pf_destroy(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
   pick_first_lb_policy *p = (pick_first_lb_policy *)pol;
@@ -268,10 +268,10 @@ static void pf_connectivity_changed(grpc_exec_ctx *exec_ctx, void *arg,
         selected =
             grpc_subchannel_get_connected_subchannel(selected_subchannel);
         GPR_ASSERT(selected != NULL);
-        gpr_atm_no_barrier_store(&p->selected, (gpr_atm)selected);
         GRPC_CONNECTED_SUBCHANNEL_REF(selected, "picked_first");
         /* drop the pick list: we are connected now */
         GRPC_LB_POLICY_WEAK_REF(&p->base, "destroy_subchannels");
+        gpr_atm_rel_store(&p->selected, (gpr_atm)selected);
         grpc_exec_ctx_enqueue(exec_ctx,
                               grpc_closure_create(destroy_subchannels, p), 1);
         /* update any calls that were waiting for a pick */

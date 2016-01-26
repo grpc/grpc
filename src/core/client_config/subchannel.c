@@ -519,7 +519,7 @@ static void publish_transport(grpc_exec_ctx *exec_ctx, grpc_subchannel *c) {
   }
 
   /* publish */
-  GPR_ASSERT(gpr_atm_no_barrier_cas(&c->connected_subchannel, 0, (gpr_atm)con));
+  GPR_ASSERT(gpr_atm_rel_cas(&c->connected_subchannel, 0, (gpr_atm)con));
   c->connecting = 0;
 
   /* setup subchannel watching connected subchannel for changes; subchannel ref
