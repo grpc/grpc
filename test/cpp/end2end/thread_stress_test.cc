@@ -259,7 +259,7 @@ class AsyncClientEnd2endTest : public End2endTest {
     for (int i = 0; i < num_rpcs; ++i) {
       AsyncClientCall* call = new AsyncClientCall;
       EchoRequest request;
-      request.set_message(std::to_string(i));
+      request.set_message("Hello");
       call->response_reader = stub_->AsyncEcho(&call->context, request, &cq_);
       call->response_reader->Finish(&call->response, &call->status,
                                     (void*)call);
