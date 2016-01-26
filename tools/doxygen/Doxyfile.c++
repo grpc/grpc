@@ -807,9 +807,14 @@ include/grpc++/impl/codegen/call_hook.h \
 include/grpc++/impl/codegen/channel_interface.h \
 include/grpc++/impl/codegen/completion_queue_tag.h \
 include/grpc++/impl/codegen/config.h \
+include/grpc++/impl/codegen/security/auth_context.h \
 include/grpc++/impl/codegen/server_interface.h \
 include/grpc++/impl/codegen/status.h \
 include/grpc++/impl/codegen/status_code_enum.h \
+include/grpc++/impl/codegen/string_ref.h \
+include/grpc++/impl/codegen/sync.h \
+include/grpc++/impl/codegen/sync_cxx11.h \
+include/grpc++/impl/codegen/sync_no_cxx11.h \
 include/grpc++/impl/codegen/time.h
 
 # This tag can be used to specify the character encoding of the source files
