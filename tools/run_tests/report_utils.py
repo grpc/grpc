@@ -77,7 +77,7 @@ def render_junit_xml_report(resultset, xml_report):
 
 def render_interop_html_report(
   client_langs, server_langs, test_cases, auth_test_cases, http2_cases, 
-  resultset, num_failures, cloud_to_prod, http2_interop):
+  resultset, num_failures, cloud_to_prod, cloud_to_prod_v2, http2_interop):
   """Generate HTML report for interop tests."""
   template_file = 'tools/run_tests/interop_html_report.template'
   try:
@@ -103,6 +103,7 @@ def render_interop_html_report(
           'resultset': resultset,
           'num_failures': num_failures,
           'cloud_to_prod': cloud_to_prod,
+          'cloud_to_prod_v2': cloud_to_prod_v2,
           'http2_interop': http2_interop}
 
   html_report_out_dir = 'reports' 
