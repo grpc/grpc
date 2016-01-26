@@ -576,9 +576,9 @@ def _windows_toolset_option(compiler):
 def _get_dockerfile_dir(arch):
   """Returns dockerfile to use"""
   if arch == 'default' or arch == 'x64':
-    return 'tools/jenkins/grpc_jenkins_slave'
+    return 'tools/dockerfile/grpc_jenkins_slave_x64'
   elif arch == 'x86':
-    return 'tools/jenkins/grpc_jenkins_slave_32bits'
+    return 'tools/dockerfile/grpc_jenkins_slave_x86'
   else:
     print 'Architecture %s not supported with current settings.' % arch
     sys.exit(1)
