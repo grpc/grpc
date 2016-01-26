@@ -31,9 +31,46 @@
  *
  */
 
-#ifndef GRPCXX_SUPPORT_STUB_OPTIONS_H
-#define GRPCXX_SUPPORT_STUB_OPTIONS_H
+#ifndef GRPCXX_IMPL_CODEGEN_PROTO_UTILS_H
+#define GRPCXX_IMPL_CODEGEN_PROTO_UTILS_H
 
-#include <grpc++/impl/codegen/stub_options.h>
+#include <type_traits>
 
-#endif  // GRPCXX_SUPPORT_STUB_OPTIONS_H
+#include <grpc/impl/codegen/byte_buffer.h>
+#include <grpc++/impl/codegen/serialization_traits.h>
+#include <grpc++/impl/codegen/config_protobuf.h>
+#include <grpc++/impl/codegen/status.h>
+
+namespace grpc {
+
+// Serialize the msg into a buffer created inside the function. The caller
+// should destroy the returned buffer when done with it. If serialization fails,
+// false is returned and buffer is left unchanged.
+Status SerializeProto(const grpc::protobuf::Message& msg,
+                      grpc_byte_buffer** buffer);
+
+// The caller keeps ownership of buffer and msg.
+Status DeserializeProto(grpc_byte_buffer* buffer, grpc::protobuf::Message* msg,
+                        int max_message_size);
+
+template <class T>
+class SerializationTraits<T, typename std::enable_if<std::is_base_of<
+                                 grpc::protobuf::Message, T>::value>::type> {
+ public:
+  static Status Serialize(const grpc::protobuf::Message& msg,
+                          grpc_byte_buffer** buffer, bool* own_buffer) {
+    *own_buffer = true;
+    return SerializeProto(msg, buffer);
+  }
+  static Status Deserialize(grpc_byte_buffer* buffer,
+                            grpc::protobuf::Message* msg,
+                            int max_message_size) {
+    auto status = DeserializeProto(buffer, msg, max_message_size);
+    grpc_byte_buffer_destroy(buffer);
+    return status;
+  }
+};
+
+}  // namespace grpc
+
+#endif  // GRPCXX_IMPL_CODEGEN_PROTO_UTILS_H
