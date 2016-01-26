@@ -95,8 +95,6 @@ RUN apt-get update && apt-get -y dist-upgrade && apt-get install -y \
 RUN cd /var/local && wget www.nuget.org/NuGet.exe
 ENV NUGET mono /var/local/NuGet.exe
 
-# TODO(jtattermusch): add dependencies for other languages
-
 ##################
 # Node dependencies
 

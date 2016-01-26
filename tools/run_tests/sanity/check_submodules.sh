@@ -1,4 +1,5 @@
-#!/bin/bash
+#!/bin/sh
+
 # Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
@@ -27,45 +28,27 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# This script is invoked by build_docker_and_run_tests.sh inside a docker
-# container. You should never need to call this script on your own.
+
 
 set -e
 
-export CONFIG=$config
-export ASAN_SYMBOLIZER_PATH=/usr/bin/llvm-symbolizer-3.5
+export TEST=true
 
-# Ensure that programs depending on current-user-ownership of cache directories
-# are satisfied (it's being mounted from outside the image).
-chown `whoami` $XDG_CACHE_HOME
+cd `dirname $0`/../../..
 
-mkdir -p /var/local/git
-git clone --recursive /var/local/jenkins/grpc /var/local/git/grpc
+submodules=`mktemp /tmp/submXXXXXX`
+want_submodules=`mktemp /tmp/submXXXXXX`
 
-nvm use 0.12 || true
+git submodule | awk '{ print $1 }' | sort > $submodules
+cat << EOF | awk '{ print $1 }' | sort > $want_submodules
+ 9f897b25800d2f54f5c442ef01a60721aeca6d87 third_party/boringssl (version_for_cocoapods_1.0-67-g9f897b2)
+ 05b155ff59114735ec8cd089f669c4c3d8f59029 third_party/gflags (v2.1.0-45-g05b155f)
+ c99458533a9b4c743ed51537e25989ea55944908 third_party/googletest (release-1.7.0)
+ d5fb408ddc281ffcadeb08699e65bb694656d0bd third_party/protobuf (v3.0.0-beta-2)
+ 50893291621658f355bc5b4d450a8d06a563053d third_party/zlib (v1.2.8)
+EOF
 
-if [ -x "$(command -v rvm)" ]
-then
-  rvm use ruby-2.1
-fi
+diff -u $submodules $want_submodules
 
-mkdir -p reports
+rm $submodules $want_submodules
 
-exit_code=0
-
-$RUN_TESTS_COMMAND || exit_code=$?
-
-cd reports
-echo '<html><head></head><body>' > index.html
-find . -maxdepth 1 -mindepth 1 -type d | sort | while read d ; do
-  d=${d#*/}
-  n=${d//_/ }
-  echo "<a href='$d/index.html'>$n</a><br />" >> index.html
-done
-echo '</body></html>' >> index.html
-cd ..
-
-zip -r reports.zip reports
-
-exit $exit_code
