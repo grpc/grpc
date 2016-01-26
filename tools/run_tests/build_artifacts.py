@@ -129,18 +129,19 @@ class CSharpExtArtifact:
                              '/p:PlatformToolset=v120',
                              '/p:Platform=%s' % msbuild_platform],
                             shell=True)
-    if self.platform == 'linux':
-      environ = {'CONFIG': 'opt'}
-      return create_docker_jobspec(self.name,
-                            'tools/jenkins/grpc_artifact_linux_%s' % self.arch,
-                            'tools/run_tests/build_artifact_csharp.sh')
     else:
-      environ = {'CONFIG': 'opt'}
-      if self.platform == 'macos':
+      environ = {'CONFIG': 'opt',
+                 'EMBED_OPENSSL': 'true',
+                 'EMBED_ZLIB': 'true'}
+      if self.platform == 'linux':
+        return create_docker_jobspec(self.name,
+            'tools/jenkins/grpc_artifact_linux_%s' % self.arch,
+            'tools/run_tests/build_artifact_csharp.sh')
+      else:
         environ.update(macos_arch_env(self.arch))
-      return create_jobspec(self.name,
-                            ['tools/run_tests/build_artifact_csharp.sh'],
-                            environ=environ)
+        return create_jobspec(self.name,
+                              ['tools/run_tests/build_artifact_csharp.sh'],
+                              environ=environ)
 
   def __str__(self):
     return self.name
