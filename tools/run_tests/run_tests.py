@@ -546,7 +546,7 @@ def _windows_arch_option(arch):
     print 'Architecture %s not supported on current platform.' % arch
     sys.exit(1)
 
-    
+
 def _windows_build_bat(compiler):
   """Returns name of build.bat for selected compiler."""
   if compiler == 'default' or compiler == 'vs2013':
@@ -558,8 +558,8 @@ def _windows_build_bat(compiler):
   else:
     print 'Compiler %s not supported.' % compiler
     sys.exit(1)
-    
-    
+
+
 def _windows_toolset_option(compiler):
   """Returns msbuild PlatformToolset for selected compiler."""
   if compiler == 'default' or compiler == 'vs2013':
@@ -571,7 +571,17 @@ def _windows_toolset_option(compiler):
   else:
     print 'Compiler %s not supported.' % compiler
     sys.exit(1)
-   
+
+
+def _get_dockerfile_dir():
+  """Returns dockerfile to use"""
+  #TODO: don't depend on env var.
+  arch_env = os.getenv('arch')
+  if arch_env == 'i386':
+    return 'tools/jenkins/grpc_jenkins_slave_32bits'
+  else:
+    # TODO: support 32_bit dockerfile as well
+    return 'tools/jenkins/grpc_jenkins_slave'
 
 def runs_per_test_type(arg_str):
     """Auxilary function to parse the "runs_per_test" flag.
@@ -662,36 +672,6 @@ args = argp.parse_args()
 
 jobset.measure_cpu_costs = args.measure_cpu_costs
 
-if args.use_docker:
-  if not args.travis:
-    print 'Seen --use_docker flag, will run tests under docker.'
-    print
-    print 'IMPORTANT: The changes you are testing need to be locally committed'
-    print 'because only the committed changes in the current branch will be'
-    print 'copied to the docker environment.'
-    time.sleep(5)
-
-  child_argv = [ arg for arg in sys.argv if not arg == '--use_docker' ]
-  run_tests_cmd = 'tools/run_tests/run_tests.py %s' % ' '.join(child_argv[1:])
-
-  # TODO(jtattermusch): revisit if we need special handling for arch here
-  # set arch command prefix in case we are working with different arch.
-  arch_env = os.getenv('arch')
-  if arch_env:
-    run_test_cmd = 'arch %s %s' % (arch_env, run_test_cmd)
-
-  env = os.environ.copy()
-  env['RUN_TESTS_COMMAND'] = run_tests_cmd
-  if args.xml_report:
-    env['XML_REPORT'] = args.xml_report
-  if not args.travis:
-    env['TTY_FLAG'] = '-t'  # enables Ctrl-C when not on Jenkins.
-
-  subprocess.check_call(['tools/jenkins/build_docker_and_run_tests.sh'],
-                        shell=True,
-                        env=env)
-  sys.exit(0)
-
 # update submodules if necessary
 need_to_regenerate_projects = False
 for spec in args.update_submodules:
@@ -762,6 +742,43 @@ if platform_string() != 'windows':
   if args.compiler != 'default':
     print 'Compiler %s not supported on current platform.' % args.compiler
     sys.exit(1)
+
+if len(languages) != 1 or len(build_configs) != 1:
+  print 'Multi-language and multi-config testing is not supported.'
+  sys.exit(1)
+
+if args.use_docker:
+  if not args.travis:
+    print 'Seen --use_docker flag, will run tests under docker.'
+    print
+    print 'IMPORTANT: The changes you are testing need to be locally committed'
+    print 'because only the committed changes in the current branch will be'
+    print 'copied to the docker environment.'
+    time.sleep(5)
+
+  child_argv = [ arg for arg in sys.argv if not arg == '--use_docker' ]
+  run_tests_cmd = 'tools/run_tests/run_tests.py %s' % ' '.join(child_argv[1:])
+
+  # TODO(jtattermusch): revisit if we need special handling for arch here
+  # set arch command prefix in case we are working with different arch.
+  arch_env = os.getenv('arch')
+  if arch_env:
+    run_test_cmd = 'arch %s %s' % (arch_env, run_test_cmd)
+
+  env = os.environ.copy()
+  env['RUN_TESTS_COMMAND'] = run_tests_cmd
+  # TODO: also support 32-bit, figure out the dockerfile properly
+  env['DOCKERFILE_DIR'] = _get_dockerfile_dir()
+  env['DOCKER_RUN_SCRIPT'] = 'tools/jenkins/docker_run_tests.sh'
+  if args.xml_report:
+    env['XML_REPORT'] = args.xml_report
+  if not args.travis:
+    env['TTY_FLAG'] = '-t'  # enables Ctrl-C when not on Jenkins.
+
+  subprocess.check_call(['tools/jenkins/build_docker_and_run_tests.sh'],
+                        shell=True,
+                        env=env)
+  sys.exit(0)
 
 if platform_string() == 'windows':
   def make_jobspec(cfg, targets, makefile='Makefile'):
