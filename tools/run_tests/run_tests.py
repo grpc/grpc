@@ -538,12 +538,12 @@ _WINDOWS_CONFIG = {
 
 def _windows_arch_option(arch):
   """Returns msbuild cmdline option for selected architecture."""
-  if arch == 'default' or arch == 'windows_x86':
+  if arch == 'default' or arch == 'x86':
     return '/p:Platform=Win32'
-  elif arch == 'windows_x64':
+  elif arch == 'x64':
     return '/p:Platform=x64'
   else:
-    print 'Architecture %s not supported on current platform.' % arch
+    print 'Architecture %s not supported.' % arch
     sys.exit(1)
 
 
@@ -573,15 +573,15 @@ def _windows_toolset_option(compiler):
     sys.exit(1)
 
 
-def _get_dockerfile_dir():
+def _get_dockerfile_dir(arch):
   """Returns dockerfile to use"""
-  #TODO: don't depend on env var.
-  arch_env = os.getenv('arch')
-  if arch_env == 'i386':
+  if arch == 'default' or arch == 'x64':
+    return 'tools/jenkins/grpc_jenkins_slave'
+  elif arch == 'x86':
     return 'tools/jenkins/grpc_jenkins_slave_32bits'
   else:
-    # TODO: support 32_bit dockerfile as well
-    return 'tools/jenkins/grpc_jenkins_slave'
+    print 'Architecture %s not supported with current settings.' % arch
+    sys.exit(1)
 
 def runs_per_test_type(arg_str):
     """Auxilary function to parse the "runs_per_test" flag.
@@ -648,7 +648,7 @@ argp.add_argument('--allow_flakes',
                   const=True,
                   help='Allow flaky tests to show as passing (re-runs failed tests up to five times)')
 argp.add_argument('--arch',
-                  choices=['default', 'windows_x86', 'windows_x64'],
+                  choices=['default', 'x86', 'x64'],
                   default='default',
                   help='Selects architecture to target. For some platforms "default" is the only supported choice.')
 argp.add_argument('--compiler',
@@ -736,9 +736,10 @@ if any(language.make_options() for language in languages):
     language_make_options = next(iter(languages)).make_options()
 
 if platform_string() != 'windows':
-  if args.arch != 'default':
-    print 'Architecture %s not supported on current platform.' % args.arch
-    sys.exit(1)
+  if args.arch != 'default' and platform_string() != 'linux':
+      # TODO: check if the current arch is correct 
+      print 'Architecture %s not supported on current platform.' % args.arch
+      sys.exit(1)
   if args.compiler != 'default':
     print 'Compiler %s not supported on current platform.' % args.compiler
     sys.exit(1)
@@ -759,16 +760,9 @@ if args.use_docker:
   child_argv = [ arg for arg in sys.argv if not arg == '--use_docker' ]
   run_tests_cmd = 'tools/run_tests/run_tests.py %s' % ' '.join(child_argv[1:])
 
-  # TODO(jtattermusch): revisit if we need special handling for arch here
-  # set arch command prefix in case we are working with different arch.
-  arch_env = os.getenv('arch')
-  if arch_env:
-    run_test_cmd = 'arch %s %s' % (arch_env, run_test_cmd)
-
   env = os.environ.copy()
   env['RUN_TESTS_COMMAND'] = run_tests_cmd
-  # TODO: also support 32-bit, figure out the dockerfile properly
-  env['DOCKERFILE_DIR'] = _get_dockerfile_dir()
+  env['DOCKERFILE_DIR'] = _get_dockerfile_dir(args.arch)
   env['DOCKER_RUN_SCRIPT'] = 'tools/jenkins/docker_run_tests.sh'
   if args.xml_report:
     env['XML_REPORT'] = args.xml_report
