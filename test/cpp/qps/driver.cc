@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -161,6 +161,8 @@ std::unique_ptr<ScenarioResult> RunScenario(
   // where class contained in std::vector must have a copy constructor
   auto* servers = new ServerData[num_servers];
   for (size_t i = 0; i < num_servers; i++) {
+    gpr_log(GPR_INFO, "Starting server on %s (worker #%d)", workers[i].c_str(),
+            i);
     servers[i].stub = WorkerService::NewStub(
         CreateChannel(workers[i], InsecureChannelCredentials()));
     ServerArgs args;
@@ -188,6 +190,8 @@ std::unique_ptr<ScenarioResult> RunScenario(
   // where class contained in std::vector must have a copy constructor
   auto* clients = new ClientData[num_clients];
   for (size_t i = 0; i < num_clients; i++) {
+    gpr_log(GPR_INFO, "Starting client on %s (worker #%d)",
+            workers[i + num_servers].c_str(), i + num_servers);
     clients[i].stub = WorkerService::NewStub(
         CreateChannel(workers[i + num_servers], InsecureChannelCredentials()));
     ClientArgs args;

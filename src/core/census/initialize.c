@@ -37,9 +37,7 @@ static int features_enabled = CENSUS_FEATURE_NONE;
 
 int census_initialize(int features) {
   if (features_enabled != CENSUS_FEATURE_NONE) {
-    return 1;
-  }
-  if (features == CENSUS_FEATURE_NONE) {
+    // Must have been a previous call to census_initialize; return error
     return 1;
   }
   features_enabled = features;

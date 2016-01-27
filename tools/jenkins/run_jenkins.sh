@@ -39,54 +39,17 @@
 # NOTE: No empty lines should appear in this file before igncr is set!
 set -ex -o igncr || set -ex
 
-# Grabbing the machine's architecture
-arch=`uname -m`
-
-# Number of concurrent cores each executor should try and schedule
-EXECUTOR_CORES=2
-
-case $platform in
-  i386)
-    arch="i386"
-    platform="linux"
-    docker_suffix=_32bits
-    ;;
-esac
-
 if [ "$platform" == "linux" ]
 then
-  echo "building $language on Linux"
-
-  ./tools/run_tests/run_tests.py --use_docker -t -l $language -c $config -x report.xml -j $EXECUTOR_CORES $@ || TESTS_FAILED="true"
-
-elif [ "$platform" == "windows" ]
-then
-  echo "building $language on Windows"
-
-  # Prevent msbuild from picking up "platform" env variable, which would break the build
-  unset platform
-
-  python tools/run_tests/run_tests.py -t -l $language -c $config -x report.xml -j $EXECUTOR_CORES $@ || TESTS_FAILED="true"
-
-elif [ "$platform" == "macos" ]
-then
-  echo "building $language on MacOS"
-
-  # Prevent msbuild from picking up "platform" env variable, which would break the build
-  unset platform
-
-  ./tools/run_tests/run_tests.py -t -l $language -c $config -x report.xml -j $EXECUTOR_CORES $@ || TESTS_FAILED="true"
-
+  USE_DOCKER_MAYBE="--use_docker"
 elif [ "$platform" == "freebsd" ]
 then
-  echo "building $language on FreeBSD"
-
-  MAKE=gmake ./tools/run_tests/run_tests.py -t -l $language -c $config -x report.xml -j $EXECUTOR_CORES $@ || TESTS_FAILED="true"
-
-else
-  echo "Unknown platform $platform"
-  exit 1
+  export MAKE=gmake
 fi
+
+unset platform  # variable named 'platform' breaks the windows build
+
+python tools/run_tests/run_tests.py $USE_DOCKER_MAYBE -t -l $language -c $config -x report.xml -j 2 $@ || TESTS_FAILED="true"
 
 if [ ! -e reports/index.html ]
 then
