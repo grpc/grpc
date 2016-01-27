@@ -1,5 +1,4 @@
-#!/bin/bash
-# Copyright 2015, Google Inc.
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -27,28 +26,37 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Builds PHP interop server and client in a base image.
-set -ex
 
-mkdir -p /var/local/git
-git clone --recursive /var/local/jenkins/grpc /var/local/git/grpc
+# A work-in-progress Dockerfile that allows running gRPC homebrew
+# installations inside docker containers
+FROM debian:jessie
 
-# copy service account keys if available
-cp -r /var/local/jenkins/service_account $HOME || true
+# Core dependencies
+RUN apt-get update && apt-get install -y \
+  bzip2 curl git ruby wget
 
-cd /var/local/git/grpc
-rvm --default use ruby-2.1
+# Install linuxbrew
+ENV PATH /home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin:$PATH
+RUN git clone https://github.com/Homebrew/linuxbrew.git /home/linuxbrew/.linuxbrew
+RUN brew doctor || true
 
-make install-certs
+# Python dependency
+RUN apt-get update && apt-get install -y python-dev
+RUN curl https://bootstrap.pypa.io/get-pip.py | python
 
-# gRPC core and protobuf need to be installed
-make install
+# NodeJS dependency
+RUN touch .profile
+RUN curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.25.4/install.sh | bash
+RUN /bin/bash -l -c "nvm install 0.12"
 
-(cd src/php/ext/grpc && phpize && ./configure && make)
+# Ruby dependency
+RUN gpg --keyserver hkp://keys.gnupg.net --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3
+RUN /bin/bash -l -c "\curl -sSL https://get.rvm.io | bash -s stable"
+RUN /bin/bash -l -c "rvm install ruby-2.1"
 
-(cd third_party/protobuf && make install)
+# PHP dependency
+RUN apt-get update && apt-get install -y php5 php5-dev php-pear phpunit unzip
 
-(cd src/php && composer install)
+RUN /bin/bash -l -c "echo 'export PATH=/home/linuxbrew/.linuxbrew/bin:\$PATH' >> ~/.bashrc"
 
-(cd src/php && protoc-gen-php -i tests/interop/ -o tests/interop/ tests/interop/test.proto)
+CMD ["bash"]
