@@ -135,7 +135,7 @@ class CSharpExtArtifact:
                  'EMBED_ZLIB': 'true'}
       if self.platform == 'linux':
         return create_docker_jobspec(self.name,
-            'tools/jenkins/grpc_artifact_linux_%s' % self.arch,
+            'tools/dockerfile/grpc_artifact_linux_%s' % self.arch,
             'tools/run_tests/build_artifact_csharp.sh')
       else:
         environ.update(macos_arch_env(self.arch))
