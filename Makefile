@@ -208,7 +208,7 @@ CFLAGS_msan = -O0 -fsanitize=memory -fsanitize-memory-track-origins -fno-omit-fr
 CXXFLAGS_msan = -O0 -fsanitize=memory -fsanitize-memory-track-origins -fno-omit-frame-pointer -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1 -Wno-unused-command-line-argument -fPIE -pie
 LDFLAGS_msan = -fsanitize=memory -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1 -fPIE -pie $(if $(JENKINS_BUILD),-Wl$(comma)-Ttext-segment=0x7e0000000000,)
 DEFINES_msan = NDEBUG
-DEFINES_msan += GRPC_TEST_SLOWDOWN_BUILD_FACTOR=1.5
+DEFINES_msan += GRPC_TEST_SLOWDOWN_BUILD_FACTOR=2
 
 VALID_CONFIG_mutrace = 1
 CC_mutrace = $(DEFAULT_CC)
