@@ -36,6 +36,9 @@
 
 #include "src/core/security/security_connector.h"
 #include "src/core/security/security_context.h"
+#include "src/core/support/env.h"
+#include "src/core/support/file.h"
+#include "src/core/support/string.h"
 #include "src/core/tsi/ssl_transport_security.h"
 #include "src/core/tsi/transport_security.h"
 #include "test/core/util/test_config.h"
@@ -297,6 +300,57 @@ static void test_cn_and_multiple_sans_and_others_ssl_peer_to_auth_context(
   GRPC_AUTH_CONTEXT_UNREF(ctx, "test");
 }
 
+static void test_default_ssl_roots(void) {
+  const char *roots_for_override_api = "roots for override api";
+  const char *roots_for_env_var = "roots for env var";
+
+  char *roots_api_file_path;
+  FILE *roots_api_file =
+      gpr_tmpfile("test_roots_for_api_override", &roots_api_file_path);
+  fwrite(roots_for_override_api, 1, strlen(roots_for_override_api),
+         roots_api_file);
+  fclose(roots_api_file);
+
+  char *roots_env_var_file_path;
+  FILE *roots_env_var_file =
+      gpr_tmpfile("test_roots_for_env_var", &roots_env_var_file_path);
+  fwrite(roots_for_env_var, 1, strlen(roots_for_env_var), roots_env_var_file);
+  fclose(roots_env_var_file);
+
+  /* First let's get the root through the override (no env are set). */
+  grpc_override_ssl_default_roots_file_path(roots_api_file_path);
+  gpr_slice roots = grpc_get_default_ssl_roots_for_testing();
+  char *roots_contents = gpr_dump_slice(roots, GPR_DUMP_ASCII);
+  gpr_slice_unref(roots);
+  GPR_ASSERT(strcmp(roots_contents, roots_for_override_api) == 0);
+  gpr_free(roots_contents);
+
+  /* Now let's set the env var: We should get the contents pointed value
+     instead. */
+  gpr_setenv(GRPC_DEFAULT_SSL_ROOTS_FILE_PATH_ENV_VAR, roots_env_var_file_path);
+  roots = grpc_get_default_ssl_roots_for_testing();
+  roots_contents = gpr_dump_slice(roots, GPR_DUMP_ASCII);
+  gpr_slice_unref(roots);
+  GPR_ASSERT(strcmp(roots_contents, roots_for_env_var) == 0);
+  gpr_free(roots_contents);
+
+  /* Now reset the env var. We should fall back to the value overridden using
+     the api. */
+  gpr_setenv(GRPC_DEFAULT_SSL_ROOTS_FILE_PATH_ENV_VAR, "");
+  roots = grpc_get_default_ssl_roots_for_testing();
+  roots_contents = gpr_dump_slice(roots, GPR_DUMP_ASCII);
+  gpr_slice_unref(roots);
+  GPR_ASSERT(strcmp(roots_contents, roots_for_override_api) == 0);
+  gpr_free(roots_contents);
+
+  /* Cleanup. */
+  remove(roots_api_file_path);
+  remove(roots_env_var_file_path);
+  gpr_free(roots_api_file_path);
+  gpr_free(roots_env_var_file_path);
+
+}
+
 /* TODO(jboeuf): Unit-test tsi_shallow_peer_from_auth_context. */
 
 int main(int argc, char **argv) {
@@ -308,6 +362,7 @@ int main(int argc, char **argv) {
   test_cn_and_one_san_ssl_peer_to_auth_context();
   test_cn_and_multiple_sans_ssl_peer_to_auth_context();
   test_cn_and_multiple_sans_and_others_ssl_peer_to_auth_context();
+  test_default_ssl_roots();
 
   grpc_shutdown();
   return 0;
