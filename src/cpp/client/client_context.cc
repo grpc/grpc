@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -48,6 +48,7 @@ namespace grpc {
 class DefaultGlobalClientCallbacks GRPC_FINAL
     : public ClientContext::GlobalCallbacks {
  public:
+  ~DefaultGlobalClientCallbacks() GRPC_OVERRIDE {}
   void DefaultConstructor(ClientContext* context) GRPC_OVERRIDE {}
   void Destructor(ClientContext* context) GRPC_OVERRIDE {}
 };

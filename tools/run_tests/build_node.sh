@@ -36,4 +36,4 @@ CONFIG=${CONFIG:-opt}
 # change to grpc repo root
 cd $(dirname $0)/../..
 
-npm install --unsafe-perm
+npm install --unsafe-perm --build-from-source
