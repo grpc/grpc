@@ -5,7 +5,7 @@
 # This file can be regenerated from the template by running
 # tools/buildgen/generate_projects.sh
 
-# Copyright 2015, Google Inc.
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -723,5 +723,16 @@
         "gpr",
       ]
     },
+    {
+      "target_name": "action_after_build",
+      "type": "none",
+      "dependencies": [ "<(module_name)" ],
+      "copies": [
+        {
+          "files": [ "<(PRODUCT_DIR)/<(module_name).node"],
+          "destination": "<(module_path)"
+        }
+      ]
+    }
   ]
 }
