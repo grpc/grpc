@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -36,7 +36,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <grpc/census.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/slice.h>
 #include <grpc/support/slice_buffer.h>
@@ -201,7 +200,7 @@ grpc_channel *grpc_insecure_channel_create(const char *target,
       "grpc_insecure_channel_create(target=%p, args=%p, reserved=%p)", 3,
       (target, args, reserved));
   GPR_ASSERT(!reserved);
-  if (grpc_channel_args_is_census_enabled(args) || census_enabled()) {
+  if (grpc_channel_args_is_census_enabled(args)) {
     filters[n++] = &grpc_client_census_filter;
   }
   filters[n++] = &grpc_compress_filter;
