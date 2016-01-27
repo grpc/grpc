@@ -42,6 +42,7 @@ enum ClientType {
 enum ServerType {
   SYNC_SERVER = 0;
   ASYNC_SERVER = 1;
+  ASYNC_GENERIC_SERVER = 2;
 }
 
 enum RpcType {
