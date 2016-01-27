@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -519,7 +519,8 @@ static void publish_transport(grpc_exec_ctx *exec_ctx, grpc_subchannel *c) {
   }
 
   /* publish */
-  GPR_ASSERT(gpr_atm_no_barrier_cas(&c->connected_subchannel, 0, (gpr_atm)con));
+  gpr_atm_full_barrier();
+  GPR_ASSERT(gpr_atm_rel_cas(&c->connected_subchannel, 0, (gpr_atm)con));
   c->connecting = 0;
 
   /* setup subchannel watching connected subchannel for changes; subchannel ref
@@ -680,8 +681,9 @@ grpc_subchannel_call *grpc_connected_subchannel_create_call(
     grpc_exec_ctx *exec_ctx, grpc_connected_subchannel *con,
     grpc_pollset *pollset) {
   grpc_channel_stack *chanstk = CHANNEL_STACK_FROM_CONNECTION(con);
+  size_t call_stack_size = chanstk->call_stack_size;
   grpc_subchannel_call *call =
-      gpr_malloc(sizeof(grpc_subchannel_call) + chanstk->call_stack_size);
+      gpr_malloc(sizeof(grpc_subchannel_call) + call_stack_size);
   grpc_call_stack *callstk = SUBCHANNEL_CALL_TO_CALL_STACK(call);
   call->connection = con;
   GRPC_CONNECTED_SUBCHANNEL_REF(con, "subchannel_call");
