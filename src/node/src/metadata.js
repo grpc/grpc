@@ -49,7 +49,7 @@
 
 var _ = require('lodash');
 
-var grpc = require('bindings')('grpc_node');
+var grpc = require('./grpc_extension');
 
 /**
  * Class for storing metadata. Keys are normalized to lowercase ASCII.
