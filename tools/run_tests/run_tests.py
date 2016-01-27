@@ -151,9 +151,9 @@ class CLanguage(object):
   def make_targets(self, test_regex):
     if platform_string() != 'windows' and test_regex != '.*':
       # use the regex to minimize the number of things to build
-      return [target['name']
+      return [os.path.basename(target['name'])
               for target in get_c_tests(False, self.test_lang)
-              if re.search(test_regex, target['name'])]
+              if re.search(test_regex, '/' + target['name'])]
     if platform_string() == 'windows':
       # don't build tools on windows just yet
       return ['buildtests_%s' % self.make_target]
