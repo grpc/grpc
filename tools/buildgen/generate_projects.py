@@ -47,6 +47,7 @@ os.chdir(os.path.join(os.path.dirname(sys.argv[0]), '..', '..'))
 argp = argparse.ArgumentParser()
 argp.add_argument('json', nargs='+')
 argp.add_argument('--templates', nargs='+', default=[])
+argp.add_argument('--jobs', '-j', default=multiprocessing.cpu_count(), type=int)
 args = argp.parse_args()
 
 json = args.json
@@ -87,7 +88,7 @@ for template in templates:
     cmd.append(root + '/' + f)
     jobs.append(jobset.JobSpec(cmd, shortname=out, timeout_seconds=None))
 
-jobset.run(jobs, maxjobs=multiprocessing.cpu_count())
+jobset.run(jobs, maxjobs=args.jobs)
 
 if test is not None:
   for s, g in test.iteritems():
