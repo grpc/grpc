@@ -61,6 +61,11 @@ namespace grpc {
 namespace testing {
 
 static std::unique_ptr<Client> CreateClient(const ClientConfig& config) {
+  gpr_log(GPR_INFO, "Starting client of type %s %s %d",
+          ClientType_Name(config.client_type()).c_str(),
+          RpcType_Name(config.rpc_type()).c_str(),
+          config.payload_config().has_bytebuf_params());
+
   switch (config.client_type()) {
     case ClientType::SYNC_CLIENT:
       return (config.rpc_type() == RpcType::UNARY)
@@ -81,6 +86,9 @@ static std::unique_ptr<Client> CreateClient(const ClientConfig& config) {
 static void LimitCores(int cores) {}
 
 static std::unique_ptr<Server> CreateServer(const ServerConfig& config) {
+  gpr_log(GPR_INFO, "Starting server of type %s",
+          ServerType_Name(config.server_type()).c_str());
+
   if (config.core_limit() > 0) {
     LimitCores(config.core_limit());
   }
@@ -171,22 +179,29 @@ class WorkerServiceImpl GRPC_FINAL : public WorkerService::Service {
     if (!args.has_setup()) {
       return Status(StatusCode::INVALID_ARGUMENT, "");
     }
+    gpr_log(GPR_INFO, "RunClientBody: about to create client");
     auto client = CreateClient(args.setup());
     if (!client) {
       return Status(StatusCode::INVALID_ARGUMENT, "");
     }
+    gpr_log(GPR_INFO, "RunClientBody: client created");
     ClientStatus status;
     if (!stream->Write(status)) {
       return Status(StatusCode::UNKNOWN, "");
     }
+    gpr_log(GPR_INFO, "RunClientBody: creation status reported");
     while (stream->Read(&args)) {
+      gpr_log(GPR_INFO, "RunClientBody: Message read");
       if (!args.has_mark()) {
+        gpr_log(GPR_INFO, "RunClientBody: Message is not a mark!");
         return Status(StatusCode::INVALID_ARGUMENT, "");
       }
       *status.mutable_stats() = client->Mark(args.mark().reset());
       stream->Write(status);
+      gpr_log(GPR_INFO, "RunClientBody: Mark response given");
     }
 
+    gpr_log(GPR_INFO, "RunClientBody: Returning");
     return Status::OK;
   }
 
@@ -202,24 +217,31 @@ class WorkerServiceImpl GRPC_FINAL : public WorkerService::Service {
     if (server_port_ != 0) {
       args.mutable_setup()->set_port(server_port_);
     }
+    gpr_log(GPR_INFO, "RunServerBody: about to create server");
     auto server = CreateServer(args.setup());
     if (!server) {
       return Status(StatusCode::INVALID_ARGUMENT, "");
     }
+    gpr_log(GPR_INFO, "RunServerBody: server created");
     ServerStatus status;
     status.set_port(server->port());
     status.set_cores(server->cores());
     if (!stream->Write(status)) {
       return Status(StatusCode::UNKNOWN, "");
     }
+    gpr_log(GPR_INFO, "RunServerBody: creation status reported");
     while (stream->Read(&args)) {
+      gpr_log(GPR_INFO, "RunServerBody: Message read");
       if (!args.has_mark()) {
+        gpr_log(GPR_INFO, "RunServerBody: Message not a mark!");
         return Status(StatusCode::INVALID_ARGUMENT, "");
       }
       *status.mutable_stats() = server->Mark(args.mark().reset());
       stream->Write(status);
+      gpr_log(GPR_INFO, "RunServerBody: Mark response given");
     }
 
+    gpr_log(GPR_INFO, "RunServerBody: Returning");
     return Status::OK;
   }
 

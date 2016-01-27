@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -51,7 +51,7 @@ var server = require('./src/server.js');
 
 var Metadata = require('./src/metadata.js');
 
-var grpc = require('bindings')('grpc_node');
+var grpc = require('./src/grpc_extension');
 
 /**
  * Load a gRPC object from an existing ProtoBuf.Reflect object.

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,24 +31,10 @@
  *
  */
 
-#include <grpc/census.h>
+var binary = require('node-pre-gyp');
+var path = require('path');
+var binding_path = binary.find(path.resolve(
+    path.join(__dirname,'../../../package.json')));
+var binding = require(binding_path);
 
-static int features_enabled = CENSUS_FEATURE_NONE;
-
-int census_initialize(int features) {
-  if (features_enabled != CENSUS_FEATURE_NONE) {
-    // Must have been a previous call to census_initialize; return error
-    return 1;
-  }
-  features_enabled = features;
-  return 0;
-}
-
-void census_shutdown(void) { features_enabled = CENSUS_FEATURE_NONE; }
-
-int census_supported(void) {
-  /* TODO(aveitch): improve this as we implement features... */
-  return CENSUS_FEATURE_NONE;
-}
-
-int census_enabled(void) { return features_enabled; }
+module.exports = binding;

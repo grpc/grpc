@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2015, Google Inc.
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -45,4 +45,4 @@ make install-certs
 
 # build Node interop client & server
 npm install -g node-gyp
-(npm install && node-gyp rebuild)
+npm install --unsafe-perm --build-from-source
