@@ -50,7 +50,7 @@ char *gpr_getenv(const char *name) {
   errno_t err;
 
   err = getenv_s(&size, NULL, 0, name);
-  if (err) return NULL;
+  if (err || (size == 0)) return NULL;
   result = gpr_malloc(size);
   err = getenv_s(&size, result, size, name);
   if (err) {
