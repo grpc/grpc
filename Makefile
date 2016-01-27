@@ -2189,6 +2189,358 @@ else
 	@echo "   make verify-install"
 endif
 
+uninstall: uninstall_c uninstall_cxx uninstall-plugins uninstall-certs
+
+uninstall_c: uninstall-headers_c uninstall-static_c uninstall-shared_c
+
+uninstall_cxx: uninstall-headers_cxx uninstall-static_cxx uninstall-shared_cxx
+
+uninstall-headers_c:
+	$(E) "[UNINSTALL] Uninstalling public C headers"
+	$(Q) $(foreach h, $(PUBLIC_HEADERS_C), $(RM) $(prefix)/$(h))
+
+uninstall-headers_cxx:
+	$(E) "[UNINSTALL] Uninstalling public C++ headers"
+	$(Q) $(foreach h, $(PUBLIC_HEADERS_CXX), $(RM) $(prefix)/$(h))
+
+uninstall-static: uninstall-static_c uninstall-static_cxx
+
+uninstall-static_c: uninstall-pkg-config_c
+	$(E) "[UNINSTALL] Uninstalling C libs"
+	$(Q) $(RM) $(prefix)/lib/libgpr.a
+	$(Q) $(RM) $(prefix)/lib/libgpr_test_util.a
+	$(Q) $(RM) $(prefix)/lib/libgrpc.a
+	$(Q) $(RM) $(prefix)/lib/libgrpc_test_util.a
+	$(Q) $(RM) $(prefix)/lib/libgrpc_test_util_unsecure.a
+	$(Q) $(RM) $(prefix)/lib/libgrpc_unsecure.a
+	$(Q) $(RM) $(prefix)/lib/libgrpc_zookeeper.a
+	$(Q) $(RM) $(prefix)/lib/libreconnect_server.a
+	$(Q) $(RM) $(prefix)/lib/libtest_tcp_server.a
+	$(Q) $(RM) $(prefix)/lib/libbad_client_test.a
+	$(Q) $(RM) $(prefix)/lib/libbad_ssl_test_server.a
+	$(Q) $(RM) $(prefix)/lib/libend2end_tests.a
+	$(Q) $(RM) $(prefix)/lib/libend2end_nosec_tests.a
+	$(Q) $(RM) $(prefix)/lib/libend2end_certs.a
+
+uninstall-static_cxx: uninstall-pkg-config_cxx
+	$(E) "[UNINSTALL] Uninstalling C++ libs"
+	$(Q) $(RM) $(prefix)/lib/libgrpc++.a
+	$(Q) $(RM) $(prefix)/lib/libgrpc++_test_config.a
+	$(Q) $(RM) $(prefix)/lib/libgrpc++_test_util.a
+	$(Q) $(RM) $(prefix)/lib/libgrpc++_unsecure.a
+	$(Q) $(RM) $(prefix)/lib/libgrpc_plugin_support.a
+	$(Q) $(RM) $(prefix)/lib/libinterop_client_helper.a
+	$(Q) $(RM) $(prefix)/lib/libinterop_client_main.a
+	$(Q) $(RM) $(prefix)/lib/libinterop_server_helper.a
+	$(Q) $(RM) $(prefix)/lib/libinterop_server_main.a
+	$(Q) $(RM) $(prefix)/lib/libqps.a
+
+
+
+uninstall-shared: uninstall-shared_c uninstall-shared_cxx uninstall-shared_csharp
+
+uninstall-shared_c: uninstall-pkg-config_c
+ifeq ($(SYSTEM),MINGW32)
+	$(Q) $(RM) $(prefix)/lib/gpr.$(SHARED_EXT)
+	$(Q) $(RM) $(prefix)/lib/libgpr-imp.a
+else
+	$(Q) $(RM) $(prefix)/lib/libgpr.$(SHARED_EXT)
+ifneq ($(SYSTEM),Darwin)
+	$(Q) $(RM) $(prefix)/lib/libgpr.so.0
+	$(Q) $(RM) $(prefix)/lib/libgpr.so
+endif
+endif
+ifeq ($(SYSTEM),MINGW32)
+	$(Q) $(RM) $(prefix)/lib/gpr_test_util.$(SHARED_EXT)
+	$(Q) $(RM) $(prefix)/lib/libgpr_test_util-imp.a
+else
+	$(Q) $(RM) $(prefix)/lib/libgpr_test_util.$(SHARED_EXT)
+ifneq ($(SYSTEM),Darwin)
+	$(Q) $(RM) $(prefix)/lib/libgpr_test_util.so.0
+	$(Q) $(RM) $(prefix)/lib/libgpr_test_util.so
+endif
+endif
+ifeq ($(SYSTEM),MINGW32)
+	$(Q) $(RM) $(prefix)/lib/grpc.$(SHARED_EXT)
+	$(Q) $(RM) $(prefix)/lib/libgrpc-imp.a
+else
+	$(Q) $(RM) $(prefix)/lib/libgrpc.$(SHARED_EXT)
+ifneq ($(SYSTEM),Darwin)
+	$(Q) $(RM) $(prefix)/lib/libgrpc.so.0
+	$(Q) $(RM) $(prefix)/lib/libgrpc.so
+endif
+endif
+ifeq ($(SYSTEM),MINGW32)
+	$(Q) $(RM) $(prefix)/lib/grpc_test_util.$(SHARED_EXT)
+	$(Q) $(RM) $(prefix)/lib/libgrpc_test_util-imp.a
+else
+	$(Q) $(RM) $(prefix)/lib/libgrpc_test_util.$(SHARED_EXT)
+ifneq ($(SYSTEM),Darwin)
+	$(Q) $(RM) $(prefix)/lib/libgrpc_test_util.so.0
+	$(Q) $(RM) $(prefix)/lib/libgrpc_test_util.so
+endif
+endif
+ifeq ($(SYSTEM),MINGW32)
+	$(Q) $(RM) $(prefix)/lib/grpc_test_util_unsecure.$(SHARED_EXT)
+	$(Q) $(RM) $(prefix)/lib/libgrpc_test_util_unsecure-imp.a
+else
+	$(Q) $(RM) $(prefix)/lib/libgrpc_test_util_unsecure.$(SHARED_EXT)
+ifneq ($(SYSTEM),Darwin)
+	$(Q) $(RM) $(prefix)/lib/libgrpc_test_util_unsecure.so.0
+	$(Q) $(RM) $(prefix)/lib/libgrpc_test_util_unsecure.so
+endif
+endif
+ifeq ($(SYSTEM),MINGW32)
+	$(Q) $(RM) $(prefix)/lib/grpc_unsecure.$(SHARED_EXT)
+	$(Q) $(RM) $(prefix)/lib/libgrpc_unsecure-imp.a
+else
+	$(Q) $(RM) $(prefix)/lib/libgrpc_unsecure.$(SHARED_EXT)
+ifneq ($(SYSTEM),Darwin)
+	$(Q) $(RM) $(prefix)/lib/libgrpc_unsecure.so.0
+	$(Q) $(RM) $(prefix)/lib/libgrpc_unsecure.so
+endif
+endif
+ifeq ($(SYSTEM),MINGW32)
+	$(Q) $(RM) $(prefix)/lib/grpc_zookeeper.$(SHARED_EXT)
+	$(Q) $(RM) $(prefix)/lib/libgrpc_zookeeper-imp.a
+else
+	$(Q) $(RM) $(prefix)/lib/libgrpc_zookeeper.$(SHARED_EXT)
+ifneq ($(SYSTEM),Darwin)
+	$(Q) $(RM) $(prefix)/lib/libgrpc_zookeeper.so.0
+	$(Q) $(RM) $(prefix)/lib/libgrpc_zookeeper.so
+endif
+endif
+ifeq ($(SYSTEM),MINGW32)
+	$(Q) $(RM) $(prefix)/lib/reconnect_server.$(SHARED_EXT)
+	$(Q) $(RM) $(prefix)/lib/libreconnect_server-imp.a
+else
+	$(Q) $(RM) $(prefix)/lib/libreconnect_server.$(SHARED_EXT)
+ifneq ($(SYSTEM),Darwin)
+	$(Q) $(RM) $(prefix)/lib/libreconnect_server.so.0
+	$(Q) $(RM) $(prefix)/lib/libreconnect_server.so
+endif
+endif
+ifeq ($(SYSTEM),MINGW32)
+	$(Q) $(RM) $(prefix)/lib/test_tcp_server.$(SHARED_EXT)
+	$(Q) $(RM) $(prefix)/lib/libtest_tcp_server-imp.a
+else
+	$(Q) $(RM) $(prefix)/lib/libtest_tcp_server.$(SHARED_EXT)
+ifneq ($(SYSTEM),Darwin)
+	$(Q) $(RM) $(prefix)/lib/libtest_tcp_server.so.0
+	$(Q) $(RM) $(prefix)/lib/libtest_tcp_server.so
+endif
+endif
+ifeq ($(SYSTEM),MINGW32)
+	$(Q) $(RM) $(prefix)/lib/bad_client_test.$(SHARED_EXT)
+	$(Q) $(RM) $(prefix)/lib/libbad_client_test-imp.a
+else
+	$(Q) $(RM) $(prefix)/lib/libbad_client_test.$(SHARED_EXT)
+ifneq ($(SYSTEM),Darwin)
+	$(Q) $(RM) $(prefix)/lib/libbad_client_test.so.0
+	$(Q) $(RM) $(prefix)/lib/libbad_client_test.so
+endif
+endif
+ifeq ($(SYSTEM),MINGW32)
+	$(Q) $(RM) $(prefix)/lib/bad_ssl_test_server.$(SHARED_EXT)
+	$(Q) $(RM) $(prefix)/lib/libbad_ssl_test_server-imp.a
+else
+	$(Q) $(RM) $(prefix)/lib/libbad_ssl_test_server.$(SHARED_EXT)
+ifneq ($(SYSTEM),Darwin)
+	$(Q) $(RM) $(prefix)/lib/libbad_ssl_test_server.so.0
+	$(Q) $(RM) $(prefix)/lib/libbad_ssl_test_server.so
+endif
+endif
+ifeq ($(SYSTEM),MINGW32)
+	$(Q) $(RM) $(prefix)/lib/end2end_tests.$(SHARED_EXT)
+	$(Q) $(RM) $(prefix)/lib/libend2end_tests-imp.a
+else
+	$(Q) $(RM) $(prefix)/lib/libend2end_tests.$(SHARED_EXT)
+ifneq ($(SYSTEM),Darwin)
+	$(Q) $(RM) $(prefix)/lib/libend2end_tests.so.0
+	$(Q) $(RM) $(prefix)/lib/libend2end_tests.so
+endif
+endif
+ifeq ($(SYSTEM),MINGW32)
+	$(Q) $(RM) $(prefix)/lib/end2end_nosec_tests.$(SHARED_EXT)
+	$(Q) $(RM) $(prefix)/lib/libend2end_nosec_tests-imp.a
+else
+	$(Q) $(RM) $(prefix)/lib/libend2end_nosec_tests.$(SHARED_EXT)
+ifneq ($(SYSTEM),Darwin)
+	$(Q) $(RM) $(prefix)/lib/libend2end_nosec_tests.so.0
+	$(Q) $(RM) $(prefix)/lib/libend2end_nosec_tests.so
+endif
+endif
+ifeq ($(SYSTEM),MINGW32)
+	$(Q) $(RM) $(prefix)/lib/end2end_certs.$(SHARED_EXT)
+	$(Q) $(RM) $(prefix)/lib/libend2end_certs-imp.a
+else
+	$(Q) $(RM) $(prefix)/lib/libend2end_certs.$(SHARED_EXT)
+ifneq ($(SYSTEM),Darwin)
+	$(Q) $(RM) $(prefix)/lib/libend2end_certs.so.0
+	$(Q) $(RM) $(prefix)/lib/libend2end_certs.so
+endif
+endif
+ifneq ($(SYSTEM),MINGW32)
+ifneq ($(SYSTEM),Darwin)
+	$(Q) ldconfig || true
+endif
+endif
+
+
+uninstall-shared_cxx: uninstall-pkg-config_cxx
+ifeq ($(SYSTEM),MINGW32)
+	$(Q) $(RM) $(prefix)/lib/grpc++.$(SHARED_EXT)
+	$(Q) $(RM) $(prefix)/lib/libgrpc++-imp.a
+else
+	$(Q) $(RM) $(prefix)/lib/libgrpc++.$(SHARED_EXT)
+ifneq ($(SYSTEM),Darwin)
+	$(Q) $(RM) $(prefix)/lib/libgrpc++.so.0
+	$(Q) $(RM) $(prefix)/lib/libgrpc++.so
+endif
+endif
+ifeq ($(SYSTEM),MINGW32)
+	$(Q) $(RM) $(prefix)/lib/grpc++_test_config.$(SHARED_EXT)
+	$(Q) $(RM) $(prefix)/lib/libgrpc++_test_config-imp.a
+else
+	$(Q) $(RM) $(prefix)/lib/libgrpc++_test_config.$(SHARED_EXT)
+ifneq ($(SYSTEM),Darwin)
+	$(Q) $(RM) $(prefix)/lib/libgrpc++_test_config.so.0
+	$(Q) $(RM) $(prefix)/lib/libgrpc++_test_config.so
+endif
+endif
+ifeq ($(SYSTEM),MINGW32)
+	$(Q) $(RM) $(prefix)/lib/grpc++_test_util.$(SHARED_EXT)
+	$(Q) $(RM) $(prefix)/lib/libgrpc++_test_util-imp.a
+else
+	$(Q) $(RM) $(prefix)/lib/libgrpc++_test_util.$(SHARED_EXT)
+ifneq ($(SYSTEM),Darwin)
+	$(Q) $(RM) $(prefix)/lib/libgrpc++_test_util.so.0
+	$(Q) $(RM) $(prefix)/lib/libgrpc++_test_util.so
+endif
+endif
+ifeq ($(SYSTEM),MINGW32)
+	$(Q) $(RM) $(prefix)/lib/grpc++_unsecure.$(SHARED_EXT)
+	$(Q) $(RM) $(prefix)/lib/libgrpc++_unsecure-imp.a
+else
+	$(Q) $(RM) $(prefix)/lib/libgrpc++_unsecure.$(SHARED_EXT)
+ifneq ($(SYSTEM),Darwin)
+	$(Q) $(RM) $(prefix)/lib/libgrpc++_unsecure.so.0
+	$(Q) $(RM) $(prefix)/lib/libgrpc++_unsecure.so
+endif
+endif
+ifeq ($(SYSTEM),MINGW32)
+	$(Q) $(RM) $(prefix)/lib/grpc_plugin_support.$(SHARED_EXT)
+	$(Q) $(RM) $(prefix)/lib/libgrpc_plugin_support-imp.a
+else
+	$(Q) $(RM) $(prefix)/lib/libgrpc_plugin_support.$(SHARED_EXT)
+ifneq ($(SYSTEM),Darwin)
+	$(Q) $(RM) $(prefix)/lib/libgrpc_plugin_support.so.0
+	$(Q) $(RM) $(prefix)/lib/libgrpc_plugin_support.so
+endif
+endif
+ifeq ($(SYSTEM),MINGW32)
+	$(Q) $(RM) $(prefix)/lib/interop_client_helper.$(SHARED_EXT)
+	$(Q) $(RM) $(prefix)/lib/libinterop_client_helper-imp.a
+else
+	$(Q) $(RM) $(prefix)/lib/libinterop_client_helper.$(SHARED_EXT)
+ifneq ($(SYSTEM),Darwin)
+	$(Q) $(RM) $(prefix)/lib/libinterop_client_helper.so.0
+	$(Q) $(RM) $(prefix)/lib/libinterop_client_helper.so
+endif
+endif
+ifeq ($(SYSTEM),MINGW32)
+	$(Q) $(RM) $(prefix)/lib/interop_client_main.$(SHARED_EXT)
+	$(Q) $(RM) $(prefix)/lib/libinterop_client_main-imp.a
+else
+	$(Q) $(RM) $(prefix)/lib/libinterop_client_main.$(SHARED_EXT)
+ifneq ($(SYSTEM),Darwin)
+	$(Q) $(RM) $(prefix)/lib/libinterop_client_main.so.0
+	$(Q) $(RM) $(prefix)/lib/libinterop_client_main.so
+endif
+endif
+ifeq ($(SYSTEM),MINGW32)
+	$(Q) $(RM) $(prefix)/lib/interop_server_helper.$(SHARED_EXT)
+	$(Q) $(RM) $(prefix)/lib/libinterop_server_helper-imp.a
+else
+	$(Q) $(RM) $(prefix)/lib/libinterop_server_helper.$(SHARED_EXT)
+ifneq ($(SYSTEM),Darwin)
+	$(Q) $(RM) $(prefix)/lib/libinterop_server_helper.so.0
+	$(Q) $(RM) $(prefix)/lib/libinterop_server_helper.so
+endif
+endif
+ifeq ($(SYSTEM),MINGW32)
+	$(Q) $(RM) $(prefix)/lib/interop_server_main.$(SHARED_EXT)
+	$(Q) $(RM) $(prefix)/lib/libinterop_server_main-imp.a
+else
+	$(Q) $(RM) $(prefix)/lib/libinterop_server_main.$(SHARED_EXT)
+ifneq ($(SYSTEM),Darwin)
+	$(Q) $(RM) $(prefix)/lib/libinterop_server_main.so.0
+	$(Q) $(RM) $(prefix)/lib/libinterop_server_main.so
+endif
+endif
+ifeq ($(SYSTEM),MINGW32)
+	$(Q) $(RM) $(prefix)/lib/qps.$(SHARED_EXT)
+	$(Q) $(RM) $(prefix)/lib/libqps-imp.a
+else
+	$(Q) $(RM) $(prefix)/lib/libqps.$(SHARED_EXT)
+ifneq ($(SYSTEM),Darwin)
+	$(Q) $(RM) $(prefix)/lib/libqps.so.0
+	$(Q) $(RM) $(prefix)/lib/libqps.so
+endif
+endif
+ifneq ($(SYSTEM),MINGW32)
+ifneq ($(SYSTEM),Darwin)
+	$(Q) ldconfig || true
+endif
+endif
+
+
+uninstall-shared_csharp:
+ifeq ($(SYSTEM),MINGW32)
+	$(Q) $(RM) $(prefix)/lib/grpc_csharp_ext.$(SHARED_EXT)
+	$(Q) $(RM) $(prefix)/lib/libgrpc_csharp_ext-imp.a
+else
+	$(Q) $(RM) $(prefix)/lib/libgrpc_csharp_ext.$(SHARED_EXT)
+ifneq ($(SYSTEM),Darwin)
+	$(Q) $(RM) $(prefix)/lib/libgrpc_csharp_ext.so.0
+	$(Q) $(RM) $(prefix)/lib/libgrpc_csharp_ext.so
+endif
+endif
+ifneq ($(SYSTEM),MINGW32)
+ifneq ($(SYSTEM),Darwin)
+	$(Q) ldconfig || true
+endif
+endif
+
+
+uninstall-plugins:
+ifeq ($(SYSTEM),MINGW32)
+	$(Q) false
+else
+	$(E) "[UNINSTALL] Uninstalling grpc protoc plugins"
+	$(Q) $(RM) $(prefix)/bin/grpc_cpp_plugin
+	$(Q) $(RM) $(prefix)/bin/grpc_csharp_plugin
+	$(Q) $(RM) $(prefix)/bin/grpc_objective_c_plugin
+	$(Q) $(RM) $(prefix)/bin/grpc_python_plugin
+	$(Q) $(RM) $(prefix)/bin/grpc_ruby_plugin
+endif
+
+uninstall-pkg-config_c:
+	$(E) "[UNINSTALL] Uninstalling C pkg-config files"
+	$(Q) $(RM) $(prefix)/lib/pkgconfig/gpr.pc
+	$(Q) $(RM) $(prefix)/lib/pkgconfig/grpc.pc
+	$(Q) $(RM) $(prefix)/lib/pkgconfig/grpc_unsecure.pc
+	$(Q) $(RM) $(prefix)/lib/pkgconfig/grpc_zookeeper.pc
+
+uninstall-pkg-config_cxx:
+	$(E) "[UNINSTALL] Uninstalling C++ pkg-config files"
+	$(Q) $(RM) $(prefix)/lib/pkgconfig/grpc++.pc
+	$(Q) $(RM) $(prefix)/lib/pkgconfig/grpc++_unsecure.pc
+
+uninstall-certs:
+	$(E) "[UNINSTALL] Uninstalling root certificates"
+	$(Q) $(RM) $(prefix)/share/grpc/roots.pem
+
 clean:
 	$(E) "[CLEAN]   Cleaning build directories."
 	$(Q) $(RM) -rf $(OBJDIR) $(LIBDIR) $(BINDIR) $(GENDIR) cache.mk

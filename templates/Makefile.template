@@ -1387,6 +1387,99 @@
   	@echo "   make verify-install"
   endif
 
+  uninstall: uninstall_c uninstall_cxx uninstall-plugins uninstall-certs
+  
+  uninstall_c: uninstall-headers_c uninstall-static_c uninstall-shared_c
+
+  uninstall_cxx: uninstall-headers_cxx uninstall-static_cxx uninstall-shared_cxx
+  
+  uninstall-headers_c:
+  	$(E) "[UNINSTALL] Uninstalling public C headers"
+  	$(Q) $(foreach h, $(PUBLIC_HEADERS_C), $(RM) $(prefix)/$(h))
+
+  uninstall-headers_cxx:
+  	$(E) "[UNINSTALL] Uninstalling public C++ headers"
+  	$(Q) $(foreach h, $(PUBLIC_HEADERS_CXX), $(RM) $(prefix)/$(h))
+  
+  uninstall-static: uninstall-static_c uninstall-static_cxx
+  
+  uninstall-static_c: uninstall-pkg-config_c
+  	$(E) "[UNINSTALL] Uninstalling C libs"
+  % for lib in libs:
+  % if lib.language == "c":
+  	$(Q) $(RM) $(prefix)/lib/lib${lib.name}.a
+  % endif
+  % endfor
+
+  uninstall-static_cxx: uninstall-pkg-config_cxx
+  	$(E) "[UNINSTALL] Uninstalling C++ libs"
+  % for lib in libs:
+  % if lib.language == "c++":
+  	$(Q) $(RM) $(prefix)/lib/lib${lib.name}.a
+  % endif
+  % endfor
+  
+  <%def name="uninstall_shared(lang_filter)">\
+  % for lib in libs:
+  % if lib.language == lang_filter:
+  ifeq ($(SYSTEM),MINGW32)
+  	$(Q) $(RM) $(prefix)/lib/${lib.name}.$(SHARED_EXT)
+  	$(Q) $(RM) $(prefix)/lib/lib${lib.name}-imp.a
+  else
+  	$(Q) $(RM) $(prefix)/lib/lib${lib.name}.$(SHARED_EXT)
+  ifneq ($(SYSTEM),Darwin)
+  	$(Q) $(RM) $(prefix)/lib/lib${lib.name}.so.${settings.version.major}
+  	$(Q) $(RM) $(prefix)/lib/lib${lib.name}.so
+  endif
+  endif
+  % endif
+  % endfor
+  ifneq ($(SYSTEM),MINGW32)
+  ifneq ($(SYSTEM),Darwin)
+  	$(Q) ldconfig || true
+  endif
+  endif
+  </%def>
+
+  uninstall-shared: uninstall-shared_c uninstall-shared_cxx uninstall-shared_csharp
+  
+  uninstall-shared_c: uninstall-pkg-config_c
+  ${uninstall_shared("c")}
+
+  uninstall-shared_cxx: uninstall-pkg-config_cxx
+  ${uninstall_shared("c++")}
+
+  uninstall-shared_csharp:
+  ${uninstall_shared("csharp")}
+  
+  uninstall-plugins:
+  ifeq ($(SYSTEM),MINGW32)
+  	$(Q) false
+  else
+  	$(E) "[UNINSTALL] Uninstalling grpc protoc plugins"
+  % for tgt in targets:
+  % if tgt.build == 'protoc':
+  	$(Q) $(RM) $(prefix)/bin/${tgt.name}
+  % endif
+  % endfor
+  endif
+
+  uninstall-pkg-config_c:
+  	$(E) "[UNINSTALL] Uninstalling C pkg-config files"
+  	$(Q) $(RM) $(prefix)/lib/pkgconfig/gpr.pc
+  	$(Q) $(RM) $(prefix)/lib/pkgconfig/grpc.pc
+  	$(Q) $(RM) $(prefix)/lib/pkgconfig/grpc_unsecure.pc
+  	$(Q) $(RM) $(prefix)/lib/pkgconfig/grpc_zookeeper.pc
+
+  uninstall-pkg-config_cxx:
+  	$(E) "[UNINSTALL] Uninstalling C++ pkg-config files"
+  	$(Q) $(RM) $(prefix)/lib/pkgconfig/grpc++.pc
+  	$(Q) $(RM) $(prefix)/lib/pkgconfig/grpc++_unsecure.pc
+
+  uninstall-certs:
+  	$(E) "[UNINSTALL] Uninstalling root certificates"
+  	$(Q) $(RM) $(prefix)/share/grpc/roots.pem
+  
   clean:
   	$(E) "[CLEAN]   Cleaning build directories."
   	$(Q) $(RM) -rf $(OBJDIR) $(LIBDIR) $(BINDIR) $(GENDIR) cache.mk
