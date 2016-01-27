@@ -31,8 +31,10 @@
 
 import abc
 import contextlib
+import itertools
 import threading
 import unittest
+from concurrent import futures
 
 # test_interfaces is referenced from specification in this module.
 from grpc.framework.foundation import logging_pool
@@ -254,9 +256,28 @@ class TestCase(test_coverage.Coverage, unittest.TestCase):
         for request, response in zip(requests, responses):
           test_messages.verify(request, response, self)
 
-  @unittest.skip('TODO(nathaniel): implement.')
   def testWaitingForSomeButNotAllParallelInvocations(self):
-    raise NotImplementedError()
+    pool = logging_pool.pool(test_constants.PARALLELISM)
+    for (group, method), test_messages_sequence in (
+        self._digest.unary_unary_messages_sequences.iteritems()):
+      for test_messages in test_messages_sequence:
+        requests = []
+        response_futures_to_indices = {}
+        for index in range(test_constants.PARALLELISM):
+          request = test_messages.request()
+          inner_response_future = self._invoker.future(group, method)(
+              request, test_constants.LONG_TIMEOUT)
+          outer_response_future = pool.submit(inner_response_future.result)
+          requests.append(request)
+          response_futures_to_indices[outer_response_future] = index
+
+        some_completed_response_futures_iterator = itertools.islice(
+            futures.as_completed(response_futures_to_indices),
+            test_constants.PARALLELISM / 2)
+        for response_future in some_completed_response_futures_iterator:
+          index = response_futures_to_indices[response_future]
+          test_messages.verify(requests[index], response_future.result(), self)
+    pool.shutdown(wait=True)
 
   def testCancelledUnaryRequestUnaryResponse(self):
     for (group, method), test_messages_sequence in (
