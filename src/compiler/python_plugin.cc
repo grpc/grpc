@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -38,7 +38,6 @@
 
 int main(int argc, char* argv[]) {
   grpc_python_generator::GeneratorConfiguration config;
-  config.early_adopter_package_root = "grpc.early_adopter";
   config.beta_package_root = "grpc.beta";
   grpc_python_generator::PythonGrpcGenerator generator(config);
   return grpc::protobuf::compiler::PluginMain(argc, argv, &generator);

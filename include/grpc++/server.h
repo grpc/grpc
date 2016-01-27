@@ -304,6 +304,8 @@ class Server GRPC_FINAL : public GrpcLibrary, private CallHook {
   int num_running_cb_;
   grpc::condition_variable callback_cv_;
 
+  std::shared_ptr<GlobalCallbacks> global_callbacks_;
+
   std::list<SyncRequest>* sync_methods_;
   std::unique_ptr<RpcServiceMethod> unknown_method_;
   bool has_generic_service_;

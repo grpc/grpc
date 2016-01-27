@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -48,7 +48,7 @@ static long ncpus = 0;
 
 static void init_ncpus() {
   ncpus = sysconf(_SC_NPROCESSORS_ONLN);
-  if (ncpus < 1 || ncpus > UINT32_MAX) {
+  if (ncpus < 1 || ncpus > INT32_MAX) {
     gpr_log(GPR_ERROR, "Cannot determine number of CPUs: assuming 1");
     ncpus = 1;
   }
