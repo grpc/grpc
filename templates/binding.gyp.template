@@ -56,12 +56,16 @@
       ],
       'include_dirs': [
         '.',
-        'include',
-        '<(node_root_dir)/deps/openssl/openssl/include',
-        '<(node_root_dir)/deps/zlib'
+        'include'
       ],
       'conditions': [
-        ['OS != "win"', {
+        ['OS == "win"', {
+          "include_dirs": [ "third_party/boringssl/include" ]
+        }, {
+          'include_dirs': [
+            '<(node_root_dir)/deps/openssl/openssl/include',
+            '<(node_root_dir)/deps/zlib'
+          ],
           'conditions': [
             ['config=="gcov"', {
               'cflags': [
@@ -74,24 +78,58 @@
                 '-fprofile-arcs'
               ]
             }
-           ]
+           ],
+           ["target_arch=='ia32'", {
+               "include_dirs": [ "<(node_root_dir)/deps/openssl/config/piii" ]
+           }],
+           ["target_arch=='x64'", {
+               "include_dirs": [ "<(node_root_dir)/deps/openssl/config/k8" ]
+           }],
+           ["target_arch=='arm'", {
+               "include_dirs": [ "<(node_root_dir)/deps/openssl/config/arm" ]
+           }]
           ]
-        }],
-        ["target_arch=='ia32'", {
-            "include_dirs": [ "<(node_root_dir)/deps/openssl/config/piii" ]
-        }],
-        ["target_arch=='x64'", {
-            "include_dirs": [ "<(node_root_dir)/deps/openssl/config/k8" ]
-        }],
-        ["target_arch=='arm'", {
-            "include_dirs": [ "<(node_root_dir)/deps/openssl/config/arm" ]
         }]
       ]
     },
+    'conditions': [
+      ['OS == "win"', {
+        'targets': [
+          # Only want to compile BoringSSL and zlib under Windows
+          % for module in node_modules:
+          % for lib in libs:
+          % if lib.name in module.transitive_deps and lib.name in ('boringssl', 'z'):
+          {
+            'cflags': [
+              '-std=c99',
+              '-Wall',
+              '-Werror'
+            ],
+            'target_name': '${lib.name}',
+            'product_prefix': 'lib',
+            'type': 'static_library',
+            'dependencies': [
+              % for dep in getattr(lib, 'deps', []):
+              '${dep}',
+              % endfor
+            ],
+            'sources': [
+              % for source in lib.src:
+              '${source}',
+              % endfor
+            ],
+            "include_dirs": [ "third_party/boringssl/include" ]
+          },
+          % endif
+          % endfor
+          % endfor
+        ]
+      }]
+    ],
     'targets': [
       % for module in node_modules:
       % for lib in libs:
-      % if lib.name in module.transitive_deps:
+      % if lib.name in module.transitive_deps and lib.name not in ('boringssl', 'z'):
       {
         'cflags': [
           '-std=c99',
@@ -117,7 +155,7 @@
               'MACOSX_DEPLOYMENT_TARGET': '10.9'
             }
           }]
-        ],
+        ]
       },
       % endif
       % endfor
@@ -138,13 +176,22 @@
           '-g'
         ],
         "conditions": [
-          ['OS == "mac"', {
+          ['OS=="mac"', {
             'xcode_settings': {
               'MACOSX_DEPLOYMENT_TARGET': '10.9',
               'OTHER_CFLAGS': [
                 '-stdlib=libc++'
               ]
             }
+          }],
+          ['OS=="win"', {
+            'dependencies': [
+              % for dep in getattr(module, 'deps', []):
+              % if dep in ('boringssl', 'z'):
+              "${dep}",
+              % endif
+              % endfor
+            ]
           }]
         ],
         "target_name": "${module.name}",
@@ -155,7 +202,9 @@
         ],
         "dependencies": [
           % for dep in getattr(module, 'deps', []):
+          % if dep not in ('boringssl', 'z'):
           "${dep}",
+          % endif
           % endfor
         ]
       },
