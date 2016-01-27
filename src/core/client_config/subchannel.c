@@ -519,6 +519,10 @@ static void publish_transport(grpc_exec_ctx *exec_ctx, grpc_subchannel *c) {
   }
 
   /* publish */
+  /* TODO(ctiller): this full barrier seems to clear up a TSAN failure.
+                    I'd have expected the rel_cas below to be enough, but
+                    seemingly it's not.
+                    Re-evaluate if we really need this. */
   gpr_atm_full_barrier();
   GPR_ASSERT(gpr_atm_rel_cas(&c->connected_subchannel, 0, (gpr_atm)con));
   c->connecting = 0;
