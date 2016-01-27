@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -36,7 +36,7 @@
 var assert = require('assert');
 var fs = require('fs');
 var path = require('path');
-var grpc = require('bindings')('grpc_node');
+var grpc = require('../src/grpc_extension');
 
 describe('server', function() {
   describe('constructor', function() {

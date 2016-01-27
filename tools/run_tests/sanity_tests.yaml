@@ -2,8 +2,8 @@
 - script: tools/run_tests/check_sources_and_headers.py
 - script: tools/run_tests/check_submodules.sh
 - script: tools/run_tests/check_cache_mk.sh
-- script: tools/buildgen/generate_projects.sh
-  cpu_cost: 100
+- script: tools/buildgen/generate_projects.sh -j 3
+  cpu_cost: 3
 - script: tools/distrib/check_copyright.py
 - script: tools/distrib/clang_format_code.sh
 - script: tools/distrib/check_trailing_newlines.sh
