@@ -162,7 +162,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
   auto* servers = new ServerData[num_servers];
   for (size_t i = 0; i < num_servers; i++) {
     gpr_log(GPR_INFO, "Starting server on %s (worker #%d)", workers[i].c_str(),
-	    i);
+            i);
     servers[i].stub = WorkerService::NewStub(
         CreateChannel(workers[i], InsecureChannelCredentials()));
     ServerArgs args;
