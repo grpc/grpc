@@ -31,8 +31,8 @@
  *
  */
 
-#include <grpc/byte_buffer_reader.h>
 #include <grpc++/support/byte_buffer.h>
+#include <grpc/byte_buffer_reader.h>
 
 namespace grpc {
 
@@ -84,7 +84,7 @@ ByteBuffer::ByteBuffer(const ByteBuffer& buf)
     : buffer_(grpc_byte_buffer_copy(buf.buffer_)) {}
 
 ByteBuffer& ByteBuffer::operator=(const ByteBuffer& buf) {
-  Clear();                                       // first remove existing data
+  Clear();  // first remove existing data
   if (buf.buffer_) {
     buffer_ = grpc_byte_buffer_copy(buf.buffer_);  // then copy
   }
