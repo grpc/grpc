@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -53,17 +53,17 @@ namespace grpc {
 
 class DefaultGlobalCallbacks GRPC_FINAL : public Server::GlobalCallbacks {
  public:
+  ~DefaultGlobalCallbacks() GRPC_OVERRIDE {}
   void PreSynchronousRequest(ServerContext* context) GRPC_OVERRIDE {}
   void PostSynchronousRequest(ServerContext* context) GRPC_OVERRIDE {}
 };
 
-static Server::GlobalCallbacks* g_callbacks = nullptr;
+static std::shared_ptr<Server::GlobalCallbacks> g_callbacks = nullptr;
 static gpr_once g_once_init_callbacks = GPR_ONCE_INIT;
 
 static void InitGlobalCallbacks() {
   if (g_callbacks == nullptr) {
-    static DefaultGlobalCallbacks default_global_callbacks;
-    g_callbacks = &default_global_callbacks;
+    g_callbacks.reset(new DefaultGlobalCallbacks());
   }
 }
 
@@ -234,12 +234,12 @@ class Server::SyncRequest GRPC_FINAL : public CompletionQueueTag {
       }
     }
 
-    void Run() {
+    void Run(std::shared_ptr<GlobalCallbacks> global_callbacks) {
       ctx_.BeginCompletionOp(&call_);
-      g_callbacks->PreSynchronousRequest(&ctx_);
+      global_callbacks->PreSynchronousRequest(&ctx_);
       method_->handler()->RunHandler(MethodHandler::HandlerParameter(
           &call_, &ctx_, request_payload_, call_.max_message_size()));
-      g_callbacks->PostSynchronousRequest(&ctx_);
+      global_callbacks->PostSynchronousRequest(&ctx_);
       request_payload_ = nullptr;
       void* ignored_tag;
       bool ignored_ok;
@@ -287,6 +287,7 @@ Server::Server(ThreadPoolInterface* thread_pool, bool thread_pool_owned,
       thread_pool_(thread_pool),
       thread_pool_owned_(thread_pool_owned) {
   gpr_once_init(&g_once_init_callbacks, InitGlobalCallbacks);
+  global_callbacks_ = g_callbacks;
   grpc_server_register_completion_queue(server_, cq_.cq(), nullptr);
 }
 
@@ -311,7 +312,7 @@ Server::~Server() {
 void Server::SetGlobalCallbacks(GlobalCallbacks* callbacks) {
   GPR_ASSERT(g_callbacks == nullptr);
   GPR_ASSERT(callbacks != nullptr);
-  g_callbacks = callbacks;
+  g_callbacks.reset(callbacks);
 }
 
 bool Server::RegisterService(const grpc::string* host, RpcService* service) {
@@ -569,7 +570,7 @@ void Server::RunRpc() {
         }
       }
       GPR_TIMER_SCOPE("cd.Run()", 0);
-      cd.Run();
+      cd.Run(global_callbacks_);
     }
   }
 
