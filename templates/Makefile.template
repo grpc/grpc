@@ -1498,7 +1498,10 @@
   else
 
   % endif
-  $(LIBDIR)/$(CONFIG)/lib${lib.name}.a: $(ZLIB_DEP) $(OPENSSL_DEP) \
+  $(LIBDIR)/$(CONFIG)/lib${lib.name}.a: \
+  % if lib.name != 'z':
+  $(ZLIB_DEP) \
+  % endif
   % endif
   % if lib.language == 'c++':
    $(PROTOBUF_DEP)\
