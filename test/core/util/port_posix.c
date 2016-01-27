@@ -37,6 +37,7 @@
 
 #include "test/core/util/port.h"
 
+#include <math.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <stdio.h>
@@ -229,10 +230,10 @@ static void got_port_from_server(grpc_exec_ctx *exec_ctx, void *arg,
     grpc_httpcli_request req;
     memset(&req, 0, sizeof(req));
     GPR_ASSERT(pr->retries < 10);
+    sleep(1 + (unsigned)(pow(1.3, pr->retries) * rand() / RAND_MAX));
     pr->retries++;
     req.host = pr->server;
     req.path = "/get";
-    sleep(1);
     grpc_httpcli_get(exec_ctx, pr->ctx, &pr->pollset, &req,
                      GRPC_TIMEOUT_SECONDS_TO_DEADLINE(10), got_port_from_server,
                      pr);
