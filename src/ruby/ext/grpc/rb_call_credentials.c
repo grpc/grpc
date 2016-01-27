@@ -79,6 +79,7 @@ static VALUE grpc_rb_call_credentials_callback(VALUE callback_args) {
 static VALUE grpc_rb_call_credentials_callback_rescue(VALUE args,
                                                       VALUE exception_object) {
   VALUE result = rb_hash_new();
+  (void)args;
   rb_hash_aset(result, rb_str_new2("metadata"), Qnil);
   /* Currently only gives the exception class name. It should be possible get
      more details */
@@ -132,6 +133,7 @@ static void grpc_rb_call_credentials_plugin_get_metadata(
 }
 
 static void grpc_rb_call_credentials_plugin_destroy(void *state) {
+  (void)state;
   // Not sure what needs to be done here
 }
 

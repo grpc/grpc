@@ -1,4 +1,5 @@
-# Copyright 2015, Google Inc.
+#!/bin/bash
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -26,57 +27,20 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+# Builds Ruby interop server and client in a base image.
+set -e
 
-# A work-in-progress Dockerfile that allows running gRPC test suites
-# inside a docker container.
+mkdir -p /var/local/git
+git clone --recursive /var/local/jenkins/grpc /var/local/git/grpc
 
-FROM debian:jessie
+# copy service account keys if available
+cp -r /var/local/jenkins/service_account $HOME || true
 
-# Install Git.
-RUN apt-get update && apt-get install -y \
-  autoconf \
-  autotools-dev \
-  build-essential \
-  bzip2 \
-  ccache \
-  curl \
-  gcc \
-  gcc-multilib \
-  git \
-  gyp \
-  libc6 \
-  libc6-dbg \
-  libc6-dev \
-  libgtest-dev \
-  libssl-dev \
-  libtool \
-  make \
-  strace \
-  python-dev \
-  python-pip \
-  python-setuptools \
-  python-yaml \
-  telnet \
-  unzip \
-  wget \
-  zip && apt-get clean
+cd /var/local/git/grpc
+rvm --default use ruby-2.1
 
-# Prepare ccache
-RUN ln -s /usr/bin/ccache /usr/local/bin/gcc
-RUN ln -s /usr/bin/ccache /usr/local/bin/g++
-RUN ln -s /usr/bin/ccache /usr/local/bin/cc
-RUN ln -s /usr/bin/ccache /usr/local/bin/c++
-RUN ln -s /usr/bin/ccache /usr/local/bin/clang
-RUN ln -s /usr/bin/ccache /usr/local/bin/clang++
+make install-certs
 
-
-#####################
-# Python dependencies
-
-# Install Python requisites
-RUN /bin/bash -l -c "pip install --upgrade pip"
-RUN /bin/bash -l -c "pip install virtualenv"
-RUN /bin/bash -l -c "pip install tox"
-
-# Define the default command.
-CMD ["bash"]
+# build Ruby interop client and server
+(cd src/ruby && gem update bundler && bundle && rake compile:grpc)
