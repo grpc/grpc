@@ -187,19 +187,19 @@ class WorkerServiceImpl GRPC_FINAL : public WorkerService::Service {
     if (!stream->Write(status)) {
       return Status(StatusCode::UNKNOWN, "");
     }
-    gpr_log(GPR_INFO, "RunClientBody: creation status reported\n");
+    gpr_log(GPR_INFO, "RunClientBody: creation status reported");
     while (stream->Read(&args)) {
-      gpr_log(GPR_INFO, "RunClientBody: Message read\n");
+      gpr_log(GPR_INFO, "RunClientBody: Message read");
       if (!args.has_mark()) {
-        gpr_log(GPR_INFO, "RunClientBody: Message is not a mark!\n");
+        gpr_log(GPR_INFO, "RunClientBody: Message is not a mark!");
         return Status(StatusCode::INVALID_ARGUMENT, "");
       }
       *status.mutable_stats() = client->Mark(args.mark().reset());
       stream->Write(status);
-      gpr_log(GPR_INFO, "RunClientBody: Mark response given\n");
+      gpr_log(GPR_INFO, "RunClientBody: Mark response given");
     }
 
-    gpr_log(GPR_INFO, "RunClientBody: Returning\n");
+    gpr_log(GPR_INFO, "RunClientBody: Returning");
     return Status::OK;
   }
 
@@ -227,19 +227,19 @@ class WorkerServiceImpl GRPC_FINAL : public WorkerService::Service {
     if (!stream->Write(status)) {
       return Status(StatusCode::UNKNOWN, "");
     }
-    gpr_log(GPR_INFO, "RunServerBody: creation status reported\n");
+    gpr_log(GPR_INFO, "RunServerBody: creation status reported");
     while (stream->Read(&args)) {
-      gpr_log(GPR_INFO, "RunServerBody: Message read\n");
+      gpr_log(GPR_INFO, "RunServerBody: Message read");
       if (!args.has_mark()) {
-        gpr_log(GPR_INFO, "RunServerBody: Message not a mark!\n");
+        gpr_log(GPR_INFO, "RunServerBody: Message not a mark!");
         return Status(StatusCode::INVALID_ARGUMENT, "");
       }
       *status.mutable_stats() = server->Mark(args.mark().reset());
       stream->Write(status);
-      gpr_log(GPR_INFO, "RunServerBody: Mark response given\n");
+      gpr_log(GPR_INFO, "RunServerBody: Mark response given");
     }
 
-    gpr_log(GPR_INFO, "RunServerBody: Returning\n");
+    gpr_log(GPR_INFO, "RunServerBody: Returning");
     return Status::OK;
   }
 
