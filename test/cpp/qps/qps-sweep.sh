@@ -37,6 +37,7 @@ fi
 bins=`find . .. ../.. ../../.. -name bins | head -1`
 
 big=65536
+half=`echo $QPS_WORKERS | awk -F, '{print int(NF/2)}'`
 
 set -ex
 
@@ -65,7 +66,8 @@ do
 # Scenario 8: Async streaming ping-pong with protobufs
   "$bins"/opt/qps_driver --rpc_type=STREAMING --client_type=ASYNC_CLIENT --server_type=ASYNC_SERVER --outstanding_rpcs_per_channel=1 --client_channels=1 --simple_req_size=0 --simple_resp_size=0 --async_client_threads=1 --async_server_threads=1 --secure_test=$secure --num_servers=1 --num_clients=1
 
-# Scenario 9: Crossbar QPS test (TBD)
+# Scenario 9: Crossbar QPS test
+  "$bins"/opt/qps_driver --rpc_type=STREAMING --client_type=ASYNC_CLIENT --server_type=ASYNC_GENERIC_SERVER --outstanding_rpcs_per_channel=100 --client_channels=64 --bbuf_req_size=0 --bbuf_resp_size=0 --async_client_threads=0 --async_server_threads=0 --secure_test=$secure --num_servers=$half --num_clients=0
 
 # Scenario 10: Multi-channel bidir throughput test
   "$bins"/opt/qps_driver --rpc_type=STREAMING --client_type=ASYNC_CLIENT --server_type=ASYNC_GENERIC_SERVER --outstanding_rpcs_per_channel=100 --client_channels=64 --bbuf_req_size=$big --bbuf_resp_size=$big --async_client_threads=0 --async_server_threads=0 --secure_test=$secure --num_servers=1 --num_clients=1
