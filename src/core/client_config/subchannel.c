@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -519,7 +519,12 @@ static void publish_transport(grpc_exec_ctx *exec_ctx, grpc_subchannel *c) {
   }
 
   /* publish */
-  GPR_ASSERT(gpr_atm_no_barrier_cas(&c->connected_subchannel, 0, (gpr_atm)con));
+  /* TODO(ctiller): this full barrier seems to clear up a TSAN failure.
+                    I'd have expected the rel_cas below to be enough, but
+                    seemingly it's not.
+                    Re-evaluate if we really need this. */
+  gpr_atm_full_barrier();
+  GPR_ASSERT(gpr_atm_rel_cas(&c->connected_subchannel, 0, (gpr_atm)con));
   c->connecting = 0;
 
   /* setup subchannel watching connected subchannel for changes; subchannel ref

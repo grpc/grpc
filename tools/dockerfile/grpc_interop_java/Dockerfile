@@ -1,5 +1,4 @@
-#!/bin/bash
-# Copyright 2015, Google Inc.
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -27,16 +26,33 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+FROM debian:jessie
+
+# Install JDK 8 and Git
 #
-# Builds http2 interop client in a base image.
-set -e
+# TODO(temiola): simplify this if/when a simpler process is available.
+#
+RUN echo oracle-java8-installer shared/accepted-oracle-license-v1-1 select true | /usr/bin/debconf-set-selections && \
+  echo "deb http://ppa.launchpad.net/webupd8team/java/ubuntu trusty main" | tee /etc/apt/sources.list.d/webupd8team-java.list && \
+  echo "deb-src http://ppa.launchpad.net/webupd8team/java/ubuntu trusty main" | tee -a /etc/apt/sources.list.d/webupd8team-java.list && \
+  apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys EEA14886 && \
+  apt-get update && \
+  apt-get -y install \
+      git \
+      libapr1 \
+      oracle-java8-installer \
+      && \
+  apt-get clean && rm -r /var/cache/oracle-jdk8-installer/
 
-mkdir -p /var/local/git
-git clone --recursive /var/local/jenkins/grpc /var/local/git/grpc
+ENV JAVA_HOME /usr/lib/jvm/java-8-oracle
+ENV PATH $PATH:$JAVA_HOME/bin
 
-# copy service account keys if available
-cp -r /var/local/jenkins/service_account $HOME || true
+# Trigger download of as many Gradle artifacts as possible.
+RUN git clone --recursive --depth 1 https://github.com/grpc/grpc-java.git && \
+  cd grpc-java && \
+  ./gradlew build -PskipCodegen=true && \
+  rm -r "$(pwd)"
 
-# compile the tests
-(cd /var/local/git/grpc/tools/http2_interop && go test -c)
-
+# Define the default command.
+CMD ["bash"]
