@@ -94,8 +94,7 @@ class ClientRpcContextUnaryImpl : public ClientRpcContext {
       std::function<
           std::unique_ptr<grpc::ClientAsyncResponseReader<ResponseType>>(
               BenchmarkService::Stub*, grpc::ClientContext*, const RequestType&,
-              CompletionQueue*)>
-          start_req,
+              CompletionQueue*)> start_req,
       std::function<void(grpc::Status, ResponseType*)> on_done)
       : ClientRpcContext(channel_id),
         context_(),
@@ -141,8 +140,7 @@ class ClientRpcContextUnaryImpl : public ClientRpcContext {
   std::function<void(grpc::Status, ResponseType*)> callback_;
   std::function<std::unique_ptr<grpc::ClientAsyncResponseReader<ResponseType>>(
       BenchmarkService::Stub*, grpc::ClientContext*, const RequestType&,
-      CompletionQueue*)>
-      start_req_;
+      CompletionQueue*)> start_req_;
   grpc::Status status_;
   double start_;
   std::unique_ptr<grpc::ClientAsyncResponseReader<ResponseType>>
@@ -161,12 +159,11 @@ class AsyncClient : public ClientImpl<StubType, RequestType> {
   using Client::closed_loop_;
   using ClientImpl<StubType, RequestType>::channels_;
   using ClientImpl<StubType, RequestType>::request_;
-  AsyncClient(
-      const ClientConfig& config,
-      std::function<ClientRpcContext*(int, StubType*, const RequestType&)>
-          setup_ctx,
-      std::function<std::unique_ptr<StubType>(std::shared_ptr<Channel>)>
-          create_stub)
+  AsyncClient(const ClientConfig& config,
+              std::function<ClientRpcContext*(int, StubType*,
+                                              const RequestType&)> setup_ctx,
+              std::function<std::unique_ptr<StubType>(std::shared_ptr<Channel>)>
+                  create_stub)
       : ClientImpl<StubType, RequestType>(config, create_stub),
         num_async_threads_(NumThreads(config)),
         channel_lock_(new std::mutex[config.client_channels()]),
@@ -408,8 +405,7 @@ class ClientRpcContextStreamingImpl : public ClientRpcContext {
       std::function<std::unique_ptr<
           grpc::ClientAsyncReaderWriter<RequestType, ResponseType>>(
           BenchmarkService::Stub*, grpc::ClientContext*, CompletionQueue*,
-          void*)>
-          start_req,
+          void*)> start_req,
       std::function<void(grpc::Status, ResponseType*)> on_done)
       : ClientRpcContext(channel_id),
         context_(),
@@ -461,10 +457,10 @@ class ClientRpcContextStreamingImpl : public ClientRpcContext {
   ResponseType response_;
   bool (ClientRpcContextStreamingImpl::*next_state_)(bool, Histogram*);
   std::function<void(grpc::Status, ResponseType*)> callback_;
-  std::function<std::unique_ptr<
-      grpc::ClientAsyncReaderWriter<RequestType, ResponseType>>(
-      BenchmarkService::Stub*, grpc::ClientContext*, CompletionQueue*, void*)>
-      start_req_;
+  std::function<
+      std::unique_ptr<grpc::ClientAsyncReaderWriter<RequestType, ResponseType>>(
+          BenchmarkService::Stub*, grpc::ClientContext*, CompletionQueue*,
+          void*)> start_req_;
   grpc::Status status_;
   double start_;
   std::unique_ptr<grpc::ClientAsyncReaderWriter<RequestType, ResponseType>>
@@ -508,8 +504,7 @@ class ClientRpcContextGenericStreamingImpl : public ClientRpcContext {
       int channel_id, grpc::GenericStub* stub, const ByteBuffer& req,
       std::function<std::unique_ptr<grpc::GenericClientAsyncReaderWriter>(
           grpc::GenericStub*, grpc::ClientContext*,
-          const grpc::string& method_name, CompletionQueue*, void*)>
-          start_req,
+          const grpc::string& method_name, CompletionQueue*, void*)> start_req,
       std::function<void(grpc::Status, ByteBuffer*)> on_done)
       : ClientRpcContext(channel_id),
         context_(),
@@ -566,8 +561,7 @@ class ClientRpcContextGenericStreamingImpl : public ClientRpcContext {
   std::function<void(grpc::Status, ByteBuffer*)> callback_;
   std::function<std::unique_ptr<grpc::GenericClientAsyncReaderWriter>(
       grpc::GenericStub*, grpc::ClientContext*, const grpc::string&,
-      CompletionQueue*, void*)>
-      start_req_;
+      CompletionQueue*, void*)> start_req_;
   grpc::Status status_;
   double start_;
   std::unique_ptr<grpc::GenericClientAsyncReaderWriter> stream_;
