@@ -42,6 +42,9 @@ set -ex -o igncr || set -ex
 # Grabbing the machine's architecture
 arch=`uname -m`
 
+# Number of concurrent cores each executor should try and schedule
+EXECUTOR_CORES=2
+
 case $platform in
   i386)
     arch="i386"
@@ -54,7 +57,7 @@ if [ "$platform" == "linux" ]
 then
   echo "building $language on Linux"
 
-  ./tools/run_tests/run_tests.py --use_docker -t -l $language -c $config -x report.xml -j 3 $@ || TESTS_FAILED="true"
+  ./tools/run_tests/run_tests.py --use_docker -t -l $language -c $config -x report.xml -j $EXECUTOR_CORES $@ || TESTS_FAILED="true"
 
 elif [ "$platform" == "windows" ]
 then
@@ -63,7 +66,7 @@ then
   # Prevent msbuild from picking up "platform" env variable, which would break the build
   unset platform
 
-  python tools/run_tests/run_tests.py -t -l $language -c $config -x report.xml -j 3 $@ || TESTS_FAILED="true"
+  python tools/run_tests/run_tests.py -t -l $language -c $config -x report.xml -j $EXECUTOR_CORES $@ || TESTS_FAILED="true"
 
 elif [ "$platform" == "macos" ]
 then
@@ -72,13 +75,13 @@ then
   # Prevent msbuild from picking up "platform" env variable, which would break the build
   unset platform
 
-  ./tools/run_tests/run_tests.py -t -l $language -c $config -x report.xml -j 3 $@ || TESTS_FAILED="true"
+  ./tools/run_tests/run_tests.py -t -l $language -c $config -x report.xml -j $EXECUTOR_CORES $@ || TESTS_FAILED="true"
 
 elif [ "$platform" == "freebsd" ]
 then
   echo "building $language on FreeBSD"
 
-  MAKE=gmake ./tools/run_tests/run_tests.py -t -l $language -c $config -x report.xml -j 3 $@ || TESTS_FAILED="true"
+  MAKE=gmake ./tools/run_tests/run_tests.py -t -l $language -c $config -x report.xml -j $EXECUTOR_CORES $@ || TESTS_FAILED="true"
 
 else
   echo "Unknown platform $platform"
