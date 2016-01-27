@@ -61,6 +61,14 @@ static const char *installed_roots_path =
     INSTALL_PREFIX "/share/grpc/roots.pem";
 #endif
 
+/* -- Overridden default roots file path. -- */
+
+static const char *overridden_default_roots_file_path = NULL;
+
+void grpc_override_ssl_default_roots_file_path(const char *roots_path) {
+  overridden_default_roots_file_path = roots_path;
+}
+
 /* -- Cipher suites. -- */
 
 /* Defines the cipher suites that we accept by default. All these cipher suites
@@ -595,23 +603,38 @@ static grpc_security_connector_vtable ssl_channel_vtable = {
 static grpc_security_connector_vtable ssl_server_vtable = {
     ssl_server_destroy, ssl_server_do_handshake, ssl_server_check_peer};
 
-static gpr_slice default_pem_root_certs;
+static gpr_slice compute_default_pem_root_certs_once(void) {
+  gpr_slice result = gpr_empty_slice();
 
-static void init_default_pem_root_certs(void) {
   /* First try to load the roots from the environment. */
   char *default_root_certs_path =
       gpr_getenv(GRPC_DEFAULT_SSL_ROOTS_FILE_PATH_ENV_VAR);
-  if (default_root_certs_path == NULL) {
-    default_pem_root_certs = gpr_empty_slice();
-  } else {
-    default_pem_root_certs = gpr_load_file(default_root_certs_path, 0, NULL);
+  if (default_root_certs_path != NULL) {
+    result = gpr_load_file(default_root_certs_path, 0, NULL);
     gpr_free(default_root_certs_path);
   }
 
-  /* Fall back to installed certs if needed. */
-  if (GPR_SLICE_IS_EMPTY(default_pem_root_certs)) {
-    default_pem_root_certs = gpr_load_file(installed_roots_path, 0, NULL);
+  /* Try overridden roots path if needed. */
+  if (GPR_SLICE_IS_EMPTY(result) &&
+      overridden_default_roots_file_path != NULL) {
+    result = gpr_load_file(overridden_default_roots_file_path, 0, NULL);
   }
+
+  /* Fall back to installed certs if needed. */
+  if (GPR_SLICE_IS_EMPTY(result)) {
+    result = gpr_load_file(installed_roots_path, 0, NULL);
+  }
+  return result;
+}
+
+static gpr_slice default_pem_root_certs;
+
+static void init_default_pem_root_certs(void) {
+  default_pem_root_certs = compute_default_pem_root_certs_once();
+}
+
+gpr_slice grpc_get_default_ssl_roots_for_testing(void) {
+  return compute_default_pem_root_certs_once();
 }
 
 size_t grpc_get_default_ssl_roots(const unsigned char **pem_root_certs) {
