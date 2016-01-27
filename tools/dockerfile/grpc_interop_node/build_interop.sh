@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2015, Google Inc.
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -28,7 +28,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
-# Builds Python interop server and client in a base image.
+# Builds Node interop server and client in a base image.
 set -e
 
 mkdir -p /var/local/git
@@ -38,10 +38,11 @@ git clone --recursive /var/local/jenkins/grpc /var/local/git/grpc
 cp -r /var/local/jenkins/service_account $HOME || true
 
 cd /var/local/git/grpc
+nvm use 0.12
+nvm alias default 0.12  # prevent the need to run 'nvm use' in every shell
 
 make install-certs
-make
 
-# build Python interop client and server
-CONFIG=opt ./tools/run_tests/build_python.sh
-
+# build Node interop client & server
+npm install -g node-gyp
+npm install --unsafe-perm --build-from-source
