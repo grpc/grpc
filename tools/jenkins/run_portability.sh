@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Copyright 2015, Google Inc.
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -52,8 +52,7 @@ maybe_build_only='--build_only'
 
 if [ "$curr_platform" == "windows" ]
 then
-  win_arch="windows_${curr_arch}"
-  python tools/run_tests/run_tests.py -t -l $language -c $config --arch ${win_arch} --compiler ${curr_compiler} ${maybe_build_only} -x report.xml $@
+  python tools/run_tests/run_tests.py -t -l $language -c $config --arch ${curr_arch} --compiler ${curr_compiler} ${maybe_build_only} -x report.xml $@
 else
   echo "Unsupported scenario."
   exit 1
