@@ -102,6 +102,7 @@ static void grpc_rb_event_queue_destroy() {
 
 static void *grpc_rb_wait_for_event_no_gil(void *param) {
   grpc_rb_event *event = NULL;
+  (void)param;
   gpr_mu_lock(&event_queue.mu);
   while ((event = grpc_rb_event_queue_dequeue()) == NULL) {
     gpr_cv_wait(&event_queue.cv,
@@ -117,6 +118,7 @@ static void *grpc_rb_wait_for_event_no_gil(void *param) {
 }
 
 static void grpc_rb_event_unblocking_func(void *arg) {
+  (void)arg;
   gpr_mu_lock(&event_queue.mu);
   event_queue.abort = true;
   gpr_cv_signal(&event_queue.cv);
@@ -127,6 +129,7 @@ static void grpc_rb_event_unblocking_func(void *arg) {
  * events */
 static VALUE grpc_rb_event_thread(VALUE arg) {
   grpc_rb_event *event;
+  (void)arg;
   while(true) {
     event = (grpc_rb_event*)rb_thread_call_without_gvl(
         grpc_rb_wait_for_event_no_gil, NULL,

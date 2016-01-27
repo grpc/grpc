@@ -1,4 +1,4 @@
-# Copyright 2015, Google Inc.
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -48,7 +48,6 @@ RUN apt-get update && apt-get install -y \
   libc6-dbg \
   libc6-dev \
   libgtest-dev \
-  libssl-dev \
   libtool \
   make \
   strace \
@@ -68,13 +67,26 @@ RUN ln -s /usr/bin/ccache /usr/local/bin/c++
 RUN ln -s /usr/bin/ccache /usr/local/bin/clang
 RUN ln -s /usr/bin/ccache /usr/local/bin/clang++
 
-##################
-# Node dependencies
+#################
+# C# dependencies
 
-# Install nvm
-RUN touch .profile
-RUN curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.25.4/install.sh | bash
-RUN /bin/bash -l -c "nvm install 0.12"
+# Update to a newer version of mono
+RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF
+RUN echo "deb http://download.mono-project.com/repo/debian wheezy main" | tee /etc/apt/sources.list.d/mono-xamarin.list
+RUN echo "deb http://download.mono-project.com/repo/debian wheezy-apache24-compat main" | tee -a /etc/apt/sources.list.d/mono-xamarin.list
+RUN echo "deb http://download.mono-project.com/repo/debian wheezy-libjpeg62-compat main" | tee -a /etc/apt/sources.list.d/mono-xamarin.list
+RUN echo "deb http://download.mono-project.com/repo/debian wheezy-libtiff-compat main" | tee -a /etc/apt/sources.list.d/mono-xamarin.list
+
+# Install dependencies
+RUN apt-get update && apt-get -y dist-upgrade && apt-get install -y \
+    mono-devel \
+    nunit \
+    nunit-console \
+    monodevelop
+
+# Download NuGet
+RUN cd /var/local && wget www.nuget.org/NuGet.exe
+ENV NUGET mono /var/local/NuGet.exe
 
 # Define the default command.
 CMD ["bash"]
