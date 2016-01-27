@@ -350,7 +350,7 @@ class AsyncClient : public ClientImpl<StubType, RequestType> {
     int num_threads = config.async_client_threads();
     if (num_threads <= 0) {  // Use dynamic sizing
       num_threads = gpr_cpu_num_cores();
-      gpr_log(GPR_INFO, "Sizing client server to %d threads\n", num_threads);
+      gpr_log(GPR_INFO, "Sizing client server to %d threads", num_threads);
     }
     return num_threads;
   }
