@@ -1,5 +1,5 @@
 #region Copyright notice and license
-// Copyright 2015, Google Inc.
+// Copyright 2015-2016, Google Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -42,22 +42,9 @@ namespace Grpc.Core.Internal
     /// </summary>
     internal class CompletionQueueSafeHandle : SafeHandleZeroIsInvalid
     {
+        static readonly NativeMethods Native = NativeMethods.Get();
+
         AtomicCounter shutdownRefcount = new AtomicCounter(1);
-
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern CompletionQueueSafeHandle grpcsharp_completion_queue_create();
-
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern void grpcsharp_completion_queue_shutdown(CompletionQueueSafeHandle cq);
-
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern CompletionQueueEvent grpcsharp_completion_queue_next(CompletionQueueSafeHandle cq);
-
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern CompletionQueueEvent grpcsharp_completion_queue_pluck(CompletionQueueSafeHandle cq, IntPtr tag);
-
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern void grpcsharp_completion_queue_destroy(IntPtr cq);
 
         private CompletionQueueSafeHandle()
         {
@@ -65,20 +52,20 @@ namespace Grpc.Core.Internal
 
         public static CompletionQueueSafeHandle Create()
         {
-            return grpcsharp_completion_queue_create();
+            return Native.grpcsharp_completion_queue_create();
 
         }
 
         public CompletionQueueEvent Next()
         {
-            return grpcsharp_completion_queue_next(this);
+            return Native.grpcsharp_completion_queue_next(this);
         }
 
         public CompletionQueueEvent Pluck(IntPtr tag)
         {
             using (Profilers.ForCurrentThread().NewScope("CompletionQueueSafeHandle.Pluck"))
             {
-                return grpcsharp_completion_queue_pluck(this, tag);
+                return Native.grpcsharp_completion_queue_pluck(this, tag);
             }
         }
 
@@ -98,7 +85,7 @@ namespace Grpc.Core.Internal
 
         protected override bool ReleaseHandle()
         {
-            grpcsharp_completion_queue_destroy(handle);
+            Native.grpcsharp_completion_queue_destroy(handle);
             return true;
         }
 
@@ -106,7 +93,7 @@ namespace Grpc.Core.Internal
         {
             if (shutdownRefcount.Decrement() == 0)
             {
-                grpcsharp_completion_queue_shutdown(this);
+                Native.grpcsharp_completion_queue_shutdown(this);
             }
         }
 

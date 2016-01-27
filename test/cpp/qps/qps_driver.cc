@@ -153,7 +153,7 @@ static void QpsDriver() {
 
   ServerConfig server_config;
   server_config.set_server_type(server_type);
-  server_config.set_host("localhost");
+  server_config.set_host("::");  // Use the wildcard server address
   server_config.set_async_server_threads(FLAGS_async_server_threads);
 
   if (FLAGS_secure_test) {
@@ -164,6 +164,13 @@ static void QpsDriver() {
     client_config.mutable_security_params()->CopyFrom(security);
     server_config.mutable_security_params()->CopyFrom(security);
   }
+
+  // Make sure that if we are performing a generic (bytebuf) test
+  // that we are also using async streaming
+  GPR_ASSERT(!client_config.payload_config().has_bytebuf_params() ||
+             (client_config.client_type() == ASYNC_CLIENT &&
+              client_config.rpc_type() == STREAMING &&
+              server_config.server_type() == ASYNC_SERVER));
 
   const auto result = RunScenario(
       client_config, FLAGS_num_clients, server_config, FLAGS_num_servers,

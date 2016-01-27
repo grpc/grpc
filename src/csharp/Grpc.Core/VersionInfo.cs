@@ -1,6 +1,6 @@
 #region Copyright notice and license
 
-// Copyright 2015, Google Inc.
+// Copyright 2015-2016, Google Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -41,6 +41,6 @@ namespace Grpc.Core
         /// <summary>
         /// Current version of gRPC C#
         /// </summary>
-        public const string CurrentVersion = "0.12.0";
+        public const string CurrentVersion = "0.13.0";
     }
 }
