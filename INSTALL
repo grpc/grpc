@@ -151,6 +151,11 @@ We will also need to make openssl and install it appropriately
   $ sudo make install
   $ cd ../../
 
+or if you use homebrew
+
+  $ brew install openssl
+  $ export PKG_CONFIG_PATH=/usr/local/opt/openssl/lib/pkgconfig
+
 If you are going to make changes and need to regenerate the projects file,
 you will need to install certain modules for python.
 
