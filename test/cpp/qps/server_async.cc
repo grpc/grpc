@@ -89,7 +89,7 @@ class AsyncQpsServerTest : public Server {
     int num_threads = config.async_server_threads();
     if (num_threads <= 0) {  // dynamic sizing
       num_threads = cores();
-      gpr_log(GPR_INFO, "Sizing async server to %d threads\n", num_threads);
+      gpr_log(GPR_INFO, "Sizing async server to %d threads", num_threads);
     }
 
     for (int i = 0; i < num_threads; i++) {
