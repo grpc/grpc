@@ -743,14 +743,17 @@ static void maybe_start_some_streams(
   }
 }
 
-static grpc_closure *add_closure_barrier(grpc_closure *closure) {
+static grpc_closure *add_closure_barrier(grpc_closure *closure, const char* reason) {
+  gpr_log(GPR_INFO, "add_closure_barrier %p %s", closure, reason);
   closure->final_data += 2;
   return closure;
 }
 
 void grpc_chttp2_complete_closure_step(grpc_exec_ctx *exec_ctx,
-                                       grpc_closure **pclosure, int success) {
+                                       grpc_closure **pclosure, int success,
+                                       const char* reason) {
   grpc_closure *closure = *pclosure;
+  gpr_log(GPR_INFO, "grpc_chttp2_complete_closure_step %p %s", closure, reason);
   if (closure == NULL) {
     return;
   }
@@ -807,7 +810,7 @@ static void perform_stream_op_locked(
   if (op->send_initial_metadata != NULL) {
     GPR_ASSERT(stream_global->send_initial_metadata_finished == NULL);
     stream_global->send_initial_metadata_finished =
-        add_closure_barrier(on_complete);
+        add_closure_barrier(on_complete, "send_initial_metadata_finished");
     stream_global->send_initial_metadata = op->send_initial_metadata;
     if (contains_non_ok_status(transport_global, op->send_initial_metadata)) {
       stream_global->seen_error = 1;
@@ -825,17 +828,17 @@ static void perform_stream_op_locked(
       }
     } else {
       grpc_chttp2_complete_closure_step(
-          exec_ctx, &stream_global->send_initial_metadata_finished, 0);
+          exec_ctx, &stream_global->send_initial_metadata_finished, 0, "send_initial_metadata_finished");
     }
   }
 
   if (op->send_message != NULL) {
     GPR_ASSERT(stream_global->send_message_finished == NULL);
     GPR_ASSERT(stream_global->send_message == NULL);
-    stream_global->send_message_finished = add_closure_barrier(on_complete);
+    stream_global->send_message_finished = add_closure_barrier(on_complete, "send_message_finished");
     if (stream_global->write_closed) {
       grpc_chttp2_complete_closure_step(
-          exec_ctx, &stream_global->send_message_finished, 0);
+          exec_ctx, &stream_global->send_message_finished, 0, "send_message_finished");
     } else if (stream_global->id != 0) {
       stream_global->send_message = op->send_message;
       grpc_chttp2_list_add_writable_stream(transport_global, stream_global);
@@ -845,7 +848,7 @@ static void perform_stream_op_locked(
   if (op->send_trailing_metadata != NULL) {
     GPR_ASSERT(stream_global->send_trailing_metadata_finished == NULL);
     stream_global->send_trailing_metadata_finished =
-        add_closure_barrier(on_complete);
+        add_closure_barrier(on_complete, "send_trailing_metadata_finished");
     stream_global->send_trailing_metadata = op->send_trailing_metadata;
     if (contains_non_ok_status(transport_global, op->send_trailing_metadata)) {
       stream_global->seen_error = 1;
@@ -854,7 +857,7 @@ static void perform_stream_op_locked(
     if (stream_global->write_closed) {
       grpc_chttp2_complete_closure_step(
           exec_ctx, &stream_global->send_trailing_metadata_finished,
-          grpc_metadata_batch_is_empty(op->send_trailing_metadata));
+          grpc_metadata_batch_is_empty(op->send_trailing_metadata), "send_trailing_metadata_finished");
     } else if (stream_global->id != 0) {
       /* TODO(ctiller): check if there's flow control for any outstanding
          bytes before going writable */
@@ -865,7 +868,7 @@ static void perform_stream_op_locked(
   if (op->recv_initial_metadata != NULL) {
     GPR_ASSERT(stream_global->recv_initial_metadata_finished == NULL);
     stream_global->recv_initial_metadata_finished =
-        add_closure_barrier(on_complete);
+        add_closure_barrier(on_complete, "recv_initial_metadata_finished");
     stream_global->recv_initial_metadata = op->recv_initial_metadata;
     grpc_chttp2_list_add_check_read_ops(transport_global, stream_global);
   }
@@ -887,12 +890,12 @@ static void perform_stream_op_locked(
   if (op->recv_trailing_metadata != NULL) {
     GPR_ASSERT(stream_global->recv_trailing_metadata_finished == NULL);
     stream_global->recv_trailing_metadata_finished =
-        add_closure_barrier(on_complete);
+        add_closure_barrier(on_complete, "recv_trailing_metadata_finished");
     stream_global->recv_trailing_metadata = op->recv_trailing_metadata;
     grpc_chttp2_list_add_check_read_ops(transport_global, stream_global);
   }
 
-  grpc_chttp2_complete_closure_step(exec_ctx, &on_complete, 1);
+  grpc_chttp2_complete_closure_step(exec_ctx, &on_complete, 1, "on_complete");
 
   GPR_TIMER_END("perform_stream_op_locked", 0);
 }
@@ -1015,7 +1018,7 @@ static void check_read_ops(grpc_exec_ctx *exec_ctx,
           &stream_global->received_initial_metadata,
           stream_global->recv_initial_metadata);
       grpc_chttp2_complete_closure_step(
-          exec_ctx, &stream_global->recv_initial_metadata_finished, 1);
+          exec_ctx, &stream_global->recv_initial_metadata_finished, 1, "recv_initial_metadata_finished");
     }
     if (stream_global->recv_message_ready != NULL) {
       if (stream_global->incoming_frames.head != NULL) {
@@ -1042,7 +1045,7 @@ static void check_read_ops(grpc_exec_ctx *exec_ctx,
             &stream_global->received_trailing_metadata,
             stream_global->recv_trailing_metadata);
         grpc_chttp2_complete_closure_step(
-            exec_ctx, &stream_global->recv_trailing_metadata_finished, 1);
+            exec_ctx, &stream_global->recv_trailing_metadata_finished, 1, "recv_trailing_metadata_finished");
       }
     }
   }
@@ -1139,11 +1142,11 @@ void grpc_chttp2_fake_status(grpc_exec_ctx *exec_ctx,
 static void fail_pending_writes(grpc_exec_ctx *exec_ctx,
                                 grpc_chttp2_stream_global *stream_global) {
   grpc_chttp2_complete_closure_step(
-      exec_ctx, &stream_global->send_initial_metadata_finished, 0);
+      exec_ctx, &stream_global->send_initial_metadata_finished, 0, "send_initial_metadata_finished");
   grpc_chttp2_complete_closure_step(
-      exec_ctx, &stream_global->send_trailing_metadata_finished, 0);
+      exec_ctx, &stream_global->send_trailing_metadata_finished, 0, "send_trailing_metadata_finished");
   grpc_chttp2_complete_closure_step(exec_ctx,
-                                    &stream_global->send_message_finished, 0);
+                                    &stream_global->send_message_finished, 0, "send_message_finished");
 }
 
 void grpc_chttp2_mark_stream_closed(
