@@ -208,7 +208,7 @@ CFLAGS_msan = -O0 -fsanitize=memory -fsanitize-memory-track-origins -fno-omit-fr
 CXXFLAGS_msan = -O0 -fsanitize=memory -fsanitize-memory-track-origins -fno-omit-frame-pointer -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1 -Wno-unused-command-line-argument -fPIE -pie
 LDFLAGS_msan = -fsanitize=memory -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1 -fPIE -pie $(if $(JENKINS_BUILD),-Wl$(comma)-Ttext-segment=0x7e0000000000,)
 DEFINES_msan = NDEBUG
-DEFINES_msan += GRPC_TEST_SLOWDOWN_BUILD_FACTOR=1.5
+DEFINES_msan += GRPC_TEST_SLOWDOWN_BUILD_FACTOR=2
 
 VALID_CONFIG_mutrace = 1
 CC_mutrace = $(DEFAULT_CC)
@@ -226,26 +226,44 @@ DEFINES_mutrace = _DEBUG DEBUG
 
 prefix ?= /usr/local
 
-PROTOC = protoc
-DTRACE = dtrace
+PROTOC ?= protoc
+DTRACE ?= dtrace
 CONFIG ?= opt
+# Doing X ?= Y is the same as:
+# ifeq ($(origin X), undefined)
+#  X = Y
+# endif
+# but some variables, such as CC, CXX, LD or AR, have defaults.
+# So instead of using ?= on them, we need to check their origin.
+# See:
+#  https://www.gnu.org/software/make/manual/html_node/Implicit-Variables.html
+#  https://www.gnu.org/software/make/manual/html_node/Flavors.html#index-_003f_003d
+#  https://www.gnu.org/software/make/manual/html_node/Origin-Function.html
+ifeq ($(origin CC), default)
 CC = $(CC_$(CONFIG))
+endif
+ifeq ($(origin CXX), default)
 CXX = $(CXX_$(CONFIG))
+endif
+ifeq ($(origin LD), default)
 LD = $(LD_$(CONFIG))
-LDXX = $(LDXX_$(CONFIG))
+endif
+LDXX ?= $(LDXX_$(CONFIG))
+ifeq ($(origin AR), default)
 AR = ar
+endif
 ifeq ($(SYSTEM),Linux)
-STRIP = strip --strip-unneeded
+STRIP ?= strip --strip-unneeded
 else
 ifeq ($(SYSTEM),Darwin)
-STRIP = strip -x
+STRIP ?= strip -x
 else
-STRIP = strip
+STRIP ?= strip
 endif
 endif
-INSTALL = install
-RM = rm -f
-PKG_CONFIG = pkg-config
+INSTALL ?= install
+RM ?= rm -f
+PKG_CONFIG ?= pkg-config
 
 ifndef VALID_CONFIG_$(CONFIG)
 $(error Invalid CONFIG value '$(CONFIG)')
@@ -261,15 +279,21 @@ endif
 CXX11_CHECK_CMD = $(CXX) -std=c++11 -o $(TMPOUT) -c test/build/c++11.cc
 HAS_CXX11 = $(shell $(CXX11_CHECK_CMD) 2> /dev/null && echo true || echo false)
 
+CHECK_NO_SHIFT_NEGATIVE_VALUE_CMD = $(CC) -std=c99 -Werror -Wno-shift-negative-value -o $(TMPOUT) -c test/build/empty.c
+HAS_NO_SHIFT_NEGATIVE_VALUE = $(shell $(CHECK_NO_SHIFT_NEGATIVE_VALUE_CMD) 2> /dev/null && echo true || echo false)
+ifeq ($(HAS_NO_SHIFT_NEGATIVE_VALUE),true)
+W_NO_SHIFT_NEGATIVE_VALUE=-Wno-shift-negative-value
+endif
+
 # The HOST compiler settings are used to compile the protoc plugins.
 # In most cases, you won't have to change anything, but if you are
 # cross-compiling, you can override these variables from GNU make's
 # command line: make CC=cross-gcc HOST_CC=gcc
 
-HOST_CC = $(CC)
-HOST_CXX = $(CXX)
-HOST_LD = $(LD)
-HOST_LDXX = $(LDXX)
+HOST_CC ?= $(CC)
+HOST_CXX ?= $(CXX)
+HOST_LD ?= $(LD)
+HOST_LDXX ?= $(LDXX)
 
 ifdef EXTRA_DEFINES
 DEFINES += $(EXTRA_DEFINES)
@@ -342,7 +366,7 @@ E = @echo
 Q = @
 endif
 
-VERSION = 0.12.0.0
+VERSION = 0.13.0.0
 
 CPPFLAGS_NO_ARCH += $(addprefix -I, $(INCLUDES)) $(addprefix -D, $(DEFINES))
 CPPFLAGS += $(CPPFLAGS_NO_ARCH) $(ARCH_FLAGS)
@@ -400,14 +424,6 @@ else
 IS_GIT_FOLDER = true
 endif
 
-ifeq ($(SYSTEM),Linux)
-OPENSSL_REQUIRES_DL = true
-endif
-
-ifeq ($(SYSTEM),Darwin)
-OPENSSL_REQUIRES_DL = true
-endif
-
 ifeq ($(HAS_PKG_CONFIG),true)
 OPENSSL_ALPN_CHECK_CMD = $(PKG_CONFIG) --atleast-version=1.0.2 openssl
 OPENSSL_NPN_CHECK_CMD = $(PKG_CONFIG) --atleast-version=1.0.1 openssl
@@ -425,11 +441,6 @@ OPENSSL_ALPN_CHECK_CMD = $(CC) $(CFLAGS) $(CPPFLAGS) -o $(TMPOUT) test/build/ope
 OPENSSL_NPN_CHECK_CMD = $(CC) $(CFLAGS) $(CPPFLAGS) -o $(TMPOUT) test/build/openssl-npn.c $(addprefix -l, $(OPENSSL_LIBS)) $(LDFLAGS)
 ZLIB_CHECK_CMD = $(CC) $(CFLAGS) $(CPPFLAGS) -o $(TMPOUT) test/build/zlib.c -lz $(LDFLAGS)
 PROTOBUF_CHECK_CMD = $(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $(TMPOUT) test/build/protobuf.cc -lprotobuf $(LDFLAGS)
-
-ifeq ($(OPENSSL_REQUIRES_DL),true)
-OPENSSL_ALPN_CHECK_CMD += -ldl
-OPENSSL_NPN_CHECK_CMD += -ldl
-endif
 
 endif # HAS_PKG_CONFIG
 
@@ -594,9 +605,6 @@ OPENSSL_DEP += $(LIBDIR)/$(CONFIG)/libboringssl.a
 OPENSSL_MERGE_LIBS += $(LIBDIR)/$(CONFIG)/libboringssl.a
 # need to prefix these to ensure overriding system libraries
 CPPFLAGS := -Ithird_party/boringssl/include $(CPPFLAGS)
-ifeq ($(OPENSSL_REQUIRES_DL),true)
-LIBS_SECURE = dl
-endif # OPENSSL_REQUIRES_DL
 else # EMBED_OPENSSL=false
 ifeq ($(HAS_PKG_CONFIG),true)
 OPENSSL_PKG_CONFIG = true
@@ -616,10 +624,7 @@ ifeq ($(HAS_SYSTEM_OPENSSL_NPN),true)
 CPPFLAGS += -DTSI_OPENSSL_ALPN_SUPPORT=0
 LIBS_SECURE = $(OPENSSL_LIBS)
 endif # HAS_SYSTEM_OPENSSL_NPN
-ifeq ($(OPENSSL_REQUIRES_DL),true)
-LIBS_SECURE += dl
 PC_LIBS_SECURE = $(addprefix -l, $(LIBS_SECURE))
-endif # OPENSSL_REQUIRES_DL=true
 endif # EMBED_OPENSSL
 endif # NO_SECURE
 
@@ -5632,7 +5637,7 @@ LIBZ_SRC = \
 
 LIBZ_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBZ_SRC))))
 
-$(LIBZ_OBJS): CFLAGS := $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-implicit-function-declaration -fvisibility=hidden
+$(LIBZ_OBJS): CFLAGS := $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-implicit-function-declaration $(W_NO_SHIFT_NEGATIVE_VALUE) -fvisibility=hidden
 
 $(LIBDIR)/$(CONFIG)/libz.a: $(ZLIB_DEP) $(OPENSSL_DEP)  $(LIBZ_OBJS)
 	$(E) "[AR]      Creating $@"

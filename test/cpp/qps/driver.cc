@@ -31,25 +31,25 @@
  *
  */
 
+#include <deque>
 #include <list>
 #include <thread>
-#include <deque>
 #include <vector>
 
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/host_port.h>
 #include <grpc++/channel.h>
 #include <grpc++/client_context.h>
 #include <grpc++/create_channel.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/host_port.h>
+#include <grpc/support/log.h>
 
 #include "src/core/support/env.h"
+#include "src/proto/grpc/testing/services.grpc.pb.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/qps/driver.h"
 #include "test/cpp/qps/histogram.h"
 #include "test/cpp/qps/qps_worker.h"
-#include "src/proto/grpc/testing/services.grpc.pb.h"
 
 using std::list;
 using std::thread;
@@ -143,6 +143,12 @@ std::unique_ptr<ScenarioResult> RunScenario(
     }
   }
 
+  // if num_clients is set to <=0, do dynamic sizing: all workers
+  // except for servers are clients
+  if (num_clients <= 0) {
+    num_clients = workers.size() - num_servers;
+  }
+
   // TODO(ctiller): support running multiple configurations, and binpack
   // client/server pairs
   // to available workers
@@ -162,6 +168,8 @@ std::unique_ptr<ScenarioResult> RunScenario(
   // where class contained in std::vector must have a copy constructor
   auto* servers = new ServerData[num_servers];
   for (size_t i = 0; i < num_servers; i++) {
+    gpr_log(GPR_INFO, "Starting server on %s (worker #%d)", workers[i].c_str(),
+            i);
     servers[i].stub = WorkerService::NewStub(
         CreateChannel(workers[i], InsecureChannelCredentials()));
     ServerArgs args;
@@ -189,6 +197,8 @@ std::unique_ptr<ScenarioResult> RunScenario(
   // where class contained in std::vector must have a copy constructor
   auto* clients = new ClientData[num_clients];
   for (size_t i = 0; i < num_clients; i++) {
+    gpr_log(GPR_INFO, "Starting client on %s (worker #%d)",
+            workers[i + num_servers].c_str(), i + num_servers);
     clients[i].stub = WorkerService::NewStub(
         CreateChannel(workers[i + num_servers], InsecureChannelCredentials()));
     ClientArgs args;

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -36,4 +36,4 @@
 
 #include <grpc/grpc.h>
 
-const char *grpc_version_string(void) { return "0.12.0.0"; }
+const char *grpc_version_string(void) { return "0.13.0.0"; }
