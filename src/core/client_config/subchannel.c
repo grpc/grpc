@@ -317,9 +317,13 @@ grpc_subchannel *grpc_subchannel_create(grpc_exec_ctx *exec_ctx,
   c->connector = connector;
   grpc_connector_ref(c->connector);
   c->num_filters = args->filter_count;
-  c->filters = gpr_malloc(sizeof(grpc_channel_filter *) * c->num_filters);
-  memcpy((void *)c->filters, args->filters,
-         sizeof(grpc_channel_filter *) * c->num_filters);
+  if (c->num_filters > 0) {
+    c->filters = gpr_malloc(sizeof(grpc_channel_filter *) * c->num_filters);
+    memcpy((void *)c->filters, args->filters,
+           sizeof(grpc_channel_filter *) * c->num_filters);
+  } else {
+    c->filters = NULL;
+  }
   c->addr = gpr_malloc(args->addr_len);
   memcpy(c->addr, args->addr, args->addr_len);
   grpc_pollset_set_init(&c->pollset_set);
@@ -517,7 +521,9 @@ static void publish_transport(grpc_exec_ctx *exec_ctx, grpc_subchannel *c) {
   /* build final filter list */
   num_filters = c->num_filters + c->connecting_result.num_filters + 1;
   filters = gpr_malloc(sizeof(*filters) * num_filters);
-  memcpy((void *)filters, c->filters, sizeof(*filters) * c->num_filters);
+  if (c->num_filters > 0) {
+    memcpy((void *)filters, c->filters, sizeof(*filters) * c->num_filters);
+  }
   memcpy((void *)(filters + c->num_filters), c->connecting_result.filters,
          sizeof(*filters) * c->connecting_result.num_filters);
   filters[num_filters - 1] = &grpc_connected_channel_filter;
@@ -553,7 +559,12 @@ static void publish_transport(grpc_exec_ctx *exec_ctx, grpc_subchannel *c) {
   }
 
   /* publish */
-  GPR_ASSERT(gpr_atm_no_barrier_cas(&c->connected_subchannel, 0, (gpr_atm)con));
+  /* TODO(ctiller): this full barrier seems to clear up a TSAN failure.
+                    I'd have expected the rel_cas below to be enough, but
+                    seemingly it's not.
+                    Re-evaluate if we really need this. */
+  gpr_atm_full_barrier();
+  GPR_ASSERT(gpr_atm_rel_cas(&c->connected_subchannel, 0, (gpr_atm)con));
   c->connecting = 0;
 
   /* setup subchannel watching connected subchannel for changes; subchannel ref
