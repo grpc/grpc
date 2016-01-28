@@ -53,15 +53,15 @@
 #include <memory>
 #include <string>
 
-#include <grpc++/impl/codegen/sync.h>
-#include <grpc++/impl/codegen/security/auth_context.h>
 #include <grpc++/impl/codegen/config.h>
+#include <grpc++/impl/codegen/security/auth_context.h>
 #include <grpc++/impl/codegen/status.h>
 #include <grpc++/impl/codegen/string_ref.h>
+#include <grpc++/impl/codegen/sync.h>
 #include <grpc++/impl/codegen/time.h>
 #include <grpc/impl/codegen/compression_types.h>
-#include <grpc/impl/codegen/propagation_bits.h>
 #include <grpc/impl/codegen/log.h>
+#include <grpc/impl/codegen/propagation_bits.h>
 #include <grpc/impl/codegen/time.h>
 
 struct census_context;
@@ -288,6 +288,7 @@ class ClientContext {
   /// a client context is constructed and destructed.
   class GlobalCallbacks {
    public:
+    virtual ~GlobalCallbacks() {}
     virtual void DefaultConstructor(ClientContext* context) = 0;
     virtual void Destructor(ClientContext* context) = 0;
   };

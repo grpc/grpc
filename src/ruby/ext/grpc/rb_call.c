@@ -525,12 +525,13 @@ typedef struct run_batch_stack {
   grpc_status_code recv_status;
   char *recv_status_details;
   size_t recv_status_details_capacity;
-  uint write_flag;
+  unsigned write_flag;
 } run_batch_stack;
 
 /* grpc_run_batch_stack_init ensures the run_batch_stack is properly
  * initialized */
-static void grpc_run_batch_stack_init(run_batch_stack *st, uint write_flag) {
+static void grpc_run_batch_stack_init(run_batch_stack *st,
+                                      unsigned write_flag) {
   MEMZERO(st, run_batch_stack, 1);
   grpc_metadata_array_init(&st->send_metadata);
   grpc_metadata_array_init(&st->send_trailing_metadata);
@@ -696,7 +697,7 @@ static VALUE grpc_rb_call_run_batch(VALUE self, VALUE cqueue, VALUE tag,
   grpc_call_error err;
   VALUE result = Qnil;
   VALUE rb_write_flag = rb_ivar_get(self, id_write_flag);
-  uint write_flag = 0;
+  unsigned write_flag = 0;
   TypedData_Get_Struct(self, grpc_call, &grpc_call_data_type, call);
 
   /* Validate the ops args, adding them to a ruby array */
