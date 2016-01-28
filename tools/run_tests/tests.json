@@ -2453,6 +2453,7 @@
       "windows"
     ], 
     "cpu_cost": 1.0, 
+    "defaults": "boringssl", 
     "exclude_configs": [
       "asan"
     ], 
@@ -2476,6 +2477,7 @@
       "windows"
     ], 
     "cpu_cost": 1.0, 
+    "defaults": "boringssl", 
     "exclude_configs": [
       "asan"
     ], 
@@ -2499,6 +2501,7 @@
       "windows"
     ], 
     "cpu_cost": 1.0, 
+    "defaults": "boringssl", 
     "exclude_configs": [
       "asan"
     ], 
@@ -2522,6 +2525,7 @@
       "windows"
     ], 
     "cpu_cost": 1.0, 
+    "defaults": "boringssl", 
     "exclude_configs": [
       "asan"
     ], 
@@ -2545,6 +2549,7 @@
       "windows"
     ], 
     "cpu_cost": 1.0, 
+    "defaults": "boringssl", 
     "exclude_configs": [
       "asan"
     ], 
@@ -2571,6 +2576,7 @@
       "windows"
     ], 
     "cpu_cost": 1.0, 
+    "defaults": "boringssl", 
     "exclude_configs": [
       "asan"
     ], 
@@ -2597,6 +2603,7 @@
       "windows"
     ], 
     "cpu_cost": 1.0, 
+    "defaults": "boringssl", 
     "exclude_configs": [
       "asan"
     ], 
@@ -2623,6 +2630,7 @@
       "windows"
     ], 
     "cpu_cost": 1.0, 
+    "defaults": "boringssl", 
     "exclude_configs": [
       "asan"
     ], 
@@ -2649,6 +2657,7 @@
       "windows"
     ], 
     "cpu_cost": 1.0, 
+    "defaults": "boringssl", 
     "exclude_configs": [
       "asan"
     ], 
@@ -2675,6 +2684,7 @@
       "windows"
     ], 
     "cpu_cost": 1.0, 
+    "defaults": "boringssl", 
     "exclude_configs": [
       "asan"
     ], 
@@ -2701,6 +2711,7 @@
       "windows"
     ], 
     "cpu_cost": 1.0, 
+    "defaults": "boringssl", 
     "exclude_configs": [
       "asan"
     ], 
@@ -2727,6 +2738,7 @@
       "windows"
     ], 
     "cpu_cost": 1.0, 
+    "defaults": "boringssl", 
     "exclude_configs": [
       "asan"
     ], 
@@ -2753,6 +2765,7 @@
       "windows"
     ], 
     "cpu_cost": 1.0, 
+    "defaults": "boringssl", 
     "exclude_configs": [
       "asan"
     ], 
@@ -2779,6 +2792,7 @@
       "windows"
     ], 
     "cpu_cost": 1.0, 
+    "defaults": "boringssl", 
     "exclude_configs": [
       "asan"
     ], 
@@ -2805,6 +2819,7 @@
       "windows"
     ], 
     "cpu_cost": 1.0, 
+    "defaults": "boringssl", 
     "exclude_configs": [
       "asan"
     ], 
@@ -2831,6 +2846,7 @@
       "windows"
     ], 
     "cpu_cost": 1.0, 
+    "defaults": "boringssl", 
     "exclude_configs": [
       "asan"
     ], 
@@ -2857,6 +2873,7 @@
       "windows"
     ], 
     "cpu_cost": 1.0, 
+    "defaults": "boringssl", 
     "exclude_configs": [
       "asan"
     ], 
@@ -2883,6 +2900,7 @@
       "windows"
     ], 
     "cpu_cost": 1.0, 
+    "defaults": "boringssl", 
     "exclude_configs": [
       "asan"
     ], 
@@ -2909,6 +2927,7 @@
       "windows"
     ], 
     "cpu_cost": 1.0, 
+    "defaults": "boringssl", 
     "exclude_configs": [
       "asan"
     ], 
@@ -2935,6 +2954,7 @@
       "windows"
     ], 
     "cpu_cost": 1.0, 
+    "defaults": "boringssl", 
     "exclude_configs": [
       "asan"
     ], 
@@ -2961,6 +2981,7 @@
       "windows"
     ], 
     "cpu_cost": 1.0, 
+    "defaults": "boringssl", 
     "exclude_configs": [
       "asan"
     ], 
@@ -2987,6 +3008,7 @@
       "windows"
     ], 
     "cpu_cost": 1.0, 
+    "defaults": "boringssl", 
     "exclude_configs": [
       "asan"
     ], 
@@ -3013,6 +3035,7 @@
       "windows"
     ], 
     "cpu_cost": 1.0, 
+    "defaults": "boringssl", 
     "exclude_configs": [
       "asan"
     ], 
@@ -3039,6 +3062,7 @@
       "windows"
     ], 
     "cpu_cost": 1.0, 
+    "defaults": "boringssl", 
     "exclude_configs": [
       "asan"
     ], 
@@ -3065,6 +3089,7 @@
       "windows"
     ], 
     "cpu_cost": 1.0, 
+    "defaults": "boringssl", 
     "exclude_configs": [
       "asan"
     ], 
@@ -3091,6 +3116,7 @@
       "windows"
     ], 
     "cpu_cost": 1.0, 
+    "defaults": "boringssl", 
     "exclude_configs": [
       "asan"
     ], 
@@ -3117,6 +3143,7 @@
       "windows"
     ], 
     "cpu_cost": 1.0, 
+    "defaults": "boringssl", 
     "exclude_configs": [
       "asan"
     ], 
@@ -3143,6 +3170,7 @@
       "windows"
     ], 
     "cpu_cost": 1.0, 
+    "defaults": "boringssl", 
     "exclude_configs": [
       "asan"
     ], 
@@ -3169,6 +3197,7 @@
       "windows"
     ], 
     "cpu_cost": 1.0, 
+    "defaults": "boringssl", 
     "exclude_configs": [
       "asan"
     ], 
@@ -3194,6 +3223,7 @@
       "windows"
     ], 
     "cpu_cost": 1.0, 
+    "defaults": "boringssl", 
     "exclude_configs": [
       "asan"
     ], 
@@ -3217,6 +3247,7 @@
       "windows"
     ], 
     "cpu_cost": 1.0, 
+    "defaults": "boringssl", 
     "exclude_configs": [
       "asan"
     ], 
@@ -3240,6 +3271,7 @@
       "windows"
     ], 
     "cpu_cost": 1.0, 
+    "defaults": "boringssl", 
     "exclude_configs": [
       "asan"
     ], 
@@ -3265,6 +3297,7 @@
       "windows"
     ], 
     "cpu_cost": 1.0, 
+    "defaults": "boringssl", 
     "exclude_configs": [
       "asan"
     ], 
@@ -3288,6 +3321,7 @@
       "windows"
     ], 
     "cpu_cost": 1.0, 
+    "defaults": "boringssl", 
     "exclude_configs": [
       "asan"
     ], 
@@ -3311,6 +3345,7 @@
       "windows"
     ], 
     "cpu_cost": 1.0, 
+    "defaults": "boringssl", 
     "exclude_configs": [
       "asan"
     ], 
@@ -3334,6 +3369,7 @@
       "windows"
     ], 
     "cpu_cost": 1.0, 
+    "defaults": "boringssl", 
     "exclude_configs": [
       "asan"
     ], 
@@ -3357,6 +3393,7 @@
       "windows"
     ], 
     "cpu_cost": 1.0, 
+    "defaults": "boringssl", 
     "exclude_configs": [
       "asan"
     ], 
@@ -3380,6 +3417,7 @@
       "windows"
     ], 
     "cpu_cost": 1.0, 
+    "defaults": "boringssl", 
     "exclude_configs": [
       "asan"
     ], 
@@ -3403,6 +3441,7 @@
       "windows"
     ], 
     "cpu_cost": 1.0, 
+    "defaults": "boringssl", 
     "exclude_configs": [
       "asan"
     ], 
@@ -3426,6 +3465,7 @@
       "windows"
     ], 
     "cpu_cost": 1.0, 
+    "defaults": "boringssl", 
     "exclude_configs": [
       "asan"
     ], 
@@ -3449,6 +3489,7 @@
       "windows"
     ], 
     "cpu_cost": 1.0, 
+    "defaults": "boringssl", 
     "exclude_configs": [
       "asan"
     ], 
@@ -3472,6 +3513,7 @@
       "windows"
     ], 
     "cpu_cost": 1.0, 
+    "defaults": "boringssl", 
     "exclude_configs": [
       "asan"
     ], 
@@ -3497,6 +3539,7 @@
       "windows"
     ], 
     "cpu_cost": 1.0, 
+    "defaults": "boringssl", 
     "exclude_configs": [
       "asan"
     ], 
@@ -3520,6 +3563,7 @@
       "windows"
     ], 
     "cpu_cost": 1.0, 
+    "defaults": "boringssl", 
     "exclude_configs": [
       "asan"
     ], 
@@ -3543,6 +3587,7 @@
       "windows"
     ], 
     "cpu_cost": 1.0, 
+    "defaults": "boringssl", 
     "exclude_configs": [
       "asan"
     ], 
@@ -3568,6 +3613,7 @@
       "windows"
     ], 
     "cpu_cost": 1.0, 
+    "defaults": "boringssl", 
     "exclude_configs": [
       "asan"
     ], 
@@ -3591,6 +3637,7 @@
       "windows"
     ], 
     "cpu_cost": 1.0, 
+    "defaults": "boringssl", 
     "exclude_configs": [
       "asan"
     ], 
@@ -3614,6 +3661,7 @@
       "windows"
     ], 
     "cpu_cost": 1.0, 
+    "defaults": "boringssl", 
     "exclude_configs": [
       "asan"
     ], 
@@ -3637,6 +3685,7 @@
       "windows"
     ], 
     "cpu_cost": 1.0, 
+    "defaults": "boringssl", 
     "exclude_configs": [
       "asan"
     ], 
@@ -3660,6 +3709,7 @@
       "windows"
     ], 
     "cpu_cost": 1.0, 
+    "defaults": "boringssl", 
     "exclude_configs": [
       "asan"
     ], 
@@ -3685,6 +3735,7 @@
       "windows"
     ], 
     "cpu_cost": 1.0, 
+    "defaults": "boringssl", 
     "exclude_configs": [
       "asan"
     ], 
@@ -3708,6 +3759,7 @@
       "windows"
     ], 
     "cpu_cost": 1.0, 
+    "defaults": "boringssl", 
     "exclude_configs": [
       "asan"
     ], 
@@ -3731,6 +3783,7 @@
       "windows"
     ], 
     "cpu_cost": 1.0, 
+    "defaults": "boringssl", 
     "exclude_configs": [
       "asan"
     ], 
@@ -3754,6 +3807,7 @@
       "windows"
     ], 
     "cpu_cost": 1.0, 
+    "defaults": "boringssl", 
     "exclude_configs": [
       "asan"
     ], 
@@ -3777,6 +3831,7 @@
       "windows"
     ], 
     "cpu_cost": 1.0, 
+    "defaults": "boringssl", 
     "exclude_configs": [
       "asan"
     ], 
@@ -3800,6 +3855,7 @@
       "windows"
     ], 
     "cpu_cost": 1.0, 
+    "defaults": "boringssl", 
     "exclude_configs": [
       "asan"
     ], 
@@ -3823,6 +3879,7 @@
       "windows"
     ], 
     "cpu_cost": 1.0, 
+    "defaults": "boringssl", 
     "exclude_configs": [
       "asan"
     ], 
@@ -3846,6 +3903,7 @@
       "windows"
     ], 
     "cpu_cost": 1.0, 
+    "defaults": "boringssl", 
     "exclude_configs": [
       "asan"
     ], 
@@ -3869,6 +3927,7 @@
       "windows"
     ], 
     "cpu_cost": 1.0, 
+    "defaults": "boringssl", 
     "exclude_configs": [
       "asan"
     ], 

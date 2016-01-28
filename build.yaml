@@ -2575,9 +2575,8 @@ vspackages:
 configs:
   asan:
     CC: clang
-    CFLAGS: -O0 -fsanitize=address -fno-omit-frame-pointer -Wno-unused-command-line-argument
+    CPPFLAGS: -O0 -fsanitize=address -fno-omit-frame-pointer -Wno-unused-command-line-argument
     CXX: clang++
-    CXXFLAGS: -O0 -fsanitize=address -fno-omit-frame-pointer -Wno-unused-command-line-argument
     LD: clang
     LDFLAGS: -fsanitize=address
     LDXX: clang++
@@ -2588,9 +2587,8 @@ configs:
     timeout_multiplier: 1.5
   asan-noleaks:
     CC: clang
-    CFLAGS: -O0 -fsanitize=address -fno-omit-frame-pointer -Wno-unused-command-line-argument
+    CPPFLAGS: -O0 -fsanitize=address -fno-omit-frame-pointer -Wno-unused-command-line-argument
     CXX: clang++
-    CXXFLAGS: -O0 -fsanitize=address -fno-omit-frame-pointer -Wno-unused-command-line-argument
     LD: clang
     LDFLAGS: -fsanitize=address
     LDXX: clang++
@@ -2607,9 +2605,8 @@ configs:
     LDFLAGS: -rdynamic
   gcov:
     CC: gcc
-    CFLAGS: -O0 -fprofile-arcs -ftest-coverage -Wno-return-type
+    CPPFLAGS: -O0 -fprofile-arcs -ftest-coverage -Wno-return-type
     CXX: g++
-    CXXFLAGS: -O0 -fprofile-arcs -ftest-coverage -Wno-return-type
     DEFINES: _DEBUG DEBUG GPR_GCOV
     LD: gcc
     LDFLAGS: -fprofile-arcs -ftest-coverage -rdynamic
@@ -2628,13 +2625,10 @@ configs:
     valgrind: --tool=memcheck --leak-check=full
   msan:
     CC: clang
-    CFLAGS: -O0 -fsanitize=memory -fsanitize-memory-track-origins -fno-omit-frame-pointer
+    CPPFLAGS: -O0 -fsanitize=memory -fsanitize-memory-track-origins -fno-omit-frame-pointer
       -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1 -Wno-unused-command-line-argument
       -fPIE -pie
     CXX: clang++
-    CXXFLAGS: -O0 -fsanitize=memory -fsanitize-memory-track-origins -fno-omit-frame-pointer
-      -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1 -Wno-unused-command-line-argument
-      -fPIE -pie
     DEFINES: NDEBUG
     LD: clang
     LDFLAGS: -fsanitize=memory -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1
@@ -2655,11 +2649,9 @@ configs:
     DEFINES: NDEBUG
   tsan:
     CC: clang
-    CFLAGS: -O0 -fsanitize=thread -fno-omit-frame-pointer -Wno-unused-command-line-argument
+    CPPFLAGS: -O0 -fsanitize=thread -fno-omit-frame-pointer -Wno-unused-command-line-argument
       -fPIE -pie
     CXX: clang++
-    CXXFLAGS: -O0 -fsanitize=thread -fno-omit-frame-pointer -Wno-unused-command-line-argument
-      -fPIE -pie
     LD: clang
     LDFLAGS: -fsanitize=thread -fPIE -pie $(if $(JENKINS_BUILD),-Wl$(comma)-Ttext-segment=0x7e0000000000,)
     LDXX: clang++
@@ -2669,15 +2661,25 @@ configs:
     timeout_multiplier: 2
   ubsan:
     CC: clang
-    CFLAGS: -O1 -fsanitize=undefined -fno-omit-frame-pointer -Wno-unused-command-line-argument
+    CPPFLAGS: -O1 -fsanitize=undefined -fno-omit-frame-pointer -Wno-unused-command-line-argument
     CXX: clang++
-    CXXFLAGS: -O1 -fsanitize=undefined -fno-omit-frame-pointer -Wno-unused-command-line-argument
     DEFINES: NDEBUG
     LD: clang
     LDFLAGS: -fsanitize=undefined
     LDXX: clang++
     compile_the_world: true
     timeout_multiplier: 1.5
+defaults:
+  boringssl:
+    CFLAGS: -Wno-sign-conversion -Wno-conversion -Wno-unused-value
+    CPPFLAGS: -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM
+      -D_GNU_SOURCE
+  global:
+    CPPFLAGS: -g -Wall -Wextra -Werror -Wno-long-long -Wno-unused-parameter
+    LDFLAGS: -g
+  zlib:
+    CFLAGS: -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-implicit-function-declaration
+      $(W_NO_SHIFT_NEGATIVE_VALUE) -fvisibility=hidden
 node_modules:
 - deps:
   - grpc
