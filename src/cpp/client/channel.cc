@@ -35,25 +35,28 @@
 
 #include <memory>
 
-#include <grpc/grpc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/slice.h>
 #include <grpc++/client_context.h>
 #include <grpc++/completion_queue.h>
-#include <grpc++/security/credentials.h>
 #include <grpc++/impl/call.h>
-#include <grpc++/impl/rpc_method.h>
 #include <grpc++/impl/codegen/completion_queue_tag.h>
+#include <grpc++/impl/grpc_library.h>
+#include <grpc++/impl/rpc_method.h>
+#include <grpc++/security/credentials.h>
 #include <grpc++/support/channel_arguments.h>
 #include <grpc++/support/config.h>
 #include <grpc++/support/status.h>
 #include <grpc++/support/time.h>
+#include <grpc/grpc.h>
+#include <grpc/support/log.h>
+#include <grpc/support/slice.h>
 #include "src/core/profiling/timers.h"
 
 namespace grpc {
 
 Channel::Channel(const grpc::string& host, grpc_channel* channel)
-    : host_(host), c_channel_(channel) {}
+    : host_(host), c_channel_(channel) {
+  internal::g_gli_initializer.summon();
+}
 
 Channel::~Channel() { grpc_channel_destroy(c_channel_); }
 

@@ -84,6 +84,7 @@ filegroups:
   - src/cpp/common/call.cc
   - src/cpp/common/channel_arguments.cc
   - src/cpp/common/completion_queue.cc
+  - src/cpp/common/grpc_library_initializer.cc
   - src/cpp/common/rpc_method.cc
   - src/cpp/proto/proto_utils.cc
   - src/cpp/server/async_generic_service.cc
@@ -107,10 +108,10 @@ filegroups:
   - include/grpc++/impl/codegen/call_hook.h
   - include/grpc++/impl/codegen/channel_interface.h
   - include/grpc++/impl/codegen/client_context.h
-  - include/grpc++/impl/codegen/stub_options.h
   - include/grpc++/impl/codegen/completion_queue_tag.h
   - include/grpc++/impl/codegen/config.h
   - include/grpc++/impl/codegen/config_protobuf.h
+  - include/grpc++/impl/codegen/grpc_library.h
   - include/grpc++/impl/codegen/proto_utils.h
   - include/grpc++/impl/codegen/security/auth_context.h
   - include/grpc++/impl/codegen/serialization_traits.h
@@ -120,10 +121,13 @@ filegroups:
   - include/grpc++/impl/codegen/status.h
   - include/grpc++/impl/codegen/status_code_enum.h
   - include/grpc++/impl/codegen/string_ref.h
+  - include/grpc++/impl/codegen/stub_options.h
   - include/grpc++/impl/codegen/sync.h
   - include/grpc++/impl/codegen/sync_cxx11.h
   - include/grpc++/impl/codegen/sync_no_cxx11.h
   - include/grpc++/impl/codegen/time.h
+  src:
+  - src/cpp/codegen/grpc_library.cc
 - name: grpc_base
   public_headers:
   - include/grpc/byte_buffer.h

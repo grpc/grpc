@@ -36,20 +36,20 @@
 
 #include <memory>
 
-#include <grpc/grpc.h>
 #include <grpc++/impl/call.h>
 #include <grpc++/impl/codegen/channel_interface.h>
-#include <grpc++/impl/grpc_library.h>
-#include <grpc++/support/config.h>
+#include <grpc++/impl/codegen/config.h>
+#include <grpc++/impl/codegen/grpc_library.h>
+#include <grpc/grpc.h>
 
 struct grpc_channel;
 
 namespace grpc {
 /// Channels represent a connection to an endpoint. Created by \a CreateChannel.
 class Channel GRPC_FINAL : public ChannelInterface,
-                           public GrpcLibrary,
                            public CallHook,
-                           public std::enable_shared_from_this<Channel> {
+                           public std::enable_shared_from_this<Channel>,
+                           private GrpcLibrary {
  public:
   ~Channel();
 

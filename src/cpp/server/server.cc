@@ -35,18 +35,19 @@
 
 #include <utility>
 
-#include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc++/completion_queue.h>
 #include <grpc++/generic/async_generic_service.h>
+#include <grpc++/impl/codegen/completion_queue_tag.h>
+#include <grpc++/impl/grpc_library.h>
 #include <grpc++/impl/method_handler_impl.h>
 #include <grpc++/impl/rpc_service_method.h>
 #include <grpc++/impl/service_type.h>
-#include <grpc++/impl/codegen/completion_queue_tag.h>
-#include <grpc++/server_context.h>
 #include <grpc++/security/server_credentials.h>
+#include <grpc++/server_context.h>
 #include <grpc++/support/time.h>
+#include <grpc/grpc.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 
 #include "src/core/profiling/timers.h"
 #include "src/cpp/server/thread_pool_interface.h"
@@ -288,6 +289,7 @@ Server::Server(ThreadPoolInterface* thread_pool, bool thread_pool_owned,
       server_(CreateServer(args)),
       thread_pool_(thread_pool),
       thread_pool_owned_(thread_pool_owned) {
+  internal::g_gli_initializer.summon();
   gpr_once_init(&g_once_init_callbacks, InitGlobalCallbacks);
   grpc_server_register_completion_queue(server_, cq_.cq(), nullptr);
 }
