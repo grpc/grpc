@@ -183,6 +183,9 @@ class CLanguage(object):
   def supports_multi_config(self):
     return True
 
+  def dockerfile_dir(self, config, arch):
+    return None
+
   def __str__(self):
     return self.make_target
 
@@ -215,6 +218,9 @@ class NodeLanguage(object):
   def supports_multi_config(self):
     return False
 
+  def dockerfile_dir(self, config, arch):
+    return None
+
   def __str__(self):
     return 'node'
 
@@ -245,6 +251,9 @@ class PhpLanguage(object):
 
   def supports_multi_config(self):
     return False
+
+  def dockerfile_dir(self, config, arch):
+    return None
 
   def __str__(self):
     return 'php'
@@ -299,6 +308,9 @@ class PythonLanguage(object):
   def supports_multi_config(self):
     return False
 
+  def dockerfile_dir(self, config, arch):
+    return None
+
   def __str__(self):
     return 'python'
 
@@ -329,6 +341,9 @@ class RubyLanguage(object):
 
   def supports_multi_config(self):
     return False
+
+  def dockerfile_dir(self, config, arch):
+    return None
 
   def __str__(self):
     return 'ruby'
@@ -412,6 +427,9 @@ class CSharpLanguage(object):
   def supports_multi_config(self):
     return False
 
+  def dockerfile_dir(self, config, arch):
+    return None
+
   def __str__(self):
     return 'csharp'
 
@@ -443,6 +461,9 @@ class ObjCLanguage(object):
   def supports_multi_config(self):
     return False
 
+  def dockerfile_dir(self, config, arch):
+    return None
+
   def __str__(self):
     return 'objc'
 
@@ -451,8 +472,10 @@ class Sanity(object):
 
   def test_specs(self, config, args):
     import yaml
-    with open('tools/run_tests/sanity_tests.yaml', 'r') as f:
-      return [config.job_spec(cmd['script'].split(), None, timeout_seconds=None, environ={'TEST': 'true'}, cpu_cost=cmd.get('cpu_cost', 1))
+    with open('tools/run_tests/sanity/sanity_tests.yaml', 'r') as f:
+      return [config.job_spec(cmd['script'].split(), None,
+                              timeout_seconds=None, environ={'TEST': 'true'},
+                              cpu_cost=cmd.get('cpu_cost', 1))
               for cmd in yaml.load(f)]
 
   def pre_build_steps(self):
@@ -475,6 +498,9 @@ class Sanity(object):
 
   def supports_multi_config(self):
     return False
+
+  def dockerfile_dir(self, config, arch):
+    return 'tools/dockerfile/grpc_sanity'
 
   def __str__(self):
     return 'sanity'
@@ -505,6 +531,9 @@ class Build(object):
 
   def supports_multi_config(self):
     return True
+
+  def dockerfile_dir(self, config, arch):
+    return None
 
   def __str__(self):
     return self.make_target
@@ -545,7 +574,7 @@ def _windows_arch_option(arch):
   else:
     print 'Architecture %s not supported.' % arch
     sys.exit(1)
-    
+
 
 def _check_arch_option(arch):
   """Checks that architecture option is valid."""
@@ -595,15 +624,19 @@ def _windows_toolset_option(compiler):
     sys.exit(1)
 
 
-def _get_dockerfile_dir(arch):
+def _get_dockerfile_dir(language, cfg, arch):
   """Returns dockerfile to use"""
-  if arch == 'default' or arch == 'x64':
-    return 'tools/dockerfile/grpc_jenkins_slave_x64'
-  elif arch == 'x86':
-    return 'tools/dockerfile/grpc_jenkins_slave_x86'
+  custom = language.dockerfile_dir(cfg, arch)
+  if custom:
+    return custom
   else:
-    print 'Architecture %s not supported with current settings.' % arch
-    sys.exit(1)
+    if arch == 'default' or arch == 'x64':
+      return 'tools/dockerfile/grpc_tests_multilang_x64'
+    elif arch == 'x86':
+      return 'tools/dockerfile/grpc_tests_multilang_x86'
+    else:
+      print 'Architecture %s not supported with current settings.' % arch
+      sys.exit(1)
 
 def runs_per_test_type(arg_str):
     """Auxilary function to parse the "runs_per_test" flag.
@@ -771,11 +804,13 @@ if args.use_docker:
     time.sleep(5)
 
   child_argv = [ arg for arg in sys.argv if not arg == '--use_docker' ]
-  run_tests_cmd = 'tools/run_tests/run_tests.py %s' % ' '.join(child_argv[1:])
+  run_tests_cmd = 'python tools/run_tests/run_tests.py %s' % ' '.join(child_argv[1:])
 
   env = os.environ.copy()
   env['RUN_TESTS_COMMAND'] = run_tests_cmd
-  env['DOCKERFILE_DIR'] = _get_dockerfile_dir(args.arch)
+  env['DOCKERFILE_DIR'] = _get_dockerfile_dir(next(iter(languages)),
+                                              next(iter(build_configs)),
+                                              args.arch)
   env['DOCKER_RUN_SCRIPT'] = 'tools/jenkins/docker_run_tests.sh'
   if args.xml_report:
     env['XML_REPORT'] = args.xml_report
@@ -786,7 +821,7 @@ if args.use_docker:
                         shell=True,
                         env=env)
   sys.exit(0)
-  
+
 if platform_string() != 'windows' and args.compiler != 'default':
     print 'Compiler %s not supported on current platform.' % args.compiler
     sys.exit(1)
