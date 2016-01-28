@@ -2561,7 +2561,7 @@ configs:
       -fPIE -pie $(if $(JENKINS_BUILD),-Wl$(comma)-Ttext-segment=0x7e0000000000,)
     LDXX: clang++
     compile_the_world: true
-    timeout_multiplier: 1.5
+    timeout_multiplier: 2
   mutrace:
     CPPFLAGS: -O0
     DEFINES: _DEBUG DEBUG
