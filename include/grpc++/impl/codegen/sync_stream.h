@@ -122,8 +122,7 @@ class ClientReader GRPC_FINAL : public ClientReaderInterface<R> {
                ClientContext* context, const W& request)
       : context_(context), call_(channel->CreateCall(method, context, &cq_)) {
     CallOpSet<CallOpSendInitialMetadata, CallOpSendMessage,
-              CallOpClientSendClose>
-        ops;
+              CallOpClientSendClose> ops;
     ops.SendInitialMetadata(context->send_initial_metadata_);
     // TODO(ctiller): don't assert
     GPR_ASSERT(ops.SendMessage(request).ok());

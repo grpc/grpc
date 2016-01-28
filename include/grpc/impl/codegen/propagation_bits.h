@@ -64,5 +64,4 @@ extern "C" {
 }
 #endif
 
-
 #endif /* GRPC_IMPL_CODEGEN_H */
