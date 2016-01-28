@@ -97,6 +97,8 @@ static std::unique_ptr<Server> CreateServer(const ServerConfig& config) {
       return CreateSynchronousServer(config);
     case ServerType::ASYNC_SERVER:
       return CreateAsyncServer(config);
+    case ServerType::ASYNC_GENERIC_SERVER:
+      return CreateAsyncGenericServer(config);
     default:
       abort();
   }

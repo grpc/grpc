@@ -47,11 +47,15 @@ mkdir -p /tmp/xdg-cache-home
 # Create a local branch so the child Docker script won't complain
 git branch -f jenkins-docker
 
-# Use image name based on Dockerfile checksum
-DOCKER_IMAGE_NAME=grpc_jenkins_slave${docker_suffix}_`sha1sum tools/jenkins/grpc_jenkins_slave/Dockerfile | cut -f1 -d\ `
+# Inputs
+# DOCKERFILE_DIR - Directory in which Dockerfile file is located.
+# DOCKER_RUN_SCRIPT - Script to run under docker (relative to grpc repo root)
+
+# Use image name based on Dockerfile location checksum
+DOCKER_IMAGE_NAME=$(basename $DOCKERFILE_DIR)_$(sha1sum $DOCKERFILE_DIR/Dockerfile | cut -f1 -d\ )
 
 # Make sure docker image has been built. Should be instantaneous if so.
-docker build -t $DOCKER_IMAGE_NAME tools/jenkins/grpc_jenkins_slave$docker_suffix
+docker build -t $DOCKER_IMAGE_NAME $DOCKERFILE_DIR
 
 # Choose random name for docker container
 CONTAINER_NAME="run_tests_$(uuidgen)"
@@ -76,7 +80,7 @@ docker run \
   -w /var/local/git/grpc \
   --name=$CONTAINER_NAME \
   $DOCKER_IMAGE_NAME \
-  bash -l /var/local/jenkins/grpc/tools/jenkins/docker_run_tests.sh || DOCKER_FAILED="true"
+  bash -l "/var/local/jenkins/grpc/$DOCKER_RUN_SCRIPT" || DOCKER_FAILED="true"
 
 if [ "$XML_REPORT" != "" ]
 then

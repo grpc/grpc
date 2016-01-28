@@ -360,7 +360,7 @@ class Jobset(object):
       if self.cancelled(): return False
       current_cpu_cost = self.cpu_cost()
       if current_cpu_cost == 0: break
-      if current_cpu_cost + spec.cpu_cost < self._maxjobs: break
+      if current_cpu_cost + spec.cpu_cost <= self._maxjobs: break
       self.reap()
     if self.cancelled(): return False
     if spec.hash_targets:
