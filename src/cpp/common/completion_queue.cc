@@ -34,14 +34,16 @@
 
 #include <memory>
 
+#include <grpc++/impl/codegen/completion_queue_tag.h>
+#include <grpc++/impl/grpc_library.h>
+#include <grpc++/support/time.h>
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
-#include <grpc++/support/time.h>
-#include <grpc++/impl/codegen/completion_queue_tag.h>
 
 namespace grpc {
 
 CompletionQueue::CompletionQueue() {
+  internal::g_gli_initializer.summon();
   cq_ = grpc_completion_queue_create(nullptr);
 }
 

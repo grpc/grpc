@@ -36,6 +36,7 @@
 
 #include <grpc++/channel.h>
 #include <grpc++/create_channel.h>
+#include <grpc++/impl/grpc_library.h>
 #include <grpc++/support/channel_arguments.h>
 
 #include "src/cpp/client/create_channel_internal.h"
@@ -53,7 +54,8 @@ std::shared_ptr<Channel> CreateCustomChannel(
     const grpc::string& target,
     const std::shared_ptr<ChannelCredentials>& creds,
     const ChannelArguments& args) {
-  GrpcLibrary init_lib;  // We need to call init in case of a bad creds.
+  internal::GrpcLibrary
+      init_lib;  // We need to call init in case of a bad creds.
   ChannelArguments cp_args = args;
   std::ostringstream user_agent_prefix;
   user_agent_prefix << "grpc-c++/" << grpc_version_string();

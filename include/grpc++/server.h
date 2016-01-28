@@ -39,10 +39,10 @@
 
 #include <grpc++/completion_queue.h>
 #include <grpc++/impl/call.h>
-#include <grpc++/impl/grpc_library.h>
+#include <grpc++/impl/codegen/grpc_library.h>
+#include <grpc++/impl/codegen/server_interface.h>
 #include <grpc++/impl/rpc_service_method.h>
 #include <grpc++/impl/sync.h>
-#include <grpc++/impl/codegen/server_interface.h>
 #include <grpc++/security/server_credentials.h>
 #include <grpc++/support/channel_arguments.h>
 #include <grpc++/support/config.h>
@@ -62,7 +62,7 @@ class ThreadPoolInterface;
 /// Models a gRPC server.
 ///
 /// Servers are configured and started via \a grpc::ServerBuilder.
-class Server GRPC_FINAL : public ServerInterface, public GrpcLibrary {
+class Server GRPC_FINAL : public ServerInterface, private GrpcLibrary {
  public:
   ~Server();
 

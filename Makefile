@@ -3010,6 +3010,7 @@ LIBGRPC++_SRC = \
     src/cpp/common/call.cc \
     src/cpp/common/channel_arguments.cc \
     src/cpp/common/completion_queue.cc \
+    src/cpp/common/grpc_library_initializer.cc \
     src/cpp/common/rpc_method.cc \
     src/cpp/proto/proto_utils.cc \
     src/cpp/server/async_generic_service.cc \
@@ -3026,6 +3027,7 @@ LIBGRPC++_SRC = \
     src/cpp/util/status.cc \
     src/cpp/util/string_ref.cc \
     src/cpp/util/time.cc \
+    src/cpp/codegen/grpc_library.cc \
 
 PUBLIC_HEADERS_CXX += \
     include/grpc++/channel.h \
@@ -3079,6 +3081,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/impl/codegen/completion_queue_tag.h \
     include/grpc++/impl/codegen/config.h \
     include/grpc++/impl/codegen/config_protobuf.h \
+    include/grpc++/impl/codegen/grpc_library.h \
     include/grpc++/impl/codegen/proto_utils.h \
     include/grpc++/impl/codegen/security/auth_context.h \
     include/grpc++/impl/codegen/serialization_traits.h \
@@ -3088,6 +3091,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/impl/codegen/status.h \
     include/grpc++/impl/codegen/status_code_enum.h \
     include/grpc++/impl/codegen/string_ref.h \
+    include/grpc++/impl/codegen/stub_options.h \
     include/grpc++/impl/codegen/sync.h \
     include/grpc++/impl/codegen/sync_cxx11.h \
     include/grpc++/impl/codegen/sync_no_cxx11.h \
@@ -3301,6 +3305,7 @@ LIBGRPC++_UNSECURE_SRC = \
     src/cpp/common/call.cc \
     src/cpp/common/channel_arguments.cc \
     src/cpp/common/completion_queue.cc \
+    src/cpp/common/grpc_library_initializer.cc \
     src/cpp/common/rpc_method.cc \
     src/cpp/proto/proto_utils.cc \
     src/cpp/server/async_generic_service.cc \
@@ -3317,6 +3322,7 @@ LIBGRPC++_UNSECURE_SRC = \
     src/cpp/util/status.cc \
     src/cpp/util/string_ref.cc \
     src/cpp/util/time.cc \
+    src/cpp/codegen/grpc_library.cc \
 
 PUBLIC_HEADERS_CXX += \
     include/grpc++/channel.h \
@@ -3370,6 +3376,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/impl/codegen/completion_queue_tag.h \
     include/grpc++/impl/codegen/config.h \
     include/grpc++/impl/codegen/config_protobuf.h \
+    include/grpc++/impl/codegen/grpc_library.h \
     include/grpc++/impl/codegen/proto_utils.h \
     include/grpc++/impl/codegen/security/auth_context.h \
     include/grpc++/impl/codegen/serialization_traits.h \
@@ -3379,6 +3386,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/impl/codegen/status.h \
     include/grpc++/impl/codegen/status_code_enum.h \
     include/grpc++/impl/codegen/string_ref.h \
+    include/grpc++/impl/codegen/stub_options.h \
     include/grpc++/impl/codegen/sync.h \
     include/grpc++/impl/codegen/sync_cxx11.h \
     include/grpc++/impl/codegen/sync_no_cxx11.h \
@@ -3458,6 +3466,7 @@ LIBGRPC_PLUGIN_SUPPORT_SRC = \
     src/compiler/objective_c_generator.cc \
     src/compiler/python_generator.cc \
     src/compiler/ruby_generator.cc \
+    src/cpp/codegen/grpc_library.cc \
 
 PUBLIC_HEADERS_CXX += \
     include/grpc++/impl/codegen/async_stream.h \
@@ -3468,6 +3477,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/impl/codegen/completion_queue_tag.h \
     include/grpc++/impl/codegen/config.h \
     include/grpc++/impl/codegen/config_protobuf.h \
+    include/grpc++/impl/codegen/grpc_library.h \
     include/grpc++/impl/codegen/proto_utils.h \
     include/grpc++/impl/codegen/security/auth_context.h \
     include/grpc++/impl/codegen/serialization_traits.h \
@@ -3477,6 +3487,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/impl/codegen/status.h \
     include/grpc++/impl/codegen/status_code_enum.h \
     include/grpc++/impl/codegen/string_ref.h \
+    include/grpc++/impl/codegen/stub_options.h \
     include/grpc++/impl/codegen/sync.h \
     include/grpc++/impl/codegen/sync_cxx11.h \
     include/grpc++/impl/codegen/sync_no_cxx11.h \

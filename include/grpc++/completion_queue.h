@@ -36,9 +36,9 @@
 #ifndef GRPCXX_COMPLETION_QUEUE_H
 #define GRPCXX_COMPLETION_QUEUE_H
 
-#include <grpc++/impl/grpc_library.h>
-#include <grpc++/support/status.h>
-#include <grpc++/support/time.h>
+#include <grpc++/impl/codegen/grpc_library.h>
+#include <grpc++/impl/codegen/status.h>
+#include <grpc++/impl/codegen/time.h>
 
 struct grpc_completion_queue;
 
@@ -78,7 +78,7 @@ class ServerContext;
 
 /// A thin wrapper around \a grpc_completion_queue (see / \a
 /// src/core/surface/completion_queue.h).
-class CompletionQueue : public GrpcLibrary {
+class CompletionQueue : private GrpcLibrary {
  public:
   /// Default constructor. Implicitly creates a \a grpc_completion_queue
   /// instance.
@@ -90,7 +90,7 @@ class CompletionQueue : public GrpcLibrary {
   explicit CompletionQueue(grpc_completion_queue* take);
 
   /// Destructor. Destroys the owned wrapped completion queue / instance.
-  ~CompletionQueue() GRPC_OVERRIDE;
+  ~CompletionQueue();
 
   /// Tri-state return for AsyncNext: SHUTDOWN, GOT_EVENT, TIMEOUT.
   enum NextStatus {
