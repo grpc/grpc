@@ -50,8 +50,8 @@
     s.extensions = %w(src/ruby/ext/grpc/extconf.rb)
 
     % for lib in libs:
-    % if lib.name in ('gpr', 'grpc'):
-    % for file in lib.public_headers + lib.headers + lib.src:
+    % if lib.name in ruby_gem.get('deps', []):
+    % for file in lib.get('public_headers', []) + lib.headers + lib.src:
     s.files += %w( ${file} )
     % endfor
     % endif
