@@ -47,9 +47,7 @@
 #include "src/core/iomgr/workqueue_windows.h"
 #endif
 
-/** A workqueue represents a list of work to be executed asynchronously. */
-struct grpc_workqueue;
-typedef struct grpc_workqueue grpc_workqueue;
+/* grpc_workqueue is forward declared in exec_ctx.h */
 
 /** Create a work queue */
 grpc_workqueue *grpc_workqueue_create(grpc_exec_ctx *exec_ctx);

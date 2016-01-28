@@ -53,7 +53,7 @@ static void ping_destroy(grpc_exec_ctx *exec_ctx, void *arg,
   gpr_free(arg);
 }
 
-static void ping_done(grpc_exec_ctx *exec_ctx, void *arg, int success) {
+static void ping_done(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
   ping_result *pr = arg;
   grpc_cq_end_op(exec_ctx, pr->cq, pr->tag, success, ping_destroy, pr,
                  &pr->completion_storage);

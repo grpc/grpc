@@ -91,7 +91,7 @@ static void client_start_transport_op(grpc_exec_ctx *exec_ctx,
 }
 
 static void server_on_done_recv(grpc_exec_ctx *exec_ctx, void *ptr,
-                                int success) {
+                                bool success) {
   grpc_call_element *elem = ptr;
   call_data *calld = elem->call_data;
   channel_data *chand = elem->channel_data;

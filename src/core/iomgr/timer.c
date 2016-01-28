@@ -224,7 +224,7 @@ void grpc_timer_cancel(grpc_exec_ctx *exec_ctx, grpc_timer *timer) {
   shard_type *shard = &g_shards[shard_idx(timer)];
   gpr_mu_lock(&shard->mu);
   if (!timer->triggered) {
-    grpc_exec_ctx_enqueue(exec_ctx, &timer->closure, 0);
+    grpc_exec_ctx_enqueue(exec_ctx, &timer->closure, false, NULL);
     timer->triggered = 1;
     if (timer->heap_index == INVALID_HEAP_INDEX) {
       list_remove(timer);
@@ -290,7 +290,7 @@ static size_t pop_timers(grpc_exec_ctx *exec_ctx, shard_type *shard,
   grpc_timer *timer;
   gpr_mu_lock(&shard->mu);
   while ((timer = pop_one(shard, now))) {
-    grpc_exec_ctx_enqueue(exec_ctx, &timer->closure, success);
+    grpc_exec_ctx_enqueue(exec_ctx, &timer->closure, success, NULL);
     n++;
   }
   *new_min_deadline = compute_min_deadline(shard);

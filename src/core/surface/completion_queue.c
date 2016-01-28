@@ -86,7 +86,7 @@ static gpr_mu g_freelist_mu;
 grpc_completion_queue *g_freelist;
 
 static void on_pollset_shutdown_done(grpc_exec_ctx *exec_ctx, void *cc,
-                                     int success);
+                                     bool success);
 
 void grpc_cq_global_init(void) { gpr_mu_init(&g_freelist_mu); }
 
@@ -169,7 +169,7 @@ void grpc_cq_internal_ref(grpc_completion_queue *cc) {
 }
 
 static void on_pollset_shutdown_done(grpc_exec_ctx *exec_ctx, void *arg,
-                                     int success) {
+                                     bool success) {
   grpc_completion_queue *cc = arg;
   GRPC_CQ_INTERNAL_UNREF(cc, "pollset_destroy");
 }

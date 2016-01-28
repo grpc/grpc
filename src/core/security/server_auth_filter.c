@@ -153,7 +153,7 @@ static void on_md_processing_done(
 }
 
 static void auth_on_recv(grpc_exec_ctx *exec_ctx, void *user_data,
-                         int success) {
+                         bool success) {
   grpc_call_element *elem = user_data;
   call_data *calld = elem->call_data;
   channel_data *chand = elem->channel_data;
