@@ -132,8 +132,10 @@ class CLanguage(object):
       if config.build_config in target['exclude_configs']:
         continue
       if self.platform == 'windows':
-        binary = 'vsprojects/%s/%s.exe' % (
-            _WINDOWS_CONFIG[config.build_config], target['name'])
+        binary = 'vsprojects/%s%s/%s.exe' % (
+            'x64/' if args.arch == 'x64' else '',
+            _WINDOWS_CONFIG[config.build_config],
+            target['name'])
       else:
         binary = 'bins/%s/%s' % (config.build_config, target['name'])
       if os.path.isfile(binary):
