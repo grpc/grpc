@@ -304,13 +304,6 @@ static void test_default_ssl_roots(void) {
   const char *roots_for_override_api = "roots for override api";
   const char *roots_for_env_var = "roots for env var";
 
-  char *roots_api_file_path;
-  FILE *roots_api_file =
-      gpr_tmpfile("test_roots_for_api_override", &roots_api_file_path);
-  fwrite(roots_for_override_api, 1, strlen(roots_for_override_api),
-         roots_api_file);
-  fclose(roots_api_file);
-
   char *roots_env_var_file_path;
   FILE *roots_env_var_file =
       gpr_tmpfile("test_roots_for_env_var", &roots_env_var_file_path);
@@ -318,7 +311,7 @@ static void test_default_ssl_roots(void) {
   fclose(roots_env_var_file);
 
   /* First let's get the root through the override (no env are set). */
-  grpc_override_ssl_default_roots_file_path(roots_api_file_path);
+  grpc_override_ssl_default_roots(roots_for_override_api);
   gpr_slice roots = grpc_get_default_ssl_roots_for_testing();
   char *roots_contents = gpr_dump_slice(roots, GPR_DUMP_ASCII);
   gpr_slice_unref(roots);
@@ -344,14 +337,9 @@ static void test_default_ssl_roots(void) {
   gpr_free(roots_contents);
 
   /* Cleanup. */
-  remove(roots_api_file_path);
   remove(roots_env_var_file_path);
-  gpr_free(roots_api_file_path);
   gpr_free(roots_env_var_file_path);
-
 }
-
-/* TODO(jboeuf): Unit-test tsi_shallow_peer_from_auth_context. */
 
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);

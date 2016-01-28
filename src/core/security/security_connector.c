@@ -61,12 +61,12 @@ static const char *installed_roots_path =
     INSTALL_PREFIX "/share/grpc/roots.pem";
 #endif
 
-/* -- Overridden default roots file path. -- */
+/* -- Overridden default roots. -- */
 
-static const char *overridden_default_roots_file_path = NULL;
+static gpr_slice overridden_default_roots;
 
-void grpc_override_ssl_default_roots_file_path(const char *roots_path) {
-  overridden_default_roots_file_path = roots_path;
+void grpc_override_ssl_default_roots(const char *roots_pem) {
+  overridden_default_roots = gpr_slice_from_copied_string(roots_pem);
 }
 
 /* -- Cipher suites. -- */
@@ -616,8 +616,8 @@ static gpr_slice compute_default_pem_root_certs_once(void) {
 
   /* Try overridden roots path if needed. */
   if (GPR_SLICE_IS_EMPTY(result) &&
-      overridden_default_roots_file_path != NULL) {
-    result = gpr_load_file(overridden_default_roots_file_path, 0, NULL);
+      !GPR_SLICE_IS_EMPTY(overridden_default_roots)) {
+    result = gpr_slice_ref(overridden_default_roots);
   }
 
   /* Fall back to installed certs if needed. */
