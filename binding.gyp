@@ -37,29 +37,46 @@
 # Some of this file is built with the help of
 # https://n8.io/converting-a-c-library-to-gyp/
 {
-  'variables': {
-    'config': '<!(echo $CONFIG)'
-  },
   # TODO: Finish windows support
   'target_defaults': {
-      # Empirically, Node only exports ALPN symbols if its major version is >0.
-      # io.js always reports versions >0 and always exports ALPN symbols.
-      # Therefore, Node's major version will be truthy if and only if it
-      # supports ALPN. The output of "node -v" is v[major].[minor].[patch],
-      # like "v4.1.1" in a recent version. We use cut to split by period and
-      # take the first field (resulting in "v[major]"), then use cut again
-      # to take all but the first character, removing the "v".
-    'defines': [
-      'TSI_OPENSSL_ALPN_SUPPORT=<!(node --version | cut -d. -f1 | cut -c2-)'
-    ],
     'include_dirs': [
       '.',
       'include'
     ],
     'conditions': [
       ['OS == "win"', {
-        "include_dirs": [ "third_party/boringssl/include" ]
-      }, {
+        "include_dirs": [ "third_party/boringssl/include" ],
+        "defines": [
+          '_WIN32_WINNT=0x0600',
+          'WIN32_LEAN_AND_MEAN',
+          '_HAS_EXCEPTIONS=0',
+          'UNICODE',
+          '_UNICODE',
+          'NOMINMAX',
+          'OPENSSL_NO_ASM'
+        ],
+        "msvs_settings": {
+          'VCCLCompilerTool': {
+            'RuntimeLibrary': 1, # static debug
+          }
+        },
+        "libraries": [
+          "ws2_32"
+        ]
+      }, { # OS != "win"
+	  # Empirically, Node only exports ALPN symbols if its major version is >0.
+	  # io.js always reports versions >0 and always exports ALPN symbols.
+	  # Therefore, Node's major version will be truthy if and only if it
+	  # supports ALPN. The output of "node -v" is v[major].[minor].[patch],
+	  # like "v4.1.1" in a recent version. We use cut to split by period and
+	  # take the first field (resulting in "v[major]"), then use cut again
+	  # to take all but the first character, removing the "v".
+	'defines': [
+	  'TSI_OPENSSL_ALPN_SUPPORT=<!(node --version | cut -d. -f1 | cut -c2-)'
+	],
+        'variables': {
+          'config': '<!(echo $CONFIG)'
+        },
         'include_dirs': [
           '<(node_root_dir)/deps/openssl/openssl/include',
           '<(node_root_dir)/deps/zlib'
