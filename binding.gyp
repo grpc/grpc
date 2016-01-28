@@ -37,7 +37,6 @@
 # Some of this file is built with the help of
 # https://n8.io/converting-a-c-library-to-gyp/
 {
-  # TODO: Finish windows support
   'target_defaults': {
     'include_dirs': [
       '.',
@@ -64,16 +63,16 @@
           "ws2_32"
         ]
       }, { # OS != "win"
-	  # Empirically, Node only exports ALPN symbols if its major version is >0.
-	  # io.js always reports versions >0 and always exports ALPN symbols.
-	  # Therefore, Node's major version will be truthy if and only if it
-	  # supports ALPN. The output of "node -v" is v[major].[minor].[patch],
-	  # like "v4.1.1" in a recent version. We use cut to split by period and
-	  # take the first field (resulting in "v[major]"), then use cut again
-	  # to take all but the first character, removing the "v".
-	'defines': [
-	  'TSI_OPENSSL_ALPN_SUPPORT=<!(node --version | cut -d. -f1 | cut -c2-)'
-	],
+          # Empirically, Node only exports ALPN symbols if its major version is >0.
+          # io.js always reports versions >0 and always exports ALPN symbols.
+          # Therefore, Node's major version will be truthy if and only if it
+          # supports ALPN. The output of "node -v" is v[major].[minor].[patch],
+          # like "v4.1.1" in a recent version. We use cut to split by period and
+          # take the first field (resulting in "v[major]"), then use cut again
+          # to take all but the first character, removing the "v".
+        'defines': [
+          'TSI_OPENSSL_ALPN_SUPPORT=<!(node --version | cut -d. -f1 | cut -c2-)'
+        ],
         'variables': {
           'config': '<!(echo $CONFIG)'
         },
@@ -110,6 +109,22 @@
   'conditions': [
     ['OS == "win"', {
       'targets': [
+        {
+          # IMPORTANT WINDOWS BUILD INFORMATION
+          # This library does not build on Windows without modifying the Node
+          # development packages that node-gyp downloads in order to build.
+          # Due to https://github.com/nodejs/node/issues/4932, the headers for
+          # BoringSSL conflict with the OpenSSL headers included by default
+          # when including the Node headers. The remedy for this is to remove
+          # the OpenSSL headers, from the downloaded Node development package,
+          # which is typically located in `.node-gyp` in your home directory.
+          'target_name': 'windows_build_warning',
+          'actions': [
+            {
+              'message': "IMPORTANT: Due to https://github.com/nodejs/node/issues/4932, to build this library on Windows, you must first remove <(node_root_dir)/include/node/openssl/"
+            }
+          ]
+        },
         # Only want to compile BoringSSL and zlib under Windows
         {
           'cflags': [
@@ -417,8 +432,7 @@
             'third_party/boringssl/ssl/t1_enc.c',
             'third_party/boringssl/ssl/t1_lib.c',
             'third_party/boringssl/ssl/tls_record.c',
-          ],
-          "include_dirs": [ "third_party/boringssl/include" ]
+          ]
         },
         {
           'cflags': [
@@ -447,8 +461,7 @@
             'third_party/zlib/trees.c',
             'third_party/zlib/uncompr.c',
             'third_party/zlib/zutil.c',
-          ],
-          "include_dirs": [ "third_party/boringssl/include" ]
+          ]
         },
       ]
     }]
