@@ -425,15 +425,5 @@ void grpc_udp_server_start(grpc_exec_ctx *exec_ctx, grpc_udp_server *s,
   gpr_mu_unlock(&s->mu);
 }
 
-/* TODO(rjshade): Add a test for this method. */
-void grpc_udp_server_write(server_port *sp, const char *buffer, size_t buf_len,
-                           const struct sockaddr *peer_address) {
-  ssize_t rc;
-  rc = sendto(sp->fd, buffer, buf_len, 0, peer_address, sizeof(peer_address));
-  if (rc < 0) {
-    gpr_log(GPR_ERROR, "Unable to send data: %s", strerror(errno));
-  }
-}
-
 #endif
 #endif
