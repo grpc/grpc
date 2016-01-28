@@ -2598,7 +2598,7 @@ defaults:
     CPPFLAGS: -g -Wall -Wextra -Werror -Wno-long-long -Wno-unused-parameter
     LDFLAGS: -g
   zlib:
-    CPPFLAGS: -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-implicit-function-declaration
+    CFLAGS: -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-implicit-function-declaration
       -fvisibility=hidden
 node_modules:
 - deps:
