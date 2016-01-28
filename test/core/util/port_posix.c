@@ -74,7 +74,7 @@ typedef struct freereq {
 } freereq;
 
 static void destroy_pollset_and_shutdown(grpc_exec_ctx *exec_ctx, void *p,
-                                         int success) {
+                                         bool success) {
   grpc_pollset_destroy(p);
   grpc_shutdown();
 }

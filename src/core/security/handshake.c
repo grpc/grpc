@@ -61,10 +61,10 @@ typedef struct {
 } grpc_security_handshake;
 
 static void on_handshake_data_received_from_peer(grpc_exec_ctx *exec_ctx,
-                                                 void *setup, int success);
+                                                 void *setup, bool success);
 
 static void on_handshake_data_sent_to_peer(grpc_exec_ctx *exec_ctx, void *setup,
-                                           int success);
+                                           bool success);
 
 static void security_connector_remove_handshake(grpc_security_handshake *h) {
   grpc_security_connector_handshake_list *node;
@@ -198,7 +198,8 @@ static void send_handshake_bytes_to_peer(grpc_exec_ctx *exec_ctx,
 }
 
 static void on_handshake_data_received_from_peer(grpc_exec_ctx *exec_ctx,
-                                                 void *handshake, int success) {
+                                                 void *handshake,
+                                                 bool success) {
   grpc_security_handshake *h = handshake;
   size_t consumed_slice_size = 0;
   tsi_result result = TSI_OK;
@@ -265,7 +266,7 @@ static void on_handshake_data_received_from_peer(grpc_exec_ctx *exec_ctx,
 
 /* If handshake is NULL, the handshake is done. */
 static void on_handshake_data_sent_to_peer(grpc_exec_ctx *exec_ctx,
-                                           void *handshake, int success) {
+                                           void *handshake, bool success) {
   grpc_security_handshake *h = handshake;
 
   /* Make sure that write is OK. */

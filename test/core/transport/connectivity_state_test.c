@@ -43,13 +43,13 @@
 
 int g_counter;
 
-static void must_succeed(grpc_exec_ctx *exec_ctx, void *arg, int success) {
+static void must_succeed(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
   GPR_ASSERT(success);
   GPR_ASSERT(arg == THE_ARG);
   g_counter++;
 }
 
-static void must_fail(grpc_exec_ctx *exec_ctx, void *arg, int success) {
+static void must_fail(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
   GPR_ASSERT(!success);
   GPR_ASSERT(arg == THE_ARG);
   g_counter++;

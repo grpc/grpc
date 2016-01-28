@@ -79,7 +79,7 @@ typedef struct client_uchannel_channel_data {
 typedef grpc_subchannel_call_holder call_data;
 
 static void monitor_subchannel(grpc_exec_ctx *exec_ctx, void *arg,
-                               int iomgr_success) {
+                               bool iomgr_success) {
   channel_data *chand = arg;
   grpc_connectivity_state_set(exec_ctx, &chand->state_tracker,
                               chand->subchannel_connectivity,
@@ -105,7 +105,7 @@ static void cuc_start_transport_op(grpc_exec_ctx *exec_ctx,
                                    grpc_transport_op *op) {
   channel_data *chand = elem->channel_data;
 
-  grpc_exec_ctx_enqueue(exec_ctx, op->on_consumed, 1);
+  grpc_exec_ctx_enqueue(exec_ctx, op->on_consumed, true, NULL);
 
   GPR_ASSERT(op->set_accept_stream == NULL);
   GPR_ASSERT(op->bind_pollset == NULL);

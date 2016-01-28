@@ -131,7 +131,7 @@ static grpc_mdelem *server_filter(void *user_data, grpc_mdelem *md) {
   }
 }
 
-static void hs_on_recv(grpc_exec_ctx *exec_ctx, void *user_data, int success) {
+static void hs_on_recv(grpc_exec_ctx *exec_ctx, void *user_data, bool success) {
   grpc_call_element *elem = user_data;
   call_data *calld = elem->call_data;
   if (success) {

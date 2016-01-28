@@ -142,7 +142,7 @@ static void start(grpc_exec_ctx *exec_ctx, grpc_server *server, void *statep,
                         on_accept, state);
 }
 
-static void destroy_done(grpc_exec_ctx *exec_ctx, void *statep, int success) {
+static void destroy_done(grpc_exec_ctx *exec_ctx, void *statep, bool success) {
   grpc_server_secure_state *state = statep;
   if (state->destroy_callback != NULL) {
     state->destroy_callback->cb(exec_ctx, state->destroy_callback->cb_arg,

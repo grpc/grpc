@@ -152,7 +152,7 @@ done:
 
 /* Callback to be passed to grpc_executor to asynch-ify
  * grpc_blocking_resolve_address */
-static void do_request_thread(grpc_exec_ctx *exec_ctx, void *rp, int success) {
+static void do_request_thread(grpc_exec_ctx *exec_ctx, void *rp, bool success) {
   request *r = rp;
   grpc_resolved_addresses *resolved =
       grpc_blocking_resolve_address(r->name, r->default_port);

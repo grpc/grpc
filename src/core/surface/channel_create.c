@@ -80,11 +80,11 @@ static void connector_unref(grpc_exec_ctx *exec_ctx, grpc_connector *con) {
 }
 
 static void on_initial_connect_string_sent(grpc_exec_ctx *exec_ctx, void *arg,
-                                           int success) {
+                                           bool success) {
   connector_unref(exec_ctx, arg);
 }
 
-static void connected(grpc_exec_ctx *exec_ctx, void *arg, int success) {
+static void connected(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
   connector *c = arg;
   grpc_closure *notify;
   grpc_endpoint *tcp = c->tcp;
