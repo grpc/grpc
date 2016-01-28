@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -89,4 +89,4 @@ gpr_avl gpr_avl_remove(gpr_avl avl, void *key);
     returns NULL if key is not found. */
 void *gpr_avl_get(gpr_avl avl, void *key);
 
-#endif
+#endif /* GRPC_SUPPORT_AVL_H */

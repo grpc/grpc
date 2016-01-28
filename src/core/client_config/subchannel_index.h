@@ -56,7 +56,7 @@ void grpc_subchannel_key_destroy(grpc_exec_ctx *exec_ctx,
 grpc_subchannel *grpc_subchannel_index_find(grpc_exec_ctx *exec_ctx,
                                             grpc_subchannel_key *key);
 
-/** Register a subchannel against a key. 
+/** Register a subchannel against a key.
     Takes ownership of \a constructed.
     Returns the registered subchannel. This may be different from
     \a constructed in the case of a registration race. */
