@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -79,15 +79,6 @@ static grpc_pollset_worker *pop_front_worker(
   } else {
     return NULL;
   }
-}
-
-static void push_back_worker(grpc_pollset_worker *root,
-                             grpc_pollset_worker_link_type type,
-                             grpc_pollset_worker *worker) {
-  worker->links[type].next = root;
-  worker->links[type].prev = worker->links[type].next->links[type].prev;
-  worker->links[type].prev->links[type].next =
-      worker->links[type].next->links[type].prev = worker;
 }
 
 static void push_front_worker(grpc_pollset_worker *root,

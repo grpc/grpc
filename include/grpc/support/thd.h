@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -48,7 +48,7 @@
 extern "C" {
 #endif
 
-typedef uint64_t gpr_thd_id;
+typedef uintptr_t gpr_thd_id;
 
 /* Thread creation options. */
 typedef struct {
