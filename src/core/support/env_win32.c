@@ -38,7 +38,12 @@
 #include "src/core/support/env.h"
 #include "src/core/support/string.h"
 
+#ifdef __MINGW32__
+errno_t getenv_s(size_t *size_needed, char *buffer, size_t size,
+                 const char *varname);
+#else
 #include <stdlib.h>
+#endif
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>

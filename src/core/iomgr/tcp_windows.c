@@ -143,10 +143,7 @@ static void on_read(grpc_exec_ctx *exec_ctx, void *tcpp, int success) {
   grpc_closure *cb = tcp->read_cb;
   grpc_winsocket *socket = tcp->socket;
   gpr_slice sub;
-  gpr_slice *slice = NULL;
-  size_t nslices = 0;
   grpc_winsocket_callback_info *info = &socket->read_info;
-  int do_abort = 0;
 
   if (success) {
     if (socket->read_info.wsa_error != 0 && !tcp->shutting_down) {
@@ -238,7 +235,6 @@ static void on_write(grpc_exec_ctx *exec_ctx, void *tcpp, int success) {
   grpc_winsocket *handle = tcp->socket;
   grpc_winsocket_callback_info *info = &handle->write_info;
   grpc_closure *cb;
-  int do_abort = 0;
 
   gpr_mu_lock(&tcp->mu);
   cb = tcp->write_cb;
