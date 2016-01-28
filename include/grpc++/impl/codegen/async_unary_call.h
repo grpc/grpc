@@ -92,12 +92,10 @@ class ClientAsyncResponseReader GRPC_FINAL
   ClientContext* context_;
   Call call_;
   SneakyCallOpSet<CallOpSendInitialMetadata, CallOpSendMessage,
-                  CallOpClientSendClose>
-      init_buf_;
+                  CallOpClientSendClose> init_buf_;
   CallOpSet<CallOpRecvInitialMetadata> meta_buf_;
   CallOpSet<CallOpRecvInitialMetadata, CallOpRecvMessage<R>,
-            CallOpClientRecvStatus>
-      finish_buf_;
+            CallOpClientRecvStatus> finish_buf_;
 };
 
 template <class W>
@@ -150,8 +148,7 @@ class ServerAsyncResponseWriter GRPC_FINAL
   ServerContext* ctx_;
   CallOpSet<CallOpSendInitialMetadata> meta_buf_;
   CallOpSet<CallOpSendInitialMetadata, CallOpSendMessage,
-            CallOpServerSendStatus>
-      finish_buf_;
+            CallOpServerSendStatus> finish_buf_;
 };
 
 }  // namespace grpc

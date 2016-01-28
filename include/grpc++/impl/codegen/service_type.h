@@ -34,10 +34,10 @@
 #ifndef GRPCXX_IMPL_CODEGEN_SERVICE_TYPE_H
 #define GRPCXX_IMPL_CODEGEN_SERVICE_TYPE_H
 
-#include <grpc++/impl/rpc_service_method.h>
-#include <grpc++/impl/serialization_traits.h>
-#include <grpc++/impl/codegen/server_interface.h>
 #include <grpc++/impl/codegen/config.h>
+#include <grpc++/impl/codegen/rpc_service_method.h>
+#include <grpc++/impl/codegen/serialization_traits.h>
+#include <grpc++/impl/codegen/server_interface.h>
 #include <grpc++/impl/codegen/status.h>
 
 namespace grpc {

@@ -161,12 +161,11 @@ class AsyncClient : public ClientImpl<StubType, RequestType> {
   using Client::closed_loop_;
   using ClientImpl<StubType, RequestType>::channels_;
   using ClientImpl<StubType, RequestType>::request_;
-  AsyncClient(
-      const ClientConfig& config,
-      std::function<ClientRpcContext*(int, StubType*, const RequestType&)>
-          setup_ctx,
-      std::function<std::unique_ptr<StubType>(std::shared_ptr<Channel>)>
-          create_stub)
+  AsyncClient(const ClientConfig& config,
+              std::function<ClientRpcContext*(int, StubType*,
+                                              const RequestType&)> setup_ctx,
+              std::function<std::unique_ptr<StubType>(std::shared_ptr<Channel>)>
+                  create_stub)
       : ClientImpl<StubType, RequestType>(config, create_stub),
         num_async_threads_(NumThreads(config)),
         channel_lock_(new std::mutex[config.client_channels()]),
