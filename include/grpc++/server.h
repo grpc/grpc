@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -303,6 +303,8 @@ class Server GRPC_FINAL : public GrpcLibrary, private CallHook {
   // The number of threads which are running callbacks.
   int num_running_cb_;
   grpc::condition_variable callback_cv_;
+
+  std::shared_ptr<GlobalCallbacks> global_callbacks_;
 
   std::list<SyncRequest>* sync_methods_;
   std::unique_ptr<RpcServiceMethod> unknown_method_;

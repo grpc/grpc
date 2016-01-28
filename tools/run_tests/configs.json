@@ -59,7 +59,7 @@
   }, 
   {
     "config": "msan", 
-    "timeout_multiplier": 1.5
+    "timeout_multiplier": 2
   }, 
   {
     "config": "mutrace"

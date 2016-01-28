@@ -49,7 +49,7 @@ ZLIB_INCLUDE = ('./third_party/zlib',)
 
 # Ensure we're in the proper directory whether or not we're being used by pip.
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, PYTHON_STEM)
+sys.path.insert(0, os.path.abspath(PYTHON_STEM))
 
 # Break import-style to ensure we can actually find our in-repo dependencies.
 import commands
@@ -119,6 +119,7 @@ PACKAGE_DIRECTORIES = {
 }
 
 INSTALL_REQUIRES = (
+    'six>=1.10',
     'enum34>=1.0.4',
     'futures>=2.2.0',
     # TODO(atash): eventually split the grpcio package into a metapackage
@@ -131,6 +132,7 @@ SETUP_REQUIRES = (
 ) + INSTALL_REQUIRES
 
 COMMAND_CLASS = {
+    'install': commands.Install,
     'doc': commands.SphinxDocumentation,
     'build_proto_modules': commands.BuildProtoModules,
     'build_project_metadata': commands.BuildProjectMetadata,
@@ -138,6 +140,7 @@ COMMAND_CLASS = {
     'build_ext': commands.BuildExt,
     'gather': commands.Gather,
     'run_interop': commands.RunInterop,
+    'bdist_egg_grpc_custom': commands.BdistEggCustomName,
 }
 
 # Ensure that package data is copied over before any commands have been run:
@@ -187,7 +190,7 @@ else:
 
 setuptools.setup(
     name='grpcio',
-    version='0.12.0b5',
+    version='0.12.0b6',
     license=LICENSE,
     ext_modules=CYTHON_EXTENSION_MODULES,
     packages=list(PACKAGES),

@@ -3,7 +3,7 @@
 [gRPC - An RPC library and framework](http://github.com/grpc/grpc)
 ===================================
 
-Copyright 2015 Google Inc.
+Copyright 2015-2016 Google Inc.
 
 #Documentation
 
