@@ -329,8 +329,10 @@ void grpc_chttp2_cleanup_writing(
     grpc_chttp2_transport_writing *transport_writing) {
   grpc_chttp2_stream_writing *stream_writing;
   grpc_chttp2_stream_global *stream_global;
+  bool is_window_available = transport_writing->outgoing_window > 0;
 
-  grpc_chttp2_list_flush_writing_stalled_by_transport(transport_writing);
+  grpc_chttp2_list_flush_writing_stalled_by_transport(transport_writing,
+                                                      is_window_available);
 
   while (grpc_chttp2_list_pop_written_stream(
       transport_global, transport_writing, &stream_global, &stream_writing)) {

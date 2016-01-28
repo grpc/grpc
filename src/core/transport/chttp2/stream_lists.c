@@ -322,12 +322,13 @@ void grpc_chttp2_list_add_writing_stalled_by_transport(
 }
 
 void grpc_chttp2_list_flush_writing_stalled_by_transport(
-    grpc_chttp2_transport_writing *transport_writing) {
+    grpc_chttp2_transport_writing *transport_writing,
+    bool is_window_available) {
   grpc_chttp2_stream *stream;
   grpc_chttp2_transport *transport = TRANSPORT_FROM_WRITING(transport_writing);
   while (stream_list_pop(transport, &stream,
                          GRPC_CHTTP2_LIST_WRITING_STALLED_BY_TRANSPORT)) {
-    if (transport_writing->outgoing_window > 0) {
+    if (is_window_available) {
       grpc_chttp2_list_add_writable_stream(&transport->global, &stream->global);
     } else {
       stream_list_add(transport, stream, GRPC_CHTTP2_LIST_STALLED_BY_TRANSPORT);

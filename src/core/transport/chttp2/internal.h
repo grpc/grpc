@@ -35,6 +35,7 @@
 #define GRPC_INTERNAL_CORE_CHTTP2_INTERNAL_H
 
 #include <assert.h>
+#include <stdbool.h>
 
 #include "src/core/iomgr/endpoint.h"
 #include "src/core/transport/chttp2/frame.h"
@@ -567,7 +568,7 @@ void grpc_chttp2_list_add_writing_stalled_by_transport(
     grpc_chttp2_transport_writing *transport_writing,
     grpc_chttp2_stream_writing *stream_writing);
 void grpc_chttp2_list_flush_writing_stalled_by_transport(
-    grpc_chttp2_transport_writing *transport_writing);
+    grpc_chttp2_transport_writing *transport_writing, bool is_window_available);
 
 int grpc_chttp2_list_pop_stalled_by_transport(
     grpc_chttp2_transport_global *transport_global,
