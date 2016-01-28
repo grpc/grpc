@@ -95,7 +95,7 @@ class RpcMethodHandler : public MethodHandler {
               CallOpServerSendStatus> ops;
     ops.SendInitialMetadata(param.server_context->initial_metadata_);
     if (status.ok()) {
-      status = ops.SendMessage(rsp);
+      status = ops.SendMessage(rsp, WriteOptions());
     }
     ops.ServerSendStatus(param.server_context->trailing_metadata_, status);
     param.call->PerformOps(&ops);
@@ -130,7 +130,7 @@ class ClientStreamingHandler : public MethodHandler {
               CallOpServerSendStatus> ops;
     ops.SendInitialMetadata(param.server_context->initial_metadata_);
     if (status.ok()) {
-      status = ops.SendMessage(rsp);
+      status = ops.SendMessage(rsp, WriteOptions());
     }
     ops.ServerSendStatus(param.server_context->trailing_metadata_, status);
     param.call->PerformOps(&ops);

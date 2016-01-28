@@ -91,7 +91,11 @@ class AsyncWriterInterface {
   ///
   /// \param[in] msg The message to be written.
   /// \param[in] tag The tag identifying the operation.
-  virtual void Write(const W& msg, void* tag) = 0;
+  virtual void Write(const W& msg, void* tag, const WriteOptions& options) = 0;
+
+  inline void Write(const W& msg, void* tag) {
+    Write(msg, tag, WriteOptions());
+  }
 };
 
 template <class R>
@@ -110,7 +114,7 @@ class ClientAsyncReader GRPC_FINAL : public ClientAsyncReaderInterface<R> {
     init_ops_.set_output_tag(tag);
     init_ops_.SendInitialMetadata(context->send_initial_metadata_);
     // TODO(ctiller): don't assert
-    GPR_ASSERT(init_ops_.SendMessage(request).ok());
+    GPR_ASSERT(init_ops_.SendMessage(request, WriteOptions()).ok());
     init_ops_.ClientSendClose();
     call_.PerformOps(&init_ops_);
   }
@@ -185,10 +189,12 @@ class ClientAsyncWriter GRPC_FINAL : public ClientAsyncWriterInterface<W> {
     call_.PerformOps(&meta_ops_);
   }
 
-  void Write(const W& msg, void* tag) GRPC_OVERRIDE {
+  using AsyncWriterInterface<W>::Write;
+  void Write(const W& msg, void* tag,
+             const WriteOptions& options) GRPC_OVERRIDE {
     write_ops_.set_output_tag(tag);
     // TODO(ctiller): don't assert
-    GPR_ASSERT(write_ops_.SendMessage(msg).ok());
+    GPR_ASSERT(write_ops_.SendMessage(msg, options).ok());
     call_.PerformOps(&write_ops_);
   }
 
@@ -260,10 +266,12 @@ class ClientAsyncReaderWriter GRPC_FINAL
     call_.PerformOps(&read_ops_);
   }
 
-  void Write(const W& msg, void* tag) GRPC_OVERRIDE {
+  using AsyncWriterInterface<W>::Write;
+  void Write(const W& msg, void* tag,
+             const WriteOptions& options) GRPC_OVERRIDE {
     write_ops_.set_output_tag(tag);
     // TODO(ctiller): don't assert
-    GPR_ASSERT(write_ops_.SendMessage(msg).ok());
+    GPR_ASSERT(write_ops_.SendMessage(msg, options).ok());
     call_.PerformOps(&write_ops_);
   }
 
@@ -323,8 +331,9 @@ class ServerAsyncReader GRPC_FINAL : public ServerAsyncStreamingInterface,
     }
     // The response is dropped if the status is not OK.
     if (status.ok()) {
-      finish_ops_.ServerSendStatus(ctx_->trailing_metadata_,
-                                   finish_ops_.SendMessage(msg));
+      finish_ops_.ServerSendStatus(
+          ctx_->trailing_metadata_,
+          finish_ops_.SendMessage(msg, WriteOptions()));
     } else {
       finish_ops_.ServerSendStatus(ctx_->trailing_metadata_, status);
     }
@@ -369,14 +378,16 @@ class ServerAsyncWriter GRPC_FINAL : public ServerAsyncStreamingInterface,
     call_.PerformOps(&meta_ops_);
   }
 
-  void Write(const W& msg, void* tag) GRPC_OVERRIDE {
+  using AsyncWriterInterface<W>::Write;
+  void Write(const W& msg, void* tag,
+             const WriteOptions& options) GRPC_OVERRIDE {
     write_ops_.set_output_tag(tag);
     if (!ctx_->sent_initial_metadata_) {
       write_ops_.SendInitialMetadata(ctx_->initial_metadata_);
       ctx_->sent_initial_metadata_ = true;
     }
     // TODO(ctiller): don't assert
-    GPR_ASSERT(write_ops_.SendMessage(msg).ok());
+    GPR_ASSERT(write_ops_.SendMessage(msg, options).ok());
     call_.PerformOps(&write_ops_);
   }
 
@@ -424,14 +435,16 @@ class ServerAsyncReaderWriter GRPC_FINAL : public ServerAsyncStreamingInterface,
     call_.PerformOps(&read_ops_);
   }
 
-  void Write(const W& msg, void* tag) GRPC_OVERRIDE {
+  using AsyncWriterInterface<W>::Write;
+  void Write(const W& msg, void* tag,
+             const WriteOptions& options) GRPC_OVERRIDE {
     write_ops_.set_output_tag(tag);
     if (!ctx_->sent_initial_metadata_) {
       write_ops_.SendInitialMetadata(ctx_->initial_metadata_);
       ctx_->sent_initial_metadata_ = true;
     }
     // TODO(ctiller): don't assert
-    GPR_ASSERT(write_ops_.SendMessage(msg).ok());
+    GPR_ASSERT(write_ops_.SendMessage(msg, options).ok());
     call_.PerformOps(&write_ops_);
   }
 

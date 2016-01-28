@@ -64,7 +64,7 @@ class ClientAsyncResponseReader GRPC_FINAL
       : context_(context), call_(channel->CreateCall(method, context, cq)) {
     init_buf_.SendInitialMetadata(context->send_initial_metadata_);
     // TODO(ctiller): don't assert
-    GPR_ASSERT(init_buf_.SendMessage(request).ok());
+    GPR_ASSERT(init_buf_.SendMessage(request, WriteOptions()).ok());
     init_buf_.ClientSendClose();
     call_.PerformOps(&init_buf_);
   }
@@ -121,8 +121,9 @@ class ServerAsyncResponseWriter GRPC_FINAL
     }
     // The response is dropped if the status is not OK.
     if (status.ok()) {
-      finish_buf_.ServerSendStatus(ctx_->trailing_metadata_,
-                                   finish_buf_.SendMessage(msg));
+      finish_buf_.ServerSendStatus(
+          ctx_->trailing_metadata_,
+          finish_buf_.SendMessage(msg, WriteOptions()));
     } else {
       finish_buf_.ServerSendStatus(ctx_->trailing_metadata_, status);
     }
