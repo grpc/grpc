@@ -55,9 +55,11 @@ greeter_async_client: helloworld.pb.o helloworld.grpc.pb.o greeter_async_client.
 greeter_async_server: helloworld.pb.o helloworld.grpc.pb.o greeter_async_server.o
 	$(CXX) $^ $(LDFLAGS) -o $@
 
+.PRECIOUS: %.grpc.pb.cc
 %.grpc.pb.cc: %.proto
 	$(PROTOC) -I $(PROTOS_PATH) --grpc_out=. --plugin=protoc-gen-grpc=$(GRPC_CPP_PLUGIN_PATH) $<
 
+.PRECIOUS: %.pb.cc
 %.pb.cc: %.proto
 	$(PROTOC) -I $(PROTOS_PATH) --cpp_out=. $<
 

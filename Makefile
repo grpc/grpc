@@ -3074,15 +3074,21 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/support/sync_stream.h \
     include/grpc++/support/time.h \
     include/grpc++/impl/codegen/async_stream.h \
+    include/grpc++/impl/codegen/async_unary_call.h \
     include/grpc++/impl/codegen/call.h \
     include/grpc++/impl/codegen/call_hook.h \
     include/grpc++/impl/codegen/channel_interface.h \
     include/grpc++/impl/codegen/client_context.h \
+    include/grpc++/impl/codegen/client_unary_call.h \
+    include/grpc++/impl/codegen/completion_queue.h \
     include/grpc++/impl/codegen/completion_queue_tag.h \
     include/grpc++/impl/codegen/config.h \
     include/grpc++/impl/codegen/config_protobuf.h \
     include/grpc++/impl/codegen/grpc_library.h \
+    include/grpc++/impl/codegen/method_handler_impl.h \
     include/grpc++/impl/codegen/proto_utils.h \
+    include/grpc++/impl/codegen/rpc_method.h \
+    include/grpc++/impl/codegen/rpc_service_method.h \
     include/grpc++/impl/codegen/security/auth_context.h \
     include/grpc++/impl/codegen/serialization_traits.h \
     include/grpc++/impl/codegen/server_context.h \
@@ -3095,6 +3101,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/impl/codegen/sync.h \
     include/grpc++/impl/codegen/sync_cxx11.h \
     include/grpc++/impl/codegen/sync_no_cxx11.h \
+    include/grpc++/impl/codegen/sync_stream.h \
     include/grpc++/impl/codegen/time.h \
 
 LIBGRPC++_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC++_SRC))))
@@ -3369,15 +3376,21 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/support/sync_stream.h \
     include/grpc++/support/time.h \
     include/grpc++/impl/codegen/async_stream.h \
+    include/grpc++/impl/codegen/async_unary_call.h \
     include/grpc++/impl/codegen/call.h \
     include/grpc++/impl/codegen/call_hook.h \
     include/grpc++/impl/codegen/channel_interface.h \
     include/grpc++/impl/codegen/client_context.h \
+    include/grpc++/impl/codegen/client_unary_call.h \
+    include/grpc++/impl/codegen/completion_queue.h \
     include/grpc++/impl/codegen/completion_queue_tag.h \
     include/grpc++/impl/codegen/config.h \
     include/grpc++/impl/codegen/config_protobuf.h \
     include/grpc++/impl/codegen/grpc_library.h \
+    include/grpc++/impl/codegen/method_handler_impl.h \
     include/grpc++/impl/codegen/proto_utils.h \
+    include/grpc++/impl/codegen/rpc_method.h \
+    include/grpc++/impl/codegen/rpc_service_method.h \
     include/grpc++/impl/codegen/security/auth_context.h \
     include/grpc++/impl/codegen/serialization_traits.h \
     include/grpc++/impl/codegen/server_context.h \
@@ -3390,6 +3403,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/impl/codegen/sync.h \
     include/grpc++/impl/codegen/sync_cxx11.h \
     include/grpc++/impl/codegen/sync_no_cxx11.h \
+    include/grpc++/impl/codegen/sync_stream.h \
     include/grpc++/impl/codegen/time.h \
 
 LIBGRPC++_UNSECURE_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC++_UNSECURE_SRC))))
@@ -3470,15 +3484,21 @@ LIBGRPC_PLUGIN_SUPPORT_SRC = \
 
 PUBLIC_HEADERS_CXX += \
     include/grpc++/impl/codegen/async_stream.h \
+    include/grpc++/impl/codegen/async_unary_call.h \
     include/grpc++/impl/codegen/call.h \
     include/grpc++/impl/codegen/call_hook.h \
     include/grpc++/impl/codegen/channel_interface.h \
     include/grpc++/impl/codegen/client_context.h \
+    include/grpc++/impl/codegen/client_unary_call.h \
+    include/grpc++/impl/codegen/completion_queue.h \
     include/grpc++/impl/codegen/completion_queue_tag.h \
     include/grpc++/impl/codegen/config.h \
     include/grpc++/impl/codegen/config_protobuf.h \
     include/grpc++/impl/codegen/grpc_library.h \
+    include/grpc++/impl/codegen/method_handler_impl.h \
     include/grpc++/impl/codegen/proto_utils.h \
+    include/grpc++/impl/codegen/rpc_method.h \
+    include/grpc++/impl/codegen/rpc_service_method.h \
     include/grpc++/impl/codegen/security/auth_context.h \
     include/grpc++/impl/codegen/serialization_traits.h \
     include/grpc++/impl/codegen/server_context.h \
@@ -3491,6 +3511,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/impl/codegen/sync.h \
     include/grpc++/impl/codegen/sync_cxx11.h \
     include/grpc++/impl/codegen/sync_no_cxx11.h \
+    include/grpc++/impl/codegen/sync_stream.h \
     include/grpc++/impl/codegen/time.h \
     include/grpc/impl/codegen/alloc.h \
     include/grpc/impl/codegen/atm.h \
