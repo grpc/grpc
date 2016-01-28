@@ -104,17 +104,38 @@ CXX_basicprof = $(DEFAULT_CXX)
 LD_basicprof = $(DEFAULT_CC)
 LDXX_basicprof = $(DEFAULT_CXX)
 CPPFLAGS_basicprof = -O2 -DGRPC_BASIC_PROFILER -DGRPC_TIMERS_RDTSC
-LDFLAGS_basicprof =
 DEFINES_basicprof = NDEBUG
 
-VALID_CONFIG_stapprof = 1
-CC_stapprof = $(DEFAULT_CC)
-CXX_stapprof = $(DEFAULT_CXX)
-LD_stapprof = $(DEFAULT_CC)
-LDXX_stapprof = $(DEFAULT_CXX)
-CPPFLAGS_stapprof = -O2 -DGRPC_STAP_PROFILER
-LDFLAGS_stapprof =
-DEFINES_stapprof = NDEBUG
+VALID_CONFIG_helgrind = 1
+CC_helgrind = $(DEFAULT_CC)
+CXX_helgrind = $(DEFAULT_CXX)
+LD_helgrind = $(DEFAULT_CC)
+LDXX_helgrind = $(DEFAULT_CXX)
+CPPFLAGS_helgrind = -O0
+LDFLAGS_helgrind = -rdynamic
+DEFINES_helgrind = _DEBUG DEBUG
+DEFINES_helgrind += GRPC_TEST_SLOWDOWN_BUILD_FACTOR=20
+
+VALID_CONFIG_asan-noleaks = 1
+REQUIRE_CUSTOM_LIBRARIES_asan-noleaks = 1
+CC_asan-noleaks = clang
+CXX_asan-noleaks = clang++
+LD_asan-noleaks = clang
+LDXX_asan-noleaks = clang++
+CPPFLAGS_asan-noleaks = -O0 -fsanitize=address -fno-omit-frame-pointer -Wno-unused-command-line-argument
+LDFLAGS_asan-noleaks = -fsanitize=address
+DEFINES_asan-noleaks += GRPC_TEST_SLOWDOWN_BUILD_FACTOR=1.5
+
+VALID_CONFIG_ubsan = 1
+REQUIRE_CUSTOM_LIBRARIES_ubsan = 1
+CC_ubsan = clang
+CXX_ubsan = clang++
+LD_ubsan = clang
+LDXX_ubsan = clang++
+CPPFLAGS_ubsan = -O1 -fsanitize=undefined -fno-omit-frame-pointer -Wno-unused-command-line-argument
+LDFLAGS_ubsan = -fsanitize=undefined
+DEFINES_ubsan = NDEBUG
+DEFINES_ubsan += GRPC_TEST_SLOWDOWN_BUILD_FACTOR=1.5
 
 VALID_CONFIG_dbg = 1
 CC_dbg = $(DEFAULT_CC)
@@ -125,6 +146,64 @@ CPPFLAGS_dbg = -O0
 LDFLAGS_dbg = -rdynamic
 DEFINES_dbg = _DEBUG DEBUG
 
+VALID_CONFIG_stapprof = 1
+CC_stapprof = $(DEFAULT_CC)
+CXX_stapprof = $(DEFAULT_CXX)
+LD_stapprof = $(DEFAULT_CC)
+LDXX_stapprof = $(DEFAULT_CXX)
+CPPFLAGS_stapprof = -O2 -DGRPC_STAP_PROFILER
+DEFINES_stapprof = NDEBUG
+
+VALID_CONFIG_gcov = 1
+CC_gcov = gcc
+CXX_gcov = g++
+LD_gcov = gcc
+LDXX_gcov = g++
+CPPFLAGS_gcov = -O0 -fprofile-arcs -ftest-coverage -Wno-return-type
+LDFLAGS_gcov = -fprofile-arcs -ftest-coverage -rdynamic
+DEFINES_gcov = _DEBUG DEBUG GPR_GCOV
+
+VALID_CONFIG_memcheck = 1
+CC_memcheck = $(DEFAULT_CC)
+CXX_memcheck = $(DEFAULT_CXX)
+LD_memcheck = $(DEFAULT_CC)
+LDXX_memcheck = $(DEFAULT_CXX)
+CPPFLAGS_memcheck = -O0
+LDFLAGS_memcheck = -rdynamic
+DEFINES_memcheck = _DEBUG DEBUG
+DEFINES_memcheck += GRPC_TEST_SLOWDOWN_BUILD_FACTOR=10
+
+VALID_CONFIG_asan = 1
+REQUIRE_CUSTOM_LIBRARIES_asan = 1
+CC_asan = clang
+CXX_asan = clang++
+LD_asan = clang
+LDXX_asan = clang++
+CPPFLAGS_asan = -O0 -fsanitize=address -fno-omit-frame-pointer -Wno-unused-command-line-argument
+LDFLAGS_asan = -fsanitize=address
+DEFINES_asan += GRPC_TEST_SLOWDOWN_BUILD_FACTOR=1.5
+
+VALID_CONFIG_tsan = 1
+REQUIRE_CUSTOM_LIBRARIES_tsan = 1
+CC_tsan = clang
+CXX_tsan = clang++
+LD_tsan = clang
+LDXX_tsan = clang++
+CPPFLAGS_tsan = -O0 -fsanitize=thread -fno-omit-frame-pointer -Wno-unused-command-line-argument -fPIE -pie
+LDFLAGS_tsan = -fsanitize=thread -fPIE -pie $(if $(JENKINS_BUILD),-Wl$(comma)-Ttext-segment=0x7e0000000000,)
+DEFINES_tsan += GRPC_TEST_SLOWDOWN_BUILD_FACTOR=2
+
+VALID_CONFIG_msan = 1
+REQUIRE_CUSTOM_LIBRARIES_msan = 1
+CC_msan = clang
+CXX_msan = clang++
+LD_msan = clang
+LDXX_msan = clang++
+CPPFLAGS_msan = -O0 -fsanitize=memory -fsanitize-memory-track-origins -fno-omit-frame-pointer -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1 -Wno-unused-command-line-argument -fPIE -pie
+LDFLAGS_msan = -fsanitize=memory -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1 -fPIE -pie $(if $(JENKINS_BUILD),-Wl$(comma)-Ttext-segment=0x7e0000000000,)
+DEFINES_msan = NDEBUG
+DEFINES_msan += GRPC_TEST_SLOWDOWN_BUILD_FACTOR=2
+
 VALID_CONFIG_mutrace = 1
 CC_mutrace = $(DEFAULT_CC)
 CXX_mutrace = $(DEFAULT_CXX)
@@ -134,69 +213,6 @@ CPPFLAGS_mutrace = -O0
 LDFLAGS_mutrace = -rdynamic
 DEFINES_mutrace = _DEBUG DEBUG
 
-VALID_CONFIG_valgrind = 1
-REQUIRE_CUSTOM_LIBRARIES_valgrind = 1
-CC_valgrind = $(DEFAULT_CC)
-CXX_valgrind = $(DEFAULT_CXX)
-LD_valgrind = $(DEFAULT_CC)
-LDXX_valgrind = $(DEFAULT_CXX)
-CPPFLAGS_valgrind = -O0
-LDFLAGS_valgrind = -rdynamic
-DEFINES_valgrind = _DEBUG DEBUG GRPC_TEST_SLOWDOWN_BUILD_FACTOR=20
-
-VALID_CONFIG_tsan = 1
-REQUIRE_CUSTOM_LIBRARIES_tsan = 1
-CC_tsan = clang
-CXX_tsan = clang++
-LD_tsan = clang
-LDXX_tsan = clang++
-CFLAGS_tsan = -O0 -fsanitize=thread -fno-omit-frame-pointer -Wno-unused-command-line-argument -fPIE -pie
-CXXFLAGS_tsan = -O0 -fsanitize=thread -fno-omit-frame-pointer -Wno-unused-command-line-argument -fPIE -pie
-LDFLAGS_tsan = -fsanitize=thread -fPIE -pie $(if $(JENKINS_BUILD),-Wl$(comma)-Ttext-segment=0x7e0000000000,)
-DEFINES_tsan = NDEBUG GRPC_TEST_SLOWDOWN_BUILD_FACTOR=10
-
-VALID_CONFIG_asan = 1
-REQUIRE_CUSTOM_LIBRARIES_asan = 1
-CC_asan = clang
-CXX_asan = clang++
-LD_asan = clang
-LDXX_asan = clang++
-CFLAGS_asan = -O0 -fsanitize=address -fno-omit-frame-pointer -Wno-unused-command-line-argument
-CXXFLAGS_asan = -O0 -fsanitize=address -fno-omit-frame-pointer -Wno-unused-command-line-argument
-LDFLAGS_asan = -fsanitize=address
-DEFINES_asan = GRPC_TEST_SLOWDOWN_BUILD_FACTOR=3
-
-VALID_CONFIG_msan = 1
-REQUIRE_CUSTOM_LIBRARIES_msan = 1
-CC_msan = clang
-CXX_msan = clang++-libc++
-LD_msan = clang
-LDXX_msan = clang++-libc++
-CFLAGS_msan = -O0 -fsanitize=memory -fsanitize-memory-track-origins -fno-omit-frame-pointer -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1 -Wno-unused-command-line-argument -fPIE -pie
-CXXFLAGS_msan = -O0 -fsanitize=memory -fsanitize-memory-track-origins -fno-omit-frame-pointer -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1 -Wno-unused-command-line-argument -fPIE -pie
-LDFLAGS_msan = -fsanitize=memory -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1 -fPIE -pie $(if $(JENKINS_BUILD),-Wl$(comma)-Ttext-segment=0x7e0000000000,)
-DEFINES_msan = NDEBUG GRPC_TEST_SLOWDOWN_BUILD_FACTOR=4
-
-VALID_CONFIG_ubsan = 1
-REQUIRE_CUSTOM_LIBRARIES_ubsan = 1
-CC_ubsan = clang
-CXX_ubsan = clang++
-LD_ubsan = clang
-LDXX_ubsan = clang++
-CFLAGS_ubsan = -O1 -fsanitize=undefined -fno-omit-frame-pointer -Wno-unused-command-line-argument
-CXXFLAGS_ubsan = -O1 -fsanitize=undefined -fno-omit-frame-pointer -Wno-unused-command-line-argument
-LDFLAGS_ubsan = -fsanitize=undefined
-DEFINES_ubsan = NDEBUG GRPC_TEST_SLOWDOWN_BUILD_FACTOR=3
-
-VALID_CONFIG_gcov = 1
-CC_gcov = gcc
-CXX_gcov = g++
-LD_gcov = gcc
-LDXX_gcov = g++
-CFLAGS_gcov = -O0 -fprofile-arcs -ftest-coverage -Wno-return-type
-CXXFLAGS_gcov = -O0 -fprofile-arcs -ftest-coverage -Wno-return-type
-LDFLAGS_gcov = -fprofile-arcs -ftest-coverage -rdynamic
-DEFINES_gcov = _DEBUG DEBUG GPR_GCOV
 
 
 # General settings.
@@ -204,26 +220,44 @@ DEFINES_gcov = _DEBUG DEBUG GPR_GCOV
 
 prefix ?= /usr/local
 
-PROTOC = protoc
-DTRACE = dtrace
+PROTOC ?= protoc
+DTRACE ?= dtrace
 CONFIG ?= opt
+# Doing X ?= Y is the same as:
+# ifeq ($(origin X), undefined)
+#  X = Y
+# endif
+# but some variables, such as CC, CXX, LD or AR, have defaults.
+# So instead of using ?= on them, we need to check their origin.
+# See:
+#  https://www.gnu.org/software/make/manual/html_node/Implicit-Variables.html
+#  https://www.gnu.org/software/make/manual/html_node/Flavors.html#index-_003f_003d
+#  https://www.gnu.org/software/make/manual/html_node/Origin-Function.html
+ifeq ($(origin CC), default)
 CC = $(CC_$(CONFIG))
+endif
+ifeq ($(origin CXX), default)
 CXX = $(CXX_$(CONFIG))
+endif
+ifeq ($(origin LD), default)
 LD = $(LD_$(CONFIG))
-LDXX = $(LDXX_$(CONFIG))
+endif
+LDXX ?= $(LDXX_$(CONFIG))
+ifeq ($(origin AR), default)
 AR = ar
+endif
 ifeq ($(SYSTEM),Linux)
-STRIP = strip --strip-unneeded
+STRIP ?= strip --strip-unneeded
 else
 ifeq ($(SYSTEM),Darwin)
-STRIP = strip -x
+STRIP ?= strip -x
 else
-STRIP = strip
+STRIP ?= strip
 endif
 endif
-INSTALL = install
-RM = rm -f
-PKG_CONFIG = pkg-config
+INSTALL ?= install
+RM ?= rm -f
+PKG_CONFIG ?= pkg-config
 
 ifndef VALID_CONFIG_$(CONFIG)
 $(error Invalid CONFIG value '$(CONFIG)')
@@ -239,15 +273,21 @@ endif
 CXX11_CHECK_CMD = $(CXX) -std=c++11 -o $(TMPOUT) -c test/build/c++11.cc
 HAS_CXX11 = $(shell $(CXX11_CHECK_CMD) 2> /dev/null && echo true || echo false)
 
+CHECK_NO_SHIFT_NEGATIVE_VALUE_CMD = $(CC) -std=c99 -Werror -Wno-shift-negative-value -o $(TMPOUT) -c test/build/empty.c
+HAS_NO_SHIFT_NEGATIVE_VALUE = $(shell $(CHECK_NO_SHIFT_NEGATIVE_VALUE_CMD) 2> /dev/null && echo true || echo false)
+ifeq ($(HAS_NO_SHIFT_NEGATIVE_VALUE),true)
+W_NO_SHIFT_NEGATIVE_VALUE=-Wno-shift-negative-value
+endif
+
 # The HOST compiler settings are used to compile the protoc plugins.
 # In most cases, you won't have to change anything, but if you are
 # cross-compiling, you can override these variables from GNU make's
 # command line: make CC=cross-gcc HOST_CC=gcc
 
-HOST_CC = $(CC)
-HOST_CXX = $(CXX)
-HOST_LD = $(LD)
-HOST_LDXX = $(LDXX)
+HOST_CC ?= $(CC)
+HOST_CXX ?= $(CXX)
+HOST_LD ?= $(LD)
+HOST_LDXX ?= $(LDXX)
 
 ifdef EXTRA_DEFINES
 DEFINES += $(EXTRA_DEFINES)
@@ -259,8 +299,7 @@ CXXFLAGS += -std=c++11
 else
 CXXFLAGS += -std=c++0x
 endif
-CFLAGS += -g -Wall -Wextra -Werror -Wno-long-long -Wno-unused-parameter
-CXXFLAGS += -g -Wall -Wextra -Werror -Wno-long-long -Wno-unused-parameter
+CPPFLAGS += -g -Wall -Wextra -Werror -Wno-long-long -Wno-unused-parameter
 LDFLAGS += -g
 
 CPPFLAGS += $(CPPFLAGS_$(CONFIG))
@@ -320,7 +359,7 @@ E = @echo
 Q = @
 endif
 
-VERSION = 0.12.0.0
+VERSION = 0.13.0.0
 
 CPPFLAGS_NO_ARCH += $(addprefix -I, $(INCLUDES)) $(addprefix -D, $(DEFINES))
 CPPFLAGS += $(CPPFLAGS_NO_ARCH) $(ARCH_FLAGS)
@@ -378,14 +417,6 @@ else
 IS_GIT_FOLDER = true
 endif
 
-ifeq ($(SYSTEM),Linux)
-OPENSSL_REQUIRES_DL = true
-endif
-
-ifeq ($(SYSTEM),Darwin)
-OPENSSL_REQUIRES_DL = true
-endif
-
 ifeq ($(HAS_PKG_CONFIG),true)
 OPENSSL_ALPN_CHECK_CMD = $(PKG_CONFIG) --atleast-version=1.0.2 openssl
 OPENSSL_NPN_CHECK_CMD = $(PKG_CONFIG) --atleast-version=1.0.1 openssl
@@ -399,25 +430,20 @@ else
 OPENSSL_LIBS = ssl crypto
 endif
 
-OPENSSL_ALPN_CHECK_CMD = $(CC) $(CFLAGS) $(CPPFLAGS) -o $(TMPOUT) test/build/openssl-alpn.c $(addprefix -l, $(OPENSSL_LIBS)) $(LDFLAGS)
-OPENSSL_NPN_CHECK_CMD = $(CC) $(CFLAGS) $(CPPFLAGS) -o $(TMPOUT) test/build/openssl-npn.c $(addprefix -l, $(OPENSSL_LIBS)) $(LDFLAGS)
-ZLIB_CHECK_CMD = $(CC) $(CFLAGS) $(CPPFLAGS) -o $(TMPOUT) test/build/zlib.c -lz $(LDFLAGS)
-PROTOBUF_CHECK_CMD = $(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $(TMPOUT) test/build/protobuf.cc -lprotobuf $(LDFLAGS)
-
-ifeq ($(OPENSSL_REQUIRES_DL),true)
-OPENSSL_ALPN_CHECK_CMD += -ldl
-OPENSSL_NPN_CHECK_CMD += -ldl
-endif
+OPENSSL_ALPN_CHECK_CMD = $(CC) $(CPPFLAGS) $(CFLAGS) -o $(TMPOUT) test/build/openssl-alpn.c $(addprefix -l, $(OPENSSL_LIBS)) $(LDFLAGS)
+OPENSSL_NPN_CHECK_CMD = $(CC) $(CPPFLAGS) $(CFLAGS) -o $(TMPOUT) test/build/openssl-npn.c $(addprefix -l, $(OPENSSL_LIBS)) $(LDFLAGS)
+ZLIB_CHECK_CMD = $(CC) $(CPPFLAGS) $(CFLAGS) -o $(TMPOUT) test/build/zlib.c -lz $(LDFLAGS)
+PROTOBUF_CHECK_CMD = $(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $(TMPOUT) test/build/protobuf.cc -lprotobuf $(LDFLAGS)
 
 endif # HAS_PKG_CONFIG
 
-PERFTOOLS_CHECK_CMD = $(CC) $(CFLAGS) $(CPPFLAGS) -o $(TMPOUT) test/build/perftools.c -lprofiler $(LDFLAGS)
+PERFTOOLS_CHECK_CMD = $(CC) $(CPPFLAGS) $(CFLAGS) -o $(TMPOUT) test/build/perftools.c -lprofiler $(LDFLAGS)
 
 PROTOC_CHECK_CMD = which protoc > /dev/null
 PROTOC_CHECK_VERSION_CMD = protoc --version | grep -q libprotoc.3
 DTRACE_CHECK_CMD = which dtrace > /dev/null
-SYSTEMTAP_HEADERS_CHECK_CMD = $(CC) $(CFLAGS) $(CPPFLAGS) -o $(TMPOUT) test/build/systemtap.c $(LDFLAGS)
-ZOOKEEPER_CHECK_CMD = $(CC) $(CFLAGS) $(CPPFLAGS) -o $(TMPOUT) test/build/zookeeper.c $(LDFLAGS) -lzookeeper_mt
+SYSTEMTAP_HEADERS_CHECK_CMD = $(CC) $(CPPFLAGS) $(CFLAGS) -o $(TMPOUT) test/build/systemtap.c $(LDFLAGS)
+ZOOKEEPER_CHECK_CMD = $(CC) $(CPPFLAGS) $(CFLAGS) -o $(TMPOUT) test/build/zookeeper.c $(LDFLAGS) -lzookeeper_mt
 
 ifndef REQUIRE_CUSTOM_LIBRARIES_$(CONFIG)
 HAS_SYSTEM_PERFTOOLS ?= $(shell $(PERFTOOLS_CHECK_CMD) 2> /dev/null && echo true || echo false)
@@ -515,14 +541,21 @@ PC_REQUIRES_GRPC = gpr
 PC_LIBS_GRPC =
 
 ifeq ($(HAS_SYSTEM_ZLIB),false)
-ifeq ($(HAS_EMBEDDED_ZLIB),true)
-ZLIB_DEP = $(LIBDIR)/$(CONFIG)/zlib/libz.a
-ZLIB_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/zlib/libz.a
-CPPFLAGS += -Ithird_party/zlib
-LDFLAGS += -L$(LIBDIR)/$(CONFIG)/zlib
+ifeq ($(HAS_EMBEDDED_ZLIB), true)
+EMBED_ZLIB ?= true
 else
 DEP_MISSING += zlib
+EMBED_ZLIB ?= broken
 endif
+else
+EMBED_ZLIB ?= false
+endif
+
+ifeq ($(EMBED_ZLIB),true)
+ZLIB_DEP = $(LIBDIR)/$(CONFIG)/libz.a
+ZLIB_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/libz.a
+CPPFLAGS += -Ithird_party/zlib
+LDFLAGS += -L$(LIBDIR)/$(CONFIG)/zlib
 else
 ifeq ($(HAS_PKG_CONFIG),true)
 CPPFLAGS += $(shell $(PKG_CONFIG) --cflags zlib)
@@ -565,9 +598,6 @@ OPENSSL_DEP += $(LIBDIR)/$(CONFIG)/libboringssl.a
 OPENSSL_MERGE_LIBS += $(LIBDIR)/$(CONFIG)/libboringssl.a
 # need to prefix these to ensure overriding system libraries
 CPPFLAGS := -Ithird_party/boringssl/include $(CPPFLAGS)
-ifeq ($(OPENSSL_REQUIRES_DL),true)
-LIBS_SECURE = dl
-endif # OPENSSL_REQUIRES_DL
 else # EMBED_OPENSSL=false
 ifeq ($(HAS_PKG_CONFIG),true)
 OPENSSL_PKG_CONFIG = true
@@ -587,10 +617,7 @@ ifeq ($(HAS_SYSTEM_OPENSSL_NPN),true)
 CPPFLAGS += -DTSI_OPENSSL_ALPN_SUPPORT=0
 LIBS_SECURE = $(OPENSSL_LIBS)
 endif # HAS_SYSTEM_OPENSSL_NPN
-ifeq ($(OPENSSL_REQUIRES_DL),true)
-LIBS_SECURE += dl
 PC_LIBS_SECURE = $(addprefix -l, $(LIBS_SECURE))
-endif # OPENSSL_REQUIRES_DL=true
 endif # EMBED_OPENSSL
 endif # NO_SECURE
 
@@ -878,6 +905,7 @@ set_initial_connect_string_test: $(BINDIR)/$(CONFIG)/set_initial_connect_string_
 sockaddr_resolver_test: $(BINDIR)/$(CONFIG)/sockaddr_resolver_test
 sockaddr_utils_test: $(BINDIR)/$(CONFIG)/sockaddr_utils_test
 socket_utils_test: $(BINDIR)/$(CONFIG)/socket_utils_test
+tag_set_test: $(BINDIR)/$(CONFIG)/tag_set_test
 tcp_client_posix_test: $(BINDIR)/$(CONFIG)/tcp_client_posix_test
 tcp_posix_test: $(BINDIR)/$(CONFIG)/tcp_posix_test
 tcp_server_posix_test: $(BINDIR)/$(CONFIG)/tcp_server_posix_test
@@ -976,6 +1004,18 @@ boringssl_tab_test: $(BINDIR)/$(CONFIG)/boringssl_tab_test
 boringssl_v3name_test: $(BINDIR)/$(CONFIG)/boringssl_v3name_test
 boringssl_pqueue_test: $(BINDIR)/$(CONFIG)/boringssl_pqueue_test
 boringssl_ssl_test: $(BINDIR)/$(CONFIG)/boringssl_ssl_test
+badreq_bad_client_test: $(BINDIR)/$(CONFIG)/badreq_bad_client_test
+connection_prefix_bad_client_test: $(BINDIR)/$(CONFIG)/connection_prefix_bad_client_test
+headers_bad_client_test: $(BINDIR)/$(CONFIG)/headers_bad_client_test
+initial_settings_frame_bad_client_test: $(BINDIR)/$(CONFIG)/initial_settings_frame_bad_client_test
+server_registered_method_bad_client_test: $(BINDIR)/$(CONFIG)/server_registered_method_bad_client_test
+simple_request_bad_client_test: $(BINDIR)/$(CONFIG)/simple_request_bad_client_test
+unknown_frame_bad_client_test: $(BINDIR)/$(CONFIG)/unknown_frame_bad_client_test
+window_overflow_bad_client_test: $(BINDIR)/$(CONFIG)/window_overflow_bad_client_test
+bad_ssl_alpn_server: $(BINDIR)/$(CONFIG)/bad_ssl_alpn_server
+bad_ssl_cert_server: $(BINDIR)/$(CONFIG)/bad_ssl_cert_server
+bad_ssl_alpn_test: $(BINDIR)/$(CONFIG)/bad_ssl_alpn_test
+bad_ssl_cert_test: $(BINDIR)/$(CONFIG)/bad_ssl_cert_test
 h2_census_test: $(BINDIR)/$(CONFIG)/h2_census_test
 h2_compress_test: $(BINDIR)/$(CONFIG)/h2_compress_test
 h2_fakesec_test: $(BINDIR)/$(CONFIG)/h2_fakesec_test
@@ -1007,18 +1047,6 @@ h2_sockpair_1byte_nosec_test: $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_nosec_test
 h2_uchannel_nosec_test: $(BINDIR)/$(CONFIG)/h2_uchannel_nosec_test
 h2_uds_nosec_test: $(BINDIR)/$(CONFIG)/h2_uds_nosec_test
 h2_uds+poll_nosec_test: $(BINDIR)/$(CONFIG)/h2_uds+poll_nosec_test
-badreq_bad_client_test: $(BINDIR)/$(CONFIG)/badreq_bad_client_test
-connection_prefix_bad_client_test: $(BINDIR)/$(CONFIG)/connection_prefix_bad_client_test
-headers_bad_client_test: $(BINDIR)/$(CONFIG)/headers_bad_client_test
-initial_settings_frame_bad_client_test: $(BINDIR)/$(CONFIG)/initial_settings_frame_bad_client_test
-server_registered_method_bad_client_test: $(BINDIR)/$(CONFIG)/server_registered_method_bad_client_test
-simple_request_bad_client_test: $(BINDIR)/$(CONFIG)/simple_request_bad_client_test
-unknown_frame_bad_client_test: $(BINDIR)/$(CONFIG)/unknown_frame_bad_client_test
-window_overflow_bad_client_test: $(BINDIR)/$(CONFIG)/window_overflow_bad_client_test
-bad_ssl_alpn_server: $(BINDIR)/$(CONFIG)/bad_ssl_alpn_server
-bad_ssl_cert_server: $(BINDIR)/$(CONFIG)/bad_ssl_cert_server
-bad_ssl_alpn_test: $(BINDIR)/$(CONFIG)/bad_ssl_alpn_test
-bad_ssl_cert_test: $(BINDIR)/$(CONFIG)/bad_ssl_cert_test
 
 run_dep_checks:
 	$(OPENSSL_ALPN_CHECK_CMD) || true
@@ -1028,14 +1056,6 @@ run_dep_checks:
 	$(PROTOBUF_CHECK_CMD) || true
 	$(PROTOC_CHECK_VERSION_CMD) || true
 	$(ZOOKEEPER_CHECK_CMD) || true
-
-$(LIBDIR)/$(CONFIG)/zlib/libz.a:
-	$(E) "[MAKE]    Building zlib"
-	$(Q)(cd third_party/zlib ; CC="$(CC)" CFLAGS="$(CFLAGS_$(CONFIG)) $(PIC_CPPFLAGS) -fvisibility=hidden $(CPPFLAGS_$(CONFIG)) $(ZLIB_CFLAGS_EXTRA)" ./configure --static)
-	$(Q)$(MAKE) -C third_party/zlib clean
-	$(Q)$(MAKE) -C third_party/zlib
-	$(Q)mkdir -p $(LIBDIR)/$(CONFIG)/zlib
-	$(Q)cp third_party/zlib/libz.a $(LIBDIR)/$(CONFIG)/zlib
 
 third_party/protobuf/configure:
 	$(E) "[AUTOGEN] Preparing protobuf"
@@ -1083,7 +1103,7 @@ plugins: $(PROTOC_PLUGINS)
 
 privatelibs: privatelibs_c privatelibs_cxx
 
-privatelibs_c:  $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libreconnect_server.a $(LIBDIR)/$(CONFIG)/libtest_tcp_server.a $(LIBDIR)/$(CONFIG)/libend2end_tests.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_tests.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libbad_ssl_test_server.a
+privatelibs_c:  $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libreconnect_server.a $(LIBDIR)/$(CONFIG)/libtest_tcp_server.a $(LIBDIR)/$(CONFIG)/libz.a $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libbad_ssl_test_server.a $(LIBDIR)/$(CONFIG)/libend2end_tests.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_tests.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a
 pc_gpr: $(LIBDIR)/$(CONFIG)/pkgconfig/gpr.pc
 
 pc_c: $(LIBDIR)/$(CONFIG)/pkgconfig/grpc.pc
@@ -1186,6 +1206,7 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/sockaddr_resolver_test \
   $(BINDIR)/$(CONFIG)/sockaddr_utils_test \
   $(BINDIR)/$(CONFIG)/socket_utils_test \
+  $(BINDIR)/$(CONFIG)/tag_set_test \
   $(BINDIR)/$(CONFIG)/tcp_client_posix_test \
   $(BINDIR)/$(CONFIG)/tcp_posix_test \
   $(BINDIR)/$(CONFIG)/tcp_server_posix_test \
@@ -1201,6 +1222,18 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/uri_parser_test \
   $(BINDIR)/$(CONFIG)/workqueue_test \
   $(BINDIR)/$(CONFIG)/public_headers_must_be_c89 \
+  $(BINDIR)/$(CONFIG)/badreq_bad_client_test \
+  $(BINDIR)/$(CONFIG)/connection_prefix_bad_client_test \
+  $(BINDIR)/$(CONFIG)/headers_bad_client_test \
+  $(BINDIR)/$(CONFIG)/initial_settings_frame_bad_client_test \
+  $(BINDIR)/$(CONFIG)/server_registered_method_bad_client_test \
+  $(BINDIR)/$(CONFIG)/simple_request_bad_client_test \
+  $(BINDIR)/$(CONFIG)/unknown_frame_bad_client_test \
+  $(BINDIR)/$(CONFIG)/window_overflow_bad_client_test \
+  $(BINDIR)/$(CONFIG)/bad_ssl_alpn_server \
+  $(BINDIR)/$(CONFIG)/bad_ssl_cert_server \
+  $(BINDIR)/$(CONFIG)/bad_ssl_alpn_test \
+  $(BINDIR)/$(CONFIG)/bad_ssl_cert_test \
   $(BINDIR)/$(CONFIG)/h2_census_test \
   $(BINDIR)/$(CONFIG)/h2_compress_test \
   $(BINDIR)/$(CONFIG)/h2_fakesec_test \
@@ -1232,18 +1265,6 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/h2_uchannel_nosec_test \
   $(BINDIR)/$(CONFIG)/h2_uds_nosec_test \
   $(BINDIR)/$(CONFIG)/h2_uds+poll_nosec_test \
-  $(BINDIR)/$(CONFIG)/badreq_bad_client_test \
-  $(BINDIR)/$(CONFIG)/connection_prefix_bad_client_test \
-  $(BINDIR)/$(CONFIG)/headers_bad_client_test \
-  $(BINDIR)/$(CONFIG)/initial_settings_frame_bad_client_test \
-  $(BINDIR)/$(CONFIG)/server_registered_method_bad_client_test \
-  $(BINDIR)/$(CONFIG)/simple_request_bad_client_test \
-  $(BINDIR)/$(CONFIG)/unknown_frame_bad_client_test \
-  $(BINDIR)/$(CONFIG)/window_overflow_bad_client_test \
-  $(BINDIR)/$(CONFIG)/bad_ssl_alpn_server \
-  $(BINDIR)/$(CONFIG)/bad_ssl_cert_server \
-  $(BINDIR)/$(CONFIG)/bad_ssl_alpn_test \
-  $(BINDIR)/$(CONFIG)/bad_ssl_cert_test \
 
 
 buildtests_cxx: buildtests_zookeeper privatelibs_cxx \
@@ -1480,6 +1501,8 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/sockaddr_utils_test || ( echo test sockaddr_utils_test failed ; exit 1 )
 	$(E) "[RUN]     Testing socket_utils_test"
 	$(Q) $(BINDIR)/$(CONFIG)/socket_utils_test || ( echo test socket_utils_test failed ; exit 1 )
+	$(E) "[RUN]     Testing tag_set_test"
+	$(Q) $(BINDIR)/$(CONFIG)/tag_set_test || ( echo test tag_set_test failed ; exit 1 )
 	$(E) "[RUN]     Testing tcp_client_posix_test"
 	$(Q) $(BINDIR)/$(CONFIG)/tcp_client_posix_test || ( echo test tcp_client_posix_test failed ; exit 1 )
 	$(E) "[RUN]     Testing tcp_posix_test"
@@ -1931,12 +1954,12 @@ endif
 $(OBJDIR)/$(CONFIG)/%.o : %.c
 	$(E) "[C]       Compiling $<"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(CC) $(CFLAGS) $(CPPFLAGS) -MMD -MF $(addsuffix .dep, $(basename $@)) -c -o $@ $<
+	$(Q) $(CC) $(CPPFLAGS) $(CFLAGS) -MMD -MF $(addsuffix .dep, $(basename $@)) -c -o $@ $<
 
 $(OBJDIR)/$(CONFIG)/%.o : $(GENDIR)/%.pb.cc
 	$(E) "[CXX]     Compiling $<"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(CXX) $(CXXFLAGS) $(CPPFLAGS) -MMD -MF $(addsuffix .dep, $(basename $@)) -c -o $@ $<
+	$(Q) $(CXX) $(CPPFLAGS) $(CXXFLAGS) -MMD -MF $(addsuffix .dep, $(basename $@)) -c -o $@ $<
 
 $(OBJDIR)/$(CONFIG)/src/compiler/%.o : src/compiler/%.cc
 	$(E) "[HOSTCXX] Compiling $<"
@@ -1946,7 +1969,7 @@ $(OBJDIR)/$(CONFIG)/src/compiler/%.o : src/compiler/%.cc
 $(OBJDIR)/$(CONFIG)/%.o : %.cc
 	$(E) "[CXX]     Compiling $<"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(CXX) $(CXXFLAGS) $(CPPFLAGS) -MMD -MF $(addsuffix .dep, $(basename $@)) -c -o $@ $<
+	$(Q) $(CXX) $(CPPFLAGS) $(CXXFLAGS) -MMD -MF $(addsuffix .dep, $(basename $@)) -c -o $@ $<
 
 install: install_c install_cxx install-plugins install-certs verify-install
 
@@ -2268,7 +2291,7 @@ PUBLIC_HEADERS_C += \
 LIBGPR_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGPR_SRC))))
 
 
-$(LIBDIR)/$(CONFIG)/libgpr.a: $(ZLIB_DEP) $(OPENSSL_DEP)  $(LIBGPR_OBJS)
+$(LIBDIR)/$(CONFIG)/libgpr.a: $(ZLIB_DEP)  $(LIBGPR_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgpr.a
@@ -2309,7 +2332,7 @@ LIBGPR_TEST_UTIL_SRC = \
 LIBGPR_TEST_UTIL_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGPR_TEST_UTIL_SRC))))
 
 
-$(LIBDIR)/$(CONFIG)/libgpr_test_util.a: $(ZLIB_DEP) $(OPENSSL_DEP)  $(LIBGPR_TEST_UTIL_OBJS)
+$(LIBDIR)/$(CONFIG)/libgpr_test_util.a: $(ZLIB_DEP)  $(LIBGPR_TEST_UTIL_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgpr_test_util.a
@@ -2479,6 +2502,7 @@ LIBGRPC_SRC = \
     src/core/census/context.c \
     src/core/census/initialize.c \
     src/core/census/operation.c \
+    src/core/census/tag_set.c \
     src/core/census/tracing.c \
     third_party/nanopb/pb_common.c \
     third_party/nanopb/pb_decode.c \
@@ -2637,7 +2661,7 @@ PUBLIC_HEADERS_C += \
 LIBGRPC_TEST_UTIL_UNSECURE_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC_TEST_UTIL_UNSECURE_SRC))))
 
 
-$(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a: $(ZLIB_DEP) $(OPENSSL_DEP)  $(LIBGRPC_TEST_UTIL_UNSECURE_OBJS)
+$(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a: $(ZLIB_DEP)  $(LIBGRPC_TEST_UTIL_UNSECURE_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a
@@ -2787,6 +2811,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/census/context.c \
     src/core/census/initialize.c \
     src/core/census/operation.c \
+    src/core/census/tag_set.c \
     src/core/census/tracing.c \
     third_party/nanopb/pb_common.c \
     third_party/nanopb/pb_decode.c \
@@ -2803,7 +2828,7 @@ PUBLIC_HEADERS_C += \
 LIBGRPC_UNSECURE_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC_UNSECURE_SRC))))
 
 
-$(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a: $(ZLIB_DEP) $(OPENSSL_DEP)  $(LIBGRPC_UNSECURE_OBJS)
+$(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a: $(ZLIB_DEP)  $(LIBGRPC_UNSECURE_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a
@@ -2861,7 +2886,7 @@ PUBLIC_HEADERS_C += \
 LIBGRPC_ZOOKEEPER_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC_ZOOKEEPER_SRC))))
 
 
-$(LIBDIR)/$(CONFIG)/libgrpc_zookeeper.a: $(ZLIB_DEP) $(OPENSSL_DEP)  $(LIBGRPC_ZOOKEEPER_OBJS)
+$(LIBDIR)/$(CONFIG)/libgrpc_zookeeper.a: $(ZLIB_DEP)  $(LIBGRPC_ZOOKEEPER_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc_zookeeper.a
@@ -3331,7 +3356,7 @@ endif
 
 else
 
-$(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a: $(ZLIB_DEP) $(OPENSSL_DEP)  $(PROTOBUF_DEP) $(LIBGRPC++_UNSECURE_OBJS)
+$(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a: $(ZLIB_DEP)  $(PROTOBUF_DEP) $(LIBGRPC++_UNSECURE_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a
@@ -3402,7 +3427,7 @@ $(LIBDIR)/$(CONFIG)/libgrpc_plugin_support.a: protobuf_dep_error
 
 else
 
-$(LIBDIR)/$(CONFIG)/libgrpc_plugin_support.a: $(ZLIB_DEP) $(OPENSSL_DEP)  $(PROTOBUF_DEP) $(LIBGRPC_PLUGIN_SUPPORT_OBJS)
+$(LIBDIR)/$(CONFIG)/libgrpc_plugin_support.a: $(ZLIB_DEP)  $(PROTOBUF_DEP) $(LIBGRPC_PLUGIN_SUPPORT_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc_plugin_support.a
@@ -3627,10 +3652,10 @@ $(OBJDIR)/$(CONFIG)/test/cpp/interop/server.o: $(GENDIR)/src/proto/grpc/testing/
 
 LIBQPS_SRC = \
     $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc \
-    $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc \
     $(GENDIR)/src/proto/grpc/testing/payloads.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.grpc.pb.cc \
-    $(GENDIR)/src/proto/grpc/testing/services.pb.cc $(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc \
     $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc \
+    $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc \
+    $(GENDIR)/src/proto/grpc/testing/services.pb.cc $(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc \
     $(GENDIR)/src/proto/grpc/testing/perf_db.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.grpc.pb.cc \
     test/cpp/qps/client_async.cc \
     test/cpp/qps/client_sync.cc \
@@ -3686,16 +3711,16 @@ ifneq ($(NO_DEPS),true)
 -include $(LIBQPS_OBJS:.o=.dep)
 endif
 endif
-$(OBJDIR)/$(CONFIG)/test/cpp/qps/client_async.o: $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/services.pb.cc $(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.grpc.pb.cc
-$(OBJDIR)/$(CONFIG)/test/cpp/qps/client_sync.o: $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/services.pb.cc $(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.grpc.pb.cc
-$(OBJDIR)/$(CONFIG)/test/cpp/qps/driver.o: $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/services.pb.cc $(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.grpc.pb.cc
-$(OBJDIR)/$(CONFIG)/test/cpp/qps/perf_db_client.o: $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/services.pb.cc $(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.grpc.pb.cc
-$(OBJDIR)/$(CONFIG)/test/cpp/qps/qps_worker.o: $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/services.pb.cc $(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.grpc.pb.cc
-$(OBJDIR)/$(CONFIG)/test/cpp/qps/report.o: $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/services.pb.cc $(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.grpc.pb.cc
-$(OBJDIR)/$(CONFIG)/test/cpp/qps/server_async.o: $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/services.pb.cc $(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.grpc.pb.cc
-$(OBJDIR)/$(CONFIG)/test/cpp/qps/server_sync.o: $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/services.pb.cc $(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.grpc.pb.cc
-$(OBJDIR)/$(CONFIG)/test/cpp/qps/timer.o: $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/services.pb.cc $(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.grpc.pb.cc
-$(OBJDIR)/$(CONFIG)/test/cpp/util/benchmark_config.o: $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/services.pb.cc $(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.grpc.pb.cc
+$(OBJDIR)/$(CONFIG)/test/cpp/qps/client_async.o: $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/services.pb.cc $(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.grpc.pb.cc
+$(OBJDIR)/$(CONFIG)/test/cpp/qps/client_sync.o: $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/services.pb.cc $(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.grpc.pb.cc
+$(OBJDIR)/$(CONFIG)/test/cpp/qps/driver.o: $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/services.pb.cc $(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.grpc.pb.cc
+$(OBJDIR)/$(CONFIG)/test/cpp/qps/perf_db_client.o: $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/services.pb.cc $(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.grpc.pb.cc
+$(OBJDIR)/$(CONFIG)/test/cpp/qps/qps_worker.o: $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/services.pb.cc $(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.grpc.pb.cc
+$(OBJDIR)/$(CONFIG)/test/cpp/qps/report.o: $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/services.pb.cc $(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.grpc.pb.cc
+$(OBJDIR)/$(CONFIG)/test/cpp/qps/server_async.o: $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/services.pb.cc $(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.grpc.pb.cc
+$(OBJDIR)/$(CONFIG)/test/cpp/qps/server_sync.o: $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/services.pb.cc $(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.grpc.pb.cc
+$(OBJDIR)/$(CONFIG)/test/cpp/qps/timer.o: $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/services.pb.cc $(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.grpc.pb.cc
+$(OBJDIR)/$(CONFIG)/test/cpp/util/benchmark_config.o: $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/services.pb.cc $(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.grpc.pb.cc
 
 
 LIBGRPC_CSHARP_EXT_SRC = \
@@ -4057,14 +4082,10 @@ LIBBORINGSSL_SRC = \
 
 LIBBORINGSSL_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_SRC))))
 
-# boringssl needs an override to ensure that it does not include
-# system openssl headers regardless of other configuration
-# we do so here with a target specific variable assignment
-$(LIBBORINGSSL_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value -fvisibility=hidden
-$(LIBBORINGSSL_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS) -fvisibility=hidden
-$(LIBBORINGSSL_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+$(LIBBORINGSSL_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE
+$(LIBBORINGSSL_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value
 
-$(LIBDIR)/$(CONFIG)/libboringssl.a: $(ZLIB_DEP) $(OPENSSL_DEP)  $(LIBBORINGSSL_OBJS)
+$(LIBDIR)/$(CONFIG)/libboringssl.a: $(ZLIB_DEP)  $(LIBBORINGSSL_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl.a
@@ -4089,12 +4110,8 @@ LIBBORINGSSL_TEST_UTIL_SRC = \
 
 LIBBORINGSSL_TEST_UTIL_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_TEST_UTIL_SRC))))
 
-# boringssl needs an override to ensure that it does not include
-# system openssl headers regardless of other configuration
-# we do so here with a target specific variable assignment
-$(LIBBORINGSSL_TEST_UTIL_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value -fvisibility=hidden
-$(LIBBORINGSSL_TEST_UTIL_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS) -fvisibility=hidden
-$(LIBBORINGSSL_TEST_UTIL_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+$(LIBBORINGSSL_TEST_UTIL_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE
+$(LIBBORINGSSL_TEST_UTIL_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value
 
 ifeq ($(NO_PROTOBUF),true)
 
@@ -4105,7 +4122,7 @@ $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a: protobuf_dep_error
 
 else
 
-$(LIBDIR)/$(CONFIG)/libboringssl_test_util.a: $(ZLIB_DEP) $(OPENSSL_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_TEST_UTIL_OBJS)
+$(LIBDIR)/$(CONFIG)/libboringssl_test_util.a: $(ZLIB_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_TEST_UTIL_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a
@@ -4130,12 +4147,8 @@ LIBBORINGSSL_AES_TEST_LIB_SRC = \
 
 LIBBORINGSSL_AES_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_AES_TEST_LIB_SRC))))
 
-# boringssl needs an override to ensure that it does not include
-# system openssl headers regardless of other configuration
-# we do so here with a target specific variable assignment
-$(LIBBORINGSSL_AES_TEST_LIB_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value -fvisibility=hidden
-$(LIBBORINGSSL_AES_TEST_LIB_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS) -fvisibility=hidden
-$(LIBBORINGSSL_AES_TEST_LIB_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+$(LIBBORINGSSL_AES_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE
+$(LIBBORINGSSL_AES_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value
 
 ifeq ($(NO_PROTOBUF),true)
 
@@ -4146,7 +4159,7 @@ $(LIBDIR)/$(CONFIG)/libboringssl_aes_test_lib.a: protobuf_dep_error
 
 else
 
-$(LIBDIR)/$(CONFIG)/libboringssl_aes_test_lib.a: $(ZLIB_DEP) $(OPENSSL_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_AES_TEST_LIB_OBJS)
+$(LIBDIR)/$(CONFIG)/libboringssl_aes_test_lib.a: $(ZLIB_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_AES_TEST_LIB_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_aes_test_lib.a
@@ -4171,12 +4184,8 @@ LIBBORINGSSL_BASE64_TEST_LIB_SRC = \
 
 LIBBORINGSSL_BASE64_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_BASE64_TEST_LIB_SRC))))
 
-# boringssl needs an override to ensure that it does not include
-# system openssl headers regardless of other configuration
-# we do so here with a target specific variable assignment
-$(LIBBORINGSSL_BASE64_TEST_LIB_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value -fvisibility=hidden
-$(LIBBORINGSSL_BASE64_TEST_LIB_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS) -fvisibility=hidden
-$(LIBBORINGSSL_BASE64_TEST_LIB_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+$(LIBBORINGSSL_BASE64_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE
+$(LIBBORINGSSL_BASE64_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value
 
 ifeq ($(NO_PROTOBUF),true)
 
@@ -4187,7 +4196,7 @@ $(LIBDIR)/$(CONFIG)/libboringssl_base64_test_lib.a: protobuf_dep_error
 
 else
 
-$(LIBDIR)/$(CONFIG)/libboringssl_base64_test_lib.a: $(ZLIB_DEP) $(OPENSSL_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_BASE64_TEST_LIB_OBJS)
+$(LIBDIR)/$(CONFIG)/libboringssl_base64_test_lib.a: $(ZLIB_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_BASE64_TEST_LIB_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_base64_test_lib.a
@@ -4212,12 +4221,8 @@ LIBBORINGSSL_BIO_TEST_LIB_SRC = \
 
 LIBBORINGSSL_BIO_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_BIO_TEST_LIB_SRC))))
 
-# boringssl needs an override to ensure that it does not include
-# system openssl headers regardless of other configuration
-# we do so here with a target specific variable assignment
-$(LIBBORINGSSL_BIO_TEST_LIB_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value -fvisibility=hidden
-$(LIBBORINGSSL_BIO_TEST_LIB_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS) -fvisibility=hidden
-$(LIBBORINGSSL_BIO_TEST_LIB_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+$(LIBBORINGSSL_BIO_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE
+$(LIBBORINGSSL_BIO_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value
 
 ifeq ($(NO_PROTOBUF),true)
 
@@ -4228,7 +4233,7 @@ $(LIBDIR)/$(CONFIG)/libboringssl_bio_test_lib.a: protobuf_dep_error
 
 else
 
-$(LIBDIR)/$(CONFIG)/libboringssl_bio_test_lib.a: $(ZLIB_DEP) $(OPENSSL_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_BIO_TEST_LIB_OBJS)
+$(LIBDIR)/$(CONFIG)/libboringssl_bio_test_lib.a: $(ZLIB_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_BIO_TEST_LIB_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_bio_test_lib.a
@@ -4253,12 +4258,8 @@ LIBBORINGSSL_BN_TEST_LIB_SRC = \
 
 LIBBORINGSSL_BN_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_BN_TEST_LIB_SRC))))
 
-# boringssl needs an override to ensure that it does not include
-# system openssl headers regardless of other configuration
-# we do so here with a target specific variable assignment
-$(LIBBORINGSSL_BN_TEST_LIB_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value -fvisibility=hidden
-$(LIBBORINGSSL_BN_TEST_LIB_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS) -fvisibility=hidden
-$(LIBBORINGSSL_BN_TEST_LIB_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+$(LIBBORINGSSL_BN_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE
+$(LIBBORINGSSL_BN_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value
 
 ifeq ($(NO_PROTOBUF),true)
 
@@ -4269,7 +4270,7 @@ $(LIBDIR)/$(CONFIG)/libboringssl_bn_test_lib.a: protobuf_dep_error
 
 else
 
-$(LIBDIR)/$(CONFIG)/libboringssl_bn_test_lib.a: $(ZLIB_DEP) $(OPENSSL_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_BN_TEST_LIB_OBJS)
+$(LIBDIR)/$(CONFIG)/libboringssl_bn_test_lib.a: $(ZLIB_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_BN_TEST_LIB_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_bn_test_lib.a
@@ -4294,12 +4295,8 @@ LIBBORINGSSL_BYTESTRING_TEST_LIB_SRC = \
 
 LIBBORINGSSL_BYTESTRING_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_BYTESTRING_TEST_LIB_SRC))))
 
-# boringssl needs an override to ensure that it does not include
-# system openssl headers regardless of other configuration
-# we do so here with a target specific variable assignment
-$(LIBBORINGSSL_BYTESTRING_TEST_LIB_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value -fvisibility=hidden
-$(LIBBORINGSSL_BYTESTRING_TEST_LIB_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS) -fvisibility=hidden
-$(LIBBORINGSSL_BYTESTRING_TEST_LIB_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+$(LIBBORINGSSL_BYTESTRING_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE
+$(LIBBORINGSSL_BYTESTRING_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value
 
 ifeq ($(NO_PROTOBUF),true)
 
@@ -4310,7 +4307,7 @@ $(LIBDIR)/$(CONFIG)/libboringssl_bytestring_test_lib.a: protobuf_dep_error
 
 else
 
-$(LIBDIR)/$(CONFIG)/libboringssl_bytestring_test_lib.a: $(ZLIB_DEP) $(OPENSSL_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_BYTESTRING_TEST_LIB_OBJS)
+$(LIBDIR)/$(CONFIG)/libboringssl_bytestring_test_lib.a: $(ZLIB_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_BYTESTRING_TEST_LIB_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_bytestring_test_lib.a
@@ -4335,12 +4332,8 @@ LIBBORINGSSL_AEAD_TEST_LIB_SRC = \
 
 LIBBORINGSSL_AEAD_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_AEAD_TEST_LIB_SRC))))
 
-# boringssl needs an override to ensure that it does not include
-# system openssl headers regardless of other configuration
-# we do so here with a target specific variable assignment
-$(LIBBORINGSSL_AEAD_TEST_LIB_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value -fvisibility=hidden
-$(LIBBORINGSSL_AEAD_TEST_LIB_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS) -fvisibility=hidden
-$(LIBBORINGSSL_AEAD_TEST_LIB_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+$(LIBBORINGSSL_AEAD_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE
+$(LIBBORINGSSL_AEAD_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value
 
 ifeq ($(NO_PROTOBUF),true)
 
@@ -4351,7 +4344,7 @@ $(LIBDIR)/$(CONFIG)/libboringssl_aead_test_lib.a: protobuf_dep_error
 
 else
 
-$(LIBDIR)/$(CONFIG)/libboringssl_aead_test_lib.a: $(ZLIB_DEP) $(OPENSSL_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_AEAD_TEST_LIB_OBJS)
+$(LIBDIR)/$(CONFIG)/libboringssl_aead_test_lib.a: $(ZLIB_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_AEAD_TEST_LIB_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_aead_test_lib.a
@@ -4376,12 +4369,8 @@ LIBBORINGSSL_CIPHER_TEST_LIB_SRC = \
 
 LIBBORINGSSL_CIPHER_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_CIPHER_TEST_LIB_SRC))))
 
-# boringssl needs an override to ensure that it does not include
-# system openssl headers regardless of other configuration
-# we do so here with a target specific variable assignment
-$(LIBBORINGSSL_CIPHER_TEST_LIB_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value -fvisibility=hidden
-$(LIBBORINGSSL_CIPHER_TEST_LIB_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS) -fvisibility=hidden
-$(LIBBORINGSSL_CIPHER_TEST_LIB_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+$(LIBBORINGSSL_CIPHER_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE
+$(LIBBORINGSSL_CIPHER_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value
 
 ifeq ($(NO_PROTOBUF),true)
 
@@ -4392,7 +4381,7 @@ $(LIBDIR)/$(CONFIG)/libboringssl_cipher_test_lib.a: protobuf_dep_error
 
 else
 
-$(LIBDIR)/$(CONFIG)/libboringssl_cipher_test_lib.a: $(ZLIB_DEP) $(OPENSSL_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_CIPHER_TEST_LIB_OBJS)
+$(LIBDIR)/$(CONFIG)/libboringssl_cipher_test_lib.a: $(ZLIB_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_CIPHER_TEST_LIB_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_cipher_test_lib.a
@@ -4417,12 +4406,8 @@ LIBBORINGSSL_CMAC_TEST_LIB_SRC = \
 
 LIBBORINGSSL_CMAC_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_CMAC_TEST_LIB_SRC))))
 
-# boringssl needs an override to ensure that it does not include
-# system openssl headers regardless of other configuration
-# we do so here with a target specific variable assignment
-$(LIBBORINGSSL_CMAC_TEST_LIB_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value -fvisibility=hidden
-$(LIBBORINGSSL_CMAC_TEST_LIB_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS) -fvisibility=hidden
-$(LIBBORINGSSL_CMAC_TEST_LIB_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+$(LIBBORINGSSL_CMAC_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE
+$(LIBBORINGSSL_CMAC_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value
 
 ifeq ($(NO_PROTOBUF),true)
 
@@ -4433,7 +4418,7 @@ $(LIBDIR)/$(CONFIG)/libboringssl_cmac_test_lib.a: protobuf_dep_error
 
 else
 
-$(LIBDIR)/$(CONFIG)/libboringssl_cmac_test_lib.a: $(ZLIB_DEP) $(OPENSSL_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_CMAC_TEST_LIB_OBJS)
+$(LIBDIR)/$(CONFIG)/libboringssl_cmac_test_lib.a: $(ZLIB_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_CMAC_TEST_LIB_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_cmac_test_lib.a
@@ -4458,14 +4443,10 @@ LIBBORINGSSL_CONSTANT_TIME_TEST_LIB_SRC = \
 
 LIBBORINGSSL_CONSTANT_TIME_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_CONSTANT_TIME_TEST_LIB_SRC))))
 
-# boringssl needs an override to ensure that it does not include
-# system openssl headers regardless of other configuration
-# we do so here with a target specific variable assignment
-$(LIBBORINGSSL_CONSTANT_TIME_TEST_LIB_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value -fvisibility=hidden
-$(LIBBORINGSSL_CONSTANT_TIME_TEST_LIB_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS) -fvisibility=hidden
-$(LIBBORINGSSL_CONSTANT_TIME_TEST_LIB_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+$(LIBBORINGSSL_CONSTANT_TIME_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE
+$(LIBBORINGSSL_CONSTANT_TIME_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value
 
-$(LIBDIR)/$(CONFIG)/libboringssl_constant_time_test_lib.a: $(ZLIB_DEP) $(OPENSSL_DEP)  $(LIBBORINGSSL_CONSTANT_TIME_TEST_LIB_OBJS)
+$(LIBDIR)/$(CONFIG)/libboringssl_constant_time_test_lib.a: $(ZLIB_DEP)  $(LIBBORINGSSL_CONSTANT_TIME_TEST_LIB_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_constant_time_test_lib.a
@@ -4488,12 +4469,8 @@ LIBBORINGSSL_ED25519_TEST_LIB_SRC = \
 
 LIBBORINGSSL_ED25519_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_ED25519_TEST_LIB_SRC))))
 
-# boringssl needs an override to ensure that it does not include
-# system openssl headers regardless of other configuration
-# we do so here with a target specific variable assignment
-$(LIBBORINGSSL_ED25519_TEST_LIB_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value -fvisibility=hidden
-$(LIBBORINGSSL_ED25519_TEST_LIB_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS) -fvisibility=hidden
-$(LIBBORINGSSL_ED25519_TEST_LIB_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+$(LIBBORINGSSL_ED25519_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE
+$(LIBBORINGSSL_ED25519_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value
 
 ifeq ($(NO_PROTOBUF),true)
 
@@ -4504,7 +4481,7 @@ $(LIBDIR)/$(CONFIG)/libboringssl_ed25519_test_lib.a: protobuf_dep_error
 
 else
 
-$(LIBDIR)/$(CONFIG)/libboringssl_ed25519_test_lib.a: $(ZLIB_DEP) $(OPENSSL_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_ED25519_TEST_LIB_OBJS)
+$(LIBDIR)/$(CONFIG)/libboringssl_ed25519_test_lib.a: $(ZLIB_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_ED25519_TEST_LIB_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_ed25519_test_lib.a
@@ -4529,12 +4506,8 @@ LIBBORINGSSL_X25519_TEST_LIB_SRC = \
 
 LIBBORINGSSL_X25519_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_X25519_TEST_LIB_SRC))))
 
-# boringssl needs an override to ensure that it does not include
-# system openssl headers regardless of other configuration
-# we do so here with a target specific variable assignment
-$(LIBBORINGSSL_X25519_TEST_LIB_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value -fvisibility=hidden
-$(LIBBORINGSSL_X25519_TEST_LIB_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS) -fvisibility=hidden
-$(LIBBORINGSSL_X25519_TEST_LIB_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+$(LIBBORINGSSL_X25519_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE
+$(LIBBORINGSSL_X25519_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value
 
 ifeq ($(NO_PROTOBUF),true)
 
@@ -4545,7 +4518,7 @@ $(LIBDIR)/$(CONFIG)/libboringssl_x25519_test_lib.a: protobuf_dep_error
 
 else
 
-$(LIBDIR)/$(CONFIG)/libboringssl_x25519_test_lib.a: $(ZLIB_DEP) $(OPENSSL_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_X25519_TEST_LIB_OBJS)
+$(LIBDIR)/$(CONFIG)/libboringssl_x25519_test_lib.a: $(ZLIB_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_X25519_TEST_LIB_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_x25519_test_lib.a
@@ -4570,12 +4543,8 @@ LIBBORINGSSL_DH_TEST_LIB_SRC = \
 
 LIBBORINGSSL_DH_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_DH_TEST_LIB_SRC))))
 
-# boringssl needs an override to ensure that it does not include
-# system openssl headers regardless of other configuration
-# we do so here with a target specific variable assignment
-$(LIBBORINGSSL_DH_TEST_LIB_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value -fvisibility=hidden
-$(LIBBORINGSSL_DH_TEST_LIB_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS) -fvisibility=hidden
-$(LIBBORINGSSL_DH_TEST_LIB_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+$(LIBBORINGSSL_DH_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE
+$(LIBBORINGSSL_DH_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value
 
 ifeq ($(NO_PROTOBUF),true)
 
@@ -4586,7 +4555,7 @@ $(LIBDIR)/$(CONFIG)/libboringssl_dh_test_lib.a: protobuf_dep_error
 
 else
 
-$(LIBDIR)/$(CONFIG)/libboringssl_dh_test_lib.a: $(ZLIB_DEP) $(OPENSSL_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_DH_TEST_LIB_OBJS)
+$(LIBDIR)/$(CONFIG)/libboringssl_dh_test_lib.a: $(ZLIB_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_DH_TEST_LIB_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_dh_test_lib.a
@@ -4611,12 +4580,8 @@ LIBBORINGSSL_DIGEST_TEST_LIB_SRC = \
 
 LIBBORINGSSL_DIGEST_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_DIGEST_TEST_LIB_SRC))))
 
-# boringssl needs an override to ensure that it does not include
-# system openssl headers regardless of other configuration
-# we do so here with a target specific variable assignment
-$(LIBBORINGSSL_DIGEST_TEST_LIB_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value -fvisibility=hidden
-$(LIBBORINGSSL_DIGEST_TEST_LIB_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS) -fvisibility=hidden
-$(LIBBORINGSSL_DIGEST_TEST_LIB_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+$(LIBBORINGSSL_DIGEST_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE
+$(LIBBORINGSSL_DIGEST_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value
 
 ifeq ($(NO_PROTOBUF),true)
 
@@ -4627,7 +4592,7 @@ $(LIBDIR)/$(CONFIG)/libboringssl_digest_test_lib.a: protobuf_dep_error
 
 else
 
-$(LIBDIR)/$(CONFIG)/libboringssl_digest_test_lib.a: $(ZLIB_DEP) $(OPENSSL_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_DIGEST_TEST_LIB_OBJS)
+$(LIBDIR)/$(CONFIG)/libboringssl_digest_test_lib.a: $(ZLIB_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_DIGEST_TEST_LIB_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_digest_test_lib.a
@@ -4652,14 +4617,10 @@ LIBBORINGSSL_DSA_TEST_LIB_SRC = \
 
 LIBBORINGSSL_DSA_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_DSA_TEST_LIB_SRC))))
 
-# boringssl needs an override to ensure that it does not include
-# system openssl headers regardless of other configuration
-# we do so here with a target specific variable assignment
-$(LIBBORINGSSL_DSA_TEST_LIB_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value -fvisibility=hidden
-$(LIBBORINGSSL_DSA_TEST_LIB_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS) -fvisibility=hidden
-$(LIBBORINGSSL_DSA_TEST_LIB_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+$(LIBBORINGSSL_DSA_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE
+$(LIBBORINGSSL_DSA_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value
 
-$(LIBDIR)/$(CONFIG)/libboringssl_dsa_test_lib.a: $(ZLIB_DEP) $(OPENSSL_DEP)  $(LIBBORINGSSL_DSA_TEST_LIB_OBJS)
+$(LIBDIR)/$(CONFIG)/libboringssl_dsa_test_lib.a: $(ZLIB_DEP)  $(LIBBORINGSSL_DSA_TEST_LIB_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_dsa_test_lib.a
@@ -4682,12 +4643,8 @@ LIBBORINGSSL_EC_TEST_LIB_SRC = \
 
 LIBBORINGSSL_EC_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_EC_TEST_LIB_SRC))))
 
-# boringssl needs an override to ensure that it does not include
-# system openssl headers regardless of other configuration
-# we do so here with a target specific variable assignment
-$(LIBBORINGSSL_EC_TEST_LIB_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value -fvisibility=hidden
-$(LIBBORINGSSL_EC_TEST_LIB_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS) -fvisibility=hidden
-$(LIBBORINGSSL_EC_TEST_LIB_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+$(LIBBORINGSSL_EC_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE
+$(LIBBORINGSSL_EC_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value
 
 ifeq ($(NO_PROTOBUF),true)
 
@@ -4698,7 +4655,7 @@ $(LIBDIR)/$(CONFIG)/libboringssl_ec_test_lib.a: protobuf_dep_error
 
 else
 
-$(LIBDIR)/$(CONFIG)/libboringssl_ec_test_lib.a: $(ZLIB_DEP) $(OPENSSL_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_EC_TEST_LIB_OBJS)
+$(LIBDIR)/$(CONFIG)/libboringssl_ec_test_lib.a: $(ZLIB_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_EC_TEST_LIB_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_ec_test_lib.a
@@ -4723,14 +4680,10 @@ LIBBORINGSSL_EXAMPLE_MUL_LIB_SRC = \
 
 LIBBORINGSSL_EXAMPLE_MUL_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_EXAMPLE_MUL_LIB_SRC))))
 
-# boringssl needs an override to ensure that it does not include
-# system openssl headers regardless of other configuration
-# we do so here with a target specific variable assignment
-$(LIBBORINGSSL_EXAMPLE_MUL_LIB_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value -fvisibility=hidden
-$(LIBBORINGSSL_EXAMPLE_MUL_LIB_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS) -fvisibility=hidden
-$(LIBBORINGSSL_EXAMPLE_MUL_LIB_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+$(LIBBORINGSSL_EXAMPLE_MUL_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE
+$(LIBBORINGSSL_EXAMPLE_MUL_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value
 
-$(LIBDIR)/$(CONFIG)/libboringssl_example_mul_lib.a: $(ZLIB_DEP) $(OPENSSL_DEP)  $(LIBBORINGSSL_EXAMPLE_MUL_LIB_OBJS)
+$(LIBDIR)/$(CONFIG)/libboringssl_example_mul_lib.a: $(ZLIB_DEP)  $(LIBBORINGSSL_EXAMPLE_MUL_LIB_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_example_mul_lib.a
@@ -4753,12 +4706,8 @@ LIBBORINGSSL_ECDSA_TEST_LIB_SRC = \
 
 LIBBORINGSSL_ECDSA_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_ECDSA_TEST_LIB_SRC))))
 
-# boringssl needs an override to ensure that it does not include
-# system openssl headers regardless of other configuration
-# we do so here with a target specific variable assignment
-$(LIBBORINGSSL_ECDSA_TEST_LIB_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value -fvisibility=hidden
-$(LIBBORINGSSL_ECDSA_TEST_LIB_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS) -fvisibility=hidden
-$(LIBBORINGSSL_ECDSA_TEST_LIB_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+$(LIBBORINGSSL_ECDSA_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE
+$(LIBBORINGSSL_ECDSA_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value
 
 ifeq ($(NO_PROTOBUF),true)
 
@@ -4769,7 +4718,7 @@ $(LIBDIR)/$(CONFIG)/libboringssl_ecdsa_test_lib.a: protobuf_dep_error
 
 else
 
-$(LIBDIR)/$(CONFIG)/libboringssl_ecdsa_test_lib.a: $(ZLIB_DEP) $(OPENSSL_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_ECDSA_TEST_LIB_OBJS)
+$(LIBDIR)/$(CONFIG)/libboringssl_ecdsa_test_lib.a: $(ZLIB_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_ECDSA_TEST_LIB_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_ecdsa_test_lib.a
@@ -4794,12 +4743,8 @@ LIBBORINGSSL_ERR_TEST_LIB_SRC = \
 
 LIBBORINGSSL_ERR_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_ERR_TEST_LIB_SRC))))
 
-# boringssl needs an override to ensure that it does not include
-# system openssl headers regardless of other configuration
-# we do so here with a target specific variable assignment
-$(LIBBORINGSSL_ERR_TEST_LIB_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value -fvisibility=hidden
-$(LIBBORINGSSL_ERR_TEST_LIB_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS) -fvisibility=hidden
-$(LIBBORINGSSL_ERR_TEST_LIB_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+$(LIBBORINGSSL_ERR_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE
+$(LIBBORINGSSL_ERR_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value
 
 ifeq ($(NO_PROTOBUF),true)
 
@@ -4810,7 +4755,7 @@ $(LIBDIR)/$(CONFIG)/libboringssl_err_test_lib.a: protobuf_dep_error
 
 else
 
-$(LIBDIR)/$(CONFIG)/libboringssl_err_test_lib.a: $(ZLIB_DEP) $(OPENSSL_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_ERR_TEST_LIB_OBJS)
+$(LIBDIR)/$(CONFIG)/libboringssl_err_test_lib.a: $(ZLIB_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_ERR_TEST_LIB_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_err_test_lib.a
@@ -4835,12 +4780,8 @@ LIBBORINGSSL_EVP_EXTRA_TEST_LIB_SRC = \
 
 LIBBORINGSSL_EVP_EXTRA_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_EVP_EXTRA_TEST_LIB_SRC))))
 
-# boringssl needs an override to ensure that it does not include
-# system openssl headers regardless of other configuration
-# we do so here with a target specific variable assignment
-$(LIBBORINGSSL_EVP_EXTRA_TEST_LIB_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value -fvisibility=hidden
-$(LIBBORINGSSL_EVP_EXTRA_TEST_LIB_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS) -fvisibility=hidden
-$(LIBBORINGSSL_EVP_EXTRA_TEST_LIB_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+$(LIBBORINGSSL_EVP_EXTRA_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE
+$(LIBBORINGSSL_EVP_EXTRA_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value
 
 ifeq ($(NO_PROTOBUF),true)
 
@@ -4851,7 +4792,7 @@ $(LIBDIR)/$(CONFIG)/libboringssl_evp_extra_test_lib.a: protobuf_dep_error
 
 else
 
-$(LIBDIR)/$(CONFIG)/libboringssl_evp_extra_test_lib.a: $(ZLIB_DEP) $(OPENSSL_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_EVP_EXTRA_TEST_LIB_OBJS)
+$(LIBDIR)/$(CONFIG)/libboringssl_evp_extra_test_lib.a: $(ZLIB_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_EVP_EXTRA_TEST_LIB_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_evp_extra_test_lib.a
@@ -4876,12 +4817,8 @@ LIBBORINGSSL_EVP_TEST_LIB_SRC = \
 
 LIBBORINGSSL_EVP_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_EVP_TEST_LIB_SRC))))
 
-# boringssl needs an override to ensure that it does not include
-# system openssl headers regardless of other configuration
-# we do so here with a target specific variable assignment
-$(LIBBORINGSSL_EVP_TEST_LIB_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value -fvisibility=hidden
-$(LIBBORINGSSL_EVP_TEST_LIB_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS) -fvisibility=hidden
-$(LIBBORINGSSL_EVP_TEST_LIB_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+$(LIBBORINGSSL_EVP_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE
+$(LIBBORINGSSL_EVP_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value
 
 ifeq ($(NO_PROTOBUF),true)
 
@@ -4892,7 +4829,7 @@ $(LIBDIR)/$(CONFIG)/libboringssl_evp_test_lib.a: protobuf_dep_error
 
 else
 
-$(LIBDIR)/$(CONFIG)/libboringssl_evp_test_lib.a: $(ZLIB_DEP) $(OPENSSL_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_EVP_TEST_LIB_OBJS)
+$(LIBDIR)/$(CONFIG)/libboringssl_evp_test_lib.a: $(ZLIB_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_EVP_TEST_LIB_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_evp_test_lib.a
@@ -4917,12 +4854,8 @@ LIBBORINGSSL_PBKDF_TEST_LIB_SRC = \
 
 LIBBORINGSSL_PBKDF_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_PBKDF_TEST_LIB_SRC))))
 
-# boringssl needs an override to ensure that it does not include
-# system openssl headers regardless of other configuration
-# we do so here with a target specific variable assignment
-$(LIBBORINGSSL_PBKDF_TEST_LIB_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value -fvisibility=hidden
-$(LIBBORINGSSL_PBKDF_TEST_LIB_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS) -fvisibility=hidden
-$(LIBBORINGSSL_PBKDF_TEST_LIB_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+$(LIBBORINGSSL_PBKDF_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE
+$(LIBBORINGSSL_PBKDF_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value
 
 ifeq ($(NO_PROTOBUF),true)
 
@@ -4933,7 +4866,7 @@ $(LIBDIR)/$(CONFIG)/libboringssl_pbkdf_test_lib.a: protobuf_dep_error
 
 else
 
-$(LIBDIR)/$(CONFIG)/libboringssl_pbkdf_test_lib.a: $(ZLIB_DEP) $(OPENSSL_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_PBKDF_TEST_LIB_OBJS)
+$(LIBDIR)/$(CONFIG)/libboringssl_pbkdf_test_lib.a: $(ZLIB_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_PBKDF_TEST_LIB_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_pbkdf_test_lib.a
@@ -4958,14 +4891,10 @@ LIBBORINGSSL_HKDF_TEST_LIB_SRC = \
 
 LIBBORINGSSL_HKDF_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_HKDF_TEST_LIB_SRC))))
 
-# boringssl needs an override to ensure that it does not include
-# system openssl headers regardless of other configuration
-# we do so here with a target specific variable assignment
-$(LIBBORINGSSL_HKDF_TEST_LIB_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value -fvisibility=hidden
-$(LIBBORINGSSL_HKDF_TEST_LIB_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS) -fvisibility=hidden
-$(LIBBORINGSSL_HKDF_TEST_LIB_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+$(LIBBORINGSSL_HKDF_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE
+$(LIBBORINGSSL_HKDF_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value
 
-$(LIBDIR)/$(CONFIG)/libboringssl_hkdf_test_lib.a: $(ZLIB_DEP) $(OPENSSL_DEP)  $(LIBBORINGSSL_HKDF_TEST_LIB_OBJS)
+$(LIBDIR)/$(CONFIG)/libboringssl_hkdf_test_lib.a: $(ZLIB_DEP)  $(LIBBORINGSSL_HKDF_TEST_LIB_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_hkdf_test_lib.a
@@ -4988,12 +4917,8 @@ LIBBORINGSSL_HMAC_TEST_LIB_SRC = \
 
 LIBBORINGSSL_HMAC_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_HMAC_TEST_LIB_SRC))))
 
-# boringssl needs an override to ensure that it does not include
-# system openssl headers regardless of other configuration
-# we do so here with a target specific variable assignment
-$(LIBBORINGSSL_HMAC_TEST_LIB_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value -fvisibility=hidden
-$(LIBBORINGSSL_HMAC_TEST_LIB_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS) -fvisibility=hidden
-$(LIBBORINGSSL_HMAC_TEST_LIB_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+$(LIBBORINGSSL_HMAC_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE
+$(LIBBORINGSSL_HMAC_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value
 
 ifeq ($(NO_PROTOBUF),true)
 
@@ -5004,7 +4929,7 @@ $(LIBDIR)/$(CONFIG)/libboringssl_hmac_test_lib.a: protobuf_dep_error
 
 else
 
-$(LIBDIR)/$(CONFIG)/libboringssl_hmac_test_lib.a: $(ZLIB_DEP) $(OPENSSL_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_HMAC_TEST_LIB_OBJS)
+$(LIBDIR)/$(CONFIG)/libboringssl_hmac_test_lib.a: $(ZLIB_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_HMAC_TEST_LIB_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_hmac_test_lib.a
@@ -5029,14 +4954,10 @@ LIBBORINGSSL_LHASH_TEST_LIB_SRC = \
 
 LIBBORINGSSL_LHASH_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_LHASH_TEST_LIB_SRC))))
 
-# boringssl needs an override to ensure that it does not include
-# system openssl headers regardless of other configuration
-# we do so here with a target specific variable assignment
-$(LIBBORINGSSL_LHASH_TEST_LIB_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value -fvisibility=hidden
-$(LIBBORINGSSL_LHASH_TEST_LIB_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS) -fvisibility=hidden
-$(LIBBORINGSSL_LHASH_TEST_LIB_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+$(LIBBORINGSSL_LHASH_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE
+$(LIBBORINGSSL_LHASH_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value
 
-$(LIBDIR)/$(CONFIG)/libboringssl_lhash_test_lib.a: $(ZLIB_DEP) $(OPENSSL_DEP)  $(LIBBORINGSSL_LHASH_TEST_LIB_OBJS)
+$(LIBDIR)/$(CONFIG)/libboringssl_lhash_test_lib.a: $(ZLIB_DEP)  $(LIBBORINGSSL_LHASH_TEST_LIB_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_lhash_test_lib.a
@@ -5059,14 +4980,10 @@ LIBBORINGSSL_GCM_TEST_LIB_SRC = \
 
 LIBBORINGSSL_GCM_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_GCM_TEST_LIB_SRC))))
 
-# boringssl needs an override to ensure that it does not include
-# system openssl headers regardless of other configuration
-# we do so here with a target specific variable assignment
-$(LIBBORINGSSL_GCM_TEST_LIB_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value -fvisibility=hidden
-$(LIBBORINGSSL_GCM_TEST_LIB_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS) -fvisibility=hidden
-$(LIBBORINGSSL_GCM_TEST_LIB_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+$(LIBBORINGSSL_GCM_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE
+$(LIBBORINGSSL_GCM_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value
 
-$(LIBDIR)/$(CONFIG)/libboringssl_gcm_test_lib.a: $(ZLIB_DEP) $(OPENSSL_DEP)  $(LIBBORINGSSL_GCM_TEST_LIB_OBJS)
+$(LIBDIR)/$(CONFIG)/libboringssl_gcm_test_lib.a: $(ZLIB_DEP)  $(LIBBORINGSSL_GCM_TEST_LIB_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_gcm_test_lib.a
@@ -5089,12 +5006,8 @@ LIBBORINGSSL_PKCS12_TEST_LIB_SRC = \
 
 LIBBORINGSSL_PKCS12_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_PKCS12_TEST_LIB_SRC))))
 
-# boringssl needs an override to ensure that it does not include
-# system openssl headers regardless of other configuration
-# we do so here with a target specific variable assignment
-$(LIBBORINGSSL_PKCS12_TEST_LIB_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value -fvisibility=hidden
-$(LIBBORINGSSL_PKCS12_TEST_LIB_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS) -fvisibility=hidden
-$(LIBBORINGSSL_PKCS12_TEST_LIB_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+$(LIBBORINGSSL_PKCS12_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE
+$(LIBBORINGSSL_PKCS12_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value
 
 ifeq ($(NO_PROTOBUF),true)
 
@@ -5105,7 +5018,7 @@ $(LIBDIR)/$(CONFIG)/libboringssl_pkcs12_test_lib.a: protobuf_dep_error
 
 else
 
-$(LIBDIR)/$(CONFIG)/libboringssl_pkcs12_test_lib.a: $(ZLIB_DEP) $(OPENSSL_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_PKCS12_TEST_LIB_OBJS)
+$(LIBDIR)/$(CONFIG)/libboringssl_pkcs12_test_lib.a: $(ZLIB_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_PKCS12_TEST_LIB_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_pkcs12_test_lib.a
@@ -5130,12 +5043,8 @@ LIBBORINGSSL_PKCS8_TEST_LIB_SRC = \
 
 LIBBORINGSSL_PKCS8_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_PKCS8_TEST_LIB_SRC))))
 
-# boringssl needs an override to ensure that it does not include
-# system openssl headers regardless of other configuration
-# we do so here with a target specific variable assignment
-$(LIBBORINGSSL_PKCS8_TEST_LIB_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value -fvisibility=hidden
-$(LIBBORINGSSL_PKCS8_TEST_LIB_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS) -fvisibility=hidden
-$(LIBBORINGSSL_PKCS8_TEST_LIB_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+$(LIBBORINGSSL_PKCS8_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE
+$(LIBBORINGSSL_PKCS8_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value
 
 ifeq ($(NO_PROTOBUF),true)
 
@@ -5146,7 +5055,7 @@ $(LIBDIR)/$(CONFIG)/libboringssl_pkcs8_test_lib.a: protobuf_dep_error
 
 else
 
-$(LIBDIR)/$(CONFIG)/libboringssl_pkcs8_test_lib.a: $(ZLIB_DEP) $(OPENSSL_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_PKCS8_TEST_LIB_OBJS)
+$(LIBDIR)/$(CONFIG)/libboringssl_pkcs8_test_lib.a: $(ZLIB_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_PKCS8_TEST_LIB_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_pkcs8_test_lib.a
@@ -5171,12 +5080,8 @@ LIBBORINGSSL_POLY1305_TEST_LIB_SRC = \
 
 LIBBORINGSSL_POLY1305_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_POLY1305_TEST_LIB_SRC))))
 
-# boringssl needs an override to ensure that it does not include
-# system openssl headers regardless of other configuration
-# we do so here with a target specific variable assignment
-$(LIBBORINGSSL_POLY1305_TEST_LIB_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value -fvisibility=hidden
-$(LIBBORINGSSL_POLY1305_TEST_LIB_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS) -fvisibility=hidden
-$(LIBBORINGSSL_POLY1305_TEST_LIB_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+$(LIBBORINGSSL_POLY1305_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE
+$(LIBBORINGSSL_POLY1305_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value
 
 ifeq ($(NO_PROTOBUF),true)
 
@@ -5187,7 +5092,7 @@ $(LIBDIR)/$(CONFIG)/libboringssl_poly1305_test_lib.a: protobuf_dep_error
 
 else
 
-$(LIBDIR)/$(CONFIG)/libboringssl_poly1305_test_lib.a: $(ZLIB_DEP) $(OPENSSL_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_POLY1305_TEST_LIB_OBJS)
+$(LIBDIR)/$(CONFIG)/libboringssl_poly1305_test_lib.a: $(ZLIB_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_POLY1305_TEST_LIB_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_poly1305_test_lib.a
@@ -5212,14 +5117,10 @@ LIBBORINGSSL_REFCOUNT_TEST_LIB_SRC = \
 
 LIBBORINGSSL_REFCOUNT_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_REFCOUNT_TEST_LIB_SRC))))
 
-# boringssl needs an override to ensure that it does not include
-# system openssl headers regardless of other configuration
-# we do so here with a target specific variable assignment
-$(LIBBORINGSSL_REFCOUNT_TEST_LIB_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value -fvisibility=hidden
-$(LIBBORINGSSL_REFCOUNT_TEST_LIB_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS) -fvisibility=hidden
-$(LIBBORINGSSL_REFCOUNT_TEST_LIB_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+$(LIBBORINGSSL_REFCOUNT_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE
+$(LIBBORINGSSL_REFCOUNT_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value
 
-$(LIBDIR)/$(CONFIG)/libboringssl_refcount_test_lib.a: $(ZLIB_DEP) $(OPENSSL_DEP)  $(LIBBORINGSSL_REFCOUNT_TEST_LIB_OBJS)
+$(LIBDIR)/$(CONFIG)/libboringssl_refcount_test_lib.a: $(ZLIB_DEP)  $(LIBBORINGSSL_REFCOUNT_TEST_LIB_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_refcount_test_lib.a
@@ -5242,12 +5143,8 @@ LIBBORINGSSL_RSA_TEST_LIB_SRC = \
 
 LIBBORINGSSL_RSA_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_RSA_TEST_LIB_SRC))))
 
-# boringssl needs an override to ensure that it does not include
-# system openssl headers regardless of other configuration
-# we do so here with a target specific variable assignment
-$(LIBBORINGSSL_RSA_TEST_LIB_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value -fvisibility=hidden
-$(LIBBORINGSSL_RSA_TEST_LIB_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS) -fvisibility=hidden
-$(LIBBORINGSSL_RSA_TEST_LIB_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+$(LIBBORINGSSL_RSA_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE
+$(LIBBORINGSSL_RSA_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value
 
 ifeq ($(NO_PROTOBUF),true)
 
@@ -5258,7 +5155,7 @@ $(LIBDIR)/$(CONFIG)/libboringssl_rsa_test_lib.a: protobuf_dep_error
 
 else
 
-$(LIBDIR)/$(CONFIG)/libboringssl_rsa_test_lib.a: $(ZLIB_DEP) $(OPENSSL_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_RSA_TEST_LIB_OBJS)
+$(LIBDIR)/$(CONFIG)/libboringssl_rsa_test_lib.a: $(ZLIB_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_RSA_TEST_LIB_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_rsa_test_lib.a
@@ -5283,14 +5180,10 @@ LIBBORINGSSL_THREAD_TEST_LIB_SRC = \
 
 LIBBORINGSSL_THREAD_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_THREAD_TEST_LIB_SRC))))
 
-# boringssl needs an override to ensure that it does not include
-# system openssl headers regardless of other configuration
-# we do so here with a target specific variable assignment
-$(LIBBORINGSSL_THREAD_TEST_LIB_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value -fvisibility=hidden
-$(LIBBORINGSSL_THREAD_TEST_LIB_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS) -fvisibility=hidden
-$(LIBBORINGSSL_THREAD_TEST_LIB_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+$(LIBBORINGSSL_THREAD_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE
+$(LIBBORINGSSL_THREAD_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value
 
-$(LIBDIR)/$(CONFIG)/libboringssl_thread_test_lib.a: $(ZLIB_DEP) $(OPENSSL_DEP)  $(LIBBORINGSSL_THREAD_TEST_LIB_OBJS)
+$(LIBDIR)/$(CONFIG)/libboringssl_thread_test_lib.a: $(ZLIB_DEP)  $(LIBBORINGSSL_THREAD_TEST_LIB_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_thread_test_lib.a
@@ -5313,14 +5206,10 @@ LIBBORINGSSL_PKCS7_TEST_LIB_SRC = \
 
 LIBBORINGSSL_PKCS7_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_PKCS7_TEST_LIB_SRC))))
 
-# boringssl needs an override to ensure that it does not include
-# system openssl headers regardless of other configuration
-# we do so here with a target specific variable assignment
-$(LIBBORINGSSL_PKCS7_TEST_LIB_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value -fvisibility=hidden
-$(LIBBORINGSSL_PKCS7_TEST_LIB_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS) -fvisibility=hidden
-$(LIBBORINGSSL_PKCS7_TEST_LIB_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+$(LIBBORINGSSL_PKCS7_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE
+$(LIBBORINGSSL_PKCS7_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value
 
-$(LIBDIR)/$(CONFIG)/libboringssl_pkcs7_test_lib.a: $(ZLIB_DEP) $(OPENSSL_DEP)  $(LIBBORINGSSL_PKCS7_TEST_LIB_OBJS)
+$(LIBDIR)/$(CONFIG)/libboringssl_pkcs7_test_lib.a: $(ZLIB_DEP)  $(LIBBORINGSSL_PKCS7_TEST_LIB_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_pkcs7_test_lib.a
@@ -5343,14 +5232,10 @@ LIBBORINGSSL_TAB_TEST_LIB_SRC = \
 
 LIBBORINGSSL_TAB_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_TAB_TEST_LIB_SRC))))
 
-# boringssl needs an override to ensure that it does not include
-# system openssl headers regardless of other configuration
-# we do so here with a target specific variable assignment
-$(LIBBORINGSSL_TAB_TEST_LIB_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value -fvisibility=hidden
-$(LIBBORINGSSL_TAB_TEST_LIB_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS) -fvisibility=hidden
-$(LIBBORINGSSL_TAB_TEST_LIB_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+$(LIBBORINGSSL_TAB_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE
+$(LIBBORINGSSL_TAB_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value
 
-$(LIBDIR)/$(CONFIG)/libboringssl_tab_test_lib.a: $(ZLIB_DEP) $(OPENSSL_DEP)  $(LIBBORINGSSL_TAB_TEST_LIB_OBJS)
+$(LIBDIR)/$(CONFIG)/libboringssl_tab_test_lib.a: $(ZLIB_DEP)  $(LIBBORINGSSL_TAB_TEST_LIB_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_tab_test_lib.a
@@ -5373,14 +5258,10 @@ LIBBORINGSSL_V3NAME_TEST_LIB_SRC = \
 
 LIBBORINGSSL_V3NAME_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_V3NAME_TEST_LIB_SRC))))
 
-# boringssl needs an override to ensure that it does not include
-# system openssl headers regardless of other configuration
-# we do so here with a target specific variable assignment
-$(LIBBORINGSSL_V3NAME_TEST_LIB_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value -fvisibility=hidden
-$(LIBBORINGSSL_V3NAME_TEST_LIB_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS) -fvisibility=hidden
-$(LIBBORINGSSL_V3NAME_TEST_LIB_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+$(LIBBORINGSSL_V3NAME_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE
+$(LIBBORINGSSL_V3NAME_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value
 
-$(LIBDIR)/$(CONFIG)/libboringssl_v3name_test_lib.a: $(ZLIB_DEP) $(OPENSSL_DEP)  $(LIBBORINGSSL_V3NAME_TEST_LIB_OBJS)
+$(LIBDIR)/$(CONFIG)/libboringssl_v3name_test_lib.a: $(ZLIB_DEP)  $(LIBBORINGSSL_V3NAME_TEST_LIB_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_v3name_test_lib.a
@@ -5403,14 +5284,10 @@ LIBBORINGSSL_PQUEUE_TEST_LIB_SRC = \
 
 LIBBORINGSSL_PQUEUE_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_PQUEUE_TEST_LIB_SRC))))
 
-# boringssl needs an override to ensure that it does not include
-# system openssl headers regardless of other configuration
-# we do so here with a target specific variable assignment
-$(LIBBORINGSSL_PQUEUE_TEST_LIB_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value -fvisibility=hidden
-$(LIBBORINGSSL_PQUEUE_TEST_LIB_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS) -fvisibility=hidden
-$(LIBBORINGSSL_PQUEUE_TEST_LIB_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+$(LIBBORINGSSL_PQUEUE_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE
+$(LIBBORINGSSL_PQUEUE_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value
 
-$(LIBDIR)/$(CONFIG)/libboringssl_pqueue_test_lib.a: $(ZLIB_DEP) $(OPENSSL_DEP)  $(LIBBORINGSSL_PQUEUE_TEST_LIB_OBJS)
+$(LIBDIR)/$(CONFIG)/libboringssl_pqueue_test_lib.a: $(ZLIB_DEP)  $(LIBBORINGSSL_PQUEUE_TEST_LIB_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_pqueue_test_lib.a
@@ -5433,12 +5310,8 @@ LIBBORINGSSL_SSL_TEST_LIB_SRC = \
 
 LIBBORINGSSL_SSL_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_SSL_TEST_LIB_SRC))))
 
-# boringssl needs an override to ensure that it does not include
-# system openssl headers regardless of other configuration
-# we do so here with a target specific variable assignment
-$(LIBBORINGSSL_SSL_TEST_LIB_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value -fvisibility=hidden
-$(LIBBORINGSSL_SSL_TEST_LIB_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS) -fvisibility=hidden
-$(LIBBORINGSSL_SSL_TEST_LIB_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+$(LIBBORINGSSL_SSL_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE
+$(LIBBORINGSSL_SSL_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value
 
 ifeq ($(NO_PROTOBUF),true)
 
@@ -5449,7 +5322,7 @@ $(LIBDIR)/$(CONFIG)/libboringssl_ssl_test_lib.a: protobuf_dep_error
 
 else
 
-$(LIBDIR)/$(CONFIG)/libboringssl_ssl_test_lib.a: $(ZLIB_DEP) $(OPENSSL_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_SSL_TEST_LIB_OBJS)
+$(LIBDIR)/$(CONFIG)/libboringssl_ssl_test_lib.a: $(ZLIB_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_SSL_TEST_LIB_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_ssl_test_lib.a
@@ -5465,6 +5338,121 @@ endif
 
 ifneq ($(NO_DEPS),true)
 -include $(LIBBORINGSSL_SSL_TEST_LIB_OBJS:.o=.dep)
+endif
+
+
+LIBZ_SRC = \
+    third_party/zlib/adler32.c \
+    third_party/zlib/compress.c \
+    third_party/zlib/crc32.c \
+    third_party/zlib/deflate.c \
+    third_party/zlib/gzclose.c \
+    third_party/zlib/gzlib.c \
+    third_party/zlib/gzread.c \
+    third_party/zlib/gzwrite.c \
+    third_party/zlib/infback.c \
+    third_party/zlib/inffast.c \
+    third_party/zlib/inflate.c \
+    third_party/zlib/inftrees.c \
+    third_party/zlib/trees.c \
+    third_party/zlib/uncompr.c \
+    third_party/zlib/zutil.c \
+
+
+LIBZ_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBZ_SRC))))
+
+$(LIBZ_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-implicit-function-declaration $(W_NO_SHIFT_NEGATIVE_VALUE) -fvisibility=hidden
+
+$(LIBDIR)/$(CONFIG)/libz.a:  $(LIBZ_OBJS)
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libz.a
+	$(Q) $(AR) rcs $(LIBDIR)/$(CONFIG)/libz.a $(LIBZ_OBJS)
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib $(LIBDIR)/$(CONFIG)/libz.a
+endif
+
+
+
+
+ifneq ($(NO_DEPS),true)
+-include $(LIBZ_OBJS:.o=.dep)
+endif
+
+
+LIBBAD_CLIENT_TEST_SRC = \
+    test/core/bad_client/bad_client.c \
+
+
+LIBBAD_CLIENT_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBAD_CLIENT_TEST_SRC))))
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure libraries if you don't have OpenSSL.
+
+$(LIBDIR)/$(CONFIG)/libbad_client_test.a: openssl_dep_error
+
+
+else
+
+
+$(LIBDIR)/$(CONFIG)/libbad_client_test.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(LIBBAD_CLIENT_TEST_OBJS)
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libbad_client_test.a
+	$(Q) $(AR) rcs $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBBAD_CLIENT_TEST_OBJS)
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib $(LIBDIR)/$(CONFIG)/libbad_client_test.a
+endif
+
+
+
+
+endif
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(LIBBAD_CLIENT_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+LIBBAD_SSL_TEST_SERVER_SRC = \
+    test/core/bad_ssl/server.c \
+
+
+LIBBAD_SSL_TEST_SERVER_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBAD_SSL_TEST_SERVER_SRC))))
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure libraries if you don't have OpenSSL.
+
+$(LIBDIR)/$(CONFIG)/libbad_ssl_test_server.a: openssl_dep_error
+
+
+else
+
+
+$(LIBDIR)/$(CONFIG)/libbad_ssl_test_server.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(LIBBAD_SSL_TEST_SERVER_OBJS)
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libbad_ssl_test_server.a
+	$(Q) $(AR) rcs $(LIBDIR)/$(CONFIG)/libbad_ssl_test_server.a $(LIBBAD_SSL_TEST_SERVER_OBJS)
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib $(LIBDIR)/$(CONFIG)/libbad_ssl_test_server.a
+endif
+
+
+
+
+endif
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(LIBBAD_SSL_TEST_SERVER_OBJS:.o=.dep)
+endif
 endif
 
 
@@ -5584,7 +5572,7 @@ LIBEND2END_NOSEC_TESTS_SRC = \
 LIBEND2END_NOSEC_TESTS_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_NOSEC_TESTS_SRC))))
 
 
-$(LIBDIR)/$(CONFIG)/libend2end_nosec_tests.a: $(ZLIB_DEP) $(OPENSSL_DEP)  $(LIBEND2END_NOSEC_TESTS_OBJS)
+$(LIBDIR)/$(CONFIG)/libend2end_nosec_tests.a: $(ZLIB_DEP)  $(LIBEND2END_NOSEC_TESTS_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libend2end_nosec_tests.a
@@ -5637,82 +5625,6 @@ endif
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(LIBEND2END_CERTS_OBJS:.o=.dep)
-endif
-endif
-
-
-LIBBAD_CLIENT_TEST_SRC = \
-    test/core/bad_client/bad_client.c \
-
-
-LIBBAD_CLIENT_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBAD_CLIENT_TEST_SRC))))
-
-
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure libraries if you don't have OpenSSL.
-
-$(LIBDIR)/$(CONFIG)/libbad_client_test.a: openssl_dep_error
-
-
-else
-
-
-$(LIBDIR)/$(CONFIG)/libbad_client_test.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(LIBBAD_CLIENT_TEST_OBJS)
-	$(E) "[AR]      Creating $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libbad_client_test.a
-	$(Q) $(AR) rcs $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBBAD_CLIENT_TEST_OBJS)
-ifeq ($(SYSTEM),Darwin)
-	$(Q) ranlib $(LIBDIR)/$(CONFIG)/libbad_client_test.a
-endif
-
-
-
-
-endif
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(LIBBAD_CLIENT_TEST_OBJS:.o=.dep)
-endif
-endif
-
-
-LIBBAD_SSL_TEST_SERVER_SRC = \
-    test/core/bad_ssl/server.c \
-
-
-LIBBAD_SSL_TEST_SERVER_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBAD_SSL_TEST_SERVER_SRC))))
-
-
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure libraries if you don't have OpenSSL.
-
-$(LIBDIR)/$(CONFIG)/libbad_ssl_test_server.a: openssl_dep_error
-
-
-else
-
-
-$(LIBDIR)/$(CONFIG)/libbad_ssl_test_server.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(LIBBAD_SSL_TEST_SERVER_OBJS)
-	$(E) "[AR]      Creating $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libbad_ssl_test_server.a
-	$(Q) $(AR) rcs $(LIBDIR)/$(CONFIG)/libbad_ssl_test_server.a $(LIBBAD_SSL_TEST_SERVER_OBJS)
-ifeq ($(SYSTEM),Darwin)
-	$(Q) ranlib $(LIBDIR)/$(CONFIG)/libbad_ssl_test_server.a
-endif
-
-
-
-
-endif
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(LIBBAD_SSL_TEST_SERVER_OBJS:.o=.dep)
 endif
 endif
 
@@ -8313,6 +8225,38 @@ endif
 endif
 
 
+TAG_SET_TEST_SRC = \
+    test/core/census/tag_set_test.c \
+
+TAG_SET_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(TAG_SET_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/tag_set_test: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/tag_set_test: $(TAG_SET_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(TAG_SET_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/tag_set_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/census/tag_set_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_tag_set_test: $(TAG_SET_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(TAG_SET_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
 TCP_CLIENT_POSIX_TEST_SRC = \
     test/core/iomgr/tcp_client_posix_test.c \
 
@@ -10780,7 +10724,7 @@ $(OBJDIR)/$(CONFIG)/test/core/surface/public_headers_must_be_c89.o:  $(LIBDIR)/$
 $(OBJDIR)/$(CONFIG)/test/core/surface/public_headers_must_be_c89.o : test/core/surface/public_headers_must_be_c89.c
 	$(E) "[C]       Compiling $<"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(CC) $(CFLAGS) $(CPPFLAGS) -std=c89 -pedantic -MMD -MF $(addsuffix .dep, $(basename $@)) -c -o $@ $<
+	$(Q) $(CC) $(CPPFLAGS) $(CFLAGS) -std=c89 -pedantic -MMD -MF $(addsuffix .dep, $(basename $@)) -c -o $@ $<
 
 deps_public_headers_must_be_c89: $(PUBLIC_HEADERS_MUST_BE_C89_OBJS:.o=.dep)
 
@@ -11763,6 +11707,294 @@ endif
 
 
 
+BADREQ_BAD_CLIENT_TEST_SRC = \
+    test/core/bad_client/tests/badreq.c \
+
+BADREQ_BAD_CLIENT_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BADREQ_BAD_CLIENT_TEST_SRC))))
+
+
+$(BINDIR)/$(CONFIG)/badreq_bad_client_test: $(BADREQ_BAD_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(BADREQ_BAD_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/badreq_bad_client_test
+
+$(OBJDIR)/$(CONFIG)/test/core/bad_client/tests/badreq.o:  $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_badreq_bad_client_test: $(BADREQ_BAD_CLIENT_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(BADREQ_BAD_CLIENT_TEST_OBJS:.o=.dep)
+endif
+
+
+CONNECTION_PREFIX_BAD_CLIENT_TEST_SRC = \
+    test/core/bad_client/tests/connection_prefix.c \
+
+CONNECTION_PREFIX_BAD_CLIENT_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CONNECTION_PREFIX_BAD_CLIENT_TEST_SRC))))
+
+
+$(BINDIR)/$(CONFIG)/connection_prefix_bad_client_test: $(CONNECTION_PREFIX_BAD_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(CONNECTION_PREFIX_BAD_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/connection_prefix_bad_client_test
+
+$(OBJDIR)/$(CONFIG)/test/core/bad_client/tests/connection_prefix.o:  $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_connection_prefix_bad_client_test: $(CONNECTION_PREFIX_BAD_CLIENT_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(CONNECTION_PREFIX_BAD_CLIENT_TEST_OBJS:.o=.dep)
+endif
+
+
+HEADERS_BAD_CLIENT_TEST_SRC = \
+    test/core/bad_client/tests/headers.c \
+
+HEADERS_BAD_CLIENT_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(HEADERS_BAD_CLIENT_TEST_SRC))))
+
+
+$(BINDIR)/$(CONFIG)/headers_bad_client_test: $(HEADERS_BAD_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(HEADERS_BAD_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/headers_bad_client_test
+
+$(OBJDIR)/$(CONFIG)/test/core/bad_client/tests/headers.o:  $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_headers_bad_client_test: $(HEADERS_BAD_CLIENT_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(HEADERS_BAD_CLIENT_TEST_OBJS:.o=.dep)
+endif
+
+
+INITIAL_SETTINGS_FRAME_BAD_CLIENT_TEST_SRC = \
+    test/core/bad_client/tests/initial_settings_frame.c \
+
+INITIAL_SETTINGS_FRAME_BAD_CLIENT_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(INITIAL_SETTINGS_FRAME_BAD_CLIENT_TEST_SRC))))
+
+
+$(BINDIR)/$(CONFIG)/initial_settings_frame_bad_client_test: $(INITIAL_SETTINGS_FRAME_BAD_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(INITIAL_SETTINGS_FRAME_BAD_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/initial_settings_frame_bad_client_test
+
+$(OBJDIR)/$(CONFIG)/test/core/bad_client/tests/initial_settings_frame.o:  $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_initial_settings_frame_bad_client_test: $(INITIAL_SETTINGS_FRAME_BAD_CLIENT_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(INITIAL_SETTINGS_FRAME_BAD_CLIENT_TEST_OBJS:.o=.dep)
+endif
+
+
+SERVER_REGISTERED_METHOD_BAD_CLIENT_TEST_SRC = \
+    test/core/bad_client/tests/server_registered_method.c \
+
+SERVER_REGISTERED_METHOD_BAD_CLIENT_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(SERVER_REGISTERED_METHOD_BAD_CLIENT_TEST_SRC))))
+
+
+$(BINDIR)/$(CONFIG)/server_registered_method_bad_client_test: $(SERVER_REGISTERED_METHOD_BAD_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(SERVER_REGISTERED_METHOD_BAD_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/server_registered_method_bad_client_test
+
+$(OBJDIR)/$(CONFIG)/test/core/bad_client/tests/server_registered_method.o:  $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_server_registered_method_bad_client_test: $(SERVER_REGISTERED_METHOD_BAD_CLIENT_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(SERVER_REGISTERED_METHOD_BAD_CLIENT_TEST_OBJS:.o=.dep)
+endif
+
+
+SIMPLE_REQUEST_BAD_CLIENT_TEST_SRC = \
+    test/core/bad_client/tests/simple_request.c \
+
+SIMPLE_REQUEST_BAD_CLIENT_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(SIMPLE_REQUEST_BAD_CLIENT_TEST_SRC))))
+
+
+$(BINDIR)/$(CONFIG)/simple_request_bad_client_test: $(SIMPLE_REQUEST_BAD_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(SIMPLE_REQUEST_BAD_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/simple_request_bad_client_test
+
+$(OBJDIR)/$(CONFIG)/test/core/bad_client/tests/simple_request.o:  $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_simple_request_bad_client_test: $(SIMPLE_REQUEST_BAD_CLIENT_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(SIMPLE_REQUEST_BAD_CLIENT_TEST_OBJS:.o=.dep)
+endif
+
+
+UNKNOWN_FRAME_BAD_CLIENT_TEST_SRC = \
+    test/core/bad_client/tests/unknown_frame.c \
+
+UNKNOWN_FRAME_BAD_CLIENT_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(UNKNOWN_FRAME_BAD_CLIENT_TEST_SRC))))
+
+
+$(BINDIR)/$(CONFIG)/unknown_frame_bad_client_test: $(UNKNOWN_FRAME_BAD_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(UNKNOWN_FRAME_BAD_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/unknown_frame_bad_client_test
+
+$(OBJDIR)/$(CONFIG)/test/core/bad_client/tests/unknown_frame.o:  $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_unknown_frame_bad_client_test: $(UNKNOWN_FRAME_BAD_CLIENT_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(UNKNOWN_FRAME_BAD_CLIENT_TEST_OBJS:.o=.dep)
+endif
+
+
+WINDOW_OVERFLOW_BAD_CLIENT_TEST_SRC = \
+    test/core/bad_client/tests/window_overflow.c \
+
+WINDOW_OVERFLOW_BAD_CLIENT_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(WINDOW_OVERFLOW_BAD_CLIENT_TEST_SRC))))
+
+
+$(BINDIR)/$(CONFIG)/window_overflow_bad_client_test: $(WINDOW_OVERFLOW_BAD_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(WINDOW_OVERFLOW_BAD_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/window_overflow_bad_client_test
+
+$(OBJDIR)/$(CONFIG)/test/core/bad_client/tests/window_overflow.o:  $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_window_overflow_bad_client_test: $(WINDOW_OVERFLOW_BAD_CLIENT_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(WINDOW_OVERFLOW_BAD_CLIENT_TEST_OBJS:.o=.dep)
+endif
+
+
+BAD_SSL_ALPN_SERVER_SRC = \
+    test/core/bad_ssl/servers/alpn.c \
+
+BAD_SSL_ALPN_SERVER_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BAD_SSL_ALPN_SERVER_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/bad_ssl_alpn_server: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/bad_ssl_alpn_server: $(BAD_SSL_ALPN_SERVER_OBJS) $(LIBDIR)/$(CONFIG)/libbad_ssl_test_server.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(BAD_SSL_ALPN_SERVER_OBJS) $(LIBDIR)/$(CONFIG)/libbad_ssl_test_server.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/bad_ssl_alpn_server
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/bad_ssl/servers/alpn.o:  $(LIBDIR)/$(CONFIG)/libbad_ssl_test_server.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_bad_ssl_alpn_server: $(BAD_SSL_ALPN_SERVER_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(BAD_SSL_ALPN_SERVER_OBJS:.o=.dep)
+endif
+endif
+
+
+BAD_SSL_CERT_SERVER_SRC = \
+    test/core/bad_ssl/servers/cert.c \
+
+BAD_SSL_CERT_SERVER_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BAD_SSL_CERT_SERVER_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/bad_ssl_cert_server: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/bad_ssl_cert_server: $(BAD_SSL_CERT_SERVER_OBJS) $(LIBDIR)/$(CONFIG)/libbad_ssl_test_server.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(BAD_SSL_CERT_SERVER_OBJS) $(LIBDIR)/$(CONFIG)/libbad_ssl_test_server.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/bad_ssl_cert_server
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/bad_ssl/servers/cert.o:  $(LIBDIR)/$(CONFIG)/libbad_ssl_test_server.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_bad_ssl_cert_server: $(BAD_SSL_CERT_SERVER_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(BAD_SSL_CERT_SERVER_OBJS:.o=.dep)
+endif
+endif
+
+
+BAD_SSL_ALPN_TEST_SRC = \
+    test/core/bad_ssl/bad_ssl_test.c \
+
+BAD_SSL_ALPN_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BAD_SSL_ALPN_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/bad_ssl_alpn_test: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/bad_ssl_alpn_test: $(BAD_SSL_ALPN_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(BAD_SSL_ALPN_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/bad_ssl_alpn_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/bad_ssl/bad_ssl_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_bad_ssl_alpn_test: $(BAD_SSL_ALPN_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(BAD_SSL_ALPN_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+BAD_SSL_CERT_TEST_SRC = \
+    test/core/bad_ssl/bad_ssl_test.c \
+
+BAD_SSL_CERT_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BAD_SSL_CERT_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/bad_ssl_cert_test: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/bad_ssl_cert_test: $(BAD_SSL_CERT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(BAD_SSL_CERT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/bad_ssl_cert_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/bad_ssl/bad_ssl_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_bad_ssl_cert_test: $(BAD_SSL_CERT_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(BAD_SSL_CERT_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
 H2_CENSUS_TEST_SRC = \
     test/core/end2end/fixtures/h2_census.c \
 
@@ -12596,294 +12828,6 @@ deps_h2_uds+poll_nosec_test: $(H2_UDS+POLL_NOSEC_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_DEPS),true)
 -include $(H2_UDS+POLL_NOSEC_TEST_OBJS:.o=.dep)
-endif
-
-
-BADREQ_BAD_CLIENT_TEST_SRC = \
-    test/core/bad_client/tests/badreq.c \
-
-BADREQ_BAD_CLIENT_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BADREQ_BAD_CLIENT_TEST_SRC))))
-
-
-$(BINDIR)/$(CONFIG)/badreq_bad_client_test: $(BADREQ_BAD_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(BADREQ_BAD_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/badreq_bad_client_test
-
-$(OBJDIR)/$(CONFIG)/test/core/bad_client/tests/badreq.o:  $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-
-deps_badreq_bad_client_test: $(BADREQ_BAD_CLIENT_TEST_OBJS:.o=.dep)
-
-ifneq ($(NO_DEPS),true)
--include $(BADREQ_BAD_CLIENT_TEST_OBJS:.o=.dep)
-endif
-
-
-CONNECTION_PREFIX_BAD_CLIENT_TEST_SRC = \
-    test/core/bad_client/tests/connection_prefix.c \
-
-CONNECTION_PREFIX_BAD_CLIENT_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CONNECTION_PREFIX_BAD_CLIENT_TEST_SRC))))
-
-
-$(BINDIR)/$(CONFIG)/connection_prefix_bad_client_test: $(CONNECTION_PREFIX_BAD_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CONNECTION_PREFIX_BAD_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/connection_prefix_bad_client_test
-
-$(OBJDIR)/$(CONFIG)/test/core/bad_client/tests/connection_prefix.o:  $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-
-deps_connection_prefix_bad_client_test: $(CONNECTION_PREFIX_BAD_CLIENT_TEST_OBJS:.o=.dep)
-
-ifneq ($(NO_DEPS),true)
--include $(CONNECTION_PREFIX_BAD_CLIENT_TEST_OBJS:.o=.dep)
-endif
-
-
-HEADERS_BAD_CLIENT_TEST_SRC = \
-    test/core/bad_client/tests/headers.c \
-
-HEADERS_BAD_CLIENT_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(HEADERS_BAD_CLIENT_TEST_SRC))))
-
-
-$(BINDIR)/$(CONFIG)/headers_bad_client_test: $(HEADERS_BAD_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(HEADERS_BAD_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/headers_bad_client_test
-
-$(OBJDIR)/$(CONFIG)/test/core/bad_client/tests/headers.o:  $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-
-deps_headers_bad_client_test: $(HEADERS_BAD_CLIENT_TEST_OBJS:.o=.dep)
-
-ifneq ($(NO_DEPS),true)
--include $(HEADERS_BAD_CLIENT_TEST_OBJS:.o=.dep)
-endif
-
-
-INITIAL_SETTINGS_FRAME_BAD_CLIENT_TEST_SRC = \
-    test/core/bad_client/tests/initial_settings_frame.c \
-
-INITIAL_SETTINGS_FRAME_BAD_CLIENT_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(INITIAL_SETTINGS_FRAME_BAD_CLIENT_TEST_SRC))))
-
-
-$(BINDIR)/$(CONFIG)/initial_settings_frame_bad_client_test: $(INITIAL_SETTINGS_FRAME_BAD_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(INITIAL_SETTINGS_FRAME_BAD_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/initial_settings_frame_bad_client_test
-
-$(OBJDIR)/$(CONFIG)/test/core/bad_client/tests/initial_settings_frame.o:  $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-
-deps_initial_settings_frame_bad_client_test: $(INITIAL_SETTINGS_FRAME_BAD_CLIENT_TEST_OBJS:.o=.dep)
-
-ifneq ($(NO_DEPS),true)
--include $(INITIAL_SETTINGS_FRAME_BAD_CLIENT_TEST_OBJS:.o=.dep)
-endif
-
-
-SERVER_REGISTERED_METHOD_BAD_CLIENT_TEST_SRC = \
-    test/core/bad_client/tests/server_registered_method.c \
-
-SERVER_REGISTERED_METHOD_BAD_CLIENT_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(SERVER_REGISTERED_METHOD_BAD_CLIENT_TEST_SRC))))
-
-
-$(BINDIR)/$(CONFIG)/server_registered_method_bad_client_test: $(SERVER_REGISTERED_METHOD_BAD_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(SERVER_REGISTERED_METHOD_BAD_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/server_registered_method_bad_client_test
-
-$(OBJDIR)/$(CONFIG)/test/core/bad_client/tests/server_registered_method.o:  $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-
-deps_server_registered_method_bad_client_test: $(SERVER_REGISTERED_METHOD_BAD_CLIENT_TEST_OBJS:.o=.dep)
-
-ifneq ($(NO_DEPS),true)
--include $(SERVER_REGISTERED_METHOD_BAD_CLIENT_TEST_OBJS:.o=.dep)
-endif
-
-
-SIMPLE_REQUEST_BAD_CLIENT_TEST_SRC = \
-    test/core/bad_client/tests/simple_request.c \
-
-SIMPLE_REQUEST_BAD_CLIENT_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(SIMPLE_REQUEST_BAD_CLIENT_TEST_SRC))))
-
-
-$(BINDIR)/$(CONFIG)/simple_request_bad_client_test: $(SIMPLE_REQUEST_BAD_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(SIMPLE_REQUEST_BAD_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/simple_request_bad_client_test
-
-$(OBJDIR)/$(CONFIG)/test/core/bad_client/tests/simple_request.o:  $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-
-deps_simple_request_bad_client_test: $(SIMPLE_REQUEST_BAD_CLIENT_TEST_OBJS:.o=.dep)
-
-ifneq ($(NO_DEPS),true)
--include $(SIMPLE_REQUEST_BAD_CLIENT_TEST_OBJS:.o=.dep)
-endif
-
-
-UNKNOWN_FRAME_BAD_CLIENT_TEST_SRC = \
-    test/core/bad_client/tests/unknown_frame.c \
-
-UNKNOWN_FRAME_BAD_CLIENT_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(UNKNOWN_FRAME_BAD_CLIENT_TEST_SRC))))
-
-
-$(BINDIR)/$(CONFIG)/unknown_frame_bad_client_test: $(UNKNOWN_FRAME_BAD_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(UNKNOWN_FRAME_BAD_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/unknown_frame_bad_client_test
-
-$(OBJDIR)/$(CONFIG)/test/core/bad_client/tests/unknown_frame.o:  $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-
-deps_unknown_frame_bad_client_test: $(UNKNOWN_FRAME_BAD_CLIENT_TEST_OBJS:.o=.dep)
-
-ifneq ($(NO_DEPS),true)
--include $(UNKNOWN_FRAME_BAD_CLIENT_TEST_OBJS:.o=.dep)
-endif
-
-
-WINDOW_OVERFLOW_BAD_CLIENT_TEST_SRC = \
-    test/core/bad_client/tests/window_overflow.c \
-
-WINDOW_OVERFLOW_BAD_CLIENT_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(WINDOW_OVERFLOW_BAD_CLIENT_TEST_SRC))))
-
-
-$(BINDIR)/$(CONFIG)/window_overflow_bad_client_test: $(WINDOW_OVERFLOW_BAD_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(WINDOW_OVERFLOW_BAD_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/window_overflow_bad_client_test
-
-$(OBJDIR)/$(CONFIG)/test/core/bad_client/tests/window_overflow.o:  $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-
-deps_window_overflow_bad_client_test: $(WINDOW_OVERFLOW_BAD_CLIENT_TEST_OBJS:.o=.dep)
-
-ifneq ($(NO_DEPS),true)
--include $(WINDOW_OVERFLOW_BAD_CLIENT_TEST_OBJS:.o=.dep)
-endif
-
-
-BAD_SSL_ALPN_SERVER_SRC = \
-    test/core/bad_ssl/servers/alpn.c \
-
-BAD_SSL_ALPN_SERVER_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BAD_SSL_ALPN_SERVER_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/bad_ssl_alpn_server: openssl_dep_error
-
-else
-
-
-
-$(BINDIR)/$(CONFIG)/bad_ssl_alpn_server: $(BAD_SSL_ALPN_SERVER_OBJS) $(LIBDIR)/$(CONFIG)/libbad_ssl_test_server.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(BAD_SSL_ALPN_SERVER_OBJS) $(LIBDIR)/$(CONFIG)/libbad_ssl_test_server.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/bad_ssl_alpn_server
-
-endif
-
-$(OBJDIR)/$(CONFIG)/test/core/bad_ssl/servers/alpn.o:  $(LIBDIR)/$(CONFIG)/libbad_ssl_test_server.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-
-deps_bad_ssl_alpn_server: $(BAD_SSL_ALPN_SERVER_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(BAD_SSL_ALPN_SERVER_OBJS:.o=.dep)
-endif
-endif
-
-
-BAD_SSL_CERT_SERVER_SRC = \
-    test/core/bad_ssl/servers/cert.c \
-
-BAD_SSL_CERT_SERVER_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BAD_SSL_CERT_SERVER_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/bad_ssl_cert_server: openssl_dep_error
-
-else
-
-
-
-$(BINDIR)/$(CONFIG)/bad_ssl_cert_server: $(BAD_SSL_CERT_SERVER_OBJS) $(LIBDIR)/$(CONFIG)/libbad_ssl_test_server.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(BAD_SSL_CERT_SERVER_OBJS) $(LIBDIR)/$(CONFIG)/libbad_ssl_test_server.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/bad_ssl_cert_server
-
-endif
-
-$(OBJDIR)/$(CONFIG)/test/core/bad_ssl/servers/cert.o:  $(LIBDIR)/$(CONFIG)/libbad_ssl_test_server.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-
-deps_bad_ssl_cert_server: $(BAD_SSL_CERT_SERVER_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(BAD_SSL_CERT_SERVER_OBJS:.o=.dep)
-endif
-endif
-
-
-BAD_SSL_ALPN_TEST_SRC = \
-    test/core/bad_ssl/bad_ssl_test.c \
-
-BAD_SSL_ALPN_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BAD_SSL_ALPN_TEST_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/bad_ssl_alpn_test: openssl_dep_error
-
-else
-
-
-
-$(BINDIR)/$(CONFIG)/bad_ssl_alpn_test: $(BAD_SSL_ALPN_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(BAD_SSL_ALPN_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/bad_ssl_alpn_test
-
-endif
-
-$(OBJDIR)/$(CONFIG)/test/core/bad_ssl/bad_ssl_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-
-deps_bad_ssl_alpn_test: $(BAD_SSL_ALPN_TEST_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(BAD_SSL_ALPN_TEST_OBJS:.o=.dep)
-endif
-endif
-
-
-BAD_SSL_CERT_TEST_SRC = \
-    test/core/bad_ssl/bad_ssl_test.c \
-
-BAD_SSL_CERT_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BAD_SSL_CERT_TEST_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/bad_ssl_cert_test: openssl_dep_error
-
-else
-
-
-
-$(BINDIR)/$(CONFIG)/bad_ssl_cert_test: $(BAD_SSL_CERT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(BAD_SSL_CERT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/bad_ssl_cert_test
-
-endif
-
-$(OBJDIR)/$(CONFIG)/test/core/bad_ssl/bad_ssl_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-
-deps_bad_ssl_cert_test: $(BAD_SSL_CERT_TEST_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(BAD_SSL_CERT_TEST_OBJS:.o=.dep)
-endif
 endif
 
 

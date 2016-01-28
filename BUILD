@@ -426,6 +426,7 @@ cc_library(
     "src/core/census/context.c",
     "src/core/census/initialize.c",
     "src/core/census/operation.c",
+    "src/core/census/tag_set.c",
     "src/core/census/tracing.c",
     "third_party/nanopb/pb_common.c",
     "third_party/nanopb/pb_decode.c",
@@ -448,6 +449,9 @@ cc_library(
     "//external:libssl",
     "//external:zlib",
     ":gpr",
+  ],
+  copts = [
+    "-std=gnu99",
   ],
 )
 
@@ -709,6 +713,7 @@ cc_library(
     "src/core/census/context.c",
     "src/core/census/initialize.c",
     "src/core/census/operation.c",
+    "src/core/census/tag_set.c",
     "src/core/census/tracing.c",
     "third_party/nanopb/pb_common.c",
     "third_party/nanopb/pb_decode.c",
@@ -728,6 +733,9 @@ cc_library(
   ],
   deps = [
     ":gpr",
+  ],
+  copts = [
+    "-std=gnu99",
   ],
 )
 
@@ -1249,6 +1257,7 @@ objc_library(
     "src/core/census/context.c",
     "src/core/census/initialize.c",
     "src/core/census/operation.c",
+    "src/core/census/tag_set.c",
     "src/core/census/tracing.c",
     "third_party/nanopb/pb_common.c",
     "third_party/nanopb/pb_decode.c",

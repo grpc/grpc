@@ -437,6 +437,7 @@ Pod::Spec.new do |s|
                       'src/core/census/context.c',
                       'src/core/census/initialize.c',
                       'src/core/census/operation.c',
+                      'src/core/census/tag_set.c',
                       'src/core/census/tracing.c',
                       'third_party/nanopb/pb_common.c',
                       'third_party/nanopb/pb_decode.c',

@@ -5,7 +5,7 @@ settings:
   '#': The public version number of the library.
   version:
     major: 0
-    minor: 12
+    minor: 13
     micro: 0
     build: 0
 filegroups:
@@ -20,6 +20,7 @@ filegroups:
   - src/core/census/context.c
   - src/core/census/initialize.c
   - src/core/census/operation.c
+  - src/core/census/tag_set.c
   - src/core/census/tracing.c
 - name: grpc++_base
   public_headers:
@@ -789,10 +790,10 @@ libs:
   - test/cpp/util/benchmark_config.h
   src:
   - src/proto/grpc/testing/messages.proto
-  - src/proto/grpc/testing/control.proto
   - src/proto/grpc/testing/payloads.proto
-  - src/proto/grpc/testing/services.proto
   - src/proto/grpc/testing/stats.proto
+  - src/proto/grpc/testing/control.proto
+  - src/proto/grpc/testing/services.proto
   - src/proto/grpc/testing/perf_db.proto
   - test/cpp/qps/client_async.cc
   - test/cpp/qps/client_sync.cc
@@ -1646,6 +1647,16 @@ targets:
   - mac
   - linux
   - posix
+- name: tag_set_test
+  build: test
+  language: c
+  src:
+  - test/core/census/tag_set_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: tcp_client_posix_test
   cpu_cost: 0.5
   build: test
@@ -2507,10 +2518,120 @@ vspackages:
   props: false
   redist: false
   version: 1.7.0.1
+configs:
+  asan:
+    CC: clang
+    CPPFLAGS: -O0 -fsanitize=address -fno-omit-frame-pointer -Wno-unused-command-line-argument
+    CXX: clang++
+    LD: clang
+    LDFLAGS: -fsanitize=address
+    LDXX: clang++
+    compile_the_world: true
+    test_environ:
+      ASAN_OPTIONS: suppressions=tools/asan_suppressions.txt:detect_leaks=1:color=always
+      LSAN_OPTIONS: suppressions=tools/asan_suppressions.txt:report_objects=1
+    timeout_multiplier: 1.5
+  asan-noleaks:
+    CC: clang
+    CPPFLAGS: -O0 -fsanitize=address -fno-omit-frame-pointer -Wno-unused-command-line-argument
+    CXX: clang++
+    LD: clang
+    LDFLAGS: -fsanitize=address
+    LDXX: clang++
+    compile_the_world: true
+    test_environ:
+      ASAN_OPTIONS: detect_leaks=0:color=always
+    timeout_multiplier: 1.5
+  basicprof:
+    CPPFLAGS: -O2 -DGRPC_BASIC_PROFILER -DGRPC_TIMERS_RDTSC
+    DEFINES: NDEBUG
+  dbg:
+    CPPFLAGS: -O0
+    DEFINES: _DEBUG DEBUG
+    LDFLAGS: -rdynamic
+  gcov:
+    CC: gcc
+    CPPFLAGS: -O0 -fprofile-arcs -ftest-coverage -Wno-return-type
+    CXX: g++
+    DEFINES: _DEBUG DEBUG GPR_GCOV
+    LD: gcc
+    LDFLAGS: -fprofile-arcs -ftest-coverage -rdynamic
+    LDXX: g++
+  helgrind:
+    CPPFLAGS: -O0
+    DEFINES: _DEBUG DEBUG
+    LDFLAGS: -rdynamic
+    timeout_multiplier: 20
+    valgrind: --tool=helgrind
+  memcheck:
+    CPPFLAGS: -O0
+    DEFINES: _DEBUG DEBUG
+    LDFLAGS: -rdynamic
+    timeout_multiplier: 10
+    valgrind: --tool=memcheck --leak-check=full
+  msan:
+    CC: clang
+    CPPFLAGS: -O0 -fsanitize=memory -fsanitize-memory-track-origins -fno-omit-frame-pointer
+      -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1 -Wno-unused-command-line-argument
+      -fPIE -pie
+    CXX: clang++
+    DEFINES: NDEBUG
+    LD: clang
+    LDFLAGS: -fsanitize=memory -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1
+      -fPIE -pie $(if $(JENKINS_BUILD),-Wl$(comma)-Ttext-segment=0x7e0000000000,)
+    LDXX: clang++
+    compile_the_world: true
+    timeout_multiplier: 2
+  mutrace:
+    CPPFLAGS: -O0
+    DEFINES: _DEBUG DEBUG
+    LDFLAGS: -rdynamic
+  opt:
+    CPPFLAGS: -O2
+    DEFINES: NDEBUG
+    LDFLAGS: -rdynamic
+  stapprof:
+    CPPFLAGS: -O2 -DGRPC_STAP_PROFILER
+    DEFINES: NDEBUG
+  tsan:
+    CC: clang
+    CPPFLAGS: -O0 -fsanitize=thread -fno-omit-frame-pointer -Wno-unused-command-line-argument
+      -fPIE -pie
+    CXX: clang++
+    LD: clang
+    LDFLAGS: -fsanitize=thread -fPIE -pie $(if $(JENKINS_BUILD),-Wl$(comma)-Ttext-segment=0x7e0000000000,)
+    LDXX: clang++
+    compile_the_world: true
+    test_environ:
+      TSAN_OPTIONS: suppressions=tools/tsan_suppressions.txt:halt_on_error=1:second_deadlock_stack=1
+    timeout_multiplier: 2
+  ubsan:
+    CC: clang
+    CPPFLAGS: -O1 -fsanitize=undefined -fno-omit-frame-pointer -Wno-unused-command-line-argument
+    CXX: clang++
+    DEFINES: NDEBUG
+    LD: clang
+    LDFLAGS: -fsanitize=undefined
+    LDXX: clang++
+    compile_the_world: true
+    timeout_multiplier: 1.5
+defaults:
+  boringssl:
+    CFLAGS: -Wno-sign-conversion -Wno-conversion -Wno-unused-value
+    CPPFLAGS: -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM
+      -D_GNU_SOURCE
+  global:
+    CPPFLAGS: -g -Wall -Wextra -Werror -Wno-long-long -Wno-unused-parameter
+    LDFLAGS: -g
+  zlib:
+    CFLAGS: -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-implicit-function-declaration
+      $(W_NO_SHIFT_NEGATIVE_VALUE) -fvisibility=hidden
 node_modules:
 - deps:
   - grpc
   - gpr
+  - boringssl
+  - z
   headers:
   - src/node/ext/byte_buffer.h
   - src/node/ext/call.h
@@ -2545,3 +2666,4 @@ python_dependencies:
   - grpc
   - gpr
   - boringssl
+  - z

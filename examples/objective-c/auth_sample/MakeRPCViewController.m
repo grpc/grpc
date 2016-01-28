@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -39,7 +39,7 @@
 
 NSString * const kTestScope = @"https://www.googleapis.com/auth/xapi.zoo";
 
-static NSString * const kTestHostAddress = @"grpc-test.sandbox.google.com";
+static NSString * const kTestHostAddress = @"grpc-test.sandbox.googleapis.com";
 
 // Category for RPC errors to create the descriptions as we want them to appear on our view.
 @interface NSError (AuthSample)
