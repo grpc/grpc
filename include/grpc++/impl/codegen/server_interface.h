@@ -34,8 +34,9 @@
 #ifndef GRPCXX_IMPL_CODEGEN_SERVER_INTERFACE_H
 #define GRPCXX_IMPL_CODEGEN_SERVER_INTERFACE_H
 
-#include <grpc++/impl/codegen/completion_queue_tag.h>
 #include <grpc++/impl/codegen/call_hook.h>
+#include <grpc++/impl/codegen/completion_queue_tag.h>
+#include <grpc++/impl/codegen/rpc_service_method.h>
 
 namespace grpc {
 
@@ -43,7 +44,6 @@ class AsyncGenericService;
 class AsynchronousService;
 class GenericServerContext;
 class RpcService;
-class RpcServiceMethod;
 class ServerAsyncStreamingInterface;
 class ServerCompletionQueue;
 class ServerContext;
