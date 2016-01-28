@@ -78,7 +78,7 @@ static grpc_subchannel_key *create_key(
   k->connector = grpc_connector_ref(connector);
   k->args.filter_count = args->filter_count;
   k->args.filters = gpr_malloc(sizeof(*k->args.filters) * k->args.filter_count);
-  memcpy(k->args.filters, args->filters,
+  memcpy((grpc_channel_filter*)k->args.filters, args->filters,
          sizeof(*k->args.filters) * k->args.filter_count);
   k->args.addr_len = args->addr_len;
   k->args.addr = gpr_malloc(args->addr_len);
