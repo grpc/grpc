@@ -49,9 +49,6 @@
     <ClCompile Include="$(SolutionDir)\..\src\cpp\common\completion_queue.cc">
       <Filter>src\cpp\common</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\cpp\common\grpc_library_initializer.cc">
-      <Filter>src\cpp\common</Filter>
-    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\common\rpc_method.cc">
       <Filter>src\cpp\common</Filter>
     </ClCompile>

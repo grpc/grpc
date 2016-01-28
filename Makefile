@@ -3015,7 +3015,6 @@ LIBGRPC++_SRC = \
     src/cpp/common/call.cc \
     src/cpp/common/channel_arguments.cc \
     src/cpp/common/completion_queue.cc \
-    src/cpp/common/grpc_library_initializer.cc \
     src/cpp/common/rpc_method.cc \
     src/cpp/proto/proto_utils.cc \
     src/cpp/server/async_generic_service.cc \
@@ -3317,7 +3316,6 @@ LIBGRPC++_UNSECURE_SRC = \
     src/cpp/common/call.cc \
     src/cpp/common/channel_arguments.cc \
     src/cpp/common/completion_queue.cc \
-    src/cpp/common/grpc_library_initializer.cc \
     src/cpp/common/rpc_method.cc \
     src/cpp/proto/proto_utils.cc \
     src/cpp/server/async_generic_service.cc \
