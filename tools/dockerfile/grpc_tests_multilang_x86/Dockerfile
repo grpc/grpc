@@ -27,10 +27,9 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# A work-in-progress Dockerfile that allows running gRPC test suites
-# inside a docker container.
+# Dockerfile for running gRPC test suites inside a docker container.
 
-FROM debian:jessie
+FROM 32bit/debian:jessie
 
 # Install Git and basic packages.
 RUN apt-get update && apt-get install -y \
@@ -95,8 +94,6 @@ RUN apt-get update && apt-get -y dist-upgrade && apt-get install -y \
 RUN cd /var/local && wget www.nuget.org/NuGet.exe
 ENV NUGET mono /var/local/NuGet.exe
 
-# TODO(jtattermusch): add dependencies for other languages
-
 ##################
 # Node dependencies
 
@@ -128,12 +125,11 @@ RUN /bin/bash -l -c "gem install bundler --no-ri --no-rdoc"
 RUN apt-get update && apt-get install -y \
     python-all-dev \
     python3-all-dev \
-    python-pip
+    python-pip \
+    python-virtualenv
 
 # Install Python packages from PyPI
-RUN pip install pip --upgrade
-RUN pip install virtualenv
-RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.0.0a2 tox
+RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.0.0a2
 
 # For sanity test
 RUN pip install simplejson mako
@@ -154,17 +150,8 @@ RUN apt-get update && apt-get install -y \
 
 ##################
 # Zookeeper dependencies
-
-# Install dependencies
-
 RUN apt-get install -y libzookeeper-mt-dev
 
-##################
-# Docker "inception".
-# Note this is quite the ugly hack.
-# This makes sure that the docker binary we inject has its dependencies.
-RUN curl https://get.docker.com/ | sh
-RUN apt-get remove --purge -y docker-engine
 
 RUN mkdir /var/local/jenkins
 

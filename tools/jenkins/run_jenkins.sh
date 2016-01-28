@@ -49,7 +49,7 @@ fi
 
 unset platform  # variable named 'platform' breaks the windows build
 
-python tools/run_tests/run_tests.py $USE_DOCKER_MAYBE -t -l $language -c $config -x report.xml -j 3 $@ || TESTS_FAILED="true"
+python tools/run_tests/run_tests.py $USE_DOCKER_MAYBE -t -l $language -c $config -x report.xml -j 2 $@ || TESTS_FAILED="true"
 
 if [ ! -e reports/index.html ]
 then
