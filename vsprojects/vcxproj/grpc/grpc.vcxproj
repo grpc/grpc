@@ -718,6 +718,8 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\census\operation.c">
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\census\tag_set.c">
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\census\tracing.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\third_party\nanopb\pb_common.c">

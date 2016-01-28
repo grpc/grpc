@@ -244,7 +244,8 @@ class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
           gpr_time_from_micros(request->param().server_cancel_after_us(),
                                GPR_TIMESPAN)));
       return Status::CANCELLED;
-    } else {
+    } else if (!request->has_param() ||
+               !request->param().skip_cancelled_check()) {
       EXPECT_FALSE(context->IsCancelled());
     }
 
@@ -823,6 +824,7 @@ TEST_P(ProxyEnd2endTest, RpcDeadlineExpires) {
   EchoRequest request;
   EchoResponse response;
   request.set_message("Hello");
+  request.mutable_param()->set_skip_cancelled_check(true);
 
   ClientContext context;
   std::chrono::system_clock::time_point deadline =

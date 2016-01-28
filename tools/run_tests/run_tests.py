@@ -31,6 +31,7 @@
 """Run tests in parallel."""
 
 import argparse
+import ast
 import glob
 import hashlib
 import itertools
@@ -66,15 +67,16 @@ def platform_string():
 
 
 # SimpleConfig: just compile with CONFIG=config, and run the binary to test
-class SimpleConfig(object):
+class Config(object):
 
-  def __init__(self, config, environ=None, timeout_multiplier=1):
+  def __init__(self, config, environ=None, timeout_multiplier=1, tool_prefix=[]):
     if environ is None:
       environ = {}
     self.build_config = config
     self.allow_hashing = (config != 'gcov')
     self.environ = environ
     self.environ['CONFIG'] = config
+    self.tool_prefix = tool_prefix
     self.timeout_multiplier = timeout_multiplier
 
   def job_spec(self, cmdline, hash_targets, timeout_seconds=5*60,
@@ -93,34 +95,13 @@ class SimpleConfig(object):
     actual_environ = self.environ.copy()
     for k, v in environ.iteritems():
       actual_environ[k] = v
-    return jobset.JobSpec(cmdline=cmdline,
+    return jobset.JobSpec(cmdline=self.tool_prefix + cmdline,
                           shortname=shortname,
                           environ=actual_environ,
                           cpu_cost=cpu_cost,
                           timeout_seconds=(self.timeout_multiplier * timeout_seconds if timeout_seconds else None),
                           hash_targets=hash_targets
                               if self.allow_hashing else None,
-                          flake_retries=5 if args.allow_flakes else 0,
-                          timeout_retries=3 if args.allow_flakes else 0)
-
-
-# ValgrindConfig: compile with some CONFIG=config, but use valgrind to run
-class ValgrindConfig(object):
-
-  def __init__(self, config, tool, args=None):
-    if args is None:
-      args = []
-    self.build_config = config
-    self.tool = tool
-    self.args = args
-    self.allow_hashing = False
-
-  def job_spec(self, cmdline, hash_targets, cpu_cost=1.0):
-    return jobset.JobSpec(cmdline=['valgrind', '--tool=%s' % self.tool] +
-                          self.args + cmdline,
-                          shortname='valgrind %s' % cmdline[0],
-                          hash_targets=None,
-                          cpu_cost=cpu_cost,
                           flake_retries=5 if args.allow_flakes else 0,
                           timeout_retries=3 if args.allow_flakes else 0)
 
@@ -170,9 +151,9 @@ class CLanguage(object):
   def make_targets(self, test_regex):
     if platform_string() != 'windows' and test_regex != '.*':
       # use the regex to minimize the number of things to build
-      return [target['name']
+      return [os.path.basename(target['name'])
               for target in get_c_tests(False, self.test_lang)
-              if re.search(test_regex, target['name'])]
+              if re.search(test_regex, '/' + target['name'])]
     if platform_string() == 'windows':
       # don't build tools on windows just yet
       return ['buildtests_%s' % self.make_target]
@@ -201,6 +182,9 @@ class CLanguage(object):
 
   def supports_multi_config(self):
     return True
+
+  def dockerfile_dir(self, config, arch):
+    return None
 
   def __str__(self):
     return self.make_target
@@ -234,6 +218,9 @@ class NodeLanguage(object):
   def supports_multi_config(self):
     return False
 
+  def dockerfile_dir(self, config, arch):
+    return None
+
   def __str__(self):
     return 'node'
 
@@ -264,6 +251,9 @@ class PhpLanguage(object):
 
   def supports_multi_config(self):
     return False
+
+  def dockerfile_dir(self, config, arch):
+    return None
 
   def __str__(self):
     return 'php'
@@ -318,6 +308,9 @@ class PythonLanguage(object):
   def supports_multi_config(self):
     return False
 
+  def dockerfile_dir(self, config, arch):
+    return None
+
   def __str__(self):
     return 'python'
 
@@ -348,6 +341,9 @@ class RubyLanguage(object):
 
   def supports_multi_config(self):
     return False
+
+  def dockerfile_dir(self, config, arch):
+    return None
 
   def __str__(self):
     return 'ruby'
@@ -431,6 +427,9 @@ class CSharpLanguage(object):
   def supports_multi_config(self):
     return False
 
+  def dockerfile_dir(self, config, arch):
+    return None
+
   def __str__(self):
     return 'csharp'
 
@@ -462,6 +461,9 @@ class ObjCLanguage(object):
   def supports_multi_config(self):
     return False
 
+  def dockerfile_dir(self, config, arch):
+    return None
+
   def __str__(self):
     return 'objc'
 
@@ -470,8 +472,10 @@ class Sanity(object):
 
   def test_specs(self, config, args):
     import yaml
-    with open('tools/run_tests/sanity_tests.yaml', 'r') as f:
-      return [config.job_spec([cmd['script']], None, timeout_seconds=None, environ={'TEST': 'true'}, cpu_cost=cmd.get('cpu_cost', 1))
+    with open('tools/run_tests/sanity/sanity_tests.yaml', 'r') as f:
+      return [config.job_spec(cmd['script'].split(), None,
+                              timeout_seconds=None, environ={'TEST': 'true'},
+                              cpu_cost=cmd.get('cpu_cost', 1))
               for cmd in yaml.load(f)]
 
   def pre_build_steps(self):
@@ -494,6 +498,9 @@ class Sanity(object):
 
   def supports_multi_config(self):
     return False
+
+  def dockerfile_dir(self, config, arch):
+    return 'tools/dockerfile/grpc_sanity'
 
   def __str__(self):
     return 'sanity'
@@ -525,27 +532,16 @@ class Build(object):
   def supports_multi_config(self):
     return True
 
+  def dockerfile_dir(self, config, arch):
+    return None
+
   def __str__(self):
     return self.make_target
 
 
 # different configurations we can run under
-_CONFIGS = {
-    'dbg': SimpleConfig('dbg'),
-    'opt': SimpleConfig('opt'),
-    'tsan': SimpleConfig('tsan', timeout_multiplier=2, environ={
-        'TSAN_OPTIONS': 'suppressions=tools/tsan_suppressions.txt:halt_on_error=1:second_deadlock_stack=1'}),
-    'msan': SimpleConfig('msan', timeout_multiplier=1.5),
-    'ubsan': SimpleConfig('ubsan'),
-    'asan': SimpleConfig('asan', timeout_multiplier=1.5, environ={
-        'ASAN_OPTIONS': 'suppressions=tools/asan_suppressions.txt:detect_leaks=1:color=always',
-        'LSAN_OPTIONS': 'suppressions=tools/asan_suppressions.txt:report_objects=1'}),
-    'asan-noleaks': SimpleConfig('asan', environ={
-        'ASAN_OPTIONS': 'detect_leaks=0:color=always'}),
-    'gcov': SimpleConfig('gcov'),
-    'memcheck': ValgrindConfig('valgrind', 'memcheck', ['--leak-check=full']),
-    'helgrind': ValgrindConfig('dbg', 'helgrind')
-    }
+with open('tools/run_tests/configs.json') as f:
+  _CONFIGS = dict((cfg['config'], Config(**cfg)) for cfg in ast.literal_eval(f.read()))
 
 
 _DEFAULT = ['opt']
@@ -571,15 +567,37 @@ _WINDOWS_CONFIG = {
 
 def _windows_arch_option(arch):
   """Returns msbuild cmdline option for selected architecture."""
-  if arch == 'default' or arch == 'windows_x86':
+  if arch == 'default' or arch == 'x86':
     return '/p:Platform=Win32'
-  elif arch == 'windows_x64':
+  elif arch == 'x64':
     return '/p:Platform=x64'
   else:
-    print 'Architecture %s not supported on current platform.' % arch
+    print 'Architecture %s not supported.' % arch
     sys.exit(1)
 
-    
+
+def _check_arch_option(arch):
+  """Checks that architecture option is valid."""
+  if platform_string() == 'windows':
+    _windows_arch_option(arch)
+  elif platform_string() == 'linux':
+    # On linux, we need to be running under docker with the right architecture.
+    runtime_arch = platform.architecture()[0]
+    if arch == 'default':
+      return
+    elif runtime_arch == '64bit' and arch == 'x64':
+      return
+    elif runtime_arch == '32bit' and arch == 'x86':
+      return
+    else:
+      print 'Architecture %s does not match current runtime architecture.' % arch
+      sys.exit(1)
+  else:
+    if args.arch != 'default':
+      print 'Architecture %s not supported on current platform.' % args.arch
+      sys.exit(1)
+
+
 def _windows_build_bat(compiler):
   """Returns name of build.bat for selected compiler."""
   if compiler == 'default' or compiler == 'vs2013':
@@ -591,8 +609,8 @@ def _windows_build_bat(compiler):
   else:
     print 'Compiler %s not supported.' % compiler
     sys.exit(1)
-    
-    
+
+
 def _windows_toolset_option(compiler):
   """Returns msbuild PlatformToolset for selected compiler."""
   if compiler == 'default' or compiler == 'vs2013':
@@ -604,7 +622,21 @@ def _windows_toolset_option(compiler):
   else:
     print 'Compiler %s not supported.' % compiler
     sys.exit(1)
-   
+
+
+def _get_dockerfile_dir(language, cfg, arch):
+  """Returns dockerfile to use"""
+  custom = language.dockerfile_dir(cfg, arch)
+  if custom:
+    return custom
+  else:
+    if arch == 'default' or arch == 'x64':
+      return 'tools/dockerfile/grpc_tests_multilang_x64'
+    elif arch == 'x86':
+      return 'tools/dockerfile/grpc_tests_multilang_x86'
+    else:
+      print 'Architecture %s not supported with current settings.' % arch
+      sys.exit(1)
 
 def runs_per_test_type(arg_str):
     """Auxilary function to parse the "runs_per_test" flag.
@@ -671,7 +703,7 @@ argp.add_argument('--allow_flakes',
                   const=True,
                   help='Allow flaky tests to show as passing (re-runs failed tests up to five times)')
 argp.add_argument('--arch',
-                  choices=['default', 'windows_x86', 'windows_x64'],
+                  choices=['default', 'x86', 'x64'],
                   default='default',
                   help='Selects architecture to target. For some platforms "default" is the only supported choice.')
 argp.add_argument('--compiler',
@@ -694,36 +726,6 @@ argp.add_argument('-x', '--xml_report', default=None, type=str,
 args = argp.parse_args()
 
 jobset.measure_cpu_costs = args.measure_cpu_costs
-
-if args.use_docker:
-  if not args.travis:
-    print 'Seen --use_docker flag, will run tests under docker.'
-    print
-    print 'IMPORTANT: The changes you are testing need to be locally committed'
-    print 'because only the committed changes in the current branch will be'
-    print 'copied to the docker environment.'
-    time.sleep(5)
-
-  child_argv = [ arg for arg in sys.argv if not arg == '--use_docker' ]
-  run_tests_cmd = 'tools/run_tests/run_tests.py %s' % ' '.join(child_argv[1:])
-
-  # TODO(jtattermusch): revisit if we need special handling for arch here
-  # set arch command prefix in case we are working with different arch.
-  arch_env = os.getenv('arch')
-  if arch_env:
-    run_test_cmd = 'arch %s %s' % (arch_env, run_test_cmd)
-
-  env = os.environ.copy()
-  env['RUN_TESTS_COMMAND'] = run_tests_cmd
-  if args.xml_report:
-    env['XML_REPORT'] = args.xml_report
-  if not args.travis:
-    env['TTY_FLAG'] = '-t'  # enables Ctrl-C when not on Jenkins.
-
-  subprocess.check_call(['tools/jenkins/build_docker_and_run_tests.sh'],
-                        shell=True,
-                        env=env)
-  sys.exit(0)
 
 # update submodules if necessary
 need_to_regenerate_projects = False
@@ -788,16 +790,46 @@ if any(language.make_options() for language in languages):
   else:
     language_make_options = next(iter(languages)).make_options()
 
-if platform_string() != 'windows':
-  if args.arch != 'default':
-    print 'Architecture %s not supported on current platform.' % args.arch
-    sys.exit(1)
-  if args.compiler != 'default':
+if len(languages) != 1 or len(build_configs) != 1:
+  print 'Multi-language and multi-config testing is not supported.'
+  sys.exit(1)
+
+if args.use_docker:
+  if not args.travis:
+    print 'Seen --use_docker flag, will run tests under docker.'
+    print
+    print 'IMPORTANT: The changes you are testing need to be locally committed'
+    print 'because only the committed changes in the current branch will be'
+    print 'copied to the docker environment.'
+    time.sleep(5)
+
+  child_argv = [ arg for arg in sys.argv if not arg == '--use_docker' ]
+  run_tests_cmd = 'python tools/run_tests/run_tests.py %s' % ' '.join(child_argv[1:])
+
+  env = os.environ.copy()
+  env['RUN_TESTS_COMMAND'] = run_tests_cmd
+  env['DOCKERFILE_DIR'] = _get_dockerfile_dir(next(iter(languages)),
+                                              next(iter(build_configs)),
+                                              args.arch)
+  env['DOCKER_RUN_SCRIPT'] = 'tools/jenkins/docker_run_tests.sh'
+  if args.xml_report:
+    env['XML_REPORT'] = args.xml_report
+  if not args.travis:
+    env['TTY_FLAG'] = '-t'  # enables Ctrl-C when not on Jenkins.
+
+  subprocess.check_call(['tools/jenkins/build_docker_and_run_tests.sh'],
+                        shell=True,
+                        env=env)
+  sys.exit(0)
+
+if platform_string() != 'windows' and args.compiler != 'default':
     print 'Compiler %s not supported on current platform.' % args.compiler
     sys.exit(1)
 
-if platform_string() == 'windows':
-  def make_jobspec(cfg, targets, makefile='Makefile'):
+_check_arch_option(args.arch)
+
+def make_jobspec(cfg, targets, makefile='Makefile'):
+  if platform_string() == 'windows':
     extra_args = []
     # better do parallel compilation
     # empirically /m:2 gives the best performance/price and should prevent
@@ -815,12 +847,11 @@ if platform_string() == 'windows':
                       language_make_options,
                       shell=True, timeout_seconds=None)
       for target in targets]
-else:
-  def make_jobspec(cfg, targets, makefile='Makefile'):
+  else:
     if targets:
       return [jobset.JobSpec([os.getenv('MAKE', 'make'),
                               '-f', makefile,
-                              '-j', '%d' % (multiprocessing.cpu_count() + 1),
+                              '-j', '%d' % args.jobs,
                               'EXTRA_DEFINES=GRPC_TEST_SLOWDOWN_MACHINE_FACTOR=%f' % args.slowdown,
                               'CONFIG=%s' % cfg] +
                               language_make_options +
@@ -829,6 +860,7 @@ else:
                              timeout_seconds=None)]
     else:
       return []
+
 make_targets = {}
 for l in languages:
   makefile = l.makefile_name()
@@ -1027,13 +1059,15 @@ def _build_and_run(
     check_cancelled, newline_on_success, cache, xml_report=None, build_only=False):
   """Do one pass of building & running tests."""
   # build latest sequentially
-  num_failures, _ = jobset.run(
+  num_failures, resultset = jobset.run(
       build_steps, maxjobs=1, stop_on_failure=True,
       newline_on_success=newline_on_success, travis=args.travis)
   if num_failures:
     return [BuildAndRunError.BUILD]
 
   if build_only:
+    if xml_report:
+      report_utils.render_junit_xml_report(resultset, xml_report)
     return []
 
   # start antagonists
@@ -1143,3 +1177,4 @@ else:
   if BuildAndRunError.POST_TEST in errors:
     exit_code |= 4
   sys.exit(exit_code)
+

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright 2015, Google Inc.
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -36,4 +36,4 @@ CONFIG=${CONFIG:-opt}
 # change to grpc repo root
 cd $(dirname $0)/../..
 
-npm install --unsafe-perm
+npm install --unsafe-perm --build-from-source
