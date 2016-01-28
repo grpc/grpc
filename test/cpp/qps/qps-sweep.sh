@@ -37,10 +37,10 @@ fi
 
 bins=`find . .. ../.. ../../.. -name bins | head -1`
 
+set -x
+
 big=65536
 half=`echo $QPS_WORKERS | awk -F, '{print int(NF/2)}'`
-
-set -ex
 
 for secure in true false; do
   # Scenario 1: generic async streaming ping-pong (contentionless latency)
