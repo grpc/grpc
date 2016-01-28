@@ -30,6 +30,8 @@
 
 set -ex
 
+apt-get install -y autoconf automake libtool curl virtualenv
+
 readonly NANOPB_TMP_OUTPUT=$(mktemp -d)
 readonly VENV_DIR=$(mktemp -d)
 # create a virtualenv for nanopb's compiler
@@ -50,7 +52,6 @@ docker build -t grpc_clang_format tools/dockerfile/grpc_clang_format
 
 # install protoc version 3
 pushd third_party/protobuf
-apt-get install -y autoconf automake libtool curl
 ./autogen.sh
 ./configure
 make
