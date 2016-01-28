@@ -2642,3 +2642,9 @@ python_dependencies:
   - gpr
   - boringssl
   - z
+ruby_gem:
+  deps:
+  - grpc
+  - gpr
+  - boringssl
+  - z

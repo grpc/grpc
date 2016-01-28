@@ -27,19 +27,8 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-ssl_roots_path = File.expand_path('../../../../etc/roots.pem', __FILE__)
-unless ENV['GRPC_DEFAULT_SSL_ROOTS_FILE_PATH']
-  ENV['GRPC_DEFAULT_SSL_ROOTS_FILE_PATH'] = ssl_roots_path
+begin
+  require "grpc/#{RUBY_VERSION.sub(/\.\d$/, '')}/grpc"
+rescue LoadError
+  require 'grpc/grpc'
 end
-
-require 'grpc/loader'
-
-require 'grpc/errors'
-require 'grpc/logconfig'
-require 'grpc/notifier'
-require 'grpc/version'
-require 'grpc/core/time_consts'
-require 'grpc/generic/active_call'
-require 'grpc/generic/client_stub'
-require 'grpc/generic/service'
-require 'grpc/generic/rpc_server'

@@ -90,7 +90,7 @@ unless File.exist?(File.join(grpc_lib_dir, 'libgrpc.a'))
   ENV['BUILDDIR'] = output_dir
 
   puts 'Building internal gRPC into ' + grpc_lib_dir
-  system("make -j -C #{grpc_root} static_c CONFIG=#{grpc_config}")
+  system("make -j -C #{grpc_root} #{grpc_lib_dir}/libgpr.a #{grpc_lib_dir}/libgrpc.a CONFIG=#{grpc_config}")
   exit 1 unless $? == 0
 end
 
