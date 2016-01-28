@@ -362,8 +362,6 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\common\completion_queue.cc">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\cpp\common\grpc_library_initializer.cc">
-    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\common\rpc_method.cc">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\proto\proto_utils.cc">

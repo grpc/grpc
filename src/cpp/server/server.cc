@@ -278,6 +278,7 @@ static grpc_server* CreateServer(const ChannelArguments& args) {
   return grpc_server_create(&channel_args, nullptr);
 }
 
+static internal::GrpcLibraryInitializer g_gli_initializer;
 Server::Server(ThreadPoolInterface* thread_pool, bool thread_pool_owned,
                int max_message_size, const ChannelArguments& args)
     : max_message_size_(max_message_size),
@@ -289,7 +290,7 @@ Server::Server(ThreadPoolInterface* thread_pool, bool thread_pool_owned,
       server_(CreateServer(args)),
       thread_pool_(thread_pool),
       thread_pool_owned_(thread_pool_owned) {
-  internal::g_gli_initializer.summon();
+  g_gli_initializer.summon();
   gpr_once_init(&g_once_init_callbacks, InitGlobalCallbacks);
   global_callbacks_ = g_callbacks;
   grpc_server_register_completion_queue(server_, cq_.cq(), nullptr);

@@ -34,6 +34,8 @@
 #ifndef GRPCXX_IMPL_GRPC_LIBRARY_H
 #define GRPCXX_IMPL_GRPC_LIBRARY_H
 
+#include <iostream>
+
 #include <grpc++/impl/codegen/config.h>
 #include <grpc++/impl/codegen/grpc_library.h>
 #include <grpc/grpc.h>
@@ -56,10 +58,8 @@ class GrpcLibraryInitializer GRPC_FINAL {
 
   /// A no-op method to force the linker to reference this class, which will
   /// take care of initializing and shutting down the gRPC runtime.
-  inline void summon() {}
+  int summon() { return 0; }
 };
-
-extern GrpcLibraryInitializer g_gli_initializer;
 
 }  // namespace internal
 }  // namespace grpc

@@ -42,8 +42,9 @@
 
 namespace grpc {
 
+static internal::GrpcLibraryInitializer g_gli_initializer;
 CompletionQueue::CompletionQueue() {
-  internal::g_gli_initializer.summon();
+  g_gli_initializer.summon();
   cq_ = grpc_completion_queue_create(nullptr);
 }
 
