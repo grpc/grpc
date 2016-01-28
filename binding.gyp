@@ -118,10 +118,17 @@
           # when including the Node headers. The remedy for this is to remove
           # the OpenSSL headers, from the downloaded Node development package,
           # which is typically located in `.node-gyp` in your home directory.
-          'target_name': 'windows_build_warning',
+          'target_name': 'WINDOWS_BUILD_WARNING',
           'actions': [
             {
-              'message': "IMPORTANT: Due to https://github.com/nodejs/node/issues/4932, to build this library on Windows, you must first remove <(node_root_dir)/include/node/openssl/"
+              'action_name': 'WINDOWS_BUILD_WARNING',
+              'inputs': [
+                'package.json'
+              ],
+              'outputs': [
+                'ignore_this_part'
+              ],
+              'action': ['echo', 'IMPORTANT: Due to https://github.com/nodejs/node/issues/4932, to build this library on Windows, you must first remove <(node_root_dir)/include/node/openssl/']
             }
           ]
         },
