@@ -10,11 +10,18 @@ RuboCop::RakeTask.new(:rubocop) do |task|
   task.patterns = ['src/ruby/{lib,spec}/**/*.rb']
 end
 
+spec = Gem::Specification.load('grpc.gemspec')
+
+Gem::PackageTask.new(spec) do |pkg|
+end
+
 # Add the extension compiler task
-Rake::ExtensionTask.new 'grpc' do |ext|
+Rake::ExtensionTask.new('grpc', spec) do |ext|
   ext.source_pattern = '**/*.{c,h}'
   ext.ext_dir = File.join('src', 'ruby', 'ext', 'grpc')
   ext.lib_dir = File.join('src', 'ruby', 'lib', 'grpc')
+  ext.cross_compile = true
+  ext.cross_platform = ['x86-mingw32', 'x64-mingw32']
 end
 
 # Define the test suites
@@ -49,6 +56,20 @@ namespace :suite do
       end
     end
   end
+end
+
+desc 'Build the gem file under rake_compiler_dock'
+task 'gem:windows' do
+  require 'digest'
+  require 'rake_compiler_dock'
+  version = Digest::SHA1.file('third_party/rake-compiler-dock/Dockerfile').hexdigest
+  image_name = 'grpc/rake-compiler-dock:' + version
+  cmd = "docker build -t #{image_name} third_party/rake-compiler-dock"
+  puts cmd
+  system cmd
+  exit 1 unless $? == 0
+  ENV['RAKE_COMPILER_DOCK_IMAGE'] = image_name
+  RakeCompilerDock.sh "bundle && rake cross native gem RUBY_CC_VERSION=2.3.0:2.2.2:2.1.6:2.0.0"
 end
 
 # Define dependencies between the suites.
