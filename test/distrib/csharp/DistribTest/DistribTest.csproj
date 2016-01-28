@@ -46,10 +46,10 @@
       <HintPath>..\packages\Google.Apis.Core.1.9.3\lib\portable-net40+sl50+win+wpa81+wp80\Google.Apis.Core.dll</HintPath>
     </Reference>
     <Reference Include="Grpc.Auth">
-      <HintPath>..\packages\Grpc.Auth.0.13.0\lib\net45\Grpc.Auth.dll</HintPath>
+      <HintPath>..\packages\Grpc.Auth.__GRPC_NUGET_VERSION__\lib\net45\Grpc.Auth.dll</HintPath>
     </Reference>
     <Reference Include="Grpc.Core">
-      <HintPath>..\packages\Grpc.Core.0.13.0\lib\net45\Grpc.Core.dll</HintPath>
+      <HintPath>..\packages\Grpc.Core.__GRPC_NUGET_VERSION__\lib\net45\Grpc.Core.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.Threading.Tasks">
       <HintPath>..\packages\Microsoft.Bcl.Async.1.0.168\lib\net40\Microsoft.Threading.Tasks.dll</HintPath>
@@ -93,12 +93,12 @@
     <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <Import Project="..\packages\grpc.native.csharp.0.13.0\build\portable-net45+netcore45+wpa81+wp8\grpc.native.csharp.targets" Condition="Exists('..\packages\grpc.native.csharp.0.13.0\build\portable-net45+netcore45+wpa81+wp8\grpc.native.csharp.targets')" />
+  <Import Project="..\packages\grpc.native.csharp.__GRPC_NUGET_VERSION__\build\portable-net45+netcore45+wpa81+wp8\grpc.native.csharp.targets" Condition="Exists('..\packages\grpc.native.csharp.__GRPC_NUGET_VERSION__\build\portable-net45+netcore45+wpa81+wp8\grpc.native.csharp.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Enable NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('..\packages\grpc.native.csharp.0.13.0\build\portable-net45+netcore45+wpa81+wp8\grpc.native.csharp.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\grpc.native.csharp.0.13.0\build\portable-net45+netcore45+wpa81+wp8\grpc.native.csharp.targets'))" />
+    <Error Condition="!Exists('..\packages\grpc.native.csharp.__GRPC_NUGET_VERSION__\build\portable-net45+netcore45+wpa81+wp8\grpc.native.csharp.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\grpc.native.csharp.__GRPC_NUGET_VERSION__\build\portable-net45+netcore45+wpa81+wp8\grpc.native.csharp.targets'))" />
     <Error Condition="!Exists('..\packages\Microsoft.Bcl.Build.1.0.21\build\Microsoft.Bcl.Build.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Microsoft.Bcl.Build.1.0.21\build\Microsoft.Bcl.Build.targets'))" />
   </Target>
   <Import Project="..\packages\Microsoft.Bcl.Build.1.0.21\build\Microsoft.Bcl.Build.targets" Condition="Exists('..\packages\Microsoft.Bcl.Build.1.0.21\build\Microsoft.Bcl.Build.targets')" />
