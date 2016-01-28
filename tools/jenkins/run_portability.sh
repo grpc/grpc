@@ -41,6 +41,14 @@ set -ex -o igncr || set -ex
 
 echo "building $scenario"
 
+# If scenario has _bo suffix, add --build_only flag.
+# Short suffix name had to been chosen due to path length limit on Windows.
+if [ "$scenario" != "${scenario%_bo}" ]
+then
+  scenario="${scenario%_bo}"
+  BUILD_ONLY_MAYBE="--build_only"
+fi
+
 parts=($(echo $scenario | tr '_' ' '))  # split scenario into parts
 
 curr_platform=${parts[0]}  # variable named 'platform' breaks the windows build
@@ -54,4 +62,4 @@ then
   USE_DOCKER_MAYBE="--use_docker"
 fi
 
-python tools/run_tests/run_tests.py $USE_DOCKER_MAYBE -t -l $language -c $config --arch ${curr_arch} --compiler ${curr_compiler} -x report.xml -j 3 $@
+python tools/run_tests/run_tests.py $USE_DOCKER_MAYBE $BUILD_ONLY_MAYBE -t -l $language -c $config --arch ${curr_arch} --compiler ${curr_compiler} -x report.xml -j 3 $@

@@ -54,6 +54,7 @@ try:
   out['libs'] = [{
       'name': 'z',
       'zlib': True,
+      'defaults': 'zlib',
       'build': 'private',
       'language': 'c',
       'secure': 'no',
