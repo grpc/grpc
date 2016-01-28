@@ -203,9 +203,11 @@
   else
   CXXFLAGS += -std=c++0x
   endif
-  CFLAGS += -g -Wall -Wextra -Werror -Wno-long-long -Wno-unused-parameter
-  CXXFLAGS += -g -Wall -Wextra -Werror -Wno-long-long -Wno-unused-parameter
-  LDFLAGS += -g
+  % for arg in ['CFLAGS', 'CXXFLAGS', 'CPPFLAGS', 'LDFLAGS', 'DEFINES']:
+  %  if defaults.get('global', []).get(arg, None) is not None:
+  ${arg} += ${defaults.get('global').get(arg)}
+  %  endif
+  % endfor
 
   CPPFLAGS += $(CPPFLAGS_$(CONFIG))
   CFLAGS += $(CFLAGS_$(CONFIG))
@@ -1429,16 +1431,10 @@
 
   LIB${lib.name.upper()}_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIB${lib.name.upper()}_SRC))))
 
-  % if lib.boringssl:
-  # boringssl needs an override to ensure that it does not include
-  # system openssl headers regardless of other configuration
-  # we do so here with a target specific variable assignment
-  $(LIB${lib.name.upper()}_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value -fvisibility=hidden
-  $(LIB${lib.name.upper()}_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS) -fvisibility=hidden
-  $(LIB${lib.name.upper()}_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
-  % elif lib.zlib:
-  $(LIB${lib.name.upper()}_OBJS): CFLAGS := $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-implicit-function-declaration -fvisibility=hidden
-  % else:
+  % if lib.get('defaults', None):
+  %  for name, value in defaults.get(lib.defaults).iteritems():
+  $(LIB${lib.name.upper()}_OBJS): ${name} += ${value}
+  %  endfor
   % endif
 
   ## If the library requires OpenSSL, let's add some restrictions.
