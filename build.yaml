@@ -2591,9 +2591,10 @@ configs:
     timeout_multiplier: 1.5
 defaults:
   boringssl:
-    CFLAGS: -Wno-sign-conversion -Wno-conversion -Wno-unused-value
+    CFLAGS: -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas
+      -Wno-implicit-function-declaration -Wno-unused-variable
     CPPFLAGS: -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM
-      -D_GNU_SOURCE
+      -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
   global:
     CPPFLAGS: -g -Wall -Wextra -Werror -Wno-long-long -Wno-unused-parameter
     LDFLAGS: -g
