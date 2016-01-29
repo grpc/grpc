@@ -5,6 +5,7 @@ libs
 objs
 
 # Python items
+python_build/
 .coverage*
 .eggs
 .tox
