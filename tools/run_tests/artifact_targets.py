@@ -28,28 +28,9 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""Builds gRPC distribution artifacts."""
+"""Definition of targets to build artifacts."""
 
-import argparse
-import atexit
-import dockerjob
-import itertools
 import jobset
-import json
-import multiprocessing
-import os
-import re
-import subprocess
-import sys
-import time
-import uuid
-
-# Docker doesn't clean up after itself, so we do it on exit.
-if jobset.platform_string() == 'linux':
-  atexit.register(lambda: subprocess.call(['stty', 'echo']))
-
-ROOT = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), '../..'))
-os.chdir(ROOT)
 
 
 def create_docker_jobspec(name, dockerfile_dir, shell_command, environ={},
@@ -58,7 +39,6 @@ def create_docker_jobspec(name, dockerfile_dir, shell_command, environ={},
   environ = environ.copy()
   environ['RUN_COMMAND'] = shell_command
 
-  #docker_args = ['-v', '%s/artifacts:/var/local/jenkins/grpc/artifacts' % ROOT]
   docker_args=[]
   for k,v in environ.iteritems():
     docker_args += ['-e', '%s=%s' % (k, v)]
@@ -107,7 +87,7 @@ class CSharpExtArtifact:
     self.name = 'csharp_ext_%s_%s' % (platform, arch)
     self.platform = platform
     self.arch = arch
-    self.labels = ['csharp', platform, arch]
+    self.labels = ['artifact', 'csharp', platform, arch]
 
   def pre_build_jobspecs(self):
     if self.platform == 'windows':
@@ -147,92 +127,11 @@ class CSharpExtArtifact:
     return self.name
 
 
-_ARTIFACTS = [
-    CSharpExtArtifact('linux', 'x86'),
-    CSharpExtArtifact('linux', 'x64'),
-    CSharpExtArtifact('macos', 'x86'),
-    CSharpExtArtifact('macos', 'x64'),
-    CSharpExtArtifact('windows', 'x86'),
-    CSharpExtArtifact('windows', 'x64')
-]
-
-
-def _create_build_map():
-  """Maps artifact names and labels to list of artifacts to be built."""
-  artifact_build_map = dict([(artifact.name, [artifact])
-                             for artifact in _ARTIFACTS])
-  if len(_ARTIFACTS) > len(artifact_build_map.keys()):
-    raise Exception('Artifact names need to be unique')
-
-  label_build_map = {}
-  label_build_map['all'] = [a for a in _ARTIFACTS]  # to build all artifacts
-  for artifact in _ARTIFACTS:
-    for label in artifact.labels:
-      if label in label_build_map:
-        label_build_map[label].append(artifact)
-      else:
-        label_build_map[label] = [artifact]
-
-  if set(artifact_build_map.keys()).intersection(label_build_map.keys()):
-    raise Exception('Artifact names need to be distinct from label names')
-  return dict( artifact_build_map.items() + label_build_map.items())
-
-
-_BUILD_MAP = _create_build_map()
-
-argp = argparse.ArgumentParser(description='Builds distribution artifacts.')
-argp.add_argument('-b', '--build',
-                  choices=sorted(_BUILD_MAP.keys()),
-                  nargs='+',
-                  default=['all'],
-                  help='Artifact name or artifact label to build.')
-argp.add_argument('-f', '--filter',
-                  choices=sorted(_BUILD_MAP.keys()),
-                  nargs='+',
-                  default=[],
-                  help='Filter artifacts to build with AND semantics.')
-argp.add_argument('-j', '--jobs', default=multiprocessing.cpu_count(), type=int)
-argp.add_argument('-t', '--travis',
-                  default=False,
-                  action='store_const',
-                  const=True)
-
-args = argp.parse_args()
-
-# Figure out which artifacts to build
-artifacts = []
-for label in args.build:
-  artifacts += _BUILD_MAP[label]
-
-# Among target selected by -b, filter out those that don't match the filter
-artifacts = [a for a in artifacts if all(f in a.labels for f in args.filter)]
-artifacts = sorted(set(artifacts))
-
-# Execute pre-build phase
-prebuild_jobs = []
-for artifact in artifacts:
-  prebuild_jobs += artifact.pre_build_jobspecs()
-if prebuild_jobs:
-  num_failures, _ = jobset.run(
-    prebuild_jobs, newline_on_success=True, maxjobs=args.jobs)
-  if num_failures != 0:
-    jobset.message('FAILED', 'Pre-build phase failed.', do_newline=True)
-    sys.exit(1)
-
-build_jobs = []
-for artifact in artifacts:
-  build_jobs.append(artifact.build_jobspec())
-if not build_jobs:
-  print 'Nothing to build.'
-  sys.exit(1)
-
-jobset.message('START', 'Building artifacts.', do_newline=True)
-num_failures, _ = jobset.run(
-    build_jobs, newline_on_success=True, maxjobs=args.jobs)
-if num_failures == 0:
-  jobset.message('SUCCESS', 'All artifacts built successfully.',
-                 do_newline=True)
-else:
-  jobset.message('FAILED', 'Failed to build artifacts.',
-                 do_newline=True)
-  sys.exit(1)
+def targets():
+  """Gets list of supported targets"""
+  return [CSharpExtArtifact('linux', 'x86'),
+          CSharpExtArtifact('linux', 'x64'),
+          CSharpExtArtifact('macos', 'x86'),
+          CSharpExtArtifact('macos', 'x64'),
+          CSharpExtArtifact('windows', 'x86'),
+          CSharpExtArtifact('windows', 'x64')]

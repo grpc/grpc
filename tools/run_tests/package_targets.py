@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/usr/bin/env python
 # Copyright 2016, Google Inc.
 # All rights reserved.
 #
@@ -27,16 +27,47 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# This script is invoked by Jenkins and triggers build of artifacts.
-#
-# To prevent cygwin bash complaining about empty lines ending with \r
-# we set the igncr option. The option doesn't exist on Linux, so we fallback
-# to just 'set -ex' there.
-# NOTE: No empty lines should appear in this file before igncr is set!
-set -ex -o igncr || set -ex
 
-curr_platform="$platform"
-unset platform  # variable named 'platform' breaks the windows build
+"""Definition of targets to build distribution packages."""
 
-python tools/run_tests/task_runner.py -f artifact $language $curr_platform $architecture
+import jobset
+
+
+def create_jobspec(name, cmdline, environ=None, cwd=None, shell=False,
+                   flake_retries=0, timeout_retries=0):
+  """Creates jobspec."""
+  jobspec = jobset.JobSpec(
+          cmdline=cmdline,
+          environ=environ,
+          cwd=cwd,
+          shortname='build_package.%s' % (name),
+          timeout_seconds=10*60,
+          flake_retries=flake_retries,
+          timeout_retries=timeout_retries,
+          shell=shell)
+  return jobspec
+
+
+class CSharpNugetTarget:
+  """Builds C# nuget packages."""
+
+  def __init__(self):
+    self.name = 'csharp_nuget'
+    self.labels = ['package', 'csharp', 'windows']
+
+  def pre_build_jobspecs(self):
+    return []
+
+  def build_jobspec(self):
+    return create_jobspec(self.name,
+                          ['build_packages.bat'],
+                          cwd='src\\csharp',
+                          shell=True)
+
+  def __str__(self):
+    return self.name
+
+
+def targets():
+  """Gets list of supported targets"""
+  return [CSharpNugetTarget()]
