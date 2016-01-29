@@ -143,14 +143,29 @@ grpc_channel_credentials *grpc_google_default_credentials_create(void);
 #define GRPC_DEFAULT_SSL_ROOTS_FILE_PATH_ENV_VAR \
   "GRPC_DEFAULT_SSL_ROOTS_FILE_PATH"
 
-/* Overrides the default TLS/SSL roots.
-   The roots must be encoded as PEM and NULL-terminated.
+/* Results for the SSL roots override callback. */
+typedef enum {
+  GRPC_SSL_ROOTS_OVERRIDE_OK,
+  GRPC_SSL_ROOTS_OVERRIDE_FAIL_PERMANENTLY, /* Do not try fallback options. */
+  GRPC_SSL_ROOTS_OVERRIDE_FAIL
+} grpc_ssl_roots_override_result;
+
+
+/* Callback for getting the SSL roots override from the application.
+   In case of success, *pem_roots_certs must be set to a NULL terminated string
+   containing the list of PEM encoded root certificates. The ownership is passed
+   to the core and freed (laster by the core) with gpr_free.
+   If this function fails and GRPC_DEFAULT_SSL_ROOTS_FILE_PATH environment is
+   set to a valid path, it will override the roots specified this func */
+typedef grpc_ssl_roots_override_result (*grpc_ssl_roots_override_callback)(
+    char **pem_root_certs);
+
+/* Setup a callback to override the default TLS/SSL roots.
    This function is not thread-safe and must be called at initialization time
    before any ssl credentials are created to have the desired side effect.
-   It also does not do any checks about the validity of the encoding.
-   If the GRPC_DEFAULT_SSL_ROOTS_FILE_PATH environment is set to a valid path,
-   it will override the roots specified in this function. */
-void grpc_override_ssl_default_roots(const char *roots_pem);
+   If GRPC_DEFAULT_SSL_ROOTS_FILE_PATH environment is set to a valid path, the
+   callback will not be called. */
+void grpc_set_ssl_roots_override_callback(grpc_ssl_roots_override_callback cb);
 
 /* Object that holds a private key / certificate chain pair in PEM format. */
 typedef struct {

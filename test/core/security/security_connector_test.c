@@ -47,6 +47,7 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
 #include <grpc/support/useful.h>
 
 static int check_transport_security_type(const grpc_auth_context *ctx) {
@@ -300,8 +301,20 @@ static void test_cn_and_multiple_sans_and_others_ssl_peer_to_auth_context(
   GRPC_AUTH_CONTEXT_UNREF(ctx, "test");
 }
 
+static const char *roots_for_override_api = "roots for override api";
+
+static grpc_ssl_roots_override_result override_roots_success(
+    char **pem_root_certs) {
+  *pem_root_certs = gpr_strdup(roots_for_override_api);
+  return GRPC_SSL_ROOTS_OVERRIDE_OK;
+}
+
+static grpc_ssl_roots_override_result override_roots_permanent_failure(
+    char **pem_root_certs) {
+  return GRPC_SSL_ROOTS_OVERRIDE_FAIL_PERMANENTLY;
+}
+
 static void test_default_ssl_roots(void) {
-  const char *roots_for_override_api = "roots for override api";
   const char *roots_for_env_var = "roots for env var";
 
   char *roots_env_var_file_path;
@@ -311,7 +324,7 @@ static void test_default_ssl_roots(void) {
   fclose(roots_env_var_file);
 
   /* First let's get the root through the override (no env are set). */
-  grpc_override_ssl_default_roots(roots_for_override_api);
+  grpc_set_ssl_roots_override_callback(override_roots_success);
   gpr_slice roots = grpc_get_default_ssl_roots_for_testing();
   char *roots_contents = gpr_dump_slice(roots, GPR_DUMP_ASCII);
   gpr_slice_unref(roots);
@@ -335,6 +348,12 @@ static void test_default_ssl_roots(void) {
   gpr_slice_unref(roots);
   GPR_ASSERT(strcmp(roots_contents, roots_for_override_api) == 0);
   gpr_free(roots_contents);
+
+  /* Now setup a permanent failure for the overridden roots and we should get
+     an empty slice. */
+  grpc_set_ssl_roots_override_callback(override_roots_permanent_failure);
+  roots = grpc_get_default_ssl_roots_for_testing();
+  GPR_ASSERT(GPR_SLICE_IS_EMPTY(roots));
 
   /* Cleanup. */
   remove(roots_env_var_file_path);
