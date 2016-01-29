@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -120,7 +120,7 @@ void grpc_iocp_work(grpc_exec_ctx *exec_ctx, gpr_timespec deadline) {
     info->has_pending_iocp = 1;
   }
   gpr_mu_unlock(&socket->state_mu);
-  grpc_exec_ctx_enqueue(exec_ctx, closure, 1);
+  grpc_exec_ctx_enqueue(exec_ctx, closure, true, NULL);
 }
 
 void grpc_iocp_init(void) {
@@ -183,7 +183,7 @@ static void socket_notify_on_iocp(grpc_exec_ctx *exec_ctx,
   gpr_mu_lock(&socket->state_mu);
   if (info->has_pending_iocp) {
     info->has_pending_iocp = 0;
-    grpc_exec_ctx_enqueue(exec_ctx, closure, 1);
+    grpc_exec_ctx_enqueue(exec_ctx, closure, true, NULL);
   } else {
     info->closure = closure;
   }

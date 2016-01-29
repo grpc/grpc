@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -43,7 +43,7 @@
 
 static int cb_called[MAX_CB][2];
 
-static void cb(grpc_exec_ctx *exec_ctx, void *arg, int success) {
+static void cb(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
   cb_called[(intptr_t)arg][success]++;
 }
 

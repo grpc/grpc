@@ -37,11 +37,12 @@
 #include <map>
 #include <memory>
 
-#include <grpc++/impl/grpc_library.h>
+#include <grpc++/impl/codegen/grpc_library.h>
 #include <grpc++/security/auth_context.h>
-#include <grpc++/support/config.h>
 #include <grpc++/support/status.h>
 #include <grpc++/support/string_ref.h>
+
+struct grpc_call;
 
 namespace grpc {
 class ChannelArguments;
@@ -56,9 +57,10 @@ class SecureCallCredentials;
 /// for all the calls on that channel.
 ///
 /// \see http://www.grpc.io/docs/guides/auth.html
-class ChannelCredentials : public GrpcLibrary {
+class ChannelCredentials : private GrpcLibrary {
  public:
-  ~ChannelCredentials() GRPC_OVERRIDE;
+  ChannelCredentials();
+  ~ChannelCredentials();
 
  protected:
   friend std::shared_ptr<ChannelCredentials> CompositeChannelCredentials(
@@ -81,9 +83,10 @@ class ChannelCredentials : public GrpcLibrary {
 /// authenticate with a server for a given call on a channel.
 ///
 /// \see http://www.grpc.io/docs/guides/auth.html
-class CallCredentials : public GrpcLibrary {
+class CallCredentials {
  public:
-  ~CallCredentials() GRPC_OVERRIDE;
+  CallCredentials();
+  ~CallCredentials();
 
   /// Apply this instance's credentials to \a call.
   virtual bool ApplyToCall(grpc_call* call) = 0;

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -126,7 +126,7 @@ static void flush_read_staging_buffer(secure_endpoint *ep, uint8_t **cur,
 }
 
 static void call_read_cb(grpc_exec_ctx *exec_ctx, secure_endpoint *ep,
-                         int success) {
+                         bool success) {
   if (grpc_trace_secure_endpoint) {
     size_t i;
     for (i = 0; i < ep->read_buffer->count; i++) {
@@ -137,11 +137,11 @@ static void call_read_cb(grpc_exec_ctx *exec_ctx, secure_endpoint *ep,
     }
   }
   ep->read_buffer = NULL;
-  grpc_exec_ctx_enqueue(exec_ctx, ep->read_cb, success);
+  grpc_exec_ctx_enqueue(exec_ctx, ep->read_cb, success, NULL);
   SECURE_ENDPOINT_UNREF(exec_ctx, ep, "read");
 }
 
-static void on_read(grpc_exec_ctx *exec_ctx, void *user_data, int success) {
+static void on_read(grpc_exec_ctx *exec_ctx, void *user_data, bool success) {
   unsigned i;
   uint8_t keep_looping = 0;
   tsi_result result = TSI_OK;
@@ -315,7 +315,7 @@ static void endpoint_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *secure_ep,
   if (result != TSI_OK) {
     /* TODO(yangg) do different things according to the error type? */
     gpr_slice_buffer_reset_and_unref(&ep->output_buffer);
-    grpc_exec_ctx_enqueue(exec_ctx, cb, 0);
+    grpc_exec_ctx_enqueue(exec_ctx, cb, false, NULL);
     return;
   }
 

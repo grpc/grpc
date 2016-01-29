@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -127,7 +127,7 @@ struct read_and_write_test_state {
 };
 
 static void read_and_write_test_read_handler(grpc_exec_ctx *exec_ctx,
-                                             void *data, int success) {
+                                             void *data, bool success) {
   struct read_and_write_test_state *state = data;
 
   state->bytes_read += count_slices(
@@ -145,7 +145,7 @@ static void read_and_write_test_read_handler(grpc_exec_ctx *exec_ctx,
 }
 
 static void read_and_write_test_write_handler(grpc_exec_ctx *exec_ctx,
-                                              void *data, int success) {
+                                              void *data, bool success) {
   struct read_and_write_test_state *state = data;
   gpr_slice *slices = NULL;
   size_t nslices;
