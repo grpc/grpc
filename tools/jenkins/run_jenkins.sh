@@ -41,7 +41,7 @@ set -ex -o igncr || set -ex
 
 if [ "$platform" == "linux" ]
 then
-  USE_DOCKER_MAYBE="--use_docker"
+  PLATFORM_SPECIFIC_ARGS="--use_docker --measure_cpu_costs"
 elif [ "$platform" == "freebsd" ]
 then
   export MAKE=gmake
@@ -49,7 +49,14 @@ fi
 
 unset platform  # variable named 'platform' breaks the windows build
 
-python tools/run_tests/run_tests.py $USE_DOCKER_MAYBE -t -l $language -c $config -x report.xml -j 2 $@ || TESTS_FAILED="true"
+python tools/run_tests/run_tests.py \
+  $PLATFORM_SPECIFIC_ARGS           \
+  -t                                \
+  -l $language                      \
+  -c $config                        \
+  -x report.xml                     \
+  -j 2                              \
+  $@ || TESTS_FAILED="true"
 
 if [ ! -e reports/index.html ]
 then
