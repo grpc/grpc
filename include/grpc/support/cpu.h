@@ -34,6 +34,8 @@
 #ifndef GRPC_SUPPORT_CPU_H
 #define GRPC_SUPPORT_CPU_H
 
+#include <grpc/support/port_platform.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
