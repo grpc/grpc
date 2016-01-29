@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -81,7 +81,7 @@ static void connector_unref(grpc_exec_ctx *exec_ctx, grpc_connector *con) {
   }
 }
 
-static void connected(grpc_exec_ctx *exec_ctx, void *arg, int success) {
+static void connected(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
   connector *c = arg;
   grpc_closure *notify;
   grpc_endpoint *tcp = c->tcp;
@@ -240,7 +240,7 @@ static grpc_end2end_test_fixture chttp2_create_fixture_micro_fullstack(
 grpc_connectivity_state g_state = GRPC_CHANNEL_IDLE;
 grpc_pollset_set g_interested_parties;
 
-static void state_changed(grpc_exec_ctx *exec_ctx, void *arg, int success) {
+static void state_changed(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
   if (g_state != GRPC_CHANNEL_READY) {
     grpc_subchannel_notify_on_state_change(
         exec_ctx, arg, &g_interested_parties, &g_state,
@@ -248,7 +248,7 @@ static void state_changed(grpc_exec_ctx *exec_ctx, void *arg, int success) {
   }
 }
 
-static void destroy_pollset(grpc_exec_ctx *exec_ctx, void *arg, int success) {
+static void destroy_pollset(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
   grpc_pollset_destroy(arg);
 }
 
