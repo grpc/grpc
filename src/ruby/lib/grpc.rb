@@ -32,9 +32,8 @@ unless ENV['GRPC_DEFAULT_SSL_ROOTS_FILE_PATH']
   ENV['GRPC_DEFAULT_SSL_ROOTS_FILE_PATH'] = ssl_roots_path
 end
 
-require 'grpc/loader'
-
 require 'grpc/errors'
+require 'grpc/grpc'
 require 'grpc/logconfig'
 require 'grpc/notifier'
 require 'grpc/version'

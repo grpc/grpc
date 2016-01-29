@@ -114,8 +114,7 @@ when /mingw|mswin/
   $LDFLAGS << ' -static '
 end
 
-subdir = RUBY_VERSION.sub(/\.\d$/,'')
-output = File.join('grpc', 'grpc')
+output = File.join('grpc', 'grpc_c')
 puts 'Generating Makefile for ' + output
 create_makefile(output)
 

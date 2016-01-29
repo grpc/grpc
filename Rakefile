@@ -16,7 +16,7 @@ Gem::PackageTask.new(spec) do |pkg|
 end
 
 # Add the extension compiler task
-Rake::ExtensionTask.new('grpc', spec) do |ext|
+Rake::ExtensionTask.new('grpc_c', spec) do |ext|
   ext.source_pattern = '**/*.{c,h}'
   ext.ext_dir = File.join('src', 'ruby', 'ext', 'grpc')
   ext.lib_dir = File.join('src', 'ruby', 'lib', 'grpc')
