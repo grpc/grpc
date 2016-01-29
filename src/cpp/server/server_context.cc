@@ -33,9 +33,11 @@
 
 #include <grpc++/server_context.h>
 
+#include <grpc/compression.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc++/completion_queue.h>
 #include <grpc++/impl/call.h>
 #include <grpc++/impl/sync.h>
 #include <grpc++/support/time.h>

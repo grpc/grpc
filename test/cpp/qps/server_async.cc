@@ -356,7 +356,7 @@ class AsyncQpsServerTest : public Server {
 
 static void RegisterBenchmarkService(ServerBuilder *builder,
                                      BenchmarkService::AsyncService *service) {
-  builder->RegisterAsyncService(service);
+  builder->RegisterService(service);
 }
 static void RegisterGenericService(ServerBuilder *builder,
                                    grpc::AsyncGenericService *service) {
