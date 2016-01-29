@@ -109,6 +109,11 @@ $CFLAGS << ' -pedantic '
 $CFLAGS << ' -Werror '
 $CFLAGS << ' -Wno-format '
 
+case RUBY_PLATFORM
+when /mingw|mswin/
+  $LDFLAGS << ' -static '
+end
+
 subdir = RUBY_VERSION.sub(/\.\d$/,'')
 output = File.join('grpc', 'grpc')
 puts 'Generating Makefile for ' + output
