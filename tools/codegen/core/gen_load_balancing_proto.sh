@@ -126,12 +126,11 @@ mv -v $TMPFILE "$OUTPUT_DIR/$PROTO_BASENAME.pb.h"
 
 ls -l $OUTPUT_DIR
 
-docker run --rm=false -v $OUTPUT_DIR:/lol -t grpc_clang_format \
-  ls -l /
-docker run --rm=true -v $OUTPUT_DIR:/lol -t grpc_clang_format \
-  ls -l /lol
-
+readonly MOUNTPOINT='/protos'
+docker run --rm=true -v ${HOST_GIT_ROOT}:$MOUNTPOINT -t grpc_clang_format \
+  ls -l $MOUNTPOINT
+#docker run --rm=true -v $OUTPUT_DIR:$MOUNTPOINT -t grpc_clang_format \
 #  clang-format-3.6 -style="{BasedOnStyle: Google, Language: Cpp}" \
-#    -i /local/load_balancer.pb.c /local/load_balancer.pb.h
+#    -i $MOUNTPOINT/load_balancer.pb.c $MOUNTPOINT/load_balancer.pb.h
 
 popd > /dev/null
