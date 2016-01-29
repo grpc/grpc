@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -89,7 +89,7 @@ class SynchronousServer GRPC_FINAL : public grpc::testing::Server {
 
     char* server_address = NULL;
 
-    gpr_join_host_port(&server_address, config.host().c_str(), port());
+    gpr_join_host_port(&server_address, "::", port());
     builder.AddListeningPort(server_address,
                              Server::CreateServerCredentials(config));
     gpr_free(server_address);

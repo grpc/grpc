@@ -76,7 +76,7 @@ function unaryCall(call, callback) {
  */
 function streamingCall(call) {
   call.on('data', function(value) {
-    var payload = {body: zeroBuffer(value.repsonse_size)};
+    var payload = {body: zeroBuffer(value.response_size)};
     call.write({payload: payload});
   });
   call.on('end', function() {

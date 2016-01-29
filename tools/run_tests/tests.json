@@ -1991,7 +1991,7 @@
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c++", 
-    "name": "grpclb_api_test", 
+    "name": "hybrid_end2end_test", 
     "platforms": [
       "linux", 
       "mac", 
