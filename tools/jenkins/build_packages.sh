@@ -39,4 +39,4 @@ set -ex -o igncr || set -ex
 curr_platform="$platform"
 unset platform  # variable named 'platform' breaks the windows build
 
-python tools/run_tests/task_runner.py -f artifact $language $curr_platform $architecture
+python tools/run_tests/task_runner.py -f package $curr_platform
