@@ -116,16 +116,17 @@ create_makefile(output)
 
 strip_tool = RbConfig::CONFIG['STRIP']
 
-File.open('Makefile.new', 'w') do |o|
-  o.puts 'hijack: all strip'
-  o.puts
-  File.foreach('Makefile') do |i|
-    o.puts i
+if grpc_config == 'opt'
+  File.open('Makefile.new', 'w') do |o|
+    o.puts 'hijack: all strip'
+    o.puts
+    File.foreach('Makefile') do |i|
+      o.puts i
+    end
+    o.puts
+    o.puts 'strip:'
+    o.puts "\t$(ECHO) Stripping $(DLLIB)"
+    o.puts "\t$(Q) #{strip_tool} $(DLLIB)"
   end
-  o.puts
-  o.puts 'strip:'
-  o.puts "\t$(ECHO) Stripping $(DLLIB)"
-  o.puts "\t$(Q) #{strip_tool} $(DLLIB)"
+  File.rename('Makefile.new', 'Makefile')
 end
-
-File.rename('Makefile.new', 'Makefile')
