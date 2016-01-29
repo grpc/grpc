@@ -124,13 +124,10 @@ mv -v $TMPFILE "$OUTPUT_DIR/$PROTO_BASENAME.pb.c"
 cat $COPYRIGHT_FILE "$OUTPUT_DIR/$PROTO_BASENAME.pb.h" > $TMPFILE
 mv -v $TMPFILE "$OUTPUT_DIR/$PROTO_BASENAME.pb.h"
 
-ls -l $OUTPUT_DIR
-
 readonly MOUNTPOINT='/protos'
-docker run --rm=true -v ${HOST_GIT_ROOT}:$MOUNTPOINT -t grpc_clang_format \
-  ls -l $MOUNTPOINT
-#docker run --rm=true -v $OUTPUT_DIR:$MOUNTPOINT -t grpc_clang_format \
-#  clang-format-3.6 -style="{BasedOnStyle: Google, Language: Cpp}" \
-#    -i $MOUNTPOINT/load_balancer.pb.c $MOUNTPOINT/load_balancer.pb.h
+docker run --rm=true -v ${HOST_GIT_ROOT}/gens/src/proto/grpc/lb/v0:$MOUNTPOINT \
+        -t grpc_clang_format \
+        clang-format-3.6 -style="{BasedOnStyle: Google, Language: Cpp}" \
+        -i $MOUNTPOINT/load_balancer.pb.c $MOUNTPOINT/load_balancer.pb.h
 
 popd > /dev/null
