@@ -2592,7 +2592,7 @@ configs:
 defaults:
   boringssl:
     CFLAGS: -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas
-      -Wno-implicit-function-declaration -Wno-unused-variable
+      -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare
     CPPFLAGS: -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM
       -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
   global:
