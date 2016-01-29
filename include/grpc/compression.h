@@ -46,19 +46,20 @@ extern "C" {
 /** Parses the first \a name_length bytes of \a name as a
  * grpc_compression_algorithm instance, updating \a algorithm. Returns 1 upon
  * success, 0 otherwise. */
-GRPC_API int grpc_compression_algorithm_parse(const char *name, size_t name_length,
-                                     grpc_compression_algorithm *algorithm);
+GRPC_API int grpc_compression_algorithm_parse(
+    const char *name, size_t name_length,
+    grpc_compression_algorithm *algorithm);
 
 /** Updates \a name with the encoding name corresponding to a valid \a
  * algorithm.  Returns 1 upon success, 0 otherwise. */
-GRPC_API int grpc_compression_algorithm_name(grpc_compression_algorithm algorithm,
-                                    char **name);
+GRPC_API int grpc_compression_algorithm_name(
+    grpc_compression_algorithm algorithm, char **name);
 
 /** Returns the compression algorithm corresponding to \a level.
  *
  * It abort()s for unknown levels . */
-GRPC_API grpc_compression_algorithm grpc_compression_algorithm_for_level(
-    grpc_compression_level level);
+GRPC_API grpc_compression_algorithm
+grpc_compression_algorithm_for_level(grpc_compression_level level);
 
 GRPC_API void grpc_compression_options_init(grpc_compression_options *opts);
 

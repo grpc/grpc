@@ -69,18 +69,19 @@ GRPC_API const grpc_auth_property *grpc_auth_property_iterator_next(
     grpc_auth_property_iterator *it);
 
 /* Iterates over the auth context. */
-GRPC_API grpc_auth_property_iterator grpc_auth_context_property_iterator(
-    const grpc_auth_context *ctx);
+GRPC_API grpc_auth_property_iterator
+grpc_auth_context_property_iterator(const grpc_auth_context *ctx);
 
 /* Gets the peer identity. Returns an empty iterator (first _next will return
    NULL) if the peer is not authenticated. */
-GRPC_API grpc_auth_property_iterator grpc_auth_context_peer_identity(
-    const grpc_auth_context *ctx);
+GRPC_API grpc_auth_property_iterator
+grpc_auth_context_peer_identity(const grpc_auth_context *ctx);
 
 /* Finds a property in the context. May return an empty iterator (first _next
    will return NULL) if no property with this name was found in the context. */
-GRPC_API grpc_auth_property_iterator grpc_auth_context_find_properties_by_name(
-    const grpc_auth_context *ctx, const char *name);
+GRPC_API grpc_auth_property_iterator
+grpc_auth_context_find_properties_by_name(const grpc_auth_context *ctx,
+                                          const char *name);
 
 /* Gets the name of the property that indicates the peer identity. Will return
    NULL if the peer is not authenticated. */
@@ -88,7 +89,8 @@ GRPC_API const char *grpc_auth_context_peer_identity_property_name(
     const grpc_auth_context *ctx);
 
 /* Returns 1 if the peer is authenticated, 0 otherwise. */
-GRPC_API int grpc_auth_context_peer_is_authenticated(const grpc_auth_context *ctx);
+GRPC_API int grpc_auth_context_peer_is_authenticated(
+    const grpc_auth_context *ctx);
 
 /* Gets the auth context from the call. Caller needs to call
    grpc_auth_context_release on the returned context. */
@@ -103,18 +105,20 @@ GRPC_API void grpc_auth_context_release(grpc_auth_context *context);
    -- */
 
 /* Add a property. */
-GRPC_API void grpc_auth_context_add_property(grpc_auth_context *ctx, const char *name,
-                                    const char *value, size_t value_length);
+GRPC_API void grpc_auth_context_add_property(grpc_auth_context *ctx,
+                                             const char *name,
+                                             const char *value,
+                                             size_t value_length);
 
 /* Add a C string property. */
 GRPC_API void grpc_auth_context_add_cstring_property(grpc_auth_context *ctx,
-                                            const char *name,
-                                            const char *value);
+                                                     const char *name,
+                                                     const char *value);
 
 /* Sets the property name. Returns 1 if successful or 0 in case of failure
    (which means that no property with this name exists). */
-GRPC_API int grpc_auth_context_set_peer_identity_property_name(grpc_auth_context *ctx,
-                                                      const char *name);
+GRPC_API int grpc_auth_context_set_peer_identity_property_name(
+    grpc_auth_context *ctx, const char *name);
 
 /* --- grpc_channel_credentials object. ---
 
@@ -203,8 +207,10 @@ extern const gpr_timespec grpc_max_auth_token_lifetime;
    - token_lifetime is the lifetime of each Json Web Token (JWT) created with
      this credentials.  It should not exceed grpc_max_auth_token_lifetime or
      will be cropped to this value.  */
-GRPC_API grpc_call_credentials *grpc_service_account_jwt_access_credentials_create(
-    const char *json_key, gpr_timespec token_lifetime, void *reserved);
+GRPC_API grpc_call_credentials *
+grpc_service_account_jwt_access_credentials_create(const char *json_key,
+                                                   gpr_timespec token_lifetime,
+                                                   void *reserved);
 
 /* Creates an Oauth2 Refresh Token credentials object for connecting to Google.
    May return NULL if the input is invalid.
@@ -289,10 +295,9 @@ GRPC_API grpc_call_credentials *grpc_metadata_credentials_create_from_plugin(
 /* --- Secure channel creation. --- */
 
 /* Creates a secure channel using the passed-in credentials. */
-GRPC_API grpc_channel *grpc_secure_channel_create(grpc_channel_credentials *creds,
-                                         const char *target,
-                                         const grpc_channel_args *args,
-                                         void *reserved);
+GRPC_API grpc_channel *grpc_secure_channel_create(
+    grpc_channel_credentials *creds, const char *target,
+    const grpc_channel_args *args, void *reserved);
 
 /* --- grpc_server_credentials object. ---
 
@@ -325,15 +330,16 @@ GRPC_API grpc_server_credentials *grpc_ssl_server_credentials_create(
 /* Add a HTTP2 over an encrypted link over tcp listener.
    Returns bound port number on success, 0 on failure.
    REQUIRES: server not started */
-GRPC_API int grpc_server_add_secure_http2_port(grpc_server *server, const char *addr,
-                                      grpc_server_credentials *creds);
+GRPC_API int grpc_server_add_secure_http2_port(grpc_server *server,
+                                               const char *addr,
+                                               grpc_server_credentials *creds);
 
 /* --- Call specific credentials. --- */
 
 /* Sets a credentials to a call. Can only be called on the client side before
    grpc_call_start_batch. */
-GRPC_API grpc_call_error grpc_call_set_credentials(grpc_call *call,
-                                          grpc_call_credentials *creds);
+GRPC_API grpc_call_error
+grpc_call_set_credentials(grpc_call *call, grpc_call_credentials *creds);
 
 /* --- Auth Metadata Processing --- */
 

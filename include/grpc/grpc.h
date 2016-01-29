@@ -102,7 +102,8 @@ GRPC_API grpc_completion_queue *grpc_completion_queue_create(void *reserved);
     Callers must not call grpc_completion_queue_next and
     grpc_completion_queue_pluck simultaneously on the same completion queue. */
 GRPC_API grpc_event grpc_completion_queue_next(grpc_completion_queue *cq,
-                                      gpr_timespec deadline, void *reserved);
+                                               gpr_timespec deadline,
+                                               void *reserved);
 
 /** Blocks until an event with tag 'tag' is available, the completion queue is
     being shutdown or deadline is reached.
@@ -115,8 +116,9 @@ GRPC_API grpc_event grpc_completion_queue_next(grpc_completion_queue *cq,
 
     Completion queues support a maximum of GRPC_MAX_COMPLETION_QUEUE_PLUCKERS
     concurrently executing plucks at any time. */
-GRPC_API grpc_event grpc_completion_queue_pluck(grpc_completion_queue *cq, void *tag,
-                                       gpr_timespec deadline, void *reserved);
+GRPC_API grpc_event
+grpc_completion_queue_pluck(grpc_completion_queue *cq, void *tag,
+                            gpr_timespec deadline, void *reserved);
 
 /** Maximum number of outstanding grpc_completion_queue_pluck executions per
     completion queue */
@@ -141,8 +143,8 @@ GRPC_API void grpc_completion_queue_destroy(grpc_completion_queue *cq);
  * grpc_alarm_cancel), an event with tag \a tag will be added to \a cq. If the
  * alarm expired, the event's success bit will be true, false otherwise (ie,
  * upon cancellation). */
-GRPC_API grpc_alarm *grpc_alarm_create(grpc_completion_queue *cq, gpr_timespec deadline,
-                              void *tag);
+GRPC_API grpc_alarm *grpc_alarm_create(grpc_completion_queue *cq,
+                                       gpr_timespec deadline, void *tag);
 
 /** Cancel a completion queue alarm. Calling this function over an alarm that
  * has already fired has no effect. */
@@ -152,8 +154,9 @@ GRPC_API void grpc_alarm_cancel(grpc_alarm *alarm);
 GRPC_API void grpc_alarm_destroy(grpc_alarm *alarm);
 
 /** Check the connectivity state of a channel. */
-GRPC_API grpc_connectivity_state grpc_channel_check_connectivity_state(
-    grpc_channel *channel, int try_to_connect);
+GRPC_API grpc_connectivity_state
+grpc_channel_check_connectivity_state(grpc_channel *channel,
+                                      int try_to_connect);
 
 /** Watch for a change in connectivity state.
     Once the channel connectivity state is different from last_observed_state,
@@ -170,21 +173,21 @@ GRPC_API void grpc_channel_watch_connectivity_state(
     If parent_call is non-NULL, it must be a server-side call. It will be used
     to propagate properties from the server call to this new client call.
     */
-GRPC_API grpc_call *grpc_channel_create_call(grpc_channel *channel,
-                                    grpc_call *parent_call,
-                                    uint32_t propagation_mask,
-                                    grpc_completion_queue *completion_queue,
-                                    const char *method, const char *host,
-                                    gpr_timespec deadline, void *reserved);
+GRPC_API grpc_call *grpc_channel_create_call(
+    grpc_channel *channel, grpc_call *parent_call, uint32_t propagation_mask,
+    grpc_completion_queue *completion_queue, const char *method,
+    const char *host, gpr_timespec deadline, void *reserved);
 
 /** Ping the channels peer (load balanced channels will select one sub-channel
     to ping); if the channel is not connected, posts a failed. */
-GRPC_API void grpc_channel_ping(grpc_channel *channel, grpc_completion_queue *cq,
-                       void *tag, void *reserved);
+GRPC_API void grpc_channel_ping(grpc_channel *channel,
+                                grpc_completion_queue *cq, void *tag,
+                                void *reserved);
 
 /** Pre-register a method/host pair on a channel. */
-GRPC_API void *grpc_channel_register_call(grpc_channel *channel, const char *method,
-                                 const char *host, void *reserved);
+GRPC_API void *grpc_channel_register_call(grpc_channel *channel,
+                                          const char *method, const char *host,
+                                          void *reserved);
 
 /** Create a call given a handle returned from grpc_channel_register_call */
 GRPC_API grpc_call *grpc_channel_create_registered_call(
@@ -203,8 +206,9 @@ GRPC_API grpc_call *grpc_channel_create_registered_call(
     needs to be synchronized. As an optimization, you may synchronize batches
     containing just send operations independently from batches containing just
     receive operations. */
-GRPC_API grpc_call_error grpc_call_start_batch(grpc_call *call, const grpc_op *ops,
-                                      size_t nops, void *tag, void *reserved);
+GRPC_API grpc_call_error grpc_call_start_batch(grpc_call *call,
+                                               const grpc_op *ops, size_t nops,
+                                               void *tag, void *reserved);
 
 /** Returns a newly allocated string representing the endpoint to which this
     call is communicating with. The string is in the uri format accepted by
@@ -221,7 +225,7 @@ struct census_context;
 /* Set census context for a call; Must be called before first call to
    grpc_call_start_batch(). */
 GRPC_API void grpc_census_call_set_context(grpc_call *call,
-                                  struct census_context *context);
+                                           struct census_context *context);
 
 /* Retrieve the calls current census context. */
 GRPC_API struct census_context *grpc_census_call_get_context(grpc_call *call);
@@ -235,14 +239,12 @@ GRPC_API char *grpc_channel_get_target(grpc_channel *channel);
     clients will want to simply pass NULL. See grpc_channel_args definition for
     more on this. The data in 'args' need only live through the invocation of
     this function. */
-GRPC_API grpc_channel *grpc_insecure_channel_create(const char *target,
-                                           const grpc_channel_args *args,
-                                           void *reserved);
+GRPC_API grpc_channel *grpc_insecure_channel_create(
+    const char *target, const grpc_channel_args *args, void *reserved);
 
 /** Create a lame client: this client fails every operation attempted on it. */
-GRPC_API grpc_channel *grpc_lame_client_channel_create(const char *target,
-                                              grpc_status_code error_code,
-                                              const char *error_message);
+GRPC_API grpc_channel *grpc_lame_client_channel_create(
+    const char *target, grpc_status_code error_code, const char *error_message);
 
 /** Close and destroy a grpc channel */
 GRPC_API void grpc_channel_destroy(grpc_channel *channel);
@@ -266,10 +268,9 @@ GRPC_API grpc_call_error grpc_call_cancel(grpc_call *call, void *reserved);
     and description passed in.
     Importantly, this function does not send status nor description to the
     remote endpoint. */
-GRPC_API grpc_call_error grpc_call_cancel_with_status(grpc_call *call,
-                                             grpc_status_code status,
-                                             const char *description,
-                                             void *reserved);
+GRPC_API grpc_call_error
+grpc_call_cancel_with_status(grpc_call *call, grpc_status_code status,
+                             const char *description, void *reserved);
 
 /** Destroy a call.
     THREAD SAFETY: grpc_call_destroy is thread-compatible */
@@ -283,11 +284,13 @@ GRPC_API void grpc_call_destroy(grpc_call *call);
     to \a cq_bound_to_call.
     Note that \a cq_for_notification must have been registered to the server via
     \a grpc_server_register_completion_queue. */
-GRPC_API grpc_call_error grpc_server_request_call(
-    grpc_server *server, grpc_call **call, grpc_call_details *details,
-    grpc_metadata_array *request_metadata,
-    grpc_completion_queue *cq_bound_to_call,
-    grpc_completion_queue *cq_for_notification, void *tag_new);
+GRPC_API grpc_call_error
+grpc_server_request_call(grpc_server *server, grpc_call **call,
+                         grpc_call_details *details,
+                         grpc_metadata_array *request_metadata,
+                         grpc_completion_queue *cq_bound_to_call,
+                         grpc_completion_queue *cq_for_notification,
+                         void *tag_new);
 
 /** Registers a method in the server.
     Methods to this (host, method) pair will not be reported by
@@ -296,8 +299,9 @@ GRPC_API grpc_call_error grpc_server_request_call(
     registered_method (as returned by this function).
     Must be called before grpc_server_start.
     Returns NULL on failure. */
-GRPC_API void *grpc_server_register_method(grpc_server *server, const char *method,
-                                  const char *host);
+GRPC_API void *grpc_server_register_method(grpc_server *server,
+                                           const char *method,
+                                           const char *host);
 
 /** Request notification of a new pre-registered call. 'cq_for_notification'
     must have been registered to the server via
@@ -313,20 +317,22 @@ GRPC_API grpc_call_error grpc_server_request_registered_call(
     be specified with args. If no additional configuration is needed, args can
     be NULL. See grpc_channel_args for more. The data in 'args' need only live
     through the invocation of this function. */
-GRPC_API grpc_server *grpc_server_create(const grpc_channel_args *args, void *reserved);
+GRPC_API grpc_server *grpc_server_create(const grpc_channel_args *args,
+                                         void *reserved);
 
 /** Register a completion queue with the server. Must be done for any
     notification completion queue that is passed to grpc_server_request_*_call
     and to grpc_server_shutdown_and_notify. Must be performed prior to
     grpc_server_start. */
 GRPC_API void grpc_server_register_completion_queue(grpc_server *server,
-                                           grpc_completion_queue *cq,
-                                           void *reserved);
+                                                    grpc_completion_queue *cq,
+                                                    void *reserved);
 
 /** Add a HTTP2 over plaintext over tcp listener.
     Returns bound port number on success, 0 on failure.
     REQUIRES: server not started */
-GRPC_API int grpc_server_add_insecure_http2_port(grpc_server *server, const char *addr);
+GRPC_API int grpc_server_add_insecure_http2_port(grpc_server *server,
+                                                 const char *addr);
 
 /** Start a server - tells all listeners to start listening */
 GRPC_API void grpc_server_start(grpc_server *server);
@@ -339,7 +345,8 @@ GRPC_API void grpc_server_start(grpc_server *server);
     grpc_server_shutdown_and_notify calls are made. 'cq' must have been
     registered to this server via grpc_server_register_completion_queue. */
 GRPC_API void grpc_server_shutdown_and_notify(grpc_server *server,
-                                     grpc_completion_queue *cq, void *tag);
+                                              grpc_completion_queue *cq,
+                                              void *tag);
 
 /** Cancel all in-progress calls.
     Only usable after shutdown. */
@@ -366,7 +373,8 @@ GRPC_API int grpc_header_key_is_legal(const char *key, size_t length);
 
 /** Check whether a non-binary metadata value is legal (will be accepted by
     core) */
-GRPC_API int grpc_header_nonbin_value_is_legal(const char *value, size_t length);
+GRPC_API int grpc_header_nonbin_value_is_legal(const char *value,
+                                               size_t length);
 
 /** Check whether a metadata key corresponds to a binary value */
 GRPC_API int grpc_is_binary_header(const char *key, size_t length);
