@@ -30,9 +30,9 @@
 
 set -ex
 
-apt-get install -y autoconf automake libtool curl virtualenv
+apt-get install -y autoconf automake libtool curl python-virtualenv
 
-readonly NANOPB_TMP_OUTPUT=$(mktemp -d)
+readonly NANOPB_TMP_OUTPUT="${HOST_GIT_ROOT}/gens/src/proto/grpc/lb/v0"
 readonly VENV_DIR=$(mktemp -d)
 # create a virtualenv for nanopb's compiler
 pushd $VENV_DIR
