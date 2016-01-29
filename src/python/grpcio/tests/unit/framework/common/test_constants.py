@@ -34,10 +34,10 @@
 TIME_ALLOWANCE = 10
 # Value for maximum duration in seconds of RPCs that may time out as part of a
 # test.
-SHORT_TIMEOUT = 4
+SHORT_TIMEOUT = 2
 # Absurdly large value for maximum duration in seconds for should-not-time-out
 # RPCs made during tests.
-LONG_TIMEOUT = 3000
+LONG_TIMEOUT = 20
 # Values to supply on construction of an object that will service RPCs; these
 # should not be used as the actual timeout values of any RPCs made during tests.
 DEFAULT_TIMEOUT = 300
