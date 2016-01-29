@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -114,13 +114,13 @@ static void finish(grpc_exec_ctx *exec_ctx, internal_request *req,
   gpr_free(req);
 }
 
-static void on_read(grpc_exec_ctx *exec_ctx, void *user_data, int success);
+static void on_read(grpc_exec_ctx *exec_ctx, void *user_data, bool success);
 
 static void do_read(grpc_exec_ctx *exec_ctx, internal_request *req) {
   grpc_endpoint_read(exec_ctx, req->ep, &req->incoming, &req->on_read);
 }
 
-static void on_read(grpc_exec_ctx *exec_ctx, void *user_data, int success) {
+static void on_read(grpc_exec_ctx *exec_ctx, void *user_data, bool success) {
   internal_request *req = user_data;
   size_t i;
 
@@ -147,7 +147,7 @@ static void on_written(grpc_exec_ctx *exec_ctx, internal_request *req) {
   do_read(exec_ctx, req);
 }
 
-static void done_write(grpc_exec_ctx *exec_ctx, void *arg, int success) {
+static void done_write(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
   internal_request *req = arg;
   if (success) {
     on_written(exec_ctx, req);
@@ -175,7 +175,7 @@ static void on_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
   start_write(exec_ctx, req);
 }
 
-static void on_connected(grpc_exec_ctx *exec_ctx, void *arg, int success) {
+static void on_connected(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
   internal_request *req = arg;
 
   if (!req->ep) {

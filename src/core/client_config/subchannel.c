@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -145,7 +145,7 @@ struct grpc_subchannel_call {
 
 static gpr_timespec compute_connect_deadline(grpc_subchannel *c);
 static void subchannel_connected(grpc_exec_ctx *exec_ctx, void *subchannel,
-                                 int iomgr_success);
+                                 bool iomgr_success);
 
 #ifdef GRPC_STREAM_REFCOUNT_DEBUG
 #define REF_REASON reason
@@ -175,7 +175,7 @@ static void subchannel_connected(grpc_exec_ctx *exec_ctx, void *subchannel,
  */
 
 static void connection_destroy(grpc_exec_ctx *exec_ctx, void *arg,
-                               int success) {
+                               bool success) {
   grpc_connected_subchannel *c = arg;
   grpc_channel_stack_destroy(exec_ctx, CHANNEL_STACK_FROM_CONNECTION(c));
   gpr_free(c);
@@ -198,7 +198,7 @@ void grpc_connected_subchannel_unref(grpc_exec_ctx *exec_ctx,
  */
 
 static void subchannel_destroy(grpc_exec_ctx *exec_ctx, void *arg,
-                               int success) {
+                               bool success) {
   grpc_subchannel *c = arg;
   gpr_free((void *)c->filters);
   grpc_channel_args_destroy(c->args);
@@ -268,7 +268,7 @@ void grpc_subchannel_weak_unref(grpc_exec_ctx *exec_ctx,
   old_refs = ref_mutate(c, -(gpr_atm)1, 1 REF_MUTATE_PURPOSE("WEAK_UNREF"));
   if (old_refs == 1) {
     grpc_exec_ctx_enqueue(exec_ctx, grpc_closure_create(subchannel_destroy, c),
-                          1);
+                          true, NULL);
   }
 }
 
@@ -284,9 +284,13 @@ grpc_subchannel *grpc_subchannel_create(grpc_connector *connector,
   c->connector = connector;
   grpc_connector_ref(c->connector);
   c->num_filters = args->filter_count;
-  c->filters = gpr_malloc(sizeof(grpc_channel_filter *) * c->num_filters);
-  memcpy((void *)c->filters, args->filters,
-         sizeof(grpc_channel_filter *) * c->num_filters);
+  if (c->num_filters > 0) {
+    c->filters = gpr_malloc(sizeof(grpc_channel_filter *) * c->num_filters);
+    memcpy((void *)c->filters, args->filters,
+           sizeof(grpc_channel_filter *) * c->num_filters);
+  } else {
+    c->filters = NULL;
+  }
   c->addr = gpr_malloc(args->addr_len);
   memcpy(c->addr, args->addr, args->addr_len);
   grpc_pollset_set_init(&c->pollset_set);
@@ -337,7 +341,7 @@ grpc_connectivity_state grpc_subchannel_check_connectivity(grpc_subchannel *c) {
 }
 
 static void on_external_state_watcher_done(grpc_exec_ctx *exec_ctx, void *arg,
-                                           int success) {
+                                           bool success) {
   external_state_watcher *w = arg;
   grpc_closure *follow_up = w->notify;
   if (w->pollset_set != NULL) {
@@ -409,7 +413,7 @@ void grpc_connected_subchannel_process_transport_op(
 }
 
 static void subchannel_on_child_state_changed(grpc_exec_ctx *exec_ctx, void *p,
-                                              int iomgr_success) {
+                                              bool iomgr_success) {
   state_watcher *sw = p;
   grpc_subchannel *c = sw->subchannel;
   gpr_mu *mu = &c->mu;
@@ -483,7 +487,9 @@ static void publish_transport(grpc_exec_ctx *exec_ctx, grpc_subchannel *c) {
   /* build final filter list */
   num_filters = c->num_filters + c->connecting_result.num_filters + 1;
   filters = gpr_malloc(sizeof(*filters) * num_filters);
-  memcpy((void *)filters, c->filters, sizeof(*filters) * c->num_filters);
+  if (c->num_filters > 0) {
+    memcpy((void *)filters, c->filters, sizeof(*filters) * c->num_filters);
+  }
   memcpy((void *)(filters + c->num_filters), c->connecting_result.filters,
          sizeof(*filters) * c->connecting_result.num_filters);
   filters[num_filters - 1] = &grpc_connected_channel_filter;
@@ -519,7 +525,12 @@ static void publish_transport(grpc_exec_ctx *exec_ctx, grpc_subchannel *c) {
   }
 
   /* publish */
-  GPR_ASSERT(gpr_atm_no_barrier_cas(&c->connected_subchannel, 0, (gpr_atm)con));
+  /* TODO(ctiller): this full barrier seems to clear up a TSAN failure.
+                    I'd have expected the rel_cas below to be enough, but
+                    seemingly it's not.
+                    Re-evaluate if we really need this. */
+  gpr_atm_full_barrier();
+  GPR_ASSERT(gpr_atm_rel_cas(&c->connected_subchannel, 0, (gpr_atm)con));
   c->connecting = 0;
 
   /* setup subchannel watching connected subchannel for changes; subchannel ref
@@ -583,7 +594,7 @@ static void update_reconnect_parameters(grpc_subchannel *c) {
       gpr_time_add(c->next_attempt, gpr_time_from_millis(jitter, GPR_TIMESPAN));
 }
 
-static void on_alarm(grpc_exec_ctx *exec_ctx, void *arg, int iomgr_success) {
+static void on_alarm(grpc_exec_ctx *exec_ctx, void *arg, bool iomgr_success) {
   grpc_subchannel *c = arg;
   gpr_mu_lock(&c->mu);
   c->have_alarm = 0;
@@ -600,7 +611,7 @@ static void on_alarm(grpc_exec_ctx *exec_ctx, void *arg, int iomgr_success) {
 }
 
 static void subchannel_connected(grpc_exec_ctx *exec_ctx, void *arg,
-                                 int iomgr_success) {
+                                 bool iomgr_success) {
   grpc_subchannel *c = arg;
 
   if (c->connecting_result.transport != NULL) {
@@ -636,7 +647,7 @@ static gpr_timespec compute_connect_deadline(grpc_subchannel *c) {
  */
 
 static void subchannel_call_destroy(grpc_exec_ctx *exec_ctx, void *call,
-                                    int success) {
+                                    bool success) {
   grpc_subchannel_call *c = call;
   GPR_TIMER_BEGIN("grpc_subchannel_call_unref.destroy", 0);
   grpc_call_stack_destroy(exec_ctx, SUBCHANNEL_CALL_TO_CALL_STACK(c));

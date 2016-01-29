@@ -160,7 +160,7 @@ grpc_tcp_server *grpc_tcp_server_create(grpc_closure *shutdown_complete) {
 
 static void finish_shutdown(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s) {
   if (s->shutdown_complete != NULL) {
-    grpc_exec_ctx_enqueue(exec_ctx, s->shutdown_complete, 1);
+    grpc_exec_ctx_enqueue(exec_ctx, s->shutdown_complete, true, NULL);
   }
 
   gpr_mu_destroy(&s->mu);
@@ -174,7 +174,8 @@ static void finish_shutdown(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s) {
   gpr_free(s);
 }
 
-static void destroyed_port(grpc_exec_ctx *exec_ctx, void *server, int success) {
+static void destroyed_port(grpc_exec_ctx *exec_ctx, void *server,
+                           bool success) {
   grpc_tcp_server *s = server;
   gpr_mu_lock(&s->mu);
   s->destroyed_ports++;
@@ -317,7 +318,7 @@ error:
 }
 
 /* event manager callback when reads are ready */
-static void on_read(grpc_exec_ctx *exec_ctx, void *arg, int success) {
+static void on_read(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
   grpc_tcp_listener *sp = arg;
   grpc_tcp_server_acceptor acceptor = {sp->server, sp->port_index,
                                        sp->fd_index};
@@ -602,7 +603,7 @@ void grpc_tcp_server_unref(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s) {
     /* Complete shutdown_starting work before destroying. */
     grpc_exec_ctx local_exec_ctx = GRPC_EXEC_CTX_INIT;
     gpr_mu_lock(&s->mu);
-    grpc_exec_ctx_enqueue_list(&local_exec_ctx, &s->shutdown_starting);
+    grpc_exec_ctx_enqueue_list(&local_exec_ctx, &s->shutdown_starting, NULL);
     gpr_mu_unlock(&s->mu);
     if (exec_ctx == NULL) {
       grpc_exec_ctx_flush(&local_exec_ctx);

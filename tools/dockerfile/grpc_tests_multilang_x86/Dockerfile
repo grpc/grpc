@@ -27,8 +27,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# A work-in-progress Dockerfile that allows running gRPC test suites
-# inside a docker container.
+# Dockerfile for running gRPC test suites inside a docker container.
 
 FROM 32bit/debian:jessie
 
@@ -95,8 +94,6 @@ RUN apt-get update && apt-get -y dist-upgrade && apt-get install -y \
 RUN cd /var/local && wget www.nuget.org/NuGet.exe
 ENV NUGET mono /var/local/NuGet.exe
 
-# TODO(jtattermusch): add dependencies for other languages
-
 ##################
 # Node dependencies
 
@@ -153,11 +150,11 @@ RUN apt-get update && apt-get install -y \
 
 ##################
 # Zookeeper dependencies
-
-# Install dependencies
-
 RUN apt-get install -y libzookeeper-mt-dev
 
+##################
+# Build profiling
+RUN apt-get install -y time
 
 RUN mkdir /var/local/jenkins
 

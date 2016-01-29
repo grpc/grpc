@@ -188,7 +188,7 @@ void grpc_chttp2_perform_writes(
     grpc_endpoint_write(exec_ctx, endpoint, &transport_writing->outbuf,
                         &transport_writing->done_cb);
   } else {
-    grpc_exec_ctx_enqueue(exec_ctx, &transport_writing->done_cb, 1);
+    grpc_exec_ctx_enqueue(exec_ctx, &transport_writing->done_cb, true, NULL);
   }
 }
 
