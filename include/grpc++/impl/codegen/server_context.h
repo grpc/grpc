@@ -105,6 +105,9 @@ class ServerContext {
 
   bool IsCancelled() const;
 
+  // Best-effort API to cancel the call from the server.
+  void TryCancel() const;
+
   const std::multimap<grpc::string_ref, grpc::string_ref>& client_metadata() {
     return client_metadata_;
   }
