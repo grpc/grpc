@@ -27,7 +27,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-require 'grpc/loader'
+require 'grpc/grpc'
 require 'grpc/generic/active_call'
 require 'grpc/generic/service'
 require 'thread'
