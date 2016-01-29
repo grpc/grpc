@@ -337,4 +337,16 @@
   } while (0)
 #endif /* GPR_FORBID_UNREACHABLE_CODE */
 
+#ifndef GPR_API
+#define GPR_API
+#endif
+
+#ifndef GRPC_API
+#define GRPC_API GPR_API
+#endif
+
+#ifndef CENSUS_API
+#define CENSUS_API GRPC_API
+#endif
+
 #endif /* GRPC_IMPL_CODEGEN_PORT_PLATFORM_H */
