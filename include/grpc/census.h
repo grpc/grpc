@@ -90,8 +90,8 @@ typedef struct census_context census_context;
  *
  * TODO(aveitch): determine how best to communicate required/max buffer size
  * so caller doesn't have to guess. */
-CENSUS_API size_t census_context_serialize(const census_context *context, char *buffer,
-                                size_t buf_size);
+CENSUS_API size_t census_context_serialize(const census_context *context,
+                                           char *buffer, size_t buf_size);
 
 /* Distributed traces can have a number of options. */
 enum census_trace_mask_values {
@@ -212,7 +212,8 @@ CENSUS_API census_context *census_start_client_rpc_op(
 /**
   Add peer information to a context representing a client RPC operation.
 */
-CENSUS_API void census_set_rpc_client_peer(census_context *context, const char *peer);
+CENSUS_API void census_set_rpc_client_peer(census_context *context,
+                                           const char *peer);
 
 /**
    Start a server RPC operation. Returns a new context to be used in future
@@ -262,8 +263,9 @@ CENSUS_API census_context *census_start_server_rpc_op(
 
    @return A new census context.
  */
-CENSUS_API census_context *census_start_op(census_context *context, const char *family,
-                                const char *name, int trace_mask);
+CENSUS_API census_context *census_start_op(census_context *context,
+                                           const char *family, const char *name,
+                                           int trace_mask);
 
 /**
   End an operation started by any of the census_start_*_op*() calls. The
@@ -287,7 +289,7 @@ CENSUS_API void census_end_op(census_context *context, int status);
     @param n Number of bytes in buffer
 */
 CENSUS_API void census_trace_print(census_context *context, uint32_t type,
-                        const char *buffer, size_t n);
+                                   const char *buffer, size_t n);
 
 /** Trace record. */
 typedef struct {
@@ -416,18 +418,19 @@ typedef struct {
 
 /* Initialize a tag set iterator. Must be called before first use of the
    iterator. */
-CENSUS_API void census_tag_set_initialize_iterator(const census_tag_set *tags,
-                                        census_tag_set_iterator *iterator);
+CENSUS_API void census_tag_set_initialize_iterator(
+    const census_tag_set *tags, census_tag_set_iterator *iterator);
 
 /* Get the contents of the "next" tag in the tag set. If there are no more
    tags in the tag set, returns 0 (and 'tag' contents will be unchanged),
    otherwise returns 1. */
-CENSUS_API int census_tag_set_next_tag(census_tag_set_iterator *iterator, census_tag *tag);
+CENSUS_API int census_tag_set_next_tag(census_tag_set_iterator *iterator,
+                                       census_tag *tag);
 
 /* Get a tag by its key. Returns 0 if the key is not present in the tag
    set. */
-CENSUS_API int census_tag_set_get_tag_by_key(const census_tag_set *tags, const char *key,
-                                  census_tag *tag);
+CENSUS_API int census_tag_set_get_tag_by_key(const census_tag_set *tags,
+                                             const char *key, census_tag *tag);
 
 /* Tag set encode/decode functionality. These functionas are intended
    for use by RPC systems only, for purposes of transmitting/receiving tag
@@ -450,13 +453,15 @@ CENSUS_API int census_tag_set_get_tag_by_key(const census_tag_set *tags, const c
            [returned-ptr, returned-ptr + *bin_buf_size) (and the return value
            should be buffer + *print_buf_size) */
 CENSUS_API char *census_tag_set_encode(const census_tag_set *tags, char *buffer,
-                            size_t buf_size, size_t *print_buf_size,
-                            size_t *bin_buf_size);
+                                       size_t buf_size, size_t *print_buf_size,
+                                       size_t *bin_buf_size);
 
 /* Decode tag set buffers encoded with census_tag_set_encode_*(). Returns NULL
    if there is an error in parsing either buffer. */
-CENSUS_API census_tag_set *census_tag_set_decode(const char *buffer, size_t size,
-                                      const char *bin_buffer, size_t bin_size);
+CENSUS_API census_tag_set *census_tag_set_decode(const char *buffer,
+                                                 size_t size,
+                                                 const char *bin_buffer,
+                                                 size_t bin_size);
 
 /* Get a contexts tag set. */
 CENSUS_API census_tag_set *census_context_tag_set(census_context *context);
@@ -490,8 +495,8 @@ typedef struct {
 } census_value;
 
 /* Record new usage values against the given context. */
-CENSUS_API void census_record_values(census_context *context, census_value *values,
-                          size_t nvalues);
+CENSUS_API void census_record_values(census_context *context,
+                                     census_value *values, size_t nvalues);
 
 /** Type representing a particular aggregation */
 typedef struct census_aggregation_ops census_aggregation_ops;
@@ -521,9 +526,9 @@ typedef struct census_view census_view;
 
   @return A new census view
 */
-CENSUS_API census_view *census_view_create(uint32_t metric_id, const census_tag_set *tags,
-                                const census_aggregation *aggregations,
-                                size_t naggregations);
+CENSUS_API census_view *census_view_create(
+    uint32_t metric_id, const census_tag_set *tags,
+    const census_aggregation *aggregations, size_t naggregations);
 
 /** Destroy a previously created view. */
 CENSUS_API void census_view_delete(census_view *view);
@@ -538,7 +543,8 @@ CENSUS_API size_t census_view_naggregations(const census_view *view);
 CENSUS_API const census_tag_set *census_view_tags(const census_view *view);
 
 /** Get aggregation descriptors associated with a view. */
-CENSUS_API const census_aggregation *census_view_aggregrations(const census_view *view);
+CENSUS_API const census_aggregation *census_view_aggregrations(
+    const census_view *view);
 
 /** Holds all the aggregation data for a particular view instantiation. Forms
   part of the data returned by census_view_data(). */
@@ -557,7 +563,8 @@ typedef struct {
   @param view View from which to get data.
   @return Full set of data for all aggregations for the view.
 */
-CENSUS_API const census_view_data *census_view_get_data(const census_view *view);
+CENSUS_API const census_view_data *census_view_get_data(
+    const census_view *view);
 
 /** Reset all view data to zero for the specified view */
 CENSUS_API void census_view_reset(census_view *view);

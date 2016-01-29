@@ -73,14 +73,14 @@ typedef struct gpr_cmdline gpr_cmdline;
 GPR_API gpr_cmdline *gpr_cmdline_create(const char *description);
 /* Add an integer parameter, with a name (used on the command line) and some
    helpful text (used in the command usage) */
-GPR_API void gpr_cmdline_add_int(gpr_cmdline *cl, const char *name, const char *help,
-                         int *value);
+GPR_API void gpr_cmdline_add_int(gpr_cmdline *cl, const char *name,
+                                 const char *help, int *value);
 /* The same, for a boolean flag */
-GPR_API void gpr_cmdline_add_flag(gpr_cmdline *cl, const char *name, const char *help,
-                          int *value);
+GPR_API void gpr_cmdline_add_flag(gpr_cmdline *cl, const char *name,
+                                  const char *help, int *value);
 /* And for a string */
-GPR_API void gpr_cmdline_add_string(gpr_cmdline *cl, const char *name, const char *help,
-                            char **value);
+GPR_API void gpr_cmdline_add_string(gpr_cmdline *cl, const char *name,
+                                    const char *help, char **value);
 /* Set a callback for non-named arguments */
 GPR_API void gpr_cmdline_on_extra_arg(
     gpr_cmdline *cl, const char *name, const char *help,

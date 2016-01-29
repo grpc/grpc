@@ -60,7 +60,7 @@ typedef struct {
    If options==NULL, default options are used.
    The thread is immediately runnable, and exits when (*thd_body)() returns.  */
 GPR_API int gpr_thd_new(gpr_thd_id *t, void (*thd_body)(void *arg), void *arg,
-                const gpr_thd_options *options);
+                        const gpr_thd_options *options);
 
 /* Return a gpr_thd_options struct with all fields set to defaults. */
 GPR_API gpr_thd_options gpr_thd_options_default(void);
