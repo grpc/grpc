@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -98,7 +98,8 @@ typedef struct grpc_transport_stream_op {
   /** Should be enqueued when one message is ready to be processed. */
   grpc_closure *recv_message_ready;
 
-  /** Receive trailing metadata from the stream, into provided metadata batch. */
+  /** Receive trailing metadata from the stream, into provided metadata batch.
+   */
   grpc_metadata_batch *recv_trailing_metadata;
 
   /** Should be enqueued when all requested operations (excluding recv_message
