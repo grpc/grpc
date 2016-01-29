@@ -2155,6 +2155,19 @@ targets:
   secure: false
   vs_config_type: Application
   vs_project_guid: '{069E9D05-B78B-4751-9252-D21EBAE7DE8E}'
+- name: grpclb_api_test
+  build: test
+  language: c++
+  src:
+  - src/proto/grpc/lb/v0/load_balancer.proto
+  - test/cpp/grpclb/grpclb_api_test.cc
+  deps:
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: hybrid_end2end_test
   build: test
   language: c++
@@ -2167,16 +2180,6 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
-- name: grpclb_api_test
-  build: test
-  language: c++
-  src:
-  - src/proto/grpc/lb/v0/load_balancer.proto
-  - test/cpp/grpclb/grpclb_api_test.cc
-  deps:
-  - grpc++
-  - grpc
-
 - name: interop_client
   build: test
   run: false
