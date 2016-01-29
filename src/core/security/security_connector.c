@@ -614,7 +614,7 @@ static gpr_slice compute_default_pem_root_certs_once(void) {
     gpr_free(default_root_certs_path);
   }
 
-  /* Try overridden roots path if needed. */
+  /* Try overridden roots if needed. */
   grpc_ssl_roots_override_result ovrd_res = GRPC_SSL_ROOTS_OVERRIDE_FAIL;
   if (GPR_SLICE_IS_EMPTY(result) && ssl_roots_override_cb != NULL) {
     char *pem_root_certs = NULL;
