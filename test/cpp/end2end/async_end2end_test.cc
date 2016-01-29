@@ -801,15 +801,14 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
     EchoResponse recv_response;
     Status recv_status;
 
-    CompletionQueue cli_cq;
     ClientContext cli_ctx;
     ServerContext srv_ctx;
     ServerAsyncReader<EchoResponse, EchoRequest> srv_stream(&srv_ctx);
 
     // Initiate the 'RequestStream' call on client
     std::unique_ptr<ClientAsyncWriter<EchoRequest>> cli_stream(
-        stub_->AsyncRequestStream(&cli_ctx, &recv_response, &cli_cq, tag(1)));
-    Verifier(GetParam()).Expect(1, true).Verify(&cli_cq);
+        stub_->AsyncRequestStream(&cli_ctx, &recv_response, cq_.get(), tag(1)));
+    Verifier(GetParam()).Expect(1, true).Verify(cq_.get());
 
     // On the server, request to be notified of 'RequestStream' calls
     // and receive the 'RequestStream' call just made by the client
@@ -821,10 +820,10 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
     for (int tag_idx = 3; tag_idx <= 5; tag_idx++) {
       send_request.set_message("Ping " + std::to_string(tag_idx));
       cli_stream->Write(send_request, tag(tag_idx));
-      Verifier(GetParam()).Expect(tag_idx, true).Verify(&cli_cq);
+      Verifier(GetParam()).Expect(tag_idx, true).Verify(cq_.get());
     }
     cli_stream->WritesDone(tag(6));
-    Verifier(GetParam()).Expect(6, true).Verify(&cli_cq);
+    Verifier(GetParam()).Expect(6, true).Verify(cq_.get());
 
     bool expected_server_cq_result = true;
     bool ignore_cq_result = false;
@@ -876,7 +875,7 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
     cli_stream->Finish(&recv_status, tag(10));
     // TODO: sreek: The expectation here should be true. This seems like a bug.
     // Investigating
-    Verifier(GetParam()).Expect(10, false).Verify(&cli_cq);
+    Verifier(GetParam()).Expect(10, false).Verify(cq_.get());
     EXPECT_FALSE(recv_status.ok());
     EXPECT_EQ(::grpc::StatusCode::CANCELLED, recv_status.error_code());
   }
@@ -892,14 +891,13 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
     Status recv_status;
     ClientContext cli_ctx;
     ServerContext srv_ctx;
-    CompletionQueue cli_cq;
     ServerAsyncWriter<EchoResponse> srv_stream(&srv_ctx);
 
     send_request.set_message("Ping");
     // Initiate the 'ResponseStream' call on the client
     std::unique_ptr<ClientAsyncReader<EchoResponse>> cli_stream(
-        stub_->AsyncResponseStream(&cli_ctx, send_request, &cli_cq, tag(1)));
-    Verifier(GetParam()).Expect(1, true).Verify(&cli_cq);
+        stub_->AsyncResponseStream(&cli_ctx, send_request, cq_.get(), tag(1)));
+    Verifier(GetParam()).Expect(1, true).Verify(cq_.get());
 
     // On the server, request to be notified of 'ResponseStream' calls and
     // receive the call just made by the client
@@ -949,7 +947,7 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
       cli_stream->Read(&recv_response, tag(tag_idx));
       Verifier(GetParam())
           .Expect(tag_idx, expected_cq_result)
-          .Verify(&cli_cq, ignore_cq_result);
+          .Verify(cq_.get(), ignore_cq_result);
     }
 
     if (server_try_cancel_thd != NULL) {
@@ -966,7 +964,7 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
 
     // Client receives the cancellation
     cli_stream->Finish(&recv_status, tag(10));
-    Verifier(GetParam()).Expect(10, true).Verify(&cli_cq);
+    Verifier(GetParam()).Expect(10, true).Verify(cq_.get());
     EXPECT_FALSE(recv_status.ok());
     EXPECT_EQ(::grpc::StatusCode::CANCELLED, recv_status.error_code());
   }
@@ -980,15 +978,14 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
     EchoResponse send_response;
     EchoResponse recv_response;
     Status recv_status;
-    CompletionQueue cli_cq;
     ClientContext cli_ctx;
     ServerContext srv_ctx;
     ServerAsyncReaderWriter<EchoResponse, EchoRequest> srv_stream(&srv_ctx);
 
     // Initiate the call from the client side
     std::unique_ptr<ClientAsyncReaderWriter<EchoRequest, EchoResponse>>
-        cli_stream(stub_->AsyncBidiStream(&cli_ctx, &cli_cq, tag(1)));
-    Verifier(GetParam()).Expect(1, true).Verify(&cli_cq);
+        cli_stream(stub_->AsyncBidiStream(&cli_ctx, cq_.get(), tag(1)));
+    Verifier(GetParam()).Expect(1, true).Verify(cq_.get());
 
     // On the server, request to be notified of the 'BidiStream' call and
     // receive the call just made by the client
@@ -998,7 +995,7 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
 
     send_request.set_message("Ping");
     cli_stream->Write(send_request, tag(3));
-    Verifier(GetParam()).Expect(3, true).Verify(&cli_cq);
+    Verifier(GetParam()).Expect(3, true).Verify(cq_.get());
 
     bool expected_cq_result = true;
     bool ignore_cq_result = false;
@@ -1035,11 +1032,11 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
     cli_stream->Read(&recv_response, tag(6));
     Verifier(GetParam())
         .Expect(6, expected_cq_result)
-        .Verify(&cli_cq, ignore_cq_result);
+        .Verify(cq_.get(), ignore_cq_result);
 
     // This is expected to succeed in all cases
     cli_stream->WritesDone(tag(7));
-    Verifier(GetParam()).Expect(7, true).Verify(&cli_cq);
+    Verifier(GetParam()).Expect(7, true).Verify(cq_.get());
 
     // This is expected to fail in all cases (Either there are no more msgs from
     // the client or the RPC is cancelled on the server)
@@ -1061,7 +1058,7 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
     Verifier(GetParam()).Expect(9, false).Verify(cq_.get());
 
     cli_stream->Finish(&recv_status, tag(10));
-    Verifier(GetParam()).Expect(10, true).Verify(&cli_cq);
+    Verifier(GetParam()).Expect(10, true).Verify(cq_.get());
     EXPECT_FALSE(recv_status.ok());
     EXPECT_EQ(grpc::StatusCode::CANCELLED, recv_status.error_code());
   }
