@@ -797,8 +797,6 @@ TEST_P(End2endServerTryCancelTest, BidiStreamServerCancelAfter) {
   TestBidiStreamServerCancel(CANCEL_AFTER_PROCESSING, 5);
 }
 
-// =====
-
 TEST_P(End2endTest, RequestStreamOneRequest) {
   ResetStub();
   EchoRequest request;
