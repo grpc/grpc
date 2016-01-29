@@ -37,12 +37,12 @@
 
 #include "test/core/util/port.h"
 
+#include <errno.h>
 #include <math.h>
 #include <netinet/in.h>
-#include <sys/socket.h>
 #include <stdio.h>
-#include <errno.h>
 #include <string.h>
+#include <sys/socket.h>
 #include <unistd.h>
 
 #include <grpc/grpc.h>
@@ -74,7 +74,7 @@ typedef struct freereq {
 } freereq;
 
 static void destroy_pollset_and_shutdown(grpc_exec_ctx *exec_ctx, void *p,
-                                         int success) {
+                                         bool success) {
   grpc_pollset_destroy(p);
   grpc_shutdown();
 }
