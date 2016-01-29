@@ -37,12 +37,12 @@
 
 #include "test/core/util/port.h"
 
+#include <errno.h>
 #include <math.h>
 #include <netinet/in.h>
-#include <sys/socket.h>
 #include <stdio.h>
-#include <errno.h>
 #include <string.h>
+#include <sys/socket.h>
 #include <unistd.h>
 
 #include <grpc/grpc.h>
