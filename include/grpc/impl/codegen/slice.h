@@ -105,7 +105,7 @@ typedef struct gpr_slice {
 
 /* Increment the refcount of s. Requires slice is initialized.
    Returns s. */
-gpr_slice gpr_slice_ref(gpr_slice s);
+GPR_API gpr_slice gpr_slice_ref(gpr_slice s);
 
 /* Decrement the ref count of s.  If the ref count of s reaches zero, all
    slices sharing the ref count are destroyed, and considered no longer
@@ -113,22 +113,22 @@ gpr_slice gpr_slice_ref(gpr_slice s);
    len, dest) where dest!=NULL , then (*dest)(start) is called, else if s is
    ultimately derived from a call to gpr_slice_new_with_len(start, len, dest)
    where dest!=NULL , then (*dest)(start, len).  Requires s initialized.  */
-void gpr_slice_unref(gpr_slice s);
+GPR_API void gpr_slice_unref(gpr_slice s);
 
 /* Create a slice pointing at some data. Calls malloc to allocate a refcount
    for the object, and arranges that destroy will be called with the pointer
    passed in at destruction. */
-gpr_slice gpr_slice_new(void *p, size_t len, void (*destroy)(void *));
+GPR_API gpr_slice gpr_slice_new(void *p, size_t len, void (*destroy)(void *));
 
 /* Equivalent to gpr_slice_new, but with a two argument destroy function that
    also takes the slice length. */
-gpr_slice gpr_slice_new_with_len(void *p, size_t len,
-                                 void (*destroy)(void *, size_t));
+GPR_API gpr_slice
+gpr_slice_new_with_len(void *p, size_t len, void (*destroy)(void *, size_t));
 
 /* Equivalent to gpr_slice_new(malloc(len), len, free), but saves one malloc()
    call.
    Aborts if malloc() fails. */
-gpr_slice gpr_slice_malloc(size_t length);
+GPR_API gpr_slice gpr_slice_malloc(size_t length);
 
 /* Create a slice by copying a string.
    Does not preserve null terminators.
@@ -136,44 +136,44 @@ gpr_slice gpr_slice_malloc(size_t length);
      size_t len = strlen(source);
      gpr_slice slice = gpr_slice_malloc(len);
      memcpy(slice->data, source, len); */
-gpr_slice gpr_slice_from_copied_string(const char *source);
+GPR_API gpr_slice gpr_slice_from_copied_string(const char *source);
 
 /* Create a slice by copying a buffer.
    Equivalent to:
      gpr_slice slice = gpr_slice_malloc(len);
      memcpy(slice->data, source, len); */
-gpr_slice gpr_slice_from_copied_buffer(const char *source, size_t len);
+GPR_API gpr_slice gpr_slice_from_copied_buffer(const char *source, size_t len);
 
 /* Create a slice pointing to constant memory */
-gpr_slice gpr_slice_from_static_string(const char *source);
+GPR_API gpr_slice gpr_slice_from_static_string(const char *source);
 
 /* Return a result slice derived from s, which shares a ref count with s, where
    result.data==s.data+begin, and result.length==end-begin.
    The ref count of s is increased by one.
    Requires s initialized, begin <= end, begin <= s.length, and
    end <= source->length. */
-gpr_slice gpr_slice_sub(gpr_slice s, size_t begin, size_t end);
+GPR_API gpr_slice gpr_slice_sub(gpr_slice s, size_t begin, size_t end);
 
 /* The same as gpr_slice_sub, but without altering the ref count */
-gpr_slice gpr_slice_sub_no_ref(gpr_slice s, size_t begin, size_t end);
+GPR_API gpr_slice gpr_slice_sub_no_ref(gpr_slice s, size_t begin, size_t end);
 
 /* Splits s into two: modifies s to be s[0:split], and returns a new slice,
    sharing a refcount with s, that contains s[split:s.length].
    Requires s intialized, split <= s.length */
-gpr_slice gpr_slice_split_tail(gpr_slice *s, size_t split);
+GPR_API gpr_slice gpr_slice_split_tail(gpr_slice *s, size_t split);
 
 /* Splits s into two: modifies s to be s[split:s.length], and returns a new
    slice, sharing a refcount with s, that contains s[0:split].
    Requires s intialized, split <= s.length */
-gpr_slice gpr_slice_split_head(gpr_slice *s, size_t split);
+GPR_API gpr_slice gpr_slice_split_head(gpr_slice *s, size_t split);
 
-gpr_slice gpr_empty_slice(void);
+GPR_API gpr_slice gpr_empty_slice(void);
 
 /* Returns <0 if a < b, ==0 if a == b, >0 if a > b
    The order is arbitrary, and is not guaranteed to be stable across different
    versions of the API. */
-int gpr_slice_cmp(gpr_slice a, gpr_slice b);
-int gpr_slice_str_cmp(gpr_slice a, const char *b);
+GPR_API int gpr_slice_cmp(gpr_slice a, gpr_slice b);
+GPR_API int gpr_slice_str_cmp(gpr_slice a, const char *b);
 
 #ifdef __cplusplus
 }

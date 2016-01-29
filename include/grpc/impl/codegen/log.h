@@ -37,6 +37,8 @@
 #include <stdlib.h> /* for abort() */
 #include <stdarg.h>
 
+#include <grpc/impl/codegen/port_platform.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -69,11 +71,11 @@ const char *gpr_log_severity_string(gpr_log_severity severity);
 
 /* Log a message. It's advised to use GPR_xxx above to generate the context
  * for each message */
-void gpr_log(const char *file, int line, gpr_log_severity severity,
-             const char *format, ...);
+GPR_API void gpr_log(const char *file, int line, gpr_log_severity severity,
+                     const char *format, ...);
 
-void gpr_log_message(const char *file, int line, gpr_log_severity severity,
-                     const char *message);
+GPR_API void gpr_log_message(const char *file, int line,
+                             gpr_log_severity severity, const char *message);
 
 /* Log overrides: applications can use this API to intercept logging calls
    and use their own implementations */
@@ -86,7 +88,7 @@ typedef struct {
 } gpr_log_func_args;
 
 typedef void (*gpr_log_func)(gpr_log_func_args *args);
-void gpr_set_log_function(gpr_log_func func);
+GPR_API void gpr_set_log_function(gpr_log_func func);
 
 /* abort() the process if x is zero, having written a line to the log.
 
