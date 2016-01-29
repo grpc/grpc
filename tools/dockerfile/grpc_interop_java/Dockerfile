@@ -51,7 +51,7 @@ ENV PATH $PATH:$JAVA_HOME/bin
 # Trigger download of as many Gradle artifacts as possible.
 RUN git clone --recursive --depth 1 https://github.com/grpc/grpc-java.git && \
   cd grpc-java && \
-  ./gradlew build -PskipCodegen=true && \
+  ./gradlew :grpc-interop-testing:installDist -PskipCodegen=true && \
   rm -r "$(pwd)"
 
 # Define the default command.

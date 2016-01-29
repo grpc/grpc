@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -131,7 +131,7 @@ static void test_post(int port) {
   gpr_free(host);
 }
 
-static void destroy_pollset(grpc_exec_ctx *exec_ctx, void *p, int success) {
+static void destroy_pollset(grpc_exec_ctx *exec_ctx, void *p, bool success) {
   grpc_pollset_destroy(p);
 }
 

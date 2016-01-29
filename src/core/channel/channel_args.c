@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -35,6 +35,7 @@
 #include "src/core/channel/channel_args.h"
 #include "src/core/support/string.h"
 
+#include <grpc/census.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/useful.h>
@@ -119,10 +120,10 @@ int grpc_channel_args_is_census_enabled(const grpc_channel_args *a) {
   if (a == NULL) return 0;
   for (i = 0; i < a->num_args; i++) {
     if (0 == strcmp(a->args[i].key, GRPC_ARG_ENABLE_CENSUS)) {
-      return a->args[i].value.integer != 0;
+      return a->args[i].value.integer != 0 && census_enabled();
     }
   }
-  return 0;
+  return census_enabled();
 }
 
 grpc_compression_algorithm grpc_channel_args_get_compression_algorithm(

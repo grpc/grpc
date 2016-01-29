@@ -492,7 +492,7 @@ void grpc_chttp2_perform_writes(
     grpc_exec_ctx *exec_ctx, grpc_chttp2_transport_writing *transport_writing,
     grpc_endpoint *endpoint);
 void grpc_chttp2_terminate_writing(grpc_exec_ctx *exec_ctx,
-                                   void *transport_writing, int success);
+                                   void *transport_writing, bool success);
 void grpc_chttp2_cleanup_writing(grpc_exec_ctx *exec_ctx,
                                  grpc_chttp2_transport_global *global,
                                  grpc_chttp2_transport_writing *writing);

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -34,122 +34,6 @@
 #ifndef GRPCXX_SUPPORT_ASYNC_UNARY_CALL_H
 #define GRPCXX_SUPPORT_ASYNC_UNARY_CALL_H
 
-#include <grpc/support/log.h>
-#include <grpc++/channel.h>
-#include <grpc++/client_context.h>
-#include <grpc++/completion_queue.h>
-#include <grpc++/server_context.h>
-#include <grpc++/impl/call.h>
-#include <grpc++/impl/service_type.h>
-#include <grpc++/support/status.h>
-
-namespace grpc {
-
-template <class R>
-class ClientAsyncResponseReaderInterface {
- public:
-  virtual ~ClientAsyncResponseReaderInterface() {}
-  virtual void ReadInitialMetadata(void* tag) = 0;
-  virtual void Finish(R* msg, Status* status, void* tag) = 0;
-};
-
-template <class R>
-class ClientAsyncResponseReader GRPC_FINAL
-    : public ClientAsyncResponseReaderInterface<R> {
- public:
-  template <class W>
-  ClientAsyncResponseReader(Channel* channel, CompletionQueue* cq,
-                            const RpcMethod& method, ClientContext* context,
-                            const W& request)
-      : context_(context), call_(channel->CreateCall(method, context, cq)) {
-    init_buf_.SendInitialMetadata(context->send_initial_metadata_);
-    // TODO(ctiller): don't assert
-    GPR_ASSERT(init_buf_.SendMessage(request).ok());
-    init_buf_.ClientSendClose();
-    call_.PerformOps(&init_buf_);
-  }
-
-  void ReadInitialMetadata(void* tag) {
-    GPR_ASSERT(!context_->initial_metadata_received_);
-
-    meta_buf_.set_output_tag(tag);
-    meta_buf_.RecvInitialMetadata(context_);
-    call_.PerformOps(&meta_buf_);
-  }
-
-  void Finish(R* msg, Status* status, void* tag) {
-    finish_buf_.set_output_tag(tag);
-    if (!context_->initial_metadata_received_) {
-      finish_buf_.RecvInitialMetadata(context_);
-    }
-    finish_buf_.RecvMessage(msg);
-    finish_buf_.ClientRecvStatus(context_, status);
-    call_.PerformOps(&finish_buf_);
-  }
-
- private:
-  ClientContext* context_;
-  Call call_;
-  SneakyCallOpSet<CallOpSendInitialMetadata, CallOpSendMessage,
-                  CallOpClientSendClose> init_buf_;
-  CallOpSet<CallOpRecvInitialMetadata> meta_buf_;
-  CallOpSet<CallOpRecvInitialMetadata, CallOpRecvMessage<R>,
-            CallOpClientRecvStatus> finish_buf_;
-};
-
-template <class W>
-class ServerAsyncResponseWriter GRPC_FINAL
-    : public ServerAsyncStreamingInterface {
- public:
-  explicit ServerAsyncResponseWriter(ServerContext* ctx)
-      : call_(nullptr, nullptr, nullptr), ctx_(ctx) {}
-
-  void SendInitialMetadata(void* tag) GRPC_OVERRIDE {
-    GPR_ASSERT(!ctx_->sent_initial_metadata_);
-
-    meta_buf_.set_output_tag(tag);
-    meta_buf_.SendInitialMetadata(ctx_->initial_metadata_);
-    ctx_->sent_initial_metadata_ = true;
-    call_.PerformOps(&meta_buf_);
-  }
-
-  void Finish(const W& msg, const Status& status, void* tag) {
-    finish_buf_.set_output_tag(tag);
-    if (!ctx_->sent_initial_metadata_) {
-      finish_buf_.SendInitialMetadata(ctx_->initial_metadata_);
-      ctx_->sent_initial_metadata_ = true;
-    }
-    // The response is dropped if the status is not OK.
-    if (status.ok()) {
-      finish_buf_.ServerSendStatus(ctx_->trailing_metadata_,
-                                   finish_buf_.SendMessage(msg));
-    } else {
-      finish_buf_.ServerSendStatus(ctx_->trailing_metadata_, status);
-    }
-    call_.PerformOps(&finish_buf_);
-  }
-
-  void FinishWithError(const Status& status, void* tag) {
-    GPR_ASSERT(!status.ok());
-    finish_buf_.set_output_tag(tag);
-    if (!ctx_->sent_initial_metadata_) {
-      finish_buf_.SendInitialMetadata(ctx_->initial_metadata_);
-      ctx_->sent_initial_metadata_ = true;
-    }
-    finish_buf_.ServerSendStatus(ctx_->trailing_metadata_, status);
-    call_.PerformOps(&finish_buf_);
-  }
-
- private:
-  void BindCall(Call* call) GRPC_OVERRIDE { call_ = *call; }
-
-  Call call_;
-  ServerContext* ctx_;
-  CallOpSet<CallOpSendInitialMetadata> meta_buf_;
-  CallOpSet<CallOpSendInitialMetadata, CallOpSendMessage,
-            CallOpServerSendStatus> finish_buf_;
-};
-
-}  // namespace grpc
+#include <grpc++/impl/codegen/async_unary_call.h>
 
 #endif  // GRPCXX_SUPPORT_ASYNC_UNARY_CALL_H

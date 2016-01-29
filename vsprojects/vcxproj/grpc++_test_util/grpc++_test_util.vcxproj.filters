@@ -10,6 +10,12 @@
     <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\duplicate\echo_duplicate.proto">
       <Filter>src\proto\grpc\testing\duplicate</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\cpp\end2end\test_service_impl.cc">
+      <Filter>test\cpp\end2end</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\cpp\util\byte_buffer_proto_helper.cc">
+      <Filter>test\cpp\util</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\cpp\util\cli_call.cc">
       <Filter>test\cpp\util</Filter>
     </ClCompile>
@@ -24,6 +30,12 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="$(SolutionDir)\..\test\cpp\end2end\test_service_impl.h">
+      <Filter>test\cpp\end2end</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\test\cpp\util\byte_buffer_proto_helper.h">
+      <Filter>test\cpp\util</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\test\cpp\util\cli_call.h">
       <Filter>test\cpp\util</Filter>
     </ClInclude>
@@ -59,6 +71,9 @@
     </Filter>
     <Filter Include="test\cpp">
       <UniqueIdentifier>{793efaa7-370f-c34a-d347-31fc4e0630e2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\cpp\end2end">
+      <UniqueIdentifier>{1e6760f2-4cf7-1ecb-88a5-5faeec3c2150}</UniqueIdentifier>
     </Filter>
     <Filter Include="test\cpp\util">
       <UniqueIdentifier>{bbe1e5b7-f4f9-8e32-ce7c-8c21afcf39d8}</UniqueIdentifier>
