@@ -50,7 +50,7 @@ extern "C" {
 #endif
 
 /** Register zookeeper name resolver in grpc */
-void grpc_zookeeper_register();
+GRPC_API void grpc_zookeeper_register();
 
 #ifdef __cplusplus
 }
