@@ -119,7 +119,7 @@ grpc_tcp_server *grpc_tcp_server_create(grpc_closure *shutdown_complete) {
 
 static void finish_shutdown(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s) {
   if (s->shutdown_complete != NULL) {
-    grpc_exec_ctx_enqueue(exec_ctx, s->shutdown_complete, 1);
+    grpc_exec_ctx_enqueue(exec_ctx, s->shutdown_complete, true, NULL);
   }
 
   /* Now that the accepts have been aborted, we can destroy the sockets.
@@ -173,7 +173,7 @@ void grpc_tcp_server_unref(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s) {
     /* Complete shutdown_starting work before destroying. */
     grpc_exec_ctx local_exec_ctx = GRPC_EXEC_CTX_INIT;
     gpr_mu_lock(&s->mu);
-    grpc_exec_ctx_enqueue_list(&local_exec_ctx, &s->shutdown_starting);
+    grpc_exec_ctx_enqueue_list(&local_exec_ctx, &s->shutdown_starting, NULL);
     gpr_mu_unlock(&s->mu);
     if (exec_ctx == NULL) {
       grpc_exec_ctx_flush(&local_exec_ctx);
@@ -311,7 +311,7 @@ failure:
 }
 
 /* Event manager callback when reads are ready. */
-static void on_accept(grpc_exec_ctx *exec_ctx, void *arg, int from_iocp) {
+static void on_accept(grpc_exec_ctx *exec_ctx, void *arg, bool from_iocp) {
   grpc_tcp_listener *sp = arg;
   grpc_tcp_server_acceptor acceptor = {sp->server, sp->port_index, 0};
   SOCKET sock = sp->new_socket;
