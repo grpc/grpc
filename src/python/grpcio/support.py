@@ -76,16 +76,23 @@ def _expect_compile(compiler, source_string, error_message):
         "Diagnostics found a compilation environment issue:\n{}"
             .format(error_message))
 
-def diagnose_build_ext_error(build_ext, error):
-  {
-      errors.CompileError: diagnose_compile_error
-  }[type(error)](build_ext, error)
-
 def diagnose_compile_error(build_ext, error):
   """Attempt to run a few test files through the compiler to see if we can
      diagnose the reason for the compile failure."""
   for c_check, message in C_CHECKS.items():
     _expect_compile(build_ext.compiler, c_check, message)
-  raise commands.CommandError(
-      "\n\nWe could not diagnose your build failure. Please file an issue at "
-      "http://www.github.com/grpc/grpc with `[Python install]` in the title.")
+
+_ERROR_DIAGNOSES = {
+    errors.CompileError: diagnose_compile_error
+}
+
+def diagnose_build_ext_error(build_ext, error, formatted):
+  diagnostic = _ERROR_DIAGNOSES.get(type(error))
+  if diagnostic is None:
+    raise commands.CommandError(
+        "\n\nWe could not diagnose your build failure. Please file an issue at "
+        "http://www.github.com/grpc/grpc with `[Python install]` in the title."
+        "\n\n{}".format(formatted))
+  else:
+    diagnostic(build_ext, error)
+
