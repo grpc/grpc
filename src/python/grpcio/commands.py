@@ -323,7 +323,7 @@ class BuildExt(build_ext.build_ext):
     except KeyboardInterrupt:
       raise
     except Exception as error:
-      support.diagnose_build_ext_error(self, error)
+      support.diagnose_build_ext_error(self, error, traceback.format_exc())
       raise CommandError("Failed `build_ext` step.")
 
 
