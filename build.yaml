@@ -2339,7 +2339,6 @@ configs:
   dbg:
     CPPFLAGS: -O0
     DEFINES: _DEBUG DEBUG
-    LDFLAGS: -rdynamic
   gcov:
     CC: gcc
     CPPFLAGS: -O0 -fprofile-arcs -ftest-coverage -Wno-return-type
@@ -2380,7 +2379,6 @@ configs:
   opt:
     CPPFLAGS: -O2
     DEFINES: NDEBUG
-    LDFLAGS: -rdynamic
   stapprof:
     CPPFLAGS: -O2 -DGRPC_STAP_PROFILER
     DEFINES: NDEBUG

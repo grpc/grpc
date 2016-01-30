@@ -1,7 +1,5 @@
 %YAML 1.2
 --- |
-  LIBRARY
-
   EXPORTS
   % for api in c_apis:
       ${api.name}
