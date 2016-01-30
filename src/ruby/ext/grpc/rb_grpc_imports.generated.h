@@ -40,27 +40,27 @@
 
 #include <windows.h>
 
-#include <include/grpc/census.h>
-#include <include/grpc/compression.h>
-#include <include/grpc/grpc.h>
-#include <include/grpc/grpc_security.h>
-#include <include/grpc/grpc_zookeeper.h>
-#include <include/grpc/impl/codegen/alloc.h>
-#include <include/grpc/impl/codegen/byte_buffer.h>
-#include <include/grpc/impl/codegen/log.h>
-#include <include/grpc/impl/codegen/slice.h>
-#include <include/grpc/impl/codegen/slice_buffer.h>
-#include <include/grpc/impl/codegen/sync.h>
-#include <include/grpc/impl/codegen/time.h>
-#include <include/grpc/support/avl.h>
-#include <include/grpc/support/cmdline.h>
-#include <include/grpc/support/cpu.h>
-#include <include/grpc/support/histogram.h>
-#include <include/grpc/support/host_port.h>
-#include <include/grpc/support/log_win32.h>
-#include <include/grpc/support/string_util.h>
-#include <include/grpc/support/subprocess.h>
-#include <include/grpc/support/thd.h>
+#include <grpc/census.h>
+#include <grpc/compression.h>
+#include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+#include <grpc/grpc_zookeeper.h>
+#include <grpc/impl/codegen/alloc.h>
+#include <grpc/impl/codegen/byte_buffer.h>
+#include <grpc/impl/codegen/log.h>
+#include <grpc/impl/codegen/slice.h>
+#include <grpc/impl/codegen/slice_buffer.h>
+#include <grpc/impl/codegen/sync.h>
+#include <grpc/impl/codegen/time.h>
+#include <grpc/support/avl.h>
+#include <grpc/support/cmdline.h>
+#include <grpc/support/cpu.h>
+#include <grpc/support/histogram.h>
+#include <grpc/support/host_port.h>
+#include <grpc/support/log_win32.h>
+#include <grpc/support/string_util.h>
+#include <grpc/support/subprocess.h>
+#include <grpc/support/thd.h>
 
 typedef int(*census_initialize_type)(int features);
 extern census_initialize_type census_initialize_import;

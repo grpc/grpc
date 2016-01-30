@@ -37,7 +37,7 @@
 
   #ifdef GPR_WIN32
 
-  #include "rb_grpc_imports.h"
+  #include "rb_grpc_imports.generated.h"
 
   %for api in c_apis:
   ${api.name}_type ${api.name}_import;

@@ -32,7 +32,7 @@
    * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
    *
    */
-  
+
   #ifndef GRPC_RB_GRPC_IMPORTS_H_
   #define GRPC_RB_GRPC_IMPORTS_H_
 
@@ -43,7 +43,7 @@
   #include <windows.h>
 
   %for header in sorted(set(api.header for api in c_apis)):
-  #include <${header}>
+  #include <${'/'.join(header.split('/')[1:])}>
   %endfor
 
   %for api in c_apis:
