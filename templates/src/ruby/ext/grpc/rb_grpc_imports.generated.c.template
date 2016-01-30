@@ -33,18 +33,20 @@
    *
    */
 
-  #include "rb_grpc_imports.h"  
+  #include <grpc/support/port_platform.h>
+
+  #ifdef GPR_WIN32
+
+  #include "rb_grpc_imports.h"
 
   %for api in c_apis:
   ${api.name}_type ${api.name}_import;
   %endfor
 
-  int grpc_rb_load_imports(const wchar_t *filename) {
-    HMODULE hm = LoadLibrary(filename);
-    if (hm == NULL) return 0;
+  void grpc_rb_load_imports(HMODULE library) {
   %for api in c_apis:
-    ${api.name}_import = (${api.name}_type) GetProcAddress(hm, "${api.name}");
+    ${api.name}_import = (${api.name}_type) GetProcAddress(library, "${api.name}");
   %endfor
   }
 
-  #endif
+  #endif /* GPR_WIN32 */

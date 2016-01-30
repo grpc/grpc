@@ -55,20 +55,22 @@ def list_c_apis(filenames):
       name = type_and_name[type_end+1:].strip()
       yield {'return_type': return_type, 'name': name, 'arguments': args, 'header': filename}
 
-def mako_plugin(dictionary):
-  apis = []
-
-  for lib in dictionary['libs']:
-    if lib['name'] == 'grpc':
-      apis.extend(list_c_apis(lib['public_headers']))
-
-  dictionary['c_apis'] = apis
-
 
 def headers_under(directory):
   for root, dirnames, filenames in os.walk(directory):
     for filename in fnmatch.filter(filenames, '*.h'):
       yield os.path.join(root, filename)
+
+
+def mako_plugin(dictionary):
+  apis = []
+
+#  for lib in dictionary['libs']:
+#    if lib['name'] == 'grpc':
+#      apis.extend(list_c_apis(lib['public_headers']))
+  apis.extend(list_c_apis(sorted(headers_under('include/grpc'))))
+
+  dictionary['c_apis'] = apis
 
 
 if __name__ == '__main__':
