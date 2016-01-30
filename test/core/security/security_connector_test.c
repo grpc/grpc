@@ -323,7 +323,9 @@ static void test_default_ssl_roots(void) {
   fwrite(roots_for_env_var, 1, strlen(roots_for_env_var), roots_env_var_file);
   fclose(roots_env_var_file);
 
-  /* First let's get the root through the override (no env are set). */
+  /* First let's get the root through the override: set the env to an invalid
+     value. */
+  gpr_setenv(GRPC_DEFAULT_SSL_ROOTS_FILE_PATH_ENV_VAR, "");
   grpc_set_ssl_roots_override_callback(override_roots_success);
   gpr_slice roots = grpc_get_default_ssl_roots_for_testing();
   char *roots_contents = gpr_dump_slice(roots, GPR_DUMP_ASCII);
