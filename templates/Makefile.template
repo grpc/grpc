@@ -313,18 +313,6 @@
   Libs: -L${'\$${libdir}'} $(PC_LIB),\
   Libs.private: $(PC_LIBS_PRIVATE)
 
-  # gpr .pc file
-  PC_NAME = gRPC Portable Runtime
-  PC_DESCRIPTION = gRPC Portable Runtime
-  PC_CFLAGS = -pthread
-  PC_REQUIRES_PRIVATE =
-  PC_LIBS_PRIVATE = -lpthread
-  PC_LIB = -lgpr
-  ifneq ($(SYSTEM),Darwin)
-  PC_LIBS_PRIVATE += -lrt
-  endif
-  GPR_PC_FILE := $(PC_TEMPLATE)
-
   ifeq ($(SYSTEM),MINGW32)
   SHARED_EXT = dll
   endif
@@ -461,7 +449,7 @@
   HAS_EMBEDDED_PROTOBUF = true
   endif
 
-  PC_REQUIRES_GRPC = gpr
+  PC_REQUIRES_GRPC =
   PC_LIBS_GRPC =
 
   ifeq ($(HAS_SYSTEM_ZLIB),false)
@@ -553,23 +541,29 @@
 
   # grpc .pc file
   PC_NAME = gRPC
-  PC_DESCRIPTION = high performance general RPC framework
-  PC_CFLAGS =
-  PC_REQUIRES_PRIVATE = $(PC_REQUIRES_GRPC) $(PC_REQUIRES_SECURE)
+  PC_DESCRIPTION = High performance general RPC framework
+  PC_CFLAGS = -pthread
+  PC_REQUIRES_PRIVATE = $(PC_REQUIRES_GRPC) $(PC_REQUIRES_SECURE) -lpthread
   PC_LIBS_PRIVATE = $(PC_LIBS_GRPC) $(PC_LIBS_SECURE)
   PC_LIB = -lgrpc
+  ifneq ($(SYSTEM),Darwin)
+  PC_LIBS_PRIVATE += -lrt
+  endif
   GRPC_PC_FILE := $(PC_TEMPLATE)
 
   # gprc_unsecure .pc file
   PC_NAME = gRPC unsecure
-  PC_DESCRIPTION = high performance general RPC framework without SSL
-  PC_CFLAGS =
-  PC_REQUIRES_PRIVATE = $(PC_REQUIRES_GRPC)
+  PC_DESCRIPTION = High performance general RPC framework without SSL
+  PC_CFLAGS = -pthread
+  PC_REQUIRES_PRIVATE = $(PC_REQUIRES_GRPC) -lpthread
   PC_LIBS_PRIVATE = $(PC_LIBS_GRPC)
   PC_LIB = -lgrpc
+  ifneq ($(SYSTEM),Darwin)
+  PC_LIBS_PRIVATE += -lrt
+  endif
   GRPC_UNSECURE_PC_FILE := $(PC_TEMPLATE)
 
-  # gprc_zookeeper .pc file
+  # grpc_zookeeper .pc file
   PC_NAME = gRPC zookeeper
   PC_DESCRIPTION = gRPC's zookeeper plugin
   PC_CFLAGS =
@@ -790,7 +784,7 @@
 
   static: static_c static_cxx
 
-  static_c: pc_c pc_c_unsecure cache.mk pc_gpr pc_c_zookeeper\
+  static_c: pc_c pc_c_unsecure cache.mk pc_c_zookeeper\
   % for lib in libs:
   % if lib.build == 'all' and lib.language == 'c' and not lib.get('external_deps', None):
    $(LIBDIR)/$(CONFIG)/lib${lib.name}.a\
@@ -799,7 +793,7 @@
    static_zookeeper_libs
 
 
-  static_cxx: pc_cxx pc_cxx_unsecure pc_gpr cache.mk \
+  static_cxx: pc_cxx pc_cxx_unsecure cache.mk \
   % for lib in libs:
   % if lib.build == 'all' and lib.language == 'c++':
    $(LIBDIR)/$(CONFIG)/lib${lib.name}.a\
@@ -809,7 +803,7 @@
 
   shared: shared_c shared_cxx
 
-  shared_c: pc_c pc_c_unsecure pc_gpr cache.mk pc_c_zookeeper\
+  shared_c: pc_c pc_c_unsecure cache.mk pc_c_zookeeper\
   % for lib in libs:
   % if lib.build == 'all' and lib.language == 'c' and not lib.get('external_deps', None):
    $(LIBDIR)/$(CONFIG)/lib${lib.name}.$(SHARED_EXT)\
@@ -867,8 +861,6 @@
    $(LIBDIR)/$(CONFIG)/lib${lib.name}.a\
   % endif
   % endfor
-
-  pc_gpr: $(LIBDIR)/$(CONFIG)/pkgconfig/gpr.pc
 
   pc_c: $(LIBDIR)/$(CONFIG)/pkgconfig/grpc.pc
 
@@ -1137,11 +1129,6 @@
   	$(E) "[MAKE]    Generating $@"
   	$(Q) echo "$(CACHE_MK)" | tr , '\n' >$@
 
-  $(LIBDIR)/$(CONFIG)/pkgconfig/gpr.pc:
-  	$(E) "[MAKE]    Generating $@"
-  	$(Q) mkdir -p $(@D)
-  	$(Q) echo "$(GPR_PC_FILE)" | tr , '\n' >$@
-
   $(LIBDIR)/$(CONFIG)/pkgconfig/grpc.pc:
   	$(E) "[MAKE]    Generating $@"
   	$(Q) mkdir -p $(@D)
@@ -1354,10 +1341,9 @@
   % endfor
   endif
 
-  install-pkg-config_c: pc_gpr pc_c pc_c_unsecure pc_c_zookeeper
+  install-pkg-config_c: pr pc_c pc_c_unsecure pc_c_zookeeper
   	$(E) "[INSTALL] Installing C pkg-config files"
   	$(Q) $(INSTALL) -d $(prefix)/lib/pkgconfig
-  	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/pkgconfig/gpr.pc $(prefix)/lib/pkgconfig/gpr.pc
   	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/pkgconfig/grpc.pc $(prefix)/lib/pkgconfig/grpc.pc
   	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/pkgconfig/grpc_unsecure.pc $(prefix)/lib/pkgconfig/grpc_unsecure.pc
   ifeq ($(HAS_ZOOKEEPER),true)
