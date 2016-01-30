@@ -53,12 +53,14 @@ def list_c_apis(filenames):
       type_end = max(last_space, last_star)
       return_type = type_and_name[0:type_end+1].strip()
       name = type_and_name[type_end+1:].strip()
-      yield {'return_type': return_type, 'name': name, 'arguments': args}
+      yield {'return_type': return_type, 'name': name, 'arguments': args, 'header': filename}
 
 def mako_plugin(dictionary):
   apis = []
 
-  # TODO(ctiller): find grpc library, iterate headers, append apis to dictionary
+  for lib in dictionary['libs']:
+    if lib['name'] == 'grpc':
+      apis.extend(list_c_apis(lib['public_headers']))
 
   dictionary['c_apis'] = apis
 
@@ -70,7 +72,5 @@ def headers_under(directory):
 
 
 if __name__ == '__main__':
-  apis = [{'name': api.name, 'return_type': api.return_type, 'args': api.arguments}
-          for api in list_c_apis(headers_under('include/grpc'))]
-  print yaml.dump(apis)
+  print yaml.dump([api for api in list_c_apis(headers_under('include/grpc'))])
 
