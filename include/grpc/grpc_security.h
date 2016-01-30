@@ -150,7 +150,6 @@ typedef enum {
   GRPC_SSL_ROOTS_OVERRIDE_FAIL
 } grpc_ssl_roots_override_result;
 
-
 /* Callback for getting the SSL roots override from the application.
    In case of success, *pem_roots_certs must be set to a NULL terminated string
    containing the list of PEM encoded root certificates. The ownership is passed
