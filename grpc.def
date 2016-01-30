@@ -1,5 +1,3 @@
-LIBRARY
-
 EXPORTS
     census_initialize
     census_shutdown
