@@ -35,7 +35,7 @@
 
 #ifdef GPR_WIN32
 
-#include "rb_grpc_imports.h"
+#include "rb_grpc_imports.generated.h"
 
 census_initialize_type census_initialize_import;
 census_shutdown_type census_shutdown_import;
