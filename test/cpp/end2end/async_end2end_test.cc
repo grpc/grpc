@@ -775,6 +775,8 @@ TEST_P(AsyncEnd2endTest, UnimplementedRpc) {
   EXPECT_EQ("", recv_status.error_message());
 }
 
+// This class is for testing scenarios where RPCs are cancelled on the server
+// by calling ServerContext::TryCancel()
 class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
  protected:
   typedef enum {
@@ -791,6 +793,18 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
     EXPECT_TRUE(context->IsCancelled());
   }
 
+  // Helper for testing client-streaming RPCs which are cancelled on the server.
+  // Depending on the value of server_try_cancel parameter, this will test one
+  // of the following three scenarios:
+  //   CANCEL_BEFORE_PROCESSING: Rpc is cancelled by the server before reading
+  //   any messages from the client
+  //
+  //   CANCEL_DURING_PROCESSING: Rpc is cancelled by the server while reading
+  //   messages from the client
+  //
+  //   CANCEL_AFTER PROCESSING: Rpc is cancelled by server after reading all
+  //   messages from the client (but before sending any status back to the
+  //   client)
   void TestClientStreamingServerCancel(
       ServerTryCancelRequestPhase server_try_cancel) {
     ResetStub();
@@ -864,22 +878,37 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
       ServerTryCancel(&srv_ctx);
     }
 
-    // Note: The RPC has been cancelled at this point for sure. So, from this
-    // point forward, we know that cq results are supposed to return false on
-    // server.
+    // The RPC has been cancelled at this point for sure (i.e irrespective of
+    // the value of `server_try_cancel` is). So, from this point forward, we
+    // know that cq results are supposed to return false on server.
 
+    // Server sends the final message and cancelled status (but the RPC is
+    // already cancelled at this point. So we expect the operation to fail)
     send_response.set_message("Pong");
     srv_stream.Finish(send_response, Status::CANCELLED, tag(9));
     Verifier(GetParam()).Expect(9, false).Verify(cq_.get());
 
+    // Client will see the cancellation
     cli_stream->Finish(&recv_status, tag(10));
-    // TODO: sreek: The expectation here should be true. This seems like a bug.
-    // Investigating
+    // TODO: sreek: The expectation here should be true. This is a bug (github
+    // issue #4972)
     Verifier(GetParam()).Expect(10, false).Verify(cq_.get());
     EXPECT_FALSE(recv_status.ok());
     EXPECT_EQ(::grpc::StatusCode::CANCELLED, recv_status.error_code());
   }
 
+  // Helper for testing server-streaming RPCs which are cancelled on the server.
+  // Depending on the value of server_try_cancel parameter, this will test one
+  // of the following three scenarios:
+  //   CANCEL_BEFORE_PROCESSING: Rpc is cancelled by the server before sending
+  //   any messages to the client
+  //
+  //   CANCEL_DURING_PROCESSING: Rpc is cancelled by the server while sending
+  //   messages to the client
+  //
+  //   CANCEL_AFTER PROCESSING: Rpc is cancelled by server after sending all
+  //   messages to the client (but before sending any status back to the
+  //   client)
   void TestServerStreamingServerCancel(
       ServerTryCancelRequestPhase server_try_cancel) {
     ResetStub();
@@ -898,7 +927,6 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
     std::unique_ptr<ClientAsyncReader<EchoResponse>> cli_stream(
         stub_->AsyncResponseStream(&cli_ctx, send_request, cq_.get(), tag(1)));
     Verifier(GetParam()).Expect(1, true).Verify(cq_.get());
-
     // On the server, request to be notified of 'ResponseStream' calls and
     // receive the call just made by the client
     service_.RequestResponseStream(&srv_ctx, &recv_request, &srv_stream,
@@ -924,8 +952,8 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
 
       // Server will cancel the RPC in a parallel thread while writing responses
       // to the client. Since the cancellation can happen at anytime, some of
-      // the cq results (i.e those until cancellation) might be true but
-      // its non deterministic. So better to ignore the cq results
+      // the cq results (i.e those until cancellation) might be true but it is
+      // non deterministic. So better to ignore the cq results
       ignore_cq_result = true;
     }
 
@@ -938,11 +966,16 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
           .Verify(cq_.get(), ignore_cq_result);
     }
 
+    if (server_try_cancel_thd != NULL) {
+      server_try_cancel_thd->join();
+      delete server_try_cancel_thd;
+    }
+
     if (server_try_cancel == CANCEL_AFTER_PROCESSING) {
       ServerTryCancel(&srv_ctx);
     }
 
-    // Client attemts to read the three messages
+    // Client attemts to read the three messages from the server
     for (int tag_idx = 6; tag_idx <= 8; tag_idx++) {
       cli_stream->Read(&recv_response, tag(tag_idx));
       Verifier(GetParam())
@@ -950,25 +983,35 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
           .Verify(cq_.get(), ignore_cq_result);
     }
 
-    if (server_try_cancel_thd != NULL) {
-      server_try_cancel_thd->join();
-      delete server_try_cancel_thd;
-    }
+    // The RPC has been cancelled at this point for sure (i.e irrespective of
+    // the value of `server_try_cancel` is). So, from this point forward, we
+    // know that cq results are supposed to return false on server.
 
-    // Note: At this point, we know that server has cancelled the request for
-    // sure.
-
-    // Server finishes the stream
+    // Server finishes the stream (but the RPC is already cancelled)
     srv_stream.Finish(Status::CANCELLED, tag(9));
     Verifier(GetParam()).Expect(9, false).Verify(cq_.get());
 
-    // Client receives the cancellation
+    // Client will see the cancellation
     cli_stream->Finish(&recv_status, tag(10));
     Verifier(GetParam()).Expect(10, true).Verify(cq_.get());
     EXPECT_FALSE(recv_status.ok());
     EXPECT_EQ(::grpc::StatusCode::CANCELLED, recv_status.error_code());
   }
 
+  // Helper for testing bidirectinal-streaming RPCs which are cancelled on the
+  // server.
+  //
+  // Depending on the value of server_try_cancel parameter, this will
+  // test one of the following three scenarios:
+  //   CANCEL_BEFORE_PROCESSING: Rpc is cancelled by the server before reading/
+  //   writing any messages from/to the client
+  //
+  //   CANCEL_DURING_PROCESSING: Rpc is cancelled by the server while reading
+  //   messages from the client
+  //
+  //   CANCEL_AFTER PROCESSING: Rpc is cancelled by server after reading all
+  //   messages from the client (but before sending any status back to the
+  //   client)
   void TestBidiStreamingServerCancel(
       ServerTryCancelRequestPhase server_try_cancel) {
     ResetStub();
@@ -993,12 +1036,14 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
                                tag(2));
     Verifier(GetParam()).Expect(2, true).Verify(cq_.get());
 
+    // Client sends the first and the only message
     send_request.set_message("Ping");
     cli_stream->Write(send_request, tag(3));
     Verifier(GetParam()).Expect(3, true).Verify(cq_.get());
 
     bool expected_cq_result = true;
     bool ignore_cq_result = false;
+
     if (server_try_cancel == CANCEL_BEFORE_PROCESSING) {
       ServerTryCancel(&srv_ctx);
 
@@ -1038,8 +1083,10 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
     cli_stream->WritesDone(tag(7));
     Verifier(GetParam()).Expect(7, true).Verify(cq_.get());
 
-    // This is expected to fail in all cases (Either there are no more msgs from
-    // the client or the RPC is cancelled on the server)
+    // This is expected to fail in all cases i.e for all values of
+    // server_try_cancel. This is becasue at this point, either there are no
+    // more msgs from the client (because client called WritesDone) or the RPC
+    // is cancelled on the server
     srv_stream.Read(&recv_request, tag(8));
     Verifier(GetParam()).Expect(8, false).Verify(cq_.get());
 
@@ -1052,7 +1099,9 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
       ServerTryCancel(&srv_ctx);
     }
 
-    // At this point, we know that the server cancelled the request for sure
+    // The RPC has been cancelled at this point for sure (i.e irrespective of
+    // the value of `server_try_cancel` is). So, from this point forward, we
+    // know that cq results are supposed to return false on server.
 
     srv_stream.Finish(Status::CANCELLED, tag(9));
     Verifier(GetParam()).Expect(9, false).Verify(cq_.get());
