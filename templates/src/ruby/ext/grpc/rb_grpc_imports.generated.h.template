@@ -36,6 +36,12 @@
   #ifndef GRPC_RB_GRPC_IMPORTS_H_
   #define GRPC_RB_GRPC_IMPORTS_H_
 
+  #include <grpc/support/port_platform.h>
+
+  #ifdef GPR_WIN32
+
+  #include <windows.h>
+
   %for header in sorted(set(api.header for api in c_apis)):
   #include <${header}>
   %endfor
@@ -46,6 +52,8 @@
   #define ${api.name} ${api.name}_import
   %endfor
 
-  int grpc_rb_load_imports(const wchar_t *filename);
+  void grpc_rb_load_imports(HMODULE library);
+
+  #endif /* GPR_WIN32 */
 
   #endif
