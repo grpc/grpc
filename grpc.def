@@ -118,7 +118,6 @@ EXPORTS
     grpc_server_add_secure_http2_port
     grpc_call_set_credentials
     grpc_server_credentials_set_auth_metadata_processor
-    grpc_zookeeper_register
     gpr_malloc
     gpr_free
     gpr_realloc

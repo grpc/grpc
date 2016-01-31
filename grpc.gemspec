@@ -18,7 +18,6 @@ Gem::Specification.new do |s|
 
   s.files = %w( Makefile )
   s.files += %w( etc/roots.pem )
-  s.files += %w( tools/distrib/grpc/docker_for_windows.rb )
   s.files += Dir.glob('src/ruby/bin/**/*')
   s.files += Dir.glob('src/ruby/ext/**/*')
   s.files += Dir.glob('src/ruby/lib/**/*')

@@ -156,7 +156,6 @@ grpc_ssl_server_credentials_create_type grpc_ssl_server_credentials_create_impor
 grpc_server_add_secure_http2_port_type grpc_server_add_secure_http2_port_import;
 grpc_call_set_credentials_type grpc_call_set_credentials_import;
 grpc_server_credentials_set_auth_metadata_processor_type grpc_server_credentials_set_auth_metadata_processor_import;
-grpc_zookeeper_register_type grpc_zookeeper_register_import;
 gpr_malloc_type gpr_malloc_import;
 gpr_free_type gpr_free_import;
 gpr_realloc_type gpr_realloc_import;
@@ -419,7 +418,6 @@ void grpc_rb_load_imports(HMODULE library) {
   grpc_server_add_secure_http2_port_import = (grpc_server_add_secure_http2_port_type) GetProcAddress(library, "grpc_server_add_secure_http2_port");
   grpc_call_set_credentials_import = (grpc_call_set_credentials_type) GetProcAddress(library, "grpc_call_set_credentials");
   grpc_server_credentials_set_auth_metadata_processor_import = (grpc_server_credentials_set_auth_metadata_processor_type) GetProcAddress(library, "grpc_server_credentials_set_auth_metadata_processor");
-  grpc_zookeeper_register_import = (grpc_zookeeper_register_type) GetProcAddress(library, "grpc_zookeeper_register");
   gpr_malloc_import = (gpr_malloc_type) GetProcAddress(library, "gpr_malloc");
   gpr_free_import = (gpr_free_type) GetProcAddress(library, "gpr_free");
   gpr_realloc_import = (gpr_realloc_type) GetProcAddress(library, "gpr_realloc");
