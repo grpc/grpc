@@ -2231,6 +2231,7 @@ LIBGPR_SRC = \
     src/core/support/string_posix.c \
     src/core/support/string_win32.c \
     src/core/support/subprocess_posix.c \
+    src/core/support/subprocess_windows.c \
     src/core/support/sync.c \
     src/core/support/sync_posix.c \
     src/core/support/sync_win32.c \
