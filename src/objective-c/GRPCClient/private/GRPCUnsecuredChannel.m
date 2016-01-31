@@ -43,7 +43,6 @@
 }
 
 - (instancetype)initWithHost:(NSString *)host channelArgs:(GRPCWrappedChannelArgs *)channelArgs  {
-
   grpc_channel_args args = (grpc_channel_args) { .num_args = 0, .args = NULL };
   if (channelArgs) {
     args = channelArgs.channelArgs;
