@@ -44,7 +44,6 @@
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
-#include <grpc/grpc_zookeeper.h>
 #include <grpc/impl/codegen/alloc.h>
 #include <grpc/impl/codegen/byte_buffer.h>
 #include <grpc/impl/codegen/log.h>
@@ -419,9 +418,6 @@ extern grpc_call_set_credentials_type grpc_call_set_credentials_import;
 typedef void(*grpc_server_credentials_set_auth_metadata_processor_type)(grpc_server_credentials *creds, grpc_auth_metadata_processor processor);
 extern grpc_server_credentials_set_auth_metadata_processor_type grpc_server_credentials_set_auth_metadata_processor_import;
 #define grpc_server_credentials_set_auth_metadata_processor grpc_server_credentials_set_auth_metadata_processor_import
-typedef void(*grpc_zookeeper_register_type)();
-extern grpc_zookeeper_register_type grpc_zookeeper_register_import;
-#define grpc_zookeeper_register grpc_zookeeper_register_import
 typedef void *(*gpr_malloc_type)(size_t size);
 extern gpr_malloc_type gpr_malloc_import;
 #define gpr_malloc gpr_malloc_import
