@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,40 +31,42 @@
  *
  */
 
-#include <ruby/ruby.h>
 #include "rb_grpc_imports.generated.h"
-#include "rb_byte_buffer.h"
 
-#include <ruby/ruby.h>
+#if GPR_WIN32
+#include <tchar.h>
 
-#include <grpc/grpc.h>
-#include <grpc/byte_buffer_reader.h>
-#include <grpc/support/slice.h>
-#include "rb_grpc.h"
+int grpc_rb_load_core() {
+#if GPR_ARCH_64
+  TCHAR fname[] = _T("grpc_c.64.ruby");
+#else
+  TCHAR fname[] = _T("grpc_c.32.ruby");
+#endif
+  HMODULE module = GetModuleHandle(_T("grpc_c.so"));
+  TCHAR path[2048 + 32] = _T("");
+  LPTSTR seek_back = NULL;
+  GetModuleFileName(module, path, 2048);
 
-grpc_byte_buffer* grpc_rb_s_to_byte_buffer(char *string, size_t length) {
-  gpr_slice slice = gpr_slice_from_copied_buffer(string, length);
-  grpc_byte_buffer *buffer = grpc_raw_byte_buffer_create(&slice, 1);
-  gpr_slice_unref(slice);
-  return buffer;
+  seek_back = _tcsrchr(path, _T('\\'));
+
+  while (seek_back) {
+    HMODULE grpc_c;
+    _tcscpy(seek_back + 1, fname);
+    grpc_c = LoadLibrary(path);
+    if (grpc_c) {
+      grpc_rb_load_imports(grpc_c);
+      return 1;
+    } else {
+      *seek_back = _T('\0');
+      seek_back = _tcsrchr(path, _T('\\'));
+    }
+  }
+
+  return 0;
 }
 
-VALUE grpc_rb_byte_buffer_to_s(grpc_byte_buffer *buffer) {
-  size_t length = 0;
-  char *string = NULL;
-  size_t offset = 0;
-  grpc_byte_buffer_reader reader;
-  gpr_slice next;
-  if (buffer == NULL) {
-    return Qnil;
+#else
 
-  }
-  length = grpc_byte_buffer_length(buffer);
-  string = xmalloc(length + 1);
-  grpc_byte_buffer_reader_init(&reader, buffer);
-  while (grpc_byte_buffer_reader_next(&reader, &next) != 0) {
-    memcpy(string + offset, GPR_SLICE_START_PTR(next), GPR_SLICE_LENGTH(next));
-    offset += GPR_SLICE_LENGTH(next);
-  }
-  return rb_str_new(string, length);
-}
+int grpc_rb_load_core() { return 1; }
+
+#endif

@@ -54,6 +54,8 @@ LIB_DIRS = [
   LIBDIR
 ]
 
+windows = RUBY_PLATFORM =~ /mingw|mswin/
+
 grpc_root = File.expand_path(File.join(File.dirname(__FILE__), '../../../..'))
 
 grpc_config = ENV['GRPC_CONFIG'] || 'opt'
@@ -64,26 +66,15 @@ else
   grpc_lib_dir = File.join(grpc_root, 'libs', grpc_config)
 end
 
-unless File.exist?(File.join(grpc_lib_dir, 'libgrpc.a'))
+unless File.exist?(File.join(grpc_lib_dir, 'libgrpc.a')) or windows
   for var in %w( CC AR ) do
     ENV[var] = RbConfig::CONFIG[var]
   end
 
   ENV['LD'] = ENV['CC']
 
-  if RUBY_PLATFORM =~ /mingw|mswin/
-    ENV['SYSTEM'] = 'MINGW32'
-  end
-
   ENV['EMBED_OPENSSL'] = 'true'
   ENV['EMBED_ZLIB'] = 'true'
-
-  grpc_cppflags = ''
-  grpc_cppflags << ' -D_WIN32_WINNT=0x600 '
-  grpc_cppflags << ' -DUNICODE '
-  grpc_cppflags << ' -D_UNICODE '
-
-  ENV['CPPFLAGS'] = grpc_cppflags
 
   output_dir = File.expand_path(RbConfig::CONFIG['topdir'])
   grpc_lib_dir = File.join(output_dir, 'libs', grpc_config)
@@ -95,7 +86,7 @@ unless File.exist?(File.join(grpc_lib_dir, 'libgrpc.a'))
 end
 
 $CFLAGS << ' -I' + File.join(grpc_root, 'include')
-$LDFLAGS << ' ' + File.join(grpc_lib_dir, 'libgrpc.a')
+$LDFLAGS << ' ' + File.join(grpc_lib_dir, 'libgrpc.a') unless windows
 if grpc_config == 'gcov'
   $CFLAGS << ' -O0 -fprofile-arcs -ftest-coverage'
   $LDFLAGS << ' -fprofile-arcs -ftest-coverage -rdynamic'
@@ -107,11 +98,6 @@ $CFLAGS << ' -Wextra '
 $CFLAGS << ' -pedantic '
 $CFLAGS << ' -Werror '
 $CFLAGS << ' -Wno-format '
-
-case RUBY_PLATFORM
-when /mingw|mswin/
-  $LDFLAGS << ' -static '
-end
 
 output = File.join('grpc', 'grpc_c')
 puts 'Generating Makefile for ' + output

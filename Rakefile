@@ -24,6 +24,13 @@ Rake::ExtensionTask.new('grpc_c', spec) do |ext|
   ext.lib_dir = File.join('src', 'ruby', 'lib', 'grpc')
   ext.cross_compile = true
   ext.cross_platform = ['x86-mingw32', 'x64-mingw32']
+  ext.cross_compiling do |spec|
+    spec.files = %w( etc/roots.pem grpc_c.32.ruby grpc_c.64.ruby )
+    spec.files += Dir.glob('src/ruby/bin/**/*')
+    spec.files += Dir.glob('src/ruby/ext/**/*')
+    spec.files += Dir.glob('src/ruby/lib/**/*')
+    spec.files += Dir.glob('src/ruby/pb/**/*')
+  end
 end
 
 # Define the test suites

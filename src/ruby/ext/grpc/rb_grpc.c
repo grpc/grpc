@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,6 +31,8 @@
  *
  */
 
+#include <ruby/ruby.h>
+#include "rb_grpc_imports.generated.h"
 #include "rb_grpc.h"
 
 #include <math.h>
@@ -45,6 +47,7 @@
 #include "rb_channel.h"
 #include "rb_channel_credentials.h"
 #include "rb_completion_queue.h"
+#include "rb_loader.h"
 #include "rb_server.h"
 #include "rb_server_credentials.h"
 
@@ -298,6 +301,11 @@ VALUE sym_details = Qundef;
 VALUE sym_metadata = Qundef;
 
 void Init_grpc_c() {
+  if (!grpc_rb_load_core()) {
+    rb_raise(rb_eLoadError, "Couldn't find or load gRPC's dynamic C core");
+    return;
+  }
+
   grpc_init();
 
 /* TODO: find alternative to ruby_vm_at_exit that is ok in Ruby 2.0 */
