@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,30 +31,28 @@
  *
  */
 
-#import <Foundation/Foundation.h>
+#import "GRPCCall+ChannelArg.h"
 
-@class GRPCCompletionQueue;
-struct grpc_call;
+#import "private/GRPCHost.h"
 
-@interface GRPCHost : NSObject
+@implementation GRPCCall (ChannelArg)
 
-@property(nonatomic, readonly) NSString *address;
-@property(nonatomic, copy) NSString *primaryUserAgent;
-@property(nonatomic, copy) NSString *secondaryUserAgent;
++ (void)usePrimaryUserAgent:(NSString *)primaryUserAgent forHost:(NSString *)host {
+  if (!primaryUserAgent || !host) {
+    [NSException raise:NSInvalidArgumentException
+                format:@"primaryUserAgent and host must be provided."];
+  }
+  GRPCHost *hostConfig = [GRPCHost hostWithAddress:host];
+  hostConfig.primaryUserAgent = primaryUserAgent;
+}
 
-/** The following properties should only be modified for testing: */
-
-@property(nonatomic, getter=isSecure) BOOL secure;
-
-@property(nonatomic, copy) NSString *pathToCertificates;
-@property(nonatomic, copy) NSString *hostNameOverride;
-
-/** Host objects initialized with the same address are the same. */
-+ (instancetype)hostWithAddress:(NSString *)address;
-- (instancetype)initWithAddress:(NSString *)address NS_DESIGNATED_INITIALIZER;
-
-/** Create a grpc_call object to the provided path on this host. */
-- (struct grpc_call *)unmanagedCallWithPath:(NSString *)path
-                            completionQueue:(GRPCCompletionQueue *)queue;
++ (void)useSecondaryUserAgent:(NSString *)secondaryUserAgent forHost:(NSString *)host {
+  if (!secondaryUserAgent || !host) {
+    [NSException raise:NSInvalidArgumentException
+                format:@"secondaryUserAgent and host must be provided."];
+  }
+  GRPCHost *hostConfig = [GRPCHost hostWithAddress:host];
+  hostConfig.secondaryUserAgent = secondaryUserAgent;
+}
 
 @end
