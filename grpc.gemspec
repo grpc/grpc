@@ -18,7 +18,7 @@ Gem::Specification.new do |s|
 
   s.files = %w( Makefile )
   s.files += %w( etc/roots.pem )
-  s.files += %w( tools/distrib/docker_for_windows.rb )
+  s.files += %w( tools/distrib/grpc/docker_for_windows.rb )
   s.files += Dir.glob('src/ruby/bin/**/*')
   s.files += Dir.glob('src/ruby/ext/**/*')
   s.files += Dir.glob('src/ruby/lib/**/*')
@@ -436,6 +436,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/census/context.c )
   s.files += %w( src/core/census/initialize.c )
   s.files += %w( src/core/census/operation.c )
+  s.files += %w( src/core/census/placeholders.c )
   s.files += %w( src/core/census/tag_set.c )
   s.files += %w( src/core/census/tracing.c )
   s.files += %w( third_party/boringssl/crypto/aes/internal.h )
