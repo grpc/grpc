@@ -33,6 +33,8 @@
 
 #include <grpc/census.h>
 
+#include <grpc/support/log.h>
+
 /* Placeholders for the pending APIs */
 
 census_tag_set *census_context_tag_set(census_context *context) {
