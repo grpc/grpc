@@ -398,6 +398,7 @@ Pod::Spec.new do |s|
                       'src/core/json/json_reader.c',
                       'src/core/json/json_string.c',
                       'src/core/json/json_writer.c',
+                      'src/core/surface/alarm.c',
                       'src/core/surface/api_trace.c',
                       'src/core/surface/byte_buffer.c',
                       'src/core/surface/byte_buffer_reader.c',

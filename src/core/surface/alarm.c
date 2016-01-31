@@ -48,7 +48,7 @@ struct grpc_alarm {
 static void do_nothing_end_completion(grpc_exec_ctx *exec_ctx, void *arg,
                                       grpc_cq_completion *c) {}
 
-static void alarm_cb(grpc_exec_ctx *exec_ctx, void *arg, int success) {
+static void alarm_cb(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
   grpc_alarm *alarm = arg;
   grpc_cq_end_op(exec_ctx, alarm->cq, alarm->tag, success,
                  do_nothing_end_completion, NULL, &alarm->completion);
@@ -65,7 +65,7 @@ grpc_alarm *grpc_alarm_create(grpc_completion_queue *cq, gpr_timespec deadline,
 
   grpc_timer_init(&exec_ctx, &alarm->alarm, deadline, alarm_cb, alarm,
                   gpr_now(GPR_CLOCK_MONOTONIC));
-  grpc_cq_begin_op(cq);
+  grpc_cq_begin_op(cq, tag);
   grpc_exec_ctx_finish(&exec_ctx);
   return alarm;
 }
