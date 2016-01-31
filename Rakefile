@@ -66,6 +66,7 @@ task 'gem:windows' do
   V = ENV['V'] || '0'
 
   env = 'CPPFLAGS="-D_WIN32_WINNT=0x600 -DUNICODE -D_UNICODE" '
+  env += 'LDFLAGS=-static '
   env += 'SYSTEM=MINGW32 '
   env += 'EMBED_ZLIB=true '
   env += 'BUILDDIR=/tmp '
@@ -73,11 +74,11 @@ task 'gem:windows' do
 
   env_comp = 'CC=x86_64-w64-mingw32-gcc '
   env_comp += 'LD=x86_64-w64-mingw32-gcc '
-  docker_for_windows "#{env} #{env_comp} make #{out} && cp #{out} grpc_c.64.ruby"
+  docker_for_windows "#{env} #{env_comp} make -j #{out} && x86_64-w64-mingw32-strip -x -S #{out} && cp #{out} grpc_c.64.ruby"
 
   env_comp = 'CC=i686-w64-mingw32-gcc '
   env_comp += 'LD=i686-w64-mingw32-gcc '
-  docker_for_windows "#{env} #{env_comp} make #{out} && cp #{out} grpc_c.32.ruby"
+  docker_for_windows "#{env} #{env_comp} make -j #{out} && i686-w64-mingw32-strip -x -S #{out} && cp #{out} grpc_c.32.ruby"
 
   docker_for_windows "bundle && rake cross native gem RUBY_CC_VERSION=2.3.0:2.2.2:2.1.6:2.0.0 GRPC_CONFIG=#{grpc_config} V=#{V}"
 end
