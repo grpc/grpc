@@ -41,7 +41,7 @@ census_tag_set *census_context_tag_set(census_context *context) {
 }
 
 int census_get_trace_record(census_trace_record *trace_record) {
-  (void)trace_record);
+  (void)trace_record;
   abort();
 }
 
