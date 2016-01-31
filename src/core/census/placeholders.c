@@ -83,6 +83,7 @@ census_view *census_view_create(uint32_t metric_id, const census_tag_set *tags,
 
 const census_tag_set *census_view_tags(const census_view *view) {
   (void)view;
+  abort();
 }
 
 void census_view_delete(census_view *view) {
