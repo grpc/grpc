@@ -67,8 +67,8 @@ namespace :suite do
   end
 end
 
-desc 'Build the gem file under rake_compiler_dock'
-task 'gem:windows' do
+desc 'Build the Windows gRPC DLLs for Ruby'
+task 'dlls' do
   grpc_config = ENV['GRPC_CONFIG'] || 'opt'
   V = ENV['V'] || '0'
 
@@ -77,15 +77,23 @@ task 'gem:windows' do
   env += 'SYSTEM=MINGW32 '
   env += 'EMBED_ZLIB=true '
   env += 'BUILDDIR=/tmp '
+  env += 'V=#{V} '
   out = '/tmp/libs/opt/grpc-0.dll'
 
-  env_comp = 'CC=x86_64-w64-mingw32-gcc '
-  env_comp += 'LD=x86_64-w64-mingw32-gcc '
-  docker_for_windows "#{env} #{env_comp} make -j #{out} && x86_64-w64-mingw32-strip -x -S #{out} && cp #{out} grpc_c.64.ruby"
+  w64 = { cross: 'x86_64-w64-mingw32', out: 'grpc_c.64.ruby' }
+  w32 = { cross: 'i686-w64-mingw32', out: 'grpc_c.32.ruby' }
 
-  env_comp = 'CC=i686-w64-mingw32-gcc '
-  env_comp += 'LD=i686-w64-mingw32-gcc '
-  docker_for_windows "#{env} #{env_comp} make -j #{out} && i686-w64-mingw32-strip -x -S #{out} && cp #{out} grpc_c.32.ruby"
+  [ w64, w32 ].each do |opt|
+    env_comp = "CC=#{opt[:cross]}-gcc "
+    env_comp += "LD=#{opt[:cross]}-gcc "
+    docker_for_windows "#{env} #{env_comp} make -j #{out} && #{opt[:cross]}-strip -x -S #{out} && cp #{out} #{opt[:out]}"
+  end
+
+end
+
+desc 'Build the gem file under rake_compiler_dock'
+task 'gem:windows' do
+  V = ENV['V'] || '0'
 
   docker_for_windows "bundle && rake cross native gem RUBY_CC_VERSION=2.3.0:2.2.2:2.1.6:2.0.0 GRPC_CONFIG=#{grpc_config} V=#{V}"
 end
