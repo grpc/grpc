@@ -31,6 +31,7 @@
  *
  */
 
+#include <ruby/ruby.h>
 #include <grpc/support/port_platform.h>
 
 #ifdef GPR_WIN32
