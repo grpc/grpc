@@ -822,6 +822,8 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\support\subprocess_posix.c">
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\support\subprocess_windows.c">
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\support\sync.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\support\sync_posix.c">
