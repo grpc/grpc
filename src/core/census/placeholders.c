@@ -66,8 +66,6 @@ int census_trace_scan_start(int consume) {
   abort();
 }
 
-void census_trace_scan_end() { abort(); }
-
 const census_aggregation *census_view_aggregrations(const census_view *view) {
   (void)view;
   abort();
@@ -78,7 +76,7 @@ census_view *census_view_create(uint32_t metric_id, const census_tag_set *tags,
                                 size_t naggregations) {
   (void)metric_id;
   (void)tags;
-  (void)census_aggregation;
+  (void)aggregations;
   (void)naggregations;
   abort();
 }
