@@ -46,3 +46,76 @@ void census_shutdown(void) {
   census_stats_store_shutdown();
   census_tracing_shutdown();
 }
+
+census_tag_set *census_context_tag_set(census_context *context) {
+  (void)context;
+  abort();
+}
+
+int census_get_trace_record(census_trace_record *trace_record) {
+  (void)trace_record);
+  abort();
+}
+
+void census_record_values(census_context *context, census_value *values,
+                          size_t nvalues) {
+  (void)context;
+  (void)values;
+  (void)nvalues;
+  abort();
+}
+
+void census_set_rpc_client_peer(census_context *context, const char *peer) {
+  (void)context;
+  (void)peer;
+  abort();
+}
+
+void census_trace_scan_end() { abort(); }
+
+int census_trace_scan_start(int consume) {
+  (void)consume;
+  abort();
+}
+
+void census_trace_scan_end() { abort(); }
+
+const census_aggregation *census_view_aggregrations(const census_view *view) {
+  (void)view;
+  abort();
+}
+
+census_view *census_view_create(uint32_t metric_id, const census_tag_set *tags,
+                                const census_aggregation *aggregations,
+                                size_t naggregations) {
+  (void)metric_id;
+  (void)tags;
+  (void)census_aggregation;
+  (void)naggregations;
+  abort();
+}
+
+void census_view_delete(census_view *view) {
+  (void)view;
+  abort();
+}
+
+const census_view_data *census_view_get_data(const census_view *view) {
+  (void)view;
+  abort();
+}
+
+size_t census_view_metric(const census_view *view) {
+  (void)view;
+  abort();
+}
+
+size_t census_view_naggregations(const census_view *view) {
+  (void)view;
+  abort();
+}
+
+void census_view_reset(census_view *view) {
+  (void)view;
+  abort();
+}
