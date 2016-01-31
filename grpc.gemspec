@@ -341,6 +341,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/json/json_reader.c )
   s.files += %w( src/core/json/json_string.c )
   s.files += %w( src/core/json/json_writer.c )
+  s.files += %w( src/core/surface/alarm.c )
   s.files += %w( src/core/surface/api_trace.c )
   s.files += %w( src/core/surface/byte_buffer.c )
   s.files += %w( src/core/surface/byte_buffer_reader.c )

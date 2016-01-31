@@ -361,6 +361,9 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\json\json_writer.c">
       <Filter>src\core\json</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\surface\alarm.c">
+      <Filter>src\core\surface</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\surface\api_trace.c">
       <Filter>src\core\surface</Filter>
     </ClCompile>
