@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,31 +30,23 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
+#import "GRPCCall.h"
 
-#import <Foundation/Foundation.h>
+/**
+ * Methods to configure GRPC channel options for specific hosts.
+ */
+@interface GRPCCall (ChannelArg)
 
-@class GRPCCompletionQueue;
-struct grpc_call;
+/**
+ * Use the provided @c primaryUserAgent at the beginning of the HTTP User Agent string for the
+ * provided @c host.
+ */
++ (void)usePrimaryUserAgent:(NSString *)primaryUserAgent forHost:(NSString *)host;
 
-@interface GRPCHost : NSObject
-
-@property(nonatomic, readonly) NSString *address;
-@property(nonatomic, copy) NSString *primaryUserAgent;
-@property(nonatomic, copy) NSString *secondaryUserAgent;
-
-/** The following properties should only be modified for testing: */
-
-@property(nonatomic, getter=isSecure) BOOL secure;
-
-@property(nonatomic, copy) NSString *pathToCertificates;
-@property(nonatomic, copy) NSString *hostNameOverride;
-
-/** Host objects initialized with the same address are the same. */
-+ (instancetype)hostWithAddress:(NSString *)address;
-- (instancetype)initWithAddress:(NSString *)address NS_DESIGNATED_INITIALIZER;
-
-/** Create a grpc_call object to the provided path on this host. */
-- (struct grpc_call *)unmanagedCallWithPath:(NSString *)path
-                            completionQueue:(GRPCCompletionQueue *)queue;
+/**
+ * Use the provided @c secondaryUserAgent at the end of the HTTP User Agent string for the
+ * provided @c host.
+ */
++ (void)useSecondaryUserAgent:(NSString *)secondaryUserAgent forHost:(NSString *)host;
 
 @end

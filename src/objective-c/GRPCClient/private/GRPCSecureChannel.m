@@ -34,6 +34,7 @@
 #import "GRPCSecureChannel.h"
 
 #include <grpc/grpc_security.h>
+#import "GRPCWrappedChannelArgs.h"
 
 // Returns NULL if the file at path couldn't be read. In that case, if errorPtr isn't NULL,
 // *errorPtr will be an object describing what went wrong.
@@ -55,12 +56,12 @@ static grpc_channel_credentials *CertificatesAtPath(NSString *path, NSError **er
 @implementation GRPCSecureChannel
 
 - (instancetype)initWithHost:(NSString *)host {
-  return [self initWithHost:host pathToCertificates:nil hostNameOverride:nil];
+  return [self initWithHost:host pathToCertificates:nil channelArgs:nil];
 }
 
 - (instancetype)initWithHost:(NSString *)host
           pathToCertificates:(NSString *)path
-            hostNameOverride:(NSString *)hostNameOverride {
+                 channelArgs:(GRPCWrappedChannelArgs *)channelArgs {
   // Load default SSL certificates once.
   static grpc_channel_credentials *kDefaultCertificates;
   static dispatch_once_t loading;
@@ -86,26 +87,20 @@ static grpc_channel_credentials *CertificatesAtPath(NSString *path, NSError **er
     return nil;
   }
 
-  // Ritual to pass the SSL host name override to the C library.
-  grpc_channel_args channelArgs;
-  grpc_arg nameOverrideArg;
-  channelArgs.num_args = 1;
-  channelArgs.args = &nameOverrideArg;
-  nameOverrideArg.type = GRPC_ARG_STRING;
-  nameOverrideArg.key = GRPC_SSL_TARGET_NAME_OVERRIDE_ARG;
-  // Cast const away. Hope C gRPC doesn't modify it!
-  nameOverrideArg.value.string = (char *) hostNameOverride.UTF8String;
-  grpc_channel_args *args = hostNameOverride ? &channelArgs : NULL;
-
-  return [self initWithHost:host credentials:certificates args:args];
+  return [self initWithHost:host credentials:certificates channelArgs:channelArgs];
 }
 
 - (instancetype)initWithHost:(NSString *)host
                  credentials:(grpc_channel_credentials *)credentials
-                        args:(grpc_channel_args *)args {
+                 channelArgs:(GRPCWrappedChannelArgs *)channelArgs {
+  grpc_channel_args args = (grpc_channel_args) { .num_args = 0, .args = NULL };
+  if (channelArgs) {
+    args = channelArgs.channelArgs;
+  }
+
   return (self = [super
               initWithChannel:grpc_secure_channel_create(
-                                  credentials, host.UTF8String, args, NULL)]);
+                                  credentials, host.UTF8String, &args, NULL)]);
 }
 
 // TODO(jcanizales): GRPCSecureChannel and GRPCUnsecuredChannel are just convenience initializers
