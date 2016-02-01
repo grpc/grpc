@@ -51,18 +51,10 @@ namespace testing {
 class Server {
  public:
   explicit Server(const ServerConfig& config) : timer_(new Timer) {
-    int clsize = config.core_list_size();
-    if (clsize > 0) {
-      std::vector<int> core_list;
-      for (int i = 0; i < clsize; i++) {
-        core_list.push_back(config.core_list(i));
-      }
-      cores_ = LimitCores(core_list);
-    } else {
-      cores_ = gpr_cpu_num_cores();
-    }
+    cores_ = LimitCores(config.core_list().data(), config.core_list_size());
     if (config.port()) {
       port_ = config.port();
+
     } else {
       port_ = grpc_pick_unused_port_or_die();
     }

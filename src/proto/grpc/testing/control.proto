@@ -134,8 +134,7 @@ message ServerConfig {
   int32 port = 4;
   // Only for async server. Number of threads used to serve the requests.
   int32 async_server_threads = 7;
-  // restrict core usage, currently unused
-  int32 core_limit = 8;
+  // payload config, used in generic server
   PayloadConfig payload_config = 9;
 
   // Specify the cores we should run the server on, if desired

@@ -38,7 +38,10 @@
 
 namespace grpc {
 namespace testing {
-int LimitCores(std::vector<int> core_vec);
+// LimitCores takes array and size arguments (instead of vector) for more direct
+// conversion from repeated field of protobuf. Use a cores_size of 0 to remove
+// existing limits (from an empty repeated field)
+int LimitCores(const int *cores, int cores_size);
 }  // namespace testing
 }  // namespace grpc
 

@@ -87,10 +87,6 @@ static std::unique_ptr<Server> CreateServer(const ServerConfig& config) {
   gpr_log(GPR_INFO, "Starting server of type %s",
           ServerType_Name(config.server_type()).c_str());
 
-  if (config.core_limit() > 0) {
-    LimitCores(config.core_limit());
-  }
-
   switch (config.server_type()) {
     case ServerType::SYNC_SERVER:
       return CreateSynchronousServer(config);
