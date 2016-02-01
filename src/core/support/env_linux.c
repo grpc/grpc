@@ -61,7 +61,7 @@ char *__attribute__((weak)) __secure_getenv(const char *name);
 char *gpr_getenv(const char *name) {
   static char *(*getenv_func)(const char *) = secure_getenv;
   /* Check to see which getenv variant is supported (go from most
-   * to least secure */
+   * to least secure) */
   if (getenv_func == NULL) {
     getenv_func = __secure_getenv;
     if (getenv_func == NULL) {
