@@ -37,4 +37,4 @@ export GRPC_CONFIG=${CONFIG:-opt}
 cd $(dirname $0)/../..
 
 rm -rf ./tmp
-rake compile:grpc
+rake compile
