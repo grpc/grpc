@@ -127,8 +127,6 @@ message ClientArgs {
 message ServerConfig {
   ServerType server_type = 1;
   SecurityParams security_params = 2;
-  // Host on which to listen.
-  string host = 3;
   // Port on which to listen. Zero means pick unused port.
   int32 port = 4;
   // Only for async server. Number of threads used to serve the requests.

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -237,7 +237,7 @@ void rr_shutdown(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
   while ((pp = p->pending_picks)) {
     p->pending_picks = pp->next;
     *pp->target = NULL;
-    grpc_exec_ctx_enqueue(exec_ctx, pp->on_complete, 0);
+    grpc_exec_ctx_enqueue(exec_ctx, pp->on_complete, false, NULL);
     gpr_free(pp);
   }
   grpc_connectivity_state_set(exec_ctx, &p->state_tracker,
@@ -263,7 +263,7 @@ static void rr_cancel_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
       grpc_pollset_set_del_pollset(exec_ctx, &p->base.interested_parties,
                                    pp->pollset);
       *target = NULL;
-      grpc_exec_ctx_enqueue(exec_ctx, pp->on_complete, 0);
+      grpc_exec_ctx_enqueue(exec_ctx, pp->on_complete, false, NULL);
       gpr_free(pp);
     } else {
       pp->next = p->pending_picks;
@@ -336,7 +336,7 @@ int rr_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol, grpc_pollset *pollset,
 }
 
 static void rr_connectivity_changed(grpc_exec_ctx *exec_ctx, void *arg,
-                                    int iomgr_success) {
+                                    bool iomgr_success) {
   subchannel_data *sd = arg;
   round_robin_lb_policy *p = sd->policy;
   pending_pick *pp;
@@ -376,7 +376,7 @@ static void rr_connectivity_changed(grpc_exec_ctx *exec_ctx, void *arg,
           }
           grpc_pollset_set_del_pollset(exec_ctx, &p->base.interested_parties,
                                        pp->pollset);
-          grpc_exec_ctx_enqueue(exec_ctx, pp->on_complete, 1);
+          grpc_exec_ctx_enqueue(exec_ctx, pp->on_complete, true, NULL);
           gpr_free(pp);
         }
         grpc_subchannel_notify_on_state_change(
@@ -428,7 +428,7 @@ static void rr_connectivity_changed(grpc_exec_ctx *exec_ctx, void *arg,
           while ((pp = p->pending_picks)) {
             p->pending_picks = pp->next;
             *pp->target = NULL;
-            grpc_exec_ctx_enqueue(exec_ctx, pp->on_complete, 1);
+            grpc_exec_ctx_enqueue(exec_ctx, pp->on_complete, true, NULL);
             gpr_free(pp);
           }
         } else {
@@ -479,7 +479,7 @@ static void rr_ping_one(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
     grpc_connected_subchannel_ping(exec_ctx, target, closure);
   } else {
     gpr_mu_unlock(&p->mu);
-    grpc_exec_ctx_enqueue(exec_ctx, closure, 0);
+    grpc_exec_ctx_enqueue(exec_ctx, closure, false, NULL);
   }
 }
 

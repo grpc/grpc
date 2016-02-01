@@ -69,9 +69,10 @@ typedef struct gpr_timespec {
 } gpr_timespec;
 
 /* Time constants. */
-gpr_timespec gpr_time_0(gpr_clock_type type);     /* The zero time interval. */
-gpr_timespec gpr_inf_future(gpr_clock_type type); /* The far future */
-gpr_timespec gpr_inf_past(gpr_clock_type type);   /* The far past. */
+GPR_API gpr_timespec
+gpr_time_0(gpr_clock_type type); /* The zero time interval. */
+GPR_API gpr_timespec gpr_inf_future(gpr_clock_type type); /* The far future */
+GPR_API gpr_timespec gpr_inf_past(gpr_clock_type type);   /* The far past. */
 
 #define GPR_MS_PER_SEC 1000
 #define GPR_US_PER_SEC 1000000
@@ -81,45 +82,46 @@ gpr_timespec gpr_inf_past(gpr_clock_type type);   /* The far past. */
 #define GPR_US_PER_MS 1000
 
 /* initialize time subsystem */
-void gpr_time_init(void);
+GPR_API void gpr_time_init(void);
 
 /* Return the current time measured from the given clocks epoch. */
-gpr_timespec gpr_now(gpr_clock_type clock);
+GPR_API gpr_timespec gpr_now(gpr_clock_type clock);
 
 /* Convert a timespec from one clock to another */
-gpr_timespec gpr_convert_clock_type(gpr_timespec t,
-                                    gpr_clock_type target_clock);
+GPR_API gpr_timespec
+gpr_convert_clock_type(gpr_timespec t, gpr_clock_type target_clock);
 
 /* Return -ve, 0, or +ve according to whether a < b, a == b, or a > b
    respectively.  */
-int gpr_time_cmp(gpr_timespec a, gpr_timespec b);
+GPR_API int gpr_time_cmp(gpr_timespec a, gpr_timespec b);
 
-gpr_timespec gpr_time_max(gpr_timespec a, gpr_timespec b);
-gpr_timespec gpr_time_min(gpr_timespec a, gpr_timespec b);
+GPR_API gpr_timespec gpr_time_max(gpr_timespec a, gpr_timespec b);
+GPR_API gpr_timespec gpr_time_min(gpr_timespec a, gpr_timespec b);
 
 /* Add and subtract times.  Calculations saturate at infinities. */
-gpr_timespec gpr_time_add(gpr_timespec a, gpr_timespec b);
-gpr_timespec gpr_time_sub(gpr_timespec a, gpr_timespec b);
+GPR_API gpr_timespec gpr_time_add(gpr_timespec a, gpr_timespec b);
+GPR_API gpr_timespec gpr_time_sub(gpr_timespec a, gpr_timespec b);
 
 /* Return a timespec representing a given number of time units. LONG_MIN is
    interpreted as gpr_inf_past, and LONG_MAX as gpr_inf_future.  */
-gpr_timespec gpr_time_from_micros(long x, gpr_clock_type clock_type);
-gpr_timespec gpr_time_from_nanos(long x, gpr_clock_type clock_type);
-gpr_timespec gpr_time_from_millis(long x, gpr_clock_type clock_type);
-gpr_timespec gpr_time_from_seconds(long x, gpr_clock_type clock_type);
-gpr_timespec gpr_time_from_minutes(long x, gpr_clock_type clock_type);
-gpr_timespec gpr_time_from_hours(long x, gpr_clock_type clock_type);
+GPR_API gpr_timespec gpr_time_from_micros(long x, gpr_clock_type clock_type);
+GPR_API gpr_timespec gpr_time_from_nanos(long x, gpr_clock_type clock_type);
+GPR_API gpr_timespec gpr_time_from_millis(long x, gpr_clock_type clock_type);
+GPR_API gpr_timespec gpr_time_from_seconds(long x, gpr_clock_type clock_type);
+GPR_API gpr_timespec gpr_time_from_minutes(long x, gpr_clock_type clock_type);
+GPR_API gpr_timespec gpr_time_from_hours(long x, gpr_clock_type clock_type);
 
-int32_t gpr_time_to_millis(gpr_timespec timespec);
+GPR_API int32_t gpr_time_to_millis(gpr_timespec timespec);
 
 /* Return 1 if two times are equal or within threshold of each other,
    0 otherwise */
-int gpr_time_similar(gpr_timespec a, gpr_timespec b, gpr_timespec threshold);
+GPR_API int gpr_time_similar(gpr_timespec a, gpr_timespec b,
+                             gpr_timespec threshold);
 
 /* Sleep until at least 'until' - an absolute timeout */
-void gpr_sleep_until(gpr_timespec until);
+GPR_API void gpr_sleep_until(gpr_timespec until);
 
-double gpr_timespec_to_micros(gpr_timespec t);
+GPR_API double gpr_timespec_to_micros(gpr_timespec t);
 
 #ifdef __cplusplus
 }
