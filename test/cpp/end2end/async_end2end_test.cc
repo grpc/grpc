@@ -884,13 +884,12 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
 
     // Server sends the final message and cancelled status (but the RPC is
     // already cancelled at this point. So we expect the operation to fail)
-    send_response.set_message("Pong");
     srv_stream.Finish(send_response, Status::CANCELLED, tag(9));
     Verifier(GetParam()).Expect(9, false).Verify(cq_.get());
 
     // Client will see the cancellation
     cli_stream->Finish(&recv_status, tag(10));
-    // TODO: sreek: The expectation here should be true. This is a bug (github
+    // TODO(sreek): The expectation here should be true. This is a bug (github
     // issue #4972)
     Verifier(GetParam()).Expect(10, false).Verify(cq_.get());
     EXPECT_FALSE(recv_status.ok());
