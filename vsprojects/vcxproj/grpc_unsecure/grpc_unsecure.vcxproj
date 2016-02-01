@@ -542,6 +542,8 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\json\json_writer.c">
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\surface\alarm.c">
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\surface\api_trace.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\surface\byte_buffer.c">
