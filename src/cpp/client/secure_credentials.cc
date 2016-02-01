@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -41,6 +41,13 @@
 
 namespace grpc {
 
+static internal::GrpcLibraryInitializer g_gli_initializer;
+SecureChannelCredentials::SecureChannelCredentials(
+    grpc_channel_credentials* c_creds)
+    : c_creds_(c_creds) {
+  g_gli_initializer.summon();
+}
+
 std::shared_ptr<grpc::Channel> SecureChannelCredentials::CreateChannel(
     const string& target, const grpc::ChannelArguments& args) {
   grpc_channel_args channel_args;
@@ -49,6 +56,12 @@ std::shared_ptr<grpc::Channel> SecureChannelCredentials::CreateChannel(
       args.GetSslTargetNameOverride(),
       grpc_secure_channel_create(c_creds_, target.c_str(), &channel_args,
                                  nullptr));
+}
+
+SecureCallCredentials::SecureCallCredentials(grpc_call_credentials* c_creds)
+    : c_creds_(c_creds) {
+  internal::GrpcLibraryInitializer gli_initializer;
+  gli_initializer.summon();
 }
 
 bool SecureCallCredentials::ApplyToCall(grpc_call* call) {

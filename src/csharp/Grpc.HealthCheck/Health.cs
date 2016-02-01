@@ -9,39 +9,38 @@ using pbr = global::Google.Protobuf.Reflection;
 using scg = global::System.Collections.Generic;
 namespace Grpc.Health.V1Alpha {
 
-  namespace Proto {
+  /// <summary>Holder for reflection information generated from health.proto</summary>
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+  public static partial class HealthReflection {
 
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-    public static partial class Health {
-
-      #region Descriptor
-      public static pbr::FileDescriptor Descriptor {
-        get { return descriptor; }
-      }
-      private static pbr::FileDescriptor descriptor;
-
-      static Health() {
-        byte[] descriptorData = global::System.Convert.FromBase64String(
-            string.Concat(
-              "CgxoZWFsdGgucHJvdG8SE2dycGMuaGVhbHRoLnYxYWxwaGEiMwoSSGVhbHRo", 
-              "Q2hlY2tSZXF1ZXN0EgwKBGhvc3QYASABKAkSDwoHc2VydmljZRgCIAEoCSKZ", 
-              "AQoTSGVhbHRoQ2hlY2tSZXNwb25zZRJGCgZzdGF0dXMYASABKA4yNi5ncnBj", 
-              "LmhlYWx0aC52MWFscGhhLkhlYWx0aENoZWNrUmVzcG9uc2UuU2VydmluZ1N0", 
-              "YXR1cyI6Cg1TZXJ2aW5nU3RhdHVzEgsKB1VOS05PV04QABILCgdTRVJWSU5H", 
-              "EAESDwoLTk9UX1NFUlZJTkcQAjJkCgZIZWFsdGgSWgoFQ2hlY2sSJy5ncnBj", 
-              "LmhlYWx0aC52MWFscGhhLkhlYWx0aENoZWNrUmVxdWVzdBooLmdycGMuaGVh", 
-              "bHRoLnYxYWxwaGEuSGVhbHRoQ2hlY2tSZXNwb25zZUIWqgITR3JwYy5IZWFs", 
-              "dGguVjFBbHBoYWIGcHJvdG8z"));
-        descriptor = pbr::FileDescriptor.InternalBuildGeneratedFileFrom(descriptorData,
-            new pbr::FileDescriptor[] { },
-            new pbr::GeneratedCodeInfo(null, new pbr::GeneratedCodeInfo[] {
-              new pbr::GeneratedCodeInfo(typeof(global::Grpc.Health.V1Alpha.HealthCheckRequest), new[]{ "Host", "Service" }, null, null, null),
-              new pbr::GeneratedCodeInfo(typeof(global::Grpc.Health.V1Alpha.HealthCheckResponse), new[]{ "Status" }, null, new[]{ typeof(global::Grpc.Health.V1Alpha.HealthCheckResponse.Types.ServingStatus) }, null)
-            }));
-      }
-      #endregion
-
+    #region Descriptor
+    /// <summary>File descriptor for health.proto</summary>
+    public static pbr::FileDescriptor Descriptor {
+      get { return descriptor; }
     }
+    private static pbr::FileDescriptor descriptor;
+
+    static HealthReflection() {
+      byte[] descriptorData = global::System.Convert.FromBase64String(
+          string.Concat(
+            "CgxoZWFsdGgucHJvdG8SE2dycGMuaGVhbHRoLnYxYWxwaGEiMwoSSGVhbHRo",
+            "Q2hlY2tSZXF1ZXN0EgwKBGhvc3QYASABKAkSDwoHc2VydmljZRgCIAEoCSKZ",
+            "AQoTSGVhbHRoQ2hlY2tSZXNwb25zZRJGCgZzdGF0dXMYASABKA4yNi5ncnBj",
+            "LmhlYWx0aC52MWFscGhhLkhlYWx0aENoZWNrUmVzcG9uc2UuU2VydmluZ1N0",
+            "YXR1cyI6Cg1TZXJ2aW5nU3RhdHVzEgsKB1VOS05PV04QABILCgdTRVJWSU5H",
+            "EAESDwoLTk9UX1NFUlZJTkcQAjJkCgZIZWFsdGgSWgoFQ2hlY2sSJy5ncnBj",
+            "LmhlYWx0aC52MWFscGhhLkhlYWx0aENoZWNrUmVxdWVzdBooLmdycGMuaGVh",
+            "bHRoLnYxYWxwaGEuSGVhbHRoQ2hlY2tSZXNwb25zZUIWqgITR3JwYy5IZWFs",
+            "dGguVjFBbHBoYWIGcHJvdG8z"));
+      descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
+          new pbr::FileDescriptor[] { },
+          new pbr::GeneratedCodeInfo(null, new pbr::GeneratedCodeInfo[] {
+            new pbr::GeneratedCodeInfo(typeof(global::Grpc.Health.V1Alpha.HealthCheckRequest), global::Grpc.Health.V1Alpha.HealthCheckRequest.Parser, new[]{ "Host", "Service" }, null, null, null),
+            new pbr::GeneratedCodeInfo(typeof(global::Grpc.Health.V1Alpha.HealthCheckResponse), global::Grpc.Health.V1Alpha.HealthCheckResponse.Parser, new[]{ "Status" }, null, new[]{ typeof(global::Grpc.Health.V1Alpha.HealthCheckResponse.Types.ServingStatus) }, null)
+          }));
+    }
+    #endregion
+
   }
   #region Messages
   [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
@@ -50,7 +49,7 @@ namespace Grpc.Health.V1Alpha {
     public static pb::MessageParser<HealthCheckRequest> Parser { get { return _parser; } }
 
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Grpc.Health.V1Alpha.Proto.Health.Descriptor.MessageTypes[0]; }
+      get { return global::Grpc.Health.V1Alpha.HealthReflection.Descriptor.MessageTypes[0]; }
     }
 
     pbr::MessageDescriptor pb::IMessage.Descriptor {
@@ -72,6 +71,7 @@ namespace Grpc.Health.V1Alpha {
       return new HealthCheckRequest(this);
     }
 
+    /// <summary>Field number for the "host" field.</summary>
     public const int HostFieldNumber = 1;
     private string host_ = "";
     public string Host {
@@ -81,6 +81,7 @@ namespace Grpc.Health.V1Alpha {
       }
     }
 
+    /// <summary>Field number for the "service" field.</summary>
     public const int ServiceFieldNumber = 2;
     private string service_ = "";
     public string Service {
@@ -114,7 +115,7 @@ namespace Grpc.Health.V1Alpha {
     }
 
     public override string ToString() {
-      return pb::JsonFormatter.Default.Format(this);
+      return pb::JsonFormatter.ToDiagnosticString(this);
     }
 
     public void WriteTo(pb::CodedOutputStream output) {
@@ -178,7 +179,7 @@ namespace Grpc.Health.V1Alpha {
     public static pb::MessageParser<HealthCheckResponse> Parser { get { return _parser; } }
 
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Grpc.Health.V1Alpha.Proto.Health.Descriptor.MessageTypes[1]; }
+      get { return global::Grpc.Health.V1Alpha.HealthReflection.Descriptor.MessageTypes[1]; }
     }
 
     pbr::MessageDescriptor pb::IMessage.Descriptor {
@@ -199,6 +200,7 @@ namespace Grpc.Health.V1Alpha {
       return new HealthCheckResponse(this);
     }
 
+    /// <summary>Field number for the "status" field.</summary>
     public const int StatusFieldNumber = 1;
     private global::Grpc.Health.V1Alpha.HealthCheckResponse.Types.ServingStatus status_ = global::Grpc.Health.V1Alpha.HealthCheckResponse.Types.ServingStatus.UNKNOWN;
     public global::Grpc.Health.V1Alpha.HealthCheckResponse.Types.ServingStatus Status {
@@ -230,7 +232,7 @@ namespace Grpc.Health.V1Alpha {
     }
 
     public override string ToString() {
-      return pb::JsonFormatter.Default.Format(this);
+      return pb::JsonFormatter.ToDiagnosticString(this);
     }
 
     public void WriteTo(pb::CodedOutputStream output) {
@@ -273,6 +275,7 @@ namespace Grpc.Health.V1Alpha {
     }
 
     #region Nested types
+    /// <summary>Container for nested types declared in the HealthCheckResponse message type.</summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     public static partial class Types {
       public enum ServingStatus {
