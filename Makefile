@@ -2505,6 +2505,7 @@ LIBGRPC_SRC = \
     src/core/census/context.c \
     src/core/census/initialize.c \
     src/core/census/operation.c \
+    src/core/census/placeholders.c \
     src/core/census/tag_set.c \
     src/core/census/tracing.c \
 
@@ -2809,6 +2810,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/census/context.c \
     src/core/census/initialize.c \
     src/core/census/operation.c \
+    src/core/census/placeholders.c \
     src/core/census/tag_set.c \
     src/core/census/tracing.c \
 
