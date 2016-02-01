@@ -60,9 +60,9 @@ using std::vector;
 
 namespace grpc {
 namespace testing {
-static std::string get_host(const std::string &worker) {
-  char *host;
-  char *port;
+static std::string get_host(const std::string& worker) {
+  char* host;
+  char* port;
 
   gpr_split_host_port(worker.c_str(), &host, &port);
   string s(host);
@@ -72,9 +72,9 @@ static std::string get_host(const std::string &worker) {
   return s;
 }
 
-static std::unordered_map<string,std::deque<int>>
-    get_hosts_and_cores(const deque<string>& workers) {
-  std::unordered_map<string,std::deque<int>> hosts;
+static std::unordered_map<string, std::deque<int>> get_hosts_and_cores(
+    const deque<string>& workers) {
+  std::unordered_map<string, std::deque<int>> hosts;
   for (auto it = workers.begin(); it != workers.end(); it++) {
     string host = get_host(*it);
     if (hosts.find(host) == hosts.end()) {
@@ -86,7 +86,7 @@ static std::unordered_map<string,std::deque<int>>
       grpc::Status s = stub->CoreCount(&ctx, dummy, &cores);
       assert(s.ok());
       std::deque<int> dq;
-      for (int i=0; i<cores.cores(); i++) {
+      for (int i = 0; i < cores.cores(); i++) {
         dq.push_back(i);
       }
       hosts[host] = dq;
@@ -141,8 +141,8 @@ struct ClientData {
 
 std::unique_ptr<ScenarioResult> RunScenario(
     const ClientConfig& initial_client_config, size_t num_clients,
-    const ServerConfig& initial_server_config, size_t num_servers, int warmup_seconds,
-    int benchmark_seconds, int spawn_local_worker_count) {
+    const ServerConfig& initial_server_config, size_t num_servers,
+    int warmup_seconds, int benchmark_seconds, int spawn_local_worker_count) {
   // ClientContext allocations (all are destroyed at scope exit)
   list<ClientContext> contexts;
 
@@ -228,7 +228,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
       bool match = false;
       int limit = dq.size();
       for (size_t cli = 0; cli < num_clients; cli++) {
-        if (host_str == get_host(workers[cli+num_servers])) {
+        if (host_str == get_host(workers[cli + num_servers])) {
           limit -= client_core_limit;
           match = true;
         }
@@ -241,7 +241,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
     if (server_core_limit > 0) {
       auto& dq = hosts_cores[host_str];
       GPR_ASSERT(dq.size() >= static_cast<size_t>(server_core_limit));
-      for (int core=0; core < server_core_limit; core++) {
+      for (int core = 0; core < server_core_limit; core++) {
         server_config.add_core_list(dq.front());
         dq.pop_front();
       }
@@ -270,8 +270,8 @@ std::unique_ptr<ScenarioResult> RunScenario(
   auto* clients = new ClientData[num_clients];
   for (size_t i = 0; i < num_clients; i++) {
     const auto& worker = workers[i + num_servers];
-    gpr_log(GPR_INFO, "Starting client on %s (worker #%d)",
-            worker.c_str(), i + num_servers);
+    gpr_log(GPR_INFO, "Starting client on %s (worker #%d)", worker.c_str(),
+            i + num_servers);
     clients[i].stub = WorkerService::NewStub(
         CreateChannel(worker, InsecureChannelCredentials()));
     ClientConfig per_client_config = client_config;
@@ -296,7 +296,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
       }
       if (client_core_limit > 0) {
         GPR_ASSERT(dq.size() >= static_cast<size_t>(client_core_limit));
-        for (int core=0; core < client_core_limit; core++) {
+        for (int core = 0; core < client_core_limit; core++) {
           per_client_config.add_core_list(dq.front());
           dq.pop_front();
         }
