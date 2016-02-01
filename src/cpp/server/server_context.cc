@@ -177,7 +177,7 @@ void ServerContext::TryCancel() const {
   grpc_call_error err = grpc_call_cancel_with_status(
       call_, GRPC_STATUS_CANCELLED, "Cancelled on the server side", NULL);
   if (err != GRPC_CALL_OK) {
-    gpr_log(GPR_INFO, "TryCancel failed with: %d", err);
+    gpr_log(GPR_ERROR, "TryCancel failed with: %d", err);
   }
 }
 
