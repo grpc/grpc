@@ -320,11 +320,11 @@ class BuildExt(build_ext.build_ext):
         extension.extra_link_args += list(BuildExt.LINK_OPTIONS[compiler])
     try:
       build_ext.build_ext.build_extensions(self)
-    except KeyboardInterrupt:
-      raise
     except Exception as error:
-      support.diagnose_build_ext_error(self, error, traceback.format_exc())
-      raise CommandError("Failed `build_ext` step.")
+      formatted_exception = traceback.format_exc()
+      support.diagnose_build_ext_error(self, error, formatted_exception)
+      raise CommandError(
+          "Failed `build_ext` step:\n{}".format(formatted_exception))
 
 
 class Gather(setuptools.Command):
