@@ -37,10 +37,12 @@ import multiprocessing
 import sys
 
 import artifact_targets
+import distribtest_targets
 import package_targets
 
 _TARGETS = []
 _TARGETS += artifact_targets.targets()
+_TARGETS += distribtest_targets.targets()
 _TARGETS += package_targets.targets()
 
 def _create_build_map():
