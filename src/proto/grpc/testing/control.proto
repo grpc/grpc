@@ -110,6 +110,7 @@ message ClientConfig {
 
   // Specify the cores we should run the client on, if desired
   repeated int32 core_list = 13;
+  int32 core_limit = 14;
 }
 
 message ClientStatus { ClientStats stats = 1; }
@@ -139,6 +140,7 @@ message ServerConfig {
 
   // Specify the cores we should run the server on, if desired
   repeated int32 core_list = 10;
+  int32 core_limit = 11;
 }
 
 message ServerArgs {
@@ -152,6 +154,14 @@ message ServerStatus {
   ServerStats stats = 1;
   // the port bound by the server
   int32 port = 2;
-  // Number of cores on the server. See gpr_cpu_num_cores.
+  // Number of cores available to the server
   int32 cores = 3;
+}
+
+message CoreRequest {
+}
+
+message CoreResponse {
+  // Number of cores available on the server
+  int32 cores = 1;
 }

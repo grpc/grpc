@@ -47,6 +47,7 @@
 #include <grpc++/server_builder.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
+#include <grpc/support/cpu.h>
 #include <grpc/support/histogram.h>
 #include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
@@ -131,6 +132,12 @@ class WorkerServiceImpl GRPC_FINAL : public WorkerService::Service {
     Status ret = RunServerBody(ctx, stream);
     grpc_profiler_stop();
     return ret;
+  }
+
+  Status CoreCount(ServerContext *ctx, const CoreRequest*,
+                   CoreResponse* resp) GRPC_OVERRIDE {
+    resp->set_cores(gpr_cpu_num_cores());
+    return Status::OK;
   }
 
  private:
