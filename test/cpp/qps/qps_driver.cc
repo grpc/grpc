@@ -51,8 +51,7 @@ DEFINE_int32(local_workers, 0, "Number of local workers to start");
 // Server config
 DEFINE_int32(async_server_threads, 1, "Number of threads for async servers");
 DEFINE_string(server_type, "SYNC_SERVER", "Server type");
-// TODO (vpai): Automatically generate the core list to avoid breakage
-DEFINE_string(server_core_list, "", "Comma-separated list of cores for server");
+DEFINE_int32(server_core_limit, -1, "Limit on server cores to use");
 
 // Client config
 DEFINE_string(rpc_type, "UNARY", "Type of RPC: UNARY or STREAMING");
@@ -75,8 +74,7 @@ DEFINE_double(determ_load, -1.0, "Deterministic offered load (qps)");
 DEFINE_double(pareto_base, -1.0, "Pareto base interarrival time (us)");
 DEFINE_double(pareto_alpha, -1.0, "Pareto alpha value");
 
-// TODO (vpai): Automatically generate the core list to avoid breakage
-DEFINE_string(client_core_list, "", "Comma-separated list of cores for client");
+DEFINE_int32(client_core_limit, -1, "Limit on client cores to use");
 
 DEFINE_bool(secure_test, false, "Run a secure test");
 
@@ -90,22 +88,6 @@ using grpc::testing::SecurityParams;
 
 namespace grpc {
 namespace testing {
-
-static std::vector<int> IntParse(const std::string& s) {
-  size_t pos = 0;
-  std::vector<int> res;
-  while (pos < s.size()) {
-    size_t comma = s.find(',', pos);
-    if (comma == std::string::npos) {
-      res.push_back(std::stoi(s.substr(pos)));
-      break;
-    } else {
-      res.push_back(std::stoi(s.substr(pos, comma - pos), nullptr));
-      pos = comma + 1;
-    }
-  }
-  return res;
-}
 
 static void QpsDriver() {
   RpcType rpc_type;
@@ -170,22 +152,16 @@ static void QpsDriver() {
   client_config.mutable_histogram_params()->set_max_possible(
       Histogram::default_max_possible());
 
-  if (FLAGS_client_core_list.size() > 0) {
-    auto v = IntParse(FLAGS_client_core_list);
-    for (size_t i = 0; i < v.size(); i++) {
-      client_config.add_core_list(v[i]);
-    }
+  if (FLAGS_client_core_limit > 0) {
+    client_config.set_core_limit(FLAGS_client_core_limit);
   }
 
   ServerConfig server_config;
   server_config.set_server_type(server_type);
   server_config.set_async_server_threads(FLAGS_async_server_threads);
 
-  if (FLAGS_server_core_list.size() > 0) {
-    auto v = IntParse(FLAGS_server_core_list);
-    for (size_t i = 0; i < v.size(); i++) {
-      server_config.add_core_list(v[i]);
-    }
+  if (FLAGS_server_core_limit > 0) {
+    server_config.set_core_limit(FLAGS_server_core_limit);
   }
 
   if (FLAGS_secure_test) {
