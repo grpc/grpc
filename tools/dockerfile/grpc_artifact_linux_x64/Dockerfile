@@ -29,7 +29,7 @@
 
 # Docker file for building gRPC artifacts.
 
-FROM debian:jessie
+FROM debian:wheezy
 
 # Install Git and basic packages.
 RUN apt-get update && apt-get install -y \
