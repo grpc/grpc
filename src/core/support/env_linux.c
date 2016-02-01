@@ -49,8 +49,20 @@
 
 #include "src/core/support/string.h"
 
+char *__attribute__((weak)) secure_getenv(const char *name);
+char *__attribute__((weak)) __secure_getenv(const char *name);
+
 char *gpr_getenv(const char *name) {
-  char *result = secure_getenv(name);
+  static char *(*getenv_func)(const char *) = secure_getenv;
+  if (getenv_func == NULL) {
+    getenv_func = __secure_getenv;
+    if (getenv_func == NULL) {
+      gpr_log(GPR_DEBUG,
+              "No secure_getenv. Please consider upgrading your libc.");
+      getenv_func = getenv;
+    }
+  }
+  char *result = getenv_func(name);
   return result == NULL ? result : gpr_strdup(result);
 }
 
