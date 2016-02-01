@@ -330,7 +330,7 @@ static void check_jwt_claim(grpc_json *claim, const char *expected_audience,
   issue_time.tv_sec = strtol(iat->value, NULL, 10);
 
   parsed_lifetime = gpr_time_sub(expiration, issue_time);
-  GPR_ASSERT(parsed_lifetime.tv_sec == grpc_max_auth_token_lifetime.tv_sec());
+  GPR_ASSERT(parsed_lifetime.tv_sec == grpc_max_auth_token_lifetime().tv_sec);
 }
 
 static void check_jwt_signature(const char *b64_signature, RSA *rsa_key,
