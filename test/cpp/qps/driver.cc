@@ -290,6 +290,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
           }
         }
         if (match) {
+          GPR_ASSERT(limit > 0);
           client_core_limit = limit;
         }
       }
