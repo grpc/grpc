@@ -134,6 +134,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/support/string_posix.c )
   s.files += %w( src/core/support/string_win32.c )
   s.files += %w( src/core/support/subprocess_posix.c )
+  s.files += %w( src/core/support/subprocess_windows.c )
   s.files += %w( src/core/support/sync.c )
   s.files += %w( src/core/support/sync_posix.c )
   s.files += %w( src/core/support/sync_win32.c )
@@ -381,6 +382,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/json/json_reader.c )
   s.files += %w( src/core/json/json_string.c )
   s.files += %w( src/core/json/json_writer.c )
+  s.files += %w( src/core/surface/alarm.c )
   s.files += %w( src/core/surface/api_trace.c )
   s.files += %w( src/core/surface/byte_buffer.c )
   s.files += %w( src/core/surface/byte_buffer_reader.c )
@@ -432,6 +434,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/census/context.c )
   s.files += %w( src/core/census/initialize.c )
   s.files += %w( src/core/census/operation.c )
+  s.files += %w( src/core/census/placeholders.c )
   s.files += %w( src/core/census/tag_set.c )
   s.files += %w( src/core/census/tracing.c )
 end
