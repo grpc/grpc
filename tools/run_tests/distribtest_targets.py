@@ -57,10 +57,11 @@ def create_docker_jobspec(name, dockerfile_dir, shell_command, environ={},
 class CSharpDistribTest:
   """Tests C# NuGet package"""
 
-  def __init__(self, platform, arch):
-    self.name = 'csharp_nuget_%s_%s' % (platform, arch)
+  def __init__(self, platform, arch, docker_suffix):
+    self.name = 'csharp_nuget_%s_%s_%s' % (platform, arch, docker_suffix)
     self.platform = platform
     self.arch = arch
+    self.docker_suffix = docker_suffix
     self.labels = ['distribtest', 'csharp', platform, arch]
 
   def pre_build_jobspecs(self):
@@ -71,7 +72,9 @@ class CSharpDistribTest:
       raise Exception("Not supported yet.")
 
     return create_docker_jobspec(self.name,
-          'tools/dockerfile/grpc_tests_distrib_csharp',
+          'tools/dockerfile/distribtest/csharp_%s_%s' % (
+              self.docker_suffix,
+              self.arch),
           'test/distrib/csharp/run_distrib_test.sh')
 
   def __str__(self):
@@ -80,4 +83,6 @@ class CSharpDistribTest:
 
 def targets():
   """Gets list of supported targets"""
-  return [CSharpDistribTest('linux', 'x64')]
+  return [CSharpDistribTest('linux', 'x64', 'wheezy'),
+          CSharpDistribTest('linux', 'x64', 'jessie'),
+          CSharpDistribTest('linux', 'x86', 'jessie')]
