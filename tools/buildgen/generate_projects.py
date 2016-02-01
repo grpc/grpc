@@ -1,6 +1,6 @@
 #!/usr/bin/env python2.7
 
-# Copyright 2015, Google Inc.
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -47,6 +47,7 @@ os.chdir(os.path.join(os.path.dirname(sys.argv[0]), '..', '..'))
 argp = argparse.ArgumentParser()
 argp.add_argument('json', nargs='+')
 argp.add_argument('--templates', nargs='+', default=[])
+argp.add_argument('--jobs', '-j', default=multiprocessing.cpu_count(), type=int)
 args = argp.parse_args()
 
 json = args.json
@@ -85,9 +86,9 @@ for template in templates:
       os.close(tf[0])
       cmd.append(test[out])
     cmd.append(root + '/' + f)
-    jobs.append(jobset.JobSpec(cmd, shortname=out))
+    jobs.append(jobset.JobSpec(cmd, shortname=out, timeout_seconds=None))
 
-jobset.run(jobs, maxjobs=multiprocessing.cpu_count())
+jobset.run(jobs, maxjobs=args.jobs)
 
 if test is not None:
   for s, g in test.iteritems():

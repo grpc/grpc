@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -34,14 +34,6 @@
 #ifndef GRPC_SUPPORT_SYNC_POSIX_H
 #define GRPC_SUPPORT_SYNC_POSIX_H
 
-#include <grpc/support/sync_generic.h>
-
-#include <pthread.h>
-
-typedef pthread_mutex_t gpr_mu;
-typedef pthread_cond_t gpr_cv;
-typedef pthread_once_t gpr_once;
-
-#define GPR_ONCE_INIT PTHREAD_ONCE_INIT
+#include <grpc/impl/codegen/sync_posix.h>
 
 #endif /* GRPC_SUPPORT_SYNC_POSIX_H */

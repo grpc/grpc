@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,6 +33,7 @@
 
 #include "test/cpp/util/metrics_server.h"
 
+#include <grpc++/server.h>
 #include <grpc++/server_builder.h>
 
 #include "src/proto/grpc/testing/metrics.grpc.pb.h"

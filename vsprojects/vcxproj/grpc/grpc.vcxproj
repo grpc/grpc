@@ -606,6 +606,8 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\json\json_writer.c">
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\surface\alarm.c">
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\surface\api_trace.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\surface\byte_buffer.c">
@@ -707,6 +709,10 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\census\initialize.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\census\operation.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\census\placeholders.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\census\tag_set.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\census\tracing.c">
     </ClCompile>

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -67,7 +67,7 @@ static DWORD deadline_to_millis_timeout(gpr_timespec deadline,
     return 0;
   }
   timeout = gpr_time_sub(deadline, now);
-  return gpr_time_to_millis(gpr_time_add(
+  return (DWORD)gpr_time_to_millis(gpr_time_add(
       timeout, gpr_time_from_nanos(GPR_NS_PER_MS - 1, GPR_TIMESPAN)));
 }
 
@@ -120,7 +120,7 @@ void grpc_iocp_work(grpc_exec_ctx *exec_ctx, gpr_timespec deadline) {
     info->has_pending_iocp = 1;
   }
   gpr_mu_unlock(&socket->state_mu);
-  grpc_exec_ctx_enqueue(exec_ctx, closure, 1);
+  grpc_exec_ctx_enqueue(exec_ctx, closure, true, NULL);
 }
 
 void grpc_iocp_init(void) {
@@ -179,13 +179,11 @@ void grpc_iocp_add_socket(grpc_winsocket *socket) {
 static void socket_notify_on_iocp(grpc_exec_ctx *exec_ctx,
                                   grpc_winsocket *socket, grpc_closure *closure,
                                   grpc_winsocket_callback_info *info) {
-  int run_now = 0;
   GPR_ASSERT(info->closure == NULL);
   gpr_mu_lock(&socket->state_mu);
   if (info->has_pending_iocp) {
-    run_now = 1;
     info->has_pending_iocp = 0;
-    grpc_exec_ctx_enqueue(exec_ctx, closure, 1);
+    grpc_exec_ctx_enqueue(exec_ctx, closure, true, NULL);
   } else {
     info->closure = closure;
   }

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -99,7 +99,7 @@ exports.runServer = function runServer(call) {
     var stats;
     switch (request.argtype) {
       case 'setup':
-      server = new BenchmarkServer(request.setup.host, request.setup.port,
+      server = new BenchmarkServer('[::]', request.setup.port,
                                    request.setup.security_params);
       server.start();
       stats = server.mark();

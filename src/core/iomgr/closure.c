@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -43,7 +43,7 @@ void grpc_closure_init(grpc_closure *closure, grpc_iomgr_cb_func cb,
 }
 
 void grpc_closure_list_add(grpc_closure_list *closure_list,
-                           grpc_closure *closure, int success) {
+                           grpc_closure *closure, bool success) {
   if (closure == NULL) return;
   closure->final_data = (success != 0);
   if (closure_list->head == NULL) {
@@ -54,7 +54,7 @@ void grpc_closure_list_add(grpc_closure_list *closure_list,
   closure_list->tail = closure;
 }
 
-int grpc_closure_list_empty(grpc_closure_list closure_list) {
+bool grpc_closure_list_empty(grpc_closure_list closure_list) {
   return closure_list.head == NULL;
 }
 
@@ -77,7 +77,7 @@ typedef struct {
   grpc_closure wrapper;
 } wrapped_closure;
 
-static void closure_wrapper(grpc_exec_ctx *exec_ctx, void *arg, int success) {
+static void closure_wrapper(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
   wrapped_closure *wc = arg;
   grpc_iomgr_cb_func cb = wc->cb;
   void *cb_arg = wc->cb_arg;

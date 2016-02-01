@@ -4,16 +4,16 @@
     <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\messages.proto">
       <Filter>src\proto\grpc\testing</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\control.proto">
-      <Filter>src\proto\grpc\testing</Filter>
-    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\payloads.proto">
       <Filter>src\proto\grpc\testing</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\services.proto">
+    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\stats.proto">
       <Filter>src\proto\grpc\testing</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\stats.proto">
+    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\control.proto">
+      <Filter>src\proto\grpc\testing</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\services.proto">
       <Filter>src\proto\grpc\testing</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\perf_db.proto">
