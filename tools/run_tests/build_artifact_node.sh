@@ -1,3 +1,4 @@
+#!/bin/bash
 # Copyright 2016, Google Inc.
 # All rights reserved.
 #
@@ -27,43 +28,20 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# Docker file for building gRPC artifacts.
+set -ex
 
-FROM 32bit/debian:jessie
+cd $(dirname $0)/../..
 
-# Install Git and basic packages.
-RUN apt-get update && apt-get install -y \
-  autoconf \
-  autotools-dev \
-  build-essential \
-  bzip2 \
-  curl \
-  gcc \
-  gcc-multilib \
-  git \
-  golang \
-  libc6 \
-  libc6-dbg \
-  libc6-dev \
-  libgtest-dev \
-  libtool \
-  make \
-  perl \
-  strace \
-  python-dev \
-  python-setuptools \
-  python-yaml \
-  telnet \
-  unzip \
-  wget \
-  zip && apt-get clean
+rm -rf build
 
-# Install Node dependencies
-RUN touch .profile
-RUN curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.25.4/install.sh | bash
-RUN /bin/bash -l -c "nvm install 4 && npm install -g node-pre-gyp"
+mkdir -p artifacts
 
-RUN mkdir /var/local/jenkins
+npm update
 
-# Define the default command.
-CMD ["bash"]
+node_versions=( 0.10.41 0.12.0 1.0.0 1.1.0 2.0.0 3.0.0 4.0.0 5.0.0 )
+
+for version in ${node_versions[@]}
+do
+  node-pre-gyp configure rebuild package testpackage --target=$version --target_arch=$1
+  cp -r build/stage/* artifacts/
+done

@@ -62,7 +62,7 @@ def create_jobspec(name, cmdline, environ=None, shell=False,
           cmdline=cmdline,
           environ=environ,
           shortname='build_artifact.%s' % (name),
-          timeout_seconds=5*60,
+          timeout_seconds=10*60,
           flake_retries=flake_retries,
           timeout_retries=timeout_retries,
           shell=shell)
@@ -126,12 +126,45 @@ class CSharpExtArtifact:
   def __str__(self):
     return self.name
 
+node_gyp_arch_map = {
+  'x86': 'ia32',
+  'x64': 'x64'
+}
+
+class NodeExtArtifact:
+  """Builds Node native extension"""
+
+  def __init__(self, platform, arch):
+    self.name = 'node_ext_{0}_{1}'.format(platform, arch)
+    self.platform = platform
+    self.arch = arch
+    self.gyp_arch = node_gyp_arch_map[arch]
+    self.labels = ['artifact', 'node', platform, arch]
+
+  def pre_build_jobspecs(self):
+    return []
+
+  def build_jobspec(self):
+    if self.platform == 'windows':
+      return create_jobspec(self.name,
+                            ['tools\\run_tests\\build_artifact_node.bat',
+                             self.gyp_arch],
+                            shell=True)
+    else:
+      if self.platform == 'linux':
+        return create_docker_jobspec(
+            self.name,
+            'tools/dockerfile/grpc_artifact_linux_{}'.format(self.arch),
+            'tools/run_tests/build_artifact_node.sh {}'.format(self.gyp_arch))
+      else:
+        return create_jobspec(self.name,
+                              ['tools/run_tests/build_artifact_node.sh',
+                               self.gyp_arch])
+
 
 def targets():
   """Gets list of supported targets"""
-  return [CSharpExtArtifact('linux', 'x86'),
-          CSharpExtArtifact('linux', 'x64'),
-          CSharpExtArtifact('macos', 'x86'),
-          CSharpExtArtifact('macos', 'x64'),
-          CSharpExtArtifact('windows', 'x86'),
-          CSharpExtArtifact('windows', 'x64')]
+  return [Cls(platform, arch)
+          for Cls in (CSharpExtArtifact, NodeExtArtifact)
+          for platform in ('linux', 'macos', 'windows')
+          for arch in ('x86', 'x64')]

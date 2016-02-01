@@ -58,6 +58,11 @@ RUN apt-get update && apt-get install -y \
   wget \
   zip && apt-get clean
 
+# Install Node dependencies
+RUN touch .profile
+RUN curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.25.4/install.sh | bash
+RUN /bin/bash -l -c "nvm install 4 && npm install -g node-pre-gyp"
+
 RUN mkdir /var/local/jenkins
 
 # Define the default command.
