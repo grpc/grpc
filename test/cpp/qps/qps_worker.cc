@@ -134,7 +134,7 @@ class WorkerServiceImpl GRPC_FINAL : public WorkerService::Service {
     return ret;
   }
 
-  Status CoreCount(ServerContext *ctx, const CoreRequest*,
+  Status CoreCount(ServerContext* ctx, const CoreRequest*,
                    CoreResponse* resp) GRPC_OVERRIDE {
     resp->set_cores(gpr_cpu_num_cores());
     return Status::OK;
