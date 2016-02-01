@@ -324,7 +324,7 @@ class ClientImpl : public Client {
              std::function<std::unique_ptr<StubType>(std::shared_ptr<Channel>)>
                  create_stub)
       : channels_(config.client_channels()), create_stub_(create_stub) {
-    LimitCores(config.core_list().data(), config.core_list_size());
+    cores_ = LimitCores(config.core_list().data(), config.core_list_size());
 
     for (int i = 0; i < config.client_channels(); i++) {
       channels_[i].init(config.server_targets(i % config.server_targets_size()),
@@ -337,6 +337,7 @@ class ClientImpl : public Client {
   virtual ~ClientImpl() {}
 
  protected:
+  int cores_;
   RequestType request_;
 
   class ClientChannelInfo {
