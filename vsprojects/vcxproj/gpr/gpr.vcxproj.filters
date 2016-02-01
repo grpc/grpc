@@ -67,6 +67,9 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\support\log_win32.c">
       <Filter>src\core\support</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\support\memcpy.c">
+      <Filter>src\core\support</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\support\murmur_hash.c">
       <Filter>src\core\support</Filter>
     </ClCompile>
