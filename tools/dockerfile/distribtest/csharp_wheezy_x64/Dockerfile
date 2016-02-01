@@ -1,5 +1,4 @@
-#!/bin/bash
-# Copyright 2016, Google Inc.
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -27,15 +26,11 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# This script is invoked by build_docker_* inside a docker
-# container. You should never need to call this script on your own.
 
-set -e
+FROM mono:4.2.2.30
 
-mkdir -p /var/local/git
-git clone --recursive "$EXTERNAL_GIT_ROOT" /var/local/git/grpc
+RUN apt-get update && apt-get install -y git unzip
 
-cd /var/local/git/grpc
-
-$RUN_COMMAND
+# TODO(jtattermusch): Currently P/Invoke to dlopen will fail without libc6-dev
+# being installed. Figure out how to workaround this.
+RUN apt-get update && apt-get install -y libc6-dev

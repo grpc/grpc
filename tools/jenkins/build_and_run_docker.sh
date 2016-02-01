@@ -43,6 +43,7 @@ git branch -f jenkins-docker
 # Inputs
 # DOCKERFILE_DIR - Directory in which Dockerfile file is located.
 # DOCKER_RUN_SCRIPT - Script to run under docker (relative to grpc repo root)
+# OUTPUT_DIR - Directory that will be copied from inside docker after finishing.
 # $@ - Extra args to pass to docker run
 
 # Use image name based on Dockerfile location checksum
@@ -57,6 +58,7 @@ CONTAINER_NAME="build_and_run_docker_$(uuidgen)"
 # Run command inside docker
 docker run \
   "$@" \
+  -e EXTERNAL_GIT_ROOT="/var/local/jenkins/grpc" \
   -e THIS_IS_REALLY_NEEDED='see https://github.com/docker/docker/issues/14203 for why docker is awful' \
   -v "$git_root:/var/local/jenkins/grpc:ro" \
   -w /var/local/git/grpc \
