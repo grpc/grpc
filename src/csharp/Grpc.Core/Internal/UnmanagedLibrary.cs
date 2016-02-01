@@ -91,6 +91,10 @@ namespace Grpc.Core.Internal
         {
             if (PlatformApis.IsLinux)
             {
+                if (PlatformApis.IsMono)
+                {
+                    return Mono.dlsym(this.handle, symbolName);
+                }
                 return Linux.dlsym(this.handle, symbolName);
             }
             if (PlatformApis.IsMacOSX)
@@ -122,6 +126,10 @@ namespace Grpc.Core.Internal
             }
             if (PlatformApis.IsLinux)
             {
+                if (PlatformApis.IsMono)
+                {
+                    return Mono.dlopen(libraryPath, RTLD_GLOBAL + RTLD_LAZY);
+                }
                 return Linux.dlopen(libraryPath, RTLD_GLOBAL + RTLD_LAZY);
             }
             if (PlatformApis.IsMacOSX)
@@ -152,6 +160,22 @@ namespace Grpc.Core.Internal
             internal static extern IntPtr dlopen(string filename, int flags);
 
             [DllImport("libSystem.dylib")]
+            internal static extern IntPtr dlsym(IntPtr handle, string symbol);
+        }
+
+        /// <summary>
+        /// On Linux systems, using using dlopen and dlsym results in
+        /// DllNotFoundException("libdl.so not found") if libc6-dev
+        /// is not installed. As a workaround, we load symbols for
+        /// dlopen and dlsym from the current process as on Linux
+        /// Mono sure is linked against these symbols.
+        /// </summary>
+        private static class Mono
+        {
+            [DllImport("__Internal")]
+            internal static extern IntPtr dlopen(string filename, int flags);
+
+            [DllImport("__Internal")]
             internal static extern IntPtr dlsym(IntPtr handle, string symbol);
         }
     }
