@@ -134,6 +134,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/support/string_posix.c )
   s.files += %w( src/core/support/string_win32.c )
   s.files += %w( src/core/support/subprocess_posix.c )
+  s.files += %w( src/core/support/subprocess_windows.c )
   s.files += %w( src/core/support/sync.c )
   s.files += %w( src/core/support/sync_posix.c )
   s.files += %w( src/core/support/sync_win32.c )
