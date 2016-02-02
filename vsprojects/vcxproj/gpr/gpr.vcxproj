@@ -293,6 +293,8 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\support\tls_pthread.c">
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\support\wrap_memcpy.c">
+    </ClCompile>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
