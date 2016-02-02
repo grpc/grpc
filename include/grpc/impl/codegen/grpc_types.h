@@ -69,10 +69,10 @@ typedef enum {
 } grpc_arg_type;
 
 typedef struct grpc_arg_pointer_vtable {
-     void *(*copy)(void *p);
-      void (*destroy)(void *p);
-      int (*cmp)(void *p, void *q);
-      } grpc_arg_pointer_vtable;
+  void *(*copy)(void *p);
+  void (*destroy)(void *p);
+  int (*cmp)(void *p, void *q);
+} grpc_arg_pointer_vtable;
 
 /** A single argument... each argument has a key and a value
 
