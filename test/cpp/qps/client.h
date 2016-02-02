@@ -36,16 +36,20 @@
 
 #include <condition_variable>
 #include <mutex>
+#include <vector>
 
 #include <grpc++/support/byte_buffer.h>
 #include <grpc++/support/slice.h>
+#include <grpc/support/log.h>
 
+#include "src/proto/grpc/testing/payloads.grpc.pb.h"
+#include "src/proto/grpc/testing/services.grpc.pb.h"
+
+#include "test/cpp/qps/limit_cores.h"
 #include "test/cpp/qps/histogram.h"
 #include "test/cpp/qps/interarrival.h"
 #include "test/cpp/qps/timer.h"
 #include "test/cpp/util/create_test_channel.h"
-#include "src/proto/grpc/testing/payloads.grpc.pb.h"
-#include "src/proto/grpc/testing/services.grpc.pb.h"
 
 namespace grpc {
 
@@ -320,6 +324,8 @@ class ClientImpl : public Client {
              std::function<std::unique_ptr<StubType>(std::shared_ptr<Channel>)>
                  create_stub)
       : channels_(config.client_channels()), create_stub_(create_stub) {
+    cores_ = LimitCores(config.core_list().data(), config.core_list_size());
+
     for (int i = 0; i < config.client_channels(); i++) {
       channels_[i].init(config.server_targets(i % config.server_targets_size()),
                         config, create_stub_);
@@ -331,6 +337,7 @@ class ClientImpl : public Client {
   virtual ~ClientImpl() {}
 
  protected:
+  int cores_;
   RequestType request_;
 
   class ClientChannelInfo {
