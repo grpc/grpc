@@ -84,8 +84,8 @@ if not "darwin" in sys.platform:
 
 DEFINE_MACROS = (('OPENSSL_NO_ASM', 1),)
 
-CFLAGS = (,)
-LDFLAGS = (,)
+CFLAGS = ()
+LDFLAGS = ()
 if "linux" in sys.platform:
   LDFLAGS += ('-Wl,-wrap,memcpy',)
 if "linux" in sys.platform or "darwin" in sys.platform:
