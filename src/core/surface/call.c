@@ -229,9 +229,9 @@ static grpc_call_error cancel_with_status(grpc_exec_ctx *exec_ctx, grpc_call *c,
                                           grpc_status_code status,
                                           const char *description);
 static void destroy_call(grpc_exec_ctx *exec_ctx, void *call_stack,
-                         int success);
+                         bool success);
 static void receiving_slice_ready(grpc_exec_ctx *exec_ctx, void *bctlp,
-                                  int success);
+                                  bool success);
 
 grpc_call *grpc_call_create(grpc_channel *channel, grpc_call *parent_call,
                             uint32_t propagation_mask,
@@ -351,7 +351,7 @@ void grpc_call_internal_unref(grpc_exec_ctx *exec_ctx, grpc_call *c REF_ARG) {
   GRPC_CALL_STACK_UNREF(exec_ctx, CALL_STACK_FROM_CALL(c), REF_REASON);
 }
 
-static void destroy_call(grpc_exec_ctx *exec_ctx, void *call, int success) {
+static void destroy_call(grpc_exec_ctx *exec_ctx, void *call, bool success) {
   size_t i;
   int ii;
   grpc_call *c = call;
@@ -688,13 +688,13 @@ typedef struct cancel_closure {
   grpc_status_code status;
 } cancel_closure;
 
-static void done_cancel(grpc_exec_ctx *exec_ctx, void *ccp, int success) {
+static void done_cancel(grpc_exec_ctx *exec_ctx, void *ccp, bool success) {
   cancel_closure *cc = ccp;
   GRPC_CALL_INTERNAL_UNREF(exec_ctx, cc->call, "cancel");
   gpr_free(cc);
 }
 
-static void send_cancel(grpc_exec_ctx *exec_ctx, void *ccp, int success) {
+static void send_cancel(grpc_exec_ctx *exec_ctx, void *ccp, bool success) {
   grpc_transport_stream_op op;
   cancel_closure *cc = ccp;
   memset(&op, 0, sizeof(op));
@@ -721,7 +721,7 @@ static grpc_call_error cancel_with_status(grpc_exec_ctx *exec_ctx, grpc_call *c,
   cc->call = c;
   cc->status = status;
   GRPC_CALL_INTERNAL_REF(c, "cancel");
-  grpc_exec_ctx_enqueue(exec_ctx, &cc->closure, 1);
+  grpc_exec_ctx_enqueue(exec_ctx, &cc->closure, true, NULL);
 
   return GRPC_CALL_OK;
 }
@@ -757,7 +757,7 @@ grpc_call *grpc_call_from_top_element(grpc_call_element *elem) {
   return CALL_FROM_TOP_ELEM(elem);
 }
 
-static void call_alarm(grpc_exec_ctx *exec_ctx, void *arg, int success) {
+static void call_alarm(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
   grpc_call *call = arg;
   gpr_mu_lock(&call->mu);
   call->have_alarm = 0;
@@ -934,7 +934,7 @@ static void post_batch_completion(grpc_exec_ctx *exec_ctx,
                                   batch_control *bctl) {
   grpc_call *call = bctl->call;
   if (bctl->is_notify_tag_closure) {
-    grpc_exec_ctx_enqueue(exec_ctx, bctl->notify_tag, bctl->success);
+    grpc_exec_ctx_enqueue(exec_ctx, bctl->notify_tag, bctl->success, NULL);
     gpr_mu_lock(&call->mu);
     bctl->call->used_batches =
         (uint8_t)(bctl->call->used_batches &
@@ -974,7 +974,7 @@ static void continue_receiving_slices(grpc_exec_ctx *exec_ctx,
 }
 
 static void receiving_slice_ready(grpc_exec_ctx *exec_ctx, void *bctlp,
-                                  int success) {
+                                  bool success) {
   batch_control *bctl = bctlp;
   grpc_call *call = bctl->call;
 
@@ -993,7 +993,7 @@ static void receiving_slice_ready(grpc_exec_ctx *exec_ctx, void *bctlp,
   }
 }
 
-static void finish_batch(grpc_exec_ctx *exec_ctx, void *bctlp, int success) {
+static void finish_batch(grpc_exec_ctx *exec_ctx, void *bctlp, bool success) {
   batch_control *bctl = bctlp;
   grpc_call *call = bctl->call;
   grpc_call *child_call;
@@ -1066,7 +1066,7 @@ static void finish_batch(grpc_exec_ctx *exec_ctx, void *bctlp, int success) {
 }
 
 static void receiving_stream_ready(grpc_exec_ctx *exec_ctx, void *bctlp,
-                                   int success) {
+                                   bool success) {
   batch_control *bctl = bctlp;
   grpc_call *call = bctl->call;
 

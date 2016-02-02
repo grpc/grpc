@@ -36,6 +36,7 @@
 #include <thread>
 #include <vector>
 
+#include <grpc++/channel.h>
 #include <grpc++/client_context.h>
 #include <grpc++/create_channel.h>
 #include <grpc/support/alloc.h>

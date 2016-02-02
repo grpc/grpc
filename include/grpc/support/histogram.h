@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -43,31 +43,34 @@ extern "C" {
 
 typedef struct gpr_histogram gpr_histogram;
 
-gpr_histogram *gpr_histogram_create(double resolution, double max_bucket_start);
-void gpr_histogram_destroy(gpr_histogram *h);
-void gpr_histogram_add(gpr_histogram *h, double x);
+GPR_API gpr_histogram *gpr_histogram_create(double resolution,
+                                            double max_bucket_start);
+GPR_API void gpr_histogram_destroy(gpr_histogram *h);
+GPR_API void gpr_histogram_add(gpr_histogram *h, double x);
 
 /* The following merges the second histogram into the first. It only works
    if they have the same buckets and resolution. Returns 0 on failure, 1
    on success */
-int gpr_histogram_merge(gpr_histogram *dst, const gpr_histogram *src);
+GPR_API int gpr_histogram_merge(gpr_histogram *dst, const gpr_histogram *src);
 
-double gpr_histogram_percentile(gpr_histogram *histogram, double percentile);
-double gpr_histogram_mean(gpr_histogram *histogram);
-double gpr_histogram_stddev(gpr_histogram *histogram);
-double gpr_histogram_variance(gpr_histogram *histogram);
-double gpr_histogram_maximum(gpr_histogram *histogram);
-double gpr_histogram_minimum(gpr_histogram *histogram);
-double gpr_histogram_count(gpr_histogram *histogram);
-double gpr_histogram_sum(gpr_histogram *histogram);
-double gpr_histogram_sum_of_squares(gpr_histogram *histogram);
+GPR_API double gpr_histogram_percentile(gpr_histogram *histogram,
+                                        double percentile);
+GPR_API double gpr_histogram_mean(gpr_histogram *histogram);
+GPR_API double gpr_histogram_stddev(gpr_histogram *histogram);
+GPR_API double gpr_histogram_variance(gpr_histogram *histogram);
+GPR_API double gpr_histogram_maximum(gpr_histogram *histogram);
+GPR_API double gpr_histogram_minimum(gpr_histogram *histogram);
+GPR_API double gpr_histogram_count(gpr_histogram *histogram);
+GPR_API double gpr_histogram_sum(gpr_histogram *histogram);
+GPR_API double gpr_histogram_sum_of_squares(gpr_histogram *histogram);
 
-const uint32_t *gpr_histogram_get_contents(gpr_histogram *histogram,
-                                           size_t *count);
-void gpr_histogram_merge_contents(gpr_histogram *histogram,
-                                  const uint32_t *data, size_t data_count,
-                                  double min_seen, double max_seen, double sum,
-                                  double sum_of_squares, double count);
+GPR_API const uint32_t *gpr_histogram_get_contents(gpr_histogram *histogram,
+                                                   size_t *count);
+GPR_API void gpr_histogram_merge_contents(gpr_histogram *histogram,
+                                          const uint32_t *data,
+                                          size_t data_count, double min_seen,
+                                          double max_seen, double sum,
+                                          double sum_of_squares, double count);
 
 #ifdef __cplusplus
 }

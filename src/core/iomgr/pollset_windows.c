@@ -107,7 +107,7 @@ void grpc_pollset_shutdown(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
   pollset->shutting_down = 1;
   grpc_pollset_kick(pollset, GRPC_POLLSET_KICK_BROADCAST);
   if (!pollset->is_iocp_worker) {
-    grpc_exec_ctx_enqueue(exec_ctx, closure, 1);
+    grpc_exec_ctx_enqueue(exec_ctx, closure, true, NULL);
   } else {
     pollset->on_shutdown = closure;
   }
@@ -165,7 +165,7 @@ void grpc_pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
       }
 
       if (pollset->shutting_down && pollset->on_shutdown != NULL) {
-        grpc_exec_ctx_enqueue(exec_ctx, pollset->on_shutdown, 1);
+        grpc_exec_ctx_enqueue(exec_ctx, pollset->on_shutdown, true, NULL);
         pollset->on_shutdown = NULL;
       }
       goto done;

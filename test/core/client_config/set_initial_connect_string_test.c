@@ -64,7 +64,7 @@ static int server_port;
 static struct rpc_state state;
 static grpc_closure on_read;
 
-static void handle_read(grpc_exec_ctx *exec_ctx, void *arg, int success) {
+static void handle_read(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
   GPR_ASSERT(success);
   gpr_slice_buffer_move_into(&state.temp_incoming_buffer,
                              &state.incoming_buffer);

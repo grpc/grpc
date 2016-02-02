@@ -970,9 +970,7 @@ describe('Call propagation', function() {
       proxy.start();
       var proxy_client = new Client('localhost:' + proxy_port,
                                     grpc.credentials.createInsecure());
-      call = proxy_client.unary({}, function(err, value) {
-        done();
-      });
+      call = proxy_client.unary({}, function(err, value) { done(); });
     });
     it('With a client stream call', function(done) {
       done = multiDone(done, 2);
@@ -994,9 +992,7 @@ describe('Call propagation', function() {
       proxy.start();
       var proxy_client = new Client('localhost:' + proxy_port,
                                     grpc.credentials.createInsecure());
-      call = proxy_client.clientStream(function(err, value) {
-        done();
-      });
+      call = proxy_client.clientStream(function(err, value) { done(); });
     });
     it('With a server stream call', function(done) {
       done = multiDone(done, 2);

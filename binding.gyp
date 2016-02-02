@@ -37,29 +37,45 @@
 # Some of this file is built with the help of
 # https://n8.io/converting-a-c-library-to-gyp/
 {
-  'variables': {
-    'config': '<!(echo $CONFIG)'
-  },
-  # TODO: Finish windows support
   'target_defaults': {
-      # Empirically, Node only exports ALPN symbols if its major version is >0.
-      # io.js always reports versions >0 and always exports ALPN symbols.
-      # Therefore, Node's major version will be truthy if and only if it
-      # supports ALPN. The output of "node -v" is v[major].[minor].[patch],
-      # like "v4.1.1" in a recent version. We use cut to split by period and
-      # take the first field (resulting in "v[major]"), then use cut again
-      # to take all but the first character, removing the "v".
-    'defines': [
-      'TSI_OPENSSL_ALPN_SUPPORT=<!(node --version | cut -d. -f1 | cut -c2-)'
-    ],
     'include_dirs': [
       '.',
       'include'
     ],
     'conditions': [
       ['OS == "win"', {
-        "include_dirs": [ "third_party/boringssl/include" ]
-      }, {
+        "include_dirs": [ "third_party/boringssl/include" ],
+        "defines": [
+          '_WIN32_WINNT=0x0600',
+          'WIN32_LEAN_AND_MEAN',
+          '_HAS_EXCEPTIONS=0',
+          'UNICODE',
+          '_UNICODE',
+          'NOMINMAX',
+          'OPENSSL_NO_ASM'
+        ],
+        "msvs_settings": {
+          'VCCLCompilerTool': {
+            'RuntimeLibrary': 1, # static debug
+          }
+        },
+        "libraries": [
+          "ws2_32"
+        ]
+      }, { # OS != "win"
+          # Empirically, Node only exports ALPN symbols if its major version is >0.
+          # io.js always reports versions >0 and always exports ALPN symbols.
+          # Therefore, Node's major version will be truthy if and only if it
+          # supports ALPN. The output of "node -v" is v[major].[minor].[patch],
+          # like "v4.1.1" in a recent version. We use cut to split by period and
+          # take the first field (resulting in "v[major]"), then use cut again
+          # to take all but the first character, removing the "v".
+        'defines': [
+          'TSI_OPENSSL_ALPN_SUPPORT=<!(node --version | cut -d. -f1 | cut -c2-)'
+        ],
+        'variables': {
+          'config': '<!(echo $CONFIG)'
+        },
         'include_dirs': [
           '<(node_root_dir)/deps/openssl/openssl/include',
           '<(node_root_dir)/deps/zlib'
@@ -93,6 +109,29 @@
   'conditions': [
     ['OS == "win"', {
       'targets': [
+        {
+          # IMPORTANT WINDOWS BUILD INFORMATION
+          # This library does not build on Windows without modifying the Node
+          # development packages that node-gyp downloads in order to build.
+          # Due to https://github.com/nodejs/node/issues/4932, the headers for
+          # BoringSSL conflict with the OpenSSL headers included by default
+          # when including the Node headers. The remedy for this is to remove
+          # the OpenSSL headers, from the downloaded Node development package,
+          # which is typically located in `.node-gyp` in your home directory.
+          'target_name': 'WINDOWS_BUILD_WARNING',
+          'actions': [
+            {
+              'action_name': 'WINDOWS_BUILD_WARNING',
+              'inputs': [
+                'package.json'
+              ],
+              'outputs': [
+                'ignore_this_part'
+              ],
+              'action': ['echo', 'IMPORTANT: Due to https://github.com/nodejs/node/issues/4932, to build this library on Windows, you must first remove <(node_root_dir)/include/node/openssl/']
+            }
+          ]
+        },
         # Only want to compile BoringSSL and zlib under Windows
         {
           'cflags': [
@@ -400,8 +439,7 @@
             'third_party/boringssl/ssl/t1_enc.c',
             'third_party/boringssl/ssl/t1_lib.c',
             'third_party/boringssl/ssl/tls_record.c',
-          ],
-          "include_dirs": [ "third_party/boringssl/include" ]
+          ]
         },
         {
           'cflags': [
@@ -430,8 +468,7 @@
             'third_party/zlib/trees.c',
             'third_party/zlib/uncompr.c',
             'third_party/zlib/zutil.c',
-          ],
-          "include_dirs": [ "third_party/boringssl/include" ]
+          ]
         },
       ]
     }]
@@ -479,6 +516,7 @@
         'src/core/support/string_posix.c',
         'src/core/support/string_win32.c',
         'src/core/support/subprocess_posix.c',
+        'src/core/support/subprocess_windows.c',
         'src/core/support/sync.c',
         'src/core/support/sync_posix.c',
         'src/core/support/sync_win32.c',
@@ -612,6 +650,7 @@
         'src/core/json/json_reader.c',
         'src/core/json/json_string.c',
         'src/core/json/json_writer.c',
+        'src/core/surface/alarm.c',
         'src/core/surface/api_trace.c',
         'src/core/surface/byte_buffer.c',
         'src/core/surface/byte_buffer_reader.c',
@@ -663,6 +702,7 @@
         'src/core/census/context.c',
         'src/core/census/initialize.c',
         'src/core/census/operation.c',
+        'src/core/census/placeholders.c',
         'src/core/census/tag_set.c',
         'src/core/census/tracing.c',
       ],
