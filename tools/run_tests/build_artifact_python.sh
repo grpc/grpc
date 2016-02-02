@@ -1,3 +1,4 @@
+#!/bin/bash
 # Copyright 2016, Google Inc.
 # All rights reserved.
 #
@@ -27,52 +28,20 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# Docker file for building gRPC artifacts.
+set -ex
 
-FROM debian:jessie
+cd $(dirname $0)/../..
 
-# Install Git and basic packages.
-RUN apt-get update && apt-get install -y \
-  autoconf \
-  autotools-dev \
-  build-essential \
-  bzip2 \
-  curl \
-  gcc \
-  gcc-multilib \
-  git \
-  golang \
-  libc6 \
-  libc6-dbg \
-  libc6-dev \
-  libgtest-dev \
-  libtool \
-  make \
-  perl \
-  strace \
-  python-dev \
-  python-setuptools \
-  python-yaml \
-  telnet \
-  unzip \
-  wget \
-  zip && apt-get clean
+pip install --upgrade six
+pip install --upgrade setuptools
 
+pip install -rrequirements.txt
 
-##################
-# Python dependencies
+GRPC_PYTHON_BUILD_WITH_CYTHON=1 python setup.py \
+    bdist_wheel \
+    sdist \
+    bdist_egg_grpc_custom
 
-RUN apt-get update && apt-get install -y \
-    python-all-dev \
-    python3-all-dev \
-    python-pip
+mkdir -p artifacts
 
-RUN pip install pip --upgrade
-RUN pip install virtualenv
-RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.0.0a2 tox
-
-
-RUN mkdir /var/local/jenkins
-
-# Define the default command.
-CMD ["bash"]
+cp -r dist/* artifacts
