@@ -65,7 +65,7 @@ static std::string get_host(const std::string& worker) {
   char* port;
 
   gpr_split_host_port(worker.c_str(), &host, &port);
-  string s(host);
+  const string s(host);
 
   gpr_free(host);
   gpr_free(port);
@@ -76,7 +76,7 @@ static std::unordered_map<string, std::deque<int>> get_hosts_and_cores(
     const deque<string>& workers) {
   std::unordered_map<string, std::deque<int>> hosts;
   for (auto it = workers.begin(); it != workers.end(); it++) {
-    string host = get_host(*it);
+    const string host = get_host(*it);
     if (hosts.find(host) == hosts.end()) {
       auto stub = WorkerService::NewStub(
           CreateChannel(*it, InsecureChannelCredentials()));
@@ -149,7 +149,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
   // To be added to the result, containing the final configuration used for
   // client and config (including host, etc.)
   ClientConfig result_client_config;
-  ServerConfig result_server_config = initial_server_config;
+  const ServerConfig result_server_config = initial_server_config;
 
   // Get client, server lists
   auto workers = get_workers("QPS_WORKERS");
@@ -224,7 +224,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
     if (server_core_limit == 0 && client_core_limit > 0) {
       // In this case, limit the server cores if it matches the
       // same host as one or more clients
-      const auto& dq = hosts_cores[host_str];
+      const auto& dq = hosts_cores.at(host_str);
       bool match = false;
       int limit = dq.size();
       for (size_t cli = 0; cli < num_clients; cli++) {
@@ -239,7 +239,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
       }
     }
     if (server_core_limit > 0) {
-      auto& dq = hosts_cores[host_str];
+      auto& dq = hosts_cores.at(host_str);
       GPR_ASSERT(dq.size() >= static_cast<size_t>(server_core_limit));
       for (int core = 0; core < server_core_limit; core++) {
         server_config.add_core_list(dq.front());

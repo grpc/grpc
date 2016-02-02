@@ -47,12 +47,12 @@ namespace testing {
 #endif
 #include <sched.h>
 int LimitCores(const int *cores, int cores_size) {
-  int num_cores = gpr_cpu_num_cores();
+  const int num_cores = gpr_cpu_num_cores();
   int cores_set = 0;
 
   cpu_set_t *cpup = CPU_ALLOC(num_cores);
   GPR_ASSERT(cpup);
-  size_t size = CPU_ALLOC_SIZE(num_cores);
+  const size_t size = CPU_ALLOC_SIZE(num_cores);
   CPU_ZERO_S(size, cpup);
 
   if (cores_size > 0) {
