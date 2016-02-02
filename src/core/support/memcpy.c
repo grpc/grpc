@@ -37,7 +37,8 @@
 #ifdef GPR_LINUX_USE_ALTERNATIVE_MEMCPY
 /* Use a custom memcpy to skirt binary ABI issues on Linux.
  * Hide it to avoid polluting customer code. */
-__attribute__((weak, visibility ("hidden"))) void *memcpy(void *restrict dst, const void *restrict src, size_t n) {
+__attribute__((weak, visibility("hidden"))) void *memcpy(
+    void *restrict dst, const void *restrict src, size_t n) {
   char *d = dst;
   const char *s = src;
   size_t i;
@@ -47,4 +48,3 @@ __attribute__((weak, visibility ("hidden"))) void *memcpy(void *restrict dst, co
   return dst;
 }
 #endif
-
