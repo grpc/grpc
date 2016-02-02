@@ -54,7 +54,7 @@ def create_docker_jobspec(name, dockerfile_dir, shell_command, environ={},
   return jobspec
 
 
-class CSharpDistribTest:
+class CSharpDistribTest(object):
   """Tests C# NuGet package"""
 
   def __init__(self, platform, arch, docker_suffix):
@@ -81,7 +81,7 @@ class CSharpDistribTest:
     return self.name
 
 
-class PythonDistribTest:
+class PythonDistribTest(object):
   """Tests Python package"""
 
   def __init__(self, platform, arch, docker_suffix):
@@ -125,5 +125,10 @@ def targets():
           PythonDistribTest('linux', 'x64', 'fedora23'),
           PythonDistribTest('linux', 'x64', 'opensuse'),
           PythonDistribTest('linux', 'x64', 'arch'),
+          PythonDistribTest('linux', 'x64', 'ubuntu1204'),
+          PythonDistribTest('linux', 'x64', 'ubuntu1404'),
+          PythonDistribTest('linux', 'x64', 'ubuntu1504'),
+          PythonDistribTest('linux', 'x64', 'ubuntu1510'),
+          PythonDistribTest('linux', 'x64', 'ubuntu1604'),
           ]
 
