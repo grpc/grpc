@@ -503,6 +503,7 @@
     "src/core/support/time_precise.c",
     "src/core/support/time_win32.c",
     "src/core/support/tls_pthread.c",
+    "src/core/support/wrap_memcpy.c",
     "third_party/boringssl/crypto/aes/internal.h",
     "third_party/boringssl/crypto/asn1/asn1_locl.h",
     "third_party/boringssl/crypto/bio/internal.h",

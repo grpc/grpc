@@ -163,6 +163,7 @@ Pod::Spec.new do |s|
                       'src/core/support/time_precise.c',
                       'src/core/support/time_win32.c',
                       'src/core/support/tls_pthread.c',
+                      'src/core/support/wrap_memcpy.c',
                       'src/core/security/auth_filters.h',
                       'src/core/security/base64.h',
                       'src/core/security/credentials.h',
