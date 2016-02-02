@@ -57,6 +57,20 @@ for secure in true false; do
     --async_client_threads=0 --async_server_threads=0 --secure_test=$secure \
     --num_servers=1 --num_clients=0
 
+  # Scenario 2b: QPS with a single server core
+  "$bins"/opt/qps_driver --rpc_type=STREAMING --client_type=ASYNC_CLIENT \
+    --server_type=ASYNC_GENERIC_SERVER --outstanding_rpcs_per_channel=100 \
+    --client_channels=64 --bbuf_req_size=0 --bbuf_resp_size=0 \
+    --async_client_threads=0 --async_server_threads=0 --secure_test=$secure \
+    --num_servers=1 --num_clients=0 --server_core_limit=1
+
+  # Scenario 2c: protobuf-based QPS
+  "$bins"/opt/qps_driver --rpc_type=STREAMING --client_type=ASYNC_CLIENT \
+    --server_type=ASYNC_SERVER --outstanding_rpcs_per_channel=100 \
+    --client_channels=64 --simple_req_size=0 --simple_resp_size=0 \
+    --async_client_threads=0 --async_server_threads=0 --secure_test=$secure \
+    --num_servers=1 --num_clients=0
+
   # Scenario 3: Latency at near-peak load (TBD)
 
   # Scenario 4: Single-channel bidirectional throughput test (like TCP_STREAM).
