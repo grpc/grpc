@@ -53,6 +53,7 @@ class QpsWorker {
 
   bool Done() const;
   void MarkDone();
+
  private:
   std::unique_ptr<WorkerServiceImpl> impl_;
   std::unique_ptr<Server> server_;

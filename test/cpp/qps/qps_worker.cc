@@ -107,8 +107,8 @@ static std::unique_ptr<Server> CreateServer(const ServerConfig& config) {
 
 class WorkerServiceImpl GRPC_FINAL : public WorkerService::Service {
  public:
-  WorkerServiceImpl(int server_port, QpsWorker *worker)
-    : acquired_(false), server_port_(server_port), worker_(worker) {}
+  WorkerServiceImpl(int server_port, QpsWorker* worker)
+      : acquired_(false), server_port_(server_port), worker_(worker) {}
 
   Status RunClient(ServerContext* ctx,
                    ServerReaderWriter<ClientStatus, ClientArgs>* stream)
@@ -138,7 +138,7 @@ class WorkerServiceImpl GRPC_FINAL : public WorkerService::Service {
     return ret;
   }
 
-  Status QuitWorker(ServerContext *ctx, const Void*, Void*) GRPC_OVERRIDE {
+  Status QuitWorker(ServerContext* ctx, const Void*, Void*) GRPC_OVERRIDE {
     InstanceGuard g(this);
     if (!g.Acquired()) {
       return Status(StatusCode::RESOURCE_EXHAUSTED, "");
@@ -147,7 +147,7 @@ class WorkerServiceImpl GRPC_FINAL : public WorkerService::Service {
     worker_->MarkDone();
     return Status::OK;
   }
-  
+
  private:
   // Protect against multiple clients using this worker at once.
   class InstanceGuard {
@@ -258,7 +258,7 @@ class WorkerServiceImpl GRPC_FINAL : public WorkerService::Service {
   std::mutex mu_;
   bool acquired_;
   int server_port_;
-  QpsWorker *worker_;
+  QpsWorker* worker_;
 };
 
 QpsWorker::QpsWorker(int driver_port, int server_port) {

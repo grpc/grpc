@@ -289,7 +289,7 @@ void RunQuit() {
   auto workers = get_hosts("QPS_WORKERS");
   for (size_t i = 0; i < workers.size(); i++) {
     auto stub = WorkerService::NewStub(
-       CreateChannel(workers[i], InsecureChannelCredentials()));
+        CreateChannel(workers[i], InsecureChannelCredentials()));
     Void dummy;
     grpc::ClientContext ctx;
     GPR_ASSERT(stub->QuitWorker(&ctx, dummy, &dummy).ok());
