@@ -218,7 +218,7 @@ static void close_fd_locked(grpc_exec_ctx *exec_ctx, grpc_fd *fd) {
   } else {
     grpc_remove_fd_from_all_epoll_sets(fd->fd);
   }
-  grpc_exec_ctx_enqueue(exec_ctx, fd->on_done_closure, 1);
+  grpc_exec_ctx_enqueue(exec_ctx, fd->on_done_closure, true, NULL);
 }
 
 int grpc_fd_wrapped_fd(grpc_fd *fd) {
@@ -273,7 +273,7 @@ static void notify_on_locked(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
   } else if (*st == CLOSURE_READY) {
     /* already ready ==> queue the closure to run immediately */
     *st = CLOSURE_NOT_READY;
-    grpc_exec_ctx_enqueue(exec_ctx, closure, !fd->shutdown);
+    grpc_exec_ctx_enqueue(exec_ctx, closure, !fd->shutdown, NULL);
     maybe_wake_one_watcher_locked(fd);
   } else {
     /* upcallptr was set to a different closure.  This is an error! */
@@ -296,7 +296,7 @@ static int set_ready_locked(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
     return 0;
   } else {
     /* waiting ==> queue closure */
-    grpc_exec_ctx_enqueue(exec_ctx, *st, !fd->shutdown);
+    grpc_exec_ctx_enqueue(exec_ctx, *st, !fd->shutdown, NULL);
     *st = CLOSURE_NOT_READY;
     return 1;
   }

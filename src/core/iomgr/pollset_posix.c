@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -243,7 +243,7 @@ void grpc_pollset_add_fd(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
 static void finish_shutdown(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset) {
   GPR_ASSERT(grpc_closure_list_empty(pollset->idle_jobs));
   pollset->vtable->finish_shutdown(pollset);
-  grpc_exec_ctx_enqueue(exec_ctx, pollset->shutdown_done, 1);
+  grpc_exec_ctx_enqueue(exec_ctx, pollset->shutdown_done, true, NULL);
 }
 
 void grpc_pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
@@ -271,7 +271,7 @@ void grpc_pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
   if (!grpc_pollset_has_workers(pollset) &&
       !grpc_closure_list_empty(pollset->idle_jobs)) {
     GPR_TIMER_MARK("grpc_pollset_work.idle_jobs", 0);
-    grpc_exec_ctx_enqueue_list(exec_ctx, &pollset->idle_jobs);
+    grpc_exec_ctx_enqueue_list(exec_ctx, &pollset->idle_jobs, NULL);
     goto done;
   }
   /* Check alarms - these are a global resource so we just ping
@@ -365,7 +365,7 @@ void grpc_pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
        * TODO(dklempner): Can we refactor the shutdown logic to avoid this? */
       gpr_mu_lock(&pollset->mu);
     } else if (!grpc_closure_list_empty(pollset->idle_jobs)) {
-      grpc_exec_ctx_enqueue_list(exec_ctx, &pollset->idle_jobs);
+      grpc_exec_ctx_enqueue_list(exec_ctx, &pollset->idle_jobs, NULL);
       gpr_mu_unlock(&pollset->mu);
       grpc_exec_ctx_flush(exec_ctx);
       gpr_mu_lock(&pollset->mu);
@@ -381,7 +381,7 @@ void grpc_pollset_shutdown(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
   pollset->shutdown_done = closure;
   grpc_pollset_kick(pollset, GRPC_POLLSET_KICK_BROADCAST);
   if (!grpc_pollset_has_workers(pollset)) {
-    grpc_exec_ctx_enqueue_list(exec_ctx, &pollset->idle_jobs);
+    grpc_exec_ctx_enqueue_list(exec_ctx, &pollset->idle_jobs, NULL);
   }
   if (!pollset->called_shutdown && pollset->in_flight_cbs == 0 &&
       !grpc_pollset_has_workers(pollset)) {
@@ -419,7 +419,8 @@ typedef struct grpc_unary_promote_args {
   grpc_closure promotion_closure;
 } grpc_unary_promote_args;
 
-static void basic_do_promote(grpc_exec_ctx *exec_ctx, void *args, int success) {
+static void basic_do_promote(grpc_exec_ctx *exec_ctx, void *args,
+                             bool success) {
   grpc_unary_promote_args *up_args = args;
   const grpc_pollset_vtable *original_vtable = up_args->original_vtable;
   grpc_pollset *pollset = up_args->pollset;

@@ -101,6 +101,26 @@ Pod::Spec.new do |s|
                       'include/grpc/support/tls_msvc.h',
                       'include/grpc/support/tls_pthread.h',
                       'include/grpc/support/useful.h',
+                      'include/grpc/impl/codegen/alloc.h',
+                      'include/grpc/impl/codegen/atm.h',
+                      'include/grpc/impl/codegen/atm_gcc_atomic.h',
+                      'include/grpc/impl/codegen/atm_gcc_sync.h',
+                      'include/grpc/impl/codegen/atm_win32.h',
+                      'include/grpc/impl/codegen/byte_buffer.h',
+                      'include/grpc/impl/codegen/compression_types.h',
+                      'include/grpc/impl/codegen/connectivity_state.h',
+                      'include/grpc/impl/codegen/grpc_types.h',
+                      'include/grpc/impl/codegen/log.h',
+                      'include/grpc/impl/codegen/port_platform.h',
+                      'include/grpc/impl/codegen/propagation_bits.h',
+                      'include/grpc/impl/codegen/slice.h',
+                      'include/grpc/impl/codegen/slice_buffer.h',
+                      'include/grpc/impl/codegen/status.h',
+                      'include/grpc/impl/codegen/sync.h',
+                      'include/grpc/impl/codegen/sync_generic.h',
+                      'include/grpc/impl/codegen/sync_posix.h',
+                      'include/grpc/impl/codegen/sync_win32.h',
+                      'include/grpc/impl/codegen/time.h',
                       'src/core/profiling/basic_timers.c',
                       'src/core/profiling/stap_timers.c',
                       'src/core/support/alloc.c',
@@ -131,6 +151,7 @@ Pod::Spec.new do |s|
                       'src/core/support/string_posix.c',
                       'src/core/support/string_win32.c',
                       'src/core/support/subprocess_posix.c',
+                      'src/core/support/subprocess_windows.c',
                       'src/core/support/sync.c',
                       'src/core/support/sync_posix.c',
                       'src/core/support/sync_win32.c',
@@ -270,7 +291,6 @@ Pod::Spec.new do |s|
                       'src/core/transport/transport.h',
                       'src/core/transport/transport_impl.h',
                       'src/core/census/aggregation.h',
-                      'src/core/census/context.h',
                       'src/core/census/rpc_metric_id.h',
                       'include/grpc/grpc_security.h',
                       'include/grpc/byte_buffer.h',
@@ -378,6 +398,7 @@ Pod::Spec.new do |s|
                       'src/core/json/json_reader.c',
                       'src/core/json/json_string.c',
                       'src/core/json/json_writer.c',
+                      'src/core/surface/alarm.c',
                       'src/core/surface/api_trace.c',
                       'src/core/surface/byte_buffer.c',
                       'src/core/surface/byte_buffer_reader.c',
@@ -429,7 +450,7 @@ Pod::Spec.new do |s|
                       'src/core/census/context.c',
                       'src/core/census/initialize.c',
                       'src/core/census/operation.c',
-                      'src/core/census/tag_set.c',
+                      'src/core/census/placeholders.c',
                       'src/core/census/tracing.c'
 
     ss.private_header_files = 'src/core/profiling/timers.h',
@@ -570,7 +591,6 @@ Pod::Spec.new do |s|
                               'src/core/transport/transport.h',
                               'src/core/transport/transport_impl.h',
                               'src/core/census/aggregation.h',
-                              'src/core/census/context.h',
                               'src/core/census/rpc_metric_id.h'
 
     ss.header_mappings_dir = '.'
@@ -585,7 +605,7 @@ Pod::Spec.new do |s|
 
     ss.requires_arc = false
     ss.libraries = 'z'
-    ss.dependency 'BoringSSL', '~> 1.0'
+    ss.dependency 'BoringSSL', '~> 2.0'
 
     # ss.compiler_flags = '-GCC_WARN_INHIBIT_ALL_WARNINGS', '-w'
   end

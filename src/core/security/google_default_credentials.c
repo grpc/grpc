@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -86,7 +86,7 @@ static void on_compute_engine_detection_http_response(
   gpr_mu_unlock(GRPC_POLLSET_MU(&detector->pollset));
 }
 
-static void destroy_pollset(grpc_exec_ctx *exec_ctx, void *p, int s) {
+static void destroy_pollset(grpc_exec_ctx *exec_ctx, void *p, bool s) {
   grpc_pollset_destroy(p);
 }
 
@@ -157,7 +157,7 @@ static grpc_call_credentials *create_default_creds_from_path(char *creds_path) {
   if (grpc_auth_json_key_is_valid(&key)) {
     result =
         grpc_service_account_jwt_access_credentials_create_from_auth_json_key(
-            key, grpc_max_auth_token_lifetime);
+            key, grpc_max_auth_token_lifetime());
     goto end;
   }
 
