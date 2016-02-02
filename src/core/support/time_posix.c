@@ -86,7 +86,7 @@ gpr_timespec gpr_now(gpr_clock_type clock_type) {
     gpr_precise_clock_now(&ret);
     return ret;
   } else {
-#ifdef __linux__
+#if defined(__linux__) && !defined(GPR_NO_DIRECT_SYSCALLS)
     /* avoid ABI problems by invoking syscalls directly */
     syscall(SYS_clock_gettime, clockid_for_gpr_clock[clock_type], &now);
 #else
