@@ -387,7 +387,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
 
 void RunQuit() {
   // Get client, server lists
-  auto workers = get_hosts("QPS_WORKERS");
+  auto workers = get_workers("QPS_WORKERS");
   for (size_t i = 0; i < workers.size(); i++) {
     auto stub = WorkerService::NewStub(
         CreateChannel(workers[i], InsecureChannelCredentials()));
