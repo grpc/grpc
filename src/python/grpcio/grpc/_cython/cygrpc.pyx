@@ -29,6 +29,9 @@
 
 cimport cpython
 
+import pkg_resources
+import os.path
+
 # TODO(atash): figure out why the coverage tool gets confused about the Cython
 # coverage plugin when the following files don't have a '.pxi' suffix.
 include "grpc/_cython/_cygrpc/call.pyx.pxi"
@@ -45,6 +48,10 @@ include "grpc/_cython/_cygrpc/server.pyx.pxi"
 cdef class _ModuleState:
 
   def __cinit__(self):
+    filename = pkg_resources.resource_filename(__name__, '_windows/grpc.def')
+    directory = os.path.dirname(filename)
+    if not pygrpc_load_core(directory):
+      raise ImportError('failed to load core gRPC library')
     grpc_init()
 
   def __dealloc__(self):
