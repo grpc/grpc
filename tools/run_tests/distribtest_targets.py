@@ -62,7 +62,7 @@ class CSharpDistribTest:
     self.platform = platform
     self.arch = arch
     self.docker_suffix = docker_suffix
-    self.labels = ['distribtest', 'csharp', platform, arch]
+    self.labels = ['distribtest', 'csharp', platform, arch, docker_suffix]
 
   def pre_build_jobspecs(self):
     return []
@@ -81,8 +81,46 @@ class CSharpDistribTest:
     return self.name
 
 
+class PythonDistribTest:
+  """Tests Python package"""
+
+  def __init__(self, platform, arch, docker_suffix):
+    self.name = 'python_%s_%s_%s' % (platform, arch, docker_suffix)
+    self.platform = platform
+    self.arch = arch
+    self.docker_suffix = docker_suffix
+    self.labels = ['distribtest', 'python', platform, arch, docker_suffix]
+
+  def pre_build_jobspecs(self):
+    return []
+
+  def build_jobspec(self):
+    if not self.platform == 'linux':
+      raise Exception("Not supported yet.")
+
+    return create_docker_jobspec(self.name,
+          'tools/dockerfile/distribtest/python_%s_%s' % (
+              self.docker_suffix,
+              self.arch),
+          'test/distrib/python/run_distrib_test.sh')
+
+  def __str__(self):
+    return self.name
+
+
 def targets():
   """Gets list of supported targets"""
   return [CSharpDistribTest('linux', 'x64', 'wheezy'),
           CSharpDistribTest('linux', 'x64', 'jessie'),
-          CSharpDistribTest('linux', 'x86', 'jessie')]
+          CSharpDistribTest('linux', 'x86', 'jessie'),
+          PythonDistribTest('linux', 'x64', 'wheezy'),
+          PythonDistribTest('linux', 'x64', 'jessie'),
+          PythonDistribTest('linux', 'x86', 'jessie'),
+          PythonDistribTest('linux', 'x64', 'centos6'),
+          PythonDistribTest('linux', 'x64', 'centos7'),
+          PythonDistribTest('linux', 'x64', 'fedora20'),
+          PythonDistribTest('linux', 'x64', 'fedora21'),
+          PythonDistribTest('linux', 'x64', 'fedora22'),
+          PythonDistribTest('linux', 'x64', 'fedora23'),
+          ]
+
