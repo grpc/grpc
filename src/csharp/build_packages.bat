@@ -49,6 +49,10 @@ endlocal
 @rem copy resulting nuget packages to artifacts directory
 xcopy /Y /I *.nupkg ..\..\artifacts\
 
+@rem create a zipfile with the artifacts as well
+powershell -Command "Add-Type -Assembly 'System.IO.Compression.FileSystem'; [System.IO.Compression.ZipFile]::CreateFromDirectory('..\..\artifacts', 'csharp_nugets.zip');"
+xcopy /Y /I csharp_nugets.zip ..\..\artifacts\
+
 goto :EOF
 
 :error

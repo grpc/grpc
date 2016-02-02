@@ -1,5 +1,5 @@
 /*
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -80,7 +80,7 @@ static grpc_mdelem *client_recv_filter(void *user_data, grpc_mdelem *md) {
   return md;
 }
 
-static void hc_on_recv(grpc_exec_ctx *exec_ctx, void *user_data, int success) {
+static void hc_on_recv(grpc_exec_ctx *exec_ctx, void *user_data, bool success) {
   grpc_call_element *elem = user_data;
   call_data *calld = elem->call_data;
   client_recv_filter_args a;

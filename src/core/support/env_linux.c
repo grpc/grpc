@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -49,8 +49,28 @@
 
 #include "src/core/support/string.h"
 
+/* Declare weak symbols for versions of secure_getenv that *may* be
+ * on a users machine. Older libc's call this __secure_getenv, even
+ * older don't support the functionality.
+ *
+ * If a symbol is not present, these will be equal to NULL.
+ */
+char *__attribute__((weak)) secure_getenv(const char *name);
+char *__attribute__((weak)) __secure_getenv(const char *name);
+
 char *gpr_getenv(const char *name) {
-  char *result = secure_getenv(name);
+  static char *(*getenv_func)(const char *) = secure_getenv;
+  /* Check to see which getenv variant is supported (go from most
+   * to least secure) */
+  if (getenv_func == NULL) {
+    getenv_func = __secure_getenv;
+    if (getenv_func == NULL) {
+      gpr_log(GPR_DEBUG,
+              "No secure_getenv. Please consider upgrading your libc.");
+      getenv_func = getenv;
+    }
+  }
+  char *result = getenv_func(name);
   return result == NULL ? result : gpr_strdup(result);
 }
 

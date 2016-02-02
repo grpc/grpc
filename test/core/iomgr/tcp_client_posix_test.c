@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -63,7 +63,7 @@ static void finish_connection() {
   gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));
 }
 
-static void must_succeed(grpc_exec_ctx *exec_ctx, void *arg, int success) {
+static void must_succeed(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
   GPR_ASSERT(g_connecting != NULL);
   GPR_ASSERT(success);
   grpc_endpoint_shutdown(exec_ctx, g_connecting);
@@ -72,7 +72,7 @@ static void must_succeed(grpc_exec_ctx *exec_ctx, void *arg, int success) {
   finish_connection();
 }
 
-static void must_fail(grpc_exec_ctx *exec_ctx, void *arg, int success) {
+static void must_fail(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
   GPR_ASSERT(g_connecting == NULL);
   GPR_ASSERT(!success);
   finish_connection();
@@ -258,7 +258,7 @@ void test_times_out(void) {
   }
 }
 
-static void destroy_pollset(grpc_exec_ctx *exec_ctx, void *p, int success) {
+static void destroy_pollset(grpc_exec_ctx *exec_ctx, void *p, bool success) {
   grpc_pollset_destroy(p);
 }
 

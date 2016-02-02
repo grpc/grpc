@@ -530,7 +530,8 @@ typedef struct run_batch_stack {
 
 /* grpc_run_batch_stack_init ensures the run_batch_stack is properly
  * initialized */
-static void grpc_run_batch_stack_init(run_batch_stack *st, unsigned write_flag) {
+static void grpc_run_batch_stack_init(run_batch_stack *st,
+                                      unsigned write_flag) {
   MEMZERO(st, run_batch_stack, 1);
   grpc_metadata_array_init(&st->send_metadata);
   grpc_metadata_array_init(&st->send_trailing_metadata);

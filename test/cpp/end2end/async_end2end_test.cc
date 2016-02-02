@@ -180,21 +180,11 @@ class AsyncEnd2endTest : public ::testing::TestWithParam<bool> {
     int port = grpc_pick_unused_port_or_die();
     server_address_ << "localhost:" << port;
 
-    // It is currently unsupported to mix sync and async services
-    // in the same server, so first test that (for coverage)
-    ServerBuilder build_bad;
-    build_bad.AddListeningPort(server_address_.str(),
-                               grpc::InsecureServerCredentials());
-    build_bad.RegisterAsyncService(&service_);
-    grpc::testing::EchoTestService::Service sync_service;
-    build_bad.RegisterService(&sync_service);
-    GPR_ASSERT(build_bad.BuildAndStart() == nullptr);
-
     // Setup server
     ServerBuilder builder;
     builder.AddListeningPort(server_address_.str(),
                              grpc::InsecureServerCredentials());
-    builder.RegisterAsyncService(&service_);
+    builder.RegisterService(&service_);
     cq_ = builder.AddCompletionQueue();
     server_ = builder.BuildAndStart();
   }

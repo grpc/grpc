@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -34,16 +34,6 @@
 #ifndef GRPCXX_IMPL_SYNC_CXX11_H
 #define GRPCXX_IMPL_SYNC_CXX11_H
 
-#include <condition_variable>
-#include <mutex>
-
-namespace grpc {
-
-using std::condition_variable;
-using std::mutex;
-using std::lock_guard;
-using std::unique_lock;
-
-}  // namespace grpc
+#include <grpc++/impl/codegen/sync_cxx11.h>
 
 #endif  // GRPCXX_IMPL_SYNC_CXX11_H

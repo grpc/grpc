@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -78,7 +78,7 @@ void grpc_connectivity_state_destroy(grpc_exec_ctx *exec_ctx,
     } else {
       success = 0;
     }
-    grpc_exec_ctx_enqueue(exec_ctx, w->notify, success);
+    grpc_exec_ctx_enqueue(exec_ctx, w->notify, success, NULL);
     gpr_free(w);
   }
   gpr_free(tracker->name);
@@ -109,7 +109,7 @@ int grpc_connectivity_state_notify_on_state_change(
   if (current == NULL) {
     grpc_connectivity_state_watcher *w = tracker->watchers;
     if (w != NULL && w->notify == notify) {
-      grpc_exec_ctx_enqueue(exec_ctx, notify, 0);
+      grpc_exec_ctx_enqueue(exec_ctx, notify, false, NULL);
       tracker->watchers = w->next;
       gpr_free(w);
       return 0;
@@ -117,7 +117,7 @@ int grpc_connectivity_state_notify_on_state_change(
     while (w != NULL) {
       grpc_connectivity_state_watcher *rm_candidate = w->next;
       if (rm_candidate != NULL && rm_candidate->notify == notify) {
-        grpc_exec_ctx_enqueue(exec_ctx, notify, 0);
+        grpc_exec_ctx_enqueue(exec_ctx, notify, false, NULL);
         w->next = w->next->next;
         gpr_free(rm_candidate);
         return 0;
@@ -128,7 +128,7 @@ int grpc_connectivity_state_notify_on_state_change(
   } else {
     if (tracker->current_state != *current) {
       *current = tracker->current_state;
-      grpc_exec_ctx_enqueue(exec_ctx, notify, 1);
+      grpc_exec_ctx_enqueue(exec_ctx, notify, true, NULL);
     } else {
       grpc_connectivity_state_watcher *w = gpr_malloc(sizeof(*w));
       w->current = current;
@@ -158,7 +158,7 @@ void grpc_connectivity_state_set(grpc_exec_ctx *exec_ctx,
   while ((w = tracker->watchers) != NULL) {
     *w->current = tracker->current_state;
     tracker->watchers = w->next;
-    grpc_exec_ctx_enqueue(exec_ctx, w->notify, 1);
+    grpc_exec_ctx_enqueue(exec_ctx, w->notify, true, NULL);
     gpr_free(w);
   }
 }

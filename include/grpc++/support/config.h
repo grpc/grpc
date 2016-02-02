@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -34,83 +34,6 @@
 #ifndef GRPCXX_SUPPORT_CONFIG_H
 #define GRPCXX_SUPPORT_CONFIG_H
 
-#if !defined(GRPC_NO_AUTODETECT_PLATFORM)
-
-#ifdef _MSC_VER
-// Visual Studio 2010 is 1600.
-#if _MSC_VER < 1600
-#error "gRPC is only supported with Visual Studio starting at 2010"
-// Visual Studio 2013 is 1800.
-#elif _MSC_VER < 1800
-#define GRPC_CXX0X_NO_FINAL 1
-#define GRPC_CXX0X_NO_OVERRIDE 1
-#define GRPC_CXX0X_NO_CHRONO 1
-#define GRPC_CXX0X_NO_THREAD 1
-#endif
-#endif  // Visual Studio
-
-#ifndef __clang__
-#ifdef __GNUC__
-// nullptr was added in gcc 4.6
-#if (__GNUC__ * 100 + __GNUC_MINOR__ < 406)
-#define GRPC_CXX0X_NO_NULLPTR 1
-#endif
-// final and override were added in gcc 4.7
-#if (__GNUC__ * 100 + __GNUC_MINOR__ < 407)
-#define GRPC_CXX0X_NO_FINAL 1
-#define GRPC_CXX0X_NO_OVERRIDE 1
-#endif
-#endif
-#endif
-
-#endif
-
-#ifdef GRPC_CXX0X_NO_FINAL
-#define GRPC_FINAL
-#else
-#define GRPC_FINAL final
-#endif
-
-#ifdef GRPC_CXX0X_NO_OVERRIDE
-#define GRPC_OVERRIDE
-#else
-#define GRPC_OVERRIDE override
-#endif
-
-#ifdef GRPC_CXX0X_NO_NULLPTR
-#include <memory>
-namespace grpc {
-const class {
- public:
-  template <class T>
-  operator T *() const {
-    return static_cast<T *>(0);
-  }
-  template <class T>
-  operator std::unique_ptr<T>() const {
-    return std::unique_ptr<T>(static_cast<T *>(0));
-  }
-  template <class T>
-  operator std::shared_ptr<T>() const {
-    return std::shared_ptr<T>(static_cast<T *>(0));
-  }
-  operator bool() const { return false; }
-
- private:
-  void operator&() const = delete;
-} nullptr = {};
-}
-#endif
-
-#ifndef GRPC_CUSTOM_STRING
-#include <string>
-#define GRPC_CUSTOM_STRING std::string
-#endif
-
-namespace grpc {
-
-typedef GRPC_CUSTOM_STRING string;
-
-}  // namespace grpc
+#include <grpc++/impl/codegen/config.h>
 
 #endif  // GRPCXX_SUPPORT_CONFIG_H
