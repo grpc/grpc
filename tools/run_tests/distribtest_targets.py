@@ -122,5 +122,6 @@ def targets():
           PythonDistribTest('linux', 'x64', 'fedora21'),
           PythonDistribTest('linux', 'x64', 'fedora22'),
           PythonDistribTest('linux', 'x64', 'fedora23'),
+          PythonDistribTest('linux', 'x64', 'opensuse'),
           ]
 
