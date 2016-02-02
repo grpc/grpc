@@ -39,8 +39,11 @@
  * Enable by setting LDFLAGS=-Wl,-wrap,memcpy when linking.
  */
 
+#ifdef __linux__
 __asm__(".symver memcpy,memcpy@GLIBC_2.2.5");
 
 void *__wrap_memcpy(void *destination, const void *source, size_t num) {
   return memcpy(destination, source, num);
 }
+#endif
+
