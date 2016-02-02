@@ -113,6 +113,7 @@ def targets():
   return [CSharpDistribTest('linux', 'x64', 'wheezy'),
           CSharpDistribTest('linux', 'x64', 'jessie'),
           CSharpDistribTest('linux', 'x86', 'jessie'),
+          CSharpDistribTest('linux', 'x64', 'centos7'),
           PythonDistribTest('linux', 'x64', 'wheezy'),
           PythonDistribTest('linux', 'x64', 'jessie'),
           PythonDistribTest('linux', 'x86', 'jessie'),
