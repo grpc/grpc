@@ -505,6 +505,7 @@ typedef struct census_view census_view;
 
   @return A new census view
 */
+
 /* TODO(aveitch): consider if context is the right argument type to pass in
    tags. */
 CENSUS_API census_view *census_view_create(
