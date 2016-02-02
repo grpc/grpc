@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -60,7 +60,7 @@ static void thd_func(void *arg) {
   gpr_event_set(&a->done_thd, (void *)1);
 }
 
-static void done_write(grpc_exec_ctx *exec_ctx, void *arg, int success) {
+static void done_write(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
   thd_args *a = arg;
   gpr_event_set(&a->done_write, (void *)1);
 }

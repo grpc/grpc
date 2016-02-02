@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -118,7 +118,7 @@ typedef struct {
 /* Called when an upload session can be safely shutdown.
    Close session FD and start to shutdown listen FD. */
 static void session_shutdown_cb(grpc_exec_ctx *exec_ctx, void *arg, /*session */
-                                int success) {
+                                bool success) {
   session *se = arg;
   server *sv = se->sv;
   grpc_fd_orphan(exec_ctx, se->em_fd, NULL, NULL, "a");
@@ -129,7 +129,7 @@ static void session_shutdown_cb(grpc_exec_ctx *exec_ctx, void *arg, /*session */
 
 /* Called when data become readable in a session. */
 static void session_read_cb(grpc_exec_ctx *exec_ctx, void *arg, /*session */
-                            int success) {
+                            bool success) {
   session *se = arg;
   int fd = se->em_fd->fd;
 
@@ -187,7 +187,7 @@ static void listen_shutdown_cb(grpc_exec_ctx *exec_ctx, void *arg /*server */,
 
 /* Called when a new TCP connection request arrives in the listening port. */
 static void listen_cb(grpc_exec_ctx *exec_ctx, void *arg, /*=sv_arg*/
-                      int success) {
+                      bool success) {
   server *sv = arg;
   int fd;
   int flags;
@@ -301,7 +301,7 @@ static void client_session_shutdown_cb(grpc_exec_ctx *exec_ctx,
 
 /* Write as much as possible, then register notify_on_write. */
 static void client_session_write(grpc_exec_ctx *exec_ctx, void *arg, /*client */
-                                 int success) {
+                                 bool success) {
   client *cl = arg;
   int fd = cl->em_fd->fd;
   ssize_t write_once = 0;
@@ -399,7 +399,7 @@ static void test_grpc_fd(void) {
 }
 
 typedef struct fd_change_data {
-  void (*cb_that_ran)(grpc_exec_ctx *exec_ctx, void *, int success);
+  grpc_iomgr_cb_func cb_that_ran;
 } fd_change_data;
 
 void init_change_data(fd_change_data *fdc) { fdc->cb_that_ran = NULL; }
@@ -407,7 +407,7 @@ void init_change_data(fd_change_data *fdc) { fdc->cb_that_ran = NULL; }
 void destroy_change_data(fd_change_data *fdc) {}
 
 static void first_read_callback(grpc_exec_ctx *exec_ctx,
-                                void *arg /* fd_change_data */, int success) {
+                                void *arg /* fd_change_data */, bool success) {
   fd_change_data *fdc = arg;
 
   gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
@@ -417,7 +417,7 @@ static void first_read_callback(grpc_exec_ctx *exec_ctx,
 }
 
 static void second_read_callback(grpc_exec_ctx *exec_ctx,
-                                 void *arg /* fd_change_data */, int success) {
+                                 void *arg /* fd_change_data */, bool success) {
   fd_change_data *fdc = arg;
 
   gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
@@ -510,7 +510,7 @@ static void test_grpc_fd_change(void) {
   close(sv[1]);
 }
 
-static void destroy_pollset(grpc_exec_ctx *exec_ctx, void *p, int success) {
+static void destroy_pollset(grpc_exec_ctx *exec_ctx, void *p, bool success) {
   grpc_pollset_destroy(p);
 }
 

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -236,7 +236,7 @@ static void test_find(void) {
 
   /* overflow the string buffer, check find still works */
   for (i = 0; i < 10000; i++) {
-    gpr_ltoa(i, buffer);
+    int64_ttoa(i, buffer);
     elem = grpc_mdelem_from_strings("test", buffer);
     GPR_ASSERT(grpc_chttp2_hptbl_add(&tbl, elem));
     GRPC_MDELEM_UNREF(elem);
@@ -256,7 +256,7 @@ static void test_find(void) {
 
   for (i = 0; i < tbl.num_ents; i++) {
     uint32_t expect = 9999 - i;
-    gpr_ltoa(expect, buffer);
+    int64_ttoa(expect, buffer);
 
     r = find_simple(&tbl, "test", buffer);
     GPR_ASSERT(r.index == i + 1 + GRPC_CHTTP2_LAST_STATIC_ENTRY);

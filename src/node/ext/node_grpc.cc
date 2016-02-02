@@ -112,8 +112,8 @@ void InitCallErrorConstants(Local<Object> exports) {
   Nan::Set(exports, Nan::New("callError").ToLocalChecked(), call_error);
   Local<Value> OK(Nan::New<Uint32, uint32_t>(GRPC_CALL_OK));
   Nan::Set(call_error, Nan::New("OK").ToLocalChecked(), OK);
-  Local<Value> ERROR(Nan::New<Uint32, uint32_t>(GRPC_CALL_ERROR));
-  Nan::Set(call_error, Nan::New("ERROR").ToLocalChecked(), ERROR);
+  Local<Value> CALL_ERROR(Nan::New<Uint32, uint32_t>(GRPC_CALL_ERROR));
+  Nan::Set(call_error, Nan::New("ERROR").ToLocalChecked(), CALL_ERROR);
   Local<Value> NOT_ON_SERVER(
       Nan::New<Uint32, uint32_t>(GRPC_CALL_ERROR_NOT_ON_SERVER));
   Nan::Set(call_error, Nan::New("NOT_ON_SERVER").ToLocalChecked(),

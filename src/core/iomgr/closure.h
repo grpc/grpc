@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -35,6 +35,7 @@
 #define GRPC_INTERNAL_CORE_IOMGR_CLOSURE_H
 
 #include <grpc/support/port_platform.h>
+#include <stdbool.h>
 
 struct grpc_closure;
 typedef struct grpc_closure grpc_closure;
@@ -54,7 +55,7 @@ typedef struct grpc_closure_list {
  * \param success An indication on the state of the iomgr. On false, cleanup
  * actions should be taken (eg, shutdown). */
 typedef void (*grpc_iomgr_cb_func)(grpc_exec_ctx *exec_ctx, void *arg,
-                                   int success);
+                                   bool success);
 
 /** A closure over a grpc_iomgr_cb_func. */
 struct grpc_closure {
@@ -83,13 +84,13 @@ grpc_closure *grpc_closure_create(grpc_iomgr_cb_func cb, void *cb_arg);
 /** add \a closure to the end of \a list and set \a closure's success to \a
  * success */
 void grpc_closure_list_add(grpc_closure_list *list, grpc_closure *closure,
-                           int success);
+                           bool success);
 
 /** append all closures from \a src to \a dst and empty \a src. */
 void grpc_closure_list_move(grpc_closure_list *src, grpc_closure_list *dst);
 
 /** return whether \a list is empty. */
-int grpc_closure_list_empty(grpc_closure_list list);
+bool grpc_closure_list_empty(grpc_closure_list list);
 
 /** return the next pointer for a queued closure list */
 grpc_closure *grpc_closure_next(grpc_closure *closure);
