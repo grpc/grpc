@@ -279,7 +279,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
     int server_core_limit = initial_server_config.core_limit();
     int client_core_limit = initial_client_config.core_limit();
     if ((server_core_limit > 0) || (client_core_limit > 0)) {
-      auto& dq = hosts_cores[get_host(worker)];
+      auto& dq = hosts_cores.at(get_host(worker));
       if (client_core_limit == 0) {
         // limit client cores if it matches a server host
         bool match = false;
