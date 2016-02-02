@@ -31,12 +31,14 @@ cimport libc.time
 from libc.stdint cimport int64_t, uint32_t, int32_t
 
 
-cdef extern from "grpc/support/alloc.h":
+cdef extern from "grpc/_cython/loader.h":
+
+  int pygrpc_load_core(const char*)
+
   void *gpr_malloc(size_t size)
   void gpr_free(void *ptr)
   void *gpr_realloc(void *p, size_t size)
 
-cdef extern from "grpc/support/slice.h":
   ctypedef struct gpr_slice:
     # don't worry about writing out the members of gpr_slice; we never access
     # them directly.
@@ -54,9 +56,6 @@ cdef extern from "grpc/support/slice.h":
   # Declare functions for function-like macros (because Cython)...
   void *gpr_slice_start_ptr "GPR_SLICE_START_PTR" (gpr_slice s)
   size_t gpr_slice_length "GPR_SLICE_LENGTH" (gpr_slice s)
-
-
-cdef extern from "grpc/support/time.h":
 
   ctypedef enum gpr_clock_type:
     GPR_CLOCK_MONOTONIC
@@ -78,8 +77,6 @@ cdef extern from "grpc/support/time.h":
   gpr_timespec gpr_convert_clock_type(gpr_timespec t,
                                       gpr_clock_type target_clock)
 
-
-cdef extern from "grpc/status.h":
   ctypedef enum grpc_status_code:
     GRPC_STATUS_OK
     GRPC_STATUS_CANCELLED
@@ -100,14 +97,10 @@ cdef extern from "grpc/status.h":
     GRPC_STATUS_DATA_LOSS
     GRPC_STATUS__DO_NOT_USE
 
-
-cdef extern from "grpc/byte_buffer_reader.h":
   struct grpc_byte_buffer_reader:
     # We don't care about the internals
     pass
 
-
-cdef extern from "grpc/byte_buffer.h":
   ctypedef struct grpc_byte_buffer:
     # We don't care about the internals.
     pass
@@ -122,9 +115,6 @@ cdef extern from "grpc/byte_buffer.h":
   int grpc_byte_buffer_reader_next(grpc_byte_buffer_reader *reader,
                                    gpr_slice *slice)
   void grpc_byte_buffer_reader_destroy(grpc_byte_buffer_reader *reader)
-
-
-cdef extern from "grpc/grpc.h":
 
   const char *GRPC_ARG_PRIMARY_USER_AGENT_STRING
   const char *GRPC_ARG_ENABLE_CENSUS
@@ -332,9 +322,6 @@ cdef extern from "grpc/grpc.h":
       grpc_server *server, grpc_completion_queue *cq, void *tag)
   void grpc_server_cancel_all_calls(grpc_server *server)
   void grpc_server_destroy(grpc_server *server)
-
-
-cdef extern from "grpc/grpc_security.h":
 
   ctypedef struct grpc_ssl_pem_key_cert_pair:
     const char *private_key
