@@ -46,4 +46,3 @@ void *__wrap_memcpy(void *destination, const void *source, size_t num) {
   return memcpy(destination, source, num);
 }
 #endif
-
