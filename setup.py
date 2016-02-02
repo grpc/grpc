@@ -80,9 +80,18 @@ EXTENSION_INCLUDE_DIRECTORIES = (
 
 EXTENSION_LIBRARIES = ('m',)
 if not "darwin" in sys.platform:
-    EXTENSION_LIBRARIES += ('rt',)
+  EXTENSION_LIBRARIES += ('rt',)
 
 DEFINE_MACROS = (('OPENSSL_NO_ASM', 1),)
+
+CFLAGS = (,)
+LDFLAGS = (,)
+if "linux" in sys.platform:
+  LDFLAGS += ('-Wl,-wrap,memcpy',)
+if "linux" in sys.platform or "darwin" in sys.platform:
+  CFLAGS += ('-fvisibility=hidden',)
+  DEFINE_MACROS += (('PyMODINIT_FUNC', '__attribute__((visibility ("default"))) void'),)
+
 
 def cython_extensions(package_names, module_names, include_dirs, libraries,
                       define_macros, build_with_cython=False):

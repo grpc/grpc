@@ -80,6 +80,8 @@ if grpc_config == 'gcov'
   $LDFLAGS << ' -fprofile-arcs -ftest-coverage -rdynamic'
 end
 
+$LDFLAGS << ' -Wl,-wrap,memcpy'
+
 $CFLAGS << ' -std=c99 '
 $CFLAGS << ' -Wall '
 $CFLAGS << ' -Wextra '

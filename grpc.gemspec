@@ -146,6 +146,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/support/time_precise.c )
   s.files += %w( src/core/support/time_win32.c )
   s.files += %w( src/core/support/tls_pthread.c )
+  s.files += %w( src/core/support/wrap_memcpy.c )
   s.files += %w( include/grpc/grpc_security.h )
   s.files += %w( include/grpc/byte_buffer.h )
   s.files += %w( include/grpc/byte_buffer_reader.h )

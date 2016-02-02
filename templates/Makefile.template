@@ -1598,6 +1598,10 @@
 
     if lib.language == 'c++':
       common = common + ' $(LDLIBSXX) $(LDLIBS_PROTOBUF)'
+
+    ldflags = '$(LDFLAGS)'
+    if lib.get('LDFLAGS', None):
+      ldflags += ' ' + lib['LDFLAGS']
   %>
 
   % if lib.build == "all":
@@ -1605,15 +1609,15 @@
   ${out_base}.$(SHARED_EXT): $(LIB${lib.name.upper()}_OBJS) ${mingw_lib_deps}
   	$(E) "[LD]      Linking $@"
   	$(Q) mkdir -p `dirname $@`
-  	$(Q) ${ld} $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=${out_base}.def -Wl,--out-implib=${out_libbase}-imp.a -o ${out_base}.$(SHARED_EXT) ${common}${mingw_libs}
+  	$(Q) ${ld} ${ldflags} -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=${out_base}.def -Wl,--out-implib=${out_libbase}-imp.a -o ${out_base}.$(SHARED_EXT) ${common}${mingw_libs}
   else
   ${out_libbase}.$(SHARED_EXT): $(LIB${lib.name.upper()}_OBJS) ${lib_deps}
   	$(E) "[LD]      Linking $@"
   	$(Q) mkdir -p `dirname $@`
   ifeq ($(SYSTEM),Darwin)
-  	$(Q) ${ld} $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name lib${lib.name}.$(SHARED_EXT) -dynamiclib -o ${out_libbase}.$(SHARED_EXT) ${common}${libs}
+  	$(Q) ${ld} ${ldflags} -L$(LIBDIR)/$(CONFIG) -install_name lib${lib.name}.$(SHARED_EXT) -dynamiclib -o ${out_libbase}.$(SHARED_EXT) ${common}${libs}
   else
-  	$(Q) ${ld} $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,lib${lib.name}.so.${settings.version.major} -o ${out_libbase}.$(SHARED_EXT) ${common}${libs}
+  	$(Q) ${ld} ${ldflags} -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,lib${lib.name}.so.${settings.version.major} -o ${out_libbase}.$(SHARED_EXT) ${common}${libs}
   	$(Q) ln -sf lib${lib.name}.$(SHARED_EXT) ${out_libbase}.so.${settings.version.major}
   	$(Q) ln -sf lib${lib.name}.$(SHARED_EXT) ${out_libbase}.so
   endif
