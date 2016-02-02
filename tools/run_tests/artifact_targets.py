@@ -108,6 +108,35 @@ class PythonArtifact:
     return self.name
 
 
+class RubyArtifact:
+  """Builds ruby native gem."""
+
+  def __init__(self, platform, arch):
+    self.name = 'ruby_native_gem_%s_%s' % (platform, arch)
+    self.platform = platform
+    self.arch = arch
+    self.labels = ['artifact', 'ruby', platform, arch]
+
+  def pre_build_jobspecs(self):
+    return []
+
+  def build_jobspec(self):
+    if self.platform == 'windows':
+      raise Exception("Not supported yet")
+    else:
+      if self.platform == 'linux':
+        environ = {}
+        if self.arch == 'x86':
+          environ['SETARCH_CMD'] = 'i386'
+        return create_docker_jobspec(self.name,
+            'tools/dockerfile/grpc_artifact_linux_%s' % self.arch,
+            'tools/run_tests/build_artifact_ruby.sh',
+            environ=environ)
+      else:
+        return create_jobspec(self.name,
+                              ['tools/run_tests/build_artifact_ruby.sh'])
+
+
 class CSharpExtArtifact:
   """Builds C# native extension library"""
 
@@ -164,4 +193,6 @@ def targets():
           CSharpExtArtifact('windows', 'x86'),
           CSharpExtArtifact('windows', 'x64'),
           PythonArtifact('linux', 'x86'),
-          PythonArtifact('linux', 'x64')]
+          PythonArtifact('linux', 'x64'),
+          RubyArtifact('linux', 'x86'),
+          RubyArtifact('linux', 'x64')]
