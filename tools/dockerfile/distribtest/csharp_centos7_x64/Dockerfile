@@ -36,4 +36,3 @@ RUN yum install -y mono
 RUN yum install -y git
 RUN yum install -y unzip
 RUN yum install -y nuget
-
