@@ -126,6 +126,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/support/log_linux.c )
   s.files += %w( src/core/support/log_posix.c )
   s.files += %w( src/core/support/log_win32.c )
+  s.files += %w( src/core/support/memcpy.c )
   s.files += %w( src/core/support/murmur_hash.c )
   s.files += %w( src/core/support/slice.c )
   s.files += %w( src/core/support/slice_buffer.c )

@@ -2227,6 +2227,7 @@ LIBGPR_SRC = \
     src/core/support/log_linux.c \
     src/core/support/log_posix.c \
     src/core/support/log_win32.c \
+    src/core/support/memcpy.c \
     src/core/support/murmur_hash.c \
     src/core/support/slice.c \
     src/core/support/slice_buffer.c \
