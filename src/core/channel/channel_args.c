@@ -37,6 +37,7 @@
 
 #include <grpc/census.h>
 #include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/useful.h>
 
@@ -100,11 +101,9 @@ static int cmp_arg(const grpc_arg *a, const grpc_arg *b) {
   if (c != 0) return c;
   switch (a->type) {
     case GRPC_ARG_STRING:
-      c = strcmp(a->value.string, b->value.string);
-      break;
+      return strcmp(a->value.string, b->value.string);
     case GRPC_ARG_INTEGER:
-      c = GPR_ICMP(a->value.integer, b->value.integer);
-      break;
+      return GPR_ICMP(a->value.integer, b->value.integer);
     case GRPC_ARG_POINTER:
       c = GPR_ICMP(a->value.pointer.p, b->value.pointer.p);
       if (c != 0) {
@@ -114,9 +113,9 @@ static int cmp_arg(const grpc_arg *a, const grpc_arg *b) {
                                            b->value.pointer.p);
         }
       }
-      break;
+      return c;
   }
-  return c;
+  GPR_UNREACHABLE_CODE(return 0);
 }
 
 static int cmp_key_stable(const void *ap, const void *bp) {
