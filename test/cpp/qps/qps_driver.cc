@@ -77,6 +77,8 @@ DEFINE_double(pareto_alpha, -1.0, "Pareto alpha value");
 
 DEFINE_bool(secure_test, false, "Run a secure test");
 
+DEFINE_bool(quit, false, "Quit the workers");
+
 using grpc::testing::ClientConfig;
 using grpc::testing::ServerConfig;
 using grpc::testing::ClientType;
@@ -89,6 +91,11 @@ namespace grpc {
 namespace testing {
 
 static void QpsDriver() {
+  if (FLAGS_quit) {
+    RunQuit();
+    return;
+  }
+
   RpcType rpc_type;
   GPR_ASSERT(RpcType_Parse(FLAGS_rpc_type, &rpc_type));
 
