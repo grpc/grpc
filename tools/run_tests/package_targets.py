@@ -47,7 +47,7 @@ def create_docker_jobspec(name, dockerfile_dir, shell_command, environ={},
   jobspec = jobset.JobSpec(
           cmdline=['tools/jenkins/build_and_run_docker.sh'] + docker_args,
           environ=docker_env,
-          shortname='build_artifact.%s' % (name),
+          shortname='build_package.%s' % (name),
           timeout_seconds=30*60,
           flake_retries=flake_retries,
           timeout_retries=timeout_retries)
@@ -92,7 +92,7 @@ class NodeNpmBinaryTarget:
 
   def __init__(self):
     self.name = 'node_npm_binary'
-    self.labels = ['package', 'csharp', 'windows']
+    self.labels = ['package', 'node', 'linux']
 
   def pre_build_jobspecs(self):
     return []
