@@ -49,6 +49,7 @@ namespace Grpc.Core.Internal
         static readonly bool isLinux;
         static readonly bool isMacOSX;
         static readonly bool isWindows;
+        static readonly bool isMono;
 
         static PlatformApis()
         {
@@ -58,6 +59,7 @@ namespace Grpc.Core.Internal
             isMacOSX = (platform == PlatformID.Unix && GetUname() == "Darwin");
             isLinux = (platform == PlatformID.Unix && !isMacOSX);
             isWindows = (platform == PlatformID.Win32NT || platform == PlatformID.Win32S || platform == PlatformID.Win32Windows);
+            isMono = Type.GetType("Mono.Runtime") != null;
         }
 
         public static bool IsLinux
@@ -73,6 +75,11 @@ namespace Grpc.Core.Internal
         public static bool IsWindows
         {
             get { return isWindows; }
+        }
+
+        public static bool IsMono
+        {
+            get { return isMono; }
         }
 
         public static bool Is64Bit
