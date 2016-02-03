@@ -128,6 +128,7 @@
     <Compile Include="Profiling\ProfilerScope.cs" />
     <Compile Include="Profiling\IProfiler.cs" />
     <Compile Include="Profiling\Profilers.cs" />
+    <Compile Include="Internal\DefaultSslRootsOverride.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Grpc.Core.nuspec" />
@@ -135,4 +136,12 @@
   </ItemGroup>
   <Import Project="NativeDeps.targets" />
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <ItemGroup>
+    <Folder Include="Resources\" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="..\..\..\etc\roots.pem">
+      <Link>Resources\roots.pem</Link>
+    </EmbeddedResource>
+  </ItemGroup>
 </Project>
