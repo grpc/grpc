@@ -228,4 +228,5 @@ def targets():
           [PythonArtifact('linux', 'x86'),
            PythonArtifact('linux', 'x64'),
            RubyArtifact('linux', 'x86'),
-           RubyArtifact('linux', 'x64')])
+           RubyArtifact('linux', 'x64'),
+           RubyArtifact('macos', 'x64')])
