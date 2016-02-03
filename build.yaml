@@ -107,6 +107,7 @@ filegroups:
   - src/core/support/time_precise.c
   - src/core/support/time_win32.c
   - src/core/support/tls_pthread.c
+  - src/core/support/wrap_memcpy.c
 - name: grpc++_base
   public_headers:
   - include/grpc++/channel.h
@@ -841,6 +842,7 @@ libs:
   - src/csharp/ext/grpc_csharp_ext.c
   deps:
   - grpc
+  LDFLAGS: $(if $(subst Linux,,$(SYSTEM)),,-Wl$(comma)-wrap$(comma)memcpy)
   deps_linkage: static
   dll: only
   vs_config_type: DynamicLibrary

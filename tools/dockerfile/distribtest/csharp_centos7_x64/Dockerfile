@@ -1,5 +1,4 @@
-#!/usr/bin/env python2.7
-# Copyright 2016, Google Inc.
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -28,46 +27,12 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""Definition of targets to build distribution packages."""
+FROM centos:7
 
-import jobset
+RUN rpm --import "http://keyserver.ubuntu.com/pks/lookup?op=get&search=0x3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF"
+RUN yum-config-manager --add-repo http://download.mono-project.com/repo/centos/
 
+RUN yum install -y mono
+RUN yum install -y git
+RUN yum install -y unzip
 
-def create_jobspec(name, cmdline, environ=None, cwd=None, shell=False,
-                   flake_retries=0, timeout_retries=0):
-  """Creates jobspec."""
-  jobspec = jobset.JobSpec(
-          cmdline=cmdline,
-          environ=environ,
-          cwd=cwd,
-          shortname='build_package.%s' % (name),
-          timeout_seconds=10*60,
-          flake_retries=flake_retries,
-          timeout_retries=timeout_retries,
-          shell=shell)
-  return jobspec
-
-
-class CSharpNugetTarget:
-  """Builds C# nuget packages."""
-
-  def __init__(self):
-    self.name = 'csharp_nuget'
-    self.labels = ['package', 'csharp', 'windows']
-
-  def pre_build_jobspecs(self):
-    return []
-
-  def build_jobspec(self):
-    return create_jobspec(self.name,
-                          ['build_packages.bat'],
-                          cwd='src\\csharp',
-                          shell=True)
-
-  def __str__(self):
-    return self.name
-
-
-def targets():
-  """Gets list of supported targets"""
-  return [CSharpNugetTarget()]

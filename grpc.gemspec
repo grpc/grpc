@@ -432,6 +432,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/support/time_precise.c )
   s.files += %w( src/core/support/time_win32.c )
   s.files += %w( src/core/support/tls_pthread.c )
+  s.files += %w( src/core/support/wrap_memcpy.c )
   s.files += %w( src/core/census/context.c )
   s.files += %w( src/core/census/initialize.c )
   s.files += %w( src/core/census/operation.c )

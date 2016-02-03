@@ -70,14 +70,14 @@ end
 desc 'Build the Windows gRPC DLLs for Ruby'
 task 'dlls' do
   grpc_config = ENV['GRPC_CONFIG'] || 'opt'
-  V = ENV['V'] || '0'
+  verbose = ENV['V'] || '0'
 
   env = 'CPPFLAGS="-D_WIN32_WINNT=0x600 -DUNICODE -D_UNICODE" '
   env += 'LDFLAGS=-static '
   env += 'SYSTEM=MINGW32 '
   env += 'EMBED_ZLIB=true '
   env += 'BUILDDIR=/tmp '
-  env += 'V=#{V} '
+  env += "V=#{verbose} "
   out = '/tmp/libs/opt/grpc-0.dll'
 
   w64 = { cross: 'x86_64-w64-mingw32', out: 'grpc_c.64.ruby' }
@@ -93,9 +93,9 @@ end
 
 desc 'Build the gem file under rake_compiler_dock'
 task 'gem:windows' do
-  V = ENV['V'] || '0'
+  verbose = ENV['V'] || '0'
 
-  docker_for_windows "bundle && rake cross native gem RUBY_CC_VERSION=2.3.0:2.2.2:2.1.6:2.0.0 GRPC_CONFIG=#{grpc_config} V=#{V}"
+  docker_for_windows "bundle && rake cross native gem RUBY_CC_VERSION=2.3.0:2.2.2:2.1.6:2.0.0 V=#{verbose}"
 end
 
 # Define dependencies between the suites.
@@ -104,6 +104,8 @@ task 'suite:idiomatic' => 'suite:wrapper'
 task 'suite:bidi' => 'suite:wrapper'
 task 'suite:server' => 'suite:wrapper'
 task 'suite:pb' => 'suite:server'
+
+task 'gem:windows' => 'dlls'
 
 desc 'Compiles the gRPC extension then runs all the tests'
 task all: ['suite:idiomatic', 'suite:bidi', 'suite:pb', 'suite:server']

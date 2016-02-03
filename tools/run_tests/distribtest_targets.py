@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2.7
 # Copyright 2016, Google Inc.
 # All rights reserved.
 #
@@ -85,4 +85,6 @@ def targets():
   """Gets list of supported targets"""
   return [CSharpDistribTest('linux', 'x64', 'wheezy'),
           CSharpDistribTest('linux', 'x64', 'jessie'),
-          CSharpDistribTest('linux', 'x86', 'jessie')]
+          CSharpDistribTest('linux', 'x86', 'jessie'),
+          CSharpDistribTest('linux', 'x64', 'centos7')]
+

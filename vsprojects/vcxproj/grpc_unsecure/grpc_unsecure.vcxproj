@@ -528,6 +528,8 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\support\tls_pthread.c">
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\support\wrap_memcpy.c">
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\census\grpc_context.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\census\grpc_filter.c">
