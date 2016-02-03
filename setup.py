@@ -82,14 +82,16 @@ CYTHON_HELPER_C_FILES = (
 
 CORE_C_FILES = ()
 if not "win32" in sys.platform:
-    CORE_C_FILES += tuple(grpc_core_dependencies.CORE_SOURCE_FILES)
+  CORE_C_FILES += tuple(grpc_core_dependencies.CORE_SOURCE_FILES)
 
 EXTENSION_INCLUDE_DIRECTORIES = (
     (PYTHON_STEM,) + CORE_INCLUDE + BORINGSSL_INCLUDE + ZLIB_INCLUDE)
 
-EXTENSION_LIBRARIES = ('m',)
+EXTENSION_LIBRARIES = ()
 if "linux" in sys.platform:
-    EXTENSION_LIBRARIES += ('rt',)
+  EXTENSION_LIBRARIES += ('rt',)
+if not "win32" in sys.platform:
+  EXTENSION_LIBRARIES += ('m',)
 
 DEFINE_MACROS = (('OPENSSL_NO_ASM', 1), ('_WIN32_WINNT', 0x600))
 
