@@ -191,7 +191,6 @@ int grpc_server_add_secure_http2_port(grpc_server *server, const char *addr,
     gpr_log(GPR_ERROR,
             "Unable to create secure server with credentials of type %s.",
             creds->type);
-    // UNREF sc
     goto error;
   }
   sc->channel_args = grpc_server_get_channel_args(server);
@@ -199,7 +198,6 @@ int grpc_server_add_secure_http2_port(grpc_server *server, const char *addr,
   /* resolve address */
   resolved = grpc_blocking_resolve_address(addr, "https");
   if (!resolved) {
-    // UNREF sc
     goto error;
   }
   state = gpr_malloc(sizeof(*state));
@@ -207,9 +205,6 @@ int grpc_server_add_secure_http2_port(grpc_server *server, const char *addr,
   grpc_closure_init(&state->destroy_closure, destroy_done, state);
   tcp = grpc_tcp_server_create(&state->destroy_closure);
   if (!tcp) {
-    // UNREF sc
-    // destroy resolved
-    // free state
     goto error;
   }
 
@@ -217,7 +212,6 @@ int grpc_server_add_secure_http2_port(grpc_server *server, const char *addr,
   state->tcp = tcp;
   state->sc = sc;
   state->creds = grpc_server_credentials_ref(creds);
-
   state->is_shutdown = 0;
   gpr_mu_init(&state->mu);
   gpr_ref_init(&state->refcount, 1);
@@ -238,7 +232,6 @@ int grpc_server_add_secure_http2_port(grpc_server *server, const char *addr,
   if (count == 0) {
     gpr_log(GPR_ERROR, "No address added out of total %d resolved",
             resolved->naddrs);
-    // UNREF tcp
     goto error;
   }
   if (count != resolved->naddrs) {
