@@ -151,15 +151,21 @@
   LD = $(LD_$(CONFIG))
   endif
   LDXX ?= $(LDXX_$(CONFIG))
-  ifeq ($(origin AR), default)
-  AR = ar
-  endif
   ifeq ($(SYSTEM),Linux)
+  ifeq ($(origin AR), default)
+  AR = ar rcs
+  endif
   STRIP ?= strip --strip-unneeded
   else
   ifeq ($(SYSTEM),Darwin)
+  ifeq ($(origin AR), default)
+  AR = libtool -o
+  endif
   STRIP ?= strip -x
   else
+  ifeq ($(origin AR), default)
+  AR = ar rcs
+  endif
   STRIP ?= strip
   endif
   endif
@@ -1478,7 +1484,7 @@
   	$(E) "[AR]      Creating $@"
   	$(Q) mkdir -p `dirname $@`
   	$(Q) rm -f $(LIBDIR)/$(CONFIG)/lib${lib.name}.a
-  	$(Q) $(AR) rcs $(LIBDIR)/$(CONFIG)/lib${lib.name}.a $(LIB${lib.name.upper()}_OBJS)
+  	$(Q) $(AR) $(LIBDIR)/$(CONFIG)/lib${lib.name}.a $(LIB${lib.name.upper()}_OBJS)
   % if lib.get('baselib', False):
   	$(Q) rm -rf $(BUILDDIR_ABSOLUTE)/tmp-merge-${lib.name}
   	$(Q) ( mkdir -p $(BUILDDIR_ABSOLUTE)/tmp-merge-${lib.name}/grpc ; <%text>\</%text>
