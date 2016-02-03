@@ -269,10 +269,6 @@ typedef unsigned __int64 uint64_t;
 #define GPR_FORBID_UNREACHABLE_CODE 1
 #endif
 
-/* For a common case, assume that the platform has a C99-like stdint.h */
-
-#include <stdint.h>
-
 /* Cache line alignment */
 #ifndef GPR_CACHELINE_SIZE_LOG
 #if defined(__i386__) || defined(__x86_64__)
