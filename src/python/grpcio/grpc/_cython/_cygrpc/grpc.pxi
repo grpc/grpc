@@ -28,10 +28,13 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 cimport libc.time
-from libc.stdint cimport int64_t, uint32_t, int32_t
 
 
 cdef extern from "grpc/_cython/loader.h":
+
+  ctypedef int int32_t
+  ctypedef unsigned uint32_t
+  ctypedef long int64_t
 
   int pygrpc_load_core(const char*)
 

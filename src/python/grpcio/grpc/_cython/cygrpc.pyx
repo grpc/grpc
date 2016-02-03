@@ -47,16 +47,19 @@ include "grpc/_cython/_cygrpc/server.pyx.pxi"
 
 cdef class _ModuleState:
 
+  cdef bint is_loaded
+
   def __cinit__(self):
     filename = pkg_resources.resource_filename(
-        __name__, '_windows/grpc_c.64.python')
-    directory = os.path.dirname(filename)
-    if not pygrpc_load_core(directory):
+        'grpc._cython', '_windows/grpc_c.64.python')
+    if not pygrpc_load_core(filename):
       raise ImportError('failed to load core gRPC library')
     grpc_init()
+    self.is_loaded = True
 
   def __dealloc__(self):
-    grpc_shutdown()
+    if self.is_loaded:
+      grpc_shutdown()
 
 _module_state = _ModuleState()
 
