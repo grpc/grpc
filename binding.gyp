@@ -676,6 +676,7 @@
         'src/core/support/time_precise.c',
         'src/core/support/time_win32.c',
         'src/core/support/tls_pthread.c',
+        'src/core/support/wrap_memcpy.c',
         'src/core/census/context.c',
         'src/core/census/initialize.c',
         'src/core/census/operation.c',
@@ -720,6 +721,11 @@
           'dependencies': [
             "boringssl",
             "z",
+          ]
+        }],
+        ['OS=="linux"', {
+          'ldflags': [
+            '-Wl,-wrap,memcpy'
           ]
         }]
       ],
