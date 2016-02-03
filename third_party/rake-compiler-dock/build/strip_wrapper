@@ -1,0 +1,30 @@
+#!/usr/bin/env ruby
+
+# Strip file on local folder instead of a Virtualbox shared folder
+# to work around this bug: https://www.virtualbox.org/ticket/8463
+
+require 'tempfile'
+require 'fileutils'
+
+strip = "#{File.basename($0)}.bin"
+
+files = ARGV.reject{|f| f=~/^-/ }.map do |arg|
+  tmp = Tempfile.new 'strip'
+  tmp.close
+  FileUtils.cp arg, tmp.path
+  [tmp, arg]
+end
+
+options = ARGV.select{|f| f=~/^-/ } + files.map{|t,o| t.path }
+
+unless system( strip, *options )
+  exit 127
+end
+code = $?.exitstatus
+
+files.each do |tmp, orig|
+  FileUtils.rm orig
+  FileUtils.cp tmp.path, orig
+end
+
+exit code

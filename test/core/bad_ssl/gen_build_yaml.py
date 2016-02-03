@@ -58,9 +58,7 @@ def main():
               'platforms': ['linux', 'posix', 'mac'],
               'deps': [
                   'grpc_test_util',
-                  'grpc',
-                  'gpr_test_util',
-                  'gpr'
+                  'grpc'
               ]
           }
       ],
@@ -76,9 +74,7 @@ def main():
               'deps': [
                   'bad_ssl_test_server',
                   'grpc_test_util',
-                  'grpc',
-                  'gpr_test_util',
-                  'gpr'
+                  'grpc'
               ]
           }
       for t in sorted(BAD_CLIENT_TESTS.keys())] + [
@@ -92,9 +88,7 @@ def main():
               'platforms': ['linux', 'posix', 'mac'],
               'deps': [
                   'grpc_test_util',
-                  'grpc',
-                  'gpr_test_util',
-                  'gpr'
+                  'grpc'
               ]
           }
       for t in sorted(BAD_CLIENT_TESTS.keys())]}

@@ -47,6 +47,7 @@
 #include <grpc++/server_builder.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
+#include <grpc/support/cpu.h>
 #include <grpc/support/histogram.h>
 #include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
@@ -83,15 +84,10 @@ static std::unique_ptr<Client> CreateClient(const ClientConfig& config) {
   abort();
 }
 
-static void LimitCores(int cores) {}
-
 static std::unique_ptr<Server> CreateServer(const ServerConfig& config) {
   gpr_log(GPR_INFO, "Starting server of type %s",
           ServerType_Name(config.server_type()).c_str());
 
-  if (config.core_limit() > 0) {
-    LimitCores(config.core_limit());
-  }
   switch (config.server_type()) {
     case ServerType::SYNC_SERVER:
       return CreateSynchronousServer(config);
@@ -136,6 +132,12 @@ class WorkerServiceImpl GRPC_FINAL : public WorkerService::Service {
     Status ret = RunServerBody(ctx, stream);
     grpc_profiler_stop();
     return ret;
+  }
+
+  Status CoreCount(ServerContext* ctx, const CoreRequest*,
+                   CoreResponse* resp) GRPC_OVERRIDE {
+    resp->set_cores(gpr_cpu_num_cores());
+    return Status::OK;
   }
 
  private:
