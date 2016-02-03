@@ -73,6 +73,10 @@ RUN pip install simplejson mako
 RUN curl https://get.docker.com/ | sh
 RUN apt-get remove --purge -y docker-engine
 
+##################
+# Build profiling
+RUN apt-get install -y time
+
 RUN mkdir /var/local/jenkins
 
 # Define the default command.

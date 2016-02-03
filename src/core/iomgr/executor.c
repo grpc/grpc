@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -77,7 +77,7 @@ static void closure_exec_thread_func(void *ignored) {
       gpr_mu_unlock(&g_executor.mu);
       break;
     } else {
-      grpc_exec_ctx_enqueue_list(&exec_ctx, &g_executor.closures);
+      grpc_exec_ctx_enqueue_list(&exec_ctx, &g_executor.closures, NULL);
     }
     gpr_mu_unlock(&g_executor.mu);
     grpc_exec_ctx_flush(&exec_ctx);
@@ -112,7 +112,7 @@ static void maybe_spawn_locked() {
   g_executor.pending_join = 1;
 }
 
-void grpc_executor_enqueue(grpc_closure *closure, int success) {
+void grpc_executor_enqueue(grpc_closure *closure, bool success) {
   gpr_mu_lock(&g_executor.mu);
   if (g_executor.shutting_down == 0) {
     grpc_closure_list_add(&g_executor.closures, closure, success);
@@ -133,7 +133,7 @@ void grpc_executor_shutdown() {
    * list below because we aren't accepting new work */
 
   /* Execute pending callbacks, some may be performing cleanups */
-  grpc_exec_ctx_enqueue_list(&exec_ctx, &g_executor.closures);
+  grpc_exec_ctx_enqueue_list(&exec_ctx, &g_executor.closures, NULL);
   grpc_exec_ctx_finish(&exec_ctx);
   GPR_ASSERT(grpc_closure_list_empty(g_executor.closures));
   if (pending_join) {

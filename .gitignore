@@ -5,12 +5,17 @@ libs
 objs
 
 # Python items
+python_build/
 .coverage*
 .eggs
 .tox
 htmlcov/
 dist/
 *.egg
+
+# Node installation output
+node_modules/
+src/node/extension_binary/
 
 # gcov coverage data
 reports
@@ -40,6 +45,9 @@ coverage
 # Makefile's cache
 cache.mk
 
+# Ruby's local gem information
+Gemfile.lock
+
 # Temporary test reports
 report.xml
 latency_trace.txt
@@ -56,7 +64,7 @@ out
 .ycm_extra_conf.py
 
 # XCode
-build/
+^build/
 *.pbxuser
 !default.pbxuser
 *.mode1v3

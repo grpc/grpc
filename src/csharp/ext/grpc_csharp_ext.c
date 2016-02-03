@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -835,6 +835,30 @@ grpcsharp_server_request_call(grpc_server *server, grpc_completion_queue *cq,
 
 /* Security */
 
+static char *default_pem_root_certs = NULL;
+
+static grpc_ssl_roots_override_result override_ssl_roots_handler(
+    char **pem_root_certs) {
+  if (!default_pem_root_certs) {
+    *pem_root_certs = NULL;
+    return GRPC_SSL_ROOTS_OVERRIDE_FAIL_PERMANENTLY;
+  }
+  *pem_root_certs = gpr_strdup(default_pem_root_certs);
+  return GRPC_SSL_ROOTS_OVERRIDE_OK;
+}
+
+GPR_EXPORT void GPR_CALLTYPE grpcsharp_override_default_ssl_roots(
+    const char *pem_root_certs) {
+  /*
+   * This currently wastes ~300kB of memory by keeping a copy of roots
+   * in a static variable, but for desktop/server use, the overhead
+   * is negligible. In the future, we might want to change the behavior
+   * for mobile (e.g. Xamarin).
+   */
+  default_pem_root_certs = gpr_strdup(pem_root_certs);
+  grpc_set_ssl_roots_override_callback(override_ssl_roots_handler);
+}
+
 GPR_EXPORT grpc_channel_credentials *GPR_CALLTYPE
 grpcsharp_ssl_credentials_create(const char *pem_root_certs,
                                  const char *key_cert_pair_cert_chain,
@@ -916,6 +940,7 @@ GPR_EXPORT grpc_call_credentials *GPR_CALLTYPE grpcsharp_composite_call_credenti
   grpc_call_credentials *creds2) {
   return grpc_composite_call_credentials_create(creds1, creds2, NULL);
 }
+
 
 /* Metadata credentials plugin */
 

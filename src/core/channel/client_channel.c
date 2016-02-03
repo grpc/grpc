@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -135,7 +135,7 @@ static void on_lb_policy_state_changed_locked(
 }
 
 static void on_lb_policy_state_changed(grpc_exec_ctx *exec_ctx, void *arg,
-                                       int iomgr_success) {
+                                       bool iomgr_success) {
   lb_policy_connectivity_watcher *w = arg;
 
   gpr_mu_lock(&w->chand->mu_config);
@@ -161,7 +161,7 @@ static void watch_lb_policy(grpc_exec_ctx *exec_ctx, channel_data *chand,
 }
 
 static void cc_on_config_changed(grpc_exec_ctx *exec_ctx, void *arg,
-                                 int iomgr_success) {
+                                 bool iomgr_success) {
   channel_data *chand = arg;
   grpc_lb_policy *lb_policy = NULL;
   grpc_lb_policy *old_lb_policy;
@@ -191,7 +191,8 @@ static void cc_on_config_changed(grpc_exec_ctx *exec_ctx, void *arg,
   old_lb_policy = chand->lb_policy;
   chand->lb_policy = lb_policy;
   if (lb_policy != NULL || chand->resolver == NULL /* disconnected */) {
-    grpc_exec_ctx_enqueue_list(exec_ctx, &chand->waiting_for_config_closures);
+    grpc_exec_ctx_enqueue_list(exec_ctx, &chand->waiting_for_config_closures,
+                               NULL);
   }
   if (lb_policy != NULL && chand->exit_idle_when_lb_policy_arrives) {
     GRPC_LB_POLICY_REF(lb_policy, "exit_idle");
@@ -249,7 +250,7 @@ static void cc_start_transport_op(grpc_exec_ctx *exec_ctx,
   channel_data *chand = elem->channel_data;
   grpc_resolver *destroy_resolver = NULL;
 
-  grpc_exec_ctx_enqueue(exec_ctx, op->on_consumed, 1);
+  grpc_exec_ctx_enqueue(exec_ctx, op->on_consumed, true, NULL);
 
   GPR_ASSERT(op->set_accept_stream == NULL);
   if (op->bind_pollset != NULL) {
@@ -268,7 +269,7 @@ static void cc_start_transport_op(grpc_exec_ctx *exec_ctx,
 
   if (op->send_ping != NULL) {
     if (chand->lb_policy == NULL) {
-      grpc_exec_ctx_enqueue(exec_ctx, op->send_ping, 0);
+      grpc_exec_ctx_enqueue(exec_ctx, op->send_ping, false, NULL);
     } else {
       grpc_lb_policy_ping_one(exec_ctx, chand->lb_policy, op->send_ping);
       op->bind_pollset = NULL;
@@ -310,15 +311,15 @@ static int cc_pick_subchannel(grpc_exec_ctx *exec_ctx, void *arg,
                               grpc_connected_subchannel **connected_subchannel,
                               grpc_closure *on_ready);
 
-static void continue_picking(grpc_exec_ctx *exec_ctx, void *arg, int success) {
+static void continue_picking(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
   continue_picking_args *cpa = arg;
   if (!success) {
-    grpc_exec_ctx_enqueue(exec_ctx, cpa->on_ready, 0);
+    grpc_exec_ctx_enqueue(exec_ctx, cpa->on_ready, false, NULL);
   } else if (cpa->connected_subchannel == NULL) {
     /* cancelled, do nothing */
   } else if (cc_pick_subchannel(exec_ctx, cpa->elem, cpa->initial_metadata,
                                 cpa->connected_subchannel, cpa->on_ready)) {
-    grpc_exec_ctx_enqueue(exec_ctx, cpa->on_ready, 1);
+    grpc_exec_ctx_enqueue(exec_ctx, cpa->on_ready, true, NULL);
   }
   gpr_free(cpa);
 }
@@ -346,7 +347,7 @@ static int cc_pick_subchannel(grpc_exec_ctx *exec_ctx, void *elemp,
       cpa = closure->cb_arg;
       if (cpa->connected_subchannel == connected_subchannel) {
         cpa->connected_subchannel = NULL;
-        grpc_exec_ctx_enqueue(exec_ctx, cpa->on_ready, 0);
+        grpc_exec_ctx_enqueue(exec_ctx, cpa->on_ready, false, NULL);
       }
     }
     gpr_mu_unlock(&chand->mu_config);
@@ -497,7 +498,7 @@ typedef struct {
 } external_connectivity_watcher;
 
 static void on_external_watch_complete(grpc_exec_ctx *exec_ctx, void *arg,
-                                       int iomgr_success) {
+                                       bool iomgr_success) {
   external_connectivity_watcher *w = arg;
   grpc_closure *follow_up = w->on_complete;
   grpc_pollset_set_del_pollset(exec_ctx, &w->chand->interested_parties,
