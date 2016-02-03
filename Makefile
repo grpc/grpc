@@ -340,7 +340,7 @@ endif
 endif
 
 ifeq ($(SYSTEM),Linux)
-LIBS = rt m pthread
+LIBS = dl rt m pthread
 LDFLAGS += -pthread
 endif
 
