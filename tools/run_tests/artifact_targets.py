@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2.7
 # Copyright 2016, Google Inc.
 # All rights reserved.
 #
@@ -78,6 +78,63 @@ def macos_arch_env(arch):
   else:
     raise Exception('Unsupported arch')
   return {'CFLAGS': arch_arg, 'LDFLAGS': arch_arg}
+
+
+class PythonArtifact:
+  """Builds Python artifacts."""
+
+  def __init__(self, platform, arch):
+    self.name = 'python_%s_%s' % (platform, arch)
+    self.platform = platform
+    self.arch = arch
+    self.labels = ['artifact', 'python', platform, arch]
+
+  def pre_build_jobspecs(self):
+      return []
+
+  def build_jobspec(self):
+    if self.platform == 'windows':
+      raise Exception('Not supported yet.')
+    else:
+      if self.platform == 'linux':
+        return create_docker_jobspec(self.name,
+            'tools/dockerfile/grpc_artifact_linux_%s' % self.arch,
+            'tools/run_tests/build_artifact_python.sh')
+      else:
+        return create_jobspec(self.name,
+                              ['tools/run_tests/build_artifact_python.sh'])
+
+  def __str__(self):
+    return self.name
+
+
+class RubyArtifact:
+  """Builds ruby native gem."""
+
+  def __init__(self, platform, arch):
+    self.name = 'ruby_native_gem_%s_%s' % (platform, arch)
+    self.platform = platform
+    self.arch = arch
+    self.labels = ['artifact', 'ruby', platform, arch]
+
+  def pre_build_jobspecs(self):
+    return []
+
+  def build_jobspec(self):
+    if self.platform == 'windows':
+      raise Exception("Not supported yet")
+    else:
+      if self.platform == 'linux':
+        environ = {}
+        if self.arch == 'x86':
+          environ['SETARCH_CMD'] = 'i386'
+        return create_docker_jobspec(self.name,
+            'tools/dockerfile/grpc_artifact_linux_%s' % self.arch,
+            'tools/run_tests/build_artifact_ruby.sh',
+            environ=environ)
+      else:
+        return create_jobspec(self.name,
+                              ['tools/run_tests/build_artifact_ruby.sh'])
 
 
 class CSharpExtArtifact:
@@ -164,7 +221,11 @@ class NodeExtArtifact:
 
 def targets():
   """Gets list of supported targets"""
-  return [Cls(platform, arch)
-          for Cls in (CSharpExtArtifact, NodeExtArtifact)
-          for platform in ('linux', 'macos', 'windows')
-          for arch in ('x86', 'x64')]
+  return ([Cls(platform, arch)
+           for Cls in (CSharpExtArtifact, NodeExtArtifact)
+           for platform in ('linux', 'macos', 'windows')
+           for arch in ('x86', 'x64')] +
+          [PythonArtifact('linux', 'x86'),
+           PythonArtifact('linux', 'x64'),
+           RubyArtifact('linux', 'x86'),
+           RubyArtifact('linux', 'x64')])

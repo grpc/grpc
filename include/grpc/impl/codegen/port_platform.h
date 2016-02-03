@@ -80,6 +80,7 @@
 #define GPR_ARCH_64 1
 #define GPR_GETPID_IN_PROCESS_H 1
 #define GPR_WINSOCK_SOCKET 1
+#define GPR_WINDOWS_SUBPROCESS 1
 #ifdef __GNUC__
 #define GPR_GCC_ATOMIC 1
 #define GPR_GCC_TLS 1
@@ -94,6 +95,7 @@
 #define GPR_WIN32 1
 #define GPR_GETPID_IN_PROCESS_H 1
 #define GPR_WINSOCK_SOCKET 1
+#define GPR_WINDOWS_SUBPROCESS 1
 #ifdef __GNUC__
 #define GPR_GCC_ATOMIC 1
 #define GPR_GCC_TLS 1
@@ -151,18 +153,13 @@
 #if __GLIBC_PREREQ(2, 10)
 #define GPR_LINUX_SOCKETUTILS 1
 #endif
-#if __GLIBC_PREREQ(2, 17)
+#endif
 #define GPR_LINUX_ENV 1
-#endif
-#endif
 #ifndef GPR_LINUX_EVENTFD
 #define GPR_POSIX_NO_SPECIAL_WAKEUP_FD 1
 #endif
 #ifndef GPR_LINUX_SOCKETUTILS
 #define GPR_POSIX_SOCKETUTILS
-#endif
-#ifndef GPR_LINUX_ENV
-#define GPR_POSIX_ENV 1
 #endif
 #define GPR_POSIX_FILE 1
 #define GPR_POSIX_STRING 1

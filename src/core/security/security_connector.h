@@ -209,6 +209,9 @@ grpc_security_status grpc_ssl_channel_security_connector_create(
 /* Gets the default ssl roots. */
 size_t grpc_get_default_ssl_roots(const unsigned char **pem_root_certs);
 
+/* Exposed for TESTING ONLY!. */
+gpr_slice grpc_get_default_ssl_roots_for_testing(void);
+
 /* Config for ssl servers. */
 typedef struct {
   unsigned char **pem_private_keys;

@@ -76,16 +76,40 @@ def _expect_compile(compiler, source_string, error_message):
         "Diagnostics found a compilation environment issue:\n{}"
             .format(error_message))
 
-def diagnose_build_ext_error(build_ext, error):
-  {
-      errors.CompileError: diagnose_compile_error
-  }[type(error)](build_ext, error)
-
 def diagnose_compile_error(build_ext, error):
-  """Attempt to run a few test files through the compiler to see if we can
-     diagnose the reason for the compile failure."""
+  """Attempt to diagnose an error during compilation."""
   for c_check, message in C_CHECKS.items():
     _expect_compile(build_ext.compiler, c_check, message)
-  raise commands.CommandError(
-      "\n\nWe could not diagnose your build failure. Please file an issue at "
-      "http://www.github.com/grpc/grpc with `[Python install]` in the title.")
+  python_sources = [
+      source for source in build_ext.get_source_files()
+      if source.startswith('./src/python') and source.endswith('c')
+  ]
+  for source in python_sources:
+    if not os.path.isfile(source):
+      raise commands.CommandError(
+          ("Diagnostics found a missing Python extension source file:\n{}\n\n"
+           "This is usually because the Cython sources haven't been transpiled "
+           "into C yet and you're building from source.\n"
+           "Try setting the environment variable "
+           "`GRPC_PYTHON_BUILD_WITH_CYTHON=1` when invoking `setup.py` or "
+           "when using `pip`, e.g.:\n\n"
+           "pip install -rrequirements.txt\n"
+           "GRPC_PYTHON_BUILD_WITH_CYTHON=1 pip install .")
+            .format(source)
+          )
+
+
+_ERROR_DIAGNOSES = {
+    errors.CompileError: diagnose_compile_error
+}
+
+def diagnose_build_ext_error(build_ext, error, formatted):
+  diagnostic = _ERROR_DIAGNOSES.get(type(error))
+  if diagnostic is None:
+    raise commands.CommandError(
+        "\n\nWe could not diagnose your build failure. Please file an issue at "
+        "http://www.github.com/grpc/grpc with `[Python install]` in the title."
+        "\n\n{}".format(formatted))
+  else:
+    diagnostic(build_ext, error)
+

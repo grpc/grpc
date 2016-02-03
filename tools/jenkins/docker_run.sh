@@ -34,7 +34,12 @@
 set -e
 
 mkdir -p /var/local/git
-git clone --recursive /var/local/jenkins/grpc /var/local/git/grpc
+git clone --recursive "$EXTERNAL_GIT_ROOT" /var/local/git/grpc
+
+if [ -x "$(command -v rvm)" ]
+then
+  rvm use ruby-2.1
+fi
 
 cd /var/local/git/grpc
 
