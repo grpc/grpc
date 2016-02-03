@@ -30,7 +30,3 @@
 FROM mono:4.2.2.30
 
 RUN apt-get update && apt-get install -y git unzip
-
-# TODO(jtattermusch): Currently P/Invoke to dlopen will fail without libc6-dev
-# being installed. Figure out how to workaround this.
-RUN apt-get update && apt-get install -y libc6-dev
