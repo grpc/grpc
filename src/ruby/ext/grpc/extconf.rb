@@ -92,7 +92,8 @@ if grpc_config == 'gcov'
   $LDFLAGS << ' -fprofile-arcs -ftest-coverage -rdynamic'
 end
 
-$LDFLAGS << ' -Wl,-wrap,memcpy'
+$LDFLAGS << ' -Wl,-wrap,memcpy' if RUBY_PLATFORM =~ /linux/
+$LDFLAGS << ' -static' if windows
 
 $CFLAGS << ' -std=c99 '
 $CFLAGS << ' -Wall '
