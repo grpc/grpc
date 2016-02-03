@@ -167,7 +167,6 @@ def targets():
           RubyDistribTest('linux', 'x64', 'fedora22'),
           RubyDistribTest('linux', 'x64', 'fedora23'),
           RubyDistribTest('linux', 'x64', 'opensuse'),
-          RubyDistribTest('linux', 'x64', 'arch'),
           RubyDistribTest('linux', 'x64', 'ubuntu1204'),
           RubyDistribTest('linux', 'x64', 'ubuntu1404'),
           RubyDistribTest('linux', 'x64', 'ubuntu1504'),
