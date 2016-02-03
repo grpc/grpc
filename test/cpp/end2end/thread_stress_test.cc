@@ -95,7 +95,7 @@ class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
     MaybeEchoDeadline(context, request, response);
     if (request->has_param() && request->param().client_cancel_after_us()) {
       {
-        std::unique_lock<std::mutex> lock(mu_);
+        unique_lock<mutex> lock(mu_);
         signal_client_ = true;
       }
       while (!context->IsCancelled()) {
@@ -160,13 +160,13 @@ class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
   }
 
   bool signal_client() {
-    std::unique_lock<std::mutex> lock(mu_);
+    unique_lock<mutex> lock(mu_);
     return signal_client_;
   }
 
  private:
   bool signal_client_;
-  std::mutex mu_;
+  mutex mu_;
 };
 
 class TestServiceImplDupPkg
@@ -262,7 +262,7 @@ class AsyncClientEnd2endTest : public ::testing::Test {
   }
 
   void Wait() {
-    std::unique_lock<std::mutex> l(mu_);
+    unique_lock<mutex> l(mu_);
     while (rpcs_outstanding_ != 0) {
       cv_.wait(l);
     }
@@ -287,7 +287,7 @@ class AsyncClientEnd2endTest : public ::testing::Test {
       call->response_reader->Finish(&call->response, &call->status,
                                     (void*)call);
 
-      std::unique_lock<std::mutex> l(mu_);
+      unique_lock<mutex> l(mu_);
       rpcs_outstanding_++;
     }
   }
@@ -303,7 +303,7 @@ class AsyncClientEnd2endTest : public ::testing::Test {
 
       bool notify;
       {
-        std::unique_lock<std::mutex> l(mu_);
+        unique_lock<mutex> l(mu_);
         rpcs_outstanding_--;
         notify = (rpcs_outstanding_ == 0);
       }
@@ -315,8 +315,8 @@ class AsyncClientEnd2endTest : public ::testing::Test {
 
   CommonStressTest common_;
   CompletionQueue cq_;
-  std::mutex mu_;
-  std::condition_variable cv_;
+  mutex mu_;
+  condition_variable cv_;
   int rpcs_outstanding_;
 };
 
