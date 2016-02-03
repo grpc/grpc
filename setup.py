@@ -88,7 +88,7 @@ EXTENSION_INCLUDE_DIRECTORIES = (
     (PYTHON_STEM,) + CORE_INCLUDE + BORINGSSL_INCLUDE + ZLIB_INCLUDE)
 
 EXTENSION_LIBRARIES = ('m',)
-if not "darwin" in sys.platform and not "win32" in sys.platform:
+if "linux" in sys.platform:
     EXTENSION_LIBRARIES += ('rt',)
 
 DEFINE_MACROS = (('OPENSSL_NO_ASM', 1), ('_WIN32_WINNT', 0x600))
