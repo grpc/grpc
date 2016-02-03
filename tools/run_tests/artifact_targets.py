@@ -96,8 +96,9 @@ class PythonArtifact:
     if self.platform == 'windows':
       raise Exception('Not supported yet.')
     else:
+      environ = {}
       if self.platform == 'linux':
-        environ = {}
+        environ['BDIST_WHEEL_MAYBE'] = 'bdist_wheel'
         if self.arch == 'x86':
           environ['SETARCH_CMD'] = 'linux32'
         return create_docker_jobspec(self.name,
@@ -105,8 +106,10 @@ class PythonArtifact:
             'tools/run_tests/build_artifact_python.sh',
             environ=environ)
       else:
+        environ['SKIP_PIP_INSTALL'] = 'TRUE'
         return create_jobspec(self.name,
-                              ['tools/run_tests/build_artifact_python.sh'])
+                              ['tools/run_tests/build_artifact_python.sh'],
+                              environ=environ)
 
   def __str__(self):
     return self.name
@@ -231,6 +234,7 @@ def targets():
            for arch in ('x86', 'x64')] +
           [PythonArtifact('linux', 'x86'),
            PythonArtifact('linux', 'x64'),
+           PythonArtifact('macos', 'x64'),
            RubyArtifact('linux', 'x86'),
            RubyArtifact('linux', 'x64'),
            RubyArtifact('macos', 'x64')])
