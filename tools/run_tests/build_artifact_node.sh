@@ -27,22 +27,21 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# This script is invoked by build_docker_* inside a docker
-# container. You should never need to call this script on your own.
 
-set -e
+set -ex
 
-mkdir -p /var/local/git
-git clone --recursive "$EXTERNAL_GIT_ROOT" /var/local/git/grpc
+cd $(dirname $0)/../..
 
-if [ -x "$(command -v rvm)" ]
-then
-  rvm use ruby-2.1
-fi
+rm -rf build
 
-cd /var/local/git/grpc
+mkdir -p artifacts
 
-nvm use 4
+npm update
 
-$RUN_COMMAND
+node_versions=( 0.10.41 0.12.0 1.0.0 1.1.0 2.0.0 3.0.0 4.0.0 5.0.0 )
+
+for version in ${node_versions[@]}
+do
+  node-pre-gyp configure rebuild package testpackage --target=$version --target_arch=$1
+  cp -r build/stage/* artifacts/
+done
