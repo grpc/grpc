@@ -148,7 +148,9 @@ static void destroy_done(grpc_exec_ctx *exec_ctx, void *statep, bool success) {
     state->destroy_callback->cb(exec_ctx, state->destroy_callback->cb_arg,
                                 success);
   }
-  grpc_security_connector_shutdown(exec_ctx, state->sc);
+  if (state->sc) {
+    grpc_security_connector_shutdown(exec_ctx, state->sc);
+  }
   state_unref(state);
 }
 
