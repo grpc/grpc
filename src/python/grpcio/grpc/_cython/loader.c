@@ -31,6 +31,8 @@
  *
  */
 
+#include "loader.h"
+
 #if GPR_WIN32
 #include <tchar.h>
 
