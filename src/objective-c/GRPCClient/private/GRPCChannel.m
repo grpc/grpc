@@ -36,6 +36,7 @@
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
 
 /**
  * Returns @c grpc_channel_credentials from the specifie @c path. If the file at the path could not
@@ -57,6 +58,17 @@ static grpc_channel_credentials *CertificatesAtPath(NSString *path, NSError **er
   return grpc_ssl_credentials_create(contentInASCII.bytes, NULL, NULL);
 }
 
+void freeChannelArgs(grpc_channel_args *channel_args) {
+  for (size_t i = 0; i < channel_args->num_args; ++i) {
+    grpc_arg *arg = &channel_args->args[i];
+    gpr_free(arg->key);
+    if (arg->type == GRPC_ARG_STRING) {
+      gpr_free(arg->value.string);
+    }
+  }
+  gpr_free(channel_args);
+}
+
 /**
  * Allocates a @c grpc_channel_args and populates it with the options specified in the
  * @c dictionary. Keys must be @c NSString.  If the value responds to @c @selector(UTF8String) then
@@ -68,31 +80,39 @@ grpc_channel_args * buildChannelArgs(NSDictionary *dictionary) {
     return NULL;
   }
 
-  NSUInteger argCount = [dictionary count];
+  NSArray *keys = [dictionary allKeys];
+  NSUInteger argCount = [keys count];
 
-  // Allocate memory for both the individual args and their container
-  grpc_channel_args *channelArgs = gpr_malloc(sizeof(grpc_channel_args)
-                                              + argCount * sizeof(grpc_arg));
+  grpc_channel_args *channelArgs = gpr_malloc(sizeof(grpc_channel_args));
   channelArgs->num_args = argCount;
-  channelArgs->args = (grpc_arg *) (channelArgs + sizeof(grpc_channel_args));
+  channelArgs->args = gpr_malloc(argCount * sizeof(grpc_arg));
 
-  __block NSUInteger argIndex = 0;
-  [dictionary enumerateKeysAndObjectsUsingBlock:^(id  _Nonnull key, id  _Nonnull obj,
-                                                  BOOL * _Nonnull stop) {
-    // use of UTF8String assumes that grpc won't modify the pointers
-    grpc_arg *arg = &channelArgs->args[argIndex++];
-    arg->key = (char *) [key UTF8String]; // allow exception to be raised if not supported
+  // TODO(kriswuollett) Check that keys adhere to GRPC core library requirements
 
-    if ([obj respondsToSelector:@selector(UTF8String)]) {
+  Class invalidValueType = NULL;
+
+  for (NSUInteger i = 0; i < argCount; ++i) {
+    grpc_arg *arg = &channelArgs->args[i];
+    arg->key = gpr_strdup([keys[i] UTF8String]);
+
+    id value = dictionary[keys[i]];
+    if ([value respondsToSelector:@selector(UTF8String)]) {
       arg->type = GRPC_ARG_STRING;
-      arg->value.string = (char *) [obj UTF8String];
-    } else if ([obj respondsToSelector:@selector(intValue)]) {
+      arg->value.string = gpr_strdup([value UTF8String]);
+    } else if ([value respondsToSelector:@selector(intValue)]) {
       arg->type = GRPC_ARG_INTEGER;
-      arg->value.integer = [obj intValue];
+      arg->value.integer = [value intValue];
     } else {
-      [NSException raise:NSInvalidArgumentException format:@"Invalid value type: %@", [obj class]];
+      invalidValueType = [value class];
+      break;
     }
-  }];
+  }
+
+  if (invalidValueType) {
+    freeChannelArgs(channelArgs);
+    [NSException raise:NSInvalidArgumentException
+                format:@"Invalid value type: %@", invalidValueType];
+  }
 
   return channelArgs;
 }
@@ -135,7 +155,7 @@ grpc_channel_args * buildChannelArgs(NSDictionary *dictionary) {
   // TODO(jcanizales): Be sure to add a test with a server that closes the connection prematurely,
   // as in the past that made this call to crash.
   grpc_channel_destroy(_unmanagedChannel);
-  gpr_free(_channelArgs);
+  freeChannelArgs(_channelArgs);
 }
 
 + (GRPCChannel *)secureChannelWithHost:(NSString *)host {
