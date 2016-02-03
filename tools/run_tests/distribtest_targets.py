@@ -108,6 +108,33 @@ class PythonDistribTest(object):
     return self.name
 
 
+class RubyDistribTest(object):
+  """Tests Ruby package"""
+
+  def __init__(self, platform, arch, docker_suffix):
+    self.name = 'ruby_%s_%s_%s' % (platform, arch, docker_suffix)
+    self.platform = platform
+    self.arch = arch
+    self.docker_suffix = docker_suffix
+    self.labels = ['distribtest', 'ruby', platform, arch, docker_suffix]
+
+  def pre_build_jobspecs(self):
+    return []
+
+  def build_jobspec(self):
+    if not self.platform == 'linux':
+      raise Exception("Not supported yet.")
+
+    return create_docker_jobspec(self.name,
+          'tools/dockerfile/distribtest/ruby_%s_%s' % (
+              self.docker_suffix,
+              self.arch),
+          'test/distrib/ruby/run_distrib_test.sh')
+
+  def __str__(self):
+    return self.name
+
+
 def targets():
   """Gets list of supported targets"""
   return [CSharpDistribTest('linux', 'x64', 'wheezy'),
@@ -130,5 +157,21 @@ def targets():
           PythonDistribTest('linux', 'x64', 'ubuntu1504'),
           PythonDistribTest('linux', 'x64', 'ubuntu1510'),
           PythonDistribTest('linux', 'x64', 'ubuntu1604'),
+          RubyDistribTest('linux', 'x64', 'wheezy'),
+          RubyDistribTest('linux', 'x64', 'jessie'),
+          RubyDistribTest('linux', 'x86', 'jessie'),
+          RubyDistribTest('linux', 'x64', 'centos6'),
+          RubyDistribTest('linux', 'x64', 'centos7'),
+          RubyDistribTest('linux', 'x64', 'fedora20'),
+          RubyDistribTest('linux', 'x64', 'fedora21'),
+          RubyDistribTest('linux', 'x64', 'fedora22'),
+          RubyDistribTest('linux', 'x64', 'fedora23'),
+          RubyDistribTest('linux', 'x64', 'opensuse'),
+          RubyDistribTest('linux', 'x64', 'arch'),
+          RubyDistribTest('linux', 'x64', 'ubuntu1204'),
+          RubyDistribTest('linux', 'x64', 'ubuntu1404'),
+          RubyDistribTest('linux', 'x64', 'ubuntu1504'),
+          RubyDistribTest('linux', 'x64', 'ubuntu1510'),
+          RubyDistribTest('linux', 'x64', 'ubuntu1604'),
           ]
 
