@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\test\core\json\json_rewrite_test.c">
+      <Filter>test\core\json</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="test">
+      <UniqueIdentifier>{09577e2a-3cfa-9c26-2e65-0655c9b4d057}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core">
+      <UniqueIdentifier>{c06009c2-6694-47e5-0841-b423236e1829}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core\json">
+      <UniqueIdentifier>{607f4cb4-9d27-6ab0-5765-7da9dabb2d39}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

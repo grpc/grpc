@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\multiple_server_queues_test.c">
+      <Filter>test\core\end2end</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="test">
+      <UniqueIdentifier>{30655558-5c27-1d63-199e-218ac46c1f08}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core">
+      <UniqueIdentifier>{a5848e43-99b7-5e20-d40d-253cbc2e8884}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core\end2end">
+      <UniqueIdentifier>{4a294a4a-1251-6ffd-ef9c-01f7722fcc68}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+
