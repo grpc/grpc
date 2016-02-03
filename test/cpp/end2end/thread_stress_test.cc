@@ -34,7 +34,6 @@
 #include <mutex>
 #include <thread>
 
-#include <gflags/gflags.h>
 #include <grpc++/channel.h>
 #include <grpc++/client_context.h>
 #include <grpc++/create_channel.h>
@@ -56,15 +55,8 @@ using grpc::testing::EchoRequest;
 using grpc::testing::EchoResponse;
 using std::chrono::system_clock;
 
-// In some distros, gflags is in the namespace google, and in some others,
-// in gflags. This hack is enabling us to find both.
-namespace google {}
-namespace gflags {}
-using namespace google;
-using namespace gflags;
-
-DEFINE_int32(num_threads, 100, "Number of threads");
-DEFINE_int32(num_rpcs, 1000, "Number of RPCs per thread");
+const int kNumThreads = 100; // Number of threads
+const int kNumRpcs = 1000; // Number of RPCs per thread
 
 namespace grpc {
 namespace testing {
@@ -239,11 +231,11 @@ static void SendRpc(grpc::testing::EchoTestService::Stub* stub, int num_rpcs) {
 TEST_F(End2endTest, ThreadStress) {
   common_.ResetStub();
   std::vector<std::thread*> threads;
-  for (int i = 0; i < FLAGS_num_threads; ++i) {
+  for (int i = 0; i < kNumThreads; ++i) {
     threads.push_back(
-        new std::thread(SendRpc, common_.GetStub(), FLAGS_num_rpcs));
+        new std::thread(SendRpc, common_.GetStub(), kNumRpcs));
   }
-  for (int i = 0; i < FLAGS_num_threads; ++i) {
+  for (int i = 0; i < kNumThreads; ++i) {
     threads[i]->join();
     delete threads[i];
   }
@@ -324,22 +316,22 @@ class AsyncClientEnd2endTest : public ::testing::Test {
 TEST_F(AsyncClientEnd2endTest, ThreadStress) {
   common_.ResetStub();
   std::vector<std::thread*> send_threads, completion_threads;
-  for (int i = 0; i < FLAGS_num_threads; ++i) {
+  for (int i = 0; i < kNumThreads; ++i) {
     completion_threads.push_back(new std::thread(
         &AsyncClientEnd2endTest_ThreadStress_Test::AsyncCompleteRpc, this));
   }
-  for (int i = 0; i < FLAGS_num_threads; ++i) {
+  for (int i = 0; i < kNumThreads; ++i) {
     send_threads.push_back(
         new std::thread(&AsyncClientEnd2endTest_ThreadStress_Test::AsyncSendRpc,
-                        this, FLAGS_num_rpcs));
+                        this, kNumRpcs));
   }
-  for (int i = 0; i < FLAGS_num_threads; ++i) {
+  for (int i = 0; i < kNumThreads; ++i) {
     send_threads[i]->join();
     delete send_threads[i];
   }
 
   Wait();
-  for (int i = 0; i < FLAGS_num_threads; ++i) {
+  for (int i = 0; i < kNumThreads; ++i) {
     completion_threads[i]->join();
     delete completion_threads[i];
   }
@@ -349,7 +341,6 @@ TEST_F(AsyncClientEnd2endTest, ThreadStress) {
 }  // namespace grpc
 
 int main(int argc, char** argv) {
-  ParseCommandLineFlags(&argc, &argv, true);
   grpc_test_init(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
