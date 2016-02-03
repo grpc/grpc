@@ -151,15 +151,21 @@
   LD = $(LD_$(CONFIG))
   endif
   LDXX ?= $(LDXX_$(CONFIG))
-  ifeq ($(origin AR), default)
-  AR = ar
-  endif
   ifeq ($(SYSTEM),Linux)
+  ifeq ($(origin AR), default)
+  AR = ar rcs
+  endif
   STRIP ?= strip --strip-unneeded
   else
   ifeq ($(SYSTEM),Darwin)
+  ifeq ($(origin AR), default)
+  AR = libtool -o
+  endif
   STRIP ?= strip -x
   else
+  ifeq ($(origin AR), default)
+  AR = ar rcs
+  endif
   STRIP ?= strip
   endif
   endif
@@ -468,6 +474,7 @@
   ifeq ($(EMBED_ZLIB),true)
   ZLIB_DEP = $(LIBDIR)/$(CONFIG)/libz.a
   ZLIB_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/libz.a
+  ZLIB_MERGE_OBJS = $(LIBZ_OBJS)
   CPPFLAGS += -Ithird_party/zlib
   LDFLAGS += -L$(LIBDIR)/$(CONFIG)/zlib
   else
@@ -510,6 +517,7 @@
   ifeq ($(EMBED_OPENSSL),true)
   OPENSSL_DEP += $(LIBDIR)/$(CONFIG)/libboringssl.a
   OPENSSL_MERGE_LIBS += $(LIBDIR)/$(CONFIG)/libboringssl.a
+  OPENSSL_MERGE_OBJS += $(LIBBORINGSSL_OBJS)
   # need to prefix these to ensure overriding system libraries
   CPPFLAGS := -Ithird_party/boringssl/include $(CPPFLAGS)
   else # EMBED_OPENSSL=false
@@ -1474,38 +1482,25 @@
   % if lib.language == 'c++':
    $(PROTOBUF_DEP)\
   % endif
-   $(LIB${lib.name.upper()}_OBJS)
+   $(LIB${lib.name.upper()}_OBJS) \
+  % if lib.get('baselib', False):
+   $(ZLIB_MERGE_OBJS) \
+  % if lib.get('secure', 'check') == True:
+   $(OPENSSL_MERGE_OBJS) \
+  % endif
+  % endif
+
   	$(E) "[AR]      Creating $@"
   	$(Q) mkdir -p `dirname $@`
   	$(Q) rm -f $(LIBDIR)/$(CONFIG)/lib${lib.name}.a
-  	$(Q) $(AR) rcs $(LIBDIR)/$(CONFIG)/lib${lib.name}.a $(LIB${lib.name.upper()}_OBJS)
+  	$(Q) $(AR) $(LIBDIR)/$(CONFIG)/lib${lib.name}.a $(LIB${lib.name.upper()}_OBJS) \
   % if lib.get('baselib', False):
-  	$(Q) rm -rf $(BUILDDIR_ABSOLUTE)/tmp-merge-${lib.name}
-  	$(Q) ( mkdir -p $(BUILDDIR_ABSOLUTE)/tmp-merge-${lib.name}/grpc ; <%text>\</%text>
-  	       cd $(BUILDDIR_ABSOLUTE)/tmp-merge-${lib.name}/grpc ; <%text>\</%text>
-  	       $(AR) x $(LIBDIR)/$(CONFIG)/lib${lib.name}.a )
-  	$(Q) for l in $(ZLIB_MERGE_LIBS) ; do ( <%text>\</%text>
-  	       mkdir -p $(BUILDDIR_ABSOLUTE)/tmp-merge-${lib.name}/zlib ; <%text>\</%text>
-  	       cd $(BUILDDIR_ABSOLUTE)/tmp-merge-${lib.name}/zlib ; <%text>\</%text>
-  	       <%text>$(AR) x $${l}</%text> ) ; done
-  	$(Q) for l in $(ZLIB_MERGE_LIBS) ; do ( <%text>\</%text>
-  	       mkdir -p $(BUILDDIR_ABSOLUTE)/tmp-merge-${lib.name}/zlib ; <%text>\</%text>
-  	       cd $(BUILDDIR_ABSOLUTE)/tmp-merge-${lib.name}/zlib ; <%text>\</%text>
-  	       <%text>$(AR) x $${l}</%text> ) ; done
+   $(ZLIB_MERGE_OBJS) \
   % if lib.get('secure', 'check') == True:
-  	$(Q) for l in $(OPENSSL_MERGE_LIBS) ; do ( <%text>\</%text>
-  	       mkdir -p $(BUILDDIR_ABSOLUTE)/tmp-merge-${lib.name}/ssl ; <%text>\</%text>
-  	       cd $(BUILDDIR_ABSOLUTE)/tmp-merge-${lib.name}/ssl ; <%text>\</%text>
-  	       <%text>$(AR) x $${l}</%text> ) ; done
-  	$(Q) for l in $(OPENSSL_MERGE_LIBS) ; do ( <%text>\</%text>
-  	       mkdir -p $(BUILDDIR_ABSOLUTE)/tmp-merge-${lib.name}/ssl ; <%text>\</%text>
-  	       cd $(BUILDDIR_ABSOLUTE)/tmp-merge-${lib.name}/ssl ; <%text>\</%text>
-  	       <%text>$(AR) x $${l}</%text> ) ; done
+   $(OPENSSL_MERGE_OBJS) \
   % endif
-  	$(Q) rm -f $(LIBDIR)/$(CONFIG)/lib${lib.name}.a $(BUILDDIR_ABSOLUTE)/tmp-merge-${lib.name}/*/__.SYMDEF*
-  	$(Q) ar rcs $(LIBDIR)/$(CONFIG)/lib${lib.name}.a $(BUILDDIR_ABSOLUTE)/tmp-merge-${lib.name}/*/*
-  	$(Q) rm -rf $(BUILDDIR_ABSOLUTE)/tmp-merge-${lib.name}
   % endif
+
   ifeq ($(SYSTEM),Darwin)
   	$(Q) ranlib $(LIBDIR)/$(CONFIG)/lib${lib.name}.a
   endif
