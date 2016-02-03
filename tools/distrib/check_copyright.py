@@ -124,7 +124,7 @@ def log(cond, why, filename):
 
 # scan files, validate the text
 ok = True
-for filename in subprocess.check_output('git ls-tree -r --name-only -r HEAD',
+for filename in subprocess.check_output('git ls-tree -r --name-only -r HEAD | grep -v ^third_party/',
                                         shell=True).splitlines():
   if filename in KNOWN_BAD: continue
   ext = os.path.splitext(filename)[1]
