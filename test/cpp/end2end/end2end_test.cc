@@ -65,40 +65,6 @@ namespace grpc {
 namespace testing {
 namespace {
 
-const char* kServerCancelAfterReads = "cancel_after_reads";
-
-// When echo_deadline is requested, deadline seen in the ServerContext is set in
-// the response in seconds.
-void MaybeEchoDeadline(ServerContext* context, const EchoRequest* request,
-                       EchoResponse* response) {
-  if (request->has_param() && request->param().echo_deadline()) {
-    gpr_timespec deadline = gpr_inf_future(GPR_CLOCK_REALTIME);
-    if (context->deadline() != system_clock::time_point::max()) {
-      Timepoint2Timespec(context->deadline(), &deadline);
-    }
-    response->mutable_param()->set_request_deadline(deadline.tv_sec);
-  }
-}
-
-void CheckServerAuthContext(const ServerContext* context,
-                            const grpc::string& expected_client_identity) {
-  std::shared_ptr<const AuthContext> auth_ctx = context->auth_context();
-  std::vector<grpc::string_ref> ssl =
-      auth_ctx->FindPropertyValues("transport_security_type");
-  EXPECT_EQ(1u, ssl.size());
-  EXPECT_EQ("ssl", ToString(ssl[0]));
-  if (expected_client_identity.length() == 0) {
-    EXPECT_TRUE(auth_ctx->GetPeerIdentityPropertyName().empty());
-    EXPECT_TRUE(auth_ctx->GetPeerIdentity().empty());
-    EXPECT_FALSE(auth_ctx->IsPeerAuthenticated());
-  } else {
-    auto identity = auth_ctx->GetPeerIdentity();
-    EXPECT_TRUE(auth_ctx->IsPeerAuthenticated());
-    EXPECT_EQ(1u, identity.size());
-    EXPECT_EQ(expected_client_identity, identity[0]);
-  }
-}
-
 bool CheckIsLocalhost(const grpc::string& addr) {
   const grpc::string kIpv6("ipv6:[::1]:");
   const grpc::string kIpv4MappedIpv6("ipv6:[::ffff:127.0.0.1]:");
