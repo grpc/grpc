@@ -46,6 +46,7 @@
 #include <grpc/support/time.h>
 #include <gtest/gtest.h>
 
+#include "src/core/surface/api_trace.h"
 #include "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
@@ -297,7 +298,7 @@ class AsyncClientEnd2endTest : public ::testing::Test {
       void* got_tag;
       bool ok = false;
       if (!cq_.Next(&got_tag, &ok)) break;
-      Call* call = static_cast<Call*>(got_tag);
+      AsyncClientCall* call = static_cast<AsyncClientCall*>(got_tag);
       GPR_ASSERT(ok);
       delete call;
 
