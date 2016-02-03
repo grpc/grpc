@@ -179,12 +179,9 @@ std::unique_ptr<ScenarioResult> RunScenario(
     }
   }
 
-<<<<<<< HEAD
-=======
   // Setup the hosts and core counts
   auto hosts_cores = get_hosts_and_cores(workers);
 
->>>>>>> master
   // if num_clients is set to <=0, do dynamic sizing: all workers
   // except for servers are clients
   if (num_clients <= 0) {
@@ -272,14 +269,9 @@ std::unique_ptr<ScenarioResult> RunScenario(
   // where class contained in std::vector must have a copy constructor
   auto* clients = new ClientData[num_clients];
   for (size_t i = 0; i < num_clients; i++) {
-<<<<<<< HEAD
-    gpr_log(GPR_INFO, "Starting client on %s (worker #%d)",
-            workers[i + num_servers].c_str(), i + num_servers);
-=======
     const auto& worker = workers[i + num_servers];
     gpr_log(GPR_INFO, "Starting client on %s (worker #%d)", worker.c_str(),
             i + num_servers);
->>>>>>> master
     clients[i].stub = WorkerService::NewStub(
         CreateChannel(worker, InsecureChannelCredentials()));
     ClientConfig per_client_config = client_config;

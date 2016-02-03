@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\test\cpp\common\secure_auth_context_test.cc">
+      <Filter>test\cpp\common</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="test">
+      <UniqueIdentifier>{d217cfff-a998-6970-2496-4ff0294d09ea}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\cpp">
+      <UniqueIdentifier>{9d2748f3-7c85-e258-041d-707f5b283b09}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\cpp\common">
+      <UniqueIdentifier>{fdaae7af-264b-ca44-2059-6da6c465e593}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+
