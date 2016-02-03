@@ -27,20 +27,16 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# This script is invoked by build_docker_* inside a docker
-# container. You should never need to call this script on your own.
 
-set -e
+set -ex
 
-mkdir -p /var/local/git
-git clone --recursive "$EXTERNAL_GIT_ROOT" /var/local/git/grpc
+cd $(dirname $0)/../..
 
-if [ -x "$(command -v rvm)" ]
-then
-  rvm use ruby-2.1
-fi
+bundle install
 
-cd /var/local/git/grpc
+${SETARCH_CMD} rake native gem
 
-$RUN_COMMAND
+mkdir -p artifacts
+
+cp pkg/*.gem artifacts
+
