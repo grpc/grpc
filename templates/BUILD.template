@@ -68,7 +68,7 @@
   % endfor
   
   % for lib in libs:
-  % if lib.name in ("grpc", "gpr"):
+  % if lib.name in ("grpc"):
   ${objc_library(lib)}
   % endif
   % endfor

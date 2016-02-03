@@ -54,8 +54,7 @@ LIB_DIRS = [
   LIBDIR
 ]
 
-fail 'libdl not found' unless have_library('dl', 'dlopen')
-fail 'zlib not found' unless have_library('z', 'inflate')
+windows = RUBY_PLATFORM =~ /mingw|mswin/
 
 grpc_root = File.expand_path(File.join(File.dirname(__FILE__), '../../../..'))
 
@@ -64,17 +63,30 @@ grpc_config = ENV['GRPC_CONFIG'] || 'opt'
 if ENV.key?('GRPC_LIB_DIR')
   grpc_lib_dir = File.join(grpc_root, ENV['GRPC_LIB_DIR'])
 else
-  grpc_lib_dir = File.join(File.join(grpc_root, 'libs'), grpc_config)
+  grpc_lib_dir = File.join(grpc_root, 'libs', grpc_config)
 end
 
-unless File.exist?(File.join(grpc_lib_dir, 'libgrpc.a'))
-  print "Building internal gRPC\n"
-  system("make -C #{grpc_root} static_c CONFIG=#{grpc_config}")
+unless File.exist?(File.join(grpc_lib_dir, 'libgrpc.a')) or windows
+  for var in %w( CC AR ) do
+    ENV[var] = RbConfig::CONFIG[var]
+  end
+
+  ENV['LD'] = ENV['CC']
+
+  ENV['EMBED_OPENSSL'] = 'true'
+  ENV['EMBED_ZLIB'] = 'true'
+
+  output_dir = File.expand_path(RbConfig::CONFIG['topdir'])
+  grpc_lib_dir = File.join(output_dir, 'libs', grpc_config)
+  ENV['BUILDDIR'] = output_dir
+
+  puts 'Building internal gRPC into ' + grpc_lib_dir
+  system("make -j -C #{grpc_root} #{grpc_lib_dir}/libgrpc.a CONFIG=#{grpc_config}")
+  exit 1 unless $? == 0
 end
 
 $CFLAGS << ' -I' + File.join(grpc_root, 'include')
-$LDFLAGS << ' ' + File.join(grpc_lib_dir, 'libgrpc.a')
-$LDFLAGS << ' ' + File.join(grpc_lib_dir, 'libgpr.a')
+$LDFLAGS << ' ' + File.join(grpc_lib_dir, 'libgrpc.a') unless windows
 if grpc_config == 'gcov'
   $CFLAGS << ' -O0 -fprofile-arcs -ftest-coverage'
   $LDFLAGS << ' -fprofile-arcs -ftest-coverage -rdynamic'
@@ -87,8 +99,25 @@ $CFLAGS << ' -Wall '
 $CFLAGS << ' -Wextra '
 $CFLAGS << ' -pedantic '
 $CFLAGS << ' -Werror '
+$CFLAGS << ' -Wno-format '
 
-$LDFLAGS << ' -lssl '
-$LDFLAGS << ' -lcrypto '
+output = File.join('grpc', 'grpc_c')
+puts 'Generating Makefile for ' + output
+create_makefile(output)
 
-create_makefile('grpc/grpc')
+strip_tool = RbConfig::CONFIG['STRIP']
+
+if grpc_config == 'opt'
+  File.open('Makefile.new', 'w') do |o|
+    o.puts 'hijack: all strip'
+    o.puts
+    File.foreach('Makefile') do |i|
+      o.puts i
+    end
+    o.puts
+    o.puts 'strip:'
+    o.puts "\t$(ECHO) Stripping $(DLLIB)"
+    o.puts "\t$(Q) #{strip_tool} $(DLLIB)"
+  end
+  File.rename('Makefile.new', 'Makefile')
+end
