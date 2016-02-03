@@ -201,7 +201,6 @@ PACKAGE_DATA = {
         'credentials/roots.pem'
     ],
     'grpc._cython': [
-        '_windows/grpc.def',
         '_windows/grpc_c.32.python',
         '_windows/grpc_c.64.python',
     ],
