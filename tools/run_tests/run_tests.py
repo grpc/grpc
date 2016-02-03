@@ -132,8 +132,10 @@ class CLanguage(object):
       if config.build_config in target['exclude_configs']:
         continue
       if self.platform == 'windows':
-        binary = 'vsprojects/%s/%s.exe' % (
-            _WINDOWS_CONFIG[config.build_config], target['name'])
+        binary = 'vsprojects/%s%s/%s.exe' % (
+            'x64/' if args.arch == 'x64' else '',
+            _WINDOWS_CONFIG[config.build_config],
+            target['name'])
       else:
         binary = 'bins/%s/%s' % (config.build_config, target['name'])
       if os.path.isfile(binary):
@@ -1059,13 +1061,15 @@ def _build_and_run(
     check_cancelled, newline_on_success, cache, xml_report=None, build_only=False):
   """Do one pass of building & running tests."""
   # build latest sequentially
-  num_failures, _ = jobset.run(
+  num_failures, resultset = jobset.run(
       build_steps, maxjobs=1, stop_on_failure=True,
       newline_on_success=newline_on_success, travis=args.travis)
   if num_failures:
     return [BuildAndRunError.BUILD]
 
   if build_only:
+    if xml_report:
+      report_utils.render_junit_xml_report(resultset, xml_report)
     return []
 
   # start antagonists

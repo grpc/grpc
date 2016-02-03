@@ -1,5 +1,5 @@
 /*
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,13 +30,18 @@
  *
  */
 
-#include <grpc/grpc.h>
 #include <grpc++/alarm.h>
+#include <grpc++/completion_queue.h>
+#include <grpc++/impl/grpc_library.h>
+#include <grpc/grpc.h>
 
 namespace grpc {
 
+static internal::GrpcLibraryInitializer g_gli_initializer;
 Alarm::Alarm(CompletionQueue* cq, gpr_timespec deadline, void* tag)
-    : alarm_(grpc_alarm_create(cq->cq(), deadline, tag)) {}
+    : alarm_(grpc_alarm_create(cq->cq(), deadline, tag)) {
+  g_gli_initializer.summon();
+}
 
 Alarm::~Alarm() { grpc_alarm_destroy(alarm_); }
 

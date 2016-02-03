@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -43,7 +43,7 @@
 namespace grpc {
 
 ServerBuilder::ServerBuilder()
-    : max_message_size_(-1), generic_service_(nullptr), thread_pool_(nullptr) {
+    : max_message_size_(-1), generic_service_(nullptr) {
   grpc_compression_options_init(&compression_options_);
 }
 
@@ -53,24 +53,13 @@ std::unique_ptr<ServerCompletionQueue> ServerBuilder::AddCompletionQueue() {
   return std::unique_ptr<ServerCompletionQueue>(cq);
 }
 
-void ServerBuilder::RegisterService(SynchronousService* service) {
-  services_.emplace_back(new NamedService<RpcService>(service->service()));
-}
-
-void ServerBuilder::RegisterAsyncService(AsynchronousService* service) {
-  async_services_.emplace_back(new NamedService<AsynchronousService>(service));
+void ServerBuilder::RegisterService(Service* service) {
+  services_.emplace_back(new NamedService(service));
 }
 
 void ServerBuilder::RegisterService(const grpc::string& addr,
-                                    SynchronousService* service) {
-  services_.emplace_back(
-      new NamedService<RpcService>(addr, service->service()));
-}
-
-void ServerBuilder::RegisterAsyncService(const grpc::string& addr,
-                                         AsynchronousService* service) {
-  async_services_.emplace_back(
-      new NamedService<AsynchronousService>(addr, service));
+                                    Service* service) {
+  services_.emplace_back(new NamedService(addr, service));
 }
 
 void ServerBuilder::RegisterAsyncGenericService(AsyncGenericService* service) {
@@ -96,14 +85,14 @@ void ServerBuilder::AddListeningPort(const grpc::string& addr,
 }
 
 std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
-  bool thread_pool_owned = false;
-  if (!async_services_.empty() && !services_.empty()) {
-    gpr_log(GPR_ERROR, "Mixing async and sync services is unsupported for now");
-    return nullptr;
-  }
-  if (!thread_pool_ && !services_.empty()) {
-    thread_pool_ = CreateDefaultThreadPool();
-    thread_pool_owned = true;
+  std::unique_ptr<ThreadPoolInterface> thread_pool;
+  for (auto it = services_.begin(); it != services_.end(); ++it) {
+    if ((*it)->service->has_synchronous_methods()) {
+      if (thread_pool == nullptr) {
+        thread_pool.reset(CreateDefaultThreadPool());
+        break;
+      }
+    }
   }
   ChannelArguments args;
   for (auto option = options_.begin(); option != options_.end(); ++option) {
@@ -115,7 +104,7 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
   args.SetInt(GRPC_COMPRESSION_ALGORITHM_STATE_ARG,
               compression_options_.enabled_algorithms_bitset);
   std::unique_ptr<Server> server(
-      new Server(thread_pool_, thread_pool_owned, max_message_size_, args));
+      new Server(thread_pool.release(), true, max_message_size_, args));
   for (auto cq = cqs_.begin(); cq != cqs_.end(); ++cq) {
     grpc_server_register_completion_queue(server->server_, (*cq)->cq(),
                                           nullptr);
@@ -126,15 +115,17 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
       return nullptr;
     }
   }
-  for (auto service = async_services_.begin(); service != async_services_.end();
-       service++) {
-    if (!server->RegisterAsyncService((*service)->host.get(),
-                                      (*service)->service)) {
-      return nullptr;
-    }
-  }
   if (generic_service_) {
     server->RegisterAsyncGenericService(generic_service_);
+  } else {
+    for (auto it = services_.begin(); it != services_.end(); ++it) {
+      if ((*it)->service->has_generic_methods()) {
+        gpr_log(GPR_ERROR,
+                "Some methods were marked generic but there is no "
+                "generic service registered.");
+        return nullptr;
+      }
+    }
   }
   for (auto port = ports_.begin(); port != ports_.end(); port++) {
     int r = server->AddListeningPort(port->addr, port->creds.get());

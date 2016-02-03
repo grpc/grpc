@@ -86,7 +86,7 @@ static void on_connect_result_set(on_connect_result *result,
 }
 
 static void server_weak_ref_shutdown(grpc_exec_ctx *exec_ctx, void *arg,
-                                     int success) {
+                                     bool success) {
   server_weak_ref *weak_ref = arg;
   weak_ref->server = NULL;
 }
@@ -303,7 +303,7 @@ static void test_connect(unsigned n) {
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
-static void destroy_pollset(grpc_exec_ctx *exec_ctx, void *p, int success) {
+static void destroy_pollset(grpc_exec_ctx *exec_ctx, void *p, bool success) {
   grpc_pollset_destroy(p);
 }
 

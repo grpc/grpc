@@ -46,7 +46,7 @@
 #include "test/core/util/port.h"
 
 static void on_server_destroyed(grpc_exec_ctx *exec_ctx, void *data,
-                                int success) {
+                                bool success) {
   test_tcp_server *server = data;
   server->shutdown = 1;
 }
@@ -97,7 +97,7 @@ void test_tcp_server_poll(test_tcp_server *server, int seconds) {
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
-static void do_nothing(grpc_exec_ctx *exec_ctx, void *arg, int success) {}
+static void do_nothing(grpc_exec_ctx *exec_ctx, void *arg, bool success) {}
 
 void test_tcp_server_destroy(test_tcp_server *server) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;

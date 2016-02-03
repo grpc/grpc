@@ -43,6 +43,8 @@
 #include <vector>
 
 #include <gflags/gflags.h>
+#include <grpc++/channel.h>
+#include <grpc++/client_context.h>
 #include <grpc++/client_context.h>
 #include <grpc++/generic/generic_stub.h>
 #include <grpc/grpc.h>
@@ -157,6 +159,7 @@ class AsyncClient : public ClientImpl<StubType, RequestType> {
   using Client::SetupLoadTest;
   using Client::NextIssueTime;
   using Client::closed_loop_;
+  using ClientImpl<StubType, RequestType>::cores_;
   using ClientImpl<StubType, RequestType>::channels_;
   using ClientImpl<StubType, RequestType>::request_;
   AsyncClient(const ClientConfig& config,
@@ -343,11 +346,11 @@ class AsyncClient : public ClientImpl<StubType, RequestType> {
    private:
     bool val_;
   };
-  static int NumThreads(const ClientConfig& config) {
+  int NumThreads(const ClientConfig& config) {
     int num_threads = config.async_client_threads();
     if (num_threads <= 0) {  // Use dynamic sizing
-      num_threads = gpr_cpu_num_cores();
-      gpr_log(GPR_INFO, "Sizing client server to %d threads", num_threads);
+      num_threads = cores_;
+      gpr_log(GPR_INFO, "Sizing async client to %d threads", num_threads);
     }
     return num_threads;
   }

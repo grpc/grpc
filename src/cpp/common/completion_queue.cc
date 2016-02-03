@@ -1,5 +1,5 @@
 /*
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -34,13 +34,17 @@
 
 #include <memory>
 
+#include <grpc++/impl/codegen/completion_queue_tag.h>
+#include <grpc++/impl/grpc_library.h>
+#include <grpc++/support/time.h>
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
-#include <grpc++/support/time.h>
 
 namespace grpc {
 
+static internal::GrpcLibraryInitializer g_gli_initializer;
 CompletionQueue::CompletionQueue() {
+  g_gli_initializer.summon();
   cq_ = grpc_completion_queue_create(nullptr);
 }
 

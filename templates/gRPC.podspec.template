@@ -39,7 +39,7 @@
   def grpc_files(libs):
     out = []
     for lib in libs:
-      if lib.name in ("grpc", "gpr"):
+      if lib.name in ("grpc"):
         out += lib.get('headers', [])
         out += lib.get('public_headers', [])
         out += lib.get('src', [])
@@ -48,7 +48,7 @@
   def grpc_private_headers(libs):
     out = []
     for lib in libs:
-      if lib.name in ("grpc", "gpr"):
+      if lib.name in ("grpc"):
         out += lib.get('headers', [])
     return out
   %>
@@ -97,7 +97,7 @@
 
       ss.requires_arc = false
       ss.libraries = 'z'
-      ss.dependency 'BoringSSL', '~> 1.0'
+      ss.dependency 'BoringSSL', '~> 2.0'
 
       # ss.compiler_flags = '-GCC_WARN_INHIBIT_ALL_WARNINGS', '-w'
     end

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -80,7 +80,7 @@ struct grpc_channel {
 /* the protobuf library will (by default) start warning at 100megs */
 #define DEFAULT_MAX_MESSAGE_LENGTH (100 * 1024 * 1024)
 
-static void destroy_channel(grpc_exec_ctx *exec_ctx, void *arg, int success);
+static void destroy_channel(grpc_exec_ctx *exec_ctx, void *arg, bool success);
 
 grpc_channel *grpc_channel_create_from_filters(
     grpc_exec_ctx *exec_ctx, const char *target,
@@ -268,7 +268,7 @@ void grpc_channel_internal_unref(grpc_exec_ctx *exec_ctx,
 }
 
 static void destroy_channel(grpc_exec_ctx *exec_ctx, void *arg,
-                            int iomgr_success) {
+                            bool iomgr_success) {
   grpc_channel *channel = arg;
   grpc_channel_stack_destroy(exec_ctx, CHANNEL_STACK_FROM_CHANNEL(channel));
   while (channel->registered_calls) {
