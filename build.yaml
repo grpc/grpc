@@ -894,8 +894,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
-  - gpr
 - name: census_context_test
   build: test
   language: c
@@ -904,8 +902,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
-  - gpr
 - name: channel_create_test
   build: test
   language: c
