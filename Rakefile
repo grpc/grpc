@@ -4,17 +4,33 @@ require 'rspec/core/rake_task'
 require 'rubocop/rake_task'
 require 'bundler/gem_tasks'
 
+load 'tools/distrib/docker_for_windows.rb'
+
 # Add rubocop style checking tasks
 RuboCop::RakeTask.new(:rubocop) do |task|
   task.options = ['-c', 'src/ruby/.rubocop.yml']
   task.patterns = ['src/ruby/{lib,spec}/**/*.rb']
 end
 
+spec = Gem::Specification.load('grpc.gemspec')
+
+Gem::PackageTask.new(spec) do |pkg|
+end
+
 # Add the extension compiler task
-Rake::ExtensionTask.new 'grpc' do |ext|
+Rake::ExtensionTask.new('grpc_c', spec) do |ext|
   ext.source_pattern = '**/*.{c,h}'
   ext.ext_dir = File.join('src', 'ruby', 'ext', 'grpc')
   ext.lib_dir = File.join('src', 'ruby', 'lib', 'grpc')
+  ext.cross_compile = true
+  ext.cross_platform = ['x86-mingw32', 'x64-mingw32']
+  ext.cross_compiling do |spec|
+    spec.files = %w( etc/roots.pem grpc_c.32.ruby grpc_c.64.ruby )
+    spec.files += Dir.glob('src/ruby/bin/**/*')
+    spec.files += Dir.glob('src/ruby/ext/**/*')
+    spec.files += Dir.glob('src/ruby/lib/**/*')
+    spec.files += Dir.glob('src/ruby/pb/**/*')
+  end
 end
 
 # Define the test suites
@@ -51,12 +67,45 @@ namespace :suite do
   end
 end
 
+desc 'Build the Windows gRPC DLLs for Ruby'
+task 'dlls' do
+  grpc_config = ENV['GRPC_CONFIG'] || 'opt'
+  verbose = ENV['V'] || '0'
+
+  env = 'CPPFLAGS="-D_WIN32_WINNT=0x600 -DUNICODE -D_UNICODE" '
+  env += 'LDFLAGS=-static '
+  env += 'SYSTEM=MINGW32 '
+  env += 'EMBED_ZLIB=true '
+  env += 'BUILDDIR=/tmp '
+  env += "V=#{verbose} "
+  out = '/tmp/libs/opt/grpc-0.dll'
+
+  w64 = { cross: 'x86_64-w64-mingw32', out: 'grpc_c.64.ruby' }
+  w32 = { cross: 'i686-w64-mingw32', out: 'grpc_c.32.ruby' }
+
+  [ w64, w32 ].each do |opt|
+    env_comp = "CC=#{opt[:cross]}-gcc "
+    env_comp += "LD=#{opt[:cross]}-gcc "
+    docker_for_windows "#{env} #{env_comp} make -j #{out} && #{opt[:cross]}-strip -x -S #{out} && cp #{out} #{opt[:out]}"
+  end
+
+end
+
+desc 'Build the gem file under rake_compiler_dock'
+task 'gem:windows' do
+  verbose = ENV['V'] || '0'
+
+  docker_for_windows "bundle && rake cross native gem RUBY_CC_VERSION=2.3.0:2.2.2:2.1.6:2.0.0 V=#{verbose}"
+end
+
 # Define dependencies between the suites.
 task 'suite:wrapper' => [:compile, :rubocop]
 task 'suite:idiomatic' => 'suite:wrapper'
 task 'suite:bidi' => 'suite:wrapper'
 task 'suite:server' => 'suite:wrapper'
 task 'suite:pb' => 'suite:server'
+
+task 'gem:windows' => 'dlls'
 
 desc 'Compiles the gRPC extension then runs all the tests'
 task all: ['suite:idiomatic', 'suite:bidi', 'suite:pb', 'suite:server']

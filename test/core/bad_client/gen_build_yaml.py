@@ -67,9 +67,7 @@ def main():
             'vs_proj_dir': 'test/bad_client',
             'deps': [
               'grpc_test_util_unsecure',
-              'grpc_unsecure',
-              'gpr_test_util',
-              'gpr'
+              'grpc_unsecure'
             ]
           }],
       'targets': [
@@ -84,9 +82,7 @@ def main():
               'deps': [
                   'bad_client_test',
                   'grpc_test_util_unsecure',
-                  'grpc_unsecure',
-                  'gpr_test_util',
-                  'gpr'
+                  'grpc_unsecure'
               ]
           }
       for t in sorted(BAD_CLIENT_TESTS.keys())]}
