@@ -44,7 +44,16 @@
 namespace grpc {
 namespace testing {
 
+const int kNumResponseStreamsMsgs = 3;
 const char* const kServerCancelAfterReads = "cancel_after_reads";
+const char* const kServerTryCancelRequest = "server_try_cancel";
+
+typedef enum {
+  DO_NOT_CANCEL = 0,
+  CANCEL_BEFORE_PROCESSING,
+  CANCEL_DURING_PROCESSING,
+  CANCEL_AFTER_PROCESSING
+} ServerTryCancelRequestPhase;
 
 class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
  public:
@@ -72,6 +81,14 @@ class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
     std::unique_lock<std::mutex> lock(mu_);
     return signal_client_;
   }
+
+ private:
+  int GetIntValueFromMetadata(
+      const char* key,
+      const std::multimap<grpc::string_ref, grpc::string_ref>& metadata,
+      int default_value);
+
+  void ServerTryCancel(ServerContext* context);
 
  private:
   bool signal_client_;
