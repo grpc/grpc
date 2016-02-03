@@ -40,6 +40,6 @@
 #include <grpc/byte_buffer_reader.h>
 
 /* Attempts to load the core if necessary, and return non-zero upon succes. */
-int pygrpc_load_core(const char *path);
+int pygrpc_load_core(char *path);
 
 #endif /* GRPC_RB_BYTE_BUFFER_H_ */
