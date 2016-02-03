@@ -35,8 +35,15 @@
 
 #if GPR_WIN32
 
-int pygrpc_load_core(const char *path) {
-  HMODULE grpc_c = LoadLibraryA(path);
+int pygrpc_load_core(char *path) {
+  HMODULE grpc_c;
+#ifdef GPR_ARCH_32
+  /* Close your eyes for a moment, it'll all be over soon. */
+  char *six = strrchr(path, '6');
+  *six++ = '3';
+  *six = '2';
+#endif
+  grpc_c = LoadLibraryA(path);
   if (grpc_c) {
     pygrpc_load_imports(grpc_c);
     return 1;
@@ -47,6 +54,6 @@ int pygrpc_load_core(const char *path) {
 
 #else
 
-int pygrpc_load_core(const char *path) { return 1; }
+int pygrpc_load_core(char *path) { return 1; }
 
 #endif
