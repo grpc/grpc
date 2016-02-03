@@ -34,6 +34,7 @@
 #import "GRPCHost.h"
 
 #include <grpc/grpc.h>
+#import <GRPCClient/GRPCCall+ChannelArg.h>
 
 #import "GRPCChannel.h"
 #import "GRPCCompletionQueue.h"
@@ -108,11 +109,9 @@
 
   if (!_channel) {
     NSMutableDictionary *args = [NSMutableDictionary dictionary];
-    if (_primaryUserAgent) {
-      args[@GRPC_ARG_PRIMARY_USER_AGENT_STRING] = _primaryUserAgent;
-    }
-    if (_secondaryUserAgent) {
-      args[@GRPC_ARG_SECONDARY_USER_AGENT_STRING] = _secondaryUserAgent;
+    NSString *userAgentPrefix = [[GRPCCall useUserAgentPrefix] copy];
+    if (userAgentPrefix) {
+      args[@GRPC_ARG_PRIMARY_USER_AGENT_STRING] = userAgentPrefix;
     }
 
     if (_secure) {

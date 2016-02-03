@@ -43,7 +43,7 @@ static NSString * const kHostAddress = @"localhost:50051";
 int main(int argc, char * argv[]) {
   @autoreleasepool {
     [GRPCCall useInsecureConnectionsForHost:kHostAddress];
-    [GRPCCall usePrimaryUserAgent:@"HelloWorld/1.0" forHost:kHostAddress];
+    [GRPCCall setUserAgentPrefix:@"HelloWorld/1.0"];
 
     HLWGreeter *client = [[HLWGreeter alloc] initWithHost:kHostAddress];
 

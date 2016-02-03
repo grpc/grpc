@@ -37,22 +37,18 @@
 
 @implementation GRPCCall (ChannelArg)
 
-+ (void)usePrimaryUserAgent:(NSString *)primaryUserAgent forHost:(NSString *)host {
-  if (!primaryUserAgent || !host) {
-    [NSException raise:NSInvalidArgumentException
-                format:@"primaryUserAgent and host must be provided."];
+static NSString *_userAgentPrefix;
+
++ (void)setUserAgentPrefix:(NSString *)userAgentPrefix {
+  @synchronized(self) {
+    _userAgentPrefix = userAgentPrefix;
   }
-  GRPCHost *hostConfig = [GRPCHost hostWithAddress:host];
-  hostConfig.primaryUserAgent = primaryUserAgent;
 }
 
-+ (void)useSecondaryUserAgent:(NSString *)secondaryUserAgent forHost:(NSString *)host {
-  if (!secondaryUserAgent || !host) {
-    [NSException raise:NSInvalidArgumentException
-                format:@"secondaryUserAgent and host must be provided."];
++ (NSString *)useUserAgentPrefix {
+  @synchronized(self) {
+    return _userAgentPrefix;
   }
-  GRPCHost *hostConfig = [GRPCHost hostWithAddress:host];
-  hostConfig.secondaryUserAgent = secondaryUserAgent;
 }
 
 @end
