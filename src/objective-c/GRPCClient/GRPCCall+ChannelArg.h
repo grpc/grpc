@@ -33,20 +33,15 @@
 #import "GRPCCall.h"
 
 /**
- * Methods to configure GRPC channel options for specific hosts.
+ * Methods to configure GRPC channel options.
  */
 @interface GRPCCall (ChannelArg)
 
 /**
- * Use the provided @c primaryUserAgent at the beginning of the HTTP User Agent string for the
- * provided @c host.
+ * Use the provided @c userAgentPrefix at the beginning of the HTTP User Agent string for all calls.
  */
-+ (void)usePrimaryUserAgent:(NSString *)primaryUserAgent forHost:(NSString *)host;
++ (void)setUserAgentPrefix:(NSString *)userAgentPrefix;
 
-/**
- * Use the provided @c secondaryUserAgent at the end of the HTTP User Agent string for the
- * provided @c host.
- */
-+ (void)useSecondaryUserAgent:(NSString *)secondaryUserAgent forHost:(NSString *)host;
++ (NSString *)useUserAgentPrefix;
 
 @end

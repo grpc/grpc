@@ -42,8 +42,8 @@ struct grpc_channel_credentials;
  * Each separate instance of this class represents at least one TCP connection to the provided host.
  */
 @interface GRPCChannel : NSObject
+
 @property(nonatomic, readonly, nonnull) struct grpc_channel *unmanagedChannel;
-@property(nonatomic, readonly, getter=isSecure) BOOL secure;
 
 - (nullable instancetype)init NS_UNAVAILABLE;
 
