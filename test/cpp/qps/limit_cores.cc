@@ -36,7 +36,6 @@
 #include <grpc/support/cpu.h>
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
-#include <vector>
 
 namespace grpc {
 namespace testing {
