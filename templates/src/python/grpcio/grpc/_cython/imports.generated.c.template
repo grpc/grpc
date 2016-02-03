@@ -39,8 +39,8 @@
 
   #ifdef GPR_WIN32
 
-  %for api in c_apis:
-  ${api.name}_type ${api.name}_import;
+  %for i, api in enumerate(c_apis):
+  ${api.name}_type ${api.name}_import = (${api.name}_type)${i};
   %endfor
 
   void pygrpc_load_imports(HMODULE library) {
