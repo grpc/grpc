@@ -191,6 +191,7 @@ int grpc_server_add_secure_http2_port(grpc_server *server, const char *addr,
     gpr_log(GPR_ERROR,
             "Unable to create secure server with credentials of type %s.",
             creds->type);
+    // UNREF sc
     goto error;
   }
   sc->channel_args = grpc_server_get_channel_args(server);
@@ -198,6 +199,7 @@ int grpc_server_add_secure_http2_port(grpc_server *server, const char *addr,
   /* resolve address */
   resolved = grpc_blocking_resolve_address(addr, "https");
   if (!resolved) {
+    // UNREF sc
     goto error;
   }
   state = gpr_malloc(sizeof(*state));
@@ -205,8 +207,20 @@ int grpc_server_add_secure_http2_port(grpc_server *server, const char *addr,
   grpc_closure_init(&state->destroy_closure, destroy_done, state);
   tcp = grpc_tcp_server_create(&state->destroy_closure);
   if (!tcp) {
+    // UNREF sc
+    // destroy resolved
+    // free state
     goto error;
   }
+
+  state->server = server;
+  state->tcp = tcp;
+  state->sc = sc;
+  state->creds = grpc_server_credentials_ref(creds);
+
+  state->is_shutdown = 0;
+  gpr_mu_init(&state->mu);
+  gpr_ref_init(&state->refcount, 1);
 
   for (i = 0; i < resolved->naddrs; i++) {
     port_temp = grpc_tcp_server_add_port(
@@ -224,6 +238,7 @@ int grpc_server_add_secure_http2_port(grpc_server *server, const char *addr,
   if (count == 0) {
     gpr_log(GPR_ERROR, "No address added out of total %d resolved",
             resolved->naddrs);
+    // UNREF tcp
     goto error;
   }
   if (count != resolved->naddrs) {
@@ -233,14 +248,6 @@ int grpc_server_add_secure_http2_port(grpc_server *server, const char *addr,
   }
   grpc_resolved_addresses_destroy(resolved);
 
-  state->server = server;
-  state->tcp = tcp;
-  state->sc = sc;
-  state->creds = grpc_server_credentials_ref(creds);
-
-  state->is_shutdown = 0;
-  gpr_mu_init(&state->mu);
-  gpr_ref_init(&state->refcount, 1);
 
   /* Register with the server only upon success */
   grpc_server_add_listener(&exec_ctx, server, state, start, destroy);
@@ -250,17 +257,18 @@ int grpc_server_add_secure_http2_port(grpc_server *server, const char *addr,
 
 /* Error path: cleanup and return */
 error:
-  if (sc) {
-    GRPC_SECURITY_CONNECTOR_UNREF(sc, "server");
-  }
   if (resolved) {
     grpc_resolved_addresses_destroy(resolved);
   }
   if (tcp) {
     grpc_tcp_server_unref(&exec_ctx, tcp);
-  }
-  if (state) {
-    gpr_free(state);
+  } else {
+    if (sc) {
+      GRPC_SECURITY_CONNECTOR_UNREF(sc, "server");
+    }
+    if (state) {
+      gpr_free(state);
+    }
   }
   grpc_exec_ctx_finish(&exec_ctx);
   return 0;
