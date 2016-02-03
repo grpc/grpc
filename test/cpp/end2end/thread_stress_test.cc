@@ -55,6 +55,13 @@ using grpc::testing::EchoRequest;
 using grpc::testing::EchoResponse;
 using std::chrono::system_clock;
 
+// In some distros, gflags is in the namespace google, and in some others,
+// in gflags. This hack is enabling us to find both.
+namespace google {}
+namespace gflags {}
+using namespace google;
+using namespace gflags;
+
 DEFINE_int32(num_threads, 100, "Number of threads");
 DEFINE_int32(num_rpcs, 1000, "Number of RPCs per thread");
 
@@ -341,7 +348,7 @@ TEST_F(AsyncClientEnd2endTest, ThreadStress) {
 }  // namespace grpc
 
 int main(int argc, char** argv) {
-  ::google::ParseCommandLineFlags(&argc, &argv, true);
+  ParseCommandLineFlags(&argc, &argv, true);
   grpc_test_init(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
