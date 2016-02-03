@@ -51,6 +51,7 @@ void *__wrap_memcpy(void *destination, const void *source, size_t num) {
 
 #else
 
+void *__real_memcpy(void *dest, const void *src, size_t n);
 void *__wrap_memcpy(void *destination, const void *source, size_t num) {
   return __real_memcpy(destination, source, num);
 }
