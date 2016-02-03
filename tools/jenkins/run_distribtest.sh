@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Copyright 2016, Google Inc.
 # All rights reserved.
 #
@@ -28,21 +28,22 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
-# This script is invoked by build_docker_* inside a docker
-# container. You should never need to call this script on your own.
+# This script is invoked by Jenkins and triggers run of distribution tests.
+#
+# To prevent cygwin bash complaining about empty lines ending with \r
+# we set the igncr option. The option doesn't exist on Linux, so we fallback
+# to just 'set -ex' there.
+# NOTE: No empty lines should appear in this file before igncr is set!
+set -ex -o igncr || set -ex
 
-set -e
+curr_platform="$platform"
+unset platform  # variable named 'platform' breaks the windows build
 
-mkdir -p /var/local/git
-git clone --recursive "$EXTERNAL_GIT_ROOT" /var/local/git/grpc
+# Try collecting the artifacts to test from previous Jenkins build step
+mkdir -p input_artifacts
+cp -r platform=windows/artifacts/* input_artifacts || true
+cp -r platform=linux/artifacts/* input_artifacts || true
 
-if [ -x "$(command -v rvm)" ]
-then
-  rvm use ruby-2.1
-fi
-
-cd /var/local/git/grpc
-
-nvm use 4 || true
-
-$RUN_COMMAND
+python tools/run_tests/task_runner.py -j 4 \
+    -f distribtest $language $curr_platform $architecture \
+    $@
