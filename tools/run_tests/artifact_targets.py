@@ -98,7 +98,6 @@ class PythonArtifact:
     else:
       environ = {}
       if self.platform == 'linux':
-        environ['BDIST_WHEEL_MAYBE'] = 'bdist_wheel'
         if self.arch == 'x86':
           environ['SETARCH_CMD'] = 'linux32'
         return create_docker_jobspec(self.name,
