@@ -2099,7 +2099,7 @@ else
 	$(Q) $(INSTALL) $(BINDIR)/$(CONFIG)/grpc_ruby_plugin $(prefix)/bin/grpc_ruby_plugin
 endif
 
-install-pkg-config_c: pr pc_c pc_c_unsecure pc_c_zookeeper
+install-pkg-config_c: pc_c pc_c_unsecure pc_c_zookeeper
 	$(E) "[INSTALL] Installing C pkg-config files"
 	$(Q) $(INSTALL) -d $(prefix)/lib/pkgconfig
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/pkgconfig/grpc.pc $(prefix)/lib/pkgconfig/grpc.pc
