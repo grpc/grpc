@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2016, Google Inc.
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -30,11 +30,23 @@
 
 set -ex
 
-cd $(dirname $0)/../..
+cd $(dirname $0)
 
-mkdir -p artifacts/
-cp -r $EXTERNAL_GIT_ROOT/architecture={x86,x64},language=node,platform={windows,linux,macos}/artifacts/* artifacts/ || true
+nvm install $1
 
-npm pack
+npm install -g node-static
 
-cp grpc-*.tgz artifacts/grpc.tgz
+STATIC_SERVER=localhost
+STATIC_PORT=8080
+
+# Serves the input_artifacts directory statically at localhost:8080
+static "$EXTERNAL_GIT_ROOT/input_artifacts" -a STATIC_SERVER -p STATIC_PORT &
+STATIC_PID=$!
+
+STATIC_URL="http://$STATIC_SERVER:$STATIC_PORT/"
+
+npm install --unsafe-perm $STATIC_URL/grpc.tgz --grpc_node_binary_host_mirror=$STATIC_URL
+
+kill $STATIC_PID
+
+./distrib_test.js
