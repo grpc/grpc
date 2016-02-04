@@ -31,43 +31,29 @@
  *
  */
 
-#ifndef GRPC_IMPL_CODEGEN_COMPRESSION_TYPES_H
-#define GRPC_IMPL_CODEGEN_COMPRESSION_TYPES_H
+#include "loader.h"
 
-#include <grpc/support/port_platform.h>
+#if GPR_WIN32
 
-#ifdef __cplusplus
-extern "C" {
+int pygrpc_load_core(char *path) {
+  HMODULE grpc_c;
+#ifdef GPR_ARCH_32
+  /* Close your eyes for a moment, it'll all be over soon. */
+  char *six = strrchr(path, '6');
+  *six++ = '3';
+  *six = '2';
 #endif
+  grpc_c = LoadLibraryA(path);
+  if (grpc_c) {
+    pygrpc_load_imports(grpc_c);
+    return 1;
+  }
 
-/** To be used in channel arguments */
-#define GRPC_COMPRESSION_ALGORITHM_ARG "grpc.compression_algorithm"
-#define GRPC_COMPRESSION_ALGORITHM_STATE_ARG "grpc.compression_algorithm_state"
-
-/* The various compression algorithms supported by GRPC */
-typedef enum {
-  GRPC_COMPRESS_NONE = 0,
-  GRPC_COMPRESS_DEFLATE,
-  GRPC_COMPRESS_GZIP,
-  /* TODO(ctiller): snappy */
-  GRPC_COMPRESS_ALGORITHMS_COUNT
-} grpc_compression_algorithm;
-
-typedef enum {
-  GRPC_COMPRESS_LEVEL_NONE = 0,
-  GRPC_COMPRESS_LEVEL_LOW,
-  GRPC_COMPRESS_LEVEL_MED,
-  GRPC_COMPRESS_LEVEL_HIGH,
-  GRPC_COMPRESS_LEVEL_COUNT
-} grpc_compression_level;
-
-typedef struct grpc_compression_options {
-  uint32_t enabled_algorithms_bitset; /**< All algs are enabled by default */
-  grpc_compression_algorithm default_compression_algorithm; /**< for channel */
-} grpc_compression_options;
-
-#ifdef __cplusplus
+  return 0;
 }
-#endif
 
-#endif /* GRPC_IMPL_CODEGEN_COMPRESSION_TYPES_H */
+#else
+
+int pygrpc_load_core(char *path) { return 1; }
+
+#endif
