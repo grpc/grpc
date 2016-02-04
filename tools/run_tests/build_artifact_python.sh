@@ -40,7 +40,7 @@ then
 fi
 
 GRPC_PYTHON_BUILD_WITH_CYTHON=1 ${SETARCH_CMD} python setup.py \
-    ${BDIST_WHEEL_MAYBE} \
+    bdist_wheel \
     sdist \
     bdist_egg_grpc_custom
 
