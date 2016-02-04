@@ -43,4 +43,6 @@ fi
 
 cd /var/local/git/grpc
 
+nvm use 4 || true
+
 $RUN_COMMAND

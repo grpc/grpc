@@ -58,6 +58,10 @@ RUN apt-get update && apt-get install -y \
   wget \
   zip && apt-get clean
 
+# Install Node dependencies
+RUN touch .profile
+RUN curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.25.4/install.sh | bash
+RUN /bin/bash -l -c "nvm install 4 && npm install -g node-pre-gyp"
 
 ##################
 # Python dependencies
@@ -86,7 +90,6 @@ RUN /bin/bash -l -c "echo 'gem: --no-ri --no-rdoc' > ~/.gemrc"
 RUN /bin/bash -l -c "echo 'export PATH=/usr/local/rvm/bin:$PATH' >> ~/.bashrc"
 RUN /bin/bash -l -c "echo 'rvm --default use ruby-2.1' >> ~/.bashrc"
 RUN /bin/bash -l -c "gem install bundler --no-ri --no-rdoc"
-
 
 RUN mkdir /var/local/jenkins
 

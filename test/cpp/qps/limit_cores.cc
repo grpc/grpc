@@ -36,7 +36,6 @@
 #include <grpc/support/cpu.h>
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
-#include <vector>
 
 namespace grpc {
 namespace testing {
@@ -46,11 +45,11 @@ namespace testing {
 #define _GNU_SOURCE
 #endif
 #include <sched.h>
-int LimitCores(const int *cores, int cores_size) {
+int LimitCores(const int* cores, int cores_size) {
   const int num_cores = gpr_cpu_num_cores();
   int cores_set = 0;
 
-  cpu_set_t *cpup = CPU_ALLOC(num_cores);
+  cpu_set_t* cpup = CPU_ALLOC(num_cores);
   GPR_ASSERT(cpup);
   const size_t size = CPU_ALLOC_SIZE(num_cores);
   CPU_ZERO_S(size, cpup);
@@ -74,7 +73,7 @@ int LimitCores(const int *cores, int cores_size) {
 }
 #else
 // LimitCores is not currently supported for non-Linux platforms
-int LimitCores(std::vector<int> core_vec) { return gpr_cpu_num_cores(); }
+int LimitCores(const int*, int) { return gpr_cpu_num_cores(); }
 #endif
 }  // namespace testing
 }  // namespace grpc
