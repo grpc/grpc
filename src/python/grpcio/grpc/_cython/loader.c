@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,17 +31,29 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_CENSUS_CONTEXT_H
-#define GRPC_INTERNAL_CORE_CENSUS_CONTEXT_H
+#include "loader.h"
 
-#include <grpc/census.h>
+#if GPR_WIN32
 
-#define GRPC_CENSUS_MAX_ON_THE_WIRE_TAG_BYTES 2048
+int pygrpc_load_core(char *path) {
+  HMODULE grpc_c;
+#ifdef GPR_ARCH_32
+  /* Close your eyes for a moment, it'll all be over soon. */
+  char *six = strrchr(path, '6');
+  *six++ = '3';
+  *six = '2';
+#endif
+  grpc_c = LoadLibraryA(path);
+  if (grpc_c) {
+    pygrpc_load_imports(grpc_c);
+    return 1;
+  }
 
-/* census_context is the in-memory representation of information needed to
- * maintain tracing, RPC statistics and resource usage information. */
-struct census_context {
-  census_tag_set *tags; /* Opaque data structure for census tags. */
-};
+  return 0;
+}
 
-#endif /* GRPC_INTERNAL_CORE_CENSUS_CONTEXT_H */
+#else
+
+int pygrpc_load_core(char *path) { return 1; }
+
+#endif
