@@ -68,6 +68,18 @@
     ], 
     "headers": [], 
     "language": "c", 
+    "name": "census_context_test", 
+    "src": [
+      "test/core/census/context_test.c"
+    ]
+  }, 
+  {
+    "deps": [
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
     "name": "channel_create_test", 
     "src": [
       "test/core/surface/channel_create_test.c"
@@ -979,18 +991,6 @@
     "name": "socket_utils_test", 
     "src": [
       "test/core/iomgr/socket_utils_test.c"
-    ]
-  }, 
-  {
-    "deps": [
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "tag_set_test", 
-    "src": [
-      "test/core/census/tag_set_test.c"
     ]
   }, 
   {
@@ -2506,7 +2506,6 @@
       "include/grpc/support/tls_pthread.h", 
       "include/grpc/support/useful.h", 
       "src/core/census/aggregation.h", 
-      "src/core/census/context.h", 
       "src/core/census/grpc_filter.h", 
       "src/core/census/rpc_metric_id.h", 
       "src/core/channel/channel_args.h", 
@@ -2706,7 +2705,6 @@
       "include/grpc/support/useful.h", 
       "src/core/census/aggregation.h", 
       "src/core/census/context.c", 
-      "src/core/census/context.h", 
       "src/core/census/grpc_context.c", 
       "src/core/census/grpc_filter.c", 
       "src/core/census/grpc_filter.h", 
@@ -2714,7 +2712,6 @@
       "src/core/census/operation.c", 
       "src/core/census/placeholders.c", 
       "src/core/census/rpc_metric_id.h", 
-      "src/core/census/tag_set.c", 
       "src/core/census/tracing.c", 
       "src/core/channel/channel_args.c", 
       "src/core/channel/channel_args.h", 
@@ -3181,7 +3178,6 @@
       "include/grpc/support/tls_pthread.h", 
       "include/grpc/support/useful.h", 
       "src/core/census/aggregation.h", 
-      "src/core/census/context.h", 
       "src/core/census/grpc_filter.h", 
       "src/core/census/rpc_metric_id.h", 
       "src/core/channel/channel_args.h", 
@@ -3366,7 +3362,6 @@
       "include/grpc/support/useful.h", 
       "src/core/census/aggregation.h", 
       "src/core/census/context.c", 
-      "src/core/census/context.h", 
       "src/core/census/grpc_context.c", 
       "src/core/census/grpc_filter.c", 
       "src/core/census/grpc_filter.h", 
@@ -3374,7 +3369,6 @@
       "src/core/census/operation.c", 
       "src/core/census/placeholders.c", 
       "src/core/census/rpc_metric_id.h", 
-      "src/core/census/tag_set.c", 
       "src/core/census/tracing.c", 
       "src/core/channel/channel_args.c", 
       "src/core/channel/channel_args.h", 
