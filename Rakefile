@@ -77,7 +77,7 @@ task 'dlls' do
   env += 'SYSTEM=MINGW32 '
   env += 'EMBED_ZLIB=true '
   env += 'BUILDDIR=/tmp '
-  env += "CONFIG=#{grpc_config} '
+  env += "CONFIG=#{grpc_config} "
   env += "V=#{verbose} "
   out = "/tmp/libs/#{grpc_config}/grpc-0.dll"
 
@@ -100,7 +100,7 @@ task 'boringssl' do
   env = 'CPPFLAGS="-D_WIN32_WINNT=0x600 -DUNICODE -D_UNICODE" '
   env += 'SYSTEM=MINGW32 '
   env += 'BUILDDIR=/tmp '
-  env += "CONFIG=#{grpc_config} '
+  env += "CONFIG=#{grpc_config} "
   env += "V=#{verbose} "
   out = "/tmp/libs/#{grpc_config}/libboringssl.a"
 
