@@ -67,7 +67,7 @@ class CommandError(Exception):
 
 # TODO(atash): Remove this once PyPI has better Linux bdist support. See
 # https://bitbucket.org/pypa/pypi/issues/120/binary-wheels-for-linux-are-not-supported
-def _get_linux_bdist_egg(decorated_basename, target_egg_basename):
+def _get_grpc_custom_bdist_egg(decorated_basename, target_egg_basename):
   """Returns a string path to a .egg file for Linux to install.
 
   If we can retrieve a pre-compiled egg from online, uses it. Else, emits a
@@ -100,6 +100,7 @@ def _get_linux_bdist_egg(decorated_basename, target_egg_basename):
 
 
 class EggNameMixin(object):
+  """Mixin for setuptools.Command classes to enable acquiring the egg name."""
 
   def egg_name(self, with_custom):
     """
@@ -124,25 +125,25 @@ class Install(install.install, EggNameMixin):
   """
 
   user_options = install.install.user_options + [
-      # TODO(atash): remove this once manylinux gets on PyPI. See
+      # TODO(atash): remove this once PyPI has better Linux bdist support. See
       # https://bitbucket.org/pypa/pypi/issues/120/binary-wheels-for-linux-are-not-supported
-      ('use-linux-bdist', None,
-       'Whether to retrieve a binary for Linux instead of building from '
-       'source.'),
+      ('use-grpc-custom-bdist', None,
+       'Whether to retrieve a binary from the gRPC binary repository instead '
+       'of building from source.'),
   ]
 
   def initialize_options(self):
     install.install.initialize_options(self)
-    self.use_linux_bdist = False
+    self.use_grpc_custom_bdist = False
 
   def finalize_options(self):
     install.install.finalize_options(self)
 
   def run(self):
-    if self.use_linux_bdist:
+    if self.use_grpc_custom_bdist:
       try:
-        egg_path = _get_linux_bdist_egg(self.egg_name(True),
-                                        self.egg_name(False))
+        egg_path = _get_grpc_custom_bdist_egg(self.egg_name(True),
+                                              self.egg_name(False))
       except CommandError as error:
         sys.stderr.write(
             '\nWARNING: Failed to acquire grpcio prebuilt binary:\n'

@@ -97,6 +97,7 @@ namespace Grpc.Core.Internal
         public readonly Delegates.grpcsharp_channel_args_set_integer_delegate grpcsharp_channel_args_set_integer;
         public readonly Delegates.grpcsharp_channel_args_destroy_delegate grpcsharp_channel_args_destroy;
 
+        public readonly Delegates.grpcsharp_override_default_ssl_roots grpcsharp_override_default_ssl_roots;
         public readonly Delegates.grpcsharp_ssl_credentials_create_delegate grpcsharp_ssl_credentials_create;
         public readonly Delegates.grpcsharp_composite_channel_credentials_create_delegate grpcsharp_composite_channel_credentials_create;
         public readonly Delegates.grpcsharp_channel_credentials_release_delegate grpcsharp_channel_credentials_release;
@@ -203,6 +204,7 @@ namespace Grpc.Core.Internal
                 this.grpcsharp_channel_args_set_integer = GetMethodDelegate<Delegates.grpcsharp_channel_args_set_integer_delegate>(library);
                 this.grpcsharp_channel_args_destroy = GetMethodDelegate<Delegates.grpcsharp_channel_args_destroy_delegate>(library);
 
+                this.grpcsharp_override_default_ssl_roots = GetMethodDelegate<Delegates.grpcsharp_override_default_ssl_roots>(library);
                 this.grpcsharp_ssl_credentials_create = GetMethodDelegate<Delegates.grpcsharp_ssl_credentials_create_delegate>(library);
                 this.grpcsharp_composite_channel_credentials_create = GetMethodDelegate<Delegates.grpcsharp_composite_channel_credentials_create_delegate>(library);
                 this.grpcsharp_channel_credentials_release = GetMethodDelegate<Delegates.grpcsharp_channel_credentials_release_delegate>(library);
@@ -306,6 +308,7 @@ namespace Grpc.Core.Internal
                 this.grpcsharp_channel_args_set_integer = PInvokeMethods.grpcsharp_channel_args_set_integer;
                 this.grpcsharp_channel_args_destroy = PInvokeMethods.grpcsharp_channel_args_destroy;
 
+                this.grpcsharp_override_default_ssl_roots = PInvokeMethods.grpcsharp_override_default_ssl_roots;
                 this.grpcsharp_ssl_credentials_create = PInvokeMethods.grpcsharp_ssl_credentials_create;
                 this.grpcsharp_composite_channel_credentials_create = PInvokeMethods.grpcsharp_composite_channel_credentials_create;
                 this.grpcsharp_channel_credentials_release = PInvokeMethods.grpcsharp_channel_credentials_release;
@@ -449,6 +452,7 @@ namespace Grpc.Core.Internal
             public delegate void grpcsharp_channel_args_set_integer_delegate(ChannelArgsSafeHandle args, UIntPtr index, string key, int value);
             public delegate void grpcsharp_channel_args_destroy_delegate(IntPtr args);
 
+            public delegate void grpcsharp_override_default_ssl_roots(string pemRootCerts);
             public delegate ChannelCredentialsSafeHandle grpcsharp_ssl_credentials_create_delegate(string pemRootCerts, string keyCertPairCertChain, string keyCertPairPrivateKey);
             public delegate ChannelCredentialsSafeHandle grpcsharp_composite_channel_credentials_create_delegate(ChannelCredentialsSafeHandle channelCreds, CallCredentialsSafeHandle callCreds);
             public delegate void grpcsharp_channel_credentials_release_delegate(IntPtr credentials);
@@ -656,6 +660,9 @@ namespace Grpc.Core.Internal
             public static extern void grpcsharp_channel_args_destroy(IntPtr args);
 
             // ChannelCredentialsSafeHandle
+
+            [DllImport("grpc_csharp_ext.dll", CharSet = CharSet.Ansi)]
+            public static extern void grpcsharp_override_default_ssl_roots(string pemRootCerts);
 
             [DllImport("grpc_csharp_ext.dll", CharSet = CharSet.Ansi)]
             public static extern ChannelCredentialsSafeHandle grpcsharp_ssl_credentials_create(string pemRootCerts, string keyCertPairCertChain, string keyCertPairPrivateKey);

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2.7
 # Copyright 2016, Google Inc.
 # All rights reserved.
 #
@@ -62,7 +62,7 @@ def create_jobspec(name, cmdline, environ=None, shell=False,
           cmdline=cmdline,
           environ=environ,
           shortname='build_artifact.%s' % (name),
-          timeout_seconds=5*60,
+          timeout_seconds=10*60,
           flake_retries=flake_retries,
           timeout_retries=timeout_retries,
           shell=shell)
@@ -78,6 +78,69 @@ def macos_arch_env(arch):
   else:
     raise Exception('Unsupported arch')
   return {'CFLAGS': arch_arg, 'LDFLAGS': arch_arg}
+
+
+class PythonArtifact:
+  """Builds Python artifacts."""
+
+  def __init__(self, platform, arch):
+    self.name = 'python_%s_%s' % (platform, arch)
+    self.platform = platform
+    self.arch = arch
+    self.labels = ['artifact', 'python', platform, arch]
+
+  def pre_build_jobspecs(self):
+      return []
+
+  def build_jobspec(self):
+    if self.platform == 'windows':
+      raise Exception('Not supported yet.')
+    else:
+      environ = {}
+      if self.platform == 'linux':
+        if self.arch == 'x86':
+          environ['SETARCH_CMD'] = 'linux32'
+        return create_docker_jobspec(self.name,
+            'tools/dockerfile/grpc_artifact_linux_%s' % self.arch,
+            'tools/run_tests/build_artifact_python.sh',
+            environ=environ)
+      else:
+        environ['SKIP_PIP_INSTALL'] = 'TRUE'
+        return create_jobspec(self.name,
+                              ['tools/run_tests/build_artifact_python.sh'],
+                              environ=environ)
+
+  def __str__(self):
+    return self.name
+
+
+class RubyArtifact:
+  """Builds ruby native gem."""
+
+  def __init__(self, platform, arch):
+    self.name = 'ruby_native_gem_%s_%s' % (platform, arch)
+    self.platform = platform
+    self.arch = arch
+    self.labels = ['artifact', 'ruby', platform, arch]
+
+  def pre_build_jobspecs(self):
+    return []
+
+  def build_jobspec(self):
+    if self.platform == 'windows':
+      raise Exception("Not supported yet")
+    else:
+      if self.platform == 'linux':
+        environ = {}
+        if self.arch == 'x86':
+          environ['SETARCH_CMD'] = 'linux32'
+        return create_docker_jobspec(self.name,
+            'tools/dockerfile/grpc_artifact_linux_%s' % self.arch,
+            'tools/run_tests/build_artifact_ruby.sh',
+            environ=environ)
+      else:
+        return create_jobspec(self.name,
+                              ['tools/run_tests/build_artifact_ruby.sh'])
 
 
 class CSharpExtArtifact:
@@ -126,12 +189,51 @@ class CSharpExtArtifact:
   def __str__(self):
     return self.name
 
+node_gyp_arch_map = {
+  'x86': 'ia32',
+  'x64': 'x64'
+}
+
+class NodeExtArtifact:
+  """Builds Node native extension"""
+
+  def __init__(self, platform, arch):
+    self.name = 'node_ext_{0}_{1}'.format(platform, arch)
+    self.platform = platform
+    self.arch = arch
+    self.gyp_arch = node_gyp_arch_map[arch]
+    self.labels = ['artifact', 'node', platform, arch]
+
+  def pre_build_jobspecs(self):
+    return []
+
+  def build_jobspec(self):
+    if self.platform == 'windows':
+      return create_jobspec(self.name,
+                            ['tools\\run_tests\\build_artifact_node.bat',
+                             self.gyp_arch],
+                            shell=True)
+    else:
+      if self.platform == 'linux':
+        return create_docker_jobspec(
+            self.name,
+            'tools/dockerfile/grpc_artifact_linux_{}'.format(self.arch),
+            'tools/run_tests/build_artifact_node.sh {}'.format(self.gyp_arch))
+      else:
+        return create_jobspec(self.name,
+                              ['tools/run_tests/build_artifact_node.sh',
+                               self.gyp_arch])
+
 
 def targets():
   """Gets list of supported targets"""
-  return [CSharpExtArtifact('linux', 'x86'),
-          CSharpExtArtifact('linux', 'x64'),
-          CSharpExtArtifact('macos', 'x86'),
-          CSharpExtArtifact('macos', 'x64'),
-          CSharpExtArtifact('windows', 'x86'),
-          CSharpExtArtifact('windows', 'x64')]
+  return ([Cls(platform, arch)
+           for Cls in (CSharpExtArtifact, NodeExtArtifact)
+           for platform in ('linux', 'macos', 'windows')
+           for arch in ('x86', 'x64')] +
+          [PythonArtifact('linux', 'x86'),
+           PythonArtifact('linux', 'x64'),
+           PythonArtifact('macos', 'x64'),
+           RubyArtifact('linux', 'x86'),
+           RubyArtifact('linux', 'x64'),
+           RubyArtifact('macos', 'x64')])
