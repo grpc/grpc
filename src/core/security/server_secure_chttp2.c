@@ -208,6 +208,14 @@ int grpc_server_add_secure_http2_port(grpc_server *server, const char *addr,
     goto error;
   }
 
+  state->server = server;
+  state->tcp = tcp;
+  state->sc = sc;
+  state->creds = grpc_server_credentials_ref(creds);
+  state->is_shutdown = 0;
+  gpr_mu_init(&state->mu);
+  gpr_ref_init(&state->refcount, 1);
+
   for (i = 0; i < resolved->naddrs; i++) {
     port_temp = grpc_tcp_server_add_port(
         tcp, (struct sockaddr *)&resolved->addrs[i].addr,
@@ -233,15 +241,6 @@ int grpc_server_add_secure_http2_port(grpc_server *server, const char *addr,
   }
   grpc_resolved_addresses_destroy(resolved);
 
-  state->server = server;
-  state->tcp = tcp;
-  state->sc = sc;
-  state->creds = grpc_server_credentials_ref(creds);
-
-  state->is_shutdown = 0;
-  gpr_mu_init(&state->mu);
-  gpr_ref_init(&state->refcount, 1);
-
   /* Register with the server only upon success */
   grpc_server_add_listener(&exec_ctx, server, state, start, destroy);
 
@@ -250,17 +249,18 @@ int grpc_server_add_secure_http2_port(grpc_server *server, const char *addr,
 
 /* Error path: cleanup and return */
 error:
-  if (sc) {
-    GRPC_SECURITY_CONNECTOR_UNREF(sc, "server");
-  }
   if (resolved) {
     grpc_resolved_addresses_destroy(resolved);
   }
   if (tcp) {
     grpc_tcp_server_unref(&exec_ctx, tcp);
-  }
-  if (state) {
-    gpr_free(state);
+  } else {
+    if (sc) {
+      GRPC_SECURITY_CONNECTOR_UNREF(sc, "server");
+    }
+    if (state) {
+      gpr_free(state);
+    }
   }
   grpc_exec_ctx_finish(&exec_ctx);
   return 0;
