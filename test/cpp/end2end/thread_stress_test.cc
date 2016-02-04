@@ -315,22 +315,22 @@ class AsyncClientEnd2endTest : public ::testing::Test {
 TEST_F(AsyncClientEnd2endTest, ThreadStress) {
   common_.ResetStub();
   std::vector<std::thread*> send_threads, completion_threads;
-  for (int i = 0; i < kNumThreads; ++i) {
+  for (int i = 0; i < kNumThreads / 2; ++i) {
     completion_threads.push_back(new std::thread(
         &AsyncClientEnd2endTest_ThreadStress_Test::AsyncCompleteRpc, this));
   }
-  for (int i = 0; i < kNumThreads; ++i) {
+  for (int i = 0; i < kNumThreads / 2; ++i) {
     send_threads.push_back(
         new std::thread(&AsyncClientEnd2endTest_ThreadStress_Test::AsyncSendRpc,
                         this, kNumRpcs));
   }
-  for (int i = 0; i < kNumThreads; ++i) {
+  for (int i = 0; i < kNumThreads / 2; ++i) {
     send_threads[i]->join();
     delete send_threads[i];
   }
 
   Wait();
-  for (int i = 0; i < kNumThreads; ++i) {
+  for (int i = 0; i < kNumThreads / 2; ++i) {
     completion_threads[i]->join();
     delete completion_threads[i];
   }
