@@ -1,4 +1,3 @@
-#!/bin/bash
 # Copyright 2016, Google Inc.
 # All rights reserved.
 #
@@ -28,13 +27,10 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-set -ex
+FROM 32bit/debian:jessie
 
-cd $(dirname $0)/../..
+RUN apt-get update && apt-get install -y curl git
 
-mkdir -p artifacts/
-cp -r $EXTERNAL_GIT_ROOT/architecture={x86,x64},language=node,platform={windows,linux,macos}/artifacts/* artifacts/ || true
-
-npm pack
-
-cp grpc-*.tgz artifacts/grpc.tgz
+# Install nvm
+RUN touch .profile
+RUN curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.30.2/install.sh | bash
