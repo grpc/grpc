@@ -38,10 +38,9 @@
 @interface GRPCCall (ChannelArg)
 
 /**
- * Use the provided @c userAgentPrefix at the beginning of the HTTP User Agent string for all calls.
+ * Use the provided @c userAgentPrefix at the beginning of the HTTP User Agent string for all calls
+ * to the specified @c host.
  */
-+ (void)setUserAgentPrefix:(NSString *)userAgentPrefix;
-
-+ (NSString *)userAgentPrefix;
++ (void)setUserAgentPrefix:(NSString *)userAgentPrefix forHost:(NSString *)host;
 
 @end
