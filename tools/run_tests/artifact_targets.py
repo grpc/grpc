@@ -175,7 +175,8 @@ class CSharpExtArtifact:
     else:
       environ = {'CONFIG': 'opt',
                  'EMBED_OPENSSL': 'true',
-                 'EMBED_ZLIB': 'true'}
+                 'EMBED_ZLIB': 'true',
+                 'CFLAGS': '-DGPR_BACKWARDS_COMPATIBILITY_MODE'}
       if self.platform == 'linux':
         return create_docker_jobspec(self.name,
             'tools/dockerfile/grpc_artifact_linux_%s' % self.arch,
