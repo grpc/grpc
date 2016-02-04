@@ -31,7 +31,7 @@
  *
  */
 
-// Test census_tag_set functions, including encoding/decoding
+// Test census_context functions, including encoding/decoding
 
 #include <grpc/census.h>
 #include <grpc/support/log.h>
@@ -46,7 +46,7 @@ static uint8_t one_byte_val = 7;
 static uint32_t four_byte_val = 0x12345678;
 static uint64_t eight_byte_val = 0x1234567890abcdef;
 
-// A set of tags Used to create a basic tag_set for testing. Each tag has a
+// A set of tags Used to create a basic context for testing. Each tag has a
 // unique set of flags. Note that replace_add_delete_test() relies on specific
 // offsets into this array - if you add or delete entries, you will also need
 // to change the test.
@@ -65,7 +65,7 @@ static census_tag basic_tags[BASIC_TAG_COUNT] = {
     /* 7 */ {"k7", (char *)&four_byte_val, 4,
              CENSUS_TAG_PROPAGATE | CENSUS_TAG_STATS | CENSUS_TAG_BINARY}};
 
-// Set of tags used to modify the basic tag_set. Note that
+// Set of tags used to modify the basic context. Note that
 // replace_add_delete_test() relies on specific offsets into this array - if
 // you add or delete entries, you will also need to change the test. Other
 // tests that rely on specific instances have XXX_XXX_OFFSET definitions (also
@@ -99,35 +99,34 @@ static bool compare_tag(const census_tag *t1, const census_tag *t2) {
           t1->flags == t2->flags);
 }
 
-// Utility function to validate a tag exists in tag set.
-static bool validate_tag(const census_tag_set *cts, const census_tag *tag) {
+// Utility function to validate a tag exists in context.
+static bool validate_tag(const census_context *context, const census_tag *tag) {
   census_tag tag2;
-  if (census_tag_set_get_tag_by_key(cts, tag->key, &tag2) != 1) return false;
+  if (census_context_get_tag(context, tag->key, &tag2) != 1) return false;
   return compare_tag(tag, &tag2);
 }
 
-// Create an empty tag_set.
+// Create an empty context.
 static void empty_test(void) {
-  struct census_tag_set *cts = census_tag_set_create(NULL, NULL, 0, NULL);
-  GPR_ASSERT(cts != NULL);
-  const census_tag_set_create_status *status =
-      census_tag_set_get_create_status(cts);
-  census_tag_set_create_status expected = {0, 0, 0, 0, 0, 0, 0, 0};
+  struct census_context *context = census_context_create(NULL, NULL, 0, NULL);
+  GPR_ASSERT(context != NULL);
+  const census_context_status *status = census_context_get_status(context);
+  census_context_status expected = {0, 0, 0, 0, 0, 0, 0, 0};
   GPR_ASSERT(memcmp(status, &expected, sizeof(expected)) == 0);
-  census_tag_set_destroy(cts);
+  census_context_destroy(context);
 }
 
-// Test create and iteration over basic tag set.
+// Test create and iteration over basic context.
 static void basic_test(void) {
-  const census_tag_set_create_status *status;
-  struct census_tag_set *cts =
-      census_tag_set_create(NULL, basic_tags, BASIC_TAG_COUNT, &status);
-  census_tag_set_create_status expected = {2, 2, 4, 0, 8, 0, 0, 0};
+  const census_context_status *status;
+  struct census_context *context =
+      census_context_create(NULL, basic_tags, BASIC_TAG_COUNT, &status);
+  census_context_status expected = {2, 2, 4, 0, 8, 0, 0, 0};
   GPR_ASSERT(memcmp(status, &expected, sizeof(expected)) == 0);
-  census_tag_set_iterator it;
-  census_tag_set_initialize_iterator(cts, &it);
+  census_context_iterator it;
+  census_context_initialize_iterator(context, &it);
   census_tag tag;
-  while (census_tag_set_next_tag(&it, &tag)) {
+  while (census_context_next_tag(&it, &tag)) {
     // can't rely on tag return order: make sure it matches exactly one.
     int matches = 0;
     for (int i = 0; i < BASIC_TAG_COUNT; i++) {
@@ -135,29 +134,28 @@ static void basic_test(void) {
     }
     GPR_ASSERT(matches == 1);
   }
-  census_tag_set_destroy(cts);
+  census_context_destroy(context);
 }
 
-// Test that census_tag_set_get_tag_by_key().
+// Test census_context_get_tag().
 static void lookup_by_key_test(void) {
-  struct census_tag_set *cts =
-      census_tag_set_create(NULL, basic_tags, BASIC_TAG_COUNT, NULL);
+  struct census_context *context =
+      census_context_create(NULL, basic_tags, BASIC_TAG_COUNT, NULL);
   census_tag tag;
   for (int i = 0; i < BASIC_TAG_COUNT; i++) {
-    GPR_ASSERT(census_tag_set_get_tag_by_key(cts, basic_tags[i].key, &tag) ==
-               1);
+    GPR_ASSERT(census_context_get_tag(context, basic_tags[i].key, &tag) == 1);
     GPR_ASSERT(compare_tag(&tag, &basic_tags[i]));
   }
   // non-existent keys
-  GPR_ASSERT(census_tag_set_get_tag_by_key(cts, "key", &tag) == 0);
-  GPR_ASSERT(census_tag_set_get_tag_by_key(cts, "key01", &tag) == 0);
-  GPR_ASSERT(census_tag_set_get_tag_by_key(cts, "k9", &tag) == 0);
-  GPR_ASSERT(census_tag_set_get_tag_by_key(cts, "random", &tag) == 0);
-  GPR_ASSERT(census_tag_set_get_tag_by_key(cts, "", &tag) == 0);
-  census_tag_set_destroy(cts);
+  GPR_ASSERT(census_context_get_tag(context, "key", &tag) == 0);
+  GPR_ASSERT(census_context_get_tag(context, "key01", &tag) == 0);
+  GPR_ASSERT(census_context_get_tag(context, "k9", &tag) == 0);
+  GPR_ASSERT(census_context_get_tag(context, "random", &tag) == 0);
+  GPR_ASSERT(census_context_get_tag(context, "", &tag) == 0);
+  census_context_destroy(context);
 }
 
-// Try creating tag set with invalid entries.
+// Try creating context with invalid entries.
 static void invalid_test(void) {
   char key[300];
   memset(key, 'k', 299);
@@ -168,155 +166,156 @@ static void invalid_test(void) {
   // long keys, short value. Key lengths (including terminator) should be
   // <= 255 (CENSUS_MAX_TAG_KV_LEN)
   GPR_ASSERT(strlen(key) == 299);
-  const census_tag_set_create_status *status;
-  struct census_tag_set *cts = census_tag_set_create(NULL, &tag, 1, &status);
-  census_tag_set_create_status expected = {0, 0, 0, 0, 0, 0, 1, 0};
+  const census_context_status *status;
+  struct census_context *context =
+      census_context_create(NULL, &tag, 1, &status);
+  census_context_status expected = {0, 0, 0, 0, 0, 0, 1, 0};
   GPR_ASSERT(memcmp(status, &expected, sizeof(expected)) == 0);
-  census_tag_set_destroy(cts);
+  census_context_destroy(context);
   key[CENSUS_MAX_TAG_KV_LEN] = 0;
   GPR_ASSERT(strlen(key) == CENSUS_MAX_TAG_KV_LEN);
-  cts = census_tag_set_create(NULL, &tag, 1, &status);
+  context = census_context_create(NULL, &tag, 1, &status);
   GPR_ASSERT(memcmp(status, &expected, sizeof(expected)) == 0);
-  census_tag_set_destroy(cts);
+  census_context_destroy(context);
   key[CENSUS_MAX_TAG_KV_LEN - 1] = 0;
   GPR_ASSERT(strlen(key) == CENSUS_MAX_TAG_KV_LEN - 1);
-  cts = census_tag_set_create(NULL, &tag, 1, &status);
-  census_tag_set_create_status expected2 = {0, 0, 1, 0, 1, 0, 0, 0};
+  context = census_context_create(NULL, &tag, 1, &status);
+  census_context_status expected2 = {0, 0, 1, 0, 1, 0, 0, 0};
   GPR_ASSERT(memcmp(status, &expected2, sizeof(expected2)) == 0);
-  census_tag_set_destroy(cts);
+  census_context_destroy(context);
   // now try with long values
   tag.value_len = 300;
-  cts = census_tag_set_create(NULL, &tag, 1, &status);
+  context = census_context_create(NULL, &tag, 1, &status);
   GPR_ASSERT(memcmp(status, &expected, sizeof(expected)) == 0);
-  census_tag_set_destroy(cts);
+  census_context_destroy(context);
   tag.value_len = CENSUS_MAX_TAG_KV_LEN + 1;
-  cts = census_tag_set_create(NULL, &tag, 1, &status);
+  context = census_context_create(NULL, &tag, 1, &status);
   GPR_ASSERT(memcmp(status, &expected, sizeof(expected)) == 0);
-  census_tag_set_destroy(cts);
+  census_context_destroy(context);
   tag.value_len = CENSUS_MAX_TAG_KV_LEN;
-  cts = census_tag_set_create(NULL, &tag, 1, &status);
+  context = census_context_create(NULL, &tag, 1, &status);
   GPR_ASSERT(memcmp(status, &expected2, sizeof(expected2)) == 0);
-  census_tag_set_destroy(cts);
+  census_context_destroy(context);
   // 0 length key.
   key[0] = 0;
-  cts = census_tag_set_create(NULL, &tag, 1, &status);
+  context = census_context_create(NULL, &tag, 1, &status);
   GPR_ASSERT(memcmp(status, &expected, sizeof(expected)) == 0);
-  census_tag_set_destroy(cts);
+  census_context_destroy(context);
 }
 
-// Make a copy of a tag set
+// Make a copy of a context
 static void copy_test(void) {
-  struct census_tag_set *cts =
-      census_tag_set_create(NULL, basic_tags, BASIC_TAG_COUNT, NULL);
-  const census_tag_set_create_status *status;
-  struct census_tag_set *cts2 = census_tag_set_create(cts, NULL, 0, &status);
-  census_tag_set_create_status expected = {2, 2, 4, 0, 0, 0, 0, 0};
+  struct census_context *context =
+      census_context_create(NULL, basic_tags, BASIC_TAG_COUNT, NULL);
+  const census_context_status *status;
+  struct census_context *context2 =
+      census_context_create(context, NULL, 0, &status);
+  census_context_status expected = {2, 2, 4, 0, 0, 0, 0, 0};
   GPR_ASSERT(memcmp(status, &expected, sizeof(expected)) == 0);
   for (int i = 0; i < BASIC_TAG_COUNT; i++) {
     census_tag tag;
-    GPR_ASSERT(census_tag_set_get_tag_by_key(cts2, basic_tags[i].key, &tag) ==
-               1);
+    GPR_ASSERT(census_context_get_tag(context2, basic_tags[i].key, &tag) == 1);
     GPR_ASSERT(compare_tag(&tag, &basic_tags[i]));
   }
-  census_tag_set_destroy(cts);
-  census_tag_set_destroy(cts2);
+  census_context_destroy(context);
+  census_context_destroy(context2);
 }
 
 // replace a single tag value
 static void replace_value_test(void) {
-  struct census_tag_set *cts =
-      census_tag_set_create(NULL, basic_tags, BASIC_TAG_COUNT, NULL);
-  const census_tag_set_create_status *status;
-  struct census_tag_set *cts2 = census_tag_set_create(
-      cts, modify_tags + REPLACE_VALUE_OFFSET, 1, &status);
-  census_tag_set_create_status expected = {2, 2, 4, 0, 0, 1, 0, 0};
+  struct census_context *context =
+      census_context_create(NULL, basic_tags, BASIC_TAG_COUNT, NULL);
+  const census_context_status *status;
+  struct census_context *context2 = census_context_create(
+      context, modify_tags + REPLACE_VALUE_OFFSET, 1, &status);
+  census_context_status expected = {2, 2, 4, 0, 0, 1, 0, 0};
   GPR_ASSERT(memcmp(status, &expected, sizeof(expected)) == 0);
   census_tag tag;
-  GPR_ASSERT(census_tag_set_get_tag_by_key(
-                 cts2, modify_tags[REPLACE_VALUE_OFFSET].key, &tag) == 1);
+  GPR_ASSERT(census_context_get_tag(
+                 context2, modify_tags[REPLACE_VALUE_OFFSET].key, &tag) == 1);
   GPR_ASSERT(compare_tag(&tag, &modify_tags[REPLACE_VALUE_OFFSET]));
-  census_tag_set_destroy(cts);
-  census_tag_set_destroy(cts2);
+  census_context_destroy(context);
+  census_context_destroy(context2);
 }
 
 // replace a single tags flags
 static void replace_flags_test(void) {
-  struct census_tag_set *cts =
-      census_tag_set_create(NULL, basic_tags, BASIC_TAG_COUNT, NULL);
-  const census_tag_set_create_status *status;
-  struct census_tag_set *cts2 =
-      census_tag_set_create(cts, modify_tags + REPLACE_FLAG_OFFSET, 1, &status);
-  census_tag_set_create_status expected = {1, 2, 5, 0, 0, 1, 0, 0};
+  struct census_context *context =
+      census_context_create(NULL, basic_tags, BASIC_TAG_COUNT, NULL);
+  const census_context_status *status;
+  struct census_context *context2 = census_context_create(
+      context, modify_tags + REPLACE_FLAG_OFFSET, 1, &status);
+  census_context_status expected = {1, 2, 5, 0, 0, 1, 0, 0};
   GPR_ASSERT(memcmp(status, &expected, sizeof(expected)) == 0);
   census_tag tag;
-  GPR_ASSERT(census_tag_set_get_tag_by_key(
-                 cts2, modify_tags[REPLACE_FLAG_OFFSET].key, &tag) == 1);
+  GPR_ASSERT(census_context_get_tag(
+                 context2, modify_tags[REPLACE_FLAG_OFFSET].key, &tag) == 1);
   GPR_ASSERT(compare_tag(&tag, &modify_tags[REPLACE_FLAG_OFFSET]));
-  census_tag_set_destroy(cts);
-  census_tag_set_destroy(cts2);
+  census_context_destroy(context);
+  census_context_destroy(context2);
 }
 
 // delete a single tag.
 static void delete_tag_test(void) {
-  struct census_tag_set *cts =
-      census_tag_set_create(NULL, basic_tags, BASIC_TAG_COUNT, NULL);
-  const census_tag_set_create_status *status;
-  struct census_tag_set *cts2 =
-      census_tag_set_create(cts, modify_tags + DELETE_TAG_OFFSET, 1, &status);
-  census_tag_set_create_status expected = {2, 1, 4, 1, 0, 0, 0, 0};
+  struct census_context *context =
+      census_context_create(NULL, basic_tags, BASIC_TAG_COUNT, NULL);
+  const census_context_status *status;
+  struct census_context *context2 = census_context_create(
+      context, modify_tags + DELETE_TAG_OFFSET, 1, &status);
+  census_context_status expected = {2, 1, 4, 1, 0, 0, 0, 0};
   GPR_ASSERT(memcmp(status, &expected, sizeof(expected)) == 0);
   census_tag tag;
-  GPR_ASSERT(census_tag_set_get_tag_by_key(
-                 cts2, modify_tags[DELETE_TAG_OFFSET].key, &tag) == 0);
-  census_tag_set_destroy(cts);
-  census_tag_set_destroy(cts2);
+  GPR_ASSERT(census_context_get_tag(
+                 context2, modify_tags[DELETE_TAG_OFFSET].key, &tag) == 0);
+  census_context_destroy(context);
+  census_context_destroy(context2);
 }
 
 // add a single new tag.
 static void add_tag_test(void) {
-  struct census_tag_set *cts =
-      census_tag_set_create(NULL, basic_tags, BASIC_TAG_COUNT, NULL);
-  const census_tag_set_create_status *status;
-  struct census_tag_set *cts2 =
-      census_tag_set_create(cts, modify_tags + ADD_TAG_OFFSET, 1, &status);
-  census_tag_set_create_status expected = {2, 2, 5, 0, 1, 0, 0, 0};
+  struct census_context *context =
+      census_context_create(NULL, basic_tags, BASIC_TAG_COUNT, NULL);
+  const census_context_status *status;
+  struct census_context *context2 =
+      census_context_create(context, modify_tags + ADD_TAG_OFFSET, 1, &status);
+  census_context_status expected = {2, 2, 5, 0, 1, 0, 0, 0};
   GPR_ASSERT(memcmp(status, &expected, sizeof(expected)) == 0);
   census_tag tag;
-  GPR_ASSERT(census_tag_set_get_tag_by_key(
-                 cts2, modify_tags[ADD_TAG_OFFSET].key, &tag) == 1);
+  GPR_ASSERT(census_context_get_tag(context2, modify_tags[ADD_TAG_OFFSET].key,
+                                    &tag) == 1);
   GPR_ASSERT(compare_tag(&tag, &modify_tags[ADD_TAG_OFFSET]));
-  census_tag_set_destroy(cts);
-  census_tag_set_destroy(cts2);
+  census_context_destroy(context);
+  census_context_destroy(context2);
 }
 
 // test many changes at once.
 static void replace_add_delete_test(void) {
-  struct census_tag_set *cts =
-      census_tag_set_create(NULL, basic_tags, BASIC_TAG_COUNT, NULL);
-  const census_tag_set_create_status *status;
-  struct census_tag_set *cts2 =
-      census_tag_set_create(cts, modify_tags, MODIFY_TAG_COUNT, &status);
-  census_tag_set_create_status expected = {2, 1, 6, 2, 3, 4, 0, 2};
+  struct census_context *context =
+      census_context_create(NULL, basic_tags, BASIC_TAG_COUNT, NULL);
+  const census_context_status *status;
+  struct census_context *context2 =
+      census_context_create(context, modify_tags, MODIFY_TAG_COUNT, &status);
+  census_context_status expected = {2, 1, 6, 2, 3, 4, 0, 2};
   GPR_ASSERT(memcmp(status, &expected, sizeof(expected)) == 0);
-  // validate tag set contents. Use specific indices into the two arrays
+  // validate context contents. Use specific indices into the two arrays
   // holding tag values.
-  GPR_ASSERT(validate_tag(cts2, &basic_tags[3]));
-  GPR_ASSERT(validate_tag(cts2, &basic_tags[4]));
-  GPR_ASSERT(validate_tag(cts2, &modify_tags[0]));
-  GPR_ASSERT(validate_tag(cts2, &modify_tags[1]));
-  GPR_ASSERT(validate_tag(cts2, &modify_tags[6]));
-  GPR_ASSERT(validate_tag(cts2, &modify_tags[7]));
-  GPR_ASSERT(validate_tag(cts2, &modify_tags[8]));
-  GPR_ASSERT(validate_tag(cts2, &modify_tags[9]));
-  GPR_ASSERT(validate_tag(cts2, &modify_tags[10]));
-  GPR_ASSERT(!validate_tag(cts2, &basic_tags[0]));
-  GPR_ASSERT(!validate_tag(cts2, &basic_tags[1]));
-  GPR_ASSERT(!validate_tag(cts2, &basic_tags[2]));
-  GPR_ASSERT(!validate_tag(cts2, &basic_tags[5]));
-  GPR_ASSERT(!validate_tag(cts2, &basic_tags[6]));
-  GPR_ASSERT(!validate_tag(cts2, &basic_tags[7]));
-  census_tag_set_destroy(cts);
-  census_tag_set_destroy(cts2);
+  GPR_ASSERT(validate_tag(context2, &basic_tags[3]));
+  GPR_ASSERT(validate_tag(context2, &basic_tags[4]));
+  GPR_ASSERT(validate_tag(context2, &modify_tags[0]));
+  GPR_ASSERT(validate_tag(context2, &modify_tags[1]));
+  GPR_ASSERT(validate_tag(context2, &modify_tags[6]));
+  GPR_ASSERT(validate_tag(context2, &modify_tags[7]));
+  GPR_ASSERT(validate_tag(context2, &modify_tags[8]));
+  GPR_ASSERT(validate_tag(context2, &modify_tags[9]));
+  GPR_ASSERT(validate_tag(context2, &modify_tags[10]));
+  GPR_ASSERT(!validate_tag(context2, &basic_tags[0]));
+  GPR_ASSERT(!validate_tag(context2, &basic_tags[1]));
+  GPR_ASSERT(!validate_tag(context2, &basic_tags[2]));
+  GPR_ASSERT(!validate_tag(context2, &basic_tags[5]));
+  GPR_ASSERT(!validate_tag(context2, &basic_tags[6]));
+  GPR_ASSERT(!validate_tag(context2, &basic_tags[7]));
+  census_context_destroy(context);
+  census_context_destroy(context2);
 }
 
 #define BUF_SIZE 200
@@ -324,38 +323,37 @@ static void replace_add_delete_test(void) {
 // test encode/decode.
 static void encode_decode_test(void) {
   char buffer[BUF_SIZE];
-  struct census_tag_set *cts =
-      census_tag_set_create(NULL, basic_tags, BASIC_TAG_COUNT, NULL);
+  struct census_context *context =
+      census_context_create(NULL, basic_tags, BASIC_TAG_COUNT, NULL);
   size_t print_bsize;
   size_t bin_bsize;
   // Test with too small a buffer
-  GPR_ASSERT(census_tag_set_encode(cts, buffer, 2, &print_bsize, &bin_bsize) ==
-             NULL);
-  char *b_buffer =
-      census_tag_set_encode(cts, buffer, BUF_SIZE, &print_bsize, &bin_bsize);
+  GPR_ASSERT(census_context_encode(context, buffer, 2, &print_bsize,
+                                   &bin_bsize) == NULL);
+  char *b_buffer = census_context_encode(context, buffer, BUF_SIZE,
+                                         &print_bsize, &bin_bsize);
   GPR_ASSERT(b_buffer != NULL && print_bsize > 0 && bin_bsize > 0 &&
              print_bsize + bin_bsize <= BUF_SIZE &&
              b_buffer == buffer + print_bsize);
-  census_tag_set *cts2 =
-      census_tag_set_decode(buffer, print_bsize, b_buffer, bin_bsize);
-  GPR_ASSERT(cts2 != NULL);
-  const census_tag_set_create_status *status =
-      census_tag_set_get_create_status(cts2);
-  census_tag_set_create_status expected = {2, 2, 0, 0, 0, 0, 0, 0};
+  census_context *context2 =
+      census_context_decode(buffer, print_bsize, b_buffer, bin_bsize);
+  GPR_ASSERT(context2 != NULL);
+  const census_context_status *status = census_context_get_status(context2);
+  census_context_status expected = {2, 2, 0, 0, 0, 0, 0, 0};
   GPR_ASSERT(memcmp(status, &expected, sizeof(expected)) == 0);
   for (int i = 0; i < BASIC_TAG_COUNT; i++) {
     census_tag tag;
     if (CENSUS_TAG_IS_PROPAGATED(basic_tags[i].flags)) {
-      GPR_ASSERT(census_tag_set_get_tag_by_key(cts2, basic_tags[i].key, &tag) ==
+      GPR_ASSERT(census_context_get_tag(context2, basic_tags[i].key, &tag) ==
                  1);
       GPR_ASSERT(compare_tag(&tag, &basic_tags[i]));
     } else {
-      GPR_ASSERT(census_tag_set_get_tag_by_key(cts2, basic_tags[i].key, &tag) ==
+      GPR_ASSERT(census_context_get_tag(context2, basic_tags[i].key, &tag) ==
                  0);
     }
   }
-  census_tag_set_destroy(cts2);
-  census_tag_set_destroy(cts);
+  census_context_destroy(context2);
+  census_context_destroy(context);
 }
 
 int main(int argc, char *argv[]) {

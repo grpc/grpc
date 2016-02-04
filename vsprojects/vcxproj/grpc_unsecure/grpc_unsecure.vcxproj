@@ -438,7 +438,6 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\transport\transport.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\transport\transport_impl.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\census\aggregation.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\census\context.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\census\rpc_metric_id.h" />
   </ItemGroup>
   <ItemGroup>
@@ -791,8 +790,6 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\census\operation.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\census\placeholders.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\census\tag_set.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\census\tracing.c">
     </ClCompile>
