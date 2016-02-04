@@ -55,8 +55,8 @@ using grpc::testing::EchoRequest;
 using grpc::testing::EchoResponse;
 using std::chrono::system_clock;
 
-const int kNumThreads = 100; // Number of threads
-const int kNumRpcs = 1000; // Number of RPCs per thread
+const int kNumThreads = 100;  // Number of threads
+const int kNumRpcs = 1000;    // Number of RPCs per thread
 
 namespace grpc {
 namespace testing {
@@ -232,8 +232,7 @@ TEST_F(End2endTest, ThreadStress) {
   common_.ResetStub();
   std::vector<std::thread*> threads;
   for (int i = 0; i < kNumThreads; ++i) {
-    threads.push_back(
-        new std::thread(SendRpc, common_.GetStub(), kNumRpcs));
+    threads.push_back(new std::thread(SendRpc, common_.GetStub(), kNumRpcs));
   }
   for (int i = 0; i < kNumThreads; ++i) {
     threads[i]->join();
