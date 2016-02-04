@@ -34,23 +34,6 @@
 #ifndef GRPC_IMPL_CODEGEN_PORT_PLATFORM_H
 #define GRPC_IMPL_CODEGEN_PORT_PLATFORM_H
 
-#ifdef _MSC_VER
-#if _MSC_VER < 1700
-typedef __int8 int8_t;
-typedef __int16 int16_t;
-typedef __int32 int32_t;
-typedef __int64 int64_t;
-typedef unsigned __int8 uint8_t;
-typedef unsigned __int16 uint16_t;
-typedef unsigned __int32 uint32_t;
-typedef unsigned __int64 uint64_t;
-#else
-#include <stdint.h>
-#endif /* _MSC_VER < 1700 */
-#else
-#include <stdint.h>
-#endif /* _MSC_VER */
-
 /* Get windows.h included everywhere (we need it) */
 #if defined(_WIN64) || defined(WIN64) || defined(_WIN32) || defined(WIN32)
 #ifndef WIN32_LEAN_AND_MEAN
@@ -270,6 +253,23 @@ typedef unsigned __int64 uint64_t;
 #undef GPR_FORBID_UNREACHABLE_CODE
 #define GPR_FORBID_UNREACHABLE_CODE 1
 #endif
+
+#ifdef _MSC_VER
+#if _MSC_VER < 1700
+typedef __int8 int8_t;
+typedef __int16 int16_t;
+typedef __int32 int32_t;
+typedef __int64 int64_t;
+typedef unsigned __int8 uint8_t;
+typedef unsigned __int16 uint16_t;
+typedef unsigned __int32 uint32_t;
+typedef unsigned __int64 uint64_t;
+#else
+#include <stdint.h>
+#endif /* _MSC_VER < 1700 */
+#else
+#include <stdint.h>
+#endif /* _MSC_VER */
 
 /* Cache line alignment */
 #ifndef GPR_CACHELINE_SIZE_LOG
