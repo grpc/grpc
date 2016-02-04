@@ -216,7 +216,7 @@ class HybridEnd2endTest : public ::testing::Test {
     }
     // Create a separate cq for each potential handler.
     for (int i = 0; i < 5; i++) {
-      cqs_.push_back(std::move(builder.AddCompletionQueue()));
+      cqs_.push_back(builder.AddCompletionQueue());
     }
     server_ = builder.BuildAndStart();
   }
