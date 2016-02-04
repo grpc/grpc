@@ -1,5 +1,4 @@
-#!/bin/bash
-# Copyright 2016, Google Inc.
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -28,20 +27,11 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-set -ex
+FROM ubuntu:16.04
 
-cd $(dirname $0)/../..
+RUN apt-get update && apt-get install -y \
+    mono-devel \
+    ca-certificates-mono \
+    nuget
 
-pip install --upgrade six
-pip install --upgrade setuptools
-
-pip install -rrequirements.txt
-
-GRPC_PYTHON_BUILD_WITH_CYTHON=1 ${SETARCH_CMD} python setup.py \
-    bdist_wheel \
-    sdist \
-    bdist_egg_grpc_custom
-
-mkdir -p artifacts
-
-cp -r dist/* artifacts
+RUN apt-get update && apt-get install -y git unzip

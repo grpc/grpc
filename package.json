@@ -84,6 +84,7 @@
     "src/node/src/client.js",
     "src/node/src/common.js",
     "src/node/src/credentials.js",
+    "src/node/src/grpc_extension.js",
     "src/node/src/metadata.js",
     "src/node/src/server.js",
     "include/grpc/grpc_security.h",

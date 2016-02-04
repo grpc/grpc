@@ -32,16 +32,8 @@ set -ex
 
 cd $(dirname $0)/../..
 
-pip install --upgrade six
-pip install --upgrade setuptools
+cp -r architecture={x86,x64},language=node,platform={windows,linux,macos}/artifacts/* artifacts/ || true
 
-pip install -rrequirements.txt
+npm pack
 
-GRPC_PYTHON_BUILD_WITH_CYTHON=1 ${SETARCH_CMD} python setup.py \
-    bdist_wheel \
-    sdist \
-    bdist_egg_grpc_custom
-
-mkdir -p artifacts
-
-cp -r dist/* artifacts
+cp grpc-*.tgz artifacts/

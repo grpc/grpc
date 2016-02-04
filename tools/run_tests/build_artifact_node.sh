@@ -32,16 +32,16 @@ set -ex
 
 cd $(dirname $0)/../..
 
-pip install --upgrade six
-pip install --upgrade setuptools
-
-pip install -rrequirements.txt
-
-GRPC_PYTHON_BUILD_WITH_CYTHON=1 ${SETARCH_CMD} python setup.py \
-    bdist_wheel \
-    sdist \
-    bdist_egg_grpc_custom
+rm -rf build
 
 mkdir -p artifacts
 
-cp -r dist/* artifacts
+npm update
+
+node_versions=( 0.10.41 0.12.0 1.0.0 1.1.0 2.0.0 3.0.0 4.0.0 5.0.0 )
+
+for version in ${node_versions[@]}
+do
+  node-pre-gyp configure rebuild package testpackage --target=$version --target_arch=$1
+  cp -r build/stage/* artifacts/
+done
