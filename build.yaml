@@ -2021,6 +2021,18 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+- name: parallel_async_test
+  cpu_cost: 10
+  build: test
+  language: c++
+  src:
+  - src/proto/helloworld/helloworld.proto
+  - test/cpp/parallel_greeter/parallel_async_test.cc
+  deps:
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
 - name: qps_driver
   build: benchmark
   language: c++
