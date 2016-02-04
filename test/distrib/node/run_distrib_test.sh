@@ -45,7 +45,7 @@ STATIC_PID=$!
 
 STATIC_URL="http://$STATIC_SERVER:$STATIC_PORT/"
 
-npm install $STATIC_URL/grpc.tgz --grpc_node_binary_host_mirror=$STATIC_URL
+npm install --unsafe-perm $STATIC_URL/grpc.tgz --grpc_node_binary_host_mirror=$STATIC_URL
 
 kill $STATIC_PID
 
