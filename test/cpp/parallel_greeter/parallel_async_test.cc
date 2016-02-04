@@ -132,7 +132,7 @@ TEST(ParallelAsync, Test) {
   std::vector<std::thread> send_threads;
   for (int i = 0; i < 10; ++i) {
     send_threads.emplace_back([&greeter]() {
-      for (int j = 0; j < 10000; ++j) greeter.SayHello(std::to_string(j));
+      for (int j = 0; j < 1000; ++j) greeter.SayHello(std::to_string(j));
     });
   }
   for (auto& t : send_threads) t.join();
