@@ -45,7 +45,7 @@ static NSString *_userAgentPrefix;
   }
 }
 
-+ (NSString *)useUserAgentPrefix {
++ (NSString *)userAgentPrefix {
   @synchronized(self) {
     return _userAgentPrefix;
   }

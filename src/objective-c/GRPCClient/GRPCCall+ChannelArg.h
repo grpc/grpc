@@ -42,6 +42,6 @@
  */
 + (void)setUserAgentPrefix:(NSString *)userAgentPrefix;
 
-+ (NSString *)useUserAgentPrefix;
++ (NSString *)userAgentPrefix;
 
 @end

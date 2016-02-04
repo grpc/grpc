@@ -39,8 +39,8 @@
 #include <grpc/support/string_util.h>
 
 /**
- * Returns @c grpc_channel_credentials from the specifie @c path. If the file at the path could not
- * be read then NULL is returned.  If NULL is returned, @c errorPtr may not be NULL if there are
+ * Returns @c grpc_channel_credentials from the specified @c path. If the file at the path could not
+ * be read then NULL is returned. If NULL is returned, @c errorPtr may not be NULL if there are
  * details available describing what went wrong.
  */
 static grpc_channel_credentials *CertificatesAtPath(NSString *path, NSError **errorPtr) {
@@ -71,9 +71,10 @@ void freeChannelArgs(grpc_channel_args *channel_args) {
 
 /**
  * Allocates a @c grpc_channel_args and populates it with the options specified in the
- * @c dictionary. Keys must be @c NSString.  If the value responds to @c @selector(UTF8String) then
- * it will be mapped to @c GRPC_ARG_STRING.  If not, it will be mapped to @c GRPC_ARG_INTEGER if the
- * value responds to @c @selector(intValue).  Otherwise, an exception will be raised.
+ * @c dictionary. Keys must be @c NSString. If the value responds to @c @selector(UTF8String) then
+ * it will be mapped to @c GRPC_ARG_STRING. If not, it will be mapped to @c GRPC_ARG_INTEGER if the
+ * value responds to @c @selector(intValue). Otherwise, an exception will be raised. The caller of
+ * this function is responsible for calling @c freeChannelArgs on a non-NULL returned value.
  */
 grpc_channel_args * buildChannelArgs(NSDictionary *dictionary) {
   if (!dictionary) {
@@ -89,8 +90,6 @@ grpc_channel_args * buildChannelArgs(NSDictionary *dictionary) {
 
   // TODO(kriswuollett) Check that keys adhere to GRPC core library requirements
 
-  Class invalidValueType = NULL;
-
   for (NSUInteger i = 0; i < argCount; ++i) {
     grpc_arg *arg = &channelArgs->args[i];
     arg->key = gpr_strdup([keys[i] UTF8String]);
@@ -103,15 +102,9 @@ grpc_channel_args * buildChannelArgs(NSDictionary *dictionary) {
       arg->type = GRPC_ARG_INTEGER;
       arg->value.integer = [value intValue];
     } else {
-      invalidValueType = [value class];
-      break;
+      [NSException raise:NSInvalidArgumentException
+                  format:@"Invalid value type: %@", [value class]];
     }
-  }
-
-  if (invalidValueType) {
-    freeChannelArgs(channelArgs);
-    [NSException raise:NSInvalidArgumentException
-                format:@"Invalid value type: %@", invalidValueType];
   }
 
   return channelArgs;
@@ -144,7 +137,7 @@ grpc_channel_args * buildChannelArgs(NSDictionary *dictionary) {
       _unmanagedChannel = grpc_secure_channel_create(credentials, _host.UTF8String, _channelArgs,
                                                      NULL);
     } else {
-      _unmanagedChannel = grpc_insecure_channel_create(host.UTF8String, _channelArgs, NULL);
+      _unmanagedChannel = grpc_insecure_channel_create(_host.UTF8String, _channelArgs, NULL);
     }
   }
 
@@ -184,8 +177,8 @@ grpc_channel_args * buildChannelArgs(NSDictionary *dictionary) {
 
   //TODO(jcanizales): Add NSError** parameter to the initializer.
   grpc_channel_credentials *certificates = path
-    ? CertificatesAtPath(path, NULL)
-    : kDefaultCertificates;
+      ? CertificatesAtPath(path, NULL)
+      : kDefaultCertificates;
 
   return [[GRPCChannel alloc] initWithHost:host
                                     secure:YES
