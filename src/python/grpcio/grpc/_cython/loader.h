@@ -31,43 +31,15 @@
  *
  */
 
-#ifndef GRPC_IMPL_CODEGEN_COMPRESSION_TYPES_H
-#define GRPC_IMPL_CODEGEN_COMPRESSION_TYPES_H
+#ifndef PYGRPC_LOADER_H_
+#define PYGRPC_LOADER_H_
 
-#include <grpc/support/port_platform.h>
+#include "imports.generated.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+/* Additional inclusions not covered by "imports.generated.h" */
+#include <grpc/byte_buffer_reader.h>
 
-/** To be used in channel arguments */
-#define GRPC_COMPRESSION_ALGORITHM_ARG "grpc.compression_algorithm"
-#define GRPC_COMPRESSION_ALGORITHM_STATE_ARG "grpc.compression_algorithm_state"
+/* Attempts to load the core if necessary, and return non-zero upon succes. */
+int pygrpc_load_core(char *path);
 
-/* The various compression algorithms supported by GRPC */
-typedef enum {
-  GRPC_COMPRESS_NONE = 0,
-  GRPC_COMPRESS_DEFLATE,
-  GRPC_COMPRESS_GZIP,
-  /* TODO(ctiller): snappy */
-  GRPC_COMPRESS_ALGORITHMS_COUNT
-} grpc_compression_algorithm;
-
-typedef enum {
-  GRPC_COMPRESS_LEVEL_NONE = 0,
-  GRPC_COMPRESS_LEVEL_LOW,
-  GRPC_COMPRESS_LEVEL_MED,
-  GRPC_COMPRESS_LEVEL_HIGH,
-  GRPC_COMPRESS_LEVEL_COUNT
-} grpc_compression_level;
-
-typedef struct grpc_compression_options {
-  uint32_t enabled_algorithms_bitset; /**< All algs are enabled by default */
-  grpc_compression_algorithm default_compression_algorithm; /**< for channel */
-} grpc_compression_options;
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif /* GRPC_IMPL_CODEGEN_COMPRESSION_TYPES_H */
+#endif /* GRPC_RB_BYTE_BUFFER_H_ */
