@@ -176,8 +176,8 @@ static void set_recv_ops_md_callbacks(grpc_call_element *elem,
   if (op->recv_initial_metadata != NULL) {
     /* substitute our callback for the higher callback */
     calld->recv_initial_metadata = op->recv_initial_metadata;
-    calld->on_done_recv = op->on_complete;
-    op->on_complete = &calld->auth_on_recv;
+    calld->on_done_recv = op->recv_initial_metadata_ready;
+    op->recv_initial_metadata_ready = &calld->auth_on_recv;
     calld->transport_op = *op;
   }
 }
