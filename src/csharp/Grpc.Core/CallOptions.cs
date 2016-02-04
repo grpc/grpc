@@ -159,7 +159,7 @@ namespace Grpc.Core
         /// Returns new instance of <see cref="CallOptions"/> with
         /// <c>WriteOptions</c> set to the value provided. Values of all other fields are preserved.
         /// </summary>
-        /// <param name="cancellationToken">The write options.</param>
+        /// <param name="writeOptions">The write options.</param>
         public CallOptions WithWriteOptions(WriteOptions writeOptions)
         {
             var newOptions = this;
