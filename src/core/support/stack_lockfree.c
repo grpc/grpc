@@ -99,6 +99,10 @@ gpr_stack_lockfree *gpr_stack_lockfree_create(size_t entries) {
 
   /* Point the head at reserved dummy entry */
   stack->head.contents.index = INVALID_ENTRY_INDEX;
+#ifdef GPR_ARCH_64
+  stack->head.contents.pad = 0;
+#endif
+  stack->head.contents.aba_ctr = 0;
   return stack;
 }
 
@@ -115,6 +119,10 @@ int gpr_stack_lockfree_push(gpr_stack_lockfree *stack, int entry) {
 
   /* First fill in the entry's index and aba ctr for new head */
   newhead.contents.index = (uint16_t)entry;
+#ifdef GPR_ARCH_64
+  newhead.contents.pad = 0;
+#endif
+
   /* Also post-increment the aba_ctr */
   curent.atm = gpr_atm_no_barrier_load(&stack->entries[entry].atm);
   newhead.contents.aba_ctr = ++curent.contents.aba_ctr;
