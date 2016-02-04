@@ -39,16 +39,13 @@
 
 static NSString *_userAgentPrefix;
 
-+ (void)setUserAgentPrefix:(NSString *)userAgentPrefix {
-  @synchronized(self) {
-    _userAgentPrefix = userAgentPrefix;
++ (void)setUserAgentPrefix:(NSString *)userAgentPrefix forHost:(NSString *)host {
+  if (!host) {
+    [NSException raise:NSInvalidArgumentException
+                format:@"host and userAgentPrefix must be provided."];
   }
-}
-
-+ (NSString *)userAgentPrefix {
-  @synchronized(self) {
-    return _userAgentPrefix;
-  }
+  GRPCHost *hostConfig = [GRPCHost hostWithAddress:host];
+  hostConfig.userAgentPrefix = userAgentPrefix;
 }
 
 @end

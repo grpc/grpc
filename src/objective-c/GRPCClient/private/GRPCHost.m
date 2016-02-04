@@ -109,9 +109,8 @@
 
   if (!_channel) {
     NSMutableDictionary *args = [NSMutableDictionary dictionary];
-    NSString *userAgentPrefix = [[GRPCCall userAgentPrefix] copy];
-    if (userAgentPrefix) {
-      args[@GRPC_ARG_PRIMARY_USER_AGENT_STRING] = userAgentPrefix;
+    if (_userAgentPrefix) {
+      args[@GRPC_ARG_PRIMARY_USER_AGENT_STRING] = _userAgentPrefix;
     }
 
     if (_secure) {
