@@ -107,8 +107,10 @@ GPR_API gpr_timespec gpr_time_sub(gpr_timespec a, gpr_timespec b);
 GPR_API gpr_timespec gpr_time_from_micros(int64_t x, gpr_clock_type clock_type);
 GPR_API gpr_timespec gpr_time_from_nanos(int64_t x, gpr_clock_type clock_type);
 GPR_API gpr_timespec gpr_time_from_millis(int64_t x, gpr_clock_type clock_type);
-GPR_API gpr_timespec gpr_time_from_seconds(int64_t x, gpr_clock_type clock_type);
-GPR_API gpr_timespec gpr_time_from_minutes(int64_t x, gpr_clock_type clock_type);
+GPR_API gpr_timespec
+gpr_time_from_seconds(int64_t x, gpr_clock_type clock_type);
+GPR_API gpr_timespec
+gpr_time_from_minutes(int64_t x, gpr_clock_type clock_type);
 GPR_API gpr_timespec gpr_time_from_hours(int64_t x, gpr_clock_type clock_type);
 
 GPR_API int32_t gpr_time_to_millis(gpr_timespec timespec);
