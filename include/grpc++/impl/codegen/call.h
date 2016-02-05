@@ -477,7 +477,9 @@ class CallOpClientRecvStatus {
 /// of the group should have a shared_ptr back to the collection,
 /// as will the object that instantiates the collection, allowing
 /// for automatic ref-counting. In practice, any actual use should
-/// derive from this base class
+/// derive from this base class. This is specifically necessary if
+/// some of the CallOpSet's in the collection are "Sneaky" and don't
+/// report back to the C++ layer CQ operations
 class CallOpSetCollectionInterface
     : public std::enable_shared_from_this<CallOpSetCollectionInterface> {};
 
@@ -497,7 +499,7 @@ class CallOpSetInterface : public CompletionQueueTag {
     max_message_size_ = max_message_size;
   }
 
-  /// Mark this as belonging to a collection
+  /// Mark this as belonging to a collection if needed
   void SetCollection(std::shared_ptr<CallOpSetCollectionInterface> collection) {
     collection_ = collection;
   }
