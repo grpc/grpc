@@ -1,4 +1,4 @@
-# Copyright 2015-2016, Google Inc.
+# Copyright 2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -27,12 +27,28 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-include "grpc/_cython/_cygrpc/grpc.pxi"
+"""Tests the implementations module of the gRPC Python Beta API."""
 
-include "grpc/_cython/_cygrpc/call.pxd.pxi"
-include "grpc/_cython/_cygrpc/channel.pxd.pxi"
-include "grpc/_cython/_cygrpc/credentials.pxd.pxi"
-include "grpc/_cython/_cygrpc/completion_queue.pxd.pxi"
-include "grpc/_cython/_cygrpc/records.pxd.pxi"
-include "grpc/_cython/_cygrpc/security.pxd.pxi"
-include "grpc/_cython/_cygrpc/server.pxd.pxi"
+import unittest
+
+from grpc.beta import implementations
+from tests.unit import resources
+
+
+class ChannelCredentialsTest(unittest.TestCase):
+
+  def test_runtime_provided_root_certificates(self):
+    channel_credentials = implementations.ssl_channel_credentials(
+        None, None, None)
+    self.assertIsInstance(
+        channel_credentials, implementations.ChannelCredentials)
+  
+  def test_application_provided_root_certificates(self):
+    channel_credentials = implementations.ssl_channel_credentials(
+        resources.test_root_certificates(), None, None)
+    self.assertIsInstance(
+        channel_credentials, implementations.ChannelCredentials)
+
+
+if __name__ == '__main__':
+  unittest.main(verbosity=2)
