@@ -40,6 +40,10 @@
 #import "GRPCCompletionQueue.h"
 #import "NSDictionary+GRPC.h"
 
+// TODO(jcanizales): Generate the version in a standalone header, from templates. Like
+// templates/src/core/surface/version.c.template .
+#define GRPC_OBJC_VERSION_STRING @"0.13.0"
+
 @interface GRPCHost ()
 // TODO(mlumish): Investigate whether caching channels with strong links is a good idea.
 @property(nonatomic, strong) GRPCChannel *channel;
@@ -109,9 +113,14 @@
 
   if (!_channel) {
     NSMutableDictionary *args = [NSMutableDictionary dictionary];
+
+    // TODO(jcanizales): Add OS and device information (see
+    // https://github.com/grpc/grpc/blob/master/doc/PROTOCOL-HTTP2.md#user-agents ).
+    NSString *userAgent = @"grpc-objc/" GRPC_OBJC_VERSION_STRING;
     if (_userAgentPrefix) {
-      args[@GRPC_ARG_PRIMARY_USER_AGENT_STRING] = _userAgentPrefix;
+      userAgent = [@[_userAgentPrefix, userAgent] componentsJoinedByString:@" "];
     }
+    args[@GRPC_ARG_PRIMARY_USER_AGENT_STRING] = userAgent;
 
     if (_secure) {
       if (_hostNameOverride) {
