@@ -37,8 +37,6 @@
 
 @implementation GRPCCall (ChannelArg)
 
-static NSString *_userAgentPrefix;
-
 + (void)setUserAgentPrefix:(NSString *)userAgentPrefix forHost:(NSString *)host {
   if (!host) {
     [NSException raise:NSInvalidArgumentException
