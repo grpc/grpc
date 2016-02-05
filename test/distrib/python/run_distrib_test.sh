@@ -32,5 +32,27 @@ set -ex
 
 cd $(dirname $0)
 
-pip install "$EXTERNAL_GIT_ROOT/input_artifacts/grpcio-0.12.0b6.tar.gz"
+# TODO(jtattermusch): replace the version number
+SDIST_ARCHIVE="$EXTERNAL_GIT_ROOT/input_artifacts/grpcio-0.12.0b8.tar.gz"
+BDIST_DIR="file://$EXTERNAL_GIT_ROOT/input_artifacts"
 
+if [ ! -f "${SDIST_ARCHIVE}" ]
+then
+  echo "Archive ${SDIST_ARCHIVE} does not exist."
+  exit 1
+fi
+
+# TODO(jtattermusch): this shouldn't be required
+pip install --upgrade six
+
+# TODO(jtattermusch): if these don't get preinstalled, pip tries to install them
+# with --use-grpc-custom-bdist option, which obviously fails.
+pip install --upgrade enum34
+pip install --upgrade futures
+
+GRPC_PYTHON_BINARIES_REPOSITORY="${BDIST_DIR}" \
+    pip install \
+    "${SDIST_ARCHIVE}" \
+    --install-option="--use-grpc-custom-bdist"
+
+python distribtest.py
