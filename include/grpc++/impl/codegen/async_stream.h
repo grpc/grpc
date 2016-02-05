@@ -232,7 +232,7 @@ class ClientAsyncWriter GRPC_FINAL : public ClientAsyncWriterInterface<W> {
       meta_ops_.SetCollection(shared_from_this());
       write_ops_.SetCollection(shared_from_this());
       writes_done_ops_.SetCollection(shared_from_this());
-          finish_ops_.SetCollection(shared_from_this();
+      finish_ops_.SetCollection(shared_from_this());
     }
     CallOpSet<CallOpSendInitialMetadata> init_ops_;
     CallOpSet<CallOpRecvInitialMetadata> meta_ops_;
@@ -322,7 +322,7 @@ class ClientAsyncReaderWriter GRPC_FINAL
       read_ops_.SetCollection(shared_from_this());
       write_ops_.SetCollection(shared_from_this());
       writes_done_ops_.SetCollection(shared_from_this());
-          finish_ops_.SetCollection(shared_from_this();
+      finish_ops_.SetCollection(shared_from_this());
     }
     CallOpSet<CallOpSendInitialMetadata> init_ops_;
     CallOpSet<CallOpRecvInitialMetadata> meta_ops_;
@@ -398,7 +398,7 @@ class ServerAsyncReader GRPC_FINAL : public ServerAsyncStreamingInterface,
     void SetCollection() {
       meta_ops_.SetCollection(shared_from_this());
       read_ops_.SetCollection(shared_from_this());
-          finish_ops_.SetCollection(shared_from_this();
+      finish_ops_.SetCollection(shared_from_this());
     }
     CallOpSet<CallOpSendInitialMetadata> meta_ops_;
     CallOpSet<CallOpRecvMessage<R>> read_ops_;
@@ -459,7 +459,7 @@ class ServerAsyncWriter GRPC_FINAL : public ServerAsyncStreamingInterface,
     void SetCollection() {
       meta_ops_.SetCollection(shared_from_this());
       write_ops_.SetCollection(shared_from_this());
-          finish_ops_.SetCollection(shared_from_this();
+      finish_ops_.SetCollection(shared_from_this());
     }
     CallOpSet<CallOpSendInitialMetadata> meta_ops_;
     CallOpSet<CallOpSendInitialMetadata, CallOpSendMessage> write_ops_;
@@ -530,7 +530,7 @@ class ServerAsyncReaderWriter GRPC_FINAL : public ServerAsyncStreamingInterface,
       meta_ops_.SetCollection(shared_from_this());
       read_ops_.SetCollection(shared_from_this());
       write_ops_.SetCollection(shared_from_this());
-          finish_ops_.SetCollection(shared_from_this();
+      finish_ops_.SetCollection(shared_from_this());
     }
     CallOpSet<CallOpSendInitialMetadata> meta_ops_;
     CallOpSet<CallOpRecvMessage<R>> read_ops_;
