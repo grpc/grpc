@@ -37,6 +37,11 @@ var os = require('os');
 var BenchmarkClient = require('./benchmark_client');
 var BenchmarkServer = require('./benchmark_server');
 
+exports.quitWorker = function quitWorker(call, callback) {
+  callback(null, {});
+  process.exit(0);
+}
+
 exports.runClient = function runClient(call) {
   var client;
   call.on('data', function(request) {
