@@ -67,14 +67,15 @@ else
 end
 
 unless File.exist?(File.join(grpc_lib_dir, 'libgrpc.a')) or windows
-  for var in %w( CC AR ) do
-    ENV[var] = RbConfig::CONFIG[var]
-  end
-
+  ENV['AR'] = RbConfig::CONFIG['AR'] + ' rcs'
+  ENV['CC'] = RbConfig::CONFIG['CC']
   ENV['LD'] = ENV['CC']
+
+  ENV['AR'] = 'libtool -o' if RUBY_PLATFORM =~ /darwin/
 
   ENV['EMBED_OPENSSL'] = 'true'
   ENV['EMBED_ZLIB'] = 'true'
+  ENV['ARCH_FLAGS'] = '-arch i386 -arch x86_64' if RUBY_PLATFORM =~ /darwin/
 
   output_dir = File.expand_path(RbConfig::CONFIG['topdir'])
   grpc_lib_dir = File.join(output_dir, 'libs', grpc_config)
@@ -107,6 +108,7 @@ puts 'Generating Makefile for ' + output
 create_makefile(output)
 
 strip_tool = RbConfig::CONFIG['STRIP']
+strip_tool = 'strip -x' if RUBY_PLATFORM =~ /darwin/
 
 if grpc_config == 'opt'
   File.open('Makefile.new', 'w') do |o|

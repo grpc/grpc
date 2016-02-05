@@ -75,14 +75,25 @@ CYTHON_EXTENSION_PACKAGE_NAMES = ()
 
 CYTHON_EXTENSION_MODULE_NAMES = ('grpc._cython.cygrpc',)
 
+CYTHON_HELPER_C_FILES = (
+    os.path.join(PYTHON_STEM, 'grpc/_cython/loader.c'),
+    os.path.join(PYTHON_STEM, 'grpc/_cython/imports.generated.c'),
+)
+
+CORE_C_FILES = ()
+if not "win32" in sys.platform:
+  CORE_C_FILES += tuple(grpc_core_dependencies.CORE_SOURCE_FILES)
+
 EXTENSION_INCLUDE_DIRECTORIES = (
     (PYTHON_STEM,) + CORE_INCLUDE + BORINGSSL_INCLUDE + ZLIB_INCLUDE)
 
-EXTENSION_LIBRARIES = ('m',)
-if not "darwin" in sys.platform:
+EXTENSION_LIBRARIES = ()
+if "linux" in sys.platform:
   EXTENSION_LIBRARIES += ('rt',)
+if not "win32" in sys.platform:
+  EXTENSION_LIBRARIES += ('m',)
 
-DEFINE_MACROS = (('OPENSSL_NO_ASM', 1),)
+DEFINE_MACROS = (('OPENSSL_NO_ASM', 1), ('_WIN32_WINNT', 0x600))
 
 CFLAGS = ()
 LDFLAGS = ()
@@ -93,8 +104,8 @@ if "linux" in sys.platform or "darwin" in sys.platform:
   DEFINE_MACROS += (('PyMODINIT_FUNC', '__attribute__((visibility ("default"))) void'),)
 
 
-def cython_extensions(package_names, module_names, include_dirs, libraries,
-                      define_macros, build_with_cython=False):
+def cython_extensions(package_names, module_names, extra_sources, include_dirs,
+                      libraries, define_macros, build_with_cython=False):
   if ENABLE_CYTHON_TRACING:
     define_macros = define_macros + [('CYTHON_TRACE_NOGIL', 1)]
   file_extension = 'pyx' if build_with_cython else 'c'
@@ -104,7 +115,7 @@ def cython_extensions(package_names, module_names, include_dirs, libraries,
   extensions = [
       _extension.Extension(
           name=module_name,
-          sources=[module_file] + grpc_core_dependencies.CORE_SOURCE_FILES,
+          sources=[module_file] + extra_sources,
           include_dirs=include_dirs, libraries=libraries,
           define_macros=define_macros,
       ) for (module_name, module_file) in zip(module_names, module_files)
@@ -120,6 +131,7 @@ def cython_extensions(package_names, module_names, include_dirs, libraries,
 
 CYTHON_EXTENSION_MODULES = cython_extensions(
     list(CYTHON_EXTENSION_PACKAGE_NAMES), list(CYTHON_EXTENSION_MODULE_NAMES),
+    list(CYTHON_HELPER_C_FILES) + list(CORE_C_FILES),
     list(EXTENSION_INCLUDE_DIRECTORIES), list(EXTENSION_LIBRARIES),
     list(DEFINE_MACROS), bool(BUILD_WITH_CYTHON))
 
@@ -174,9 +186,6 @@ TEST_PACKAGE_DATA = {
         'credentials/server1.key',
         'credentials/server1.pem',
     ],
-    'grpc._adapter': [
-        'credentials/roots.pem'
-    ],
 }
 
 TESTS_REQUIRE = (
@@ -189,7 +198,15 @@ TEST_SUITE = 'tests'
 TEST_LOADER = 'tests:Loader'
 TEST_RUNNER = 'tests:Runner'
 
-PACKAGE_DATA = {}
+PACKAGE_DATA = {
+    'grpc._adapter': [
+        'credentials/roots.pem'
+    ],
+    'grpc._cython': [
+        '_windows/grpc_c.32.python',
+        '_windows/grpc_c.64.python',
+    ],
+}
 if INSTALL_TESTS:
   PACKAGE_DATA = dict(PACKAGE_DATA, **TEST_PACKAGE_DATA)
   PACKAGES = setuptools.find_packages(PYTHON_STEM)
@@ -199,7 +216,7 @@ else:
 
 setuptools.setup(
     name='grpcio',
-    version='0.12.0b6',
+    version='0.12.0b8',
     license=LICENSE,
     ext_modules=CYTHON_EXTENSION_MODULES,
     packages=list(PACKAGES),

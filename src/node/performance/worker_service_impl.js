@@ -33,8 +33,14 @@
 
 'use strict';
 
+var os = require('os');
 var BenchmarkClient = require('./benchmark_client');
 var BenchmarkServer = require('./benchmark_server');
+
+exports.quitWorker = function quitWorker(call, callback) {
+  callback(null, {});
+  process.exit(0);
+}
 
 exports.runClient = function runClient(call) {
   var client;
@@ -129,4 +135,8 @@ exports.runServer = function runServer(call) {
       call.end();
     });
   });
+};
+
+exports.coreCount = function coreCount(call, callback) {
+  callback(null, {cores: os.cpus().length});
 };
