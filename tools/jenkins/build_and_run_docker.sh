@@ -37,9 +37,6 @@ cd $(dirname $0)/../..
 git_root=$(pwd)
 cd -
 
-# Create a local branch so the child Docker script won't complain
-git branch -f jenkins-docker
-
 # Inputs
 # DOCKERFILE_DIR - Directory in which Dockerfile file is located.
 # DOCKER_RUN_SCRIPT - Script to run under docker (relative to grpc repo root)
