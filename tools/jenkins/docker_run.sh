@@ -31,7 +31,7 @@
 # This script is invoked by build_docker_* inside a docker
 # container. You should never need to call this script on your own.
 
-set -e
+set -ex
 
 if [ "$RELATIVE_COPY_PATH" == "" ]
 then
@@ -39,7 +39,7 @@ then
   git clone --recursive "$EXTERNAL_GIT_ROOT" /var/local/git/grpc
 else
   mkdir -p "/var/local/git/grpc/$RELATIVE_COPY_PATH"
-  cp -r "$EXTERNAL_GIT_ROOT/$RELATIVE_COPY_PATH/*" "/var/local/git/grpc/$RELATIVE_COPY_PATH"
+  cp -r "$EXTERNAL_GIT_ROOT/$RELATIVE_COPY_PATH"/* "/var/local/git/grpc/$RELATIVE_COPY_PATH"
 fi
 
 if [ -x "$(command -v rvm)" ]
