@@ -48,7 +48,7 @@ static int *box(int x) {
   return b;
 }
 
-static long int_compare(void *int1, void *int2) {
+static int64_t int_compare(void *int1, void *int2) {
   return (*(int *)int1) - (*(int *)int2);
 }
 static void *int_copy(void *p) { return box(*(int *)p); }
