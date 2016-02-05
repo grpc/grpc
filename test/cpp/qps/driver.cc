@@ -384,5 +384,18 @@ std::unique_ptr<ScenarioResult> RunScenario(
   delete[] servers;
   return result;
 }
+
+void RunQuit() {
+  // Get client, server lists
+  auto workers = get_workers("QPS_WORKERS");
+  for (size_t i = 0; i < workers.size(); i++) {
+    auto stub = WorkerService::NewStub(
+        CreateChannel(workers[i], InsecureChannelCredentials()));
+    Void dummy;
+    grpc::ClientContext ctx;
+    GPR_ASSERT(stub->QuitWorker(&ctx, dummy, &dummy).ok());
+  }
+}
+
 }  // namespace testing
 }  // namespace grpc
