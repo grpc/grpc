@@ -66,6 +66,8 @@ else
   grpc_lib_dir = File.join(grpc_root, 'libs', grpc_config)
 end
 
+ENV['MACOSX_DEPLOYMENT_TARGET'] = '10.7'
+
 unless File.exist?(File.join(grpc_lib_dir, 'libgrpc.a')) or windows
   ENV['AR'] = RbConfig::CONFIG['AR'] + ' rcs'
   ENV['CC'] = RbConfig::CONFIG['CC']
