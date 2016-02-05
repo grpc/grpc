@@ -36,17 +36,17 @@ nvm install $1
 
 npm install -g node-static
 
-STATIC_SERVER=localhost
+STATIC_SERVER=127.0.0.1
 STATIC_PORT=8080
 
 # Serves the input_artifacts directory statically at localhost:8080
-static "$EXTERNAL_GIT_ROOT/input_artifacts" -a STATIC_SERVER -p STATIC_PORT &
+static "$EXTERNAL_GIT_ROOT/input_artifacts" -a $STATIC_SERVER -p $STATIC_PORT &
 STATIC_PID=$!
 
 STATIC_URL="http://$STATIC_SERVER:$STATIC_PORT/"
 
 npm install --unsafe-perm $STATIC_URL/grpc.tgz --grpc_node_binary_host_mirror=$STATIC_URL
 
-kill $STATIC_PID
+kill -9 $STATIC_PID
 
 ./distrib_test.js

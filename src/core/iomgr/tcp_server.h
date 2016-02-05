@@ -40,15 +40,14 @@
 /* Forward decl of grpc_tcp_server */
 typedef struct grpc_tcp_server grpc_tcp_server;
 
-typedef struct grpc_tcp_server_acceptor grpc_tcp_server_acceptor;
-struct grpc_tcp_server_acceptor {
+typedef struct grpc_tcp_server_acceptor {
   /* grpc_tcp_server_cb functions share a ref on from_server that is valid
      until the function returns. */
   grpc_tcp_server *from_server;
   /* Indices that may be passed to grpc_tcp_server_port_fd(). */
   unsigned port_index;
   unsigned fd_index;
-};
+} grpc_tcp_server_acceptor;
 
 /* Called for newly connected TCP connections. */
 typedef void (*grpc_tcp_server_cb)(grpc_exec_ctx *exec_ctx, void *arg,
@@ -57,7 +56,7 @@ typedef void (*grpc_tcp_server_cb)(grpc_exec_ctx *exec_ctx, void *arg,
 
 /* Create a server, initially not bound to any ports. The caller owns one ref.
    If shutdown_complete is not NULL, it will be used by
-   grpc_tcp_server_unref(). */
+   grpc_tcp_server_unref() when the ref count reaches zero. */
 grpc_tcp_server *grpc_tcp_server_create(grpc_closure *shutdown_complete);
 
 /* Start listening to bound ports */
@@ -84,7 +83,7 @@ unsigned grpc_tcp_server_port_fd_count(grpc_tcp_server *s, unsigned port_index);
 /* Returns the file descriptor of the Mth (fd_index) listening socket of the Nth
    (port_index) call to add_port() on this server, or -1 if the indices are out
    of bounds. The file descriptor remains owned by the server, and will be
-   cleaned up when grpc_tcp_server_destroy is called. */
+   cleaned up when the ref count reaches zero. */
 int grpc_tcp_server_port_fd(grpc_tcp_server *s, unsigned port_index,
                             unsigned fd_index);
 
@@ -97,7 +96,7 @@ grpc_tcp_server *grpc_tcp_server_ref(grpc_tcp_server *s);
 void grpc_tcp_server_shutdown_starting_add(grpc_tcp_server *s,
                                            grpc_closure *shutdown_starting);
 
-/* If the recount drops to zero, delete s, and call (exec_ctx==NULL) or enqueue
+/* If the refcount drops to zero, delete s, and call (exec_ctx==NULL) or enqueue
    a call (exec_ctx!=NULL) to shutdown_complete. */
 void grpc_tcp_server_unref(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s);
 
