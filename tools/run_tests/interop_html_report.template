@@ -46,15 +46,19 @@
     ## Because interop tests does not have runs_per_test flag, each test is 
     ## run once. So there should only be one element for each result.
     <% result = resultset[shortname][0] %>
-    <td bgcolor="white">
-      <div style="width:95%; border: 1px solid black; position: relative; padding: 3px;">
-        <span style="position: absolute; left: 45%;">${int(result.http2results['percent'] * 100)}&#37;</span>
-        <div style="height: 20px; 
-          background-color: hsl(${result.http2results['percent'] * 120}, 100%, 50%); 
-          width: ${result.http2results['percent'] * 100}%;"
-          title="${result.http2results['failed_cases'] | h}"></div>
-      </div>
-    </td>
+    % if result.http2results:
+      <td bgcolor="white">
+        <div style="width:95%; border: 1px solid black; position: relative; padding: 3px;">
+          <span style="position: absolute; left: 45%;">${int(result.http2results['percent'] * 100)}&#37;</span>
+          <div style="height: 20px; 
+            background-color: hsl(${result.http2results['percent'] * 120}, 100%, 50%); 
+            width: ${result.http2results['percent'] * 100}%;"
+            title="${result.http2results['failed_cases'] | h}"></div>
+        </div>
+      </td>
+    % else: 
+      <td bgcolor="red">No result is found!</td>
+    % endif
   % else:
      <td bgcolor="magenta">Not implemented</td>
   % endif
