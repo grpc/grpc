@@ -166,3 +166,6 @@ message CoreResponse {
   // Number of cores available on the server
   int32 cores = 1;
 }
+
+message Void {
+}
