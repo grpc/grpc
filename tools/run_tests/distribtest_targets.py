@@ -104,7 +104,8 @@ class NodeDistribTest(object):
                                  'tools/dockerfile/distribtest/node_%s_%s' % (
                                      self.docker_suffix,
                                      self.arch),
-                                 'test/distrib/node/run_distrib_test.sh %s' % (
+                                 # bash -l needed to make nvm available
+                                 'bash -l test/distrib/node/run_distrib_test.sh %s' % (
                                      self.node_version))
     def __str__(self):
       return self.name
