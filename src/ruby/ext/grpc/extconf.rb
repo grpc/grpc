@@ -75,6 +75,7 @@ unless File.exist?(File.join(grpc_lib_dir, 'libgrpc.a')) or windows
 
   ENV['EMBED_OPENSSL'] = 'true'
   ENV['EMBED_ZLIB'] = 'true'
+  ENV['ARCH_FLAGS'] = RbConfig::CONFIG['ARCH_FLAG']
   ENV['ARCH_FLAGS'] = '-arch i386 -arch x86_64' if RUBY_PLATFORM =~ /darwin/
 
   output_dir = File.expand_path(RbConfig::CONFIG['topdir'])
