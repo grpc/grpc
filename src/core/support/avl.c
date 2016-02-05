@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -67,12 +67,12 @@ static void unref_node(const gpr_avl_vtable *vtable, gpr_avl_node *node) {
   }
 }
 
-static int64_t node_height(gpr_avl_node *node) {
+static long node_height(gpr_avl_node *node) {
   return node == NULL ? 0 : node->height;
 }
 
 #ifndef NDEBUG
-static int64_t calculate_height(gpr_avl_node *node) {
+static long calculate_height(gpr_avl_node *node) {
   return node == NULL ? 0 : 1 + GPR_MAX(calculate_height(node->left),
                                         calculate_height(node->right));
 }
@@ -103,7 +103,7 @@ gpr_avl_node *new_node(void *key, void *value, gpr_avl_node *left,
 
 static gpr_avl_node *get(const gpr_avl_vtable *vtable, gpr_avl_node *node,
                          void *key) {
-  int64_t cmp;
+  long cmp;
 
   if (node == NULL) {
     return NULL;
@@ -198,7 +198,7 @@ static gpr_avl_node *rebalance(const gpr_avl_vtable *vtable, void *key,
 
 static gpr_avl_node *add(const gpr_avl_vtable *vtable, gpr_avl_node *node,
                          void *key, void *value) {
-  int64_t cmp;
+  long cmp;
   if (node == NULL) {
     return new_node(key, value, NULL, NULL);
   }
@@ -240,7 +240,7 @@ static gpr_avl_node *in_order_tail(gpr_avl_node *node) {
 
 static gpr_avl_node *remove(const gpr_avl_vtable *vtable, gpr_avl_node *node,
                             void *key) {
-  int64_t cmp;
+  long cmp;
   if (node == NULL) {
     return NULL;
   }
