@@ -43,7 +43,7 @@ typedef struct gpr_avl_node {
   void *value;
   struct gpr_avl_node *left;
   struct gpr_avl_node *right;
-  int64_t height;
+  long height;
 } gpr_avl_node;
 
 typedef struct gpr_avl_vtable {
@@ -53,7 +53,7 @@ typedef struct gpr_avl_vtable {
   void *(*copy_key)(void *key);
   /** compare key1, key2; return <0 if key1 < key2,
       >0 if key1 > key2, 0 if key1 == key2 */
-  int64_t (*compare_keys)(void *key1, void *key2);
+  long (*compare_keys)(void *key1, void *key2);
   /** destroy a value */
   void (*destroy_value)(void *value);
   /** copy a value */
