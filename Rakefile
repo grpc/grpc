@@ -23,7 +23,15 @@ Rake::ExtensionTask.new('grpc_c', spec) do |ext|
   ext.ext_dir = File.join('src', 'ruby', 'ext', 'grpc')
   ext.lib_dir = File.join('src', 'ruby', 'lib', 'grpc')
   ext.cross_compile = true
-  ext.cross_platform = ['x86-mingw32', 'x64-mingw32']
+  ext.cross_platform = [
+    'x86-mingw32', 'x64-mingw32',
+    'x86_64-linux', 'x86-linux',
+    'x86_64-darwin-11',
+    'x86_64-darwin-12',
+    'x86_64-darwin-13',
+    'x86_64-darwin-14',
+    'x86_64-darwin-15'
+  ]
   ext.cross_compiling do |spec|
     spec.files = %w( etc/roots.pem grpc_c.32.ruby grpc_c.64.ruby )
     spec.files += Dir.glob('src/ruby/bin/**/*')
@@ -91,8 +99,8 @@ task 'dlls' do
 
 end
 
-desc 'Build the gem file under rake_compiler_dock'
-task 'gem:windows' do
+desc 'Build the native gem file under rake_compiler_dock'
+task 'gem:native' do
   verbose = ENV['V'] || '0'
 
   docker_for_windows "bundle && rake cross native gem RUBY_CC_VERSION=2.3.0:2.2.2:2.1.6:2.0.0 V=#{verbose}"
@@ -105,7 +113,7 @@ task 'suite:bidi' => 'suite:wrapper'
 task 'suite:server' => 'suite:wrapper'
 task 'suite:pb' => 'suite:server'
 
-task 'gem:windows' => 'dlls'
+task 'gem:native' => 'dlls'
 
 desc 'Compiles the gRPC extension then runs all the tests'
 task all: ['suite:idiomatic', 'suite:bidi', 'suite:pb', 'suite:server']
