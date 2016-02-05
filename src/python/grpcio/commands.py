@@ -52,6 +52,10 @@ import support
 
 PYTHON_STEM = os.path.dirname(os.path.abspath(__file__))
 
+BINARIES_REPOSITORY = os.environ.get(
+    'GRPC_PYTHON_BINARIES_REPOSITORY',
+    'https://storage.googleapis.com/grpc-precompiled-binaries/python/')
+
 CONF_PY_ADDENDUM = """
 extensions.append('sphinx.ext.napoleon')
 napoleon_google_docstring = True
@@ -78,10 +82,7 @@ def _get_grpc_custom_bdist_egg(decorated_basename, target_egg_basename):
   from six.moves.urllib import request
   decorated_path = decorated_basename + '.egg'
   try:
-    url = (
-        'https://storage.googleapis.com/grpc-precompiled-binaries/'
-        'python/{target}'
-            .format(target=decorated_path))
+    url = BINARIES_REPOSITORY + '/{target}'.format(target=decorated_path)
     egg_data = request.urlopen(url).read()
   except IOError as error:
     raise CommandError(
