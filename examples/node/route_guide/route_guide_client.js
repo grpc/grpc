@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,13 +30,13 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
- 
+
 var async = require('async');
 var fs = require('fs');
 var parseArgs = require('minimist');
 var path = require('path');
 var _ = require('lodash');
-var grpc = require('../../../');
+var grpc = require('grpc');
 var routeguide = grpc.load(__dirname + '/route_guide.proto').routeguide;
 var client = new routeguide.RouteGuide('localhost:50051',
                                        grpc.Credentials.createInsecure());
