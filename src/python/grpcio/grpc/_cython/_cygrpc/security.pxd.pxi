@@ -1,4 +1,4 @@
-# Copyright 2015-2016, Google Inc.
+# Copyright 2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -27,12 +27,6 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-include "grpc/_cython/_cygrpc/grpc.pxi"
 
-include "grpc/_cython/_cygrpc/call.pxd.pxi"
-include "grpc/_cython/_cygrpc/channel.pxd.pxi"
-include "grpc/_cython/_cygrpc/credentials.pxd.pxi"
-include "grpc/_cython/_cygrpc/completion_queue.pxd.pxi"
-include "grpc/_cython/_cygrpc/records.pxd.pxi"
-include "grpc/_cython/_cygrpc/security.pxd.pxi"
-include "grpc/_cython/_cygrpc/server.pxd.pxi"
+cdef grpc_ssl_roots_override_result ssl_roots_override_callback(
+    char **pem_root_certs) with gil
