@@ -45,6 +45,9 @@ coverage
 # Makefile's cache
 cache.mk
 
+# Ruby's local gem information
+Gemfile.lock
+
 # Temporary test reports
 report.xml
 latency_trace.txt
@@ -61,7 +64,7 @@ out
 .ycm_extra_conf.py
 
 # XCode
-build/
+^build/
 *.pbxuser
 !default.pbxuser
 *.mode1v3

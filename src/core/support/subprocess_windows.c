@@ -59,7 +59,7 @@ gpr_subprocess *gpr_subprocess_create(int argc, const char **argv) {
   STARTUPINFO si;
   PROCESS_INFORMATION pi;
 
-  char *args = gpr_strjoin_sep(argv, argc, " ", NULL);
+  char *args = gpr_strjoin_sep(argv, (size_t)argc, " ", NULL);
   TCHAR *args_tchar;
 
   args_tchar = gpr_char_to_tchar(args);
@@ -119,7 +119,7 @@ getExitCode:
     return 0;
   }
   if (GetExitCodeProcess(p->pi.hProcess, &dwExitCode)) {
-    return dwExitCode;
+    return (int)dwExitCode;
   } else {
     return -1;  // failed to get exit code
   }
