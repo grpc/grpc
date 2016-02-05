@@ -77,8 +77,9 @@ task 'dlls' do
   env += 'SYSTEM=MINGW32 '
   env += 'EMBED_ZLIB=true '
   env += 'BUILDDIR=/tmp '
+  env += "CONFIG=#{grpc_config} "
   env += "V=#{verbose} "
-  out = '/tmp/libs/opt/grpc-0.dll'
+  out = "/tmp/libs/#{grpc_config}/grpc-0.dll"
 
   w64 = { cross: 'x86_64-w64-mingw32', out: 'grpc_c.64.ruby' }
   w32 = { cross: 'i686-w64-mingw32', out: 'grpc_c.32.ruby' }
@@ -89,6 +90,27 @@ task 'dlls' do
     docker_for_windows "#{env} #{env_comp} make -j #{out} && #{opt[:cross]}-strip -x -S #{out} && cp #{out} #{opt[:out]}"
   end
 
+end
+
+desc 'Builds the windows boringssl static library'
+task 'boringssl' do
+  grpc_config = ENV['GRPC_CONFIG'] || 'opt'
+  verbose = ENV['V'] || '0'
+
+  env = 'CPPFLAGS="-D_WIN32_WINNT=0x600 -DUNICODE -D_UNICODE" '
+  env += 'SYSTEM=MINGW32 '
+  env += 'BUILDDIR=/tmp '
+  env += "CONFIG=#{grpc_config} "
+  env += "V=#{verbose} "
+  out = "/tmp/libs/#{grpc_config}/libboringssl.a"
+
+  w64 = { cross: 'x86_64-w64-mingw32', out: 'libboringssl-64.a' }
+  w32 = { cross: 'i686-w64-mingw32', out: 'libboringssl-32.a' }
+
+  [ w64, w32 ].each do |opt|
+    env_comp = "CC=#{opt[:cross]}-gcc "
+    docker_for_windows "#{env} #{env_comp} make -j #{out} && cp #{out} #{opt[:out]}"
+  end
 end
 
 desc 'Build the gem file under rake_compiler_dock'
