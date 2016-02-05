@@ -180,8 +180,9 @@ static void writer_thread(void* arg) {
       /* Ran out of log space. Sleep for a bit and let the reader catch up.
          This should never happen for circular logs. */
       if (VERBOSE) {
-        printf("   Writer stalled due to out-of-space: %d out of %d written\n",
-               records_written, args->num_records);
+        printf(
+            "   Writer %d stalled due to out-of-space: %d out of %d written\n",
+            args->index, records_written, args->num_records);
       }
       gpr_sleep_until(GRPC_TIMEOUT_MILLIS_TO_DEADLINE(10));
     }
@@ -189,7 +190,7 @@ static void writer_thread(void* arg) {
   /* Done. Decrement count and signal. */
   gpr_mu_lock(args->mu);
   (*args->count)--;
-  gpr_cv_broadcast(args->done);
+  gpr_cv_signal(args->done);
   if (VERBOSE) {
     printf("   Writer %d done\n", args->index);
   }
@@ -242,7 +243,7 @@ static void reader_thread(void* arg) {
   }
   /* Done */
   args->running = 0;
-  gpr_cv_broadcast(args->done);
+  gpr_cv_signal(args->done);
   if (VERBOSE) {
     printf("   Reader: records: %d, iterations: %d\n", records_read,
            num_iterations);
@@ -568,6 +569,7 @@ void test_performance(void) {
 
 int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
+  gpr_time_init();
   srand((unsigned)gpr_now(GPR_CLOCK_REALTIME).tv_nsec);
   test_invalid_record_size();
   test_end_write_with_different_size();
