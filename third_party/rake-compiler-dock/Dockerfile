@@ -107,9 +107,9 @@ RUN bash -c "rvm use 2.3.0 --default && \
     rake-compiler cross-ruby VERSION=2.2.2 HOST=i686-w64-mingw32 && \
     rake-compiler cross-ruby VERSION=2.2.2 HOST=x86_64-w64-mingw32 && \
     rake-compiler cross-ruby VERSION=2.2.2 HOST=x86_64-linux-gnu && \
-    rake-compiler cross-ruby VERSION=2.1.6 HOST=i686-w64-mingw32 && \
-    rake-compiler cross-ruby VERSION=2.1.6 HOST=x86_64-w64-mingw32 && \
-    rake-compiler cross-ruby VERSION=2.1.6 HOST=x86_64-linux-gnu && \
+    rake-compiler cross-ruby VERSION=2.1.5 HOST=i686-w64-mingw32 && \
+    rake-compiler cross-ruby VERSION=2.1.5 HOST=x86_64-w64-mingw32 && \
+    rake-compiler cross-ruby VERSION=2.1.5 HOST=x86_64-linux-gnu && \
     rake-compiler cross-ruby VERSION=2.0.0-p645 HOST=i686-w64-mingw32 && \
     rake-compiler cross-ruby VERSION=2.0.0-p645 HOST=x86_64-w64-mingw32 && \
     rake-compiler cross-ruby VERSION=2.0.0-p645 HOST=x86_64-linux-gnu && \
@@ -120,7 +120,7 @@ RUN bash -c "rvm use 2.3.0 --default && \
     export MAKE=\"make -j`nproc`\" CFLAGS='-m32 -s -O1 -fno-omit-frame-pointer -fno-fast-math' LDFLAGS='-m32' && \
     rake-compiler cross-ruby VERSION=2.3.0 HOST=i686-linux-gnu && \
     rake-compiler cross-ruby VERSION=2.2.2 HOST=i686-linux-gnu && \
-    rake-compiler cross-ruby VERSION=2.1.6 HOST=i686-linux-gnu && \
+    rake-compiler cross-ruby VERSION=2.1.5 HOST=i686-linux-gnu && \
     rake-compiler cross-ruby VERSION=2.0.0-p645 HOST=i686-linux-gnu && \
     rm -rf ~/.rake-compiler/tmp/builds ~/.rake-compiler/sources && \
     find /usr/local/rvm -type d -print0 | sudo xargs -0 chmod g+sw "
@@ -164,6 +164,6 @@ RUN cp /tmp/build/runas /usr/local/bin/
 # Install sudoers configuration
 RUN cp /tmp/build/sudoers /etc/sudoers.d/rake-compiler-dock
 
-ENV RUBY_CC_VERSION 2.3.0:2.2.2:2.1.6:2.0.0
+ENV RUBY_CC_VERSION 2.3.0:2.2.2:2.1.5:2.0.0
 
 CMD bash
