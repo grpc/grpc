@@ -65,7 +65,7 @@ class ClientAsyncResponseReader GRPC_FINAL
       : context_(context),
         call_(channel->CreateCall(method, context, cq)),
         collection_(new CallOpSetCollection) {
-    collection_->SetCollection();
+    collection_->init_buf_.SetCollection(collection_);
     collection_->init_buf_.SendInitialMetadata(context->send_initial_metadata_);
     // TODO(ctiller): don't assert
     GPR_ASSERT(collection_->init_buf_.SendMessage(request).ok());
@@ -76,12 +76,14 @@ class ClientAsyncResponseReader GRPC_FINAL
   void ReadInitialMetadata(void* tag) {
     GPR_ASSERT(!context_->initial_metadata_received_);
 
+    collection_->meta_buf_.SetCollection(collection_);
     collection_->meta_buf_.set_output_tag(tag);
     collection_->meta_buf_.RecvInitialMetadata(context_);
     call_.PerformOps(&collection_->meta_buf_);
   }
 
   void Finish(R* msg, Status* status, void* tag) {
+    collection_->finish_buf_.SetCollection(collection_);
     collection_->finish_buf_.set_output_tag(tag);
     if (!context_->initial_metadata_received_) {
       collection_->finish_buf_.RecvInitialMetadata(context_);
@@ -97,11 +99,6 @@ class ClientAsyncResponseReader GRPC_FINAL
 
   class CallOpSetCollection : public CallOpSetCollectionInterface {
    public:
-    void SetCollection() {
-      init_buf_.SetCollection(shared_from_this());
-      meta_buf_.SetCollection(shared_from_this());
-      finish_buf_.SetCollection(shared_from_this());
-    }
     SneakyCallOpSet<CallOpSendInitialMetadata, CallOpSendMessage,
                     CallOpClientSendClose> init_buf_;
     CallOpSet<CallOpRecvInitialMetadata> meta_buf_;
