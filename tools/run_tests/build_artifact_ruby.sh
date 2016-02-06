@@ -34,6 +34,7 @@ SYSTEM=`uname | cut -f 1 -d_`
 cd $(dirname $0)/../..
 set +ex
 [[ -s /etc/profile.d/rvm.sh ]] && . /etc/profile.d/rvm.sh
+[[ -s "$HOME/.rvm/scripts/rvm" ]] && source "$HOME/.rvm/scripts/rvm"
 set -ex
 
 if [ "$SYSTEM" == "MSYS" ] ; then
