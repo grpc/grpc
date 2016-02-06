@@ -62,7 +62,7 @@ set -ex
 rake gem:native
 
 if [ "$SYSTEM" == "Darwin" ] ; then
-  rm pkg/`ls pkg/*.gem | grep -v darwin`
+  rm `ls pkg/*.gem | grep -v darwin`
 fi
 
 mkdir -p artifacts
