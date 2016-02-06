@@ -48,13 +48,8 @@ if [ "$SYSTEM" == "MINGW32" ] ; then
   exit 1
 fi
 
-if [ "$SYSTEM" == "Darwin" ] ; then
-  set +ex
-  rvm use ruby-head
-  set -ex
-fi
-
 set +ex
+rvm use default
 gem install bundler --update
 bundle install
 set -ex
