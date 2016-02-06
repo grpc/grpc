@@ -135,7 +135,7 @@ class Install(install.install, EggNameMixin):
 
   def initialize_options(self):
     install.install.initialize_options(self)
-    self.use_grpc_custom_bdist = False
+    self.use_grpc_custom_bdist = bool(int(os.environ.get('GRPC_PYTHON_USE_CUSTOM_BDIST', '1')))
 
   def finalize_options(self):
     install.install.finalize_options(self)

@@ -42,17 +42,17 @@ then
   exit 1
 fi
 
-# TODO(jtattermusch): this shouldn't be required
-pip install --upgrade six
+PIP=pip2
+which $PIP || PIP=pip
+PYTHON=python2
+which $PYTHON || PYTHON=python
 
-# TODO(jtattermusch): if these don't get preinstalled, pip tries to install them
-# with --use-grpc-custom-bdist option, which obviously fails.
-pip install --upgrade enum34
-pip install --upgrade futures
+# TODO(jtattermusch): this shouldn't be required
+$PIP install --upgrade six
 
 GRPC_PYTHON_BINARIES_REPOSITORY="${BDIST_DIR}" \
-    pip install \
-    "${SDIST_ARCHIVE}" \
-    --install-option="--use-grpc-custom-bdist"
+    $PIP install \
+    "${SDIST_ARCHIVE}"
 
-python distribtest.py
+$PYTHON distribtest.py
+
