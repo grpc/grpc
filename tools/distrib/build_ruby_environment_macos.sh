@@ -55,5 +55,5 @@ for v in 2.3.0 2.2.2 2.1.5 2.0.0-p645 ; do
   rake -f $CROSS_RUBY cross-ruby VERSION=$v HOST=x86_64-darwin11
 done
 
-sed 's/x86_64-darwin-11/universal-darwin/' ~/.rake-compiler/config.yaml > $CROSS_RUBY
-mv $CROSS_RUBY > ~/.rake-compiler/config.yaml
+sed 's/x86_64-darwin-11/universal-darwin/' ~/.rake-compiler/config.yml > $CROSS_RUBY
+mv $CROSS_RUBY > ~/.rake-compiler/config.yml
