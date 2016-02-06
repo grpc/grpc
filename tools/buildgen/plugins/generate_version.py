@@ -1,4 +1,6 @@
-# Copyright 2015-2016, Google Inc.
+#!/usr/bin/env python2.7
+
+# Copyright 2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -27,7 +29,28 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# GRPC contains the General RPC module.
-module GRPC
-  VERSION = '0.13.0.0.pre'
-end
+import collections
+import fnmatch
+import git
+import os
+import re
+import sys
+import yaml
+
+
+def mako_plugin(dictionary):
+  try:
+    repo = git.Repo('.')
+  except git.exc.InvalidGitRepositoryError:
+    return
+
+  version = dictionary.get('settings').get('version')
+
+  if repo.head.ref == repo.heads.master:
+    version['master'] = True
+
+  # The following is theorically what we'd desire at some point,
+  # but due to our policy of checking in generated code, this is
+  # in fact impossible to do, since you can't have a commit that
+  # has its own name in it...
+  # version['revision'] = repo.head.commit.hexsha
