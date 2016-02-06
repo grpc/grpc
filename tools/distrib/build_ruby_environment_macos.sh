@@ -51,7 +51,7 @@ EOF
 
 MAKE="make -j8"
 
-for v in 2.3.0 2.2.2 2.1.6 2.0.0-p645 ; do
+for v in 2.3.0 2.2.2 2.1.5 2.0.0-p645 ; do
   rake -f $CROSS_RUBY cross-ruby VERSION=$v HOST=x86_64-darwin11
 done
 
