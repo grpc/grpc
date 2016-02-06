@@ -55,7 +55,7 @@ if [ "$SYSTEM" == "Darwin" ] ; then
 fi
 
 set +ex
-gem install bundle --update
+gem install bundler --update
 bundle install
 set -ex
 
