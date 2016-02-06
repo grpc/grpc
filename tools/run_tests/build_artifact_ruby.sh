@@ -28,12 +28,17 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 set -ex
+
+SYSTEM=`uname | cut -f 1 -d_`
+
 cd $(dirname $0)/../..
+if [ "$SYSTEM" == "Darwin" ] ; then
+  ./tools/distrib/build_ruby_environment_macos.sh
+fi
 set +ex
 [[ -s /etc/profile.d/rvm.sh ]] && . /etc/profile.d/rvm.sh
 set -ex
 
-SYSTEM=`uname | cut -f 1 -d_`
 if [ "$SYSTEM" == "MSYS" ] ; then
   SYSTEM=MINGW32
 fi
@@ -52,11 +57,9 @@ if [ "$SYSTEM" == "Darwin" ] ; then
   set -ex
 fi
 
-if [ "$SYSTEM" == "Linux" ] ; then
-  set +ex
-  ${SETARCH_CMD} bundle install
-  set -ex
-fi
+set +ex
+${SETARCH_CMD} bundle install
+set -ex
 
 ${SETARCH_CMD} rake gem:native
 
