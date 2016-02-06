@@ -34,3 +34,7 @@ RUN apt-get update && apt-get install -y curl
 # Install nvm
 RUN touch .profile
 RUN curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.30.2/install.sh | bash
+
+# Install node 4, as on 32bit system, npm will be missing after nvm install
+RUN curl -sL https://deb.nodesource.com/setup_4.x | bash -
+RUN apt-get update && apt-get install -y nodejs
