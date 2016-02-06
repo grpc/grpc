@@ -27,16 +27,43 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
+set -ex
+cd $(dirname $0)/../..
+set +ex
+[[ -s /etc/profile.d/rvm.sh ]] && . /etc/profile.d/rvm.sh
 set -ex
 
-cd $(dirname $0)/../..
+SYSTEM=`uname | cut -f 1 -d_`
+if [ "$SYSTEM" == "MSYS" ] ; then
+  SYSTEM=MINGW32
+fi
+if [ "$SYSTEM" == "MINGW64" ] ; then
+  SYSTEM=MINGW32
+fi
 
-${SETARCH_CMD} bundle install
+if [ "$SYSTEM" == "MINGW32" ] ; then
+  echo "Need Linux to build the Windows ruby gem."
+  exit 1
+fi
 
-${SETARCH_CMD} rake native gem
+if [ "$SYSTEM" == "Darwin" ] ; then
+  set +ex
+  rvm use ruby-head
+  set -ex
+fi
+
+if [ "$SYSTEM" == "Linux" ] ; then
+  set +ex
+  ${SETARCH_CMD} bundle install
+  set -ex
+fi
+
+${SETARCH_CMD} rake gem:native
+
+if [ "$SYSTEM" == "Darwin" ] ; then
+  rm pkg/`ls pkg/*.gem | grep -v darwin`
+fi
 
 mkdir -p artifacts
 
 cp pkg/*.gem artifacts
-
