@@ -29,7 +29,7 @@
 
 FROM 32bit/debian:jessie
 
-RUN apt-get update && apt-get install -y curl git
+RUN apt-get update && apt-get install -y git
 
 # Install nvm
 RUN touch .profile

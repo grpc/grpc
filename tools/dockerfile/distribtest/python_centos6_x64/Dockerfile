@@ -29,7 +29,6 @@
 
 FROM centos:6
 
-RUN yum install -y git
 RUN yum install -y python
 
 RUN rpm -ivh http://dl.fedoraproject.org/pub/epel/6/i386/epel-release-6-8.noarch.rpm
