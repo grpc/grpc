@@ -27,16 +27,32 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
+set -ex
+cd $(dirname $0)/../..
+set +ex
+[[ -s /etc/profile.d/rvm.sh ]] && . /etc/profile.d/rvm.sh
 set -ex
 
-cd $(dirname $0)/../..
+SYSTEM=`uname | cut -f 1 -d_`
+if [ "$SYSTEM" == "MSYS" ] ; then
+  SYSTEM=MINGW32
+fi
+if [ "$SYSTEM" == "MINGW64" ] ; then
+  SYSTEM=MINGW32
+fi
 
-${SETARCH_CMD} bundle install
+if [ "$SYSTEM" == "Linux" ] ; then
+  ${SETARCH_CMD} bundle install
+fi
+
+if [ "$SYSTEM" == "Darwin" ] ; then
+  set +ex
+  rvm use system
+  set -ex
+fi
 
 ${SETARCH_CMD} rake native gem
 
 mkdir -p artifacts
 
 cp pkg/*.gem artifacts
-
