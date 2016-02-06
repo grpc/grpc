@@ -55,10 +55,11 @@ if [ "$SYSTEM" == "Darwin" ] ; then
 fi
 
 set +ex
-${SETARCH_CMD} bundle install
+gem install bundle --update
+bundle install
 set -ex
 
-${SETARCH_CMD} rake gem:native
+rake gem:native
 
 if [ "$SYSTEM" == "Darwin" ] ; then
   rm pkg/`ls pkg/*.gem | grep -v darwin`
