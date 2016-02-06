@@ -32,9 +32,6 @@ set -ex
 SYSTEM=`uname | cut -f 1 -d_`
 
 cd $(dirname $0)/../..
-if [ "$SYSTEM" == "Darwin" ] ; then
-  /bin/bash ./tools/distrib/build_ruby_environment_macos.sh
-fi
 set +ex
 [[ -s /etc/profile.d/rvm.sh ]] && . /etc/profile.d/rvm.sh
 set -ex
