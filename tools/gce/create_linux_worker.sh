@@ -46,6 +46,9 @@ gcloud compute instances create $INSTANCE_NAME \
     --image ubuntu-14-04 \
     --boot-disk-size 1000
 
+echo 'Created GCE instance, waiting 60 seconds for it to come online.'
+sleep 60
+
 gcloud compute copy-files \
     --project="$CLOUD_PROJECT" \
     --zone "$ZONE" \
