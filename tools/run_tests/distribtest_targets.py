@@ -55,28 +55,49 @@ def create_docker_jobspec(name, dockerfile_dir, shell_command, environ={},
   return jobspec
 
 
+def create_jobspec(name, cmdline, environ=None, shell=False,
+                   flake_retries=0, timeout_retries=0):
+  """Creates jobspec."""
+  jobspec = jobset.JobSpec(
+          cmdline=cmdline,
+          environ=environ,
+          shortname='distribtest.%s' % (name),
+          timeout_seconds=10*60,
+          flake_retries=flake_retries,
+          timeout_retries=timeout_retries,
+          shell=shell)
+  return jobspec
+
+
 class CSharpDistribTest(object):
   """Tests C# NuGet package"""
 
-  def __init__(self, platform, arch, docker_suffix):
-    self.name = 'csharp_nuget_%s_%s_%s' % (platform, arch, docker_suffix)
+  def __init__(self, platform, arch, docker_suffix=None):
+    self.name = 'csharp_nuget_%s_%s' % (platform, arch)
     self.platform = platform
     self.arch = arch
     self.docker_suffix = docker_suffix
-    self.labels = ['distribtest', 'csharp', platform, arch, docker_suffix]
+    self.labels = ['distribtest', 'csharp', platform, arch]
+    if docker_suffix:
+      self.name += '_%s' % docker_suffix
+      self.labels.append(docker_suffix)
 
   def pre_build_jobspecs(self):
     return []
 
   def build_jobspec(self):
-    if not self.platform == 'linux':
-      raise Exception("Not supported yet.")
-
-    return create_docker_jobspec(self.name,
+    if self.platform == 'linux':
+      return create_docker_jobspec(self.name,
           'tools/dockerfile/distribtest/csharp_%s_%s' % (
               self.docker_suffix,
               self.arch),
           'test/distrib/csharp/run_distrib_test.sh')
+    elif self.platform == 'macos':
+      return create_jobspec(self.name,
+          ['test/distrib/csharp/run_distrib_test.sh'],
+          environ={'EXTERNAL_GIT_ROOT': '../../..'})
+    else:
+      raise Exception("Not supported yet.")
 
   def __str__(self):
     return self.name
@@ -105,8 +126,7 @@ class NodeDistribTest(object):
                                  'tools/dockerfile/distribtest/node_%s_%s' % (
                                      self.docker_suffix,
                                      self.arch),
-                                 # bash -l needed to make nvm available
-                                 'bash -l test/distrib/node/run_distrib_test.sh %s' % (
+                                 'test/distrib/node/run_distrib_test.sh %s' % (
                                      self.node_version))
     def __str__(self):
       return self.name
@@ -176,6 +196,7 @@ def targets():
           CSharpDistribTest('linux', 'x64', 'ubuntu1504'),
           CSharpDistribTest('linux', 'x64', 'ubuntu1510'),
           CSharpDistribTest('linux', 'x64', 'ubuntu1604'),
+          CSharpDistribTest('macos', 'x86'),
           PythonDistribTest('linux', 'x64', 'wheezy'),
           PythonDistribTest('linux', 'x64', 'jessie'),
           PythonDistribTest('linux', 'x86', 'jessie'),
