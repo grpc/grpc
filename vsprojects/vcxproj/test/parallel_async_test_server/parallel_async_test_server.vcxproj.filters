@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\helloworld.proto">
+      <Filter>src\proto\grpc\testing</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\cpp\end2end\parallel_async_test_server.cc">
+      <Filter>test\cpp\end2end</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="src">
+      <UniqueIdentifier>{ee04daed-113f-f01e-b2ce-dd1669e51baf}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\proto">
+      <UniqueIdentifier>{875ea73a-d79d-a990-435a-7628661b5e07}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\proto\grpc">
+      <UniqueIdentifier>{f6b224e6-5231-052b-c049-5ece33d606c4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\proto\grpc\testing">
+      <UniqueIdentifier>{a0d969b1-bd87-f2c7-94c2-98d1493c09f0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test">
+      <UniqueIdentifier>{1b3edac4-307a-290a-eaa2-8d663f6a76d8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\cpp">
+      <UniqueIdentifier>{dbafe128-56c9-98f6-8031-b235a689faa0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\cpp\end2end">
+      <UniqueIdentifier>{43e72a5c-3a79-00ac-d0d6-5b3a6bfd4313}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

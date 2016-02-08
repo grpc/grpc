@@ -1540,6 +1540,40 @@
     "deps": [
       "grpc", 
       "grpc++", 
+      "grpc++_test_util", 
+      "grpc_test_util"
+    ], 
+    "headers": [
+      "src/proto/grpc/testing/helloworld.grpc.pb.h", 
+      "src/proto/grpc/testing/helloworld.pb.h"
+    ], 
+    "language": "c++", 
+    "name": "parallel_async_test", 
+    "src": [
+      "test/cpp/end2end/parallel_async_test.cc"
+    ]
+  }, 
+  {
+    "deps": [
+      "grpc", 
+      "grpc++", 
+      "grpc++_test_util", 
+      "grpc_test_util"
+    ], 
+    "headers": [
+      "src/proto/grpc/testing/helloworld.grpc.pb.h", 
+      "src/proto/grpc/testing/helloworld.pb.h"
+    ], 
+    "language": "c++", 
+    "name": "parallel_async_test_server", 
+    "src": [
+      "test/cpp/end2end/parallel_async_test_server.cc"
+    ]
+  }, 
+  {
+    "deps": [
+      "grpc", 
+      "grpc++", 
       "grpc++_test_config", 
       "grpc++_test_util", 
       "grpc_test_util", 

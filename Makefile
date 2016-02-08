@@ -951,6 +951,8 @@ interop_server: $(BINDIR)/$(CONFIG)/interop_server
 interop_test: $(BINDIR)/$(CONFIG)/interop_test
 metrics_client: $(BINDIR)/$(CONFIG)/metrics_client
 mock_test: $(BINDIR)/$(CONFIG)/mock_test
+parallel_async_test: $(BINDIR)/$(CONFIG)/parallel_async_test
+parallel_async_test_server: $(BINDIR)/$(CONFIG)/parallel_async_test_server
 qps_driver: $(BINDIR)/$(CONFIG)/qps_driver
 qps_interarrival_test: $(BINDIR)/$(CONFIG)/qps_interarrival_test
 qps_openloop_test: $(BINDIR)/$(CONFIG)/qps_openloop_test
@@ -1293,6 +1295,8 @@ buildtests_cxx: buildtests_zookeeper privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/interop_test \
   $(BINDIR)/$(CONFIG)/metrics_client \
   $(BINDIR)/$(CONFIG)/mock_test \
+  $(BINDIR)/$(CONFIG)/parallel_async_test \
+  $(BINDIR)/$(CONFIG)/parallel_async_test_server \
   $(BINDIR)/$(CONFIG)/qps_interarrival_test \
   $(BINDIR)/$(CONFIG)/qps_openloop_test \
   $(BINDIR)/$(CONFIG)/qps_test \
@@ -1599,6 +1603,10 @@ test_cxx: test_zookeeper buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/interop_test || ( echo test interop_test failed ; exit 1 )
 	$(E) "[RUN]     Testing mock_test"
 	$(Q) $(BINDIR)/$(CONFIG)/mock_test || ( echo test mock_test failed ; exit 1 )
+	$(E) "[RUN]     Testing parallel_async_test"
+	$(Q) $(BINDIR)/$(CONFIG)/parallel_async_test || ( echo test parallel_async_test failed ; exit 1 )
+	$(E) "[RUN]     Testing parallel_async_test_server"
+	$(Q) $(BINDIR)/$(CONFIG)/parallel_async_test_server || ( echo test parallel_async_test_server failed ; exit 1 )
 	$(E) "[RUN]     Testing qps_test"
 	$(Q) $(BINDIR)/$(CONFIG)/qps_test || ( echo test qps_test failed ; exit 1 )
 	$(E) "[RUN]     Testing secure_auth_context_test"
@@ -1808,6 +1816,21 @@ $(GENDIR)/src/proto/grpc/testing/empty.pb.cc: src/proto/grpc/testing/empty.proto
 	$(Q) $(PROTOC) --cpp_out=$(GENDIR) $<
 
 $(GENDIR)/src/proto/grpc/testing/empty.grpc.pb.cc: src/proto/grpc/testing/empty.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) 
+	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(BINDIR)/$(CONFIG)/grpc_cpp_plugin $<
+endif
+
+ifeq ($(NO_PROTOC),true)
+$(GENDIR)/src/proto/grpc/testing/helloworld.pb.cc: protoc_dep_error
+$(GENDIR)/src/proto/grpc/testing/helloworld.grpc.pb.cc: protoc_dep_error
+else
+$(GENDIR)/src/proto/grpc/testing/helloworld.pb.cc: src/proto/grpc/testing/helloworld.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) 
+	$(E) "[PROTOC]  Generating protobuf CC file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) --cpp_out=$(GENDIR) $<
+
+$(GENDIR)/src/proto/grpc/testing/helloworld.grpc.pb.cc: src/proto/grpc/testing/helloworld.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) 
 	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(PROTOC) --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(BINDIR)/$(CONFIG)/grpc_cpp_plugin $<
@@ -9867,6 +9890,100 @@ ifneq ($(NO_DEPS),true)
 -include $(MOCK_TEST_OBJS:.o=.dep)
 endif
 endif
+
+
+PARALLEL_ASYNC_TEST_SRC = \
+    $(GENDIR)/src/proto/grpc/testing/helloworld.pb.cc $(GENDIR)/src/proto/grpc/testing/helloworld.grpc.pb.cc \
+    test/cpp/end2end/parallel_async_test.cc \
+
+PARALLEL_ASYNC_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(PARALLEL_ASYNC_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/parallel_async_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/parallel_async_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/parallel_async_test: $(PROTOBUF_DEP) $(PARALLEL_ASYNC_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(PARALLEL_ASYNC_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/parallel_async_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/src/proto/grpc/testing/helloworld.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a
+
+$(OBJDIR)/$(CONFIG)/test/cpp/end2end/parallel_async_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a
+
+deps_parallel_async_test: $(PARALLEL_ASYNC_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(PARALLEL_ASYNC_TEST_OBJS:.o=.dep)
+endif
+endif
+$(OBJDIR)/$(CONFIG)/test/cpp/end2end/parallel_async_test.o: $(GENDIR)/src/proto/grpc/testing/helloworld.pb.cc $(GENDIR)/src/proto/grpc/testing/helloworld.grpc.pb.cc
+
+
+PARALLEL_ASYNC_TEST_SERVER_SRC = \
+    $(GENDIR)/src/proto/grpc/testing/helloworld.pb.cc $(GENDIR)/src/proto/grpc/testing/helloworld.grpc.pb.cc \
+    test/cpp/end2end/parallel_async_test_server.cc \
+
+PARALLEL_ASYNC_TEST_SERVER_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(PARALLEL_ASYNC_TEST_SERVER_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/parallel_async_test_server: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/parallel_async_test_server: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/parallel_async_test_server: $(PROTOBUF_DEP) $(PARALLEL_ASYNC_TEST_SERVER_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(PARALLEL_ASYNC_TEST_SERVER_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/parallel_async_test_server
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/src/proto/grpc/testing/helloworld.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a
+
+$(OBJDIR)/$(CONFIG)/test/cpp/end2end/parallel_async_test_server.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a
+
+deps_parallel_async_test_server: $(PARALLEL_ASYNC_TEST_SERVER_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(PARALLEL_ASYNC_TEST_SERVER_OBJS:.o=.dep)
+endif
+endif
+$(OBJDIR)/$(CONFIG)/test/cpp/end2end/parallel_async_test_server.o: $(GENDIR)/src/proto/grpc/testing/helloworld.pb.cc $(GENDIR)/src/proto/grpc/testing/helloworld.grpc.pb.cc
 
 
 QPS_DRIVER_SRC = \
