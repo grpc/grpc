@@ -544,7 +544,7 @@ class CallOpSet : public CallOpSetInterface,
     this->Op5::FinishOp(status, max_message_size_);
     this->Op6::FinishOp(status, max_message_size_);
     *tag = return_tag_;
-    collection_.reset(); // drop the ref at this point
+    collection_.reset();  // drop the ref at this point
     return true;
   }
 
