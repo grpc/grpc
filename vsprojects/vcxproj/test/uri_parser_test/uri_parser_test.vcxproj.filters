@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\test\core\client_config\uri_parser_test.c">
+      <Filter>test\core\client_config</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="test">
+      <UniqueIdentifier>{4d026376-ec29-de8b-a02b-d11e45900c44}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core">
+      <UniqueIdentifier>{5e9a3063-bec4-a26c-b10d-13c866d4e639}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core\client_config">
+      <UniqueIdentifier>{65156042-def7-b09c-d76e-38ba78456f20}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

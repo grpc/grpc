@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\test\core\security\print_google_default_creds_token.c">
+      <Filter>test\core\security</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="test">
+      <UniqueIdentifier>{5a149bd4-51f2-6ea6-4ea8-2d933273f17e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core">
+      <UniqueIdentifier>{f3b3d83b-df7b-8d34-ce52-4d0352ce861a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core\security">
+      <UniqueIdentifier>{101930bc-c8a6-c980-fbbb-8b48d3029a3e}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+
