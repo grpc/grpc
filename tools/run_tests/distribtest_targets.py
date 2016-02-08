@@ -244,6 +244,6 @@ def targets():
           ] + [
             NodeDistribTest('linux', 'x64', os, version)
             for os in ('wheezy', 'jessie', 'ubuntu1204', 'ubuntu1404',
-                       'ubuntu1504', 'ubuntu1510', 'ubuntu1604', 'macos')
+                       'ubuntu1504', 'ubuntu1510', 'ubuntu1604')
             for version in ('0.10', '0.12', '3', '4', '5')
           ]
