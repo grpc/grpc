@@ -99,7 +99,7 @@ gpr_stack_lockfree *gpr_stack_lockfree_create(size_t entries) {
 
   /* Point the head at reserved dummy entry */
   stack->head.contents.index = INVALID_ENTRY_INDEX;
-  /* Fill in the pad and aba_ctr to avoid confusing memcheck tools */
+/* Fill in the pad and aba_ctr to avoid confusing memcheck tools */
 #ifdef GPR_ARCH_64
   stack->head.contents.pad = 0;
 #endif
