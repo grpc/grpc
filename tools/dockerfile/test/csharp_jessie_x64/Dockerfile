@@ -32,13 +32,13 @@ FROM debian:jessie
 # Install Git and basic packages.
 RUN apt-get update && apt-get install -y \
   autoconf \
-  autotools-dev \  
+  autotools-dev \
   build-essential \
   bzip2 \
   ccache \
   curl \
   gcc \
-  gcc-multilib \ 
+  gcc-multilib \
   git \
   golang \
   gyp \
@@ -52,7 +52,7 @@ RUN apt-get update && apt-get install -y \
   perl \
   strace \
   python-dev \
-  python-setuptools \ 
+  python-setuptools \
   python-yaml \
   telnet \
   unzip \
@@ -76,13 +76,9 @@ RUN echo "deb http://download.mono-project.com/repo/debian wheezy-libtiff-compat
 # Install dependencies
 RUN apt-get update && apt-get -y dist-upgrade && apt-get install -y \
     mono-devel \
-    nunit \
-    nunit-console \
-    monodevelop
-
-# Download NuGet
-RUN cd /var/local && wget www.nuget.org/NuGet.exe
-ENV NUGET mono /var/local/NuGet.exe
+    ca-certificates-mono \
+    nuget \
+    && apt-get clean
 
 # Prepare ccache
 RUN ln -s /usr/bin/ccache /usr/local/bin/gcc
