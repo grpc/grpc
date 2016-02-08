@@ -218,7 +218,7 @@ else:
 
 setuptools.setup(
     name='grpcio',
-    version='0.12.0b8',
+    version='0.12.0b9',
     license=LICENSE,
     ext_modules=CYTHON_EXTENSION_MODULES,
     packages=list(PACKAGES),
