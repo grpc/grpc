@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\test\cpp\common\channel_arguments_test.cc">
+      <Filter>test\cpp\common</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="test">
+      <UniqueIdentifier>{74eee7ed-dbd7-190f-f073-edf641a325f0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\cpp">
+      <UniqueIdentifier>{16fb3cfd-129c-a846-b9a5-dbec55fd83a8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\cpp\common">
+      <UniqueIdentifier>{641fdf8b-9e1d-4d66-c744-217b0b527616}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

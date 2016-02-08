@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\aes\aes_test.cc">
+      <Filter>third_party\boringssl\crypto\aes</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="third_party">
+      <UniqueIdentifier>{f7a8726b-fb16-6753-47be-89a42b297291}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party\boringssl">
+      <UniqueIdentifier>{0e49c798-ec5e-6240-bac2-6cc90e42ce2d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party\boringssl\crypto">
+      <UniqueIdentifier>{38523c66-b3d4-e9e8-bc81-5ced9852414e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party\boringssl\crypto\aes">
+      <UniqueIdentifier>{da1a0309-56e8-44cd-3d64-4eb99afe5aa3}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

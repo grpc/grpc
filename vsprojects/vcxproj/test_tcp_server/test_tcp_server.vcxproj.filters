@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\test\core\util\test_tcp_server.c">
+      <Filter>test\core\util</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="$(SolutionDir)\..\test\core\util\test_tcp_server.h">
+      <Filter>test\core\util</Filter>
+    </ClInclude>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="test">
+      <UniqueIdentifier>{28134501-94bd-f7ba-b77b-c4863be94758}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core">
+      <UniqueIdentifier>{6e538eb5-ce76-212d-d785-e8450b89f1ba}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core\util">
+      <UniqueIdentifier>{f33a1bbf-69a0-d776-ab7c-2fd5c382b6d3}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

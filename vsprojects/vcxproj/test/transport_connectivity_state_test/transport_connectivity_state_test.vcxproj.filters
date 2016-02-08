@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\test\core\transport\connectivity_state_test.c">
+      <Filter>test\core\transport</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="test">
+      <UniqueIdentifier>{714707eb-8e3c-a990-6aaf-a23ea345f0cc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core">
+      <UniqueIdentifier>{b79db837-dc1a-74b2-dc04-664d00ca3ec7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core\transport">
+      <UniqueIdentifier>{21b47183-e00e-b938-5cae-9f2d972d032b}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+
