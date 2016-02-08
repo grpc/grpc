@@ -177,7 +177,7 @@ static VALUE grpc_rb_server_credentials_init(VALUE self, VALUE pem_root_certs,
   VALUE key = Qnil;
   VALUE key_cert = Qnil;
   int auth_client = 0;
-  int num_key_certs = 0;
+  long num_key_certs = 0;
   int i;
 
   if (NIL_P(force_client_auth) ||

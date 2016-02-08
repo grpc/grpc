@@ -29,6 +29,4 @@
 
 FROM 32bit/debian:jessie
 
-RUN apt-get update
-RUN apt-get install -y git python python-pip
-
+RUN apt-get update && apt-get install -y python python-pip
