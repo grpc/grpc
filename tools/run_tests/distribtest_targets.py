@@ -119,15 +119,21 @@ class NodeDistribTest(object):
     return []
 
   def build_jobspec(self):
-    if self.platform not in ('linux',):
+    if self.platform == 'linux':
+      return create_docker_jobspec(self.name,
+                                   'tools/dockerfile/distribtest/node_%s_%s' % (
+                                       self.docker_suffix,
+                                       self.arch),
+                                   'test/distrib/node/run_distrib_test.sh %s' % (
+                                       self.node_version))
+    elif self.platform == 'macos':
+      return create_jobspec(self.name,
+                            ['test/distrib/node/run_distrib_test.sh',
+                             str(self.node_version)],
+                            environ={'EXTERNAL_GIT_ROOT': '../../..'})
+    else:
       raise Exception("Not supported yet.")
 
-    return create_docker_jobspec(self.name,
-                                 'tools/dockerfile/distribtest/node_%s_%s' % (
-                                     self.docker_suffix,
-                                     self.arch),
-                                 'test/distrib/node/run_distrib_test.sh %s' % (
-                                     self.node_version))
     def __str__(self):
       return self.name
 
@@ -232,6 +238,6 @@ def targets():
           ] + [
             NodeDistribTest('linux', 'x64', os, version)
             for os in ('wheezy', 'jessie', 'ubuntu1204', 'ubuntu1404',
-                       'ubuntu1504', 'ubuntu1510', 'ubuntu1604')
+                       'ubuntu1504', 'ubuntu1510', 'ubuntu1604', 'macos')
             for version in ('0.10', '0.12', '3', '4', '5')
           ]
