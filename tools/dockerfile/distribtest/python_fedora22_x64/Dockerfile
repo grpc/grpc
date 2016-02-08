@@ -29,9 +29,4 @@
 
 FROM fedora:22
 
-RUN yum clean all
-RUN yum update -y
-RUN yum install -y git
-RUN yum install -y python
-RUN yum install -y python-pip
-
+RUN yum clean all && yum update -y && yum install -y python python-pip

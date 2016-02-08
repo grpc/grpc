@@ -29,7 +29,7 @@
 
 FROM ubuntu:15.10
 
-RUN apt-get update && apt-get install -y curl git
+RUN apt-get update && apt-get install -y curl
 
 # Install nvm
 RUN touch .profile
