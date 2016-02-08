@@ -5,7 +5,7 @@ settings:
   '#1': The public version number of the library.
   '#2': Master always has a "-dev" suffix
   '#3': Use "-preN" suffixes to identify pre-release versions
-  '#4': Per-language overrides are possible with (eg) ruby_version security_connector_test
+  '#4': Per-language overrides are possible with (eg) ruby_version tag here
   '#5': See the expand_version.py for all the quirks here
   version: 0.13.0-dev
 filegroups:
