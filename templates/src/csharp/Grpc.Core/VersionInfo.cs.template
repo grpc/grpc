@@ -43,6 +43,6 @@
           /// <summary>
           /// Current version of gRPC C#
           /// </summary>
-          public const string CurrentVersion = "${settings.version.major}.${settings.version.minor}.${settings.version.micro}";
+          public const string CurrentVersion = "${settings.csharp_version}";
       }
   }
