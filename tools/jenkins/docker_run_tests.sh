@@ -43,8 +43,6 @@ chown `whoami` $XDG_CACHE_HOME
 mkdir -p /var/local/git
 git clone --recursive /var/local/jenkins/grpc /var/local/git/grpc
 
-nvm use 0.12 || true
-
 if [ -x "$(command -v rvm)" ]
 then
   rvm use ruby-2.1

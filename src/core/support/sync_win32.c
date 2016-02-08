@@ -87,6 +87,7 @@ int gpr_cv_wait(gpr_cv *cv, gpr_mu *mu, gpr_timespec abs_deadline) {
       0) {
     SleepConditionVariableCS(cv, &mu->cs, INFINITE);
   } else {
+    abs_deadline = gpr_convert_clock_type(abs_deadline, GPR_CLOCK_REALTIME);
     gpr_timespec now = gpr_now(abs_deadline.clock_type);
     int64_t now_ms = (int64_t)now.tv_sec * 1000 + now.tv_nsec / 1000000;
     int64_t deadline_ms =

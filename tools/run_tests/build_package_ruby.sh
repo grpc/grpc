@@ -1,6 +1,5 @@
 #!/bin/bash
-
-# Copyright 2015-2016, Google Inc.
+# Copyright 2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -29,16 +28,16 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-NODE_VERSION=$1
-source ~/.nvm/nvm.sh
 set -ex
 
-nvm use $NODE_VERSION
+cd $(dirname $0)/../..
 
-export GRPC_CONFIG=${CONFIG:-opt}
+mkdir -p artifacts/
 
-# Expire cache after 1 week
-npm update --cache-min 604800
+# All the ruby packages have been built in the artifact phase already
+# and we only collect them here to deliver them to the distribtest phase.
+cp -r $EXTERNAL_GIT_ROOT/architecture={x86,x64},language=ruby,platform={windows,linux,macos}/artifacts/* artifacts/ || true
 
-npm install node-gyp-install
-./node_modules/.bin/node-gyp-install
+# TODO: all the artifact builder configurations generate a grpc-VERSION.gem
+# source distribution package, and only one of them will end up
+# in the artifacts/ directory. They should be all equivalent though.
