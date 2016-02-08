@@ -93,7 +93,7 @@ static void assert_decodes_as(const char *buffer, gpr_timespec expected) {
 }
 
 void decode_suite(char ext,
-                  gpr_timespec (*answer)(long x, gpr_clock_type clock)) {
+                  gpr_timespec (*answer)(int64_t x, gpr_clock_type clock)) {
   long test_vals[] = {1,       12,       123,       1234,     12345,   123456,
                       1234567, 12345678, 123456789, 98765432, 9876543, 987654,
                       98765,   9876,     987,       98,       9};
