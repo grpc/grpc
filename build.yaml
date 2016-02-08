@@ -2,12 +2,12 @@
 '#2': It is used among other things to generate all of our project files.
 '#3': Please refer to the templates directory for more information.
 settings:
-  '#': The public version number of the library.
-  version:
-    major: 0
-    minor: 13
-    micro: 0
-    build: 0
+  '#1': The public version number of the library.
+  '#2': Master always has a "-dev" suffix
+  '#3': Use "-preN" suffixes to identify pre-release versions
+  '#4': Per-language overrides are possible with (eg) ruby_version security_connector_test
+  '#5': See the expand_version.py for all the quirks here
+  version: 0.13.0-dev
 filegroups:
 - name: census
   public_headers:
