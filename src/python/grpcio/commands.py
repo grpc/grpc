@@ -56,6 +56,9 @@ BINARIES_REPOSITORY = os.environ.get(
     'GRPC_PYTHON_BINARIES_REPOSITORY',
     'https://storage.googleapis.com/grpc-precompiled-binaries/python/')
 
+USE_GRPC_CUSTOM_BDIST = bool(int(os.environ.get(
+    'GRPC_PYTHON_USE_CUSTOM_BDIST', '1')))
+
 CONF_PY_ADDENDUM = """
 extensions.append('sphinx.ext.napoleon')
 napoleon_google_docstring = True
@@ -135,7 +138,7 @@ class Install(install.install, EggNameMixin):
 
   def initialize_options(self):
     install.install.initialize_options(self)
-    self.use_grpc_custom_bdist = bool(int(os.environ.get('GRPC_PYTHON_USE_CUSTOM_BDIST', '1')))
+    self.use_grpc_custom_bdist = USE_GRPC_CUSTOM_BDIST
 
   def finalize_options(self):
     install.install.finalize_options(self)
