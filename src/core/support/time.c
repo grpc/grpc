@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -83,12 +83,12 @@ gpr_timespec gpr_inf_past(gpr_clock_type type) {
 /* TODO(ctiller): consider merging _nanos, _micros, _millis into a single
    function for maintainability. Similarly for _seconds, _minutes, and _hours */
 
-gpr_timespec gpr_time_from_nanos(long ns, gpr_clock_type type) {
+gpr_timespec gpr_time_from_nanos(int64_t ns, gpr_clock_type type) {
   gpr_timespec result;
   result.clock_type = type;
-  if (ns == LONG_MAX) {
+  if (ns == INT64_MAX) {
     result = gpr_inf_future(type);
-  } else if (ns == LONG_MIN) {
+  } else if (ns == INT64_MIN) {
     result = gpr_inf_past(type);
   } else if (ns >= 0) {
     result.tv_sec = ns / GPR_NS_PER_SEC;
@@ -101,12 +101,12 @@ gpr_timespec gpr_time_from_nanos(long ns, gpr_clock_type type) {
   return result;
 }
 
-gpr_timespec gpr_time_from_micros(long us, gpr_clock_type type) {
+gpr_timespec gpr_time_from_micros(int64_t us, gpr_clock_type type) {
   gpr_timespec result;
   result.clock_type = type;
-  if (us == LONG_MAX) {
+  if (us == INT64_MAX) {
     result = gpr_inf_future(type);
-  } else if (us == LONG_MIN) {
+  } else if (us == INT64_MIN) {
     result = gpr_inf_past(type);
   } else if (us >= 0) {
     result.tv_sec = us / 1000000;
@@ -119,12 +119,12 @@ gpr_timespec gpr_time_from_micros(long us, gpr_clock_type type) {
   return result;
 }
 
-gpr_timespec gpr_time_from_millis(long ms, gpr_clock_type type) {
+gpr_timespec gpr_time_from_millis(int64_t ms, gpr_clock_type type) {
   gpr_timespec result;
   result.clock_type = type;
-  if (ms == LONG_MAX) {
+  if (ms == INT64_MAX) {
     result = gpr_inf_future(type);
-  } else if (ms == LONG_MIN) {
+  } else if (ms == INT64_MIN) {
     result = gpr_inf_past(type);
   } else if (ms >= 0) {
     result.tv_sec = ms / 1000;
@@ -137,12 +137,12 @@ gpr_timespec gpr_time_from_millis(long ms, gpr_clock_type type) {
   return result;
 }
 
-gpr_timespec gpr_time_from_seconds(long s, gpr_clock_type type) {
+gpr_timespec gpr_time_from_seconds(int64_t s, gpr_clock_type type) {
   gpr_timespec result;
   result.clock_type = type;
-  if (s == LONG_MAX) {
+  if (s == INT64_MAX) {
     result = gpr_inf_future(type);
-  } else if (s == LONG_MIN) {
+  } else if (s == INT64_MIN) {
     result = gpr_inf_past(type);
   } else {
     result.tv_sec = s;
@@ -151,12 +151,12 @@ gpr_timespec gpr_time_from_seconds(long s, gpr_clock_type type) {
   return result;
 }
 
-gpr_timespec gpr_time_from_minutes(long m, gpr_clock_type type) {
+gpr_timespec gpr_time_from_minutes(int64_t m, gpr_clock_type type) {
   gpr_timespec result;
   result.clock_type = type;
-  if (m >= LONG_MAX / 60) {
+  if (m >= INT64_MAX / 60) {
     result = gpr_inf_future(type);
-  } else if (m <= LONG_MIN / 60) {
+  } else if (m <= INT64_MIN / 60) {
     result = gpr_inf_past(type);
   } else {
     result.tv_sec = m * 60;
@@ -165,12 +165,12 @@ gpr_timespec gpr_time_from_minutes(long m, gpr_clock_type type) {
   return result;
 }
 
-gpr_timespec gpr_time_from_hours(long h, gpr_clock_type type) {
+gpr_timespec gpr_time_from_hours(int64_t h, gpr_clock_type type) {
   gpr_timespec result;
   result.clock_type = type;
-  if (h >= LONG_MAX / 3600) {
+  if (h >= INT64_MAX / 3600) {
     result = gpr_inf_future(type);
-  } else if (h <= LONG_MIN / 3600) {
+  } else if (h <= INT64_MIN / 3600) {
     result = gpr_inf_past(type);
   } else {
     result.tv_sec = h * 3600;

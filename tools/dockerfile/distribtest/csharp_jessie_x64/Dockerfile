@@ -40,4 +40,4 @@ RUN apt-get update && apt-get install -y \
     ca-certificates-mono \
     nuget
 
-RUN apt-get update && apt-get install -y git unzip
+RUN apt-get update && apt-get install -y unzip

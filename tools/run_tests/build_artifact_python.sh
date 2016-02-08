@@ -39,9 +39,11 @@ then
   pip install -rrequirements.txt
 fi
 
-GRPC_PYTHON_BUILD_WITH_CYTHON=1 ${SETARCH_CMD} python setup.py \
-    bdist_wheel \
-    sdist \
+GRPC_PYTHON_USE_CUSTOM_BDIST=0  \
+GRPC_PYTHON_BUILD_WITH_CYTHON=1 \
+${SETARCH_CMD} python setup.py  \
+    bdist_wheel                 \
+    sdist                       \
     bdist_egg_grpc_custom
 
 mkdir -p artifacts

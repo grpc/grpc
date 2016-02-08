@@ -1,3 +1,4 @@
+#!/bin/bash
 # Copyright 2016, Google Inc.
 # All rights reserved.
 #
@@ -27,10 +28,16 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-FROM ubuntu:12.04
+set -ex
 
-RUN apt-get update && apt-get install -y curl
+cd $(dirname $0)/../..
 
-# Install nvm
-RUN touch .profile
-RUN curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.30.2/install.sh | bash
+mkdir -p artifacts/
+
+# All the ruby packages have been built in the artifact phase already
+# and we only collect them here to deliver them to the distribtest phase.
+cp -r $EXTERNAL_GIT_ROOT/architecture={x86,x64},language=ruby,platform={windows,linux,macos}/artifacts/* artifacts/ || true
+
+# TODO: all the artifact builder configurations generate a grpc-VERSION.gem
+# source distribution package, and only one of them will end up
+# in the artifacts/ directory. They should be all equivalent though.

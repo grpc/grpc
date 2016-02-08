@@ -118,6 +118,8 @@ def cython_extensions(package_names, module_names, extra_sources, include_dirs,
           sources=[module_file] + extra_sources,
           include_dirs=include_dirs, libraries=libraries,
           define_macros=define_macros,
+          extra_compile_args=list(CFLAGS),
+          extra_link_args=list(LDFLAGS),
       ) for (module_name, module_file) in zip(module_names, module_files)
   ]
   if build_with_cython:
@@ -216,7 +218,7 @@ else:
 
 setuptools.setup(
     name='grpcio',
-    version='0.12.0b8',
+    version='0.12.0b9',
     license=LICENSE,
     ext_modules=CYTHON_EXTENSION_MODULES,
     packages=list(PACKAGES),
