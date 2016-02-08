@@ -32,13 +32,13 @@ FROM debian:jessie
 # Install Git and basic packages.
 RUN apt-get update && apt-get install -y \
   autoconf \
-  autotools-dev \  
+  autotools-dev \
   build-essential \
   bzip2 \
   ccache \
   curl \
   gcc \
-  gcc-multilib \ 
+  gcc-multilib \
   git \
   golang \
   gyp \
@@ -52,7 +52,7 @@ RUN apt-get update && apt-get install -y \
   perl \
   strace \
   python-dev \
-  python-setuptools \ 
+  python-setuptools \
   python-yaml \
   telnet \
   unzip \
