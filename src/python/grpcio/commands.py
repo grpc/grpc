@@ -54,7 +54,7 @@ PYTHON_STEM = os.path.dirname(os.path.abspath(__file__))
 
 BINARIES_REPOSITORY = os.environ.get(
     'GRPC_PYTHON_BINARIES_REPOSITORY',
-    'https://storage.googleapis.com/grpc-precompiled-binaries/python/')
+    'https://storage.googleapis.com/grpc-precompiled-binaries/python')
 
 CONF_PY_ADDENDUM = """
 extensions.append('sphinx.ext.napoleon')
