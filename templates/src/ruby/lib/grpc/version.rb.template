@@ -31,5 +31,9 @@
 
   # GRPC contains the General RPC module.
   module GRPC
-    VERSION = '${settings.version.major}.${settings.version.minor}.${settings.version.micro}.${settings.version.build}'
+    VERSION = '${settings.version.major}.${settings.version.minor}.${settings.version.micro}.${settings.version.build}\
+  % if settings.version.master:
+  .pre\
+  % endif
+  '
   end

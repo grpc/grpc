@@ -8,6 +8,8 @@ settings:
     minor: 13
     micro: 0
     build: 0
+    master: false
+    revision: 0
 filegroups:
 - name: census
   public_headers:
