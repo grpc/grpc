@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\test\core\util\test_config.c">
+      <Filter>test\core\util</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="$(SolutionDir)\..\test\core\util\test_config.h">
+      <Filter>test\core\util</Filter>
+    </ClInclude>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="test">
+      <UniqueIdentifier>{6d7715e1-42c7-d42f-0545-f06bfb524be4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core">
+      <UniqueIdentifier>{3bcb4b0b-5eba-67b1-71bb-2541c003e51d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core\util">
+      <UniqueIdentifier>{d150aa83-89ac-8ebf-2189-ed2feca0655c}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

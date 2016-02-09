@@ -152,11 +152,15 @@ def main():
   sec_deps = [
     'end2end_certs',
     'grpc_test_util',
-    'grpc'
+    'grpc',
+    'gpr_test_util',
+    'gpr'
   ]
   unsec_deps = [
     'grpc_test_util_unsecure',
-    'grpc_unsecure'
+    'grpc_unsecure',
+    'gpr_test_util',
+    'gpr'
   ]
   json = {
       '#': 'generated with test/end2end/gen_build_json.py',
