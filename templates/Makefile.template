@@ -1478,6 +1478,7 @@
   % endif
    $(LIB${lib.name.upper()}_OBJS) \
   % if lib.get('baselib', False):
+   $(LIBGPR_OBJS) \
    $(ZLIB_MERGE_OBJS) \
   % if lib.get('secure', 'check') == True:
    $(OPENSSL_MERGE_OBJS) \
@@ -1489,6 +1490,7 @@
   	$(Q) rm -f $(LIBDIR)/$(CONFIG)/lib${lib.name}.a
   	$(Q) $(AR) $(LIBDIR)/$(CONFIG)/lib${lib.name}.a $(LIB${lib.name.upper()}_OBJS) \
   % if lib.get('baselib', False):
+   $(LIBGPR_OBJS) \
    $(ZLIB_MERGE_OBJS) \
   % if lib.get('secure', 'check') == True:
    $(OPENSSL_MERGE_OBJS) \
@@ -1526,6 +1528,7 @@
         mingw_lib_deps = mingw_lib_deps + ' ' + lib_archive
     else:
       for dep in lib.get('deps', []):
+        if dep == 'gpr': continue
         libs = libs + ' -l' + dep
         lib_deps = lib_deps + ' $(LIBDIR)/$(CONFIG)/lib' + dep + '.$(SHARED_EXT)'
         mingw_libs = mingw_libs + ' -l' + dep + '-imp'
@@ -1535,6 +1538,8 @@
     if security == True:
       common = common + ' $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE)'
     common = common + ' $(ZLIB_MERGE_LIBS)'
+    lib_deps += ' $(LIBDIR)/$(CONFIG)/libgpr.a'
+    common += ' $(LIBDIR)/$(CONFIG)/libgpr.a'
 
     if security in [True, 'check']:
       for src in lib.src:

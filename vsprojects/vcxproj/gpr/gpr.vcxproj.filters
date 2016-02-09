@@ -91,6 +91,9 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\support\subprocess_posix.c">
       <Filter>src\core\support</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\support\subprocess_windows.c">
+      <Filter>src\core\support</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\support\sync.c">
       <Filter>src\core\support</Filter>
     </ClCompile>
@@ -122,6 +125,9 @@
       <Filter>src\core\support</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\support\tls_pthread.c">
+      <Filter>src\core\support</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\support\wrap_memcpy.c">
       <Filter>src\core\support</Filter>
     </ClCompile>
   </ItemGroup>
@@ -225,34 +231,16 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm_win32.h">
       <Filter>include\grpc\impl\codegen</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\byte_buffer.h">
-      <Filter>include\grpc\impl\codegen</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\compression_types.h">
-      <Filter>include\grpc\impl\codegen</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\connectivity_state.h">
-      <Filter>include\grpc\impl\codegen</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\grpc_types.h">
-      <Filter>include\grpc\impl\codegen</Filter>
-    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\log.h">
       <Filter>include\grpc\impl\codegen</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\port_platform.h">
       <Filter>include\grpc\impl\codegen</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\propagation_bits.h">
-      <Filter>include\grpc\impl\codegen</Filter>
-    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\slice.h">
       <Filter>include\grpc\impl\codegen</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\slice_buffer.h">
-      <Filter>include\grpc\impl\codegen</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\status.h">
       <Filter>include\grpc\impl\codegen</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync.h">
