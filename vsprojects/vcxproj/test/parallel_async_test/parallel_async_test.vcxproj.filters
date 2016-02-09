@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\src\proto\helloworld\helloworld.proto">
+      <Filter>src\proto\helloworld</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\cpp\parallel_greeter\parallel_async_test.cc">
+      <Filter>test\cpp\parallel_greeter</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="src">
+      <UniqueIdentifier>{1a4c47ab-2e16-747d-6627-70d9e96e1082}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\proto">
+      <UniqueIdentifier>{a6117a75-60b4-3eb4-1c0f-674dad16baf5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\proto\helloworld">
+      <UniqueIdentifier>{78a1b01f-c46d-7093-8b01-a438e3235305}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test">
+      <UniqueIdentifier>{17cc3279-900b-c9b2-926d-0b8f4178b69c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\cpp">
+      <UniqueIdentifier>{4279514c-f051-a696-d12f-8b9cf44e7895}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\cpp\parallel_greeter">
+      <UniqueIdentifier>{f1535042-85ad-a5c6-270b-3594ece79757}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+
