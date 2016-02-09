@@ -558,7 +558,7 @@
   PC_LIB = -lgrpc
   GRPC_PC_FILE := $(PC_TEMPLATE)
 
-  # gprc_unsecure .pc file
+  # grpc_unsecure .pc file
   PC_NAME = gRPC unsecure
   PC_DESCRIPTION = high performance general RPC framework without SSL
   PC_CFLAGS =
@@ -567,7 +567,7 @@
   PC_LIB = -lgrpc
   GRPC_UNSECURE_PC_FILE := $(PC_TEMPLATE)
 
-  # gprc_zookeeper .pc file
+  # grpc_zookeeper .pc file
   PC_NAME = gRPC zookeeper
   PC_DESCRIPTION = gRPC's zookeeper plugin
   PC_CFLAGS =
@@ -1522,14 +1522,12 @@
       mingw_lib_deps += ' $(PROTOBUF_DEP)'
     if lib.get('deps_linkage', None) == 'static':
       for dep in lib.get('deps', []):
-        if dep == 'gpr': continue
         lib_archive = '$(LIBDIR)/$(CONFIG)/lib' + dep + '.a'
         common = common + ' ' + lib_archive
         lib_deps = lib_deps + ' ' + lib_archive
         mingw_lib_deps = mingw_lib_deps + ' ' + lib_archive
     else:
       for dep in lib.get('deps', []):
-        if dep == 'gpr': continue
         libs = libs + ' -l' + dep
         lib_deps = lib_deps + ' $(LIBDIR)/$(CONFIG)/lib' + dep + '.$(SHARED_EXT)'
         mingw_libs = mingw_libs + ' -l' + dep + '-imp'
@@ -1539,8 +1537,6 @@
     if security == True:
       common = common + ' $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE)'
     common = common + ' $(ZLIB_MERGE_LIBS)'
-    lib_deps += ' $(LIBDIR)/$(CONFIG)/libgpr.a'
-    common += ' $(LIBDIR)/$(CONFIG)/libgpr.a'
 
     if security in [True, 'check']:
       for src in lib.src:

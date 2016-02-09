@@ -574,6 +574,7 @@ libs:
   deps:
   - gpr
   baselib: true
+  deps_linkage: static
   dll: true
   filegroups:
   - grpc_codegen
@@ -621,6 +622,7 @@ libs:
   deps:
   - gpr
   baselib: true
+  deps_linkage: static
   dll: true
   filegroups:
   - grpc_base
@@ -684,7 +686,6 @@ libs:
   - src/cpp/common/secure_create_auth_context.cc
   - src/cpp/server/secure_server_credentials.cc
   deps:
-  - gpr
   - grpc
   baselib: true
   dll: true
