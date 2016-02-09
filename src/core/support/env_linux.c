@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -42,15 +42,25 @@
 
 #include "src/core/support/env.h"
 
+#include <dlfcn.h>
 #include <stdlib.h>
 
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
+#include <grpc/support/useful.h>
 
 #include "src/core/support/string.h"
 
 char *gpr_getenv(const char *name) {
-  char *result = secure_getenv(name);
+  typedef char *(*getenv_type)(const char *);
+  static getenv_type getenv_func = NULL;
+  /* Check to see which getenv variant is supported (go from most
+   * to least secure) */
+  const char *names[] = {"secure_getenv", "__secure_getenv", "getenv"};
+  for (size_t i = 0; getenv_func == NULL && i < GPR_ARRAY_SIZE(names); i++) {
+    getenv_func = (getenv_type)dlsym(RTLD_DEFAULT, names[i]);
+  }
+  char *result = getenv_func(name);
   return result == NULL ? result : gpr_strdup(result);
 }
 

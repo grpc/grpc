@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,6 +31,8 @@
  *
  */
 
+#include <ruby/ruby.h>
+#include "rb_grpc_imports.generated.h"
 #include "rb_channel.h"
 
 #include <ruby/ruby.h>
@@ -227,7 +229,7 @@ static VALUE grpc_rb_channel_watch_connectivity_state(VALUE self,
   }
   grpc_channel_watch_connectivity_state(
       ch,
-      NUM2LONG(last_state),
+      (grpc_connectivity_state)NUM2LONG(last_state),
       grpc_rb_time_timeval(deadline, /* absolute time */ 0),
       cq,
       ROBJECT(tag));

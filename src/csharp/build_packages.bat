@@ -1,7 +1,7 @@
 @rem Builds gRPC NuGet packages
 
 @rem Current package versions
-set VERSION=0.13.0
+set VERSION=0.14.0-dev
 set PROTOBUF_VERSION=3.0.0-beta2
 
 @rem Packages that depend on prerelease packages (like Google.Protobuf) need to have prerelease suffix as well.
@@ -48,6 +48,10 @@ endlocal
 
 @rem copy resulting nuget packages to artifacts directory
 xcopy /Y /I *.nupkg ..\..\artifacts\
+
+@rem create a zipfile with the artifacts as well
+powershell -Command "Add-Type -Assembly 'System.IO.Compression.FileSystem'; [System.IO.Compression.ZipFile]::CreateFromDirectory('..\..\artifacts', 'csharp_nugets.zip');"
+xcopy /Y /I csharp_nugets.zip ..\..\artifacts\
 
 goto :EOF
 

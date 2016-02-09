@@ -43,4 +43,4 @@ rvm --default use ruby-2.1
 make install-certs
 
 # build Ruby interop client and server
-(cd src/ruby && gem update bundler && bundle && rake compile:grpc)
+(cd src/ruby && gem update bundler && bundle && rake compile)

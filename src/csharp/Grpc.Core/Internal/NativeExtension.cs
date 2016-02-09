@@ -60,6 +60,8 @@ namespace Grpc.Core.Internal
             // to make sure we don't lose any logs.
             NativeLogRedirector.Redirect(this.nativeMethods);
 
+            DefaultSslRootsOverride.Override(this.nativeMethods);
+
             Logger.Debug("gRPC native library loaded successfully.");
         }
 
@@ -104,7 +106,7 @@ namespace Grpc.Core.Internal
 
         private static string GetExecutingAssemblyDirectory()
         {
-            return Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+            return Path.GetDirectoryName(typeof(NativeExtension).GetTypeInfo().Assembly.Location);
         }
 
         private static string GetPlatformString()
