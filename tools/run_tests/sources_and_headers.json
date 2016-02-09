@@ -188,6 +188,18 @@
     ], 
     "headers": [], 
     "language": "c", 
+    "name": "exec_ctx_test", 
+    "src": [
+      "test/core/iomgr/exec_ctx_test.c"
+    ]
+  }, 
+  {
+    "deps": [
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
     "name": "fd_conservation_posix_test", 
     "src": [
       "test/core/iomgr/fd_conservation_posix_test.c"

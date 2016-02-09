@@ -65,20 +65,21 @@ grpc_workqueue *grpc_workqueue_create(grpc_exec_ctx *exec_ctx) {
 
 static void workqueue_destroy(grpc_exec_ctx *exec_ctx,
                               grpc_workqueue *workqueue) {
-  GPR_ASSERT(grpc_closure_list_empty(workqueue->closure_list));
+  grpc_exec_ctx_enqueue_list(exec_ctx, &workqueue->closure_list, NULL);
   grpc_fd_shutdown(exec_ctx, workqueue->wakeup_read_fd);
 }
 
 #ifdef GRPC_WORKQUEUE_REFCOUNT_DEBUG
-void grpc_workqueue_ref(grpc_workqueue *workqueue, const char *file, int line,
-                        const char *reason) {
+grpc_workqueue *grpc_workqueue_ref(grpc_workqueue *workqueue, const char *file,
+                                   int line, const char *reason) {
   gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG, "WORKQUEUE:%p   ref %d -> %d %s",
           workqueue, (int)workqueue->refs.count, (int)workqueue->refs.count + 1,
           reason);
 #else
-void grpc_workqueue_ref(grpc_workqueue *workqueue) {
+grpc_workqueue *grpc_workqueue_ref(grpc_workqueue *workqueue) {
 #endif
   gpr_ref(&workqueue->refs);
+  return workqueue;
 }
 
 #ifdef GRPC_WORKQUEUE_REFCOUNT_DEBUG
@@ -131,12 +132,19 @@ static void on_readable(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
 }
 
 void grpc_workqueue_push(grpc_workqueue *workqueue, grpc_closure *closure,
-                         int success) {
+                         bool success) {
+  grpc_closure_list list = GRPC_CLOSURE_LIST_INIT;
+  grpc_closure_list_add(&list, closure, success);
+  grpc_workqueue_push_list(workqueue, &list);
+}
+
+void grpc_workqueue_push_list(grpc_workqueue *workqueue,
+                              grpc_closure_list *closure_list) {
   gpr_mu_lock(&workqueue->mu);
   if (grpc_closure_list_empty(workqueue->closure_list)) {
     grpc_wakeup_fd_wakeup(&workqueue->wakeup_fd);
   }
-  grpc_closure_list_add(&workqueue->closure_list, closure, success);
+  grpc_closure_list_move(closure_list, &workqueue->closure_list);
   gpr_mu_unlock(&workqueue->mu);
 }
 
