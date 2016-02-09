@@ -1,4 +1,4 @@
-# Copyright 2015-2016, Google Inc.
+# Copyright 2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -27,44 +27,18 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-cimport cpython
+from libc.string cimport memcpy
 
 import pkg_resources
-import os.path
-import sys
 
-# TODO(atash): figure out why the coverage tool gets confused about the Cython
-# coverage plugin when the following files don't have a '.pxi' suffix.
-include "grpc/_cython/_cygrpc/call.pyx.pxi"
-include "grpc/_cython/_cygrpc/channel.pyx.pxi"
-include "grpc/_cython/_cygrpc/credentials.pyx.pxi"
-include "grpc/_cython/_cygrpc/completion_queue.pyx.pxi"
-include "grpc/_cython/_cygrpc/records.pyx.pxi"
-include "grpc/_cython/_cygrpc/security.pyx.pxi"
-include "grpc/_cython/_cygrpc/server.pyx.pxi"
 
-#
-# Global state
-#
-
-cdef class _ModuleState:
-
-  cdef bint is_loaded
-
-  def __cinit__(self):
-    if 'win32' in sys.platform:
-      filename = pkg_resources.resource_filename(
-          'grpc._cython', '_windows/grpc_c.64.python')
-      if not pygrpc_load_core(filename):
-        raise ImportError('failed to load core gRPC library')
-    grpc_init()
-    self.is_loaded = True
-    grpc_set_ssl_roots_override_callback(
-        <grpc_ssl_roots_override_callback>ssl_roots_override_callback)
-
-  def __dealloc__(self):
-    if self.is_loaded:
-      grpc_shutdown()
-
-_module_state = _ModuleState()
-
+cdef grpc_ssl_roots_override_result ssl_roots_override_callback(
+    char **pem_root_certs) with gil:
+  temporary_pem_root_certs = pkg_resources.resource_string(
+      'grpc._cython', '_credentials/roots.pem')
+  pem_root_certs[0] = <char *>gpr_malloc(len(temporary_pem_root_certs) + 1)
+  memcpy(
+      pem_root_certs[0], <char *>temporary_pem_root_certs,
+      len(temporary_pem_root_certs))
+  pem_root_certs[0][len(temporary_pem_root_certs)] = '\0'
+  return GRPC_SSL_ROOTS_OVERRIDE_OK
