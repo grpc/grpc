@@ -76,6 +76,10 @@ class Version:
         raise Exception('Don\'t know how to translate version tag "%s" to pep440' % self.tag)
     return s
 
+  def ruby(self):
+    """Version string in Ruby style"""
+    return '%d.%d.%d.%s' % (self.major, self.minor, self.patch, self.tag)
+
 def mako_plugin(dictionary):
   """Expand version numbers:
      - for each language, ensure there's a language_version tag in
