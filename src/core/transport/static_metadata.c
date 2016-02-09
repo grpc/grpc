@@ -156,5 +156,4 @@ const char *const grpc_static_metadata_strings[GRPC_STATIC_MDSTR_COUNT] = {
     "www-authenticate"};
 
 const uint8_t grpc_static_accept_encoding_metadata[8] = {0,  29, 26, 30,
-                                                           28, 32, 27, 31};
-
+                                                         28, 32, 27, 31};
