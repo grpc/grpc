@@ -1,5 +1,6 @@
-#!/bin/bash
-# Copyright 2015-2016, Google Inc.
+#!/usr/bin/env ruby
+
+# Copyright 2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -28,17 +29,11 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-set -ex
+require 'grpc'
 
-cd $(dirname $0)
+# This code doesn't do much but makes sure the native extension is loaded
+# which is what we are testing here.
+ch = GRPC::Core::Channel.new('localhost:1000', nil, :this_channel_is_insecure)
+ch.destroy
 
-# Create an indexed local gem source with gRPC gems to test
-GEM_SOURCE=../../../gem_source
-mkdir -p ${GEM_SOURCE}/gems
-cp -r $EXTERNAL_GIT_ROOT/input_artifacts/*.gem ${GEM_SOURCE}/gems
-gem install builder
-gem generate_index --directory ${GEM_SOURCE}
-
-bundle install
-
-bundle exec ./distribtest.rb
+puts "Success!"
