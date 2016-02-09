@@ -3899,7 +3899,6 @@
   }, 
   {
     "deps": [
-      "gpr", 
       "grpc"
     ], 
     "headers": [
