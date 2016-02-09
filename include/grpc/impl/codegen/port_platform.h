@@ -80,6 +80,7 @@
 #define GPR_ARCH_64 1
 #define GPR_GETPID_IN_PROCESS_H 1
 #define GPR_WINSOCK_SOCKET 1
+#define GPR_WINDOWS_SUBPROCESS 1
 #ifdef __GNUC__
 #define GPR_GCC_ATOMIC 1
 #define GPR_GCC_TLS 1
@@ -94,6 +95,7 @@
 #define GPR_WIN32 1
 #define GPR_GETPID_IN_PROCESS_H 1
 #define GPR_WINSOCK_SOCKET 1
+#define GPR_WINDOWS_SUBPROCESS 1
 #ifdef __GNUC__
 #define GPR_GCC_ATOMIC 1
 #define GPR_GCC_TLS 1
@@ -151,18 +153,13 @@
 #if __GLIBC_PREREQ(2, 10)
 #define GPR_LINUX_SOCKETUTILS 1
 #endif
-#if __GLIBC_PREREQ(2, 17)
+#endif
 #define GPR_LINUX_ENV 1
-#endif
-#endif
 #ifndef GPR_LINUX_EVENTFD
 #define GPR_POSIX_NO_SPECIAL_WAKEUP_FD 1
 #endif
 #ifndef GPR_LINUX_SOCKETUTILS
 #define GPR_POSIX_SOCKETUTILS
-#endif
-#ifndef GPR_LINUX_ENV
-#define GPR_POSIX_ENV 1
 #endif
 #define GPR_POSIX_FILE 1
 #define GPR_POSIX_STRING 1
@@ -257,9 +254,22 @@
 #define GPR_FORBID_UNREACHABLE_CODE 1
 #endif
 
-/* For a common case, assume that the platform has a C99-like stdint.h */
-
+#ifdef _MSC_VER
+#if _MSC_VER < 1700
+typedef __int8 int8_t;
+typedef __int16 int16_t;
+typedef __int32 int32_t;
+typedef __int64 int64_t;
+typedef unsigned __int8 uint8_t;
+typedef unsigned __int16 uint16_t;
+typedef unsigned __int32 uint32_t;
+typedef unsigned __int64 uint64_t;
+#else
 #include <stdint.h>
+#endif /* _MSC_VER < 1700 */
+#else
+#include <stdint.h>
+#endif /* _MSC_VER */
 
 /* Cache line alignment */
 #ifndef GPR_CACHELINE_SIZE_LOG

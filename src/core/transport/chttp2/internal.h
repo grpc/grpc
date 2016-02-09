@@ -35,6 +35,7 @@
 #define GRPC_INTERNAL_CORE_CHTTP2_INTERNAL_H
 
 #include <assert.h>
+#include <stdbool.h>
 
 #include "src/core/iomgr/endpoint.h"
 #include "src/core/transport/chttp2/frame.h"
@@ -67,6 +68,9 @@ typedef enum {
   GRPC_CHTTP2_LIST_CLOSED_WAITING_FOR_PARSING,
   GRPC_CHTTP2_LIST_CLOSED_WAITING_FOR_WRITING,
   GRPC_CHTTP2_LIST_STALLED_BY_TRANSPORT,
+  /* streams waiting for the outgoing window in the writing path, they will be
+   * merged to the stalled list or writable list under transport lock. */
+  GRPC_CHTTP2_LIST_WRITING_STALLED_BY_TRANSPORT,
   /** streams that are waiting to start because there are too many concurrent
       streams on the connection */
   GRPC_CHTTP2_LIST_WAITING_FOR_CONCURRENCY,
@@ -504,11 +508,11 @@ void grpc_chttp2_publish_reads(grpc_exec_ctx *exec_ctx,
                                grpc_chttp2_transport_global *global,
                                grpc_chttp2_transport_parsing *parsing);
 
-/** Get a writable stream
-    returns non-zero if there was a stream available */
 void grpc_chttp2_list_add_writable_stream(
     grpc_chttp2_transport_global *transport_global,
     grpc_chttp2_stream_global *stream_global);
+/** Get a writable stream
+    returns non-zero if there was a stream available */
 int grpc_chttp2_list_pop_writable_stream(
     grpc_chttp2_transport_global *transport_global,
     grpc_chttp2_transport_writing *transport_writing,
@@ -560,9 +564,12 @@ int grpc_chttp2_list_pop_check_read_ops(
     grpc_chttp2_transport_global *transport_global,
     grpc_chttp2_stream_global **stream_global);
 
-void grpc_chttp2_list_add_stalled_by_transport(
+void grpc_chttp2_list_add_writing_stalled_by_transport(
     grpc_chttp2_transport_writing *transport_writing,
     grpc_chttp2_stream_writing *stream_writing);
+void grpc_chttp2_list_flush_writing_stalled_by_transport(
+    grpc_chttp2_transport_writing *transport_writing, bool is_window_available);
+
 int grpc_chttp2_list_pop_stalled_by_transport(
     grpc_chttp2_transport_global *transport_global,
     grpc_chttp2_stream_global **stream_global);

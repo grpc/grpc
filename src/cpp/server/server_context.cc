@@ -33,14 +33,14 @@
 
 #include <grpc++/server_context.h>
 
-#include <grpc/compression.h>
-#include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc++/completion_queue.h>
 #include <grpc++/impl/call.h>
 #include <grpc++/impl/sync.h>
 #include <grpc++/support/time.h>
+#include <grpc/compression.h>
+#include <grpc/grpc.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 
 #include "src/core/channel/compress_filter.h"
 #include "src/cpp/common/create_auth_context.h"
@@ -171,6 +171,14 @@ void ServerContext::AddInitialMetadata(const grpc::string& key,
 void ServerContext::AddTrailingMetadata(const grpc::string& key,
                                         const grpc::string& value) {
   trailing_metadata_.insert(std::make_pair(key, value));
+}
+
+void ServerContext::TryCancel() const {
+  grpc_call_error err = grpc_call_cancel_with_status(
+      call_, GRPC_STATUS_CANCELLED, "Cancelled on the server side", NULL);
+  if (err != GRPC_CALL_OK) {
+    gpr_log(GPR_ERROR, "TryCancel failed with: %d", err);
+  }
 }
 
 bool ServerContext::IsCancelled() const {

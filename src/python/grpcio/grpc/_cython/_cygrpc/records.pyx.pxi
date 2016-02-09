@@ -1,4 +1,4 @@
-# Copyright 2015, Google Inc.
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -146,8 +146,13 @@ cdef class Timespec:
         gpr_convert_clock_type(self.c_time, GPR_CLOCK_REALTIME))
     return <double>real_time.seconds + <double>real_time.nanoseconds / 1e9
 
-  infinite_future = Timespec(float("+inf"))
-  infinite_past = Timespec(float("-inf"))
+  @staticmethod
+  def infinite_future():
+    return Timespec(float("+inf"))
+
+  @staticmethod
+  def infinite_past():
+    return Timespec(float("-inf"))
 
 
 cdef class CallDetails:
