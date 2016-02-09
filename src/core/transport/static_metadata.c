@@ -46,13 +46,13 @@
 grpc_mdstr grpc_static_mdstr_table[GRPC_STATIC_MDSTR_COUNT];
 
 grpc_mdelem grpc_static_mdelem_table[GRPC_STATIC_MDELEM_COUNT];
-gpr_uintptr grpc_static_mdelem_user_data[GRPC_STATIC_MDELEM_COUNT] = {
+uintptr_t grpc_static_mdelem_user_data[GRPC_STATIC_MDELEM_COUNT] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 3, 7, 5, 2, 4, 8, 6, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
-const gpr_uint8
+const uint8_t
     grpc_static_metadata_elem_indices[GRPC_STATIC_MDELEM_COUNT * 2] = {
         11, 35, 10, 35, 12, 35, 12, 49, 13, 35, 14, 35, 15, 35, 16, 35, 17, 35,
         19, 35, 20, 35, 21, 35, 24, 35, 25, 35, 26, 35, 27, 35, 28, 35, 29, 35,
@@ -155,6 +155,6 @@ const char *const grpc_static_metadata_strings[GRPC_STATIC_MDSTR_COUNT] = {
     "via",
     "www-authenticate"};
 
-const gpr_uint8 grpc_static_accept_encoding_metadata[8] = {0,  29, 26, 30,
+const uint8_t grpc_static_accept_encoding_metadata[8] = {0,  29, 26, 30,
                                                            28, 32, 27, 31};
 
