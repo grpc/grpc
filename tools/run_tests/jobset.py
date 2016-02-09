@@ -254,14 +254,21 @@ class Job(object):
       stdout = self._tempfile.read()
       self.result.message = stdout[-_MAX_RESULT_SIZE:]
       return stdout
+    is_http2 = False
+    msg = ''
+    if 'http2' in self._spec.shortname:
+      is_http2 = True
+      msg = stdout()
     if self._state == _RUNNING and self._process.poll() is not None:
       elapsed = time.time() - self._start
       self.result.elapsed_time = elapsed
       if self._process.returncode != 0:
         if self._retries < self._spec.flake_retries:
+          if not is_http2:
+            msg = stdout()
           message('FLAKE', '%s [ret=%d, pid=%d]' % (
             self._spec.shortname, self._process.returncode, self._process.pid),
-            stdout(), do_newline=True)
+            msg, do_newline=True)
           self._retries += 1
           self.result.num_failures += 1
           self.result.retries = self._timeout_retries + self._retries
@@ -269,9 +276,11 @@ class Job(object):
         else:
           self._state = _FAILURE
           if not self._suppress_failure_message:
+            if not is_http2:
+              msg = stdout()
             message('FAILED', '%s [ret=%d, pid=%d]' % (
-                self._spec.shortname, self._process.returncode, self._process.pid),
-                stdout(), do_newline=True)
+                self._spec.shortname, self._process.returncode, 
+                self._process.pid), msg, do_newline=True)
           self.result.state = 'FAILED'
           self.result.num_failures += 1
           self.result.returncode = self._process.returncode
@@ -279,24 +288,32 @@ class Job(object):
         self._state = _SUCCESS
         measurement = ''
         if measure_cpu_costs:
-          m = re.search(r'real ([0-9.]+)\nuser ([0-9.]+)\nsys ([0-9.]+)', stdout())
+          if not is_http2:
+            msg = stdout()
+          m = re.search(r'real ([0-9.]+)\nuser ([0-9.]+)\nsys ([0-9.]+)', msg)
           real = float(m.group(1))
           user = float(m.group(2))
           sys = float(m.group(3))
           if real > 0.5:
             cores = (user + sys) / real
-            measurement = '; cpu_cost=%.01f; estimated=%.01f' % (cores, self._spec.cpu_cost)
+            measurement = '; cpu_cost=%.01f; estimated=%.01f' % (
+                cores, self._spec.cpu_cost)
         message('PASSED', '%s [time=%.1fsec; retries=%d:%d%s]' % (
-                    self._spec.shortname, elapsed, self._retries, self._timeout_retries, measurement),
-            do_newline=self._newline_on_success or self._travis)
+            self._spec.shortname, elapsed, self._retries, self._timeout_retries, 
+            measurement), 
+                do_newline=self._newline_on_success or self._travis)
         self.result.state = 'PASSED'
         if self._bin_hash:
           update_cache.finished(self._spec.identity(), self._bin_hash)
     elif (self._state == _RUNNING and
           self._spec.timeout_seconds is not None and
           time.time() - self._start > self._spec.timeout_seconds):
+      if not is_http2:
+        msg = stdout()
       if self._timeout_retries < self._spec.timeout_retries:
-        message('TIMEOUT_FLAKE', '%s [pid=%d]' % (self._spec.shortname, self._process.pid), stdout(), do_newline=True)
+        message('TIMEOUT_FLAKE', '%s [pid=%d]' % (self._spec.shortname, 
+                                                  self._process.pid), 
+                msg, do_newline=True)
         self._timeout_retries += 1
         self.result.num_failures += 1
         self.result.retries = self._timeout_retries + self._retries
@@ -305,7 +322,9 @@ class Job(object):
         self._process.terminate()
         self.start()
       else:
-        message('TIMEOUT', '%s [pid=%d]' % (self._spec.shortname, self._process.pid), stdout(), do_newline=True)
+        message('TIMEOUT', '%s [pid=%d]' % (self._spec.shortname, 
+                                            self._process.pid), 
+                msg, do_newline=True)
         self.kill()
         self.result.state = 'TIMEOUT'
         self.result.num_failures += 1
