@@ -626,6 +626,7 @@ libs:
   dll: true
   filegroups:
   - grpc_base
+  - grpc_codegen
   - census
   secure: false
   vs_project_guid: '{46CEDFFF-9692-456A-AA24-38B5D6BCF4C5}'
@@ -768,6 +769,7 @@ libs:
   filegroups:
   - grpc++_codegen
   - grpc_codegen
+  - gpr_codegen
   secure: false
   vs_project_guid: '{B6E81D84-2ACB-41B8-8781-493A944C7817}'
 - name: interop_client_helper
