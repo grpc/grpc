@@ -180,16 +180,10 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm_gcc_atomic.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm_gcc_sync.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm_win32.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\byte_buffer.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\compression_types.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\connectivity_state.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\grpc_types.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\log.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\port_platform.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\propagation_bits.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\slice.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\slice_buffer.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\status.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_generic.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_posix.h" />
@@ -269,6 +263,8 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\support\subprocess_posix.c">
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\support\subprocess_windows.c">
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\support\sync.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\support\sync_posix.c">
@@ -290,6 +286,8 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\support\time_win32.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\support\tls_pthread.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\support\wrap_memcpy.c">
     </ClCompile>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
