@@ -1,4 +1,3 @@
-#!/bin/bash
 # Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
@@ -27,38 +26,71 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# This script is invoked by build_docker_and_run_tests.sh inside a docker
-# container. You should never need to call this script on your own.
 
-set -e
+FROM debian:jessie
 
-export CONFIG=$config
-export ASAN_SYMBOLIZER_PATH=/usr/bin/llvm-symbolizer-3.5
+# Install Git and basic packages.
+RUN apt-get update && apt-get install -y \
+  autoconf \
+  autotools-dev \
+  build-essential \
+  bzip2 \
+  ccache \
+  curl \
+  gcc \
+  gcc-multilib \
+  git \
+  golang \
+  gyp \
+  lcov \
+  libc6 \
+  libc6-dbg \
+  libc6-dev \
+  libgtest-dev \
+  libtool \
+  make \
+  perl \
+  strace \
+  python-dev \
+  python-setuptools \
+  python-yaml \
+  telnet \
+  unzip \
+  wget \
+  zip && apt-get clean
 
-# Ensure that programs depending on current-user-ownership of cache directories
-# are satisfied (it's being mounted from outside the image).
-chown $(whoami) $XDG_CACHE_HOME
+#================
+# Build profiling
+RUN apt-get update && apt-get install -y time && apt-get clean
 
-mkdir -p /var/local/git
-git clone --recursive /var/local/jenkins/grpc /var/local/git/grpc
+#=================
+# PHP dependencies
 
-mkdir -p reports
+# Install dependencies
 
-exit_code=0
+RUN /bin/bash -l -c "echo 'deb http://packages.dotdeb.org wheezy-php55 all' \
+    >> /etc/apt/sources.list.d/dotdeb.list"
+RUN /bin/bash -l -c "echo 'deb-src http://packages.dotdeb.org wheezy-php55 all' \
+    >> /etc/apt/sources.list.d/dotdeb.list"
+RUN wget http://www.dotdeb.org/dotdeb.gpg -O- | apt-key add -
 
-$RUN_TESTS_COMMAND || exit_code=$?
+RUN apt-get update && apt-get install -y \
+    git php5 php5-dev phpunit unzip
 
-cd reports
-echo '<html><head></head><body>' > index.html
-find . -maxdepth 1 -mindepth 1 -type d | sort | while read d ; do
-  d=${d#*/}
-  n=${d//_/ }
-  echo "<a href='$d/index.html'>$n</a><br />" >> index.html
-done
-echo '</body></html>' >> index.html
-cd ..
+# Prepare ccache
+RUN ln -s /usr/bin/ccache /usr/local/bin/gcc
+RUN ln -s /usr/bin/ccache /usr/local/bin/g++
+RUN ln -s /usr/bin/ccache /usr/local/bin/cc
+RUN ln -s /usr/bin/ccache /usr/local/bin/c++
+RUN ln -s /usr/bin/ccache /usr/local/bin/clang
+RUN ln -s /usr/bin/ccache /usr/local/bin/clang++
 
-zip -r reports.zip reports
+#======================
+# Zookeeper dependencies
+# TODO(jtattermusch): is zookeeper still needed?
+RUN apt-get install -y libzookeeper-mt-dev
 
-exit $exit_code
+RUN mkdir /var/local/jenkins
+
+# Define the default command.
+CMD ["bash"]
