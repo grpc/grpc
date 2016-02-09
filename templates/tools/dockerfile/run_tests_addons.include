@@ -5,6 +5,3 @@
 RUN apt-get install -y libzookeeper-mt-dev
 
 RUN mkdir /var/local/jenkins
-
-# Define the default command.
-CMD ["bash"]
