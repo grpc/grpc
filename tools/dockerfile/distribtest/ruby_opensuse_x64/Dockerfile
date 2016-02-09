@@ -30,3 +30,5 @@
 FROM opensuse:42.1
 
 RUN zypper --non-interactive install ruby
+
+RUN gem install bundler
