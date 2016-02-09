@@ -551,29 +551,23 @@
 
   # grpc .pc file
   PC_NAME = gRPC
-  PC_DESCRIPTION = High performance general RPC framework
-  PC_CFLAGS = -pthread
-  PC_REQUIRES_PRIVATE = $(PC_REQUIRES_GRPC) $(PC_REQUIRES_SECURE) -lpthread
+  PC_DESCRIPTION = high performance general RPC framework
+  PC_CFLAGS =
+  PC_REQUIRES_PRIVATE = $(PC_REQUIRES_GRPC) $(PC_REQUIRES_SECURE)
   PC_LIBS_PRIVATE = $(PC_LIBS_GRPC) $(PC_LIBS_SECURE)
   PC_LIB = -lgrpc
-  ifneq ($(SYSTEM),Darwin)
-  PC_LIBS_PRIVATE += -lrt
-  endif
   GRPC_PC_FILE := $(PC_TEMPLATE)
 
   # gprc_unsecure .pc file
   PC_NAME = gRPC unsecure
-  PC_DESCRIPTION = High performance general RPC framework without SSL
-  PC_CFLAGS = -pthread
-  PC_REQUIRES_PRIVATE = $(PC_REQUIRES_GRPC) -lpthread
+  PC_DESCRIPTION = high performance general RPC framework without SSL
+  PC_CFLAGS =
+  PC_REQUIRES_PRIVATE = $(PC_REQUIRES_GRPC)
   PC_LIBS_PRIVATE = $(PC_LIBS_GRPC)
   PC_LIB = -lgrpc
-  ifneq ($(SYSTEM),Darwin)
-  PC_LIBS_PRIVATE += -lrt
-  endif
   GRPC_UNSECURE_PC_FILE := $(PC_TEMPLATE)
 
-  # grpc_zookeeper .pc file
+  # gprc_zookeeper .pc file
   PC_NAME = gRPC zookeeper
   PC_DESCRIPTION = gRPC's zookeeper plugin
   PC_CFLAGS =
