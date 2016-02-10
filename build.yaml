@@ -979,6 +979,14 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+- name: exec_ctx_test
+  build: test
+  language: c
+  src:
+  - test/core/iomgr/exec_ctx_test.c
+  deps:
+  - grpc_test_util
+  - grpc
 - name: fd_conservation_posix_test
   build: test
   language: c
@@ -1701,10 +1709,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  platforms:
-  - mac
-  - linux
-  - posix
 - name: async_end2end_test
   build: test
   language: c++

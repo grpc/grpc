@@ -36,6 +36,24 @@
 
 #include "src/core/iomgr/closure.h"
 
+/** A workqueue represents a list of work to be executed asynchronously.
+    Forward declared here to avoid a circular dependency with workqueue.h. */
+struct grpc_workqueue;
+typedef struct grpc_workqueue grpc_workqueue;
+
+typedef struct grpc_offloadable_closure_list {
+  struct grpc_offloadable_closure_list *next;
+  grpc_closure_list closure_list;
+  grpc_workqueue *workqueue;
+} grpc_offloadable_closure_list;
+
+#define GRPC_OFFLOADABLE_INLINE_COUNT 4
+
+typedef bool (*grpc_offload_check)(void *arg);
+
+bool grpc_always_offload(void *ignored);
+bool grpc_never_offload(void *ignored);
+
 /** Execution context.
  *  A bag of data that collects information along a callstack.
  *  Generally created at public API entry points, and passed down as
@@ -55,15 +73,28 @@
  */
 struct grpc_exec_ctx {
   grpc_closure_list closure_list;
+  grpc_offloadable_closure_list *offloadables;
+  grpc_offloadable_closure_list *free_offloadables;
+  grpc_offload_check offload_check;
+  void *offload_check_arg;
+
+  int inlined_used;
+  grpc_offloadable_closure_list inlined[GRPC_OFFLOADABLE_INLINE_COUNT];
 };
 
-/** A workqueue represents a list of work to be executed asynchronously.
-    Forward declared here to avoid a circular dependency with workqueue.h. */
-struct grpc_workqueue;
-typedef struct grpc_workqueue grpc_workqueue;
+#define GRPC_EXEC_CTX_INIT_WITH_OFFLOAD_CHECK(offload_check,                   \
+                                              offload_check_arg)               \
+  {                                                                            \
+    GRPC_CLOSURE_LIST_INIT, NULL, NULL, offload_check, offload_check_arg, 0, { \
+      { NULL, GRPC_CLOSURE_LIST_INIT, NULL }                                   \
+      , {NULL, GRPC_CLOSURE_LIST_INIT, NULL},                                  \
+          {NULL, GRPC_CLOSURE_LIST_INIT, NULL},                                \
+          {NULL, GRPC_CLOSURE_LIST_INIT, NULL},                                \
+    }                                                                          \
+  }
 
 #define GRPC_EXEC_CTX_INIT \
-  { GRPC_CLOSURE_LIST_INIT }
+  GRPC_EXEC_CTX_INIT_WITH_OFFLOAD_CHECK(grpc_never_offload, NULL)
 
 /** Flush any work that has been enqueued onto this grpc_exec_ctx.
  *  Caller must guarantee that no interfering locks are held.
