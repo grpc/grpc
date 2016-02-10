@@ -212,10 +212,8 @@ void grpc_pollset_kick(grpc_pollset *p, grpc_pollset_worker *specific_worker) {
         grpc_iocp_kick();
       }
     } else {
-      if (p->is_iocp_worker) {
-        if (g_active_poller == specific_worker) {
-          grpc_iocp_kick();
-        }
+      if (p->is_iocp_worker && g_active_poller == specific_worker) {
+        grpc_iocp_kick();
       } else {
         specific_worker->kicked = 1;
         gpr_cv_signal(&specific_worker->cv);
