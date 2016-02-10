@@ -39,7 +39,8 @@
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 
-#include "src/core/httpcli/httpcli.h"
+#include "src/core/http/httpcli.h"
+#include "src/core/http/parser.h"
 #include "src/core/support/env.h"
 #include "src/core/support/load_file.h"
 #include "src/core/surface/api_trace.h"
@@ -66,14 +67,14 @@ typedef struct {
 
 static void on_compute_engine_detection_http_response(
     grpc_exec_ctx *exec_ctx, void *user_data,
-    const grpc_httpcli_response *response) {
+    const grpc_http_response *response) {
   compute_engine_detector *detector = (compute_engine_detector *)user_data;
   if (response != NULL && response->status == 200 && response->hdr_count > 0) {
     /* Internet providers can return a generic response to all requests, so
        it is necessary to check that metadata header is present also. */
     size_t i;
     for (i = 0; i < response->hdr_count; i++) {
-      grpc_httpcli_header *header = &response->hdrs[i];
+      grpc_http_header *header = &response->hdrs[i];
       if (strcmp(header->key, "Metadata-Flavor") == 0 &&
           strcmp(header->value, "Google") == 0) {
         detector->success = 1;
@@ -109,7 +110,7 @@ static int is_stack_running_on_compute_engine(void) {
 
   memset(&request, 0, sizeof(grpc_httpcli_request));
   request.host = GRPC_COMPUTE_ENGINE_DETECTION_HOST;
-  request.path = "/";
+  request.http.path = "/";
 
   grpc_httpcli_context_init(&context);
 

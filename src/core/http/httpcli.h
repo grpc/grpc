@@ -31,27 +31,20 @@
  *
  */
 
-#ifndef GRPC_CORE_HTTPCLI_HTTPCLI_H
-#define GRPC_CORE_HTTPCLI_HTTPCLI_H
+#ifndef GRPC_CORE_HTTP_HTTPCLI_H
+#define GRPC_CORE_HTTP_HTTPCLI_H
 
 #include <stddef.h>
 
 #include <grpc/support/time.h>
 
+#include "src/core/http/parser.h"
 #include "src/core/iomgr/endpoint.h"
 #include "src/core/iomgr/iomgr_internal.h"
 #include "src/core/iomgr/pollset_set.h"
 
 /* User agent this library reports */
 #define GRPC_HTTPCLI_USER_AGENT "grpc-httpcli/0.0"
-/* Maximum length of a header string of the form 'Key: Value\r\n' */
-#define GRPC_HTTPCLI_MAX_HEADER_LENGTH 4096
-
-/* A single header to be passed in a request */
-typedef struct grpc_httpcli_header {
-  char *key;
-  char *value;
-} grpc_httpcli_header;
 
 /* Tracks in-progress http requests
    TODO(ctiller): allow caching and capturing multiple requests for the
@@ -77,33 +70,21 @@ typedef struct grpc_httpcli_request {
   char *host;
   /* The host to verify in the SSL handshake (or NULL) */
   char *ssl_host_override;
-  /* The path of the resource to fetch */
-  char *path;
-  /* Additional headers: count and key/values; the following are supplied
-     automatically and MUST NOT be set here:
+  /* The main part of the request
+     The following headers are supplied automatically and MUST NOT be set here:
      Host, Connection, User-Agent */
-  size_t hdr_count;
-  grpc_httpcli_header *hdrs;
+  grpc_http_request http;
   /* handshaker to use ssl for the request */
   const grpc_httpcli_handshaker *handshaker;
 } grpc_httpcli_request;
 
-/* A response */
-typedef struct grpc_httpcli_response {
-  /* HTTP status code */
-  int status;
-  /* Headers: count and key/values */
-  size_t hdr_count;
-  grpc_httpcli_header *hdrs;
-  /* Body: length and contents; contents are NOT null-terminated */
-  size_t body_length;
-  char *body;
-} grpc_httpcli_response;
+/* Expose the parser response type as a httpcli response too */
+typedef struct grpc_http_response grpc_httpcli_response;
 
 /* Callback for grpc_httpcli_get and grpc_httpcli_post. */
 typedef void (*grpc_httpcli_response_cb)(grpc_exec_ctx *exec_ctx,
                                          void *user_data,
-                                         const grpc_httpcli_response *response);
+                                         const grpc_http_response *response);
 
 void grpc_httpcli_context_init(grpc_httpcli_context *context);
 void grpc_httpcli_context_destroy(grpc_httpcli_context *context);
@@ -160,4 +141,4 @@ typedef int (*grpc_httpcli_post_override)(
 void grpc_httpcli_set_override(grpc_httpcli_get_override get,
                                grpc_httpcli_post_override post);
 
-#endif /* GRPC_CORE_HTTPCLI_HTTPCLI_H */
+#endif /* GRPC_CORE_HTTP_HTTPCLI_H */
