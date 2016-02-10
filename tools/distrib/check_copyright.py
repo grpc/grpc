@@ -131,8 +131,14 @@ def log(cond, why, filename):
 
 # scan files, validate the text
 ok = True
-for filename in subprocess.check_output(FILE_LIST_COMMAND,
-                                        shell=True).splitlines():
+filename_list = []
+try:
+  filename_list = subprocess.check_output(FILE_LIST_COMMAND,
+                                          shell=True).splitlines()
+except subprocess.CalledProcessError:
+  sys.exit(0)
+
+for filename in filename_list:
   if filename in KNOWN_BAD: continue
   ext = os.path.splitext(filename)[1]
   base = os.path.basename(filename)
