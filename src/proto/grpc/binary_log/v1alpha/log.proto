@@ -95,10 +95,10 @@ message Metadata {
 message Message {
   // Cryptographically unique identifier, generated on the client and sent
   // to the server.
-  uint32 rpc_id = 1;
+  uint64 rpc_id = 1;
   // The sequence number of the message. Messages sent by the client and by the
   // server should have independently incrementing sequence numbers.
-  uint64 sequence_number = 2;
+  uint32 sequence_number = 2;
   Direction direction = 3;
   // The length of the complete message.
   uint32 length = 4;
