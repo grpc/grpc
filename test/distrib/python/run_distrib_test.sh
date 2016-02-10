@@ -47,9 +47,6 @@ which $PIP || PIP=pip
 PYTHON=python2
 which $PYTHON || PYTHON=python
 
-# TODO(jtattermusch): this shouldn't be required
-$PIP install --upgrade six
-
 GRPC_PYTHON_BINARIES_REPOSITORY="${BDIST_DIR}" \
     $PIP install \
     ${SDIST_ARCHIVE}

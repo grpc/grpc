@@ -34,7 +34,6 @@ cd $(dirname $0)/../..
 
 if [ "$SKIP_PIP_INSTALL" == "" ]
 then
-  pip install --upgrade six
   pip install --upgrade setuptools
   pip install -rrequirements.txt
 fi
