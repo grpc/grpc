@@ -134,11 +134,14 @@ class Install(install.install, EggNameMixin):
       ('use-grpc-custom-bdist', None,
        'Whether to retrieve a binary from the gRPC binary repository instead '
        'of building from source.'),
+      ('no-fallbacks', None,
+       "Don't try to gracefully recover."),
   ]
 
   def initialize_options(self):
     install.install.initialize_options(self)
     self.use_grpc_custom_bdist = USE_GRPC_CUSTOM_BDIST
+    self.no_fallbacks = False
 
   def finalize_options(self):
     install.install.finalize_options(self)
@@ -165,6 +168,8 @@ class Install(install.install, EggNameMixin):
                   .format(traceback.format_exc()))
           raise
       except Exception:
+        if self.no_fallbacks:
+          raise
         install.install.run(self)
     else:
       install.install.run(self)
