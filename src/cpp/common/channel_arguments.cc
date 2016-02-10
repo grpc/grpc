@@ -30,13 +30,22 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
-
 #include <grpc++/support/channel_arguments.h>
 
+#include <sstream>
+
+#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/log.h>
 #include "src/core/channel/channel_args.h"
 
 namespace grpc {
+
+ChannelArguments::ChannelArguments() {
+  std::ostringstream user_agent_prefix;
+  user_agent_prefix << "grpc-c++/" << grpc_version_string();
+  // This will be ignored if used on the server side.
+  SetString(GRPC_ARG_PRIMARY_USER_AGENT_STRING, user_agent_prefix.str());
+}
 
 ChannelArguments::ChannelArguments(const ChannelArguments& other)
     : strings_(other.strings_) {
@@ -79,6 +88,28 @@ void ChannelArguments::Swap(ChannelArguments& other) {
 void ChannelArguments::SetCompressionAlgorithm(
     grpc_compression_algorithm algorithm) {
   SetInt(GRPC_COMPRESSION_ALGORITHM_ARG, algorithm);
+}
+
+// Note: a second call to this will add in front the result of the first call.
+void ChannelArguments::SetUserAgentPrefix(
+    const grpc::string& user_agent_prefix) {
+  if (user_agent_prefix.empty()) {
+    return;
+  }
+  bool replaced = false;
+  for (auto it = args_.begin(); it != args_.end(); ++it) {
+    const grpc_arg& arg = *it;
+    if (arg.type == GRPC_ARG_STRING &&
+        grpc::string(arg.key) == GRPC_ARG_PRIMARY_USER_AGENT_STRING) {
+      strings_.push_back(user_agent_prefix + " " + arg.value.string);
+      it->value.string = const_cast<char*>(strings_.back().c_str());
+      replaced = true;
+      break;
+    }
+  }
+  if (!replaced) {
+    SetString(GRPC_ARG_PRIMARY_USER_AGENT_STRING, user_agent_prefix);
+  }
 }
 
 void ChannelArguments::SetInt(const grpc::string& key, int value) {
