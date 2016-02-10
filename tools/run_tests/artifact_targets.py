@@ -62,7 +62,7 @@ def create_jobspec(name, cmdline, environ=None, shell=False,
           cmdline=cmdline,
           environ=environ,
           shortname='build_artifact.%s' % (name),
-          timeout_seconds=10*60,
+          timeout_seconds=30*60,
           flake_retries=flake_retries,
           timeout_retries=timeout_retries,
           shell=shell)
