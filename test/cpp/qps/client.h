@@ -184,7 +184,7 @@ class Client {
     // Set up the load distribution based on the number of threads
     const auto& load = config.load_params();
 
-    std::unique_ptr<RandomDist> random_dist;
+    std::unique_ptr<RandomDistInterface> random_dist;
     switch (load.load_case()) {
       case LoadParams::kClosedLoop:
         // Closed-loop doesn't use random dist at all
@@ -218,11 +218,12 @@ class Client {
       closed_loop_ = false;
       // set up interarrival timer according to random dist
       interarrival_timer_.init(*random_dist, num_threads);
+      auto now = grpc_time_source::now();
       for (size_t i = 0; i < num_threads; i++) {
         next_time_.push_back(
-            grpc_time_source::now() +
+            now +
             std::chrono::duration_cast<grpc_time_source::duration>(
-                interarrival_timer_(i)));
+                interarrival_timer_.next(i)));
       }
     }
   }
@@ -234,7 +235,7 @@ class Client {
       *time_delay = next_time_[thread_idx];
       next_time_[thread_idx] +=
           std::chrono::duration_cast<grpc_time_source::duration>(
-              interarrival_timer_(thread_idx));
+              interarrival_timer_.next(thread_idx));
       return true;
     }
   }
