@@ -57,9 +57,7 @@
 
   # Basic platform detection
   HOST_SYSTEM = $(shell uname | cut -f 1 -d_)
-  ifeq ($(SYSTEM),)
-  SYSTEM = $(HOST_SYSTEM)
-  endif
+  SYSTEM ?= $(HOST_SYSTEM)
   ifeq ($(SYSTEM),MSYS)
   SYSTEM = MINGW32
   endif
@@ -153,15 +151,21 @@
   LD = $(LD_$(CONFIG))
   endif
   LDXX ?= $(LDXX_$(CONFIG))
-  ifeq ($(origin AR), default)
-  AR = ar
-  endif
   ifeq ($(SYSTEM),Linux)
+  ifeq ($(origin AR), default)
+  AR = ar rcs
+  endif
   STRIP ?= strip --strip-unneeded
   else
   ifeq ($(SYSTEM),Darwin)
+  ifeq ($(origin AR), default)
+  AR = libtool -o
+  endif
   STRIP ?= strip -x
   else
+  ifeq ($(origin AR), default)
+  AR = ar rcs
+  endif
   STRIP ?= strip
   endif
   endif
@@ -253,12 +257,12 @@
   endif
 
   ifeq ($(SYSTEM),Linux)
-  LIBS = rt m pthread
+  LIBS = dl rt m pthread
   LDFLAGS += -pthread
   endif
 
   ifeq ($(SYSTEM),MINGW32)
-  LIBS = m pthread
+  LIBS = m pthread ws2_32
   LDFLAGS += -pthread
   endif
 
@@ -272,7 +276,7 @@
   Q = @
   endif
 
-  VERSION = ${settings.version.major}.${settings.version.minor}.${settings.version.micro}.${settings.version.build}
+  VERSION = ${settings.core_version}
 
   CPPFLAGS_NO_ARCH += $(addprefix -I, $(INCLUDES)) $(addprefix -D, $(DEFINES))
   CPPFLAGS += $(CPPFLAGS_NO_ARCH) $(ARCH_FLAGS)
@@ -313,26 +317,18 @@
   Libs: -L${'\$${libdir}'} $(PC_LIB),\
   Libs.private: $(PC_LIBS_PRIVATE)
 
-  # gpr .pc file
-  PC_NAME = gRPC Portable Runtime
-  PC_DESCRIPTION = gRPC Portable Runtime
-  PC_CFLAGS = -pthread
-  PC_REQUIRES_PRIVATE =
-  PC_LIBS_PRIVATE = -lpthread
-  PC_LIB = -lgpr
-  ifneq ($(SYSTEM),Darwin)
-  PC_LIBS_PRIVATE += -lrt
-  endif
-  GPR_PC_FILE := $(PC_TEMPLATE)
-
   ifeq ($(SYSTEM),MINGW32)
   SHARED_EXT = dll
-  endif
-  ifeq ($(SYSTEM),Darwin)
+  SHARED_PREFIX =
+  SHARED_VERSION = -${settings.core_version.major}
+  else ifeq ($(SYSTEM),Darwin)
   SHARED_EXT = dylib
-  endif
-  ifeq ($(SHARED_EXT),)
+  SHARED_PREFIX = lib
+  SHARED_VERSION =
+  else
   SHARED_EXT = so.$(VERSION)
+  SHARED_PREFIX = lib
+  SHARED_VERSION =
   endif
 
   ifeq ($(wildcard .git),)
@@ -461,7 +457,7 @@
   HAS_EMBEDDED_PROTOBUF = true
   endif
 
-  PC_REQUIRES_GRPC = gpr
+  PC_REQUIRES_GRPC =
   PC_LIBS_GRPC =
 
   ifeq ($(HAS_SYSTEM_ZLIB),false)
@@ -478,6 +474,7 @@
   ifeq ($(EMBED_ZLIB),true)
   ZLIB_DEP = $(LIBDIR)/$(CONFIG)/libz.a
   ZLIB_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/libz.a
+  ZLIB_MERGE_OBJS = $(LIBZ_OBJS)
   CPPFLAGS += -Ithird_party/zlib
   LDFLAGS += -L$(LIBDIR)/$(CONFIG)/zlib
   else
@@ -520,6 +517,7 @@
   ifeq ($(EMBED_OPENSSL),true)
   OPENSSL_DEP += $(LIBDIR)/$(CONFIG)/libboringssl.a
   OPENSSL_MERGE_LIBS += $(LIBDIR)/$(CONFIG)/libboringssl.a
+  OPENSSL_MERGE_OBJS += $(LIBBORINGSSL_OBJS)
   # need to prefix these to ensure overriding system libraries
   CPPFLAGS := -Ithird_party/boringssl/include $(CPPFLAGS)
   else # EMBED_OPENSSL=false
@@ -553,23 +551,29 @@
 
   # grpc .pc file
   PC_NAME = gRPC
-  PC_DESCRIPTION = high performance general RPC framework
-  PC_CFLAGS =
-  PC_REQUIRES_PRIVATE = $(PC_REQUIRES_GRPC) $(PC_REQUIRES_SECURE)
+  PC_DESCRIPTION = High performance general RPC framework
+  PC_CFLAGS = -pthread
+  PC_REQUIRES_PRIVATE = $(PC_REQUIRES_GRPC) $(PC_REQUIRES_SECURE) -lpthread
   PC_LIBS_PRIVATE = $(PC_LIBS_GRPC) $(PC_LIBS_SECURE)
   PC_LIB = -lgrpc
+  ifneq ($(SYSTEM),Darwin)
+  PC_LIBS_PRIVATE += -lrt
+  endif
   GRPC_PC_FILE := $(PC_TEMPLATE)
 
   # gprc_unsecure .pc file
   PC_NAME = gRPC unsecure
-  PC_DESCRIPTION = high performance general RPC framework without SSL
-  PC_CFLAGS =
-  PC_REQUIRES_PRIVATE = $(PC_REQUIRES_GRPC)
+  PC_DESCRIPTION = High performance general RPC framework without SSL
+  PC_CFLAGS = -pthread
+  PC_REQUIRES_PRIVATE = $(PC_REQUIRES_GRPC) -lpthread
   PC_LIBS_PRIVATE = $(PC_LIBS_GRPC)
   PC_LIB = -lgrpc
+  ifneq ($(SYSTEM),Darwin)
+  PC_LIBS_PRIVATE += -lrt
+  endif
   GRPC_UNSECURE_PC_FILE := $(PC_TEMPLATE)
 
-  # gprc_zookeeper .pc file
+  # grpc_zookeeper .pc file
   PC_NAME = gRPC zookeeper
   PC_DESCRIPTION = gRPC's zookeeper plugin
   PC_CFLAGS =
@@ -790,7 +794,7 @@
 
   static: static_c static_cxx
 
-  static_c: pc_c pc_c_unsecure cache.mk pc_gpr pc_c_zookeeper\
+  static_c: pc_c pc_c_unsecure cache.mk pc_c_zookeeper\
   % for lib in libs:
   % if lib.build == 'all' and lib.language == 'c' and not lib.get('external_deps', None):
    $(LIBDIR)/$(CONFIG)/lib${lib.name}.a\
@@ -799,7 +803,7 @@
    static_zookeeper_libs
 
 
-  static_cxx: pc_cxx pc_cxx_unsecure pc_gpr cache.mk \
+  static_cxx: pc_cxx pc_cxx_unsecure cache.mk \
   % for lib in libs:
   % if lib.build == 'all' and lib.language == 'c++':
    $(LIBDIR)/$(CONFIG)/lib${lib.name}.a\
@@ -809,10 +813,10 @@
 
   shared: shared_c shared_cxx
 
-  shared_c: pc_c pc_c_unsecure pc_gpr cache.mk pc_c_zookeeper\
+  shared_c: pc_c pc_c_unsecure cache.mk pc_c_zookeeper\
   % for lib in libs:
   % if lib.build == 'all' and lib.language == 'c' and not lib.get('external_deps', None):
-   $(LIBDIR)/$(CONFIG)/lib${lib.name}.$(SHARED_EXT)\
+   $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT)\
   % endif
   % endfor
    shared_zookeeper_libs
@@ -820,7 +824,7 @@
   shared_cxx: pc_cxx pc_cxx_unsecure cache.mk\
   % for lib in libs:
   % if lib.build == 'all' and lib.language == 'c++':
-   $(LIBDIR)/$(CONFIG)/lib${lib.name}.$(SHARED_EXT)\
+   $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT)\
   % endif
   % endfor
 
@@ -828,7 +832,7 @@
   shared_csharp: shared_c \
   % for lib in libs:
   % if lib.build == 'all' and lib.language == 'csharp':
-   $(LIBDIR)/$(CONFIG)/lib${lib.name}.$(SHARED_EXT)\
+   $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT)\
   % endif
   % endfor
 
@@ -843,7 +847,7 @@
   shared_zookeeper_libs:\
   % for lib in libs:
   % if lib.build == 'all' and lib.language == 'c' and 'zookeeper' in lib.get('external_deps', []):
-   $(LIBDIR)/$(CONFIG)/lib${lib.name}.$(SHARED_EXT)\
+   $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT)\
   % endif
   % endfor
 
@@ -867,8 +871,6 @@
    $(LIBDIR)/$(CONFIG)/lib${lib.name}.a\
   % endif
   % endfor
-
-  pc_gpr: $(LIBDIR)/$(CONFIG)/pkgconfig/gpr.pc
 
   pc_c: $(LIBDIR)/$(CONFIG)/pkgconfig/grpc.pc
 
@@ -1089,8 +1091,8 @@
   % if lib.language == "c":
   % if lib.build == "all":
   % if not lib.get('external_deps', None):
-  	$(E) "[STRIP]   Stripping lib${lib.name}.so"
-  	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/lib${lib.name}.$(SHARED_EXT)
+  	$(E) "[STRIP]   Stripping $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT)"
+  	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT)
   % endif
   % endif
   % endif
@@ -1100,8 +1102,8 @@
   % if lib.language == "c":
   % if lib.build == "all":
   % if 'zookeeper' in lib.get('external_deps', []):
-  	$(E) "[STRIP]   Stripping lib${lib.name}.so"
-  	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/lib${lib.name}.$(SHARED_EXT)
+  	$(E) "[STRIP]   Stripping $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT)"
+  	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT)
   % endif
   % endif
   % endif
@@ -1114,8 +1116,8 @@
   % for lib in libs:
   % if lib.language == "c++":
   % if lib.build == "all":
-  	$(E) "[STRIP]   Stripping lib${lib.name}.so"
-  	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/lib${lib.name}.$(SHARED_EXT)
+  	$(E) "[STRIP]   Stripping $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT)"
+  	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT)
   % endif
   % endif
   % endfor
@@ -1126,8 +1128,8 @@
   % for lib in libs:
   % if lib.language == "csharp":
   % if lib.build == "all":
-  	$(E) "[STRIP]   Stripping lib${lib.name}.so"
-  	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/lib${lib.name}.$(SHARED_EXT)
+  	$(E) "[STRIP]   Stripping $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT)"
+  	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT)
   % endif
   % endif
   % endfor
@@ -1136,11 +1138,6 @@
   cache.mk::
   	$(E) "[MAKE]    Generating $@"
   	$(Q) echo "$(CACHE_MK)" | tr , '\n' >$@
-
-  $(LIBDIR)/$(CONFIG)/pkgconfig/gpr.pc:
-  	$(E) "[MAKE]    Generating $@"
-  	$(Q) mkdir -p $(@D)
-  	$(Q) echo "$(GPR_PC_FILE)" | tr , '\n' >$@
 
   $(LIBDIR)/$(CONFIG)/pkgconfig/grpc.pc:
   	$(E) "[MAKE]    Generating $@"
@@ -1283,19 +1280,14 @@
   % if lib.language == lang_filter:
   % if lib.build == "all":
   % if not lib.get('external_deps', None):
+  	$(E) "[INSTALL] Installing $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT)"
+  	$(Q) $(INSTALL) -d $(prefix)/lib
+  	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT) $(prefix)/lib/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT)
   ifeq ($(SYSTEM),MINGW32)
-  	$(E) "[INSTALL] Installing ${lib.name}.$(SHARED_EXT)"
-  	$(Q) $(INSTALL) -d $(prefix)/lib
-  	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/${lib.name}.$(SHARED_EXT) $(prefix)/lib/${lib.name}.$(SHARED_EXT)
   	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/lib${lib.name}-imp.a $(prefix)/lib/lib${lib.name}-imp.a
-  else
-  	$(E) "[INSTALL] Installing lib${lib.name}.$(SHARED_EXT)"
-  	$(Q) $(INSTALL) -d $(prefix)/lib
-  	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/lib${lib.name}.$(SHARED_EXT) $(prefix)/lib/lib${lib.name}.$(SHARED_EXT)
-  ifneq ($(SYSTEM),Darwin)
-  	$(Q) ln -sf lib${lib.name}.$(SHARED_EXT) $(prefix)/lib/lib${lib.name}.so.${settings.version.major}
-  	$(Q) ln -sf lib${lib.name}.$(SHARED_EXT) $(prefix)/lib/lib${lib.name}.so
-  endif
+  else ifneq ($(SYSTEM),Darwin)
+  	$(Q) ln -sf $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT) $(prefix)/lib/lib${lib.name}.so.${settings.core_version.major}
+  	$(Q) ln -sf $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT) $(prefix)/lib/lib${lib.name}.so
   endif
   % endif
   % endif
@@ -1306,19 +1298,14 @@
   % if lib.language == lang_filter:
   % if lib.build == "all":
   % if 'zookeeper' in lib.get('external_deps', []):
+  	$(E) "[INSTALL] Installing $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT)"
+  	$(Q) $(INSTALL) -d $(prefix)/lib
+  	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT) $(prefix)/lib/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT)
   ifeq ($(SYSTEM),MINGW32)
-  	$(E) "[INSTALL] Installing ${lib.name}.$(SHARED_EXT)"
-  	$(Q) $(INSTALL) -d $(prefix)/lib
-  	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/${lib.name}.$(SHARED_EXT) $(prefix)/lib/${lib.name}.$(SHARED_EXT)
   	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/lib${lib.name}-imp.a $(prefix)/lib/lib${lib.name}-imp.a
-  else
-  	$(E) "[INSTALL] Installing lib${lib.name}.$(SHARED_EXT)"
-  	$(Q) $(INSTALL) -d $(prefix)/lib
-  	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/lib${lib.name}.$(SHARED_EXT) $(prefix)/lib/lib${lib.name}.$(SHARED_EXT)
-  ifneq ($(SYSTEM),Darwin)
-  	$(Q) ln -sf lib${lib.name}.$(SHARED_EXT) $(prefix)/lib/lib${lib.name}.so.${settings.version.major}
-  	$(Q) ln -sf lib${lib.name}.$(SHARED_EXT) $(prefix)/lib/lib${lib.name}.so
-  endif
+  else ifneq ($(SYSTEM),Darwin)
+  	$(Q) ln -sf $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT) $(prefix)/lib/lib${lib.name}.so.${settings.core_version.major}
+  	$(Q) ln -sf $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT) $(prefix)/lib/lib${lib.name}.so
   endif
   % endif
   % endif
@@ -1354,10 +1341,9 @@
   % endfor
   endif
 
-  install-pkg-config_c: pc_gpr pc_c pc_c_unsecure pc_c_zookeeper
+  install-pkg-config_c: pc_c pc_c_unsecure pc_c_zookeeper
   	$(E) "[INSTALL] Installing C pkg-config files"
   	$(Q) $(INSTALL) -d $(prefix)/lib/pkgconfig
-  	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/pkgconfig/gpr.pc $(prefix)/lib/pkgconfig/gpr.pc
   	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/pkgconfig/grpc.pc $(prefix)/lib/pkgconfig/grpc.pc
   	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/pkgconfig/grpc_unsecure.pc $(prefix)/lib/pkgconfig/grpc_unsecure.pc
   ifeq ($(HAS_ZOOKEEPER),true)
@@ -1452,11 +1438,7 @@
   $(LIBDIR)/$(CONFIG)/lib${lib.name}.a: openssl_dep_error
 
   % if lib.build == "all":
-  ifeq ($(SYSTEM),MINGW32)
-  $(LIBDIR)/$(CONFIG)/${lib.name}.$(SHARED_EXT): openssl_dep_error
-  else
-  $(LIBDIR)/$(CONFIG)/lib${lib.name}.$(SHARED_EXT): openssl_dep_error
-  endif
+  $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT): openssl_dep_error
   % endif
 
   else
@@ -1469,11 +1451,7 @@
   $(LIBDIR)/$(CONFIG)/lib${lib.name}.a: protobuf_dep_error
 
   % if lib.build == "all":
-  ifeq ($(SYSTEM),MINGW32)
-  $(LIBDIR)/$(CONFIG)/${lib.name}.$(SHARED_EXT): protobuf_dep_error
-  else
-  $(LIBDIR)/$(CONFIG)/lib${lib.name}.$(SHARED_EXT): protobuf_dep_error
-  endif
+  $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT): protobuf_dep_error
   % endif
 
   else
@@ -1490,11 +1468,7 @@
   $(LIBDIR)/$(CONFIG)/lib${lib.name}.a: protobuf_dep_error
 
   % if lib.build == "all":
-  ifeq ($(SYSTEM),MINGW32)
-  $(LIBDIR)/$(CONFIG)/${lib.name}.$(SHARED_EXT): protobuf_dep_error
-  else
-  $(LIBDIR)/$(CONFIG)/lib${lib.name}.$(SHARED_EXT): protobuf_dep_error
-  endif
+  $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT): protobuf_dep_error
   % endif
 
   else
@@ -1508,38 +1482,25 @@
   % if lib.language == 'c++':
    $(PROTOBUF_DEP)\
   % endif
-   $(LIB${lib.name.upper()}_OBJS)
+   $(LIB${lib.name.upper()}_OBJS) \
+  % if lib.get('baselib', False):
+   $(ZLIB_MERGE_OBJS) \
+  % if lib.get('secure', 'check') == True:
+   $(OPENSSL_MERGE_OBJS) \
+  % endif
+  % endif
+
   	$(E) "[AR]      Creating $@"
   	$(Q) mkdir -p `dirname $@`
   	$(Q) rm -f $(LIBDIR)/$(CONFIG)/lib${lib.name}.a
-  	$(Q) $(AR) rcs $(LIBDIR)/$(CONFIG)/lib${lib.name}.a $(LIB${lib.name.upper()}_OBJS)
+  	$(Q) $(AR) $(LIBDIR)/$(CONFIG)/lib${lib.name}.a $(LIB${lib.name.upper()}_OBJS) \
   % if lib.get('baselib', False):
-  	$(Q) rm -rf $(BUILDDIR_ABSOLUTE)/tmp-merge-${lib.name}
-  	$(Q) ( mkdir -p $(BUILDDIR_ABSOLUTE)/tmp-merge-${lib.name}/grpc ; <%text>\</%text>
-  	       cd $(BUILDDIR_ABSOLUTE)/tmp-merge-${lib.name}/grpc ; <%text>\</%text>
-  	       $(AR) x $(LIBDIR)/$(CONFIG)/lib${lib.name}.a )
-  	$(Q) for l in $(ZLIB_MERGE_LIBS) ; do ( <%text>\</%text>
-  	       mkdir -p $(BUILDDIR_ABSOLUTE)/tmp-merge-${lib.name}/zlib ; <%text>\</%text>
-  	       cd $(BUILDDIR_ABSOLUTE)/tmp-merge-${lib.name}/zlib ; <%text>\</%text>
-  	       <%text>$(AR) x $${l}</%text> ) ; done
-  	$(Q) for l in $(ZLIB_MERGE_LIBS) ; do ( <%text>\</%text>
-  	       mkdir -p $(BUILDDIR_ABSOLUTE)/tmp-merge-${lib.name}/zlib ; <%text>\</%text>
-  	       cd $(BUILDDIR_ABSOLUTE)/tmp-merge-${lib.name}/zlib ; <%text>\</%text>
-  	       <%text>$(AR) x $${l}</%text> ) ; done
+   $(ZLIB_MERGE_OBJS) \
   % if lib.get('secure', 'check') == True:
-  	$(Q) for l in $(OPENSSL_MERGE_LIBS) ; do ( <%text>\</%text>
-  	       mkdir -p $(BUILDDIR_ABSOLUTE)/tmp-merge-${lib.name}/ssl ; <%text>\</%text>
-  	       cd $(BUILDDIR_ABSOLUTE)/tmp-merge-${lib.name}/ssl ; <%text>\</%text>
-  	       <%text>$(AR) x $${l}</%text> ) ; done
-  	$(Q) for l in $(OPENSSL_MERGE_LIBS) ; do ( <%text>\</%text>
-  	       mkdir -p $(BUILDDIR_ABSOLUTE)/tmp-merge-${lib.name}/ssl ; <%text>\</%text>
-  	       cd $(BUILDDIR_ABSOLUTE)/tmp-merge-${lib.name}/ssl ; <%text>\</%text>
-  	       <%text>$(AR) x $${l}</%text> ) ; done
+   $(OPENSSL_MERGE_OBJS) \
   % endif
-  	$(Q) rm -f $(LIBDIR)/$(CONFIG)/lib${lib.name}.a $(BUILDDIR_ABSOLUTE)/tmp-merge-${lib.name}/*/__.SYMDEF*
-  	$(Q) ar rcs $(LIBDIR)/$(CONFIG)/lib${lib.name}.a $(BUILDDIR_ABSOLUTE)/tmp-merge-${lib.name}/*/*
-  	$(Q) rm -rf $(BUILDDIR_ABSOLUTE)/tmp-merge-${lib.name}
   % endif
+
   ifeq ($(SYSTEM),Darwin)
   	$(Q) ranlib $(LIBDIR)/$(CONFIG)/lib${lib.name}.a
   endif
@@ -1551,8 +1512,8 @@
     else:
       ld = '$(LD)'
 
-    out_base = '$(LIBDIR)/$(CONFIG)/' + lib.name
-    out_libbase = '$(LIBDIR)/$(CONFIG)/lib' + lib.name
+    out_mingbase = '$(LIBDIR)/$(CONFIG)/' + lib.name + '$(SHARED_VERSION)'
+    out_libbase = '$(LIBDIR)/$(CONFIG)/lib' + lib.name + '$(SHARED_VERSION)'
 
     common = '$(LIB' + lib.name.upper() + '_OBJS) $(LDLIBS)'
 
@@ -1598,24 +1559,28 @@
 
     if lib.language == 'c++':
       common = common + ' $(LDLIBSXX) $(LDLIBS_PROTOBUF)'
+
+    ldflags = '$(LDFLAGS)'
+    if lib.get('LDFLAGS', None):
+      ldflags += ' ' + lib['LDFLAGS']
   %>
 
   % if lib.build == "all":
   ifeq ($(SYSTEM),MINGW32)
-  ${out_base}.$(SHARED_EXT): $(LIB${lib.name.upper()}_OBJS) ${mingw_lib_deps}
+  ${out_mingbase}.$(SHARED_EXT): $(LIB${lib.name.upper()}_OBJS) ${mingw_lib_deps}
   	$(E) "[LD]      Linking $@"
   	$(Q) mkdir -p `dirname $@`
-  	$(Q) ${ld} $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=${out_base}.def -Wl,--out-implib=${out_libbase}-imp.a -o ${out_base}.$(SHARED_EXT) ${common}${mingw_libs}
+  	$(Q) ${ld} ${ldflags} -L$(LIBDIR)/$(CONFIG) -shared ${lib.name}.def -Wl,--output-def=${out_mingbase}.def -Wl,--out-implib=${out_libbase}-dll.a -o ${out_mingbase}.$(SHARED_EXT) ${common}${mingw_libs}
   else
   ${out_libbase}.$(SHARED_EXT): $(LIB${lib.name.upper()}_OBJS) ${lib_deps}
   	$(E) "[LD]      Linking $@"
   	$(Q) mkdir -p `dirname $@`
   ifeq ($(SYSTEM),Darwin)
-  	$(Q) ${ld} $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name lib${lib.name}.$(SHARED_EXT) -dynamiclib -o ${out_libbase}.$(SHARED_EXT) ${common}${libs}
+  	$(Q) ${ld} ${ldflags} -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT) -dynamiclib -o ${out_libbase}.$(SHARED_EXT) ${common}${libs}
   else
-  	$(Q) ${ld} $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,lib${lib.name}.so.${settings.version.major} -o ${out_libbase}.$(SHARED_EXT) ${common}${libs}
-  	$(Q) ln -sf lib${lib.name}.$(SHARED_EXT) ${out_libbase}.so.${settings.version.major}
-  	$(Q) ln -sf lib${lib.name}.$(SHARED_EXT) ${out_libbase}.so
+  	$(Q) ${ld} ${ldflags} -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,lib${lib.name}.so.${settings.core_version.major} -o ${out_libbase}.$(SHARED_EXT) ${common}${libs}
+  	$(Q) ln -sf $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT) ${out_libbase}.so.${settings.core_version.major}
+  	$(Q) ln -sf $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT) ${out_libbase}.so
   endif
   endif
   % endif

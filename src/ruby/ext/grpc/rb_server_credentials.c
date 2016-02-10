@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,6 +31,8 @@
  *
  */
 
+#include <ruby/ruby.h>
+#include "rb_grpc_imports.generated.h"
 #include "rb_server_credentials.h"
 
 #include <ruby/ruby.h>
@@ -175,7 +177,7 @@ static VALUE grpc_rb_server_credentials_init(VALUE self, VALUE pem_root_certs,
   VALUE key = Qnil;
   VALUE key_cert = Qnil;
   int auth_client = 0;
-  int num_key_certs = 0;
+  long num_key_certs = 0;
   int i;
 
   if (NIL_P(force_client_auth) ||
