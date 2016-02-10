@@ -111,10 +111,11 @@ class NodeDistribTest(object):
     self.arch = arch
     self.node_version = node_version
     self.labels = ['distribtest', 'node', platform, arch,
-                   docker_suffix, 'node-%s' % node_version]
+                   'node-%s' % node_version]
     if docker_suffix is not None:
       self.name += '_%s' % docker_suffix
       self.docker_suffix = docker_suffix
+      self.labels.append(docker_suffix)
 
   def pre_build_jobspecs(self):
     return []
