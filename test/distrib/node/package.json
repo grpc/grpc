@@ -1,0 +1,7 @@
+{
+  "name": "grpc-distrib-test",
+  "version": "0.0.1",
+  "dependencies": {
+    "grpc": "*"
+  }
+}

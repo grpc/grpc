@@ -47,6 +47,7 @@
 #include <grpc++/server_builder.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
+#include <grpc/support/cpu.h>
 #include <grpc/support/histogram.h>
 #include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
@@ -83,15 +84,10 @@ static std::unique_ptr<Client> CreateClient(const ClientConfig& config) {
   abort();
 }
 
-static void LimitCores(int cores) {}
-
 static std::unique_ptr<Server> CreateServer(const ServerConfig& config) {
   gpr_log(GPR_INFO, "Starting server of type %s",
           ServerType_Name(config.server_type()).c_str());
 
-  if (config.core_limit() > 0) {
-    LimitCores(config.core_limit());
-  }
   switch (config.server_type()) {
     case ServerType::SYNC_SERVER:
       return CreateSynchronousServer(config);
@@ -107,8 +103,8 @@ static std::unique_ptr<Server> CreateServer(const ServerConfig& config) {
 
 class WorkerServiceImpl GRPC_FINAL : public WorkerService::Service {
  public:
-  explicit WorkerServiceImpl(int server_port)
-      : acquired_(false), server_port_(server_port) {}
+  WorkerServiceImpl(int server_port, QpsWorker* worker)
+      : acquired_(false), server_port_(server_port), worker_(worker) {}
 
   Status RunClient(ServerContext* ctx,
                    ServerReaderWriter<ClientStatus, ClientArgs>* stream)
@@ -136,6 +132,22 @@ class WorkerServiceImpl GRPC_FINAL : public WorkerService::Service {
     Status ret = RunServerBody(ctx, stream);
     grpc_profiler_stop();
     return ret;
+  }
+
+  Status CoreCount(ServerContext* ctx, const CoreRequest*,
+                   CoreResponse* resp) GRPC_OVERRIDE {
+    resp->set_cores(gpr_cpu_num_cores());
+    return Status::OK;
+  }
+
+  Status QuitWorker(ServerContext* ctx, const Void*, Void*) GRPC_OVERRIDE {
+    InstanceGuard g(this);
+    if (!g.Acquired()) {
+      return Status(StatusCode::RESOURCE_EXHAUSTED, "");
+    }
+
+    worker_->MarkDone();
+    return Status::OK;
   }
 
  private:
@@ -248,10 +260,12 @@ class WorkerServiceImpl GRPC_FINAL : public WorkerService::Service {
   std::mutex mu_;
   bool acquired_;
   int server_port_;
+  QpsWorker* worker_;
 };
 
 QpsWorker::QpsWorker(int driver_port, int server_port) {
-  impl_.reset(new WorkerServiceImpl(server_port));
+  impl_.reset(new WorkerServiceImpl(server_port, this));
+  gpr_atm_rel_store(&done_, static_cast<gpr_atm>(0));
 
   char* server_address = NULL;
   gpr_join_host_port(&server_address, "::", driver_port);
@@ -267,5 +281,11 @@ QpsWorker::QpsWorker(int driver_port, int server_port) {
 
 QpsWorker::~QpsWorker() {}
 
+bool QpsWorker::Done() const {
+  return (gpr_atm_acq_load(&done_) != static_cast<gpr_atm>(0));
+}
+void QpsWorker::MarkDone() {
+  gpr_atm_rel_store(&done_, static_cast<gpr_atm>(1));
+}
 }  // namespace testing
 }  // namespace grpc
