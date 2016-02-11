@@ -82,9 +82,9 @@ class ClientRpcContextUnaryImpl : public ClientRpcContext {
       BenchmarkService::Stub* stub, const RequestType& req,
       std::function<gpr_timespec()> next_issue,
       std::function<
-      std::unique_ptr<grpc::ClientAsyncResponseReader<ResponseType>>(
-          BenchmarkService::Stub*, grpc::ClientContext*, const RequestType&,
-          CompletionQueue*)> start_req,
+          std::unique_ptr<grpc::ClientAsyncResponseReader<ResponseType>>(
+              BenchmarkService::Stub*, grpc::ClientContext*, const RequestType&,
+              CompletionQueue*)> start_req,
       std::function<void(grpc::Status, ResponseType*)> on_done)
       : context_(),
         stub_(stub),
@@ -92,15 +92,15 @@ class ClientRpcContextUnaryImpl : public ClientRpcContext {
         req_(req),
         response_(),
         next_state_(State::READY),
-    callback_(on_done),
-    next_issue_(next_issue),
-    start_req_(start_req) {}
+        callback_(on_done),
+        next_issue_(next_issue),
+        start_req_(start_req) {}
   ~ClientRpcContextUnaryImpl() GRPC_OVERRIDE {}
   void Start(CompletionQueue* cq) GRPC_OVERRIDE {
     cq_ = cq;
-    if (!next_issue_) { // ready to issue
+    if (!next_issue_) {  // ready to issue
       RunNextState(true, nullptr);
-    } else { // wait for the issue time
+    } else {  // wait for the issue time
       alarm_.reset(new Alarm(cq_, next_issue_(), ClientRpcContext::tag(this)));
     }
   }
@@ -124,17 +124,18 @@ class ClientRpcContextUnaryImpl : public ClientRpcContext {
     }
   }
   ClientRpcContext* StartNewClone() GRPC_OVERRIDE {
-    return new ClientRpcContextUnaryImpl(stub_, req_, next_issue_,
-                                         start_req_, callback_);
+    return new ClientRpcContextUnaryImpl(stub_, req_, next_issue_, start_req_,
+                                         callback_);
   }
+
  private:
   grpc::ClientContext context_;
   BenchmarkService::Stub* stub_;
-  CompletionQueue *cq_;
+  CompletionQueue* cq_;
   std::unique_ptr<Alarm> alarm_;
   RequestType req_;
   ResponseType response_;
-  enum State {INVALID, READY, RESP_DONE};
+  enum State { INVALID, READY, RESP_DONE };
   State next_state_;
   std::function<void(grpc::Status, ResponseType*)> callback_;
   std::function<gpr_timespec()> next_issue_;
@@ -160,9 +161,9 @@ class AsyncClient : public ClientImpl<StubType, RequestType> {
   using ClientImpl<StubType, RequestType>::channels_;
   using ClientImpl<StubType, RequestType>::request_;
   AsyncClient(const ClientConfig& config,
-              std::function<ClientRpcContext*(StubType*,
-                                              std::function<gpr_timespec()> next_issue,
-                                              const RequestType&)> setup_ctx,
+              std::function<ClientRpcContext*(
+                  StubType*, std::function<gpr_timespec()> next_issue,
+                  const RequestType&)> setup_ctx,
               std::function<std::unique_ptr<StubType>(std::shared_ptr<Channel>)>
                   create_stub)
       : ClientImpl<StubType, RequestType>(config, create_stub),
@@ -182,8 +183,7 @@ class AsyncClient : public ClientImpl<StubType, RequestType> {
         if (!closed_loop_) {
           next_issue = std::bind(&Client::NextIssueTime, this, t);
         }
-        auto ctx = setup_ctx(channels_[ch].get_stub(),
-                             next_issue, request_);
+        auto ctx = setup_ctx(channels_[ch].get_stub(), next_issue, request_);
         ctx->Start(cq);
         t = (t + 1) % cli_cqs_.size();
       }
@@ -293,7 +293,7 @@ class ClientRpcContextStreamingImpl : public ClientRpcContext {
         response_(),
         next_state_(State::INVALID),
         callback_(on_done),
-    next_issue_(next_issue),
+        next_issue_(next_issue),
         start_req_(start_req),
         start_(Timer::Now()) {}
   ~ClientRpcContextStreamingImpl() GRPC_OVERRIDE {}
@@ -306,14 +306,15 @@ class ClientRpcContextStreamingImpl : public ClientRpcContext {
     while (true) {
       switch (next_state_) {
         case State::STREAM_IDLE:
-          if (!next_issue_) { // ready to issue
+          if (!next_issue_) {  // ready to issue
             next_state_ = State::READY_TO_WRITE;
           } else {
             next_state_ = State::WAIT;
           }
-          break; // loop around, don't return
+          break;  // loop around, don't return
         case State::WAIT:
-          alarm_.reset(new Alarm(cq_, next_issue_(), ClientRpcContext::tag(this)));
+          alarm_.reset(
+              new Alarm(cq_, next_issue_(), ClientRpcContext::tag(this)));
           next_state_ = State::READY_TO_WRITE;
           return true;
         case State::READY_TO_WRITE:
@@ -336,7 +337,7 @@ class ClientRpcContextStreamingImpl : public ClientRpcContext {
           hist->Add((Timer::Now() - start_) * 1e9);
           callback_(status_, &response_);
           next_state_ = State::STREAM_IDLE;
-          break; // loop around
+          break;  // loop around
         default:
           GPR_ASSERT(false);
           return false;
@@ -351,11 +352,18 @@ class ClientRpcContextStreamingImpl : public ClientRpcContext {
  private:
   grpc::ClientContext context_;
   BenchmarkService::Stub* stub_;
-  CompletionQueue *cq_;
+  CompletionQueue* cq_;
   std::unique_ptr<Alarm> alarm_;
   RequestType req_;
   ResponseType response_;
-  enum State {INVALID, STREAM_IDLE, WAIT, READY_TO_WRITE, WRITE_DONE, READ_DONE};
+  enum State {
+    INVALID,
+    STREAM_IDLE,
+    WAIT,
+    READY_TO_WRITE,
+    WRITE_DONE,
+    READ_DONE
+  };
   State next_state_;
   std::function<void(grpc::Status, ResponseType*)> callback_;
   std::function<gpr_timespec()> next_issue_;
@@ -413,7 +421,7 @@ class ClientRpcContextGenericStreamingImpl : public ClientRpcContext {
         response_(),
         next_state_(State::INVALID),
         callback_(on_done),
-    next_issue_(next_issue),
+        next_issue_(next_issue),
         start_req_(start_req),
         start_(Timer::Now()) {}
   ~ClientRpcContextGenericStreamingImpl() GRPC_OVERRIDE {}
@@ -429,14 +437,15 @@ class ClientRpcContextGenericStreamingImpl : public ClientRpcContext {
     while (true) {
       switch (next_state_) {
         case State::STREAM_IDLE:
-          if (!next_issue_) { // ready to issue
+          if (!next_issue_) {  // ready to issue
             next_state_ = State::READY_TO_WRITE;
           } else {
             next_state_ = State::WAIT;
           }
-          break; // loop around, don't return
+          break;  // loop around, don't return
         case State::WAIT:
-          alarm_.reset(new Alarm(cq_, next_issue_(), ClientRpcContext::tag(this)));
+          alarm_.reset(
+              new Alarm(cq_, next_issue_(), ClientRpcContext::tag(this)));
           next_state_ = State::READY_TO_WRITE;
           return true;
         case State::READY_TO_WRITE:
@@ -459,7 +468,7 @@ class ClientRpcContextGenericStreamingImpl : public ClientRpcContext {
           hist->Add((Timer::Now() - start_) * 1e9);
           callback_(status_, &response_);
           next_state_ = State::STREAM_IDLE;
-          break; // loop around
+          break;  // loop around
         default:
           GPR_ASSERT(false);
           return false;
@@ -470,14 +479,22 @@ class ClientRpcContextGenericStreamingImpl : public ClientRpcContext {
     return new ClientRpcContextGenericStreamingImpl(stub_, req_, next_issue_,
                                                     start_req_, callback_);
   }
+
  private:
   grpc::ClientContext context_;
   grpc::GenericStub* stub_;
-  CompletionQueue *cq_;
+  CompletionQueue* cq_;
   std::unique_ptr<Alarm> alarm_;
   ByteBuffer req_;
   ByteBuffer response_;
-  enum State {INVALID, STREAM_IDLE, WAIT, READY_TO_WRITE, WRITE_DONE, READ_DONE};
+  enum State {
+    INVALID,
+    STREAM_IDLE,
+    WAIT,
+    READY_TO_WRITE,
+    WRITE_DONE,
+    READ_DONE
+  };
   State next_state_;
   std::function<void(grpc::Status, ByteBuffer*)> callback_;
   std::function<gpr_timespec()> next_issue_;
