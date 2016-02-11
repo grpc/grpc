@@ -32,14 +32,28 @@
 
 #include <grpc++/alarm.h>
 #include <grpc++/completion_queue.h>
+#include <grpc++/impl/codegen/completion_queue_tag.h>
 #include <grpc++/impl/grpc_library.h>
 #include <grpc/grpc.h>
 
 namespace grpc {
 
+class AlarmEntry : public CompletionQueueTag {
+public:
+  AlarmEntry(void *tag): tag_(tag) {}
+  bool FinalizeResult(void** tag, bool* status) GRPC_OVERRIDE {
+    *tag = tag_;
+    delete this;
+    return true;
+  }
+private:
+  void* tag_;
+};
+
 static internal::GrpcLibraryInitializer g_gli_initializer;
 Alarm::Alarm(CompletionQueue* cq, gpr_timespec deadline, void* tag)
-    : alarm_(grpc_alarm_create(cq->cq(), deadline, tag)) {
+  : alarm_(grpc_alarm_create(cq->cq(), deadline,
+			     static_cast<void*>(new AlarmEntry(tag)))) {
   g_gli_initializer.summon();
 }
 
