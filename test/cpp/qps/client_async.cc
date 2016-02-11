@@ -157,6 +157,7 @@ class AsyncClient : public ClientImpl<StubType, RequestType> {
  public:
   using Client::SetupLoadTest;
   using Client::closed_loop_;
+  using Client::NextIssuer;
   using ClientImpl<StubType, RequestType>::cores_;
   using ClientImpl<StubType, RequestType>::channels_;
   using ClientImpl<StubType, RequestType>::request_;
@@ -172,6 +173,7 @@ class AsyncClient : public ClientImpl<StubType, RequestType> {
 
     for (int i = 0; i < num_async_threads_; i++) {
       cli_cqs_.emplace_back(new CompletionQueue);
+      next_issuers_.emplace_back(NextIssuer(i));
     }
 
     using namespace std::placeholders;
@@ -179,11 +181,8 @@ class AsyncClient : public ClientImpl<StubType, RequestType> {
     for (int i = 0; i < config.outstanding_rpcs_per_channel(); i++) {
       for (int ch = 0; ch < config.client_channels(); ch++) {
         auto* cq = cli_cqs_[t].get();
-        std::function<gpr_timespec()> next_issue;
-        if (!closed_loop_) {
-          next_issue = std::bind(&Client::NextIssueTime, this, t);
-        }
-        auto ctx = setup_ctx(channels_[ch].get_stub(), next_issue, request_);
+        auto ctx =
+            setup_ctx(channels_[ch].get_stub(), next_issuers_[t], request_);
         ctx->Start(cq);
         t = (t + 1) % cli_cqs_.size();
       }
@@ -204,29 +203,22 @@ class AsyncClient : public ClientImpl<StubType, RequestType> {
                   size_t thread_idx) GRPC_OVERRIDE GRPC_FINAL {
     void* got_tag;
     bool ok;
-    bool got_event;
 
-    switch (cli_cqs_[thread_idx]->Next(&got_tag, &ok)) {
-      case CompletionQueue::SHUTDOWN:
-        return false;
-      case CompletionQueue::GOT_EVENT:
-        got_event = true;
-        break;
-      default:
-        GPR_ASSERT(false);
-        break;
-    }
-    if (got_event) {
+    if (cli_cqs_[thread_idx]->Next(&got_tag, &ok)) {
+      // Got a regular event, so process it
       ClientRpcContext* ctx = ClientRpcContext::detag(got_tag);
-      if (ctx->RunNextState(ok, histogram) == false) {
+      if (!ctx->RunNextState(ok, histogram)) {
         // The RPC and callback are done, so clone the ctx
-        ClientRpcContext* clone_ctx = ctx->StartNewClone();
-        clone_ctx->Start(cli_cqs_[thread_idx].get());
+        // and kickstart the new one
+        auto clone = ctx->StartNewClone();
+        clone->Start(cli_cqs_[thread_idx].get());
         // delete the old version
         delete ctx;
       }
+      return true;
+    } else {  // queue is shutting down
+      return false;
     }
-    return true;
   }
 
  protected:
@@ -243,6 +235,7 @@ class AsyncClient : public ClientImpl<StubType, RequestType> {
   }
 
   std::vector<std::unique_ptr<CompletionQueue>> cli_cqs_;
+  std::vector<std::function<gpr_timespec()>> next_issuers_;
 };
 
 static std::unique_ptr<BenchmarkService::Stub> BenchmarkStubCreator(
