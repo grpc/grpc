@@ -28,14 +28,11 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+NODE_VERSION=$1
+source ~/.nvm/nvm.sh
 set -ex
 
 cd $(dirname $0)
-
-NODE_VERSION="$1"
-
-# make sure nvm is available
-source ~/.nvm/nvm.sh || true
 
 nvm install $NODE_VERSION
 
