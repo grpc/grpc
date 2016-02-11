@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 
-# Copyright 2015-2016, Google Inc.
+# Copyright 2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -29,22 +29,11 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# Sample app that connects to a Greeter service.
-#
-# Usage: $ path/to/greeter_client.rb
-
-this_dir = File.expand_path(File.dirname(__FILE__))
-lib_dir = File.join(this_dir, 'lib')
-$LOAD_PATH.unshift(lib_dir) unless $LOAD_PATH.include?(lib_dir)
-
 require 'grpc'
-require 'helloworld_services'
 
-def main
-  stub = Helloworld::Greeter::Stub.new('localhost:50051', :this_channel_is_insecure)
-  user = ARGV.size > 0 ?  ARGV[0] : 'world'
-  message = stub.say_hello(Helloworld::HelloRequest.new(name: user)).message
-  p "Greeting: #{message}"
-end
+# This code doesn't do much but makes sure the native extension is loaded
+# which is what we are testing here.
+ch = GRPC::Core::Channel.new('localhost:1000', nil, :this_channel_is_insecure)
+ch.destroy
 
-main
+puts "Success!"
