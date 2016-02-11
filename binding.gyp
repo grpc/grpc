@@ -591,6 +591,7 @@
         'src/core/client_config/connector.c',
         'src/core/client_config/default_initial_connect_string.c',
         'src/core/client_config/initial_connect_string.c',
+        'src/core/client_config/lb_policies/load_balancer_api.c',
         'src/core/client_config/lb_policies/pick_first.c',
         'src/core/client_config/lb_policies/round_robin.c',
         'src/core/client_config/lb_policy.c',
@@ -654,6 +655,7 @@
         'src/core/json/json_reader.c',
         'src/core/json/json_string.c',
         'src/core/json/json_writer.c',
+        'src/core/proto/grpc/lb/v0/load_balancer.pb.c',
         'src/core/surface/alarm.c',
         'src/core/surface/api_trace.c',
         'src/core/surface/byte_buffer.c',
@@ -708,6 +710,9 @@
         'src/core/census/operation.c',
         'src/core/census/placeholders.c',
         'src/core/census/tracing.c',
+        'third_party/nanopb/pb_common.c',
+        'third_party/nanopb/pb_decode.c',
+        'third_party/nanopb/pb_encode.c',
       ],
       "conditions": [
         ['OS == "mac"', {
