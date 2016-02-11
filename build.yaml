@@ -1908,6 +1908,8 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+  - gpr_test_util
+  - gpr
 - name: async_end2end_test
   build: test
   language: c++
