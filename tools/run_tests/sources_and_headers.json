@@ -1170,6 +1170,20 @@
     ], 
     "headers": [], 
     "language": "c++", 
+    "name": "alarm_cpp_test", 
+    "src": [
+      "test/cpp/common/alarm_cpp_test.cc"
+    ]
+  }, 
+  {
+    "deps": [
+      "grpc", 
+      "grpc++", 
+      "grpc++_test_util", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c++", 
     "name": "async_end2end_test", 
     "src": [
       "test/cpp/end2end/async_end2end_test.cc"
@@ -3884,6 +3898,7 @@
       "src/cpp/client/secure_credentials.cc", 
       "src/cpp/client/secure_credentials.h", 
       "src/cpp/codegen/grpc_library.cc", 
+      "src/cpp/common/alarm.cc", 
       "src/cpp/common/auth_property_iterator.cc", 
       "src/cpp/common/call.cc", 
       "src/cpp/common/channel_arguments.cc", 
@@ -4133,6 +4148,7 @@
       "src/cpp/client/generic_stub.cc", 
       "src/cpp/client/insecure_credentials.cc", 
       "src/cpp/codegen/grpc_library.cc", 
+      "src/cpp/common/alarm.cc", 
       "src/cpp/common/call.cc", 
       "src/cpp/common/channel_arguments.cc", 
       "src/cpp/common/completion_queue.cc", 
