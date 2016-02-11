@@ -14,3 +14,6 @@
 [submodule "third_party/boringssl"]
 	path = third_party/boringssl
 	url = https://boringssl.googlesource.com/boringssl
+[submodule "third_party/nanopb"]
+	path = third_party/nanopb
+	url = https://github.com/nanopb/nanopb.git
