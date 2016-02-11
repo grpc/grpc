@@ -1,17 +1,17 @@
 Load Balancing in gRPC
 =======================
 
-## Objective
+# Objective
 
 To design a load balancing API between a gRPC client and a Load Balancer to
 instruct the client how to send load to multiple backend servers. 
 
-## Background
+# Background
 
 Prior to any gRPC specifics, we explore some usual ways to approach load
 balancing.
 
-## Proxy Model
+### Proxy Model
 
 Using a proxy provides a solid trustable client that can report load to the load
 balancing system. Proxies typically require more resources to operate since they
@@ -21,7 +21,7 @@ latency to the RPCs.
 The proxy model was deemed inefficient when considering request heavy services
 like storage. 
 
-## Balancing-aware Client
+### Balancing-aware Client
 
 This thicker client places more of the load balancing logic in the client. For
 example, the client could contain many load balancing policies (Round Robin,
@@ -40,7 +40,7 @@ It would also significantly complicate the API: the new design hides the load
 balancing complexity of multiple layers and presents it as a simple list of
 servers to the client.
 
-## External Load Balancing Service
+### External Load Balancing Service
 
 The client load balancing code is kept simple and portable, implementing
 straightforward algorithms (ie, Pick First, Round Robin) for server selection.
@@ -52,7 +52,7 @@ unavailability or health issues. The load balancer will make any necessary
 complex decisions and inform the client. The load balancer may communicate with
 the backend servers to collect load and health information.
 
-## Proposed Architecture
+# Proposed Architecture
 
 The gRPC load balancing approach follows the third approach, by having an
 external load balancer which provides simple clients with a list of servers.
