@@ -472,6 +472,17 @@ class CallOpClientRecvStatus {
   size_t status_details_capacity_;
 };
 
+/// An abstract collection of CallOpSet's, to be used whenever
+/// CallOpSet objects must be thought of as a group. Each member
+/// of the group should have a shared_ptr back to the collection,
+/// as will the object that instantiates the collection, allowing
+/// for automatic ref-counting. In practice, any actual use should
+/// derive from this base class. This is specifically necessary if
+/// some of the CallOpSet's in the collection are "Sneaky" and don't
+/// report back to the C++ layer CQ operations
+class CallOpSetCollectionInterface
+    : public std::enable_shared_from_this<CallOpSetCollectionInterface> {};
+
 /// An abstract collection of call ops, used to generate the
 /// grpc_call_op structure to pass down to the lower layers,
 /// and as it is-a CompletionQueueTag, also massages the final
@@ -488,8 +499,14 @@ class CallOpSetInterface : public CompletionQueueTag {
     max_message_size_ = max_message_size;
   }
 
+  /// Mark this as belonging to a collection if needed
+  void SetCollection(std::shared_ptr<CallOpSetCollectionInterface> collection) {
+    collection_ = collection;
+  }
+
  protected:
   int max_message_size_;
+  std::shared_ptr<CallOpSetCollectionInterface> collection_;
 };
 
 /// Primary implementaiton of CallOpSetInterface.
@@ -527,6 +544,7 @@ class CallOpSet : public CallOpSetInterface,
     this->Op5::FinishOp(status, max_message_size_);
     this->Op6::FinishOp(status, max_message_size_);
     *tag = return_tag_;
+    collection_.reset();  // drop the ref at this point
     return true;
   }
 

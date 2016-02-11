@@ -1,6 +1,6 @@
 #region Copyright notice and license
 
-// Copyright 2015, Google Inc.
+// Copyright 2015-2016, Google Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -111,7 +111,7 @@ namespace Grpc.Core.Profiling
 
         public void Dump(string filepath)
         {
-            using (var stream = new StreamWriter(filepath))
+            using (var stream = File.CreateText(filepath))
             {
                 Dump(stream);
             }

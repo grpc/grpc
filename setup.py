@@ -54,6 +54,7 @@ sys.path.insert(0, os.path.abspath(PYTHON_STEM))
 # Break import-style to ensure we can actually find our in-repo dependencies.
 import commands
 import grpc_core_dependencies
+import grpc_version
 
 LICENSE = '3-clause BSD'
 
@@ -167,7 +168,7 @@ COMMAND_CLASS = {
 }
 
 # Ensure that package data is copied over before any commands have been run:
-credentials_dir = os.path.join(PYTHON_STEM, 'grpc/_adapter/credentials')
+credentials_dir = os.path.join(PYTHON_STEM, 'grpc/_cython/_credentials')
 try:
   os.mkdir(credentials_dir)
 except OSError:
@@ -201,10 +202,8 @@ TEST_LOADER = 'tests:Loader'
 TEST_RUNNER = 'tests:Runner'
 
 PACKAGE_DATA = {
-    'grpc._adapter': [
-        'credentials/roots.pem'
-    ],
     'grpc._cython': [
+        '_credentials/roots.pem',
         '_windows/grpc_c.32.python',
         '_windows/grpc_c.64.python',
     ],
@@ -218,7 +217,7 @@ else:
 
 setuptools.setup(
     name='grpcio',
-    version='0.12.0b9',
+    version=grpc_version.VERSION,
     license=LICENSE,
     ext_modules=CYTHON_EXTENSION_MODULES,
     packages=list(PACKAGES),
