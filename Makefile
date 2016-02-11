@@ -940,6 +940,7 @@ grpc_csharp_plugin: $(BINDIR)/$(CONFIG)/grpc_csharp_plugin
 grpc_objective_c_plugin: $(BINDIR)/$(CONFIG)/grpc_objective_c_plugin
 grpc_python_plugin: $(BINDIR)/$(CONFIG)/grpc_python_plugin
 grpc_ruby_plugin: $(BINDIR)/$(CONFIG)/grpc_ruby_plugin
+grpclb_api_test: $(BINDIR)/$(CONFIG)/grpclb_api_test
 hybrid_end2end_test: $(BINDIR)/$(CONFIG)/hybrid_end2end_test
 interop_client: $(BINDIR)/$(CONFIG)/interop_client
 interop_server: $(BINDIR)/$(CONFIG)/interop_server
@@ -1283,6 +1284,7 @@ buildtests_cxx: buildtests_zookeeper privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/generic_async_streaming_ping_pong_test \
   $(BINDIR)/$(CONFIG)/generic_end2end_test \
   $(BINDIR)/$(CONFIG)/grpc_cli \
+  $(BINDIR)/$(CONFIG)/grpclb_api_test \
   $(BINDIR)/$(CONFIG)/hybrid_end2end_test \
   $(BINDIR)/$(CONFIG)/interop_client \
   $(BINDIR)/$(CONFIG)/interop_server \
@@ -1591,6 +1593,8 @@ test_cxx: test_zookeeper buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/generic_async_streaming_ping_pong_test || ( echo test generic_async_streaming_ping_pong_test failed ; exit 1 )
 	$(E) "[RUN]     Testing generic_end2end_test"
 	$(Q) $(BINDIR)/$(CONFIG)/generic_end2end_test || ( echo test generic_end2end_test failed ; exit 1 )
+	$(E) "[RUN]     Testing grpclb_api_test"
+	$(Q) $(BINDIR)/$(CONFIG)/grpclb_api_test || ( echo test grpclb_api_test failed ; exit 1 )
 	$(E) "[RUN]     Testing hybrid_end2end_test"
 	$(Q) $(BINDIR)/$(CONFIG)/hybrid_end2end_test || ( echo test hybrid_end2end_test failed ; exit 1 )
 	$(E) "[RUN]     Testing interop_test"
@@ -1739,6 +1743,21 @@ $(LIBDIR)/$(CONFIG)/pkgconfig/grpc++_unsecure.pc:
 	$(E) "[MAKE]    Generating $@"
 	$(Q) mkdir -p $(@D)
 	$(Q) echo "$(GRPCXX_UNSECURE_PC_FILE)" | tr , '\n' >$@
+
+ifeq ($(NO_PROTOC),true)
+$(GENDIR)/src/proto/grpc/lb/v0/load_balancer.pb.cc: protoc_dep_error
+$(GENDIR)/src/proto/grpc/lb/v0/load_balancer.grpc.pb.cc: protoc_dep_error
+else
+$(GENDIR)/src/proto/grpc/lb/v0/load_balancer.pb.cc: src/proto/grpc/lb/v0/load_balancer.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) 
+	$(E) "[PROTOC]  Generating protobuf CC file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) --cpp_out=$(GENDIR) $<
+
+$(GENDIR)/src/proto/grpc/lb/v0/load_balancer.grpc.pb.cc: src/proto/grpc/lb/v0/load_balancer.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) 
+	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(BINDIR)/$(CONFIG)/grpc_cpp_plugin $<
+endif
 
 ifeq ($(NO_PROTOC),true)
 $(GENDIR)/src/proto/grpc/testing/control.pb.cc: protoc_dep_error
@@ -2348,6 +2367,7 @@ LIBGRPC_SRC = \
     src/core/client_config/connector.c \
     src/core/client_config/default_initial_connect_string.c \
     src/core/client_config/initial_connect_string.c \
+    src/core/client_config/lb_policies/load_balancer_api.c \
     src/core/client_config/lb_policies/pick_first.c \
     src/core/client_config/lb_policies/round_robin.c \
     src/core/client_config/lb_policy.c \
@@ -2411,6 +2431,7 @@ LIBGRPC_SRC = \
     src/core/json/json_reader.c \
     src/core/json/json_string.c \
     src/core/json/json_writer.c \
+    src/core/proto/grpc/lb/v0/load_balancer.pb.c \
     src/core/surface/alarm.c \
     src/core/surface/api_trace.c \
     src/core/surface/byte_buffer.c \
@@ -2465,6 +2486,9 @@ LIBGRPC_SRC = \
     src/core/census/operation.c \
     src/core/census/placeholders.c \
     src/core/census/tracing.c \
+    third_party/nanopb/pb_common.c \
+    third_party/nanopb/pb_decode.c \
+    third_party/nanopb/pb_encode.c \
 
 PUBLIC_HEADERS_C += \
     include/grpc/grpc_security.h \
@@ -2632,6 +2656,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/client_config/connector.c \
     src/core/client_config/default_initial_connect_string.c \
     src/core/client_config/initial_connect_string.c \
+    src/core/client_config/lb_policies/load_balancer_api.c \
     src/core/client_config/lb_policies/pick_first.c \
     src/core/client_config/lb_policies/round_robin.c \
     src/core/client_config/lb_policy.c \
@@ -2695,6 +2720,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/json/json_reader.c \
     src/core/json/json_string.c \
     src/core/json/json_writer.c \
+    src/core/proto/grpc/lb/v0/load_balancer.pb.c \
     src/core/surface/alarm.c \
     src/core/surface/api_trace.c \
     src/core/surface/byte_buffer.c \
@@ -2749,6 +2775,9 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/census/operation.c \
     src/core/census/placeholders.c \
     src/core/census/tracing.c \
+    third_party/nanopb/pb_common.c \
+    third_party/nanopb/pb_decode.c \
+    third_party/nanopb/pb_encode.c \
 
 PUBLIC_HEADERS_C += \
     include/grpc/byte_buffer.h \
@@ -9668,6 +9697,53 @@ deps_grpc_ruby_plugin: $(GRPC_RUBY_PLUGIN_OBJS:.o=.dep)
 ifneq ($(NO_DEPS),true)
 -include $(GRPC_RUBY_PLUGIN_OBJS:.o=.dep)
 endif
+
+
+GRPCLB_API_TEST_SRC = \
+    $(GENDIR)/src/proto/grpc/lb/v0/load_balancer.pb.cc $(GENDIR)/src/proto/grpc/lb/v0/load_balancer.grpc.pb.cc \
+    test/cpp/grpclb/grpclb_api_test.cc \
+
+GRPCLB_API_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GRPCLB_API_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/grpclb_api_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/grpclb_api_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/grpclb_api_test: $(PROTOBUF_DEP) $(GRPCLB_API_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(GRPCLB_API_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/grpclb_api_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/src/proto/grpc/lb/v0/load_balancer.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a
+
+$(OBJDIR)/$(CONFIG)/test/cpp/grpclb/grpclb_api_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a
+
+deps_grpclb_api_test: $(GRPCLB_API_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(GRPCLB_API_TEST_OBJS:.o=.dep)
+endif
+endif
+$(OBJDIR)/$(CONFIG)/test/cpp/grpclb/grpclb_api_test.o: $(GENDIR)/src/proto/grpc/lb/v0/load_balancer.pb.cc $(GENDIR)/src/proto/grpc/lb/v0/load_balancer.grpc.pb.cc
 
 
 HYBRID_END2END_TEST_SRC = \

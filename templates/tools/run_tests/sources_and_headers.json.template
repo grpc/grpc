@@ -12,20 +12,27 @@
   			out.extend(fmt % name for fmt in ['%s.grpc.pb.h', '%s.pb.h'])
   	return out
   
-  def no_protos(src):
+  def no_protos_filter(src):
+  	return os.path.splitext(src)[1] != '.proto'
+
+  def no_third_party_filter(src):
+  	return not src.startswith('third_party/')
+  
+  def filter_srcs(srcs, filters):
   	out = []
-  	for f in src:
-  		if os.path.splitext(f)[1] != '.proto':
-  			out.append(f)
+  	for s in srcs:
+  		filter_passes = (f(s) for f in filters)
+  		if all(filter_passes):
+  			out.append(s)
   	return out
   %>
   
   ${json.dumps([{"name": tgt.name,
                  "language": tgt.language,
                  "src": sorted(
-                     no_protos(tgt.src) + 
-                     tgt.get('public_headers', []) + 
-                     tgt.get('headers', [])),
+                     filter_srcs(tgt.src, (no_protos_filter, no_third_party_filter)) + 
+                     filter_srcs(tgt.get('public_headers', []), (no_protos_filter, no_third_party_filter)) + 
+                     filter_srcs(tgt.get('headers', []), (no_third_party_filter,))),
                  "headers": sorted(
                      tgt.get('public_headers', []) + 
                      tgt.get('headers', []) + 
