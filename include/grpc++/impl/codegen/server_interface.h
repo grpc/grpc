@@ -42,7 +42,6 @@
 namespace grpc {
 
 class AsyncGenericService;
-class AsynchronousService;
 class GenericServerContext;
 class RpcService;
 class ServerAsyncStreamingInterface;
@@ -79,7 +78,6 @@ class ServerInterface : public CallHook {
   virtual void Wait() = 0;
 
  protected:
-  friend class AsynchronousService;
   friend class Service;
 
   /// Register a service. This call does not take ownership of the service.
