@@ -41,6 +41,7 @@
 #include <grpc++/support/byte_buffer.h>
 #include <grpc++/support/slice.h>
 #include <grpc/support/log.h>
+#include <grpc/support/time.h>
 
 #include "src/proto/grpc/testing/payloads.grpc.pb.h"
 #include "src/proto/grpc/testing/services.grpc.pb.h"
@@ -52,26 +53,7 @@
 #include "test/cpp/util/create_test_channel.h"
 
 namespace grpc {
-
-#if defined(__APPLE__)
-// Specialize Timepoint for high res clock as we need that
-template <>
-class TimePoint<std::chrono::high_resolution_clock::time_point> {
- public:
-  TimePoint(const std::chrono::high_resolution_clock::time_point& time) {
-    TimepointHR2Timespec(time, &time_);
-  }
-  gpr_timespec raw_time() const { return time_; }
-
- private:
-  gpr_timespec time_;
-};
-#endif
-
 namespace testing {
-
-typedef std::chrono::high_resolution_clock grpc_time_source;
-typedef std::chrono::time_point<grpc_time_source> grpc_time;
 
 template <class RequestType>
 class ClientRequestCreator {
@@ -218,26 +200,20 @@ class Client {
       closed_loop_ = false;
       // set up interarrival timer according to random dist
       interarrival_timer_.init(*random_dist, num_threads);
-      auto now = grpc_time_source::now();
+      auto now = gpr_now(GPR_CLOCK_MONOTONIC);
       for (size_t i = 0; i < num_threads; i++) {
         next_time_.push_back(
-            now +
-            std::chrono::duration_cast<grpc_time_source::duration>(
-                interarrival_timer_.next(i)));
+            gpr_time_add(now, gpr_time_from_nanos(interarrival_timer_.next(i), GPR_TIMESPAN)));
       }
     }
   }
 
-  bool NextIssueTime(int thread_idx, grpc_time* time_delay) {
-    if (closed_loop_) {
-      return false;
-    } else {
-      *time_delay = next_time_[thread_idx];
-      next_time_[thread_idx] +=
-          std::chrono::duration_cast<grpc_time_source::duration>(
-              interarrival_timer_.next(thread_idx));
-      return true;
-    }
+  gpr_timespec NextIssueTime(int thread_idx) {
+    gpr_timespec result = next_time_[thread_idx];
+    next_time_[thread_idx] =
+        gpr_time_add(next_time_[thread_idx],
+                     gpr_time_from_nanos(interarrival_timer_.next(thread_idx), GPR_TIMESPAN));
+    return result;
   }
 
  private:
@@ -315,7 +291,7 @@ class Client {
   std::unique_ptr<Timer> timer_;
 
   InterarrivalTimer interarrival_timer_;
-  std::vector<grpc_time> next_time_;
+  std::vector<gpr_timespec> next_time_;
 };
 
 template <class StubType, class RequestType>

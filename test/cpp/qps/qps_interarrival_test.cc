@@ -49,7 +49,7 @@ static void RunTest(RandomDistInterface &&r, int threads, std::string title) {
 
   for (int i = 0; i < 10000000; i++) {
     for (int j = 0; j < threads; j++) {
-      gpr_histogram_add(h, timer.next(j).count());
+      gpr_histogram_add(h, timer.next(j));
     }
   }
 

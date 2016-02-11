@@ -151,9 +151,8 @@ class InterarrivalTimer {
       // and that supports new and old compilers
       const double uniform_0_1 = static_cast<double>(rand())
           / static_cast<double>(RAND_MAX);
-      random_table_.push_back(
-          std::chrono::nanoseconds(static_cast<int64_t>(
-              1e9 * r.transform(uniform_0_1))));
+      random_table_.push_back(static_cast<int64_t>(
+          1e9 * r.transform(uniform_0_1)));
     }
     // Now set up the thread positions
     for (int i = 0; i < threads; i++) {
@@ -162,7 +161,7 @@ class InterarrivalTimer {
   }
   virtual ~InterarrivalTimer(){};
 
-  std::chrono::nanoseconds next(int thread_num) {
+  int64_t next(int thread_num) {
     auto ret = *(thread_posns_[thread_num]++);
     if (thread_posns_[thread_num] == random_table_.end())
       thread_posns_[thread_num] = random_table_.begin();
@@ -170,7 +169,7 @@ class InterarrivalTimer {
   }
 
  private:
-  typedef std::vector<std::chrono::nanoseconds> time_table;
+  typedef std::vector<int64_t> time_table;
   std::vector<time_table::const_iterator> thread_posns_;
   time_table random_table_;
 };
