@@ -2969,6 +2969,7 @@ LIBGRPC++_SRC = \
     src/cpp/codegen/grpc_library.cc \
 
 PUBLIC_HEADERS_CXX += \
+    include/grpc++/alarm.h \
     include/grpc++/channel.h \
     include/grpc++/client_context.h \
     include/grpc++/completion_queue.h \
@@ -3248,6 +3249,7 @@ LIBGRPC++_UNSECURE_SRC = \
     src/cpp/codegen/grpc_library.cc \
 
 PUBLIC_HEADERS_CXX += \
+    include/grpc++/alarm.h \
     include/grpc++/channel.h \
     include/grpc++/client_context.h \
     include/grpc++/completion_queue.h \

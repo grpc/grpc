@@ -3729,6 +3729,7 @@
       "grpc"
     ], 
     "headers": [
+      "include/grpc++/alarm.h", 
       "include/grpc++/channel.h", 
       "include/grpc++/client_context.h", 
       "include/grpc++/completion_queue.h", 
@@ -3814,6 +3815,7 @@
     "language": "c++", 
     "name": "grpc++", 
     "src": [
+      "include/grpc++/alarm.h", 
       "include/grpc++/channel.h", 
       "include/grpc++/client_context.h", 
       "include/grpc++/completion_queue.h", 
@@ -3984,6 +3986,7 @@
       "grpc_unsecure"
     ], 
     "headers": [
+      "include/grpc++/alarm.h", 
       "include/grpc++/channel.h", 
       "include/grpc++/client_context.h", 
       "include/grpc++/completion_queue.h", 
@@ -4066,6 +4069,7 @@
     "language": "c++", 
     "name": "grpc++_unsecure", 
     "src": [
+      "include/grpc++/alarm.h", 
       "include/grpc++/channel.h", 
       "include/grpc++/client_context.h", 
       "include/grpc++/completion_queue.h", 

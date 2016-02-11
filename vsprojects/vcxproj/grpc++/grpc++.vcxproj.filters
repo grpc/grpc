@@ -105,6 +105,9 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\alarm.h">
+      <Filter>include\grpc++</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\channel.h">
       <Filter>include\grpc++</Filter>
     </ClInclude>
