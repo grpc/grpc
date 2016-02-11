@@ -40,6 +40,7 @@ include "grpc/_cython/_cygrpc/channel.pyx.pxi"
 include "grpc/_cython/_cygrpc/credentials.pyx.pxi"
 include "grpc/_cython/_cygrpc/completion_queue.pyx.pxi"
 include "grpc/_cython/_cygrpc/records.pyx.pxi"
+include "grpc/_cython/_cygrpc/security.pyx.pxi"
 include "grpc/_cython/_cygrpc/server.pyx.pxi"
 
 #
@@ -58,6 +59,8 @@ cdef class _ModuleState:
         raise ImportError('failed to load core gRPC library')
     grpc_init()
     self.is_loaded = True
+    grpc_set_ssl_roots_override_callback(
+        <grpc_ssl_roots_override_callback>ssl_roots_override_callback)
 
   def __dealloc__(self):
     if self.is_loaded:

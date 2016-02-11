@@ -39,7 +39,6 @@ cp -r /var/local/jenkins/service_account $HOME || true
 
 cd /var/local/git/grpc
 
-make install-certs
 make
 
 # build Python interop client and server
