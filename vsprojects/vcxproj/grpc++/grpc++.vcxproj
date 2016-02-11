@@ -258,6 +258,7 @@
   </ItemDefinitionGroup>
 
   <ItemGroup>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\alarm.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\channel.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\client_context.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\completion_queue.h" />
