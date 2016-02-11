@@ -217,6 +217,10 @@ class Client {
                                          GPR_TIMESPAN));
     return result;
   }
+  std::function<gpr_timespec()> NextIssuer(int thread_idx) {
+    return closed_loop_ ? std::function<gpr_timespec()>()
+                        : std::bind(&Client::NextIssueTime, this, thread_idx);
+  }
 
  private:
   class Thread {
