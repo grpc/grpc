@@ -33,9 +33,9 @@
 
 #include <grpc++/alarm.h>
 #include <grpc++/completion_queue.h>
+#include <grpc++/impl/codegen/completion_queue_tag.h>
 #include <gtest/gtest.h>
 
-#include <grpc++/completion_queue.h>
 #include "test/core/util/test_config.h"
 
 namespace grpc {
@@ -45,7 +45,7 @@ class TestTag : public CompletionQueueTag {
  public:
   TestTag() : tag_(0) {}
   TestTag(intptr_t tag) : tag_(tag) {}
-  bool FinalizeResult(void** tag, bool* status) { return true; }
+  bool FinalizeResult(void** tag, bool* status) GRPC_OVERRIDE { return true; }
   intptr_t tag() { return tag_; }
 
  private:
