@@ -29,4 +29,4 @@
 
 FROM mono:4.2.2.30
 
-RUN apt-get update && apt-get install -y git unzip
+RUN apt-get update && apt-get install -y unzip

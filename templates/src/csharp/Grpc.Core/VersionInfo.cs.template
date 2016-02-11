@@ -41,8 +41,13 @@
       public static class VersionInfo
       {
           /// <summary>
+          /// Current version of gRPC C# assemblies
+          /// </summary>
+          public const string CurrentAssemblyVersion = "${settings.version.major}.${settings.version.minor}.${settings.version.patch}.0";
+
+          /// <summary>
           /// Current version of gRPC C#
           /// </summary>
-          public const string CurrentVersion = "${settings.version.major}.${settings.version.minor}.${settings.version.micro}";
+          public const string CurrentVersion = "${settings.csharp_version}";
       }
   }

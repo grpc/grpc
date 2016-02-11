@@ -229,7 +229,7 @@ static VALUE grpc_rb_channel_watch_connectivity_state(VALUE self,
   }
   grpc_channel_watch_connectivity_state(
       ch,
-      NUM2LONG(last_state),
+      (grpc_connectivity_state)NUM2LONG(last_state),
       grpc_rb_time_timeval(deadline, /* absolute time */ 0),
       cq,
       ROBJECT(tag));

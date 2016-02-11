@@ -655,22 +655,22 @@ extern gpr_time_add_type gpr_time_add_import;
 typedef gpr_timespec(*gpr_time_sub_type)(gpr_timespec a, gpr_timespec b);
 extern gpr_time_sub_type gpr_time_sub_import;
 #define gpr_time_sub gpr_time_sub_import
-typedef gpr_timespec(*gpr_time_from_micros_type)(long x, gpr_clock_type clock_type);
+typedef gpr_timespec(*gpr_time_from_micros_type)(int64_t x, gpr_clock_type clock_type);
 extern gpr_time_from_micros_type gpr_time_from_micros_import;
 #define gpr_time_from_micros gpr_time_from_micros_import
-typedef gpr_timespec(*gpr_time_from_nanos_type)(long x, gpr_clock_type clock_type);
+typedef gpr_timespec(*gpr_time_from_nanos_type)(int64_t x, gpr_clock_type clock_type);
 extern gpr_time_from_nanos_type gpr_time_from_nanos_import;
 #define gpr_time_from_nanos gpr_time_from_nanos_import
-typedef gpr_timespec(*gpr_time_from_millis_type)(long x, gpr_clock_type clock_type);
+typedef gpr_timespec(*gpr_time_from_millis_type)(int64_t x, gpr_clock_type clock_type);
 extern gpr_time_from_millis_type gpr_time_from_millis_import;
 #define gpr_time_from_millis gpr_time_from_millis_import
-typedef gpr_timespec(*gpr_time_from_seconds_type)(long x, gpr_clock_type clock_type);
+typedef gpr_timespec(*gpr_time_from_seconds_type)(int64_t x, gpr_clock_type clock_type);
 extern gpr_time_from_seconds_type gpr_time_from_seconds_import;
 #define gpr_time_from_seconds gpr_time_from_seconds_import
-typedef gpr_timespec(*gpr_time_from_minutes_type)(long x, gpr_clock_type clock_type);
+typedef gpr_timespec(*gpr_time_from_minutes_type)(int64_t x, gpr_clock_type clock_type);
 extern gpr_time_from_minutes_type gpr_time_from_minutes_import;
 #define gpr_time_from_minutes gpr_time_from_minutes_import
-typedef gpr_timespec(*gpr_time_from_hours_type)(long x, gpr_clock_type clock_type);
+typedef gpr_timespec(*gpr_time_from_hours_type)(int64_t x, gpr_clock_type clock_type);
 extern gpr_time_from_hours_type gpr_time_from_hours_import;
 #define gpr_time_from_hours gpr_time_from_hours_import
 typedef int32_t(*gpr_time_to_millis_type)(gpr_timespec timespec);

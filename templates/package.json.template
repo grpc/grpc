@@ -2,7 +2,7 @@
 --- |
   {
     "name": "grpc",
-    "version": "0.12.0",
+    "version": "${settings.node_version}",
     "author": "Google Inc.",
     "description": "gRPC Library for Node",
     "homepage": "http://www.grpc.io/",

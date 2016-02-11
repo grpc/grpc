@@ -29,6 +29,9 @@
 
 FROM 32bit/debian:jessie
 
-RUN apt-get update
-RUN apt-get install -y git python python-pip
+RUN apt-get update && apt-get install -y python python-pip
 
+# docker is running on a 64-bit machine, so we need to
+# override "uname -m" to report i686 instead of x86_64, otherwise
+# python will choose a wrong binary package to install.
+ENTRYPOINT ["linux32"]
