@@ -72,6 +72,7 @@ RUN pip install simplejson mako
 # Docker "inception"
 # Note this is quite the ugly hack.
 # This makes sure that the docker binary we inject has its dependencies.
+RUN apt-get install libsystemd-journal0
 RUN curl https://get.docker.com/ | sh
 RUN apt-get remove --purge -y docker-engine
 
