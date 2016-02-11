@@ -44,7 +44,7 @@ GRPC_PYTHON_BUILD_WITH_CYTHON=1 \
 ${SETARCH_CMD} python setup.py  \
     bdist_wheel                 \
     sdist                       \
-    bdist_egg_grpc_custom
+    bdist_wheel_grpc_custom
 
 mkdir -p artifacts
 
