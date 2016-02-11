@@ -118,6 +118,8 @@ static int cmp_arg(const grpc_arg *a, const grpc_arg *b) {
   GPR_UNREACHABLE_CODE(return 0);
 }
 
+/* stabilizing comparison function: since channel_args ordering matters for
+ * keys with the same name, we need to preserve that ordering */
 static int cmp_key_stable(const void *ap, const void *bp) {
   const grpc_arg *const *a = ap;
   const grpc_arg *const *b = bp;
