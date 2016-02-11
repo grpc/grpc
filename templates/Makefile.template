@@ -551,26 +551,20 @@
 
   # grpc .pc file
   PC_NAME = gRPC
-  PC_DESCRIPTION = High performance general RPC framework
-  PC_CFLAGS = -pthread
-  PC_REQUIRES_PRIVATE = $(PC_REQUIRES_GRPC) $(PC_REQUIRES_SECURE) -lpthread
+  PC_DESCRIPTION = high performance general RPC framework
+  PC_CFLAGS =
+  PC_REQUIRES_PRIVATE = $(PC_REQUIRES_GRPC) $(PC_REQUIRES_SECURE)
   PC_LIBS_PRIVATE = $(PC_LIBS_GRPC) $(PC_LIBS_SECURE)
   PC_LIB = -lgrpc
-  ifneq ($(SYSTEM),Darwin)
-  PC_LIBS_PRIVATE += -lrt
-  endif
   GRPC_PC_FILE := $(PC_TEMPLATE)
 
-  # gprc_unsecure .pc file
+  # grpc_unsecure .pc file
   PC_NAME = gRPC unsecure
-  PC_DESCRIPTION = High performance general RPC framework without SSL
-  PC_CFLAGS = -pthread
-  PC_REQUIRES_PRIVATE = $(PC_REQUIRES_GRPC) -lpthread
+  PC_DESCRIPTION = high performance general RPC framework without SSL
+  PC_CFLAGS =
+  PC_REQUIRES_PRIVATE = $(PC_REQUIRES_GRPC)
   PC_LIBS_PRIVATE = $(PC_LIBS_GRPC)
   PC_LIB = -lgrpc
-  ifneq ($(SYSTEM),Darwin)
-  PC_LIBS_PRIVATE += -lrt
-  endif
   GRPC_UNSECURE_PC_FILE := $(PC_TEMPLATE)
 
   # grpc_zookeeper .pc file
@@ -1484,6 +1478,7 @@
   % endif
    $(LIB${lib.name.upper()}_OBJS) \
   % if lib.get('baselib', False):
+   $(LIBGPR_OBJS) \
    $(ZLIB_MERGE_OBJS) \
   % if lib.get('secure', 'check') == True:
    $(OPENSSL_MERGE_OBJS) \
@@ -1495,6 +1490,7 @@
   	$(Q) rm -f $(LIBDIR)/$(CONFIG)/lib${lib.name}.a
   	$(Q) $(AR) $(LIBDIR)/$(CONFIG)/lib${lib.name}.a $(LIB${lib.name.upper()}_OBJS) \
   % if lib.get('baselib', False):
+   $(LIBGPR_OBJS) \
    $(ZLIB_MERGE_OBJS) \
   % if lib.get('secure', 'check') == True:
    $(OPENSSL_MERGE_OBJS) \
