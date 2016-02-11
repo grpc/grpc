@@ -1,7 +1,7 @@
 FROM ubuntu:14.04
 
 RUN apt-get -y update && \
-    apt-get install -y curl git-core mingw-w64 xz-utils build-essential wget unzip
+    apt-get install -y curl git-core mingw-w64 xz-utils build-essential gcc-multilib wget unzip
 
 RUN mkdir -p /opt/mingw && \
     curl -SL http://downloads.sourceforge.net/mingw-w64/i686-w64-mingw32-gcc-4.7.2-release-linux64_rubenvb.tar.xz | \
@@ -27,46 +27,75 @@ RUN gpg --keyserver hkp://keys.gnupg.net --recv-keys D39DC0E3 && \
 
 # Regenerate the following using build.sh if the build folder changes.
 RUN echo \
-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\
+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\
+si7rsi7r8qcs/w8AInVFAFAAAA==\
 | base64 -d | tar xzC /tmp
 
 # Import patch files for ruby and gems
@@ -86,7 +115,7 @@ RUN bash -c " \
 # do not generate documentation for gems
 RUN echo "gem: --no-ri --no-rdoc" >> ~/.gemrc && \
     bash -c " \
-        rvm all do gem install bundler rake-compiler hoe mini_portile rubygems-tasks json && \
+        rvm all do gem install bundler rake-compiler hoe mini_portile rubygems-tasks && \
         rvm 2.3.0 do gem install mini_portile2 && \
         find /usr/local/rvm -type d -print0 | sudo xargs -0 chmod g+sw "
 
@@ -96,19 +125,32 @@ RUN sudo mkdir -p /usr/local/rake-compiler && \
     ln -s /usr/local/rake-compiler ~/.rake-compiler
 
 # Patch rake-compiler to avoid build of ruby extensions
-RUN cd /usr/local/rvm/gems/ruby-2.3.0/gems/rake-compiler-0.9.5 && patch -p1 < /home/rvm/patches/rake-compiler-0.9.5/without-exts.diff ; \
+RUN cd /usr/local/rvm/gems/ruby-2.3.0/gems/rake-compiler-0.9.5 && git apply /home/rvm/patches/rake-compiler-0.9.5/*.diff ; \
     true
 
 RUN bash -c "rvm use 2.3.0 --default && \
     export MAKE=\"make -j`nproc`\" CFLAGS='-s -O1 -fno-omit-frame-pointer -fno-fast-math' && \
     rake-compiler cross-ruby VERSION=2.3.0 HOST=i686-w64-mingw32 && \
     rake-compiler cross-ruby VERSION=2.3.0 HOST=x86_64-w64-mingw32 && \
+    rake-compiler cross-ruby VERSION=2.3.0 HOST=x86_64-linux-gnu && \
     rake-compiler cross-ruby VERSION=2.2.2 HOST=i686-w64-mingw32 && \
     rake-compiler cross-ruby VERSION=2.2.2 HOST=x86_64-w64-mingw32 && \
-    rake-compiler cross-ruby VERSION=2.1.6 HOST=i686-w64-mingw32 && \
-    rake-compiler cross-ruby VERSION=2.1.6 HOST=x86_64-w64-mingw32 && \
+    rake-compiler cross-ruby VERSION=2.2.2 HOST=x86_64-linux-gnu && \
+    rake-compiler cross-ruby VERSION=2.1.5 HOST=i686-w64-mingw32 && \
+    rake-compiler cross-ruby VERSION=2.1.5 HOST=x86_64-w64-mingw32 && \
+    rake-compiler cross-ruby VERSION=2.1.5 HOST=x86_64-linux-gnu && \
     rake-compiler cross-ruby VERSION=2.0.0-p645 HOST=i686-w64-mingw32 && \
     rake-compiler cross-ruby VERSION=2.0.0-p645 HOST=x86_64-w64-mingw32 && \
+    rake-compiler cross-ruby VERSION=2.0.0-p645 HOST=x86_64-linux-gnu && \
+    rm -rf ~/.rake-compiler/tmp/builds ~/.rake-compiler/sources && \
+    find /usr/local/rvm -type d -print0 | sudo xargs -0 chmod g+sw "
+
+RUN bash -c "rvm use 2.3.0 --default && \
+    export MAKE=\"make -j`nproc`\" CFLAGS='-m32 -s -O1 -fno-omit-frame-pointer -fno-fast-math' LDFLAGS='-m32' && \
+    rake-compiler cross-ruby VERSION=2.3.0 HOST=i686-linux-gnu && \
+    rake-compiler cross-ruby VERSION=2.2.2 HOST=i686-linux-gnu && \
+    rake-compiler cross-ruby VERSION=2.1.5 HOST=i686-linux-gnu && \
+    rake-compiler cross-ruby VERSION=2.0.0-p645 HOST=i686-linux-gnu && \
     rm -rf ~/.rake-compiler/tmp/builds ~/.rake-compiler/sources && \
     find /usr/local/rvm -type d -print0 | sudo xargs -0 chmod g+sw "
 
@@ -137,9 +179,12 @@ RUN mv /opt/mingw/mingw32/bin/i686-w64-mingw32-strip /opt/mingw/mingw32/bin/i686
 RUN find / -name rbconfig.rb | while read f ; do sed -i 's/0x0501/0x0600/' $f ; done
 RUN find / -name win32.h | while read f ; do sed -i 's/gettimeofday/rb_gettimeofday/' $f ; done
 RUN sed -i 's/defined.__MINGW64__.$/1/' /usr/local/rake-compiler/ruby/i686-w64-mingw32/ruby-2.0.0-p645/include/ruby-2.0.0/ruby/win32.h
-RUN find / -name libwinpthread.dll.a | while read f ; do rm $f ; done
-RUN find / -name libwinpthread-1.dll | while read f ; do rm $f ; done
+RUN find / -name libwinpthread.dll.a | xargs rm
+RUN find / -name libwinpthread-1.dll | xargs rm
 RUN find / -name *msvcrt-ruby*.dll.a | while read f ; do n=`echo $f | sed s/.dll//` ; mv $f $n ; done
+RUN find /usr/local/rake-compiler/ruby -name libruby.so | xargs rm
+RUN find /usr/local/rake-compiler/ruby -name libruby-static.a | while read f ; do ar t $f | xargs ar d $f ; done
+RUN find /usr/local/rake-compiler/ruby -name libruby-static.a | while read f ; do mv $f `echo $f | sed s/-static//` ; done
 
 # Install SIGINT forwarder
 RUN cp /tmp/build/sigfw.c /root/
@@ -151,6 +196,6 @@ RUN cp /tmp/build/runas /usr/local/bin/
 # Install sudoers configuration
 RUN cp /tmp/build/sudoers /etc/sudoers.d/rake-compiler-dock
 
-ENV RUBY_CC_VERSION 2.3.0:2.2.2:2.1.6:2.0.0
+ENV RUBY_CC_VERSION 2.3.0:2.2.2:2.1.5:2.0.0
 
 CMD bash

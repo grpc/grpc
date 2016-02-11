@@ -1,4 +1,4 @@
-# Copyright 2015, Google Inc.
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -77,7 +77,7 @@ def render_junit_xml_report(resultset, xml_report):
 
 def render_interop_html_report(
   client_langs, server_langs, test_cases, auth_test_cases, http2_cases, 
-  resultset, num_failures, cloud_to_prod, http2_interop):
+  resultset, num_failures, cloud_to_prod, prod_servers, http2_interop):
   """Generate HTML report for interop tests."""
   template_file = 'tools/run_tests/interop_html_report.template'
   try:
@@ -94,6 +94,7 @@ def render_interop_html_report(
   sorted_http2_cases = sorted(http2_cases)
   sorted_client_langs = sorted(client_langs)
   sorted_server_langs = sorted(server_langs)
+  sorted_prod_servers = sorted(prod_servers)
 
   args = {'client_langs': sorted_client_langs, 
           'server_langs': sorted_server_langs,
@@ -103,6 +104,7 @@ def render_interop_html_report(
           'resultset': resultset,
           'num_failures': num_failures,
           'cloud_to_prod': cloud_to_prod,
+          'prod_servers': sorted_prod_servers,
           'http2_interop': http2_interop}
 
   html_report_out_dir = 'reports' 

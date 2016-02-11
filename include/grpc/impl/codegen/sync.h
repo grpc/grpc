@@ -115,7 +115,8 @@ GPR_API void gpr_cv_destroy(gpr_cv *cv);
 /* Atomically release *mu and wait on *cv.  When the calling thread is woken
    from *cv or the deadline abs_deadline is exceeded, execute gpr_mu_lock(mu)
    and return whether the deadline was exceeded.  Use
-   abs_deadline==gpr_inf_future for no deadline.  May return even when not
+   abs_deadline==gpr_inf_future for no deadline.  abs_deadline can be either
+   an absolute deadline, or a GPR_TIMESPAN.  May return even when not
    woken explicitly.  Requires:  *mu and *cv initialized; the calling thread
    holds an exclusive lock on *mu.  */
 GPR_API int gpr_cv_wait(gpr_cv *cv, gpr_mu *mu, gpr_timespec abs_deadline);

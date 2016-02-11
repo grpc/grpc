@@ -57,7 +57,7 @@ static HANDLE g_iocp;
 static DWORD deadline_to_millis_timeout(gpr_timespec deadline,
                                         gpr_timespec now) {
   gpr_timespec timeout;
-  static const int max_spin_polling_us = 10;
+  static const int64_t max_spin_polling_us = 10;
   if (gpr_time_cmp(deadline, gpr_inf_future(deadline.clock_type)) == 0) {
     return INFINITE;
   }
