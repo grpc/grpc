@@ -33,8 +33,8 @@
 
 set -ex
 
-cd `dirname $0`/../..
-git_root=`pwd`
+cd $(dirname $0)/../..
+git_root=$(pwd)
 cd -
 
 # Ensure existence of ccache directory

@@ -32,5 +32,27 @@ set -ex
 
 cd $(dirname $0)
 
-pip install "$EXTERNAL_GIT_ROOT/input_artifacts/grpcio-0.12.0b6.tar.gz"
+# Pick up the source dist archive whatever its version is
+SDIST_ARCHIVE=$EXTERNAL_GIT_ROOT/input_artifacts/grpcio-*.tar.gz
+BDIST_DIR="file://$EXTERNAL_GIT_ROOT/input_artifacts"
+
+if [ ! -f ${SDIST_ARCHIVE} ]
+then
+  echo "Archive ${SDIST_ARCHIVE} does not exist."
+  exit 1
+fi
+
+PIP=pip2
+which $PIP || PIP=pip
+PYTHON=python2
+which $PYTHON || PYTHON=python
+
+# TODO(jtattermusch): this shouldn't be required
+$PIP install --upgrade six
+
+GRPC_PYTHON_BINARIES_REPOSITORY="${BDIST_DIR}" \
+    $PIP install \
+    ${SDIST_ARCHIVE}
+
+$PYTHON distribtest.py
 
