@@ -2943,7 +2943,6 @@ LIBGRPC++_SRC = \
     src/cpp/server/async_generic_service.cc \
     src/cpp/server/create_default_thread_pool.cc \
     src/cpp/server/dynamic_thread_pool.cc \
-    src/cpp/server/fixed_size_thread_pool.cc \
     src/cpp/server/insecure_server_credentials.cc \
     src/cpp/server/server.cc \
     src/cpp/server/server_builder.cc \
@@ -3223,7 +3222,6 @@ LIBGRPC++_UNSECURE_SRC = \
     src/cpp/server/async_generic_service.cc \
     src/cpp/server/create_default_thread_pool.cc \
     src/cpp/server/dynamic_thread_pool.cc \
-    src/cpp/server/fixed_size_thread_pool.cc \
     src/cpp/server/insecure_server_credentials.cc \
     src/cpp/server/server.cc \
     src/cpp/server/server_builder.cc \
