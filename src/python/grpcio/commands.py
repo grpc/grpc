@@ -187,7 +187,17 @@ class Install(install.install, WheelNameMixin):
 class BdistWheelCustomName(bdist_wheel.bdist_wheel, WheelNameMixin):
   """Thin wrapper around the bdist command to build with our custom name."""
 
+  description = ("Create a gRPC custom-named wheel distribution. "
+                 "Cannot be run with any other distribution-related command.")
+
   def run(self):
+    # TODO(atash): if the hack we use to support Linux binaries becomes
+    # 'supported' (i.e.
+    # https://bitbucket.org/pypa/pypi/issues/120/binary-wheels-for-linux-are-not-supported
+    # is not solved and we see users beginning to use this command, ill-advised
+    # as that may be) consider making the following capable of running with
+    # other distribution-related commands. Currently it depends on the (AFAIK
+    # undocumented, private) ordering of the distribution files.
     bdist_wheel.bdist_wheel.run(self)
     output = self.distribution.dist_files[-1][2]
     target = os.path.join(self.dist_dir, '{}.whl'.format(self.wheel_name(True)))
