@@ -1,4 +1,6 @@
-# Copyright 2015-2016, Google Inc.
+#!/usr/bin/env ruby
+
+# Copyright 2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -27,8 +29,11 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-FROM ubuntu:15.04
+require 'grpc'
 
-RUN apt-get update -y && apt-get install -y ruby-full
+# This code doesn't do much but makes sure the native extension is loaded
+# which is what we are testing here.
+ch = GRPC::Core::Channel.new('localhost:1000', nil, :this_channel_is_insecure)
+ch.destroy
 
-RUN gem install bundler
+puts "Success!"
