@@ -43,7 +43,13 @@ GRPC_PYTHON_USE_CUSTOM_BDIST=0  \
 GRPC_PYTHON_BUILD_WITH_CYTHON=1 \
 ${SETARCH_CMD} python setup.py  \
     bdist_wheel                 \
-    sdist                       \
+    sdist
+
+# The bdist_wheel_grpc_custom command is finicky about command output ordering
+# and thus ought to be run in a shell command separate of others.
+GRPC_PYTHON_USE_CUSTOM_BDIST=0  \
+GRPC_PYTHON_BUILD_WITH_CYTHON=1 \
+${SETARCH_CMD} python setup.py  \
     bdist_wheel_grpc_custom
 
 mkdir -p artifacts
