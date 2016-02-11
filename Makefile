@@ -917,6 +917,7 @@ transport_security_test: $(BINDIR)/$(CONFIG)/transport_security_test
 udp_server_test: $(BINDIR)/$(CONFIG)/udp_server_test
 uri_parser_test: $(BINDIR)/$(CONFIG)/uri_parser_test
 workqueue_test: $(BINDIR)/$(CONFIG)/workqueue_test
+alarm_cpp_test: $(BINDIR)/$(CONFIG)/alarm_cpp_test
 async_end2end_test: $(BINDIR)/$(CONFIG)/async_end2end_test
 async_streaming_ping_pong_test: $(BINDIR)/$(CONFIG)/async_streaming_ping_pong_test
 async_unary_ping_pong_test: $(BINDIR)/$(CONFIG)/async_unary_ping_pong_test
@@ -1264,6 +1265,7 @@ buildtests_c: privatelibs_c \
 
 
 buildtests_cxx: buildtests_zookeeper privatelibs_cxx \
+  $(BINDIR)/$(CONFIG)/alarm_cpp_test \
   $(BINDIR)/$(CONFIG)/async_end2end_test \
   $(BINDIR)/$(CONFIG)/async_streaming_ping_pong_test \
   $(BINDIR)/$(CONFIG)/async_unary_ping_pong_test \
@@ -1557,6 +1559,8 @@ flaky_test_c: buildtests_c
 
 
 test_cxx: test_zookeeper buildtests_cxx
+	$(E) "[RUN]     Testing alarm_cpp_test"
+	$(Q) $(BINDIR)/$(CONFIG)/alarm_cpp_test || ( echo test alarm_cpp_test failed ; exit 1 )
 	$(E) "[RUN]     Testing async_end2end_test"
 	$(Q) $(BINDIR)/$(CONFIG)/async_end2end_test || ( echo test async_end2end_test failed ; exit 1 )
 	$(E) "[RUN]     Testing async_streaming_ping_pong_test"
@@ -2930,6 +2934,7 @@ LIBGRPC++_SRC = \
     src/cpp/client/credentials.cc \
     src/cpp/client/generic_stub.cc \
     src/cpp/client/insecure_credentials.cc \
+    src/cpp/common/alarm.cc \
     src/cpp/common/call.cc \
     src/cpp/common/channel_arguments.cc \
     src/cpp/common/completion_queue.cc \
@@ -2952,6 +2957,7 @@ LIBGRPC++_SRC = \
     src/cpp/codegen/grpc_library.cc \
 
 PUBLIC_HEADERS_CXX += \
+    include/grpc++/alarm.h \
     include/grpc++/channel.h \
     include/grpc++/client_context.h \
     include/grpc++/completion_queue.h \
@@ -3208,6 +3214,7 @@ LIBGRPC++_UNSECURE_SRC = \
     src/cpp/client/credentials.cc \
     src/cpp/client/generic_stub.cc \
     src/cpp/client/insecure_credentials.cc \
+    src/cpp/common/alarm.cc \
     src/cpp/common/call.cc \
     src/cpp/common/channel_arguments.cc \
     src/cpp/common/completion_queue.cc \
@@ -3230,6 +3237,7 @@ LIBGRPC++_UNSECURE_SRC = \
     src/cpp/codegen/grpc_library.cc \
 
 PUBLIC_HEADERS_CXX += \
+    include/grpc++/alarm.h \
     include/grpc++/channel.h \
     include/grpc++/client_context.h \
     include/grpc++/completion_queue.h \
@@ -8729,6 +8737,49 @@ deps_workqueue_test: $(WORKQUEUE_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(WORKQUEUE_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+ALARM_CPP_TEST_SRC = \
+    test/cpp/common/alarm_cpp_test.cc \
+
+ALARM_CPP_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(ALARM_CPP_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/alarm_cpp_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/alarm_cpp_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/alarm_cpp_test: $(PROTOBUF_DEP) $(ALARM_CPP_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(ALARM_CPP_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/alarm_cpp_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/cpp/common/alarm_cpp_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_alarm_cpp_test: $(ALARM_CPP_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(ALARM_CPP_TEST_OBJS:.o=.dep)
 endif
 endif
 
