@@ -1,6 +1,6 @@
 #region Copyright notice and license
 
-// Copyright 2015, Google Inc.
+// Copyright 2015-2016, Google Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -34,4 +34,4 @@
 using System.Reflection;
 
 // The current version of gRPC C#.
-[assembly: AssemblyVersion(Grpc.Core.VersionInfo.CurrentVersion + ".0")]
+[assembly: AssemblyVersion(Grpc.Core.VersionInfo.CurrentAssemblyVersion)]

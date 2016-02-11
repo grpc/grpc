@@ -55,10 +55,10 @@ using grpc::testing::EchoRequest;
 using grpc::testing::EchoResponse;
 using std::chrono::system_clock;
 
-const int kNumThreads = 100; // Number of threads
+const int kNumThreads = 100;  // Number of threads
 const int kNumAsyncSendThreads = 2;
 const int kNumAsyncReceiveThreads = 50;
-const int kNumRpcs = 1000;    // Number of RPCs per thread
+const int kNumRpcs = 1000;  // Number of RPCs per thread
 
 namespace grpc {
 namespace testing {

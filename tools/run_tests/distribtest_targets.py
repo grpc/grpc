@@ -106,28 +106,36 @@ class NodeDistribTest(object):
   """Tests Node package"""
 
   def __init__(self, platform, arch, docker_suffix, node_version):
-    self.name = 'node_npm_%s_%s_%s_%s' % (platform, arch,
-                                          docker_suffix, node_version)
+    self.name = 'node_npm_%s_%s_%s' % (platform, arch, node_version)
     self.platform = platform
     self.arch = arch
-    self.docker_suffix = docker_suffix
     self.node_version = node_version
     self.labels = ['distribtest', 'node', platform, arch,
-                   docker_suffix, 'node-%s' % node_version]
+                   'node-%s' % node_version]
+    if docker_suffix is not None:
+      self.name += '_%s' % docker_suffix
+      self.docker_suffix = docker_suffix
+      self.labels.append(docker_suffix)
 
   def pre_build_jobspecs(self):
     return []
 
   def build_jobspec(self):
-    if self.platform not in ('linux',):
+    if self.platform == 'linux':
+      return create_docker_jobspec(self.name,
+                                   'tools/dockerfile/distribtest/node_%s_%s' % (
+                                       self.docker_suffix,
+                                       self.arch),
+                                   'test/distrib/node/run_distrib_test.sh %s' % (
+                                       self.node_version))
+    elif self.platform == 'macos':
+      return create_jobspec(self.name,
+                            ['test/distrib/node/run_distrib_test.sh',
+                             str(self.node_version)],
+                            environ={'EXTERNAL_GIT_ROOT': '../../..'})
+    else:
       raise Exception("Not supported yet.")
 
-    return create_docker_jobspec(self.name,
-                                 'tools/dockerfile/distribtest/node_%s_%s' % (
-                                     self.docker_suffix,
-                                     self.arch),
-                                 'test/distrib/node/run_distrib_test.sh %s' % (
-                                     self.node_version))
     def __str__(self):
       return self.name
 
@@ -228,6 +236,11 @@ def targets():
           RubyDistribTest('linux', 'x64', 'ubuntu1504'),
           RubyDistribTest('linux', 'x64', 'ubuntu1510'),
           RubyDistribTest('linux', 'x64', 'ubuntu1604'),
+          NodeDistribTest('macos', 'x64', None, '0.10'),
+          NodeDistribTest('macos', 'x64', None, '0.12'),
+          NodeDistribTest('macos', 'x64', None, '3'),
+          NodeDistribTest('macos', 'x64', None, '4'),
+          NodeDistribTest('macos', 'x64', None, '5'),
           NodeDistribTest('linux', 'x86', 'jessie', '4')
           ] + [
             NodeDistribTest('linux', 'x64', os, version)
