@@ -60,9 +60,6 @@ docker build -t $DOCKER_IMAGE_NAME $DOCKERFILE_DIR
 # Choose random name for docker container
 CONTAINER_NAME="run_tests_$(uuidgen)"
 
-# Git root as seen by the docker instance
-docker_instance_git_root=/var/local/jenkins/grpc
-
 # Run tests inside docker
 docker run \
   -e "RUN_TESTS_COMMAND=$RUN_TESTS_COMMAND" \
@@ -72,10 +69,9 @@ docker run \
   -e XDG_CACHE_HOME=/tmp/xdg-cache-home \
   -e THIS_IS_REALLY_NEEDED='see https://github.com/docker/docker/issues/14203 for why docker is awful' \
   -e HOST_GIT_ROOT=$git_root \
-  -e LOCAL_GIT_ROOT=$docker_instance_git_root \
   -e "BUILD_ID=$BUILD_ID" \
   -i $TTY_FLAG \
-  -v "$git_root:$docker_instance_git_root" \
+  -v "$git_root:/var/local/jenkins/grpc" \
   -v /tmp/ccache:/tmp/ccache \
   -v /tmp/npm-cache:/tmp/npm-cache \
   -v /tmp/xdg-cache-home:/tmp/xdg-cache-home \
