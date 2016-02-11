@@ -202,8 +202,9 @@ class Client {
       interarrival_timer_.init(*random_dist, num_threads);
       auto now = gpr_now(GPR_CLOCK_MONOTONIC);
       for (size_t i = 0; i < num_threads; i++) {
-        next_time_.push_back(
-            gpr_time_add(now, gpr_time_from_nanos(interarrival_timer_.next(i), GPR_TIMESPAN)));
+        next_time_.push_back(gpr_time_add(
+            now,
+            gpr_time_from_nanos(interarrival_timer_.next(i), GPR_TIMESPAN)));
       }
     }
   }
@@ -212,7 +213,8 @@ class Client {
     gpr_timespec result = next_time_[thread_idx];
     next_time_[thread_idx] =
         gpr_time_add(next_time_[thread_idx],
-                     gpr_time_from_nanos(interarrival_timer_.next(thread_idx), GPR_TIMESPAN));
+                     gpr_time_from_nanos(interarrival_timer_.next(thread_idx),
+                                         GPR_TIMESPAN));
     return result;
   }
 

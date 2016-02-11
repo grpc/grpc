@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -149,10 +149,10 @@ class InterarrivalTimer {
     for (int i = 0; i < entries; i++) {
       // rand is the only choice that is portable across POSIX and Windows
       // and that supports new and old compilers
-      const double uniform_0_1 = static_cast<double>(rand())
-          / static_cast<double>(RAND_MAX);
-      random_table_.push_back(static_cast<int64_t>(
-          1e9 * r.transform(uniform_0_1)));
+      const double uniform_0_1 =
+          static_cast<double>(rand()) / static_cast<double>(RAND_MAX);
+      random_table_.push_back(
+          static_cast<int64_t>(1e9 * r.transform(uniform_0_1)));
     }
     // Now set up the thread positions
     for (int i = 0; i < threads; i++) {
