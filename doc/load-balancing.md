@@ -8,7 +8,7 @@ instruct the client how to send load to multiple backend servers.
 
 ## Background
 
-Prior to any gRPC specifics, we explore some usual way to approach load
+Prior to any gRPC specifics, we explore some usual ways to approach load
 balancing.
 
 ## Proxy Model
