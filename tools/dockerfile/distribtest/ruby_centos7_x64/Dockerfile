@@ -30,3 +30,5 @@
 FROM centos:7
 
 RUN yum install -y ruby
+
+RUN gem install bundler
