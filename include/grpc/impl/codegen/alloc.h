@@ -49,23 +49,23 @@ typedef struct gpr_allocation_functions {
 } gpr_allocation_functions;
 
 /* malloc, never returns NULL */
-GPR_API void *gpr_malloc(size_t size);
+GPRAPI void *gpr_malloc(size_t size);
 /* free */
-GPR_API void gpr_free(void *ptr);
+GPRAPI void gpr_free(void *ptr);
 /* realloc, never returns NULL */
-GPR_API void *gpr_realloc(void *p, size_t size);
+GPRAPI void *gpr_realloc(void *p, size_t size);
 /* aligned malloc, never returns NULL, will align to 1 << alignment_log */
-GPR_API void *gpr_malloc_aligned(size_t size, size_t alignment_log);
+GPRAPI void *gpr_malloc_aligned(size_t size, size_t alignment_log);
 /* free memory allocated by gpr_malloc_aligned */
-GPR_API void gpr_free_aligned(void *ptr);
+GPRAPI void gpr_free_aligned(void *ptr);
 
 /** Request the family of allocation functions in \a functions be used. NOTE
  * that this request will be honored in a *best effort* basis and that no
  * guarantees are made about the default functions (eg, malloc) being called. */
-GPR_API void gpr_set_allocation_functions(gpr_allocation_functions functions);
+GPRAPI void gpr_set_allocation_functions(gpr_allocation_functions functions);
 
 /** Return the family of allocation functions currently in effect. */
-GPR_API gpr_allocation_functions gpr_get_allocation_functions();
+GPRAPI gpr_allocation_functions gpr_get_allocation_functions();
 
 #ifdef __cplusplus
 }

@@ -535,10 +535,10 @@ def build_interop_image_jobspec(language, tag=None):
     env['TTY_FLAG'] = '-t'
   # This env variable is used to get around the github rate limit
   # error when running the PHP `composer install` command
-  # TODO(stanleycheung): find a more elegant way to do this
-  if language.safename == 'php' and os.path.exists('/var/local/.composer/auth.json'):
+  host_file = '%s/.composer/auth.json' % os.environ['HOME']
+  if language.safename == 'php' and os.path.exists(host_file):
     env['BUILD_INTEROP_DOCKER_EXTRA_ARGS'] = \
-      '-v /var/local/.composer/auth.json:/root/.composer/auth.json:ro'
+      '-v %s:/root/.composer/auth.json:ro' % host_file
   build_job = jobset.JobSpec(
           cmdline=['tools/jenkins/build_interop_image.sh'],
           environ=env,

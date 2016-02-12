@@ -544,7 +544,7 @@ static void destroy_stream(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
   GPR_ASSERT(s->global.send_initial_metadata_finished == NULL);
   GPR_ASSERT(s->global.send_message_finished == NULL);
   GPR_ASSERT(s->global.send_trailing_metadata_finished == NULL);
-  GPR_ASSERT(s->global.recv_initial_metadata_finished == NULL);
+  GPR_ASSERT(s->global.recv_initial_metadata_ready == NULL);
   GPR_ASSERT(s->global.recv_message_ready == NULL);
   GPR_ASSERT(s->global.recv_trailing_metadata_finished == NULL);
   grpc_chttp2_data_parser_destroy(exec_ctx, &s->parsing.data_parser);
@@ -863,9 +863,9 @@ static void perform_stream_op_locked(
   }
 
   if (op->recv_initial_metadata != NULL) {
-    GPR_ASSERT(stream_global->recv_initial_metadata_finished == NULL);
-    stream_global->recv_initial_metadata_finished =
-        add_closure_barrier(on_complete);
+    GPR_ASSERT(stream_global->recv_initial_metadata_ready == NULL);
+    stream_global->recv_initial_metadata_ready =
+        op->recv_initial_metadata_ready;
     stream_global->recv_initial_metadata = op->recv_initial_metadata;
     grpc_chttp2_list_add_check_read_ops(transport_global, stream_global);
   }
@@ -1009,13 +1009,14 @@ static void check_read_ops(grpc_exec_ctx *exec_ctx,
   grpc_byte_stream *bs;
   while (
       grpc_chttp2_list_pop_check_read_ops(transport_global, &stream_global)) {
-    if (stream_global->recv_initial_metadata_finished != NULL &&
+    if (stream_global->recv_initial_metadata_ready != NULL &&
         stream_global->published_initial_metadata) {
       grpc_chttp2_incoming_metadata_buffer_publish(
           &stream_global->received_initial_metadata,
           stream_global->recv_initial_metadata);
-      grpc_chttp2_complete_closure_step(
-          exec_ctx, &stream_global->recv_initial_metadata_finished, 1);
+      grpc_exec_ctx_enqueue(
+          exec_ctx, stream_global->recv_initial_metadata_ready, true, NULL);
+      stream_global->recv_initial_metadata_ready = NULL;
     }
     if (stream_global->recv_message_ready != NULL) {
       if (stream_global->incoming_frames.head != NULL) {
