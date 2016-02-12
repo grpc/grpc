@@ -195,16 +195,22 @@ class CLanguage(object):
 class NodeLanguage(object):
 
   def __init__(self):
+    self.platform = platform_string()
     self.node_version = '0.12'
 
   def test_specs(self, config, args):
-    return [config.job_spec(['tools/run_tests/run_node.sh', self.node_version],
-                            None,
-                            environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
+    if self.platform == 'windows':
+      return [config.job_spec(['tools\\run_tests\\run_node.bat'], None)]
+    else:
+      return [config.job_spec(['tools/run_tests/run_node.sh', self.node_version],
+                              None,
+                              environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
 
   def pre_build_steps(self):
-    # Default to 1 week cache expiration
-    return [['tools/run_tests/pre_build_node.sh', self.node_version]]
+    if self.platform == 'windows':
+      return [['tools\\run_tests\\pre_build_node.bat']]
+    else:
+      return [['tools/run_tests/pre_build_node.sh', self.node_version]]
 
   def make_targets(self, test_regex):
     return []
@@ -213,7 +219,10 @@ class NodeLanguage(object):
     return []
 
   def build_steps(self):
-    return [['tools/run_tests/build_node.sh', self.node_version]]
+    if self.platform == 'windows':
+      return [['tools\\run_tests\\build_node.bat']]
+    else:
+      return [['tools/run_tests/build_node.sh', self.node_version]]
 
   def post_tests_steps(self):
     return []

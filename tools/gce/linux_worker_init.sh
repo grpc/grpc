@@ -1,4 +1,5 @@
-# Copyright 2016, Google Inc.
+#!/bin/bash
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -27,10 +28,43 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from grpc.beta import implementations
+# Initializes a fresh GCE VM to become a jenkins linux worker.
+# You shouldn't run this script on your own, use create_linux_worker.sh
+# instead.
 
-# This code doesn't do much but makes sure the native extension is loaded
-# which is what we are testing here.
-channel = implementations.insecure_channel('localhost', 1000)
-del channel
-print 'Success!'
+set -ex
+
+sudo apt-get update
+
+# Install JRE
+sudo apt-get install -y openjdk-7-jre
+sudo apt-get install -y unzip lsof
+
+# Install Docker
+curl -sSL https://get.docker.com/ | sh
+
+# Setup jenkins user (or the user will already exist bcuz magic)
+sudo adduser jenkins --disabled-password || true
+
+# Enable jenkins to use docker without sudo:
+sudo usermod -aG docker jenkins
+
+# Use "overlay" storage driver for docker
+# see https://github.com/grpc/grpc/issues/4988
+echo 'DOCKER_OPTS="${DOCKER_OPTS} --storage-driver=overlay"' | sudo tee --append /etc/default/docker
+
+# Install RVM
+# TODO(jtattermusch): why is RVM needed?
+gpg --keyserver hkp://keys.gnupg.net --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3
+curl -sSL https://get.rvm.io | bash -s stable --ruby
+
+# Add pubkey of jenkins@grpc-jenkins-master to authorized keys of jenkins@
+# This needs to happen as the last step to prevent Jenkins master from connecting
+# to a machine that hasn't been properly setup yet.
+cat jenkins_master.pub | sudo tee --append ~jenkins/.ssh/authorized_keys
+
+# Restart for docker to pickup the config changes.
+echo 'Successfully initialized the linux worker, going for reboot in 10 seconds'
+sleep 10
+
+sudo reboot
