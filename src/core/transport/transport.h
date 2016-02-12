@@ -92,6 +92,8 @@ typedef struct grpc_transport_stream_op {
 
   /** Receive initial metadata from the stream, into provided metadata batch. */
   grpc_metadata_batch *recv_initial_metadata;
+  /** Should be enqueued when initial metadata is ready to be processed. */
+  grpc_closure *recv_initial_metadata_ready;
 
   /** Receive message data from the stream, into provided byte stream. */
   grpc_byte_stream **recv_message;
@@ -103,7 +105,8 @@ typedef struct grpc_transport_stream_op {
   grpc_metadata_batch *recv_trailing_metadata;
 
   /** Should be enqueued when all requested operations (excluding recv_message
-     which has its own closure) in a given batch have been completed. */
+      and recv_initial_metadata which have their own closures) in a given batch
+      have been completed. */
   grpc_closure *on_complete;
 
   /** If != GRPC_STATUS_OK, cancel this stream */

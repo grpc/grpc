@@ -254,9 +254,22 @@
 #define GPR_FORBID_UNREACHABLE_CODE 1
 #endif
 
-/* For a common case, assume that the platform has a C99-like stdint.h */
-
+#ifdef _MSC_VER
+#if _MSC_VER < 1700
+typedef __int8 int8_t;
+typedef __int16 int16_t;
+typedef __int32 int32_t;
+typedef __int64 int64_t;
+typedef unsigned __int8 uint8_t;
+typedef unsigned __int16 uint16_t;
+typedef unsigned __int32 uint32_t;
+typedef unsigned __int64 uint64_t;
+#else
 #include <stdint.h>
+#endif /* _MSC_VER < 1700 */
+#else
+#include <stdint.h>
+#endif /* _MSC_VER */
 
 /* Cache line alignment */
 #ifndef GPR_CACHELINE_SIZE_LOG
@@ -334,16 +347,16 @@
   } while (0)
 #endif /* GPR_FORBID_UNREACHABLE_CODE */
 
-#ifndef GPR_API
-#define GPR_API
+#ifndef GPRAPI
+#define GPRAPI
 #endif
 
-#ifndef GRPC_API
-#define GRPC_API GPR_API
+#ifndef GRPCAPI
+#define GRPCAPI GPRAPI
 #endif
 
-#ifndef CENSUS_API
-#define CENSUS_API GRPC_API
+#ifndef CENSUSAPI
+#define CENSUSAPI GRPCAPI
 #endif
 
 #endif /* GRPC_IMPL_CODEGEN_PORT_PLATFORM_H */

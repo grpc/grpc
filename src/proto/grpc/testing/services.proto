@@ -65,4 +65,7 @@ service WorkerService {
 
   // Just return the core count - unary call
   rpc CoreCount(CoreRequest) returns (CoreResponse);
+
+  // Quit this worker
+  rpc QuitWorker(Void) returns (Void);
 }

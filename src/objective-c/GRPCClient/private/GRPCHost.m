@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -34,11 +34,15 @@
 #import "GRPCHost.h"
 
 #include <grpc/grpc.h>
+#import <GRPCClient/GRPCCall+ChannelArg.h>
 
 #import "GRPCChannel.h"
 #import "GRPCCompletionQueue.h"
-#import "GRPCSecureChannel.h"
-#import "GRPCUnsecuredChannel.h"
+#import "NSDictionary+GRPC.h"
+
+// TODO(jcanizales): Generate the version in a standalone header, from templates. Like
+// templates/src/core/surface/version.c.template .
+#define GRPC_OBJC_VERSION_STRING @"0.13.0"
 
 @interface GRPCHost ()
 // TODO(mlumish): Investigate whether caching channels with strong links is a good idea.
@@ -106,13 +110,28 @@
 - (GRPCChannel *)channel {
   // Create it lazily, because we don't want to open a connection just because someone is
   // configuring a host.
+
   if (!_channel) {
+    NSMutableDictionary *args = [NSMutableDictionary dictionary];
+
+    // TODO(jcanizales): Add OS and device information (see
+    // https://github.com/grpc/grpc/blob/master/doc/PROTOCOL-HTTP2.md#user-agents ).
+    NSString *userAgent = @"grpc-objc/" GRPC_OBJC_VERSION_STRING;
+    if (_userAgentPrefix) {
+      userAgent = [@[_userAgentPrefix, userAgent] componentsJoinedByString:@" "];
+    }
+    args[@GRPC_ARG_PRIMARY_USER_AGENT_STRING] = userAgent;
+
     if (_secure) {
-      _channel = [[GRPCSecureChannel alloc] initWithHost:_address
-                                      pathToCertificates:_pathToCertificates
-                                        hostNameOverride:_hostNameOverride];
+      if (_hostNameOverride) {
+        args[@GRPC_SSL_TARGET_NAME_OVERRIDE_ARG] = _hostNameOverride;
+      }
+
+      _channel = [GRPCChannel secureChannelWithHost:_address
+                                 pathToCertificates:_pathToCertificates
+                                        channelArgs:args];
     } else {
-      _channel = [[GRPCUnsecuredChannel alloc] initWithHost:_address];
+      _channel = [GRPCChannel insecureChannelWithHost:_address channelArgs:args];
     }
   }
   return _channel;

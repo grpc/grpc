@@ -241,7 +241,6 @@ int grpc_server_add_secure_http2_port(grpc_server *server, const char *addr,
   }
   grpc_resolved_addresses_destroy(resolved);
 
-
   /* Register with the server only upon success */
   grpc_server_add_listener(&exec_ctx, server, state, start, destroy);
 
