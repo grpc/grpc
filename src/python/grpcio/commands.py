@@ -114,19 +114,17 @@ def _get_grpc_custom_bdist(decorated_basename, target_bdist_basename):
 class WheelNameMixin(object):
   """Mixin for setuptools.Command classes to enable acquiring the bdist name."""
 
-  def wheel_name(self, with_custom):
-    """
-    Args:
-      with_custom: Boolean describing whether or not to decorate the bdist name
-        with custom gRPC-specific target information.
-    """
+  def wheel_custom_name(self):
+    base = self.wheel_name()
+    # Drop troublesome parts of the target tuple
+    base_split = base.split('-')
+    base = '-'.join(base_split[0:3] + base_split[4:])
+    flavor = 'ucs2' if sys.maxunicode == 65535 else 'ucs4'
+    return '{base}-{flavor}'.format(base=base, flavor=flavor)
+
+  def wheel_name(self):
     wheel_command = self.get_finalized_command('bdist_wheel')
-    base = wheel_command.get_archive_basename()
-    if with_custom:
-      flavor = 'ucs2' if sys.maxunicode == 65535 else 'ucs4'
-      return '{base}-{flavor}'.format(base=base, flavor=flavor)
-    else:
-      return base
+    return wheel_command.get_archive_basename()
 
 
 class Install(install.install, WheelNameMixin):
@@ -155,8 +153,8 @@ class Install(install.install, WheelNameMixin):
     if self.use_grpc_custom_bdist:
       try:
         try:
-          bdist_path = _get_grpc_custom_bdist(self.wheel_name(True),
-                                            self.wheel_name(False))
+          bdist_path = _get_grpc_custom_bdist(self.wheel_custom_name(),
+                                              self.wheel_name())
         except CommandError as error:
           sys.stderr.write(
               '\nWARNING: Failed to acquire grpcio prebuilt binary:\n'
@@ -200,7 +198,8 @@ class BdistWheelCustomName(bdist_wheel.bdist_wheel, WheelNameMixin):
     # undocumented, private) ordering of the distribution files.
     bdist_wheel.bdist_wheel.run(self)
     output = self.distribution.dist_files[-1][2]
-    target = os.path.join(self.dist_dir, '{}.whl'.format(self.wheel_name(True)))
+    target = os.path.join(
+        self.dist_dir, '{}.whl'.format(self.wheel_custom_name()))
     shutil.move(output, target)
 
 
