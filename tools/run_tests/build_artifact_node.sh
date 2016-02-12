@@ -36,7 +36,7 @@ nvm use 4
 
 cd $(dirname $0)/../..
 
-rm -rf build
+rm -rf build || true
 
 mkdir -p artifacts
 
