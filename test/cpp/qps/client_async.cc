@@ -222,7 +222,7 @@ class AsyncClient : public ClientImpl<StubType, RequestType> {
   }
 
  protected:
-  int num_async_threads_;
+  const int num_async_threads_;
 
  private:
   int NumThreads(const ClientConfig& config) {

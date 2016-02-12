@@ -200,7 +200,7 @@ class Client {
       closed_loop_ = false;
       // set up interarrival timer according to random dist
       interarrival_timer_.init(*random_dist, num_threads);
-      auto now = gpr_now(GPR_CLOCK_MONOTONIC);
+      const auto now = gpr_now(GPR_CLOCK_MONOTONIC);
       for (size_t i = 0; i < num_threads; i++) {
         next_time_.push_back(gpr_time_add(
             now,
@@ -210,7 +210,7 @@ class Client {
   }
 
   gpr_timespec NextIssueTime(int thread_idx) {
-    gpr_timespec result = next_time_[thread_idx];
+    const gpr_timespec result = next_time_[thread_idx];
     next_time_[thread_idx] =
         gpr_time_add(next_time_[thread_idx],
                      gpr_time_from_nanos(interarrival_timer_.next(thread_idx),
@@ -289,7 +289,7 @@ class Client {
     Histogram* new_stats_;
     Histogram histogram_;
     Client* client_;
-    size_t idx_;
+    const size_t idx_;
     std::thread impl_;
   };
 
@@ -306,9 +306,8 @@ class ClientImpl : public Client {
   ClientImpl(const ClientConfig& config,
              std::function<std::unique_ptr<StubType>(std::shared_ptr<Channel>)>
                  create_stub)
-      : channels_(config.client_channels()), create_stub_(create_stub) {
-    cores_ = LimitCores(config.core_list().data(), config.core_list_size());
-
+    : cores_(LimitCores(config.core_list().data(), config.core_list_size())),
+      channels_(config.client_channels()), create_stub_(create_stub) {
     for (int i = 0; i < config.client_channels(); i++) {
       channels_[i].init(config.server_targets(i % config.server_targets_size()),
                         config, create_stub_);
@@ -320,7 +319,7 @@ class ClientImpl : public Client {
   virtual ~ClientImpl() {}
 
  protected:
-  int cores_;
+  const int cores_;
   RequestType request_;
 
   class ClientChannelInfo {
