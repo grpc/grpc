@@ -67,4 +67,3 @@ if [ $? != 0 ]; then
   echo "Outputs differ: $NANOPB_TMP_OUTPUT vs src/core/proto/grpc/lb/v0"
   exit 1
 fi
-deactivate
