@@ -34,6 +34,14 @@
 #ifndef GRPC_IMPL_CODEGEN_PORT_PLATFORM_H
 #define GRPC_IMPL_CODEGEN_PORT_PLATFORM_H
 
+/*
+ * Define GPR_BACKWARDS_COMPATIBILITY_MODE to try harder to be ABI
+ * compatible with older platforms (currently only on Linux)
+ * Causes:
+ *  - some libc calls to be gotten via dlsym
+ *  - some syscalls to be made directly
+ */
+
 /* Get windows.h included everywhere (we need it) */
 #if defined(_WIN64) || defined(WIN64) || defined(_WIN32) || defined(WIN32)
 #ifndef WIN32_LEAN_AND_MEAN
