@@ -34,6 +34,14 @@
 #ifndef GRPC_IMPL_CODEGEN_PORT_PLATFORM_H
 #define GRPC_IMPL_CODEGEN_PORT_PLATFORM_H
 
+/*
+ * Define GPR_BACKWARDS_COMPATIBILITY_MODE to try harder to be ABI
+ * compatible with older platforms (currently only on Linux)
+ * Causes:
+ *  - some libc calls to be gotten via dlsym
+ *  - some syscalls to be made directly
+ */
+
 /* Get windows.h included everywhere (we need it) */
 #if defined(_WIN64) || defined(WIN64) || defined(_WIN32) || defined(WIN32)
 #ifndef WIN32_LEAN_AND_MEAN
@@ -347,16 +355,16 @@ typedef unsigned __int64 uint64_t;
   } while (0)
 #endif /* GPR_FORBID_UNREACHABLE_CODE */
 
-#ifndef GPR_API
-#define GPR_API
+#ifndef GPRAPI
+#define GPRAPI
 #endif
 
-#ifndef GRPC_API
-#define GRPC_API GPR_API
+#ifndef GRPCAPI
+#define GRPCAPI GPRAPI
 #endif
 
-#ifndef CENSUS_API
-#define CENSUS_API GRPC_API
+#ifndef CENSUSAPI
+#define CENSUSAPI GRPCAPI
 #endif
 
 #endif /* GRPC_IMPL_CODEGEN_PORT_PLATFORM_H */

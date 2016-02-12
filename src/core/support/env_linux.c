@@ -52,6 +52,7 @@
 #include "src/core/support/string.h"
 
 char *gpr_getenv(const char *name) {
+#if defined(GPR_BACKWARDS_COMPATIBILITY_MODE)
   typedef char *(*getenv_type)(const char *);
   static getenv_type getenv_func = NULL;
   /* Check to see which getenv variant is supported (go from most
@@ -62,6 +63,10 @@ char *gpr_getenv(const char *name) {
   }
   char *result = getenv_func(name);
   return result == NULL ? result : gpr_strdup(result);
+#else
+  char *result = secure_getenv(name);
+  return result == NULL ? result : gpr_strdup(result);
+#endif
 }
 
 void gpr_setenv(const char *name, const char *value) {

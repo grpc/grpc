@@ -8,6 +8,8 @@ dockerfile: Docker files to test gRPC.
 
 doxygen: gRPC C/C++ documentation generation via Doxygen.
 
+gce: scripts to help setup testing infrastructure on GCE.
+
 jenkins: support for running tests on Jenkins.
 
 profile_analyzer: pretty printer for gRPC profiling data.
