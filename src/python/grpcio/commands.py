@@ -46,20 +46,10 @@ from setuptools.command import build_py
 from setuptools.command import easy_install
 from setuptools.command import install
 from setuptools.command import test
-from wheel import bdist_wheel
 
 import support
 
 PYTHON_STEM = os.path.dirname(os.path.abspath(__file__))
-
-BINARIES_REPOSITORY = os.environ.get(
-    'GRPC_PYTHON_BINARIES_REPOSITORY',
-    'https://storage.googleapis.com/grpc-precompiled-binaries/python')
-
-USE_GRPC_CUSTOM_BDIST = bool(int(os.environ.get(
-    'GRPC_PYTHON_USE_CUSTOM_BDIST', '1')))
-
-GRPC_CUSTOM_BDIST_EXT = '.whl'
 
 CONF_PY_ADDENDUM = """
 extensions.append('sphinx.ext.napoleon')
@@ -109,98 +99,6 @@ def _get_grpc_custom_bdist(decorated_basename, target_bdist_basename):
         '{}\n\nCould not write grpcio bdist: {}'
             .format(traceback.format_exc(), error.message))
   return bdist_path
-
-
-class WheelNameMixin(object):
-  """Mixin for setuptools.Command classes to enable acquiring the bdist name."""
-
-  def wheel_custom_name(self):
-    base = self.wheel_name()
-    # Drop troublesome parts of the target tuple
-    base_split = base.split('-')
-    base = '-'.join(base_split[0:3] + base_split[4:])
-    flavor = 'ucs2' if sys.maxunicode == 65535 else 'ucs4'
-    return '{base}-{flavor}'.format(base=base, flavor=flavor)
-
-  def wheel_name(self):
-    wheel_command = self.get_finalized_command('bdist_wheel')
-    return wheel_command.get_archive_basename()
-
-
-class Install(install.install, WheelNameMixin):
-  """Custom Install command for gRPC Python.
-
-  This is for bdist shims and whatever else we might need a custom install
-  command for.
-  """
-
-  user_options = install.install.user_options + [
-      # TODO(atash): remove this once PyPI has better Linux bdist support. See
-      # https://bitbucket.org/pypa/pypi/issues/120/binary-wheels-for-linux-are-not-supported
-      ('use-grpc-custom-bdist', None,
-       'Whether to retrieve a binary from the gRPC binary repository instead '
-       'of building from source.'),
-  ]
-
-  def initialize_options(self):
-    install.install.initialize_options(self)
-    self.use_grpc_custom_bdist = USE_GRPC_CUSTOM_BDIST
-
-  def finalize_options(self):
-    install.install.finalize_options(self)
-
-  def run(self):
-    if self.use_grpc_custom_bdist:
-      try:
-        try:
-          bdist_path = _get_grpc_custom_bdist(self.wheel_custom_name(),
-                                              self.wheel_name())
-        except CommandError as error:
-          sys.stderr.write(
-              '\nWARNING: Failed to acquire grpcio prebuilt binary:\n'
-              '{}.\n\n'.format(error.message))
-          raise
-        try:
-          self._run_bdist_retrieval_install(bdist_path)
-        except Exception as error:
-          # if anything else happens (and given how there's no way to really know
-          # what's happening in setuptools here, I mean *anything*), warn the user
-          # and fall back to building from source.
-          sys.stderr.write(
-              '{}\nWARNING: Failed to install grpcio prebuilt binary.\n\n'
-                  .format(traceback.format_exc()))
-          raise
-      except Exception:
-        install.install.run(self)
-    else:
-      install.install.run(self)
-
-  # TODO(atash): Remove this once PyPI has better Linux bdist support. See
-  # https://bitbucket.org/pypa/pypi/issues/120/binary-wheels-for-linux-are-not-supported
-  def _run_bdist_retrieval_install(self, bdist_path):
-    import pip
-    pip.main(['install', bdist_path])
-
-
-class BdistWheelCustomName(bdist_wheel.bdist_wheel, WheelNameMixin):
-  """Thin wrapper around the bdist command to build with our custom name."""
-
-  description = ("Create a gRPC custom-named wheel distribution. "
-                 "Cannot be run with any other distribution-related command.")
-
-  def run(self):
-    # TODO(atash): if the hack we use to support Linux binaries becomes
-    # 'supported' (i.e.
-    # https://bitbucket.org/pypa/pypi/issues/120/binary-wheels-for-linux-are-not-supported
-    # is not solved and we see users beginning to use this command, ill-advised
-    # as that may be) consider making the following capable of running with
-    # other distribution-related commands. Currently it depends on the (AFAIK
-    # undocumented, private) ordering of the distribution files.
-    bdist_wheel.bdist_wheel.run(self)
-    output = self.distribution.dist_files[-1][2]
-    target = os.path.join(
-        self.dist_dir, '{}.whl'.format(self.wheel_custom_name()))
-    shutil.move(output, target)
 
 
 class SphinxDocumentation(setuptools.Command):
