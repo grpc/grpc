@@ -46,7 +46,7 @@ fi
 GRPC_PYTHON_USE_CUSTOM_BDIST=0  \
 GRPC_PYTHON_BUILD_WITH_CYTHON=1 \
 ${SETARCH_CMD} python setup.py  \
-    bdist_wheel_grpc_custom
+    build_tagged_ext
 
 GRPC_PYTHON_USE_CUSTOM_BDIST=0  \
 GRPC_PYTHON_BUILD_WITH_CYTHON=1 \
