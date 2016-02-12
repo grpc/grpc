@@ -232,6 +232,7 @@ setup_arguments = {
     'setup_requires': SETUP_REQUIRES,
     'cmdclass': COMMAND_CLASS,
     'tests_require': TESTS_REQUIRE,
+    'test_suite': TEST_SUITE,
     'test_loader': TEST_LOADER,
     'test_runner': TEST_RUNNER,
 }
