@@ -122,11 +122,15 @@ class NodeDistribTest(object):
 
   def build_jobspec(self):
     if self.platform == 'linux':
+      linux32 = ''
+      if self.arch == 'x86':
+        linux32 = 'linux32'
       return create_docker_jobspec(self.name,
                                    'tools/dockerfile/distribtest/node_%s_%s' % (
                                        self.docker_suffix,
                                        self.arch),
-                                   'test/distrib/node/run_distrib_test.sh %s' % (
+                                   '%s test/distrib/node/run_distrib_test.sh %s' % (
+                                       linux32,
                                        self.node_version))
     elif self.platform == 'macos':
       return create_jobspec(self.name,
