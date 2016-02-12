@@ -240,10 +240,7 @@ def targets():
           RubyDistribTest('linux', 'x64', 'ubuntu1504'),
           RubyDistribTest('linux', 'x64', 'ubuntu1510'),
           RubyDistribTest('linux', 'x64', 'ubuntu1604'),
-          NodeDistribTest('macos', 'x64', None, '0.12'),
-          NodeDistribTest('macos', 'x64', None, '3'),
           NodeDistribTest('macos', 'x64', None, '4'),
-          NodeDistribTest('macos', 'x64', None, '5'),
           NodeDistribTest('linux', 'x86', 'jessie', '4')
           ] + [
             NodeDistribTest('linux', 'x64', os, version)
