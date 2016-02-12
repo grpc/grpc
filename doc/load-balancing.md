@@ -25,9 +25,10 @@ like storage.
 
 This thicker client places more of the load balancing logic in the client. For
 example, the client could contain many load balancing policies (Round Robin,
-Random, etc) used to select servers from a list. In this model, a load balancer
-would be responsible for providing a list of servers and let the client choose
-the preferred server from the list. 
+Random, etc) used to select servers from a list. In this model, a list of
+servers would be either statically configured in the client, provided by the
+name resolution system, an external load balancer, etc. In any case, the client
+is responsible for choosing the preferred server from the list. 
 
 One of the drawbacks of this approach is writing and maintaining the load
 balancing policies in multiple languages and/or versions of the clients. These
@@ -36,14 +37,14 @@ to server communication so the client would need to get thicker to support
 additional RPCs to get health or load information in addition to sending RPCs
 for user requests.
 
-It would also significantly complicate the API: the new design hides the load
-balancing complexity of multiple layers and presents it as a simple list of
-servers to the client.
+It would also significantly complicate the client's code: the new design hides
+the load balancing complexity of multiple layers and presents it as a simple
+list of servers to the client.
 
 ### External Load Balancing Service
 
 The client load balancing code is kept simple and portable, implementing
-straightforward algorithms (ie, Pick First, Round Robin) for server selection.
+well-known algorithms (ie, Round Robin) for server selection.
 Complex load balancing algorithms are instead provided by the load balancer. The
 client relies on the load balancer to provide _load balancing configuration_ and
 _the list of servers_ to which the client should send requests. The balancer
@@ -76,7 +77,7 @@ specific list of “picked” servers in a particular order. The balancer can
 optionally provide an expiration interval after which the server list should no
 longer be trusted and should be updated by the balancer.
 
-The load balancer is may open reporting streams to each server contained in the
+The load balancer may open reporting streams to each server contained in the
 server list. These streams are primarily used for load reporting. For example,
 Weighted Round Robin requires that the servers report utilization to the load
 balancer in order to compute the next list of servers.
