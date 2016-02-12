@@ -8,7 +8,6 @@ settings:
   '#4': Per-language overrides are possible with (eg) ruby_version tag here
   '#5': See the expand_version.py for all the quirks here
   python_version: 0.13.0-pre2
-  ruby_version: 0.13.0-pre1.1
   version: 0.13.0-pre1
 filegroups:
 - name: census
