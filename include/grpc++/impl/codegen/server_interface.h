@@ -34,6 +34,7 @@
 #ifndef GRPCXX_IMPL_CODEGEN_SERVER_INTERFACE_H
 #define GRPCXX_IMPL_CODEGEN_SERVER_INTERFACE_H
 
+#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc++/impl/codegen/call_hook.h>
 #include <grpc++/impl/codegen/completion_queue_tag.h>
 #include <grpc++/impl/codegen/rpc_service_method.h>
@@ -41,7 +42,6 @@
 namespace grpc {
 
 class AsyncGenericService;
-class AsynchronousService;
 class GenericServerContext;
 class RpcService;
 class ServerAsyncStreamingInterface;
@@ -78,7 +78,6 @@ class ServerInterface : public CallHook {
   virtual void Wait() = 0;
 
  protected:
-  friend class AsynchronousService;
   friend class Service;
 
   /// Register a service. This call does not take ownership of the service.

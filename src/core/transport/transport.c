@@ -126,6 +126,7 @@ char *grpc_transport_get_peer(grpc_exec_ctx *exec_ctx,
 void grpc_transport_stream_op_finish_with_failure(
     grpc_exec_ctx *exec_ctx, grpc_transport_stream_op *op) {
   grpc_exec_ctx_enqueue(exec_ctx, op->recv_message_ready, false, NULL);
+  grpc_exec_ctx_enqueue(exec_ctx, op->recv_initial_metadata_ready, false, NULL);
   grpc_exec_ctx_enqueue(exec_ctx, op->on_complete, false, NULL);
 }
 

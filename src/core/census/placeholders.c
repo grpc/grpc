@@ -37,11 +37,6 @@
 
 /* Placeholders for the pending APIs */
 
-census_tag_set *census_context_tag_set(census_context *context) {
-  (void)context;
-  abort();
-}
-
 int census_get_trace_record(census_trace_record *trace_record) {
   (void)trace_record;
   abort();
@@ -73,7 +68,7 @@ const census_aggregation *census_view_aggregrations(const census_view *view) {
   abort();
 }
 
-census_view *census_view_create(uint32_t metric_id, const census_tag_set *tags,
+census_view *census_view_create(uint32_t metric_id, const census_context *tags,
                                 const census_aggregation *aggregations,
                                 size_t naggregations) {
   (void)metric_id;
@@ -83,7 +78,7 @@ census_view *census_view_create(uint32_t metric_id, const census_tag_set *tags,
   abort();
 }
 
-const census_tag_set *census_view_tags(const census_view *view) {
+const census_context *census_view_tags(const census_view *view) {
   (void)view;
   abort();
 }

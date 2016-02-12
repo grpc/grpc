@@ -241,10 +241,8 @@ static void fail_locked(grpc_exec_ctx *exec_ctx,
                         grpc_subchannel_call_holder *holder) {
   size_t i;
   for (i = 0; i < holder->waiting_ops_count; i++) {
-    grpc_exec_ctx_enqueue(exec_ctx, holder->waiting_ops[i].on_complete, false,
-                          NULL);
-    grpc_exec_ctx_enqueue(exec_ctx, holder->waiting_ops[i].recv_message_ready,
-                          false, NULL);
+    grpc_transport_stream_op_finish_with_failure(exec_ctx,
+                                                 &holder->waiting_ops[i]);
   }
   holder->waiting_ops_count = 0;
 }

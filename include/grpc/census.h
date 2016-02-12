@@ -59,39 +59,158 @@ enum census_features {
  * census_initialize() will return a non-zero value. It is an error to call
  * census_initialize() more than once (without an intervening
  * census_shutdown()). */
-CENSUS_API int census_initialize(int features);
-CENSUS_API void census_shutdown(void);
+CENSUSAPI int census_initialize(int features);
+CENSUSAPI void census_shutdown(void);
 
 /** Return the features supported by the current census implementation (not all
  * features will be available on all platforms). */
-CENSUS_API int census_supported(void);
+CENSUSAPI int census_supported(void);
 
 /** Return the census features currently enabled. */
-CENSUS_API int census_enabled(void);
+CENSUSAPI int census_enabled(void);
 
 /**
-  Context is a handle used by census to represent the current tracing and
-  tagging information. Contexts should be propagated across RPC's. Contexts
-  are created by any of the census_start_*_op() functions. A context is
-  typically used as argument to most census functions. Conceptually, contexts
-  should be thought of as specific to single RPC/thread. The context can be
-  serialized for passing across the wire, via census_context_serialize().
-*/
+  A Census Context is a handle used by Census to represent the current tracing
+  and stats collection information. Contexts should be propagated across RPC's
+  (this is the responsibility of the local RPC system). A context is typically
+  used as the first argument to most census functions. Conceptually, they
+  should be thought of as specific to a single RPC/thread. The user visible
+  context representation is that of a collection of key:value string pairs,
+  each of which is termed a 'tag'; these form the basis against which Census
+  metrics will be recorded. Keys are unique within a context. */
 typedef struct census_context census_context;
 
-/* This function is called by the RPC subsystem whenever it needs to get a
- * serialized form of the current census context (presumably to pass across
- * the wire). Arguments:
- * 'buffer': pointer to memory into which serialized context will be placed
- * 'buf_size': size of 'buffer'
- *
- * Returns: the number of bytes used in buffer if successful, or 0 if the
- * buffer is of insufficient size.
- *
- * TODO(aveitch): determine how best to communicate required/max buffer size
- * so caller doesn't have to guess. */
-CENSUS_API size_t census_context_serialize(const census_context *context,
-                                           char *buffer, size_t buf_size);
+/* A tag is a key:value pair. The key is a non-empty, printable (UTF-8
+   encoded), nil-terminated string. The value is a binary string, that may be
+   printable. There are limits on the sizes of both keys and values (see
+   CENSUS_MAX_TAG_KB_LEN definition below), and the number of tags that can be
+   propagated (CENSUS_MAX_PROPAGATED_TAGS). Users should also remember that
+   some systems may have limits on, e.g., the number of bytes that can be
+   transmitted as metadata, and that larger tags means more memory consumed
+   and time in processing. */
+typedef struct {
+  const char *key;
+  const char *value;
+  size_t value_len;
+  uint8_t flags;
+} census_tag;
+
+/* Maximum length of a tag's key or value. */
+#define CENSUS_MAX_TAG_KV_LEN 255
+/* Maximum number of propagatable tags. */
+#define CENSUS_MAX_PROPAGATED_TAGS 255
+
+/* Tag flags. */
+#define CENSUS_TAG_PROPAGATE 1 /* Tag should be propagated over RPC */
+#define CENSUS_TAG_STATS 2     /* Tag will be used for statistics aggregation */
+#define CENSUS_TAG_BINARY 4    /* Tag value is not printable */
+#define CENSUS_TAG_RESERVED 8  /* Reserved for internal use. */
+/* Flag values 8,16,32,64,128 are reserved for future/internal use. Clients
+   should not use or rely on their values. */
+
+#define CENSUS_TAG_IS_PROPAGATED(flags) (flags & CENSUS_TAG_PROPAGATE)
+#define CENSUS_TAG_IS_STATS(flags) (flags & CENSUS_TAG_STATS)
+#define CENSUS_TAG_IS_BINARY(flags) (flags & CENSUS_TAG_BINARY)
+
+/* An instance of this structure is kept by every context, and records the
+   basic information associated with the creation of that context. */
+typedef struct {
+  int n_propagated_tags;        /* number of propagated printable tags */
+  int n_propagated_binary_tags; /* number of propagated binary tags */
+  int n_local_tags;             /* number of non-propagated (local) tags */
+  int n_deleted_tags;           /* number of tags that were deleted */
+  int n_added_tags;             /* number of tags that were added */
+  int n_modified_tags;          /* number of tags that were modified */
+  int n_invalid_tags;           /* number of tags with bad keys or values (e.g.
+                                   longer than CENSUS_MAX_TAG_KV_LEN) */
+  int n_ignored_tags;           /* number of tags ignored because of
+                                   CENSUS_MAX_PROPAGATED_TAGS limit. */
+} census_context_status;
+
+/* Create a new context, adding and removing tags from an existing context.
+   This will copy all tags from the 'tags' input, so it is recommended
+   to add as many tags in a single operation as is practical for the client.
+   @param base Base context to build upon. Can be NULL.
+   @param tags A set of tags to be added/changed/deleted. Tags with keys that
+   are in 'tags', but not 'base', are added to the tag set. Keys that are in
+   both 'tags' and 'base' will have their value/flags modified. Tags with keys
+   in both, but with NULL or zero-length values, will be deleted from the tag
+   set. Tags with invalid (too long or short) keys or values will be ignored.
+   If adding a tag will result in more than CENSUS_MAX_PROPAGATED_TAGS in either
+   binary or non-binary tags, they will be ignored, as will deletions of
+   tags that don't exist.
+   @param ntags number of tags in 'tags'
+   @param status If not NULL, will return a pointer to a census_context_status
+   structure containing information about the new context and status of the
+   tags used in its creation.
+   @return A new, valid census_context.
+*/
+CENSUSAPI census_context *census_context_create(
+    const census_context *base, const census_tag *tags, int ntags,
+    census_context_status const **status);
+
+/* Destroy a context. Once this function has been called, the context cannot
+   be reused. */
+CENSUSAPI void census_context_destroy(census_context *context);
+
+/* Get a pointer to the original status from the context creation. */
+CENSUSAPI const census_context_status *census_context_get_status(
+    const census_context *context);
+
+/* Structure used for iterating over the tegs in a context. API clients should
+   not use or reference internal fields - neither their contents or
+   presence/absence are guaranteed. */
+typedef struct {
+  const census_context *context;
+  int base;
+  int index;
+  char *kvm;
+} census_context_iterator;
+
+/* Initialize a census_tag_iterator. Must be called before first use. */
+CENSUSAPI void census_context_initialize_iterator(
+    const census_context *context, census_context_iterator *iterator);
+
+/* Get the contents of the "next" tag in the context. If there are no more
+   tags, returns 0 (and 'tag' contents will be unchanged), otherwise returns 1.
+   */
+CENSUSAPI int census_context_next_tag(census_context_iterator *iterator,
+                                      census_tag *tag);
+
+/* Get a context tag by key. Returns 0 if the key is not present. */
+CENSUSAPI int census_context_get_tag(const census_context *context,
+                                     const char *key, census_tag *tag);
+
+/* Tag set encode/decode functionality. These functionas are intended
+   for use by RPC systems only, for purposes of transmitting/receiving contexts.
+   */
+
+/* Encode a context into a buffer. The propagated tags are encoded into the
+   buffer in two regions: one for printable tags, and one for binary tags.
+   @param context context to be encoded
+   @param buffer pointer to buffer. This address will be used to encode the
+                 printable tags.
+   @param buf_size number of available bytes in buffer.
+   @param print_buf_size Will be set to the number of bytes consumed by
+                         printable tags.
+   @param bin_buf_size Will be set to the number of bytes used to encode the
+                       binary tags.
+   @return A pointer to the binary tag's encoded, or NULL if the buffer was
+           insufficiently large to hold the encoded tags. Thus, if successful,
+           printable tags are encoded into
+           [buffer, buffer + *print_buf_size) and binary tags into
+           [returned-ptr, returned-ptr + *bin_buf_size) (and the returned
+           pointer should be buffer + *print_buf_size) */
+CENSUSAPI char *census_context_encode(const census_context *context,
+                                      char *buffer, size_t buf_size,
+                                      size_t *print_buf_size,
+                                      size_t *bin_buf_size);
+
+/* Decode context buffers encoded with census_context_encode(). Returns NULL
+   if there is an error in parsing either buffer. */
+CENSUSAPI census_context *census_context_decode(const char *buffer, size_t size,
+                                                const char *bin_buffer,
+                                                size_t bin_size);
 
 /* Distributed traces can have a number of options. */
 enum census_trace_mask_values {
@@ -101,10 +220,10 @@ enum census_trace_mask_values {
 
 /** Get the current trace mask associated with this context. The value returned
     will be the logical or of census_trace_mask_values values. */
-CENSUS_API int census_trace_mask(const census_context *context);
+CENSUSAPI int census_trace_mask(const census_context *context);
 
 /** Set the trace mask associated with a context. */
-CENSUS_API void census_set_trace_mask(int trace_mask);
+CENSUSAPI void census_set_trace_mask(int trace_mask);
 
 /* The concept of "operation" is a fundamental concept for Census. In an RPC
    system, and operation typcially represents a single RPC, or a significant
@@ -152,7 +271,7 @@ typedef struct {
 
   @return A timestamp representing the operation start time.
 */
-CENSUS_API census_timestamp census_start_rpc_op_timestamp(void);
+CENSUSAPI census_timestamp census_start_rpc_op_timestamp(void);
 
 /**
   Represent functions to map RPC name ID to service/method names. Census
@@ -204,7 +323,7 @@ typedef struct {
 
    @return A new census context.
  */
-CENSUS_API census_context *census_start_client_rpc_op(
+CENSUSAPI census_context *census_start_client_rpc_op(
     const census_context *context, int64_t rpc_name_id,
     const census_rpc_name_info *rpc_name_info, const char *peer, int trace_mask,
     const census_timestamp *start_time);
@@ -212,8 +331,8 @@ CENSUS_API census_context *census_start_client_rpc_op(
 /**
   Add peer information to a context representing a client RPC operation.
 */
-CENSUS_API void census_set_rpc_client_peer(census_context *context,
-                                           const char *peer);
+CENSUSAPI void census_set_rpc_client_peer(census_context *context,
+                                          const char *peer);
 
 /**
    Start a server RPC operation. Returns a new context to be used in future
@@ -233,7 +352,7 @@ CENSUS_API void census_set_rpc_client_peer(census_context *context,
 
    @return A new census context.
  */
-CENSUS_API census_context *census_start_server_rpc_op(
+CENSUSAPI census_context *census_start_server_rpc_op(
     const char *buffer, int64_t rpc_name_id,
     const census_rpc_name_info *rpc_name_info, const char *peer, int trace_mask,
     census_timestamp *start_time);
@@ -263,9 +382,9 @@ CENSUS_API census_context *census_start_server_rpc_op(
 
    @return A new census context.
  */
-CENSUS_API census_context *census_start_op(census_context *context,
-                                           const char *family, const char *name,
-                                           int trace_mask);
+CENSUSAPI census_context *census_start_op(census_context *context,
+                                          const char *family, const char *name,
+                                          int trace_mask);
 
 /**
   End an operation started by any of the census_start_*_op*() calls. The
@@ -276,7 +395,7 @@ CENSUS_API census_context *census_start_op(census_context *context,
   @param status status associated with the operation. Not interpreted by
                 census.
 */
-CENSUS_API void census_end_op(census_context *context, int status);
+CENSUSAPI void census_end_op(census_context *context, int status);
 
 #define CENSUS_TRACE_RECORD_START_OP ((uint32_t)0)
 #define CENSUS_TRACE_RECORD_END_OP ((uint32_t)1)
@@ -288,8 +407,8 @@ CENSUS_API void census_end_op(census_context *context, int status);
     @param buffer Pointer to buffer to use
     @param n Number of bytes in buffer
 */
-CENSUS_API void census_trace_print(census_context *context, uint32_t type,
-                                   const char *buffer, size_t n);
+CENSUSAPI void census_trace_print(census_context *context, uint32_t type,
+                                  const char *buffer, size_t n);
 
 /** Trace record. */
 typedef struct {
@@ -310,7 +429,7 @@ typedef struct {
          while scanning is ongoing.
   @returns 0 on success, non-zero on failure (e.g. if a scan is already ongoing)
 */
-CENSUS_API int census_trace_scan_start(int consume);
+CENSUSAPI int census_trace_scan_start(int consume);
 
 /** Get a trace record. The data pointed to by the trace buffer is guaranteed
     stable until the next census_get_trace_record() call (if the consume
@@ -321,150 +440,10 @@ CENSUS_API int census_trace_scan_start(int consume);
            census_trace_scan_start()), 0 if there is no more trace data (and
            trace_record will not be modified) or 1 otherwise.
 */
-CENSUS_API int census_get_trace_record(census_trace_record *trace_record);
+CENSUSAPI int census_get_trace_record(census_trace_record *trace_record);
 
 /** End a scan previously started by census_trace_scan_start() */
-CENSUS_API void census_trace_scan_end();
-
-/* A Census tag set is a collection of key:value string pairs; these form the
-   basis against which Census metrics will be recorded. Keys are unique within
-   a tag set. All contexts have an associated tag set. */
-typedef struct census_tag_set census_tag_set;
-
-/* A tag is a key:value pair. The key is a non-empty, printable (UTF-8
-   encoded), nil-terminated string. The value is a binary string, that may be
-   printable. There are limits on the sizes of both keys and values (see
-   CENSUS_MAX_TAG_KB_LEN definition below), and the number of tags that can be
-   propagated (CENSUS_MAX_PROPAGATED_TAGS). Users should also remember that
-   some systems may have limits on, e.g., the number of bytes that can be
-   transmitted as metadata, and that larger tags means more memory consumed
-   and time in processing. */
-typedef struct {
-  const char *key;
-  const char *value;
-  size_t value_len;
-  uint8_t flags;
-} census_tag;
-
-/* Maximum length of a tag's key or value. */
-#define CENSUS_MAX_TAG_KV_LEN 255
-/* Maximum number of propagatable tags. */
-#define CENSUS_MAX_PROPAGATED_TAGS 255
-
-/* Tag flags. */
-#define CENSUS_TAG_PROPAGATE 1 /* Tag should be propagated over RPC */
-#define CENSUS_TAG_STATS 2     /* Tag will be used for statistics aggregation */
-#define CENSUS_TAG_BINARY 4    /* Tag value is not printable */
-#define CENSUS_TAG_RESERVED 8  /* Reserved for internal use. */
-/* Flag values 8,16,32,64,128 are reserved for future/internal use. Clients
-   should not use or rely on their values. */
-
-#define CENSUS_TAG_IS_PROPAGATED(flags) (flags & CENSUS_TAG_PROPAGATE)
-#define CENSUS_TAG_IS_STATS(flags) (flags & CENSUS_TAG_STATS)
-#define CENSUS_TAG_IS_BINARY(flags) (flags & CENSUS_TAG_BINARY)
-
-typedef struct {
-  int n_propagated_tags;        /* number of propagated printable tags */
-  int n_propagated_binary_tags; /* number of propagated binary tags */
-  int n_local_tags;             /* number of non-propagated (local) tags */
-  int n_deleted_tags;           /* number of tags that were deleted */
-  int n_added_tags;             /* number of tags that were added */
-  int n_modified_tags;          /* number of tags that were modified */
-  int n_invalid_tags;           /* number of tags with bad keys or values (e.g.
-                                   longer than CENSUS_MAX_TAG_KV_LEN) */
-  int n_ignored_tags;           /* number of tags ignored because of
-                                   CENSUS_MAX_PROPAGATED_TAGS limit. */
-} census_tag_set_create_status;
-
-/* Create a new tag set, adding and removing tags from an existing tag set.
-   This will copy all tags from it's input parameters, so it is recommended
-   to add as many tags in a single operation as is practical for the client.
-   @param base Base tag set to build upon. Can be NULL.
-   @param tags A set of tags to be added/changed/deleted. Tags with keys that
-   are in 'tags', but not 'base', are added to the tag set. Keys that are in
-   both 'tags' and 'base' will have their value/flags modified. Tags with keys
-   in both, but with NULL or zero-length values, will be deleted from the tag
-   set. Tags with invalid (too long or short) keys or values will be ignored.
-   If adding a tag will result in more than CENSUS_MAX_PROPAGATED_TAGS in either
-   binary or non-binary tags, they will be ignored, as will deletions of
-   tags that don't exist.
-   @param ntags number of tags in 'tags'
-   @param status If not NULL, will return a pointer to a
-   census_tag_set_create_status structure containing information about the new
-   tag set and status of the tags used in its creation.
-   @return A new, valid census_tag_set.
-*/
-CENSUS_API census_tag_set *census_tag_set_create(
-    const census_tag_set *base, const census_tag *tags, int ntags,
-    census_tag_set_create_status const **status);
-
-/* Destroy a tag set created by census_tag_set_create(). Once this function
-   has been called, the tag set cannot be reused. */
-CENSUS_API void census_tag_set_destroy(census_tag_set *tags);
-
-/* Get a pointer to the original status from the creation of this tag set. */
-CENSUS_API const census_tag_set_create_status *census_tag_set_get_create_status(
-    const census_tag_set *tags);
-
-/* Structure used for tag set iteration. API clients should not use or
-   reference internal fields - neither their contents or presence/absence are
-   guaranteed. */
-typedef struct {
-  const census_tag_set *tags;
-  int base;
-  int index;
-  char *kvm;
-} census_tag_set_iterator;
-
-/* Initialize a tag set iterator. Must be called before first use of the
-   iterator. */
-CENSUS_API void census_tag_set_initialize_iterator(
-    const census_tag_set *tags, census_tag_set_iterator *iterator);
-
-/* Get the contents of the "next" tag in the tag set. If there are no more
-   tags in the tag set, returns 0 (and 'tag' contents will be unchanged),
-   otherwise returns 1. */
-CENSUS_API int census_tag_set_next_tag(census_tag_set_iterator *iterator,
-                                       census_tag *tag);
-
-/* Get a tag by its key. Returns 0 if the key is not present in the tag
-   set. */
-CENSUS_API int census_tag_set_get_tag_by_key(const census_tag_set *tags,
-                                             const char *key, census_tag *tag);
-
-/* Tag set encode/decode functionality. These functionas are intended
-   for use by RPC systems only, for purposes of transmitting/receiving tag
-   sets. */
-
-/* Encode a tag set into a buffer. The propagated tags are encoded into the
-   buffer in two regions: one for printable tags, and one for binary tags.
-   @param tags tag set to be encoded
-   @param buffer pointer to buffer. This address will be used to encode the
-                 printable tags.
-   @param buf_size number of available bytes in buffer.
-   @param print_buf_size Will be set to the number of bytes consumed by
-                         printable tags.
-   @param bin_buf_size Will be set to the number of bytes used to encode the
-                       binary tags.
-   @return A pointer to the binary tag's encoded, or NULL if the buffer was
-           insufficiently large to hold the encoded tags. Thus, if successful,
-           printable tags are encoded into
-           [buffer, buffer + *print_buf_size) and binary tags into
-           [returned-ptr, returned-ptr + *bin_buf_size) (and the return value
-           should be buffer + *print_buf_size) */
-CENSUS_API char *census_tag_set_encode(const census_tag_set *tags, char *buffer,
-                                       size_t buf_size, size_t *print_buf_size,
-                                       size_t *bin_buf_size);
-
-/* Decode tag set buffers encoded with census_tag_set_encode_*(). Returns NULL
-   if there is an error in parsing either buffer. */
-CENSUS_API census_tag_set *census_tag_set_decode(const char *buffer,
-                                                 size_t size,
-                                                 const char *bin_buffer,
-                                                 size_t bin_size);
-
-/* Get a contexts tag set. */
-CENSUS_API census_tag_set *census_context_tag_set(census_context *context);
+CENSUSAPI void census_trace_scan_end();
 
 /* Core stats collection API's. The following concepts are used:
    * Aggregation: A collection of values. Census supports the following
@@ -495,8 +474,8 @@ typedef struct {
 } census_value;
 
 /* Record new usage values against the given context. */
-CENSUS_API void census_record_values(census_context *context,
-                                     census_value *values, size_t nvalues);
+CENSUSAPI void census_record_values(census_context *context,
+                                    census_value *values, size_t nvalues);
 
 /** Type representing a particular aggregation */
 typedef struct census_aggregation_ops census_aggregation_ops;
@@ -511,8 +490,7 @@ extern census_aggregation_ops census_agg_window;
     construction via census_define_view(). */
 typedef struct {
   const census_aggregation_ops *ops;
-  const void *
-      create_arg; /* Argument to be used for aggregation initialization. */
+  const void *create_arg; /* Aaggregation initialization argument. */
 } census_aggregation;
 
 /** A census view type. Opaque. */
@@ -520,36 +498,39 @@ typedef struct census_view census_view;
 
 /** Create a new view.
   @param metric_id Metric with which this view is associated.
-  @param tags tags that define the view
+  @param tags tags that define the view.
   @param aggregations aggregations to associate with the view
   @param naggregations number of aggregations
 
   @return A new census view
 */
-CENSUS_API census_view *census_view_create(
-    uint32_t metric_id, const census_tag_set *tags,
+
+/* TODO(aveitch): consider if context is the right argument type to pass in
+   tags. */
+CENSUSAPI census_view *census_view_create(
+    uint32_t metric_id, const census_context *tags,
     const census_aggregation *aggregations, size_t naggregations);
 
 /** Destroy a previously created view. */
-CENSUS_API void census_view_delete(census_view *view);
+CENSUSAPI void census_view_delete(census_view *view);
 
 /** Metric ID associated with a view */
-CENSUS_API size_t census_view_metric(const census_view *view);
+CENSUSAPI size_t census_view_metric(const census_view *view);
 
 /** Number of aggregations associated with view. */
-CENSUS_API size_t census_view_naggregations(const census_view *view);
+CENSUSAPI size_t census_view_naggregations(const census_view *view);
 
 /** Get tags associated with view. */
-CENSUS_API const census_tag_set *census_view_tags(const census_view *view);
+CENSUSAPI const census_context *census_view_tags(const census_view *view);
 
 /** Get aggregation descriptors associated with a view. */
-CENSUS_API const census_aggregation *census_view_aggregrations(
+CENSUSAPI const census_aggregation *census_view_aggregrations(
     const census_view *view);
 
 /** Holds all the aggregation data for a particular view instantiation. Forms
   part of the data returned by census_view_data(). */
 typedef struct {
-  const census_tag_set *tags; /* Tags for this set of aggregations. */
+  const census_context *tags; /* Tags for this set of aggregations. */
   const void **data; /* One data set for every aggregation in the view. */
 } census_view_aggregation_data;
 
@@ -563,11 +544,10 @@ typedef struct {
   @param view View from which to get data.
   @return Full set of data for all aggregations for the view.
 */
-CENSUS_API const census_view_data *census_view_get_data(
-    const census_view *view);
+CENSUSAPI const census_view_data *census_view_get_data(const census_view *view);
 
 /** Reset all view data to zero for the specified view */
-CENSUS_API void census_view_reset(census_view *view);
+CENSUSAPI void census_view_reset(census_view *view);
 
 #ifdef __cplusplus
 }

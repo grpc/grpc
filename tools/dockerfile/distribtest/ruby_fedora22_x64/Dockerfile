@@ -29,8 +29,6 @@
 
 FROM fedora:22
 
-RUN yum clean all
-RUN yum update -y
-RUN yum install -y git
-RUN yum install -y ruby
+RUN yum clean all && yum update -y && yum install -y ruby
 
+RUN gem install bundler
