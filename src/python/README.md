@@ -50,6 +50,20 @@ Please read our online documentation for a [Quick Start][] and a [detailed examp
 
 BUILDING FROM SOURCE
 ---------------------
+
+**Linux (Debian):**
+
+- Several standard development tools are required to build from source: 
+```
+$ sudo apt-get install git make gcc dh-autoreconf python-dev
+```
+
+- In addition, you'll need to install the latest version of tox from pip:
+```
+$ sudo apt-get install pip
+$ sudo pip install tox
+```
+
 - Clone this repository
 
 - Initialize the git submodules
