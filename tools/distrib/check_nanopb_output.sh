@@ -33,22 +33,6 @@ set -ex
 apt-get install -y autoconf automake libtool curl python-virtualenv
 
 readonly NANOPB_TMP_OUTPUT="${LOCAL_GIT_ROOT}/gens/src/proto/grpc/lb/v0"
-readonly VENV_DIR=$(mktemp -d)
-# create a virtualenv for nanopb's compiler
-pushd $VENV_DIR
-readonly VENV_NAME="nanopb-$(date '+%Y%m%d_%H%M%S_%N')"
-virtualenv $VENV_NAME
-. $VENV_NAME/bin/activate
-popd
-
-# install proto3
-pip install protobuf==3.0.0b2
-
-# change to root directory
-cd $(dirname $0)/../..
-
-# build clang-format docker image
-docker build -t grpc_clang_format tools/dockerfile/grpc_clang_format
 
 # install protoc version 3
 pushd third_party/protobuf

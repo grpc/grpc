@@ -70,9 +70,6 @@ read -r -d '' COPYRIGHT <<'EOF'
 
 EOF
 
-# build clang-format docker image
-docker build -t grpc_clang_format tools/dockerfile/grpc_clang_format
-
 CURRENT_YEAR=$(date +%Y)
 COPYRIGHT_FILE=$(mktemp)
 echo "${COPYRIGHT/<YEAR>/$CURRENT_YEAR}" > $COPYRIGHT_FILE
@@ -106,6 +103,15 @@ if [[ ! -f "${EXPECTED_OPTIONS_FILE_PATH}" ]]; then
   exit 4
 fi
 
+readonly VENV_DIR=$(mktemp -d)
+readonly VENV_NAME="nanopb-$(date '+%Y%m%d_%H%M%S_%N')"
+pushd $VENV_DIR
+virtualenv $VENV_NAME
+. $VENV_NAME/bin/activate
+popd
+
+pip install protobuf==3.0.0b2
+
 pushd "$(dirname $1)" > /dev/null
 
 protoc \
@@ -124,10 +130,7 @@ mv -v $TMPFILE "$OUTPUT_DIR/$PROTO_BASENAME.pb.c"
 cat $COPYRIGHT_FILE "$OUTPUT_DIR/$PROTO_BASENAME.pb.h" > $TMPFILE
 mv -v $TMPFILE "$OUTPUT_DIR/$PROTO_BASENAME.pb.h"
 
-readonly MOUNTPOINT='/protos'
-docker run --rm=true -v ${HOST_GIT_ROOT}/gens/src/proto/grpc/lb/v0:$MOUNTPOINT \
-        -t grpc_clang_format \
-        clang-format-3.6 -style="{BasedOnStyle: Google, Language: Cpp}" \
-        -i $MOUNTPOINT/load_balancer.pb.c $MOUNTPOINT/load_balancer.pb.h
+deactivate
+rm -rf $VENV_DIR
 
 popd > /dev/null
