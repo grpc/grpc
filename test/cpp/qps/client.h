@@ -306,8 +306,9 @@ class ClientImpl : public Client {
   ClientImpl(const ClientConfig& config,
              std::function<std::unique_ptr<StubType>(std::shared_ptr<Channel>)>
                  create_stub)
-    : cores_(LimitCores(config.core_list().data(), config.core_list_size())),
-      channels_(config.client_channels()), create_stub_(create_stub) {
+      : cores_(LimitCores(config.core_list().data(), config.core_list_size())),
+        channels_(config.client_channels()),
+        create_stub_(create_stub) {
     for (int i = 0; i < config.client_channels(); i++) {
       channels_[i].init(config.server_targets(i % config.server_targets_size()),
                         config, create_stub_);
