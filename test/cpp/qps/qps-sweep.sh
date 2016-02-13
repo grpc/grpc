@@ -55,7 +55,7 @@ for secure in true false; do
     --server_type=ASYNC_GENERIC_SERVER --outstanding_rpcs_per_channel=100 \
     --client_channels=64 --bbuf_req_size=0 --bbuf_resp_size=0 \
     --async_client_threads=0 --async_server_threads=0 --secure_test=$secure \
-    --num_servers=1 --num_clients=0
+    --num_servers=1 --num_clients=0 |& tee /tmp/qps-test.$$
 
   # Scenario 2b: QPS with a single server core
   "$bins"/opt/qps_driver --rpc_type=STREAMING --client_type=ASYNC_CLIENT \
@@ -71,7 +71,15 @@ for secure in true false; do
     --async_client_threads=0 --async_server_threads=0 --secure_test=$secure \
     --num_servers=1 --num_clients=0
 
-  # Scenario 3: Latency at near-peak load (TBD)
+  # Scenario 3: Latency at near-peak load (all clients equally loaded)
+  "$bins"/opt/qps_driver --rpc_type=STREAMING --client_type=ASYNC_CLIENT \
+    --server_type=ASYNC_GENERIC_SERVER --outstanding_rpcs_per_channel=100 \
+    --client_channels=64 --bbuf_req_size=0 --bbuf_resp_size=0 \
+    --async_client_threads=0 --async_server_threads=0 --secure_test=$secure \
+    --num_servers=1 --num_clients=0 --poisson_load=`awk '$5 == "QPS:" \
+      {print int(0.7 * $6); exit}' /tmp/qps-test.$$`
+
+  rm /tmp/qps-test.$$
 
   # Scenario 4: Single-channel bidirectional throughput test (like TCP_STREAM).
   "$bins"/opt/qps_driver --rpc_type=STREAMING --client_type=ASYNC_CLIENT \
