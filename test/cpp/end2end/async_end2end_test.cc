@@ -479,8 +479,10 @@ TEST_P(AsyncEnd2endTest, ClientInitialMetadataRpc) {
   send_request.set_message("Hello");
   std::pair<grpc::string, grpc::string> meta1("key1", "val1");
   std::pair<grpc::string, grpc::string> meta2("key2", "val2");
+  std::pair<grpc::string, grpc::string> meta3("g.r.d-bin", "xyz");
   cli_ctx.AddMetadata(meta1.first, meta1.second);
   cli_ctx.AddMetadata(meta2.first, meta2.second);
+  cli_ctx.AddMetadata(meta3.first, meta3.second);
 
   std::unique_ptr<ClientAsyncResponseReader<EchoResponse>> response_reader(
       stub_->AsyncEcho(&cli_ctx, send_request, cq_.get()));
@@ -494,6 +496,8 @@ TEST_P(AsyncEnd2endTest, ClientInitialMetadataRpc) {
             ToString(client_initial_metadata.find(meta1.first)->second));
   EXPECT_EQ(meta2.second,
             ToString(client_initial_metadata.find(meta2.first)->second));
+  EXPECT_EQ(meta3.second,
+            ToString(client_initial_metadata.find(meta3.first)->second));
   EXPECT_GE(client_initial_metadata.size(), static_cast<size_t>(2));
 
   send_response.set_message(recv_request.message());
