@@ -49,6 +49,7 @@
 #include "src/core/profiling/timers.h"
 #include "src/core/support/block_annotate.h"
 #include <grpc/support/alloc.h>
+#include <grpc/support/atm.h>
 #include <grpc/support/log.h>
 #include <grpc/support/thd.h>
 #include <grpc/support/tls.h>
