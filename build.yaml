@@ -2815,6 +2815,34 @@ node_modules:
   - src/node/ext/server.cc
   - src/node/ext/server_credentials.cc
   - src/node/ext/timeval.cc
+php_config_m4:
+  deps:
+  - grpc
+  - gpr
+  - boringssl
+  - z
+  headers:
+  - src/php/ext/grpc/byte_buffer.h
+  - src/php/ext/grpc/call.h
+  - src/php/ext/grpc/call_credentials.h
+  - src/php/ext/grpc/channel.h
+  - src/php/ext/grpc/channel_credentials.h
+  - src/php/ext/grpc/completion_queue.h
+  - src/php/ext/grpc/php_grpc.h
+  - src/php/ext/grpc/server.h
+  - src/php/ext/grpc/server_credentials.h
+  - src/php/ext/grpc/timeval.h
+  src:
+  - src/php/ext/grpc/byte_buffer.c
+  - src/php/ext/grpc/call.c
+  - src/php/ext/grpc/call_credentials.c
+  - src/php/ext/grpc/channel.c
+  - src/php/ext/grpc/channel_credentials.c
+  - src/php/ext/grpc/completion_queue.c
+  - src/php/ext/grpc/php_grpc.c
+  - src/php/ext/grpc/server.c
+  - src/php/ext/grpc/server_credentials.c
+  - src/php/ext/grpc/timeval.c
 python_dependencies:
   deps:
   - grpc
