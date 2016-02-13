@@ -59,23 +59,23 @@ GPR_TLS_DECL(g_current_thread_worker);
 
 /** Default poll() function - a pointer so that it can be overridden by some
  *  tests */
-typedef union poll_function {
+typedef union poll_function_union {
   grpc_poll_function_type poll_function;
   gpr_atm atm;
-} poll_function;
+} poll_function_union;
 
 /* C89 allows initialization of a union's first element, which is great here */
-static poll_function poller_function = { poll };
+static poll_function_union poller_function = { poll };
 
 void grpc_poll_function_set(grpc_poll_function_type poller) {
-  poll_function f;
-  memset(&f, sizeof(f), 0); /* clear this out to avoid uninit'ed bytes */
+  poll_function_union f;
+  memset(&f, 0, sizeof(f)); /* clear this out to avoid uninit'ed bytes */
   f.poll_function = poller;
   gpr_atm_rel_store(&poller_function.atm, f.atm);
 }
 
 grpc_poll_function_type grpc_poll_function_get(void) {
-  poll_function f;
+  poll_function_union f;
   f.atm = gpr_atm_acq_load(&poller_function.atm);
   return f.poll_function;
 }

@@ -42,6 +42,10 @@
 #include "src/core/iomgr/iomgr.h"
 #include "src/core/iomgr/wakeup_fd_posix.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct grpc_pollset_vtable grpc_pollset_vtable;
 
 /* forward declare only in this file to avoid leaking impl details via
@@ -148,5 +152,9 @@ void grpc_poll_function_set(grpc_poll_function_type poller);
 grpc_poll_function_type grpc_poll_function_get(void);
 
 extern grpc_wakeup_fd grpc_global_wakeup_fd;
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRPC_INTERNAL_CORE_IOMGR_POLLSET_POSIX_H */
