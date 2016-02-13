@@ -66,7 +66,7 @@ typedef union poll_function_union {
 } poll_function_union;
 
 /* C89 allows initialization of a union's first element, which is great here */
-static poll_function_union poller_function = { poll };
+static poll_function_union poller_function = {poll};
 
 void grpc_poll_function_set(grpc_poll_function_type poller) {
   poll_function_union f;
