@@ -38,6 +38,9 @@ nvm install $NODE_VERSION
 
 npm install -g node-static
 
+# Kill off existing static servers
+kill -9 $(ps aux | grep '[n]ode .*static' | awk '{print $2}') || true
+
 STATIC_SERVER=127.0.0.1
 STATIC_PORT=8080
 
