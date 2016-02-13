@@ -582,6 +582,8 @@ libs:
   - grpc_codegen
   - grpc_base
   - census
+  force_load:
+  - gpr
   secure: true
   vs_packages:
   - grpc.dependencies.openssl

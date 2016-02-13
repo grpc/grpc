@@ -1523,6 +1523,8 @@
     if lib.get('deps_linkage', None) == 'static':
       for dep in lib.get('deps', []):
         lib_archive = '$(LIBDIR)/$(CONFIG)/lib' + dep + '.a'
+        if dep in lib.get('force_load', []):
+          common = common + ' $(if $(subst Darwin,,$(SYSTEM)),,-force_load)'
         common = common + ' ' + lib_archive
         lib_deps = lib_deps + ' ' + lib_archive
         mingw_lib_deps = mingw_lib_deps + ' ' + lib_archive
