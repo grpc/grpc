@@ -36,7 +36,7 @@ nvm use 4
 
 cd $(dirname $0)/../..
 
-rm -rf build
+rm -rf build || true
 
 mkdir -p artifacts
 
@@ -46,6 +46,6 @@ node_versions=( 0.12.0 1.0.0 1.1.0 2.0.0 3.0.0 4.0.0 5.0.0 )
 
 for version in ${node_versions[@]}
 do
-  node-pre-gyp configure rebuild package testpackage --target=$version --target_arch=$NODE_TARGET_ARCH
+  ./node_modules/.bin/node-pre-gyp configure rebuild package testpackage --target=$version --target_arch=$NODE_TARGET_ARCH
   cp -r build/stage/* artifacts/
 done
