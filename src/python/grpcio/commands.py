@@ -41,7 +41,6 @@ import sys
 import traceback
 
 import setuptools
-from setuptools.command import bdist_egg
 from setuptools.command import build_ext
 from setuptools.command import build_py
 from setuptools.command import easy_install
@@ -51,13 +50,6 @@ from setuptools.command import test
 import support
 
 PYTHON_STEM = os.path.dirname(os.path.abspath(__file__))
-
-BINARIES_REPOSITORY = os.environ.get(
-    'GRPC_PYTHON_BINARIES_REPOSITORY',
-    'https://storage.googleapis.com/grpc-precompiled-binaries/python')
-
-USE_GRPC_CUSTOM_BDIST = bool(int(os.environ.get(
-    'GRPC_PYTHON_USE_CUSTOM_BDIST', '1')))
 
 CONF_PY_ADDENDUM = """
 extensions.append('sphinx.ext.napoleon')
@@ -74,126 +66,39 @@ class CommandError(Exception):
 
 # TODO(atash): Remove this once PyPI has better Linux bdist support. See
 # https://bitbucket.org/pypa/pypi/issues/120/binary-wheels-for-linux-are-not-supported
-def _get_grpc_custom_bdist_egg(decorated_basename, target_egg_basename):
-  """Returns a string path to a .egg file for Linux to install.
+def _get_grpc_custom_bdist(decorated_basename, target_bdist_basename):
+  """Returns a string path to a bdist file for Linux to install.
 
-  If we can retrieve a pre-compiled egg from online, uses it. Else, emits a
+  If we can retrieve a pre-compiled bdist from online, uses it. Else, emits a
   warning and builds from source.
   """
+  # TODO(atash): somehow the name that's returned from `wheel` is different
+  # between different versions of 'wheel' (but from a compatibility standpoint,
+  # the names are compatible); we should have some way of determining name
+  # compatibility in the same way `wheel` does to avoid having to rename all of
+  # the custom wheels that we build/upload to GCS.
+
   # Break import style to ensure that setup.py has had a chance to install the
-  # relevant package eggs.
+  # relevant package.
   from six.moves.urllib import request
-  decorated_path = decorated_basename + '.egg'
+  decorated_path = decorated_basename + GRPC_CUSTOM_BDIST_EXT
   try:
     url = BINARIES_REPOSITORY + '/{target}'.format(target=decorated_path)
-    egg_data = request.urlopen(url).read()
+    bdist_data = request.urlopen(url).read()
   except IOError as error:
     raise CommandError(
-        '{}\n\nCould not find the bdist egg {}: {}'
+        '{}\n\nCould not find the bdist {}: {}'
             .format(traceback.format_exc(), decorated_path, error.message))
-  # Our chosen local egg path.
-  egg_path = target_egg_basename + '.egg'
+  # Our chosen local bdist path.
+  bdist_path = target_bdist_basename + GRPC_CUSTOM_BDIST_EXT
   try:
-    with open(egg_path, 'w') as egg_file:
-      egg_file.write(egg_data)
+    with open(bdist_path, 'w') as bdist_file:
+      bdist_file.write(bdist_data)
   except IOError as error:
     raise CommandError(
-        '{}\n\nCould not write grpcio egg: {}'
+        '{}\n\nCould not write grpcio bdist: {}'
             .format(traceback.format_exc(), error.message))
-  return egg_path
-
-
-class EggNameMixin(object):
-  """Mixin for setuptools.Command classes to enable acquiring the egg name."""
-
-  def egg_name(self, with_custom):
-    """
-    Args:
-      with_custom: Boolean describing whether or not to decorate the egg name
-        with custom gRPC-specific target information.
-    """
-    egg_command = self.get_finalized_command('bdist_egg')
-    base = os.path.splitext(os.path.basename(egg_command.egg_output))[0]
-    if with_custom:
-      flavor = 'ucs2' if sys.maxunicode == 65535 else 'ucs4'
-      return '{base}-{flavor}'.format(base=base, flavor=flavor)
-    else:
-      return base
-
-
-class Install(install.install, EggNameMixin):
-  """Custom Install command for gRPC Python.
-
-  This is for bdist shims and whatever else we might need a custom install
-  command for.
-  """
-
-  user_options = install.install.user_options + [
-      # TODO(atash): remove this once PyPI has better Linux bdist support. See
-      # https://bitbucket.org/pypa/pypi/issues/120/binary-wheels-for-linux-are-not-supported
-      ('use-grpc-custom-bdist', None,
-       'Whether to retrieve a binary from the gRPC binary repository instead '
-       'of building from source.'),
-  ]
-
-  def initialize_options(self):
-    install.install.initialize_options(self)
-    self.use_grpc_custom_bdist = USE_GRPC_CUSTOM_BDIST
-
-  def finalize_options(self):
-    install.install.finalize_options(self)
-
-  def run(self):
-    if self.use_grpc_custom_bdist:
-      try:
-        try:
-          egg_path = _get_grpc_custom_bdist_egg(self.egg_name(True),
-                                                self.egg_name(False))
-        except CommandError as error:
-          sys.stderr.write(
-              '\nWARNING: Failed to acquire grpcio prebuilt binary:\n'
-              '{}.\n\n'.format(error.message))
-          raise
-        try:
-          self._run_bdist_retrieval_install(egg_path)
-        except Exception as error:
-          # if anything else happens (and given how there's no way to really know
-          # what's happening in setuptools here, I mean *anything*), warn the user
-          # and fall back to building from source.
-          sys.stderr.write(
-              '{}\nWARNING: Failed to install grpcio prebuilt binary.\n\n'
-                  .format(traceback.format_exc()))
-          raise
-      except Exception:
-        install.install.run(self)
-    else:
-      install.install.run(self)
-
-  # TODO(atash): Remove this once PyPI has better Linux bdist support. See
-  # https://bitbucket.org/pypa/pypi/issues/120/binary-wheels-for-linux-are-not-supported
-  def _run_bdist_retrieval_install(self, bdist_egg):
-    easy_install = self.distribution.get_command_class('easy_install')
-    easy_install_command = easy_install(
-        self.distribution, args='x', root=self.root, record=self.record,
-    )
-    easy_install_command.ensure_finalized()
-    easy_install_command.always_copy_from = '.'
-    easy_install_command.package_index.scan(glob.glob('*.egg'))
-    arguments = [bdist_egg]
-    if setuptools.bootstrap_install_from:
-      args.insert(0, setuptools.bootstrap_install_from)
-    easy_install_command.args = arguments
-    easy_install_command.run()
-    setuptools.bootstrap_install_from = None
-
-
-class BdistEggCustomName(bdist_egg.bdist_egg, EggNameMixin):
-  """Thin wrapper around the bdist_egg command to build with our custom name."""
-
-  def run(self):
-    bdist_egg.bdist_egg.run(self)
-    target = os.path.join(self.dist_dir, '{}.egg'.format(self.egg_name(True)))
-    shutil.move(self.get_outputs()[0], target)
+  return bdist_path
 
 
 class SphinxDocumentation(setuptools.Command):
