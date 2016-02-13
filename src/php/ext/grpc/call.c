@@ -125,15 +125,9 @@ zval *grpc_parse_metadata_array(grpc_metadata_array *metadata_array) {
     memcpy(str_val, elem->value, elem->value_length);
     if (zend_hash_find(array_hash, str_key, key_len, (void **)data) ==
         SUCCESS) {
-      if (Z_TYPE_P(*data) != IS_ARRAY) {
-        zend_throw_exception(zend_exception_get_default(),
-                             "Metadata hash somehow contains wrong types.",
-                             1 TSRMLS_CC);
-          efree(str_key);
-          efree(str_val);
-          return NULL;
-      }
-      add_next_index_stringl(*data, str_val, elem->value_length, false);
+      zend_throw_exception(zend_exception_get_default(),
+                           "Metadata hash somehow contains wrong types.",
+                           1 TSRMLS_CC);
     } else {
       MAKE_STD_ZVAL(inner_array);
       array_init(inner_array);
