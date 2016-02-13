@@ -1,22 +1,40 @@
 gRPC Python
 ===========
 
-Package for GRPC Python.
+Package for gRPC Python.
 
-Dependencies
+Installation
 ------------
 
-Ensure you have installed the gRPC core.  On Mac OS X, install homebrew_.
-Run the following command to install gRPC Python.
+gRPC Python is available for Linux and Mac OS X running Python 2.7.
+
+From PyPI
+~~~~~~~~~
+
+If you are installing locally...
 
 ::
 
-  $ curl -fsSL https://goo.gl/getgrpc | bash -s python
+  $ pip install grpcio
 
-This will download and run the [gRPC install script][] to install grpc core. The script then uses pip to install this package.  It also installs the Protocol Buffers compiler (_protoc_) and the gRPC _protoc_ plugin for python.
+Else system wide (on Ubuntu)...
 
-Otherwise, `install from source`_
+::
 
-.. _`install from source`: https://github.com/grpc/grpc/blob/master/src/python/README.md#building-from-source
-.. _homebrew: http://brew.sh
-.. _`gRPC install script`: https://raw.githubusercontent.com/grpc/homebrew-grpc/master/scripts/install
+  $ sudo pip install grpcio
+
+From Source
+~~~~~~~~~~~
+
+Building from source requires that you have the Python headers (usually a
+package named `python-dev`).
+
+::
+
+  $ export REPO_ROOT=grpc
+  $ git clone https://github.com/grpc/grpc.git $REPO_ROOT
+  $ cd $REPO_ROOT
+  $ pip install .
+
+Note that `$REPO_ROOT` can be assigned to whatever directory name floats your
+fancy.

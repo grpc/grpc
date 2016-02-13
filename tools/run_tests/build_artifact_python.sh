@@ -39,12 +39,20 @@ then
   pip install -rrequirements.txt
 fi
 
+# The bdist_wheel_grpc_custom command is finicky about command output ordering
+# and thus ought to be run in a shell command separate of others. Further, it
+# trashes the actual bdist_wheel output, so it should be run first so that
+# bdist_wheel may be run unmolested.
+GRPC_PYTHON_USE_CUSTOM_BDIST=0  \
+GRPC_PYTHON_BUILD_WITH_CYTHON=1 \
+${SETARCH_CMD} python setup.py  \
+    build_tagged_ext
+
 GRPC_PYTHON_USE_CUSTOM_BDIST=0  \
 GRPC_PYTHON_BUILD_WITH_CYTHON=1 \
 ${SETARCH_CMD} python setup.py  \
     bdist_wheel                 \
-    sdist                       \
-    bdist_egg_grpc_custom
+    sdist
 
 mkdir -p artifacts
 
