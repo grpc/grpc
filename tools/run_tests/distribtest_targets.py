@@ -122,11 +122,15 @@ class NodeDistribTest(object):
 
   def build_jobspec(self):
     if self.platform == 'linux':
+      linux32 = ''
+      if self.arch == 'x86':
+        linux32 = 'linux32'
       return create_docker_jobspec(self.name,
                                    'tools/dockerfile/distribtest/node_%s_%s' % (
                                        self.docker_suffix,
                                        self.arch),
-                                   'test/distrib/node/run_distrib_test.sh %s' % (
+                                   '%s test/distrib/node/run_distrib_test.sh %s' % (
+                                       linux32,
                                        self.node_version))
     elif self.platform == 'macos':
       return create_jobspec(self.name,
@@ -236,11 +240,7 @@ def targets():
           RubyDistribTest('linux', 'x64', 'ubuntu1504'),
           RubyDistribTest('linux', 'x64', 'ubuntu1510'),
           RubyDistribTest('linux', 'x64', 'ubuntu1604'),
-          NodeDistribTest('macos', 'x64', None, '0.10'),
-          NodeDistribTest('macos', 'x64', None, '0.12'),
-          NodeDistribTest('macos', 'x64', None, '3'),
           NodeDistribTest('macos', 'x64', None, '4'),
-          NodeDistribTest('macos', 'x64', None, '5'),
           NodeDistribTest('linux', 'x86', 'jessie', '4')
           ] + [
             NodeDistribTest('linux', 'x64', os, version)
