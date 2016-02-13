@@ -96,6 +96,7 @@ static void multipoll_with_poll_pollset_maybe_work_and_unlock(
   /* TODO(ctiller): inline some elements to avoid an allocation */
   grpc_fd_watcher *watchers;
   struct pollfd *pfds;
+  grpc_poll_function_type poll_function;
 
   h = pollset->data.ptr;
   timeout = grpc_poll_deadline_to_millis_timeout(deadline, now);
@@ -137,10 +138,11 @@ static void multipoll_with_poll_pollset_maybe_work_and_unlock(
                                                POLLIN, POLLOUT, &watchers[i]);
   }
 
+  poll_function = grpc_poll_function_get();
   /* TODO(vpai): Consider first doing a 0 timeout poll here to avoid
      even going into the blocking annotation if possible */
   GRPC_SCHEDULING_START_BLOCKING_REGION;
-  r = grpc_poll_function(pfds, pfd_count, timeout);
+  r = poll_function(pfds, pfd_count, timeout);
   GRPC_SCHEDULING_END_BLOCKING_REGION;
 
   if (r < 0) {

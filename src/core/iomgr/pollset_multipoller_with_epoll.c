@@ -194,6 +194,7 @@ static void multipoll_with_epoll_pollset_maybe_work_and_unlock(
   pollset_hdr *h = pollset->data.ptr;
   int timeout_ms;
   struct pollfd pfds[2];
+  grpc_poll_function_type poll_function;
 
   /* If you want to ignore epoll's ability to sanely handle parallel pollers,
    * for a more apples-to-apples performance comparison with poll, add a
@@ -212,11 +213,12 @@ static void multipoll_with_epoll_pollset_maybe_work_and_unlock(
   pfds[1].events = POLLIN;
   pfds[1].revents = 0;
 
+  poll_function = grpc_poll_function_get();
   /* TODO(vpai): Consider first doing a 0 timeout poll here to avoid
      even going into the blocking annotation if possible */
   GPR_TIMER_BEGIN("poll", 0);
   GRPC_SCHEDULING_START_BLOCKING_REGION;
-  poll_rv = grpc_poll_function(pfds, 2, timeout_ms);
+  poll_rv = poll_function(pfds, 2, timeout_ms);
   GRPC_SCHEDULING_END_BLOCKING_REGION;
   GPR_TIMER_END("poll", 0);
 
