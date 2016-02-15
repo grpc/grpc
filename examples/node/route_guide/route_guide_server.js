@@ -31,12 +31,14 @@
  *
  */
 
+var PROTO_PATH = __dirname + '/../../protos/route_guide.proto';
+
 var fs = require('fs');
 var parseArgs = require('minimist');
 var path = require('path');
 var _ = require('lodash');
 var grpc = require('grpc');
-var routeguide = grpc.load(__dirname + '/route_guide.proto').routeguide;
+var routeguide = grpc.load(PROTO_PATH).routeguide;
 
 var COORD_FACTOR = 1e7;
 
