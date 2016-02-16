@@ -141,8 +141,8 @@ PHP_METHOD(Channel, __construct) {
   HashTable *array_hash;
   zval **creds_obj = NULL;
   wrapped_grpc_channel_credentials *creds = NULL;
-  /* "s|a" == 1 string, 1 optional array */
-  if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|a", &target,
+  /* "sa" == 1 string, 1 array */
+  if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "sa", &target,
                             &target_length, &args_array) == FAILURE) {
     zend_throw_exception(spl_ce_InvalidArgumentException,
                          "Channel expects a string and an array", 1 TSRMLS_CC);
