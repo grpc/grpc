@@ -173,7 +173,7 @@ static void test_receive(int number_of_clients) {
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
-static void destroy_pollset(grpc_exec_ctx *exec_ctx, void *p, int success) {
+static void destroy_pollset(grpc_exec_ctx *exec_ctx, void *p, bool success) {
   grpc_pollset_destroy(p);
 }
 
