@@ -15,7 +15,7 @@ Gem::Specification.new do |s|
 
   s.required_ruby_version = '>= 2.0.0'
 
-  s.files = %w( Makefile )
+  s.files = %w( Makefile .yardopts )
   s.files += %w( etc/roots.pem )
   s.files += Dir.glob('src/ruby/bin/**/*')
   s.files += Dir.glob('src/ruby/ext/**/*')
@@ -31,7 +31,7 @@ Gem::Specification.new do |s|
   s.require_paths = %w( src/ruby/bin src/ruby/lib src/ruby/pb )
   s.platform      = Gem::Platform::RUBY
 
-  s.add_dependency 'google-protobuf', '~> 3.0.0.alpha.5.0.2'
+  s.add_dependency 'google-protobuf', '~> 3.0.0.alpha.5.0.3'
   s.add_dependency 'googleauth',      '~> 0.5.1'
 
   s.add_development_dependency 'bundler',            '~> 1.9'
@@ -282,6 +282,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/transport/transport.h )
   s.files += %w( src/core/transport/transport_impl.h )
   s.files += %w( src/core/census/aggregation.h )
+  s.files += %w( src/core/census/log.h )
   s.files += %w( src/core/census/rpc_metric_id.h )
   s.files += %w( src/core/httpcli/httpcli_security_connector.c )
   s.files += %w( src/core/security/base64.c )
@@ -433,6 +434,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/transport/transport_op_string.c )
   s.files += %w( src/core/census/context.c )
   s.files += %w( src/core/census/initialize.c )
+  s.files += %w( src/core/census/log.c )
   s.files += %w( src/core/census/operation.c )
   s.files += %w( src/core/census/placeholders.c )
   s.files += %w( src/core/census/tracing.c )
