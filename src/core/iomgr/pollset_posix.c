@@ -49,6 +49,7 @@
 #include "src/core/profiling/timers.h"
 #include "src/core/support/block_annotate.h"
 #include <grpc/support/alloc.h>
+#include <grpc/support/atm.h>
 #include <grpc/support/log.h>
 #include <grpc/support/thd.h>
 #include <grpc/support/tls.h>
@@ -59,7 +60,26 @@ GPR_TLS_DECL(g_current_thread_worker);
 
 /** Default poll() function - a pointer so that it can be overridden by some
  *  tests */
-grpc_poll_function_type grpc_poll_function = poll;
+typedef union poll_function_union {
+  grpc_poll_function_type poll_function;
+  gpr_atm atm;
+} poll_function_union;
+
+/* C89 allows initialization of a union's first element, which is great here */
+static poll_function_union poller_function = {poll};
+
+void grpc_poll_function_set(grpc_poll_function_type poller) {
+  poll_function_union f;
+  memset(&f, 0, sizeof(f)); /* clear this out to avoid uninit'ed bytes */
+  f.poll_function = poller;
+  gpr_atm_rel_store(&poller_function.atm, f.atm);
+}
+
+grpc_poll_function_type grpc_poll_function_get(void) {
+  poll_function_union f;
+  f.atm = gpr_atm_acq_load(&poller_function.atm);
+  return f.poll_function;
+}
 
 /** The alarm system needs to be able to wakeup 'some poller' sometimes
  *  (specifically when a new alarm needs to be triggered earlier than the next
@@ -547,6 +567,7 @@ static void basic_pollset_maybe_work_and_unlock(grpc_exec_ctx *exec_ctx,
   int timeout;
   int r;
   nfds_t nfds;
+  grpc_poll_function_type poll_function;
 
   fd = pollset->data.ptr;
   if (fd && grpc_fd_is_orphaned(fd)) {
@@ -575,13 +596,14 @@ static void basic_pollset_maybe_work_and_unlock(grpc_exec_ctx *exec_ctx,
     gpr_mu_unlock(&pollset->mu);
   }
 
+  poll_function = grpc_poll_function_get();
   /* TODO(vpai): Consider first doing a 0 timeout poll here to avoid
      even going into the blocking annotation if possible */
   /* poll fd count (argument 2) is shortened by one if we have no events
      to poll on - such that it only includes the kicker */
   GPR_TIMER_BEGIN("poll", 0);
   GRPC_SCHEDULING_START_BLOCKING_REGION;
-  r = grpc_poll_function(pfd, nfds, timeout);
+  r = poll_function(pfd, nfds, timeout);
   GRPC_SCHEDULING_END_BLOCKING_REGION;
   GPR_TIMER_END("poll", 0);
 

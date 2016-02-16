@@ -76,11 +76,11 @@ static int assert_non_blocking_poll(struct pollfd* pfds, nfds_t nfds,
 class PollOverride {
  public:
   PollOverride(grpc_poll_function_type f) {
-    prev_ = grpc_poll_function;
-    grpc_poll_function = f;
+    prev_ = grpc_poll_function_get();
+    grpc_poll_function_set(f);
   }
 
-  ~PollOverride() { grpc_poll_function = prev_; }
+  ~PollOverride() { grpc_poll_function_set(prev_); }
 
  private:
   grpc_poll_function_type prev_;
