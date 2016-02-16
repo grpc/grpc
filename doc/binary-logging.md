@@ -6,7 +6,14 @@ The log format is described in [this proto file](src/proto/grpc/binary_log/v1alp
 
 ## API
 
-The binary logger will be a separate library from gRPC, in each language that we support. The user will need to explicitly call into the library to generate logs. The following API is an example of what it will approximately look like in C++:
+The binary logger will be a separate library from gRPC, in each language that we support. The user will need to explicitly call into the library to generate logs. The library will provide the ability to log sending or receiving, as relevant, the following on both the client and the server:
+
+ - Initial metadata
+ - Messages
+ - Status with trailing metadata from the server
+ - Additional key/value pairs that are associated with a call but not sent over the wire
+
+The following is an example of what such an API could look like in C++:
 
 ```c++
 // The context provides the method_name, deadline, peer, and metadata contents.
