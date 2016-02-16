@@ -42,7 +42,6 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "src/core/iomgr/timer_internal.h"
 #include "src/core/iomgr/fd_posix.h"
 #include "src/core/iomgr/iomgr_internal.h"
 #include "src/core/iomgr/socket_utils_posix.h"
@@ -272,16 +271,6 @@ void grpc_pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
       !grpc_closure_list_empty(pollset->idle_jobs)) {
     GPR_TIMER_MARK("grpc_pollset_work.idle_jobs", 0);
     grpc_exec_ctx_enqueue_list(exec_ctx, &pollset->idle_jobs, NULL);
-    goto done;
-  }
-  /* Check alarms - these are a global resource so we just ping
-     each time through on every pollset.
-     May update deadline to ensure timely wakeups.
-     TODO(ctiller): can this work be localized? */
-  if (grpc_timer_check(exec_ctx, now, &deadline)) {
-    GPR_TIMER_MARK("grpc_pollset_work.alarm_triggered", 0);
-    gpr_mu_unlock(&pollset->mu);
-    locked = 0;
     goto done;
   }
   /* If we're shutting down then we don't execute any extended work */
