@@ -37,39 +37,45 @@
 #include <gflags/gflags.h>
 #include <grpc++/grpc++.h>
 
-#include "test/cpp/util/metrics_server.h"
-#include "test/cpp/util/test_config.h"
 #include "src/proto/grpc/testing/metrics.grpc.pb.h"
 #include "src/proto/grpc/testing/metrics.pb.h"
+#include "test/cpp/util/metrics_server.h"
+#include "test/cpp/util/test_config.h"
 
 DEFINE_string(metrics_server_address, "",
               "The metrics server addresses in the fomrat <hostname>:<port>");
+DEFINE_bool(total_only, false,
+            "If true, this prints only the total value of all gauges");
+
+int kDeadlineSecs = 10;
 
 using grpc::testing::EmptyMessage;
 using grpc::testing::GaugeResponse;
 using grpc::testing::MetricsService;
 using grpc::testing::MetricsServiceImpl;
 
-void PrintMetrics(const grpc::string& server_address) {
-  gpr_log(GPR_INFO, "creating a channel to %s", server_address.c_str());
-  std::shared_ptr<grpc::Channel> channel(
-      grpc::CreateChannel(server_address, grpc::InsecureChannelCredentials()));
-
-  std::unique_ptr<MetricsService::Stub> stub(MetricsService::NewStub(channel));
-
+// Prints the values of all Gauges (unless total_only is set to 'true' in which
+// case this only prints the sum of all gauge values).
+bool PrintMetrics(std::unique_ptr<MetricsService::Stub> stub, bool total_only) {
   grpc::ClientContext context;
   EmptyMessage message;
+
+  std::chrono::system_clock::time_point deadline =
+      std::chrono::system_clock::now() + std::chrono::seconds(kDeadlineSecs);
+
+  context.set_deadline(deadline);
 
   std::unique_ptr<grpc::ClientReader<GaugeResponse>> reader(
       stub->GetAllGauges(&context, message));
 
   GaugeResponse gauge_response;
   long overall_qps = 0;
-  int idx = 0;
   while (reader->Read(&gauge_response)) {
     if (gauge_response.value_case() == GaugeResponse::kLongValue) {
-      gpr_log(GPR_INFO, "Gauge: %d (%s: %ld)", ++idx,
-              gauge_response.name().c_str(), gauge_response.long_value());
+      if (!total_only) {
+        gpr_log(GPR_INFO, "%s: %ld", gauge_response.name().c_str(),
+                gauge_response.long_value());
+      }
       overall_qps += gauge_response.long_value();
     } else {
       gpr_log(GPR_INFO, "Gauge %s is not a long value",
@@ -77,12 +83,14 @@ void PrintMetrics(const grpc::string& server_address) {
     }
   }
 
-  gpr_log(GPR_INFO, "OVERALL: %ld", overall_qps);
+  gpr_log(GPR_INFO, "%ld", overall_qps);
 
   const grpc::Status status = reader->Finish();
   if (!status.ok()) {
     gpr_log(GPR_ERROR, "Error in getting metrics from the client");
   }
+
+  return status.ok();
 }
 
 int main(int argc, char** argv) {
@@ -97,7 +105,12 @@ int main(int argc, char** argv) {
     return 1;
   }
 
-  PrintMetrics(FLAGS_metrics_server_address);
+  std::shared_ptr<grpc::Channel> channel(grpc::CreateChannel(
+      FLAGS_metrics_server_address, grpc::InsecureChannelCredentials()));
+
+  if (!PrintMetrics(MetricsService::NewStub(channel), FLAGS_total_only)) {
+    return 1;
+  }
 
   return 0;
 }
