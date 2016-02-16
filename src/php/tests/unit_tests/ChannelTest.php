@@ -1,6 +1,7 @@
+<?php
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,27 +32,51 @@
  *
  */
 
-var PROTO_PATH = __dirname + '/../protos/helloworld.proto';
+class ChannelTest extends PHPUnit_Framework_TestCase
+{
+    public function setUp()
+    {
+    }
 
-var grpc = require('grpc');
-var hello_proto = grpc.load(PROTO_PATH).helloworld;
+    public function tearDown()
+    {
+    }
 
-/**
- * Implements the SayHello RPC method.
- */
-function sayHello(call, callback) {
-  callback(null, {message: 'Hello ' + call.request.name});
+    public function testInsecureCredentials()
+    {
+        $this->channel = new Grpc\Channel(
+            'localhost:0',
+            [
+                'credentials' => Grpc\ChannelCredentials::createInsecure(),
+            ]
+        );
+        $this->assertSame('Grpc\Channel', get_class($this->channel));
+    }
+
+    /**
+     * @expectedException InvalidArgumentException
+     */
+    public function testInvalidCredentials()
+    {
+        $this->channel = new Grpc\Channel(
+            'localhost:0',
+            [
+                'credentials' => new Grpc\Timeval(100),
+            ]
+        );
+    }
+
+    /**
+     * @expectedException InvalidArgumentException
+     */
+    public function testInvalidOptionsArray()
+    {
+        $this->channel = new Grpc\Channel(
+            'localhost:0',
+            [
+                'abc' => [],
+            ]
+        );
+    }
+
 }
-
-/**
- * Starts an RPC server that receives requests for the Greeter service at the
- * sample server port
- */
-function main() {
-  var server = new grpc.Server();
-  server.addProtoService(hello_proto.Greeter.service, {sayHello: sayHello});
-  server.bind('0.0.0.0:50051', grpc.ServerCredentials.createInsecure());
-  server.start();
-}
-
-main();
