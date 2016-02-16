@@ -1,6 +1,7 @@
+<?php
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,27 +32,40 @@
  *
  */
 
-var PROTO_PATH = __dirname + '/../protos/helloworld.proto';
+class ServerTest extends PHPUnit_Framework_TestCase
+{
+    public function setUp()
+    {
+    }
 
-var grpc = require('grpc');
-var hello_proto = grpc.load(PROTO_PATH).helloworld;
+    public function tearDown()
+    {
+    }
 
-/**
- * Implements the SayHello RPC method.
- */
-function sayHello(call, callback) {
-  callback(null, {message: 'Hello ' + call.request.name});
+    /**
+     * @expectedException InvalidArgumentException
+     */
+    public function testInvalidConstructor()
+    {
+        $server = new Grpc\Server('invalid_host');
+    }
+
+    /**
+     * @expectedException InvalidArgumentException
+     */
+    public function testInvalidAddHttp2Port()
+    {
+        $this->server = new Grpc\Server([]);
+        $this->port = $this->server->addHttp2Port(['0.0.0.0:0']);
+    }
+
+    /**
+     * @expectedException InvalidArgumentException
+     */
+    public function testInvalidAddSecureHttp2Port()
+    {
+        $this->server = new Grpc\Server([]);
+        $this->port = $this->server->addSecureHttp2Port(['0.0.0.0:0']);
+    }
+
 }
-
-/**
- * Starts an RPC server that receives requests for the Greeter service at the
- * sample server port
- */
-function main() {
-  var server = new grpc.Server();
-  server.addProtoService(hello_proto.Greeter.service, {sayHello: sayHello});
-  server.bind('0.0.0.0:50051', grpc.ServerCredentials.createInsecure());
-  server.start();
-}
-
-main();
