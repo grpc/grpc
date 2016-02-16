@@ -86,4 +86,24 @@ void grpc_timer_init(grpc_exec_ctx *exec_ctx, grpc_timer *timer,
    Requires:  cancel() must happen after add() on a given timer */
 void grpc_timer_cancel(grpc_exec_ctx *exec_ctx, grpc_timer *timer);
 
+/* iomgr internal api for dealing with timers */
+
+/* Check for timers to be run, and run them.
+   Return non zero if timer callbacks were executed.
+   Drops drop_mu if it is non-null before executing callbacks.
+   If next is non-null, TRY to update *next with the next running timer
+   IF that timer occurs before *next current value.
+   *next is never guaranteed to be updated on any given execution; however,
+   with high probability at least one thread in the system will see an update
+   at any time slice. */
+
+int grpc_timer_check(grpc_exec_ctx* exec_ctx, gpr_timespec now,
+                     gpr_timespec* next);
+void grpc_timer_list_init(gpr_timespec now);
+void grpc_timer_list_shutdown(grpc_exec_ctx* exec_ctx);
+
+/* the following must be implemented by each iomgr implementation */
+
+void grpc_kick_poller(void);
+
 #endif /* GRPC_INTERNAL_CORE_IOMGR_TIMER_H */

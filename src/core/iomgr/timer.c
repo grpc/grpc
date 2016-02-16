@@ -34,7 +34,6 @@
 #include "src/core/iomgr/timer.h"
 
 #include "src/core/iomgr/timer_heap.h"
-#include "src/core/iomgr/timer_internal.h"
 #include "src/core/iomgr/time_averaged_stats.h"
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
