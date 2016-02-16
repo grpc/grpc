@@ -34,7 +34,7 @@
 #ifndef GRPC_INTERNAL_CORE_IOMGR_POLLSET_SET_POSIX_H
 #define GRPC_INTERNAL_CORE_IOMGR_POLLSET_SET_POSIX_H
 
-#include "src/core/iomgr/fd_posix.h"
+#include "src/core/iomgr/ev_posix.h"
 #include "src/core/iomgr/pollset_posix.h"
 
 typedef struct grpc_pollset_set {
