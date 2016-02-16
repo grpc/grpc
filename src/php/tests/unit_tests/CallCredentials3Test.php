@@ -32,18 +32,12 @@
  *
  */
 
-class CallCredentialsTest extends PHPUnit_Framework_TestCase
+class CallCredentials3Test extends PHPUnit_Framework_TestCase
 {
     public function setUp()
     {
         $this->credentials = Grpc\ChannelCredentials::createSsl(
             file_get_contents(dirname(__FILE__).'/../data/ca.pem'));
-        $this->call_credentials = Grpc\CallCredentials::createFromPlugin(
-            [$this, 'callbackFunc']);
-        $this->credentials = Grpc\ChannelCredentials::createComposite(
-            $this->credentials,
-            $this->call_credentials
-        );
         $server_credentials = Grpc\ServerCredentials::createSsl(
             null,
             file_get_contents(dirname(__FILE__).'/../data/server1.key'),
@@ -85,6 +79,10 @@ class CallCredentialsTest extends PHPUnit_Framework_TestCase
                               '/abc/dummy_method',
                               $deadline,
                               $this->host_override);
+
+        $call_credentials = Grpc\CallCredentials::createFromPlugin(
+            [$this, 'callbackFunc']);
+        $call->setCredentials($call_credentials);
 
         $event = $call->startBatch([
             Grpc\OP_SEND_INITIAL_METADATA => [],
@@ -135,40 +133,4 @@ class CallCredentialsTest extends PHPUnit_Framework_TestCase
         unset($server_call);
     }
 
-    public function callbackFunc2($context)
-    {
-        return [];
-    }
-
-    public function testCreateComposite()
-    {
-        $call_credentials2 = Grpc\CallCredentials::createFromPlugin(
-            [$this, 'callbackFunc2']);
-        $call_credentials3 = Grpc\CallCredentials::createComposite(
-            $this->call_credentials,
-            $call_credentials2
-        );
-        $this->assertSame('Grpc\CallCredentials', get_class($call_credentials3));
-    }
-
-    /**
-     * @expectedException InvalidArgumentException
-     */
-    public function testCreateFromPluginInvalidParam()
-    {
-        $call_credentials = Grpc\CallCredentials::createFromPlugin(
-            'callbackFunc'
-        );
-    }
-
-    /**
-     * @expectedException InvalidArgumentException
-     */
-    public function testCreateCompositeInvalidParam()
-    {
-        $call_credentials3 = Grpc\CallCredentials::createComposite(
-            $this->call_credentials,
-            $this->credentials
-        );
-    }
 }
