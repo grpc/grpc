@@ -451,6 +451,9 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\census\initialize.c">
       <Filter>src\core\census</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\census\log.c">
+      <Filter>src\core\census</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\census\operation.c">
       <Filter>src\core\census</Filter>
     </ClCompile>
@@ -885,6 +888,9 @@
       <Filter>src\core\transport</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\census\aggregation.h">
+      <Filter>src\core\census</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\census\log.h">
       <Filter>src\core\census</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\census\rpc_metric_id.h">
