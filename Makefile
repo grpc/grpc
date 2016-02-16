@@ -2371,9 +2371,10 @@ LIBGRPC_SRC = \
     src/core/iomgr/endpoint.c \
     src/core/iomgr/endpoint_pair_posix.c \
     src/core/iomgr/endpoint_pair_windows.c \
+    src/core/iomgr/ev_poll_and_epoll_posix.c \
+    src/core/iomgr/ev_posix.c \
     src/core/iomgr/exec_ctx.c \
     src/core/iomgr/executor.c \
-    src/core/iomgr/fd_posix.c \
     src/core/iomgr/iocp_windows.c \
     src/core/iomgr/iomgr.c \
     src/core/iomgr/iomgr_posix.c \
@@ -2655,9 +2656,10 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/iomgr/endpoint.c \
     src/core/iomgr/endpoint_pair_posix.c \
     src/core/iomgr/endpoint_pair_windows.c \
+    src/core/iomgr/ev_poll_and_epoll_posix.c \
+    src/core/iomgr/ev_posix.c \
     src/core/iomgr/exec_ctx.c \
     src/core/iomgr/executor.c \
-    src/core/iomgr/fd_posix.c \
     src/core/iomgr/iocp_windows.c \
     src/core/iomgr/iomgr.c \
     src/core/iomgr/iomgr_posix.c \

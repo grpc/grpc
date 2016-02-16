@@ -31,11 +31,22 @@
  *
  */
 
+ /* This file will be removed shortly: it's here to keep refactoring
+  * steps simple and auditable.
+  * It's the combination of the old files:
+  *  - fd_posix.{h,c}
+  *  - pollset_posix.{h,c}
+  *  - pullset_multipoller_with_{poll,epoll}.{h,c}
+  * The new version will be split into:
+  *  - ev_poll_posix.{h,c}
+  *  - ev_epoll_posix.{h,c}
+  */
+
 #include <grpc/support/port_platform.h>
 
 #ifdef GPR_POSIX_SOCKET
 
-#include "src/core/iomgr/fd_posix.h"
+#include "src/core/iomgr/ev_poll_and_epoll_posix.h"
 
 #include <assert.h>
 #include <sys/socket.h>
@@ -45,6 +56,112 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/useful.h>
+
+typedef struct grpc_fd_watcher {
+  struct grpc_fd_watcher *next;
+  struct grpc_fd_watcher *prev;
+  grpc_pollset *pollset;
+  grpc_pollset_worker *worker;
+  grpc_fd *fd;
+} grpc_fd_watcher;
+
+struct grpc_fd {
+  int fd;
+  /* refst format:
+     bit0:   1=active/0=orphaned
+     bit1-n: refcount
+     meaning that mostly we ref by two to avoid altering the orphaned bit,
+     and just unref by 1 when we're ready to flag the object as orphaned */
+  gpr_atm refst;
+
+  gpr_mu mu;
+  int shutdown;
+  int closed;
+  int released;
+
+  /* The watcher list.
+
+     The following watcher related fields are protected by watcher_mu.
+
+     An fd_watcher is an ephemeral object created when an fd wants to
+     begin polling, and destroyed after the poll.
+
+     It denotes the fd's interest in whether to read poll or write poll
+     or both or neither on this fd.
+
+     If a watcher is asked to poll for reads or writes, the read_watcher
+     or write_watcher fields are set respectively. A watcher may be asked
+     to poll for both, in which case both fields will be set.
+
+     read_watcher and write_watcher may be NULL if no watcher has been
+     asked to poll for reads or writes.
+
+     If an fd_watcher is not asked to poll for reads or writes, it's added
+     to a linked list of inactive watchers, rooted at inactive_watcher_root.
+     If at a later time there becomes need of a poller to poll, one of
+     the inactive pollers may be kicked out of their poll loops to take
+     that responsibility. */
+  grpc_fd_watcher inactive_watcher_root;
+  grpc_fd_watcher *read_watcher;
+  grpc_fd_watcher *write_watcher;
+
+  grpc_closure *read_closure;
+  grpc_closure *write_closure;
+
+  struct grpc_fd *freelist_next;
+
+  grpc_closure *on_done_closure;
+
+  grpc_iomgr_object iomgr_object;
+};
+
+/* Begin polling on an fd.
+   Registers that the given pollset is interested in this fd - so that if read
+   or writability interest changes, the pollset can be kicked to pick up that
+   new interest.
+   Return value is:
+     (fd_needs_read? read_mask : 0) | (fd_needs_write? write_mask : 0)
+   i.e. a combination of read_mask and write_mask determined by the fd's current
+   interest in said events.
+   Polling strategies that do not need to alter their behavior depending on the
+   fd's current interest (such as epoll) do not need to call this function.
+   MUST NOT be called with a pollset lock taken */
+uint32_t grpc_fd_begin_poll(grpc_fd *fd, grpc_pollset *pollset,
+                            grpc_pollset_worker *worker, uint32_t read_mask,
+                            uint32_t write_mask, grpc_fd_watcher *rec);
+/* Complete polling previously started with grpc_fd_begin_poll
+   MUST NOT be called with a pollset lock taken
+   if got_read or got_write are 1, also does the become_{readable,writable} as
+   appropriate. */
+void grpc_fd_end_poll(grpc_exec_ctx *exec_ctx, grpc_fd_watcher *rec,
+                      int got_read, int got_write);
+
+/* Return 1 if this fd is orphaned, 0 otherwise */
+int grpc_fd_is_orphaned(grpc_fd *fd);
+
+/* Notification from the poller to an fd that it has become readable or
+   writable.
+   If allow_synchronous_callback is 1, allow running the fd callback inline
+   in this callstack, otherwise register an asynchronous callback and return */
+void grpc_fd_become_readable(grpc_exec_ctx *exec_ctx, grpc_fd *fd);
+void grpc_fd_become_writable(grpc_exec_ctx *exec_ctx, grpc_fd *fd);
+
+/* Reference counting for fds */
+/*#define GRPC_FD_REF_COUNT_DEBUG*/
+#ifdef GRPC_FD_REF_COUNT_DEBUG
+void grpc_fd_ref(grpc_fd *fd, const char *reason, const char *file, int line);
+void grpc_fd_unref(grpc_fd *fd, const char *reason, const char *file, int line);
+#define GRPC_FD_REF(fd, reason) grpc_fd_ref(fd, reason, __FILE__, __LINE__)
+#define GRPC_FD_UNREF(fd, reason) grpc_fd_unref(fd, reason, __FILE__, __LINE__)
+#else
+void grpc_fd_ref(grpc_fd *fd);
+void grpc_fd_unref(grpc_fd *fd);
+#define GRPC_FD_REF(fd, reason) grpc_fd_ref(fd)
+#define GRPC_FD_UNREF(fd, reason) grpc_fd_unref(fd)
+#endif
+
+void grpc_fd_global_init(void);
+void grpc_fd_global_shutdown(void);
 
 #define CLOSURE_NOT_READY ((grpc_closure *)0)
 #define CLOSURE_READY ((grpc_closure *)1)
