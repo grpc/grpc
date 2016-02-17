@@ -674,6 +674,13 @@ libs:
   - grpc
   - gpr_test_util
   - gpr
+- name: codegen_lib
+  build: all
+  language: c++
+  filegroups:
+  - grpc++_codegen
+  - grpc_codegen
+  secure: false
 - name: grpc++
   build: all
   language: c++
