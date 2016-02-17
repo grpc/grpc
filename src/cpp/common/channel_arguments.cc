@@ -91,6 +91,9 @@ void ChannelArguments::SetCompressionAlgorithm(
 }
 
 // Note: a second call to this will add in front the result of the first call.
+// An example is calling this on a copy of ChannelArguments which already has a
+// prefix. The user can build up a prefix string by calling this multiple times,
+// each with more significant identifier.
 void ChannelArguments::SetUserAgentPrefix(
     const grpc::string& user_agent_prefix) {
   if (user_agent_prefix.empty()) {
