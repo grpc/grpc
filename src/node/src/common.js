@@ -44,10 +44,10 @@ var _ = require('lodash');
 /**
  * Get a function that deserializes a specific type of protobuf.
  * @param {function()} cls The constructor of the message type to deserialize
- * @param {bool=} binaryAsBase64 Deserialize bytes fields as base64 instead of binary.
- *     Defaults to false
- * @param {bool=} longsAsStrings Deserialize long values as strings instead of doubles.
- *     Defaults to true
+ * @param {bool=} binaryAsBase64 Deserialize bytes fields as base64 strings
+ *     instead of Buffers. Defaults to false
+ * @param {bool=} longsAsStrings Deserialize long values as strings instead of
+ *     objects. Defaults to true
  * @return {function(Buffer):cls} The deserialization function
  */
 exports.deserializeCls = function deserializeCls(cls, binaryAsBase64,
@@ -133,7 +133,8 @@ exports.wrapIgnoreNull = function wrapIgnoreNull(func) {
  * @param {Object=} options Options to apply to these attributes
  * @return {Object} The attributes map
  */
-exports.getProtobufServiceAttrs = function getProtobufServiceAttrs(service, options) {
+exports.getProtobufServiceAttrs = function getProtobufServiceAttrs(service,
+                                                                   options) {
   var prefix = '/' + fullyQualifiedName(service) + '/';
   var binaryAsBase64, longsAsStrings;
   if (options) {

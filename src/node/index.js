@@ -78,7 +78,15 @@ exports.loadObject = function loadObject(value, options) {
 var loadObject = exports.loadObject;
 
 /**
- * Load a gRPC object from a .proto file.
+ * Load a gRPC object from a .proto file. The options object can provide the
+ * following options:
+ * - convertFieldsToCamelCase: Loads this file with that option on protobuf.js
+ *   set as specified. See
+ *   https://github.com/dcodeIO/protobuf.js/wiki/Advanced-options for details
+ * - binaryAsBase64: deserialize bytes values as base64 strings instead of
+ *   Buffers. Defaults to false
+ * - longsAsStrings: deserialize long values as strings instead of objects.
+ *   Defaults to true
  * @param {string|{root: string, file: string}} filename The file to load
  * @param {string=} format The file format to expect. Must be either 'proto' or
  *     'json'. Defaults to 'proto'
