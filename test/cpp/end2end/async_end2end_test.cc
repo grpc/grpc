@@ -43,6 +43,7 @@
 #include <grpc/grpc.h>
 #include <grpc/support/thd.h>
 #include <grpc/support/time.h>
+#include <grpc/support/tls.h>
 #include <gtest/gtest.h>
 
 #include "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h"
@@ -59,6 +60,8 @@ using grpc::testing::EchoRequest;
 using grpc::testing::EchoResponse;
 using std::chrono::system_clock;
 
+GPR_TLS_DECL(g_is_async_end2end_test);
+
 namespace grpc {
 namespace testing {
 
@@ -67,9 +70,11 @@ namespace {
 void* tag(int i) { return (void*)(intptr_t)i; }
 
 #ifdef GPR_POSIX_SOCKET
-static int assert_non_blocking_poll(struct pollfd* pfds, nfds_t nfds,
-                                    int timeout) {
-  GPR_ASSERT(timeout == 0);
+static int maybe_assert_non_blocking_poll(struct pollfd* pfds, nfds_t nfds,
+                                          int timeout) {
+  if (gpr_tls_get(&g_is_async_end2end_test)) {
+    GPR_ASSERT(timeout == 0);
+  }
   return poll(pfds, nfds, timeout);
 }
 
@@ -89,7 +94,7 @@ class PollOverride {
 class PollingOverrider : public PollOverride {
  public:
   explicit PollingOverrider(bool allow_blocking)
-      : PollOverride(allow_blocking ? poll : assert_non_blocking_poll) {}
+      : PollOverride(allow_blocking ? poll : maybe_assert_non_blocking_poll) {}
 };
 #else
 class PollingOverrider {
@@ -180,9 +185,11 @@ class Verifier {
 
 class AsyncEnd2endTest : public ::testing::TestWithParam<bool> {
  protected:
-  AsyncEnd2endTest(): poll_override_(GetParam()) {}
+  AsyncEnd2endTest() {}
 
   void SetUp() GRPC_OVERRIDE {
+    poll_overrider_.reset(new PollingOverrider(!GetParam()));
+
     int port = grpc_pick_unused_port_or_die();
     server_address_ << "localhost:" << port;
 
@@ -193,6 +200,8 @@ class AsyncEnd2endTest : public ::testing::TestWithParam<bool> {
     builder.RegisterService(&service_);
     cq_ = builder.AddCompletionQueue();
     server_ = builder.BuildAndStart();
+
+    gpr_tls_set(&g_is_async_end2end_test, 1);
   }
 
   void TearDown() GRPC_OVERRIDE {
@@ -202,6 +211,8 @@ class AsyncEnd2endTest : public ::testing::TestWithParam<bool> {
     cq_->Shutdown();
     while (cq_->Next(&ignored_tag, &ignored_ok))
       ;
+    poll_overrider_.reset();
+    gpr_tls_set(&g_is_async_end2end_test, 0);
   }
 
   void ResetStub() {
@@ -250,7 +261,7 @@ class AsyncEnd2endTest : public ::testing::TestWithParam<bool> {
   grpc::testing::EchoTestService::AsyncService service_;
   std::ostringstream server_address_;
 
-  PollingOverrider poll_override_;
+  std::unique_ptr<PollingOverrider> poll_overrider_;
 };
 
 TEST_P(AsyncEnd2endTest, SimpleRpc) {
@@ -1089,7 +1100,7 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
     Verifier(GetParam()).Expect(7, true).Verify(cq_.get());
 
     // This is expected to fail in all cases i.e for all values of
-    // server_try_cancel. This is becasue at this point, either there are no
+    // server_try_cancel. This is because at this point, either there are no
     // more msgs from the client (because client called WritesDone) or the RPC
     // is cancelled on the server
     srv_stream.Read(&recv_request, tag(8));
@@ -1166,6 +1177,9 @@ INSTANTIATE_TEST_CASE_P(AsyncEnd2endServerTryCancel,
 
 int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
+  gpr_tls_init(&g_is_async_end2end_test);
   ::testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
+  int ret = RUN_ALL_TESTS();
+  gpr_tls_destroy(&g_is_async_end2end_test);
+  return ret;
 }
