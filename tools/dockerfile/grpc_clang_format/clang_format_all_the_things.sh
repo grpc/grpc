@@ -48,6 +48,12 @@ do
   done
 done
 
+# The CHANGED_FILES variable is used to restrict the set of files to check.
+# Here we set files to the intersection of files and CHANGED_FILES
+if [ -n "$CHANGED_FILES" ]; then
+  files=$(comm -12 <(echo $files | tr ' ' '\n' | sort -u) <(echo $CHANGED_FILES | tr ' ' '\n' | sort -u))
+fi
+
 if [ "x$TEST" = "x" ]
 then
   echo $files | xargs $CLANG_FORMAT -i
