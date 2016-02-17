@@ -37,11 +37,26 @@ fi
 
 bins=`find . .. ../.. ../../.. -name bins | head -1`
 
+# Print out each command that gets executed
 set -x
 
+#
+# Specify parameters used in some of the tests
+#
+
+# big is the size in bytes of large messages (0 is the size otherwise)
 big=65536
+
+# wide is the number of client channels in multi-channel tests (1 otherwise)
 wide=64
+
+# deep is the number of RPCs outstanding on a channel in non-ping-pong tests
+# (the value used is 1 otherwise)
 deep=100
+
+# half is half the count of worker processes, used in the crossbar scenario
+# that uses equal clients and servers. The other scenarios use only 1 server
+# and either 1 client or N-1 clients as appropriate
 half=`echo $QPS_WORKERS | awk -F, '{print int(NF/2)}'`
 
 for secure in true false; do
