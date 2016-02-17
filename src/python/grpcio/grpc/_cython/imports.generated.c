@@ -296,6 +296,10 @@ gpr_thd_options_is_joinable_type gpr_thd_options_is_joinable_import;
 gpr_thd_currentid_type gpr_thd_currentid_import;
 gpr_thd_join_type gpr_thd_join_import;
 
+#ifdef __cplusplus
+extern "C" {
+#endif  /* __cpluslus */
+
 void pygrpc_load_imports(HMODULE library) {
   census_initialize_import = (census_initialize_type) GetProcAddress(library, "census_initialize");
   census_shutdown_import = (census_shutdown_type) GetProcAddress(library, "census_shutdown");
@@ -556,5 +560,9 @@ void pygrpc_load_imports(HMODULE library) {
   gpr_thd_currentid_import = (gpr_thd_currentid_type) GetProcAddress(library, "gpr_thd_currentid");
   gpr_thd_join_import = (gpr_thd_join_type) GetProcAddress(library, "gpr_thd_join");
 }
+
+#ifdef __cplusplus
+}
+#endif  /* __cpluslus */
 
 #endif /* !GPR_WIN32 */
