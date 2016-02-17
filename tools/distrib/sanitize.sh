@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2015-2016, Google Inc.
+# Copyright 2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -30,11 +30,25 @@
 
 set -ex
 
-# change to root directory
 cd $(dirname $0)/../..
 
-# build clang-format docker image
-docker build -t grpc_clang_format tools/dockerfile/grpc_clang_format
+DIFF_COMMAND="git diff --name-only HEAD | grep -v ^third_party/"
 
-# run clang-format against the checked out codebase
-docker run -e TEST=$TEST -e CHANGED_FILES="$CHANGED_FILES" --rm=true -v ${HOST_GIT_ROOT:-`pwd`}:/local-code -t grpc_clang_format /clang_format_all_the_things.sh
+if [ "x$1" == 'x--pre-commit' ]; then
+  if eval $DIFF_COMMAND | grep '^build.yaml$'; then
+    ./tools/buildgen/generate_projects.sh
+  else
+    templates=$(eval $DIFF_COMMAND | grep '\.template$' || true)
+    if [ -n "$templates" ]; then
+      ./tools/buildgen/generate_projects.sh --templates $templates
+    fi
+  fi
+  CHANGED_FILES=$(eval $DIFF_COMMAND) ./tools/distrib/clang_format_code.sh
+  ./tools/distrib/check_copyright.py --fix --precommit
+  ./tools/distrib/check_trailing_newlines.sh
+else
+  ./tools/buildgen/generate_projects.sh
+  ./tools/distrib/clang_format_code.sh
+  ./tools/distrib/check_copyright.py --fix
+  ./tools/distrib/check_trailing_newlines.sh
+fi
