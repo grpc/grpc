@@ -836,7 +836,15 @@ typedef void(*gpr_thd_join_type)(gpr_thd_id t);
 extern gpr_thd_join_type gpr_thd_join_import;
 #define gpr_thd_join gpr_thd_join_import
 
+#ifdef __cplusplus
+extern "C" {
+#endif  /* __cpluslus */
+
 void pygrpc_load_imports(HMODULE library);
+
+#ifdef __cplusplus
+}
+#endif  /* __cpluslus */
 
 #else /* !GPR_WIN32 */
 
