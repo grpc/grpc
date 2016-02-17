@@ -39,7 +39,16 @@
 /* Additional inclusions not covered by "imports.generated.h" */
 #include <grpc/byte_buffer_reader.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif  /* __cpluslus */
+
 /* Attempts to load the core if necessary, and return non-zero upon succes. */
 int pygrpc_load_core(char *path);
 
+#ifdef __cplusplus
+}
+#endif  /* __cpluslus */
+
 #endif /* GRPC_RB_BYTE_BUFFER_H_ */
+
