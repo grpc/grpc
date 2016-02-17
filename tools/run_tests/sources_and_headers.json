@@ -90,6 +90,20 @@
     ], 
     "headers": [], 
     "language": "c", 
+    "name": "census_log_test", 
+    "src": [
+      "test/core/census/log_test.c"
+    ]
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
     "name": "channel_create_test", 
     "src": [
       "test/core/surface/channel_create_test.c"
@@ -2969,6 +2983,7 @@
       "include/grpc/status.h", 
       "src/core/census/aggregation.h", 
       "src/core/census/grpc_filter.h", 
+      "src/core/census/log.h", 
       "src/core/census/rpc_metric_id.h", 
       "src/core/channel/channel_args.h", 
       "src/core/channel/channel_stack.h", 
@@ -3119,6 +3134,8 @@
       "src/core/census/grpc_filter.c", 
       "src/core/census/grpc_filter.h", 
       "src/core/census/initialize.c", 
+      "src/core/census/log.c", 
+      "src/core/census/log.h", 
       "src/core/census/operation.c", 
       "src/core/census/placeholders.c", 
       "src/core/census/rpc_metric_id.h", 
@@ -3494,6 +3511,7 @@
       "include/grpc/status.h", 
       "src/core/census/aggregation.h", 
       "src/core/census/grpc_filter.h", 
+      "src/core/census/log.h", 
       "src/core/census/rpc_metric_id.h", 
       "src/core/channel/channel_args.h", 
       "src/core/channel/channel_stack.h", 
@@ -3629,6 +3647,8 @@
       "src/core/census/grpc_filter.c", 
       "src/core/census/grpc_filter.h", 
       "src/core/census/initialize.c", 
+      "src/core/census/log.c", 
+      "src/core/census/log.h", 
       "src/core/census/operation.c", 
       "src/core/census/placeholders.c", 
       "src/core/census/rpc_metric_id.h", 
@@ -4009,7 +4029,6 @@
       "src/cpp/common/create_auth_context.h", 
       "src/cpp/common/secure_auth_context.h", 
       "src/cpp/server/dynamic_thread_pool.h", 
-      "src/cpp/server/fixed_size_thread_pool.h", 
       "src/cpp/server/secure_server_credentials.h", 
       "src/cpp/server/thread_pool_interface.h"
     ], 
@@ -4117,8 +4136,6 @@
       "src/cpp/server/create_default_thread_pool.cc", 
       "src/cpp/server/dynamic_thread_pool.cc", 
       "src/cpp/server/dynamic_thread_pool.h", 
-      "src/cpp/server/fixed_size_thread_pool.cc", 
-      "src/cpp/server/fixed_size_thread_pool.h", 
       "src/cpp/server/insecure_server_credentials.cc", 
       "src/cpp/server/secure_server_credentials.cc", 
       "src/cpp/server/secure_server_credentials.h", 
@@ -4265,7 +4282,6 @@
       "src/cpp/client/create_channel_internal.h", 
       "src/cpp/common/create_auth_context.h", 
       "src/cpp/server/dynamic_thread_pool.h", 
-      "src/cpp/server/fixed_size_thread_pool.h", 
       "src/cpp/server/thread_pool_interface.h"
     ], 
     "language": "c++", 
@@ -4366,8 +4382,6 @@
       "src/cpp/server/create_default_thread_pool.cc", 
       "src/cpp/server/dynamic_thread_pool.cc", 
       "src/cpp/server/dynamic_thread_pool.h", 
-      "src/cpp/server/fixed_size_thread_pool.cc", 
-      "src/cpp/server/fixed_size_thread_pool.h", 
       "src/cpp/server/insecure_server_credentials.cc", 
       "src/cpp/server/server.cc", 
       "src/cpp/server/server_builder.cc", 

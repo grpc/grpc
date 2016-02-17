@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -51,15 +51,15 @@ namespace testing {
 // stacks. Thus, this code only uses a uniform distribution of doubles [0,1)
 // and then provides the distribution functions itself.
 
-class RandomDist {
+class RandomDistInterface {
  public:
-  RandomDist() {}
-  virtual ~RandomDist() = 0;
-  // Argument to operator() is a uniform double in the range [0,1)
-  virtual double operator()(double uni) const = 0;
+  RandomDistInterface() {}
+  virtual ~RandomDistInterface() = 0;
+  // Argument to transform is a uniform double in the range [0,1)
+  virtual double transform(double uni) const = 0;
 };
 
-inline RandomDist::~RandomDist() {}
+inline RandomDistInterface::~RandomDistInterface() {}
 
 // ExpDist implements an exponential distribution, which is the
 // interarrival distribution for a Poisson process. The parameter
@@ -69,11 +69,11 @@ inline RandomDist::~RandomDist() {}
 // independent identical stationary sources. For more information,
 // see http://en.wikipedia.org/wiki/Exponential_distribution
 
-class ExpDist GRPC_FINAL : public RandomDist {
+class ExpDist GRPC_FINAL : public RandomDistInterface {
  public:
   explicit ExpDist(double lambda) : lambda_recip_(1.0 / lambda) {}
   ~ExpDist() GRPC_OVERRIDE {}
-  double operator()(double uni) const GRPC_OVERRIDE {
+  double transform(double uni) const GRPC_OVERRIDE {
     // Note: Use 1.0-uni above to avoid NaN if uni is 0
     return lambda_recip_ * (-log(1.0 - uni));
   }
@@ -87,11 +87,11 @@ class ExpDist GRPC_FINAL : public RandomDist {
 // mean interarrival time is (lo+hi)/2. For more information,
 // see http://en.wikipedia.org/wiki/Uniform_distribution_%28continuous%29
 
-class UniformDist GRPC_FINAL : public RandomDist {
+class UniformDist GRPC_FINAL : public RandomDistInterface {
  public:
   UniformDist(double lo, double hi) : lo_(lo), range_(hi - lo) {}
   ~UniformDist() GRPC_OVERRIDE {}
-  double operator()(double uni) const GRPC_OVERRIDE {
+  double transform(double uni) const GRPC_OVERRIDE {
     return uni * range_ + lo_;
   }
 
@@ -106,11 +106,11 @@ class UniformDist GRPC_FINAL : public RandomDist {
 // clients) will not preserve any deterministic interarrival gap across
 // requests.
 
-class DetDist GRPC_FINAL : public RandomDist {
+class DetDist GRPC_FINAL : public RandomDistInterface {
  public:
   explicit DetDist(double val) : val_(val) {}
   ~DetDist() GRPC_OVERRIDE {}
-  double operator()(double uni) const GRPC_OVERRIDE { return val_; }
+  double transform(double uni) const GRPC_OVERRIDE { return val_; }
 
  private:
   double val_;
@@ -123,12 +123,12 @@ class DetDist GRPC_FINAL : public RandomDist {
 // good representation of the response times of data center jobs. See
 // http://en.wikipedia.org/wiki/Pareto_distribution
 
-class ParetoDist GRPC_FINAL : public RandomDist {
+class ParetoDist GRPC_FINAL : public RandomDistInterface {
  public:
   ParetoDist(double base, double alpha)
       : base_(base), alpha_recip_(1.0 / alpha) {}
   ~ParetoDist() GRPC_OVERRIDE {}
-  double operator()(double uni) const GRPC_OVERRIDE {
+  double transform(double uni) const GRPC_OVERRIDE {
     // Note: Use 1.0-uni above to avoid div by zero if uni is 0
     return base_ / pow(1.0 - uni, alpha_recip_);
   }
@@ -145,13 +145,14 @@ class ParetoDist GRPC_FINAL : public RandomDist {
 class InterarrivalTimer {
  public:
   InterarrivalTimer() {}
-  void init(const RandomDist& r, int threads, int entries = 1000000) {
+  void init(const RandomDistInterface& r, int threads, int entries = 1000000) {
     for (int i = 0; i < entries; i++) {
       // rand is the only choice that is portable across POSIX and Windows
       // and that supports new and old compilers
-      const double uniform_0_1 = rand() / RAND_MAX;
+      const double uniform_0_1 =
+          static_cast<double>(rand()) / static_cast<double>(RAND_MAX);
       random_table_.push_back(
-          std::chrono::nanoseconds(static_cast<int64_t>(1e9 * r(uniform_0_1))));
+          static_cast<int64_t>(1e9 * r.transform(uniform_0_1)));
     }
     // Now set up the thread positions
     for (int i = 0; i < threads; i++) {
@@ -160,7 +161,7 @@ class InterarrivalTimer {
   }
   virtual ~InterarrivalTimer(){};
 
-  std::chrono::nanoseconds operator()(int thread_num) {
+  int64_t next(int thread_num) {
     auto ret = *(thread_posns_[thread_num]++);
     if (thread_posns_[thread_num] == random_table_.end())
       thread_posns_[thread_num] = random_table_.begin();
@@ -168,7 +169,7 @@ class InterarrivalTimer {
   }
 
  private:
-  typedef std::vector<std::chrono::nanoseconds> time_table;
+  typedef std::vector<int64_t> time_table;
   std::vector<time_table::const_iterator> thread_posns_;
   time_table random_table_;
 };

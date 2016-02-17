@@ -1,6 +1,7 @@
+<?php
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,37 +32,51 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CPP_FIXED_SIZE_THREAD_POOL_H
-#define GRPC_INTERNAL_CPP_FIXED_SIZE_THREAD_POOL_H
+class ChannelTest extends PHPUnit_Framework_TestCase
+{
+    public function setUp()
+    {
+    }
 
-#include <queue>
-#include <vector>
+    public function tearDown()
+    {
+    }
 
-#include <grpc++/impl/sync.h>
-#include <grpc++/impl/thd.h>
-#include <grpc++/support/config.h>
+    public function testInsecureCredentials()
+    {
+        $this->channel = new Grpc\Channel(
+            'localhost:0',
+            [
+                'credentials' => Grpc\ChannelCredentials::createInsecure(),
+            ]
+        );
+        $this->assertSame('Grpc\Channel', get_class($this->channel));
+    }
 
-#include "src/cpp/server/thread_pool_interface.h"
+    /**
+     * @expectedException InvalidArgumentException
+     */
+    public function testInvalidCredentials()
+    {
+        $this->channel = new Grpc\Channel(
+            'localhost:0',
+            [
+                'credentials' => new Grpc\Timeval(100),
+            ]
+        );
+    }
 
-namespace grpc {
+    /**
+     * @expectedException InvalidArgumentException
+     */
+    public function testInvalidOptionsArray()
+    {
+        $this->channel = new Grpc\Channel(
+            'localhost:0',
+            [
+                'abc' => [],
+            ]
+        );
+    }
 
-class FixedSizeThreadPool GRPC_FINAL : public ThreadPoolInterface {
- public:
-  explicit FixedSizeThreadPool(int num_threads);
-  ~FixedSizeThreadPool();
-
-  void Add(const std::function<void()>& callback) GRPC_OVERRIDE;
-
- private:
-  grpc::mutex mu_;
-  grpc::condition_variable cv_;
-  bool shutdown_;
-  std::queue<std::function<void()>> callbacks_;
-  std::vector<grpc::thread*> threads_;
-
-  void ThreadFunc();
-};
-
-}  // namespace grpc
-
-#endif  // GRPC_INTERNAL_CPP_FIXED_SIZE_THREAD_POOL_H
+}
