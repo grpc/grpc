@@ -340,7 +340,6 @@
     <ClInclude Include="$(SolutionDir)\..\src\cpp\client\create_channel_internal.h" />
     <ClInclude Include="$(SolutionDir)\..\src\cpp\common\create_auth_context.h" />
     <ClInclude Include="$(SolutionDir)\..\src\cpp\server\dynamic_thread_pool.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\cpp\server\fixed_size_thread_pool.h" />
     <ClInclude Include="$(SolutionDir)\..\src\cpp\server\thread_pool_interface.h" />
   </ItemGroup>
   <ItemGroup>
@@ -387,8 +386,6 @@
     <ClCompile Include="$(SolutionDir)\..\src\cpp\server\create_default_thread_pool.cc">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\server\dynamic_thread_pool.cc">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\cpp\server\fixed_size_thread_pool.cc">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\server\insecure_server_credentials.cc">
     </ClCompile>
