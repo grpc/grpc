@@ -111,21 +111,26 @@ class NodeDistribTest(object):
     self.arch = arch
     self.node_version = node_version
     self.labels = ['distribtest', 'node', platform, arch,
-                   docker_suffix, 'node-%s' % node_version]
+                   'node-%s' % node_version]
     if docker_suffix is not None:
       self.name += '_%s' % docker_suffix
       self.docker_suffix = docker_suffix
+      self.labels.append(docker_suffix)
 
   def pre_build_jobspecs(self):
     return []
 
   def build_jobspec(self):
     if self.platform == 'linux':
+      linux32 = ''
+      if self.arch == 'x86':
+        linux32 = 'linux32'
       return create_docker_jobspec(self.name,
                                    'tools/dockerfile/distribtest/node_%s_%s' % (
                                        self.docker_suffix,
                                        self.arch),
-                                   'test/distrib/node/run_distrib_test.sh %s' % (
+                                   '%s test/distrib/node/run_distrib_test.sh %s' % (
+                                       linux32,
                                        self.node_version))
     elif self.platform == 'macos':
       return create_jobspec(self.name,
@@ -235,15 +240,11 @@ def targets():
           RubyDistribTest('linux', 'x64', 'ubuntu1504'),
           RubyDistribTest('linux', 'x64', 'ubuntu1510'),
           RubyDistribTest('linux', 'x64', 'ubuntu1604'),
-          NodeDistribTest('macos', 'x64', None, '0.10'),
-          NodeDistribTest('macos', 'x64', None, '0.12'),
-          NodeDistribTest('macos', 'x64', None, '3'),
           NodeDistribTest('macos', 'x64', None, '4'),
-          NodeDistribTest('macos', 'x64', None, '5'),
           NodeDistribTest('linux', 'x86', 'jessie', '4')
           ] + [
             NodeDistribTest('linux', 'x64', os, version)
             for os in ('wheezy', 'jessie', 'ubuntu1204', 'ubuntu1404',
                        'ubuntu1504', 'ubuntu1510', 'ubuntu1604')
-            for version in ('0.10', '0.12', '3', '4', '5')
+            for version in ('0.12', '3', '4', '5')
           ]
