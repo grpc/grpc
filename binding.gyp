@@ -55,7 +55,8 @@
           'UNICODE',
           '_UNICODE',
           'NOMINMAX',
-          'OPENSSL_NO_ASM'
+          'OPENSSL_NO_ASM',
+          'GPR_BACKWARDS_COMPATIBILITY_MODE'
         ],
         "msvs_settings": {
           'VCCLCompilerTool': {
@@ -78,7 +79,8 @@
           # supports ALPN. The target is "[major].[minor].[patch]". We split by
           # periods and take the first field to get the major version.
         'defines': [
-          'TSI_OPENSSL_ALPN_SUPPORT=<!(echo <(target) | cut -d. -f1)'
+          'TSI_OPENSSL_ALPN_SUPPORT=<!(echo <(target) | cut -d. -f1)',
+          'GPR_BACKWARDS_COMPATIBILITY_MODE'
         ],
         'include_dirs': [
           '<(node_root_dir)/deps/openssl/openssl/include',
@@ -484,10 +486,75 @@
         '-Wall',
         '-Werror'
       ],
+      'target_name': 'gpr',
+      'product_prefix': 'lib',
+      'type': 'static_library',
+      'dependencies': [
+      ],
+      'sources': [
+        'src/core/profiling/basic_timers.c',
+        'src/core/profiling/stap_timers.c',
+        'src/core/support/alloc.c',
+        'src/core/support/avl.c',
+        'src/core/support/cmdline.c',
+        'src/core/support/cpu_iphone.c',
+        'src/core/support/cpu_linux.c',
+        'src/core/support/cpu_posix.c',
+        'src/core/support/cpu_windows.c',
+        'src/core/support/env_linux.c',
+        'src/core/support/env_posix.c',
+        'src/core/support/env_win32.c',
+        'src/core/support/file.c',
+        'src/core/support/file_posix.c',
+        'src/core/support/file_win32.c',
+        'src/core/support/histogram.c',
+        'src/core/support/host_port.c',
+        'src/core/support/log.c',
+        'src/core/support/log_android.c',
+        'src/core/support/log_linux.c',
+        'src/core/support/log_posix.c',
+        'src/core/support/log_win32.c',
+        'src/core/support/murmur_hash.c',
+        'src/core/support/slice.c',
+        'src/core/support/slice_buffer.c',
+        'src/core/support/stack_lockfree.c',
+        'src/core/support/string.c',
+        'src/core/support/string_posix.c',
+        'src/core/support/string_win32.c',
+        'src/core/support/subprocess_posix.c',
+        'src/core/support/subprocess_windows.c',
+        'src/core/support/sync.c',
+        'src/core/support/sync_posix.c',
+        'src/core/support/sync_win32.c',
+        'src/core/support/thd.c',
+        'src/core/support/thd_posix.c',
+        'src/core/support/thd_win32.c',
+        'src/core/support/time.c',
+        'src/core/support/time_posix.c',
+        'src/core/support/time_precise.c',
+        'src/core/support/time_win32.c',
+        'src/core/support/tls_pthread.c',
+        'src/core/support/wrap_memcpy.c',
+      ],
+      "conditions": [
+        ['OS == "mac"', {
+          'xcode_settings': {
+            'MACOSX_DEPLOYMENT_TARGET': '10.9'
+          }
+        }]
+      ]
+    },
+    {
+      'cflags': [
+        '-std=c99',
+        '-Wall',
+        '-Werror'
+      ],
       'target_name': 'grpc',
       'product_prefix': 'lib',
       'type': 'static_library',
       'dependencies': [
+        'gpr',
       ],
       'sources': [
         'src/core/httpcli/httpcli_security_connector.c',
@@ -639,51 +706,9 @@
         'src/core/transport/static_metadata.c',
         'src/core/transport/transport.c',
         'src/core/transport/transport_op_string.c',
-        'src/core/profiling/basic_timers.c',
-        'src/core/profiling/stap_timers.c',
-        'src/core/support/alloc.c',
-        'src/core/support/avl.c',
-        'src/core/support/cmdline.c',
-        'src/core/support/cpu_iphone.c',
-        'src/core/support/cpu_linux.c',
-        'src/core/support/cpu_posix.c',
-        'src/core/support/cpu_windows.c',
-        'src/core/support/env_linux.c',
-        'src/core/support/env_posix.c',
-        'src/core/support/env_win32.c',
-        'src/core/support/file.c',
-        'src/core/support/file_posix.c',
-        'src/core/support/file_win32.c',
-        'src/core/support/histogram.c',
-        'src/core/support/host_port.c',
-        'src/core/support/log.c',
-        'src/core/support/log_android.c',
-        'src/core/support/log_linux.c',
-        'src/core/support/log_posix.c',
-        'src/core/support/log_win32.c',
-        'src/core/support/murmur_hash.c',
-        'src/core/support/slice.c',
-        'src/core/support/slice_buffer.c',
-        'src/core/support/stack_lockfree.c',
-        'src/core/support/string.c',
-        'src/core/support/string_posix.c',
-        'src/core/support/string_win32.c',
-        'src/core/support/subprocess_posix.c',
-        'src/core/support/subprocess_windows.c',
-        'src/core/support/sync.c',
-        'src/core/support/sync_posix.c',
-        'src/core/support/sync_win32.c',
-        'src/core/support/thd.c',
-        'src/core/support/thd_posix.c',
-        'src/core/support/thd_win32.c',
-        'src/core/support/time.c',
-        'src/core/support/time_posix.c',
-        'src/core/support/time_precise.c',
-        'src/core/support/time_win32.c',
-        'src/core/support/tls_pthread.c',
-        'src/core/support/wrap_memcpy.c',
         'src/core/census/context.c',
         'src/core/census/initialize.c',
+        'src/core/census/log.c',
         'src/core/census/operation.c',
         'src/core/census/placeholders.c',
         'src/core/census/tracing.c',
@@ -749,6 +774,7 @@
       ],
       "dependencies": [
         "grpc",
+        "gpr",
       ]
     },
     {
