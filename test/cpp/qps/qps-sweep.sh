@@ -37,9 +37,26 @@ fi
 
 bins=`find . .. ../.. ../../.. -name bins | head -1`
 
+# Print out each command that gets executed
 set -x
 
+#
+# Specify parameters used in some of the tests
+#
+
+# big is the size in bytes of large messages (0 is the size otherwise)
 big=65536
+
+# wide is the number of client channels in multi-channel tests (1 otherwise)
+wide=64
+
+# deep is the number of RPCs outstanding on a channel in non-ping-pong tests
+# (the value used is 1 otherwise)
+deep=100
+
+# half is half the count of worker processes, used in the crossbar scenario
+# that uses equal clients and servers. The other scenarios use only 1 server
+# and either 1 client or N-1 clients as appropriate
 half=`echo $QPS_WORKERS | awk -F, '{print int(NF/2)}'`
 
 for secure in true false; do
@@ -52,30 +69,40 @@ for secure in true false; do
 
   # Scenario 2: generic async streaming "unconstrained" (QPS)
   "$bins"/opt/qps_driver --rpc_type=STREAMING --client_type=ASYNC_CLIENT \
-    --server_type=ASYNC_GENERIC_SERVER --outstanding_rpcs_per_channel=100 \
-    --client_channels=64 --bbuf_req_size=0 --bbuf_resp_size=0 \
+    --server_type=ASYNC_GENERIC_SERVER --outstanding_rpcs_per_channel=$deep \
+    --client_channels=$wide --bbuf_req_size=0 --bbuf_resp_size=0 \
     --async_client_threads=0 --async_server_threads=0 --secure_test=$secure \
-    --num_servers=1 --num_clients=0
+    --num_servers=1 --num_clients=0 |& tee /tmp/qps-test.$$
 
   # Scenario 2b: QPS with a single server core
   "$bins"/opt/qps_driver --rpc_type=STREAMING --client_type=ASYNC_CLIENT \
-    --server_type=ASYNC_GENERIC_SERVER --outstanding_rpcs_per_channel=100 \
-    --client_channels=64 --bbuf_req_size=0 --bbuf_resp_size=0 \
+    --server_type=ASYNC_GENERIC_SERVER --outstanding_rpcs_per_channel=$deep \
+    --client_channels=$wide --bbuf_req_size=0 --bbuf_resp_size=0 \
     --async_client_threads=0 --async_server_threads=0 --secure_test=$secure \
     --num_servers=1 --num_clients=0 --server_core_limit=1
 
   # Scenario 2c: protobuf-based QPS
   "$bins"/opt/qps_driver --rpc_type=STREAMING --client_type=ASYNC_CLIENT \
-    --server_type=ASYNC_SERVER --outstanding_rpcs_per_channel=100 \
-    --client_channels=64 --simple_req_size=0 --simple_resp_size=0 \
+    --server_type=ASYNC_SERVER --outstanding_rpcs_per_channel=$deep \
+    --client_channels=$wide --simple_req_size=0 --simple_resp_size=0 \
     --async_client_threads=0 --async_server_threads=0 --secure_test=$secure \
     --num_servers=1 --num_clients=0
 
-  # Scenario 3: Latency at near-peak load (TBD)
+  # Scenario 3: Latency at sub-peak load (all clients equally loaded)
+  for loadfactor in 0.2 0.5 0.7; do
+    "$bins"/opt/qps_driver --rpc_type=STREAMING --client_type=ASYNC_CLIENT \
+      --server_type=ASYNC_GENERIC_SERVER --outstanding_rpcs_per_channel=$deep \
+      --client_channels=$wide --bbuf_req_size=0 --bbuf_resp_size=0 \
+      --async_client_threads=0 --async_server_threads=0 --secure_test=$secure \
+      --num_servers=1 --num_clients=0 --poisson_load=`awk -v lf=$loadfactor \
+      '$5 == "QPS:" {print int(lf * $6); exit}' /tmp/qps-test.$$`
+  done
+
+  rm /tmp/qps-test.$$
 
   # Scenario 4: Single-channel bidirectional throughput test (like TCP_STREAM).
   "$bins"/opt/qps_driver --rpc_type=STREAMING --client_type=ASYNC_CLIENT \
-    --server_type=ASYNC_GENERIC_SERVER --outstanding_rpcs_per_channel=100 \
+    --server_type=ASYNC_GENERIC_SERVER --outstanding_rpcs_per_channel=$deep \
     --client_channels=1 --bbuf_req_size=$big --bbuf_resp_size=$big \
     --async_client_threads=1 --async_server_threads=1 --secure_test=$secure \
     --num_servers=1 --num_clients=1
@@ -108,35 +135,35 @@ for secure in true false; do
 
   # Scenario 9: Crossbar QPS test
   "$bins"/opt/qps_driver --rpc_type=STREAMING --client_type=ASYNC_CLIENT \
-    --server_type=ASYNC_GENERIC_SERVER --outstanding_rpcs_per_channel=100 \
-    --client_channels=64 --bbuf_req_size=0 --bbuf_resp_size=0 \
+    --server_type=ASYNC_GENERIC_SERVER --outstanding_rpcs_per_channel=$deep \
+    --client_channels=$wide --bbuf_req_size=0 --bbuf_resp_size=0 \
     --async_client_threads=0 --async_server_threads=0 --secure_test=$secure \
     --num_servers=$half --num_clients=0
 
   # Scenario 10: Multi-channel bidir throughput test
   "$bins"/opt/qps_driver --rpc_type=STREAMING --client_type=ASYNC_CLIENT \
-    --server_type=ASYNC_GENERIC_SERVER --outstanding_rpcs_per_channel=100 \
-    --client_channels=64 --bbuf_req_size=$big --bbuf_resp_size=$big \
+    --server_type=ASYNC_GENERIC_SERVER --outstanding_rpcs_per_channel=1 \
+    --client_channels=$wide --bbuf_req_size=$big --bbuf_resp_size=$big \
     --async_client_threads=0 --async_server_threads=0 --secure_test=$secure \
     --num_servers=1 --num_clients=1
 
   # Scenario 11: Single-channel request throughput test
   "$bins"/opt/qps_driver --rpc_type=STREAMING --client_type=ASYNC_CLIENT \
-    --server_type=ASYNC_GENERIC_SERVER --outstanding_rpcs_per_channel=100 \
+    --server_type=ASYNC_GENERIC_SERVER --outstanding_rpcs_per_channel=$deep \
     --client_channels=1 --bbuf_req_size=$big --bbuf_resp_size=0 \
     --async_client_threads=1 --async_server_threads=1 --secure_test=$secure \
     --num_servers=1 --num_clients=1
 
   # Scenario 12: Single-channel response throughput test
   "$bins"/opt/qps_driver --rpc_type=STREAMING --client_type=ASYNC_CLIENT \
-    --server_type=ASYNC_GENERIC_SERVER --outstanding_rpcs_per_channel=100 \
+    --server_type=ASYNC_GENERIC_SERVER --outstanding_rpcs_per_channel=$deep \
     --client_channels=1 --bbuf_req_size=0 --bbuf_resp_size=$big \
     --async_client_threads=1 --async_server_threads=1 --secure_test=$secure \
     --num_servers=1 --num_clients=1
 
   # Scenario 13: Single-channel bidirectional protobuf throughput test
   "$bins"/opt/qps_driver --rpc_type=STREAMING --client_type=ASYNC_CLIENT \
-    --server_type=ASYNC_SERVER --outstanding_rpcs_per_channel=100 \
+    --server_type=ASYNC_SERVER --outstanding_rpcs_per_channel=$deep \
     --client_channels=1 --simple_req_size=$big --simple_resp_size=$big \
     --async_client_threads=1 --async_server_threads=1 --secure_test=$secure \
     --num_servers=1 --num_clients=1
