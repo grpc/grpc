@@ -39,8 +39,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
-    <Reference Include="System.Interactive.Async, Version=1.2.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
+    <Reference Include="System.Interactive.Async">
       <HintPath>..\packages\Ix-Async.1.2.5\lib\net45\System.Interactive.Async.dll</HintPath>
     </Reference>
   </ItemGroup>
@@ -129,6 +128,7 @@
     <Compile Include="Profiling\IProfiler.cs" />
     <Compile Include="Profiling\Profilers.cs" />
     <Compile Include="Internal\DefaultSslRootsOverride.cs" />
+    <Compile Include="Testing\MockAsyncUnaryCall.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Grpc.Core.nuspec" />
@@ -138,6 +138,7 @@
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
     <Folder Include="Resources\" />
+    <Folder Include="Testing\" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="..\..\..\etc\roots.pem">

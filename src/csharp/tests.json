@@ -33,6 +33,7 @@
     "Grpc.Core.Tests.TimeoutsTest",
     "Grpc.Core.Tests.UserAgentStringTest",
     "Math.Tests.MathClientServerTest",
+    "Math.Tests.MockMathClientTest",
     "Grpc.HealthCheck.Tests.HealthClientServerTest",
     "Grpc.HealthCheck.Tests.HealthServiceImplTest",
     "Grpc.IntegrationTesting.HeaderInterceptorTest",
