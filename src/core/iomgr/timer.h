@@ -89,7 +89,7 @@ void grpc_timer_cancel(grpc_exec_ctx *exec_ctx, grpc_timer *timer);
 /* iomgr internal api for dealing with timers */
 
 /* Check for timers to be run, and run them.
-   Return non zero if timer callbacks were executed.
+   Return true if timer callbacks were executed.
    Drops drop_mu if it is non-null before executing callbacks.
    If next is non-null, TRY to update *next with the next running timer
    IF that timer occurs before *next current value.
@@ -97,10 +97,10 @@ void grpc_timer_cancel(grpc_exec_ctx *exec_ctx, grpc_timer *timer);
    with high probability at least one thread in the system will see an update
    at any time slice. */
 
-int grpc_timer_check(grpc_exec_ctx* exec_ctx, gpr_timespec now,
-                     gpr_timespec* next);
+bool grpc_timer_check(grpc_exec_ctx *exec_ctx, gpr_timespec now,
+                      gpr_timespec *next);
 void grpc_timer_list_init(gpr_timespec now);
-void grpc_timer_list_shutdown(grpc_exec_ctx* exec_ctx);
+void grpc_timer_list_shutdown(grpc_exec_ctx *exec_ctx);
 
 /* the following must be implemented by each iomgr implementation */
 
