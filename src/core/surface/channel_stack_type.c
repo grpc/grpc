@@ -31,12 +31,24 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_CHANNEL_CONNECTED_CHANNEL_H
-#define GRPC_INTERNAL_CORE_CHANNEL_CONNECTED_CHANNEL_H
+#include <grpc/support/port_platform.h>
+#include "src/core/surface/channel_stack_type.h"
+#include <grpc/support/log.h>
 
-#include "src/core/channel/channel_stack_builder.h"
-
-bool grpc_add_connected_filter(grpc_channel_stack_builder *builder,
-                               void *arg_must_be_null);
-
-#endif /* GRPC_INTERNAL_CORE_CHANNEL_CONNECTED_CHANNEL_H */
+bool grpc_channel_stack_type_is_client(grpc_channel_stack_type type) {
+  switch (type) {
+    case GRPC_CLIENT_CHANNEL:
+      return true;
+    case GRPC_CLIENT_UCHANNEL:
+      return true;
+    case GRPC_CLIENT_SUBCHANNEL:
+      return true;
+    case GRPC_CLIENT_LAME_CHANNEL:
+      return true;
+    case GRPC_SERVER_CHANNEL:
+      return false;
+    case GRPC_NUM_CHANNEL_STACK_TYPES:
+      break;
+  }
+  GPR_UNREACHABLE_CODE(return true;);
+}

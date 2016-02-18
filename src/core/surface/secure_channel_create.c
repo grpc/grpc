@@ -40,11 +40,8 @@
 #include <grpc/support/slice.h>
 #include <grpc/support/slice_buffer.h>
 
-#include "src/core/census/grpc_filter.h"
 #include "src/core/channel/channel_args.h"
 #include "src/core/channel/client_channel.h"
-#include "src/core/channel/compress_filter.h"
-#include "src/core/channel/http_client_filter.h"
 #include "src/core/client_config/resolver_registry.h"
 #include "src/core/iomgr/tcp_client.h"
 #include "src/core/security/auth_filters.h"
@@ -115,10 +112,6 @@ static void on_secure_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
     args_copy = grpc_channel_args_copy_and_add(c->args.channel_args,
                                                &auth_context_arg, 1);
     c->result->channel_args = args_copy;
-    c->result->filters = gpr_malloc(sizeof(grpc_channel_filter *) * 2);
-    c->result->filters[0] = &grpc_http_client_filter;
-    c->result->filters[1] = &grpc_client_auth_filter;
-    c->result->num_filters = 2;
   }
   notify = c->notify;
   c->notify = NULL;
@@ -263,10 +256,7 @@ grpc_channel *grpc_secure_channel_create(grpc_channel_credentials *creds,
   grpc_channel_security_connector *security_connector;
   grpc_resolver *resolver;
   subchannel_factory *f;
-#define MAX_FILTERS 3
-  const grpc_channel_filter *filters[MAX_FILTERS];
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  size_t n = 0;
 
   GRPC_API_TRACE(
       "grpc_secure_channel_create(creds=%p, target=%s, args=%p, "
@@ -295,15 +285,9 @@ grpc_channel *grpc_secure_channel_create(grpc_channel_credentials *creds,
   args_copy = grpc_channel_args_copy_and_add(
       new_args_from_connector != NULL ? new_args_from_connector : args,
       &connector_arg, 1);
-  if (grpc_channel_args_is_census_enabled(args)) {
-    filters[n++] = &grpc_client_census_filter;
-  }
-  filters[n++] = &grpc_compress_filter;
-  filters[n++] = &grpc_client_channel_filter;
-  GPR_ASSERT(n <= MAX_FILTERS);
 
-  channel = grpc_channel_create_from_filters(&exec_ctx, target, filters, n,
-                                             args_copy, 1);
+  channel = grpc_channel_create(&exec_ctx, target, args_copy,
+                                GRPC_CLIENT_CHANNEL, NULL);
 
   f = gpr_malloc(sizeof(*f));
   f->base.vtable = &subchannel_factory_vtable;

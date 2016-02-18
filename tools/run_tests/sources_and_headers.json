@@ -2433,6 +2433,22 @@
     ], 
     "headers": [], 
     "language": "c", 
+    "name": "h2_full+trace_test", 
+    "src": [
+      "test/core/end2end/fixtures/h2_full+trace.c"
+    ]
+  }, 
+  {
+    "deps": [
+      "end2end_certs", 
+      "end2end_tests", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
     "name": "h2_oauth2_test", 
     "src": [
       "test/core/end2end/fixtures/h2_oauth2.c"
@@ -2452,54 +2468,6 @@
     "name": "h2_proxy_test", 
     "src": [
       "test/core/end2end/fixtures/h2_proxy.c"
-    ]
-  }, 
-  {
-    "deps": [
-      "end2end_certs", 
-      "end2end_tests", 
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "h2_sockpair_test", 
-    "src": [
-      "test/core/end2end/fixtures/h2_sockpair.c"
-    ]
-  }, 
-  {
-    "deps": [
-      "end2end_certs", 
-      "end2end_tests", 
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "h2_sockpair+trace_test", 
-    "src": [
-      "test/core/end2end/fixtures/h2_sockpair+trace.c"
-    ]
-  }, 
-  {
-    "deps": [
-      "end2end_certs", 
-      "end2end_tests", 
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "h2_sockpair_1byte_test", 
-    "src": [
-      "test/core/end2end/fixtures/h2_sockpair_1byte.c"
     ]
   }, 
   {
@@ -2698,54 +2666,24 @@
     ], 
     "headers": [], 
     "language": "c", 
+    "name": "h2_full+trace_nosec_test", 
+    "src": [
+      "test/core/end2end/fixtures/h2_full+trace.c"
+    ]
+  }, 
+  {
+    "deps": [
+      "end2end_nosec_tests", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "language": "c", 
     "name": "h2_proxy_nosec_test", 
     "src": [
       "test/core/end2end/fixtures/h2_proxy.c"
-    ]
-  }, 
-  {
-    "deps": [
-      "end2end_nosec_tests", 
-      "gpr", 
-      "gpr_test_util", 
-      "grpc_test_util_unsecure", 
-      "grpc_unsecure"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "h2_sockpair_nosec_test", 
-    "src": [
-      "test/core/end2end/fixtures/h2_sockpair.c"
-    ]
-  }, 
-  {
-    "deps": [
-      "end2end_nosec_tests", 
-      "gpr", 
-      "gpr_test_util", 
-      "grpc_test_util_unsecure", 
-      "grpc_unsecure"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "h2_sockpair+trace_nosec_test", 
-    "src": [
-      "test/core/end2end/fixtures/h2_sockpair+trace.c"
-    ]
-  }, 
-  {
-    "deps": [
-      "end2end_nosec_tests", 
-      "gpr", 
-      "gpr_test_util", 
-      "grpc_test_util_unsecure", 
-      "grpc_unsecure"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "h2_sockpair_1byte_nosec_test", 
-    "src": [
-      "test/core/end2end/fixtures/h2_sockpair_1byte.c"
     ]
   }, 
   {
@@ -2983,10 +2921,12 @@
       "include/grpc/status.h", 
       "src/core/census/aggregation.h", 
       "src/core/census/grpc_filter.h", 
+      "src/core/census/grpc_plugin.h", 
       "src/core/census/log.h", 
       "src/core/census/rpc_metric_id.h", 
       "src/core/channel/channel_args.h", 
       "src/core/channel/channel_stack.h", 
+      "src/core/channel/channel_stack_builder.h", 
       "src/core/channel/client_channel.h", 
       "src/core/channel/client_uchannel.h", 
       "src/core/channel/compress_filter.h", 
@@ -3074,9 +3014,12 @@
       "src/core/surface/call.h", 
       "src/core/surface/call_test_only.h", 
       "src/core/surface/channel.h", 
+      "src/core/surface/channel_init.h", 
+      "src/core/surface/channel_stack_type.h", 
       "src/core/surface/completion_queue.h", 
       "src/core/surface/event_string.h", 
       "src/core/surface/init.h", 
+      "src/core/surface/lame_client.h", 
       "src/core/surface/server.h", 
       "src/core/surface/surface_trace.h", 
       "src/core/transport/byte_stream.h", 
@@ -3134,6 +3077,8 @@
       "src/core/census/grpc_context.c", 
       "src/core/census/grpc_filter.c", 
       "src/core/census/grpc_filter.h", 
+      "src/core/census/grpc_plugin.c", 
+      "src/core/census/grpc_plugin.h", 
       "src/core/census/initialize.c", 
       "src/core/census/log.c", 
       "src/core/census/log.h", 
@@ -3145,6 +3090,8 @@
       "src/core/channel/channel_args.h", 
       "src/core/channel/channel_stack.c", 
       "src/core/channel/channel_stack.h", 
+      "src/core/channel/channel_stack_builder.c", 
+      "src/core/channel/channel_stack_builder.h", 
       "src/core/channel/client_channel.c", 
       "src/core/channel/client_channel.h", 
       "src/core/channel/client_uchannel.c", 
@@ -3333,7 +3280,11 @@
       "src/core/surface/channel.h", 
       "src/core/surface/channel_connectivity.c", 
       "src/core/surface/channel_create.c", 
+      "src/core/surface/channel_init.c", 
+      "src/core/surface/channel_init.h", 
       "src/core/surface/channel_ping.c", 
+      "src/core/surface/channel_stack_type.c", 
+      "src/core/surface/channel_stack_type.h", 
       "src/core/surface/completion_queue.c", 
       "src/core/surface/completion_queue.h", 
       "src/core/surface/event_string.c", 
@@ -3342,12 +3293,12 @@
       "src/core/surface/init.h", 
       "src/core/surface/init_secure.c", 
       "src/core/surface/lame_client.c", 
+      "src/core/surface/lame_client.h", 
       "src/core/surface/metadata_array.c", 
       "src/core/surface/secure_channel_create.c", 
       "src/core/surface/server.c", 
       "src/core/surface/server.h", 
       "src/core/surface/server_chttp2.c", 
-      "src/core/surface/server_create.c", 
       "src/core/surface/surface_trace.h", 
       "src/core/surface/validate_metadata.c", 
       "src/core/surface/version.c", 
@@ -3514,10 +3465,12 @@
       "include/grpc/status.h", 
       "src/core/census/aggregation.h", 
       "src/core/census/grpc_filter.h", 
+      "src/core/census/grpc_plugin.h", 
       "src/core/census/log.h", 
       "src/core/census/rpc_metric_id.h", 
       "src/core/channel/channel_args.h", 
       "src/core/channel/channel_stack.h", 
+      "src/core/channel/channel_stack_builder.h", 
       "src/core/channel/client_channel.h", 
       "src/core/channel/client_uchannel.h", 
       "src/core/channel/compress_filter.h", 
@@ -3596,9 +3549,12 @@
       "src/core/surface/call.h", 
       "src/core/surface/call_test_only.h", 
       "src/core/surface/channel.h", 
+      "src/core/surface/channel_init.h", 
+      "src/core/surface/channel_stack_type.h", 
       "src/core/surface/completion_queue.h", 
       "src/core/surface/event_string.h", 
       "src/core/surface/init.h", 
+      "src/core/surface/lame_client.h", 
       "src/core/surface/server.h", 
       "src/core/surface/surface_trace.h", 
       "src/core/transport/byte_stream.h", 
@@ -3650,6 +3606,8 @@
       "src/core/census/grpc_context.c", 
       "src/core/census/grpc_filter.c", 
       "src/core/census/grpc_filter.h", 
+      "src/core/census/grpc_plugin.c", 
+      "src/core/census/grpc_plugin.h", 
       "src/core/census/initialize.c", 
       "src/core/census/log.c", 
       "src/core/census/log.h", 
@@ -3661,6 +3619,8 @@
       "src/core/channel/channel_args.h", 
       "src/core/channel/channel_stack.c", 
       "src/core/channel/channel_stack.h", 
+      "src/core/channel/channel_stack_builder.c", 
+      "src/core/channel/channel_stack_builder.h", 
       "src/core/channel/client_channel.c", 
       "src/core/channel/client_channel.h", 
       "src/core/channel/client_uchannel.c", 
@@ -3824,7 +3784,11 @@
       "src/core/surface/channel.h", 
       "src/core/surface/channel_connectivity.c", 
       "src/core/surface/channel_create.c", 
+      "src/core/surface/channel_init.c", 
+      "src/core/surface/channel_init.h", 
       "src/core/surface/channel_ping.c", 
+      "src/core/surface/channel_stack_type.c", 
+      "src/core/surface/channel_stack_type.h", 
       "src/core/surface/completion_queue.c", 
       "src/core/surface/completion_queue.h", 
       "src/core/surface/event_string.c", 
@@ -3833,11 +3797,11 @@
       "src/core/surface/init.h", 
       "src/core/surface/init_unsecure.c", 
       "src/core/surface/lame_client.c", 
+      "src/core/surface/lame_client.h", 
       "src/core/surface/metadata_array.c", 
       "src/core/surface/server.c", 
       "src/core/surface/server.h", 
       "src/core/surface/server_chttp2.c", 
-      "src/core/surface/server_create.c", 
       "src/core/surface/surface_trace.h", 
       "src/core/surface/validate_metadata.c", 
       "src/core/surface/version.c", 

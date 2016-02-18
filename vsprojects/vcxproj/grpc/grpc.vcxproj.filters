@@ -70,10 +70,16 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\census\grpc_filter.c">
       <Filter>src\core\census</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\census\grpc_plugin.c">
+      <Filter>src\core\census</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\channel\channel_args.c">
       <Filter>src\core\channel</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\channel\channel_stack.c">
+      <Filter>src\core\channel</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\channel\channel_stack_builder.c">
       <Filter>src\core\channel</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\channel\client_channel.c">
@@ -331,7 +337,13 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\surface\channel_create.c">
       <Filter>src\core\surface</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\surface\channel_init.c">
+      <Filter>src\core\surface</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\surface\channel_ping.c">
+      <Filter>src\core\surface</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\surface\channel_stack_type.c">
       <Filter>src\core\surface</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\surface\completion_queue.c">
@@ -353,9 +365,6 @@
       <Filter>src\core\surface</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\surface\server_chttp2.c">
-      <Filter>src\core\surface</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\surface\server_create.c">
       <Filter>src\core\surface</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\surface\validate_metadata.c">
@@ -554,10 +563,16 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\census\grpc_filter.h">
       <Filter>src\core\census</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\census\grpc_plugin.h">
+      <Filter>src\core\census</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\channel\channel_args.h">
       <Filter>src\core\channel</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\channel\channel_stack.h">
+      <Filter>src\core\channel</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\channel\channel_stack_builder.h">
       <Filter>src\core\channel</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\channel\client_channel.h">
@@ -794,6 +809,12 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\surface\channel.h">
       <Filter>src\core\surface</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\surface\channel_init.h">
+      <Filter>src\core\surface</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\surface\channel_stack_type.h">
+      <Filter>src\core\surface</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\surface\completion_queue.h">
       <Filter>src\core\surface</Filter>
     </ClInclude>
@@ -801,6 +822,9 @@
       <Filter>src\core\surface</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\surface\init.h">
+      <Filter>src\core\surface</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\surface\lame_client.h">
       <Filter>src\core\surface</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\surface\server.h">

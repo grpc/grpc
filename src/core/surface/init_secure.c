@@ -32,11 +32,56 @@
  */
 
 #include "src/core/surface/init.h"
+
+#include <limits.h>
+#include <string.h>
+
+#include "src/core/surface/channel_init.h"
 #include "src/core/debug/trace.h"
+#include "src/core/security/auth_filters.h"
+#include "src/core/security/credentials.h"
 #include "src/core/security/secure_endpoint.h"
+#include "src/core/security/security_connector.h"
 #include "src/core/tsi/transport_security_interface.h"
 
 void grpc_security_pre_init(void) {
   grpc_register_tracer("secure_endpoint", &grpc_trace_secure_endpoint);
   grpc_register_tracer("transport_security", &tsi_tracing_enabled);
+}
+
+static bool maybe_prepend_client_auth_filter(
+    grpc_channel_stack_builder *builder, void *arg) {
+  const grpc_channel_args *args =
+      grpc_channel_stack_builder_get_channel_arguments(builder);
+  if (args) {
+    for (size_t i = 0; i < args->num_args; i++) {
+      if (0 == strcmp(GRPC_SECURITY_CONNECTOR_ARG, args->args[i].key)) {
+        return grpc_channel_stack_builder_prepend_filter(
+            builder, &grpc_client_auth_filter, NULL, NULL);
+      }
+    }
+  }
+  return true;
+}
+
+static bool maybe_prepend_server_auth_filter(
+    grpc_channel_stack_builder *builder, void *arg) {
+  const grpc_channel_args *args =
+      grpc_channel_stack_builder_get_channel_arguments(builder);
+  if (args) {
+    for (size_t i = 0; i < args->num_args; i++) {
+      if (0 == strcmp(GRPC_SERVER_CREDENTIALS_ARG, args->args[i].key)) {
+        return grpc_channel_stack_builder_prepend_filter(
+            builder, &grpc_server_auth_filter, NULL, NULL);
+      }
+    }
+  }
+  return true;
+}
+
+void grpc_register_security_filters(void) {
+  grpc_channel_init_register_stage(GRPC_CLIENT_SUBCHANNEL, INT_MAX,
+                                   maybe_prepend_client_auth_filter, NULL);
+  grpc_channel_init_register_stage(GRPC_SERVER_CHANNEL, INT_MAX,
+                                   maybe_prepend_server_auth_filter, NULL);
 }
