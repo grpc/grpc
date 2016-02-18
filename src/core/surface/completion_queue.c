@@ -335,7 +335,8 @@ grpc_event grpc_completion_queue_next(grpc_completion_queue *cc,
       gpr_mu_lock(GRPC_POLLSET_MU(&cc->pollset));
       continue;
     }
-    grpc_pollset_work(&exec_ctx, &cc->pollset, &worker, now, iteration_deadline);
+    grpc_pollset_work(&exec_ctx, &cc->pollset, &worker, now,
+                      iteration_deadline);
   }
   GRPC_SURFACE_TRACE_RETURNED_EVENT(cc, &ret);
   GRPC_CQ_INTERNAL_UNREF(cc, "next");
@@ -451,7 +452,8 @@ grpc_event grpc_completion_queue_pluck(grpc_completion_queue *cc, void *tag,
       gpr_mu_lock(GRPC_POLLSET_MU(&cc->pollset));
       continue;
     }
-    grpc_pollset_work(&exec_ctx, &cc->pollset, &worker, now, iteration_deadline);
+    grpc_pollset_work(&exec_ctx, &cc->pollset, &worker, now,
+                      iteration_deadline);
     del_plucker(cc, tag, &worker);
   }
 done:
