@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,12 +31,10 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_CHANNEL_CONNECTED_CHANNEL_H
-#define GRPC_INTERNAL_CORE_CHANNEL_CONNECTED_CHANNEL_H
+#ifndef GRPC_INTERNAL_CORE_CENSUS_GRPC_PLUGIN_H
+#define GRPC_INTERNAL_CORE_CENSUS_GRPC_PLUGIN_H
 
-#include "src/core/channel/channel_stack_builder.h"
+void census_grpc_plugin_init(void);
+void census_grpc_plugin_destroy(void);
 
-bool grpc_add_connected_filter(grpc_channel_stack_builder *builder,
-                               void *arg_must_be_null);
-
-#endif /* GRPC_INTERNAL_CORE_CHANNEL_CONNECTED_CHANNEL_H */
+#endif /* GRPC_INTERNAL_CORE_CENSUS_GRPC_PLUGIN_H */

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,12 +31,11 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_CHANNEL_CONNECTED_CHANNEL_H
-#define GRPC_INTERNAL_CORE_CHANNEL_CONNECTED_CHANNEL_H
+#ifndef GRPC_INTERNAL_CORE_SURFACE_LAME_CHANNEL_H
+#define GRPC_INTERNAL_CORE_SURFACE_LAME_CHANNEL_H
 
-#include "src/core/channel/channel_stack_builder.h"
+#include "src/core/channel/channel_stack.h"
 
-bool grpc_add_connected_filter(grpc_channel_stack_builder *builder,
-                               void *arg_must_be_null);
+extern const grpc_channel_filter grpc_lame_filter;
 
-#endif /* GRPC_INTERNAL_CORE_CHANNEL_CONNECTED_CHANNEL_H */
+#endif  // GRPC_INTERNAL_CORE_SURFACE_LAME_CHANNEL_H

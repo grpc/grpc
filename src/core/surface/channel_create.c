@@ -105,9 +105,6 @@ static void connected(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
                                         0);
     GPR_ASSERT(c->result->transport);
     c->result->channel_args = c->args.channel_args;
-    c->result->filters = gpr_malloc(sizeof(grpc_channel_filter *));
-    c->result->filters[0] = &grpc_http_client_filter;
-    c->result->num_filters = 1;
   } else {
     memset(c->result, 0, sizeof(*c->result));
   }
@@ -190,25 +187,16 @@ grpc_channel *grpc_insecure_channel_create(const char *target,
                                            const grpc_channel_args *args,
                                            void *reserved) {
   grpc_channel *channel = NULL;
-#define MAX_FILTERS 3
-  const grpc_channel_filter *filters[MAX_FILTERS];
   grpc_resolver *resolver;
   subchannel_factory *f;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  size_t n = 0;
   GRPC_API_TRACE(
       "grpc_insecure_channel_create(target=%p, args=%p, reserved=%p)", 3,
       (target, args, reserved));
   GPR_ASSERT(!reserved);
-  if (grpc_channel_args_is_census_enabled(args)) {
-    filters[n++] = &grpc_client_census_filter;
-  }
-  filters[n++] = &grpc_compress_filter;
-  filters[n++] = &grpc_client_channel_filter;
-  GPR_ASSERT(n <= MAX_FILTERS);
 
   channel =
-      grpc_channel_create_from_filters(&exec_ctx, target, filters, n, args, 1);
+      grpc_channel_create(&exec_ctx, target, args, GRPC_CLIENT_CHANNEL, NULL);
 
   f = gpr_malloc(sizeof(*f));
   f->base.vtable = &subchannel_factory_vtable;

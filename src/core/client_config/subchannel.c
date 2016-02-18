@@ -39,6 +39,7 @@
 #include <grpc/support/avl.h>
 
 #include "src/core/channel/channel_args.h"
+#include "src/core/surface/channel_init.h"
 #include "src/core/channel/client_channel.h"
 #include "src/core/channel/connected_channel.h"
 #include "src/core/client_config/initial_connect_string.h"
@@ -511,32 +512,15 @@ void grpc_connected_subchannel_ping(grpc_exec_ctx *exec_ctx,
 }
 
 static void publish_transport(grpc_exec_ctx *exec_ctx, grpc_subchannel *c) {
-  size_t channel_stack_size;
   grpc_connected_subchannel *con;
   grpc_channel_stack *stk;
-  size_t num_filters;
-  const grpc_channel_filter **filters;
   state_watcher *sw_subchannel;
 
-  /* build final filter list */
-  num_filters = c->num_filters + c->connecting_result.num_filters + 1;
-  filters = gpr_malloc(sizeof(*filters) * num_filters);
-  if (c->num_filters > 0) {
-    memcpy((void *)filters, c->filters, sizeof(*filters) * c->num_filters);
-  }
-  memcpy((void *)(filters + c->num_filters), c->connecting_result.filters,
-         sizeof(*filters) * c->connecting_result.num_filters);
-  filters[num_filters - 1] = &grpc_connected_channel_filter;
-
   /* construct channel stack */
-  channel_stack_size = grpc_channel_stack_size(filters, num_filters);
-  con = gpr_malloc(channel_stack_size);
+  con = grpc_channel_init_create_stack(
+      exec_ctx, GRPC_CLIENT_SUBCHANNEL, 0, c->connecting_result.channel_args, 1,
+      connection_destroy, NULL, c->connecting_result.transport);
   stk = CHANNEL_STACK_FROM_CONNECTION(con);
-  grpc_channel_stack_init(exec_ctx, 1, connection_destroy, con, filters,
-                          num_filters, c->connecting_result.channel_args,
-                          "CONNECTED_SUBCHANNEL", stk);
-  grpc_connected_channel_bind_transport(stk, c->connecting_result.transport);
-  gpr_free((void *)c->connecting_result.filters);
   memset(&c->connecting_result, 0, sizeof(c->connecting_result));
 
   /* initialize state watcher */
@@ -551,7 +535,6 @@ static void publish_transport(grpc_exec_ctx *exec_ctx, grpc_subchannel *c) {
   if (c->disconnected) {
     gpr_mu_unlock(&c->mu);
     gpr_free(sw_subchannel);
-    gpr_free((void *)filters);
     grpc_channel_stack_destroy(exec_ctx, stk);
     gpr_free(con);
     GRPC_SUBCHANNEL_WEAK_UNREF(exec_ctx, c, "connecting");
@@ -581,7 +564,6 @@ static void publish_transport(grpc_exec_ctx *exec_ctx, grpc_subchannel *c) {
                               "connected");
 
   gpr_mu_unlock(&c->mu);
-  gpr_free((void *)filters);
 }
 
 /* Generate a random number between 0 and 1. */

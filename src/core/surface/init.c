@@ -33,13 +33,21 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <limits.h>
 #include <memory.h>
 
-#include <grpc/census.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/time.h>
+/* TODO(ctiller): find another way? - better not to include census here */
+#include "src/core/census/grpc_plugin.h"
 #include "src/core/channel/channel_stack.h"
+#include "src/core/channel/compress_filter.h"
+#include "src/core/channel/connected_channel.h"
+#include "src/core/channel/client_channel.h"
+#include "src/core/channel/client_uchannel.h"
+#include "src/core/channel/http_client_filter.h"
+#include "src/core/channel/http_server_filter.h"
 #include "src/core/client_config/lb_policy_registry.h"
 #include "src/core/client_config/lb_policies/pick_first.h"
 #include "src/core/client_config/lb_policies/round_robin.h"
@@ -54,11 +62,15 @@
 #include "src/core/profiling/timers.h"
 #include "src/core/surface/api_trace.h"
 #include "src/core/surface/call.h"
+#include "src/core/surface/channel_init.h"
 #include "src/core/surface/completion_queue.h"
 #include "src/core/surface/init.h"
+#include "src/core/surface/lame_client.h"
+#include "src/core/surface/server.h"
 #include "src/core/surface/surface_trace.h"
 #include "src/core/transport/chttp2_transport.h"
 #include "src/core/transport/connectivity_state.h"
+#include "src/core/transport/transport_impl.h"
 
 #ifndef GRPC_DEFAULT_NAME_PREFIX
 #define GRPC_DEFAULT_NAME_PREFIX "dns:///"
@@ -72,7 +84,54 @@ static int g_initializations;
 
 static void do_basic_init(void) {
   gpr_mu_init(&g_init_mu);
+  /* TODO(ctiller): ideally remove this strict linkage */
+  grpc_register_plugin(census_grpc_plugin_init, census_grpc_plugin_destroy);
   g_initializations = 0;
+}
+
+static bool append_filter(grpc_channel_stack_builder *builder, void *arg) {
+  return grpc_channel_stack_builder_append_filter(builder, arg, NULL, NULL);
+}
+
+static bool prepend_filter(grpc_channel_stack_builder *builder, void *arg) {
+  return grpc_channel_stack_builder_prepend_filter(builder, arg, NULL, NULL);
+}
+
+static bool maybe_add_http_filter(grpc_channel_stack_builder *builder,
+                                  void *arg) {
+  grpc_transport *t = grpc_channel_stack_builder_get_transport(builder);
+  if (t && strstr(t->vtable->name, "http")) {
+    return grpc_channel_stack_builder_prepend_filter(builder, arg, NULL, NULL);
+  }
+  return true;
+}
+
+static void register_builtin_channel_init() {
+  grpc_channel_init_register_stage(GRPC_CLIENT_CHANNEL, INT_MAX, prepend_filter,
+                                   (void *)&grpc_compress_filter);
+  grpc_channel_init_register_stage(GRPC_CLIENT_UCHANNEL, INT_MAX,
+                                   prepend_filter,
+                                   (void *)&grpc_compress_filter);
+  grpc_channel_init_register_stage(GRPC_SERVER_CHANNEL, INT_MAX, prepend_filter,
+                                   (void *)&grpc_compress_filter);
+  grpc_channel_init_register_stage(GRPC_CLIENT_SUBCHANNEL, INT_MAX,
+                                   maybe_add_http_filter,
+                                   (void *)&grpc_http_client_filter);
+  grpc_channel_init_register_stage(GRPC_CLIENT_SUBCHANNEL, INT_MAX,
+                                   grpc_add_connected_filter, NULL);
+  grpc_channel_init_register_stage(GRPC_SERVER_CHANNEL, INT_MAX,
+                                   maybe_add_http_filter,
+                                   (void *)&grpc_http_server_filter);
+  grpc_channel_init_register_stage(GRPC_SERVER_CHANNEL, INT_MAX,
+                                   grpc_add_connected_filter, NULL);
+  grpc_channel_init_register_stage(GRPC_CLIENT_CHANNEL, INT_MAX, append_filter,
+                                   (void *)&grpc_client_channel_filter);
+  grpc_channel_init_register_stage(GRPC_CLIENT_UCHANNEL, INT_MAX, append_filter,
+                                   (void *)&grpc_client_uchannel_filter);
+  grpc_channel_init_register_stage(GRPC_CLIENT_LAME_CHANNEL, INT_MAX,
+                                   append_filter, (void *)&grpc_lame_filter);
+  grpc_channel_init_register_stage(GRPC_SERVER_CHANNEL, INT_MAX, prepend_filter,
+                                   (void *)&grpc_server_top_filter);
 }
 
 typedef struct grpc_plugin {
@@ -85,7 +144,7 @@ static int g_number_of_plugins = 0;
 
 void grpc_register_plugin(void (*init)(void), void (*destroy)(void)) {
   GRPC_API_TRACE("grpc_register_plugin(init=%p, destroy=%p)", 2,
-                 ((void*)(intptr_t)init, (void*)(intptr_t)destroy));
+                 ((void *)(intptr_t)init, (void *)(intptr_t)destroy));
   GPR_ASSERT(g_number_of_plugins != MAX_PLUGINS);
   g_all_of_the_plugins[g_number_of_plugins].init = init;
   g_all_of_the_plugins[g_number_of_plugins].destroy = destroy;
@@ -100,6 +159,7 @@ void grpc_init(void) {
   if (++g_initializations == 1) {
     gpr_time_init();
     grpc_mdctx_global_init();
+    grpc_channel_init_init();
     grpc_lb_policy_registry_init(grpc_pick_first_lb_factory_create());
     grpc_register_lb_policy(grpc_pick_first_lb_factory_create());
     grpc_register_lb_policy(grpc_round_robin_lb_factory_create());
@@ -119,14 +179,6 @@ void grpc_init(void) {
     grpc_iomgr_init();
     grpc_executor_init();
     grpc_tracer_init("GRPC_TRACE");
-    /* Only initialize census if no one else has and some features are
-     * available. */
-    if (census_enabled() == CENSUS_FEATURE_NONE &&
-        census_supported() != CENSUS_FEATURE_NONE) {
-      if (census_initialize(census_supported())) { /* enable all features. */
-        gpr_log(GPR_ERROR, "Could not initialize census.");
-      }
-    }
     gpr_timers_global_init();
     grpc_cq_global_init();
     grpc_subchannel_index_init();
@@ -135,6 +187,12 @@ void grpc_init(void) {
         g_all_of_the_plugins[i].init();
       }
     }
+    /* register channel finalization AFTER all plugins, to ensure that it's run
+     * at the appropriate time */
+    grpc_register_security_filters();
+    register_builtin_channel_init();
+    /* no more changes to channel init pipelines */
+    grpc_channel_init_finalize();
   }
   gpr_mu_unlock(&g_init_mu);
   GRPC_API_TRACE("grpc_init(void)", 0, ());
@@ -149,7 +207,6 @@ void grpc_shutdown(void) {
     grpc_cq_global_shutdown();
     grpc_iomgr_shutdown();
     grpc_subchannel_index_shutdown();
-    census_shutdown();
     gpr_timers_global_destroy();
     grpc_tracer_shutdown();
     grpc_resolver_registry_shutdown();
@@ -159,6 +216,7 @@ void grpc_shutdown(void) {
         g_all_of_the_plugins[i].destroy();
       }
     }
+    grpc_channel_init_shutdown();
     grpc_mdctx_global_shutdown();
   }
   gpr_mu_unlock(&g_init_mu);
