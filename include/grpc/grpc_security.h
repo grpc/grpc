@@ -167,7 +167,8 @@ typedef grpc_ssl_roots_override_result (*grpc_ssl_roots_override_callback)(
    before any ssl credentials are created to have the desired side effect.
    If GRPC_DEFAULT_SSL_ROOTS_FILE_PATH environment is set to a valid path, the
    callback will not be called. */
-void grpc_set_ssl_roots_override_callback(grpc_ssl_roots_override_callback cb);
+GRPCAPI void grpc_set_ssl_roots_override_callback(
+    grpc_ssl_roots_override_callback cb);
 
 /* Object that holds a private key / certificate chain pair in PEM format. */
 typedef struct {

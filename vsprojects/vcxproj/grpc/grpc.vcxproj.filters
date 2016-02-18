@@ -145,6 +145,9 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\client_config\subchannel_factory.c">
       <Filter>src\core\client_config</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\client_config\subchannel_index.c">
+      <Filter>src\core\client_config</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\client_config\uri_parser.c">
       <Filter>src\core\client_config</Filter>
     </ClCompile>
@@ -454,6 +457,9 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\census\initialize.c">
       <Filter>src\core\census</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\census\log.c">
+      <Filter>src\core\census</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\census\operation.c">
       <Filter>src\core\census</Filter>
     </ClCompile>
@@ -624,6 +630,9 @@
       <Filter>src\core\client_config</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\client_config\subchannel_factory.h">
+      <Filter>src\core\client_config</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\client_config\subchannel_index.h">
       <Filter>src\core\client_config</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\client_config\uri_parser.h">
@@ -888,6 +897,9 @@
       <Filter>src\core\transport</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\census\aggregation.h">
+      <Filter>src\core\census</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\census\log.h">
       <Filter>src\core\census</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\census\rpc_metric_id.h">
