@@ -79,7 +79,8 @@ class ChannelArgumentsTest : public ::testing::Test {
           return grpc::string(arg.value.string) == expected_arg.value.string;
         } else if (arg.type == GRPC_ARG_POINTER) {
           return arg.value.pointer.p == expected_arg.value.pointer.p &&
-                 arg.value.pointer.vtable->copy == expected_arg.value.pointer.vtable->copy &&
+                 arg.value.pointer.vtable->copy ==
+                     expected_arg.value.pointer.vtable->copy &&
                  arg.value.pointer.vtable->destroy ==
                      expected_arg.value.pointer.vtable->destroy;
         }
