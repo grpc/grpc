@@ -555,6 +555,7 @@
       'type': 'static_library',
       'dependencies': [
         'gpr',
+        'grpc_codegen_lib',
       ],
       'sources': [
         'src/core/httpcli/httpcli_security_connector.c',
@@ -711,6 +712,27 @@
         'src/core/census/operation.c',
         'src/core/census/placeholders.c',
         'src/core/census/tracing.c',
+      ],
+      "conditions": [
+        ['OS == "mac"', {
+          'xcode_settings': {
+            'MACOSX_DEPLOYMENT_TARGET': '10.9'
+          }
+        }]
+      ]
+    },
+    {
+      'cflags': [
+        '-std=c99',
+        '-Wall',
+        '-Werror'
+      ],
+      'target_name': 'grpc_codegen_lib',
+      'product_prefix': 'lib',
+      'type': 'static_library',
+      'dependencies': [
+      ],
+      'sources': [
       ],
       "conditions": [
         ['OS == "mac"', {

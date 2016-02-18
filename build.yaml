@@ -202,55 +202,6 @@ filegroups:
   - src/cpp/util/status.cc
   - src/cpp/util/string_ref.cc
   - src/cpp/util/time.cc
-- name: grpc++_codegen
-  public_headers:
-  - include/grpc++/impl/codegen/async_stream.h
-  - include/grpc++/impl/codegen/async_unary_call.h
-  - include/grpc++/impl/codegen/call.h
-  - include/grpc++/impl/codegen/call_hook.h
-  - include/grpc++/impl/codegen/channel_interface.h
-  - include/grpc++/impl/codegen/client_context.h
-  - include/grpc++/impl/codegen/client_unary_call.h
-  - include/grpc++/impl/codegen/completion_queue.h
-  - include/grpc++/impl/codegen/completion_queue_tag.h
-  - include/grpc++/impl/codegen/config.h
-  - include/grpc++/impl/codegen/config_protobuf.h
-  - include/grpc++/impl/codegen/grpc_library.h
-  - include/grpc++/impl/codegen/method_handler_impl.h
-  - include/grpc++/impl/codegen/proto_utils.h
-  - include/grpc++/impl/codegen/rpc_method.h
-  - include/grpc++/impl/codegen/rpc_service_method.h
-  - include/grpc++/impl/codegen/security/auth_context.h
-  - include/grpc++/impl/codegen/serialization_traits.h
-  - include/grpc++/impl/codegen/server_context.h
-  - include/grpc++/impl/codegen/server_interface.h
-  - include/grpc++/impl/codegen/service_type.h
-  - include/grpc++/impl/codegen/status.h
-  - include/grpc++/impl/codegen/status_code_enum.h
-  - include/grpc++/impl/codegen/string_ref.h
-  - include/grpc++/impl/codegen/stub_options.h
-  - include/grpc++/impl/codegen/sync.h
-  - include/grpc++/impl/codegen/sync_cxx11.h
-  - include/grpc++/impl/codegen/sync_no_cxx11.h
-  - include/grpc++/impl/codegen/sync_stream.h
-  - include/grpc++/impl/codegen/time.h
-  headers:
-  - include/grpc/impl/codegen/alloc.h
-  - include/grpc/impl/codegen/atm.h
-  - include/grpc/impl/codegen/atm_gcc_atomic.h
-  - include/grpc/impl/codegen/atm_gcc_sync.h
-  - include/grpc/impl/codegen/atm_win32.h
-  - include/grpc/impl/codegen/log.h
-  - include/grpc/impl/codegen/port_platform.h
-  - include/grpc/impl/codegen/slice.h
-  - include/grpc/impl/codegen/slice_buffer.h
-  - include/grpc/impl/codegen/sync.h
-  - include/grpc/impl/codegen/sync_generic.h
-  - include/grpc/impl/codegen/sync_posix.h
-  - include/grpc/impl/codegen/sync_win32.h
-  - include/grpc/impl/codegen/time.h
-  src:
-  - src/cpp/codegen/grpc_library.cc
 - name: grpc_base
   public_headers:
   - include/grpc/byte_buffer.h
@@ -500,14 +451,6 @@ filegroups:
   - src/core/transport/static_metadata.c
   - src/core/transport/transport.c
   - src/core/transport/transport_op_string.c
-- name: grpc_codegen
-  public_headers:
-  - include/grpc/impl/codegen/byte_buffer.h
-  - include/grpc/impl/codegen/compression_types.h
-  - include/grpc/impl/codegen/connectivity_state.h
-  - include/grpc/impl/codegen/grpc_types.h
-  - include/grpc/impl/codegen/propagation_bits.h
-  - include/grpc/impl/codegen/status.h
 - name: grpc_test_util_base
   headers:
   - test/core/end2end/cq_verifier.h
@@ -590,11 +533,11 @@ libs:
   - src/core/tsi/transport_security.c
   deps:
   - gpr
+  - grpc_codegen_lib
   baselib: true
   deps_linkage: static
   dll: true
   filegroups:
-  - grpc_codegen
   - grpc_base
   - census
   secure: true
@@ -638,12 +581,12 @@ libs:
   - src/core/surface/init_unsecure.c
   deps:
   - gpr
+  - grpc_codegen_lib
   baselib: true
   deps_linkage: static
   dll: true
   filegroups:
   - grpc_base
-  - grpc_codegen
   - census
   secure: false
   vs_project_guid: '{46CEDFFF-9692-456A-AA24-38B5D6BCF4C5}'
@@ -689,13 +632,6 @@ libs:
   - grpc
   - gpr_test_util
   - gpr
-- name: codegen_lib
-  build: all
-  language: c++
-  filegroups:
-  - grpc++_codegen
-  - grpc_codegen
-  secure: false
 - name: grpc++
   build: all
   language: c++
@@ -712,13 +648,66 @@ libs:
   - src/cpp/server/secure_server_credentials.cc
   deps:
   - grpc
+  - grpc++_codegen_lib
   baselib: true
   dll: true
   filegroups:
   - grpc++_base
-  - grpc++_codegen
   secure: check
   vs_project_guid: '{C187A093-A0FE-489D-A40A-6E33DE0F9FEB}'
+- name: grpc++_codegen_lib
+  build: all
+  language: c++
+  public_headers:
+  - include/grpc++/impl/codegen/async_stream.h
+  - include/grpc++/impl/codegen/async_unary_call.h
+  - include/grpc++/impl/codegen/call.h
+  - include/grpc++/impl/codegen/call_hook.h
+  - include/grpc++/impl/codegen/channel_interface.h
+  - include/grpc++/impl/codegen/client_context.h
+  - include/grpc++/impl/codegen/client_unary_call.h
+  - include/grpc++/impl/codegen/completion_queue.h
+  - include/grpc++/impl/codegen/completion_queue_tag.h
+  - include/grpc++/impl/codegen/config.h
+  - include/grpc++/impl/codegen/config_protobuf.h
+  - include/grpc++/impl/codegen/grpc_library.h
+  - include/grpc++/impl/codegen/method_handler_impl.h
+  - include/grpc++/impl/codegen/proto_utils.h
+  - include/grpc++/impl/codegen/rpc_method.h
+  - include/grpc++/impl/codegen/rpc_service_method.h
+  - include/grpc++/impl/codegen/security/auth_context.h
+  - include/grpc++/impl/codegen/serialization_traits.h
+  - include/grpc++/impl/codegen/server_context.h
+  - include/grpc++/impl/codegen/server_interface.h
+  - include/grpc++/impl/codegen/service_type.h
+  - include/grpc++/impl/codegen/status.h
+  - include/grpc++/impl/codegen/status_code_enum.h
+  - include/grpc++/impl/codegen/string_ref.h
+  - include/grpc++/impl/codegen/stub_options.h
+  - include/grpc++/impl/codegen/sync.h
+  - include/grpc++/impl/codegen/sync_cxx11.h
+  - include/grpc++/impl/codegen/sync_no_cxx11.h
+  - include/grpc++/impl/codegen/sync_stream.h
+  - include/grpc++/impl/codegen/time.h
+  headers:
+  - include/grpc/impl/codegen/alloc.h
+  - include/grpc/impl/codegen/atm.h
+  - include/grpc/impl/codegen/atm_gcc_atomic.h
+  - include/grpc/impl/codegen/atm_gcc_sync.h
+  - include/grpc/impl/codegen/atm_win32.h
+  - include/grpc/impl/codegen/log.h
+  - include/grpc/impl/codegen/port_platform.h
+  - include/grpc/impl/codegen/slice.h
+  - include/grpc/impl/codegen/slice_buffer.h
+  - include/grpc/impl/codegen/sync.h
+  - include/grpc/impl/codegen/sync_generic.h
+  - include/grpc/impl/codegen/sync_posix.h
+  - include/grpc/impl/codegen/sync_win32.h
+  - include/grpc/impl/codegen/time.h
+  src:
+  - src/cpp/codegen/grpc_library.cc
+  private: true
+  secure: false
 - name: grpc++_test_config
   build: private
   language: c++
@@ -757,13 +746,27 @@ libs:
   deps:
   - gpr
   - grpc_unsecure
+  - grpc++_codegen_lib
   baselib: true
   dll: true
   filegroups:
   - grpc++_base
-  - grpc++_codegen
   secure: false
   vs_project_guid: '{6EE56155-DF7C-4F6E-BFC4-F6F776BEB211}'
+- name: grpc_codegen_lib
+  build: all
+  language: c++
+  public_headers:
+  - include/grpc/impl/codegen/byte_buffer.h
+  - include/grpc/impl/codegen/compression_types.h
+  - include/grpc/impl/codegen/connectivity_state.h
+  - include/grpc/impl/codegen/grpc_types.h
+  - include/grpc/impl/codegen/propagation_bits.h
+  - include/grpc/impl/codegen/status.h
+  headers: []
+  src: []
+  private: true
+  secure: false
 - name: grpc_plugin_support
   build: protoc
   language: c++
@@ -789,10 +792,10 @@ libs:
   - src/compiler/objective_c_generator.cc
   - src/compiler/python_generator.cc
   - src/compiler/ruby_generator.cc
-  deps: []
+  deps:
+  - grpc_codegen_lib
+  - grpc++_codegen_lib
   filegroups:
-  - grpc++_codegen
-  - grpc_codegen
   - gpr_codegen
   secure: false
   vs_project_guid: '{B6E81D84-2ACB-41B8-8781-493A944C7817}'
