@@ -14,10 +14,12 @@ filegroups:
   - include/grpc/census.h
   headers:
   - src/core/census/aggregation.h
+  - src/core/census/log.h
   - src/core/census/rpc_metric_id.h
   src:
   - src/core/census/context.c
   - src/core/census/initialize.c
+  - src/core/census/log.c
   - src/core/census/operation.c
   - src/core/census/placeholders.c
   - src/core/census/tracing.c
@@ -172,7 +174,6 @@ filegroups:
   - src/cpp/client/create_channel_internal.h
   - src/cpp/common/create_auth_context.h
   - src/cpp/server/dynamic_thread_pool.h
-  - src/cpp/server/fixed_size_thread_pool.h
   - src/cpp/server/thread_pool_interface.h
   src:
   - src/cpp/client/channel.cc
@@ -191,7 +192,6 @@ filegroups:
   - src/cpp/server/async_generic_service.cc
   - src/cpp/server/create_default_thread_pool.cc
   - src/cpp/server/dynamic_thread_pool.cc
-  - src/cpp/server/fixed_size_thread_pool.cc
   - src/cpp/server/insecure_server_credentials.cc
   - src/cpp/server/server.cc
   - src/cpp/server/server_builder.cc
@@ -271,6 +271,7 @@ filegroups:
   - src/core/client_config/resolvers/sockaddr_resolver.h
   - src/core/client_config/subchannel.h
   - src/core/client_config/subchannel_factory.h
+  - src/core/client_config/subchannel_index.h
   - src/core/client_config/uri_parser.h
   - src/core/compression/algorithm_metadata.h
   - src/core/compression/message_compress.h
@@ -388,6 +389,7 @@ filegroups:
   - src/core/client_config/resolvers/sockaddr_resolver.c
   - src/core/client_config/subchannel.c
   - src/core/client_config/subchannel_factory.c
+  - src/core/client_config/subchannel_index.c
   - src/core/client_config/uri_parser.c
   - src/core/compression/algorithm.c
   - src/core/compression/message_compress.c
@@ -964,6 +966,16 @@ targets:
   language: c
   src:
   - test/core/census/context_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: census_log_test
+  build: test
+  language: c
+  src:
+  - test/core/census/log_test.c
   deps:
   - grpc_test_util
   - grpc
@@ -2326,7 +2338,6 @@ targets:
   - posix
 - name: qps_openloop_test
   build: test
-  run: false
   language: c++
   src:
   - test/cpp/qps/qps_openloop_test.cc
@@ -2645,8 +2656,8 @@ configs:
     LDXX: clang++
     compile_the_world: true
     test_environ:
-      ASAN_OPTIONS: suppressions=tools/asan_suppressions.txt:detect_leaks=1:color=always
-      LSAN_OPTIONS: suppressions=tools/asan_suppressions.txt:report_objects=1
+      ASAN_OPTIONS: detect_leaks=1:color=always
+      LSAN_OPTIONS: suppressions=tools/lsan_suppressions.txt:report_objects=1
     timeout_multiplier: 1.5
   asan-noleaks:
     CC: clang

@@ -79,6 +79,7 @@ unless File.exist?(File.join(grpc_lib_dir, 'libgrpc.a')) or windows
   ENV['EMBED_ZLIB'] = 'true'
   ENV['ARCH_FLAGS'] = RbConfig::CONFIG['ARCH_FLAG']
   ENV['ARCH_FLAGS'] = '-arch i386 -arch x86_64' if RUBY_PLATFORM =~ /darwin/
+  ENV['CFLAGS'] = '-DGPR_BACKWARDS_COMPATIBILITY_MODE'
 
   output_dir = File.expand_path(RbConfig::CONFIG['topdir'])
   grpc_lib_dir = File.join(output_dir, 'libs', grpc_config)
