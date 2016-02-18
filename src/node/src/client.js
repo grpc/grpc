@@ -698,13 +698,16 @@ exports.waitForClientReady = function(client, deadline, callback) {
  * Creates a constructor for clients for the given service
  * @param {ProtoBuf.Reflect.Service} service The service to generate a client
  *     for
+ * @param {Object=} options Options to apply to the client
  * @return {function(string, Object)} New client constructor
  */
-exports.makeProtobufClientConstructor =  function(service) {
-  var method_attrs = common.getProtobufServiceAttrs(service, service.name);
+exports.makeProtobufClientConstructor =  function(service, options) {
+  var method_attrs = common.getProtobufServiceAttrs(service, service.name,
+                                                    options);
   var Client = exports.makeClientConstructor(
       method_attrs, common.fullyQualifiedName(service));
   Client.service = service;
+  Client.service.grpc_options = options;
   return Client;
 };
 

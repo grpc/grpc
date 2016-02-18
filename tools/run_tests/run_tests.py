@@ -334,13 +334,14 @@ class RubyLanguage(object):
 
   def test_specs(self, config, args):
     return [config.job_spec(['tools/run_tests/run_ruby.sh'], None,
+                            timeout_seconds=10*60,
                             environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
 
   def pre_build_steps(self):
     return [['tools/run_tests/pre_build_ruby.sh']]
 
   def make_targets(self, test_regex):
-    return ['static_c']
+    return []
 
   def make_options(self):
     return []
@@ -1197,4 +1198,3 @@ else:
   if BuildAndRunError.POST_TEST in errors:
     exit_code |= 4
   sys.exit(exit_code)
-

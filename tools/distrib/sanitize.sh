@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2015-2016, Google Inc.
+# Copyright 2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -28,37 +28,27 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-NODE_VERSION=$1
-source ~/.nvm/nvm.sh
 set -ex
 
-nvm use $NODE_VERSION
-
-CONFIG=${CONFIG:-opt}
-
-# change to grpc repo root
 cd $(dirname $0)/../..
 
-root=`pwd`
+DIFF_COMMAND="git diff --name-only HEAD | grep -v ^third_party/"
 
-test_directory='src/node/test'
-timeout=8000
-
-if [ "$CONFIG" = "gcov" ]
-then
-  ./node_modules/.bin/istanbul cover --dir reports/node_coverage \
-    -x **/interop/* ./node_modules/.bin/_mocha -- --timeout $timeout $test_directory
-  cd build
-  gcov Release/obj.target/grpc/ext/*.o
-  lcov --base-directory . --directory . -c -o coverage.info
-  lcov -e coverage.info '**/src/node/ext/*' -o coverage.info
-  genhtml -o ../reports/node_ext_coverage --num-spaces 2 \
-    -t 'Node gRPC test coverage' coverage.info --rc genhtml_hi_limit=95 \
-    --rc genhtml_med_limit=80 --no-prefix
-  echo '<html><head><meta http-equiv="refresh" content="0;URL=lcov-report/index.html"></head></html>' > \
-    ../reports/node_coverage/index.html
+if [ "x$1" == 'x--pre-commit' ]; then
+  if eval $DIFF_COMMAND | grep '^build.yaml$'; then
+    ./tools/buildgen/generate_projects.sh
+  else
+    templates=$(eval $DIFF_COMMAND | grep '\.template$' || true)
+    if [ -n "$templates" ]; then
+      ./tools/buildgen/generate_projects.sh --templates $templates
+    fi
+  fi
+  CHANGED_FILES=$(eval $DIFF_COMMAND) ./tools/distrib/clang_format_code.sh
+  ./tools/distrib/check_copyright.py --fix --precommit
+  ./tools/distrib/check_trailing_newlines.sh
 else
-  JUNIT_REPORT_PATH=src/node/reports.xml JUNIT_REPORT_STACK=1 \
-    ./node_modules/.bin/mocha --timeout $timeout \
-    --reporter mocha-jenkins-reporter $test_directory
+  ./tools/buildgen/generate_projects.sh
+  ./tools/distrib/clang_format_code.sh
+  ./tools/distrib/check_copyright.py --fix
+  ./tools/distrib/check_trailing_newlines.sh
 fi
