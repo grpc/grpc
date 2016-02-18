@@ -210,7 +210,6 @@ PACKAGE_DATA = {
     'grpc._cython': [
         '_windows/grpc_c.32.python',
         '_windows/grpc_c.64.python',
-        'cygrpc.so',
     ],
 }
 if INSTALL_TESTS:
