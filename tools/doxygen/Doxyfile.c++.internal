@@ -812,6 +812,7 @@ src/cpp/common/create_auth_context.h \
 src/cpp/server/dynamic_thread_pool.h \
 src/cpp/server/thread_pool_interface.h \
 src/cpp/client/secure_credentials.cc \
+src/cpp/codegen/grpc_library.cc \
 src/cpp/common/auth_property_iterator.cc \
 src/cpp/common/secure_auth_context.cc \
 src/cpp/common/secure_channel_arguments.cc \

@@ -775,6 +775,7 @@ cc_library(
     "src/cpp/server/dynamic_thread_pool.h",
     "src/cpp/server/thread_pool_interface.h",
     "src/cpp/client/secure_credentials.cc",
+    "src/cpp/codegen/grpc_library.cc",
     "src/cpp/common/auth_property_iterator.cc",
     "src/cpp/common/secure_auth_context.cc",
     "src/cpp/common/secure_channel_arguments.cc",
@@ -883,7 +884,6 @@ cc_library(
     "include/grpc/impl/codegen/sync_posix.h",
     "include/grpc/impl/codegen/sync_win32.h",
     "include/grpc/impl/codegen/time.h",
-    "src/cpp/codegen/grpc_library.cc",
   ],
   hdrs = [
     "include/grpc++/impl/codegen/async_stream.h",

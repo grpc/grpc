@@ -315,6 +315,8 @@
   <ItemGroup>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\client\secure_credentials.cc">
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\cpp\codegen\grpc_library.cc">
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\common\auth_property_iterator.cc">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\common\secure_auth_context.cc">
