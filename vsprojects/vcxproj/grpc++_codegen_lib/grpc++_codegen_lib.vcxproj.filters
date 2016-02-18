@@ -1,11 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="$(SolutionDir)\..\src\cpp\codegen\grpc_library.cc">
-      <Filter>src\cpp\codegen</Filter>
-    </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\async_stream.h">
       <Filter>include\grpc++\impl\codegen</Filter>
     </ClInclude>
@@ -166,15 +161,6 @@
     </Filter>
     <Filter Include="include\grpc\impl\codegen">
       <UniqueIdentifier>{311586c5-1a08-e1ba-8dd8-d1cbe10156b3}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="src">
-      <UniqueIdentifier>{e9bdb195-1cf9-a0f4-231c-fcee59eb54ca}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="src\cpp">
-      <UniqueIdentifier>{d2e57ea3-c758-0f7c-3bc9-e71dd87bd654}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="src\cpp\codegen">
-      <UniqueIdentifier>{f93ade18-7c50-7ed9-b8e7-383b11f077c2}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

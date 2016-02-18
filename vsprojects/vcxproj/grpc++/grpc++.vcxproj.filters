@@ -4,6 +4,9 @@
     <ClCompile Include="$(SolutionDir)\..\src\cpp\client\secure_credentials.cc">
       <Filter>src\cpp\client</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\cpp\codegen\grpc_library.cc">
+      <Filter>src\cpp\codegen</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\common\auth_property_iterator.cc">
       <Filter>src\cpp\common</Filter>
     </ClCompile>
@@ -283,6 +286,9 @@
     </Filter>
     <Filter Include="src\cpp\client">
       <UniqueIdentifier>{7febf32a-d7a6-76fa-9e17-f189f591c062}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\cpp\codegen">
+      <UniqueIdentifier>{3c3e27f4-d3d9-3c42-5204-08b5e839f2de}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\cpp\common">
       <UniqueIdentifier>{2336e396-7e0b-8bf9-3b09-adc6ad1f0e5b}</UniqueIdentifier>
