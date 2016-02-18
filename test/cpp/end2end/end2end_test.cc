@@ -252,6 +252,9 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
       args.SetSslTargetNameOverride("foo.test.google.fr");
       channel_creds = SslCredentials(ssl_opts);
     }
+    if (!user_agent_prefix_.empty()) {
+      args.SetUserAgentPrefix(user_agent_prefix_);
+    }
     args.SetString(GRPC_ARG_SECONDARY_USER_AGENT_STRING, "end2end_test");
     channel_ = CreateCustomChannel(server_address_.str(), channel_creds, args);
   }
@@ -285,6 +288,7 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
   TestServiceImpl service_;
   TestServiceImpl special_service_;
   TestServiceImplDupPkg dup_pkg_service_;
+  grpc::string user_agent_prefix_;
 };
 
 static void SendRpc(grpc::testing::EchoTestService::Stub* stub, int num_rpcs,
@@ -599,6 +603,25 @@ TEST_P(End2endServerTryCancelTest, BidiStreamServerCancelDuring) {
 // but before returning to the client
 TEST_P(End2endServerTryCancelTest, BidiStreamServerCancelAfter) {
   TestBidiStreamServerCancel(CANCEL_AFTER_PROCESSING, 5);
+}
+
+TEST_P(End2endTest, SimpleRpcWithCustomeUserAgentPrefix) {
+  user_agent_prefix_ = "custom_prefix";
+  ResetStub();
+  EchoRequest request;
+  EchoResponse response;
+  request.set_message("Hello hello hello hello");
+  request.mutable_param()->set_echo_metadata(true);
+
+  ClientContext context;
+  Status s = stub_->Echo(&context, request, &response);
+  EXPECT_EQ(response.message(), request.message());
+  EXPECT_TRUE(s.ok());
+  const auto& trailing_metadata = context.GetServerTrailingMetadata();
+  auto iter = trailing_metadata.find("user-agent");
+  EXPECT_TRUE(iter != trailing_metadata.end());
+  grpc::string expected_prefix = user_agent_prefix_ + " grpc-c++/";
+  EXPECT_TRUE(iter->second.starts_with(expected_prefix));
 }
 
 TEST_P(End2endTest, MultipleRpcsWithVariedBinaryMetadataValue) {
