@@ -38,7 +38,7 @@ namespace Grpc.Core.Utils
     /// <summary>
     /// Utility methods to simplify checking preconditions in the code.
     /// </summary>
-    public static class Preconditions
+    public static class GrpcPreconditions
     {
         /// <summary>
         /// Throws <see cref="ArgumentException"/> if condition is false.

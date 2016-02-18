@@ -61,8 +61,8 @@ namespace Grpc.Core
         /// </summary>
         public AuthInterceptorContext(string serviceUrl, string methodName)
         {
-            this.serviceUrl = Preconditions.CheckNotNull(serviceUrl);
-            this.methodName = Preconditions.CheckNotNull(methodName);
+            this.serviceUrl = GrpcPreconditions.CheckNotNull(serviceUrl);
+            this.methodName = GrpcPreconditions.CheckNotNull(methodName);
         }
 
         /// <summary>

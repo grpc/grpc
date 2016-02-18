@@ -78,10 +78,10 @@ namespace Grpc.Core.Internal
             var context = HandlerUtils.NewContext(newRpc, asyncCall.Peer, responseStream, asyncCall.CancellationToken);
             try
             {
-                Preconditions.CheckArgument(await requestStream.MoveNext().ConfigureAwait(false));
+                GrpcPreconditions.CheckArgument(await requestStream.MoveNext().ConfigureAwait(false));
                 var request = requestStream.Current;
                 // TODO(jtattermusch): we need to read the full stream so that native callhandle gets deallocated.
-                Preconditions.CheckArgument(!await requestStream.MoveNext().ConfigureAwait(false));
+                GrpcPreconditions.CheckArgument(!await requestStream.MoveNext().ConfigureAwait(false));
                 var result = await handler(request, context).ConfigureAwait(false);
                 status = context.Status;
                 await responseStream.WriteAsync(result).ConfigureAwait(false);
@@ -134,10 +134,10 @@ namespace Grpc.Core.Internal
             var context = HandlerUtils.NewContext(newRpc, asyncCall.Peer, responseStream, asyncCall.CancellationToken);
             try
             {
-                Preconditions.CheckArgument(await requestStream.MoveNext().ConfigureAwait(false));
+                GrpcPreconditions.CheckArgument(await requestStream.MoveNext().ConfigureAwait(false));
                 var request = requestStream.Current;
                 // TODO(jtattermusch): we need to read the full stream so that native callhandle gets deallocated.
-                Preconditions.CheckArgument(!await requestStream.MoveNext().ConfigureAwait(false));
+                GrpcPreconditions.CheckArgument(!await requestStream.MoveNext().ConfigureAwait(false));
                 await handler(request, responseStream, context).ConfigureAwait(false);
                 status = context.Status;
             }
