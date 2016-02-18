@@ -62,9 +62,6 @@ typedef struct {
 typedef struct {
   /** the connected transport */
   grpc_transport *transport;
-  /** any additional filters (owned by the caller of connect) */
-  const grpc_channel_filter **filters;
-  size_t num_filters;
 
   /** channel arguments (to be passed to the filters) */
   const grpc_channel_args *channel_args;

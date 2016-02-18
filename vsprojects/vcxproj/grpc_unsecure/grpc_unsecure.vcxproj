@@ -273,8 +273,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(SolutionDir)\..\src\core\census\grpc_filter.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\census\grpc_plugin.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\channel\channel_args.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\channel\channel_stack.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\channel\channel_stack_builder.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\channel\client_channel.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\channel\client_uchannel.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\channel\compress_filter.h" />
@@ -353,9 +355,12 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\surface\call.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\surface\call_test_only.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\surface\channel.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\surface\channel_init.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\surface\channel_stack_type.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\surface\completion_queue.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\surface\event_string.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\surface\init.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\surface\lame_client.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\surface\server.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\surface\surface_trace.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\transport\byte_stream.h" />
@@ -397,9 +402,13 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\census\grpc_filter.c">
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\census\grpc_plugin.c">
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\channel\channel_args.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\channel\channel_stack.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\channel\channel_stack_builder.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\channel\client_channel.c">
     </ClCompile>
@@ -571,7 +580,11 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\surface\channel_create.c">
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\surface\channel_init.c">
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\surface\channel_ping.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\surface\channel_stack_type.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\surface\completion_queue.c">
     </ClCompile>
@@ -586,8 +599,6 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\surface\server.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\surface\server_chttp2.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\surface\server_create.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\surface\validate_metadata.c">
     </ClCompile>

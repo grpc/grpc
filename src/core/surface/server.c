@@ -42,7 +42,6 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/useful.h>
 
-#include "src/core/census/grpc_filter.h"
 #include "src/core/channel/channel_args.h"
 #include "src/core/channel/connected_channel.h"
 #include "src/core/iomgr/iomgr.h"
@@ -182,8 +181,6 @@ typedef struct {
 } channel_broadcaster;
 
 struct grpc_server {
-  size_t channel_filter_count;
-  grpc_channel_filter const **channel_filters;
   grpc_channel_args *channel_args;
 
   grpc_completion_queue **cqs;
@@ -355,7 +352,6 @@ static void server_delete(grpc_exec_ctx *exec_ctx, grpc_server *server) {
   grpc_channel_args_destroy(server->channel_args);
   gpr_mu_destroy(&server->mu_global);
   gpr_mu_destroy(&server->mu_call);
-  gpr_free((void *)server->channel_filters);
   while ((rm = server->registered_methods) != NULL) {
     server->registered_methods = rm->next;
     request_matcher_destroy(&rm->request_matcher);
@@ -750,7 +746,7 @@ static void destroy_channel_elem(grpc_exec_ctx *exec_ctx,
   }
 }
 
-static const grpc_channel_filter server_surface_filter = {
+const grpc_channel_filter grpc_server_top_filter = {
     server_start_transport_stream_op, grpc_channel_next_op, sizeof(call_data),
     init_call_elem, grpc_call_stack_ignore_set_pollset, destroy_call_elem,
     sizeof(channel_data), init_channel_elem, destroy_channel_elem,
@@ -776,11 +772,10 @@ void grpc_server_register_completion_queue(grpc_server *server,
   server->cqs[n] = cq;
 }
 
-grpc_server *grpc_server_create_from_filters(
-    const grpc_channel_filter **filters, size_t filter_count,
-    const grpc_channel_args *args) {
+grpc_server *grpc_server_create(const grpc_channel_args *args, void *reserved) {
   size_t i;
-  int census_enabled = grpc_channel_args_is_census_enabled(args);
+
+  GRPC_API_TRACE("grpc_server_create(%p, %p)", 2, (args, reserved));
 
   grpc_server *server = gpr_malloc(sizeof(grpc_server));
 
@@ -807,23 +802,6 @@ grpc_server *grpc_server_create_from_filters(
                        server->max_requested_calls);
   server->requested_calls = gpr_malloc(server->max_requested_calls *
                                        sizeof(*server->requested_calls));
-
-  /* Server filter stack is:
-
-     server_surface_filter - for making surface API calls
-     grpc_server_census_filter (optional) - for stats collection and tracing
-     {passed in filter stack}
-     grpc_connected_channel_filter - for interfacing with transports */
-  server->channel_filter_count = filter_count + 1u + (census_enabled ? 1u : 0u);
-  server->channel_filters =
-      gpr_malloc(server->channel_filter_count * sizeof(grpc_channel_filter *));
-  server->channel_filters[0] = &server_surface_filter;
-  if (census_enabled) {
-    server->channel_filters[1] = &grpc_server_census_filter;
-  }
-  for (i = 0; i < filter_count; i++) {
-    server->channel_filters[i + 1u + (census_enabled ? 1u : 0u)] = filters[i];
-  }
 
   server->channel_args = grpc_channel_args_copy(args);
 
@@ -885,12 +863,7 @@ void grpc_server_start(grpc_server *server) {
 
 void grpc_server_setup_transport(grpc_exec_ctx *exec_ctx, grpc_server *s,
                                  grpc_transport *transport,
-                                 grpc_channel_filter const **extra_filters,
-                                 size_t num_extra_filters,
                                  const grpc_channel_args *args) {
-  size_t num_filters = s->channel_filter_count + num_extra_filters + 1;
-  grpc_channel_filter const **filters =
-      gpr_malloc(sizeof(grpc_channel_filter *) * num_filters);
   size_t i;
   size_t num_registered_methods;
   size_t alloc;
@@ -906,22 +879,14 @@ void grpc_server_setup_transport(grpc_exec_ctx *exec_ctx, grpc_server *s,
   uint32_t max_probes = 0;
   grpc_transport_op op;
 
-  for (i = 0; i < s->channel_filter_count; i++) {
-    filters[i] = s->channel_filters[i];
-  }
-  for (; i < s->channel_filter_count + num_extra_filters; i++) {
-    filters[i] = extra_filters[i - s->channel_filter_count];
-  }
-  filters[i] = &grpc_connected_channel_filter;
-
   for (i = 0; i < s->cq_count; i++) {
     memset(&op, 0, sizeof(op));
     op.bind_pollset = grpc_cq_pollset(s->cqs[i]);
     grpc_transport_perform_op(exec_ctx, transport, &op);
   }
 
-  channel = grpc_channel_create_from_filters(exec_ctx, NULL, filters,
-                                             num_filters, args, 0);
+  channel =
+      grpc_channel_create(exec_ctx, NULL, args, GRPC_SERVER_CHANNEL, transport);
   chand = (channel_data *)grpc_channel_stack_element(
               grpc_channel_get_channel_stack(channel), 0)->channel_data;
   chand->server = s;
@@ -958,16 +923,11 @@ void grpc_server_setup_transport(grpc_exec_ctx *exec_ctx, grpc_server *s,
     chand->registered_method_max_probes = max_probes;
   }
 
-  grpc_connected_channel_bind_transport(grpc_channel_get_channel_stack(channel),
-                                        transport);
-
   gpr_mu_lock(&s->mu_global);
   chand->next = &s->root_channel_data;
   chand->prev = chand->next->prev;
   chand->next->prev = chand->prev->next = chand;
   gpr_mu_unlock(&s->mu_global);
-
-  gpr_free((void *)filters);
 
   GRPC_CHANNEL_INTERNAL_REF(channel, "connectivity");
   memset(&op, 0, sizeof(op));

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,12 +31,42 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_CHANNEL_CONNECTED_CHANNEL_H
-#define GRPC_INTERNAL_CORE_CHANNEL_CONNECTED_CHANNEL_H
+#include "src/core/census/grpc_plugin.h"
 
+#include <limits.h>
+
+#include <grpc/census.h>
+
+#include "src/core/census/grpc_filter.h"
+#include "src/core/surface/channel_init.h"
 #include "src/core/channel/channel_stack_builder.h"
 
-bool grpc_add_connected_filter(grpc_channel_stack_builder *builder,
-                               void *arg_must_be_null);
+static bool maybe_add_census_filter(grpc_channel_stack_builder *builder,
+                                    void *arg_must_be_null) {
+  const grpc_channel_args *args =
+      grpc_channel_stack_builder_get_channel_arguments(builder);
+  if (grpc_channel_args_is_census_enabled(args)) {
+    return grpc_channel_stack_builder_prepend_filter(
+        builder, &grpc_client_census_filter, NULL, NULL);
+  }
+  return true;
+}
 
-#endif /* GRPC_INTERNAL_CORE_CHANNEL_CONNECTED_CHANNEL_H */
+void census_grpc_plugin_init(void) {
+  /* Only initialize census if no one else has and some features are
+   * available. */
+  if (census_enabled() == CENSUS_FEATURE_NONE &&
+      census_supported() != CENSUS_FEATURE_NONE) {
+    if (census_initialize(census_supported())) { /* enable all features. */
+      gpr_log(GPR_ERROR, "Could not initialize census.");
+    }
+  }
+  grpc_channel_init_register_stage(GRPC_CLIENT_CHANNEL, INT_MAX,
+                                   maybe_add_census_filter, NULL);
+  grpc_channel_init_register_stage(GRPC_CLIENT_UCHANNEL, INT_MAX,
+                                   maybe_add_census_filter, NULL);
+  grpc_channel_init_register_stage(GRPC_SERVER_CHANNEL, INT_MAX,
+                                   maybe_add_census_filter, NULL);
+}
+
+void census_grpc_plugin_destroy(void) { census_shutdown(); }

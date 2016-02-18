@@ -40,6 +40,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/surface/channel_init.h"
 #include "src/core/client_config/resolver_registry.h"
 #include "src/core/iomgr/iomgr.h"
 #include "src/core/support/string.h"
@@ -82,24 +83,25 @@ struct grpc_channel {
 
 static void destroy_channel(grpc_exec_ctx *exec_ctx, void *arg, bool success);
 
-grpc_channel *grpc_channel_create_from_filters(
-    grpc_exec_ctx *exec_ctx, const char *target,
-    const grpc_channel_filter **filters, size_t num_filters,
-    const grpc_channel_args *args, int is_client) {
-  size_t i;
-  size_t size =
-      sizeof(grpc_channel) + grpc_channel_stack_size(filters, num_filters);
-  grpc_channel *channel = gpr_malloc(size);
+grpc_channel *grpc_channel_create(grpc_exec_ctx *exec_ctx, const char *target,
+                                  const grpc_channel_args *args,
+                                  grpc_channel_stack_type channel_stack_type,
+                                  grpc_transport *optional_transport) {
+  bool is_client = grpc_channel_stack_type_is_client(channel_stack_type);
+
+  grpc_channel *channel = grpc_channel_init_create_stack(
+      exec_ctx, channel_stack_type, sizeof(grpc_channel), args, 1,
+      destroy_channel, NULL, optional_transport);
+
   memset(channel, 0, sizeof(*channel));
   channel->target = gpr_strdup(target);
-  GPR_ASSERT(grpc_is_initialized() && "call grpc_init()");
   channel->is_client = is_client;
   gpr_mu_init(&channel->registered_call_mu);
   channel->registered_calls = NULL;
 
   channel->max_message_length = DEFAULT_MAX_MESSAGE_LENGTH;
   if (args) {
-    for (i = 0; i < args->num_args; i++) {
+    for (size_t i = 0; i < args->num_args; i++) {
       if (0 == strcmp(args->args[i].key, GRPC_ARG_MAX_MESSAGE_LENGTH)) {
         if (args->args[i].type != GRPC_ARG_INTEGER) {
           gpr_log(GPR_ERROR, "%s ignored: it must be an integer",
@@ -151,11 +153,6 @@ grpc_channel *grpc_channel_create_from_filters(
     }
     gpr_free(default_authority);
   }
-
-  grpc_channel_stack_init(exec_ctx, 1, destroy_channel, channel, filters,
-                          num_filters, args,
-                          is_client ? "CLIENT_CHANNEL" : "SERVER_CHANNEL",
-                          CHANNEL_STACK_FROM_CHANNEL(channel));
 
   return channel;
 }

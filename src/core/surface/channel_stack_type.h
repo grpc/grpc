@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,18 +31,21 @@
  *
  */
 
-#include <grpc/grpc.h>
-#include "src/core/census/grpc_filter.h"
-#include "src/core/channel/channel_args.h"
-#include "src/core/channel/compress_filter.h"
-#include "src/core/surface/api_trace.h"
-#include "src/core/surface/completion_queue.h"
-#include "src/core/surface/server.h"
+#ifndef GRPC_INTERNAL_CORE_SURFACE_CHANNEL_STACK_TYPE_H
+#define GRPC_INTERNAL_CORE_SURFACE_CHANNEL_STACK_TYPE_H
 
-grpc_server *grpc_server_create(const grpc_channel_args *args, void *reserved) {
-  const grpc_channel_filter *filters[3];
-  size_t num_filters = 0;
-  filters[num_filters++] = &grpc_compress_filter;
-  GRPC_API_TRACE("grpc_server_create(%p, %p)", 2, (args, reserved));
-  return grpc_server_create_from_filters(filters, num_filters, args);
-}
+#include <stdbool.h>
+
+typedef enum {
+  GRPC_CLIENT_CHANNEL,
+  GRPC_CLIENT_UCHANNEL,
+  GRPC_CLIENT_SUBCHANNEL,
+  GRPC_CLIENT_LAME_CHANNEL,
+  GRPC_SERVER_CHANNEL,
+  // must be last
+  GRPC_NUM_CHANNEL_STACK_TYPES
+} grpc_channel_stack_type;
+
+bool grpc_channel_stack_type_is_client(grpc_channel_stack_type type);
+
+#endif /* GRPC_INTERNAL_CORE_SURFACE_CHANNEL_STACK_TYPE_H */

@@ -1713,8 +1713,9 @@ static char *chttp2_get_peer(grpc_exec_ctx *exec_ctx, grpc_transport *t) {
 }
 
 static const grpc_transport_vtable vtable = {
-    sizeof(grpc_chttp2_stream), init_stream, set_pollset, perform_stream_op,
-    perform_transport_op, destroy_stream, destroy_transport, chttp2_get_peer};
+    sizeof(grpc_chttp2_stream), "chttp2", init_stream, set_pollset,
+    perform_stream_op, perform_transport_op, destroy_stream, destroy_transport,
+    chttp2_get_peer};
 
 grpc_transport *grpc_create_chttp2_transport(
     grpc_exec_ctx *exec_ctx, const grpc_channel_args *channel_args,
