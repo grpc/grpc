@@ -83,7 +83,7 @@ void grpc_pollset_destroy(grpc_pollset *pollset);
    pollset
    lock */
 void grpc_pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
-                       grpc_pollset_worker *worker, gpr_timespec now,
+                       grpc_pollset_worker **worker, gpr_timespec now,
                        gpr_timespec deadline);
 
 /* Break one polling thread out of polling work for this pollset.

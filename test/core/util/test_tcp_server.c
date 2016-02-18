@@ -85,7 +85,7 @@ void test_tcp_server_start(test_tcp_server *server, int port) {
 }
 
 void test_tcp_server_poll(test_tcp_server *server, int seconds) {
-  grpc_pollset_worker worker;
+  grpc_pollset_worker *worker = NULL;
   gpr_timespec deadline =
       gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
                    gpr_time_from_seconds(seconds, GPR_TIMESPAN));
