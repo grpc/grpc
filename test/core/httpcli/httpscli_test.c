@@ -90,7 +90,7 @@ static void test_get(int port) {
                    on_finish, (void *)42);
   gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
   while (!g_done) {
-    grpc_pollset_worker worker;
+    grpc_pollset_worker *worker = NULL;
     grpc_pollset_work(&exec_ctx, &g_pollset, &worker,
                       gpr_now(GPR_CLOCK_MONOTONIC), n_seconds_time(20));
     gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));
@@ -122,7 +122,7 @@ static void test_post(int port) {
                     n_seconds_time(15), on_finish, (void *)42);
   gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
   while (!g_done) {
-    grpc_pollset_worker worker;
+    grpc_pollset_worker *worker = NULL;
     grpc_pollset_work(&exec_ctx, &g_pollset, &worker,
                       gpr_now(GPR_CLOCK_MONOTONIC), n_seconds_time(20));
     gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));

@@ -234,7 +234,7 @@ static void read_and_write_test(grpc_endpoint_test_config config,
 
   gpr_mu_lock(GRPC_POLLSET_MU(g_pollset));
   while (!state.read_done || !state.write_done) {
-    grpc_pollset_worker worker;
+    grpc_pollset_worker *worker = NULL;
     GPR_ASSERT(gpr_time_cmp(gpr_now(GPR_CLOCK_MONOTONIC), deadline) < 0);
     grpc_pollset_work(&exec_ctx, g_pollset, &worker,
                       gpr_now(GPR_CLOCK_MONOTONIC), deadline);
