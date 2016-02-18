@@ -221,7 +221,8 @@ void *grpc_channel_stack_builder_finish(grpc_exec_ctx *exec_ctx,
   }
 
   // create an array of filters
-  const grpc_channel_filter *filters[num_filters];
+  const grpc_channel_filter **filters =
+      gpr_malloc(sizeof(*filters) * num_filters);
   size_t i = 0;
   for (filter_node *p = builder->begin.next; p != &builder->end; p = p->next) {
     filters[i++] = p->filter;
@@ -251,6 +252,7 @@ void *grpc_channel_stack_builder_finish(grpc_exec_ctx *exec_ctx,
   }
 
   grpc_channel_stack_builder_destroy(builder);
+  gpr_free((grpc_channel_filter **)filters);
 
   return result;
 }
