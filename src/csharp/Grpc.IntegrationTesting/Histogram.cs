@@ -66,8 +66,8 @@ namespace Grpc.IntegrationTesting
 
         public Histogram(double resolution, double maxPossible)
         {
-            Grpc.Core.Utils.Preconditions.CheckArgument(resolution > 0);
-            Grpc.Core.Utils.Preconditions.CheckArgument(maxPossible > 0);
+            GrpcPreconditions.CheckArgument(resolution > 0);
+            GrpcPreconditions.CheckArgument(maxPossible > 0);
             this.maxPossible = maxPossible;
             this.multiplier = 1.0 + resolution;
             this.oneOnLogMultiplier = 1.0 / Math.Log(1.0 + resolution);

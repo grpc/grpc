@@ -106,10 +106,10 @@ namespace Grpc.Core
         public Method(MethodType type, string serviceName, string name, Marshaller<TRequest> requestMarshaller, Marshaller<TResponse> responseMarshaller)
         {
             this.type = type;
-            this.serviceName = Preconditions.CheckNotNull(serviceName, "serviceName");
-            this.name = Preconditions.CheckNotNull(name, "name");
-            this.requestMarshaller = Preconditions.CheckNotNull(requestMarshaller, "requestMarshaller");
-            this.responseMarshaller = Preconditions.CheckNotNull(responseMarshaller, "responseMarshaller");
+            this.serviceName = GrpcPreconditions.CheckNotNull(serviceName, "serviceName");
+            this.name = GrpcPreconditions.CheckNotNull(name, "name");
+            this.requestMarshaller = GrpcPreconditions.CheckNotNull(requestMarshaller, "requestMarshaller");
+            this.responseMarshaller = GrpcPreconditions.CheckNotNull(responseMarshaller, "responseMarshaller");
             this.fullName = GetFullName(serviceName, name);
         }
 

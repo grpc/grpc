@@ -71,7 +71,7 @@ namespace Grpc.Auth
         /// <returns>The interceptor.</returns>
         public static AsyncAuthInterceptor FromAccessToken(string accessToken)
         {
-            Preconditions.CheckNotNull(accessToken);
+            GrpcPreconditions.CheckNotNull(accessToken);
             return new AsyncAuthInterceptor(async (context, metadata) =>
             {
                 metadata.Add(CreateBearerTokenHeader(accessToken));
