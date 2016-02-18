@@ -41,6 +41,11 @@ namespace testing {
 
 class ChannelArgumentsTest : public ::testing::Test {
  protected:
+  ChannelArgumentsTest()
+      : pointer_vtable_({&ChannelArguments::PointerVtableMembers::Copy,
+                         &ChannelArguments::PointerVtableMembers::Destroy,
+                         &ChannelArguments::PointerVtableMembers::Compare}) {}
+
   void SetChannelArgs(const ChannelArguments& channel_args,
                       grpc_channel_args* args) {
     channel_args.SetChannelArgs(args);
@@ -74,14 +79,15 @@ class ChannelArgumentsTest : public ::testing::Test {
           return grpc::string(arg.value.string) == expected_arg.value.string;
         } else if (arg.type == GRPC_ARG_POINTER) {
           return arg.value.pointer.p == expected_arg.value.pointer.p &&
-                 arg.value.pointer.copy == expected_arg.value.pointer.copy &&
-                 arg.value.pointer.destroy ==
-                     expected_arg.value.pointer.destroy;
+                 arg.value.pointer.vtable->copy == expected_arg.value.pointer.vtable->copy &&
+                 arg.value.pointer.vtable->destroy ==
+                     expected_arg.value.pointer.vtable->destroy;
         }
       }
     }
     return false;
   }
+  grpc_arg_pointer_vtable pointer_vtable_;
   ChannelArguments channel_args_;
 };
 
@@ -151,8 +157,7 @@ TEST_F(ChannelArgumentsTest, SetPointer) {
   arg0.type = GRPC_ARG_POINTER;
   arg0.key = const_cast<char*>(key0.c_str());
   arg0.value.pointer.p = &key0;
-  arg0.value.pointer.copy = nullptr;
-  arg0.value.pointer.destroy = nullptr;
+  arg0.value.pointer.vtable = &pointer_vtable_;
 
   grpc::string key(key0);
   channel_args_.SetPointer(key, arg0.value.pointer.p);
