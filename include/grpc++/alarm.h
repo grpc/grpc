@@ -39,6 +39,8 @@
 #include <grpc++/impl/codegen/completion_queue_tag.h>
 #include <grpc++/impl/codegen/grpc_library.h>
 #include <grpc++/impl/codegen/time.h>
+#include <grpc++/impl/codegen/completion_queue.h>
+#include <grpc/grpc.h>
 
 struct grpc_alarm;
 
@@ -54,7 +56,11 @@ class Alarm : private GrpcLibrary {
   /// Once the alarm expires (at \a deadline) or it's cancelled (see \a Cancel),
   /// an event with tag \a tag will be added to \a cq. If the alarm expired, the
   /// event's success bit will be true, false otherwise (ie, upon cancellation).
-  Alarm(CompletionQueue* cq, gpr_timespec deadline, void* tag);
+  template <typename T>
+  Alarm(CompletionQueue* cq, const T& deadline, void* tag)
+      : tag_(tag),
+        alarm_(grpc_alarm_create(cq->cq(), TimePoint<T>(deadline).raw_time(),
+                                 static_cast<void*>(&tag_))) {}
 
   /// Destroy the given completion queue alarm, cancelling it in the process.
   ~Alarm();
