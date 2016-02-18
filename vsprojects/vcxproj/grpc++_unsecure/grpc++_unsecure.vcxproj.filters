@@ -52,9 +52,6 @@
     <ClCompile Include="$(SolutionDir)\..\src\cpp\server\dynamic_thread_pool.cc">
       <Filter>src\cpp\server</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\cpp\server\fixed_size_thread_pool.cc">
-      <Filter>src\cpp\server</Filter>
-    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\server\insecure_server_credentials.cc">
       <Filter>src\cpp\server</Filter>
     </ClCompile>
@@ -321,9 +318,6 @@
       <Filter>src\cpp\common</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\cpp\server\dynamic_thread_pool.h">
-      <Filter>src\cpp\server</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\cpp\server\fixed_size_thread_pool.h">
       <Filter>src\cpp\server</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\cpp\server\thread_pool_interface.h">

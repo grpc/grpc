@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -129,9 +129,9 @@ zval *grpc_parse_metadata_array(grpc_metadata_array *metadata_array) {
         zend_throw_exception(zend_exception_get_default(),
                              "Metadata hash somehow contains wrong types.",
                              1 TSRMLS_CC);
-          efree(str_key);
-          efree(str_val);
-          return NULL;
+        efree(str_key);
+        efree(str_val);
+        return NULL;
       }
       add_next_index_stringl(*data, str_val, elem->value_length, false);
     } else {

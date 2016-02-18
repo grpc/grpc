@@ -198,6 +198,7 @@ Pod::Spec.new do |s|
                       'src/core/client_config/resolvers/sockaddr_resolver.h',
                       'src/core/client_config/subchannel.h',
                       'src/core/client_config/subchannel_factory.h',
+                      'src/core/client_config/subchannel_index.h',
                       'src/core/client_config/uri_parser.h',
                       'src/core/compression/algorithm_metadata.h',
                       'src/core/compression/message_compress.h',
@@ -285,6 +286,7 @@ Pod::Spec.new do |s|
                       'src/core/transport/transport.h',
                       'src/core/transport/transport_impl.h',
                       'src/core/census/aggregation.h',
+                      'src/core/census/log.h',
                       'src/core/census/rpc_metric_id.h',
                       'include/grpc/grpc_security.h',
                       'include/grpc/impl/codegen/byte_buffer.h',
@@ -347,6 +349,7 @@ Pod::Spec.new do |s|
                       'src/core/client_config/resolvers/sockaddr_resolver.c',
                       'src/core/client_config/subchannel.c',
                       'src/core/client_config/subchannel_factory.c',
+                      'src/core/client_config/subchannel_index.c',
                       'src/core/client_config/uri_parser.c',
                       'src/core/compression/algorithm.c',
                       'src/core/compression/message_compress.c',
@@ -449,6 +452,7 @@ Pod::Spec.new do |s|
                       'src/core/transport/transport_op_string.c',
                       'src/core/census/context.c',
                       'src/core/census/initialize.c',
+                      'src/core/census/log.c',
                       'src/core/census/operation.c',
                       'src/core/census/placeholders.c',
                       'src/core/census/tracing.c'
@@ -503,6 +507,7 @@ Pod::Spec.new do |s|
                               'src/core/client_config/resolvers/sockaddr_resolver.h',
                               'src/core/client_config/subchannel.h',
                               'src/core/client_config/subchannel_factory.h',
+                              'src/core/client_config/subchannel_index.h',
                               'src/core/client_config/uri_parser.h',
                               'src/core/compression/algorithm_metadata.h',
                               'src/core/compression/message_compress.h',
@@ -590,6 +595,7 @@ Pod::Spec.new do |s|
                               'src/core/transport/transport.h',
                               'src/core/transport/transport_impl.h',
                               'src/core/census/aggregation.h',
+                              'src/core/census/log.h',
                               'src/core/census/rpc_metric_id.h'
 
     ss.header_mappings_dir = '.'
