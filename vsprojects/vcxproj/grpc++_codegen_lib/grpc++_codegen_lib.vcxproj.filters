@@ -96,24 +96,6 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\time.h">
       <Filter>include\grpc++\impl\codegen</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\byte_buffer.h">
-      <Filter>include\grpc\impl\codegen</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\compression_types.h">
-      <Filter>include\grpc\impl\codegen</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\connectivity_state.h">
-      <Filter>include\grpc\impl\codegen</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\grpc_types.h">
-      <Filter>include\grpc\impl\codegen</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\propagation_bits.h">
-      <Filter>include\grpc\impl\codegen</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\status.h">
-      <Filter>include\grpc\impl\codegen</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\alloc.h">
@@ -162,37 +144,37 @@
 
   <ItemGroup>
     <Filter Include="include">
-      <UniqueIdentifier>{26708a09-f550-4ca3-5b87-0c59b8d2a990}</UniqueIdentifier>
+      <UniqueIdentifier>{cf409044-341b-37b5-03f3-0b09c3c474c4}</UniqueIdentifier>
     </Filter>
     <Filter Include="include\grpc">
-      <UniqueIdentifier>{04860d30-add0-446c-0616-9a868fc666db}</UniqueIdentifier>
+      <UniqueIdentifier>{cddccffd-da89-18ad-da57-0c9d704a4633}</UniqueIdentifier>
     </Filter>
     <Filter Include="include\grpc++">
-      <UniqueIdentifier>{b6dbcd21-b90a-418f-c573-1506c332b8e8}</UniqueIdentifier>
+      <UniqueIdentifier>{cb8cb5ad-cf23-a491-046c-1c0688be53ac}</UniqueIdentifier>
     </Filter>
     <Filter Include="include\grpc++\impl">
-      <UniqueIdentifier>{a956ffb7-4d13-0bdb-59a3-b4c8aa3f474e}</UniqueIdentifier>
+      <UniqueIdentifier>{a734ff7f-2489-0c04-3fc6-35e361240cf1}</UniqueIdentifier>
     </Filter>
     <Filter Include="include\grpc++\impl\codegen">
-      <UniqueIdentifier>{875841b7-cb83-f37e-f577-fd760171b82a}</UniqueIdentifier>
+      <UniqueIdentifier>{ffc473f2-ece4-fedf-238f-f161e5c3d5e7}</UniqueIdentifier>
     </Filter>
     <Filter Include="include\grpc++\impl\codegen\security">
-      <UniqueIdentifier>{3498847d-d81a-00e2-5cac-4848d1a0fc1d}</UniqueIdentifier>
+      <UniqueIdentifier>{89065a9e-e4a0-e5e4-32e9-51cd4cadab46}</UniqueIdentifier>
     </Filter>
     <Filter Include="include\grpc\impl">
-      <UniqueIdentifier>{9bcd27c0-64e4-9efd-2410-c61ff61ceba4}</UniqueIdentifier>
+      <UniqueIdentifier>{45ab28cb-74e7-1a53-77c1-bbf2ec383fa2}</UniqueIdentifier>
     </Filter>
     <Filter Include="include\grpc\impl\codegen">
-      <UniqueIdentifier>{16750fe6-ad5d-a9e8-3b9a-aa950b684a1d}</UniqueIdentifier>
+      <UniqueIdentifier>{311586c5-1a08-e1ba-8dd8-d1cbe10156b3}</UniqueIdentifier>
     </Filter>
     <Filter Include="src">
-      <UniqueIdentifier>{4c1ab54d-a99c-092e-0fa1-21567544a045}</UniqueIdentifier>
+      <UniqueIdentifier>{e9bdb195-1cf9-a0f4-231c-fcee59eb54ca}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\cpp">
-      <UniqueIdentifier>{e68d006c-11d5-e865-91fe-bca4384da93a}</UniqueIdentifier>
+      <UniqueIdentifier>{d2e57ea3-c758-0f7c-3bc9-e71dd87bd654}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\cpp\codegen">
-      <UniqueIdentifier>{626b856b-6ded-b6a2-feb8-2469a1c3e29c}</UniqueIdentifier>
+      <UniqueIdentifier>{f93ade18-7c50-7ed9-b8e7-383b11f077c2}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>
