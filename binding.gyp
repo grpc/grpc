@@ -55,7 +55,8 @@
           'UNICODE',
           '_UNICODE',
           'NOMINMAX',
-          'OPENSSL_NO_ASM'
+          'OPENSSL_NO_ASM',
+          'GPR_BACKWARDS_COMPATIBILITY_MODE'
         ],
         "msvs_settings": {
           'VCCLCompilerTool': {
@@ -78,7 +79,8 @@
           # supports ALPN. The target is "[major].[minor].[patch]". We split by
           # periods and take the first field to get the major version.
         'defines': [
-          'TSI_OPENSSL_ALPN_SUPPORT=<!(echo <(target) | cut -d. -f1)'
+          'TSI_OPENSSL_ALPN_SUPPORT=<!(echo <(target) | cut -d. -f1)',
+          'GPR_BACKWARDS_COMPATIBILITY_MODE'
         ],
         'include_dirs': [
           '<(node_root_dir)/deps/openssl/openssl/include',
@@ -604,6 +606,7 @@
         'src/core/client_config/resolvers/sockaddr_resolver.c',
         'src/core/client_config/subchannel.c',
         'src/core/client_config/subchannel_factory.c',
+        'src/core/client_config/subchannel_index.c',
         'src/core/client_config/uri_parser.c',
         'src/core/compression/algorithm.c',
         'src/core/compression/message_compress.c',
@@ -707,6 +710,7 @@
         'src/core/transport/transport_op_string.c',
         'src/core/census/context.c',
         'src/core/census/initialize.c',
+        'src/core/census/log.c',
         'src/core/census/operation.c',
         'src/core/census/placeholders.c',
         'src/core/census/tracing.c',

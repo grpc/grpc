@@ -53,6 +53,7 @@ sys.path.insert(0, os.path.abspath(PYTHON_STEM))
 
 # Break import-style to ensure we can actually find our in-repo dependencies.
 import commands
+import precompiled
 import grpc_core_dependencies
 import grpc_version
 
@@ -94,10 +95,10 @@ if "linux" in sys.platform:
 if not "win32" in sys.platform:
   EXTENSION_LIBRARIES += ('m',)
 
-DEFINE_MACROS = (('OPENSSL_NO_ASM', 1), ('_WIN32_WINNT', 0x600))
+DEFINE_MACROS = (('OPENSSL_NO_ASM', 1), ('_WIN32_WINNT', 0x600), ('GPR_BACKWARDS_COMPATIBILITY_MODE', 1),)
 
-CFLAGS = ()
 LDFLAGS = ()
+CFLAGS = ()
 if "linux" in sys.platform:
   LDFLAGS += ('-Wl,-wrap,memcpy',)
 if "linux" in sys.platform or "darwin" in sys.platform:
@@ -156,15 +157,14 @@ SETUP_REQUIRES = (
 ) + INSTALL_REQUIRES
 
 COMMAND_CLASS = {
-    'install': commands.Install,
     'doc': commands.SphinxDocumentation,
     'build_proto_modules': commands.BuildProtoModules,
     'build_project_metadata': commands.BuildProjectMetadata,
     'build_py': commands.BuildPy,
     'build_ext': commands.BuildExt,
+    'build_tagged_ext': precompiled.BuildTaggedExt,
     'gather': commands.Gather,
     'run_interop': commands.RunInterop,
-    'bdist_egg_grpc_custom': commands.BdistEggCustomName,
 }
 
 # Ensure that package data is copied over before any commands have been run:
@@ -202,10 +202,13 @@ TEST_LOADER = 'tests:Loader'
 TEST_RUNNER = 'tests:Runner'
 
 PACKAGE_DATA = {
+    # Binaries that may or may not be present in the final installation, but are
+    # mentioned here for completeness.
     'grpc._cython': [
         '_credentials/roots.pem',
         '_windows/grpc_c.32.python',
         '_windows/grpc_c.64.python',
+        'cygrpc.so',
     ],
 }
 if INSTALL_TESTS:
@@ -215,19 +218,23 @@ else:
   PACKAGES = setuptools.find_packages(
       PYTHON_STEM, exclude=['tests', 'tests.*'])
 
-setuptools.setup(
-    name='grpcio',
-    version=grpc_version.VERSION,
-    license=LICENSE,
-    ext_modules=CYTHON_EXTENSION_MODULES,
-    packages=list(PACKAGES),
-    package_dir=PACKAGE_DIRECTORIES,
-    package_data=PACKAGE_DATA,
-    install_requires=INSTALL_REQUIRES,
-    setup_requires=SETUP_REQUIRES,
-    cmdclass=COMMAND_CLASS,
-    tests_require=TESTS_REQUIRE,
-    test_suite=TEST_SUITE,
-    test_loader=TEST_LOADER,
-    test_runner=TEST_RUNNER,
-)
+setup_arguments = {
+    'name': 'grpcio',
+    'version': grpc_version.VERSION,
+    'license': LICENSE,
+    'ext_modules': CYTHON_EXTENSION_MODULES,
+    'packages': list(PACKAGES),
+    'package_dir': PACKAGE_DIRECTORIES,
+    'package_data': PACKAGE_DATA,
+    'install_requires': INSTALL_REQUIRES,
+    'setup_requires': SETUP_REQUIRES,
+    'cmdclass': COMMAND_CLASS,
+    'tests_require': TESTS_REQUIRE,
+    'test_suite': TEST_SUITE,
+    'test_loader': TEST_LOADER,
+    'test_runner': TEST_RUNNER,
+}
+
+precompiled.update_setup_arguments(setup_arguments)
+
+setuptools.setup(**setup_arguments)

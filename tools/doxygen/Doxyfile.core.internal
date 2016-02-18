@@ -814,6 +814,7 @@ src/core/client_config/resolvers/dns_resolver.h \
 src/core/client_config/resolvers/sockaddr_resolver.h \
 src/core/client_config/subchannel.h \
 src/core/client_config/subchannel_factory.h \
+src/core/client_config/subchannel_index.h \
 src/core/client_config/uri_parser.h \
 src/core/compression/algorithm_metadata.h \
 src/core/compression/message_compress.h \
@@ -903,6 +904,7 @@ src/core/transport/static_metadata.h \
 src/core/transport/transport.h \
 src/core/transport/transport_impl.h \
 src/core/census/aggregation.h \
+src/core/census/log.h \
 src/core/census/rpc_metric_id.h \
 third_party/nanopb/pb.h \
 third_party/nanopb/pb_common.h \
@@ -957,6 +959,7 @@ src/core/client_config/resolvers/dns_resolver.c \
 src/core/client_config/resolvers/sockaddr_resolver.c \
 src/core/client_config/subchannel.c \
 src/core/client_config/subchannel_factory.c \
+src/core/client_config/subchannel_index.c \
 src/core/client_config/uri_parser.c \
 src/core/compression/algorithm.c \
 src/core/compression/message_compress.c \
@@ -1060,6 +1063,7 @@ src/core/transport/transport.c \
 src/core/transport/transport_op_string.c \
 src/core/census/context.c \
 src/core/census/initialize.c \
+src/core/census/log.c \
 src/core/census/operation.c \
 src/core/census/placeholders.c \
 src/core/census/tracing.c \

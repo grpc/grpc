@@ -23,13 +23,12 @@
     "test": "./node_modules/.bin/mocha src/node/test && npm run-script lint",
     "gen_docs": "./node_modules/.bin/jsdoc -c src/node/jsdoc_conf.json",
     "coverage": "./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha src/node/test",
-    "preinstall": "npm install node-pre-gyp",
     "install": "./node_modules/.bin/node-pre-gyp install --fallback-to-build"
   },
+  "bundledDependencies": ["node-pre-gyp"],
   "dependencies": {
     "lodash": "^3.9.3",
     "nan": "^2.0.0",
-    "node-pre-gyp": "^0.6.19",
     "protobufjs": "^4.0.0"
   },
   "devDependencies": {
@@ -141,6 +140,7 @@
     "src/core/client_config/resolvers/sockaddr_resolver.h",
     "src/core/client_config/subchannel.h",
     "src/core/client_config/subchannel_factory.h",
+    "src/core/client_config/subchannel_index.h",
     "src/core/client_config/uri_parser.h",
     "src/core/compression/algorithm_metadata.h",
     "src/core/compression/message_compress.h",
@@ -230,6 +230,7 @@
     "src/core/transport/transport.h",
     "src/core/transport/transport_impl.h",
     "src/core/census/aggregation.h",
+    "src/core/census/log.h",
     "src/core/census/rpc_metric_id.h",
     "third_party/nanopb/pb.h",
     "third_party/nanopb/pb_common.h",
@@ -284,6 +285,7 @@
     "src/core/client_config/resolvers/sockaddr_resolver.c",
     "src/core/client_config/subchannel.c",
     "src/core/client_config/subchannel_factory.c",
+    "src/core/client_config/subchannel_index.c",
     "src/core/client_config/uri_parser.c",
     "src/core/compression/algorithm.c",
     "src/core/compression/message_compress.c",
@@ -387,6 +389,7 @@
     "src/core/transport/transport_op_string.c",
     "src/core/census/context.c",
     "src/core/census/initialize.c",
+    "src/core/census/log.c",
     "src/core/census/operation.c",
     "src/core/census/placeholders.c",
     "src/core/census/tracing.c",
