@@ -93,22 +93,23 @@ class PythonArtifact:
       return []
 
   def build_jobspec(self):
-    if self.platform == 'windows':
-      raise Exception('Not supported yet.')
+    environ = {}
+    if self.platform == 'linux':
+      if self.arch == 'x86':
+        environ['SETARCH_CMD'] = 'linux32'
+      return create_docker_jobspec(self.name,
+          'tools/dockerfile/grpc_artifact_linux_%s' % self.arch,
+          'tools/run_tests/build_artifact_python.sh',
+          environ=environ)
+    elif self.platform == 'windows':
+      return create_jobspec(self.name,
+                            ['tools\\run_tests\\build_artifact_python.bat'],
+                            shell=True)
     else:
-      environ = {}
-      if self.platform == 'linux':
-        if self.arch == 'x86':
-          environ['SETARCH_CMD'] = 'linux32'
-        return create_docker_jobspec(self.name,
-            'tools/dockerfile/grpc_artifact_linux_%s' % self.arch,
-            'tools/run_tests/build_artifact_python.sh',
-            environ=environ)
-      else:
-        environ['SKIP_PIP_INSTALL'] = 'TRUE'
-        return create_jobspec(self.name,
-                              ['tools/run_tests/build_artifact_python.sh'],
-                              environ=environ)
+      environ['SKIP_PIP_INSTALL'] = 'TRUE'
+      return create_jobspec(self.name,
+                            ['tools/run_tests/build_artifact_python.sh'],
+                            environ=environ)
 
   def __str__(self):
     return self.name
@@ -235,6 +236,7 @@ def targets():
           [PythonArtifact('linux', 'x86'),
            PythonArtifact('linux', 'x64'),
            PythonArtifact('macos', 'x64'),
+           PythonArtifact('windows', 'x64'),
            RubyArtifact('linux', 'x86'),
            RubyArtifact('linux', 'x64'),
            RubyArtifact('macos', 'x64')])
