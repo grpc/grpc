@@ -70,5 +70,11 @@ std::shared_ptr<ServerCredentials> GetServerCredentials(
   return nullptr;
 }
 
+std::vector<grpc::string> GetSecureCredentialsTypeList() {
+  std::vector<grpc::string> types;
+  types.push_back(kTlsCredentialsType);
+  return types;
+}
+
 }  // namespace testing
 }  // namespace grpc

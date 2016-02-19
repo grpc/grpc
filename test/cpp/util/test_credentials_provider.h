@@ -55,6 +55,9 @@ std::shared_ptr<ChannelCredentials> GetChannelCredentials(
 std::shared_ptr<ServerCredentials> GetServerCredentials(
     const grpc::string& type);
 
+// Provide a list of secure credentials type.
+std::vector<grpc::string> GetSecureCredentialsTypeList();
+
 }  // namespace testing
 }  // namespace grpc
 
