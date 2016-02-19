@@ -34,18 +34,22 @@
 #ifndef GRPC_INTERNAL_CORE_IOMGR_EV_POSIX_H
 #define GRPC_INTERNAL_CORE_IOMGR_EV_POSIX_H
 
+#include "src/core/iomgr/exec_ctx.h"
+
 typedef struct grpc_fd grpc_fd;
+typedef struct grpc_pollset grpc_pollset;
+typedef struct grpc_pollset_worker grpc_pollset_worker;
 
 typedef struct grpc_event_engine_vtable {
   grpc_fd *(*fd_create)(int fd, const char *name);
   int (*fd_wrapped_fd)(grpc_fd *fd);
   void (*fd_orphan)(grpc_exec_ctx *exec_ctx, grpc_fd *fd, grpc_closure *on_done,
-                      int *release_fd, const char *reason);
+                    int *release_fd, const char *reason);
   void (*fd_shutdown)(grpc_exec_ctx *exec_ctx, grpc_fd *fd);
   void (*fd_notify_on_read)(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
-                              grpc_closure *closure);
+                            grpc_closure *closure);
   void (*fd_notify_on_write)(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
-                               grpc_closure *closure);
+                             grpc_closure *closure);
 } grpc_event_engine_vtable;
 
 extern const grpc_event_engine_vtable *grpc_event_engine;
@@ -94,4 +98,4 @@ void grpc_fd_notify_on_read(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
 void grpc_fd_notify_on_write(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
                              grpc_closure *closure);
 
-#endif // GRPC_INTERNAL_CORE_IOMGR_EV_POSIX_H
+#endif  // GRPC_INTERNAL_CORE_IOMGR_EV_POSIX_H

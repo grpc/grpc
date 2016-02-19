@@ -47,7 +47,7 @@
       that is servicing a call that it's tracking */
 
 #ifdef GPR_POSIX_SOCKET
-#include "src/core/iomgr/pollset_posix.h"
+#include "src/core/iomgr/ev_posix.h"
 #endif
 
 #ifdef GPR_WIN32
