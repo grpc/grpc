@@ -587,6 +587,26 @@ libs:
   - grpc.dependencies.openssl
   - grpc.dependencies.zlib
   vs_project_guid: '{29D16885-7228-4C31-81ED-5F9187C7F2A9}'
+- name: grpc_dll
+  build: private
+  language: c
+  src:
+  - grpc.def
+  deps:
+  - grpc
+  - gpr
+  deps_linkage: static
+  dll: only
+  vs_config_type: DynamicLibrary
+  vs_packages:
+  - grpc.dependencies.openssl
+  - grpc.dependencies.zlib
+  vs_project_guid: '{A2F6CBBA-A553-41B3-A7DE-F26DECCC27F0}'
+  vs_props:
+  - zlib
+  - openssl
+  - winsock
+  - global
 - name: grpc_test_util
   build: private
   language: c

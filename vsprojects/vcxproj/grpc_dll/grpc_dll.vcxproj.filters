@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\grpc.def">
+      <Filter></Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="">
+      <UniqueIdentifier>{4e0e4342-caa8-2d9f-65d2-1430409e58a9}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+
