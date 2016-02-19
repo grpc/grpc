@@ -39,6 +39,8 @@
 namespace grpc {
 namespace testing {
 
+const char kTlsCredentialsType[] = "TLS_CREDENTIALS";
+
 std::shared_ptr<ChannelCredentials> GetChannelCredentials(
     const grpc::string& type, ChannelArguments* args) {
   if (type == kInsecureCredentialsType) {
