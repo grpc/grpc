@@ -37,7 +37,7 @@ using System.Threading.Tasks;
 
 using Grpc.Core;
 using Grpc.Core.Utils;
-using Grpc.Health.V1Alpha;
+using Grpc.Health.V1;
 
 namespace Grpc.HealthCheck
 {
@@ -48,10 +48,10 @@ namespace Grpc.HealthCheck
     /// <code>
     /// var serviceImpl = new HealthServiceImpl();
     /// server = new Server();
-    /// server.AddServiceDefinition(Grpc.Health.V1Alpha.Health.BindService(serviceImpl));
+    /// server.AddServiceDefinition(Grpc.Health.V1.Health.BindService(serviceImpl));
     /// </code>
     /// </summary>
-    public class HealthServiceImpl : Grpc.Health.V1Alpha.Health.IHealth
+    public class HealthServiceImpl : Grpc.Health.V1.Health.IHealth
     {
         private readonly object myLock = new object();
         private readonly Dictionary<Key, HealthCheckResponse.Types.ServingStatus> statusMap = 
