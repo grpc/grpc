@@ -27,6 +27,20 @@
 @rem (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 @rem OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+
+set NUGET=C:\nuget\nuget.exe
+%NUGET% restore vsprojects\grpc.sln || goto :error
+
+
+@call vsprojects\build_vs2013.bat vsprojects\grpc.sln /t:grpc_dll /p:Configuration=Release /p:PlatformToolset=v120 /p:Platform=Win32 || goto :error
+@call vsprojects\build_vs2013.bat vsprojects\grpc.sln /t:grpc_dll /p:Configuration=Release /p:PlatformToolset=v120 /p:Platform=x64   || goto :error
+
+mkdir src\python\grpcio\grpc\_cython\_windows
+
+copy /Y vsprojects\Release\grpc_dll.dll src\python\grpcio\grpc\_cython\_windows\grpc_c.32.python || goto :error
+copy /Y vsprojects\x64\Release\grpc_dll.dll src\python\grpcio\grpc\_cython\_windows\grpc_c.64.python || goto :error
+
+
 set PATH=%PATH%;C:\Python27\scripts
 
 pip install --upgrade six

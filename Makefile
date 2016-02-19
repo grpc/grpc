@@ -2318,27 +2318,6 @@ endif
 
 
 LIBGRPC_SRC = \
-    src/core/httpcli/httpcli_security_connector.c \
-    src/core/security/base64.c \
-    src/core/security/client_auth_filter.c \
-    src/core/security/credentials.c \
-    src/core/security/credentials_metadata.c \
-    src/core/security/credentials_posix.c \
-    src/core/security/credentials_win32.c \
-    src/core/security/google_default_credentials.c \
-    src/core/security/handshake.c \
-    src/core/security/json_token.c \
-    src/core/security/jwt_verifier.c \
-    src/core/security/secure_endpoint.c \
-    src/core/security/security_connector.c \
-    src/core/security/security_context.c \
-    src/core/security/server_auth_filter.c \
-    src/core/security/server_secure_chttp2.c \
-    src/core/surface/init_secure.c \
-    src/core/surface/secure_channel_create.c \
-    src/core/tsi/fake_transport_security.c \
-    src/core/tsi/ssl_transport_security.c \
-    src/core/tsi/transport_security.c \
     src/core/census/grpc_context.c \
     src/core/census/grpc_filter.c \
     src/core/channel/channel_args.c \
@@ -2466,6 +2445,27 @@ LIBGRPC_SRC = \
     src/core/transport/static_metadata.c \
     src/core/transport/transport.c \
     src/core/transport/transport_op_string.c \
+    src/core/httpcli/httpcli_security_connector.c \
+    src/core/security/base64.c \
+    src/core/security/client_auth_filter.c \
+    src/core/security/credentials.c \
+    src/core/security/credentials_metadata.c \
+    src/core/security/credentials_posix.c \
+    src/core/security/credentials_win32.c \
+    src/core/security/google_default_credentials.c \
+    src/core/security/handshake.c \
+    src/core/security/json_token.c \
+    src/core/security/jwt_verifier.c \
+    src/core/security/secure_endpoint.c \
+    src/core/security/security_connector.c \
+    src/core/security/security_context.c \
+    src/core/security/server_auth_filter.c \
+    src/core/security/server_secure_chttp2.c \
+    src/core/surface/init_secure.c \
+    src/core/surface/secure_channel_create.c \
+    src/core/tsi/fake_transport_security.c \
+    src/core/tsi/ssl_transport_security.c \
+    src/core/tsi/transport_security.c \
     src/core/census/context.c \
     src/core/census/initialize.c \
     src/core/census/log.c \
@@ -2541,7 +2541,6 @@ endif
 
 
 LIBGRPC_DLL_SRC = \
-    grpc.def \
 
 
 LIBGRPC_DLL_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC_DLL_SRC))))
@@ -12990,7 +12989,6 @@ ifneq ($(OPENSSL_DEP),)
 # This is to ensure the embedded OpenSSL is built beforehand, properly
 # installing headers to their final destination on the drive. We need this
 # otherwise parallel compilation will fail if a source is compiled first.
-grpc.def: $(OPENSSL_DEP)
 src/core/httpcli/httpcli_security_connector.c: $(OPENSSL_DEP)
 src/core/security/base64.c: $(OPENSSL_DEP)
 src/core/security/client_auth_filter.c: $(OPENSSL_DEP)
