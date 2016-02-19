@@ -1,5 +1,5 @@
 #!/usr/bin/env python2.7
-# Copyright 2015, Google Inc.
+# Copyright 2015-2016 Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -50,7 +50,8 @@ def _make_pod_config(pod_name, image_name, container_port_list, cmd_list,
                   'name': pod_name,
                   'image': image_name,
                   'ports': [{'containerPort': port,
-                             'protocol': 'TCP'} for port in container_port_list]
+                             'protocol': 'TCP'} for port in container_port_list],
+                  'imagePullPolicy': 'Always'
               }
           ]
       }

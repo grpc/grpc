@@ -1,3 +1,33 @@
+#!/usr/bin/env python2.7
+# Copyright 2015-2016 Google Inc.
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are
+# met:
+#
+#     * Redistributions of source code must retain the above copyright
+# notice, this list of conditions and the following disclaimer.
+#     * Redistributions in binary form must reproduce the above
+# copyright notice, this list of conditions and the following disclaimer
+# in the documentation and/or other materials provided with the
+# distribution.
+#     * Neither the name of Google Inc. nor the names of its
+# contributors may be used to endorse or promote products derived from
+# this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 import argparse
 import json
 import uuid
@@ -10,14 +40,14 @@ from oauth2client.client import GoogleCredentials
 NUM_RETRIES = 3
 
 
-def create_bq():
+def create_big_query():
   """Authenticates with cloud platform and gets a BiqQuery service object
   """
   creds = GoogleCredentials.get_application_default()
   return discovery.build('bigquery', 'v2', credentials=creds)
 
 
-def create_ds(biq_query, project_id, dataset_id):
+def create_dataset(biq_query, project_id, dataset_id):
   is_success = True
   body = {
       'datasetReference': {
@@ -25,6 +55,7 @@ def create_ds(biq_query, project_id, dataset_id):
           'datasetId': dataset_id
       }
   }
+
   try:
     dataset_req = biq_query.datasets().insert(projectId=project_id, body=body)
     dataset_req.execute(num_retries=NUM_RETRIES)
@@ -38,21 +69,18 @@ def create_ds(biq_query, project_id, dataset_id):
   return is_success
 
 
-def make_field(field_name, field_type, field_description):
-  return {
-      'name': field_name,
-      'type': field_type,
-      'description': field_description
-  }
-
-
-def create_table(big_query, project_id, dataset_id, table_id, fields_list,
+def create_table(big_query, project_id, dataset_id, table_id, table_schema,
                  description):
   is_success = True
+
   body = {
       'description': description,
       'schema': {
-          'fields': fields_list
+          'fields': [{
+              'name': field_name,
+              'type': field_type,
+              'description': field_description
+          } for (field_name, field_type, field_description) in table_schema]
       },
       'tableReference': {
           'datasetId': dataset_id,
@@ -60,6 +88,7 @@ def create_table(big_query, project_id, dataset_id, table_id, fields_list,
           'tableId': table_id
       }
   }
+
   try:
     table_req = big_query.tables().insert(projectId=project_id,
                                           datasetId=dataset_id,
@@ -91,43 +120,8 @@ def insert_rows(big_query, project_id, dataset_id, table_id, rows_list):
     is_success = False
   return is_success
 
-#####################
 
-
-def make_emp_row(emp_id, emp_name, emp_email):
-  return {
-      'insertId': str(emp_id),
-      'json': {
-          'emp_id': emp_id,
-          'emp_name': emp_name,
-          'emp_email_id': emp_email
-      }
-  }
-
-
-def get_emp_table_fields_list():
-  return [
-      make_field('emp_id', 'INTEGER', 'Employee id'),
-      make_field('emp_name', 'STRING', 'Employee name'),
-      make_field('emp_email_id', 'STRING', 'Employee email id')
-  ]
-
-
-def insert_emp_rows(big_query, project_id, dataset_id, table_id, start_idx,
-                    num_rows):
-  rows_list = [make_emp_row(i, 'sree_%d' % i, 'sreecha_%d@gmail.com' % i)
-               for i in range(start_idx, start_idx + num_rows)]
-  insert_rows(big_query, project_id, dataset_id, table_id, rows_list)
-
-
-def create_emp_table(big_query, project_id, dataset_id, table_id):
-  fields_list = get_emp_table_fields_list()
-  description = 'Test table created by sree'
-  create_table(big_query, project_id, dataset_id, table_id, fields_list,
-               description)
-
-
-def sync_query(big_query, project_id, query, timeout=5000):
+def sync_query_job(big_query, project_id, query, timeout=5000):
   query_data = {'query': query, 'timeoutMs': timeout}
   query_job = None
   try:
@@ -139,43 +133,8 @@ def sync_query(big_query, project_id, query, timeout=5000):
     print http_error.content
   return query_job
 
-#[Start query_emp_records]
-def query_emp_records(big_query, project_id, dataset_id, table_id):
-  query = 'SELECT emp_id, emp_name FROM %s.%s ORDER BY emp_id;' % (dataset_id, table_id)
-  print query
-  query_job = sync_query(big_query, project_id, query, 5000)
-  job_id = query_job['jobReference']
-
-  print query_job
-  print '**Starting paging **'
-  #[Start Paging]
-  page_token = None
-  while True:
-    page = big_query.jobs().getQueryResults(
-        pageToken=page_token,
-        **query_job['jobReference']).execute(num_retries=NUM_RETRIES)
-    rows = page['rows']
-    for row in rows:
-      print row['f'][0]['v'], "---", row['f'][1]['v']
-    page_token = page.get('pageToken')
-    if not page_token:
-      break
-  #[End Paging]
-#[End query_emp_records]
-
-#########################
-DATASET_SEQ_NUM = 1
-TABLE_SEQ_NUM = 11
-
-PROJECT_ID = 'sree-gce'
-DATASET_ID = 'sree_test_dataset_%d' % DATASET_SEQ_NUM
-TABLE_ID = 'sree_test_table_%d' % TABLE_SEQ_NUM
-
-EMP_ROW_IDX = 10
-EMP_NUM_ROWS = 5
-
-bq = create_bq()
-create_ds(bq, PROJECT_ID, DATASET_ID)
-create_emp_table(bq, PROJECT_ID, DATASET_ID, TABLE_ID)
-insert_emp_rows(bq, PROJECT_ID, DATASET_ID, TABLE_ID, EMP_ROW_IDX, EMP_NUM_ROWS)
-query_emp_records(bq, PROJECT_ID, DATASET_ID, TABLE_ID)
+  # List of (column name, column type, description) tuples
+def make_row(unique_row_id, row_values_dict):
+  """row_values_dict is a dictionar of column name and column value.
+  """
+  return {'insertId': unique_row_id, 'json': row_values_dict}
