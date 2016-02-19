@@ -4188,7 +4188,8 @@
       "test/cpp/util/cli_call.h", 
       "test/cpp/util/create_test_channel.h", 
       "test/cpp/util/string_ref_helper.h", 
-      "test/cpp/util/subprocess.h"
+      "test/cpp/util/subprocess.h", 
+      "test/cpp/util/test_credentials_provider.h"
     ], 
     "language": "c++", 
     "name": "grpc++_test_util", 
@@ -4204,7 +4205,9 @@
       "test/cpp/util/string_ref_helper.cc", 
       "test/cpp/util/string_ref_helper.h", 
       "test/cpp/util/subprocess.cc", 
-      "test/cpp/util/subprocess.h"
+      "test/cpp/util/subprocess.h", 
+      "test/cpp/util/test_credentials_provider.cc", 
+      "test/cpp/util/test_credentials_provider.h"
     ]
   }, 
   {
