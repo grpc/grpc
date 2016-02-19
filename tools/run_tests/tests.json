@@ -2104,7 +2104,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 10, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c++", 
@@ -2123,9 +2123,7 @@
       "posix"
     ], 
     "cpu_cost": 10, 
-    "exclude_configs": [
-      "tsan"
-    ], 
+    "exclude_configs": [], 
     "flaky": false, 
     "language": "c++", 
     "name": "qps_test", 
