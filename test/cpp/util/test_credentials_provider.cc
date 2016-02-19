@@ -40,24 +40,24 @@ namespace grpc {
 namespace testing {
 
 std::shared_ptr<ChannelCredentials> GetChannelCredentials(
-    const grpc::string& type, ChannelArguments* args) {
-  if (type == kInsecureCredentialsType) {
+    TestCredentialsType type, ChannelArguments* args) {
+  if (type == INSECURE_CREDENTIALS) {
     return InsecureChannelCredentials();
-  } else if (type == kTlsCredentialsType) {
+  } else if (type == TLS_CREDENTIALS) {
     SslCredentialsOptions ssl_opts = {test_root_cert, "", ""};
     args->SetSslTargetNameOverride("foo.test.google.fr");
     return SslCredentials(ssl_opts);
   } else {
-    gpr_log(GPR_ERROR, "Unsupported credentials type %s.", type.c_str());
+    gpr_log(GPR_ERROR, "Unsupported credentials type %d.", type);
   }
   return nullptr;
 }
 
 std::shared_ptr<ServerCredentials> GetServerCredentials(
-    const grpc::string& type) {
-  if (type == kInsecureCredentialsType) {
+    TestCredentialsType type) {
+  if (type == INSECURE_CREDENTIALS) {
     return InsecureServerCredentials();
-  } else if (type == kTlsCredentialsType) {
+  } else if (type == TLS_CREDENTIALS) {
     SslServerCredentialsOptions::PemKeyCertPair pkcp = {test_server1_key,
                                                         test_server1_cert};
     SslServerCredentialsOptions ssl_opts;
@@ -65,9 +65,21 @@ std::shared_ptr<ServerCredentials> GetServerCredentials(
     ssl_opts.pem_key_cert_pairs.push_back(pkcp);
     return SslServerCredentials(ssl_opts);
   } else {
-    gpr_log(GPR_ERROR, "Unsupported credentials type %s.", type.c_str());
+    gpr_log(GPR_ERROR, "Unsupported credentials type %d.", type);
   }
   return nullptr;
+}
+
+grpc::string TestCredentialsTypeToString(TestCredentialsType type) {
+  switch (type) {
+    case INSECURE_CREDENTIALS:
+      return "INSECURE_CREDENTIALS";
+    case TLS_CREDENTIALS:
+      return "TLS_CREDENTIALS";
+    default:
+      break;
+  }
+  return "UNKNOWN";
 }
 
 }  // namespace testing

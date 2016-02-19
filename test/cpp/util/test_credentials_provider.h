@@ -43,17 +43,22 @@
 namespace grpc {
 namespace testing {
 
-const char kInsecureCredentialsType[] = "INSECURE_CREDENTIALS";
-const char kTlsCredentialsType[] = "TLS_CREDENTIALS";
+enum TestCredentialsType {
+  INSECURE_CREDENTIALS = 0,
+  TLS_CREDENTIALS,
+  MAX_CREDENTIALS_TYPE
+};
 
 // Provide channel credentials according to the given type. Alter the channel
 // arguments if needed.
 std::shared_ptr<ChannelCredentials> GetChannelCredentials(
-    const grpc::string& type, ChannelArguments* args);
+    TestCredentialsType type, ChannelArguments* args);
 
 // Provide server credentials according to the given type.
 std::shared_ptr<ServerCredentials> GetServerCredentials(
-    const grpc::string& type);
+    TestCredentialsType type);
+
+grpc::string TestCredentialsTypeToString(TestCredentialsType type);
 
 }  // namespace testing
 }  // namespace grpc
