@@ -1,4 +1,4 @@
-# Copyright 2015, Google Inc.
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -28,7 +28,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 require 'grpc'
-require 'grpc/health/v1alpha/health_services'
+require 'grpc/health/v1/health_services'
 require 'thread'
 
 module Grpc
@@ -36,9 +36,9 @@ module Grpc
   # service.
   module Health
     # Checker is implementation of the schema-specified health checking service.
-    class Checker < V1alpha::Health::Service
+    class Checker < V1::Health::Service
       StatusCodes = GRPC::Core::StatusCodes
-      HealthCheckResponse = V1alpha::HealthCheckResponse
+      HealthCheckResponse = V1::HealthCheckResponse
 
       # Initializes the statuses of participating services
       def initialize
