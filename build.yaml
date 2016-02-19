@@ -716,6 +716,7 @@ libs:
   - test/cpp/util/create_test_channel.h
   - test/cpp/util/string_ref_helper.h
   - test/cpp/util/subprocess.h
+  - test/cpp/util/test_credentials_provider.h
   src:
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/echo.proto
@@ -726,6 +727,7 @@ libs:
   - test/cpp/util/create_test_channel.cc
   - test/cpp/util/string_ref_helper.cc
   - test/cpp/util/subprocess.cc
+  - test/cpp/util/test_credentials_provider.cc
   deps:
   - grpc++
   - grpc_test_util
