@@ -191,14 +191,14 @@ class TestServiceImplDupPkg
 
 class TestScenario {
  public:
-  TestScenario(bool proxy, const grpc::string& creds_type)
-      : use_proxy(proxy), credentials_type(creds_type) {}
+  TestScenario(bool proxy, TestCredentialsType type)
+      : use_proxy(proxy), credentials_type(type) {}
   void Log() const {
     gpr_log(GPR_INFO, "Scenario: proxy %d, credentials %s", use_proxy,
-            credentials_type.c_str());
+            TestCredentialsTypeToString(credentials_type).c_str());
   }
   bool use_proxy;
-  const grpc::string credentials_type;
+  TestCredentialsType credentials_type;
 };
 
 class End2endTest : public ::testing::TestWithParam<TestScenario> {
@@ -223,7 +223,7 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
     // Setup server
     ServerBuilder builder;
     auto server_creds = GetServerCredentials(GetParam().credentials_type);
-    if (GetParam().credentials_type != kInsecureCredentialsType) {
+    if (GetParam().credentials_type != INSECURE_CREDENTIALS) {
       server_creds->SetAuthMetadataProcessor(processor);
     }
     builder.AddListeningPort(server_address_.str(), server_creds);
@@ -933,7 +933,7 @@ TEST_P(End2endTest, ChannelState) {
 
 // Takes 10s.
 TEST_P(End2endTest, ChannelStateTimeout) {
-  if (GetParam().credentials_type != kInsecureCredentialsType) {
+  if (GetParam().credentials_type != INSECURE_CREDENTIALS) {
     return;
   }
   int port = grpc_pick_unused_port_or_die();
@@ -1142,7 +1142,7 @@ class SecureEnd2endTest : public End2endTest {
  protected:
   SecureEnd2endTest() {
     GPR_ASSERT(!GetParam().use_proxy);
-    GPR_ASSERT(GetParam().credentials_type != kInsecureCredentialsType);
+    GPR_ASSERT(GetParam().credentials_type != INSECURE_CREDENTIALS);
   }
 };
 
@@ -1365,25 +1365,43 @@ TEST_P(SecureEnd2endTest, ClientAuthContext) {
   EXPECT_EQ("*.test.youtube.com", ToString(auth_ctx->GetPeerIdentity()[2]));
 }
 
-INSTANTIATE_TEST_CASE_P(
-    End2end, End2endTest,
-    ::testing::Values(TestScenario(false, kInsecureCredentialsType),
-                      TestScenario(false, kTlsCredentialsType)));
+std::vector<TestScenario> CreateTestScenarios(bool use_proxy,
+                                              bool test_insecure,
+                                              bool test_secure) {
+  std::vector<TestScenario> scenarios;
+  for (int i = INSECURE_CREDENTIALS; i < MAX_CREDENTIALS_TYPE; i++) {
+    if (i == INSECURE_CREDENTIALS && !test_insecure) {
+      continue;
+    }
+    if (i != INSECURE_CREDENTIALS && !test_secure) {
+      continue;
+    }
+    if (use_proxy) {
+      scenarios.push_back(
+          TestScenario(true, static_cast<TestCredentialsType>(i)));
+    }
+    scenarios.push_back(
+        TestScenario(false, static_cast<TestCredentialsType>(i)));
+  }
+  GPR_ASSERT(!scenarios.empty());
+  return scenarios;
+}
 
-INSTANTIATE_TEST_CASE_P(
-    End2endServerTryCancel, End2endServerTryCancelTest,
-    ::testing::Values(TestScenario(false, kInsecureCredentialsType)));
+INSTANTIATE_TEST_CASE_P(End2end, End2endTest,
+                        ::testing::ValuesIn(CreateTestScenarios(false, true,
+                                                                true)));
 
-INSTANTIATE_TEST_CASE_P(
-    ProxyEnd2end, ProxyEnd2endTest,
-    ::testing::Values(TestScenario(false, kInsecureCredentialsType),
-                      TestScenario(false, kTlsCredentialsType),
-                      TestScenario(true, kInsecureCredentialsType),
-                      TestScenario(true, kTlsCredentialsType)));
+INSTANTIATE_TEST_CASE_P(End2endServerTryCancel, End2endServerTryCancelTest,
+                        ::testing::ValuesIn(CreateTestScenarios(false, true,
+                                                                false)));
+
+INSTANTIATE_TEST_CASE_P(ProxyEnd2end, ProxyEnd2endTest,
+                        ::testing::ValuesIn(CreateTestScenarios(true, true,
+                                                                true)));
 
 INSTANTIATE_TEST_CASE_P(SecureEnd2end, SecureEnd2endTest,
-                        ::testing::Values(TestScenario(false,
-                                                       kTlsCredentialsType)));
+                        ::testing::ValuesIn(CreateTestScenarios(false, false,
+                                                                true)));
 
 }  // namespace
 }  // namespace testing
