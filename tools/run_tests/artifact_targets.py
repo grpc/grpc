@@ -79,6 +79,12 @@ def macos_arch_env(arch):
     raise Exception('Unsupported arch')
   return {'CFLAGS': arch_arg, 'LDFLAGS': arch_arg}
 
+_MACOS_COMPAT_FLAG = '-mmacosx-version-min=10.7'
+
+_ARCH_FLAG_MAP = {
+  'x86': '-m32',
+  'x64': '-m64'
+}
 
 class PythonArtifact:
   """Builds Python artifacts."""
@@ -190,6 +196,7 @@ class CSharpExtArtifact:
   def __str__(self):
     return self.name
 
+
 node_gyp_arch_map = {
   'x86': 'ia32',
   'x64': 'x64'
@@ -226,6 +233,43 @@ class NodeExtArtifact:
                                self.gyp_arch])
 
 
+class ProtocArtifact:
+  """Builds protoc and protoc-plugin artifacts"""
+
+  def __init__(self, platform, arch):
+    self.name = 'protoc_%s_%s' % (platform, arch)
+    self.platform = platform
+    self.arch = arch
+    self.labels = ['artifact', 'protoc', platform, arch]
+
+  def pre_build_jobspecs(self):
+      return []
+
+  def build_jobspec(self):
+    if self.platform != 'windows':
+      cxxflags = '-DNDEBUG %s' % _ARCH_FLAG_MAP[self.arch]
+      ldflags = ' -static-libgcc -static-libstdc++ -s %s' % _ARCH_FLAG_MAP[self.arch]
+      environ={'CONFIG': 'opt',
+               'CXXFLAGS': cxxflags,
+               'LDFLAGS': ldflags,
+               'PROTOBUF_LDFLAGS_EXTRA': ldflags}
+      if self.platform == 'linux':
+        return create_docker_jobspec(self.name,
+            'tools/dockerfile/grpc_artifact_protoc',
+            'tools/run_tests/build_artifact_protoc.sh',
+            environ=environ)
+      else:
+        environ['CXXFLAGS'] += ' %s' % _MACOS_COMPAT_FLAG
+        return create_jobspec(self.name,
+            ['tools/run_tests/build_artifact_protoc.sh'],
+            environ=environ)
+    else:
+      raise Exception('Not yet supported')
+
+  def __str__(self):
+    return self.name
+
+
 def targets():
   """Gets list of supported targets"""
   return ([Cls(platform, arch)
@@ -237,4 +281,8 @@ def targets():
            PythonArtifact('macos', 'x64'),
            RubyArtifact('linux', 'x86'),
            RubyArtifact('linux', 'x64'),
-           RubyArtifact('macos', 'x64')])
+           RubyArtifact('macos', 'x64'),
+           ProtocArtifact('linux', 'x86'),
+           ProtocArtifact('linux', 'x64'),
+           ProtocArtifact('macos', 'x86'),
+           ProtocArtifact('macos', 'x64')])
