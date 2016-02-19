@@ -250,7 +250,7 @@ class ProtocArtifact:
       cxxflags = '-DNDEBUG %s' % _ARCH_FLAG_MAP[self.arch]
       ldflags = '%s' % _ARCH_FLAG_MAP[self.arch]
       if self.platform != 'macos':
-        ldflags += ' -static-libgcc -static-libstdc++ -s'
+        ldflags += '  -static-libgcc -static-libstdc++ -s'
       environ={'CONFIG': 'opt',
                'CXXFLAGS': cxxflags,
                'LDFLAGS': ldflags,
