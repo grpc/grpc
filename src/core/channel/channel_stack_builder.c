@@ -37,6 +37,8 @@
 
 #include <grpc/support/alloc.h>
 
+int grpc_trace_channel_stack_builder = 0;
+
 #define BEGIN_SENTINAL ((grpc_channel_filter *)1)
 #define END_SENTINAL ((grpc_channel_filter *)2)
 
@@ -217,6 +219,7 @@ void *grpc_channel_stack_builder_finish(grpc_exec_ctx *exec_ctx,
   // count the number of filters
   size_t num_filters = 0;
   for (filter_node *p = builder->begin.next; p != &builder->end; p = p->next) {
+    gpr_log(GPR_DEBUG, "%d: %s", num_filters, p->filter->name);
     num_filters++;
   }
 
@@ -245,9 +248,10 @@ void *grpc_channel_stack_builder_finish(grpc_exec_ctx *exec_ctx,
   // run post-initialization functions
   i = 0;
   for (filter_node *p = builder->begin.next; p != &builder->end; p = p->next) {
-    if (p->init != NULL)
+    if (p->init != NULL) {
       p->init(channel_stack, grpc_channel_stack_element(channel_stack, i),
               p->init_arg);
+    }
     i++;
   }
 

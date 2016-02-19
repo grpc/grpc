@@ -135,4 +135,6 @@ void *grpc_channel_stack_builder_finish(grpc_exec_ctx *exec_ctx,
 // Destroy the builder without creating a channel stack
 void grpc_channel_stack_builder_destroy(grpc_channel_stack_builder *builder);
 
+extern int grpc_trace_channel_stack_builder;
+
 #endif
