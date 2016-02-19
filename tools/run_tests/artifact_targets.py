@@ -248,7 +248,9 @@ class ProtocArtifact:
   def build_jobspec(self):
     if self.platform != 'windows':
       cxxflags = '-DNDEBUG %s' % _ARCH_FLAG_MAP[self.arch]
-      ldflags = ' -static-libgcc -static-libstdc++ -s %s' % _ARCH_FLAG_MAP[self.arch]
+      ldflags = '%s' % _ARCH_FLAG_MAP[self.arch]
+      if self.platform != 'macos':
+        ldflags += ' -static-libgcc -static-libstdc++ -s'
       environ={'CONFIG': 'opt',
                'CXXFLAGS': cxxflags,
                'LDFLAGS': ldflags,
@@ -259,7 +261,7 @@ class ProtocArtifact:
             'tools/run_tests/build_artifact_protoc.sh',
             environ=environ)
       else:
-        environ['CXXFLAGS'] += ' %s' % _MACOS_COMPAT_FLAG
+        environ['CXXFLAGS'] += ' -std=c++11 -stdlib=libc++ %s' % _MACOS_COMPAT_FLAG
         return create_jobspec(self.name,
             ['tools/run_tests/build_artifact_protoc.sh'],
             environ=environ)
