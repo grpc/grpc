@@ -44,7 +44,6 @@ namespace grpc {
 namespace testing {
 
 const char kInsecureCredentialsType[] = "INSECURE_CREDENTIALS";
-const char kTlsCredentialsType[] = "TLS_CREDENTIALS";
 
 // Provide channel credentials according to the given type. Alter the channel
 // arguments if needed.
