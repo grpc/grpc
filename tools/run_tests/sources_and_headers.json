@@ -3422,9 +3422,7 @@
     "headers": [], 
     "language": "c", 
     "name": "grpc_dll", 
-    "src": [
-      "grpc.def"
-    ]
+    "src": []
   }, 
   {
     "deps": [
