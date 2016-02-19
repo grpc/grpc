@@ -25,6 +25,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "grpc", "vcxproj\.\grpc\grpc
 		{A828FD72-44CE-4EA5-8966-6E4624458D58} = {A828FD72-44CE-4EA5-8966-6E4624458D58}
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "grpc_codegen_lib", "vcxproj\.\grpc_codegen_lib\grpc_codegen_lib.vcxproj", "{A828FD72-44CE-4EA5-8966-6E4624458D58}"
+	ProjectSection(myProperties) = preProject
+        	lib = "True"
+	EndProjectSection
+EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "grpc_test_util", "vcxproj\.\grpc_test_util\grpc_test_util.vcxproj", "{17BCAFC0-5FDC-4C94-AEB9-95F3E220614B}"
 	ProjectSection(myProperties) = preProject
         	lib = "True"
@@ -224,6 +229,22 @@ Global
 		{29D16885-7228-4C31-81ED-5F9187C7F2A9}.Release-DLL|Win32.Build.0 = Release-DLL|Win32
 		{29D16885-7228-4C31-81ED-5F9187C7F2A9}.Release-DLL|x64.ActiveCfg = Release-DLL|x64
 		{29D16885-7228-4C31-81ED-5F9187C7F2A9}.Release-DLL|x64.Build.0 = Release-DLL|x64
+		{A828FD72-44CE-4EA5-8966-6E4624458D58}.Debug|Win32.ActiveCfg = Debug|Win32
+		{A828FD72-44CE-4EA5-8966-6E4624458D58}.Debug|x64.ActiveCfg = Debug|x64
+		{A828FD72-44CE-4EA5-8966-6E4624458D58}.Release|Win32.ActiveCfg = Release|Win32
+		{A828FD72-44CE-4EA5-8966-6E4624458D58}.Release|x64.ActiveCfg = Release|x64
+		{A828FD72-44CE-4EA5-8966-6E4624458D58}.Debug|Win32.Build.0 = Debug|Win32
+		{A828FD72-44CE-4EA5-8966-6E4624458D58}.Debug|x64.Build.0 = Debug|x64
+		{A828FD72-44CE-4EA5-8966-6E4624458D58}.Release|Win32.Build.0 = Release|Win32
+		{A828FD72-44CE-4EA5-8966-6E4624458D58}.Release|x64.Build.0 = Release|x64
+		{A828FD72-44CE-4EA5-8966-6E4624458D58}.Debug-DLL|Win32.ActiveCfg = Debug|Win32
+		{A828FD72-44CE-4EA5-8966-6E4624458D58}.Debug-DLL|Win32.Build.0 = Debug|Win32
+		{A828FD72-44CE-4EA5-8966-6E4624458D58}.Debug-DLL|x64.ActiveCfg = Debug|x64
+		{A828FD72-44CE-4EA5-8966-6E4624458D58}.Debug-DLL|x64.Build.0 = Debug|x64
+		{A828FD72-44CE-4EA5-8966-6E4624458D58}.Release-DLL|Win32.ActiveCfg = Release|Win32
+		{A828FD72-44CE-4EA5-8966-6E4624458D58}.Release-DLL|Win32.Build.0 = Release|Win32
+		{A828FD72-44CE-4EA5-8966-6E4624458D58}.Release-DLL|x64.ActiveCfg = Release|x64
+		{A828FD72-44CE-4EA5-8966-6E4624458D58}.Release-DLL|x64.Build.0 = Release|x64
 		{17BCAFC0-5FDC-4C94-AEB9-95F3E220614B}.Debug|Win32.ActiveCfg = Debug|Win32
 		{17BCAFC0-5FDC-4C94-AEB9-95F3E220614B}.Debug|x64.ActiveCfg = Debug|x64
 		{17BCAFC0-5FDC-4C94-AEB9-95F3E220614B}.Release|Win32.ActiveCfg = Release|Win32
