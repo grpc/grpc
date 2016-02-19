@@ -699,6 +699,7 @@ libs:
   filegroups:
   - gpr_codegen
   secure: false
+  vs_project_guid: '{AAC6AF12-94C8-4A3C-A1BF-DAA4738F4500}'
 - name: grpc++_test_config
   build: private
   language: c++
@@ -759,6 +760,7 @@ libs:
   filegroups:
   - gpr_codegen
   secure: false
+  vs_project_guid: '{A828FD72-44CE-4EA5-8966-6E4624458D58}'
 - name: grpc_plugin_support
   build: protoc
   language: c++

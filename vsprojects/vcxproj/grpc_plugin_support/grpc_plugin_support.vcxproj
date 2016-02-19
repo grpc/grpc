@@ -193,10 +193,10 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="$(SolutionDir)\..\vsprojects\vcxproj\.\grpc_codegen_lib\grpc_codegen_lib.vcxproj">
-      <Project>{53765FE1-7835-FDD0-44E4-95E2178F5ACB}</Project>
+      <Project>{A828FD72-44CE-4EA5-8966-6E4624458D58}</Project>
     </ProjectReference>
     <ProjectReference Include="$(SolutionDir)\..\vsprojects\vcxproj\.\grpc++_codegen_lib\grpc++_codegen_lib.vcxproj">
-      <Project>{C90648F0-DF66-738D-A337-C5346B58445E}</Project>
+      <Project>{AAC6AF12-94C8-4A3C-A1BF-DAA4738F4500}</Project>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
