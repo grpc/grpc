@@ -29,4 +29,4 @@
 
 set JUNIT_REPORT_PATH=src\node\reports.xml
 set JUNIT_REPORT_STACK=1
-.\node_modules\.bin\mocha.cmd --reporter mocha-jenkins-reporter src\node\test
+.\node_modules\.bin\mocha.cmd --reporter mocha-jenkins-reporter --timeout 8000 src\node\test
