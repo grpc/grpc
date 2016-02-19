@@ -79,16 +79,16 @@ namespace Grpc.HealthCheck.Tests
         [Test]
         public void ServiceIsRunning()
         {
-            serviceImpl.SetStatus("", "", HealthCheckResponse.Types.ServingStatus.SERVING);
+            serviceImpl.SetStatus("", HealthCheckResponse.Types.ServingStatus.SERVING);
 
-            var response = client.Check(new HealthCheckRequest { Host = "", Service = "" });
+            var response = client.Check(new HealthCheckRequest { Service = "" });
             Assert.AreEqual(HealthCheckResponse.Types.ServingStatus.SERVING, response.Status);
         }
 
         [Test]
         public void ServiceDoesntExist()
         {
-            Assert.Throws(Is.TypeOf(typeof(RpcException)).And.Property("Status").Property("StatusCode").EqualTo(StatusCode.NotFound), () => client.Check(new HealthCheckRequest { Host = "", Service = "nonexistent.service" }));
+            Assert.Throws(Is.TypeOf(typeof(RpcException)).And.Property("Status").Property("StatusCode").EqualTo(StatusCode.NotFound), () => client.Check(new HealthCheckRequest { Service = "nonexistent.service" }));
         }
 
         // TODO(jtattermusch): add test with timeout once timeouts are supported
