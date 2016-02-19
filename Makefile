@@ -1076,13 +1076,13 @@ static: static_c static_cxx
 static_c: pc_c pc_c_unsecure cache.mk pc_c_zookeeper $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a static_zookeeper_libs
 
 
-static_cxx: pc_cxx pc_cxx_unsecure cache.mk  $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc++_codegen_lib.a $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_codegen_lib.a
+static_cxx: pc_cxx pc_cxx_unsecure cache.mk  $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a
 
 shared: shared_c shared_cxx
 
 shared_c: pc_c pc_c_unsecure cache.mk pc_c_zookeeper $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)gpr$(SHARED_VERSION).$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc$(SHARED_VERSION).$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION).$(SHARED_EXT) shared_zookeeper_libs
 
-shared_cxx: pc_cxx pc_cxx_unsecure cache.mk $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++$(SHARED_VERSION).$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++_codegen_lib$(SHARED_VERSION).$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++_unsecure$(SHARED_VERSION).$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc_codegen_lib$(SHARED_VERSION).$(SHARED_EXT)
+shared_cxx: pc_cxx pc_cxx_unsecure cache.mk $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++$(SHARED_VERSION).$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++_unsecure$(SHARED_VERSION).$(SHARED_EXT)
 
 shared_csharp: shared_c  $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc_csharp_ext$(SHARED_VERSION).$(SHARED_EXT)
 ifeq ($(HAS_ZOOKEEPER),true)
@@ -1117,7 +1117,7 @@ pc_cxx: $(LIBDIR)/$(CONFIG)/pkgconfig/grpc++.pc
 
 pc_cxx_unsecure: $(LIBDIR)/$(CONFIG)/pkgconfig/grpc++_unsecure.pc
 
-privatelibs_cxx:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libinterop_client_helper.a $(LIBDIR)/$(CONFIG)/libinterop_client_main.a $(LIBDIR)/$(CONFIG)/libinterop_server_helper.a $(LIBDIR)/$(CONFIG)/libinterop_server_main.a $(LIBDIR)/$(CONFIG)/libqps.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl_aes_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_base64_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_bio_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_bn_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_bytestring_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_aead_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_cipher_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_cmac_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_ed25519_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_x25519_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_dh_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_digest_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_ec_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_ecdsa_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_err_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_evp_extra_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_evp_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_pbkdf_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_hmac_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_pkcs12_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_pkcs8_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_poly1305_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_rsa_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_ssl_test_lib.a
+privatelibs_cxx:  $(LIBDIR)/$(CONFIG)/libgrpc++_codegen_lib.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_codegen_lib.a $(LIBDIR)/$(CONFIG)/libinterop_client_helper.a $(LIBDIR)/$(CONFIG)/libinterop_client_main.a $(LIBDIR)/$(CONFIG)/libinterop_server_helper.a $(LIBDIR)/$(CONFIG)/libinterop_server_main.a $(LIBDIR)/$(CONFIG)/libqps.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl_aes_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_base64_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_bio_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_bn_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_bytestring_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_aead_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_cipher_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_cmac_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_ed25519_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_x25519_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_dh_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_digest_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_ec_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_ecdsa_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_err_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_evp_extra_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_evp_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_pbkdf_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_hmac_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_pkcs12_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_pkcs8_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_poly1305_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_rsa_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_ssl_test_lib.a
 
 ifeq ($(HAS_ZOOKEEPER),true)
 privatelibs_zookeeper: 
@@ -1685,12 +1685,8 @@ strip-static_cxx: static_cxx
 ifeq ($(CONFIG),opt)
 	$(E) "[STRIP]   Stripping libgrpc++.a"
 	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/libgrpc++.a
-	$(E) "[STRIP]   Stripping libgrpc++_codegen_lib.a"
-	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/libgrpc++_codegen_lib.a
 	$(E) "[STRIP]   Stripping libgrpc++_unsecure.a"
 	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a
-	$(E) "[STRIP]   Stripping libgrpc_codegen_lib.a"
-	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/libgrpc_codegen_lib.a
 endif
 
 strip-shared_c: shared_c
@@ -1711,12 +1707,8 @@ strip-shared_cxx: shared_cxx
 ifeq ($(CONFIG),opt)
 	$(E) "[STRIP]   Stripping $(SHARED_PREFIX)grpc++$(SHARED_VERSION).$(SHARED_EXT)"
 	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++$(SHARED_VERSION).$(SHARED_EXT)
-	$(E) "[STRIP]   Stripping $(SHARED_PREFIX)grpc++_codegen_lib$(SHARED_VERSION).$(SHARED_EXT)"
-	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++_codegen_lib$(SHARED_VERSION).$(SHARED_EXT)
 	$(E) "[STRIP]   Stripping $(SHARED_PREFIX)grpc++_unsecure$(SHARED_VERSION).$(SHARED_EXT)"
 	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++_unsecure$(SHARED_VERSION).$(SHARED_EXT)
-	$(E) "[STRIP]   Stripping $(SHARED_PREFIX)grpc_codegen_lib$(SHARED_VERSION).$(SHARED_EXT)"
-	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc_codegen_lib$(SHARED_VERSION).$(SHARED_EXT)
 endif
 
 strip-shared_csharp: shared_csharp
@@ -2011,15 +2003,9 @@ install-static_cxx: static_cxx strip-static_cxx install-pkg-config_cxx
 	$(E) "[INSTALL] Installing libgrpc++.a"
 	$(Q) $(INSTALL) -d $(prefix)/lib
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc++.a $(prefix)/lib/libgrpc++.a
-	$(E) "[INSTALL] Installing libgrpc++_codegen_lib.a"
-	$(Q) $(INSTALL) -d $(prefix)/lib
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc++_codegen_lib.a $(prefix)/lib/libgrpc++_codegen_lib.a
 	$(E) "[INSTALL] Installing libgrpc++_unsecure.a"
 	$(Q) $(INSTALL) -d $(prefix)/lib
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a $(prefix)/lib/libgrpc++_unsecure.a
-	$(E) "[INSTALL] Installing libgrpc_codegen_lib.a"
-	$(Q) $(INSTALL) -d $(prefix)/lib
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc_codegen_lib.a $(prefix)/lib/libgrpc_codegen_lib.a
 
 
 
@@ -2079,15 +2065,6 @@ else ifneq ($(SYSTEM),Darwin)
 	$(Q) ln -sf $(SHARED_PREFIX)grpc++$(SHARED_VERSION).$(SHARED_EXT) $(prefix)/lib/libgrpc++.so.0
 	$(Q) ln -sf $(SHARED_PREFIX)grpc++$(SHARED_VERSION).$(SHARED_EXT) $(prefix)/lib/libgrpc++.so
 endif
-	$(E) "[INSTALL] Installing $(SHARED_PREFIX)grpc++_codegen_lib$(SHARED_VERSION).$(SHARED_EXT)"
-	$(Q) $(INSTALL) -d $(prefix)/lib
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++_codegen_lib$(SHARED_VERSION).$(SHARED_EXT) $(prefix)/lib/$(SHARED_PREFIX)grpc++_codegen_lib$(SHARED_VERSION).$(SHARED_EXT)
-ifeq ($(SYSTEM),MINGW32)
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc++_codegen_lib-imp.a $(prefix)/lib/libgrpc++_codegen_lib-imp.a
-else ifneq ($(SYSTEM),Darwin)
-	$(Q) ln -sf $(SHARED_PREFIX)grpc++_codegen_lib$(SHARED_VERSION).$(SHARED_EXT) $(prefix)/lib/libgrpc++_codegen_lib.so.0
-	$(Q) ln -sf $(SHARED_PREFIX)grpc++_codegen_lib$(SHARED_VERSION).$(SHARED_EXT) $(prefix)/lib/libgrpc++_codegen_lib.so
-endif
 	$(E) "[INSTALL] Installing $(SHARED_PREFIX)grpc++_unsecure$(SHARED_VERSION).$(SHARED_EXT)"
 	$(Q) $(INSTALL) -d $(prefix)/lib
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++_unsecure$(SHARED_VERSION).$(SHARED_EXT) $(prefix)/lib/$(SHARED_PREFIX)grpc++_unsecure$(SHARED_VERSION).$(SHARED_EXT)
@@ -2096,15 +2073,6 @@ ifeq ($(SYSTEM),MINGW32)
 else ifneq ($(SYSTEM),Darwin)
 	$(Q) ln -sf $(SHARED_PREFIX)grpc++_unsecure$(SHARED_VERSION).$(SHARED_EXT) $(prefix)/lib/libgrpc++_unsecure.so.0
 	$(Q) ln -sf $(SHARED_PREFIX)grpc++_unsecure$(SHARED_VERSION).$(SHARED_EXT) $(prefix)/lib/libgrpc++_unsecure.so
-endif
-	$(E) "[INSTALL] Installing $(SHARED_PREFIX)grpc_codegen_lib$(SHARED_VERSION).$(SHARED_EXT)"
-	$(Q) $(INSTALL) -d $(prefix)/lib
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc_codegen_lib$(SHARED_VERSION).$(SHARED_EXT) $(prefix)/lib/$(SHARED_PREFIX)grpc_codegen_lib$(SHARED_VERSION).$(SHARED_EXT)
-ifeq ($(SYSTEM),MINGW32)
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc_codegen_lib-imp.a $(prefix)/lib/libgrpc_codegen_lib-imp.a
-else ifneq ($(SYSTEM),Darwin)
-	$(Q) ln -sf $(SHARED_PREFIX)grpc_codegen_lib$(SHARED_VERSION).$(SHARED_EXT) $(prefix)/lib/libgrpc_codegen_lib.so.0
-	$(Q) ln -sf $(SHARED_PREFIX)grpc_codegen_lib$(SHARED_VERSION).$(SHARED_EXT) $(prefix)/lib/libgrpc_codegen_lib.so
 endif
 ifeq ($(HAS_ZOOKEEPER),true)
 endif
@@ -3151,7 +3119,6 @@ ifeq ($(NO_PROTOBUF),true)
 
 $(LIBDIR)/$(CONFIG)/libgrpc++_codegen_lib.a: protobuf_dep_error
 
-$(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++_codegen_lib$(SHARED_VERSION).$(SHARED_EXT): protobuf_dep_error
 
 else
 
@@ -3166,23 +3133,6 @@ endif
 
 
 
-ifeq ($(SYSTEM),MINGW32)
-$(LIBDIR)/$(CONFIG)/grpc++_codegen_lib$(SHARED_VERSION).$(SHARED_EXT): $(LIBGRPC++_CODEGEN_LIB_OBJS)  $(ZLIB_DEP) $(PROTOBUF_DEP) $(LIBDIR)/$(CONFIG)/grpc_codegen_lib.$(SHARED_EXT)
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared grpc++_codegen_lib.def -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc++_codegen_lib$(SHARED_VERSION).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc++_codegen_lib$(SHARED_VERSION)-dll.a -o $(LIBDIR)/$(CONFIG)/grpc++_codegen_lib$(SHARED_VERSION).$(SHARED_EXT) $(LIBGRPC++_CODEGEN_LIB_OBJS) $(LDLIBS) $(ZLIB_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) -lgrpc_codegen_lib-imp
-else
-$(LIBDIR)/$(CONFIG)/libgrpc++_codegen_lib$(SHARED_VERSION).$(SHARED_EXT): $(LIBGRPC++_CODEGEN_LIB_OBJS)  $(ZLIB_DEP) $(PROTOBUF_DEP) $(LIBDIR)/$(CONFIG)/libgrpc_codegen_lib.$(SHARED_EXT)
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-ifeq ($(SYSTEM),Darwin)
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc++_codegen_lib$(SHARED_VERSION).$(SHARED_EXT) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc++_codegen_lib$(SHARED_VERSION).$(SHARED_EXT) $(LIBGRPC++_CODEGEN_LIB_OBJS) $(LDLIBS) $(ZLIB_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) -lgrpc_codegen_lib
-else
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc++_codegen_lib.so.0 -o $(LIBDIR)/$(CONFIG)/libgrpc++_codegen_lib$(SHARED_VERSION).$(SHARED_EXT) $(LIBGRPC++_CODEGEN_LIB_OBJS) $(LDLIBS) $(ZLIB_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) -lgrpc_codegen_lib
-	$(Q) ln -sf $(SHARED_PREFIX)grpc++_codegen_lib$(SHARED_VERSION).$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc++_codegen_lib$(SHARED_VERSION).so.0
-	$(Q) ln -sf $(SHARED_PREFIX)grpc++_codegen_lib$(SHARED_VERSION).$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc++_codegen_lib$(SHARED_VERSION).so
-endif
-endif
 
 endif
 
@@ -3458,7 +3408,6 @@ ifeq ($(NO_PROTOBUF),true)
 
 $(LIBDIR)/$(CONFIG)/libgrpc_codegen_lib.a: protobuf_dep_error
 
-$(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc_codegen_lib$(SHARED_VERSION).$(SHARED_EXT): protobuf_dep_error
 
 else
 
@@ -3473,23 +3422,6 @@ endif
 
 
 
-ifeq ($(SYSTEM),MINGW32)
-$(LIBDIR)/$(CONFIG)/grpc_codegen_lib$(SHARED_VERSION).$(SHARED_EXT): $(LIBGRPC_CODEGEN_LIB_OBJS)  $(ZLIB_DEP) $(PROTOBUF_DEP)
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared grpc_codegen_lib.def -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc_codegen_lib$(SHARED_VERSION).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc_codegen_lib$(SHARED_VERSION)-dll.a -o $(LIBDIR)/$(CONFIG)/grpc_codegen_lib$(SHARED_VERSION).$(SHARED_EXT) $(LIBGRPC_CODEGEN_LIB_OBJS) $(LDLIBS) $(ZLIB_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF)
-else
-$(LIBDIR)/$(CONFIG)/libgrpc_codegen_lib$(SHARED_VERSION).$(SHARED_EXT): $(LIBGRPC_CODEGEN_LIB_OBJS)  $(ZLIB_DEP) $(PROTOBUF_DEP)
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-ifeq ($(SYSTEM),Darwin)
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc_codegen_lib$(SHARED_VERSION).$(SHARED_EXT) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc_codegen_lib$(SHARED_VERSION).$(SHARED_EXT) $(LIBGRPC_CODEGEN_LIB_OBJS) $(LDLIBS) $(ZLIB_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF)
-else
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc_codegen_lib.so.0 -o $(LIBDIR)/$(CONFIG)/libgrpc_codegen_lib$(SHARED_VERSION).$(SHARED_EXT) $(LIBGRPC_CODEGEN_LIB_OBJS) $(LDLIBS) $(ZLIB_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF)
-	$(Q) ln -sf $(SHARED_PREFIX)grpc_codegen_lib$(SHARED_VERSION).$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc_codegen_lib$(SHARED_VERSION).so.0
-	$(Q) ln -sf $(SHARED_PREFIX)grpc_codegen_lib$(SHARED_VERSION).$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc_codegen_lib$(SHARED_VERSION).so
-endif
-endif
 
 endif
 
