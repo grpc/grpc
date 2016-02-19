@@ -5,8 +5,7 @@ require 'google/protobuf'
 
 Google::Protobuf::DescriptorPool.generated_pool.build do
   add_message "grpc.health.v1.HealthCheckRequest" do
-    optional :host, :string, 1
-    optional :service, :string, 2
+    optional :service, :string, 1
   end
   add_message "grpc.health.v1.HealthCheckResponse" do
     optional :status, :enum, 1, "grpc.health.v1.HealthCheckResponse.ServingStatus"
