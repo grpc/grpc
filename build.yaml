@@ -547,6 +547,22 @@ libs:
   - grpc.dependencies.openssl
   - grpc.dependencies.zlib
   vs_project_guid: '{29D16885-7228-4C31-81ED-5F9187C7F2A9}'
+- name: grpc_codegen_lib
+  build: private
+  language: c
+  public_headers:
+  - include/grpc/impl/codegen/byte_buffer.h
+  - include/grpc/impl/codegen/compression_types.h
+  - include/grpc/impl/codegen/connectivity_state.h
+  - include/grpc/impl/codegen/grpc_types.h
+  - include/grpc/impl/codegen/propagation_bits.h
+  - include/grpc/impl/codegen/status.h
+  headers: []
+  src: []
+  filegroups:
+  - gpr_codegen
+  secure: false
+  vs_project_guid: '{A828FD72-44CE-4EA5-8966-6E4624458D58}'
 - name: grpc_test_util
   build: private
   language: c
@@ -745,22 +761,6 @@ libs:
   - grpc++_base
   secure: false
   vs_project_guid: '{6EE56155-DF7C-4F6E-BFC4-F6F776BEB211}'
-- name: grpc_codegen_lib
-  build: private
-  language: c++
-  public_headers:
-  - include/grpc/impl/codegen/byte_buffer.h
-  - include/grpc/impl/codegen/compression_types.h
-  - include/grpc/impl/codegen/connectivity_state.h
-  - include/grpc/impl/codegen/grpc_types.h
-  - include/grpc/impl/codegen/propagation_bits.h
-  - include/grpc/impl/codegen/status.h
-  headers: []
-  src: []
-  filegroups:
-  - gpr_codegen
-  secure: false
-  vs_project_guid: '{A828FD72-44CE-4EA5-8966-6E4624458D58}'
 - name: grpc_plugin_support
   build: protoc
   language: c++
