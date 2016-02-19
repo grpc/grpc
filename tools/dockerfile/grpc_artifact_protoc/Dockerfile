@@ -51,8 +51,6 @@ RUN bash -c 'echo "enabled=1" >> /etc/yum.repos.d/devtools-1.1.repo'
 RUN bash -c "sed -e 's/\$basearch/i386/g' /etc/yum.repos.d/devtools-1.1.repo > /etc/yum.repos.d/devtools-i386-1.1.repo"
 RUN sed -e 's/testing-/testing-i386-/g' -i /etc/yum.repos.d/devtools-i386-1.1.repo
 
-# Make yum install twice to overcome docker issue when using overlay storage driver.
-
 # We'll get and "Rpmdb checksum is invalid: dCDPT(pkg checksums)" error caused by
 # docker issue when using overlay storage driver, but all the stuff we need
 # will be installed, so for now we just ignore the error.
