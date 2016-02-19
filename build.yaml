@@ -659,7 +659,7 @@ libs:
   secure: check
   vs_project_guid: '{C187A093-A0FE-489D-A40A-6E33DE0F9FEB}'
 - name: grpc++_codegen_lib
-  build: all
+  build: private
   language: c++
   public_headers:
   - include/grpc++/impl/codegen/async_stream.h
@@ -698,7 +698,6 @@ libs:
   - grpc_codegen_lib
   filegroups:
   - gpr_codegen
-  private: true
   secure: false
 - name: grpc++_test_config
   build: private
@@ -746,7 +745,7 @@ libs:
   secure: false
   vs_project_guid: '{6EE56155-DF7C-4F6E-BFC4-F6F776BEB211}'
 - name: grpc_codegen_lib
-  build: all
+  build: private
   language: c++
   public_headers:
   - include/grpc/impl/codegen/byte_buffer.h
@@ -759,7 +758,6 @@ libs:
   src: []
   filegroups:
   - gpr_codegen
-  private: true
   secure: false
 - name: grpc_plugin_support
   build: protoc
