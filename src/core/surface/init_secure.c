@@ -82,6 +82,8 @@ static bool maybe_prepend_server_auth_filter(
 void grpc_register_security_filters(void) {
   grpc_channel_init_register_stage(GRPC_CLIENT_SUBCHANNEL, INT_MAX,
                                    maybe_prepend_client_auth_filter, NULL);
+  grpc_channel_init_register_stage(GRPC_CLIENT_DIRECT_CHANNEL, INT_MAX,
+                                   maybe_prepend_client_auth_filter, NULL);
   grpc_channel_init_register_stage(GRPC_SERVER_CHANNEL, INT_MAX,
                                    maybe_prepend_server_auth_filter, NULL);
 }

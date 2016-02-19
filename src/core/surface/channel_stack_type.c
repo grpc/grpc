@@ -45,6 +45,8 @@ bool grpc_channel_stack_type_is_client(grpc_channel_stack_type type) {
       return true;
     case GRPC_CLIENT_LAME_CHANNEL:
       return true;
+    case GRPC_CLIENT_DIRECT_CHANNEL:
+      return true;
     case GRPC_SERVER_CHANNEL:
       return false;
     case GRPC_NUM_CHANNEL_STACK_TYPES:

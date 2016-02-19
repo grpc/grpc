@@ -2481,6 +2481,54 @@
     ], 
     "headers": [], 
     "language": "c", 
+    "name": "h2_sockpair_test", 
+    "src": [
+      "test/core/end2end/fixtures/h2_sockpair.c"
+    ]
+  }, 
+  {
+    "deps": [
+      "end2end_certs", 
+      "end2end_tests", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_sockpair+trace_test", 
+    "src": [
+      "test/core/end2end/fixtures/h2_sockpair+trace.c"
+    ]
+  }, 
+  {
+    "deps": [
+      "end2end_certs", 
+      "end2end_tests", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_sockpair_1byte_test", 
+    "src": [
+      "test/core/end2end/fixtures/h2_sockpair_1byte.c"
+    ]
+  }, 
+  {
+    "deps": [
+      "end2end_certs", 
+      "end2end_tests", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
     "name": "h2_ssl_test", 
     "src": [
       "test/core/end2end/fixtures/h2_ssl.c"
@@ -2684,6 +2732,51 @@
     "name": "h2_proxy_nosec_test", 
     "src": [
       "test/core/end2end/fixtures/h2_proxy.c"
+    ]
+  }, 
+  {
+    "deps": [
+      "end2end_nosec_tests", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_sockpair_nosec_test", 
+    "src": [
+      "test/core/end2end/fixtures/h2_sockpair.c"
+    ]
+  }, 
+  {
+    "deps": [
+      "end2end_nosec_tests", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_sockpair+trace_nosec_test", 
+    "src": [
+      "test/core/end2end/fixtures/h2_sockpair+trace.c"
+    ]
+  }, 
+  {
+    "deps": [
+      "end2end_nosec_tests", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_sockpair_1byte_nosec_test", 
+    "src": [
+      "test/core/end2end/fixtures/h2_sockpair_1byte.c"
     ]
   }, 
   {

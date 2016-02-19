@@ -116,6 +116,8 @@ static const char *name_for_type(grpc_channel_stack_type type) {
       return "CLIENT_UCHANNEL";
     case GRPC_CLIENT_LAME_CHANNEL:
       return "CLIENT_LAME_CHANNEL";
+    case GRPC_CLIENT_DIRECT_CHANNEL:
+      return "CLIENT_DIRECT_CHANNEL";
     case GRPC_NUM_CHANNEL_STACK_TYPES:
       break;
   }
