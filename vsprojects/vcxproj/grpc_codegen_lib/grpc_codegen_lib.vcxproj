@@ -168,6 +168,10 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_win32.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\time.h" />
   </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\vsprojects\dummy.c">
+    </ClCompile>
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

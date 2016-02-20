@@ -193,6 +193,10 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\time.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\vsprojects\dummy.c">
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="$(SolutionDir)\..\vsprojects\vcxproj\.\grpc_codegen_lib\grpc_codegen_lib.vcxproj">
       <Project>{A828FD72-44CE-4EA5-8966-6E4624458D58}</Project>
     </ProjectReference>
