@@ -74,6 +74,4 @@ struct grpc_pollset {
 
 extern gpr_mu grpc_polling_mu;
 
-#define GRPC_POLLSET_MU(pollset) (&grpc_polling_mu)
-
 #endif /* GRPC_INTERNAL_CORE_IOMGR_POLLSET_WINDOWS_H */
