@@ -625,5 +625,77 @@ void InteropClient::DoStatusWithMessage() {
   gpr_log(GPR_DEBUG, "Done testing Status and Message");
 }
 
+void InteropClient::DoCustomMetadata() {
+  const grpc::string kEchoInitialMetadataKey("x-grpc-test-echo-initial");
+  const grpc::string kInitialMetadataValue("test_initial_metadata_value");
+  const grpc::string kEchoTrailingBinMetadataKey(
+      "x-grpc-test-echo-trailing-bin");
+  const grpc::string kTrailingBinValue("\x0a\x0b\x0a\x0b\x0a\x0b");
+  ;
+
+  {
+    gpr_log(GPR_DEBUG, "Sending RPC with custom metadata");
+    ClientContext context;
+    context.AddMetadata(kEchoInitialMetadataKey, kInitialMetadataValue);
+    context.AddMetadata(kEchoTrailingBinMetadataKey, kTrailingBinValue);
+    SimpleRequest request;
+    SimpleResponse response;
+    request.set_response_size(kLargeResponseSize);
+    grpc::string payload(kLargeRequestSize, '\0');
+    request.mutable_payload()->set_body(payload.c_str(), kLargeRequestSize);
+
+    Status s = serviceStub_.Get()->UnaryCall(&context, request, &response);
+    AssertOkOrPrintErrorStatus(s);
+    const auto& server_initial_metadata = context.GetServerInitialMetadata();
+    auto iter = server_initial_metadata.find(kEchoInitialMetadataKey);
+    GPR_ASSERT(iter != server_initial_metadata.end());
+    GPR_ASSERT(iter->second.data() == kInitialMetadataValue);
+    const auto& server_trailing_metadata = context.GetServerTrailingMetadata();
+    iter = server_trailing_metadata.find(kEchoTrailingBinMetadataKey);
+    GPR_ASSERT(iter != server_trailing_metadata.end());
+    GPR_ASSERT(grpc::string(iter->second.begin(), iter->second.end()) ==
+               kTrailingBinValue);
+
+    gpr_log(GPR_DEBUG, "Done testing RPC with custom metadata");
+  }
+
+  {
+    gpr_log(GPR_DEBUG, "Sending stream with custom metadata");
+    ClientContext context;
+    context.AddMetadata(kEchoInitialMetadataKey, kInitialMetadataValue);
+    context.AddMetadata(kEchoTrailingBinMetadataKey, kTrailingBinValue);
+    std::unique_ptr<ClientReaderWriter<StreamingOutputCallRequest,
+                                       StreamingOutputCallResponse>>
+        stream(serviceStub_.Get()->FullDuplexCall(&context));
+
+    StreamingOutputCallRequest request;
+    request.set_response_type(PayloadType::COMPRESSABLE);
+    ResponseParameters* response_parameter = request.add_response_parameters();
+    response_parameter->set_size(kLargeResponseSize);
+    grpc::string payload(kLargeRequestSize, '\0');
+    request.mutable_payload()->set_body(payload.c_str(), kLargeRequestSize);
+    StreamingOutputCallResponse response;
+    GPR_ASSERT(stream->Write(request));
+    stream->WritesDone();
+    GPR_ASSERT(stream->Read(&response));
+    GPR_ASSERT(response.payload().body() ==
+               grpc::string(kLargeResponseSize, '\0'));
+    GPR_ASSERT(!stream->Read(&response));
+    Status s = stream->Finish();
+    AssertOkOrPrintErrorStatus(s);
+    const auto& server_initial_metadata = context.GetServerInitialMetadata();
+    auto iter = server_initial_metadata.find(kEchoInitialMetadataKey);
+    GPR_ASSERT(iter != server_initial_metadata.end());
+    GPR_ASSERT(iter->second.data() == kInitialMetadataValue);
+    const auto& server_trailing_metadata = context.GetServerTrailingMetadata();
+    iter = server_trailing_metadata.find(kEchoTrailingBinMetadataKey);
+    GPR_ASSERT(iter != server_trailing_metadata.end());
+    GPR_ASSERT(grpc::string(iter->second.begin(), iter->second.end()) ==
+               kTrailingBinValue);
+
+    gpr_log(GPR_DEBUG, "Done testing stream with custom metadata");
+  }
+}
+
 }  // namespace testing
 }  // namespace grpc
