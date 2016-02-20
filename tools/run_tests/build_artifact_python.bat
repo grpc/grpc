@@ -41,7 +41,7 @@ copy /Y vsprojects\Release\grpc_dll.dll src\python\grpcio\grpc\_cython\_windows\
 copy /Y vsprojects\x64\Release\grpc_dll.dll src\python\grpcio\grpc\_cython\_windows\grpc_c.64.python || goto :error
 
 
-set PATH=%PATH%;C:\Python27\scripts
+set PATH=C:\%1;C:\%1\scripts;%PATH%
 
 pip install --upgrade six
 pip install --upgrade setuptools
