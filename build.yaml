@@ -945,6 +945,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  - gpr
 - name: census_context_test
   build: test
   language: c
