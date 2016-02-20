@@ -41,6 +41,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/useful.h>
 
+#include "src/core/iomgr/pollset_posix.h"
 #include "src/core/iomgr/pollset_set.h"
 
 void grpc_pollset_set_init(grpc_pollset_set *pollset_set) {
