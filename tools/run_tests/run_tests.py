@@ -522,39 +522,6 @@ class Sanity(object):
     return 'sanity'
 
 
-class Build(object):
-
-  def test_specs(self, config, args):
-    return []
-
-  def pre_build_steps(self):
-    return []
-
-  def make_targets(self, test_regex):
-    return ['static']
-
-  def make_options(self):
-    return []
-
-  def build_steps(self):
-    return []
-
-  def post_tests_steps(self):
-    return []
-
-  def makefile_name(self):
-    return 'Makefile'
-
-  def supports_multi_config(self):
-    return True
-
-  def dockerfile_dir(self, config, arch):
-    return None
-
-  def __str__(self):
-    return self.make_target
-
-
 # different configurations we can run under
 with open('tools/run_tests/configs.json') as f:
   _CONFIGS = dict((cfg['config'], Config(**cfg)) for cfg in ast.literal_eval(f.read()))
@@ -570,8 +537,7 @@ _LANGUAGES = {
     'ruby': RubyLanguage(),
     'csharp': CSharpLanguage(),
     'objc' : ObjCLanguage(),
-    'sanity': Sanity(),
-    'build': Build(),
+    'sanity': Sanity()
     }
 
 _WINDOWS_CONFIG = {
