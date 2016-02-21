@@ -269,8 +269,7 @@ static void Init_grpc_time_consts() {
   id_tv_nsec = rb_intern("tv_nsec");
 }
 
-static void grpc_rb_shutdown(VALUE val) {
-  (void)val;
+static void grpc_rb_shutdown(void) {
   grpc_shutdown();
 }
 
@@ -298,7 +297,7 @@ void Init_grpc_c() {
 
   grpc_init();
 
-  rb_set_end_proc(grpc_rb_shutdown, Qnil);
+  atexit(grpc_rb_shutdown);
 
   grpc_rb_mGRPC = rb_define_module("GRPC");
   grpc_rb_mGrpcCore = rb_define_module_under(grpc_rb_mGRPC, "Core");
