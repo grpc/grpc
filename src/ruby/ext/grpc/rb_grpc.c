@@ -289,15 +289,20 @@ VALUE sym_code = Qundef;
 VALUE sym_details = Qundef;
 VALUE sym_metadata = Qundef;
 
+static gpr_once g_once_init = GPR_ONCE_INIT;
+
+static void grpc_ruby_once_init() {
+  grpc_init();
+  atexit(grpc_rb_shutdown);
+}
+
 void Init_grpc_c() {
   if (!grpc_rb_load_core()) {
     rb_raise(rb_eLoadError, "Couldn't find or load gRPC's dynamic C core");
     return;
   }
 
-  grpc_init();
-
-  atexit(grpc_rb_shutdown);
+  gpr_once_init(&g_once_init, grpc_ruby_once_init);
 
   grpc_rb_mGRPC = rb_define_module("GRPC");
   grpc_rb_mGrpcCore = rb_define_module_under(grpc_rb_mGRPC, "Core");
