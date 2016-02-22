@@ -776,6 +776,8 @@ libs:
   - gpr_codegen
   secure: false
   vs_project_guid: '{B6E81D84-2ACB-41B8-8781-493A944C7817}'
+  vs_props:
+  - protoc
 - name: interop_client_helper
   build: private
   language: c++
