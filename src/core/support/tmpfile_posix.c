@@ -31,61 +31,55 @@
  *
  */
 
-#include "src/core/support/file.h"
+#include <grpc/support/port_platform.h>
+
+#ifdef GPR_POSIX_FILE
+
+#include "src/core/support/tmpfile.h"
 
 #include <errno.h>
+#include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/support/block_annotate.h"
 #include "src/core/support/string.h"
 
-gpr_slice gpr_load_file(const char *filename, int add_null_terminator,
-                        int *success) {
-  unsigned char *contents = NULL;
-  size_t contents_size = 0;
-  char *error_msg = NULL;
-  gpr_slice result = gpr_empty_slice();
-  FILE *file;
-  size_t bytes_read = 0;
+FILE *gpr_tmpfile(const char *prefix, char **tmp_filename) {
+  FILE *result = NULL;
+  char *template;
+  int fd;
 
-  GRPC_SCHEDULING_START_BLOCKING_REGION;
-  file = fopen(filename, "rb");
-  if (file == NULL) {
-    gpr_asprintf(&error_msg, "Could not open file %s (error = %s).", filename,
-                 strerror(errno));
-    GPR_ASSERT(error_msg != NULL);
+  if (tmp_filename != NULL) *tmp_filename = NULL;
+
+  gpr_asprintf(&template, "/tmp/%s_XXXXXX", prefix);
+  GPR_ASSERT(template != NULL);
+
+  fd = mkstemp(template);
+  if (fd == -1) {
+    gpr_log(GPR_ERROR, "mkstemp failed for template %s with error %s.",
+            template, strerror(errno));
     goto end;
   }
-  fseek(file, 0, SEEK_END);
-  /* Converting to size_t on the assumption that it will not fail */
-  contents_size = (size_t)ftell(file);
-  fseek(file, 0, SEEK_SET);
-  contents = gpr_malloc(contents_size + (add_null_terminator ? 1 : 0));
-  bytes_read = fread(contents, 1, contents_size, file);
-  if (bytes_read < contents_size) {
-    GPR_ASSERT(ferror(file));
-    gpr_asprintf(&error_msg, "Error %s occured while reading file %s.",
-                 strerror(errno), filename);
-    GPR_ASSERT(error_msg != NULL);
+  result = fdopen(fd, "w+");
+  if (result == NULL) {
+    gpr_log(GPR_ERROR, "Could not open file %s from fd %d (error = %s).",
+            template, fd, strerror(errno));
+    unlink(template);
+    close(fd);
     goto end;
   }
-  if (success != NULL) *success = 1;
-  if (add_null_terminator) {
-    contents[contents_size++] = 0;
-  }
-  result = gpr_slice_new(contents, contents_size, gpr_free);
 
 end:
-  if (error_msg != NULL) {
-    gpr_log(GPR_ERROR, "%s", error_msg);
-    gpr_free(error_msg);
-    if (success != NULL) *success = 0;
+  if (result != NULL && tmp_filename != NULL) {
+    *tmp_filename = template;
+  } else {
+    gpr_free(template);
   }
-  if (file != NULL) fclose(file);
-  GRPC_SCHEDULING_END_BLOCKING_REGION;
   return result;
 }
+
+#endif /* GPR_POSIX_FILE */

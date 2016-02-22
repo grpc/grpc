@@ -31,55 +31,27 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#ifndef TEST_QPS_USAGE_TIMER_H
+#define TEST_QPS_USAGE_TIMER_H
 
-#ifdef GPR_POSIX_FILE
+class UsageTimer {
+ public:
+  Timer();
 
-#include "src/core/support/file.h"
+  struct Result {
+    double wall;
+    double user;
+    double system;
+  };
 
-#include <errno.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
+  Result Mark() const;
 
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
+  static double Now();
 
-#include "src/core/support/string.h"
+ private:
+  static Result Sample();
 
-FILE *gpr_tmpfile(const char *prefix, char **tmp_filename) {
-  FILE *result = NULL;
-  char *template;
-  int fd;
+  const Result start_;
+};
 
-  if (tmp_filename != NULL) *tmp_filename = NULL;
-
-  gpr_asprintf(&template, "/tmp/%s_XXXXXX", prefix);
-  GPR_ASSERT(template != NULL);
-
-  fd = mkstemp(template);
-  if (fd == -1) {
-    gpr_log(GPR_ERROR, "mkstemp failed for template %s with error %s.",
-            template, strerror(errno));
-    goto end;
-  }
-  result = fdopen(fd, "w+");
-  if (result == NULL) {
-    gpr_log(GPR_ERROR, "Could not open file %s from fd %d (error = %s).",
-            template, fd, strerror(errno));
-    unlink(template);
-    close(fd);
-    goto end;
-  }
-
-end:
-  if (result != NULL && tmp_filename != NULL) {
-    *tmp_filename = template;
-  } else {
-    gpr_free(template);
-  }
-  return result;
-}
-
-#endif /* GPR_POSIX_FILE */
+#endif  // TEST_QPS_TIMER_H

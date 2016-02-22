@@ -31,54 +31,61 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "src/core/support/load_file.h"
 
-#ifdef GPR_WIN32
-
-#include <io.h>
-#include <stdio.h>
+#include <errno.h>
 #include <string.h>
-#include <tchar.h>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/support/file.h"
-#include "src/core/support/string_win32.h"
+#include "src/core/support/block_annotate.h"
+#include "src/core/support/string.h"
 
-FILE *gpr_tmpfile(const char *prefix, char **tmp_filename_out) {
-  FILE *result = NULL;
-  LPTSTR template_string = NULL;
-  TCHAR tmp_path[MAX_PATH];
-  TCHAR tmp_filename[MAX_PATH];
-  DWORD status;
-  UINT success;
+gpr_slice gpr_load_file(const char *filename, int add_null_terminator,
+                        int *success) {
+  unsigned char *contents = NULL;
+  size_t contents_size = 0;
+  char *error_msg = NULL;
+  gpr_slice result = gpr_empty_slice();
+  FILE *file;
+  size_t bytes_read = 0;
 
-  if (tmp_filename_out != NULL) *tmp_filename_out = NULL;
-
-  /* Convert our prefix to TCHAR. */
-  template_string = gpr_char_to_tchar(prefix);
-  GPR_ASSERT(template_string);
-
-  /* Get the path to the best temporary folder available. */
-  status = GetTempPath(MAX_PATH, tmp_path);
-  if (status == 0 || status > MAX_PATH) goto end;
-
-  /* Generate a unique filename with our template + temporary path. */
-  success = GetTempFileName(tmp_path, template_string, 0, tmp_filename);
-  if (!success) goto end;
-
-  /* Open a file there. */
-  if (_tfopen_s(&result, tmp_filename, TEXT("wb+")) != 0) goto end;
+  GRPC_SCHEDULING_START_BLOCKING_REGION;
+  file = fopen(filename, "rb");
+  if (file == NULL) {
+    gpr_asprintf(&error_msg, "Could not open file %s (error = %s).", filename,
+                 strerror(errno));
+    GPR_ASSERT(error_msg != NULL);
+    goto end;
+  }
+  fseek(file, 0, SEEK_END);
+  /* Converting to size_t on the assumption that it will not fail */
+  contents_size = (size_t)ftell(file);
+  fseek(file, 0, SEEK_SET);
+  contents = gpr_malloc(contents_size + (add_null_terminator ? 1 : 0));
+  bytes_read = fread(contents, 1, contents_size, file);
+  if (bytes_read < contents_size) {
+    GPR_ASSERT(ferror(file));
+    gpr_asprintf(&error_msg, "Error %s occured while reading file %s.",
+                 strerror(errno), filename);
+    GPR_ASSERT(error_msg != NULL);
+    goto end;
+  }
+  if (success != NULL) *success = 1;
+  if (add_null_terminator) {
+    contents[contents_size++] = 0;
+  }
+  result = gpr_slice_new(contents, contents_size, gpr_free);
 
 end:
-  if (result && tmp_filename_out) {
-    *tmp_filename_out = gpr_tchar_to_char(tmp_filename);
+  if (error_msg != NULL) {
+    gpr_log(GPR_ERROR, "%s", error_msg);
+    gpr_free(error_msg);
+    if (success != NULL) *success = 0;
   }
-
-  gpr_free(template_string);
+  if (file != NULL) fclose(file);
+  GRPC_SCHEDULING_END_BLOCKING_REGION;
   return result;
 }
-
-#endif /* GPR_WIN32 */

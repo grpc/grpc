@@ -35,7 +35,7 @@
 #include <grpc/support/log.h>
 #include <signal.h>
 
-#include "test/core/bad_ssl/server.h"
+#include "test/core/bad_ssl/server_common.h"
 #include "test/core/util/test_config.h"
 
 /* Common server implementation details for all servers in servers/.

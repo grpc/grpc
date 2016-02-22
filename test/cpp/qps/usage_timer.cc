@@ -31,11 +31,11 @@
  *
  */
 
-#include "test/cpp/qps/timer.h"
+#include "test/cpp/qps/usage_timer.h"
 
-#include <sys/time.h>
-#include <sys/resource.h>
 #include <grpc/support/time.h>
+#include <sys/resource.h>
+#include <sys/time.h>
 
 Timer::Timer() : start_(Sample()) {}
 
