@@ -2469,7 +2469,7 @@ LIBGRPC_SRC = \
     src/core/tsi/transport_security.c \
     src/core/census/context.c \
     src/core/census/initialize.c \
-    src/core/census/log.c \
+    src/core/census/mlog.c \
     src/core/census/operation.c \
     src/core/census/placeholders.c \
     src/core/census/tracing.c \
@@ -2792,7 +2792,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/transport/transport_op_string.c \
     src/core/census/context.c \
     src/core/census/initialize.c \
-    src/core/census/log.c \
+    src/core/census/mlog.c \
     src/core/census/operation.c \
     src/core/census/placeholders.c \
     src/core/census/tracing.c \
@@ -5877,7 +5877,7 @@ endif
 
 
 CENSUS_LOG_TEST_SRC = \
-    test/core/census/log_test.c \
+    test/core/census/mlog_test.c \
 
 CENSUS_LOG_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CENSUS_LOG_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -5897,7 +5897,7 @@ $(BINDIR)/$(CONFIG)/census_log_test: $(CENSUS_LOG_TEST_OBJS) $(LIBDIR)/$(CONFIG)
 
 endif
 
-$(OBJDIR)/$(CONFIG)/test/core/census/log_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(OBJDIR)/$(CONFIG)/test/core/census/mlog_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
 deps_census_log_test: $(CENSUS_LOG_TEST_OBJS:.o=.dep)
 
