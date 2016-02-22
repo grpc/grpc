@@ -36,8 +36,11 @@
 #ifndef GRPCXX_ALARM_H
 #define GRPCXX_ALARM_H
 
+#include <grpc++/impl/codegen/completion_queue_tag.h>
 #include <grpc++/impl/codegen/grpc_library.h>
 #include <grpc++/impl/codegen/time.h>
+
+struct grpc_alarm;
 
 namespace grpc {
 
@@ -61,6 +64,19 @@ class Alarm : private GrpcLibrary {
   void Cancel();
 
  private:
+  class AlarmEntry : public CompletionQueueTag {
+   public:
+    AlarmEntry(void* tag) : tag_(tag) {}
+    bool FinalizeResult(void** tag, bool* status) GRPC_OVERRIDE {
+      *tag = tag_;
+      return true;
+    }
+
+   private:
+    void* tag_;
+  };
+
+  AlarmEntry tag_;
   grpc_alarm* const alarm_;  // owned
 };
 

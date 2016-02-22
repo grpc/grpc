@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,55 +31,51 @@
  *
  */
 
-#include <grpc++/impl/sync.h>
-#include <grpc++/impl/thd.h>
-#include "src/cpp/server/fixed_size_thread_pool.h"
+#include <grpc++/alarm.h>
+#include <grpc++/completion_queue.h>
+#include <gtest/gtest.h>
+
+#include "test/core/util/test_config.h"
 
 namespace grpc {
+namespace {
 
-void FixedSizeThreadPool::ThreadFunc() {
-  for (;;) {
-    // Wait until work is available or we are shutting down.
-    grpc::unique_lock<grpc::mutex> lock(mu_);
-    if (!shutdown_ && callbacks_.empty()) {
-      cv_.wait(lock);
-    }
-    // Drain callbacks before considering shutdown to ensure all work
-    // gets completed.
-    if (!callbacks_.empty()) {
-      auto cb = callbacks_.front();
-      callbacks_.pop();
-      lock.unlock();
-      cb();
-    } else if (shutdown_) {
-      return;
-    }
-  }
+TEST(AlarmTest, RegularExpiry) {
+  CompletionQueue cq;
+  void* junk = reinterpret_cast<void*>(1618033);
+  Alarm alarm(&cq, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(1), junk);
+
+  void* output_tag;
+  bool ok;
+  const CompletionQueue::NextStatus status = cq.AsyncNext(
+      (void**)&output_tag, &ok, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(2));
+
+  EXPECT_EQ(status, CompletionQueue::GOT_EVENT);
+  EXPECT_TRUE(ok);
+  EXPECT_EQ(junk, output_tag);
 }
 
-FixedSizeThreadPool::FixedSizeThreadPool(int num_threads) : shutdown_(false) {
-  for (int i = 0; i < num_threads; i++) {
-    threads_.push_back(
-        new grpc::thread(&FixedSizeThreadPool::ThreadFunc, this));
-  }
+TEST(AlarmTest, Cancellation) {
+  CompletionQueue cq;
+  void* junk = reinterpret_cast<void*>(1618033);
+  Alarm alarm(&cq, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(2), junk);
+  alarm.Cancel();
+
+  void* output_tag;
+  bool ok;
+  const CompletionQueue::NextStatus status = cq.AsyncNext(
+      (void**)&output_tag, &ok, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(1));
+
+  EXPECT_EQ(status, CompletionQueue::GOT_EVENT);
+  EXPECT_FALSE(ok);
+  EXPECT_EQ(junk, output_tag);
 }
 
-FixedSizeThreadPool::~FixedSizeThreadPool() {
-  {
-    grpc::lock_guard<grpc::mutex> lock(mu_);
-    shutdown_ = true;
-    cv_.notify_all();
-  }
-  for (auto t = threads_.begin(); t != threads_.end(); t++) {
-    (*t)->join();
-    delete *t;
-  }
-}
-
-void FixedSizeThreadPool::Add(const std::function<void()>& callback) {
-  grpc::lock_guard<grpc::mutex> lock(mu_);
-  callbacks_.push(callback);
-  cv_.notify_one();
-}
-
+}  // namespace
 }  // namespace grpc
+
+int main(int argc, char** argv) {
+  grpc_test_init(argc, argv);
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
+}

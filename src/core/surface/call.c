@@ -159,6 +159,9 @@ struct grpc_call {
   uint8_t receiving_message;
   uint8_t received_final_op;
 
+  /* have we received initial metadata */
+  bool has_initial_md_been_received;
+
   batch_control active_batches[MAX_CONCURRENT_BATCHES];
 
   /* first idx: is_receiving, second idx: is_trailing */
@@ -200,6 +203,7 @@ struct grpc_call {
   gpr_slice receiving_slice;
   grpc_closure receiving_slice_ready;
   grpc_closure receiving_stream_ready;
+  grpc_closure receiving_initial_metadata_ready;
   uint32_t test_only_last_message_flags;
 
   union {
@@ -212,6 +216,11 @@ struct grpc_call {
       int *cancelled;
     } server;
   } final_op;
+
+  struct {
+    void *bctlp;
+    bool success;
+  } saved_receiving_stream_ready_ctx;
 };
 
 #define CALL_STACK_FROM_CALL(call) ((grpc_call_stack *)((call) + 1))
@@ -993,6 +1002,94 @@ static void receiving_slice_ready(grpc_exec_ctx *exec_ctx, void *bctlp,
   }
 }
 
+static void process_data_after_md(grpc_exec_ctx *exec_ctx, batch_control *bctl,
+                                  bool success) {
+  grpc_call *call = bctl->call;
+  if (call->receiving_stream == NULL) {
+    *call->receiving_buffer = NULL;
+    call->receiving_message = 0;
+    if (gpr_unref(&bctl->steps_to_complete)) {
+      post_batch_completion(exec_ctx, bctl);
+    }
+  } else if (call->receiving_stream->length >
+             grpc_channel_get_max_message_length(call->channel)) {
+    cancel_with_status(exec_ctx, call, GRPC_STATUS_INTERNAL,
+                       "Max message size exceeded");
+    grpc_byte_stream_destroy(exec_ctx, call->receiving_stream);
+    call->receiving_stream = NULL;
+    *call->receiving_buffer = NULL;
+    call->receiving_message = 0;
+    if (gpr_unref(&bctl->steps_to_complete)) {
+      post_batch_completion(exec_ctx, bctl);
+    }
+  } else {
+    call->test_only_last_message_flags = call->receiving_stream->flags;
+    if ((call->receiving_stream->flags & GRPC_WRITE_INTERNAL_COMPRESS) &&
+        (call->compression_algorithm > GRPC_COMPRESS_NONE)) {
+      *call->receiving_buffer = grpc_raw_compressed_byte_buffer_create(
+          NULL, 0, call->compression_algorithm);
+    } else {
+      *call->receiving_buffer = grpc_raw_byte_buffer_create(NULL, 0);
+    }
+    grpc_closure_init(&call->receiving_slice_ready, receiving_slice_ready,
+                      bctl);
+    continue_receiving_slices(exec_ctx, bctl);
+    /* early out */
+    return;
+  }
+}
+
+static void receiving_stream_ready(grpc_exec_ctx *exec_ctx, void *bctlp,
+                                   bool success) {
+  batch_control *bctl = bctlp;
+  grpc_call *call = bctl->call;
+
+  gpr_mu_lock(&bctl->call->mu);
+  if (bctl->call->has_initial_md_been_received) {
+    gpr_mu_unlock(&bctl->call->mu);
+    process_data_after_md(exec_ctx, bctlp, success);
+  } else {
+    call->saved_receiving_stream_ready_ctx.bctlp = bctlp;
+    call->saved_receiving_stream_ready_ctx.success = success;
+    gpr_mu_unlock(&bctl->call->mu);
+  }
+}
+
+static void receiving_initial_metadata_ready(grpc_exec_ctx *exec_ctx,
+                                             void *bctlp, bool success) {
+  batch_control *bctl = bctlp;
+  grpc_call *call = bctl->call;
+
+  gpr_mu_lock(&call->mu);
+
+  grpc_metadata_batch *md =
+      &call->metadata_batch[1 /* is_receiving */][0 /* is_trailing */];
+  grpc_metadata_batch_filter(md, recv_initial_filter, call);
+  call->has_initial_md_been_received = true;
+
+  if (gpr_time_cmp(md->deadline, gpr_inf_future(md->deadline.clock_type)) !=
+          0 &&
+      !call->is_client) {
+    GPR_TIMER_BEGIN("set_deadline_alarm", 0);
+    set_deadline_alarm(exec_ctx, call, md->deadline);
+    GPR_TIMER_END("set_deadline_alarm", 0);
+  }
+
+  if (call->saved_receiving_stream_ready_ctx.bctlp != NULL) {
+    grpc_closure *saved_rsr_closure = grpc_closure_create(
+        receiving_stream_ready, call->saved_receiving_stream_ready_ctx.bctlp);
+    grpc_exec_ctx_enqueue(exec_ctx, saved_rsr_closure,
+                          call->saved_receiving_stream_ready_ctx.success, NULL);
+    call->saved_receiving_stream_ready_ctx.bctlp = NULL;
+  }
+
+  gpr_mu_unlock(&call->mu);
+
+  if (gpr_unref(&bctl->steps_to_complete)) {
+    post_batch_completion(exec_ctx, bctl);
+  }
+}
+
 static void finish_batch(grpc_exec_ctx *exec_ctx, void *bctlp, bool success) {
   batch_control *bctl = bctlp;
   grpc_call *call = bctl->call;
@@ -1010,19 +1107,6 @@ static void finish_batch(grpc_exec_ctx *exec_ctx, void *bctlp, bool success) {
   if (bctl->send_final_op) {
     grpc_metadata_batch_destroy(
         &call->metadata_batch[0 /* is_receiving */][1 /* is_trailing */]);
-  }
-  if (bctl->recv_initial_metadata) {
-    grpc_metadata_batch *md =
-        &call->metadata_batch[1 /* is_receiving */][0 /* is_trailing */];
-    grpc_metadata_batch_filter(md, recv_initial_filter, call);
-
-    if (gpr_time_cmp(md->deadline, gpr_inf_future(md->deadline.clock_type)) !=
-            0 &&
-        !call->is_client) {
-      GPR_TIMER_BEGIN("set_deadline_alarm", 0);
-      set_deadline_alarm(exec_ctx, call, md->deadline);
-      GPR_TIMER_END("set_deadline_alarm", 0);
-    }
   }
   if (bctl->recv_final_op) {
     grpc_metadata_batch *md =
@@ -1062,45 +1146,6 @@ static void finish_batch(grpc_exec_ctx *exec_ctx, void *bctlp, bool success) {
   gpr_mu_unlock(&call->mu);
   if (gpr_unref(&bctl->steps_to_complete)) {
     post_batch_completion(exec_ctx, bctl);
-  }
-}
-
-static void receiving_stream_ready(grpc_exec_ctx *exec_ctx, void *bctlp,
-                                   bool success) {
-  batch_control *bctl = bctlp;
-  grpc_call *call = bctl->call;
-
-  if (call->receiving_stream == NULL) {
-    *call->receiving_buffer = NULL;
-    call->receiving_message = 0;
-    if (gpr_unref(&bctl->steps_to_complete)) {
-      post_batch_completion(exec_ctx, bctl);
-    }
-  } else if (call->receiving_stream->length >
-             grpc_channel_get_max_message_length(call->channel)) {
-    cancel_with_status(exec_ctx, call, GRPC_STATUS_INTERNAL,
-                       "Max message size exceeded");
-    grpc_byte_stream_destroy(exec_ctx, call->receiving_stream);
-    call->receiving_stream = NULL;
-    *call->receiving_buffer = NULL;
-    call->receiving_message = 0;
-    if (gpr_unref(&bctl->steps_to_complete)) {
-      post_batch_completion(exec_ctx, bctl);
-    }
-  } else {
-    call->test_only_last_message_flags = call->receiving_stream->flags;
-    if ((call->receiving_stream->flags & GRPC_WRITE_INTERNAL_COMPRESS) &&
-        (call->compression_algorithm > GRPC_COMPRESS_NONE)) {
-      *call->receiving_buffer = grpc_raw_compressed_byte_buffer_create(
-          NULL, 0, call->compression_algorithm);
-    } else {
-      *call->receiving_buffer = grpc_raw_byte_buffer_create(NULL, 0);
-    }
-    grpc_closure_init(&call->receiving_slice_ready, receiving_slice_ready,
-                      bctl);
-    continue_receiving_slices(exec_ctx, bctl);
-    /* early out */
-    return;
   }
 }
 
@@ -1273,9 +1318,14 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
         }
         call->received_initial_metadata = 1;
         call->buffered_metadata[0] = op->data.recv_initial_metadata;
+        grpc_closure_init(&call->receiving_initial_metadata_ready,
+                          receiving_initial_metadata_ready, bctl);
         bctl->recv_initial_metadata = 1;
         stream_op.recv_initial_metadata =
             &call->metadata_batch[1 /* is_receiving */][0 /* is_trailing */];
+        stream_op.recv_initial_metadata_ready =
+            &call->receiving_initial_metadata_ready;
+        num_completion_callbacks_needed++;
         break;
       case GRPC_OP_RECV_MESSAGE:
         /* Flag validation: currently allow no flags */

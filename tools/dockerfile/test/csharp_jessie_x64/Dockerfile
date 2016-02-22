@@ -27,9 +27,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# Dockerfile for running gRPC test suites inside a docker container.
-
-FROM 32bit/debian:jessie
+FROM debian:jessie
 
 # Install Git and basic packages.
 RUN apt-get update && apt-get install -y \
@@ -61,19 +59,11 @@ RUN apt-get update && apt-get install -y \
   wget \
   zip && apt-get clean
 
-# Prepare ccache
-RUN ln -s /usr/bin/ccache /usr/local/bin/gcc
-RUN ln -s /usr/bin/ccache /usr/local/bin/g++
-RUN ln -s /usr/bin/ccache /usr/local/bin/cc
-RUN ln -s /usr/bin/ccache /usr/local/bin/c++
-RUN ln -s /usr/bin/ccache /usr/local/bin/clang
-RUN ln -s /usr/bin/ccache /usr/local/bin/clang++
+#================
+# Build profiling
+RUN apt-get update && apt-get install -y time && apt-get clean
 
-##################
-# C++ dependencies
-RUN apt-get update && apt-get -y install libgflags-dev libgtest-dev libc++-dev clang
-
-#################
+#================
 # C# dependencies
 
 # Update to a newer version of mono
@@ -86,75 +76,22 @@ RUN echo "deb http://download.mono-project.com/repo/debian wheezy-libtiff-compat
 # Install dependencies
 RUN apt-get update && apt-get -y dist-upgrade && apt-get install -y \
     mono-devel \
-    nunit \
-    nunit-console \
-    monodevelop
+    ca-certificates-mono \
+    nuget \
+    && apt-get clean
 
-# Download NuGet
-RUN cd /var/local && wget www.nuget.org/NuGet.exe
-ENV NUGET mono /var/local/NuGet.exe
+# Prepare ccache
+RUN ln -s /usr/bin/ccache /usr/local/bin/gcc
+RUN ln -s /usr/bin/ccache /usr/local/bin/g++
+RUN ln -s /usr/bin/ccache /usr/local/bin/cc
+RUN ln -s /usr/bin/ccache /usr/local/bin/c++
+RUN ln -s /usr/bin/ccache /usr/local/bin/clang
+RUN ln -s /usr/bin/ccache /usr/local/bin/clang++
 
-##################
-# Node dependencies
-
-# Install nvm
-RUN touch .profile
-RUN curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.25.4/install.sh | bash
-RUN /bin/bash -l -c "nvm install 0.12 && npm config set cache /tmp/npm-cache"
-
-##################
-# Ruby dependencies
-
-# Install rvm
-RUN gpg --keyserver hkp://keys.gnupg.net --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3
-RUN \curl -sSL https://get.rvm.io | bash -s stable
-
-# Install Ruby 2.1
-RUN /bin/bash -l -c "rvm install ruby-2.1"
-RUN /bin/bash -l -c "rvm use --default ruby-2.1"
-RUN /bin/bash -l -c "echo 'gem: --no-ri --no-rdoc' > ~/.gemrc"
-RUN /bin/bash -l -c "echo 'export PATH=/usr/local/rvm/bin:$PATH' >> ~/.bashrc"
-RUN /bin/bash -l -c "echo 'rvm --default use ruby-2.1' >> ~/.bashrc"
-RUN /bin/bash -l -c "gem install bundler --no-ri --no-rdoc"
-
-##################
-# Python dependencies
-
-# Install dependencies
-
-RUN apt-get update && apt-get install -y \
-    python-all-dev \
-    python3-all-dev \
-    python-pip \
-    python-virtualenv
-
-# Install Python packages from PyPI
-RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.0.0a2
-
-# For sanity test
-RUN pip install simplejson mako
-
-##################
-# PHP dependencies
-
-# Install dependencies
-
-RUN /bin/bash -l -c "echo 'deb http://packages.dotdeb.org wheezy-php55 all' \
-    >> /etc/apt/sources.list.d/dotdeb.list"
-RUN /bin/bash -l -c "echo 'deb-src http://packages.dotdeb.org wheezy-php55 all' \
-    >> /etc/apt/sources.list.d/dotdeb.list"
-RUN wget http://www.dotdeb.org/dotdeb.gpg -O- | apt-key add -
-
-RUN apt-get update && apt-get install -y \
-    git php5 php5-dev phpunit unzip
-
-##################
+#======================
 # Zookeeper dependencies
+# TODO(jtattermusch): is zookeeper still needed?
 RUN apt-get install -y libzookeeper-mt-dev
-
-##################
-# Build profiling
-RUN apt-get install -y time
 
 RUN mkdir /var/local/jenkins
 

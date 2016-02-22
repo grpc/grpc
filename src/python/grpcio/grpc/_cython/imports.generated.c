@@ -137,6 +137,7 @@ grpc_auth_context_add_cstring_property_type grpc_auth_context_add_cstring_proper
 grpc_auth_context_set_peer_identity_property_name_type grpc_auth_context_set_peer_identity_property_name_import;
 grpc_channel_credentials_release_type grpc_channel_credentials_release_import;
 grpc_google_default_credentials_create_type grpc_google_default_credentials_create_import;
+grpc_set_ssl_roots_override_callback_type grpc_set_ssl_roots_override_callback_import;
 grpc_ssl_credentials_create_type grpc_ssl_credentials_create_import;
 grpc_call_credentials_release_type grpc_call_credentials_release_import;
 grpc_composite_channel_credentials_create_type grpc_composite_channel_credentials_create_import;
@@ -296,6 +297,10 @@ gpr_thd_options_is_joinable_type gpr_thd_options_is_joinable_import;
 gpr_thd_currentid_type gpr_thd_currentid_import;
 gpr_thd_join_type gpr_thd_join_import;
 
+#ifdef __cplusplus
+extern "C" {
+#endif  /* __cpluslus */
+
 void pygrpc_load_imports(HMODULE library) {
   census_initialize_import = (census_initialize_type) GetProcAddress(library, "census_initialize");
   census_shutdown_import = (census_shutdown_type) GetProcAddress(library, "census_shutdown");
@@ -397,6 +402,7 @@ void pygrpc_load_imports(HMODULE library) {
   grpc_auth_context_set_peer_identity_property_name_import = (grpc_auth_context_set_peer_identity_property_name_type) GetProcAddress(library, "grpc_auth_context_set_peer_identity_property_name");
   grpc_channel_credentials_release_import = (grpc_channel_credentials_release_type) GetProcAddress(library, "grpc_channel_credentials_release");
   grpc_google_default_credentials_create_import = (grpc_google_default_credentials_create_type) GetProcAddress(library, "grpc_google_default_credentials_create");
+  grpc_set_ssl_roots_override_callback_import = (grpc_set_ssl_roots_override_callback_type) GetProcAddress(library, "grpc_set_ssl_roots_override_callback");
   grpc_ssl_credentials_create_import = (grpc_ssl_credentials_create_type) GetProcAddress(library, "grpc_ssl_credentials_create");
   grpc_call_credentials_release_import = (grpc_call_credentials_release_type) GetProcAddress(library, "grpc_call_credentials_release");
   grpc_composite_channel_credentials_create_import = (grpc_composite_channel_credentials_create_type) GetProcAddress(library, "grpc_composite_channel_credentials_create");
@@ -556,5 +562,9 @@ void pygrpc_load_imports(HMODULE library) {
   gpr_thd_currentid_import = (gpr_thd_currentid_type) GetProcAddress(library, "gpr_thd_currentid");
   gpr_thd_join_import = (gpr_thd_join_type) GetProcAddress(library, "gpr_thd_join");
 }
+
+#ifdef __cplusplus
+}
+#endif  /* __cpluslus */
 
 #endif /* !GPR_WIN32 */

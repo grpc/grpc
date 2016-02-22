@@ -33,6 +33,10 @@
 
 #include "loader.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif  /* __cpluslus  */
+
 #if GPR_WIN32
 
 int pygrpc_load_core(char *path) {
@@ -56,4 +60,9 @@ int pygrpc_load_core(char *path) {
 
 int pygrpc_load_core(char *path) { return 1; }
 
-#endif
+#endif  /* !GPR_WIN32 */
+
+#ifdef __cplusplus
+}
+#endif  /* __cpluslus */
+

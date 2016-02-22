@@ -202,12 +202,17 @@ static void *connector_pointer_arg_copy(void *p) {
   return GRPC_SECURITY_CONNECTOR_REF(p, "connector_pointer_arg");
 }
 
+static int connector_pointer_cmp(void *a, void *b) { return GPR_ICMP(a, b); }
+
+static const grpc_arg_pointer_vtable connector_pointer_vtable = {
+    connector_pointer_arg_copy, connector_pointer_arg_destroy,
+    connector_pointer_cmp};
+
 grpc_arg grpc_security_connector_to_arg(grpc_security_connector *sc) {
   grpc_arg result;
   result.type = GRPC_ARG_POINTER;
   result.key = GRPC_SECURITY_CONNECTOR_ARG;
-  result.value.pointer.destroy = connector_pointer_arg_destroy;
-  result.value.pointer.copy = connector_pointer_arg_copy;
+  result.value.pointer.vtable = &connector_pointer_vtable;
   result.value.pointer.p = sc;
   return result;
 }

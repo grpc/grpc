@@ -1,7 +1,7 @@
 <?php
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -106,6 +106,34 @@ abstract class AbstractGeneratedCodeTest extends PHPUnit_Framework_TestCase
         $this->assertSame(\Grpc\STATUS_CANCELLED, $status->code);
     }
 
+    public function testCallCredentialsCallback()
+    {
+        $div_arg = new math\DivArgs();
+        $call = self::$client->Div($div_arg, array(), array(
+            'call_credentials_callback' => function ($context) {
+                return array();
+            },
+        ));
+        $call->cancel();
+        list($response, $status) = $call->wait();
+        $this->assertSame(\Grpc\STATUS_CANCELLED, $status->code);
+    }
+
+    public function testCallCredentialsCallback2()
+    {
+        $div_arg = new math\DivArgs();
+        $call = self::$client->Div($div_arg);
+        $call_credentials = Grpc\CallCredentials::createFromPlugin(
+            function ($context) {
+                return array();
+            }
+        );
+        $call->setCallCredentials($call_credentials);
+        $call->cancel();
+        list($response, $status) = $call->wait();
+        $this->assertSame(\Grpc\STATUS_CANCELLED, $status->code);
+    }
+
     /**
      * @expectedException InvalidArgumentException
      */
@@ -116,6 +144,23 @@ abstract class AbstractGeneratedCodeTest extends PHPUnit_Framework_TestCase
         ]);
         $div_arg = new math\DivArgs();
         $invalid_client->InvalidUnaryCall($div_arg);
+    }
+
+    /**
+     * @expectedException Exception
+     */
+    public function testMissingCredentials()
+    {
+        $invalid_client = new DummyInvalidClient('host', [
+        ]);
+    }
+
+    public function testPrimaryUserAgentString()
+    {
+        $invalid_client = new DummyInvalidClient('host', [
+            'credentials' => Grpc\ChannelCredentials::createInsecure(),
+            'grpc.primary_user_agent' => 'testUserAgent',
+        ]);
     }
 
     public function testWriteFlags()
