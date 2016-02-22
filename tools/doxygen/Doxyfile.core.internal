@@ -902,7 +902,7 @@ src/core/tsi/ssl_types.h \
 src/core/tsi/transport_security.h \
 src/core/tsi/transport_security_interface.h \
 src/core/census/aggregation.h \
-src/core/census/log.h \
+src/core/census/mlog.h \
 src/core/census/rpc_metric_id.h \
 src/core/census/grpc_context.c \
 src/core/census/grpc_filter.c \
@@ -1055,7 +1055,7 @@ src/core/tsi/ssl_transport_security.c \
 src/core/tsi/transport_security.c \
 src/core/census/context.c \
 src/core/census/initialize.c \
-src/core/census/log.c \
+src/core/census/mlog.c \
 src/core/census/operation.c \
 src/core/census/placeholders.c \
 src/core/census/tracing.c \
