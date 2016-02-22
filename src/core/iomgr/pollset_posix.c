@@ -42,16 +42,17 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "src/core/iomgr/ev_posix.h"
-#include "src/core/iomgr/iomgr_internal.h"
-#include "src/core/iomgr/socket_utils_posix.h"
-#include "src/core/profiling/timers.h"
-#include "src/core/support/block_annotate.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/thd.h>
 #include <grpc/support/tls.h>
 #include <grpc/support/useful.h>
+
+#include "src/core/iomgr/ev_posix.h"
+#include "src/core/iomgr/iomgr_internal.h"
+#include "src/core/iomgr/socket_utils_posix.h"
+#include "src/core/profiling/timers.h"
+#include "src/core/support/block_annotate.h"
 
 GPR_TLS_DECL(g_current_thread_poller);
 GPR_TLS_DECL(g_current_thread_worker);
@@ -96,6 +97,8 @@ static void push_front_worker(grpc_pollset *p, grpc_pollset_worker *worker) {
   worker->next = worker->prev->next;
   worker->prev->next = worker->next->prev = worker;
 }
+
+size_t grpc_pollset_size(void) { return sizeof(grpc_pollset); }
 
 void grpc_pollset_kick_ext(grpc_pollset *p,
                            grpc_pollset_worker *specific_worker,
@@ -186,8 +189,8 @@ void grpc_kick_poller(void) { grpc_wakeup_fd_wakeup(&grpc_global_wakeup_fd); }
 
 static void become_basic_pollset(grpc_pollset *pollset, grpc_fd *fd_or_null);
 
-void grpc_pollset_init(grpc_pollset *pollset) {
-  gpr_mu_init(&pollset->mu);
+void grpc_pollset_init(grpc_pollset *pollset, gpr_mu *mu) {
+  pollset->mu = mu;
   pollset->root_worker.next = pollset->root_worker.prev = &pollset->root_worker;
   pollset->in_flight_cbs = 0;
   pollset->shutting_down = 0;
@@ -204,7 +207,6 @@ void grpc_pollset_destroy(grpc_pollset *pollset) {
   GPR_ASSERT(!grpc_pollset_has_workers(pollset));
   GPR_ASSERT(pollset->idle_jobs.head == pollset->idle_jobs.tail);
   pollset->vtable->destroy(pollset);
-  gpr_mu_destroy(&pollset->mu);
   while (pollset->local_wakeup_cache) {
     grpc_cached_wakeup_fd *next = pollset->local_wakeup_cache->next;
     grpc_wakeup_fd_destroy(&pollset->local_wakeup_cache->fd);
@@ -227,15 +229,15 @@ void grpc_pollset_reset(grpc_pollset *pollset) {
 
 void grpc_pollset_add_fd(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
                          grpc_fd *fd) {
-  gpr_mu_lock(&pollset->mu);
+  gpr_mu_lock(pollset->mu);
   pollset->vtable->add_fd(exec_ctx, pollset, fd, 1);
 /* the following (enabled only in debug) will reacquire and then release
    our lock - meaning that if the unlocking flag passed to add_fd above is
    not respected, the code will deadlock (in a way that we have a chance of
    debugging) */
 #ifndef NDEBUG
-  gpr_mu_lock(&pollset->mu);
-  gpr_mu_unlock(&pollset->mu);
+  gpr_mu_lock(pollset->mu);
+  gpr_mu_unlock(pollset->mu);
 #endif
 }
 
@@ -246,8 +248,11 @@ static void finish_shutdown(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset) {
 }
 
 void grpc_pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
-                       grpc_pollset_worker *worker, gpr_timespec now,
+                       grpc_pollset_worker **worker_hdl, gpr_timespec now,
                        gpr_timespec deadline) {
+  grpc_pollset_worker worker;
+  *worker_hdl = &worker;
+
   /* pollset->mu already held */
   int added_worker = 0;
   int locked = 1;
@@ -255,16 +260,16 @@ void grpc_pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
   int keep_polling = 0;
   GPR_TIMER_BEGIN("grpc_pollset_work", 0);
   /* this must happen before we (potentially) drop pollset->mu */
-  worker->next = worker->prev = NULL;
-  worker->reevaluate_polling_on_wakeup = 0;
+  worker.next = worker.prev = NULL;
+  worker.reevaluate_polling_on_wakeup = 0;
   if (pollset->local_wakeup_cache != NULL) {
-    worker->wakeup_fd = pollset->local_wakeup_cache;
-    pollset->local_wakeup_cache = worker->wakeup_fd->next;
+    worker.wakeup_fd = pollset->local_wakeup_cache;
+    pollset->local_wakeup_cache = worker.wakeup_fd->next;
   } else {
-    worker->wakeup_fd = gpr_malloc(sizeof(*worker->wakeup_fd));
-    grpc_wakeup_fd_init(&worker->wakeup_fd->fd);
+    worker.wakeup_fd = gpr_malloc(sizeof(*worker.wakeup_fd));
+    grpc_wakeup_fd_init(&worker.wakeup_fd->fd);
   }
-  worker->kicked_specifically = 0;
+  worker.kicked_specifically = 0;
   /* If there's work waiting for the pollset to be idle, and the
      pollset is idle, then do that work */
   if (!grpc_pollset_has_workers(pollset) &&
@@ -281,7 +286,7 @@ void grpc_pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
   /* Give do_promote priority so we don't starve it out */
   if (pollset->in_flight_cbs) {
     GPR_TIMER_MARK("grpc_pollset_work.in_flight_cbs", 0);
-    gpr_mu_unlock(&pollset->mu);
+    gpr_mu_unlock(pollset->mu);
     locked = 0;
     goto done;
   }
@@ -293,13 +298,13 @@ void grpc_pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
     keep_polling = 0;
     if (!pollset->kicked_without_pollers) {
       if (!added_worker) {
-        push_front_worker(pollset, worker);
+        push_front_worker(pollset, &worker);
         added_worker = 1;
-        gpr_tls_set(&g_current_thread_worker, (intptr_t)worker);
+        gpr_tls_set(&g_current_thread_worker, (intptr_t)&worker);
       }
       gpr_tls_set(&g_current_thread_poller, (intptr_t)pollset);
       GPR_TIMER_BEGIN("maybe_work_and_unlock", 0);
-      pollset->vtable->maybe_work_and_unlock(exec_ctx, pollset, worker,
+      pollset->vtable->maybe_work_and_unlock(exec_ctx, pollset, &worker,
                                              deadline, now);
       GPR_TIMER_END("maybe_work_and_unlock", 0);
       locked = 0;
@@ -315,16 +320,16 @@ void grpc_pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
   done:
     if (!locked) {
       queued_work |= grpc_exec_ctx_flush(exec_ctx);
-      gpr_mu_lock(&pollset->mu);
+      gpr_mu_lock(pollset->mu);
       locked = 1;
     }
     /* If we're forced to re-evaluate polling (via grpc_pollset_kick with
        GRPC_POLLSET_REEVALUATE_POLLING_ON_WAKEUP) then we land here and force
        a loop */
-    if (worker->reevaluate_polling_on_wakeup) {
-      worker->reevaluate_polling_on_wakeup = 0;
+    if (worker.reevaluate_polling_on_wakeup) {
+      worker.reevaluate_polling_on_wakeup = 0;
       pollset->kicked_without_pollers = 0;
-      if (queued_work || worker->kicked_specifically) {
+      if (queued_work || worker.kicked_specifically) {
         /* If there's queued work on the list, then set the deadline to be
            immediate so we get back out of the polling loop quickly */
         deadline = gpr_inf_past(GPR_CLOCK_MONOTONIC);
@@ -333,33 +338,34 @@ void grpc_pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
     }
   }
   if (added_worker) {
-    remove_worker(pollset, worker);
+    remove_worker(pollset, &worker);
     gpr_tls_set(&g_current_thread_worker, 0);
   }
   /* release wakeup fd to the local pool */
-  worker->wakeup_fd->next = pollset->local_wakeup_cache;
-  pollset->local_wakeup_cache = worker->wakeup_fd;
+  worker.wakeup_fd->next = pollset->local_wakeup_cache;
+  pollset->local_wakeup_cache = worker.wakeup_fd;
   /* check shutdown conditions */
   if (pollset->shutting_down) {
     if (grpc_pollset_has_workers(pollset)) {
       grpc_pollset_kick(pollset, NULL);
     } else if (!pollset->called_shutdown && pollset->in_flight_cbs == 0) {
       pollset->called_shutdown = 1;
-      gpr_mu_unlock(&pollset->mu);
+      gpr_mu_unlock(pollset->mu);
       finish_shutdown(exec_ctx, pollset);
       grpc_exec_ctx_flush(exec_ctx);
       /* Continuing to access pollset here is safe -- it is the caller's
        * responsibility to not destroy when it has outstanding calls to
        * grpc_pollset_work.
        * TODO(dklempner): Can we refactor the shutdown logic to avoid this? */
-      gpr_mu_lock(&pollset->mu);
+      gpr_mu_lock(pollset->mu);
     } else if (!grpc_closure_list_empty(pollset->idle_jobs)) {
       grpc_exec_ctx_enqueue_list(exec_ctx, &pollset->idle_jobs, NULL);
-      gpr_mu_unlock(&pollset->mu);
+      gpr_mu_unlock(pollset->mu);
       grpc_exec_ctx_flush(exec_ctx);
-      gpr_mu_lock(&pollset->mu);
+      gpr_mu_lock(pollset->mu);
     }
   }
+  *worker_hdl = NULL;
   GPR_TIMER_END("grpc_pollset_work", 0);
 }
 
@@ -424,7 +430,7 @@ static void basic_do_promote(grpc_exec_ctx *exec_ctx, void *args,
    * 4. The pollset may be shutting down.
    */
 
-  gpr_mu_lock(&pollset->mu);
+  gpr_mu_lock(pollset->mu);
   /* First we need to ensure that nobody is polling concurrently */
   GPR_ASSERT(!grpc_pollset_has_workers(pollset));
 
@@ -465,7 +471,7 @@ static void basic_do_promote(grpc_exec_ctx *exec_ctx, void *args,
     }
   }
 
-  gpr_mu_unlock(&pollset->mu);
+  gpr_mu_unlock(pollset->mu);
 
   /* Matching ref in basic_pollset_add_fd */
   GRPC_FD_UNREF(fd, "basicpoll_add");
@@ -518,7 +524,7 @@ static void basic_pollset_add_fd(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
 
 exit:
   if (and_unlock_pollset) {
-    gpr_mu_unlock(&pollset->mu);
+    gpr_mu_unlock(pollset->mu);
   }
 }
 
@@ -554,14 +560,14 @@ static void basic_pollset_maybe_work_and_unlock(grpc_exec_ctx *exec_ctx,
     pfd[2].fd = fd->fd;
     pfd[2].revents = 0;
     GRPC_FD_REF(fd, "basicpoll_begin");
-    gpr_mu_unlock(&pollset->mu);
+    gpr_mu_unlock(pollset->mu);
     pfd[2].events = (short)grpc_fd_begin_poll(fd, pollset, worker, POLLIN,
                                               POLLOUT, &fd_watcher);
     if (pfd[2].events != 0) {
       nfds++;
     }
   } else {
-    gpr_mu_unlock(&pollset->mu);
+    gpr_mu_unlock(pollset->mu);
   }
 
   /* TODO(vpai): Consider first doing a 0 timeout poll here to avoid

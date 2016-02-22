@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -73,7 +73,5 @@ struct grpc_pollset {
 };
 
 extern gpr_mu grpc_polling_mu;
-
-#define GRPC_POLLSET_MU(pollset) (&grpc_polling_mu)
 
 #endif /* GRPC_INTERNAL_CORE_IOMGR_POLLSET_WINDOWS_H */
