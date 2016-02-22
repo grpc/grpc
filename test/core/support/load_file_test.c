@@ -38,7 +38,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/slice.h>
 
-#include "src/core/support/file.h"
+#include "src/core/support/load_file.h"
 #include "src/core/support/string.h"
 #include "test/core/util/test_config.h"
 

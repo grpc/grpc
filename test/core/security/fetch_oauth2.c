@@ -43,7 +43,7 @@
 #include <grpc/support/sync.h>
 
 #include "src/core/security/credentials.h"
-#include "src/core/support/file.h"
+#include "src/core/support/load_file.h"
 #include "test/core/security/oauth2_utils.h"
 
 static grpc_call_credentials *create_refresh_token_creds(
