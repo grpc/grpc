@@ -133,6 +133,26 @@
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
+    "name": "census_log_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ]
+  }, 
+  {
+    "args": [], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
     "name": "channel_create_test", 
     "platforms": [
       "linux", 
@@ -1719,6 +1739,26 @@
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c++", 
+    "name": "alarm_cpp_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ]
+  }, 
+  {
+    "args": [], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c++", 
     "name": "async_end2end_test", 
     "platforms": [
       "linux", 
@@ -2055,6 +2095,24 @@
       "mac", 
       "posix", 
       "windows"
+    ]
+  }, 
+  {
+    "args": [], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c++", 
+    "name": "qps_openloop_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix"
     ]
   }, 
   {

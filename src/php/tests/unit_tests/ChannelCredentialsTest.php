@@ -1,6 +1,7 @@
+<?php
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,37 +32,42 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CPP_FIXED_SIZE_THREAD_POOL_H
-#define GRPC_INTERNAL_CPP_FIXED_SIZE_THREAD_POOL_H
+class ChanellCredentialsTest extends PHPUnit_Framework_TestCase
+{
+    public function setUp()
+    {
+    }
 
-#include <queue>
-#include <vector>
+    public function tearDown()
+    {
+    }
 
-#include <grpc++/impl/sync.h>
-#include <grpc++/impl/thd.h>
-#include <grpc++/support/config.h>
+    public function testCreateDefault()
+    {
+        $channel_credentials = Grpc\ChannelCredentials::createDefault();
+        $this->assertSame('Grpc\ChannelCredentials', get_class($channel_credentials));
+    }
 
-#include "src/cpp/server/thread_pool_interface.h"
+    /**
+     * @expectedException InvalidArgumentException
+     */
+    public function testInvalidCreateSsl()
+    {
+        $channel_credentials = Grpc\ChannelCredentials::createSsl([]);
+    }
 
-namespace grpc {
+    /**
+     * @expectedException InvalidArgumentException
+     */
+    public function testInvalidCreateComposite()
+    {
+        $channel_credentials = Grpc\ChannelCredentials::createComposite(
+            'something', 'something');
+    }
 
-class FixedSizeThreadPool GRPC_FINAL : public ThreadPoolInterface {
- public:
-  explicit FixedSizeThreadPool(int num_threads);
-  ~FixedSizeThreadPool();
-
-  void Add(const std::function<void()>& callback) GRPC_OVERRIDE;
-
- private:
-  grpc::mutex mu_;
-  grpc::condition_variable cv_;
-  bool shutdown_;
-  std::queue<std::function<void()>> callbacks_;
-  std::vector<grpc::thread*> threads_;
-
-  void ThreadFunc();
-};
-
-}  // namespace grpc
-
-#endif  // GRPC_INTERNAL_CPP_FIXED_SIZE_THREAD_POOL_H
+    public function testCreateInsecure()
+    {
+        $channel_credentials = Grpc\ChannelCredentials::createInsecure();
+        $this->assertNull($channel_credentials);
+    }
+}

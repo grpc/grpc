@@ -35,11 +35,11 @@
  * WARNING: Auto-generated code.
  *
  * To make changes to this file, change
- *tools/codegen/core/gen_static_metadata.py,
+ * tools/codegen/core/gen_static_metadata.py,
  * and then re-run it.
  *
  * See metadata.h for an explanation of the interface here, and metadata.c for
- *an
+ * an
  * explanation of what's going on.
  */
 
@@ -69,21 +69,21 @@ const char *const grpc_static_metadata_strings[GRPC_STATIC_MDSTR_COUNT] = {
     "0", "1", "2", "200", "204", "206", "304", "400", "404", "500", "accept",
     "accept-charset", "accept-encoding", "accept-language", "accept-ranges",
     "access-control-allow-origin", "age", "allow", "application/grpc",
-    ":authority", "authorization", "cache-control", "census", "census-bin",
-    "content-disposition", "content-encoding", "content-language",
-    "content-length", "content-location", "content-range", "content-type",
-    "cookie", "date", "deflate", "deflate,gzip", "", "etag", "expect",
-    "expires", "from", "GET", "grpc", "grpc-accept-encoding", "grpc-encoding",
-    "grpc-internal-encoding-request", "grpc-message", "grpc-status",
-    "grpc-timeout", "gzip", "gzip, deflate", "host", "http", "https",
-    "identity", "identity,deflate", "identity,deflate,gzip", "identity,gzip",
-    "if-match", "if-modified-since", "if-none-match", "if-range",
-    "if-unmodified-since", "last-modified", "link", "location", "max-forwards",
-    ":method", ":path", "POST", "proxy-authenticate", "proxy-authorization",
-    "range", "referer", "refresh", "retry-after", ":scheme", "server",
-    "set-cookie", "/", "/index.html", ":status", "strict-transport-security",
-    "te", "trailers", "transfer-encoding", "user-agent", "vary", "via",
-    "www-authenticate"};
+    ":authority", "authorization", "cache-control", "census-bin",
+    "census-binary-bin", "content-disposition", "content-encoding",
+    "content-language", "content-length", "content-location", "content-range",
+    "content-type", "cookie", "date", "deflate", "deflate,gzip", "", "etag",
+    "expect", "expires", "from", "GET", "grpc", "grpc-accept-encoding",
+    "grpc-encoding", "grpc-internal-encoding-request", "grpc-message",
+    "grpc-status", "grpc-timeout", "gzip", "gzip, deflate", "host", "http",
+    "https", "identity", "identity,deflate", "identity,deflate,gzip",
+    "identity,gzip", "if-match", "if-modified-since", "if-none-match",
+    "if-range", "if-unmodified-since", "last-modified", "link", "location",
+    "max-forwards", ":method", ":path", "POST", "proxy-authenticate",
+    "proxy-authorization", "range", "referer", "refresh", "retry-after",
+    ":scheme", "server", "set-cookie", "/", "/index.html", ":status",
+    "strict-transport-security", "te", "trailers", "transfer-encoding",
+    "user-agent", "vary", "via", "www-authenticate"};
 
 const uint8_t grpc_static_accept_encoding_metadata[8] = {0,  29, 26, 30,
                                                          28, 32, 27, 31};

@@ -197,9 +197,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
   workers.resize(num_clients + num_servers);
 
   gpr_timespec deadline =
-      gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                   gpr_time_from_seconds(
-                       warmup_seconds + benchmark_seconds + 20, GPR_TIMESPAN));
+      GRPC_TIMEOUT_SECONDS_TO_DEADLINE(warmup_seconds + benchmark_seconds + 20);
 
   // Start servers
   using runsc::ServerData;
