@@ -82,6 +82,7 @@ static const char* kRandomFile = "test/cpp/interop/rnd.dat";
 
 const char kEchoInitialMetadataKey[] = "x-grpc-test-echo-initial";
 const char kEchoTrailingBinMetadataKey[] = "x-grpc-test-echo-trailing-bin";
+const char kEchoUserAgentKey[] = "x-grpc-test-echo-useragent";
 
 void MaybeEchoMetadata(ServerContext* context) {
   const auto& client_metadata = context->client_metadata();
@@ -97,6 +98,15 @@ void MaybeEchoMetadata(ServerContext* context) {
     context->AddTrailingMetadata(
         kEchoTrailingBinMetadataKey,
         grpc::string(iter->second.begin(), iter->second.end()));
+  }
+  // Check if client sent a magic key in the header that makes us echo
+  // back the user-agent (for testing purpose)
+  iter = client_metadata.find(kEchoUserAgentKey);
+  if (iter != client_metadata.end()) {
+    iter = client_metadata.find("user-agent");
+    if (iter != client_metadata.end()) {
+      context->AddInitialMetadata(kEchoUserAgentKey, iter->second.data());
+    }
   }
 }
 
@@ -150,6 +160,7 @@ class TestServiceImpl : public TestService::Service {
  public:
   Status EmptyCall(ServerContext* context, const grpc::testing::Empty* request,
                    grpc::testing::Empty* response) {
+    MaybeEchoMetadata(context);
     return Status::OK;
   }
 
