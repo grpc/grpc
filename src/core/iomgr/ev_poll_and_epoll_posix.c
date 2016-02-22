@@ -31,16 +31,16 @@
  *
  */
 
- /* This file will be removed shortly: it's here to keep refactoring
-  * steps simple and auditable.
-  * It's the combination of the old files:
-  *  - fd_posix.{h,c}
-  *  - pollset_posix.{h,c}
-  *  - pullset_multipoller_with_{poll,epoll}.{h,c}
-  * The new version will be split into:
-  *  - ev_poll_posix.{h,c}
-  *  - ev_epoll_posix.{h,c}
-  */
+/* This file will be removed shortly: it's here to keep refactoring
+ * steps simple and auditable.
+ * It's the combination of the old files:
+ *  - fd_posix.{h,c}
+ *  - pollset_posix.{h,c}
+ *  - pullset_multipoller_with_{poll,epoll}.{h,c}
+ * The new version will be split into:
+ *  - ev_poll_posix.{h,c}
+ *  - ev_epoll_posix.{h,c}
+ */
 
 #include <grpc/support/port_platform.h>
 
@@ -292,11 +292,11 @@ int grpc_fd_is_orphaned(grpc_fd *fd) {
 }
 
 static void pollset_kick_locked(grpc_fd_watcher *watcher) {
-  gpr_mu_lock(GRPC_POLLSET_MU(watcher->pollset));
+  gpr_mu_lock(watcher->pollset->mu);
   GPR_ASSERT(watcher->worker);
   grpc_pollset_kick_ext(watcher->pollset, watcher->worker,
                         GRPC_POLLSET_REEVALUATE_POLLING_ON_WAKEUP);
-  gpr_mu_unlock(GRPC_POLLSET_MU(watcher->pollset));
+  gpr_mu_unlock(watcher->pollset->mu);
 }
 
 static void maybe_wake_one_watcher_locked(grpc_fd *fd) {
