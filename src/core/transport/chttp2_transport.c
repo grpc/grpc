@@ -598,7 +598,7 @@ static void lock(grpc_chttp2_transport *t) { gpr_mu_lock(&t->mu); }
 static void unlock(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t) {
   GPR_TIMER_BEGIN("unlock", 0);
   if (!t->writing_active && !t->closed &&
-      grpc_chttp2_unlocking_check_writes(&t->global, &t->writing,
+      grpc_chttp2_unlocking_check_writes(exec_ctx, &t->global, &t->writing,
                                          t->parsing_active)) {
     t->writing_active = 1;
     REF_TRANSPORT(t, "writing");
