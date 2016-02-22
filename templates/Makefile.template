@@ -159,7 +159,7 @@
   else
   ifeq ($(SYSTEM),Darwin)
   ifeq ($(origin AR), default)
-  AR = libtool -o
+  AR = libtool -no_warning_for_no_symbols -o
   endif
   STRIP ?= strip -x
   else
@@ -790,8 +790,10 @@
 
   static_c: pc_c pc_c_unsecure cache.mk pc_c_zookeeper\
   % for lib in libs:
+  % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.build == 'all' and lib.language == 'c' and not lib.get('external_deps', None):
    $(LIBDIR)/$(CONFIG)/lib${lib.name}.a\
+  % endif
   % endif
   % endfor
    static_zookeeper_libs
@@ -799,8 +801,10 @@
 
   static_cxx: pc_cxx pc_cxx_unsecure cache.mk \
   % for lib in libs:
+  % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.build == 'all' and lib.language == 'c++':
    $(LIBDIR)/$(CONFIG)/lib${lib.name}.a\
+  % endif
   % endif
   % endfor
 
@@ -809,39 +813,49 @@
 
   shared_c: pc_c pc_c_unsecure cache.mk pc_c_zookeeper\
   % for lib in libs:
+  % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.build == 'all' and lib.language == 'c' and not lib.get('external_deps', None):
    $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT)\
+  % endif
   % endif
   % endfor
    shared_zookeeper_libs
 
   shared_cxx: pc_cxx pc_cxx_unsecure cache.mk\
   % for lib in libs:
+  % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.build == 'all' and lib.language == 'c++':
    $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT)\
+  % endif
   % endif
   % endfor
 
 
   shared_csharp: shared_c \
   % for lib in libs:
+  % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.build == 'all' and lib.language == 'csharp':
    $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT)\
+  % endif
   % endif
   % endfor
 
   ifeq ($(HAS_ZOOKEEPER),true)
   static_zookeeper_libs:\
   % for lib in libs:
+  % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.build == 'all' and lib.language == 'c' and 'zookeeper' in lib.get('external_deps', []):
    $(LIBDIR)/$(CONFIG)/lib${lib.name}.a\
+  % endif
   % endif
   % endfor
 
   shared_zookeeper_libs:\
   % for lib in libs:
+  % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.build == 'all' and lib.language == 'c' and 'zookeeper' in lib.get('external_deps', []):
    $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT)\
+  % endif
   % endif
   % endfor
 
@@ -861,8 +875,10 @@
 
   privatelibs_c: \
   % for lib in libs:
+  % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.build == 'private' and lib.language == 'c' and not lib.get('external_deps', None) and not lib.boringssl:
    $(LIBDIR)/$(CONFIG)/lib${lib.name}.a\
+  % endif
   % endif
   % endfor
 
@@ -882,8 +898,10 @@
 
   privatelibs_cxx: \
   % for lib in libs:
+  % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.build == 'private' and lib.language == 'c++' and not lib.get('external_deps', None):
    $(LIBDIR)/$(CONFIG)/lib${lib.name}.a\
+  % endif
   % endif
   % endfor
 
@@ -891,8 +909,10 @@
   ifeq ($(HAS_ZOOKEEPER),true)
   privatelibs_zookeeper: \
   % for lib in libs:
+  % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.build == 'private' and lib.language == 'c++' and zookeeper in lib.get('external_deps', []):
    $(LIBDIR)/$(CONFIG)/lib${lib.name}.a\
+  % endif
   % endif
   % endfor
 
@@ -1044,6 +1064,7 @@
   strip-static_c: static_c
   ifeq ($(CONFIG),opt)
   % for lib in libs:
+  % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.language == "c":
   % if lib.build == "all":
   % if not lib.get('external_deps', None):
@@ -1052,14 +1073,17 @@
   % endif
   % endif
   % endif
+  % endif
   % endfor
   ifeq ($(HAS_ZOOKEEPER),true)
   % for lib in libs:
+  % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.language == "c":
   % if lib.build == "all":
   % if 'zookeeper' in lib.get('external_deps', []):
   	$(E) "[STRIP]   Stripping lib${lib.name}.a"
   	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/lib${lib.name}.a
+  % endif
   % endif
   % endif
   % endif
@@ -1070,10 +1094,12 @@
   strip-static_cxx: static_cxx
   ifeq ($(CONFIG),opt)
   % for lib in libs:
+  % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.language == "c++":
   % if lib.build == "all":
   	$(E) "[STRIP]   Stripping lib${lib.name}.a"
   	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/lib${lib.name}.a
+  % endif
   % endif
   % endif
   % endfor
@@ -1082,6 +1108,7 @@
   strip-shared_c: shared_c
   ifeq ($(CONFIG),opt)
   % for lib in libs:
+  % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.language == "c":
   % if lib.build == "all":
   % if not lib.get('external_deps', None):
@@ -1090,14 +1117,17 @@
   % endif
   % endif
   % endif
+  % endif
   % endfor
   ifeq ($(HAS_ZOOKEEPER),true)
   % for lib in libs:
+  % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.language == "c":
   % if lib.build == "all":
   % if 'zookeeper' in lib.get('external_deps', []):
   	$(E) "[STRIP]   Stripping $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT)"
   	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT)
+  % endif
   % endif
   % endif
   % endif
@@ -1108,10 +1138,12 @@
   strip-shared_cxx: shared_cxx
   ifeq ($(CONFIG),opt)
   % for lib in libs:
+  % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.language == "c++":
   % if lib.build == "all":
   	$(E) "[STRIP]   Stripping $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT)"
   	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT)
+  % endif
   % endif
   % endif
   % endfor
@@ -1120,10 +1152,12 @@
   strip-shared_csharp: shared_csharp
   ifeq ($(CONFIG),opt)
   % for lib in libs:
+  % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.language == "csharp":
   % if lib.build == "all":
   	$(E) "[STRIP]   Stripping $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT)"
   	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT)
+  % endif
   % endif
   % endif
   % endfor
@@ -1234,6 +1268,7 @@
 
   install-static_c: static_c strip-static_c install-pkg-config_c
   % for lib in libs:
+  % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.language == "c":
   % if lib.build == "all":
   % if not lib.get('external_deps', None):
@@ -1243,15 +1278,18 @@
   % endif
   % endif
   % endif
+  % endif
   % endfor
   ifeq ($(HAS_ZOOKEEPER),true)
   % for lib in libs:
+  % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.language == "c":
   % if lib.build == "all":
   % if 'zookeeper' in lib.get('external_deps', []):
   	$(E) "[INSTALL] Installing lib${lib.name}.a"
   	$(Q) $(INSTALL) -d $(prefix)/lib
   	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/lib${lib.name}.a $(prefix)/lib/lib${lib.name}.a
+  % endif
   % endif
   % endif
   % endif
@@ -1260,6 +1298,7 @@
 
   install-static_cxx: static_cxx strip-static_cxx install-pkg-config_cxx
   % for lib in libs:
+  % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.language == "c++":
   % if lib.build == "all":
   	$(E) "[INSTALL] Installing lib${lib.name}.a"
@@ -1267,10 +1306,12 @@
   	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/lib${lib.name}.a $(prefix)/lib/lib${lib.name}.a
   % endif
   % endif
+  % endif
   % endfor
 
   <%def name="install_shared(lang_filter)">\
   % for lib in libs:
+  % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.language == lang_filter:
   % if lib.build == "all":
   % if not lib.get('external_deps', None):
@@ -1286,9 +1327,11 @@
   % endif
   % endif
   % endif
+  % endif
   % endfor
   ifeq ($(HAS_ZOOKEEPER),true)
   % for lib in libs:
+  % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.language == lang_filter:
   % if lib.build == "all":
   % if 'zookeeper' in lib.get('external_deps', []):
@@ -1301,6 +1344,7 @@
   	$(Q) ln -sf $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT) $(prefix)/lib/lib${lib.name}.so.${settings.core_version.major}
   	$(Q) ln -sf $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT) $(prefix)/lib/lib${lib.name}.so
   endif
+  % endif
   % endif
   % endif
   % endif
@@ -1383,7 +1427,9 @@
   # The various libraries
 
   % for lib in libs:
+  % if 'Makefile' in lib.get('build_system', ['Makefile']):
   ${makelib(lib)}
+  % endif
   % endfor
 
 
@@ -1498,7 +1544,7 @@
   % endif
 
   ifeq ($(SYSTEM),Darwin)
-  	$(Q) ranlib $(LIBDIR)/$(CONFIG)/lib${lib.name}.a
+  	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/lib${lib.name}.a
   endif
 
   <%
