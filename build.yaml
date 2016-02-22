@@ -598,6 +598,8 @@ libs:
   deps:
   - gpr
   - grpc
+  build_system:
+  - visual_studio
   deps_linkage: static
   dll_def: grpc.def
   vs_config_type: DynamicLibrary
