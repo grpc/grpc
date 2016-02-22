@@ -35,12 +35,13 @@
 #define GRPC_INTERNAL_CORE_IOMGR_EV_POSIX_H
 
 #include "src/core/iomgr/exec_ctx.h"
+#include "src/core/iomgr/pollset.h"
 
 typedef struct grpc_fd grpc_fd;
-typedef struct grpc_pollset grpc_pollset;
-typedef struct grpc_pollset_worker grpc_pollset_worker;
 
 typedef struct grpc_event_engine_vtable {
+  size_t pollset_size;
+
   grpc_fd *(*fd_create)(int fd, const char *name);
   int (*fd_wrapped_fd)(grpc_fd *fd);
   void (*fd_orphan)(grpc_exec_ctx *exec_ctx, grpc_fd *fd, grpc_closure *on_done,
@@ -50,6 +51,17 @@ typedef struct grpc_event_engine_vtable {
                             grpc_closure *closure);
   void (*fd_notify_on_write)(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
                              grpc_closure *closure);
+
+  void (*pollset_init)(grpc_pollset *pollset, gpr_mu *mu);
+  void (*pollset_shutdown)(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
+                           grpc_closure *closure);
+  void (*pollset_reset)(grpc_pollset *pollset);
+  void (*pollset_destroy)(grpc_pollset *pollset);
+  void (*pollset_work)(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
+                       grpc_pollset_worker **worker, gpr_timespec now,
+                       gpr_timespec deadline);
+  void (*pollset_kick)(grpc_pollset *pollset,
+                       grpc_pollset_worker *specific_worker);
 } grpc_event_engine_vtable;
 
 extern const grpc_event_engine_vtable *grpc_event_engine;

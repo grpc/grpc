@@ -34,12 +34,8 @@
 #ifndef GRPC_INTERNAL_CORE_IOMGR_POLLSET_SET_POSIX_H
 #define GRPC_INTERNAL_CORE_IOMGR_POLLSET_SET_POSIX_H
 
-<<<<<<< HEAD
 #include <grpc/support/sync.h>
 #include "src/core/iomgr/ev_posix.h"
-=======
-#include "src/core/iomgr/fd_posix.h"
->>>>>>> c605c62b30ca15c83a7c4e98386062c62de0d36d
 
 typedef struct grpc_pollset_set {
   gpr_mu mu;
