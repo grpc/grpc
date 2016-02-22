@@ -302,6 +302,16 @@ void Init_grpc_c() {
     return;
   }
 
+  /* ruby_vm_at_exit doesn't seem to be working. It would crash once every
+   * blue moon, and some users are getting it repeatedly. See the discussions
+   *  - https://github.com/grpc/grpc/pull/5337
+   *  - https://bugs.ruby-lang.org/issues/12095
+   *
+   * In order to still be able to handle the (unlikely) situation where the
+   * extension is loaded by a first Ruby VM that is subsequently destroyed,
+   * then loaded again by another VM within the same process, we need to
+   * schedule our initialization and destruction only once.
+   */
   gpr_once_init(&g_once_init, grpc_ruby_once_init);
 
   grpc_rb_mGRPC = rb_define_module("GRPC");
