@@ -49,18 +49,8 @@
     - a completion queue might keep a pollset with an entry for each transport
       that is servicing a call that it's tracking */
 
-<<<<<<< HEAD
-#ifdef GPR_POSIX_SOCKET
-#include "src/core/iomgr/ev_posix.h"
-#endif
-
-#ifdef GPR_WIN32
-#include "src/core/iomgr/pollset_windows.h"
-#endif
-=======
 typedef struct grpc_pollset grpc_pollset;
 typedef struct grpc_pollset_worker grpc_pollset_worker;
->>>>>>> c605c62b30ca15c83a7c4e98386062c62de0d36d
 
 size_t grpc_pollset_size(void);
 void grpc_pollset_init(grpc_pollset *pollset, gpr_mu *mu);
