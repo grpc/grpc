@@ -3420,6 +3420,16 @@
   {
     "deps": [
       "gpr", 
+      "grpc"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "grpc_dll", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "gpr", 
       "gpr_test_util", 
       "grpc"
     ], 
