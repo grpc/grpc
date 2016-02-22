@@ -73,8 +73,9 @@ static void client_setup_transport(grpc_exec_ctx *exec_ctx, void *ts,
                                    grpc_transport *transport) {
   sp_client_setup *cs = ts;
 
-  cs->f->client = grpc_channel_create(
-      exec_ctx, "socketpair-target", cs->client_args, GRPC_CLIENT_DIRECT_CHANNEL, transport);
+  cs->f->client =
+      grpc_channel_create(exec_ctx, "socketpair-target", cs->client_args,
+                          GRPC_CLIENT_DIRECT_CHANNEL, transport);
 }
 
 static grpc_end2end_test_fixture chttp2_create_fixture_socketpair(

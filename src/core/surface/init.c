@@ -109,7 +109,8 @@ static bool maybe_add_http_filter(grpc_channel_stack_builder *builder,
 static void register_builtin_channel_init() {
   grpc_channel_init_register_stage(GRPC_CLIENT_CHANNEL, INT_MAX, prepend_filter,
                                    (void *)&grpc_compress_filter);
-  grpc_channel_init_register_stage(GRPC_CLIENT_DIRECT_CHANNEL, INT_MAX, prepend_filter,
+  grpc_channel_init_register_stage(GRPC_CLIENT_DIRECT_CHANNEL, INT_MAX,
+                                   prepend_filter,
                                    (void *)&grpc_compress_filter);
   grpc_channel_init_register_stage(GRPC_CLIENT_UCHANNEL, INT_MAX,
                                    prepend_filter,
@@ -182,7 +183,8 @@ void grpc_init(void) {
     grpc_register_tracer("http", &grpc_http_trace);
     grpc_register_tracer("flowctl", &grpc_flowctl_trace);
     grpc_register_tracer("connectivity_state", &grpc_connectivity_state_trace);
-    grpc_register_tracer("channel_stack_builder", &grpc_trace_channel_stack_builder);
+    grpc_register_tracer("channel_stack_builder",
+                         &grpc_trace_channel_stack_builder);
     grpc_security_pre_init();
     grpc_iomgr_init();
     grpc_executor_init();
