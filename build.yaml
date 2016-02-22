@@ -14,12 +14,12 @@ filegroups:
   - include/grpc/census.h
   headers:
   - src/core/census/aggregation.h
-  - src/core/census/log.h
+  - src/core/census/mlog.h
   - src/core/census/rpc_metric_id.h
   src:
   - src/core/census/context.c
   - src/core/census/initialize.c
-  - src/core/census/log.c
+  - src/core/census/mlog.c
   - src/core/census/operation.c
   - src/core/census/placeholders.c
   - src/core/census/tracing.c
@@ -598,6 +598,8 @@ libs:
   deps:
   - gpr
   - grpc
+  build_system:
+  - visual_studio
   deps_linkage: static
   dll_def: grpc.def
   vs_config_type: DynamicLibrary
@@ -982,7 +984,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/census/log_test.c
+  - test/core/census/mlog_test.c
   deps:
   - grpc_test_util
   - grpc
