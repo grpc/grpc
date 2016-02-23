@@ -638,9 +638,6 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\iomgr\timer_heap.h">
       <Filter>src\core\iomgr</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\iomgr\timer_internal.h">
-      <Filter>src\core\iomgr</Filter>
-    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\iomgr\udp_server.h">
       <Filter>src\core\iomgr</Filter>
     </ClInclude>
