@@ -86,11 +86,6 @@ docker run \
   $DOCKER_IMAGE_NAME \
   bash -l "/var/local/jenkins/grpc/$DOCKER_RUN_SCRIPT" || DOCKER_FAILED="true"
 
-if [ "$XML_REPORT" != "" ]
-then
-  docker cp "$CONTAINER_NAME:/var/local/git/grpc/$XML_REPORT" $git_root || true
-fi
-
 docker cp "$CONTAINER_NAME:/var/local/git/grpc/reports.zip" $git_root || true
 unzip -o $git_root/reports.zip -d $git_root || true
 rm -f reports.zip
