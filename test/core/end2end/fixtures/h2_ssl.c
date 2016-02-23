@@ -43,7 +43,7 @@
 #include "src/core/channel/channel_args.h"
 #include "src/core/security/credentials.h"
 #include "src/core/support/env.h"
-#include "src/core/support/load_file.h"
+#include "src/core/support/tmpfile.h"
 #include "src/core/support/string.h"
 #include "test/core/end2end/data/ssl_test_data.h"
 #include "test/core/util/port.h"

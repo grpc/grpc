@@ -47,7 +47,7 @@
 #include "src/core/httpcli/httpcli.h"
 #include "src/core/security/json_token.h"
 #include "src/core/support/env.h"
-#include "src/core/support/load_file.h"
+#include "src/core/support/tmpfile.h"
 #include "src/core/support/string.h"
 #include "test/core/util/test_config.h"
 

@@ -397,7 +397,7 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\transport\transport.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\transport\transport_impl.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\security\auth_filters.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\security\base64.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\security\b64.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\security\credentials.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\security\handshake.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\security\json_token.h" />
@@ -411,7 +411,7 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\tsi\transport_security.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\tsi\transport_security_interface.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\census\aggregation.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\census\log.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\census\mlog.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\census\rpc_metric_id.h" />
   </ItemGroup>
   <ItemGroup>
@@ -473,7 +473,7 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\client_config\uri_parser.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\compression\algorithm.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\compression\compression_algorithm.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\compression\message_compress.c">
     </ClCompile>
@@ -673,7 +673,7 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\httpcli\httpcli_security_connector.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\security\base64.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\security\b64.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\security\client_auth_filter.c">
     </ClCompile>
@@ -717,7 +717,7 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\census\initialize.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\census\log.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\census\mlog.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\census\operation.c">
     </ClCompile>
