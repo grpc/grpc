@@ -110,6 +110,8 @@ virtualenv $VENV_NAME
 . $VENV_NAME/bin/activate
 popd
 
+# this should be the same version as the submodule we compile against
+# ideally we'd update this as a template to ensure that
 pip install protobuf==3.0.0b2
 
 pushd "$(dirname $1)" > /dev/null
