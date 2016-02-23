@@ -2787,6 +2787,10 @@ node_modules:
   - src/node/ext/server.cc
   - src/node/ext/server_credentials.cc
   - src/node/ext/timeval.cc
+openssl_fallback:
+  base_uri: http://openssl.org/source/
+  extraction_dir: openssl-1.0.2f
+  tarball: openssl-1.0.2f.tar.gz
 python_dependencies:
   deps:
   - grpc

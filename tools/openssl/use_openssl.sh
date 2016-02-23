@@ -1,4 +1,6 @@
-# Copyright 2016, Google Inc.
+#!/bin/bash
+
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -27,61 +29,33 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-FROM debian:squeeze
+set -ex
 
-# Install Git and basic packages.
-RUN apt-get update && apt-get install -y \
-  autoconf \
-  autotools-dev \
-  build-essential \
-  bzip2 \
-  ccache \
-  curl \
-  gcc \
-  gcc-multilib \
-  git \
-  gyp \
-  lcov \
-  libc6 \
-  libc6-dbg \
-  libc6-dev \
-  libgtest-dev \
-  libtool \
-  make \
-  perl \
-  strace \
-  python-dev \
-  python-setuptools \
-  python-yaml \
-  telnet \
-  unzip \
-  wget \
-  zip && apt-get clean
+cd $(dirname $0)/../..
+set root=`pwd`
+CC=${CC:-cc}
 
-#================
-# Build profiling
-RUN apt-get update && apt-get install -y time && apt-get clean
+# allow openssl to be pre-downloaded
+if [ ! -e third_party/openssl-1.0.2f.tar.gz ]
+then
+  echo "Downloading http://openssl.org/source/openssl-1.0.2f.tar.gz to third_party/openssl-1.0.2f.tar.gz"
+  wget http://openssl.org/source/openssl-1.0.2f.tar.gz -O third_party/openssl-1.0.2f.tar.gz
+fi
 
+# clean openssl directory
+rm -rf third_party/openssl-1.0.2f
 
-# libgflags-dev is not available on squeezy
-RUN apt-get update && apt-get -y install libgtest-dev libc++-dev clang && apt-get clean
+# extract archive
+cd third_party
+tar xfz openssl-1.0.2f.tar.gz
 
-RUN apt-get update && apt-get -y install python-pip && apt-get clean
-RUN pip install argparse
+# build openssl
+cd openssl-1.0.2f
+CC="$CC -fPIC -fvisibility=hidden" ./config no-asm
+make
 
-RUN wget http://openssl.org/source/openssl-1.0.2f.tar.gz
-ADD post-git-setup.sh /
-
-# Prepare ccache
-RUN ln -s /usr/bin/ccache /usr/local/bin/gcc
-RUN ln -s /usr/bin/ccache /usr/local/bin/g++
-RUN ln -s /usr/bin/ccache /usr/local/bin/cc
-RUN ln -s /usr/bin/ccache /usr/local/bin/c++
-RUN ln -s /usr/bin/ccache /usr/local/bin/clang
-RUN ln -s /usr/bin/ccache /usr/local/bin/clang++
-
-
-RUN mkdir /var/local/jenkins
-
-# Define the default command.
-CMD ["bash"]
+# generate the 'grpc_obj' directory needed by the makefile
+mkdir grpc_obj
+cd grpc_obj
+ar x ../libcrypto.a
+ar x ../libssl.a

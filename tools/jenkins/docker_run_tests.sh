@@ -43,6 +43,8 @@ chown $(whoami) $XDG_CACHE_HOME
 mkdir -p /var/local/git
 git clone --recursive /var/local/jenkins/grpc /var/local/git/grpc
 
+[ -e /post-git-setup.sh ] && /post-git-setup.sh
+
 mkdir -p reports
 
 exit_code=0

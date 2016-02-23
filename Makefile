@@ -426,6 +426,7 @@ endif
 
 OPENSSL_ALPN_CHECK_CMD = $(CC) $(CPPFLAGS) $(CFLAGS) -o $(TMPOUT) test/build/openssl-alpn.c $(addprefix -l, $(OPENSSL_LIBS)) $(LDFLAGS)
 OPENSSL_NPN_CHECK_CMD = $(CC) $(CPPFLAGS) $(CFLAGS) -o $(TMPOUT) test/build/openssl-npn.c $(addprefix -l, $(OPENSSL_LIBS)) $(LDFLAGS)
+BORINGSSL_COMPILE_CHECK_CMD = $(CC) $(CPPFLAGS) -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -o $(TMPOUT) test/build/boringssl.c $(LDFLAGS)
 ZLIB_CHECK_CMD = $(CC) $(CPPFLAGS) $(CFLAGS) -o $(TMPOUT) test/build/zlib.c -lz $(LDFLAGS)
 PROTOBUF_CHECK_CMD = $(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $(TMPOUT) test/build/protobuf.cc -lprotobuf $(LDFLAGS)
 
@@ -510,10 +511,13 @@ HAS_ZOOKEEPER = $(shell $(ZOOKEEPER_CHECK_CMD) 2> /dev/null && echo true || echo
 # Note that for testing purposes, one can do:
 #   make HAS_EMBEDDED_OPENSSL_ALPN=false
 # to emulate the fact we do not have OpenSSL in the third_party folder.
-ifeq ($(wildcard third_party/boringssl/include/openssl/ssl.h),)
+ifneq ($(wildcard third_party/openssl-1.0.2f/libssl.a),)
+HAS_EMBEDDED_OPENSSL_ALPN = third_party/openssl-1.0.2f
+else ifeq ($(wildcard third_party/boringssl/include/openssl/ssl.h),)
 HAS_EMBEDDED_OPENSSL_ALPN = false
 else
-HAS_EMBEDDED_OPENSSL_ALPN = true
+CAN_COMPILE_EMBEDDED_OPENSSL ?= $(shell $(BORINGSSL_COMPILE_CHECK_CMD) 2> /dev/null && echo true || echo false)
+HAS_EMBEDDED_OPENSSL_ALPN = $(CAN_COMPILE_EMBEDDED_OPENSSL)
 endif
 
 ifeq ($(wildcard third_party/zlib/zlib.h),)
@@ -572,8 +576,8 @@ ifeq ($(HAS_SYSTEM_OPENSSL_ALPN),true)
 EMBED_OPENSSL ?= false
 NO_SECURE ?= false
 else # HAS_SYSTEM_OPENSSL_ALPN=false
-ifeq ($(HAS_EMBEDDED_OPENSSL_ALPN),true)
-EMBED_OPENSSL ?= true
+ifneq ($(HAS_EMBEDDED_OPENSSL_ALPN),false)
+EMBED_OPENSSL ?= $(HAS_EMBEDDED_OPENSSL_ALPN)
 NO_SECURE ?= false
 else # HAS_EMBEDDED_OPENSSL_ALPN=false
 ifeq ($(HAS_SYSTEM_OPENSSL_NPN),true)
@@ -594,6 +598,12 @@ OPENSSL_MERGE_LIBS += $(LIBDIR)/$(CONFIG)/libboringssl.a
 OPENSSL_MERGE_OBJS += $(LIBBORINGSSL_OBJS)
 # need to prefix these to ensure overriding system libraries
 CPPFLAGS := -Ithird_party/boringssl/include $(CPPFLAGS)
+else ifneq ($(EMBED_OPENSSL),false)
+OPENSSL_DEP += $(EMBED_OPENSSL)/libssl.a $(EMBED_OPENSSL)/libcrypto.a
+OPENSSL_MERGE_LIBS += $(EMBED_OPENSSL)/libssl.a $(EMBED_OPENSSL)/libcrypto.a
+OPENSSL_MERGE_OBJS += $(wildcard $(EMBED_OPENSSL)/grpc_obj/*.o)
+# need to prefix these to ensure overriding system libraries
+CPPFLAGS := -I$(EMBED_OPENSSL)/include $(CPPFLAGS)
 else # EMBED_OPENSSL=false
 ifeq ($(HAS_PKG_CONFIG),true)
 OPENSSL_PKG_CONFIG = true
@@ -768,8 +778,9 @@ openssl_dep_message:
 	@echo
 	@echo "DEPENDENCY ERROR"
 	@echo
-	@echo "The target you are trying to run requires OpenSSL."
-	@echo "Your system doesn't have it, and neither does the third_party directory."
+	@echo "The target you are trying to run requires an OpenSSL implementation."
+	@echo "Your system doesn't have one, and either the third_party directory"
+	@echo "doesn't have it, or your compiler can't build BoringSSL."
 	@echo
 	@echo "Please consult INSTALL to get more information."
 	@echo
@@ -13021,3 +13032,7 @@ test/cpp/util/test_credentials_provider.cc: $(OPENSSL_DEP)
 endif
 
 .PHONY: all strip tools dep_error openssl_dep_error openssl_dep_message git_update stop buildtests buildtests_c buildtests_cxx test test_c test_cxx install install_c install_cxx install-headers install-headers_c install-headers_cxx install-shared install-shared_c install-shared_cxx install-static install-static_c install-static_cxx strip strip-shared strip-static strip_c strip-shared_c strip-static_c strip_cxx strip-shared_cxx strip-static_cxx dep_c dep_cxx bins_dep_c bins_dep_cxx clean
+
+.PHONY: printvars
+printvars:
+	@$(foreach V,$(sort $(.VARIABLES)),                 	  $(if $(filter-out environment% default automatic, 	  $(origin $V)),$(warning $V=$($V) ($(value $V)))))
