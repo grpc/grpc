@@ -811,7 +811,7 @@ if any(language.make_options() for language in languages):
   else:
     language_make_options = next(iter(languages)).make_options()
 
-if len(languages) != 1 or len(build_configs) != 1:
+if len(languages) != 1 and len(build_configs) != 1:
   print 'Multi-language and multi-config testing is not supported.'
   sys.exit(1)
 
