@@ -31,6 +31,11 @@
 # This script is invoked by Jenkins and runs performance smoke test.
 set -ex
 
+#
+# Put a timeout on this test
+#
+((sleep 900; kill $$)&)
+
 # Enter the gRPC repo root
 cd $(dirname $0)/../..
 
