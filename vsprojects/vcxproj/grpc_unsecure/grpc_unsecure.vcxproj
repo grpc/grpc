@@ -336,7 +336,6 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\iomgr\time_averaged_stats.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\iomgr\timer.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\iomgr\timer_heap.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\iomgr\timer_internal.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\iomgr\udp_server.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\iomgr\wakeup_fd_pipe.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\iomgr\wakeup_fd_posix.h" />
@@ -387,7 +386,7 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\transport\transport.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\transport\transport_impl.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\census\aggregation.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\census\log.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\census\mlog.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\census\rpc_metric_id.h" />
   </ItemGroup>
   <ItemGroup>
@@ -653,7 +652,7 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\census\initialize.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\census\log.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\census\mlog.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\census\operation.c">
     </ClCompile>
