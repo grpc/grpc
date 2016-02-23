@@ -34,6 +34,10 @@
 #ifndef GRPC_INTERNAL_CORE_IOMGR_REACHABILITY_H
 #define GRPC_INTERNAL_CORE_IOMGR_REACHABILITY_H
 
+// Reachability (as used here) is defined as being the existance of a network
+// route to a specified address. It does not indicate whether a server is
+// serving traffic at that address.
+
 /// Network type: a broad classification of different kinds of network
 /// Useful for systems that want to send traffic only on a restricted class
 typedef enum grpc_network_type {
@@ -72,22 +76,39 @@ void grpc_reachability_init(void);
 /// Global shutdown - cancels all outstanding watches
 void grpc_reachability_shutdown(void);
 
-/// Watch addr for reachability.
-/// If addr==NULL, watch for any nic being available.
-/// When reachability changes from *reachable, call on_reachability_changed
-/// with success=true, and *reachable set to the current reachability, and
-/// *out_target_nic set to NULL or a specific nic on which the address is
-/// reachable.
-/// Ownership of *out_target_nic is transferred to the on_reachability_changed
-/// callback.
-void grpc_reachability_watch(
+/// Watch \a addr for reachability.
+/// If \a addr == NULL, watch for any network being available.
+/// When \a addr becomes reachable, call \a on_reachable with success=true
+/// \a optionally_only_on_nic allows reachability to be awaited only via a
+/// specific network interface
+void grpc_reachability_await_reachable(
     const sockaddr_t *addr, size_t addr_len,
-    const grpc_network_interface *optionally_only_on_nic, bool *reachable,
-    const grpc_network_interface **out_target_nic,
-    grpc_closure *on_reachability_changed);
+    const grpc_network_interface *optionally_only_on_nic,
+    grpc_closure *on_reachable);
+/// Watch \a addr for reachability.
+/// If \a addr == NULL, watch for all networks being unavailable.
+/// When \a addr becomes unreachable, call \a on_unreachable with success=true
+/// \a optionally_only_on_nic allows reachability to be awaited only via a
+/// specific network interface
+void grpc_reachability_await_unreachable(
+    const sockaddr_t *addr, size_t addr_len,
+    const grpc_network_interface *optionally_only_on_nic,
+    grpc_closure *on_unreachable);
+
+/// Query (instantaneous) reachability of \a addr
+/// (optionally) on \a optionally_only_on_nic (if it is non-NULL)
+/// Return true if \a is (probably) reachable, false if it is not
+/// If optional_bind_nic is non-NULL, AND this function returns true,
+/// set *optional_bind_nic to the network interface that must be passed to
+/// bind() to route to this address - or NULL if no such call is required.
+bool grpc_reachability_query(
+    const sockaddr_t *addr, size_t addr_len,
+    const grpc_network_interface *optionally_only_on_nic,
+    const grpc_network_interface **optional_bind_nic);
 
 /// Cancel a previously queued watch: the callback will be called with
 /// success=false (if it has not already been scheduled)
-void grpc_reachability_cancel_watch(grpc_closure *on_reachability_changed);
+void grpc_reachability_cancel_await_reachable(grpc_closure *on_reachable);
+void grpc_reachability_cancel_await_unreachable(grpc_closure *on_reachable);
 
 #endif  // GRPC_INTERNAL_CORE_IOMGR_REACHABILITY_H
