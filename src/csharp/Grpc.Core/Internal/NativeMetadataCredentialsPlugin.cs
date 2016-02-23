@@ -53,7 +53,7 @@ namespace Grpc.Core.Internal
 
         public NativeMetadataCredentialsPlugin(AsyncAuthInterceptor interceptor)
         {
-            this.interceptor = Preconditions.CheckNotNull(interceptor, "interceptor");
+            this.interceptor = GrpcPreconditions.CheckNotNull(interceptor, "interceptor");
             this.nativeInterceptor = NativeMetadataInterceptorHandler;
 
             // Make sure the callback doesn't get garbage collected until it is destroyed.

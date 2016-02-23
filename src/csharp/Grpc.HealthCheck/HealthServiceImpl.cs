@@ -1,5 +1,5 @@
 ﻿#region Copyright notice and license
-// Copyright 2015, Google Inc.
+// Copyright 2015-2016, Google Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -127,8 +127,8 @@ namespace Grpc.HealthCheck
         {
             public Key(string host, string service)
             {
-                this.Host = Preconditions.CheckNotNull(host);
-                this.Service = Preconditions.CheckNotNull(service);
+                this.Host = GrpcPreconditions.CheckNotNull(host);
+                this.Service = GrpcPreconditions.CheckNotNull(service);
             }
 
             readonly string Host;
