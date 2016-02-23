@@ -158,7 +158,7 @@
   </ItemDefinitionGroup>
 
   <ItemGroup>
-    <ClCompile Include="$(SolutionDir)\..\test\core\census\log_test.c">
+    <ClCompile Include="$(SolutionDir)\..\test\core\census\mlog_test.c">
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
