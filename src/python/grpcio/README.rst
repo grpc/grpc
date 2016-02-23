@@ -6,7 +6,7 @@ Package for gRPC Python.
 Installation
 ------------
 
-gRPC Python is available for Linux and Mac OS X running Python 2.7.
+gRPC Python is available for Linux, Mac OS X, and Windows running Python 2.7.
 
 From PyPI
 ~~~~~~~~~
@@ -40,5 +40,5 @@ package named :code:`python-dev`).
   $ cd $REPO_ROOT
   $ pip install .
 
-Note that `$REPO_ROOT` can be assigned to whatever directory name floats your
-fancy.
+Note that :code:`$REPO_ROOT` can be assigned to whatever directory name floats
+your fancy.
