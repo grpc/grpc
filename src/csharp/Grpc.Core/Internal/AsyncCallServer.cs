@@ -53,7 +53,7 @@ namespace Grpc.Core.Internal
 
         public AsyncCallServer(Func<TResponse, byte[]> serializer, Func<byte[], TRequest> deserializer, GrpcEnvironment environment, Server server) : base(serializer, deserializer, environment)
         {
-            this.server = Preconditions.CheckNotNull(server);
+            this.server = GrpcPreconditions.CheckNotNull(server);
         }
 
         public void Initialize(CallSafeHandle call)
@@ -71,7 +71,7 @@ namespace Grpc.Core.Internal
         {
             lock (myLock)
             {
-                Preconditions.CheckNotNull(call);
+                GrpcPreconditions.CheckNotNull(call);
 
                 started = true;
 
@@ -108,14 +108,14 @@ namespace Grpc.Core.Internal
         {
             lock (myLock)
             {
-                Preconditions.CheckNotNull(headers, "metadata");
-                Preconditions.CheckNotNull(completionDelegate, "Completion delegate cannot be null");
+                GrpcPreconditions.CheckNotNull(headers, "metadata");
+                GrpcPreconditions.CheckNotNull(completionDelegate, "Completion delegate cannot be null");
 
-                Preconditions.CheckState(!initialMetadataSent, "Response headers can only be sent once per call.");
-                Preconditions.CheckState(streamingWritesCounter == 0, "Response headers can only be sent before the first write starts.");
+                GrpcPreconditions.CheckState(!initialMetadataSent, "Response headers can only be sent once per call.");
+                GrpcPreconditions.CheckState(streamingWritesCounter == 0, "Response headers can only be sent before the first write starts.");
                 CheckSendingAllowed();
 
-                Preconditions.CheckNotNull(completionDelegate, "Completion delegate cannot be null");
+                GrpcPreconditions.CheckNotNull(completionDelegate, "Completion delegate cannot be null");
 
                 using (var metadataArray = MetadataArraySafeHandle.Create(headers))
                 {
@@ -136,7 +136,7 @@ namespace Grpc.Core.Internal
         {
             lock (myLock)
             {
-                Preconditions.CheckNotNull(completionDelegate, "Completion delegate cannot be null");
+                GrpcPreconditions.CheckNotNull(completionDelegate, "Completion delegate cannot be null");
                 CheckSendingAllowed();
 
                 using (var metadataArray = MetadataArraySafeHandle.Create(trailers))
@@ -177,7 +177,7 @@ namespace Grpc.Core.Internal
         protected override void CheckReadingAllowed()
         {
             base.CheckReadingAllowed();
-            Preconditions.CheckArgument(!cancelRequested);
+            GrpcPreconditions.CheckArgument(!cancelRequested);
         }
 
         protected override void OnAfterReleaseResources()

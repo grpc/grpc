@@ -95,6 +95,17 @@ class ChannelArguments {
   friend class SecureChannelCredentials;
   friend class testing::ChannelArgumentsTest;
 
+  /// Default pointer argument operations.
+  struct PointerVtableMembers {
+    static void* Copy(void* in) { return in; }
+    static void Destroy(void* in) {}
+    static int Compare(void* a, void* b) {
+      if (a < b) return -1;
+      if (a > b) return 1;
+      return 0;
+    }
+  };
+
   // Returns empty string when it is not set.
   grpc::string GetSslTargetNameOverride() const;
 
