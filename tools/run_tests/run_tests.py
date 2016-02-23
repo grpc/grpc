@@ -123,6 +123,11 @@ def _check_compiler(compiler, supported_compilers):
     raise Exception('Compiler %s not supported.' % compiler)
 
 
+def _is_use_docker_child():
+  """Returns True if running running as a --use_docker child."""
+  return True if os.getenv('RUN_TESTS_COMMAND') else False
+
+
 class CLanguage(object):
 
   def __init__(self, make_target, test_lang):
@@ -137,8 +142,9 @@ class CLanguage(object):
       self._make_options = [_windows_toolset_option(self.args.compiler),
                             _windows_arch_option(self.args.arch)]
     else:
-      _check_compiler(self.args.compiler, ['default'])
       self._make_options = []
+      self._docker_distro = self._get_docker_distro(self.args.use_docker,
+                                                    self.args.compiler)
 
   def test_specs(self):
     out = []
@@ -197,8 +203,24 @@ class CLanguage(object):
   def makefile_name(self):
     return 'Makefile'
 
+  def _get_docker_distro(self, use_docker, compiler):
+    if _is_use_docker_child():
+      return "already_under_docker"
+    if not use_docker:
+      _check_compiler(compiler, ['default'])
+
+    if compiler == 'gcc4.9' or compiler == 'default':
+      return 'jessie'
+    elif compiler == 'gcc4.4':
+      return 'squeeze'
+    elif compiler == 'gcc5.3':
+      return 'ubuntu1604'
+    else:
+      raise Exception('Compiler %s not supported.' % compiler)
+
   def dockerfile_dir(self):
-    return 'tools/dockerfile/test/cxx_jessie_%s' % _docker_arch_suffix(self.args.arch)
+    return 'tools/dockerfile/test/cxx_%s_%s' % (self._docker_distro,
+                                                _docker_arch_suffix(self.args.arch))
 
   def __str__(self):
     return self.make_target
@@ -712,7 +734,9 @@ argp.add_argument('--arch',
                   default='default',
                   help='Selects architecture to target. For some platforms "default" is the only supported choice.')
 argp.add_argument('--compiler',
-                  choices=['default', 'vs2010', 'vs2013', 'vs2015'],
+                  choices=['default',
+                           'gcc4.4', 'gcc4.9', 'gcc5.3',
+                           'vs2010', 'vs2013', 'vs2015'],
                   default='default',
                   help='Selects compiler to use. Allowed values depend on the platform and language.')
 argp.add_argument('--build_only',
