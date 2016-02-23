@@ -1019,6 +1019,11 @@ static void check_read_ops(grpc_exec_ctx *exec_ctx,
       stream_global->recv_initial_metadata_ready = NULL;
     }
     if (stream_global->recv_message_ready != NULL) {
+      while (stream_global->seen_error &&
+             (bs = grpc_chttp2_incoming_frame_queue_pop(
+                  &stream_global->incoming_frames)) != NULL) {
+        grpc_byte_stream_destroy(exec_ctx, bs);
+      }
       if (stream_global->incoming_frames.head != NULL) {
         *stream_global->recv_message = grpc_chttp2_incoming_frame_queue_pop(
             &stream_global->incoming_frames);
