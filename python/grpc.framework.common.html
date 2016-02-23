@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>grpc.framework.common package &mdash; grpcio 0.11.0b1 documentation</title>
+  <title>grpc.framework.common package &mdash; grpcio 0.13.1rc1 documentation</title>
   
 
   
@@ -30,7 +30,7 @@
   
 
   
-    <link rel="top" title="grpcio 0.11.0b1 documentation" href="index.html"/>
+    <link rel="top" title="grpcio 0.13.1rc1 documentation" href="index.html"/>
         <link rel="up" title="grpc.framework package" href="grpc.framework.html"/>
         <link rel="next" title="grpc.framework.core package" href="grpc.framework.core.html"/>
         <link rel="prev" title="grpc.framework.base package" href="grpc.framework.base.html"/> 
@@ -61,7 +61,7 @@
             
             
               <div class="version">
-                0.11.0b1
+                0.13.1rc1
               </div>
             
           
@@ -119,7 +119,7 @@
         <div class="rst-content">
           
 
-
+ 
 
 
 
@@ -158,6 +158,26 @@
 <em class="property">class </em><code class="descclassname">grpc.framework.common.cardinality.</code><code class="descname">Cardinality</code><a class="reference internal" href="_modules/grpc/framework/common/cardinality.html#Cardinality"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.common.cardinality.Cardinality" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">enum.Enum</span></code></p>
 <p>Describes the streaming semantics of an RPC method.</p>
+<dl class="attribute">
+<dt id="grpc.framework.common.cardinality.Cardinality.STREAM_STREAM">
+<code class="descname">STREAM_STREAM</code><em class="property"> = &lt;Cardinality.STREAM_STREAM: 'request-streaming/response-streaming'&gt;</em><a class="headerlink" href="#grpc.framework.common.cardinality.Cardinality.STREAM_STREAM" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.framework.common.cardinality.Cardinality.STREAM_UNARY">
+<code class="descname">STREAM_UNARY</code><em class="property"> = &lt;Cardinality.STREAM_UNARY: 'request-streaming/response-unary'&gt;</em><a class="headerlink" href="#grpc.framework.common.cardinality.Cardinality.STREAM_UNARY" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.framework.common.cardinality.Cardinality.UNARY_STREAM">
+<code class="descname">UNARY_STREAM</code><em class="property"> = &lt;Cardinality.UNARY_STREAM: 'request-unary/response-streaming'&gt;</em><a class="headerlink" href="#grpc.framework.common.cardinality.Cardinality.UNARY_STREAM" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.framework.common.cardinality.Cardinality.UNARY_UNARY">
+<code class="descname">UNARY_UNARY</code><em class="property"> = &lt;Cardinality.UNARY_UNARY: 'request-unary/response-unary'&gt;</em><a class="headerlink" href="#grpc.framework.common.cardinality.Cardinality.UNARY_UNARY" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 </dd></dl>
 
 </div>
@@ -169,6 +189,16 @@
 <em class="property">class </em><code class="descclassname">grpc.framework.common.style.</code><code class="descname">Service</code><a class="reference internal" href="_modules/grpc/framework/common/style.html#Service"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.common.style.Service" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">enum.Enum</span></code></p>
 <p>Describes the control flow style of RPC method implementation.</p>
+<dl class="attribute">
+<dt id="grpc.framework.common.style.Service.EVENT">
+<code class="descname">EVENT</code><em class="property"> = &lt;Service.EVENT: 'event'&gt;</em><a class="headerlink" href="#grpc.framework.common.style.Service.EVENT" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.framework.common.style.Service.INLINE">
+<code class="descname">INLINE</code><em class="property"> = &lt;Service.INLINE: 'inline'&gt;</em><a class="headerlink" href="#grpc.framework.common.style.Service.INLINE" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 </dd></dl>
 
 </div>
@@ -196,7 +226,7 @@
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2015, Author.
+        &copy; Copyright 2016, Author.
 
     </p>
   </div>
@@ -218,7 +248,7 @@
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'0.11.0b1',
+            VERSION:'0.13.1rc1',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true

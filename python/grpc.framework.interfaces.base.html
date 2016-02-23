@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>grpc.framework.interfaces.base package &mdash; grpcio 0.11.0b1 documentation</title>
+  <title>grpc.framework.interfaces.base package &mdash; grpcio 0.13.1rc1 documentation</title>
   
 
   
@@ -30,7 +30,7 @@
   
 
   
-    <link rel="top" title="grpcio 0.11.0b1 documentation" href="index.html"/>
+    <link rel="top" title="grpcio 0.13.1rc1 documentation" href="index.html"/>
         <link rel="up" title="grpc.framework.interfaces package" href="grpc.framework.interfaces.html"/>
         <link rel="next" title="grpc.framework.interfaces.face package" href="grpc.framework.interfaces.face.html"/>
         <link rel="prev" title="grpc.framework.interfaces package" href="grpc.framework.interfaces.html"/> 
@@ -61,7 +61,7 @@
             
             
               <div class="version">
-                0.11.0b1
+                0.13.1rc1
               </div>
             
           
@@ -119,7 +119,7 @@
         <div class="rst-content">
           
 
-
+ 
 
 
 
@@ -231,11 +231,15 @@ implementation affording custom state and behavior.</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A pair of objects affording information about the operation and action
-continuing the operation. The first element of the returned pair is an
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><dl class="docutils">
+<dt>A pair of objects affording information about the operation and action</dt>
+<dd><p class="first last">continuing the operation. The first element of the returned pair is an
 OperationContext for the operation and the second element of the
 returned pair is an Operator to which operation values not passed in
 this call should later be passed.</p>
+</dd>
+</dl>
+</p>
 </td>
 </tr>
 </tbody>
@@ -250,8 +254,11 @@ this call should later be passed.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">A dictionary from Outcome.Kind value to an integer identifying the number
-of operations that terminated with that outcome kind.</td>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><dl class="docutils">
+<dt>A dictionary from Outcome.Kind value to an integer identifying the number</dt>
+<dd>of operations that terminated with that outcome kind.</dd>
+</dl>
+</td>
 </tr>
 </tbody>
 </table>
@@ -279,12 +286,15 @@ terminate before being forcefully terminated by the stopping of this
 End. May be zero to terminate all ongoing operations and immediately
 stop.</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">A threading.Event that will be set to indicate all operations having
-terminated and this End having completely stopped. The returned event
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><dl class="docutils">
+<dt>A threading.Event that will be set to indicate all operations having</dt>
+<dd>terminated and this End having completely stopped. The returned event
 may not be set until after the full grace period (if some ongoing
 operation continues for the full length of the period) or it may be set
 much sooner (if for example this End had no operations in progress at
-the time its stop method was called).</td>
+the time its stop method was called).</dd>
+</dl>
+</td>
 </tr>
 </tbody>
 </table>
@@ -329,10 +339,13 @@ along with indication of operation termination. May be None.</p>
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>callback</strong> &#8211; A callable to be passed an Outcome value on operation
 termination.</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">None if the operation has not yet terminated and the passed callback will
-later be called when it does terminate, or if the operation has already
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><dl class="docutils">
+<dt>None if the operation has not yet terminated and the passed callback will</dt>
+<dd>later be called when it does terminate, or if the operation has already
 terminated an Outcome value describing the operation termination and the
-passed callback will not be called as a result of this method call.</td>
+passed callback will not be called as a result of this method call.</dd>
+</dl>
+</td>
 </tr>
 </tbody>
 </table>
@@ -366,8 +379,11 @@ passed callback will not be called as a result of this method call.</td>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">None if the operation is still active or the Outcome value for the
-operation if it has terminated.</td>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><dl class="docutils">
+<dt>None if the operation is still active or the Outcome value for the</dt>
+<dd>operation if it has terminated.</dd>
+</dl>
+</td>
 </tr>
 </tbody>
 </table>
@@ -452,6 +468,51 @@ provided.</p>
 <em class="property">class </em><code class="descname">Kind</code><a class="reference internal" href="_modules/grpc/framework/interfaces/base/base.html#Outcome.Kind"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.interfaces.base.base.Outcome.Kind" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">enum.Enum</span></code></p>
 <p>Ways in which an operation can terminate.</p>
+<dl class="attribute">
+<dt id="grpc.framework.interfaces.base.base.Outcome.Kind.CANCELLED">
+<code class="descname">CANCELLED</code><em class="property"> = &lt;Kind.CANCELLED: 'cancelled'&gt;</em><a class="headerlink" href="#grpc.framework.interfaces.base.base.Outcome.Kind.CANCELLED" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.framework.interfaces.base.base.Outcome.Kind.COMPLETED">
+<code class="descname">COMPLETED</code><em class="property"> = &lt;Kind.COMPLETED: 'completed'&gt;</em><a class="headerlink" href="#grpc.framework.interfaces.base.base.Outcome.Kind.COMPLETED" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.framework.interfaces.base.base.Outcome.Kind.EXPIRED">
+<code class="descname">EXPIRED</code><em class="property"> = &lt;Kind.EXPIRED: 'expired'&gt;</em><a class="headerlink" href="#grpc.framework.interfaces.base.base.Outcome.Kind.EXPIRED" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.framework.interfaces.base.base.Outcome.Kind.LOCAL_FAILURE">
+<code class="descname">LOCAL_FAILURE</code><em class="property"> = &lt;Kind.LOCAL_FAILURE: 'local failure'&gt;</em><a class="headerlink" href="#grpc.framework.interfaces.base.base.Outcome.Kind.LOCAL_FAILURE" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.framework.interfaces.base.base.Outcome.Kind.LOCAL_SHUTDOWN">
+<code class="descname">LOCAL_SHUTDOWN</code><em class="property"> = &lt;Kind.LOCAL_SHUTDOWN: 'local shutdown'&gt;</em><a class="headerlink" href="#grpc.framework.interfaces.base.base.Outcome.Kind.LOCAL_SHUTDOWN" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.framework.interfaces.base.base.Outcome.Kind.RECEPTION_FAILURE">
+<code class="descname">RECEPTION_FAILURE</code><em class="property"> = &lt;Kind.RECEPTION_FAILURE: 'reception failure'&gt;</em><a class="headerlink" href="#grpc.framework.interfaces.base.base.Outcome.Kind.RECEPTION_FAILURE" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.framework.interfaces.base.base.Outcome.Kind.REMOTE_FAILURE">
+<code class="descname">REMOTE_FAILURE</code><em class="property"> = &lt;Kind.REMOTE_FAILURE: 'remote failure'&gt;</em><a class="headerlink" href="#grpc.framework.interfaces.base.base.Outcome.Kind.REMOTE_FAILURE" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.framework.interfaces.base.base.Outcome.Kind.REMOTE_SHUTDOWN">
+<code class="descname">REMOTE_SHUTDOWN</code><em class="property"> = &lt;Kind.REMOTE_SHUTDOWN: 'remote shutdown'&gt;</em><a class="headerlink" href="#grpc.framework.interfaces.base.base.Outcome.Kind.REMOTE_SHUTDOWN" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.framework.interfaces.base.base.Outcome.Kind.TRANSMISSION_FAILURE">
+<code class="descname">TRANSMISSION_FAILURE</code><em class="property"> = &lt;Kind.TRANSMISSION_FAILURE: 'transmission failure'&gt;</em><a class="headerlink" href="#grpc.framework.interfaces.base.base.Outcome.Kind.TRANSMISSION_FAILURE" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 </dd></dl>
 
 </dd></dl>
@@ -500,16 +561,18 @@ operation.</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">A Subscription via which this object may or may not accept more values of
-the operation.</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><dl class="docutils">
+<dt>A Subscription via which this object may or may not accept more values of</dt>
+<dd><p class="first last">the operation.</p>
+</dd>
+</dl>
+</p>
 </td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><ul class="first last simple">
-<li><a class="reference internal" href="#grpc.framework.interfaces.base.base.NoSuchMethodError" title="grpc.framework.interfaces.base.base.NoSuchMethodError"><code class="xref py py-exc docutils literal"><span class="pre">NoSuchMethodError</span></code></a> &#8211;
-If this Servicer does not handle operations with the
+<li><a class="reference internal" href="#grpc.framework.interfaces.base.base.NoSuchMethodError" title="grpc.framework.interfaces.base.base.NoSuchMethodError"><code class="xref py py-exc docutils literal"><span class="pre">NoSuchMethodError</span></code></a> &#8211; If this Servicer does not handle operations with the
 given group and method.</li>
-<li><code class="xref py py-exc docutils literal"><span class="pre">abandonment.Abandoned</span></code> &#8211;
-If the operation has been aborted and there no
+<li><code class="xref py py-exc docutils literal"><span class="pre">abandonment.Abandoned</span></code> &#8211; If the operation has been aborted and there no
 longer is any reason to service the operation.</li>
 </ul>
 </td>
@@ -567,6 +630,21 @@ Kind.FULL.</p>
 <dt id="grpc.framework.interfaces.base.base.Subscription.Kind">
 <em class="property">class </em><code class="descname">Kind</code><a class="reference internal" href="_modules/grpc/framework/interfaces/base/base.html#Subscription.Kind"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.interfaces.base.base.Subscription.Kind" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">enum.Enum</span></code></p>
+<dl class="attribute">
+<dt id="grpc.framework.interfaces.base.base.Subscription.Kind.FULL">
+<code class="descname">FULL</code><em class="property"> = &lt;Kind.FULL: 'full'&gt;</em><a class="headerlink" href="#grpc.framework.interfaces.base.base.Subscription.Kind.FULL" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.framework.interfaces.base.base.Subscription.Kind.NONE">
+<code class="descname">NONE</code><em class="property"> = &lt;Kind.NONE: 'none'&gt;</em><a class="headerlink" href="#grpc.framework.interfaces.base.base.Subscription.Kind.NONE" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.framework.interfaces.base.base.Subscription.Kind.TERMINATION_ONLY">
+<code class="descname">TERMINATION_ONLY</code><em class="property"> = &lt;Kind.TERMINATION_ONLY: 'termination only'&gt;</em><a class="headerlink" href="#grpc.framework.interfaces.base.base.Subscription.Kind.TERMINATION_ONLY" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 </dd></dl>
 
 </dd></dl>
@@ -611,8 +689,12 @@ Kind.FULL.</p>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A base.Subscription of kind base.Subscription.Kind.FULL wrapping the given
-base.Operator and base.ProtocolReceiver.</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><dl class="docutils">
+<dt>A base.Subscription of kind base.Subscription.Kind.FULL wrapping the given</dt>
+<dd><p class="first last">base.Operator and base.ProtocolReceiver.</p>
+</dd>
+</dl>
+</p>
 </td>
 </tr>
 </tbody>
@@ -644,7 +726,7 @@ base.Operator and base.ProtocolReceiver.</p>
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2015, Author.
+        &copy; Copyright 2016, Author.
 
     </p>
   </div>
@@ -666,7 +748,7 @@ base.Operator and base.ProtocolReceiver.</p>
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'0.11.0b1',
+            VERSION:'0.13.1rc1',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true

@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>grpc.beta package &mdash; grpcio 0.11.0b1 documentation</title>
+  <title>grpc.beta package &mdash; grpcio 0.13.1rc1 documentation</title>
   
 
   
@@ -30,7 +30,7 @@
   
 
   
-    <link rel="top" title="grpcio 0.11.0b1 documentation" href="index.html"/>
+    <link rel="top" title="grpcio 0.13.1rc1 documentation" href="index.html"/>
         <link rel="up" title="grpc package" href="grpc.html"/>
         <link rel="next" title="grpc.early_adopter package" href="grpc.early_adopter.html"/>
         <link rel="prev" title="grpc package" href="grpc.html"/> 
@@ -61,7 +61,7 @@
             
             
               <div class="version">
-                0.11.0b1
+                0.13.1rc1
               </div>
             
           
@@ -122,7 +122,7 @@
         <div class="rst-content">
           
 
-
+ 
 
 
 
@@ -154,6 +154,18 @@
 <div class="section" id="module-grpc.beta.implementations">
 <span id="grpc-beta-implementations-module"></span><h2>grpc.beta.implementations module<a class="headerlink" href="#module-grpc.beta.implementations" title="Permalink to this headline">¶</a></h2>
 <p>Entry points into the Beta API of gRPC Python.</p>
+<dl class="class">
+<dt id="grpc.beta.implementations.CallCredentials">
+<em class="property">class </em><code class="descclassname">grpc.beta.implementations.</code><code class="descname">CallCredentials</code><span class="sig-paren">(</span><em>low_credentials</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/beta/implementations.html#CallCredentials"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.beta.implementations.CallCredentials" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>A value encapsulating data asserting an identity over an <em>established</em>
+channel. May be composed with ChannelCredentials to always assert identity for
+every call over that channel.</p>
+<p>This class and its instances have no supported interface - it exists to define
+the type of its instances and its instances exist to be passed to other
+functions.</p>
+</dd></dl>
+
 <dl class="class">
 <dt id="grpc.beta.implementations.Channel">
 <em class="property">class </em><code class="descclassname">grpc.beta.implementations.</code><code class="descname">Channel</code><span class="sig-paren">(</span><em>low_channel</em>, <em>intermediary_low_channel</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/beta/implementations.html#Channel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.beta.implementations.Channel" title="Permalink to this definition">¶</a></dt>
@@ -204,8 +216,8 @@ been passed to its &#8220;subscribe&#8221; method.</td>
 </dd></dl>
 
 <dl class="class">
-<dt id="grpc.beta.implementations.ClientCredentials">
-<em class="property">class </em><code class="descclassname">grpc.beta.implementations.</code><code class="descname">ClientCredentials</code><span class="sig-paren">(</span><em>low_credentials</em>, <em>intermediary_low_credentials</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/beta/implementations.html#ClientCredentials"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.beta.implementations.ClientCredentials" title="Permalink to this definition">¶</a></dt>
+<dt id="grpc.beta.implementations.ChannelCredentials">
+<em class="property">class </em><code class="descclassname">grpc.beta.implementations.</code><code class="descname">ChannelCredentials</code><span class="sig-paren">(</span><em>low_credentials</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/beta/implementations.html#ChannelCredentials"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.beta.implementations.ChannelCredentials" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <p>A value encapsulating the data required to create a secure Channel.</p>
 <p>This class and its instances have no supported interface - it exists to define
@@ -215,7 +227,7 @@ functions.</p>
 
 <dl class="class">
 <dt id="grpc.beta.implementations.ServerCredentials">
-<em class="property">class </em><code class="descclassname">grpc.beta.implementations.</code><code class="descname">ServerCredentials</code><span class="sig-paren">(</span><em>low_credentials</em>, <em>intermediary_low_credentials</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/beta/implementations.html#ServerCredentials"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.beta.implementations.ServerCredentials" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">grpc.beta.implementations.</code><code class="descname">ServerCredentials</code><span class="sig-paren">(</span><em>low_credentials</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/beta/implementations.html#ServerCredentials"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.beta.implementations.ServerCredentials" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <p>A value encapsulating the data required to open a secure port on a Server.</p>
 <p>This class and its instances have no supported interface - it exists to define
@@ -241,6 +253,50 @@ functions.</p>
 <p>This class and its instances have no supported interface - it exists to define
 the type of its instances and its instances exist to be passed to other
 functions.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="grpc.beta.implementations.composite_call_credentials">
+<code class="descclassname">grpc.beta.implementations.</code><code class="descname">composite_call_credentials</code><span class="sig-paren">(</span><em>call_credentials</em>, <em>additional_call_credentials</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/beta/implementations.html#composite_call_credentials"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.beta.implementations.composite_call_credentials" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compose two CallCredentials to make a new one.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>call_credentials</strong> &#8211; A CallCredentials object.</li>
+<li><strong>additional_call_credentials</strong> &#8211; Another CallCredentials object to compose on
+top of call_credentials.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A CallCredentials object for use in a GRPCCallOptions object.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="grpc.beta.implementations.composite_channel_credentials">
+<code class="descclassname">grpc.beta.implementations.</code><code class="descname">composite_channel_credentials</code><span class="sig-paren">(</span><em>channel_credentials</em>, <em>additional_call_credentials</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/beta/implementations.html#composite_channel_credentials"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.beta.implementations.composite_channel_credentials" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compose ChannelCredentials on top of client credentials to make a new one.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>channel_credentials</strong> &#8211; A ChannelCredentials object.</li>
+<li><strong>additional_call_credentials</strong> &#8211; A CallCredentials object to compose on
+top of channel_credentials.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A ChannelCredentials object for use in a GRPCCallOptions object.</p>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="function">
@@ -311,8 +367,25 @@ of the returned face.DynamicStub.</li>
 </dd></dl>
 
 <dl class="function">
+<dt id="grpc.beta.implementations.metadata_call_credentials">
+<code class="descclassname">grpc.beta.implementations.</code><code class="descname">metadata_call_credentials</code><span class="sig-paren">(</span><em>metadata_plugin</em>, <em>name=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/beta/implementations.html#metadata_call_credentials"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.beta.implementations.metadata_call_credentials" title="Permalink to this definition">¶</a></dt>
+<dd><p>Construct CallCredentials from an interfaces.GRPCAuthMetadataPlugin.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>metadata_plugin</strong> &#8211; An interfaces.GRPCAuthMetadataPlugin to use in constructing
+the CallCredentials object.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">A CallCredentials object for use in a GRPCCallOptions object.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
 <dt id="grpc.beta.implementations.secure_channel">
-<code class="descclassname">grpc.beta.implementations.</code><code class="descname">secure_channel</code><span class="sig-paren">(</span><em>host</em>, <em>port</em>, <em>client_credentials</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/beta/implementations.html#secure_channel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.beta.implementations.secure_channel" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">grpc.beta.implementations.</code><code class="descname">secure_channel</code><span class="sig-paren">(</span><em>host</em>, <em>port</em>, <em>channel_credentials</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/beta/implementations.html#secure_channel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.beta.implementations.secure_channel" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates a secure Channel to a remote host.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -321,7 +394,7 @@ of the returned face.DynamicStub.</li>
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>host</strong> &#8211; The name of the remote host to which to connect.</li>
 <li><strong>port</strong> &#8211; The port of the remote host to which to connect.</li>
-<li><strong>client_credentials</strong> &#8211; A ClientCredentials.</li>
+<li><strong>channel_credentials</strong> &#8211; A ChannelCredentials.</li>
 </ul>
 </td>
 </tr>
@@ -391,9 +464,9 @@ invoked.</li>
 </dd></dl>
 
 <dl class="function">
-<dt id="grpc.beta.implementations.ssl_client_credentials">
-<code class="descclassname">grpc.beta.implementations.</code><code class="descname">ssl_client_credentials</code><span class="sig-paren">(</span><em>root_certificates</em>, <em>private_key</em>, <em>certificate_chain</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/beta/implementations.html#ssl_client_credentials"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.beta.implementations.ssl_client_credentials" title="Permalink to this definition">¶</a></dt>
-<dd><p>Creates a ClientCredentials for use with an SSL-enabled Channel.</p>
+<dt id="grpc.beta.implementations.ssl_channel_credentials">
+<code class="descclassname">grpc.beta.implementations.</code><code class="descname">ssl_channel_credentials</code><span class="sig-paren">(</span><em>root_certificates</em>, <em>private_key</em>, <em>certificate_chain</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/beta/implementations.html#ssl_channel_credentials"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.beta.implementations.ssl_channel_credentials" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a ChannelCredentials for use with an SSL-enabled Channel.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -408,7 +481,7 @@ certificate chain should be used.</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A ClientCredentials for use with an SSL-enabled Channel.</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A ChannelCredentials for use with an SSL-enabled Channel.</p>
 </td>
 </tr>
 </tbody>
@@ -514,6 +587,63 @@ recover.</p>
 <dd><p>The channel has seen a failure from which it cannot recover.</p>
 </dd></dl>
 
+<dl class="attribute">
+<dt>
+<code class="descname">CONNECTING</code><em class="property"> = &lt;ChannelConnectivity.CONNECTING: (&lt;ConnectivityState.CONNECTING: 1&gt;, 'connecting')&gt;</em></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="descname">FATAL_FAILURE</code><em class="property"> = &lt;ChannelConnectivity.FATAL_FAILURE: (&lt;ConnectivityState.FATAL_FAILURE: 4&gt;, 'fatal failure')&gt;</em></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="descname">IDLE</code><em class="property"> = &lt;ChannelConnectivity.IDLE: (&lt;ConnectivityState.IDLE: 0&gt;, 'idle')&gt;</em></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="descname">READY</code><em class="property"> = &lt;ChannelConnectivity.READY: (&lt;ConnectivityState.READY: 2&gt;, 'ready')&gt;</em></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="descname">TRANSIENT_FAILURE</code><em class="property"> = &lt;ChannelConnectivity.TRANSIENT_FAILURE: (&lt;ConnectivityState.TRANSIENT_FAILURE: 3&gt;, 'transient failure')&gt;</em></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="grpc.beta.interfaces.GRPCAuthMetadataContext">
+<em class="property">class </em><code class="descclassname">grpc.beta.interfaces.</code><code class="descname">GRPCAuthMetadataContext</code><a class="reference internal" href="_modules/grpc/beta/interfaces.html#GRPCAuthMetadataContext"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.beta.interfaces.GRPCAuthMetadataContext" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>Provides information to call credentials metadata plugins.</p>
+<dl class="attribute">
+<dt id="grpc.beta.interfaces.GRPCAuthMetadataContext.service_url">
+<code class="descname">service_url</code><a class="headerlink" href="#grpc.beta.interfaces.GRPCAuthMetadataContext.service_url" title="Permalink to this definition">¶</a></dt>
+<dd><p>A string URL of the service being called into.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.beta.interfaces.GRPCAuthMetadataContext.method_name">
+<code class="descname">method_name</code><a class="headerlink" href="#grpc.beta.interfaces.GRPCAuthMetadataContext.method_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>A string of the fully qualified method name being called.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="grpc.beta.interfaces.GRPCAuthMetadataPlugin">
+<em class="property">class </em><code class="descclassname">grpc.beta.interfaces.</code><code class="descname">GRPCAuthMetadataPlugin</code><a class="reference internal" href="_modules/grpc/beta/interfaces.html#GRPCAuthMetadataPlugin"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.beta.interfaces.GRPCAuthMetadataPlugin" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+</dd></dl>
+
+<dl class="class">
+<dt id="grpc.beta.interfaces.GRPCAuthMetadataPluginCallback">
+<em class="property">class </em><code class="descclassname">grpc.beta.interfaces.</code><code class="descname">GRPCAuthMetadataPluginCallback</code><a class="reference internal" href="_modules/grpc/beta/interfaces.html#GRPCAuthMetadataPluginCallback"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.beta.interfaces.GRPCAuthMetadataPluginCallback" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>Callback object received by a metadata plugin.</p>
 </dd></dl>
 
 <dl class="class">
@@ -583,10 +713,13 @@ called.</p>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>address</strong> &#8211; The address for which to open a port.</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">An integer port on which RPCs will be serviced after this link has been
-started. This is typically the same number as the port number contained
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><dl class="docutils">
+<dt>An integer port on which RPCs will be serviced after this link has been</dt>
+<dd>started. This is typically the same number as the port number contained
 in the passed address, but will likely be different if the port number
-contained in the passed address was zero.</td>
+contained in the passed address was zero.</dd>
+</dl>
+</td>
 </tr>
 </tbody>
 </table>
@@ -608,10 +741,14 @@ called.</p>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">An integer port on which RPCs will be serviced after this link has been
-started. This is typically the same number as the port number contained
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><dl class="docutils">
+<dt>An integer port on which RPCs will be serviced after this link has been</dt>
+<dd><p class="first last">started. This is typically the same number as the port number contained
 in the passed address, but will likely be different if the port number
 contained in the passed address was zero.</p>
+</dd>
+</dl>
+</p>
 </td>
 </tr>
 </tbody>
@@ -664,6 +801,91 @@ very early in the grace period).</td>
 <em class="property">class </em><code class="descclassname">grpc.beta.interfaces.</code><code class="descname">StatusCode</code><a class="reference internal" href="_modules/grpc/beta/interfaces.html#StatusCode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.beta.interfaces.StatusCode" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">enum.Enum</span></code></p>
 <p>Mirrors grpc_status_code in the C core.</p>
+<dl class="attribute">
+<dt id="grpc.beta.interfaces.StatusCode.ABORTED">
+<code class="descname">ABORTED</code><em class="property"> = &lt;StatusCode.ABORTED: 10&gt;</em><a class="headerlink" href="#grpc.beta.interfaces.StatusCode.ABORTED" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.beta.interfaces.StatusCode.ALREADY_EXISTS">
+<code class="descname">ALREADY_EXISTS</code><em class="property"> = &lt;StatusCode.ALREADY_EXISTS: 6&gt;</em><a class="headerlink" href="#grpc.beta.interfaces.StatusCode.ALREADY_EXISTS" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.beta.interfaces.StatusCode.CANCELLED">
+<code class="descname">CANCELLED</code><em class="property"> = &lt;StatusCode.CANCELLED: 1&gt;</em><a class="headerlink" href="#grpc.beta.interfaces.StatusCode.CANCELLED" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.beta.interfaces.StatusCode.DATA_LOSS">
+<code class="descname">DATA_LOSS</code><em class="property"> = &lt;StatusCode.DATA_LOSS: 15&gt;</em><a class="headerlink" href="#grpc.beta.interfaces.StatusCode.DATA_LOSS" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.beta.interfaces.StatusCode.DEADLINE_EXCEEDED">
+<code class="descname">DEADLINE_EXCEEDED</code><em class="property"> = &lt;StatusCode.DEADLINE_EXCEEDED: 4&gt;</em><a class="headerlink" href="#grpc.beta.interfaces.StatusCode.DEADLINE_EXCEEDED" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.beta.interfaces.StatusCode.FAILED_PRECONDITION">
+<code class="descname">FAILED_PRECONDITION</code><em class="property"> = &lt;StatusCode.FAILED_PRECONDITION: 9&gt;</em><a class="headerlink" href="#grpc.beta.interfaces.StatusCode.FAILED_PRECONDITION" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.beta.interfaces.StatusCode.INTERNAL">
+<code class="descname">INTERNAL</code><em class="property"> = &lt;StatusCode.INTERNAL: 13&gt;</em><a class="headerlink" href="#grpc.beta.interfaces.StatusCode.INTERNAL" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.beta.interfaces.StatusCode.INVALID_ARGUMENT">
+<code class="descname">INVALID_ARGUMENT</code><em class="property"> = &lt;StatusCode.INVALID_ARGUMENT: 3&gt;</em><a class="headerlink" href="#grpc.beta.interfaces.StatusCode.INVALID_ARGUMENT" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.beta.interfaces.StatusCode.NOT_FOUND">
+<code class="descname">NOT_FOUND</code><em class="property"> = &lt;StatusCode.NOT_FOUND: 5&gt;</em><a class="headerlink" href="#grpc.beta.interfaces.StatusCode.NOT_FOUND" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.beta.interfaces.StatusCode.OK">
+<code class="descname">OK</code><em class="property"> = &lt;StatusCode.OK: 0&gt;</em><a class="headerlink" href="#grpc.beta.interfaces.StatusCode.OK" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.beta.interfaces.StatusCode.OUT_OF_RANGE">
+<code class="descname">OUT_OF_RANGE</code><em class="property"> = &lt;StatusCode.OUT_OF_RANGE: 11&gt;</em><a class="headerlink" href="#grpc.beta.interfaces.StatusCode.OUT_OF_RANGE" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.beta.interfaces.StatusCode.PERMISSION_DENIED">
+<code class="descname">PERMISSION_DENIED</code><em class="property"> = &lt;StatusCode.PERMISSION_DENIED: 7&gt;</em><a class="headerlink" href="#grpc.beta.interfaces.StatusCode.PERMISSION_DENIED" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.beta.interfaces.StatusCode.RESOURCE_EXHAUSTED">
+<code class="descname">RESOURCE_EXHAUSTED</code><em class="property"> = &lt;StatusCode.RESOURCE_EXHAUSTED: 8&gt;</em><a class="headerlink" href="#grpc.beta.interfaces.StatusCode.RESOURCE_EXHAUSTED" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.beta.interfaces.StatusCode.UNAUTHENTICATED">
+<code class="descname">UNAUTHENTICATED</code><em class="property"> = &lt;StatusCode.UNAUTHENTICATED: 16&gt;</em><a class="headerlink" href="#grpc.beta.interfaces.StatusCode.UNAUTHENTICATED" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.beta.interfaces.StatusCode.UNAVAILABLE">
+<code class="descname">UNAVAILABLE</code><em class="property"> = &lt;StatusCode.UNAVAILABLE: 14&gt;</em><a class="headerlink" href="#grpc.beta.interfaces.StatusCode.UNAVAILABLE" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.beta.interfaces.StatusCode.UNIMPLEMENTED">
+<code class="descname">UNIMPLEMENTED</code><em class="property"> = &lt;StatusCode.UNIMPLEMENTED: 12&gt;</em><a class="headerlink" href="#grpc.beta.interfaces.StatusCode.UNIMPLEMENTED" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.beta.interfaces.StatusCode.UNKNOWN">
+<code class="descname">UNKNOWN</code><em class="property"> = &lt;StatusCode.UNKNOWN: 2&gt;</em><a class="headerlink" href="#grpc.beta.interfaces.StatusCode.UNKNOWN" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 </dd></dl>
 
 <dl class="function">
@@ -679,7 +901,7 @@ very early in the grace period).</td>
 <li><strong>disable_compression</strong> &#8211; A boolean indicating whether or not compression should
 be disabled for the request object of the RPC. Only valid for
 request-unary RPCs.</li>
-<li><strong>credentials</strong> &#8211; A ClientCredentials object to use for the invoked RPC.</li>
+<li><strong>credentials</strong> &#8211; A CallCredentials object to use for the invoked RPC.</li>
 </ul>
 </td>
 </tr>
@@ -705,8 +927,11 @@ subscription to the given implementations.Channel&#8217;s connectivity.</p>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>channel</strong> &#8211; An implementations.Channel.</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">A future.Future that matures when the given Channel has connectivity
-interfaces.ChannelConnectivity.READY.</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><dl class="docutils">
+<dt>A future.Future that matures when the given Channel has connectivity</dt>
+<dd>interfaces.ChannelConnectivity.READY.</dd>
+</dl>
+</td>
 </tr>
 </tbody>
 </table>
@@ -737,7 +962,7 @@ interfaces.ChannelConnectivity.READY.</td>
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2015, Author.
+        &copy; Copyright 2016, Author.
 
     </p>
   </div>
@@ -759,7 +984,7 @@ interfaces.ChannelConnectivity.READY.</td>
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'0.11.0b1',
+            VERSION:'0.13.1rc1',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true

@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>grpc.framework.interfaces.face package &mdash; grpcio 0.11.0b1 documentation</title>
+  <title>grpc.framework.interfaces.face package &mdash; grpcio 0.13.1rc1 documentation</title>
   
 
   
@@ -30,7 +30,7 @@
   
 
   
-    <link rel="top" title="grpcio 0.11.0b1 documentation" href="index.html"/>
+    <link rel="top" title="grpcio 0.13.1rc1 documentation" href="index.html"/>
         <link rel="up" title="grpc.framework.interfaces package" href="grpc.framework.interfaces.html"/>
         <link rel="next" title="grpc.framework.interfaces.links package" href="grpc.framework.interfaces.links.html"/>
         <link rel="prev" title="grpc.framework.interfaces.base package" href="grpc.framework.interfaces.base.html"/> 
@@ -61,7 +61,7 @@
             
             
               <div class="version">
-                0.11.0b1
+                0.13.1rc1
               </div>
             
           
@@ -119,7 +119,7 @@
         <div class="rst-content">
           
 
-
+ 
 
 
 
@@ -199,6 +199,41 @@ details value was received.</p>
 <em class="property">class </em><code class="descname">Kind</code><a class="reference internal" href="_modules/grpc/framework/interfaces/face/face.html#Abortion.Kind"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.interfaces.face.face.Abortion.Kind" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">enum.Enum</span></code></p>
 <p>Types of RPC abortion.</p>
+<dl class="attribute">
+<dt id="grpc.framework.interfaces.face.face.Abortion.Kind.CANCELLED">
+<code class="descname">CANCELLED</code><em class="property"> = &lt;Kind.CANCELLED: 'cancelled'&gt;</em><a class="headerlink" href="#grpc.framework.interfaces.face.face.Abortion.Kind.CANCELLED" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.framework.interfaces.face.face.Abortion.Kind.EXPIRED">
+<code class="descname">EXPIRED</code><em class="property"> = &lt;Kind.EXPIRED: 'expired'&gt;</em><a class="headerlink" href="#grpc.framework.interfaces.face.face.Abortion.Kind.EXPIRED" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.framework.interfaces.face.face.Abortion.Kind.LOCAL_FAILURE">
+<code class="descname">LOCAL_FAILURE</code><em class="property"> = &lt;Kind.LOCAL_FAILURE: 'local failure'&gt;</em><a class="headerlink" href="#grpc.framework.interfaces.face.face.Abortion.Kind.LOCAL_FAILURE" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.framework.interfaces.face.face.Abortion.Kind.LOCAL_SHUTDOWN">
+<code class="descname">LOCAL_SHUTDOWN</code><em class="property"> = &lt;Kind.LOCAL_SHUTDOWN: 'local shutdown'&gt;</em><a class="headerlink" href="#grpc.framework.interfaces.face.face.Abortion.Kind.LOCAL_SHUTDOWN" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.framework.interfaces.face.face.Abortion.Kind.NETWORK_FAILURE">
+<code class="descname">NETWORK_FAILURE</code><em class="property"> = &lt;Kind.NETWORK_FAILURE: 'network failure'&gt;</em><a class="headerlink" href="#grpc.framework.interfaces.face.face.Abortion.Kind.NETWORK_FAILURE" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.framework.interfaces.face.face.Abortion.Kind.REMOTE_FAILURE">
+<code class="descname">REMOTE_FAILURE</code><em class="property"> = &lt;Kind.REMOTE_FAILURE: 'remote failure'&gt;</em><a class="headerlink" href="#grpc.framework.interfaces.face.face.Abortion.Kind.REMOTE_FAILURE" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.framework.interfaces.face.face.Abortion.Kind.REMOTE_SHUTDOWN">
+<code class="descname">REMOTE_SHUTDOWN</code><em class="property"> = &lt;Kind.REMOTE_SHUTDOWN: 'remote shutdown'&gt;</em><a class="headerlink" href="#grpc.framework.interfaces.face.face.Abortion.Kind.REMOTE_SHUTDOWN" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 </dd></dl>
 
 </dd></dl>
@@ -235,8 +270,11 @@ emitted from the service-side of the RPC.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">The code object emitted by the service-side of the RPC, or None if there
-was no such value.</td>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><dl class="docutils">
+<dt>The code object emitted by the service-side of the RPC, or None if there</dt>
+<dd>was no such value.</dd>
+</dl>
+</td>
 </tr>
 </tbody>
 </table>
@@ -252,8 +290,11 @@ emitted from the service-side of the RPC.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">The details value emitted by the service-side of the RPC, or None if there
-was no such value.</td>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><dl class="docutils">
+<dt>The details value emitted by the service-side of the RPC, or None if there</dt>
+<dd>was no such value.</dd>
+</dl>
+</td>
 </tr>
 </tbody>
 </table>
@@ -269,8 +310,11 @@ emitted from the service-side of the RPC.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">The initial metadata object emitted by the service-side of the RPC, or
-None if there was no such value.</td>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><dl class="docutils">
+<dt>The initial metadata object emitted by the service-side of the RPC, or</dt>
+<dd>None if there was no such value.</dd>
+</dl>
+</td>
 </tr>
 </tbody>
 </table>
@@ -286,8 +330,11 @@ emitted from the service-side of the RPC.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">The terminal metadata object emitted by the service-side of the RPC, or
-None if there was no such value.</td>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><dl class="docutils">
+<dt>The terminal metadata object emitted by the service-side of the RPC, or</dt>
+<dd>None if there was no such value.</dd>
+</dl>
+</td>
 </tr>
 </tbody>
 </table>
@@ -350,18 +397,21 @@ RPC abortion).</p>
 <li><strong>timeout</strong> &#8211; A duration of time in seconds to allow for the RPC.</li>
 <li><strong>metadata</strong> &#8211; A metadata value to be passed to the service-side of the RPC.</li>
 <li><strong>with_call</strong> &#8211; Whether or not to include return a Call for the RPC in addition
-to the reponse.</li>
+to the response.</li>
 <li><strong>protocol_options</strong> &#8211; A value specified by the provider of a Face interface
 implementation affording custom state and behavior.</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The response value for the RPC, and a Call for the RPC if with_call was
-set to True at invocation.</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><dl class="docutils">
+<dt>The response value for the RPC, and a Call for the RPC if with_call was</dt>
+<dd><p class="first last">set to True at invocation.</p>
+</dd>
+</dl>
+</p>
 </td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><p class="first last"><a class="reference internal" href="#grpc.framework.interfaces.face.face.AbortionError" title="grpc.framework.interfaces.face.face.AbortionError"><code class="xref py py-exc docutils literal"><span class="pre">AbortionError</span></code></a> &#8211;
-Indicating that the RPC was aborted.</p>
+<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><p class="first last"><a class="reference internal" href="#grpc.framework.interfaces.face.face.AbortionError" title="grpc.framework.interfaces.face.face.AbortionError"><code class="xref py py-exc docutils literal"><span class="pre">AbortionError</span></code></a> &#8211; Indicating that the RPC was aborted.</p>
 </td>
 </tr>
 </tbody>
@@ -386,18 +436,21 @@ RPC abortion).</p>
 <li><strong>timeout</strong> &#8211; A duration of time in seconds to allow for the RPC.</li>
 <li><strong>metadata</strong> &#8211; A metadata value to be passed to the service-side of the RPC.</li>
 <li><strong>with_call</strong> &#8211; Whether or not to include return a Call for the RPC in addition
-to the reponse.</li>
+to the response.</li>
 <li><strong>protocol_options</strong> &#8211; A value specified by the provider of a Face interface
 implementation affording custom state and behavior.</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The response value for the RPC, and a Call for the RPC if with_call was
-set to True at invocation.</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><dl class="docutils">
+<dt>The response value for the RPC, and a Call for the RPC if with_call was</dt>
+<dd><p class="first last">set to True at invocation.</p>
+</dd>
+</dl>
+</p>
 </td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><p class="first last"><a class="reference internal" href="#grpc.framework.interfaces.face.face.AbortionError" title="grpc.framework.interfaces.face.face.AbortionError"><code class="xref py py-exc docutils literal"><span class="pre">AbortionError</span></code></a> &#8211;
-Indicating that the RPC was aborted.</p>
+<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><p class="first last"><a class="reference internal" href="#grpc.framework.interfaces.face.face.AbortionError" title="grpc.framework.interfaces.face.face.AbortionError"><code class="xref py py-exc docutils literal"><span class="pre">AbortionError</span></code></a> &#8211; Indicating that the RPC was aborted.</p>
 </td>
 </tr>
 </tbody>
@@ -425,8 +478,12 @@ implementation affording custom state and behavior.</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A pair of a Call object for the RPC and a stream.Consumer to which the
-request values of the RPC should be passed.</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><dl class="docutils">
+<dt>A pair of a Call object for the RPC and a stream.Consumer to which the</dt>
+<dd><p class="first last">request values of the RPC should be passed.</p>
+</dd>
+</dl>
+</p>
 </td>
 </tr>
 </tbody>
@@ -454,8 +511,12 @@ implementation affording custom state and behavior.</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A pair of a Call object for the RPC and a stream.Consumer to which the
-request values of the RPC should be passed.</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><dl class="docutils">
+<dt>A pair of a Call object for the RPC and a stream.Consumer to which the</dt>
+<dd><p class="first last">request values of the RPC should be passed.</p>
+</dd>
+</dl>
+</p>
 </td>
 </tr>
 </tbody>
@@ -539,10 +600,14 @@ implementation affording custom state and behavior.</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">An object that is both a Call for the RPC and a future.Future. In the
-event of RPC completion, the return Future&#8217;s result value will be the
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><dl class="docutils">
+<dt>An object that is both a Call for the RPC and a future.Future. In the</dt>
+<dd><p class="first last">event of RPC completion, the return Future&#8217;s result value will be the
 response value of the RPC. In the event of RPC abortion, the returned
 Future&#8217;s exception value will be an AbortionError.</p>
+</dd>
+</dl>
+</p>
 </td>
 </tr>
 </tbody>
@@ -568,10 +633,14 @@ implementation affording custom state and behavior.</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">An object that is both a Call for the RPC and a future.Future. In the
-event of RPC completion, the return Future&#8217;s result value will be the
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><dl class="docutils">
+<dt>An object that is both a Call for the RPC and a future.Future. In the</dt>
+<dd><p class="first last">event of RPC completion, the return Future&#8217;s result value will be the
 response value of the RPC. In the event of RPC abortion, the returned
 Future&#8217;s exception value will be an AbortionError.</p>
+</dd>
+</dl>
+</p>
 </td>
 </tr>
 </tbody>
@@ -597,9 +666,13 @@ implementation affording custom state and behavior.</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">An object that is both a Call for the RPC and an iterator of response
-values. Drawing response values from the returned iterator may raise
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><dl class="docutils">
+<dt>An object that is both a Call for the RPC and an iterator of response</dt>
+<dd><p class="first last">values. Drawing response values from the returned iterator may raise
 AbortionError indicating abortion of the RPC.</p>
+</dd>
+</dl>
+</p>
 </td>
 </tr>
 </tbody>
@@ -625,9 +698,13 @@ implementation affording custom state and behavior.</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">An object that is both a Call for the RPC and an iterator of response
-values. Drawing response values from the returned iterator may raise
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><dl class="docutils">
+<dt>An object that is both a Call for the RPC and an iterator of response</dt>
+<dd><p class="first last">values. Drawing response values from the returned iterator may raise
 AbortionError indicating abortion of the RPC.</p>
+</dd>
+</dl>
+</p>
 </td>
 </tr>
 </tbody>
@@ -851,20 +928,22 @@ values of the RPC.</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">A stream.Consumer with which to accept the request values of the RPC. The
-consumer returned from this method may or may not be invoked to
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><dl class="docutils">
+<dt>A stream.Consumer with which to accept the request values of the RPC. The</dt>
+<dd><p class="first last">consumer returned from this method may or may not be invoked to
 completion: in the case of RPC abortion, RPC Framework will simply stop
 passing values to this object. Implementations must not assume that this
 object will be called to completion of the request stream or even called
 at all.</p>
+</dd>
+</dl>
+</p>
 </td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><ul class="first last simple">
-<li><code class="xref py py-exc docutils literal"><span class="pre">abandonment.Abandoned</span></code> &#8211;
-May or may not be raised when the RPC has been
+<li><code class="xref py py-exc docutils literal"><span class="pre">abandonment.Abandoned</span></code> &#8211; May or may not be raised when the RPC has been
 aborted.</li>
-<li><a class="reference internal" href="#grpc.framework.interfaces.face.face.NoSuchMethodError" title="grpc.framework.interfaces.face.face.NoSuchMethodError"><code class="xref py py-exc docutils literal"><span class="pre">NoSuchMethodError</span></code></a> &#8211;
-If this MultiMethod does not recognize the given group
+<li><a class="reference internal" href="#grpc.framework.interfaces.face.face.NoSuchMethodError" title="grpc.framework.interfaces.face.face.NoSuchMethodError"><code class="xref py py-exc docutils literal"><span class="pre">NoSuchMethodError</span></code></a> &#8211; If this MultiMethod does not recognize the given group
 and name for the RPC and is not able to service the RPC.</li>
 </ul>
 </td>
@@ -1012,8 +1091,11 @@ in the event of RPC abortion.</td>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">A value specified by the provider of a Face interface implementation
-affording custom state and behavior.</td>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><dl class="docutils">
+<dt>A value specified by the provider of a Face interface implementation</dt>
+<dd>affording custom state and behavior.</dd>
+</dl>
+</td>
 </tr>
 </tbody>
 </table>
@@ -1103,8 +1185,11 @@ emitted from the invocation-side of the RPC.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">The metadata object emitted by the invocation-side of the RPC, or None if
-there was no such value.</td>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><dl class="docutils">
+<dt>The metadata object emitted by the invocation-side of the RPC, or None if</dt>
+<dd>there was no such value.</dd>
+</dl>
+</td>
 </tr>
 </tbody>
 </table>
@@ -1135,33 +1220,6 @@ be transmitted to the invocation side of the RPC.</td>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <p>Affords invoking a stream-stream RPC in any call style.</p>
 <dl class="method">
-<dt id="grpc.framework.interfaces.face.face.StreamStreamMultiCallable.__call__">
-<code class="descname">__call__</code><span class="sig-paren">(</span><em>request_iterator</em>, <em>timeout</em>, <em>metadata=None</em>, <em>protocol_options=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/interfaces/face/face.html#StreamStreamMultiCallable.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.interfaces.face.face.StreamStreamMultiCallable.__call__" title="Permalink to this definition">¶</a></dt>
-<dd><p>Invokes the underlying RPC.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>request_iterator</strong> &#8211; An iterator that yields request values for the RPC.</li>
-<li><strong>timeout</strong> &#8211; A duration of time in seconds to allow for the RPC.</li>
-<li><strong>metadata</strong> &#8211; A metadata value to be passed to the service-side of
-the RPC.</li>
-<li><strong>protocol_options</strong> &#8211; A value specified by the provider of a Face interface
-implementation affording custom state and behavior.</li>
-</ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">An object that is both a Call for the RPC and an iterator of response
-values. Drawing response values from the returned iterator may raise
-AbortionError indicating abortion of the RPC.</p>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
 <dt id="grpc.framework.interfaces.face.face.StreamStreamMultiCallable.event">
 <code class="descname">event</code><span class="sig-paren">(</span><em>receiver</em>, <em>abortion_callback</em>, <em>timeout</em>, <em>metadata=None</em>, <em>protocol_options=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/interfaces/face/face.html#StreamStreamMultiCallable.event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.interfaces.face.face.StreamStreamMultiCallable.event" title="Permalink to this definition">¶</a></dt>
 <dd><p>Asynchronously invokes the underlying RPC.</p>
@@ -1181,8 +1239,12 @@ implementation affording custom state and behavior.</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A single object that is both a Call object for the RPC and a
-stream.Consumer to which the request values of the RPC should be passed.</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><dl class="docutils">
+<dt>A single object that is both a Call object for the RPC and a</dt>
+<dd><p class="first last">stream.Consumer to which the request values of the RPC should be passed.</p>
+</dd>
+</dl>
+</p>
 </td>
 </tr>
 </tbody>
@@ -1196,38 +1258,6 @@ stream.Consumer to which the request values of the RPC should be passed.</p>
 <em class="property">class </em><code class="descclassname">grpc.framework.interfaces.face.face.</code><code class="descname">StreamUnaryMultiCallable</code><a class="reference internal" href="_modules/grpc/framework/interfaces/face/face.html#StreamUnaryMultiCallable"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.interfaces.face.face.StreamUnaryMultiCallable" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <p>Affords invoking a stream-unary RPC in any call style.</p>
-<dl class="method">
-<dt id="grpc.framework.interfaces.face.face.StreamUnaryMultiCallable.__call__">
-<code class="descname">__call__</code><span class="sig-paren">(</span><em>request_iterator</em>, <em>timeout</em>, <em>metadata=None</em>, <em>with_call=False</em>, <em>protocol_options=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/interfaces/face/face.html#StreamUnaryMultiCallable.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.interfaces.face.face.StreamUnaryMultiCallable.__call__" title="Permalink to this definition">¶</a></dt>
-<dd><p>Synchronously invokes the underlying RPC.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>request_iterator</strong> &#8211; An iterator that yields request values for the RPC.</li>
-<li><strong>timeout</strong> &#8211; A duration of time in seconds to allow for the RPC.</li>
-<li><strong>metadata</strong> &#8211; A metadata value to be passed to the service-side of
-the RPC.</li>
-<li><strong>with_call</strong> &#8211; Whether or not to include return a Call for the RPC in addition
-to the reponse.</li>
-<li><strong>protocol_options</strong> &#8211; A value specified by the provider of a Face interface
-implementation affording custom state and behavior.</li>
-</ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The response value for the RPC, and a Call for the RPC if with_call was
-set to True at invocation.</p>
-</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><p class="first last"><a class="reference internal" href="#grpc.framework.interfaces.face.face.AbortionError" title="grpc.framework.interfaces.face.face.AbortionError"><code class="xref py py-exc docutils literal"><span class="pre">AbortionError</span></code></a> &#8211;
-Indicating that the RPC was aborted.</p>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
 <dl class="method">
 <dt id="grpc.framework.interfaces.face.face.StreamUnaryMultiCallable.event">
 <code class="descname">event</code><span class="sig-paren">(</span><em>receiver</em>, <em>abortion_callback</em>, <em>timeout</em>, <em>metadata=None</em>, <em>protocol_options=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/interfaces/face/face.html#StreamUnaryMultiCallable.event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.interfaces.face.face.StreamUnaryMultiCallable.event" title="Permalink to this definition">¶</a></dt>
@@ -1248,8 +1278,12 @@ implementation affording custom state and behavior.</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A single object that is both a Call object for the RPC and a
-stream.Consumer to which the request values of the RPC should be passed.</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><dl class="docutils">
+<dt>A single object that is both a Call object for the RPC and a</dt>
+<dd><p class="first last">stream.Consumer to which the request values of the RPC should be passed.</p>
+</dd>
+</dl>
+</p>
 </td>
 </tr>
 </tbody>
@@ -1274,10 +1308,14 @@ implementation affording custom state and behavior.</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">An object that is both a Call for the RPC and a future.Future. In the
-event of RPC completion, the return Future&#8217;s result value will be the
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><dl class="docutils">
+<dt>An object that is both a Call for the RPC and a future.Future. In the</dt>
+<dd><p class="first last">event of RPC completion, the return Future&#8217;s result value will be the
 response value of the RPC. In the event of RPC abortion, the returned
 Future&#8217;s exception value will be an AbortionError.</p>
+</dd>
+</dl>
+</p>
 </td>
 </tr>
 </tbody>
@@ -1291,33 +1329,6 @@ Future&#8217;s exception value will be an AbortionError.</p>
 <em class="property">class </em><code class="descclassname">grpc.framework.interfaces.face.face.</code><code class="descname">UnaryStreamMultiCallable</code><a class="reference internal" href="_modules/grpc/framework/interfaces/face/face.html#UnaryStreamMultiCallable"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.interfaces.face.face.UnaryStreamMultiCallable" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <p>Affords invoking a unary-stream RPC in any call style.</p>
-<dl class="method">
-<dt id="grpc.framework.interfaces.face.face.UnaryStreamMultiCallable.__call__">
-<code class="descname">__call__</code><span class="sig-paren">(</span><em>request</em>, <em>timeout</em>, <em>metadata=None</em>, <em>protocol_options=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/interfaces/face/face.html#UnaryStreamMultiCallable.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.interfaces.face.face.UnaryStreamMultiCallable.__call__" title="Permalink to this definition">¶</a></dt>
-<dd><p>Invokes the underlying RPC.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>request</strong> &#8211; The request value for the RPC.</li>
-<li><strong>timeout</strong> &#8211; A duration of time in seconds to allow for the RPC.</li>
-<li><strong>metadata</strong> &#8211; A metadata value to be passed to the service-side of
-the RPC.</li>
-<li><strong>protocol_options</strong> &#8211; A value specified by the provider of a Face interface
-implementation affording custom state and behavior.</li>
-</ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">An object that is both a Call for the RPC and an iterator of response
-values. Drawing response values from the returned iterator may raise
-AbortionError indicating abortion of the RPC.</p>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
 <dl class="method">
 <dt id="grpc.framework.interfaces.face.face.UnaryStreamMultiCallable.event">
 <code class="descname">event</code><span class="sig-paren">(</span><em>request</em>, <em>receiver</em>, <em>abortion_callback</em>, <em>timeout</em>, <em>metadata=None</em>, <em>protocol_options=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/interfaces/face/face.html#UnaryStreamMultiCallable.event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.interfaces.face.face.UnaryStreamMultiCallable.event" title="Permalink to this definition">¶</a></dt>
@@ -1353,38 +1364,6 @@ implementation affording custom state and behavior.</li>
 <em class="property">class </em><code class="descclassname">grpc.framework.interfaces.face.face.</code><code class="descname">UnaryUnaryMultiCallable</code><a class="reference internal" href="_modules/grpc/framework/interfaces/face/face.html#UnaryUnaryMultiCallable"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.interfaces.face.face.UnaryUnaryMultiCallable" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <p>Affords invoking a unary-unary RPC in any call style.</p>
-<dl class="method">
-<dt id="grpc.framework.interfaces.face.face.UnaryUnaryMultiCallable.__call__">
-<code class="descname">__call__</code><span class="sig-paren">(</span><em>request</em>, <em>timeout</em>, <em>metadata=None</em>, <em>with_call=False</em>, <em>protocol_options=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/interfaces/face/face.html#UnaryUnaryMultiCallable.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.interfaces.face.face.UnaryUnaryMultiCallable.__call__" title="Permalink to this definition">¶</a></dt>
-<dd><p>Synchronously invokes the underlying RPC.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>request</strong> &#8211; The request value for the RPC.</li>
-<li><strong>timeout</strong> &#8211; A duration of time in seconds to allow for the RPC.</li>
-<li><strong>metadata</strong> &#8211; A metadata value to be passed to the service-side of
-the RPC.</li>
-<li><strong>with_call</strong> &#8211; Whether or not to include return a Call for the RPC in addition
-to the reponse.</li>
-<li><strong>protocol_options</strong> &#8211; A value specified by the provider of a Face interface
-implementation affording custom state and behavior.</li>
-</ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The response value for the RPC, and a Call for the RPC if with_call was
-set to True at invocation.</p>
-</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><p class="first last"><a class="reference internal" href="#grpc.framework.interfaces.face.face.AbortionError" title="grpc.framework.interfaces.face.face.AbortionError"><code class="xref py py-exc docutils literal"><span class="pre">AbortionError</span></code></a> &#8211;
-Indicating that the RPC was aborted.</p>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
 <dl class="method">
 <dt id="grpc.framework.interfaces.face.face.UnaryUnaryMultiCallable.event">
 <code class="descname">event</code><span class="sig-paren">(</span><em>request</em>, <em>receiver</em>, <em>abortion_callback</em>, <em>timeout</em>, <em>metadata=None</em>, <em>protocol_options=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/interfaces/face/face.html#UnaryUnaryMultiCallable.event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.interfaces.face.face.UnaryUnaryMultiCallable.event" title="Permalink to this definition">¶</a></dt>
@@ -1431,10 +1410,14 @@ implementation affording custom state and behavior.</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">An object that is both a Call for the RPC and a future.Future. In the
-event of RPC completion, the return Future&#8217;s result value will be the
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><dl class="docutils">
+<dt>An object that is both a Call for the RPC and a future.Future. In the</dt>
+<dd><p class="first last">event of RPC completion, the return Future&#8217;s result value will be the
 response value of the RPC. In the event of RPC abortion, the returned
 Future&#8217;s exception value will be an AbortionError.</p>
+</dd>
+</dl>
+</p>
 </td>
 </tr>
 </tbody>
@@ -1618,7 +1601,7 @@ returns a response value.</td>
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2015, Author.
+        &copy; Copyright 2016, Author.
 
     </p>
   </div>
@@ -1640,7 +1623,7 @@ returns a response value.</td>
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'0.11.0b1',
+            VERSION:'0.13.1rc1',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true

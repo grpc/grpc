@@ -4,7 +4,7 @@
  *
  * Sphinx stylesheet -- basic theme.
  *
- * :copyright: Copyright 2007-2015 by the Sphinx team, see AUTHORS.
+ * :copyright: Copyright 2007-2016 by the Sphinx team, see AUTHORS.
  * :license: BSD, see LICENSE for details.
  *
  */
@@ -52,6 +52,8 @@ div.sphinxsidebar {
     width: 230px;
     margin-left: -100%;
     font-size: 90%;
+    word-wrap: break-word;
+    overflow-wrap : break-word;
 }
 
 div.sphinxsidebar ul {
