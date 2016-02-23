@@ -39,9 +39,6 @@
 
 int grpc_trace_channel_stack_builder = 0;
 
-#define BEGIN_SENTINAL ((grpc_channel_filter *)1)
-#define END_SENTINAL ((grpc_channel_filter *)2)
-
 typedef struct filter_node {
   struct filter_node *next;
   struct filter_node *prev;
@@ -51,7 +48,7 @@ typedef struct filter_node {
 } filter_node;
 
 struct grpc_channel_stack_builder {
-  // sentinal nodes for filters that have been added
+  // sentinel nodes for filters that have been added
   filter_node begin;
   filter_node end;
   // various set/get-able parameters
@@ -69,8 +66,8 @@ grpc_channel_stack_builder *grpc_channel_stack_builder_create(void) {
   grpc_channel_stack_builder *b = gpr_malloc(sizeof(*b));
   memset(b, 0, sizeof(*b));
 
-  b->begin.filter = BEGIN_SENTINAL;
-  b->end.filter = END_SENTINAL;
+  b->begin.filter = NULL;
+  b->end.filter = NULL;
   b->begin.next = &b->end;
   b->begin.prev = &b->end;
   b->end.next = &b->begin;

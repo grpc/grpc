@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_CHANNEL_CHANNEL_INIT_H
-#define GRPC_INTERNAL_CORE_CHANNEL_CHANNEL_INIT_H
+#ifndef GRPC_INTERNAL_CORE_SURFACE_CHANNEL_INIT_H
+#define GRPC_INTERNAL_CORE_SURFACE_CHANNEL_INIT_H
 
 #include "src/core/channel/channel_stack_builder.h"
 #include "src/core/surface/channel_stack_type.h"
@@ -43,8 +43,8 @@
 // It also provides a universal entry path to run those mutators to build
 // a channel stack for various subsystems.
 
-// One stage of mutation: call channel stack builder's to influence the finally
-// constructed channel stack
+// One stage of mutation: call functions against \a builder to influence the
+// finally constructed channel stack
 typedef bool (*grpc_channel_init_stage)(grpc_channel_stack_builder *builder,
                                         void *arg);
 
@@ -73,4 +73,4 @@ void *grpc_channel_init_create_stack(
     const grpc_channel_args *args, int initial_refs, grpc_iomgr_cb_func destroy,
     void *destroy_arg, grpc_transport *optional_transport);
 
-#endif
+#endif  // GRPC_INTERNAL_CORE_SURFACE_CHANNEL_INIT_H
