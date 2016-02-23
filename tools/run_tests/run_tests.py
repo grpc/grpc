@@ -385,7 +385,7 @@ class RubyLanguage(object):
   def pre_build_steps(self):
     return [['tools/run_tests/pre_build_ruby.sh']]
 
-  def make_targets(self, test_regex):
+  def make_targets(self):
     return []
 
   def make_options(self):
