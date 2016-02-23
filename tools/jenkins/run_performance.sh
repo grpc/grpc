@@ -31,11 +31,6 @@
 # This script is invoked by Jenkins and runs performance smoke test.
 set -ex
 
-#
-# Put a timeout on this test
-#
-((sleep 900; kill $$)&)
-
 # Enter the gRPC repo root
 cd $(dirname $0)/../..
 
@@ -51,6 +46,11 @@ bins/$config/qps_worker -driver_port 10000 &
 PID1=$!
 bins/$config/qps_worker -driver_port 10010 &
 PID2=$!
+
+#
+# Put a timeout on these tests
+#
+((sleep 900; kill $$)&)
 
 export QPS_WORKERS="localhost:10000,localhost:10010"
 
