@@ -14,12 +14,12 @@ filegroups:
   - include/grpc/census.h
   headers:
   - src/core/census/aggregation.h
-  - src/core/census/log.h
+  - src/core/census/mlog.h
   - src/core/census/rpc_metric_id.h
   src:
   - src/core/census/context.c
   - src/core/census/initialize.c
-  - src/core/census/log.c
+  - src/core/census/mlog.c
   - src/core/census/operation.c
   - src/core/census/placeholders.c
   - src/core/census/tracing.c
@@ -494,6 +494,44 @@ filegroups:
   - include/grpc/impl/codegen/grpc_types.h
   - include/grpc/impl/codegen/propagation_bits.h
   - include/grpc/impl/codegen/status.h
+- name: grpc_secure
+  headers:
+  - src/core/security/auth_filters.h
+  - src/core/security/base64.h
+  - src/core/security/credentials.h
+  - src/core/security/handshake.h
+  - src/core/security/json_token.h
+  - src/core/security/jwt_verifier.h
+  - src/core/security/secure_endpoint.h
+  - src/core/security/security_connector.h
+  - src/core/security/security_context.h
+  - src/core/tsi/fake_transport_security.h
+  - src/core/tsi/ssl_transport_security.h
+  - src/core/tsi/ssl_types.h
+  - src/core/tsi/transport_security.h
+  - src/core/tsi/transport_security_interface.h
+  src:
+  - src/core/httpcli/httpcli_security_connector.c
+  - src/core/security/base64.c
+  - src/core/security/client_auth_filter.c
+  - src/core/security/credentials.c
+  - src/core/security/credentials_metadata.c
+  - src/core/security/credentials_posix.c
+  - src/core/security/credentials_win32.c
+  - src/core/security/google_default_credentials.c
+  - src/core/security/handshake.c
+  - src/core/security/json_token.c
+  - src/core/security/jwt_verifier.c
+  - src/core/security/secure_endpoint.c
+  - src/core/security/security_connector.c
+  - src/core/security/security_context.c
+  - src/core/security/server_auth_filter.c
+  - src/core/security/server_secure_chttp2.c
+  - src/core/surface/init_secure.c
+  - src/core/surface/secure_channel_create.c
+  - src/core/tsi/fake_transport_security.c
+  - src/core/tsi/ssl_transport_security.c
+  - src/core/tsi/transport_security.c
 - name: grpc_test_util_base
   headers:
   - test/core/end2end/cq_verifier.h
@@ -537,43 +575,6 @@ libs:
   language: c
   public_headers:
   - include/grpc/grpc_security.h
-  headers:
-  - src/core/security/auth_filters.h
-  - src/core/security/base64.h
-  - src/core/security/credentials.h
-  - src/core/security/handshake.h
-  - src/core/security/json_token.h
-  - src/core/security/jwt_verifier.h
-  - src/core/security/secure_endpoint.h
-  - src/core/security/security_connector.h
-  - src/core/security/security_context.h
-  - src/core/tsi/fake_transport_security.h
-  - src/core/tsi/ssl_transport_security.h
-  - src/core/tsi/ssl_types.h
-  - src/core/tsi/transport_security.h
-  - src/core/tsi/transport_security_interface.h
-  src:
-  - src/core/httpcli/httpcli_security_connector.c
-  - src/core/security/base64.c
-  - src/core/security/client_auth_filter.c
-  - src/core/security/credentials.c
-  - src/core/security/credentials_metadata.c
-  - src/core/security/credentials_posix.c
-  - src/core/security/credentials_win32.c
-  - src/core/security/google_default_credentials.c
-  - src/core/security/handshake.c
-  - src/core/security/json_token.c
-  - src/core/security/jwt_verifier.c
-  - src/core/security/secure_endpoint.c
-  - src/core/security/security_connector.c
-  - src/core/security/security_context.c
-  - src/core/security/server_auth_filter.c
-  - src/core/security/server_secure_chttp2.c
-  - src/core/surface/init_secure.c
-  - src/core/surface/secure_channel_create.c
-  - src/core/tsi/fake_transport_security.c
-  - src/core/tsi/ssl_transport_security.c
-  - src/core/tsi/transport_security.c
   deps:
   - gpr
   baselib: true
@@ -582,12 +583,34 @@ libs:
   filegroups:
   - grpc_codegen
   - grpc_base
+  - grpc_secure
   - census
   secure: true
   vs_packages:
   - grpc.dependencies.openssl
   - grpc.dependencies.zlib
   vs_project_guid: '{29D16885-7228-4C31-81ED-5F9187C7F2A9}'
+- name: grpc_dll
+  build: private
+  language: c
+  src: []
+  deps:
+  - gpr
+  - grpc
+  build_system:
+  - visual_studio
+  deps_linkage: static
+  dll_def: grpc.def
+  vs_config_type: DynamicLibrary
+  vs_packages:
+  - grpc.dependencies.openssl
+  - grpc.dependencies.zlib
+  vs_project_guid: '{A2F6CBBA-A553-41B3-A7DE-F26DECCC27F0}'
+  vs_props:
+  - zlib
+  - openssl
+  - winsock
+  - global
 - name: grpc_test_util
   build: private
   language: c
@@ -715,6 +738,7 @@ libs:
   - test/cpp/util/create_test_channel.h
   - test/cpp/util/string_ref_helper.h
   - test/cpp/util/subprocess.h
+  - test/cpp/util/test_credentials_provider.h
   src:
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/echo.proto
@@ -725,6 +749,7 @@ libs:
   - test/cpp/util/create_test_channel.cc
   - test/cpp/util/string_ref_helper.cc
   - test/cpp/util/subprocess.cc
+  - test/cpp/util/test_credentials_provider.cc
   deps:
   - grpc++
   - grpc_test_util
@@ -958,7 +983,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/census/log_test.c
+  - test/core/census/mlog_test.c
   deps:
   - grpc_test_util
   - grpc
