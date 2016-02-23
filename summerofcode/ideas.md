@@ -2,10 +2,12 @@
 
 Hello students!
 
-We want gRPC to be the universal protocol for all computing platforms and
-paradigms, so while these are our ideas of what we think would make good
-projects for the summer, we're eager to hear your ideas and proposals as well.
-Try us out and get to know the gRPC code and team!
+We want gRPC to be the universal remote procedure call protocol for all
+computing platforms and paradigms, so while these are our ideas of what we
+think would make good projects for the summer, we're eager to hear your ideas
+and proposals as well.
+[Try us out](https://github.com/grpc/grpc/blob/master/CONTRIBUTING.md) and get
+to know the gRPC code and team!
 
 **Required skills for all projects:** git version control, collaborative
 software development on github.com, and software development in at least one
@@ -15,7 +17,7 @@ of gRPC's ten languages on at least one of Linux, Mac OS X, and Windows.
 
 gRPC C Core:
 
-1. Port gRPC to  one of the major BSD platforms ([FreeBSD](https://freebsd.org), [NetBSD](https://netbsd.org), and [OpenBSD](https://openbsd.org)) and create packages for them. Add kqueue support in the process.
+1. Port gRPC to  one of the major BSD platforms ([FreeBSD](https://freebsd.org), [NetBSD](https://netbsd.org), and [OpenBSD](https://openbsd.org)) and create packages for them. Add [kqueue](https://www.freebsd.org/cgi/man.cgi?query=kqueue) support in the process.
  * **Required skills:** C programming language, BSD operating system.
  * **Likely mentors:** [Craig Tiller](https://github.com/ctiller), [Nicolas Noble](https://github.com/nicolasnoble).
 1. Fix gRPC C-core's URI parser. The current parser does not qualify as a standard parser according to [RFC3986]( https://tools.ietf.org/html/rfc3986). Write test suites to verify this and make changes necessary to make the URI parser compliant.
