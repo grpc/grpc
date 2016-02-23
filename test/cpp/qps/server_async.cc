@@ -51,6 +51,7 @@
 #include <gtest/gtest.h>
 
 #include "src/proto/grpc/testing/services.grpc.pb.h"
+#include "test/core/util/test_config.h"
 #include "test/cpp/qps/server.h"
 
 namespace grpc {
@@ -129,7 +130,7 @@ class AsyncQpsServerTest : public Server {
     }
   }
   ~AsyncQpsServerTest() {
-    auto deadline = std::chrono::system_clock::now() + std::chrono::seconds(10);
+    auto deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(10);
     server_->Shutdown(deadline);
     for (auto ss = shutdown_state_.begin(); ss != shutdown_state_.end(); ++ss) {
       (*ss)->set_shutdown();

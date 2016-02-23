@@ -56,17 +56,18 @@ var grpc = require('./src/grpc_extension');
 /**
  * Load a gRPC object from an existing ProtoBuf.Reflect object.
  * @param {ProtoBuf.Reflect.Namespace} value The ProtoBuf object to load.
+ * @param {Object=} options Options to apply to the loaded object
  * @return {Object<string, *>} The resulting gRPC object
  */
-exports.loadObject = function loadObject(value) {
+exports.loadObject = function loadObject(value, options) {
   var result = {};
   if (value.className === 'Namespace') {
     _.each(value.children, function(child) {
-      result[child.name] = loadObject(child);
+      result[child.name] = loadObject(child, options);
     });
     return result;
   } else if (value.className === 'Service') {
-    return client.makeProtobufClientConstructor(value);
+    return client.makeProtobufClientConstructor(value, options);
   } else if (value.className === 'Message' || value.className === 'Enum') {
     return value.build();
   } else {
@@ -77,28 +78,45 @@ exports.loadObject = function loadObject(value) {
 var loadObject = exports.loadObject;
 
 /**
- * Load a gRPC object from a .proto file.
- * @param {string} filename The file to load
+ * Load a gRPC object from a .proto file. The options object can provide the
+ * following options:
+ * - convertFieldsToCamelCase: Loads this file with that option on protobuf.js
+ *   set as specified. See
+ *   https://github.com/dcodeIO/protobuf.js/wiki/Advanced-options for details
+ * - binaryAsBase64: deserialize bytes values as base64 strings instead of
+ *   Buffers. Defaults to false
+ * - longsAsStrings: deserialize long values as strings instead of objects.
+ *   Defaults to true
+ * @param {string|{root: string, file: string}} filename The file to load
  * @param {string=} format The file format to expect. Must be either 'proto' or
  *     'json'. Defaults to 'proto'
+ * @param {Object=} options Options to apply to the loaded file
  * @return {Object<string, *>} The resulting gRPC object
  */
-exports.load = function load(filename, format) {
+exports.load = function load(filename, format, options) {
   if (!format) {
     format = 'proto';
   }
-  var builder;
-  switch(format) {
-    case 'proto':
-    builder = ProtoBuf.loadProtoFile(filename);
-    break;
-    case 'json':
-    builder = ProtoBuf.loadJsonFile(filename);
-    break;
-    default:
-    throw new Error('Unrecognized format "' + format + '"');
+  var convertFieldsToCamelCaseOriginal = ProtoBuf.convertFieldsToCamelCase;
+  if(options && options.hasOwnProperty('convertFieldsToCamelCase')) {
+    ProtoBuf.convertFieldsToCamelCase = options.convertFieldsToCamelCase;
   }
-  return loadObject(builder.ns);
+  var builder;
+  try {
+    switch(format) {
+      case 'proto':
+      builder = ProtoBuf.loadProtoFile(filename);
+      break;
+      case 'json':
+      builder = ProtoBuf.loadJsonFile(filename);
+      break;
+      default:
+      throw new Error('Unrecognized format "' + format + '"');
+    }
+  } finally {
+    ProtoBuf.convertFieldsToCamelCase = convertFieldsToCamelCaseOriginal;
+  }
+  return loadObject(builder.ns, options);
 };
 
 /**

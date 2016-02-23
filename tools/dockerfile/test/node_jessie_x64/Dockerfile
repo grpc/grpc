@@ -27,8 +27,6 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# Dockerfile for running gRPC sanity tests
-
 FROM debian:jessie
 
 # Install Git and basic packages.
@@ -61,21 +59,30 @@ RUN apt-get update && apt-get install -y \
   wget \
   zip && apt-get clean
 
-##################
-# Sanity test dependencies
-RUN apt-get update && apt-get install -y python-pip
-RUN pip install simplejson mako
-
-##################
-# Docker "inception".
-# Note this is quite the ugly hack.
-# This makes sure that the docker binary we inject has its dependencies.
-RUN curl https://get.docker.com/ | sh
-RUN apt-get remove --purge -y docker-engine
-
-##################
+#================
 # Build profiling
-RUN apt-get install -y time
+RUN apt-get update && apt-get install -y time && apt-get clean
+
+#==================
+# Node dependencies
+
+# Install nvm
+RUN touch .profile
+RUN curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.25.4/install.sh | bash
+RUN /bin/bash -l -c "nvm install 0.12 && npm config set cache /tmp/npm-cache"
+
+# Prepare ccache
+RUN ln -s /usr/bin/ccache /usr/local/bin/gcc
+RUN ln -s /usr/bin/ccache /usr/local/bin/g++
+RUN ln -s /usr/bin/ccache /usr/local/bin/cc
+RUN ln -s /usr/bin/ccache /usr/local/bin/c++
+RUN ln -s /usr/bin/ccache /usr/local/bin/clang
+RUN ln -s /usr/bin/ccache /usr/local/bin/clang++
+
+#======================
+# Zookeeper dependencies
+# TODO(jtattermusch): is zookeeper still needed?
+RUN apt-get install -y libzookeeper-mt-dev
 
 RUN mkdir /var/local/jenkins
 

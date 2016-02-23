@@ -53,7 +53,7 @@ static void RunQPS() {
   client_config.set_outstanding_rpcs_per_channel(1000);
   client_config.set_client_channels(8);
   client_config.set_async_client_threads(8);
-  client_config.set_rpc_type(UNARY);
+  client_config.set_rpc_type(STREAMING);
   client_config.mutable_load_params()->mutable_poisson()->set_offered_load(
       1000.0);
 

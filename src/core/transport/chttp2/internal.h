@@ -385,7 +385,7 @@ typedef struct {
   grpc_closure *send_trailing_metadata_finished;
 
   grpc_metadata_batch *recv_initial_metadata;
-  grpc_closure *recv_initial_metadata_finished;
+  grpc_closure *recv_initial_metadata_ready;
   grpc_byte_stream **recv_message;
   grpc_closure *recv_message_ready;
   grpc_metadata_batch *recv_trailing_metadata;

@@ -36,7 +36,7 @@ cdef extern from "grpc/_cython/loader.h":
   ctypedef unsigned uint32_t
   ctypedef long int64_t
 
-  int pygrpc_load_core(const char*)
+  int pygrpc_load_core(char*)
 
   void *gpr_malloc(size_t size)
   void gpr_free(void *ptr)
@@ -99,6 +99,11 @@ cdef extern from "grpc/_cython/loader.h":
     GRPC_STATUS_UNAVAILABLE
     GRPC_STATUS_DATA_LOSS
     GRPC_STATUS__DO_NOT_USE
+
+  ctypedef enum grpc_ssl_roots_override_result:
+    GRPC_SSL_ROOTS_OVERRIDE_OK
+    GRPC_SSL_ROOTS_OVERRIDE_FAILED_PERMANENTLY
+    GRPC_SSL_ROOTS_OVERRIDE_FAILED
 
   struct grpc_byte_buffer_reader:
     # We don't care about the internals
@@ -337,6 +342,10 @@ cdef extern from "grpc/_cython/loader.h":
   ctypedef struct grpc_call_credentials:
     # We don't care about the internals (and in fact don't know them)
     pass
+
+  ctypedef void (*grpc_ssl_roots_override_callback)(char **pem_root_certs)
+
+  void grpc_set_ssl_roots_override_callback(grpc_ssl_roots_override_callback cb)
 
   grpc_channel_credentials *grpc_google_default_credentials_create()
   grpc_channel_credentials *grpc_ssl_credentials_create(
