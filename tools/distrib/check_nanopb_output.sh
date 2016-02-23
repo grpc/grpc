@@ -1,5 +1,4 @@
-#!/bin/sh
-
+#!/bin/bash
 # Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
@@ -29,27 +28,42 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+set -ex
 
-set -e
+apt-get install -y autoconf automake libtool curl python-virtualenv
 
-export TEST=true
+readonly NANOPB_TMP_OUTPUT="${LOCAL_GIT_ROOT}/gens/src/proto/grpc/lb/v0"
 
-cd `dirname $0`/../../..
+# install protoc version 3
+pushd third_party/protobuf
+./autogen.sh
+./configure
+make
+make install
+ldconfig
+popd
 
-submodules=`mktemp /tmp/submXXXXXX`
-want_submodules=`mktemp /tmp/submXXXXXX`
+if [ ! -x "/usr/local/bin/protoc" ]; then
+  echo "Error: protoc not found in path"
+  exit 1
+fi
+readonly PROTOC_PATH='/usr/local/bin'
+# stack up and change to nanopb's proto generator directory
+pushd third_party/nanopb/generator/proto
+PATH="$PROTOC_PATH:$PATH" make
 
-git submodule | awk '{ print $1 }' | sort > $submodules
-cat << EOF | awk '{ print $1 }' | sort > $want_submodules
- 9f897b25800d2f54f5c442ef01a60721aeca6d87 third_party/boringssl (version_for_cocoapods_1.0-67-g9f897b2)
- 05b155ff59114735ec8cd089f669c4c3d8f59029 third_party/gflags (v2.1.0-45-g05b155f)
- c99458533a9b4c743ed51537e25989ea55944908 third_party/googletest (release-1.7.0)
- 5497a1dfc91a86965383cdd1652e348345400435 third_party/nanopb (nanopb-0.3.3-10-g5497a1d)
- d5fb408ddc281ffcadeb08699e65bb694656d0bd third_party/protobuf (v3.0.0-beta-2)
- 50893291621658f355bc5b4d450a8d06a563053d third_party/zlib (v1.2.8)
-EOF
+# back to the root directory
+popd
 
-diff -u $submodules $want_submodules
 
-rm $submodules $want_submodules
+# nanopb-compile the proto to a temp location
+PATH="$PROTOC_PATH:$PATH" ./tools/codegen/core/gen_load_balancing_proto.sh \
+  src/proto/grpc/lb/v0/load_balancer.proto \
+  $NANOPB_TMP_OUTPUT
 
+# compare outputs to checked compiled code
+diff -rq $NANOPB_TMP_OUTPUT src/core/proto/grpc/lb/v0
+if [ $? != 0 ]; then
+  echo "Outputs differ: $NANOPB_TMP_OUTPUT vs src/core/proto/grpc/lb/v0"
+  exit 1
+fi
