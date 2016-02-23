@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -43,7 +43,7 @@
 #include <grpc/support/thd.h>
 
 #include "src/core/iomgr/iomgr_internal.h"
-#include "src/core/iomgr/timer_internal.h"
+#include "src/core/iomgr/timer.h"
 #include "src/core/support/string.h"
 
 static gpr_mu g_mu;
