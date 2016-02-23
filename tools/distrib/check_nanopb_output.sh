@@ -68,4 +68,4 @@ if [ $? != 0 ]; then
   exit 1
 fi
 
-rm -Rf $NANOPB_TMP_OUTPUT
+rm -Rf "${LOCAL_GIT_ROOT}/gens"
