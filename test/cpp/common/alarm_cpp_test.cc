@@ -63,7 +63,7 @@ TEST(AlarmTest, ZeroExpiry) {
   void* output_tag;
   bool ok;
   const CompletionQueue::NextStatus status = cq.AsyncNext(
-      (void**)&output_tag, &ok, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(1));
+      (void**)&output_tag, &ok, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(0));
 
   EXPECT_EQ(status, CompletionQueue::GOT_EVENT);
   EXPECT_TRUE(ok);
@@ -78,7 +78,7 @@ TEST(AlarmTest, NegativeExpiry) {
   void* output_tag;
   bool ok;
   const CompletionQueue::NextStatus status = cq.AsyncNext(
-      (void**)&output_tag, &ok, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(1));
+      (void**)&output_tag, &ok, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(0));
 
   EXPECT_EQ(status, CompletionQueue::GOT_EVENT);
   EXPECT_TRUE(ok);
