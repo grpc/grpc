@@ -56,6 +56,10 @@ class Alarm : private GrpcLibrary {
   /// Once the alarm expires (at \a deadline) or it's cancelled (see \a Cancel),
   /// an event with tag \a tag will be added to \a cq. If the alarm expired, the
   /// event's success bit will be true, false otherwise (ie, upon cancellation).
+  /// \internal We rely on the presence of \a cq for grpc initialization. If \a
+  /// cq were ever to be removed, a reference to a static
+  /// internal::GrpcLibraryInitializer instance would need to be introduced
+  /// here. \endinternal.
   template <typename T>
   Alarm(CompletionQueue* cq, const T& deadline, void* tag)
       : tag_(tag),

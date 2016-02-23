@@ -35,10 +35,7 @@
 
 namespace grpc {
 
-static internal::GrpcLibraryInitializer g_gli_initializer;
-
 Alarm::~Alarm() {
-  g_gli_initializer.summon();
   grpc_alarm_destroy(alarm_);
 }
 
