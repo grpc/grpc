@@ -323,7 +323,20 @@ grpc_event grpc_completion_queue_next(grpc_completion_queue *cc,
       break;
     }
     first_loop = 0;
-    grpc_pollset_work(&exec_ctx, &cc->pollset, &worker, now, deadline);
+    /* Check alarms - these are a global resource so we just ping
+       each time through on every pollset.
+       May update deadline to ensure timely wakeups.
+       TODO(ctiller): can this work be localized? */
+    gpr_timespec iteration_deadline = deadline;
+    if (grpc_timer_check(&exec_ctx, now, &iteration_deadline)) {
+      GPR_TIMER_MARK("alarm_triggered", 0);
+      gpr_mu_unlock(GRPC_POLLSET_MU(&cc->pollset));
+      grpc_exec_ctx_flush(&exec_ctx);
+      gpr_mu_lock(GRPC_POLLSET_MU(&cc->pollset));
+    } else {
+      grpc_pollset_work(&exec_ctx, &cc->pollset, &worker, now,
+                        iteration_deadline);
+    }
   }
   GRPC_SURFACE_TRACE_RETURNED_EVENT(cc, &ret);
   GRPC_CQ_INTERNAL_UNREF(cc, "next");
@@ -427,7 +440,20 @@ grpc_event grpc_completion_queue_pluck(grpc_completion_queue *cc, void *tag,
       break;
     }
     first_loop = 0;
-    grpc_pollset_work(&exec_ctx, &cc->pollset, &worker, now, deadline);
+    /* Check alarms - these are a global resource so we just ping
+       each time through on every pollset.
+       May update deadline to ensure timely wakeups.
+       TODO(ctiller): can this work be localized? */
+    gpr_timespec iteration_deadline = deadline;
+    if (grpc_timer_check(&exec_ctx, now, &iteration_deadline)) {
+      GPR_TIMER_MARK("alarm_triggered", 0);
+      gpr_mu_unlock(GRPC_POLLSET_MU(&cc->pollset));
+      grpc_exec_ctx_flush(&exec_ctx);
+      gpr_mu_lock(GRPC_POLLSET_MU(&cc->pollset));
+    } else {
+      grpc_pollset_work(&exec_ctx, &cc->pollset, &worker, now,
+                        iteration_deadline);
+    }
     del_plucker(cc, tag, &worker);
   }
 done:
