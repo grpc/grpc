@@ -51,29 +51,35 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.abspath(os.path.join(SCRIPT_DIR, '..', '..', '..'))
 
 CONFIG = args.config
-SETUP_PATH = os.path.join(PROJECT_ROOT, 'src/python/grpcio/setup.py')
-DOC_PATH = os.path.join(PROJECT_ROOT, 'src/python/grpcio/doc/build')
+SETUP_PATH = os.path.join(PROJECT_ROOT, 'setup.py')
+REQUIREMENTS_PATH = os.path.join(PROJECT_ROOT, 'requirements.txt')
+DOC_PATH = os.path.join(PROJECT_ROOT, 'doc/build')
 INCLUDE_PATH = os.path.join(PROJECT_ROOT, 'include')
 LIBRARY_PATH = os.path.join(PROJECT_ROOT, 'libs/{}'.format(CONFIG))
 VIRTUALENV_DIR = os.path.join(SCRIPT_DIR, 'distrib_virtualenv')
 VIRTUALENV_PYTHON_PATH = os.path.join(VIRTUALENV_DIR, 'bin', 'python')
+VIRTUALENV_PIP_PATH = os.path.join(VIRTUALENV_DIR, 'bin', 'pip')
 
 environment = os.environ.copy()
 environment.update({
     'CONFIG': CONFIG,
     'CFLAGS': '-I{}'.format(INCLUDE_PATH),
     'LDFLAGS': '-L{}'.format(LIBRARY_PATH),
-    'LD_LIBRARY_PATH': LIBRARY_PATH
+    'LD_LIBRARY_PATH': LIBRARY_PATH,
+    'GRPC_PYTHON_BUILD_WITH_CYTHON': '1',
 })
 
 subprocess_arguments_list = [
     {'args': ['make'], 'cwd': PROJECT_ROOT},
     {'args': ['virtualenv', VIRTUALENV_DIR], 'env': environment},
+    {'args': [VIRTUALENV_PIP_PATH, 'install', '-r', REQUIREMENTS_PATH],
+     'env': environment},
     {'args': [VIRTUALENV_PYTHON_PATH, SETUP_PATH, 'build'], 'env': environment},
     {'args': [VIRTUALENV_PYTHON_PATH, SETUP_PATH, 'doc'], 'env': environment},
 ]
 
 for subprocess_arguments in subprocess_arguments_list:
+  print('Running command: {}'.format(subprocess_arguments['args']))
   subprocess.check_call(**subprocess_arguments)
 
 if args.submit:
