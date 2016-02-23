@@ -218,7 +218,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/iomgr/time_averaged_stats.h )
   s.files += %w( src/core/iomgr/timer.h )
   s.files += %w( src/core/iomgr/timer_heap.h )
-  s.files += %w( src/core/iomgr/timer_internal.h )
   s.files += %w( src/core/iomgr/udp_server.h )
   s.files += %w( src/core/iomgr/wakeup_fd_pipe.h )
   s.files += %w( src/core/iomgr/wakeup_fd_posix.h )
