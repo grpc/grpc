@@ -134,12 +134,11 @@ class CLanguage(object):
     self.config = config
     self.args = args
     if self.platform == 'windows':
-      _check_compiler(self.args.compiler, ['default',
-                                           'vs2010',
-                                           'vs2013',
-                                           'vs2015'])
+      self._make_options = [_windows_toolset_option(self.args.compiler),
+                            _windows_arch_option(self.args.arch)]
     else:
       _check_compiler(self.args.compiler, ['default'])
+      self._make_options = []
 
   def test_specs(self):
     out = []
@@ -179,7 +178,7 @@ class CLanguage(object):
     return ['buildtests_%s' % self.make_target, 'tools_%s' % self.make_target]
 
   def make_options(self):
-    return []
+    return self._make_options;
 
   def pre_build_steps(self):
     if self.platform == 'windows':
@@ -844,9 +843,7 @@ def make_jobspec(cfg, targets, makefile='Makefile'):
     return [
       jobset.JobSpec([_windows_build_bat(args.compiler),
                       'vsprojects\\%s.sln' % target,
-                      '/p:Configuration=%s' % _WINDOWS_CONFIG[cfg],
-                      _windows_toolset_option(args.compiler),
-                      _windows_arch_option(args.arch)] +
+                      '/p:Configuration=%s' % _WINDOWS_CONFIG[cfg]] +
                       extra_args +
                       language_make_options,
                       shell=True, timeout_seconds=None)
