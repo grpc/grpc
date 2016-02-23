@@ -149,7 +149,7 @@ class CLanguage(object):
       if self.platform == 'windows':
         binary = 'vsprojects/%s%s/%s.exe' % (
             'x64/' if self.args.arch == 'x64' else '',
-            _WINDOWS_CONFIG[self.config.build_config],
+            _MSBUILD_CONFIG[self.config.build_config],
             target['name'])
       else:
         binary = 'bins/%s/%s' % (self.config.build_config, target['name'])
@@ -402,7 +402,7 @@ class CSharpLanguage(object):
     assemblies = tests_json['assemblies']
     tests = tests_json['tests']
 
-    msbuild_config = _WINDOWS_CONFIG[self.config.build_config]
+    msbuild_config = _MSBUILD_CONFIG[self.config.build_config]
     assembly_files = ['%s/bin/%s/%s.dll' % (a, msbuild_config, a)
                       for a in assemblies]
 
@@ -568,7 +568,7 @@ _LANGUAGES = {
     }
 
 
-_WINDOWS_CONFIG = {
+_MSBUILD_CONFIG = {
     'dbg': 'Debug',
     'opt': 'Release',
     'gcov': 'Debug',
@@ -843,7 +843,7 @@ def make_jobspec(cfg, targets, makefile='Makefile'):
     return [
       jobset.JobSpec([_windows_build_bat(args.compiler),
                       'vsprojects\\%s.sln' % target,
-                      '/p:Configuration=%s' % _WINDOWS_CONFIG[cfg]] +
+                      '/p:Configuration=%s' % _MSBUILD_CONFIG[cfg]] +
                       extra_args +
                       language_make_options,
                       shell=True, timeout_seconds=None)
@@ -870,7 +870,7 @@ for l in languages:
 
 def build_step_environ(cfg):
   environ = {'CONFIG': cfg}
-  msbuild_cfg = _WINDOWS_CONFIG.get(cfg)
+  msbuild_cfg = _MSBUILD_CONFIG.get(cfg)
   if msbuild_cfg:
     environ['MSBUILD_CONFIG'] = msbuild_cfg
   return environ
