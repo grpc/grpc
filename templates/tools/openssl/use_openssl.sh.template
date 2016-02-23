@@ -1,6 +1,8 @@
 %YAML 1.2
 --- |
-  # Copyright 2016, Google Inc.
+  #!/bin/bash
+
+  # Copyright 2015-2016, Google Inc.
   # All rights reserved.
   #
   # Redistribution and use in source and binary forms, with or without
@@ -29,19 +31,33 @@
   # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
   # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-  FROM debian:squeeze
+  set -ex
 
-  <%include file="../../apt_get_basic.include" args="skip_golang=True"/>
+  cd $(dirname $0)/../..
+  set root=`pwd`
+  CC=${"${CC:-cc}"}
 
-  # libgflags-dev is not available on squeezy
-  RUN apt-get update && apt-get -y install libgtest-dev libc++-dev clang && apt-get clean
+  # allow openssl to be pre-downloaded
+  if [ ! -e third_party/${openssl_fallback.tarball} ]
+  then
+    echo "Downloading ${openssl_fallback.base_uri + openssl_fallback.tarball} to third_party/${openssl_fallback.tarball}"
+    wget ${openssl_fallback.base_uri + openssl_fallback.tarball} -O third_party/${openssl_fallback.tarball}
+  fi
 
-  RUN apt-get update && apt-get -y install python-pip && apt-get clean
-  RUN pip install argparse
+  # clean openssl directory
+  rm -rf third_party/${openssl_fallback.extraction_dir}
 
-  RUN wget ${openssl_fallback.base_uri + openssl_fallback.tarball}
-  ADD post-git-setup.sh /
+  # extract archive
+  cd third_party
+  tar xfz ${openssl_fallback.tarball}
 
-  <%include file="../../run_tests_addons.include" args="skip_zookeeper=True"/>
-  # Define the default command.
-  CMD ["bash"]
+  # build openssl
+  cd ${openssl_fallback.extraction_dir}
+  CC="$CC -fPIC -fvisibility=hidden" ./config no-asm
+  make
+
+  # generate the 'grpc_obj' directory needed by the makefile
+  mkdir grpc_obj
+  cd grpc_obj
+  ar x ../libcrypto.a
+  ar x ../libssl.a

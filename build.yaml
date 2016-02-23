@@ -2844,6 +2844,10 @@ php_config_m4:
   - src/php/ext/grpc/server.c
   - src/php/ext/grpc/server_credentials.c
   - src/php/ext/grpc/timeval.c
+openssl_fallback:
+  base_uri: http://openssl.org/source/
+  extraction_dir: openssl-1.0.2f
+  tarball: openssl-1.0.2f.tar.gz
 python_dependencies:
   deps:
   - grpc

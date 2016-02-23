@@ -1,5 +1,6 @@
 %YAML 1.2
 --- |
+  #!/bin/bash
   # Copyright 2016, Google Inc.
   # All rights reserved.
   #
@@ -29,19 +30,8 @@
   # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
   # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-  FROM debian:squeeze
+  set -ex
 
-  <%include file="../../apt_get_basic.include" args="skip_golang=True"/>
-
-  # libgflags-dev is not available on squeezy
-  RUN apt-get update && apt-get -y install libgtest-dev libc++-dev clang && apt-get clean
-
-  RUN apt-get update && apt-get -y install python-pip && apt-get clean
-  RUN pip install argparse
-
-  RUN wget ${openssl_fallback.base_uri + openssl_fallback.tarball}
-  ADD post-git-setup.sh /
-
-  <%include file="../../run_tests_addons.include" args="skip_zookeeper=True"/>
-  # Define the default command.
-  CMD ["bash"]
+  cd /var/local/git/grpc
+  cp /${openssl_fallback.tarball} third_party
+  ./tools/openssl/use_openssl.sh
