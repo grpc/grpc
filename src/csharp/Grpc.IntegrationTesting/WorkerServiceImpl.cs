@@ -47,6 +47,13 @@ namespace Grpc.Testing
     /// </summary>
     public class WorkerServiceImpl : WorkerService.IWorkerService
     {
+        readonly Action stopRequestHandler;
+
+        public WorkerServiceImpl(Action stopRequestHandler)
+        {
+            this.stopRequestHandler = Grpc.Core.Utils.Preconditions.CheckNotNull(stopRequestHandler);
+        }
+        
         public async Task RunServer(IAsyncStreamReader<ServerArgs> requestStream, IServerStreamWriter<ServerStatus> responseStream, ServerCallContext context)
         {
             GrpcPreconditions.CheckState(await requestStream.MoveNext());
@@ -91,6 +98,17 @@ namespace Grpc.Testing
                 });
             }
             await runner.StopAsync();
+        }
+
+        public Task<CoreResponse> CoreCount(CoreRequest request, ServerCallContext context)
+        {
+            return Task.FromResult(new CoreResponse { Cores = Environment.ProcessorCount });
+        }
+
+        public Task<Void> QuitWorker(Void request, ServerCallContext context)
+        {
+            stopRequestHandler();
+            return Task.FromResult(new Void());
         }
     }
 }
