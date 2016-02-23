@@ -27,6 +27,35 @@
 @rem (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 @rem OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-set JUNIT_REPORT_PATH=src\node\reports.xml
-set JUNIT_REPORT_STACK=1
-.\node_modules\.bin\mocha.cmd --reporter mocha-jenkins-reporter --timeout 8000 src\node\test
+
+set NUGET=C:\nuget\nuget.exe
+%NUGET% restore vsprojects\grpc.sln || goto :error
+
+
+@call vsprojects\build_vs2013.bat vsprojects\grpc.sln /t:grpc_dll /p:Configuration=Release /p:PlatformToolset=v120 /p:Platform=Win32 || goto :error
+@call vsprojects\build_vs2013.bat vsprojects\grpc.sln /t:grpc_dll /p:Configuration=Release /p:PlatformToolset=v120 /p:Platform=x64   || goto :error
+
+mkdir src\python\grpcio\grpc\_cython\_windows
+
+copy /Y vsprojects\Release\grpc_dll.dll src\python\grpcio\grpc\_cython\_windows\grpc_c.32.python || goto :error
+copy /Y vsprojects\x64\Release\grpc_dll.dll src\python\grpcio\grpc\_cython\_windows\grpc_c.64.python || goto :error
+
+
+set PATH=C:\%1;C:\%1\scripts;%PATH%
+
+pip install --upgrade six
+pip install --upgrade setuptools
+pip install -rrequirements.txt
+
+set GRPC_PYTHON_USE_CUSTOM_BDIST=0
+set GRPC_PYTHON_BUILD_WITH_CYTHON=1
+
+python setup.py bdist_wheel
+
+mkdir artifacts
+xcopy /Y /I /S dist\* artifacts\ || goto :error
+
+goto :EOF
+
+:error
+exit /b 1
