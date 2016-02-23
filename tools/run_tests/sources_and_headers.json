@@ -92,7 +92,7 @@
     "language": "c", 
     "name": "census_log_test", 
     "src": [
-      "test/core/census/log_test.c"
+      "test/core/census/mlog_test.c"
     ]
   }, 
   {
@@ -3015,7 +3015,7 @@
       "src/core/census/aggregation.h", 
       "src/core/census/grpc_filter.h", 
       "src/core/census/grpc_plugin.h", 
-      "src/core/census/log.h", 
+      "src/core/census/mlog.h", 
       "src/core/census/rpc_metric_id.h", 
       "src/core/channel/channel_args.h", 
       "src/core/channel/channel_stack.h", 
@@ -3081,7 +3081,6 @@
       "src/core/iomgr/time_averaged_stats.h", 
       "src/core/iomgr/timer.h", 
       "src/core/iomgr/timer_heap.h", 
-      "src/core/iomgr/timer_internal.h", 
       "src/core/iomgr/udp_server.h", 
       "src/core/iomgr/wakeup_fd_pipe.h", 
       "src/core/iomgr/wakeup_fd_posix.h", 
@@ -3173,8 +3172,8 @@
       "src/core/census/grpc_plugin.c", 
       "src/core/census/grpc_plugin.h", 
       "src/core/census/initialize.c", 
-      "src/core/census/log.c", 
-      "src/core/census/log.h", 
+      "src/core/census/mlog.c", 
+      "src/core/census/mlog.h", 
       "src/core/census/operation.c", 
       "src/core/census/placeholders.c", 
       "src/core/census/rpc_metric_id.h", 
@@ -3311,7 +3310,6 @@
       "src/core/iomgr/timer.h", 
       "src/core/iomgr/timer_heap.c", 
       "src/core/iomgr/timer_heap.h", 
-      "src/core/iomgr/timer_internal.h", 
       "src/core/iomgr/udp_server.c", 
       "src/core/iomgr/udp_server.h", 
       "src/core/iomgr/wakeup_fd_eventfd.c", 
@@ -3464,6 +3462,16 @@
   {
     "deps": [
       "gpr", 
+      "grpc"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "grpc_dll", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "gpr", 
       "gpr_test_util", 
       "grpc"
     ], 
@@ -3559,7 +3567,7 @@
       "src/core/census/aggregation.h", 
       "src/core/census/grpc_filter.h", 
       "src/core/census/grpc_plugin.h", 
-      "src/core/census/log.h", 
+      "src/core/census/mlog.h", 
       "src/core/census/rpc_metric_id.h", 
       "src/core/channel/channel_args.h", 
       "src/core/channel/channel_stack.h", 
@@ -3625,7 +3633,6 @@
       "src/core/iomgr/time_averaged_stats.h", 
       "src/core/iomgr/timer.h", 
       "src/core/iomgr/timer_heap.h", 
-      "src/core/iomgr/timer_internal.h", 
       "src/core/iomgr/udp_server.h", 
       "src/core/iomgr/wakeup_fd_pipe.h", 
       "src/core/iomgr/wakeup_fd_posix.h", 
@@ -3702,8 +3709,8 @@
       "src/core/census/grpc_plugin.c", 
       "src/core/census/grpc_plugin.h", 
       "src/core/census/initialize.c", 
-      "src/core/census/log.c", 
-      "src/core/census/log.h", 
+      "src/core/census/mlog.c", 
+      "src/core/census/mlog.h", 
       "src/core/census/operation.c", 
       "src/core/census/placeholders.c", 
       "src/core/census/rpc_metric_id.h", 
@@ -3839,7 +3846,6 @@
       "src/core/iomgr/timer.h", 
       "src/core/iomgr/timer_heap.c", 
       "src/core/iomgr/timer_heap.h", 
-      "src/core/iomgr/timer_internal.h", 
       "src/core/iomgr/udp_server.c", 
       "src/core/iomgr/udp_server.h", 
       "src/core/iomgr/wakeup_fd_eventfd.c", 
@@ -4243,7 +4249,8 @@
       "test/cpp/util/cli_call.h", 
       "test/cpp/util/create_test_channel.h", 
       "test/cpp/util/string_ref_helper.h", 
-      "test/cpp/util/subprocess.h"
+      "test/cpp/util/subprocess.h", 
+      "test/cpp/util/test_credentials_provider.h"
     ], 
     "language": "c++", 
     "name": "grpc++_test_util", 
@@ -4259,7 +4266,9 @@
       "test/cpp/util/string_ref_helper.cc", 
       "test/cpp/util/string_ref_helper.h", 
       "test/cpp/util/subprocess.cc", 
-      "test/cpp/util/subprocess.h"
+      "test/cpp/util/subprocess.h", 
+      "test/cpp/util/test_credentials_provider.cc", 
+      "test/cpp/util/test_credentials_provider.h"
     ]
   }, 
   {
