@@ -38,36 +38,46 @@
 #include "src/core/surface/channel_stack_type.h"
 #include "src/core/transport/transport.h"
 
-// This module provides a way for plugins (and the grpc core library itself)
-// to register mutators for channel stacks.
-// It also provides a universal entry path to run those mutators to build
-// a channel stack for various subsystems.
+/// This module provides a way for plugins (and the grpc core library itself)
+/// to register mutators for channel stacks.
+/// It also provides a universal entry path to run those mutators to build
+/// a channel stack for various subsystems.
 
-// One stage of mutation: call functions against \a builder to influence the
-// finally constructed channel stack
+/// One stage of mutation: call functions against \a builder to influence the
+/// finally constructed channel stack
 typedef bool (*grpc_channel_init_stage)(grpc_channel_stack_builder *builder,
                                         void *arg);
 
-// Global initialization of the system
+/// Global initialization of the system
 void grpc_channel_init_init(void);
 
-// Register one stage of mutators.
-// Stages are run in priority order (lowest to highest), and then in
-// registration order (in the case of a tie).
-// Stages are registered against one of the pre-determined channel stack
-// types.
+/// Register one stage of mutators.
+/// Stages are run in priority order (lowest to highest), and then in
+/// registration order (in the case of a tie).
+/// Stages are registered against one of the pre-determined channel stack
+/// types.
 void grpc_channel_init_register_stage(grpc_channel_stack_type type,
                                       int priority,
-                                      grpc_channel_init_stage stage,
+                                      grpc_channel_init_stage stage_fn,
                                       void *stage_arg);
 
-// Finalize registration. No more calls to grpc_channel_init_register_stage are
-// allowed.
+/// Finalize registration. No more calls to grpc_channel_init_register_stage are
+/// allowed.
 void grpc_channel_init_finalize(void);
-// Shutdown the channel init system
+/// Shutdown the channel init system
 void grpc_channel_init_shutdown(void);
 
-// Construct a channel stack of some sort: see channel_stack.h for details
+/// Construct a channel stack of some sort: see channel_stack.h for details
+/// \a type is the type of channel stack to create
+/// \a prefix_bytes is the number of bytes before the channel stack to allocate
+/// \a args are configuration arguments for the channel stack
+/// \a initial_refs is the initial refcount to give the channel stack
+/// \a destroy and \a destroy_arg specify how to destroy the channel stack
+///    if destroy_arg is NULL, the returned value from this function will be
+///    substituted
+/// \a optional_transport is either NULL or a constructed transport object
+/// Returns a pointer to the base of the memory allocated (the actual channel
+/// stack object will be prefix_bytes past that pointer)
 void *grpc_channel_init_create_stack(
     grpc_exec_ctx *exec_ctx, grpc_channel_stack_type type, size_t prefix_bytes,
     const grpc_channel_args *args, int initial_refs, grpc_iomgr_cb_func destroy,
