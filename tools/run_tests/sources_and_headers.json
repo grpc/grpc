@@ -57,7 +57,6 @@
   }, 
   {
     "deps": [
-      "gpr", 
       "grpc", 
       "grpc_test_util"
     ], 
