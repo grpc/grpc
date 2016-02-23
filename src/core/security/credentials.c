@@ -196,14 +196,21 @@ static void *server_credentials_pointer_arg_copy(void *p) {
   return grpc_server_credentials_ref(p);
 }
 
+static int server_credentials_pointer_cmp(void *a, void *b) {
+  return GPR_ICMP(a, b);
+}
+
+static const grpc_arg_pointer_vtable cred_ptr_vtable = {
+    server_credentials_pointer_arg_copy, server_credentials_pointer_arg_destroy,
+    server_credentials_pointer_cmp};
+
 grpc_arg grpc_server_credentials_to_arg(grpc_server_credentials *p) {
   grpc_arg arg;
   memset(&arg, 0, sizeof(grpc_arg));
   arg.type = GRPC_ARG_POINTER;
   arg.key = GRPC_SERVER_CREDENTIALS_ARG;
   arg.value.pointer.p = p;
-  arg.value.pointer.copy = server_credentials_pointer_arg_copy;
-  arg.value.pointer.destroy = server_credentials_pointer_arg_destroy;
+  arg.value.pointer.vtable = &cred_ptr_vtable;
   return arg;
 }
 

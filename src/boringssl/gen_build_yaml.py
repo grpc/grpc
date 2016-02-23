@@ -33,6 +33,8 @@ import sys
 import os
 import yaml
 
+sys.dont_write_bytecode = True
+
 boring_ssl_root = os.path.abspath(os.path.join(
     os.path.dirname(sys.argv[0]), 
     '../../third_party/boringssl'))

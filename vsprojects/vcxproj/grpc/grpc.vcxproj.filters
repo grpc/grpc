@@ -1,69 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="$(SolutionDir)\..\src\core\httpcli\httpcli_security_connector.c">
-      <Filter>src\core\httpcli</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\security\base64.c">
-      <Filter>src\core\security</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\security\client_auth_filter.c">
-      <Filter>src\core\security</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\security\credentials.c">
-      <Filter>src\core\security</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\security\credentials_metadata.c">
-      <Filter>src\core\security</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\security\credentials_posix.c">
-      <Filter>src\core\security</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\security\credentials_win32.c">
-      <Filter>src\core\security</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\security\google_default_credentials.c">
-      <Filter>src\core\security</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\security\handshake.c">
-      <Filter>src\core\security</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\security\json_token.c">
-      <Filter>src\core\security</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\security\jwt_verifier.c">
-      <Filter>src\core\security</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\security\secure_endpoint.c">
-      <Filter>src\core\security</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\security\security_connector.c">
-      <Filter>src\core\security</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\security\security_context.c">
-      <Filter>src\core\security</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\security\server_auth_filter.c">
-      <Filter>src\core\security</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\security\server_secure_chttp2.c">
-      <Filter>src\core\security</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\surface\init_secure.c">
-      <Filter>src\core\surface</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\surface\secure_channel_create.c">
-      <Filter>src\core\surface</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\tsi\fake_transport_security.c">
-      <Filter>src\core\tsi</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\tsi\ssl_transport_security.c">
-      <Filter>src\core\tsi</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\tsi\transport_security.c">
-      <Filter>src\core\tsi</Filter>
-    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\census\grpc_context.c">
       <Filter>src\core\census</Filter>
     </ClCompile>
@@ -143,6 +80,9 @@
       <Filter>src\core\client_config</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\client_config\subchannel_factory.c">
+      <Filter>src\core\client_config</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\client_config\subchannel_index.c">
       <Filter>src\core\client_config</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\client_config\uri_parser.c">
@@ -445,139 +385,76 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\transport\transport_op_string.c">
       <Filter>src\core\transport</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\profiling\basic_timers.c">
-      <Filter>src\core\profiling</Filter>
+    <ClCompile Include="$(SolutionDir)\..\src\core\httpcli\httpcli_security_connector.c">
+      <Filter>src\core\httpcli</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\profiling\stap_timers.c">
-      <Filter>src\core\profiling</Filter>
+    <ClCompile Include="$(SolutionDir)\..\src\core\security\base64.c">
+      <Filter>src\core\security</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\support\alloc.c">
-      <Filter>src\core\support</Filter>
+    <ClCompile Include="$(SolutionDir)\..\src\core\security\client_auth_filter.c">
+      <Filter>src\core\security</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\support\avl.c">
-      <Filter>src\core\support</Filter>
+    <ClCompile Include="$(SolutionDir)\..\src\core\security\credentials.c">
+      <Filter>src\core\security</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\support\cmdline.c">
-      <Filter>src\core\support</Filter>
+    <ClCompile Include="$(SolutionDir)\..\src\core\security\credentials_metadata.c">
+      <Filter>src\core\security</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\support\cpu_iphone.c">
-      <Filter>src\core\support</Filter>
+    <ClCompile Include="$(SolutionDir)\..\src\core\security\credentials_posix.c">
+      <Filter>src\core\security</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\support\cpu_linux.c">
-      <Filter>src\core\support</Filter>
+    <ClCompile Include="$(SolutionDir)\..\src\core\security\credentials_win32.c">
+      <Filter>src\core\security</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\support\cpu_posix.c">
-      <Filter>src\core\support</Filter>
+    <ClCompile Include="$(SolutionDir)\..\src\core\security\google_default_credentials.c">
+      <Filter>src\core\security</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\support\cpu_windows.c">
-      <Filter>src\core\support</Filter>
+    <ClCompile Include="$(SolutionDir)\..\src\core\security\handshake.c">
+      <Filter>src\core\security</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\support\env_linux.c">
-      <Filter>src\core\support</Filter>
+    <ClCompile Include="$(SolutionDir)\..\src\core\security\json_token.c">
+      <Filter>src\core\security</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\support\env_posix.c">
-      <Filter>src\core\support</Filter>
+    <ClCompile Include="$(SolutionDir)\..\src\core\security\jwt_verifier.c">
+      <Filter>src\core\security</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\support\env_win32.c">
-      <Filter>src\core\support</Filter>
+    <ClCompile Include="$(SolutionDir)\..\src\core\security\secure_endpoint.c">
+      <Filter>src\core\security</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\support\file.c">
-      <Filter>src\core\support</Filter>
+    <ClCompile Include="$(SolutionDir)\..\src\core\security\security_connector.c">
+      <Filter>src\core\security</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\support\file_posix.c">
-      <Filter>src\core\support</Filter>
+    <ClCompile Include="$(SolutionDir)\..\src\core\security\security_context.c">
+      <Filter>src\core\security</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\support\file_win32.c">
-      <Filter>src\core\support</Filter>
+    <ClCompile Include="$(SolutionDir)\..\src\core\security\server_auth_filter.c">
+      <Filter>src\core\security</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\support\histogram.c">
-      <Filter>src\core\support</Filter>
+    <ClCompile Include="$(SolutionDir)\..\src\core\security\server_secure_chttp2.c">
+      <Filter>src\core\security</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\support\host_port.c">
-      <Filter>src\core\support</Filter>
+    <ClCompile Include="$(SolutionDir)\..\src\core\surface\init_secure.c">
+      <Filter>src\core\surface</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\support\log.c">
-      <Filter>src\core\support</Filter>
+    <ClCompile Include="$(SolutionDir)\..\src\core\surface\secure_channel_create.c">
+      <Filter>src\core\surface</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\support\log_android.c">
-      <Filter>src\core\support</Filter>
+    <ClCompile Include="$(SolutionDir)\..\src\core\tsi\fake_transport_security.c">
+      <Filter>src\core\tsi</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\support\log_linux.c">
-      <Filter>src\core\support</Filter>
+    <ClCompile Include="$(SolutionDir)\..\src\core\tsi\ssl_transport_security.c">
+      <Filter>src\core\tsi</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\support\log_posix.c">
-      <Filter>src\core\support</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\support\log_win32.c">
-      <Filter>src\core\support</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\support\murmur_hash.c">
-      <Filter>src\core\support</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\support\slice.c">
-      <Filter>src\core\support</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\support\slice_buffer.c">
-      <Filter>src\core\support</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\support\stack_lockfree.c">
-      <Filter>src\core\support</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\support\string.c">
-      <Filter>src\core\support</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\support\string_posix.c">
-      <Filter>src\core\support</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\support\string_win32.c">
-      <Filter>src\core\support</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\support\subprocess_posix.c">
-      <Filter>src\core\support</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\support\subprocess_windows.c">
-      <Filter>src\core\support</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\support\sync.c">
-      <Filter>src\core\support</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\support\sync_posix.c">
-      <Filter>src\core\support</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\support\sync_win32.c">
-      <Filter>src\core\support</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\support\thd.c">
-      <Filter>src\core\support</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\support\thd_posix.c">
-      <Filter>src\core\support</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\support\thd_win32.c">
-      <Filter>src\core\support</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\support\time.c">
-      <Filter>src\core\support</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\support\time_posix.c">
-      <Filter>src\core\support</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\support\time_precise.c">
-      <Filter>src\core\support</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\support\time_win32.c">
-      <Filter>src\core\support</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\support\tls_pthread.c">
-      <Filter>src\core\support</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\support\wrap_memcpy.c">
-      <Filter>src\core\support</Filter>
+    <ClCompile Include="$(SolutionDir)\..\src\core\tsi\transport_security.c">
+      <Filter>src\core\tsi</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\census\context.c">
       <Filter>src\core\census</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\census\initialize.c">
+      <Filter>src\core\census</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\census\mlog.c">
       <Filter>src\core\census</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\census\operation.c">
@@ -594,6 +471,24 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc\grpc_security.h">
       <Filter>include\grpc</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\byte_buffer.h">
+      <Filter>include\grpc\impl\codegen</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\compression_types.h">
+      <Filter>include\grpc\impl\codegen</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\connectivity_state.h">
+      <Filter>include\grpc\impl\codegen</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\grpc_types.h">
+      <Filter>include\grpc\impl\codegen</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\propagation_bits.h">
+      <Filter>include\grpc\impl\codegen</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\status.h">
+      <Filter>include\grpc\impl\codegen</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc\byte_buffer.h">
       <Filter>include\grpc</Filter>
     </ClInclude>
@@ -609,197 +504,11 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc\status.h">
       <Filter>include\grpc</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\support\alloc.h">
-      <Filter>include\grpc\support</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\support\atm.h">
-      <Filter>include\grpc\support</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\support\atm_gcc_atomic.h">
-      <Filter>include\grpc\support</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\support\atm_gcc_sync.h">
-      <Filter>include\grpc\support</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\support\atm_win32.h">
-      <Filter>include\grpc\support</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\support\avl.h">
-      <Filter>include\grpc\support</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\support\cmdline.h">
-      <Filter>include\grpc\support</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\support\cpu.h">
-      <Filter>include\grpc\support</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\support\histogram.h">
-      <Filter>include\grpc\support</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\support\host_port.h">
-      <Filter>include\grpc\support</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\support\log.h">
-      <Filter>include\grpc\support</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\support\log_win32.h">
-      <Filter>include\grpc\support</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\support\port_platform.h">
-      <Filter>include\grpc\support</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\support\slice.h">
-      <Filter>include\grpc\support</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\support\slice_buffer.h">
-      <Filter>include\grpc\support</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\support\string_util.h">
-      <Filter>include\grpc\support</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\support\subprocess.h">
-      <Filter>include\grpc\support</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\support\sync.h">
-      <Filter>include\grpc\support</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\support\sync_generic.h">
-      <Filter>include\grpc\support</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\support\sync_posix.h">
-      <Filter>include\grpc\support</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\support\sync_win32.h">
-      <Filter>include\grpc\support</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\support\thd.h">
-      <Filter>include\grpc\support</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\support\time.h">
-      <Filter>include\grpc\support</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\support\tls.h">
-      <Filter>include\grpc\support</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\support\tls_gcc.h">
-      <Filter>include\grpc\support</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\support\tls_msvc.h">
-      <Filter>include\grpc\support</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\support\tls_pthread.h">
-      <Filter>include\grpc\support</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\support\useful.h">
-      <Filter>include\grpc\support</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\alloc.h">
-      <Filter>include\grpc\impl\codegen</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm.h">
-      <Filter>include\grpc\impl\codegen</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm_gcc_atomic.h">
-      <Filter>include\grpc\impl\codegen</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm_gcc_sync.h">
-      <Filter>include\grpc\impl\codegen</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm_win32.h">
-      <Filter>include\grpc\impl\codegen</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\byte_buffer.h">
-      <Filter>include\grpc\impl\codegen</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\compression_types.h">
-      <Filter>include\grpc\impl\codegen</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\connectivity_state.h">
-      <Filter>include\grpc\impl\codegen</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\grpc_types.h">
-      <Filter>include\grpc\impl\codegen</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\log.h">
-      <Filter>include\grpc\impl\codegen</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\port_platform.h">
-      <Filter>include\grpc\impl\codegen</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\propagation_bits.h">
-      <Filter>include\grpc\impl\codegen</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\slice.h">
-      <Filter>include\grpc\impl\codegen</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\slice_buffer.h">
-      <Filter>include\grpc\impl\codegen</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\status.h">
-      <Filter>include\grpc\impl\codegen</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync.h">
-      <Filter>include\grpc\impl\codegen</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_generic.h">
-      <Filter>include\grpc\impl\codegen</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_posix.h">
-      <Filter>include\grpc\impl\codegen</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_win32.h">
-      <Filter>include\grpc\impl\codegen</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\time.h">
-      <Filter>include\grpc\impl\codegen</Filter>
-    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc\census.h">
       <Filter>include\grpc</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="$(SolutionDir)\..\src\core\security\auth_filters.h">
-      <Filter>src\core\security</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\security\base64.h">
-      <Filter>src\core\security</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\security\credentials.h">
-      <Filter>src\core\security</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\security\handshake.h">
-      <Filter>src\core\security</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\security\json_token.h">
-      <Filter>src\core\security</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\security\jwt_verifier.h">
-      <Filter>src\core\security</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\security\secure_endpoint.h">
-      <Filter>src\core\security</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\security\security_connector.h">
-      <Filter>src\core\security</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\security\security_context.h">
-      <Filter>src\core\security</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\tsi\fake_transport_security.h">
-      <Filter>src\core\tsi</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\tsi\ssl_transport_security.h">
-      <Filter>src\core\tsi</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\tsi\ssl_types.h">
-      <Filter>src\core\tsi</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\tsi\transport_security.h">
-      <Filter>src\core\tsi</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\tsi\transport_security_interface.h">
-      <Filter>src\core\tsi</Filter>
-    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\census\grpc_filter.h">
       <Filter>src\core\census</Filter>
     </ClInclude>
@@ -876,6 +585,9 @@
       <Filter>src\core\client_config</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\client_config\subchannel_factory.h">
+      <Filter>src\core\client_config</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\client_config\subchannel_index.h">
       <Filter>src\core\client_config</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\client_config\uri_parser.h">
@@ -1139,37 +851,52 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\transport\transport_impl.h">
       <Filter>src\core\transport</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\profiling\timers.h">
-      <Filter>src\core\profiling</Filter>
+    <ClInclude Include="$(SolutionDir)\..\src\core\security\auth_filters.h">
+      <Filter>src\core\security</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\support\block_annotate.h">
-      <Filter>src\core\support</Filter>
+    <ClInclude Include="$(SolutionDir)\..\src\core\security\base64.h">
+      <Filter>src\core\security</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\support\env.h">
-      <Filter>src\core\support</Filter>
+    <ClInclude Include="$(SolutionDir)\..\src\core\security\credentials.h">
+      <Filter>src\core\security</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\support\file.h">
-      <Filter>src\core\support</Filter>
+    <ClInclude Include="$(SolutionDir)\..\src\core\security\handshake.h">
+      <Filter>src\core\security</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\support\murmur_hash.h">
-      <Filter>src\core\support</Filter>
+    <ClInclude Include="$(SolutionDir)\..\src\core\security\json_token.h">
+      <Filter>src\core\security</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\support\stack_lockfree.h">
-      <Filter>src\core\support</Filter>
+    <ClInclude Include="$(SolutionDir)\..\src\core\security\jwt_verifier.h">
+      <Filter>src\core\security</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\support\string.h">
-      <Filter>src\core\support</Filter>
+    <ClInclude Include="$(SolutionDir)\..\src\core\security\secure_endpoint.h">
+      <Filter>src\core\security</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\support\string_win32.h">
-      <Filter>src\core\support</Filter>
+    <ClInclude Include="$(SolutionDir)\..\src\core\security\security_connector.h">
+      <Filter>src\core\security</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\support\thd_internal.h">
-      <Filter>src\core\support</Filter>
+    <ClInclude Include="$(SolutionDir)\..\src\core\security\security_context.h">
+      <Filter>src\core\security</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\support\time_precise.h">
-      <Filter>src\core\support</Filter>
+    <ClInclude Include="$(SolutionDir)\..\src\core\tsi\fake_transport_security.h">
+      <Filter>src\core\tsi</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\tsi\ssl_transport_security.h">
+      <Filter>src\core\tsi</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\tsi\ssl_types.h">
+      <Filter>src\core\tsi</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\tsi\transport_security.h">
+      <Filter>src\core\tsi</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\tsi\transport_security_interface.h">
+      <Filter>src\core\tsi</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\census\aggregation.h">
+      <Filter>src\core\census</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\census\mlog.h">
       <Filter>src\core\census</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\census\rpc_metric_id.h">
@@ -1189,9 +916,6 @@
     </Filter>
     <Filter Include="include\grpc\impl\codegen">
       <UniqueIdentifier>{def748f5-ed2a-a9bb-40d9-c31d00f0e13b}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="include\grpc\support">
-      <UniqueIdentifier>{31de82ea-dc6c-73fb-a640-979b8a7b240c}</UniqueIdentifier>
     </Filter>
     <Filter Include="src">
       <UniqueIdentifier>{d538af37-07b2-062b-fa2a-d9f882cb2737}</UniqueIdentifier>
@@ -1229,17 +953,11 @@
     <Filter Include="src\core\json">
       <UniqueIdentifier>{e665cc0e-b994-d7c5-cc18-2007392019f0}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\core\profiling">
-      <UniqueIdentifier>{87674b72-0f05-0469-481a-bd8c7af9ad80}</UniqueIdentifier>
-    </Filter>
     <Filter Include="src\core\security">
       <UniqueIdentifier>{1d850ac6-e639-4eab-5338-4ba40272fcc9}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\core\statistics">
       <UniqueIdentifier>{0ef49896-2313-4a3f-1ce2-716fa0e5c6ca}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="src\core\support">
-      <UniqueIdentifier>{2e3e1be6-8bb0-c221-e337-ef7d5fba4925}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\core\surface">
       <UniqueIdentifier>{aeb18e82-5d25-0aad-8b02-a0a3470073ce}</UniqueIdentifier>
