@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>grpc.framework.interfaces.links package &mdash; grpcio 0.11.0b1 documentation</title>
+  <title>grpc.framework.interfaces.links package &mdash; grpcio 0.13.1rc1 documentation</title>
   
 
   
@@ -30,7 +30,7 @@
   
 
   
-    <link rel="top" title="grpcio 0.11.0b1 documentation" href="index.html"/>
+    <link rel="top" title="grpcio 0.13.1rc1 documentation" href="index.html"/>
         <link rel="up" title="grpc.framework.interfaces package" href="grpc.framework.interfaces.html"/>
         <link rel="prev" title="grpc.framework.interfaces.face package" href="grpc.framework.interfaces.face.html"/> 
 
@@ -60,7 +60,7 @@
             
             
               <div class="version">
-                0.11.0b1
+                0.13.1rc1
               </div>
             
           
@@ -118,7 +118,7 @@
         <div class="rst-content">
           
 
-
+ 
 
 
 
@@ -203,6 +203,21 @@ system affording ticket transport.</p>
 <dt id="grpc.framework.interfaces.links.links.Protocol.Kind">
 <em class="property">class </em><code class="descname">Kind</code><a class="reference internal" href="_modules/grpc/framework/interfaces/links/links.html#Protocol.Kind"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.interfaces.links.links.Protocol.Kind" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">enum.Enum</span></code></p>
+<dl class="attribute">
+<dt id="grpc.framework.interfaces.links.links.Protocol.Kind.CALL_OPTION">
+<code class="descname">CALL_OPTION</code><em class="property"> = &lt;Kind.CALL_OPTION: 'call option'&gt;</em><a class="headerlink" href="#grpc.framework.interfaces.links.links.Protocol.Kind.CALL_OPTION" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.framework.interfaces.links.links.Protocol.Kind.INVOCATION_CONTEXT">
+<code class="descname">INVOCATION_CONTEXT</code><em class="property"> = &lt;Kind.INVOCATION_CONTEXT: 'invocation context'&gt;</em><a class="headerlink" href="#grpc.framework.interfaces.links.links.Protocol.Kind.INVOCATION_CONTEXT" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.framework.interfaces.links.links.Protocol.Kind.SERVICER_CONTEXT">
+<code class="descname">SERVICER_CONTEXT</code><em class="property"> = &lt;Kind.SERVICER_CONTEXT: 'servicer context'&gt;</em><a class="headerlink" href="#grpc.framework.interfaces.links.links.Protocol.Kind.SERVICER_CONTEXT" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 </dd></dl>
 
 </dd></dl>
@@ -327,6 +342,21 @@ between high-level application and underlying ticket transport.</p>
 <em class="property">class </em><code class="descname">Subscription</code><a class="reference internal" href="_modules/grpc/framework/interfaces/links/links.html#Ticket.Subscription"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.interfaces.links.links.Ticket.Subscription" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">enum.Enum</span></code></p>
 <p>Identifies the level of subscription of a side of an operation.</p>
+<dl class="attribute">
+<dt id="grpc.framework.interfaces.links.links.Ticket.Subscription.FULL">
+<code class="descname">FULL</code><em class="property"> = &lt;Subscription.FULL: 'full'&gt;</em><a class="headerlink" href="#grpc.framework.interfaces.links.links.Ticket.Subscription.FULL" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.framework.interfaces.links.links.Ticket.Subscription.NONE">
+<code class="descname">NONE</code><em class="property"> = &lt;Subscription.NONE: 'none'&gt;</em><a class="headerlink" href="#grpc.framework.interfaces.links.links.Ticket.Subscription.NONE" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.framework.interfaces.links.links.Ticket.Subscription.TERMINATION">
+<code class="descname">TERMINATION</code><em class="property"> = &lt;Subscription.TERMINATION: 'termination'&gt;</em><a class="headerlink" href="#grpc.framework.interfaces.links.links.Ticket.Subscription.TERMINATION" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 </dd></dl>
 
 <dl class="class">
@@ -334,6 +364,46 @@ between high-level application and underlying ticket transport.</p>
 <em class="property">class </em><code class="descclassname">Ticket.</code><code class="descname">Termination</code><a class="reference internal" href="_modules/grpc/framework/interfaces/links/links.html#Ticket.Termination"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.interfaces.links.links.Ticket.Termination" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">enum.Enum</span></code></p>
 <p>Identifies the termination of an operation.</p>
+<dl class="attribute">
+<dt id="grpc.framework.interfaces.links.links.Ticket.Termination.CANCELLATION">
+<code class="descname">CANCELLATION</code><em class="property"> = &lt;Termination.CANCELLATION: 'cancellation'&gt;</em><a class="headerlink" href="#grpc.framework.interfaces.links.links.Ticket.Termination.CANCELLATION" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.framework.interfaces.links.links.Ticket.Termination.COMPLETION">
+<code class="descname">COMPLETION</code><em class="property"> = &lt;Termination.COMPLETION: 'completion'&gt;</em><a class="headerlink" href="#grpc.framework.interfaces.links.links.Ticket.Termination.COMPLETION" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.framework.interfaces.links.links.Ticket.Termination.EXPIRATION">
+<code class="descname">EXPIRATION</code><em class="property"> = &lt;Termination.EXPIRATION: 'expiration'&gt;</em><a class="headerlink" href="#grpc.framework.interfaces.links.links.Ticket.Termination.EXPIRATION" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.framework.interfaces.links.links.Ticket.Termination.LOCAL_FAILURE">
+<code class="descname">LOCAL_FAILURE</code><em class="property"> = &lt;Termination.LOCAL_FAILURE: 'local failure'&gt;</em><a class="headerlink" href="#grpc.framework.interfaces.links.links.Ticket.Termination.LOCAL_FAILURE" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.framework.interfaces.links.links.Ticket.Termination.RECEPTION_FAILURE">
+<code class="descname">RECEPTION_FAILURE</code><em class="property"> = &lt;Termination.RECEPTION_FAILURE: 'reception failure'&gt;</em><a class="headerlink" href="#grpc.framework.interfaces.links.links.Ticket.Termination.RECEPTION_FAILURE" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.framework.interfaces.links.links.Ticket.Termination.REMOTE_FAILURE">
+<code class="descname">REMOTE_FAILURE</code><em class="property"> = &lt;Termination.REMOTE_FAILURE: 'remote failure'&gt;</em><a class="headerlink" href="#grpc.framework.interfaces.links.links.Ticket.Termination.REMOTE_FAILURE" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.framework.interfaces.links.links.Ticket.Termination.SHUTDOWN">
+<code class="descname">SHUTDOWN</code><em class="property"> = &lt;Termination.SHUTDOWN: 'shutdown'&gt;</em><a class="headerlink" href="#grpc.framework.interfaces.links.links.Ticket.Termination.SHUTDOWN" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.framework.interfaces.links.links.Ticket.Termination.TRANSMISSION_FAILURE">
+<code class="descname">TRANSMISSION_FAILURE</code><em class="property"> = &lt;Termination.TRANSMISSION_FAILURE: 'transmission failure'&gt;</em><a class="headerlink" href="#grpc.framework.interfaces.links.links.Ticket.Termination.TRANSMISSION_FAILURE" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 </dd></dl>
 
 </dd></dl>
@@ -365,7 +435,7 @@ between high-level application and underlying ticket transport.</p>
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2015, Author.
+        &copy; Copyright 2016, Author.
 
     </p>
   </div>
@@ -387,7 +457,7 @@ between high-level application and underlying ticket transport.</p>
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'0.11.0b1',
+            VERSION:'0.13.1rc1',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true

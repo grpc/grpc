@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>grpc.beta.interfaces &mdash; grpcio 0.11.0b1 documentation</title>
+  <title>grpc.beta.interfaces &mdash; grpcio 0.13.1rc1 documentation</title>
   
 
   
@@ -30,7 +30,7 @@
   
 
   
-    <link rel="top" title="grpcio 0.11.0b1 documentation" href="../../../index.html"/>
+    <link rel="top" title="grpcio 0.13.1rc1 documentation" href="../../../index.html"/>
         <link rel="up" title="Module code" href="../../index.html"/> 
 
   
@@ -59,7 +59,7 @@
             
             
               <div class="version">
-                0.11.0b1
+                0.13.1rc1
               </div>
             
           
@@ -127,44 +127,44 @@
            <div itemprop="articleBody">
             
   <h1>Source code for grpc.beta.interfaces</h1><div class="highlight"><pre>
-<span class="c"># Copyright 2015, Google Inc.</span>
-<span class="c"># All rights reserved.</span>
-<span class="c">#</span>
-<span class="c"># Redistribution and use in source and binary forms, with or without</span>
-<span class="c"># modification, are permitted provided that the following conditions are</span>
-<span class="c"># met:</span>
-<span class="c">#</span>
-<span class="c">#     * Redistributions of source code must retain the above copyright</span>
-<span class="c"># notice, this list of conditions and the following disclaimer.</span>
-<span class="c">#     * Redistributions in binary form must reproduce the above</span>
-<span class="c"># copyright notice, this list of conditions and the following disclaimer</span>
-<span class="c"># in the documentation and/or other materials provided with the</span>
-<span class="c"># distribution.</span>
-<span class="c">#     * Neither the name of Google Inc. nor the names of its</span>
-<span class="c"># contributors may be used to endorse or promote products derived from</span>
-<span class="c"># this software without specific prior written permission.</span>
-<span class="c">#</span>
-<span class="c"># THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS</span>
-<span class="c"># &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT</span>
-<span class="c"># LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR</span>
-<span class="c"># A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT</span>
-<span class="c"># OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,</span>
-<span class="c"># SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT</span>
-<span class="c"># LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,</span>
-<span class="c"># DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY</span>
-<span class="c"># THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT</span>
-<span class="c"># (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE</span>
-<span class="c"># OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.</span>
+<span></span><span class="c1"># Copyright 2015, Google Inc.</span>
+<span class="c1"># All rights reserved.</span>
+<span class="c1">#</span>
+<span class="c1"># Redistribution and use in source and binary forms, with or without</span>
+<span class="c1"># modification, are permitted provided that the following conditions are</span>
+<span class="c1"># met:</span>
+<span class="c1">#</span>
+<span class="c1">#     * Redistributions of source code must retain the above copyright</span>
+<span class="c1"># notice, this list of conditions and the following disclaimer.</span>
+<span class="c1">#     * Redistributions in binary form must reproduce the above</span>
+<span class="c1"># copyright notice, this list of conditions and the following disclaimer</span>
+<span class="c1"># in the documentation and/or other materials provided with the</span>
+<span class="c1"># distribution.</span>
+<span class="c1">#     * Neither the name of Google Inc. nor the names of its</span>
+<span class="c1"># contributors may be used to endorse or promote products derived from</span>
+<span class="c1"># this software without specific prior written permission.</span>
+<span class="c1">#</span>
+<span class="c1"># THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS</span>
+<span class="c1"># &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT</span>
+<span class="c1"># LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR</span>
+<span class="c1"># A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT</span>
+<span class="c1"># OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,</span>
+<span class="c1"># SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT</span>
+<span class="c1"># LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,</span>
+<span class="c1"># DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY</span>
+<span class="c1"># THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT</span>
+<span class="c1"># (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE</span>
+<span class="c1"># OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.</span>
 
 <span class="sd">&quot;&quot;&quot;Constants and interfaces of the Beta API of gRPC Python.&quot;&quot;&quot;</span>
 
 <span class="kn">import</span> <span class="nn">abc</span>
 <span class="kn">import</span> <span class="nn">enum</span>
 
-<span class="kn">from</span> <span class="nn">grpc._adapter</span> <span class="kn">import</span> <span class="n">_types</span>
+<span class="kn">from</span> <span class="nn">grpc._adapter</span> <span class="k">import</span> <span class="n">_types</span>
 
 
-<span class="nd">@enum.unique</span>
+<span class="nd">@enum</span><span class="o">.</span><span class="n">unique</span>
 <div class="viewcode-block" id="ChannelConnectivity"><a class="viewcode-back" href="../../../grpc.beta.html#grpc.beta.interfaces.ChannelConnectivity">[docs]</a><span class="k">class</span> <span class="nc">ChannelConnectivity</span><span class="p">(</span><span class="n">enum</span><span class="o">.</span><span class="n">Enum</span><span class="p">):</span>
   <span class="sd">&quot;&quot;&quot;Mirrors grpc_connectivity_state in the gRPC Core.</span>
 
@@ -176,15 +176,15 @@
 <span class="sd">      recover.</span>
 <span class="sd">    FATAL_FAILURE: The channel has seen a failure from which it cannot recover.</span>
 <span class="sd">  &quot;&quot;&quot;</span>
-  <span class="n">IDLE</span> <span class="o">=</span> <span class="p">(</span><span class="n">_types</span><span class="o">.</span><span class="n">ConnectivityState</span><span class="o">.</span><span class="n">IDLE</span><span class="p">,</span> <span class="s">&#39;idle&#39;</span><span class="p">,)</span>
-  <span class="n">CONNECTING</span> <span class="o">=</span> <span class="p">(</span><span class="n">_types</span><span class="o">.</span><span class="n">ConnectivityState</span><span class="o">.</span><span class="n">CONNECTING</span><span class="p">,</span> <span class="s">&#39;connecting&#39;</span><span class="p">,)</span>
-  <span class="n">READY</span> <span class="o">=</span> <span class="p">(</span><span class="n">_types</span><span class="o">.</span><span class="n">ConnectivityState</span><span class="o">.</span><span class="n">READY</span><span class="p">,</span> <span class="s">&#39;ready&#39;</span><span class="p">,)</span>
+  <span class="n">IDLE</span> <span class="o">=</span> <span class="p">(</span><span class="n">_types</span><span class="o">.</span><span class="n">ConnectivityState</span><span class="o">.</span><span class="n">IDLE</span><span class="p">,</span> <span class="s1">&#39;idle&#39;</span><span class="p">,)</span>
+  <span class="n">CONNECTING</span> <span class="o">=</span> <span class="p">(</span><span class="n">_types</span><span class="o">.</span><span class="n">ConnectivityState</span><span class="o">.</span><span class="n">CONNECTING</span><span class="p">,</span> <span class="s1">&#39;connecting&#39;</span><span class="p">,)</span>
+  <span class="n">READY</span> <span class="o">=</span> <span class="p">(</span><span class="n">_types</span><span class="o">.</span><span class="n">ConnectivityState</span><span class="o">.</span><span class="n">READY</span><span class="p">,</span> <span class="s1">&#39;ready&#39;</span><span class="p">,)</span>
   <span class="n">TRANSIENT_FAILURE</span> <span class="o">=</span> <span class="p">(</span>
-      <span class="n">_types</span><span class="o">.</span><span class="n">ConnectivityState</span><span class="o">.</span><span class="n">TRANSIENT_FAILURE</span><span class="p">,</span> <span class="s">&#39;transient failure&#39;</span><span class="p">,)</span>
-  <span class="n">FATAL_FAILURE</span> <span class="o">=</span> <span class="p">(</span><span class="n">_types</span><span class="o">.</span><span class="n">ConnectivityState</span><span class="o">.</span><span class="n">FATAL_FAILURE</span><span class="p">,</span> <span class="s">&#39;fatal failure&#39;</span><span class="p">,)</span>
+      <span class="n">_types</span><span class="o">.</span><span class="n">ConnectivityState</span><span class="o">.</span><span class="n">TRANSIENT_FAILURE</span><span class="p">,</span> <span class="s1">&#39;transient failure&#39;</span><span class="p">,)</span>
+  <span class="n">FATAL_FAILURE</span> <span class="o">=</span> <span class="p">(</span><span class="n">_types</span><span class="o">.</span><span class="n">ConnectivityState</span><span class="o">.</span><span class="n">FATAL_FAILURE</span><span class="p">,</span> <span class="s1">&#39;fatal failure&#39;</span><span class="p">,)</span></div>
 
-</div>
-<span class="nd">@enum.unique</span>
+
+<span class="nd">@enum</span><span class="o">.</span><span class="n">unique</span>
 <div class="viewcode-block" id="StatusCode"><a class="viewcode-back" href="../../../grpc.beta.html#grpc.beta.interfaces.StatusCode">[docs]</a><span class="k">class</span> <span class="nc">StatusCode</span><span class="p">(</span><span class="n">enum</span><span class="o">.</span><span class="n">Enum</span><span class="p">):</span>
   <span class="sd">&quot;&quot;&quot;Mirrors grpc_status_code in the C core.&quot;&quot;&quot;</span>
   <span class="n">OK</span>                  <span class="o">=</span> <span class="mi">0</span>
@@ -203,9 +203,9 @@
   <span class="n">INTERNAL</span>            <span class="o">=</span> <span class="mi">13</span>
   <span class="n">UNAVAILABLE</span>         <span class="o">=</span> <span class="mi">14</span>
   <span class="n">DATA_LOSS</span>           <span class="o">=</span> <span class="mi">15</span>
-  <span class="n">UNAUTHENTICATED</span>     <span class="o">=</span> <span class="mi">16</span>
+  <span class="n">UNAUTHENTICATED</span>     <span class="o">=</span> <span class="mi">16</span></div>
 
-</div>
+
 <div class="viewcode-block" id="GRPCCallOptions"><a class="viewcode-back" href="../../../grpc.beta.html#grpc.beta.interfaces.GRPCCallOptions">[docs]</a><span class="k">class</span> <span class="nc">GRPCCallOptions</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
   <span class="sd">&quot;&quot;&quot;A value encapsulating gRPC-specific options passed on RPC invocation.</span>
 
@@ -217,10 +217,10 @@
   <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">disable_compression</span><span class="p">,</span> <span class="n">subcall_of</span><span class="p">,</span> <span class="n">credentials</span><span class="p">):</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">disable_compression</span> <span class="o">=</span> <span class="n">disable_compression</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">subcall_of</span> <span class="o">=</span> <span class="n">subcall_of</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">credentials</span> <span class="o">=</span> <span class="n">credentials</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">credentials</span> <span class="o">=</span> <span class="n">credentials</span></div>
 
-</div>
-<div class="viewcode-block" id="grpc_call_options"><a class="viewcode-back" href="../../../grpc.beta.html#grpc.beta.interfaces.grpc_call_options">[docs]</a><span class="k">def</span> <span class="nf">grpc_call_options</span><span class="p">(</span><span class="n">disable_compression</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">credentials</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+
+<div class="viewcode-block" id="grpc_call_options"><a class="viewcode-back" href="../../../grpc.beta.html#grpc.beta.interfaces.grpc_call_options">[docs]</a><span class="k">def</span> <span class="nf">grpc_call_options</span><span class="p">(</span><span class="n">disable_compression</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">credentials</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
   <span class="sd">&quot;&quot;&quot;Creates a GRPCCallOptions value to be passed at RPC invocation.</span>
 
 <span class="sd">  All parameters are optional and should always be passed by keyword.</span>
@@ -229,45 +229,89 @@
 <span class="sd">    disable_compression: A boolean indicating whether or not compression should</span>
 <span class="sd">      be disabled for the request object of the RPC. Only valid for</span>
 <span class="sd">      request-unary RPCs.</span>
-<span class="sd">    credentials: A ClientCredentials object to use for the invoked RPC.</span>
+<span class="sd">    credentials: A CallCredentials object to use for the invoked RPC.</span>
 <span class="sd">  &quot;&quot;&quot;</span>
-  <span class="k">return</span> <span class="n">GRPCCallOptions</span><span class="p">(</span><span class="n">disable_compression</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="n">credentials</span><span class="p">)</span>
+  <span class="k">return</span> <span class="n">GRPCCallOptions</span><span class="p">(</span><span class="n">disable_compression</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">credentials</span><span class="p">)</span></div>
 
-</div>
+
+<div class="viewcode-block" id="GRPCAuthMetadataContext"><a class="viewcode-back" href="../../../grpc.beta.html#grpc.beta.interfaces.GRPCAuthMetadataContext">[docs]</a><span class="k">class</span> <span class="nc">GRPCAuthMetadataContext</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;Provides information to call credentials metadata plugins.</span>
+
+<span class="sd">  Attributes:</span>
+<span class="sd">    service_url: A string URL of the service being called into.</span>
+<span class="sd">    method_name: A string of the fully qualified method name being called.</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+  <span class="n">__metaclass__</span> <span class="o">=</span> <span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span></div>
+
+
+<div class="viewcode-block" id="GRPCAuthMetadataPluginCallback"><a class="viewcode-back" href="../../../grpc.beta.html#grpc.beta.interfaces.GRPCAuthMetadataPluginCallback">[docs]</a><span class="k">class</span> <span class="nc">GRPCAuthMetadataPluginCallback</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;Callback object received by a metadata plugin.&quot;&quot;&quot;</span>
+  <span class="n">__metaclass__</span> <span class="o">=</span> <span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span>
+
+  <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">metadata</span><span class="p">,</span> <span class="n">error</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Inform the gRPC runtime of the metadata to construct a CallCredentials.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">      metadata: An iterable of 2-sequences (e.g. tuples) of metadata key/value</span>
+<span class="sd">        pairs.</span>
+<span class="sd">      error: An Exception to indicate error or None to indicate success.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="GRPCAuthMetadataPlugin"><a class="viewcode-back" href="../../../grpc.beta.html#grpc.beta.interfaces.GRPCAuthMetadataPlugin">[docs]</a><span class="k">class</span> <span class="nc">GRPCAuthMetadataPlugin</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+  <span class="n">__metaclass__</span> <span class="o">=</span> <span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span>
+
+  <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">context</span><span class="p">,</span> <span class="n">callback</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Invoke the plugin.</span>
+
+<span class="sd">    Must not block. Need only be called by the gRPC runtime.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">      context: A GRPCAuthMetadataContext providing information on what the</span>
+<span class="sd">        plugin is being used for.</span>
+<span class="sd">      callback: A GRPCAuthMetadataPluginCallback to be invoked either</span>
+<span class="sd">        synchronously or asynchronously.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+
+
 <div class="viewcode-block" id="GRPCServicerContext"><a class="viewcode-back" href="../../../grpc.beta.html#grpc.beta.interfaces.GRPCServicerContext">[docs]</a><span class="k">class</span> <span class="nc">GRPCServicerContext</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
   <span class="sd">&quot;&quot;&quot;Exposes gRPC-specific options and behaviors to code servicing RPCs.&quot;&quot;&quot;</span>
   <span class="n">__metaclass__</span> <span class="o">=</span> <span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span>
 
-  <span class="nd">@abc.abstractmethod</span>
+  <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
 <div class="viewcode-block" id="GRPCServicerContext.peer"><a class="viewcode-back" href="../../../grpc.beta.html#grpc.beta.interfaces.GRPCServicerContext.peer">[docs]</a>  <span class="k">def</span> <span class="nf">peer</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Identifies the peer that invoked the RPC being serviced.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">      A string identifying the peer that invoked the RPC being serviced.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
-</div>
-  <span class="nd">@abc.abstractmethod</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+
+  <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
 <div class="viewcode-block" id="GRPCServicerContext.disable_next_response_compression"><a class="viewcode-back" href="../../../grpc.beta.html#grpc.beta.interfaces.GRPCServicerContext.disable_next_response_compression">[docs]</a>  <span class="k">def</span> <span class="nf">disable_next_response_compression</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Disables compression of the next response passed by the application.&quot;&quot;&quot;</span>
-    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div></div>
 
-</div></div>
+
 <div class="viewcode-block" id="GRPCInvocationContext"><a class="viewcode-back" href="../../../grpc.beta.html#grpc.beta.interfaces.GRPCInvocationContext">[docs]</a><span class="k">class</span> <span class="nc">GRPCInvocationContext</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
   <span class="sd">&quot;&quot;&quot;Exposes gRPC-specific options and behaviors to code invoking RPCs.&quot;&quot;&quot;</span>
   <span class="n">__metaclass__</span> <span class="o">=</span> <span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span>
 
-  <span class="nd">@abc.abstractmethod</span>
+  <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
 <div class="viewcode-block" id="GRPCInvocationContext.disable_next_request_compression"><a class="viewcode-back" href="../../../grpc.beta.html#grpc.beta.interfaces.GRPCInvocationContext.disable_next_request_compression">[docs]</a>  <span class="k">def</span> <span class="nf">disable_next_request_compression</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Disables compression of the next request passed by the application.&quot;&quot;&quot;</span>
-    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div></div>
 
-</div></div>
+
 <div class="viewcode-block" id="Server"><a class="viewcode-back" href="../../../grpc.beta.html#grpc.beta.interfaces.Server">[docs]</a><span class="k">class</span> <span class="nc">Server</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
   <span class="sd">&quot;&quot;&quot;Services RPCs.&quot;&quot;&quot;</span>
   <span class="n">__metaclass__</span> <span class="o">=</span> <span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span>
 
-  <span class="nd">@abc.abstractmethod</span>
+  <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
 <div class="viewcode-block" id="Server.add_insecure_port"><a class="viewcode-back" href="../../../grpc.beta.html#grpc.beta.interfaces.Server.add_insecure_port">[docs]</a>  <span class="k">def</span> <span class="nf">add_insecure_port</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">address</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Reserves a port for insecure RPC service once this Server becomes active.</span>
 
@@ -283,9 +327,9 @@
 <span class="sd">        in the passed address, but will likely be different if the port number</span>
 <span class="sd">        contained in the passed address was zero.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
-</div>
-  <span class="nd">@abc.abstractmethod</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+
+  <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
 <div class="viewcode-block" id="Server.add_secure_port"><a class="viewcode-back" href="../../../grpc.beta.html#grpc.beta.interfaces.Server.add_secure_port">[docs]</a>  <span class="k">def</span> <span class="nf">add_secure_port</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">address</span><span class="p">,</span> <span class="n">server_credentials</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Reserves a port for secure RPC service after this Server becomes active.</span>
 
@@ -302,18 +346,18 @@
 <span class="sd">        in the passed address, but will likely be different if the port number</span>
 <span class="sd">        contained in the passed address was zero.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
-</div>
-  <span class="nd">@abc.abstractmethod</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+
+  <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
 <div class="viewcode-block" id="Server.start"><a class="viewcode-back" href="../../../grpc.beta.html#grpc.beta.interfaces.Server.start">[docs]</a>  <span class="k">def</span> <span class="nf">start</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Starts this Server&#39;s service of RPCs.</span>
 
 <span class="sd">    This method may only be called while the server is not serving RPCs (i.e. it</span>
 <span class="sd">    is not idempotent).</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
-</div>
-  <span class="nd">@abc.abstractmethod</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+
+  <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
 <div class="viewcode-block" id="Server.stop"><a class="viewcode-back" href="../../../grpc.beta.html#grpc.beta.interfaces.Server.stop">[docs]</a>  <span class="k">def</span> <span class="nf">stop</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">grace</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Stops this Server&#39;s service of RPCs.</span>
 
@@ -352,7 +396,7 @@
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2015, Author.
+        &copy; Copyright 2016, Author.
 
     </p>
   </div>
@@ -374,7 +418,7 @@
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'../../../',
-            VERSION:'0.11.0b1',
+            VERSION:'0.13.1rc1',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true

@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>grpc.framework.foundation package &mdash; grpcio 0.11.0b1 documentation</title>
+  <title>grpc.framework.foundation package &mdash; grpcio 0.13.1rc1 documentation</title>
   
 
   
@@ -30,7 +30,7 @@
   
 
   
-    <link rel="top" title="grpcio 0.11.0b1 documentation" href="index.html"/>
+    <link rel="top" title="grpcio 0.13.1rc1 documentation" href="index.html"/>
         <link rel="up" title="grpc.framework package" href="grpc.framework.html"/>
         <link rel="next" title="grpc.framework.interfaces package" href="grpc.framework.interfaces.html"/>
         <link rel="prev" title="grpc.framework.face package" href="grpc.framework.face.html"/> 
@@ -61,7 +61,7 @@
             
             
               <div class="version">
-                0.11.0b1
+                0.13.1rc1
               </div>
             
           
@@ -119,7 +119,7 @@
         <div class="rst-content">
           
 
-
+ 
 
 
 
@@ -173,18 +173,6 @@ an exception indicating some operational or programming defect.</p>
 <p>Interface for objects that may be started and stopped.</p>
 <p>Values implementing this type must also implement the context manager
 protocol.</p>
-<dl class="method">
-<dt id="grpc.framework.foundation.activated.Activated.__enter__">
-<code class="descname">__enter__</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/foundation/activated.html#Activated.__enter__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.foundation.activated.Activated.__enter__" title="Permalink to this definition">¶</a></dt>
-<dd><p>See the context manager protocol for specification.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="grpc.framework.foundation.activated.Activated.__exit__">
-<code class="descname">__exit__</code><span class="sig-paren">(</span><em>exc_type</em>, <em>exc_val</em>, <em>exc_tb</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/foundation/activated.html#Activated.__exit__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.foundation.activated.Activated.__exit__" title="Permalink to this definition">¶</a></dt>
-<dd><p>See the context manager protocol for specification.</p>
-</dd></dl>
-
 <dl class="method">
 <dt id="grpc.framework.foundation.activated.Activated.start">
 <code class="descname">start</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/foundation/activated.html#Activated.start"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.foundation.activated.Activated.start" title="Permalink to this definition">¶</a></dt>
@@ -242,6 +230,16 @@ Kind.RAISED.</p>
 <em class="property">class </em><code class="descname">Kind</code><a class="reference internal" href="_modules/grpc/framework/foundation/callable_util.html#Outcome.Kind"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.foundation.callable_util.Outcome.Kind" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">enum.Enum</span></code></p>
 <p>Identifies the general kind of the outcome of some call.</p>
+<dl class="attribute">
+<dt id="grpc.framework.foundation.callable_util.Outcome.Kind.RAISED">
+<code class="descname">RAISED</code><em class="property"> = &lt;Kind.RAISED: &lt;object object at 0x7f788b900e40&gt;&gt;</em><a class="headerlink" href="#grpc.framework.foundation.callable_util.Outcome.Kind.RAISED" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.framework.foundation.callable_util.Outcome.Kind.RETURNED">
+<code class="descname">RETURNED</code><em class="property"> = &lt;Kind.RETURNED: &lt;object object at 0x7f788b900e30&gt;&gt;</em><a class="headerlink" href="#grpc.framework.foundation.callable_util.Outcome.Kind.RETURNED" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 </dd></dl>
 
 </dd></dl>
@@ -262,8 +260,12 @@ Kind.RAISED.</p>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">An Outcome describing whether the given behavior returned a value or raised
-an exception.</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><dl class="docutils">
+<dt>An Outcome describing whether the given behavior returned a value or raised</dt>
+<dd><p class="first last">an exception.</p>
+</dd>
+</dl>
+</p>
 </td>
 </tr>
 </tbody>
@@ -284,10 +286,14 @@ an exception.</p>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A callable that when executed invokes the given behavior. The returned
-callable takes the same arguments as the given behavior but returns a
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><dl class="docutils">
+<dt>A callable that when executed invokes the given behavior. The returned</dt>
+<dd><p class="first last">callable takes the same arguments as the given behavior but returns a
 future.Outcome describing whether the given behavior returned a value or
 raised an exception.</p>
+</dd>
+</dl>
+</p>
 </td>
 </tr>
 </tbody>
@@ -353,13 +359,16 @@ immediately.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">True if the computation has not yet begun, will not be allowed to take
-place, and determination of both was possible without blocking. False
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><dl class="docutils">
+<dt>True if the computation has not yet begun, will not be allowed to take</dt>
+<dd>place, and determination of both was possible without blocking. False
 under all other circumstances including but not limited to the
 computation&#8217;s already having begun, the computation&#8217;s already having
 finished, and the computation&#8217;s having been scheduled for execution on a
 remote system for which a determination of whether or not it commenced
-before being cancelled cannot be made without blocking.</td>
+before being cancelled cannot be made without blocking.</dd>
+</dl>
+</td>
 </tr>
 </tbody>
 </table>
@@ -374,10 +383,13 @@ before being cancelled cannot be made without blocking.</td>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">True if the computation was cancelled any time before its result became
-immediately available. False under all other circumstances including but
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><dl class="docutils">
+<dt>True if the computation was cancelled any time before its result became</dt>
+<dd>immediately available. False under all other circumstances including but
 not limited to this object&#8217;s cancel method not having been called and
-the computation&#8217;s result having become immediately available.</td>
+the computation&#8217;s result having become immediately available.</dd>
+</dl>
+</td>
 </tr>
 </tbody>
 </table>
@@ -392,9 +404,12 @@ the computation&#8217;s result having become immediately available.</td>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">True if the computation is known to have either completed or have been
-unscheduled or interrupted. False if the computation may possibly be
-executing or scheduled to execute later.</td>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><dl class="docutils">
+<dt>True if the computation is known to have either completed or have been</dt>
+<dd>unscheduled or interrupted. False if the computation may possibly be
+executing or scheduled to execute later.</dd>
+</dl>
+</td>
 </tr>
 </tbody>
 </table>
@@ -415,16 +430,18 @@ the computation is terminated or is cancelled no matter how long that
 takes.</p>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The exception raised by the computation, or None if the computation did
-not raise an exception.</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><dl class="docutils">
+<dt>The exception raised by the computation, or None if the computation did</dt>
+<dd><p class="first last">not raise an exception.</p>
+</dd>
+</dl>
+</p>
 </td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><ul class="first last simple">
-<li><a class="reference internal" href="#grpc.framework.foundation.future.TimeoutError" title="grpc.framework.foundation.future.TimeoutError"><code class="xref py py-exc docutils literal"><span class="pre">TimeoutError</span></code></a> &#8211;
-If a timeout value is passed and the computation does not
+<li><a class="reference internal" href="#grpc.framework.foundation.future.TimeoutError" title="grpc.framework.foundation.future.TimeoutError"><code class="xref py py-exc docutils literal"><span class="pre">TimeoutError</span></code></a> &#8211; If a timeout value is passed and the computation does not
 terminate within the allotted time.</li>
-<li><a class="reference internal" href="#grpc.framework.foundation.future.CancelledError" title="grpc.framework.foundation.future.CancelledError"><code class="xref py py-exc docutils literal"><span class="pre">CancelledError</span></code></a> &#8211;
-If the computation was cancelled.</li>
+<li><a class="reference internal" href="#grpc.framework.foundation.future.CancelledError" title="grpc.framework.foundation.future.CancelledError"><code class="xref py py-exc docutils literal"><span class="pre">CancelledError</span></code></a> &#8211; If the computation was cancelled.</li>
 </ul>
 </td>
 </tr>
@@ -450,13 +467,10 @@ computation has finished or is cancelled no matter how long that takes.</p>
 </td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><ul class="first last simple">
-<li><a class="reference internal" href="#grpc.framework.foundation.future.TimeoutError" title="grpc.framework.foundation.future.TimeoutError"><code class="xref py py-exc docutils literal"><span class="pre">TimeoutError</span></code></a> &#8211;
-If a timeout value is passed and the computation does not
+<li><a class="reference internal" href="#grpc.framework.foundation.future.TimeoutError" title="grpc.framework.foundation.future.TimeoutError"><code class="xref py py-exc docutils literal"><span class="pre">TimeoutError</span></code></a> &#8211; If a timeout value is passed and the computation does not
 terminate within the allotted time.</li>
-<li><a class="reference internal" href="#grpc.framework.foundation.future.CancelledError" title="grpc.framework.foundation.future.CancelledError"><code class="xref py py-exc docutils literal"><span class="pre">CancelledError</span></code></a> &#8211;
-If the computation was cancelled.</li>
-<li><code class="xref py py-exc docutils literal"><span class="pre">Exception</span></code> &#8211;
-If the computation raised an exception, this call will raise
+<li><a class="reference internal" href="#grpc.framework.foundation.future.CancelledError" title="grpc.framework.foundation.future.CancelledError"><code class="xref py py-exc docutils literal"><span class="pre">CancelledError</span></code></a> &#8211; If the computation was cancelled.</li>
+<li><code class="xref py py-exc docutils literal"><span class="pre">Exception</span></code> &#8211; If the computation raised an exception, this call will raise
 the same exception.</li>
 </ul>
 </td>
@@ -474,9 +488,12 @@ the same exception.</li>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">True if the computation is scheduled to take place in the future or is
-taking place now, or False if the computation took place in the past or
-was cancelled.</td>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><dl class="docutils">
+<dt>True if the computation is scheduled to take place in the future or is</dt>
+<dd>taking place now, or False if the computation took place in the past or
+was cancelled.</dd>
+</dl>
+</td>
 </tr>
 </tbody>
 </table>
@@ -497,16 +514,18 @@ the computation is terminated or is cancelled no matter how long that
 takes.</p>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The traceback of the exception raised by the computation, or None if the
-computation did not raise an exception.</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><dl class="docutils">
+<dt>The traceback of the exception raised by the computation, or None if the</dt>
+<dd><p class="first last">computation did not raise an exception.</p>
+</dd>
+</dl>
+</p>
 </td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><ul class="first last simple">
-<li><a class="reference internal" href="#grpc.framework.foundation.future.TimeoutError" title="grpc.framework.foundation.future.TimeoutError"><code class="xref py py-exc docutils literal"><span class="pre">TimeoutError</span></code></a> &#8211;
-If a timeout value is passed and the computation does not
+<li><a class="reference internal" href="#grpc.framework.foundation.future.TimeoutError" title="grpc.framework.foundation.future.TimeoutError"><code class="xref py py-exc docutils literal"><span class="pre">TimeoutError</span></code></a> &#8211; If a timeout value is passed and the computation does not
 terminate within the allotted time.</li>
-<li><a class="reference internal" href="#grpc.framework.foundation.future.CancelledError" title="grpc.framework.foundation.future.CancelledError"><code class="xref py py-exc docutils literal"><span class="pre">CancelledError</span></code></a> &#8211;
-If the computation was cancelled.</li>
+<li><a class="reference internal" href="#grpc.framework.foundation.future.CancelledError" title="grpc.framework.foundation.future.CancelledError"><code class="xref py py-exc docutils literal"><span class="pre">CancelledError</span></code></a> &#8211; If the computation was cancelled.</li>
 </ul>
 </td>
 </tr>
@@ -564,8 +583,11 @@ about the maximum length of time that will pass.</li>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>max_workers</strong> &#8211; The maximum number of worker threads to allow the pool.</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">A futures.ThreadPoolExecutor-compatible thread pool that logs exceptions
-raised by the tasks executed within it.</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><dl class="docutils">
+<dt>A futures.ThreadPoolExecutor-compatible thread pool that logs exceptions</dt>
+<dd>raised by the tasks executed within it.</dd>
+</dl>
+</td>
 </tr>
 </tbody>
 </table>
@@ -632,8 +654,12 @@ Relay later.</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">An object that is both an activated.Activated and a Relay. The object is
-only valid for use as a Relay when activated.</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><dl class="docutils">
+<dt>An object that is both an activated.Activated and a Relay. The object is</dt>
+<dd><p class="first last">only valid for use as a Relay when activated.</p>
+</dd>
+</dl>
+</p>
 </td>
 </tr>
 </tbody>
@@ -652,8 +678,11 @@ only valid for use as a Relay when activated.</p>
 passed values dropped until a different behavior is given to the returned
 Relay later.</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">An object that is both an activated.Activated and a Relay. The object is
-only valid for use as a Relay when activated.</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><dl class="docutils">
+<dt>An object that is both an activated.Activated and a Relay. The object is</dt>
+<dd>only valid for use as a Relay when activated.</dd>
+</dl>
+</td>
 </tr>
 </tbody>
 </table>
@@ -804,7 +833,7 @@ only valid for use as a Relay when activated.</td>
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2015, Author.
+        &copy; Copyright 2016, Author.
 
     </p>
   </div>
@@ -826,7 +855,7 @@ only valid for use as a Relay when activated.</td>
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'0.11.0b1',
+            VERSION:'0.13.1rc1',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true

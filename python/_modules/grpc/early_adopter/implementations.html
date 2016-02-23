@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>grpc.early_adopter.implementations &mdash; grpcio 0.11.0b1 documentation</title>
+  <title>grpc.early_adopter.implementations &mdash; grpcio 0.13.1rc1 documentation</title>
   
 
   
@@ -30,7 +30,7 @@
   
 
   
-    <link rel="top" title="grpcio 0.11.0b1 documentation" href="../../../index.html"/>
+    <link rel="top" title="grpcio 0.13.1rc1 documentation" href="../../../index.html"/>
         <link rel="up" title="Module code" href="../../index.html"/> 
 
   
@@ -59,7 +59,7 @@
             
             
               <div class="version">
-                0.11.0b1
+                0.13.1rc1
               </div>
             
           
@@ -127,48 +127,48 @@
            <div itemprop="articleBody">
             
   <h1>Source code for grpc.early_adopter.implementations</h1><div class="highlight"><pre>
-<span class="c"># Copyright 2015, Google Inc.</span>
-<span class="c"># All rights reserved.</span>
-<span class="c">#</span>
-<span class="c"># Redistribution and use in source and binary forms, with or without</span>
-<span class="c"># modification, are permitted provided that the following conditions are</span>
-<span class="c"># met:</span>
-<span class="c">#</span>
-<span class="c">#     * Redistributions of source code must retain the above copyright</span>
-<span class="c"># notice, this list of conditions and the following disclaimer.</span>
-<span class="c">#     * Redistributions in binary form must reproduce the above</span>
-<span class="c"># copyright notice, this list of conditions and the following disclaimer</span>
-<span class="c"># in the documentation and/or other materials provided with the</span>
-<span class="c"># distribution.</span>
-<span class="c">#     * Neither the name of Google Inc. nor the names of its</span>
-<span class="c"># contributors may be used to endorse or promote products derived from</span>
-<span class="c"># this software without specific prior written permission.</span>
-<span class="c">#</span>
-<span class="c"># THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS</span>
-<span class="c"># &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT</span>
-<span class="c"># LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR</span>
-<span class="c"># A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT</span>
-<span class="c"># OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,</span>
-<span class="c"># SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT</span>
-<span class="c"># LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,</span>
-<span class="c"># DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY</span>
-<span class="c"># THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT</span>
-<span class="c"># (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE</span>
-<span class="c"># OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.</span>
+<span></span><span class="c1"># Copyright 2015, Google Inc.</span>
+<span class="c1"># All rights reserved.</span>
+<span class="c1">#</span>
+<span class="c1"># Redistribution and use in source and binary forms, with or without</span>
+<span class="c1"># modification, are permitted provided that the following conditions are</span>
+<span class="c1"># met:</span>
+<span class="c1">#</span>
+<span class="c1">#     * Redistributions of source code must retain the above copyright</span>
+<span class="c1"># notice, this list of conditions and the following disclaimer.</span>
+<span class="c1">#     * Redistributions in binary form must reproduce the above</span>
+<span class="c1"># copyright notice, this list of conditions and the following disclaimer</span>
+<span class="c1"># in the documentation and/or other materials provided with the</span>
+<span class="c1"># distribution.</span>
+<span class="c1">#     * Neither the name of Google Inc. nor the names of its</span>
+<span class="c1"># contributors may be used to endorse or promote products derived from</span>
+<span class="c1"># this software without specific prior written permission.</span>
+<span class="c1">#</span>
+<span class="c1"># THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS</span>
+<span class="c1"># &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT</span>
+<span class="c1"># LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR</span>
+<span class="c1"># A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT</span>
+<span class="c1"># OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,</span>
+<span class="c1"># SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT</span>
+<span class="c1"># LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,</span>
+<span class="c1"># DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY</span>
+<span class="c1"># THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT</span>
+<span class="c1"># (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE</span>
+<span class="c1"># OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.</span>
 
 <span class="sd">&quot;&quot;&quot;Entry points into GRPC.&quot;&quot;&quot;</span>
 
 <span class="kn">import</span> <span class="nn">threading</span>
 
-<span class="kn">from</span> <span class="nn">grpc._adapter</span> <span class="kn">import</span> <span class="n">fore</span> <span class="k">as</span> <span class="n">_fore</span>
-<span class="kn">from</span> <span class="nn">grpc._adapter</span> <span class="kn">import</span> <span class="n">rear</span> <span class="k">as</span> <span class="n">_rear</span>
-<span class="kn">from</span> <span class="nn">grpc.framework.alpha</span> <span class="kn">import</span> <span class="n">_face_utilities</span>
-<span class="kn">from</span> <span class="nn">grpc.framework.alpha</span> <span class="kn">import</span> <span class="n">_reexport</span>
-<span class="kn">from</span> <span class="nn">grpc.framework.alpha</span> <span class="kn">import</span> <span class="n">interfaces</span>
-<span class="kn">from</span> <span class="nn">grpc.framework.base</span> <span class="kn">import</span> <span class="n">implementations</span> <span class="k">as</span> <span class="n">_base_implementations</span>
-<span class="kn">from</span> <span class="nn">grpc.framework.base</span> <span class="kn">import</span> <span class="n">util</span> <span class="k">as</span> <span class="n">_base_utilities</span>
-<span class="kn">from</span> <span class="nn">grpc.framework.face</span> <span class="kn">import</span> <span class="n">implementations</span> <span class="k">as</span> <span class="n">_face_implementations</span>
-<span class="kn">from</span> <span class="nn">grpc.framework.foundation</span> <span class="kn">import</span> <span class="n">logging_pool</span>
+<span class="kn">from</span> <span class="nn">grpc._adapter</span> <span class="k">import</span> <span class="n">fore</span> <span class="k">as</span> <span class="n">_fore</span>
+<span class="kn">from</span> <span class="nn">grpc._adapter</span> <span class="k">import</span> <span class="n">rear</span> <span class="k">as</span> <span class="n">_rear</span>
+<span class="kn">from</span> <span class="nn">grpc.framework.alpha</span> <span class="k">import</span> <span class="n">_face_utilities</span>
+<span class="kn">from</span> <span class="nn">grpc.framework.alpha</span> <span class="k">import</span> <span class="n">_reexport</span>
+<span class="kn">from</span> <span class="nn">grpc.framework.alpha</span> <span class="k">import</span> <span class="n">interfaces</span>
+<span class="kn">from</span> <span class="nn">grpc.framework.base</span> <span class="k">import</span> <span class="n">implementations</span> <span class="k">as</span> <span class="n">_base_implementations</span>
+<span class="kn">from</span> <span class="nn">grpc.framework.base</span> <span class="k">import</span> <span class="n">util</span> <span class="k">as</span> <span class="n">_base_utilities</span>
+<span class="kn">from</span> <span class="nn">grpc.framework.face</span> <span class="k">import</span> <span class="n">implementations</span> <span class="k">as</span> <span class="n">_face_implementations</span>
+<span class="kn">from</span> <span class="nn">grpc.framework.foundation</span> <span class="k">import</span> <span class="n">logging_pool</span>
 
 <span class="n">_DEFAULT_THREAD_POOL_SIZE</span> <span class="o">=</span> <span class="mi">8</span>
 <span class="n">_ONE_DAY_IN_SECONDS</span> <span class="o">=</span> <span class="mi">24</span> <span class="o">*</span> <span class="mi">60</span> <span class="o">*</span> <span class="mi">60</span>
@@ -182,46 +182,46 @@
     <span class="bp">self</span><span class="o">.</span><span class="n">_lock</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Lock</span><span class="p">()</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">_breakdown</span> <span class="o">=</span> <span class="n">breakdown</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">_port</span> <span class="o">=</span> <span class="n">port</span>
-    <span class="k">if</span> <span class="n">private_key</span> <span class="ow">is</span> <span class="bp">None</span> <span class="ow">or</span> <span class="n">certificate_chain</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">private_key</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">certificate_chain</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
       <span class="bp">self</span><span class="o">.</span><span class="n">_key_chain_pairs</span> <span class="o">=</span> <span class="p">()</span>
     <span class="k">else</span><span class="p">:</span>
       <span class="bp">self</span><span class="o">.</span><span class="n">_key_chain_pairs</span> <span class="o">=</span> <span class="p">((</span><span class="n">private_key</span><span class="p">,</span> <span class="n">certificate_chain</span><span class="p">),)</span>
 
     <span class="bp">self</span><span class="o">.</span><span class="n">_pool_size</span> <span class="o">=</span> <span class="n">thread_pool_size</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span> <span class="o">=</span> <span class="bp">None</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">_back</span> <span class="o">=</span> <span class="bp">None</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">_fore_link</span> <span class="o">=</span> <span class="bp">None</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_back</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_fore_link</span> <span class="o">=</span> <span class="kc">None</span>
 
   <span class="k">def</span> <span class="nf">_start</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
     <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lock</span><span class="p">:</span>
-      <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+      <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span> <span class="o">=</span> <span class="n">logging_pool</span><span class="o">.</span><span class="n">pool</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_pool_size</span><span class="p">)</span>
         <span class="n">servicer</span> <span class="o">=</span> <span class="n">_face_implementations</span><span class="o">.</span><span class="n">servicer</span><span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_breakdown</span><span class="o">.</span><span class="n">implementations</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_breakdown</span><span class="o">.</span><span class="n">implementations</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_back</span> <span class="o">=</span> <span class="n">_base_implementations</span><span class="o">.</span><span class="n">back_link</span><span class="p">(</span>
             <span class="n">servicer</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span><span class="p">,</span> <span class="n">_ONE_DAY_IN_SECONDS</span><span class="p">,</span>
             <span class="n">_ONE_DAY_IN_SECONDS</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_fore_link</span> <span class="o">=</span> <span class="n">_fore</span><span class="o">.</span><span class="n">ForeLink</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_breakdown</span><span class="o">.</span><span class="n">request_deserializers</span><span class="p">,</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_breakdown</span><span class="o">.</span><span class="n">response_serializers</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_key_chain_pairs</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_breakdown</span><span class="o">.</span><span class="n">response_serializers</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_key_chain_pairs</span><span class="p">,</span>
             <span class="n">port</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_port</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_back</span><span class="o">.</span><span class="n">join_fore_link</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_fore_link</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_fore_link</span><span class="o">.</span><span class="n">join_rear_link</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_back</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_fore_link</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
       <span class="k">else</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;Server currently running!&#39;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Server currently running!&#39;</span><span class="p">)</span>
 
   <span class="k">def</span> <span class="nf">_stop</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
     <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lock</span><span class="p">:</span>
-      <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;Server not running!&#39;</span><span class="p">)</span>
+      <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Server not running!&#39;</span><span class="p">)</span>
       <span class="k">else</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_fore_link</span><span class="o">.</span><span class="n">stop</span><span class="p">()</span>
         <span class="n">_base_utilities</span><span class="o">.</span><span class="n">wait_for_idle</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_back</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span><span class="o">.</span><span class="n">shutdown</span><span class="p">(</span><span class="n">wait</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_fore_link</span> <span class="o">=</span> <span class="bp">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_back</span> <span class="o">=</span> <span class="bp">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span><span class="o">.</span><span class="n">shutdown</span><span class="p">(</span><span class="n">wait</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_fore_link</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_back</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span> <span class="o">=</span> <span class="kc">None</span>
 
   <span class="k">def</span> <span class="nf">__enter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">_start</span><span class="p">()</span>
@@ -229,7 +229,7 @@
 
   <span class="k">def</span> <span class="nf">__exit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exc_type</span><span class="p">,</span> <span class="n">exc_val</span><span class="p">,</span> <span class="n">exc_tb</span><span class="p">):</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">_stop</span><span class="p">()</span>
-    <span class="k">return</span> <span class="bp">False</span>
+    <span class="k">return</span> <span class="kc">False</span>
 
   <span class="k">def</span> <span class="nf">start</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">_start</span><span class="p">()</span>
@@ -246,7 +246,7 @@
 
   <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span>
       <span class="bp">self</span><span class="p">,</span> <span class="n">breakdown</span><span class="p">,</span> <span class="n">host</span><span class="p">,</span> <span class="n">port</span><span class="p">,</span> <span class="n">secure</span><span class="p">,</span> <span class="n">root_certificates</span><span class="p">,</span> <span class="n">private_key</span><span class="p">,</span>
-      <span class="n">certificate_chain</span><span class="p">,</span> <span class="n">metadata_transformer</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">server_host_override</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+      <span class="n">certificate_chain</span><span class="p">,</span> <span class="n">metadata_transformer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">server_host_override</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
       <span class="n">thread_pool_size</span><span class="o">=</span><span class="n">_DEFAULT_THREAD_POOL_SIZE</span><span class="p">):</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">_lock</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Lock</span><span class="p">()</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">_breakdown</span> <span class="o">=</span> <span class="n">breakdown</span>
@@ -260,14 +260,14 @@
     <span class="bp">self</span><span class="o">.</span><span class="n">_server_host_override</span> <span class="o">=</span> <span class="n">server_host_override</span>
 
     <span class="bp">self</span><span class="o">.</span><span class="n">_pool_size</span> <span class="o">=</span> <span class="n">thread_pool_size</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span> <span class="o">=</span> <span class="bp">None</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">_front</span> <span class="o">=</span> <span class="bp">None</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">_rear_link</span> <span class="o">=</span> <span class="bp">None</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">_understub</span> <span class="o">=</span> <span class="bp">None</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_front</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_rear_link</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_understub</span> <span class="o">=</span> <span class="kc">None</span>
 
   <span class="k">def</span> <span class="nf">__enter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
     <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lock</span><span class="p">:</span>
-      <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+      <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span> <span class="o">=</span> <span class="n">logging_pool</span><span class="o">.</span><span class="n">pool</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_pool_size</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_front</span> <span class="o">=</span> <span class="n">_base_implementations</span><span class="o">.</span><span class="n">front_link</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span><span class="p">)</span>
@@ -282,33 +282,33 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_rear_link</span><span class="o">.</span><span class="n">join_fore_link</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_front</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_rear_link</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_understub</span> <span class="o">=</span> <span class="n">_face_implementations</span><span class="o">.</span><span class="n">dynamic_stub</span><span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_breakdown</span><span class="o">.</span><span class="n">face_cardinalities</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_front</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_breakdown</span><span class="o">.</span><span class="n">face_cardinalities</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_front</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
       <span class="k">else</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;Tried to __enter__ already-__enter__ed Stub!&#39;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Tried to __enter__ already-__enter__ed Stub!&#39;</span><span class="p">)</span>
     <span class="k">return</span> <span class="bp">self</span>
 
   <span class="k">def</span> <span class="nf">__exit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exc_type</span><span class="p">,</span> <span class="n">exc_val</span><span class="p">,</span> <span class="n">exc_tb</span><span class="p">):</span>
     <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lock</span><span class="p">:</span>
-      <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;Tried to __exit__ non-__enter__ed Stub!&#39;</span><span class="p">)</span>
+      <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Tried to __exit__ non-__enter__ed Stub!&#39;</span><span class="p">)</span>
       <span class="k">else</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_rear_link</span><span class="o">.</span><span class="n">stop</span><span class="p">()</span>
         <span class="n">_base_utilities</span><span class="o">.</span><span class="n">wait_for_idle</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_front</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span><span class="o">.</span><span class="n">shutdown</span><span class="p">(</span><span class="n">wait</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_rear_link</span> <span class="o">=</span> <span class="bp">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_front</span> <span class="o">=</span> <span class="bp">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span> <span class="o">=</span> <span class="bp">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_understub</span> <span class="o">=</span> <span class="bp">None</span>
-    <span class="k">return</span> <span class="bp">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span><span class="o">.</span><span class="n">shutdown</span><span class="p">(</span><span class="n">wait</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_rear_link</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_front</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_understub</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">return</span> <span class="kc">False</span>
 
   <span class="k">def</span> <span class="nf">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">):</span>
     <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lock</span><span class="p">:</span>
-      <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;Tried to __getattr__ non-__enter__ed Stub!&#39;</span><span class="p">)</span>
+      <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Tried to __getattr__ non-__enter__ed Stub!&#39;</span><span class="p">)</span>
       <span class="k">else</span><span class="p">:</span>
         <span class="n">method_cardinality</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_breakdown</span><span class="o">.</span><span class="n">cardinalities</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">attr</span><span class="p">)</span>
         <span class="n">underlying_attr</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_understub</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_breakdown</span><span class="o">.</span><span class="n">qualified_names</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">attr</span><span class="p">),</span> <span class="bp">None</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_understub</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_breakdown</span><span class="o">.</span><span class="n">qualified_names</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">attr</span><span class="p">),</span> <span class="kc">None</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">method_cardinality</span> <span class="ow">is</span> <span class="n">interfaces</span><span class="o">.</span><span class="n">Cardinality</span><span class="o">.</span><span class="n">UNARY_UNARY</span><span class="p">:</span>
           <span class="k">return</span> <span class="n">_reexport</span><span class="o">.</span><span class="n">unary_unary_sync_async</span><span class="p">(</span><span class="n">underlying_attr</span><span class="p">)</span>
         <span class="k">elif</span> <span class="n">method_cardinality</span> <span class="ow">is</span> <span class="n">interfaces</span><span class="o">.</span><span class="n">Cardinality</span><span class="o">.</span><span class="n">UNARY_STREAM</span><span class="p">:</span>
@@ -325,9 +325,9 @@
 
 
 <div class="viewcode-block" id="stub"><a class="viewcode-back" href="../../../grpc.early_adopter.html#grpc.early_adopter.implementations.stub">[docs]</a><span class="k">def</span> <span class="nf">stub</span><span class="p">(</span>
-    <span class="n">service_name</span><span class="p">,</span> <span class="n">methods</span><span class="p">,</span> <span class="n">host</span><span class="p">,</span> <span class="n">port</span><span class="p">,</span> <span class="n">metadata_transformer</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">secure</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
-    <span class="n">root_certificates</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">private_key</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">certificate_chain</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
-    <span class="n">server_host_override</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">thread_pool_size</span><span class="o">=</span><span class="n">_DEFAULT_THREAD_POOL_SIZE</span><span class="p">):</span>
+    <span class="n">service_name</span><span class="p">,</span> <span class="n">methods</span><span class="p">,</span> <span class="n">host</span><span class="p">,</span> <span class="n">port</span><span class="p">,</span> <span class="n">metadata_transformer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">secure</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">root_certificates</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">private_key</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">certificate_chain</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">server_host_override</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">thread_pool_size</span><span class="o">=</span><span class="n">_DEFAULT_THREAD_POOL_SIZE</span><span class="p">):</span>
   <span class="sd">&quot;&quot;&quot;Constructs an interfaces.Stub.</span>
 
 <span class="sd">  Args:</span>
@@ -361,11 +361,11 @@
       <span class="n">breakdown</span><span class="p">,</span> <span class="n">host</span><span class="p">,</span> <span class="n">port</span><span class="p">,</span> <span class="n">secure</span><span class="p">,</span> <span class="n">root_certificates</span><span class="p">,</span> <span class="n">private_key</span><span class="p">,</span>
       <span class="n">certificate_chain</span><span class="p">,</span> <span class="n">server_host_override</span><span class="o">=</span><span class="n">server_host_override</span><span class="p">,</span>
       <span class="n">metadata_transformer</span><span class="o">=</span><span class="n">metadata_transformer</span><span class="p">,</span>
-      <span class="n">thread_pool_size</span><span class="o">=</span><span class="n">thread_pool_size</span><span class="p">)</span>
+      <span class="n">thread_pool_size</span><span class="o">=</span><span class="n">thread_pool_size</span><span class="p">)</span></div>
 
-</div>
+
 <div class="viewcode-block" id="server"><a class="viewcode-back" href="../../../grpc.early_adopter.html#grpc.early_adopter.implementations.server">[docs]</a><span class="k">def</span> <span class="nf">server</span><span class="p">(</span>
-    <span class="n">service_name</span><span class="p">,</span> <span class="n">methods</span><span class="p">,</span> <span class="n">port</span><span class="p">,</span> <span class="n">private_key</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">certificate_chain</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+    <span class="n">service_name</span><span class="p">,</span> <span class="n">methods</span><span class="p">,</span> <span class="n">port</span><span class="p">,</span> <span class="n">private_key</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">certificate_chain</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">thread_pool_size</span><span class="o">=</span><span class="n">_DEFAULT_THREAD_POOL_SIZE</span><span class="p">):</span>
   <span class="sd">&quot;&quot;&quot;Constructs an interfaces.Server.</span>
 
@@ -400,7 +400,7 @@
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2015, Author.
+        &copy; Copyright 2016, Author.
 
     </p>
   </div>
@@ -422,7 +422,7 @@
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'../../../',
-            VERSION:'0.11.0b1',
+            VERSION:'0.13.1rc1',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true

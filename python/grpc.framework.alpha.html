@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>grpc.framework.alpha package &mdash; grpcio 0.11.0b1 documentation</title>
+  <title>grpc.framework.alpha package &mdash; grpcio 0.13.1rc1 documentation</title>
   
 
   
@@ -30,7 +30,7 @@
   
 
   
-    <link rel="top" title="grpcio 0.11.0b1 documentation" href="index.html"/>
+    <link rel="top" title="grpcio 0.13.1rc1 documentation" href="index.html"/>
         <link rel="up" title="grpc.framework package" href="grpc.framework.html"/>
         <link rel="next" title="grpc.framework.base package" href="grpc.framework.base.html"/>
         <link rel="prev" title="grpc.framework package" href="grpc.framework.html"/> 
@@ -61,7 +61,7 @@
             
             
               <div class="version">
-                0.11.0b1
+                0.13.1rc1
               </div>
             
           
@@ -119,7 +119,7 @@
         <div class="rst-content">
           
 
-
+ 
 
 
 
@@ -184,6 +184,31 @@
 <em class="property">class </em><code class="descclassname">grpc.framework.alpha.interfaces.</code><code class="descname">Abortion</code><a class="reference internal" href="_modules/grpc/framework/alpha/interfaces.html#Abortion"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.alpha.interfaces.Abortion" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">enum.Enum</span></code></p>
 <p>Categories of RPC abortion.</p>
+<dl class="attribute">
+<dt id="grpc.framework.alpha.interfaces.Abortion.CANCELLED">
+<code class="descname">CANCELLED</code><em class="property"> = &lt;Abortion.CANCELLED: 'cancelled'&gt;</em><a class="headerlink" href="#grpc.framework.alpha.interfaces.Abortion.CANCELLED" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.framework.alpha.interfaces.Abortion.EXPIRED">
+<code class="descname">EXPIRED</code><em class="property"> = &lt;Abortion.EXPIRED: 'expired'&gt;</em><a class="headerlink" href="#grpc.framework.alpha.interfaces.Abortion.EXPIRED" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.framework.alpha.interfaces.Abortion.NETWORK_FAILURE">
+<code class="descname">NETWORK_FAILURE</code><em class="property"> = &lt;Abortion.NETWORK_FAILURE: 'network failure'&gt;</em><a class="headerlink" href="#grpc.framework.alpha.interfaces.Abortion.NETWORK_FAILURE" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.framework.alpha.interfaces.Abortion.SERVICED_FAILURE">
+<code class="descname">SERVICED_FAILURE</code><em class="property"> = &lt;Abortion.SERVICED_FAILURE: 'serviced failure'&gt;</em><a class="headerlink" href="#grpc.framework.alpha.interfaces.Abortion.SERVICED_FAILURE" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.framework.alpha.interfaces.Abortion.SERVICER_FAILURE">
+<code class="descname">SERVICER_FAILURE</code><em class="property"> = &lt;Abortion.SERVICER_FAILURE: 'servicer failure'&gt;</em><a class="headerlink" href="#grpc.framework.alpha.interfaces.Abortion.SERVICER_FAILURE" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 </dd></dl>
 
 <dl class="class">
@@ -191,12 +216,6 @@
 <em class="property">class </em><code class="descclassname">grpc.framework.alpha.interfaces.</code><code class="descname">CancellableIterator</code><a class="reference internal" href="_modules/grpc/framework/alpha/interfaces.html#CancellableIterator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.alpha.interfaces.CancellableIterator" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <p>Implements the Iterator protocol and affords a cancel method.</p>
-<dl class="method">
-<dt id="grpc.framework.alpha.interfaces.CancellableIterator.__iter__">
-<code class="descname">__iter__</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/alpha/interfaces.html#CancellableIterator.__iter__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.alpha.interfaces.CancellableIterator.__iter__" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns the self object in accordance with the Iterator protocol.</p>
-</dd></dl>
-
 <dl class="method">
 <dt id="grpc.framework.alpha.interfaces.CancellableIterator.cancel">
 <code class="descname">cancel</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/alpha/interfaces.html#CancellableIterator.cancel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.alpha.interfaces.CancellableIterator.cancel" title="Permalink to this definition">¶</a></dt>
@@ -216,6 +235,26 @@
 <em class="property">class </em><code class="descclassname">grpc.framework.alpha.interfaces.</code><code class="descname">Cardinality</code><a class="reference internal" href="_modules/grpc/framework/alpha/interfaces.html#Cardinality"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.alpha.interfaces.Cardinality" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">enum.Enum</span></code></p>
 <p>Constants for the four cardinalities of RPC.</p>
+<dl class="attribute">
+<dt id="grpc.framework.alpha.interfaces.Cardinality.STREAM_STREAM">
+<code class="descname">STREAM_STREAM</code><em class="property"> = &lt;Cardinality.STREAM_STREAM: 'request-streaming/response-streaming'&gt;</em><a class="headerlink" href="#grpc.framework.alpha.interfaces.Cardinality.STREAM_STREAM" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.framework.alpha.interfaces.Cardinality.STREAM_UNARY">
+<code class="descname">STREAM_UNARY</code><em class="property"> = &lt;Cardinality.STREAM_UNARY: 'request-streaming/response-unary'&gt;</em><a class="headerlink" href="#grpc.framework.alpha.interfaces.Cardinality.STREAM_UNARY" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.framework.alpha.interfaces.Cardinality.UNARY_STREAM">
+<code class="descname">UNARY_STREAM</code><em class="property"> = &lt;Cardinality.UNARY_STREAM: 'request-unary/response-streaming'&gt;</em><a class="headerlink" href="#grpc.framework.alpha.interfaces.Cardinality.UNARY_STREAM" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.framework.alpha.interfaces.Cardinality.UNARY_UNARY">
+<code class="descname">UNARY_UNARY</code><em class="property"> = &lt;Cardinality.UNARY_UNARY: 'request-unary/response-unary'&gt;</em><a class="headerlink" href="#grpc.framework.alpha.interfaces.Cardinality.UNARY_UNARY" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 </dd></dl>
 
 <dl class="class">
@@ -263,9 +302,12 @@ out.</div></blockquote>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">A Cardinality value identifying whether or not this
-RpcMethodDescription is request-unary or request-streaming and
-whether or not it is response-unary or response-streaming.</td>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><dl class="docutils">
+<dt>A Cardinality value identifying whether or not this</dt>
+<dd>RpcMethodDescription is request-unary or request-streaming and
+whether or not it is response-unary or response-streaming.</dd>
+</dl>
+</td>
 </tr>
 </tbody>
 </table>
@@ -307,8 +349,11 @@ RpcMethodInvocationDescription.</td>
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>request</strong> &#8211; A request value appropriate for the RPC method described by this
 RpcMethodInvocationDescription.</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">The serialization of the given request value as a
-bytestring.</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><dl class="docutils">
+<dt>The serialization of the given request value as a</dt>
+<dd>bytestring.</dd>
+</dl>
+</td>
 </tr>
 </tbody>
 </table>
@@ -350,8 +395,11 @@ RpcMethodServiceDescription.</td>
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>response</strong> &#8211; A response value appropriate for the RPC method described by
 this RpcMethodServiceDescription.</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">The serialization of the given response value as a
-bytestring.</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><dl class="docutils">
+<dt>The serialization of the given response value as a</dt>
+<dd>bytestring.</dd>
+</dl>
+</td>
 </tr>
 </tbody>
 </table>
@@ -374,8 +422,11 @@ method described by this RpcMethodServiceDescription.</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Yields:</th><td class="field-body"><p class="first last">Zero or more response values appropriate for the RPC method described by
-this RpcMethodServiceDescription.</p>
+<tr class="field-even field"><th class="field-name">Yields:</th><td class="field-body"><dl class="first last docutils">
+<dt>Zero or more response values appropriate for the RPC method described by</dt>
+<dd><p class="first last">this RpcMethodServiceDescription.</p>
+</dd>
+</dl>
 </td>
 </tr>
 </tbody>
@@ -399,8 +450,12 @@ method described by this RpcMethodServiceDescription.</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A response value appropriate for the RPC method described by this
-RpcMethodServiceDescription.</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><dl class="docutils">
+<dt>A response value appropriate for the RPC method described by this</dt>
+<dd><p class="first last">RpcMethodServiceDescription.</p>
+</dd>
+</dl>
+</p>
 </td>
 </tr>
 </tbody>
@@ -424,8 +479,11 @@ RpcMethodServiceDescription.</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Yields:</th><td class="field-body"><p class="first last">Zero or more response values appropriate for the RPC method described by
-this RpcMethodServiceDescription.</p>
+<tr class="field-even field"><th class="field-name">Yields:</th><td class="field-body"><dl class="first last docutils">
+<dt>Zero or more response values appropriate for the RPC method described by</dt>
+<dd><p class="first last">this RpcMethodServiceDescription.</p>
+</dd>
+</dl>
 </td>
 </tr>
 </tbody>
@@ -449,8 +507,12 @@ RpcMethodServiceDescription.</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A response value appropriate for the RPC method described by this
-RpcMethodServiceDescription.</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><dl class="docutils">
+<dt>A response value appropriate for the RPC method described by this</dt>
+<dd><p class="first last">RpcMethodServiceDescription.</p>
+</dd>
+</dl>
+</p>
 </td>
 </tr>
 </tbody>
@@ -493,31 +555,6 @@ and blocks until the RPC&#8217;s response is available. Calling the &#8220;async
 of a value of this type invokes its associated RPC and immediately returns a
 future.Future bound to the asynchronous execution of the RPC.</p>
 <dl class="method">
-<dt id="grpc.framework.alpha.interfaces.StreamUnarySyncAsync.__call__">
-<code class="descname">__call__</code><span class="sig-paren">(</span><em>request_iterator</em>, <em>timeout</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/alpha/interfaces.html#StreamUnarySyncAsync.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.alpha.interfaces.StreamUnarySyncAsync.__call__" title="Permalink to this definition">¶</a></dt>
-<dd><p>Synchronously invokes the underlying RPC.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>request_iterator</strong> &#8211; An iterator that yields request values for the RPC.</li>
-<li><strong>timeout</strong> &#8211; A duration of time in seconds to allow for the RPC.</li>
-</ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The response value for the RPC.</p>
-</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><p class="first last"><code class="xref py py-exc docutils literal"><span class="pre">exceptions.RpcError</span></code> &#8211;
-Indicating that the RPC was aborted.</p>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
 <dt id="grpc.framework.alpha.interfaces.StreamUnarySyncAsync.async">
 <code class="descname">async</code><span class="sig-paren">(</span><em>request_iterator</em>, <em>timeout</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/alpha/interfaces.html#StreamUnarySyncAsync.async"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.alpha.interfaces.StreamUnarySyncAsync.async" title="Permalink to this definition">¶</a></dt>
 <dd><p>Asynchronously invokes the underlying RPC.</p>
@@ -531,10 +568,14 @@ Indicating that the RPC was aborted.</p>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A future.Future representing the RPC. In the event of RPC completion, the
-returned Future&#8217;s result value will be the response value of the RPC.
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><dl class="docutils">
+<dt>A future.Future representing the RPC. In the event of RPC completion, the</dt>
+<dd><p class="first last">returned Future&#8217;s result value will be the response value of the RPC.
 In the event of RPC abortion, the returned Future&#8217;s exception value
 will be an exceptions.RpcError.</p>
+</dd>
+</dl>
+</p>
 </td>
 </tr>
 </tbody>
@@ -580,25 +621,6 @@ blocks until the RPC&#8217;s response is available. Calling the &#8220;async&#82
 of a value of this type invokes its associated RPC and immediately returns a
 future.Future bound to the asynchronous execution of the RPC.</p>
 <dl class="method">
-<dt id="grpc.framework.alpha.interfaces.UnaryUnarySyncAsync.__call__">
-<code class="descname">__call__</code><span class="sig-paren">(</span><em>request</em>, <em>timeout</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/alpha/interfaces.html#UnaryUnarySyncAsync.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.alpha.interfaces.UnaryUnarySyncAsync.__call__" title="Permalink to this definition">¶</a></dt>
-<dd><p>Synchronously invokes the underlying RPC.
-:param request: The request value for the RPC.
-:param timeout: A duration of time in seconds to allow for the RPC.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">The response value for the RPC.</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><code class="xref py py-exc docutils literal"><span class="pre">exceptions.RpcError</span></code> &#8211;
-Indicating that the RPC was aborted.</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
 <dt id="grpc.framework.alpha.interfaces.UnaryUnarySyncAsync.async">
 <code class="descname">async</code><span class="sig-paren">(</span><em>request</em>, <em>timeout</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/alpha/interfaces.html#UnaryUnarySyncAsync.async"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.alpha.interfaces.UnaryUnarySyncAsync.async" title="Permalink to this definition">¶</a></dt>
 <dd><p>Asynchronously invokes the underlying RPC.
@@ -608,10 +630,13 @@ Indicating that the RPC was aborted.</td>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">A future.Future representing the RPC. In the event of RPC completion, the
-returned Future&#8217;s result value will be the response value of the RPC.
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><dl class="docutils">
+<dt>A future.Future representing the RPC. In the event of RPC completion, the</dt>
+<dd>returned Future&#8217;s result value will be the response value of the RPC.
 In the event of RPC abortion, the returned Future&#8217;s exception value
-will be an exceptions.RpcError.</td>
+will be an exceptions.RpcError.</dd>
+</dl>
+</td>
 </tr>
 </tbody>
 </table>
@@ -640,9 +665,13 @@ that bytestring.</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">An interfaces.RpcMethodInvocationDescription constructed from the given
-arguments representing a  streaming-request/streaming-response RPC
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><dl class="docutils">
+<dt>An interfaces.RpcMethodInvocationDescription constructed from the given</dt>
+<dd><p class="first last">arguments representing a  streaming-request/streaming-response RPC
 method.</p>
+</dd>
+</dl>
+</p>
 </td>
 </tr>
 </tbody>
@@ -671,9 +700,13 @@ that value.</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">An interfaces.RpcMethodServiceDescription constructed from the given
-arguments representing a
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><dl class="docutils">
+<dt>An interfaces.RpcMethodServiceDescription constructed from the given</dt>
+<dd><p class="first last">arguments representing a
 streaming-request/streaming-response RPC method.</p>
+</dd>
+</dl>
+</p>
 </td>
 </tr>
 </tbody>
@@ -697,8 +730,12 @@ that bytestring.</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">An interfaces.RpcMethodInvocationDescription constructed from the given
-arguments representing a streaming-request/unary-response RPC method.</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><dl class="docutils">
+<dt>An interfaces.RpcMethodInvocationDescription constructed from the given</dt>
+<dd><p class="first last">arguments representing a streaming-request/unary-response RPC method.</p>
+</dd>
+</dl>
+</p>
 </td>
 </tr>
 </tbody>
@@ -726,9 +763,13 @@ that value.</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">An interfaces.RpcMethodServiceDescription constructed from the given
-arguments representing a streaming-request/unary-response
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><dl class="docutils">
+<dt>An interfaces.RpcMethodServiceDescription constructed from the given</dt>
+<dd><p class="first last">arguments representing a streaming-request/unary-response
 RPC method.</p>
+</dd>
+</dl>
+</p>
 </td>
 </tr>
 </tbody>
@@ -752,8 +793,12 @@ that bytestring.</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">An interfaces.RpcMethodInvocationDescription constructed from the given
-arguments representing a unary-request/streaming-response RPC method.</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><dl class="docutils">
+<dt>An interfaces.RpcMethodInvocationDescription constructed from the given</dt>
+<dd><p class="first last">arguments representing a unary-request/streaming-response RPC method.</p>
+</dd>
+</dl>
+</p>
 </td>
 </tr>
 </tbody>
@@ -781,9 +826,13 @@ that value.</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">An interfaces.RpcMethodServiceDescription constructed from the given
-arguments representing a unary-request/streaming-response
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><dl class="docutils">
+<dt>An interfaces.RpcMethodServiceDescription constructed from the given</dt>
+<dd><p class="first last">arguments representing a unary-request/streaming-response
 RPC method.</p>
+</dd>
+</dl>
+</p>
 </td>
 </tr>
 </tbody>
@@ -807,8 +856,12 @@ that bytestring.</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">An interfaces.RpcMethodInvocationDescription constructed from the given
-arguments representing a unary-request/unary-response RPC method.</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><dl class="docutils">
+<dt>An interfaces.RpcMethodInvocationDescription constructed from the given</dt>
+<dd><p class="first last">arguments representing a unary-request/unary-response RPC method.</p>
+</dd>
+</dl>
+</p>
 </td>
 </tr>
 </tbody>
@@ -836,9 +889,13 @@ that value.</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">An interfaces.RpcMethodServiceDescription constructed from the given
-arguments representing a unary-request/unary-response RPC
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><dl class="docutils">
+<dt>An interfaces.RpcMethodServiceDescription constructed from the given</dt>
+<dd><p class="first last">arguments representing a unary-request/unary-response RPC
 method.</p>
+</dd>
+</dl>
+</p>
 </td>
 </tr>
 </tbody>
@@ -870,7 +927,7 @@ method.</p>
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2015, Author.
+        &copy; Copyright 2016, Author.
 
     </p>
   </div>
@@ -892,7 +949,7 @@ method.</p>
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'0.11.0b1',
+            VERSION:'0.13.1rc1',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true

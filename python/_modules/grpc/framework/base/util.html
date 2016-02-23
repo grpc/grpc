@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>grpc.framework.base.util &mdash; grpcio 0.11.0b1 documentation</title>
+  <title>grpc.framework.base.util &mdash; grpcio 0.13.1rc1 documentation</title>
   
 
   
@@ -30,7 +30,7 @@
   
 
   
-    <link rel="top" title="grpcio 0.11.0b1 documentation" href="../../../../index.html"/>
+    <link rel="top" title="grpcio 0.13.1rc1 documentation" href="../../../../index.html"/>
         <link rel="up" title="Module code" href="../../../index.html"/> 
 
   
@@ -59,7 +59,7 @@
             
             
               <div class="version">
-                0.11.0b1
+                0.13.1rc1
               </div>
             
           
@@ -127,52 +127,52 @@
            <div itemprop="articleBody">
             
   <h1>Source code for grpc.framework.base.util</h1><div class="highlight"><pre>
-<span class="c"># Copyright 2015, Google Inc.</span>
-<span class="c"># All rights reserved.</span>
-<span class="c">#</span>
-<span class="c"># Redistribution and use in source and binary forms, with or without</span>
-<span class="c"># modification, are permitted provided that the following conditions are</span>
-<span class="c"># met:</span>
-<span class="c">#</span>
-<span class="c">#     * Redistributions of source code must retain the above copyright</span>
-<span class="c"># notice, this list of conditions and the following disclaimer.</span>
-<span class="c">#     * Redistributions in binary form must reproduce the above</span>
-<span class="c"># copyright notice, this list of conditions and the following disclaimer</span>
-<span class="c"># in the documentation and/or other materials provided with the</span>
-<span class="c"># distribution.</span>
-<span class="c">#     * Neither the name of Google Inc. nor the names of its</span>
-<span class="c"># contributors may be used to endorse or promote products derived from</span>
-<span class="c"># this software without specific prior written permission.</span>
-<span class="c">#</span>
-<span class="c"># THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS</span>
-<span class="c"># &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT</span>
-<span class="c"># LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR</span>
-<span class="c"># A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT</span>
-<span class="c"># OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,</span>
-<span class="c"># SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT</span>
-<span class="c"># LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,</span>
-<span class="c"># DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY</span>
-<span class="c"># THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT</span>
-<span class="c"># (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE</span>
-<span class="c"># OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.</span>
+<span></span><span class="c1"># Copyright 2015, Google Inc.</span>
+<span class="c1"># All rights reserved.</span>
+<span class="c1">#</span>
+<span class="c1"># Redistribution and use in source and binary forms, with or without</span>
+<span class="c1"># modification, are permitted provided that the following conditions are</span>
+<span class="c1"># met:</span>
+<span class="c1">#</span>
+<span class="c1">#     * Redistributions of source code must retain the above copyright</span>
+<span class="c1"># notice, this list of conditions and the following disclaimer.</span>
+<span class="c1">#     * Redistributions in binary form must reproduce the above</span>
+<span class="c1"># copyright notice, this list of conditions and the following disclaimer</span>
+<span class="c1"># in the documentation and/or other materials provided with the</span>
+<span class="c1"># distribution.</span>
+<span class="c1">#     * Neither the name of Google Inc. nor the names of its</span>
+<span class="c1"># contributors may be used to endorse or promote products derived from</span>
+<span class="c1"># this software without specific prior written permission.</span>
+<span class="c1">#</span>
+<span class="c1"># THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS</span>
+<span class="c1"># &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT</span>
+<span class="c1"># LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR</span>
+<span class="c1"># A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT</span>
+<span class="c1"># OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,</span>
+<span class="c1"># SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT</span>
+<span class="c1"># LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,</span>
+<span class="c1"># DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY</span>
+<span class="c1"># THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT</span>
+<span class="c1"># (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE</span>
+<span class="c1"># OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.</span>
 
 <span class="sd">&quot;&quot;&quot;Utilities helpful for working with the base layer of RPC Framework.&quot;&quot;&quot;</span>
 
 <span class="kn">import</span> <span class="nn">collections</span>
 <span class="kn">import</span> <span class="nn">threading</span>
 
-<span class="kn">from</span> <span class="nn">grpc.framework.base</span> <span class="kn">import</span> <span class="n">interfaces</span>
+<span class="kn">from</span> <span class="nn">grpc.framework.base</span> <span class="k">import</span> <span class="n">interfaces</span>
 
 
 <span class="k">class</span> <span class="nc">_ServicedSubscription</span><span class="p">(</span>
-    <span class="n">collections</span><span class="o">.</span><span class="n">namedtuple</span><span class="p">(</span><span class="s">&#39;_ServicedSubscription&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s">&#39;kind&#39;</span><span class="p">,</span> <span class="s">&#39;ingestor&#39;</span><span class="p">]),</span>
+    <span class="n">collections</span><span class="o">.</span><span class="n">namedtuple</span><span class="p">(</span><span class="s1">&#39;_ServicedSubscription&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;kind&#39;</span><span class="p">,</span> <span class="s1">&#39;ingestor&#39;</span><span class="p">]),</span>
     <span class="n">interfaces</span><span class="o">.</span><span class="n">ServicedSubscription</span><span class="p">):</span>
   <span class="sd">&quot;&quot;&quot;See interfaces.ServicedSubscription for specification.&quot;&quot;&quot;</span>
 
 <span class="n">_NONE_SUBSCRIPTION</span> <span class="o">=</span> <span class="n">_ServicedSubscription</span><span class="p">(</span>
-    <span class="n">interfaces</span><span class="o">.</span><span class="n">ServicedSubscription</span><span class="o">.</span><span class="n">Kind</span><span class="o">.</span><span class="n">NONE</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+    <span class="n">interfaces</span><span class="o">.</span><span class="n">ServicedSubscription</span><span class="o">.</span><span class="n">Kind</span><span class="o">.</span><span class="n">NONE</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
 <span class="n">_TERMINATION_ONLY_SUBSCRIPTION</span> <span class="o">=</span> <span class="n">_ServicedSubscription</span><span class="p">(</span>
-    <span class="n">interfaces</span><span class="o">.</span><span class="n">ServicedSubscription</span><span class="o">.</span><span class="n">Kind</span><span class="o">.</span><span class="n">TERMINATION_ONLY</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+    <span class="n">interfaces</span><span class="o">.</span><span class="n">ServicedSubscription</span><span class="o">.</span><span class="n">Kind</span><span class="o">.</span><span class="n">TERMINATION_ONLY</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
 
 
 <div class="viewcode-block" id="none_serviced_subscription"><a class="viewcode-back" href="../../../../grpc.framework.base.html#grpc.framework.base.util.none_serviced_subscription">[docs]</a><span class="k">def</span> <span class="nf">none_serviced_subscription</span><span class="p">():</span>
@@ -183,9 +183,9 @@
 <span class="sd">      operation&#39;s results (such as would be the case for a fire-and-forget</span>
 <span class="sd">      operation invocation).</span>
 <span class="sd">  &quot;&quot;&quot;</span>
-  <span class="k">return</span> <span class="n">_NONE_SUBSCRIPTION</span>
+  <span class="k">return</span> <span class="n">_NONE_SUBSCRIPTION</span></div>
 
-</div>
+
 <div class="viewcode-block" id="termination_only_serviced_subscription"><a class="viewcode-back" href="../../../../grpc.framework.base.html#grpc.framework.base.util.termination_only_serviced_subscription">[docs]</a><span class="k">def</span> <span class="nf">termination_only_serviced_subscription</span><span class="p">():</span>
   <span class="sd">&quot;&quot;&quot;Creates a &quot;termination only&quot; interfaces.ServicedSubscription object.</span>
 
@@ -195,9 +195,9 @@
 <span class="sd">      (such as completion or expiration) and would ignore the actual results of</span>
 <span class="sd">      the operation.</span>
 <span class="sd">  &quot;&quot;&quot;</span>
-  <span class="k">return</span> <span class="n">_TERMINATION_ONLY_SUBSCRIPTION</span>
+  <span class="k">return</span> <span class="n">_TERMINATION_ONLY_SUBSCRIPTION</span></div>
 
-</div>
+
 <div class="viewcode-block" id="full_serviced_subscription"><a class="viewcode-back" href="../../../../grpc.framework.base.html#grpc.framework.base.util.full_serviced_subscription">[docs]</a><span class="k">def</span> <span class="nf">full_serviced_subscription</span><span class="p">(</span><span class="n">ingestor</span><span class="p">):</span>
   <span class="sd">&quot;&quot;&quot;Creates a &quot;full&quot; interfaces.ServicedSubscription object.</span>
 
@@ -209,9 +209,9 @@
 <span class="sd">      subscription.</span>
 <span class="sd">  &quot;&quot;&quot;</span>
   <span class="k">return</span> <span class="n">_ServicedSubscription</span><span class="p">(</span>
-      <span class="n">interfaces</span><span class="o">.</span><span class="n">ServicedSubscription</span><span class="o">.</span><span class="n">Kind</span><span class="o">.</span><span class="n">FULL</span><span class="p">,</span> <span class="n">ingestor</span><span class="p">)</span>
+      <span class="n">interfaces</span><span class="o">.</span><span class="n">ServicedSubscription</span><span class="o">.</span><span class="n">Kind</span><span class="o">.</span><span class="n">FULL</span><span class="p">,</span> <span class="n">ingestor</span><span class="p">)</span></div>
 
-</div>
+
 <div class="viewcode-block" id="wait_for_idle"><a class="viewcode-back" href="../../../../grpc.framework.base.html#grpc.framework.base.util.wait_for_idle">[docs]</a><span class="k">def</span> <span class="nf">wait_for_idle</span><span class="p">(</span><span class="n">end</span><span class="p">):</span>
   <span class="sd">&quot;&quot;&quot;Waits for an interfaces.End to complete all operations.</span>
 
@@ -232,7 +232,7 @@
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2015, Author.
+        &copy; Copyright 2016, Author.
 
     </p>
   </div>
@@ -254,7 +254,7 @@
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'../../../../',
-            VERSION:'0.11.0b1',
+            VERSION:'0.13.1rc1',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true
