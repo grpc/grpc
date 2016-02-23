@@ -102,7 +102,6 @@ TEST(AlarmTest, NegativeExpiry) {
   EXPECT_EQ(junk, output_tag);
 }
 
-
 TEST(AlarmTest, Cancellation) {
   CompletionQueue cq;
   void* junk = reinterpret_cast<void*>(1618033);
