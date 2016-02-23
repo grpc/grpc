@@ -88,7 +88,7 @@
 // include the name of the structure, which will be passed as the first
 // argument. E.g. cl_block_initialize() will initialize a cl_block.
 
-#include "src/core/census/log.h"
+#include "src/core/census/mlog.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
 #include <grpc/support/cpu.h>

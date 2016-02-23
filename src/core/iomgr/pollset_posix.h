@@ -142,6 +142,10 @@ int grpc_pollset_has_workers(grpc_pollset *pollset);
 void grpc_remove_fd_from_all_epoll_sets(int fd);
 
 /* override to allow tests to hook poll() usage */
+/* NOTE: Any changes to grpc_poll_function must take place when the gRPC
+   is certainly not doing any polling anywhere.
+   Otherwise, there might be a race between changing the variable and actually
+   doing a polling operation */
 typedef int (*grpc_poll_function_type)(struct pollfd *, nfds_t, int);
 extern grpc_poll_function_type grpc_poll_function;
 extern grpc_wakeup_fd grpc_global_wakeup_fd;
