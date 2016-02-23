@@ -168,7 +168,7 @@ static void test_connectivity(grpc_end2end_test_config config) {
   cq_verifier_destroy(cqv);
 }
 
-void channel_connectivity(grpc_end2end_test_config config) {
+void connectivity(grpc_end2end_test_config config) {
   GPR_ASSERT(config.feature_mask & FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION);
   test_connectivity(config);
 }

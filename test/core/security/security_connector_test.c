@@ -43,7 +43,7 @@
 #include "src/core/security/security_connector.h"
 #include "src/core/security/security_context.h"
 #include "src/core/support/env.h"
-#include "src/core/support/load_file.h"
+#include "src/core/support/tmpfile.h"
 #include "src/core/support/string.h"
 #include "src/core/tsi/ssl_transport_security.h"
 #include "src/core/tsi/transport_security.h"

@@ -194,13 +194,14 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\profiling\timers.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\support\block_annotate.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\support\env.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\support\file.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\support\load_file.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\support\murmur_hash.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\support\stack_lockfree.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\support\string.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\support\string_win32.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\support\thd_internal.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\support\time_precise.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\support\tmpfile.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(SolutionDir)\..\src\core\profiling\basic_timers.c">
@@ -227,15 +228,11 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\support\env_win32.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\support\file.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\support\file_posix.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\support\file_win32.c">
-    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\support\histogram.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\support\host_port.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\support\load_file.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\support\log.c">
     </ClCompile>
@@ -286,6 +283,10 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\support\time_win32.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\support\tls_pthread.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\support\tmpfile_posix.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\support\tmpfile_win32.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\support\wrap_memcpy.c">
     </ClCompile>

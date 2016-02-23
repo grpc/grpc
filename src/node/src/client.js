@@ -648,8 +648,8 @@ exports.makeClientConstructor = function(methods, serviceName) {
     var deserialize = attrs.responseDeserialize;
     Client.prototype[name] = requester_makers[method_type](
         attrs.path, serialize, deserialize);
-    Client.prototype[name].serialize = serialize;
-    Client.prototype[name].deserialize = deserialize;
+    // Associate all provided attributes with the method
+    _.assign(Client.prototype[name], attrs);
   });
 
   return Client;
