@@ -55,8 +55,8 @@ import report_utils
 import watch_dirs
 
 
-ROOT = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), '../..'))
-os.chdir(ROOT)
+_ROOT = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), '../..'))
+os.chdir(_ROOT)
 
 
 _FORCE_ENVIRON_FOR_WRAPPERS = {}
@@ -159,8 +159,7 @@ class CLanguage(object):
                                         shortname=' '.join(cmdline),
                                         cpu_cost=target['cpu_cost'],
                                         environ={'GRPC_DEFAULT_SSL_ROOTS_FILE_PATH':
-                                                 os.path.abspath(os.path.dirname(
-                                                     sys.argv[0]) + '/../../src/core/tsi/test_creds/ca.pem')}))
+                                                 _ROOT + '/src/core/tsi/test_creds/ca.pem'}))
       elif self.args.regex == '.*' or self.platform == 'windows':
         print '\nWARNING: binary not found, skipping', binary
     return sorted(out)
@@ -645,14 +644,6 @@ def _docker_arch_suffix(arch):
     sys.exit(1)
 
 
-def _get_dockerfile_dir(language, cfg, arch):
-  """Returns dockerfile to use"""
-  custom = language.dockerfile_dir(cfg, arch)
-  if custom:
-    return custom
-  else:
-    return 'tools/dockerfile/grpc_tests_multilang_%s' % _docker_arch_suffix(arch)
-
 def runs_per_test_type(arg_str):
     """Auxilary function to parse the "runs_per_test" flag.
 
@@ -781,7 +772,7 @@ else:
   lang_list = args.language
 # We don't support code coverage on some languages
 if 'gcov' in args.config:
-  for bad in ['objc', 'sanity', 'build']:
+  for bad in ['objc', 'sanity']:
     if bad in lang_list:
       lang_list.remove(bad)
 
@@ -797,10 +788,6 @@ if any(language.make_options() for language in languages):
   else:
     language_make_options = next(iter(languages)).make_options()
 
-if len(languages) != 1:
-  print 'Multi-language testing is not supported.'
-  sys.exit(1)
-
 if args.use_docker:
   if not args.travis:
     print 'Seen --use_docker flag, will run tests under docker.'
@@ -810,14 +797,18 @@ if args.use_docker:
     print 'copied to the docker environment.'
     time.sleep(5)
 
+  dockerfile_dirs = set([l.dockerfile_dir() for l in languages])
+  if len(dockerfile_dirs) > 1:
+    print 'Languages to be tested require running under different docker images.'
+    sys.exit(1)
+  dockerfile_dir = next(iter(dockerfile_dirs))
+
   child_argv = [ arg for arg in sys.argv if not arg == '--use_docker' ]
   run_tests_cmd = 'python tools/run_tests/run_tests.py %s' % ' '.join(child_argv[1:])
 
   env = os.environ.copy()
   env['RUN_TESTS_COMMAND'] = run_tests_cmd
-  env['DOCKERFILE_DIR'] = _get_dockerfile_dir(next(iter(languages)),
-                                              next(iter(build_configs)),
-                                              args.arch)
+  env['DOCKERFILE_DIR'] = dockerfile_dir
   env['DOCKER_RUN_SCRIPT'] = 'tools/jenkins/docker_run_tests.sh'
   if args.xml_report:
     env['XML_REPORT'] = args.xml_report
@@ -1001,7 +992,7 @@ def _start_port_server(port_server_port):
           print 'last ditch attempt to contact port server succeeded'
           break
         except:
-          traceback.print_exc();
+          traceback.print_exc()
           port_log = open(logfile, 'r').read()
           print port_log
           sys.exit(1)
@@ -1021,7 +1012,7 @@ def _start_port_server(port_server_port):
         time.sleep(1)
         waits += 1
       except:
-        traceback.print_exc();
+        traceback.print_exc()
         port_server.kill()
         raise
 
