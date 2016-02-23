@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -309,14 +309,19 @@ static void *auth_context_pointer_arg_copy(void *p) {
   return GRPC_AUTH_CONTEXT_REF(p, "auth_context_pointer_arg");
 }
 
+static int auth_context_pointer_cmp(void *a, void *b) { return GPR_ICMP(a, b); }
+
+static const grpc_arg_pointer_vtable auth_context_pointer_vtable = {
+    auth_context_pointer_arg_copy, auth_context_pointer_arg_destroy,
+    auth_context_pointer_cmp};
+
 grpc_arg grpc_auth_context_to_arg(grpc_auth_context *p) {
   grpc_arg arg;
   memset(&arg, 0, sizeof(grpc_arg));
   arg.type = GRPC_ARG_POINTER;
   arg.key = GRPC_AUTH_CONTEXT_ARG;
   arg.value.pointer.p = p;
-  arg.value.pointer.copy = auth_context_pointer_arg_copy;
-  arg.value.pointer.destroy = auth_context_pointer_arg_destroy;
+  arg.value.pointer.vtable = &auth_context_pointer_vtable;
   return arg;
 }
 

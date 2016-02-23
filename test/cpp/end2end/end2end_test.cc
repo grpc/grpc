@@ -51,11 +51,11 @@
 #include "src/core/security/credentials.h"
 #include "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
-#include "test/core/end2end/data/ssl_test_data.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/string_ref_helper.h"
+#include "test/cpp/util/test_credentials_provider.h"
 
 using grpc::testing::EchoRequest;
 using grpc::testing::EchoResponse;
@@ -191,12 +191,14 @@ class TestServiceImplDupPkg
 
 class TestScenario {
  public:
-  TestScenario(bool proxy, bool tls) : use_proxy(proxy), use_tls(tls) {}
+  TestScenario(bool proxy, const grpc::string& creds_type)
+      : use_proxy(proxy), credentials_type(creds_type) {}
   void Log() const {
-    gpr_log(GPR_INFO, "Scenario: proxy %d, tls %d", use_proxy, use_tls);
+    gpr_log(GPR_INFO, "Scenario: proxy %d, credentials %s", use_proxy,
+            credentials_type.c_str());
   }
   bool use_proxy;
-  bool use_tls;
+  const grpc::string credentials_type;
 };
 
 class End2endTest : public ::testing::TestWithParam<TestScenario> {
@@ -220,14 +222,8 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
     server_address_ << "127.0.0.1:" << port;
     // Setup server
     ServerBuilder builder;
-    auto server_creds = InsecureServerCredentials();
-    if (GetParam().use_tls) {
-      SslServerCredentialsOptions::PemKeyCertPair pkcp = {test_server1_key,
-                                                          test_server1_cert};
-      SslServerCredentialsOptions ssl_opts;
-      ssl_opts.pem_root_certs = "";
-      ssl_opts.pem_key_cert_pairs.push_back(pkcp);
-      server_creds = SslServerCredentials(ssl_opts);
+    auto server_creds = GetServerCredentials(GetParam().credentials_type);
+    if (GetParam().credentials_type != kInsecureCredentialsType) {
       server_creds->SetAuthMetadataProcessor(processor);
     }
     builder.AddListeningPort(server_address_.str(), server_creds);
@@ -246,11 +242,10 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
     }
     EXPECT_TRUE(is_server_started_);
     ChannelArguments args;
-    auto channel_creds = InsecureChannelCredentials();
-    if (GetParam().use_tls) {
-      SslCredentialsOptions ssl_opts = {test_root_cert, "", ""};
-      args.SetSslTargetNameOverride("foo.test.google.fr");
-      channel_creds = SslCredentials(ssl_opts);
+    auto channel_creds =
+        GetChannelCredentials(GetParam().credentials_type, &args);
+    if (!user_agent_prefix_.empty()) {
+      args.SetUserAgentPrefix(user_agent_prefix_);
     }
     args.SetString(GRPC_ARG_SECONDARY_USER_AGENT_STRING, "end2end_test");
     channel_ = CreateCustomChannel(server_address_.str(), channel_creds, args);
@@ -285,6 +280,7 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
   TestServiceImpl service_;
   TestServiceImpl special_service_;
   TestServiceImplDupPkg dup_pkg_service_;
+  grpc::string user_agent_prefix_;
 };
 
 static void SendRpc(grpc::testing::EchoTestService::Stub* stub, int num_rpcs,
@@ -599,6 +595,25 @@ TEST_P(End2endServerTryCancelTest, BidiStreamServerCancelDuring) {
 // but before returning to the client
 TEST_P(End2endServerTryCancelTest, BidiStreamServerCancelAfter) {
   TestBidiStreamServerCancel(CANCEL_AFTER_PROCESSING, 5);
+}
+
+TEST_P(End2endTest, SimpleRpcWithCustomeUserAgentPrefix) {
+  user_agent_prefix_ = "custom_prefix";
+  ResetStub();
+  EchoRequest request;
+  EchoResponse response;
+  request.set_message("Hello hello hello hello");
+  request.mutable_param()->set_echo_metadata(true);
+
+  ClientContext context;
+  Status s = stub_->Echo(&context, request, &response);
+  EXPECT_EQ(response.message(), request.message());
+  EXPECT_TRUE(s.ok());
+  const auto& trailing_metadata = context.GetServerTrailingMetadata();
+  auto iter = trailing_metadata.find("user-agent");
+  EXPECT_TRUE(iter != trailing_metadata.end());
+  grpc::string expected_prefix = user_agent_prefix_ + " grpc-c++/";
+  EXPECT_TRUE(iter->second.starts_with(expected_prefix));
 }
 
 TEST_P(End2endTest, MultipleRpcsWithVariedBinaryMetadataValue) {
@@ -918,7 +933,7 @@ TEST_P(End2endTest, ChannelState) {
 
 // Takes 10s.
 TEST_P(End2endTest, ChannelStateTimeout) {
-  if (GetParam().use_tls) {
+  if (GetParam().credentials_type != kInsecureCredentialsType) {
     return;
   }
   int port = grpc_pick_unused_port_or_die();
@@ -1127,7 +1142,7 @@ class SecureEnd2endTest : public End2endTest {
  protected:
   SecureEnd2endTest() {
     GPR_ASSERT(!GetParam().use_proxy);
-    GPR_ASSERT(GetParam().use_tls);
+    GPR_ASSERT(GetParam().credentials_type != kInsecureCredentialsType);
   }
 };
 
@@ -1350,21 +1365,42 @@ TEST_P(SecureEnd2endTest, ClientAuthContext) {
   EXPECT_EQ("*.test.youtube.com", ToString(auth_ctx->GetPeerIdentity()[2]));
 }
 
+std::vector<TestScenario> CreateTestScenarios(bool use_proxy,
+                                              bool test_insecure,
+                                              bool test_secure) {
+  std::vector<TestScenario> scenarios;
+  std::vector<grpc::string> credentials_types;
+  if (test_secure) {
+    credentials_types = GetSecureCredentialsTypeList();
+  }
+  if (test_insecure) {
+    credentials_types.push_back(kInsecureCredentialsType);
+  }
+  for (auto it = credentials_types.begin(); it != credentials_types.end();
+       ++it) {
+    scenarios.push_back(TestScenario(false, *it));
+    if (use_proxy) {
+      scenarios.push_back(TestScenario(true, *it));
+    }
+  }
+  return scenarios;
+}
+
 INSTANTIATE_TEST_CASE_P(End2end, End2endTest,
-                        ::testing::Values(TestScenario(false, false),
-                                          TestScenario(false, true)));
+                        ::testing::ValuesIn(CreateTestScenarios(false, true,
+                                                                true)));
 
 INSTANTIATE_TEST_CASE_P(End2endServerTryCancel, End2endServerTryCancelTest,
-                        ::testing::Values(TestScenario(false, false)));
+                        ::testing::ValuesIn(CreateTestScenarios(false, true,
+                                                                false)));
 
 INSTANTIATE_TEST_CASE_P(ProxyEnd2end, ProxyEnd2endTest,
-                        ::testing::Values(TestScenario(false, false),
-                                          TestScenario(false, true),
-                                          TestScenario(true, false),
-                                          TestScenario(true, true)));
+                        ::testing::ValuesIn(CreateTestScenarios(true, true,
+                                                                true)));
 
 INSTANTIATE_TEST_CASE_P(SecureEnd2end, SecureEnd2endTest,
-                        ::testing::Values(TestScenario(false, true)));
+                        ::testing::ValuesIn(CreateTestScenarios(false, false,
+                                                                true)));
 
 }  // namespace
 }  // namespace testing

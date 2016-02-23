@@ -1,6 +1,6 @@
 #region Copyright notice and license
 
-// Copyright 2015, Google Inc.
+// Copyright 2015-2016, Google Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -57,7 +57,7 @@ namespace Grpc.IntegrationTesting
         /// </summary>
         public static IServerRunner CreateStarted(ServerConfig config)
         {
-            Grpc.Core.Utils.Preconditions.CheckArgument(config.ServerType == ServerType.ASYNC_SERVER);
+            GrpcPreconditions.CheckArgument(config.ServerType == ServerType.ASYNC_SERVER);
             var credentials = config.SecurityParams != null ? TestCredentials.CreateSslServerCredentials() : ServerCredentials.Insecure;
 
             // TODO: qps_driver needs to setup payload properly...
@@ -83,7 +83,7 @@ namespace Grpc.IntegrationTesting
 
         public ServerRunnerImpl(Server server)
         {
-            this.server = Grpc.Core.Utils.Preconditions.CheckNotNull(server);
+            this.server = GrpcPreconditions.CheckNotNull(server);
         }
 
         public int BoundPort
