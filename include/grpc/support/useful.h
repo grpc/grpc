@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -71,5 +71,7 @@
      (GPR_INTERNAL_HEXDIGIT_BITCOUNT(i) >> 4)) & \
     0x0f0f0f0f) %                                \
    255)
+
+#define GPR_ICMP(a, b) ((a) < (b) ? -1 : ((a) > (b) ? 1 : 0))
 
 #endif /* GRPC_SUPPORT_USEFUL_H */

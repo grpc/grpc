@@ -95,10 +95,10 @@ if "linux" in sys.platform:
 if not "win32" in sys.platform:
   EXTENSION_LIBRARIES += ('m',)
 
-DEFINE_MACROS = (('OPENSSL_NO_ASM', 1), ('_WIN32_WINNT', 0x600))
+DEFINE_MACROS = (('OPENSSL_NO_ASM', 1), ('_WIN32_WINNT', 0x600), ('GPR_BACKWARDS_COMPATIBILITY_MODE', 1),)
 
-CFLAGS = ()
 LDFLAGS = ()
+CFLAGS = ()
 if "linux" in sys.platform:
   LDFLAGS += ('-Wl,-wrap,memcpy',)
 if "linux" in sys.platform or "darwin" in sys.platform:
@@ -168,7 +168,7 @@ COMMAND_CLASS = {
 }
 
 # Ensure that package data is copied over before any commands have been run:
-credentials_dir = os.path.join(PYTHON_STEM, 'grpc/_adapter/credentials')
+credentials_dir = os.path.join(PYTHON_STEM, 'grpc/_cython/_credentials')
 try:
   os.mkdir(credentials_dir)
 except OSError:
@@ -202,12 +202,10 @@ TEST_LOADER = 'tests:Loader'
 TEST_RUNNER = 'tests:Runner'
 
 PACKAGE_DATA = {
-    'grpc._adapter': [
-        'credentials/roots.pem'
-    ],
     # Binaries that may or may not be present in the final installation, but are
     # mentioned here for completeness.
     'grpc._cython': [
+        '_credentials/roots.pem',
         '_windows/grpc_c.32.python',
         '_windows/grpc_c.64.python',
     ],

@@ -1,6 +1,7 @@
+
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,62 +32,51 @@
  *
  */
 
-#include <grpc++/alarm.h>
-#include <grpc++/completion_queue.h>
-#include <gtest/gtest.h>
+#include "test/cpp/util/test_credentials_provider.h"
 
-#include <grpc++/completion_queue.h>
-#include "test/core/util/test_config.h"
+#include "test/core/end2end/data/ssl_test_data.h"
 
 namespace grpc {
-namespace {
+namespace testing {
 
-class TestTag : public CompletionQueueTag {
- public:
-  TestTag() : tag_(0) {}
-  TestTag(intptr_t tag) : tag_(tag) {}
-  bool FinalizeResult(void** tag, bool* status) { return true; }
-  intptr_t tag() { return tag_; }
+const char kTlsCredentialsType[] = "TLS_CREDENTIALS";
 
- private:
-  intptr_t tag_;
-};
-
-TEST(AlarmTest, RegularExpiry) {
-  CompletionQueue cq;
-  TestTag input_tag(1618033);
-  Alarm alarm(&cq, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(1), &input_tag);
-
-  TestTag* output_tag;
-  bool ok;
-  const CompletionQueue::NextStatus status = cq.AsyncNext(
-      (void**)&output_tag, &ok, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(2));
-
-  EXPECT_EQ(status, CompletionQueue::GOT_EVENT);
-  EXPECT_TRUE(ok);
-  EXPECT_EQ(output_tag->tag(), input_tag.tag());
+std::shared_ptr<ChannelCredentials> GetChannelCredentials(
+    const grpc::string& type, ChannelArguments* args) {
+  if (type == kInsecureCredentialsType) {
+    return InsecureChannelCredentials();
+  } else if (type == kTlsCredentialsType) {
+    SslCredentialsOptions ssl_opts = {test_root_cert, "", ""};
+    args->SetSslTargetNameOverride("foo.test.google.fr");
+    return SslCredentials(ssl_opts);
+  } else {
+    gpr_log(GPR_ERROR, "Unsupported credentials type %s.", type.c_str());
+  }
+  return nullptr;
 }
 
-TEST(AlarmTest, Cancellation) {
-  CompletionQueue cq;
-  TestTag input_tag(1618033);
-  Alarm alarm(&cq, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(2), &input_tag);
-  alarm.Cancel();
-
-  TestTag* output_tag;
-  bool ok;
-  const CompletionQueue::NextStatus status = cq.AsyncNext(
-      (void**)&output_tag, &ok, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(1));
-
-  EXPECT_EQ(status, CompletionQueue::GOT_EVENT);
-  EXPECT_FALSE(ok);
-  EXPECT_EQ(output_tag->tag(), input_tag.tag());
+std::shared_ptr<ServerCredentials> GetServerCredentials(
+    const grpc::string& type) {
+  if (type == kInsecureCredentialsType) {
+    return InsecureServerCredentials();
+  } else if (type == kTlsCredentialsType) {
+    SslServerCredentialsOptions::PemKeyCertPair pkcp = {test_server1_key,
+                                                        test_server1_cert};
+    SslServerCredentialsOptions ssl_opts;
+    ssl_opts.pem_root_certs = "";
+    ssl_opts.pem_key_cert_pairs.push_back(pkcp);
+    return SslServerCredentials(ssl_opts);
+  } else {
+    gpr_log(GPR_ERROR, "Unsupported credentials type %s.", type.c_str());
+  }
+  return nullptr;
 }
 
-}  // namespace
+std::vector<grpc::string> GetSecureCredentialsTypeList() {
+  std::vector<grpc::string> types;
+  types.push_back(kTlsCredentialsType);
+  return types;
+}
+
+}  // namespace testing
 }  // namespace grpc
-
-int main(int argc, char** argv) {
-  ::testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
-}
