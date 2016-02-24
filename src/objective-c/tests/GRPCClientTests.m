@@ -42,10 +42,12 @@
 #import <RxLibrary/GRXWriteable.h>
 #import <RxLibrary/GRXWriter+Immediate.h>
 #import <GRPCClient/GRPCCall+ChannelArg.h>
+
 static NSString * const kHostAddress = @"localhost:5050";
 static NSString * const kPackage = @"grpc.testing";
 static NSString * const kService = @"TestService";
 static NSString * const kRemoteSSLHost = @"grpc-test.sandbox.googleapis.com";
+
 static ProtoMethod *kInexistentMethod;
 static ProtoMethod *kEmptyCallMethod;
 static ProtoMethod *kUnaryCallMethod;
@@ -127,7 +129,6 @@ static ProtoMethod *kUnaryCallMethod;
     XCTFail(@"Received unexpected response: %@", value);
   } completionHandler:^(NSError *errorOrNil) {
     XCTAssertNotNil(errorOrNil, @"Finished without error!");
-    //
     XCTAssertEqual(errorOrNil.code, 12, @"Finished with unexpected error: %@", errorOrNil);
     [expectation fulfill];
   }];
@@ -257,6 +258,7 @@ static ProtoMethod *kUnaryCallMethod;
   [self waitForExpectationsWithTimeout:8 handler:nil];
 }
 
+// todo(makaradd): Move to a different file that contains only unit tests
 - (void)testExceptions {
   // Try to set userAgentPrefix for host that is nil. This should cause
   // an exception.
