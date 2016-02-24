@@ -70,7 +70,8 @@ RUN apt-get update && apt-get -y install python-pip && apt-get clean
 RUN pip install argparse
 
 RUN wget http://openssl.org/source/openssl-1.0.2f.tar.gz
-ADD post-git-setup.sh /
+
+ENV POST_GIT_STEP tools/dockerfile/test/cxx_squeeze_x64/post-git-setup.sh
 
 # Prepare ccache
 RUN ln -s /usr/bin/ccache /usr/local/bin/gcc
