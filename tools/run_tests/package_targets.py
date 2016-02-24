@@ -140,7 +140,7 @@ class PythonPackage:
 
 
 class PHPPackage:
-  """Builds PHP PECL package and collects precompiled package"""
+  """Copy PHP PECL package artifact"""
 
   def __init__(self):
     self.name = 'php_package'
