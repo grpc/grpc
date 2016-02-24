@@ -36,14 +36,6 @@
 #include <stdio.h>
 #include <unistd.h>
 
-// boringssl uses anonymous unions
-struct foo {
-  union {
-    int a;
-    int b;
-  };
-};
-
 int main(void) {
   const char *close = "this should not shadow";
   printf("%s\n", close);
