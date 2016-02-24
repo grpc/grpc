@@ -1,6 +1,6 @@
 #region Copyright notice and license
 
-// Copyright 2015, Google Inc.
+// Copyright 2015-2016, Google Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -48,7 +48,6 @@ namespace Grpc.IntegrationTesting
     /// </summary>
     public class RunnerClientServerTest
     {
-        const string Host = "localhost";
         IServerRunner serverRunner;
 
         [TestFixtureSetUp]
@@ -57,7 +56,6 @@ namespace Grpc.IntegrationTesting
             var serverConfig = new ServerConfig
             {
                 ServerType = ServerType.ASYNC_SERVER,
-                Host = Host,
                 PayloadConfig = new PayloadConfig
                 {
                     SimpleParams = new SimpleProtoParams
@@ -83,7 +81,7 @@ namespace Grpc.IntegrationTesting
         {
             var config = new ClientConfig
             {
-                ServerTargets = { string.Format("{0}:{1}", Host, serverRunner.BoundPort) },
+                ServerTargets = { string.Format("{0}:{1}", "localhost", serverRunner.BoundPort) },
                 RpcType = RpcType.UNARY,
                 LoadParams = new LoadParams { ClosedLoop = new ClosedLoopParams() },
                 PayloadConfig = new PayloadConfig
