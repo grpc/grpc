@@ -286,6 +286,7 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\client_config\client_config.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\client_config\connector.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\client_config\initial_connect_string.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\client_config\lb_policies\load_balancer_api.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\client_config\lb_policies\pick_first.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\client_config\lb_policies\round_robin.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\client_config\lb_policy.h" />
@@ -336,7 +337,6 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\iomgr\time_averaged_stats.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\iomgr\timer.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\iomgr\timer_heap.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\iomgr\timer_internal.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\iomgr\udp_server.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\iomgr\wakeup_fd_pipe.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\iomgr\wakeup_fd_posix.h" />
@@ -347,6 +347,7 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\json\json_common.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\json\json_reader.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\json\json_writer.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\proto\grpc\lb\v0\load_balancer.pb.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\statistics\census_interface.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\statistics\census_rpc_stats.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\surface\api_trace.h" />
@@ -387,8 +388,12 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\transport\transport.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\transport\transport_impl.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\census\aggregation.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\census\log.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\census\mlog.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\census\rpc_metric_id.h" />
+    <ClInclude Include="$(SolutionDir)\..\third_party\nanopb\pb.h" />
+    <ClInclude Include="$(SolutionDir)\..\third_party\nanopb\pb_common.h" />
+    <ClInclude Include="$(SolutionDir)\..\third_party\nanopb\pb_decode.h" />
+    <ClInclude Include="$(SolutionDir)\..\third_party\nanopb\pb_encode.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(SolutionDir)\..\src\core\surface\init_unsecure.c">
@@ -423,6 +428,8 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\client_config\initial_connect_string.c">
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\client_config\lb_policies\load_balancer_api.c">
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\client_config\lb_policies\pick_first.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\client_config\lb_policies\round_robin.c">
@@ -451,7 +458,7 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\client_config\uri_parser.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\compression\algorithm.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\compression\compression_algorithm.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\compression\message_compress.c">
     </ClCompile>
@@ -550,6 +557,8 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\json\json_string.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\json\json_writer.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\proto\grpc\lb\v0\load_balancer.pb.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\surface\alarm.c">
     </ClCompile>
@@ -653,13 +662,19 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\census\initialize.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\census\log.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\census\mlog.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\census\operation.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\census\placeholders.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\census\tracing.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\third_party\nanopb\pb_common.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\third_party\nanopb\pb_decode.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\third_party\nanopb\pb_encode.c">
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
