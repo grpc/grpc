@@ -157,7 +157,4 @@
   XCTAssertEqualObjects(handler.errorOrNil, nil);
 }
 
-- (void)testBufferedPipeSetState {
-}
-
 @end
