@@ -46,10 +46,10 @@
 #include "src/proto/grpc/testing/payloads.grpc.pb.h"
 #include "src/proto/grpc/testing/services.grpc.pb.h"
 
-#include "test/cpp/qps/limit_cores.h"
 #include "test/cpp/qps/histogram.h"
 #include "test/cpp/qps/interarrival.h"
-#include "test/cpp/qps/timer.h"
+#include "test/cpp/qps/limit_cores.h"
+#include "test/cpp/qps/usage_timer.h"
 #include "test/cpp/util/create_test_channel.h"
 
 namespace grpc {

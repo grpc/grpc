@@ -58,7 +58,7 @@
 #include "test/cpp/qps/client.h"
 #include "test/cpp/qps/histogram.h"
 #include "test/cpp/qps/interarrival.h"
-#include "test/cpp/qps/timer.h"
+#include "test/cpp/qps/usage_timer.h"
 
 namespace grpc {
 namespace testing {

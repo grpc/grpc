@@ -121,7 +121,7 @@ LD_asan-noleaks = clang
 LDXX_asan-noleaks = clang++
 CPPFLAGS_asan-noleaks = -O0 -fsanitize=address -fno-omit-frame-pointer -Wno-unused-command-line-argument -DGPR_NO_DIRECT_SYSCALLS
 LDFLAGS_asan-noleaks = -fsanitize=address
-DEFINES_asan-noleaks += GRPC_TEST_SLOWDOWN_BUILD_FACTOR=1.5
+DEFINES_asan-noleaks += GRPC_TEST_SLOWDOWN_BUILD_FACTOR=3
 
 VALID_CONFIG_ubsan = 1
 REQUIRE_CUSTOM_LIBRARIES_ubsan = 1
@@ -177,7 +177,7 @@ LD_asan = clang
 LDXX_asan = clang++
 CPPFLAGS_asan = -O0 -fsanitize=address -fno-omit-frame-pointer -Wno-unused-command-line-argument -DGPR_NO_DIRECT_SYSCALLS
 LDFLAGS_asan = -fsanitize=address
-DEFINES_asan += GRPC_TEST_SLOWDOWN_BUILD_FACTOR=1.5
+DEFINES_asan += GRPC_TEST_SLOWDOWN_BUILD_FACTOR=3
 
 VALID_CONFIG_tsan = 1
 REQUIRE_CUSTOM_LIBRARIES_tsan = 1
@@ -187,7 +187,7 @@ LD_tsan = clang
 LDXX_tsan = clang++
 CPPFLAGS_tsan = -O0 -fsanitize=thread -fno-omit-frame-pointer -Wno-unused-command-line-argument -fPIE -pie -DGPR_NO_DIRECT_SYSCALLS
 LDFLAGS_tsan = -fsanitize=thread -fPIE -pie $(if $(JENKINS_BUILD),-Wl$(comma)-Ttext-segment=0x7e0000000000,)
-DEFINES_tsan += GRPC_TEST_SLOWDOWN_BUILD_FACTOR=2
+DEFINES_tsan += GRPC_TEST_SLOWDOWN_BUILD_FACTOR=5
 
 VALID_CONFIG_msan = 1
 REQUIRE_CUSTOM_LIBRARIES_msan = 1
@@ -198,7 +198,7 @@ LDXX_msan = clang++
 CPPFLAGS_msan = -O0 -fsanitize=memory -fsanitize-memory-track-origins -fno-omit-frame-pointer -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1 -Wno-unused-command-line-argument -fPIE -pie -DGPR_NO_DIRECT_SYSCALLS
 LDFLAGS_msan = -fsanitize=memory -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1 -fPIE -pie $(if $(JENKINS_BUILD),-Wl$(comma)-Ttext-segment=0x7e0000000000,)
 DEFINES_msan = NDEBUG
-DEFINES_msan += GRPC_TEST_SLOWDOWN_BUILD_FACTOR=2
+DEFINES_msan += GRPC_TEST_SLOWDOWN_BUILD_FACTOR=4
 
 VALID_CONFIG_mutrace = 1
 CC_mutrace = $(DEFAULT_CC)
@@ -843,7 +843,6 @@ alloc_test: $(BINDIR)/$(CONFIG)/alloc_test
 alpn_test: $(BINDIR)/$(CONFIG)/alpn_test
 bin_encoder_test: $(BINDIR)/$(CONFIG)/bin_encoder_test
 census_context_test: $(BINDIR)/$(CONFIG)/census_context_test
-census_log_test: $(BINDIR)/$(CONFIG)/census_log_test
 channel_create_test: $(BINDIR)/$(CONFIG)/channel_create_test
 chttp2_hpack_encoder_test: $(BINDIR)/$(CONFIG)/chttp2_hpack_encoder_test
 chttp2_status_conversion_test: $(BINDIR)/$(CONFIG)/chttp2_status_conversion_test
@@ -865,9 +864,9 @@ gpr_avl_test: $(BINDIR)/$(CONFIG)/gpr_avl_test
 gpr_cmdline_test: $(BINDIR)/$(CONFIG)/gpr_cmdline_test
 gpr_cpu_test: $(BINDIR)/$(CONFIG)/gpr_cpu_test
 gpr_env_test: $(BINDIR)/$(CONFIG)/gpr_env_test
-gpr_file_test: $(BINDIR)/$(CONFIG)/gpr_file_test
 gpr_histogram_test: $(BINDIR)/$(CONFIG)/gpr_histogram_test
 gpr_host_port_test: $(BINDIR)/$(CONFIG)/gpr_host_port_test
+gpr_load_file_test: $(BINDIR)/$(CONFIG)/gpr_load_file_test
 gpr_log_test: $(BINDIR)/$(CONFIG)/gpr_log_test
 gpr_slice_buffer_test: $(BINDIR)/$(CONFIG)/gpr_slice_buffer_test
 gpr_slice_test: $(BINDIR)/$(CONFIG)/gpr_slice_test
@@ -879,7 +878,7 @@ gpr_time_test: $(BINDIR)/$(CONFIG)/gpr_time_test
 gpr_tls_test: $(BINDIR)/$(CONFIG)/gpr_tls_test
 gpr_useful_test: $(BINDIR)/$(CONFIG)/gpr_useful_test
 grpc_auth_context_test: $(BINDIR)/$(CONFIG)/grpc_auth_context_test
-grpc_base64_test: $(BINDIR)/$(CONFIG)/grpc_base64_test
+grpc_b64_test: $(BINDIR)/$(CONFIG)/grpc_b64_test
 grpc_byte_buffer_reader_test: $(BINDIR)/$(CONFIG)/grpc_byte_buffer_reader_test
 grpc_channel_args_test: $(BINDIR)/$(CONFIG)/grpc_channel_args_test
 grpc_channel_stack_test: $(BINDIR)/$(CONFIG)/grpc_channel_stack_test
@@ -909,6 +908,7 @@ lame_client_test: $(BINDIR)/$(CONFIG)/lame_client_test
 lb_policies_test: $(BINDIR)/$(CONFIG)/lb_policies_test
 low_level_ping_pong_benchmark: $(BINDIR)/$(CONFIG)/low_level_ping_pong_benchmark
 message_compress_test: $(BINDIR)/$(CONFIG)/message_compress_test
+mlog_test: $(BINDIR)/$(CONFIG)/mlog_test
 multiple_server_queues_test: $(BINDIR)/$(CONFIG)/multiple_server_queues_test
 murmur_hash_test: $(BINDIR)/$(CONFIG)/murmur_hash_test
 no_server_test: $(BINDIR)/$(CONFIG)/no_server_test
@@ -958,6 +958,7 @@ grpc_csharp_plugin: $(BINDIR)/$(CONFIG)/grpc_csharp_plugin
 grpc_objective_c_plugin: $(BINDIR)/$(CONFIG)/grpc_objective_c_plugin
 grpc_python_plugin: $(BINDIR)/$(CONFIG)/grpc_python_plugin
 grpc_ruby_plugin: $(BINDIR)/$(CONFIG)/grpc_ruby_plugin
+grpclb_api_test: $(BINDIR)/$(CONFIG)/grpclb_api_test
 hybrid_end2end_test: $(BINDIR)/$(CONFIG)/hybrid_end2end_test
 interop_client: $(BINDIR)/$(CONFIG)/interop_client
 interop_server: $(BINDIR)/$(CONFIG)/interop_server
@@ -1152,7 +1153,6 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/alpn_test \
   $(BINDIR)/$(CONFIG)/bin_encoder_test \
   $(BINDIR)/$(CONFIG)/census_context_test \
-  $(BINDIR)/$(CONFIG)/census_log_test \
   $(BINDIR)/$(CONFIG)/channel_create_test \
   $(BINDIR)/$(CONFIG)/chttp2_hpack_encoder_test \
   $(BINDIR)/$(CONFIG)/chttp2_status_conversion_test \
@@ -1172,9 +1172,9 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/gpr_cmdline_test \
   $(BINDIR)/$(CONFIG)/gpr_cpu_test \
   $(BINDIR)/$(CONFIG)/gpr_env_test \
-  $(BINDIR)/$(CONFIG)/gpr_file_test \
   $(BINDIR)/$(CONFIG)/gpr_histogram_test \
   $(BINDIR)/$(CONFIG)/gpr_host_port_test \
+  $(BINDIR)/$(CONFIG)/gpr_load_file_test \
   $(BINDIR)/$(CONFIG)/gpr_log_test \
   $(BINDIR)/$(CONFIG)/gpr_slice_buffer_test \
   $(BINDIR)/$(CONFIG)/gpr_slice_test \
@@ -1186,7 +1186,7 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/gpr_tls_test \
   $(BINDIR)/$(CONFIG)/gpr_useful_test \
   $(BINDIR)/$(CONFIG)/grpc_auth_context_test \
-  $(BINDIR)/$(CONFIG)/grpc_base64_test \
+  $(BINDIR)/$(CONFIG)/grpc_b64_test \
   $(BINDIR)/$(CONFIG)/grpc_byte_buffer_reader_test \
   $(BINDIR)/$(CONFIG)/grpc_channel_args_test \
   $(BINDIR)/$(CONFIG)/grpc_channel_stack_test \
@@ -1211,6 +1211,7 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/lame_client_test \
   $(BINDIR)/$(CONFIG)/lb_policies_test \
   $(BINDIR)/$(CONFIG)/message_compress_test \
+  $(BINDIR)/$(CONFIG)/mlog_test \
   $(BINDIR)/$(CONFIG)/multiple_server_queues_test \
   $(BINDIR)/$(CONFIG)/murmur_hash_test \
   $(BINDIR)/$(CONFIG)/no_server_test \
@@ -1302,6 +1303,7 @@ buildtests_cxx: buildtests_zookeeper privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/generic_async_streaming_ping_pong_test \
   $(BINDIR)/$(CONFIG)/generic_end2end_test \
   $(BINDIR)/$(CONFIG)/grpc_cli \
+  $(BINDIR)/$(CONFIG)/grpclb_api_test \
   $(BINDIR)/$(CONFIG)/hybrid_end2end_test \
   $(BINDIR)/$(CONFIG)/interop_client \
   $(BINDIR)/$(CONFIG)/interop_server \
@@ -1388,8 +1390,6 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/bin_encoder_test || ( echo test bin_encoder_test failed ; exit 1 )
 	$(E) "[RUN]     Testing census_context_test"
 	$(Q) $(BINDIR)/$(CONFIG)/census_context_test || ( echo test census_context_test failed ; exit 1 )
-	$(E) "[RUN]     Testing census_log_test"
-	$(Q) $(BINDIR)/$(CONFIG)/census_log_test || ( echo test census_log_test failed ; exit 1 )
 	$(E) "[RUN]     Testing channel_create_test"
 	$(Q) $(BINDIR)/$(CONFIG)/channel_create_test || ( echo test channel_create_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_hpack_encoder_test"
@@ -1424,12 +1424,12 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/gpr_cpu_test || ( echo test gpr_cpu_test failed ; exit 1 )
 	$(E) "[RUN]     Testing gpr_env_test"
 	$(Q) $(BINDIR)/$(CONFIG)/gpr_env_test || ( echo test gpr_env_test failed ; exit 1 )
-	$(E) "[RUN]     Testing gpr_file_test"
-	$(Q) $(BINDIR)/$(CONFIG)/gpr_file_test || ( echo test gpr_file_test failed ; exit 1 )
 	$(E) "[RUN]     Testing gpr_histogram_test"
 	$(Q) $(BINDIR)/$(CONFIG)/gpr_histogram_test || ( echo test gpr_histogram_test failed ; exit 1 )
 	$(E) "[RUN]     Testing gpr_host_port_test"
 	$(Q) $(BINDIR)/$(CONFIG)/gpr_host_port_test || ( echo test gpr_host_port_test failed ; exit 1 )
+	$(E) "[RUN]     Testing gpr_load_file_test"
+	$(Q) $(BINDIR)/$(CONFIG)/gpr_load_file_test || ( echo test gpr_load_file_test failed ; exit 1 )
 	$(E) "[RUN]     Testing gpr_log_test"
 	$(Q) $(BINDIR)/$(CONFIG)/gpr_log_test || ( echo test gpr_log_test failed ; exit 1 )
 	$(E) "[RUN]     Testing gpr_slice_buffer_test"
@@ -1452,8 +1452,8 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/gpr_useful_test || ( echo test gpr_useful_test failed ; exit 1 )
 	$(E) "[RUN]     Testing grpc_auth_context_test"
 	$(Q) $(BINDIR)/$(CONFIG)/grpc_auth_context_test || ( echo test grpc_auth_context_test failed ; exit 1 )
-	$(E) "[RUN]     Testing grpc_base64_test"
-	$(Q) $(BINDIR)/$(CONFIG)/grpc_base64_test || ( echo test grpc_base64_test failed ; exit 1 )
+	$(E) "[RUN]     Testing grpc_b64_test"
+	$(Q) $(BINDIR)/$(CONFIG)/grpc_b64_test || ( echo test grpc_b64_test failed ; exit 1 )
 	$(E) "[RUN]     Testing grpc_byte_buffer_reader_test"
 	$(Q) $(BINDIR)/$(CONFIG)/grpc_byte_buffer_reader_test || ( echo test grpc_byte_buffer_reader_test failed ; exit 1 )
 	$(E) "[RUN]     Testing grpc_channel_args_test"
@@ -1500,6 +1500,8 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/lb_policies_test || ( echo test lb_policies_test failed ; exit 1 )
 	$(E) "[RUN]     Testing message_compress_test"
 	$(Q) $(BINDIR)/$(CONFIG)/message_compress_test || ( echo test message_compress_test failed ; exit 1 )
+	$(E) "[RUN]     Testing mlog_test"
+	$(Q) $(BINDIR)/$(CONFIG)/mlog_test || ( echo test mlog_test failed ; exit 1 )
 	$(E) "[RUN]     Testing multiple_server_queues_test"
 	$(Q) $(BINDIR)/$(CONFIG)/multiple_server_queues_test || ( echo test multiple_server_queues_test failed ; exit 1 )
 	$(E) "[RUN]     Testing murmur_hash_test"
@@ -1612,6 +1614,8 @@ test_cxx: test_zookeeper buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/generic_async_streaming_ping_pong_test || ( echo test generic_async_streaming_ping_pong_test failed ; exit 1 )
 	$(E) "[RUN]     Testing generic_end2end_test"
 	$(Q) $(BINDIR)/$(CONFIG)/generic_end2end_test || ( echo test generic_end2end_test failed ; exit 1 )
+	$(E) "[RUN]     Testing grpclb_api_test"
+	$(Q) $(BINDIR)/$(CONFIG)/grpclb_api_test || ( echo test grpclb_api_test failed ; exit 1 )
 	$(E) "[RUN]     Testing hybrid_end2end_test"
 	$(Q) $(BINDIR)/$(CONFIG)/hybrid_end2end_test || ( echo test hybrid_end2end_test failed ; exit 1 )
 	$(E) "[RUN]     Testing interop_test"
@@ -1762,6 +1766,21 @@ $(LIBDIR)/$(CONFIG)/pkgconfig/grpc++_unsecure.pc:
 	$(E) "[MAKE]    Generating $@"
 	$(Q) mkdir -p $(@D)
 	$(Q) echo "$(GRPCXX_UNSECURE_PC_FILE)" | tr , '\n' >$@
+
+ifeq ($(NO_PROTOC),true)
+$(GENDIR)/src/proto/grpc/lb/v0/load_balancer.pb.cc: protoc_dep_error
+$(GENDIR)/src/proto/grpc/lb/v0/load_balancer.grpc.pb.cc: protoc_dep_error
+else
+$(GENDIR)/src/proto/grpc/lb/v0/load_balancer.pb.cc: src/proto/grpc/lb/v0/load_balancer.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) 
+	$(E) "[PROTOC]  Generating protobuf CC file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) --cpp_out=$(GENDIR) $<
+
+$(GENDIR)/src/proto/grpc/lb/v0/load_balancer.grpc.pb.cc: src/proto/grpc/lb/v0/load_balancer.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) 
+	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(BINDIR)/$(CONFIG)/grpc_cpp_plugin $<
+endif
 
 ifeq ($(NO_PROTOC),true)
 $(GENDIR)/src/proto/grpc/testing/control.pb.cc: protoc_dep_error
@@ -2197,11 +2216,9 @@ LIBGPR_SRC = \
     src/core/support/env_linux.c \
     src/core/support/env_posix.c \
     src/core/support/env_win32.c \
-    src/core/support/file.c \
-    src/core/support/file_posix.c \
-    src/core/support/file_win32.c \
     src/core/support/histogram.c \
     src/core/support/host_port.c \
+    src/core/support/load_file.c \
     src/core/support/log.c \
     src/core/support/log_android.c \
     src/core/support/log_linux.c \
@@ -2227,6 +2244,8 @@ LIBGPR_SRC = \
     src/core/support/time_precise.c \
     src/core/support/time_win32.c \
     src/core/support/tls_pthread.c \
+    src/core/support/tmpfile_posix.c \
+    src/core/support/tmpfile_win32.c \
     src/core/support/wrap_memcpy.c \
 
 PUBLIC_HEADERS_C += \
@@ -2350,6 +2369,7 @@ LIBGRPC_SRC = \
     src/core/client_config/connector.c \
     src/core/client_config/default_initial_connect_string.c \
     src/core/client_config/initial_connect_string.c \
+    src/core/client_config/lb_policies/load_balancer_api.c \
     src/core/client_config/lb_policies/pick_first.c \
     src/core/client_config/lb_policies/round_robin.c \
     src/core/client_config/lb_policy.c \
@@ -2364,7 +2384,7 @@ LIBGRPC_SRC = \
     src/core/client_config/subchannel_factory.c \
     src/core/client_config/subchannel_index.c \
     src/core/client_config/uri_parser.c \
-    src/core/compression/algorithm.c \
+    src/core/compression/compression_algorithm.c \
     src/core/compression/message_compress.c \
     src/core/debug/trace.c \
     src/core/httpcli/format_request.c \
@@ -2414,6 +2434,7 @@ LIBGRPC_SRC = \
     src/core/json/json_reader.c \
     src/core/json/json_string.c \
     src/core/json/json_writer.c \
+    src/core/proto/grpc/lb/v0/load_balancer.pb.c \
     src/core/surface/alarm.c \
     src/core/surface/api_trace.c \
     src/core/surface/byte_buffer.c \
@@ -2464,7 +2485,7 @@ LIBGRPC_SRC = \
     src/core/transport/transport.c \
     src/core/transport/transport_op_string.c \
     src/core/httpcli/httpcli_security_connector.c \
-    src/core/security/base64.c \
+    src/core/security/b64.c \
     src/core/security/client_auth_filter.c \
     src/core/security/credentials.c \
     src/core/security/credentials_metadata.c \
@@ -2490,6 +2511,9 @@ LIBGRPC_SRC = \
     src/core/census/operation.c \
     src/core/census/placeholders.c \
     src/core/census/tracing.c \
+    third_party/nanopb/pb_common.c \
+    third_party/nanopb/pb_decode.c \
+    third_party/nanopb/pb_encode.c \
 
 PUBLIC_HEADERS_C += \
     include/grpc/grpc_security.h \
@@ -2657,6 +2681,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/client_config/connector.c \
     src/core/client_config/default_initial_connect_string.c \
     src/core/client_config/initial_connect_string.c \
+    src/core/client_config/lb_policies/load_balancer_api.c \
     src/core/client_config/lb_policies/pick_first.c \
     src/core/client_config/lb_policies/round_robin.c \
     src/core/client_config/lb_policy.c \
@@ -2671,7 +2696,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/client_config/subchannel_factory.c \
     src/core/client_config/subchannel_index.c \
     src/core/client_config/uri_parser.c \
-    src/core/compression/algorithm.c \
+    src/core/compression/compression_algorithm.c \
     src/core/compression/message_compress.c \
     src/core/debug/trace.c \
     src/core/httpcli/format_request.c \
@@ -2721,6 +2746,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/json/json_reader.c \
     src/core/json/json_string.c \
     src/core/json/json_writer.c \
+    src/core/proto/grpc/lb/v0/load_balancer.pb.c \
     src/core/surface/alarm.c \
     src/core/surface/api_trace.c \
     src/core/surface/byte_buffer.c \
@@ -2776,6 +2802,9 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/census/operation.c \
     src/core/census/placeholders.c \
     src/core/census/tracing.c \
+    third_party/nanopb/pb_common.c \
+    third_party/nanopb/pb_decode.c \
+    third_party/nanopb/pb_encode.c \
 
 PUBLIC_HEADERS_C += \
     include/grpc/byte_buffer.h \
@@ -3635,7 +3664,7 @@ LIBINTEROP_SERVER_MAIN_SRC = \
     $(GENDIR)/src/proto/grpc/testing/empty.pb.cc $(GENDIR)/src/proto/grpc/testing/empty.grpc.pb.cc \
     $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc \
     $(GENDIR)/src/proto/grpc/testing/test.pb.cc $(GENDIR)/src/proto/grpc/testing/test.grpc.pb.cc \
-    test/cpp/interop/server.cc \
+    test/cpp/interop/server_main.cc \
 
 
 LIBINTEROP_SERVER_MAIN_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBINTEROP_SERVER_MAIN_SRC))))
@@ -3680,7 +3709,7 @@ ifneq ($(NO_DEPS),true)
 -include $(LIBINTEROP_SERVER_MAIN_OBJS:.o=.dep)
 endif
 endif
-$(OBJDIR)/$(CONFIG)/test/cpp/interop/server.o: $(GENDIR)/src/proto/grpc/testing/empty.pb.cc $(GENDIR)/src/proto/grpc/testing/empty.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/test.pb.cc $(GENDIR)/src/proto/grpc/testing/test.grpc.pb.cc
+$(OBJDIR)/$(CONFIG)/test/cpp/interop/server_main.o: $(GENDIR)/src/proto/grpc/testing/empty.pb.cc $(GENDIR)/src/proto/grpc/testing/empty.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/test.pb.cc $(GENDIR)/src/proto/grpc/testing/test.grpc.pb.cc
 
 
 LIBQPS_SRC = \
@@ -3699,7 +3728,7 @@ LIBQPS_SRC = \
     test/cpp/qps/report.cc \
     test/cpp/qps/server_async.cc \
     test/cpp/qps/server_sync.cc \
-    test/cpp/qps/timer.cc \
+    test/cpp/qps/usage_timer.cc \
     test/cpp/util/benchmark_config.cc \
 
 
@@ -3754,7 +3783,7 @@ $(OBJDIR)/$(CONFIG)/test/cpp/qps/qps_worker.o: $(GENDIR)/src/proto/grpc/testing/
 $(OBJDIR)/$(CONFIG)/test/cpp/qps/report.o: $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/services.pb.cc $(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.grpc.pb.cc
 $(OBJDIR)/$(CONFIG)/test/cpp/qps/server_async.o: $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/services.pb.cc $(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.grpc.pb.cc
 $(OBJDIR)/$(CONFIG)/test/cpp/qps/server_sync.o: $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/services.pb.cc $(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.grpc.pb.cc
-$(OBJDIR)/$(CONFIG)/test/cpp/qps/timer.o: $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/services.pb.cc $(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.grpc.pb.cc
+$(OBJDIR)/$(CONFIG)/test/cpp/qps/usage_timer.o: $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/services.pb.cc $(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.grpc.pb.cc
 $(OBJDIR)/$(CONFIG)/test/cpp/util/benchmark_config.o: $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/services.pb.cc $(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.grpc.pb.cc
 
 
@@ -5450,7 +5479,7 @@ endif
 
 
 LIBBAD_SSL_TEST_SERVER_SRC = \
-    test/core/bad_ssl/server.c \
+    test/core/bad_ssl/server_common.c \
 
 
 LIBBAD_SSL_TEST_SERVER_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBAD_SSL_TEST_SERVER_SRC))))
@@ -5498,9 +5527,8 @@ LIBEND2END_TESTS_SRC = \
     test/core/end2end/tests/cancel_before_invoke.c \
     test/core/end2end/tests/cancel_in_a_vacuum.c \
     test/core/end2end/tests/cancel_with_status.c \
-    test/core/end2end/tests/channel_connectivity.c \
-    test/core/end2end/tests/channel_ping.c \
     test/core/end2end/tests/compressed_payload.c \
+    test/core/end2end/tests/connectivity.c \
     test/core/end2end/tests/default_host.c \
     test/core/end2end/tests/disappearing_server.c \
     test/core/end2end/tests/empty_batch.c \
@@ -5511,10 +5539,10 @@ LIBEND2END_TESTS_SRC = \
     test/core/end2end/tests/large_metadata.c \
     test/core/end2end/tests/max_concurrent_streams.c \
     test/core/end2end/tests/max_message_length.c \
-    test/core/end2end/tests/metadata.c \
     test/core/end2end/tests/negative_deadline.c \
     test/core/end2end/tests/no_op.c \
     test/core/end2end/tests/payload.c \
+    test/core/end2end/tests/ping.c \
     test/core/end2end/tests/ping_pong_streaming.c \
     test/core/end2end/tests/registered_call.c \
     test/core/end2end/tests/request_with_flags.c \
@@ -5523,6 +5551,7 @@ LIBEND2END_TESTS_SRC = \
     test/core/end2end/tests/shutdown_finishes_calls.c \
     test/core/end2end/tests/shutdown_finishes_tags.c \
     test/core/end2end/tests/simple_delayed_request.c \
+    test/core/end2end/tests/simple_metadata.c \
     test/core/end2end/tests/simple_request.c \
     test/core/end2end/tests/trailing_metadata.c \
 
@@ -5571,9 +5600,8 @@ LIBEND2END_NOSEC_TESTS_SRC = \
     test/core/end2end/tests/cancel_before_invoke.c \
     test/core/end2end/tests/cancel_in_a_vacuum.c \
     test/core/end2end/tests/cancel_with_status.c \
-    test/core/end2end/tests/channel_connectivity.c \
-    test/core/end2end/tests/channel_ping.c \
     test/core/end2end/tests/compressed_payload.c \
+    test/core/end2end/tests/connectivity.c \
     test/core/end2end/tests/default_host.c \
     test/core/end2end/tests/disappearing_server.c \
     test/core/end2end/tests/empty_batch.c \
@@ -5584,10 +5612,10 @@ LIBEND2END_NOSEC_TESTS_SRC = \
     test/core/end2end/tests/large_metadata.c \
     test/core/end2end/tests/max_concurrent_streams.c \
     test/core/end2end/tests/max_message_length.c \
-    test/core/end2end/tests/metadata.c \
     test/core/end2end/tests/negative_deadline.c \
     test/core/end2end/tests/no_op.c \
     test/core/end2end/tests/payload.c \
+    test/core/end2end/tests/ping.c \
     test/core/end2end/tests/ping_pong_streaming.c \
     test/core/end2end/tests/registered_call.c \
     test/core/end2end/tests/request_with_flags.c \
@@ -5596,6 +5624,7 @@ LIBEND2END_NOSEC_TESTS_SRC = \
     test/core/end2end/tests/shutdown_finishes_calls.c \
     test/core/end2end/tests/shutdown_finishes_tags.c \
     test/core/end2end/tests/simple_delayed_request.c \
+    test/core/end2end/tests/simple_metadata.c \
     test/core/end2end/tests/simple_request.c \
     test/core/end2end/tests/trailing_metadata.c \
 
@@ -5852,38 +5881,6 @@ deps_census_context_test: $(CENSUS_CONTEXT_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(CENSUS_CONTEXT_TEST_OBJS:.o=.dep)
-endif
-endif
-
-
-CENSUS_LOG_TEST_SRC = \
-    test/core/census/mlog_test.c \
-
-CENSUS_LOG_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CENSUS_LOG_TEST_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/census_log_test: openssl_dep_error
-
-else
-
-
-
-$(BINDIR)/$(CONFIG)/census_log_test: $(CENSUS_LOG_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CENSUS_LOG_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/census_log_test
-
-endif
-
-$(OBJDIR)/$(CONFIG)/test/core/census/mlog_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-
-deps_census_log_test: $(CENSUS_LOG_TEST_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(CENSUS_LOG_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -6560,38 +6557,6 @@ endif
 endif
 
 
-GPR_FILE_TEST_SRC = \
-    test/core/support/file_test.c \
-
-GPR_FILE_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GPR_FILE_TEST_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/gpr_file_test: openssl_dep_error
-
-else
-
-
-
-$(BINDIR)/$(CONFIG)/gpr_file_test: $(GPR_FILE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(GPR_FILE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/gpr_file_test
-
-endif
-
-$(OBJDIR)/$(CONFIG)/test/core/support/file_test.o:  $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-
-deps_gpr_file_test: $(GPR_FILE_TEST_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(GPR_FILE_TEST_OBJS:.o=.dep)
-endif
-endif
-
-
 GPR_HISTOGRAM_TEST_SRC = \
     test/core/support/histogram_test.c \
 
@@ -6652,6 +6617,38 @@ deps_gpr_host_port_test: $(GPR_HOST_PORT_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(GPR_HOST_PORT_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+GPR_LOAD_FILE_TEST_SRC = \
+    test/core/support/load_file_test.c \
+
+GPR_LOAD_FILE_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GPR_LOAD_FILE_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/gpr_load_file_test: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/gpr_load_file_test: $(GPR_LOAD_FILE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(GPR_LOAD_FILE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/gpr_load_file_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/support/load_file_test.o:  $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_gpr_load_file_test: $(GPR_LOAD_FILE_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(GPR_LOAD_FILE_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -7008,34 +7005,34 @@ endif
 endif
 
 
-GRPC_BASE64_TEST_SRC = \
-    test/core/security/base64_test.c \
+GRPC_B64_TEST_SRC = \
+    test/core/security/b64_test.c \
 
-GRPC_BASE64_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GRPC_BASE64_TEST_SRC))))
+GRPC_B64_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GRPC_B64_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
 
 # You can't build secure targets if you don't have OpenSSL.
 
-$(BINDIR)/$(CONFIG)/grpc_base64_test: openssl_dep_error
+$(BINDIR)/$(CONFIG)/grpc_b64_test: openssl_dep_error
 
 else
 
 
 
-$(BINDIR)/$(CONFIG)/grpc_base64_test: $(GRPC_BASE64_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(BINDIR)/$(CONFIG)/grpc_b64_test: $(GRPC_B64_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(GRPC_BASE64_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/grpc_base64_test
+	$(Q) $(LD) $(LDFLAGS) $(GRPC_B64_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/grpc_b64_test
 
 endif
 
-$(OBJDIR)/$(CONFIG)/test/core/security/base64_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(OBJDIR)/$(CONFIG)/test/core/security/b64_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
-deps_grpc_base64_test: $(GRPC_BASE64_TEST_OBJS:.o=.dep)
+deps_grpc_b64_test: $(GRPC_B64_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(GRPC_BASE64_TEST_OBJS:.o=.dep)
+-include $(GRPC_B64_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -7964,6 +7961,38 @@ deps_message_compress_test: $(MESSAGE_COMPRESS_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(MESSAGE_COMPRESS_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+MLOG_TEST_SRC = \
+    test/core/census/mlog_test.c \
+
+MLOG_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(MLOG_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/mlog_test: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/mlog_test: $(MLOG_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(MLOG_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/mlog_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/census/mlog_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_mlog_test: $(MLOG_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(MLOG_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -9727,6 +9756,53 @@ deps_grpc_ruby_plugin: $(GRPC_RUBY_PLUGIN_OBJS:.o=.dep)
 ifneq ($(NO_DEPS),true)
 -include $(GRPC_RUBY_PLUGIN_OBJS:.o=.dep)
 endif
+
+
+GRPCLB_API_TEST_SRC = \
+    $(GENDIR)/src/proto/grpc/lb/v0/load_balancer.pb.cc $(GENDIR)/src/proto/grpc/lb/v0/load_balancer.grpc.pb.cc \
+    test/cpp/grpclb/grpclb_api_test.cc \
+
+GRPCLB_API_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GRPCLB_API_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/grpclb_api_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/grpclb_api_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/grpclb_api_test: $(PROTOBUF_DEP) $(GRPCLB_API_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(GRPCLB_API_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/grpclb_api_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/src/proto/grpc/lb/v0/load_balancer.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a
+
+$(OBJDIR)/$(CONFIG)/test/cpp/grpclb/grpclb_api_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a
+
+deps_grpclb_api_test: $(GRPCLB_API_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(GRPCLB_API_TEST_OBJS:.o=.dep)
+endif
+endif
+$(OBJDIR)/$(CONFIG)/test/cpp/grpclb/grpclb_api_test.o: $(GENDIR)/src/proto/grpc/lb/v0/load_balancer.pb.cc $(GENDIR)/src/proto/grpc/lb/v0/load_balancer.grpc.pb.cc
 
 
 HYBRID_END2END_TEST_SRC = \
@@ -12974,7 +13050,7 @@ ifneq ($(OPENSSL_DEP),)
 # installing headers to their final destination on the drive. We need this
 # otherwise parallel compilation will fail if a source is compiled first.
 src/core/httpcli/httpcli_security_connector.c: $(OPENSSL_DEP)
-src/core/security/base64.c: $(OPENSSL_DEP)
+src/core/security/b64.c: $(OPENSSL_DEP)
 src/core/security/client_auth_filter.c: $(OPENSSL_DEP)
 src/core/security/credentials.c: $(OPENSSL_DEP)
 src/core/security/credentials_metadata.c: $(OPENSSL_DEP)
@@ -13002,7 +13078,7 @@ src/cpp/common/secure_create_auth_context.cc: $(OPENSSL_DEP)
 src/cpp/server/secure_server_credentials.cc: $(OPENSSL_DEP)
 src/csharp/ext/grpc_csharp_ext.c: $(OPENSSL_DEP)
 test/core/bad_client/bad_client.c: $(OPENSSL_DEP)
-test/core/bad_ssl/server.c: $(OPENSSL_DEP)
+test/core/bad_ssl/server_common.c: $(OPENSSL_DEP)
 test/core/end2end/data/server1_cert.c: $(OPENSSL_DEP)
 test/core/end2end/data/server1_key.c: $(OPENSSL_DEP)
 test/core/end2end/data/test_root_cert.c: $(OPENSSL_DEP)
@@ -13015,8 +13091,8 @@ test/cpp/end2end/test_service_impl.cc: $(OPENSSL_DEP)
 test/cpp/interop/client.cc: $(OPENSSL_DEP)
 test/cpp/interop/client_helper.cc: $(OPENSSL_DEP)
 test/cpp/interop/interop_client.cc: $(OPENSSL_DEP)
-test/cpp/interop/server.cc: $(OPENSSL_DEP)
 test/cpp/interop/server_helper.cc: $(OPENSSL_DEP)
+test/cpp/interop/server_main.cc: $(OPENSSL_DEP)
 test/cpp/qps/client_async.cc: $(OPENSSL_DEP)
 test/cpp/qps/client_sync.cc: $(OPENSSL_DEP)
 test/cpp/qps/driver.cc: $(OPENSSL_DEP)
@@ -13026,7 +13102,7 @@ test/cpp/qps/qps_worker.cc: $(OPENSSL_DEP)
 test/cpp/qps/report.cc: $(OPENSSL_DEP)
 test/cpp/qps/server_async.cc: $(OPENSSL_DEP)
 test/cpp/qps/server_sync.cc: $(OPENSSL_DEP)
-test/cpp/qps/timer.cc: $(OPENSSL_DEP)
+test/cpp/qps/usage_timer.cc: $(OPENSSL_DEP)
 test/cpp/util/benchmark_config.cc: $(OPENSSL_DEP)
 test/cpp/util/byte_buffer_proto_helper.cc: $(OPENSSL_DEP)
 test/cpp/util/cli_call.cc: $(OPENSSL_DEP)
