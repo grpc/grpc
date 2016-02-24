@@ -241,11 +241,11 @@ class NodeExtArtifact:
                               ['tools/run_tests/build_artifact_node.sh',
                                self.gyp_arch])
 
-class PHPExtArtifact:
-  """Builds PHP native extension"""
+class PHPArtifact:
+  """Builds PHP PECL package"""
 
   def __init__(self, platform, arch):
-    self.name = 'php_ext_{0}_{1}'.format(platform, arch)
+    self.name = 'php_pecl_package_{0}_{1}'.format(platform, arch)
     self.platform = platform
     self.arch = arch
     self.labels = ['artifact', 'php', platform, arch]
@@ -317,5 +317,5 @@ def targets():
            RubyArtifact('linux', 'x86'),
            RubyArtifact('linux', 'x64'),
            RubyArtifact('macos', 'x64'),
-           PHPExtArtifact('linux', 'x64'),
-           PHPExtArtifact('macos', 'x64')])
+           PHPArtifact('linux', 'x64'),
+           PHPArtifact('macos', 'x64')])
