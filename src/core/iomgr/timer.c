@@ -34,7 +34,6 @@
 #include "src/core/iomgr/timer.h"
 
 #include "src/core/iomgr/timer_heap.h"
-#include "src/core/iomgr/timer_internal.h"
 #include "src/core/iomgr/time_averaged_stats.h"
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
@@ -336,8 +335,8 @@ static int run_some_expired_timers(grpc_exec_ctx *exec_ctx, gpr_timespec now,
   return (int)n;
 }
 
-int grpc_timer_check(grpc_exec_ctx *exec_ctx, gpr_timespec now,
-                     gpr_timespec *next) {
+bool grpc_timer_check(grpc_exec_ctx *exec_ctx, gpr_timespec now,
+                      gpr_timespec *next) {
   GPR_ASSERT(now.clock_type == g_clock_type);
   return run_some_expired_timers(
       exec_ctx, now, next,
