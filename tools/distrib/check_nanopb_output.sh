@@ -27,41 +27,42 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# This script is invoked by build_docker_and_run_tests.sh inside a docker
-# container. You should never need to call this script on your own.
 
-set -e
+set -ex
 
-export CONFIG=$config
-export ASAN_SYMBOLIZER_PATH=/usr/bin/llvm-symbolizer-3.5
+apt-get install -y autoconf automake libtool curl python-virtualenv
 
-# Ensure that programs depending on current-user-ownership of cache directories
-# are satisfied (it's being mounted from outside the image).
-chown $(whoami) $XDG_CACHE_HOME
+readonly NANOPB_TMP_OUTPUT="$(mktemp -d)"
 
-mkdir -p /var/local/git
-git clone --recursive /var/local/jenkins/grpc /var/local/git/grpc
+# install protoc version 3
+pushd third_party/protobuf
+./autogen.sh
+./configure
+make
+make install
+ldconfig
+popd
 
-[ -e /post-git-setup.sh ] && /post-git-setup.sh
+if [ ! -x "/usr/local/bin/protoc" ]; then
+  echo "Error: protoc not found in path"
+  exit 1
+fi
+readonly PROTOC_PATH='/usr/local/bin'
+# stack up and change to nanopb's proto generator directory
+pushd third_party/nanopb/generator/proto
+PATH="$PROTOC_PATH:$PATH" make
 
-mkdir -p reports
+# back to the root directory
+popd
 
-exit_code=0
 
-$RUN_TESTS_COMMAND || exit_code=$?
+# nanopb-compile the proto to a temp location
+PATH="$PROTOC_PATH:$PATH" ./tools/codegen/core/gen_load_balancing_proto.sh \
+  src/proto/grpc/lb/v0/load_balancer.proto \
+  $NANOPB_TMP_OUTPUT
 
-cd reports
-echo '<html><head></head><body>' > index.html
-find . -maxdepth 1 -mindepth 1 -type d | sort | while read d ; do
-  d=${d#*/}
-  n=${d//_/ }
-  echo "<a href='$d/index.html'>$n</a><br />" >> index.html
-done
-echo '</body></html>' >> index.html
-cd ..
-
-zip -r reports.zip reports
-find . -name reports.xml | xargs zip reports.zip
-
-exit $exit_code
+# compare outputs to checked compiled code
+if ! diff -r $NANOPB_TMP_OUTPUT src/core/proto/grpc/lb/v0; then
+  echo "Outputs differ: $NANOPB_TMP_OUTPUT vs src/core/proto/grpc/lb/v0"
+  exit 2
+fi
