@@ -118,24 +118,20 @@ class ClientAsyncReader GRPC_FINAL : public ClientAsyncReaderInterface<R> {
     GPR_ASSERT(!context_->initial_metadata_received_);
 
     meta_ops_.set_output_tag(tag);
-    meta_ops_.RecvInitialMetadata(context_);
+    meta_ops_.RecvInitialMetadataLocked(context_);
     call_.PerformOps(&meta_ops_);
   }
 
   void Read(R* msg, void* tag) GRPC_OVERRIDE {
     read_ops_.set_output_tag(tag);
-    if (!context_->initial_metadata_received_) {
-      read_ops_.RecvInitialMetadata(context_);
-    }
+    read_ops_.RecvInitialMetadataLockedChecked(context_);
     read_ops_.RecvMessage(msg);
     call_.PerformOps(&read_ops_);
   }
 
   void Finish(Status* status, void* tag) GRPC_OVERRIDE {
     finish_ops_.set_output_tag(tag);
-    if (!context_->initial_metadata_received_) {
-      finish_ops_.RecvInitialMetadata(context_);
-    }
+    finish_ops_.RecvInitialMetadataLockedChecked(context_);
     finish_ops_.ClientRecvStatus(context_, status);
     call_.PerformOps(&finish_ops_);
   }
@@ -180,7 +176,7 @@ class ClientAsyncWriter GRPC_FINAL : public ClientAsyncWriterInterface<W> {
     GPR_ASSERT(!context_->initial_metadata_received_);
 
     meta_ops_.set_output_tag(tag);
-    meta_ops_.RecvInitialMetadata(context_);
+    meta_ops_.RecvInitialMetadataLocked(context_);
     call_.PerformOps(&meta_ops_);
   }
 
@@ -199,9 +195,7 @@ class ClientAsyncWriter GRPC_FINAL : public ClientAsyncWriterInterface<W> {
 
   void Finish(Status* status, void* tag) GRPC_OVERRIDE {
     finish_ops_.set_output_tag(tag);
-    if (!context_->initial_metadata_received_) {
-      finish_ops_.RecvInitialMetadata(context_);
-    }
+    finish_ops_.RecvInitialMetadataLockedChecked(context_);
     finish_ops_.ClientRecvStatus(context_, status);
     call_.PerformOps(&finish_ops_);
   }
@@ -246,15 +240,13 @@ class ClientAsyncReaderWriter GRPC_FINAL
     GPR_ASSERT(!context_->initial_metadata_received_);
 
     meta_ops_.set_output_tag(tag);
-    meta_ops_.RecvInitialMetadata(context_);
+    meta_ops_.RecvInitialMetadataLocked(context_);
     call_.PerformOps(&meta_ops_);
   }
 
   void Read(R* msg, void* tag) GRPC_OVERRIDE {
     read_ops_.set_output_tag(tag);
-    if (!context_->initial_metadata_received_) {
-      read_ops_.RecvInitialMetadata(context_);
-    }
+    read_ops_.RecvInitialMetadataLockedChecked(context_);
     read_ops_.RecvMessage(msg);
     call_.PerformOps(&read_ops_);
   }
@@ -274,9 +266,7 @@ class ClientAsyncReaderWriter GRPC_FINAL
 
   void Finish(Status* status, void* tag) GRPC_OVERRIDE {
     finish_ops_.set_output_tag(tag);
-    if (!context_->initial_metadata_received_) {
-      finish_ops_.RecvInitialMetadata(context_);
-    }
+    finish_ops_.RecvInitialMetadataLockedChecked(context_);
     finish_ops_.ClientRecvStatus(context_, status);
     call_.PerformOps(&finish_ops_);
   }
