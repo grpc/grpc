@@ -339,9 +339,10 @@ grpc_event grpc_completion_queue_next(grpc_completion_queue *cc,
       grpc_exec_ctx_flush(&exec_ctx);
       gpr_mu_lock(&cc->mu);
       continue;
+    } else {
+      grpc_pollset_work(&exec_ctx, POLLSET_FROM_CQ(cc), &worker, now,
+                        iteration_deadline);
     }
-    grpc_pollset_work(&exec_ctx, POLLSET_FROM_CQ(cc), &worker, now,
-                      iteration_deadline);
   }
   GRPC_SURFACE_TRACE_RETURNED_EVENT(cc, &ret);
   GRPC_CQ_INTERNAL_UNREF(cc, "next");
@@ -456,9 +457,10 @@ grpc_event grpc_completion_queue_pluck(grpc_completion_queue *cc, void *tag,
       grpc_exec_ctx_flush(&exec_ctx);
       gpr_mu_lock(&cc->mu);
       continue;
+    } else {
+      grpc_pollset_work(&exec_ctx, POLLSET_FROM_CQ(cc), &worker, now,
+                        iteration_deadline);
     }
-    grpc_pollset_work(&exec_ctx, POLLSET_FROM_CQ(cc), &worker, now,
-                      iteration_deadline);
     del_plucker(cc, tag, &worker);
   }
 done:

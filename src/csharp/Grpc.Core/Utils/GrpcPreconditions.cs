@@ -1,6 +1,6 @@
 #region Copyright notice and license
 
-// Copyright 2015, Google Inc.
+// Copyright 2015-2016, Google Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -38,7 +38,7 @@ namespace Grpc.Core.Utils
     /// <summary>
     /// Utility methods to simplify checking preconditions in the code.
     /// </summary>
-    public static class Preconditions
+    public static class GrpcPreconditions
     {
         /// <summary>
         /// Throws <see cref="ArgumentException"/> if condition is false.

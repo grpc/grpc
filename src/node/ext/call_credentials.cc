@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -187,7 +187,8 @@ NAN_METHOD(PluginCallback) {
   shared_ptr<Resources> resources(new Resources);
   grpc_status_code code = static_cast<grpc_status_code>(
       Nan::To<uint32_t>(info[0]).FromJust());
-  char *details = *Utf8String(info[1]);
+  Utf8String details_utf8_str(info[1]);
+  char *details = *details_utf8_str;
   grpc_metadata_array array;
   if (!CreateMetadataArray(Nan::To<Object>(info[2]).ToLocalChecked(),
                            &array, resources)){
