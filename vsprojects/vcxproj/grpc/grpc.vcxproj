@@ -296,6 +296,7 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\client_config\client_config.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\client_config\connector.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\client_config\initial_connect_string.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\client_config\lb_policies\load_balancer_api.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\client_config\lb_policies\pick_first.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\client_config\lb_policies\round_robin.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\client_config\lb_policy.h" />
@@ -356,6 +357,7 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\json\json_common.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\json\json_reader.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\json\json_writer.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\proto\grpc\lb\v0\load_balancer.pb.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\statistics\census_interface.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\statistics\census_rpc_stats.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\surface\api_trace.h" />
@@ -412,6 +414,10 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\census\aggregation.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\census\mlog.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\census\rpc_metric_id.h" />
+    <ClInclude Include="$(SolutionDir)\..\third_party\nanopb\pb.h" />
+    <ClInclude Include="$(SolutionDir)\..\third_party\nanopb\pb_common.h" />
+    <ClInclude Include="$(SolutionDir)\..\third_party\nanopb\pb_decode.h" />
+    <ClInclude Include="$(SolutionDir)\..\third_party\nanopb\pb_encode.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(SolutionDir)\..\src\core\census\grpc_context.c">
@@ -443,6 +449,8 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\client_config\default_initial_connect_string.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\client_config\initial_connect_string.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\client_config\lb_policies\load_balancer_api.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\client_config\lb_policies\pick_first.c">
     </ClCompile>
@@ -571,6 +579,8 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\json\json_string.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\json\json_writer.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\proto\grpc\lb\v0\load_balancer.pb.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\surface\alarm.c">
     </ClCompile>
@@ -723,6 +733,12 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\census\placeholders.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\census\tracing.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\third_party\nanopb\pb_common.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\third_party\nanopb\pb_decode.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\third_party\nanopb\pb_encode.c">
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
