@@ -91,7 +91,7 @@ class DefaultCredentialsProvider : public CredentialsProvider {
 };
 
 gpr_once g_once_init_provider_mu = GPR_ONCE_INIT;
-grpc::mutex* g_provider_mu;
+grpc::mutex* g_provider_mu = nullptr;
 CredentialsProvider* g_provider = nullptr;
 
 void InitProviderMu() {
