@@ -34,8 +34,9 @@
 
 #include "test/cpp/util/test_credentials_provider.h"
 
-#include "include/grpc/impl/codegen/sync_posix.h"
-#include "include/grpc++/impl/codegen/sync_no_cxx11.h"
+#include <grpc/support/sync.h>
+#include <grpc++/impl/sync.h>
+
 #include "test/core/end2end/data/ssl_test_data.h"
 
 namespace {
