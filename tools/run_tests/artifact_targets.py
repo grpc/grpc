@@ -241,6 +241,23 @@ class NodeExtArtifact:
                               ['tools/run_tests/build_artifact_node.sh',
                                self.gyp_arch])
 
+class PHPArtifact:
+  """Builds PHP PECL package"""
+
+  def __init__(self, platform, arch):
+    self.name = 'php_pecl_package_{0}_{1}'.format(platform, arch)
+    self.platform = platform
+    self.arch = arch
+    self.labels = ['artifact', 'php', platform, arch]
+
+  def pre_build_jobspecs(self):
+    return []
+
+  def build_jobspec(self):
+    return create_docker_jobspec(
+        self.name,
+        'tools/dockerfile/grpc_artifact_linux_{}'.format(self.arch),
+        'tools/run_tests/build_artifact_php.sh')
 
 class ProtocArtifact:
   """Builds protoc and protoc-plugin artifacts"""
@@ -299,4 +316,6 @@ def targets():
            PythonArtifact('windows', 'x64'),
            RubyArtifact('linux', 'x86'),
            RubyArtifact('linux', 'x64'),
-           RubyArtifact('macos', 'x64')])
+           RubyArtifact('macos', 'x64'),
+           PHPArtifact('linux', 'x64'),
+           PHPArtifact('macos', 'x64')])
