@@ -114,6 +114,9 @@ namespace Grpc.Testing {
     static readonly Marshaller<global::Grpc.Testing.ServerStatus> __Marshaller_ServerStatus = Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Grpc.Testing.ServerStatus.Parser.ParseFrom);
     static readonly Marshaller<global::Grpc.Testing.ClientArgs> __Marshaller_ClientArgs = Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Grpc.Testing.ClientArgs.Parser.ParseFrom);
     static readonly Marshaller<global::Grpc.Testing.ClientStatus> __Marshaller_ClientStatus = Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Grpc.Testing.ClientStatus.Parser.ParseFrom);
+    static readonly Marshaller<global::Grpc.Testing.CoreRequest> __Marshaller_CoreRequest = Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Grpc.Testing.CoreRequest.Parser.ParseFrom);
+    static readonly Marshaller<global::Grpc.Testing.CoreResponse> __Marshaller_CoreResponse = Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Grpc.Testing.CoreResponse.Parser.ParseFrom);
+    static readonly Marshaller<global::Grpc.Testing.Void> __Marshaller_Void = Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Grpc.Testing.Void.Parser.ParseFrom);
 
     static readonly Method<global::Grpc.Testing.ServerArgs, global::Grpc.Testing.ServerStatus> __Method_RunServer = new Method<global::Grpc.Testing.ServerArgs, global::Grpc.Testing.ServerStatus>(
         MethodType.DuplexStreaming,
@@ -129,6 +132,20 @@ namespace Grpc.Testing {
         __Marshaller_ClientArgs,
         __Marshaller_ClientStatus);
 
+    static readonly Method<global::Grpc.Testing.CoreRequest, global::Grpc.Testing.CoreResponse> __Method_CoreCount = new Method<global::Grpc.Testing.CoreRequest, global::Grpc.Testing.CoreResponse>(
+        MethodType.Unary,
+        __ServiceName,
+        "CoreCount",
+        __Marshaller_CoreRequest,
+        __Marshaller_CoreResponse);
+
+    static readonly Method<global::Grpc.Testing.Void, global::Grpc.Testing.Void> __Method_QuitWorker = new Method<global::Grpc.Testing.Void, global::Grpc.Testing.Void>(
+        MethodType.Unary,
+        __ServiceName,
+        "QuitWorker",
+        __Marshaller_Void,
+        __Marshaller_Void);
+
     // service descriptor
     public static global::Google.Protobuf.Reflection.ServiceDescriptor Descriptor
     {
@@ -142,6 +159,14 @@ namespace Grpc.Testing {
       AsyncDuplexStreamingCall<global::Grpc.Testing.ServerArgs, global::Grpc.Testing.ServerStatus> RunServer(CallOptions options);
       AsyncDuplexStreamingCall<global::Grpc.Testing.ClientArgs, global::Grpc.Testing.ClientStatus> RunClient(Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));
       AsyncDuplexStreamingCall<global::Grpc.Testing.ClientArgs, global::Grpc.Testing.ClientStatus> RunClient(CallOptions options);
+      global::Grpc.Testing.CoreResponse CoreCount(global::Grpc.Testing.CoreRequest request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));
+      global::Grpc.Testing.CoreResponse CoreCount(global::Grpc.Testing.CoreRequest request, CallOptions options);
+      AsyncUnaryCall<global::Grpc.Testing.CoreResponse> CoreCountAsync(global::Grpc.Testing.CoreRequest request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));
+      AsyncUnaryCall<global::Grpc.Testing.CoreResponse> CoreCountAsync(global::Grpc.Testing.CoreRequest request, CallOptions options);
+      global::Grpc.Testing.Void QuitWorker(global::Grpc.Testing.Void request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));
+      global::Grpc.Testing.Void QuitWorker(global::Grpc.Testing.Void request, CallOptions options);
+      AsyncUnaryCall<global::Grpc.Testing.Void> QuitWorkerAsync(global::Grpc.Testing.Void request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));
+      AsyncUnaryCall<global::Grpc.Testing.Void> QuitWorkerAsync(global::Grpc.Testing.Void request, CallOptions options);
     }
 
     // server-side interface
@@ -149,6 +174,8 @@ namespace Grpc.Testing {
     {
       Task RunServer(IAsyncStreamReader<global::Grpc.Testing.ServerArgs> requestStream, IServerStreamWriter<global::Grpc.Testing.ServerStatus> responseStream, ServerCallContext context);
       Task RunClient(IAsyncStreamReader<global::Grpc.Testing.ClientArgs> requestStream, IServerStreamWriter<global::Grpc.Testing.ClientStatus> responseStream, ServerCallContext context);
+      Task<global::Grpc.Testing.CoreResponse> CoreCount(global::Grpc.Testing.CoreRequest request, ServerCallContext context);
+      Task<global::Grpc.Testing.Void> QuitWorker(global::Grpc.Testing.Void request, ServerCallContext context);
     }
 
     // client stub
@@ -177,6 +204,46 @@ namespace Grpc.Testing {
         var call = CreateCall(__Method_RunClient, options);
         return Calls.AsyncDuplexStreamingCall(call);
       }
+      public global::Grpc.Testing.CoreResponse CoreCount(global::Grpc.Testing.CoreRequest request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
+      {
+        var call = CreateCall(__Method_CoreCount, new CallOptions(headers, deadline, cancellationToken));
+        return Calls.BlockingUnaryCall(call, request);
+      }
+      public global::Grpc.Testing.CoreResponse CoreCount(global::Grpc.Testing.CoreRequest request, CallOptions options)
+      {
+        var call = CreateCall(__Method_CoreCount, options);
+        return Calls.BlockingUnaryCall(call, request);
+      }
+      public AsyncUnaryCall<global::Grpc.Testing.CoreResponse> CoreCountAsync(global::Grpc.Testing.CoreRequest request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
+      {
+        var call = CreateCall(__Method_CoreCount, new CallOptions(headers, deadline, cancellationToken));
+        return Calls.AsyncUnaryCall(call, request);
+      }
+      public AsyncUnaryCall<global::Grpc.Testing.CoreResponse> CoreCountAsync(global::Grpc.Testing.CoreRequest request, CallOptions options)
+      {
+        var call = CreateCall(__Method_CoreCount, options);
+        return Calls.AsyncUnaryCall(call, request);
+      }
+      public global::Grpc.Testing.Void QuitWorker(global::Grpc.Testing.Void request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
+      {
+        var call = CreateCall(__Method_QuitWorker, new CallOptions(headers, deadline, cancellationToken));
+        return Calls.BlockingUnaryCall(call, request);
+      }
+      public global::Grpc.Testing.Void QuitWorker(global::Grpc.Testing.Void request, CallOptions options)
+      {
+        var call = CreateCall(__Method_QuitWorker, options);
+        return Calls.BlockingUnaryCall(call, request);
+      }
+      public AsyncUnaryCall<global::Grpc.Testing.Void> QuitWorkerAsync(global::Grpc.Testing.Void request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
+      {
+        var call = CreateCall(__Method_QuitWorker, new CallOptions(headers, deadline, cancellationToken));
+        return Calls.AsyncUnaryCall(call, request);
+      }
+      public AsyncUnaryCall<global::Grpc.Testing.Void> QuitWorkerAsync(global::Grpc.Testing.Void request, CallOptions options)
+      {
+        var call = CreateCall(__Method_QuitWorker, options);
+        return Calls.AsyncUnaryCall(call, request);
+      }
     }
 
     // creates service definition that can be registered with a server
@@ -184,7 +251,9 @@ namespace Grpc.Testing {
     {
       return ServerServiceDefinition.CreateBuilder(__ServiceName)
           .AddMethod(__Method_RunServer, serviceImpl.RunServer)
-          .AddMethod(__Method_RunClient, serviceImpl.RunClient).Build();
+          .AddMethod(__Method_RunClient, serviceImpl.RunClient)
+          .AddMethod(__Method_CoreCount, serviceImpl.CoreCount)
+          .AddMethod(__Method_QuitWorker, serviceImpl.QuitWorker).Build();
     }
 
     // creates a new client
