@@ -13,7 +13,9 @@
     "name": "alarm_test", 
     "src": [
       "test/core/surface/alarm_test.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -27,7 +29,9 @@
     "name": "algorithm_test", 
     "src": [
       "test/core/compression/algorithm_test.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -39,7 +43,9 @@
     "name": "alloc_test", 
     "src": [
       "test/core/support/alloc_test.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -53,7 +59,9 @@
     "name": "alpn_test", 
     "src": [
       "test/core/transport/chttp2/alpn_test.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -65,7 +73,9 @@
     "name": "bin_encoder_test", 
     "src": [
       "test/core/transport/chttp2/bin_encoder_test.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -79,21 +89,9 @@
     "name": "census_context_test", 
     "src": [
       "test/core/census/context_test.c"
-    ]
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
     ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "census_log_test", 
-    "src": [
-      "test/core/census/mlog_test.c"
-    ]
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -107,7 +105,9 @@
     "name": "channel_create_test", 
     "src": [
       "test/core/surface/channel_create_test.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -121,7 +121,9 @@
     "name": "chttp2_hpack_encoder_test", 
     "src": [
       "test/core/transport/chttp2/hpack_encoder_test.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -135,7 +137,9 @@
     "name": "chttp2_status_conversion_test", 
     "src": [
       "test/core/transport/chttp2/status_conversion_test.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -149,7 +153,9 @@
     "name": "chttp2_stream_map_test", 
     "src": [
       "test/core/transport/chttp2/stream_map_test.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -163,7 +169,9 @@
     "name": "chttp2_varint_test", 
     "src": [
       "test/core/transport/chttp2/varint_test.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -177,7 +185,9 @@
     "name": "compression_test", 
     "src": [
       "test/core/compression/compression_test.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -191,7 +201,9 @@
     "name": "dns_resolver_test", 
     "src": [
       "test/core/client_config/resolvers/dns_resolver_test.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -205,7 +217,9 @@
     "name": "dualstack_socket_test", 
     "src": [
       "test/core/end2end/dualstack_socket_test.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -219,7 +233,9 @@
     "name": "endpoint_pair_test", 
     "src": [
       "test/core/iomgr/endpoint_pair_test.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -233,7 +249,9 @@
     "name": "fd_conservation_posix_test", 
     "src": [
       "test/core/iomgr/fd_conservation_posix_test.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -247,7 +265,9 @@
     "name": "fd_posix_test", 
     "src": [
       "test/core/iomgr/fd_posix_test.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -261,7 +281,9 @@
     "name": "fling_client", 
     "src": [
       "test/core/fling/client.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -275,7 +297,9 @@
     "name": "fling_server", 
     "src": [
       "test/core/fling/server.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -289,7 +313,9 @@
     "name": "fling_stream_test", 
     "src": [
       "test/core/fling/fling_stream_test.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -303,7 +329,9 @@
     "name": "fling_test", 
     "src": [
       "test/core/fling/fling_test.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -315,7 +343,9 @@
     "name": "gen_hpack_tables", 
     "src": [
       "tools/codegen/core/gen_hpack_tables.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [], 
@@ -324,7 +354,9 @@
     "name": "gen_legal_metadata_characters", 
     "src": [
       "tools/codegen/core/gen_legal_metadata_characters.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -336,7 +368,9 @@
     "name": "gpr_avl_test", 
     "src": [
       "test/core/support/avl_test.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -348,7 +382,9 @@
     "name": "gpr_cmdline_test", 
     "src": [
       "test/core/support/cmdline_test.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -360,7 +396,9 @@
     "name": "gpr_cpu_test", 
     "src": [
       "test/core/support/cpu_test.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -372,19 +410,9 @@
     "name": "gpr_env_test", 
     "src": [
       "test/core/support/env_test.c"
-    ]
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util"
     ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "gpr_file_test", 
-    "src": [
-      "test/core/support/file_test.c"
-    ]
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -396,7 +424,9 @@
     "name": "gpr_histogram_test", 
     "src": [
       "test/core/support/histogram_test.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -408,7 +438,23 @@
     "name": "gpr_host_port_test", 
     "src": [
       "test/core/support/host_port_test.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "gpr_load_file_test", 
+    "src": [
+      "test/core/support/load_file_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -420,7 +466,9 @@
     "name": "gpr_log_test", 
     "src": [
       "test/core/support/log_test.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -432,7 +480,9 @@
     "name": "gpr_slice_buffer_test", 
     "src": [
       "test/core/support/slice_buffer_test.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -444,7 +494,9 @@
     "name": "gpr_slice_test", 
     "src": [
       "test/core/support/slice_test.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -456,7 +508,9 @@
     "name": "gpr_stack_lockfree_test", 
     "src": [
       "test/core/support/stack_lockfree_test.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -468,7 +522,9 @@
     "name": "gpr_string_test", 
     "src": [
       "test/core/support/string_test.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -480,7 +536,9 @@
     "name": "gpr_sync_test", 
     "src": [
       "test/core/support/sync_test.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -492,7 +550,9 @@
     "name": "gpr_thd_test", 
     "src": [
       "test/core/support/thd_test.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -504,7 +564,9 @@
     "name": "gpr_time_test", 
     "src": [
       "test/core/support/time_test.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -516,7 +578,9 @@
     "name": "gpr_tls_test", 
     "src": [
       "test/core/support/tls_test.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -528,7 +592,9 @@
     "name": "gpr_useful_test", 
     "src": [
       "test/core/support/useful_test.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -542,7 +608,9 @@
     "name": "grpc_auth_context_test", 
     "src": [
       "test/core/security/auth_context_test.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -553,10 +621,12 @@
     ], 
     "headers": [], 
     "language": "c", 
-    "name": "grpc_base64_test", 
+    "name": "grpc_b64_test", 
     "src": [
-      "test/core/security/base64_test.c"
-    ]
+      "test/core/security/b64_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -570,7 +640,9 @@
     "name": "grpc_byte_buffer_reader_test", 
     "src": [
       "test/core/surface/byte_buffer_reader_test.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -584,7 +656,9 @@
     "name": "grpc_channel_args_test", 
     "src": [
       "test/core/channel/channel_args_test.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -598,7 +672,9 @@
     "name": "grpc_channel_stack_test", 
     "src": [
       "test/core/channel/channel_stack_test.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -612,7 +688,9 @@
     "name": "grpc_completion_queue_test", 
     "src": [
       "test/core/surface/completion_queue_test.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -626,7 +704,9 @@
     "name": "grpc_create_jwt", 
     "src": [
       "test/core/security/create_jwt.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -640,7 +720,9 @@
     "name": "grpc_credentials_test", 
     "src": [
       "test/core/security/credentials_test.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -654,7 +736,9 @@
     "name": "grpc_fetch_oauth2", 
     "src": [
       "test/core/security/fetch_oauth2.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -668,7 +752,9 @@
     "name": "grpc_invalid_channel_args_test", 
     "src": [
       "test/core/surface/invalid_channel_args_test.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -682,7 +768,9 @@
     "name": "grpc_json_token_test", 
     "src": [
       "test/core/security/json_token_test.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -696,7 +784,9 @@
     "name": "grpc_jwt_verifier_test", 
     "src": [
       "test/core/security/jwt_verifier_test.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -710,7 +800,9 @@
     "name": "grpc_print_google_default_creds_token", 
     "src": [
       "test/core/security/print_google_default_creds_token.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -724,7 +816,9 @@
     "name": "grpc_security_connector_test", 
     "src": [
       "test/core/security/security_connector_test.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -738,7 +832,9 @@
     "name": "grpc_verify_jwt", 
     "src": [
       "test/core/security/verify_jwt.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -752,7 +848,9 @@
     "name": "hpack_parser_test", 
     "src": [
       "test/core/transport/chttp2/hpack_parser_test.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -766,7 +864,9 @@
     "name": "hpack_table_test", 
     "src": [
       "test/core/transport/chttp2/hpack_table_test.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -780,7 +880,9 @@
     "name": "httpcli_format_request_test", 
     "src": [
       "test/core/httpcli/format_request_test.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -794,7 +896,9 @@
     "name": "httpcli_parser_test", 
     "src": [
       "test/core/httpcli/parser_test.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -808,7 +912,9 @@
     "name": "httpcli_test", 
     "src": [
       "test/core/httpcli/httpcli_test.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -822,7 +928,9 @@
     "name": "httpscli_test", 
     "src": [
       "test/core/httpcli/httpscli_test.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -836,7 +944,9 @@
     "name": "init_test", 
     "src": [
       "test/core/surface/init_test.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -850,7 +960,9 @@
     "name": "invalid_call_argument_test", 
     "src": [
       "test/core/end2end/invalid_call_argument_test.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -862,7 +974,9 @@
     "name": "json_rewrite", 
     "src": [
       "test/core/json/json_rewrite.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -876,7 +990,9 @@
     "name": "json_rewrite_test", 
     "src": [
       "test/core/json/json_rewrite_test.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -890,7 +1006,9 @@
     "name": "json_stream_error_test", 
     "src": [
       "test/core/json/json_stream_error_test.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -904,7 +1022,9 @@
     "name": "json_test", 
     "src": [
       "test/core/json/json_test.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -918,7 +1038,9 @@
     "name": "lame_client_test", 
     "src": [
       "test/core/surface/lame_client_test.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -932,7 +1054,9 @@
     "name": "lb_policies_test", 
     "src": [
       "test/core/client_config/lb_policies_test.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -946,7 +1070,9 @@
     "name": "low_level_ping_pong_benchmark", 
     "src": [
       "test/core/network_benchmarks/low_level_ping_pong.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -960,7 +1086,25 @@
     "name": "message_compress_test", 
     "src": [
       "test/core/compression/message_compress_test.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "mlog_test", 
+    "src": [
+      "test/core/census/mlog_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -974,7 +1118,9 @@
     "name": "multiple_server_queues_test", 
     "src": [
       "test/core/end2end/multiple_server_queues_test.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -986,7 +1132,9 @@
     "name": "murmur_hash_test", 
     "src": [
       "test/core/support/murmur_hash_test.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -1000,7 +1148,9 @@
     "name": "no_server_test", 
     "src": [
       "test/core/end2end/no_server_test.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -1014,7 +1164,9 @@
     "name": "resolve_address_test", 
     "src": [
       "test/core/iomgr/resolve_address_test.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -1028,7 +1180,9 @@
     "name": "secure_channel_create_test", 
     "src": [
       "test/core/surface/secure_channel_create_test.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -1042,7 +1196,9 @@
     "name": "secure_endpoint_test", 
     "src": [
       "test/core/security/secure_endpoint_test.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -1056,7 +1212,9 @@
     "name": "server_chttp2_test", 
     "src": [
       "test/core/surface/server_chttp2_test.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -1070,7 +1228,9 @@
     "name": "server_test", 
     "src": [
       "test/core/surface/server_test.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -1085,7 +1245,9 @@
     "name": "set_initial_connect_string_test", 
     "src": [
       "test/core/client_config/set_initial_connect_string_test.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -1099,7 +1261,9 @@
     "name": "sockaddr_resolver_test", 
     "src": [
       "test/core/client_config/resolvers/sockaddr_resolver_test.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -1113,7 +1277,9 @@
     "name": "sockaddr_utils_test", 
     "src": [
       "test/core/iomgr/sockaddr_utils_test.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -1127,7 +1293,9 @@
     "name": "socket_utils_test", 
     "src": [
       "test/core/iomgr/socket_utils_test.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -1141,7 +1309,9 @@
     "name": "tcp_client_posix_test", 
     "src": [
       "test/core/iomgr/tcp_client_posix_test.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -1155,7 +1325,9 @@
     "name": "tcp_posix_test", 
     "src": [
       "test/core/iomgr/tcp_posix_test.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -1169,7 +1341,9 @@
     "name": "tcp_server_posix_test", 
     "src": [
       "test/core/iomgr/tcp_server_posix_test.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -1183,7 +1357,9 @@
     "name": "time_averaged_stats_test", 
     "src": [
       "test/core/iomgr/time_averaged_stats_test.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -1197,7 +1373,9 @@
     "name": "timeout_encoding_test", 
     "src": [
       "test/core/transport/chttp2/timeout_encoding_test.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -1211,7 +1389,9 @@
     "name": "timer_heap_test", 
     "src": [
       "test/core/iomgr/timer_heap_test.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -1225,7 +1405,9 @@
     "name": "timer_list_test", 
     "src": [
       "test/core/iomgr/timer_list_test.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -1239,7 +1421,9 @@
     "name": "timers_test", 
     "src": [
       "test/core/profiling/timers_test.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -1253,7 +1437,9 @@
     "name": "transport_connectivity_state_test", 
     "src": [
       "test/core/transport/connectivity_state_test.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -1267,7 +1453,9 @@
     "name": "transport_metadata_test", 
     "src": [
       "test/core/transport/metadata_test.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -1281,7 +1469,9 @@
     "name": "transport_security_test", 
     "src": [
       "test/core/tsi/transport_security_test.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -1295,7 +1485,9 @@
     "name": "udp_server_test", 
     "src": [
       "test/core/iomgr/udp_server_test.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -1309,7 +1501,9 @@
     "name": "uri_parser_test", 
     "src": [
       "test/core/client_config/uri_parser_test.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -1323,7 +1517,9 @@
     "name": "workqueue_test", 
     "src": [
       "test/core/iomgr/workqueue_test.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -1339,7 +1535,9 @@
     "name": "alarm_cpp_test", 
     "src": [
       "test/cpp/common/alarm_cpp_test.cc"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -1355,7 +1553,9 @@
     "name": "async_end2end_test", 
     "src": [
       "test/cpp/end2end/async_end2end_test.cc"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -1372,7 +1572,9 @@
     "name": "async_streaming_ping_pong_test", 
     "src": [
       "test/cpp/qps/async_streaming_ping_pong_test.cc"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -1389,7 +1591,9 @@
     "name": "async_unary_ping_pong_test", 
     "src": [
       "test/cpp/qps/async_unary_ping_pong_test.cc"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -1405,7 +1609,9 @@
     "name": "auth_property_iterator_test", 
     "src": [
       "test/cpp/common/auth_property_iterator_test.cc"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -1418,7 +1624,9 @@
     "name": "channel_arguments_test", 
     "src": [
       "test/cpp/common/channel_arguments_test.cc"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -1434,7 +1642,9 @@
     "name": "cli_call_test", 
     "src": [
       "test/cpp/util/cli_call_test.cc"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -1450,7 +1660,9 @@
     "name": "client_crash_test", 
     "src": [
       "test/cpp/end2end/client_crash_test.cc"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -1466,7 +1678,9 @@
     "name": "client_crash_test_server", 
     "src": [
       "test/cpp/end2end/client_crash_test_server.cc"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -1479,7 +1693,9 @@
     "name": "credentials_test", 
     "src": [
       "test/cpp/client/credentials_test.cc"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -1494,7 +1710,9 @@
     "name": "cxx_byte_buffer_test", 
     "src": [
       "test/cpp/util/byte_buffer_test.cc"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -1509,7 +1727,9 @@
     "name": "cxx_slice_test", 
     "src": [
       "test/cpp/util/slice_test.cc"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -1520,7 +1740,9 @@
     "name": "cxx_string_ref_test", 
     "src": [
       "test/cpp/util/string_ref_test.cc"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -1535,7 +1757,9 @@
     "name": "cxx_time_test", 
     "src": [
       "test/cpp/util/time_test.cc"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -1551,7 +1775,9 @@
     "name": "end2end_test", 
     "src": [
       "test/cpp/end2end/end2end_test.cc"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -1568,7 +1794,9 @@
     "name": "generic_async_streaming_ping_pong_test", 
     "src": [
       "test/cpp/qps/generic_async_streaming_ping_pong_test.cc"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -1584,7 +1812,9 @@
     "name": "generic_end2end_test", 
     "src": [
       "test/cpp/end2end/generic_end2end_test.cc"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -1601,7 +1831,9 @@
     "name": "grpc_cli", 
     "src": [
       "test/cpp/util/grpc_cli.cc"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -1612,7 +1844,9 @@
     "name": "grpc_cpp_plugin", 
     "src": [
       "src/compiler/cpp_plugin.cc"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -1623,7 +1857,9 @@
     "name": "grpc_csharp_plugin", 
     "src": [
       "src/compiler/csharp_plugin.cc"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -1634,7 +1870,9 @@
     "name": "grpc_objective_c_plugin", 
     "src": [
       "src/compiler/objective_c_plugin.cc"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -1645,7 +1883,9 @@
     "name": "grpc_python_plugin", 
     "src": [
       "src/compiler/python_plugin.cc"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -1656,7 +1896,28 @@
     "name": "grpc_ruby_plugin", 
     "src": [
       "src/compiler/ruby_plugin.cc"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "grpc", 
+      "grpc++", 
+      "grpc++_test_util", 
+      "grpc_test_util"
+    ], 
+    "headers": [
+      "src/proto/grpc/lb/v0/load_balancer.grpc.pb.h", 
+      "src/proto/grpc/lb/v0/load_balancer.pb.h"
+    ], 
+    "language": "c++", 
+    "name": "grpclb_api_test", 
+    "src": [
+      "test/cpp/grpclb/grpclb_api_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -1672,7 +1933,9 @@
     "name": "hybrid_end2end_test", 
     "src": [
       "test/cpp/end2end/hybrid_end2end_test.cc"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -1689,7 +1952,9 @@
     "headers": [], 
     "language": "c++", 
     "name": "interop_client", 
-    "src": []
+    "src": [], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -1706,7 +1971,9 @@
     "headers": [], 
     "language": "c++", 
     "name": "interop_server", 
-    "src": []
+    "src": [], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -1720,7 +1987,9 @@
     "name": "interop_test", 
     "src": [
       "test/cpp/interop/interop_test.cc"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -1739,7 +2008,9 @@
     "src": [
       "test/cpp/interop/metrics_client.cc", 
       "test/cpp/util/metrics_server.h"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -1755,7 +2026,9 @@
     "name": "mock_test", 
     "src": [
       "test/cpp/end2end/mock_test.cc"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -1773,7 +2046,9 @@
     "name": "qps_driver", 
     "src": [
       "test/cpp/qps/qps_driver.cc"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -1790,7 +2065,9 @@
     "name": "qps_interarrival_test", 
     "src": [
       "test/cpp/qps/qps_interarrival_test.cc"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -1808,7 +2085,9 @@
     "name": "qps_openloop_test", 
     "src": [
       "test/cpp/qps/qps_openloop_test.cc"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -1826,7 +2105,9 @@
     "name": "qps_test", 
     "src": [
       "test/cpp/qps/qps_test.cc"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -1849,7 +2130,9 @@
       "test/cpp/qps/client.h", 
       "test/cpp/qps/server.h", 
       "test/cpp/qps/worker.cc"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -1873,7 +2156,9 @@
     "name": "reconnect_interop_client", 
     "src": [
       "test/cpp/interop/reconnect_interop_client.cc"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -1899,7 +2184,9 @@
     "name": "reconnect_interop_server", 
     "src": [
       "test/cpp/interop/reconnect_interop_server.cc"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -1915,7 +2202,9 @@
     "name": "secure_auth_context_test", 
     "src": [
       "test/cpp/common/secure_auth_context_test.cc"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -1932,7 +2221,9 @@
     "name": "secure_sync_unary_ping_pong_test", 
     "src": [
       "test/cpp/qps/secure_sync_unary_ping_pong_test.cc"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -1948,7 +2239,9 @@
     "name": "server_crash_test", 
     "src": [
       "test/cpp/end2end/server_crash_test.cc"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -1964,7 +2257,9 @@
     "name": "server_crash_test_client", 
     "src": [
       "test/cpp/end2end/server_crash_test_client.cc"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -1980,7 +2275,9 @@
     "name": "shutdown_test", 
     "src": [
       "test/cpp/end2end/shutdown_test.cc"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -1995,7 +2292,9 @@
     "name": "status_test", 
     "src": [
       "test/cpp/util/status_test.cc"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -2011,7 +2310,9 @@
     "name": "streaming_throughput_test", 
     "src": [
       "test/cpp/end2end/streaming_throughput_test.cc"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -2048,7 +2349,9 @@
       "test/cpp/interop/stress_test.cc", 
       "test/cpp/util/metrics_server.cc", 
       "test/cpp/util/metrics_server.h"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -2065,7 +2368,9 @@
     "name": "sync_streaming_ping_pong_test", 
     "src": [
       "test/cpp/qps/sync_streaming_ping_pong_test.cc"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -2082,7 +2387,9 @@
     "name": "sync_unary_ping_pong_test", 
     "src": [
       "test/cpp/qps/sync_unary_ping_pong_test.cc"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -2098,7 +2405,9 @@
     "name": "thread_stress_test", 
     "src": [
       "test/cpp/end2end/thread_stress_test.cc"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -2118,7 +2427,9 @@
     "name": "zookeeper_test", 
     "src": [
       "test/cpp/end2end/zookeeper_test.cc"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -2130,7 +2441,477 @@
     "name": "public_headers_must_be_c89", 
     "src": [
       "test/core/surface/public_headers_must_be_c89.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_aes_test_lib", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "boringssl_aes_test", 
+    "src": [], 
+    "third_party": true, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_base64_test_lib", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "boringssl_base64_test", 
+    "src": [], 
+    "third_party": true, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_bio_test_lib", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "boringssl_bio_test", 
+    "src": [], 
+    "third_party": true, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_bn_test_lib", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "boringssl_bn_test", 
+    "src": [], 
+    "third_party": true, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_bytestring_test_lib", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "boringssl_bytestring_test", 
+    "src": [], 
+    "third_party": true, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_aead_test_lib", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "boringssl_aead_test", 
+    "src": [], 
+    "third_party": true, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_cipher_test_lib", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "boringssl_cipher_test", 
+    "src": [], 
+    "third_party": true, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_cmac_test_lib", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "boringssl_cmac_test", 
+    "src": [], 
+    "third_party": true, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_constant_time_test_lib", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "boringssl_constant_time_test", 
+    "src": [], 
+    "third_party": true, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_ed25519_test_lib", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "boringssl_ed25519_test", 
+    "src": [], 
+    "third_party": true, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_test_util", 
+      "boringssl_x25519_test_lib"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "boringssl_x25519_test", 
+    "src": [], 
+    "third_party": true, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_dh_test_lib", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "boringssl_dh_test", 
+    "src": [], 
+    "third_party": true, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_digest_test_lib", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "boringssl_digest_test", 
+    "src": [], 
+    "third_party": true, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_dsa_test_lib", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "boringssl_dsa_test", 
+    "src": [], 
+    "third_party": true, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_ec_test_lib", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "boringssl_ec_test", 
+    "src": [], 
+    "third_party": true, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_example_mul_lib", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "boringssl_example_mul", 
+    "src": [], 
+    "third_party": true, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_ecdsa_test_lib", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "boringssl_ecdsa_test", 
+    "src": [], 
+    "third_party": true, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_err_test_lib", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "boringssl_err_test", 
+    "src": [], 
+    "third_party": true, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_evp_extra_test_lib", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "boringssl_evp_extra_test", 
+    "src": [], 
+    "third_party": true, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_evp_test_lib", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "boringssl_evp_test", 
+    "src": [], 
+    "third_party": true, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_pbkdf_test_lib", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "boringssl_pbkdf_test", 
+    "src": [], 
+    "third_party": true, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_hkdf_test_lib", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "boringssl_hkdf_test", 
+    "src": [], 
+    "third_party": true, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_hmac_test_lib", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "boringssl_hmac_test", 
+    "src": [], 
+    "third_party": true, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_lhash_test_lib", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "boringssl_lhash_test", 
+    "src": [], 
+    "third_party": true, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_gcm_test_lib", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "boringssl_gcm_test", 
+    "src": [], 
+    "third_party": true, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_pkcs12_test_lib", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "boringssl_pkcs12_test", 
+    "src": [], 
+    "third_party": true, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_pkcs8_test_lib", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "boringssl_pkcs8_test", 
+    "src": [], 
+    "third_party": true, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_poly1305_test_lib", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "boringssl_poly1305_test", 
+    "src": [], 
+    "third_party": true, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_refcount_test_lib", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "boringssl_refcount_test", 
+    "src": [], 
+    "third_party": true, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_rsa_test_lib", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "boringssl_rsa_test", 
+    "src": [], 
+    "third_party": true, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_test_util", 
+      "boringssl_thread_test_lib"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "boringssl_thread_test", 
+    "src": [], 
+    "third_party": true, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_pkcs7_test_lib", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "boringssl_pkcs7_test", 
+    "src": [], 
+    "third_party": true, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_tab_test_lib", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "boringssl_tab_test", 
+    "src": [], 
+    "third_party": true, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_test_util", 
+      "boringssl_v3name_test_lib"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "boringssl_v3name_test", 
+    "src": [], 
+    "third_party": true, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_pqueue_test_lib", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "boringssl_pqueue_test", 
+    "src": [], 
+    "third_party": true, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_ssl_test_lib", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "boringssl_ssl_test", 
+    "src": [], 
+    "third_party": true, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -2145,7 +2926,9 @@
     "name": "badreq_bad_client_test", 
     "src": [
       "test/core/bad_client/tests/badreq.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -2160,7 +2943,9 @@
     "name": "connection_prefix_bad_client_test", 
     "src": [
       "test/core/bad_client/tests/connection_prefix.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -2175,7 +2960,9 @@
     "name": "headers_bad_client_test", 
     "src": [
       "test/core/bad_client/tests/headers.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -2190,7 +2977,9 @@
     "name": "initial_settings_frame_bad_client_test", 
     "src": [
       "test/core/bad_client/tests/initial_settings_frame.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -2205,7 +2994,9 @@
     "name": "server_registered_method_bad_client_test", 
     "src": [
       "test/core/bad_client/tests/server_registered_method.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -2220,7 +3011,9 @@
     "name": "simple_request_bad_client_test", 
     "src": [
       "test/core/bad_client/tests/simple_request.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -2235,7 +3028,9 @@
     "name": "unknown_frame_bad_client_test", 
     "src": [
       "test/core/bad_client/tests/unknown_frame.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -2250,7 +3045,9 @@
     "name": "window_overflow_bad_client_test", 
     "src": [
       "test/core/bad_client/tests/window_overflow.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -2265,7 +3062,9 @@
     "name": "bad_ssl_alpn_server", 
     "src": [
       "test/core/bad_ssl/servers/alpn.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -2280,7 +3079,9 @@
     "name": "bad_ssl_cert_server", 
     "src": [
       "test/core/bad_ssl/servers/cert.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -2294,7 +3095,9 @@
     "name": "bad_ssl_alpn_test", 
     "src": [
       "test/core/bad_ssl/bad_ssl_test.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -2308,7 +3111,9 @@
     "name": "bad_ssl_cert_test", 
     "src": [
       "test/core/bad_ssl/bad_ssl_test.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -2324,7 +3129,9 @@
     "name": "h2_census_test", 
     "src": [
       "test/core/end2end/fixtures/h2_census.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -2340,7 +3147,9 @@
     "name": "h2_compress_test", 
     "src": [
       "test/core/end2end/fixtures/h2_compress.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -2356,7 +3165,9 @@
     "name": "h2_fakesec_test", 
     "src": [
       "test/core/end2end/fixtures/h2_fakesec.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -2372,7 +3183,9 @@
     "name": "h2_full_test", 
     "src": [
       "test/core/end2end/fixtures/h2_full.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -2388,7 +3201,9 @@
     "name": "h2_full+pipe_test", 
     "src": [
       "test/core/end2end/fixtures/h2_full+pipe.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -2404,7 +3219,9 @@
     "name": "h2_full+poll_test", 
     "src": [
       "test/core/end2end/fixtures/h2_full+poll.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -2420,7 +3237,9 @@
     "name": "h2_full+poll+pipe_test", 
     "src": [
       "test/core/end2end/fixtures/h2_full+poll+pipe.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -2436,7 +3255,9 @@
     "name": "h2_oauth2_test", 
     "src": [
       "test/core/end2end/fixtures/h2_oauth2.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -2452,7 +3273,9 @@
     "name": "h2_proxy_test", 
     "src": [
       "test/core/end2end/fixtures/h2_proxy.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -2468,7 +3291,9 @@
     "name": "h2_sockpair_test", 
     "src": [
       "test/core/end2end/fixtures/h2_sockpair.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -2484,7 +3309,9 @@
     "name": "h2_sockpair+trace_test", 
     "src": [
       "test/core/end2end/fixtures/h2_sockpair+trace.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -2500,7 +3327,9 @@
     "name": "h2_sockpair_1byte_test", 
     "src": [
       "test/core/end2end/fixtures/h2_sockpair_1byte.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -2516,7 +3345,9 @@
     "name": "h2_ssl_test", 
     "src": [
       "test/core/end2end/fixtures/h2_ssl.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -2532,7 +3363,9 @@
     "name": "h2_ssl+poll_test", 
     "src": [
       "test/core/end2end/fixtures/h2_ssl+poll.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -2548,7 +3381,9 @@
     "name": "h2_ssl_proxy_test", 
     "src": [
       "test/core/end2end/fixtures/h2_ssl_proxy.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -2564,7 +3399,9 @@
     "name": "h2_uchannel_test", 
     "src": [
       "test/core/end2end/fixtures/h2_uchannel.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -2580,7 +3417,9 @@
     "name": "h2_uds_test", 
     "src": [
       "test/core/end2end/fixtures/h2_uds.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -2596,7 +3435,9 @@
     "name": "h2_uds+poll_test", 
     "src": [
       "test/core/end2end/fixtures/h2_uds+poll.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -2611,7 +3452,9 @@
     "name": "h2_census_nosec_test", 
     "src": [
       "test/core/end2end/fixtures/h2_census.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -2626,7 +3469,9 @@
     "name": "h2_compress_nosec_test", 
     "src": [
       "test/core/end2end/fixtures/h2_compress.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -2641,7 +3486,9 @@
     "name": "h2_full_nosec_test", 
     "src": [
       "test/core/end2end/fixtures/h2_full.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -2656,7 +3503,9 @@
     "name": "h2_full+pipe_nosec_test", 
     "src": [
       "test/core/end2end/fixtures/h2_full+pipe.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -2671,7 +3520,9 @@
     "name": "h2_full+poll_nosec_test", 
     "src": [
       "test/core/end2end/fixtures/h2_full+poll.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -2686,7 +3537,9 @@
     "name": "h2_full+poll+pipe_nosec_test", 
     "src": [
       "test/core/end2end/fixtures/h2_full+poll+pipe.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -2701,7 +3554,9 @@
     "name": "h2_proxy_nosec_test", 
     "src": [
       "test/core/end2end/fixtures/h2_proxy.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -2716,7 +3571,9 @@
     "name": "h2_sockpair_nosec_test", 
     "src": [
       "test/core/end2end/fixtures/h2_sockpair.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -2731,7 +3588,9 @@
     "name": "h2_sockpair+trace_nosec_test", 
     "src": [
       "test/core/end2end/fixtures/h2_sockpair+trace.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -2746,7 +3605,9 @@
     "name": "h2_sockpair_1byte_nosec_test", 
     "src": [
       "test/core/end2end/fixtures/h2_sockpair_1byte.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -2761,7 +3622,9 @@
     "name": "h2_uchannel_nosec_test", 
     "src": [
       "test/core/end2end/fixtures/h2_uchannel.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -2776,7 +3639,9 @@
     "name": "h2_uds_nosec_test", 
     "src": [
       "test/core/end2end/fixtures/h2_uds.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [
@@ -2791,7 +3656,9 @@
     "name": "h2_uds+poll_nosec_test", 
     "src": [
       "test/core/end2end/fixtures/h2_uds+poll.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "target"
   }, 
   {
     "deps": [], 
@@ -2841,13 +3708,14 @@
       "src/core/profiling/timers.h", 
       "src/core/support/block_annotate.h", 
       "src/core/support/env.h", 
-      "src/core/support/file.h", 
+      "src/core/support/load_file.h", 
       "src/core/support/murmur_hash.h", 
       "src/core/support/stack_lockfree.h", 
       "src/core/support/string.h", 
       "src/core/support/string_win32.h", 
       "src/core/support/thd_internal.h", 
-      "src/core/support/time_precise.h"
+      "src/core/support/time_precise.h", 
+      "src/core/support/tmpfile.h"
     ], 
     "language": "c", 
     "name": "gpr", 
@@ -2909,12 +3777,10 @@
       "src/core/support/env_linux.c", 
       "src/core/support/env_posix.c", 
       "src/core/support/env_win32.c", 
-      "src/core/support/file.c", 
-      "src/core/support/file.h", 
-      "src/core/support/file_posix.c", 
-      "src/core/support/file_win32.c", 
       "src/core/support/histogram.c", 
       "src/core/support/host_port.c", 
+      "src/core/support/load_file.c", 
+      "src/core/support/load_file.h", 
       "src/core/support/log.c", 
       "src/core/support/log_android.c", 
       "src/core/support/log_linux.c", 
@@ -2946,8 +3812,13 @@
       "src/core/support/time_precise.h", 
       "src/core/support/time_win32.c", 
       "src/core/support/tls_pthread.c", 
+      "src/core/support/tmpfile.h", 
+      "src/core/support/tmpfile_posix.c", 
+      "src/core/support/tmpfile_win32.c", 
       "src/core/support/wrap_memcpy.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "lib"
   }, 
   {
     "deps": [
@@ -2961,7 +3832,9 @@
     "src": [
       "test/core/util/test_config.c", 
       "test/core/util/test_config.h"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "lib"
   }, 
   {
     "deps": [
@@ -2998,6 +3871,7 @@
       "src/core/client_config/client_config.h", 
       "src/core/client_config/connector.h", 
       "src/core/client_config/initial_connect_string.h", 
+      "src/core/client_config/lb_policies/load_balancer_api.h", 
       "src/core/client_config/lb_policies/pick_first.h", 
       "src/core/client_config/lb_policies/round_robin.h", 
       "src/core/client_config/lb_policy.h", 
@@ -3058,8 +3932,9 @@
       "src/core/json/json_common.h", 
       "src/core/json/json_reader.h", 
       "src/core/json/json_writer.h", 
+      "src/core/proto/grpc/lb/v0/load_balancer.pb.h", 
       "src/core/security/auth_filters.h", 
-      "src/core/security/base64.h", 
+      "src/core/security/b64.h", 
       "src/core/security/credentials.h", 
       "src/core/security/handshake.h", 
       "src/core/security/json_token.h", 
@@ -3110,7 +3985,11 @@
       "src/core/tsi/ssl_transport_security.h", 
       "src/core/tsi/ssl_types.h", 
       "src/core/tsi/transport_security.h", 
-      "src/core/tsi/transport_security_interface.h"
+      "src/core/tsi/transport_security_interface.h", 
+      "third_party/nanopb/pb.h", 
+      "third_party/nanopb/pb_common.h", 
+      "third_party/nanopb/pb_decode.h", 
+      "third_party/nanopb/pb_encode.h"
     ], 
     "language": "c", 
     "name": "grpc", 
@@ -3166,6 +4045,8 @@
       "src/core/client_config/default_initial_connect_string.c", 
       "src/core/client_config/initial_connect_string.c", 
       "src/core/client_config/initial_connect_string.h", 
+      "src/core/client_config/lb_policies/load_balancer_api.c", 
+      "src/core/client_config/lb_policies/load_balancer_api.h", 
       "src/core/client_config/lb_policies/pick_first.c", 
       "src/core/client_config/lb_policies/pick_first.h", 
       "src/core/client_config/lb_policies/round_robin.c", 
@@ -3194,8 +4075,8 @@
       "src/core/client_config/subchannel_index.h", 
       "src/core/client_config/uri_parser.c", 
       "src/core/client_config/uri_parser.h", 
-      "src/core/compression/algorithm.c", 
       "src/core/compression/algorithm_metadata.h", 
+      "src/core/compression/compression_algorithm.c", 
       "src/core/compression/message_compress.c", 
       "src/core/compression/message_compress.h", 
       "src/core/debug/trace.c", 
@@ -3291,9 +4172,11 @@
       "src/core/json/json_string.c", 
       "src/core/json/json_writer.c", 
       "src/core/json/json_writer.h", 
+      "src/core/proto/grpc/lb/v0/load_balancer.pb.c", 
+      "src/core/proto/grpc/lb/v0/load_balancer.pb.h", 
       "src/core/security/auth_filters.h", 
-      "src/core/security/base64.c", 
-      "src/core/security/base64.h", 
+      "src/core/security/b64.c", 
+      "src/core/security/b64.h", 
       "src/core/security/client_auth_filter.c", 
       "src/core/security/credentials.c", 
       "src/core/security/credentials.h", 
@@ -3413,7 +4296,9 @@
       "src/core/tsi/transport_security.c", 
       "src/core/tsi/transport_security.h", 
       "src/core/tsi/transport_security_interface.h"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "lib"
   }, 
   {
     "deps": [
@@ -3423,7 +4308,9 @@
     "headers": [], 
     "language": "c", 
     "name": "grpc_dll", 
-    "src": []
+    "src": [], 
+    "third_party": false, 
+    "type": "lib"
   }, 
   {
     "deps": [
@@ -3466,7 +4353,9 @@
       "test/core/util/port_windows.c", 
       "test/core/util/slice_splitter.c", 
       "test/core/util/slice_splitter.h"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "lib"
   }, 
   {
     "deps": [
@@ -3501,7 +4390,9 @@
       "test/core/util/port_windows.c", 
       "test/core/util/slice_splitter.c", 
       "test/core/util/slice_splitter.h"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "lib"
   }, 
   {
     "deps": [
@@ -3537,6 +4428,7 @@
       "src/core/client_config/client_config.h", 
       "src/core/client_config/connector.h", 
       "src/core/client_config/initial_connect_string.h", 
+      "src/core/client_config/lb_policies/load_balancer_api.h", 
       "src/core/client_config/lb_policies/pick_first.h", 
       "src/core/client_config/lb_policies/round_robin.h", 
       "src/core/client_config/lb_policy.h", 
@@ -3597,6 +4489,7 @@
       "src/core/json/json_common.h", 
       "src/core/json/json_reader.h", 
       "src/core/json/json_writer.h", 
+      "src/core/proto/grpc/lb/v0/load_balancer.pb.h", 
       "src/core/statistics/census_interface.h", 
       "src/core/statistics/census_rpc_stats.h", 
       "src/core/surface/api_trace.h", 
@@ -3635,7 +4528,11 @@
       "src/core/transport/metadata_batch.h", 
       "src/core/transport/static_metadata.h", 
       "src/core/transport/transport.h", 
-      "src/core/transport/transport_impl.h"
+      "src/core/transport/transport_impl.h", 
+      "third_party/nanopb/pb.h", 
+      "third_party/nanopb/pb_common.h", 
+      "third_party/nanopb/pb_decode.h", 
+      "third_party/nanopb/pb_encode.h"
     ], 
     "language": "c", 
     "name": "grpc_unsecure", 
@@ -3690,6 +4587,8 @@
       "src/core/client_config/default_initial_connect_string.c", 
       "src/core/client_config/initial_connect_string.c", 
       "src/core/client_config/initial_connect_string.h", 
+      "src/core/client_config/lb_policies/load_balancer_api.c", 
+      "src/core/client_config/lb_policies/load_balancer_api.h", 
       "src/core/client_config/lb_policies/pick_first.c", 
       "src/core/client_config/lb_policies/pick_first.h", 
       "src/core/client_config/lb_policies/round_robin.c", 
@@ -3718,8 +4617,8 @@
       "src/core/client_config/subchannel_index.h", 
       "src/core/client_config/uri_parser.c", 
       "src/core/client_config/uri_parser.h", 
-      "src/core/compression/algorithm.c", 
       "src/core/compression/algorithm_metadata.h", 
+      "src/core/compression/compression_algorithm.c", 
       "src/core/compression/message_compress.c", 
       "src/core/compression/message_compress.h", 
       "src/core/debug/trace.c", 
@@ -3814,6 +4713,8 @@
       "src/core/json/json_string.c", 
       "src/core/json/json_writer.c", 
       "src/core/json/json_writer.h", 
+      "src/core/proto/grpc/lb/v0/load_balancer.pb.c", 
+      "src/core/proto/grpc/lb/v0/load_balancer.pb.h", 
       "src/core/statistics/census_interface.h", 
       "src/core/statistics/census_rpc_stats.h", 
       "src/core/surface/alarm.c", 
@@ -3903,7 +4804,9 @@
       "src/core/transport/transport.h", 
       "src/core/transport/transport_impl.h", 
       "src/core/transport/transport_op_string.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "lib"
   }, 
   {
     "deps": [
@@ -3920,7 +4823,9 @@
       "include/grpc/grpc_zookeeper.h", 
       "src/core/client_config/resolvers/zookeeper_resolver.c", 
       "src/core/client_config/resolvers/zookeeper_resolver.h"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "lib"
   }, 
   {
     "deps": [
@@ -3938,7 +4843,9 @@
     "src": [
       "test/core/util/reconnect_server.c", 
       "test/core/util/reconnect_server.h"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "lib"
   }, 
   {
     "deps": [
@@ -3955,7 +4862,9 @@
     "src": [
       "test/core/util/test_tcp_server.c", 
       "test/core/util/test_tcp_server.h"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "lib"
   }, 
   {
     "deps": [
@@ -4161,7 +5070,9 @@
       "src/cpp/util/status.cc", 
       "src/cpp/util/string_ref.cc", 
       "src/cpp/util/time.cc"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "lib"
   }, 
   {
     "deps": [], 
@@ -4173,7 +5084,9 @@
     "src": [
       "test/cpp/util/test_config.cc", 
       "test/cpp/util/test_config.h"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "lib"
   }, 
   {
     "deps": [
@@ -4212,7 +5125,9 @@
       "test/cpp/util/subprocess.h", 
       "test/cpp/util/test_credentials_provider.cc", 
       "test/cpp/util/test_credentials_provider.h"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "lib"
   }, 
   {
     "deps": [
@@ -4408,7 +5323,9 @@
       "src/cpp/util/status.cc", 
       "src/cpp/util/string_ref.cc", 
       "src/cpp/util/time.cc"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "lib"
   }, 
   {
     "deps": [], 
@@ -4553,7 +5470,9 @@
       "src/compiler/ruby_generator_map-inl.h", 
       "src/compiler/ruby_generator_string-inl.h", 
       "src/cpp/codegen/grpc_library.cc"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "lib"
   }, 
   {
     "deps": [
@@ -4573,7 +5492,9 @@
     "src": [
       "test/cpp/interop/client_helper.cc", 
       "test/cpp/interop/client_helper.h"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "lib"
   }, 
   {
     "deps": [
@@ -4601,7 +5522,9 @@
       "test/cpp/interop/client.cc", 
       "test/cpp/interop/interop_client.cc", 
       "test/cpp/interop/interop_client.h"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "lib"
   }, 
   {
     "deps": [
@@ -4618,7 +5541,9 @@
     "src": [
       "test/cpp/interop/server_helper.cc", 
       "test/cpp/interop/server_helper.h"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "lib"
   }, 
   {
     "deps": [
@@ -4642,8 +5567,10 @@
     "language": "c++", 
     "name": "interop_server_main", 
     "src": [
-      "test/cpp/interop/server.cc"
-    ]
+      "test/cpp/interop/server_main.cc"
+    ], 
+    "third_party": false, 
+    "type": "lib"
   }, 
   {
     "deps": [
@@ -4674,7 +5601,7 @@
       "test/cpp/qps/report.h", 
       "test/cpp/qps/server.h", 
       "test/cpp/qps/stats.h", 
-      "test/cpp/qps/timer.h", 
+      "test/cpp/qps/usage_timer.h", 
       "test/cpp/util/benchmark_config.h"
     ], 
     "language": "c++", 
@@ -4699,11 +5626,13 @@
       "test/cpp/qps/server_async.cc", 
       "test/cpp/qps/server_sync.cc", 
       "test/cpp/qps/stats.h", 
-      "test/cpp/qps/timer.cc", 
-      "test/cpp/qps/timer.h", 
+      "test/cpp/qps/usage_timer.cc", 
+      "test/cpp/qps/usage_timer.h", 
       "test/cpp/util/benchmark_config.cc", 
       "test/cpp/util/benchmark_config.h"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "lib"
   }, 
   {
     "deps": [
@@ -4715,7 +5644,590 @@
     "name": "grpc_csharp_ext", 
     "src": [
       "src/csharp/ext/grpc_csharp_ext.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [], 
+    "headers": [
+      "third_party/boringssl/crypto/aes/internal.h", 
+      "third_party/boringssl/crypto/asn1/asn1_locl.h", 
+      "third_party/boringssl/crypto/bio/internal.h", 
+      "third_party/boringssl/crypto/bn/internal.h", 
+      "third_party/boringssl/crypto/bn/rsaz_exp.h", 
+      "third_party/boringssl/crypto/bytestring/internal.h", 
+      "third_party/boringssl/crypto/cipher/internal.h", 
+      "third_party/boringssl/crypto/conf/conf_def.h", 
+      "third_party/boringssl/crypto/conf/internal.h", 
+      "third_party/boringssl/crypto/des/internal.h", 
+      "third_party/boringssl/crypto/dh/internal.h", 
+      "third_party/boringssl/crypto/digest/internal.h", 
+      "third_party/boringssl/crypto/digest/md32_common.h", 
+      "third_party/boringssl/crypto/directory.h", 
+      "third_party/boringssl/crypto/dsa/internal.h", 
+      "third_party/boringssl/crypto/ec/internal.h", 
+      "third_party/boringssl/crypto/ec/p256-x86_64-table.h", 
+      "third_party/boringssl/crypto/evp/internal.h", 
+      "third_party/boringssl/crypto/internal.h", 
+      "third_party/boringssl/crypto/modes/internal.h", 
+      "third_party/boringssl/crypto/obj/obj_dat.h", 
+      "third_party/boringssl/crypto/obj/obj_xref.h", 
+      "third_party/boringssl/crypto/pkcs8/internal.h", 
+      "third_party/boringssl/crypto/rand/internal.h", 
+      "third_party/boringssl/crypto/rsa/internal.h", 
+      "third_party/boringssl/crypto/test/scoped_types.h", 
+      "third_party/boringssl/crypto/test/test_util.h", 
+      "third_party/boringssl/crypto/x509/charmap.h", 
+      "third_party/boringssl/crypto/x509/vpm_int.h", 
+      "third_party/boringssl/crypto/x509v3/ext_dat.h", 
+      "third_party/boringssl/crypto/x509v3/pcy_int.h", 
+      "third_party/boringssl/include/openssl/aead.h", 
+      "third_party/boringssl/include/openssl/aes.h", 
+      "third_party/boringssl/include/openssl/arm_arch.h", 
+      "third_party/boringssl/include/openssl/asn1.h", 
+      "third_party/boringssl/include/openssl/asn1_mac.h", 
+      "third_party/boringssl/include/openssl/asn1t.h", 
+      "third_party/boringssl/include/openssl/base.h", 
+      "third_party/boringssl/include/openssl/base64.h", 
+      "third_party/boringssl/include/openssl/bio.h", 
+      "third_party/boringssl/include/openssl/blowfish.h", 
+      "third_party/boringssl/include/openssl/bn.h", 
+      "third_party/boringssl/include/openssl/buf.h", 
+      "third_party/boringssl/include/openssl/buffer.h", 
+      "third_party/boringssl/include/openssl/bytestring.h", 
+      "third_party/boringssl/include/openssl/cast.h", 
+      "third_party/boringssl/include/openssl/chacha.h", 
+      "third_party/boringssl/include/openssl/cipher.h", 
+      "third_party/boringssl/include/openssl/cmac.h", 
+      "third_party/boringssl/include/openssl/conf.h", 
+      "third_party/boringssl/include/openssl/cpu.h", 
+      "third_party/boringssl/include/openssl/crypto.h", 
+      "third_party/boringssl/include/openssl/curve25519.h", 
+      "third_party/boringssl/include/openssl/des.h", 
+      "third_party/boringssl/include/openssl/dh.h", 
+      "third_party/boringssl/include/openssl/digest.h", 
+      "third_party/boringssl/include/openssl/dsa.h", 
+      "third_party/boringssl/include/openssl/dtls1.h", 
+      "third_party/boringssl/include/openssl/ec.h", 
+      "third_party/boringssl/include/openssl/ec_key.h", 
+      "third_party/boringssl/include/openssl/ecdh.h", 
+      "third_party/boringssl/include/openssl/ecdsa.h", 
+      "third_party/boringssl/include/openssl/engine.h", 
+      "third_party/boringssl/include/openssl/err.h", 
+      "third_party/boringssl/include/openssl/evp.h", 
+      "third_party/boringssl/include/openssl/ex_data.h", 
+      "third_party/boringssl/include/openssl/hkdf.h", 
+      "third_party/boringssl/include/openssl/hmac.h", 
+      "third_party/boringssl/include/openssl/lhash.h", 
+      "third_party/boringssl/include/openssl/lhash_macros.h", 
+      "third_party/boringssl/include/openssl/md4.h", 
+      "third_party/boringssl/include/openssl/md5.h", 
+      "third_party/boringssl/include/openssl/mem.h", 
+      "third_party/boringssl/include/openssl/obj.h", 
+      "third_party/boringssl/include/openssl/obj_mac.h", 
+      "third_party/boringssl/include/openssl/objects.h", 
+      "third_party/boringssl/include/openssl/opensslfeatures.h", 
+      "third_party/boringssl/include/openssl/opensslv.h", 
+      "third_party/boringssl/include/openssl/ossl_typ.h", 
+      "third_party/boringssl/include/openssl/pem.h", 
+      "third_party/boringssl/include/openssl/pkcs12.h", 
+      "third_party/boringssl/include/openssl/pkcs7.h", 
+      "third_party/boringssl/include/openssl/pkcs8.h", 
+      "third_party/boringssl/include/openssl/poly1305.h", 
+      "third_party/boringssl/include/openssl/pqueue.h", 
+      "third_party/boringssl/include/openssl/rand.h", 
+      "third_party/boringssl/include/openssl/rc4.h", 
+      "third_party/boringssl/include/openssl/rsa.h", 
+      "third_party/boringssl/include/openssl/safestack.h", 
+      "third_party/boringssl/include/openssl/sha.h", 
+      "third_party/boringssl/include/openssl/srtp.h", 
+      "third_party/boringssl/include/openssl/ssl.h", 
+      "third_party/boringssl/include/openssl/ssl3.h", 
+      "third_party/boringssl/include/openssl/stack.h", 
+      "third_party/boringssl/include/openssl/stack_macros.h", 
+      "third_party/boringssl/include/openssl/thread.h", 
+      "third_party/boringssl/include/openssl/time_support.h", 
+      "third_party/boringssl/include/openssl/tls1.h", 
+      "third_party/boringssl/include/openssl/type_check.h", 
+      "third_party/boringssl/include/openssl/x509.h", 
+      "third_party/boringssl/include/openssl/x509_vfy.h", 
+      "third_party/boringssl/include/openssl/x509v3.h", 
+      "third_party/boringssl/ssl/internal.h", 
+      "third_party/boringssl/ssl/test/async_bio.h", 
+      "third_party/boringssl/ssl/test/packeted_bio.h", 
+      "third_party/boringssl/ssl/test/scoped_types.h", 
+      "third_party/boringssl/ssl/test/test_config.h"
+    ], 
+    "language": "c", 
+    "name": "boringssl", 
+    "src": [
+      "src/boringssl/err_data.c"
+    ], 
+    "third_party": true, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "boringssl_test_util", 
+    "src": [], 
+    "third_party": true, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "boringssl_aes_test_lib", 
+    "src": [], 
+    "third_party": true, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "boringssl_base64_test_lib", 
+    "src": [], 
+    "third_party": true, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "boringssl_bio_test_lib", 
+    "src": [], 
+    "third_party": true, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "boringssl_bn_test_lib", 
+    "src": [], 
+    "third_party": true, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "boringssl_bytestring_test_lib", 
+    "src": [], 
+    "third_party": true, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "boringssl_aead_test_lib", 
+    "src": [], 
+    "third_party": true, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "boringssl_cipher_test_lib", 
+    "src": [], 
+    "third_party": true, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "boringssl_cmac_test_lib", 
+    "src": [], 
+    "third_party": true, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "boringssl_constant_time_test_lib", 
+    "src": [], 
+    "third_party": true, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "boringssl_ed25519_test_lib", 
+    "src": [], 
+    "third_party": true, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "boringssl_x25519_test_lib", 
+    "src": [], 
+    "third_party": true, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "boringssl_dh_test_lib", 
+    "src": [], 
+    "third_party": true, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "boringssl_digest_test_lib", 
+    "src": [], 
+    "third_party": true, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "boringssl_dsa_test_lib", 
+    "src": [], 
+    "third_party": true, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "boringssl_ec_test_lib", 
+    "src": [], 
+    "third_party": true, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "boringssl_example_mul_lib", 
+    "src": [], 
+    "third_party": true, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "boringssl_ecdsa_test_lib", 
+    "src": [], 
+    "third_party": true, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "boringssl_err_test_lib", 
+    "src": [], 
+    "third_party": true, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "boringssl_evp_extra_test_lib", 
+    "src": [], 
+    "third_party": true, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "boringssl_evp_test_lib", 
+    "src": [], 
+    "third_party": true, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "boringssl_pbkdf_test_lib", 
+    "src": [], 
+    "third_party": true, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "boringssl_hkdf_test_lib", 
+    "src": [], 
+    "third_party": true, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "boringssl_hmac_test_lib", 
+    "src": [], 
+    "third_party": true, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "boringssl_lhash_test_lib", 
+    "src": [], 
+    "third_party": true, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "boringssl_gcm_test_lib", 
+    "src": [], 
+    "third_party": true, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "boringssl_pkcs12_test_lib", 
+    "src": [], 
+    "third_party": true, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "boringssl_pkcs8_test_lib", 
+    "src": [], 
+    "third_party": true, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "boringssl_poly1305_test_lib", 
+    "src": [], 
+    "third_party": true, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "boringssl_refcount_test_lib", 
+    "src": [], 
+    "third_party": true, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "boringssl_rsa_test_lib", 
+    "src": [], 
+    "third_party": true, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "boringssl_thread_test_lib", 
+    "src": [], 
+    "third_party": true, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "boringssl_pkcs7_test_lib", 
+    "src": [], 
+    "third_party": true, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "boringssl_tab_test_lib", 
+    "src": [], 
+    "third_party": true, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "boringssl_v3name_test_lib", 
+    "src": [], 
+    "third_party": true, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "boringssl_pqueue_test_lib", 
+    "src": [], 
+    "third_party": true, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "boringssl_ssl_test_lib", 
+    "src": [], 
+    "third_party": true, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [], 
+    "headers": [
+      "third_party/zlib/crc32.h", 
+      "third_party/zlib/deflate.h", 
+      "third_party/zlib/gzguts.h", 
+      "third_party/zlib/inffast.h", 
+      "third_party/zlib/inffixed.h", 
+      "third_party/zlib/inflate.h", 
+      "third_party/zlib/inftrees.h", 
+      "third_party/zlib/trees.h", 
+      "third_party/zlib/zconf.h", 
+      "third_party/zlib/zlib.h", 
+      "third_party/zlib/zutil.h"
+    ], 
+    "language": "c", 
+    "name": "z", 
+    "src": [], 
+    "third_party": true, 
+    "type": "lib"
   }, 
   {
     "deps": [
@@ -4732,7 +6244,9 @@
     "src": [
       "test/core/bad_client/bad_client.c", 
       "test/core/bad_client/bad_client.h"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "lib"
   }, 
   {
     "deps": [
@@ -4742,14 +6256,16 @@
       "grpc_test_util"
     ], 
     "headers": [
-      "test/core/bad_ssl/server.h"
+      "test/core/bad_ssl/server_common.h"
     ], 
     "language": "c", 
     "name": "bad_ssl_test_server", 
     "src": [
-      "test/core/bad_ssl/server.c", 
-      "test/core/bad_ssl/server.h"
-    ]
+      "test/core/bad_ssl/server_common.c", 
+      "test/core/bad_ssl/server_common.h"
+    ], 
+    "third_party": false, 
+    "type": "lib"
   }, 
   {
     "deps": [
@@ -4778,9 +6294,8 @@
       "test/core/end2end/tests/cancel_in_a_vacuum.c", 
       "test/core/end2end/tests/cancel_test_helpers.h", 
       "test/core/end2end/tests/cancel_with_status.c", 
-      "test/core/end2end/tests/channel_connectivity.c", 
-      "test/core/end2end/tests/channel_ping.c", 
       "test/core/end2end/tests/compressed_payload.c", 
+      "test/core/end2end/tests/connectivity.c", 
       "test/core/end2end/tests/default_host.c", 
       "test/core/end2end/tests/disappearing_server.c", 
       "test/core/end2end/tests/empty_batch.c", 
@@ -4791,10 +6306,10 @@
       "test/core/end2end/tests/large_metadata.c", 
       "test/core/end2end/tests/max_concurrent_streams.c", 
       "test/core/end2end/tests/max_message_length.c", 
-      "test/core/end2end/tests/metadata.c", 
       "test/core/end2end/tests/negative_deadline.c", 
       "test/core/end2end/tests/no_op.c", 
       "test/core/end2end/tests/payload.c", 
+      "test/core/end2end/tests/ping.c", 
       "test/core/end2end/tests/ping_pong_streaming.c", 
       "test/core/end2end/tests/registered_call.c", 
       "test/core/end2end/tests/request_with_flags.c", 
@@ -4803,9 +6318,12 @@
       "test/core/end2end/tests/shutdown_finishes_calls.c", 
       "test/core/end2end/tests/shutdown_finishes_tags.c", 
       "test/core/end2end/tests/simple_delayed_request.c", 
+      "test/core/end2end/tests/simple_metadata.c", 
       "test/core/end2end/tests/simple_request.c", 
       "test/core/end2end/tests/trailing_metadata.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "lib"
   }, 
   {
     "deps": [
@@ -4832,9 +6350,8 @@
       "test/core/end2end/tests/cancel_in_a_vacuum.c", 
       "test/core/end2end/tests/cancel_test_helpers.h", 
       "test/core/end2end/tests/cancel_with_status.c", 
-      "test/core/end2end/tests/channel_connectivity.c", 
-      "test/core/end2end/tests/channel_ping.c", 
       "test/core/end2end/tests/compressed_payload.c", 
+      "test/core/end2end/tests/connectivity.c", 
       "test/core/end2end/tests/default_host.c", 
       "test/core/end2end/tests/disappearing_server.c", 
       "test/core/end2end/tests/empty_batch.c", 
@@ -4845,10 +6362,10 @@
       "test/core/end2end/tests/large_metadata.c", 
       "test/core/end2end/tests/max_concurrent_streams.c", 
       "test/core/end2end/tests/max_message_length.c", 
-      "test/core/end2end/tests/metadata.c", 
       "test/core/end2end/tests/negative_deadline.c", 
       "test/core/end2end/tests/no_op.c", 
       "test/core/end2end/tests/payload.c", 
+      "test/core/end2end/tests/ping.c", 
       "test/core/end2end/tests/ping_pong_streaming.c", 
       "test/core/end2end/tests/registered_call.c", 
       "test/core/end2end/tests/request_with_flags.c", 
@@ -4857,9 +6374,12 @@
       "test/core/end2end/tests/shutdown_finishes_calls.c", 
       "test/core/end2end/tests/shutdown_finishes_tags.c", 
       "test/core/end2end/tests/simple_delayed_request.c", 
+      "test/core/end2end/tests/simple_metadata.c", 
       "test/core/end2end/tests/simple_request.c", 
       "test/core/end2end/tests/trailing_metadata.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "lib"
   }, 
   {
     "deps": [], 
@@ -4870,6 +6390,8 @@
       "test/core/end2end/data/server1_cert.c", 
       "test/core/end2end/data/server1_key.c", 
       "test/core/end2end/data/test_root_cert.c"
-    ]
+    ], 
+    "third_party": false, 
+    "type": "lib"
   }
 ]

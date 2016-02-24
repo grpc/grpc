@@ -62,5 +62,6 @@ echo '</body></html>' >> index.html
 cd ..
 
 zip -r reports.zip reports
+find . -name reports.xml | xargs zip reports.zip
 
 exit $exit_code

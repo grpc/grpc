@@ -41,7 +41,7 @@
 
 #include "src/core/httpcli/httpcli.h"
 #include "src/core/support/env.h"
-#include "src/core/support/file.h"
+#include "src/core/support/load_file.h"
 #include "src/core/surface/api_trace.h"
 
 /* -- Constants. -- */
