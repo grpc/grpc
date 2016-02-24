@@ -192,7 +192,6 @@ static ProtoMethod *kUnaryCallMethod;
   [self waitForExpectationsWithTimeout:8 handler:nil];
 }
 
-// TODO(jcanizales): Activate this test against the remote server.
 - (void)testMetadata {
   __weak XCTestExpectation *expectation = [self expectationWithDescription:@"RPC unauthorized."];
 
@@ -258,7 +257,7 @@ static ProtoMethod *kUnaryCallMethod;
   [self waitForExpectationsWithTimeout:8 handler:nil];
 }
 
-// todo(makaradd): Move to a different file that contains only unit tests
+// TODO(makarandd): Move to a different file that contains only unit tests
 - (void)testExceptions {
   // Try to set userAgentPrefix for host that is nil. This should cause
   // an exception.
