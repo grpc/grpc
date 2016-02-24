@@ -40,7 +40,8 @@
   RUN pip install argparse
 
   RUN wget ${openssl_fallback.base_uri + openssl_fallback.tarball}
-  ADD post-git-setup.sh /
+
+  ENV POST_GIT_STEP tools/dockerfile/test/cxx_squeeze_x64/post-git-setup.sh
 
   <%include file="../../run_tests_addons.include" args="skip_zookeeper=True"/>
   # Define the default command.
