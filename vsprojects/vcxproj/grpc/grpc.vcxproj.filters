@@ -1,69 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="$(SolutionDir)\..\src\core\httpcli\httpcli_security_connector.c">
-      <Filter>src\core\httpcli</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\security\base64.c">
-      <Filter>src\core\security</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\security\client_auth_filter.c">
-      <Filter>src\core\security</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\security\credentials.c">
-      <Filter>src\core\security</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\security\credentials_metadata.c">
-      <Filter>src\core\security</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\security\credentials_posix.c">
-      <Filter>src\core\security</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\security\credentials_win32.c">
-      <Filter>src\core\security</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\security\google_default_credentials.c">
-      <Filter>src\core\security</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\security\handshake.c">
-      <Filter>src\core\security</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\security\json_token.c">
-      <Filter>src\core\security</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\security\jwt_verifier.c">
-      <Filter>src\core\security</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\security\secure_endpoint.c">
-      <Filter>src\core\security</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\security\security_connector.c">
-      <Filter>src\core\security</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\security\security_context.c">
-      <Filter>src\core\security</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\security\server_auth_filter.c">
-      <Filter>src\core\security</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\security\server_secure_chttp2.c">
-      <Filter>src\core\security</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\surface\init_secure.c">
-      <Filter>src\core\surface</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\surface\secure_channel_create.c">
-      <Filter>src\core\surface</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\tsi\fake_transport_security.c">
-      <Filter>src\core\tsi</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\tsi\ssl_transport_security.c">
-      <Filter>src\core\tsi</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\tsi\transport_security.c">
-      <Filter>src\core\tsi</Filter>
-    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\census\grpc_context.c">
       <Filter>src\core\census</Filter>
     </ClCompile>
@@ -108,6 +45,9 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\client_config\initial_connect_string.c">
       <Filter>src\core\client_config</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\client_config\lb_policies\load_balancer_api.c">
+      <Filter>src\core\client_config\lb_policies</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\client_config\lb_policies\pick_first.c">
       <Filter>src\core\client_config\lb_policies</Filter>
@@ -301,6 +241,9 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\json\json_writer.c">
       <Filter>src\core\json</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\proto\grpc\lb\v0\load_balancer.pb.c">
+      <Filter>src\core\proto\grpc\lb\v0</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\surface\alarm.c">
       <Filter>src\core\surface</Filter>
     </ClCompile>
@@ -448,13 +391,76 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\transport\transport_op_string.c">
       <Filter>src\core\transport</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\httpcli\httpcli_security_connector.c">
+      <Filter>src\core\httpcli</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\security\base64.c">
+      <Filter>src\core\security</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\security\client_auth_filter.c">
+      <Filter>src\core\security</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\security\credentials.c">
+      <Filter>src\core\security</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\security\credentials_metadata.c">
+      <Filter>src\core\security</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\security\credentials_posix.c">
+      <Filter>src\core\security</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\security\credentials_win32.c">
+      <Filter>src\core\security</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\security\google_default_credentials.c">
+      <Filter>src\core\security</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\security\handshake.c">
+      <Filter>src\core\security</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\security\json_token.c">
+      <Filter>src\core\security</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\security\jwt_verifier.c">
+      <Filter>src\core\security</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\security\secure_endpoint.c">
+      <Filter>src\core\security</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\security\security_connector.c">
+      <Filter>src\core\security</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\security\security_context.c">
+      <Filter>src\core\security</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\security\server_auth_filter.c">
+      <Filter>src\core\security</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\security\server_secure_chttp2.c">
+      <Filter>src\core\security</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\surface\init_secure.c">
+      <Filter>src\core\surface</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\surface\secure_channel_create.c">
+      <Filter>src\core\surface</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\tsi\fake_transport_security.c">
+      <Filter>src\core\tsi</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\tsi\ssl_transport_security.c">
+      <Filter>src\core\tsi</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\tsi\transport_security.c">
+      <Filter>src\core\tsi</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\census\context.c">
       <Filter>src\core\census</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\census\initialize.c">
       <Filter>src\core\census</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\census\log.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\census\mlog.c">
       <Filter>src\core\census</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\census\operation.c">
@@ -465,6 +471,15 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\census\tracing.c">
       <Filter>src\core\census</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\third_party\nanopb\pb_common.c">
+      <Filter>third_party\nanopb</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\third_party\nanopb\pb_decode.c">
+      <Filter>third_party\nanopb</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\third_party\nanopb\pb_encode.c">
+      <Filter>third_party\nanopb</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -509,48 +524,6 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="$(SolutionDir)\..\src\core\security\auth_filters.h">
-      <Filter>src\core\security</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\security\base64.h">
-      <Filter>src\core\security</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\security\credentials.h">
-      <Filter>src\core\security</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\security\handshake.h">
-      <Filter>src\core\security</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\security\json_token.h">
-      <Filter>src\core\security</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\security\jwt_verifier.h">
-      <Filter>src\core\security</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\security\secure_endpoint.h">
-      <Filter>src\core\security</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\security\security_connector.h">
-      <Filter>src\core\security</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\security\security_context.h">
-      <Filter>src\core\security</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\tsi\fake_transport_security.h">
-      <Filter>src\core\tsi</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\tsi\ssl_transport_security.h">
-      <Filter>src\core\tsi</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\tsi\ssl_types.h">
-      <Filter>src\core\tsi</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\tsi\transport_security.h">
-      <Filter>src\core\tsi</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\tsi\transport_security_interface.h">
-      <Filter>src\core\tsi</Filter>
-    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\census\grpc_filter.h">
       <Filter>src\core\census</Filter>
     </ClInclude>
@@ -592,6 +565,9 @@
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\client_config\initial_connect_string.h">
       <Filter>src\core\client_config</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\client_config\lb_policies\load_balancer_api.h">
+      <Filter>src\core\client_config\lb_policies</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\client_config\lb_policies\pick_first.h">
       <Filter>src\core\client_config\lb_policies</Filter>
@@ -773,6 +749,9 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\json\json_writer.h">
       <Filter>src\core\json</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\proto\grpc\lb\v0\load_balancer.pb.h">
+      <Filter>src\core\proto\grpc\lb\v0</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\statistics\census_interface.h">
       <Filter>src\core\statistics</Filter>
     </ClInclude>
@@ -890,14 +869,68 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\transport\transport_impl.h">
       <Filter>src\core\transport</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\security\auth_filters.h">
+      <Filter>src\core\security</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\security\base64.h">
+      <Filter>src\core\security</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\security\credentials.h">
+      <Filter>src\core\security</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\security\handshake.h">
+      <Filter>src\core\security</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\security\json_token.h">
+      <Filter>src\core\security</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\security\jwt_verifier.h">
+      <Filter>src\core\security</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\security\secure_endpoint.h">
+      <Filter>src\core\security</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\security\security_connector.h">
+      <Filter>src\core\security</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\security\security_context.h">
+      <Filter>src\core\security</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\tsi\fake_transport_security.h">
+      <Filter>src\core\tsi</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\tsi\ssl_transport_security.h">
+      <Filter>src\core\tsi</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\tsi\ssl_types.h">
+      <Filter>src\core\tsi</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\tsi\transport_security.h">
+      <Filter>src\core\tsi</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\tsi\transport_security_interface.h">
+      <Filter>src\core\tsi</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\census\aggregation.h">
       <Filter>src\core\census</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\census\log.h">
+    <ClInclude Include="$(SolutionDir)\..\src\core\census\mlog.h">
       <Filter>src\core\census</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\census\rpc_metric_id.h">
       <Filter>src\core\census</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\third_party\nanopb\pb.h">
+      <Filter>third_party\nanopb</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\third_party\nanopb\pb_common.h">
+      <Filter>third_party\nanopb</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\third_party\nanopb\pb_decode.h">
+      <Filter>third_party\nanopb</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\third_party\nanopb\pb_encode.h">
+      <Filter>third_party\nanopb</Filter>
     </ClInclude>
   </ItemGroup>
 
@@ -950,6 +983,18 @@
     <Filter Include="src\core\json">
       <UniqueIdentifier>{e665cc0e-b994-d7c5-cc18-2007392019f0}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\core\proto">
+      <UniqueIdentifier>{1ff04466-0905-8a5d-d6f4-7ff2df4c13b5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\proto\grpc">
+      <UniqueIdentifier>{7c7ad0b3-bf85-5bd3-e0c8-4f5468a8e2e6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\proto\grpc\lb">
+      <UniqueIdentifier>{3d533dad-8100-e8a3-b7c3-1fc13a4d60da}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\proto\grpc\lb\v0">
+      <UniqueIdentifier>{0ffcf868-7617-5fed-b6ce-2162d9d09148}</UniqueIdentifier>
+    </Filter>
     <Filter Include="src\core\security">
       <UniqueIdentifier>{1d850ac6-e639-4eab-5338-4ba40272fcc9}</UniqueIdentifier>
     </Filter>
@@ -967,6 +1012,12 @@
     </Filter>
     <Filter Include="src\core\tsi">
       <UniqueIdentifier>{0b0f9ab1-efa4-7f03-e446-6fb9b5227e84}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party">
+      <UniqueIdentifier>{aaab30a4-2a15-732e-c141-3fbc0f0f5a7a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party\nanopb">
+      <UniqueIdentifier>{93d6596d-330c-1d27-6f84-3c840e57869e}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>
