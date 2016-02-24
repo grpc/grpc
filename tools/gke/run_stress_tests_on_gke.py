@@ -33,10 +33,16 @@ import subprocess
 import sys
 import time
 
+stress_test_utils_dir = os.path.abspath(os.path.join(
+    os.path.dirname(__file__), '../run_tests/stress_test'))
+sys.path.append(stress_test_utils_dir)
+from stress_test_utils import BigQueryHelper
+
 import kubernetes_api
 
 GRPC_ROOT = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), '../..'))
 os.chdir(GRPC_ROOT)
+
 
 class BigQuerySettings:
 
@@ -283,26 +289,15 @@ def _launch_client(gcp_project_id, docker_image_name, bq_settings,
   return True
 
 
-def _launch_server_and_client(gcp_project_id, docker_image_name,
+def _launch_server_and_client(bq_settings, gcp_project_id, docker_image_name,
                               num_client_instances):
-  # == Big Query tables related settings (Common for both server and client) ==
-
-  # Create a unique id for this run (Note: Using timestamp instead of UUID to
-  # make it easier to deduce the date/time of the run just by looking at the run
-  # run id. This is useful in debugging when looking at records in Biq query)
-  run_id = datetime.datetime.now().strftime('%Y_%m_%d_%H_%M_%S')
-
-  dataset_id = 'stress_test_%s' % run_id
-  summary_table_id = 'summary'
-  qps_table_id = 'qps'
-
-  bq_settings = BigQuerySettings(run_id, dataset_id, summary_table_id,
-                                 qps_table_id)
-
   # Start kubernetes proxy
   kubernetes_api_port = 9001
   kubernetes_proxy = KubernetesProxy(kubernetes_api_port)
   kubernetes_proxy.start()
+
+  # num of seconds to wait for the GKE image to start and warmup
+  image_warmp_secs = 60
 
   server_pod_name = 'stress-server'
   server_port = 8080
@@ -315,7 +310,8 @@ def _launch_server_and_client(gcp_project_id, docker_image_name,
   # Server takes a while to start.
   # TODO(sree) Use Kubernetes API to query the status of the server instead of
   # sleeping
-  time.sleep(60)
+  print 'Waiting for %s seconds for the server to start...' % image_warmp_secs
+  time.sleep(image_warmp_secs)
 
   # Launch client
   server_address = '%s.default.svc.cluster.local:%d' % (server_pod_name,
@@ -329,6 +325,8 @@ def _launch_server_and_client(gcp_project_id, docker_image_name,
     print 'Error in launching client(s)'
     return False
 
+  print 'Waiting for %s seconds for the client images to start...' % image_warmp_secs
+  time.sleep(image_warmp_secs)
   return True
 
 
@@ -359,31 +357,68 @@ def _build_and_push_docker_image(gcp_project_id, docker_image_name, tag_name):
 
 # TODO(sree): This is just to test the above APIs. Rewrite this to make
 # everything configurable (like image names / number of instances etc)
-def test_run():
+def run_test(skip_building_image, gcp_project_id, image_name, tag_name,
+             num_client_instances, poll_interval_secs, total_duration_secs):
+  if not skip_building_image:
+    is_success = _build_docker_image(image_name, tag_name)
+    if not is_success:
+      return False
+
+    is_success = _push_docker_image_to_gke_registry(tag_name)
+    if not is_success:
+      return False
+
+  # == Big Query tables related settings (Common for both server and client) ==
+
+  # Create a unique id for this run (Note: Using timestamp instead of UUID to
+  # make it easier to deduce the date/time of the run just by looking at the run
+  # run id. This is useful in debugging when looking at records in Biq query)
+  run_id = datetime.datetime.now().strftime('%Y_%m_%d_%H_%M_%S')
+  dataset_id = 'stress_test_%s' % run_id
+  summary_table_id = 'summary'
+  qps_table_id = 'qps'
+  bq_settings = BigQuerySettings(run_id, dataset_id, summary_table_id,
+                                 qps_table_id)
+
+  bq_helper = BigQueryHelper(run_id, '', '', gcp_project_id, dataset_id,
+                             summary_table_id, qps_table_id)
+  bq_helper.initialize()
+  is_success = _launch_server_and_client(bq_settings, gcp_project_id, tag_name,
+                                         num_client_instances)
+  if not is_success:
+    return False
+
+  start_time = datetime.datetime.now()
+  end_time = start_time + datetime.timedelta(seconds=total_duration_secs)
+
+  while True:
+    if datetime.datetime.now() > end_time:
+      print 'Test was run for %d seconds' % total_duration_secs
+      break
+
+    # Check if either stress server or clients have failed
+    if not bq_helper.check_if_any_tests_failed():
+      is_success = False
+      print 'Some tests failed.'
+      break
+    # Things seem to be running fine. Wait until next poll time to check the
+    # status
+    time.sleep(poll_interval_secs)
+
+  # Print BiqQuery tables
+  bq_helper.print_summary_records()
+  bq_helper.print_qps_records()
+
+  _delete_server_and_client(num_client_instances)
+  return is_success
+
+
+if __name__ == '__main__':
   image_name = 'grpc_stress_test'
   gcp_project_id = 'sree-gce'
   tag_name = 'gcr.io/%s/%s' % (gcp_project_id, image_name)
   num_client_instances = 3
-
-  is_success = _build_docker_image(image_name, tag_name)
-  if not is_success:
-    return
-
-  is_success = _push_docker_image_to_gke_registry(tag_name)
-  if not is_success:
-    return
-
-  is_success = _launch_server_and_client(gcp_project_id, tag_name,
-                                         num_client_instances)
-
-  # Run the test for 2 mins
-  time.sleep(120)
-
-  is_success = _delete_server_and_client(num_client_instances)
-
-  if not is_success:
-    return
-
-
-if __name__ == '__main__':
-  test_run()
+  poll_interval_secs = 5,
+  test_duration_secs = 150
+  run_test(True, gcp_project_id, image_name, tag_name, num_client_instances,
+           poll_interval_secs, test_duration_secs)
