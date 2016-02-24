@@ -72,6 +72,11 @@ def run_server():
 
   logfile_name = env.get('LOGFILE_NAME')
 
+  print('pod_name: %s, project_id: %s, run_id: %s, dataset_id: %s, '
+        'summary_table_id: %s, qps_table_id: %s') % (
+            pod_name, project_id, run_id, dataset_id, summary_table_id,
+            qps_table_id)
+
   bq_helper = BigQueryHelper(run_id, image_type, pod_name, project_id,
                              dataset_id, summary_table_id, qps_table_id)
   bq_helper.initialize()

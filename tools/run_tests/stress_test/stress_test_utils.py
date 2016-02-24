@@ -43,10 +43,12 @@ bq_utils_dir = os.path.abspath(os.path.join(
 sys.path.append(bq_utils_dir)
 import big_query_utils as bq_utils
 
+
 class EventType:
   STARTING = 'STARTING'
   SUCCESS = 'SUCCESS'
   FAILURE = 'FAILURE'
+
 
 class BigQueryHelper:
   """Helper class for the stress test wrappers to interact with BigQuery.
@@ -101,9 +103,9 @@ class BigQueryHelper:
                                 self.qps_table_id, [row])
 
   def check_if_any_tests_failed(self, num_query_retries=3):
-    query = ('SELECT event_type FROM %s.%s WHERE run_id = %s AND '
+    query = ('SELECT event_type FROM %s.%s WHERE run_id = \'%s\' AND '
              'event_type="%s"') % (self.dataset_id, self.summary_table_id,
-                                         self.run_id, EventType.FAILURE)
+                                   self.run_id, EventType.FAILURE)
     query_job = bq_utils.sync_query_job(self.bq, self.project_id, query)
     page = self.bq.jobs().getQueryResults(**query_job['jobReference']).execute(
         num_retries=num_query_retries)
@@ -119,7 +121,7 @@ class BigQueryHelper:
     print 'Run Id', self.run_id
     print line
     query = ('SELECT pod_name, image_type, event_type, event_date, details'
-             ' FROM %s.%s WHERE run_id = %s ORDER by event_date;') % (
+             ' FROM %s.%s WHERE run_id = \'%s\' ORDER by event_date;') % (
                  self.dataset_id, self.summary_table_id, self.run_id)
     query_job = bq_utils.sync_query_job(self.bq, self.project_id, query)
 
@@ -147,8 +149,9 @@ class BigQueryHelper:
     print 'Run Id: ', self.run_id
     print line
     query = (
-        'SELECT pod_name, recorded_at, qps FROM %s.%s WHERE run_id = %s ORDER '
-        'by recorded_at;') % (self.dataset_id, self.qps_table_id, self.run_id)
+        'SELECT pod_name, recorded_at, qps FROM %s.%s WHERE run_id = \'%s\' '
+        'ORDER by recorded_at;') % (self.dataset_id, self.qps_table_id,
+                                    self.run_id)
     query_job = bq_utils.sync_query_job(self.bq, self.project_id, query)
     print '{:<25} {:30} {}'.format('Pod name', 'Recorded at', 'Qps')
     print line
@@ -167,7 +170,7 @@ class BigQueryHelper:
 
   def __create_summary_table(self):
     summary_table_schema = [
-        ('run_id', 'INTEGER', 'Test run id'),
+        ('run_id', 'STRING', 'Test run id'),
         ('image_type', 'STRING', 'Client or Server?'),
         ('pod_name', 'STRING', 'GKE pod hosting this image'),
         ('event_date', 'STRING', 'The date of this event'),
@@ -182,7 +185,7 @@ class BigQueryHelper:
 
   def __create_qps_table(self):
     qps_table_schema = [
-        ('run_id', 'INTEGER', 'Test run id'),
+        ('run_id', 'STRING', 'Test run id'),
         ('pod_name', 'STRING', 'GKE pod hosting this image'),
         ('recorded_at', 'STRING', 'Metrics recorded at time'),
         ('qps', 'INTEGER', 'Queries per second')
