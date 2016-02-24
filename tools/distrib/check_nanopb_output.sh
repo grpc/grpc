@@ -32,7 +32,7 @@ set -ex
 
 apt-get install -y autoconf automake libtool curl python-virtualenv
 
-readonly NANOPB_TMP_OUTPUT="${LOCAL_GIT_ROOT}/gens/src/proto/grpc/lb/v0"
+readonly NANOPB_TMP_OUTPUT="$(mktemp -d)"
 
 # install protoc version 3
 pushd third_party/protobuf
@@ -62,8 +62,7 @@ PATH="$PROTOC_PATH:$PATH" ./tools/codegen/core/gen_load_balancing_proto.sh \
   $NANOPB_TMP_OUTPUT
 
 # compare outputs to checked compiled code
-diff -rq $NANOPB_TMP_OUTPUT src/core/proto/grpc/lb/v0
-if [ $? != 0 ]; then
+if ! diff -r $NANOPB_TMP_OUTPUT src/core/proto/grpc/lb/v0; then
   echo "Outputs differ: $NANOPB_TMP_OUTPUT vs src/core/proto/grpc/lb/v0"
-  exit 1
+  exit 2
 fi
