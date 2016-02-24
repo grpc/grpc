@@ -47,6 +47,11 @@ PID1=$!
 bins/$config/qps_worker -driver_port 10010 &
 PID2=$!
 
+#
+# Put a timeout on these tests
+#
+((sleep 900; kill $$ && killall qps_worker && rm -f /tmp/qps-test.$$ )&)
+
 export QPS_WORKERS="localhost:10000,localhost:10010"
 
 # big is the size in bytes of large messages (0 is the size otherwise)

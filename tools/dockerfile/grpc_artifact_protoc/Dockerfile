@@ -1,5 +1,4 @@
-#!/bin/bash
-# Copyright 2015-2016, Google Inc.
+# Copyright 2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -27,39 +26,38 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# This script is invoked by build_docker_and_run_tests.sh inside a docker
-# container. You should never need to call this script on your own.
 
-set -e
+# Docker file for building protoc and gRPC protoc plugin artifacts.
+# forked from https://github.com/google/protobuf/blob/master/protoc-artifacts/Dockerfile
 
-export CONFIG=$config
-export ASAN_SYMBOLIZER_PATH=/usr/bin/llvm-symbolizer-3.5
+FROM centos:6.6
 
-# Ensure that programs depending on current-user-ownership of cache directories
-# are satisfied (it's being mounted from outside the image).
-chown $(whoami) $XDG_CACHE_HOME
+RUN yum install -y git \
+                   tar \
+                   wget \
+                   make \
+                   autoconf \
+                   curl-devel \
+                   unzip \
+                   automake \
+                   libtool \
+                   glibc-static.i686 \
+                   glibc-devel \
+                   glibc-devel.i686
 
-mkdir -p /var/local/git
-git clone --recursive /var/local/jenkins/grpc /var/local/git/grpc
+# Install GCC 4.7 to support -static-libstdc++
+RUN wget http://people.centos.org/tru/devtools-1.1/devtools-1.1.repo -P /etc/yum.repos.d
+RUN bash -c 'echo "enabled=1" >> /etc/yum.repos.d/devtools-1.1.repo'
+RUN bash -c "sed -e 's/\$basearch/i386/g' /etc/yum.repos.d/devtools-1.1.repo > /etc/yum.repos.d/devtools-i386-1.1.repo"
+RUN sed -e 's/testing-/testing-i386-/g' -i /etc/yum.repos.d/devtools-i386-1.1.repo
 
-mkdir -p reports
+# We'll get and "Rpmdb checksum is invalid: dCDPT(pkg checksums)" error caused by
+# docker issue when using overlay storage driver, but all the stuff we need
+# will be installed, so for now we just ignore the error.
+# https://github.com/docker/docker/issues/10180
+RUN yum install -y devtoolset-1.1 \
+                   devtoolset-1.1-libstdc++-devel \
+                   devtoolset-1.1-libstdc++-devel.i686 || true
 
-exit_code=0
-
-$RUN_TESTS_COMMAND || exit_code=$?
-
-cd reports
-echo '<html><head></head><body>' > index.html
-find . -maxdepth 1 -mindepth 1 -type d | sort | while read d ; do
-  d=${d#*/}
-  n=${d//_/ }
-  echo "<a href='$d/index.html'>$n</a><br />" >> index.html
-done
-echo '</body></html>' >> index.html
-cd ..
-
-zip -r reports.zip reports
-find . -name reports.xml | xargs zip reports.zip
-
-exit $exit_code
+# Start in devtoolset environment that uses GCC 4.7
+CMD ["scl", "enable", "devtoolset-1.1", "bash"]
