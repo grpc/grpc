@@ -244,7 +244,7 @@ def _launch_client(gcp_project_id, docker_image_name, bq_settings,
   client_arg_list = []
 
   # TODO(sree) Make this configurable (and also less frequent)
-  poll_interval_secs = 5
+  poll_interval_secs = 30
 
   metrics_port = 8081
   metrics_server_address = 'localhost:%d' % metrics_port
@@ -397,7 +397,7 @@ def run_test(skip_building_image, gcp_project_id, image_name, tag_name,
       break
 
     # Check if either stress server or clients have failed
-    if not bq_helper.check_if_any_tests_failed():
+    if bq_helper.check_if_any_tests_failed():
       is_success = False
       print 'Some tests failed.'
       break
