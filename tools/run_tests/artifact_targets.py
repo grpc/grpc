@@ -275,7 +275,12 @@ class ProtocArtifact:
             ['tools/run_tests/build_artifact_protoc.sh'],
             environ=environ)
     else:
-      raise Exception('Not yet supported')
+      generator = 'Visual Studio 12 Win64' if self.arch == 'x64' else 'Visual Studio 12' 
+      vcplatform = 'x64' if self.arch == 'x64' else 'Win32'
+      return create_jobspec(self.name,
+                            ['tools\\run_tests\\build_artifact_protoc.bat'],
+                            environ={'generator': generator,
+                                     'Platform': vcplatform})
 
   def __str__(self):
     return self.name
@@ -284,7 +289,7 @@ class ProtocArtifact:
 def targets():
   """Gets list of supported targets"""
   return ([Cls(platform, arch)
-           for Cls in (CSharpExtArtifact, NodeExtArtifact)
+           for Cls in (CSharpExtArtifact, NodeExtArtifact, ProtocArtifact)
            for platform in ('linux', 'macos', 'windows')
            for arch in ('x86', 'x64')] +
           [PythonArtifact('linux', 'x86'),
@@ -294,8 +299,4 @@ def targets():
            PythonArtifact('windows', 'x64'),
            RubyArtifact('linux', 'x86'),
            RubyArtifact('linux', 'x64'),
-           RubyArtifact('macos', 'x64'),
-           ProtocArtifact('linux', 'x86'),
-           ProtocArtifact('linux', 'x64'),
-           ProtocArtifact('macos', 'x86'),
-           ProtocArtifact('macos', 'x64')])
+           RubyArtifact('macos', 'x64')])
