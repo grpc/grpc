@@ -167,7 +167,7 @@ class BigQueryHelper:
 
   def __create_summary_table(self):
     summary_table_schema = [
-        ('run_id', 'INTEGER', 'Test run id'),
+        ('run_id', 'STRING', 'Test run id'),
         ('image_type', 'STRING', 'Client or Server?'),
         ('pod_name', 'STRING', 'GKE pod hosting this image'),
         ('event_date', 'STRING', 'The date of this event'),
@@ -182,7 +182,7 @@ class BigQueryHelper:
 
   def __create_qps_table(self):
     qps_table_schema = [
-        ('run_id', 'INTEGER', 'Test run id'),
+        ('run_id', 'STRING', 'Test run id'),
         ('pod_name', 'STRING', 'GKE pod hosting this image'),
         ('recorded_at', 'STRING', 'Metrics recorded at time'),
         ('qps', 'INTEGER', 'Queries per second')

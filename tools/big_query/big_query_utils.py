@@ -135,6 +135,6 @@ def sync_query_job(big_query, project_id, query, timeout=5000):
 
   # List of (column name, column type, description) tuples
 def make_row(unique_row_id, row_values_dict):
-  """row_values_dict is a dictionar of column name and column value.
+  """row_values_dict is a dictionary of column name and column value.
   """
   return {'insertId': unique_row_id, 'json': row_values_dict}
