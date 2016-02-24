@@ -149,11 +149,13 @@ static const gpr_avl_vtable subchannel_avl_vtable = {
 void grpc_subchannel_index_init(void) {
   g_subchannel_index = gpr_avl_create(&subchannel_avl_vtable);
   gpr_mu_init(&g_mu);
+  gpr_tls_init(&subchannel_index_exec_ctx);
 }
 
 void grpc_subchannel_index_shutdown(void) {
   gpr_mu_destroy(&g_mu);
   gpr_avl_unref(g_subchannel_index);
+  gpr_tls_destroy(&subchannel_index_exec_ctx);
 }
 
 grpc_subchannel *grpc_subchannel_index_find(grpc_exec_ctx *exec_ctx,
