@@ -43,7 +43,7 @@
 #include "test/core/end2end/data/ssl_test_data.h"
 #include "test/core/util/port.h"
 #include "test/cpp/qps/limit_cores.h"
-#include "test/cpp/qps/timer.h"
+#include "test/cpp/qps/usage_timer.h"
 
 namespace grpc {
 namespace testing {

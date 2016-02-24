@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -35,7 +35,7 @@
 
 #ifdef GPR_POSIX_FILE
 
-#include "src/core/support/file.h"
+#include "src/core/support/tmpfile.h"
 
 #include <errno.h>
 #include <stdlib.h>
