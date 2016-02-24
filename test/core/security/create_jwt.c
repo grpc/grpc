@@ -36,7 +36,7 @@
 
 #include "src/core/security/credentials.h"
 #include "src/core/security/json_token.h"
-#include "src/core/support/file.h"
+#include "src/core/support/load_file.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/cmdline.h>

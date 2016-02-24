@@ -31,49 +31,41 @@
  *
  */
 
-#include <string.h>
+#include "test/cpp/qps/usage_timer.h"
 
-#include <grpc/grpc.h>
-#include <grpc/grpc_security.h>
-#include <grpc/support/log.h>
-#include <grpc/support/useful.h>
+#include <grpc/support/time.h>
+#include <sys/resource.h>
+#include <sys/time.h>
 
-#include "src/core/support/load_file.h"
+Timer::Timer() : start_(Sample()) {}
 
-#include "test/core/bad_ssl/server_common.h"
-#include "test/core/end2end/data/ssl_test_data.h"
+double Timer::Now() {
+  auto ts = gpr_now(GPR_CLOCK_REALTIME);
+  return ts.tv_sec + 1e-9 * ts.tv_nsec;
+}
 
-/* This server will present an untrusted cert to the connecting client,
- * causing the SSL handshake to fail */
+static double time_double(struct timeval* tv) {
+  return tv->tv_sec + 1e-6 * tv->tv_usec;
+}
 
-int main(int argc, char **argv) {
-  const char *addr = bad_ssl_addr(argc, argv);
-  grpc_ssl_pem_key_cert_pair pem_key_cert_pair;
-  grpc_server_credentials *ssl_creds;
-  grpc_server *server;
-  gpr_slice cert_slice, key_slice;
-  int ok;
+Timer::Result Timer::Sample() {
+  struct rusage usage;
+  struct timeval tv;
+  gettimeofday(&tv, NULL);
+  getrusage(RUSAGE_SELF, &usage);
 
-  grpc_init();
+  Result r;
+  r.wall = time_double(&tv);
+  r.user = time_double(&usage.ru_utime);
+  r.system = time_double(&usage.ru_stime);
+  return r;
+}
 
-  cert_slice = gpr_load_file("src/core/tsi/test_creds/badserver.pem", 1, &ok);
-  GPR_ASSERT(ok);
-  key_slice = gpr_load_file("src/core/tsi/test_creds/badserver.key", 1, &ok);
-  GPR_ASSERT(ok);
-  pem_key_cert_pair.private_key = (const char *)GPR_SLICE_START_PTR(key_slice);
-  pem_key_cert_pair.cert_chain = (const char *)GPR_SLICE_START_PTR(cert_slice);
-
-  ssl_creds =
-      grpc_ssl_server_credentials_create(NULL, &pem_key_cert_pair, 1, 0, NULL);
-  server = grpc_server_create(NULL, NULL);
-  GPR_ASSERT(grpc_server_add_secure_http2_port(server, addr, ssl_creds));
-  grpc_server_credentials_release(ssl_creds);
-
-  gpr_slice_unref(cert_slice);
-  gpr_slice_unref(key_slice);
-
-  bad_ssl_run(server);
-  grpc_shutdown();
-
-  return 0;
+Timer::Result Timer::Mark() const {
+  Result s = Sample();
+  Result r;
+  r.wall = s.wall - start_.wall;
+  r.user = s.user - start_.user;
+  r.system = s.system - start_.system;
+  return r;
 }

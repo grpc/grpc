@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,33 +31,27 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_SUPPORT_FILE_H
-#define GRPC_INTERNAL_CORE_SUPPORT_FILE_H
+#ifndef TEST_QPS_USAGE_TIMER_H
+#define TEST_QPS_USAGE_TIMER_H
 
-#include <stdio.h>
+class UsageTimer {
+ public:
+  Timer();
 
-#include <grpc/support/slice.h>
+  struct Result {
+    double wall;
+    double user;
+    double system;
+  };
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+  Result Mark() const;
 
-/* File utility functions */
+  static double Now();
 
-/* Loads the content of a file into a slice. add_null_terminator will add
-   a NULL terminator if non-zero. The success parameter, if not NULL,
-   will be set to 1 in case of success and 0 in case of failure. */
-gpr_slice gpr_load_file(const char *filename, int add_null_terminator,
-                        int *success);
+ private:
+  static Result Sample();
 
-/* Creates a temporary file from a prefix.
-   If tmp_filename is not NULL, *tmp_filename is assigned the name of the
-   created file and it is the responsibility of the caller to gpr_free it
-   unless an error occurs in which case it will be set to NULL. */
-FILE *gpr_tmpfile(const char *prefix, char **tmp_filename);
+  const Result start_;
+};
 
-#ifdef __cplusplus
-}
-#endif
-
-#endif /* GRPC_INTERNAL_CORE_SUPPORT_FILE_H */
+#endif  // TEST_QPS_TIMER_H
