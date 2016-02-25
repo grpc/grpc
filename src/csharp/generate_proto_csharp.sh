@@ -42,7 +42,7 @@ $PROTOC --plugin=$PLUGIN --csharp_out=$EXAMPLES_DIR --grpc_out=$EXAMPLES_DIR \
     -I src/proto/math src/proto/math/math.proto
 
 $PROTOC --plugin=$PLUGIN --csharp_out=$HEALTHCHECK_DIR --grpc_out=$HEALTHCHECK_DIR \
-    -I src/proto/grpc/health/v1alpha src/proto/grpc/health/v1alpha/health.proto
+    -I src/proto/grpc/health/v1 src/proto/grpc/health/v1/health.proto
 
 $PROTOC --plugin=$PLUGIN --csharp_out=$TESTING_DIR --grpc_out=$TESTING_DIR \
     -I . src/proto/grpc/testing/{control,empty,messages,payloads,services,stats,test}.proto 
