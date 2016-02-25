@@ -48,11 +48,9 @@ if test "$PHP_GRPC" != "no"; then
     src/core/support/env_linux.c \
     src/core/support/env_posix.c \
     src/core/support/env_win32.c \
-    src/core/support/file.c \
-    src/core/support/file_posix.c \
-    src/core/support/file_win32.c \
     src/core/support/histogram.c \
     src/core/support/host_port.c \
+    src/core/support/load_file.c \
     src/core/support/log.c \
     src/core/support/log_android.c \
     src/core/support/log_linux.c \
@@ -78,6 +76,8 @@ if test "$PHP_GRPC" != "no"; then
     src/core/support/time_precise.c \
     src/core/support/time_win32.c \
     src/core/support/tls_pthread.c \
+    src/core/support/tmpfile_posix.c \
+    src/core/support/tmpfile_win32.c \
     src/core/support/wrap_memcpy.c \
     src/core/census/grpc_context.c \
     src/core/census/grpc_filter.c \
@@ -109,7 +109,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/client_config/subchannel_factory.c \
     src/core/client_config/subchannel_index.c \
     src/core/client_config/uri_parser.c \
-    src/core/compression/algorithm.c \
+    src/core/compression/compression_algorithm.c \
     src/core/compression/message_compress.c \
     src/core/debug/trace.c \
     src/core/httpcli/format_request.c \
@@ -210,7 +210,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/transport/transport.c \
     src/core/transport/transport_op_string.c \
     src/core/httpcli/httpcli_security_connector.c \
-    src/core/security/base64.c \
+    src/core/security/b64.c \
     src/core/security/client_auth_filter.c \
     src/core/security/credentials.c \
     src/core/security/credentials_metadata.c \
