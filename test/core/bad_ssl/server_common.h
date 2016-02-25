@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,22 +31,12 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_SECURITY_BASE64_H
-#define GRPC_INTERNAL_CORE_SECURITY_BASE64_H
+#ifndef GRPC_TEST_CORE_BAD_SSL_SERVER_H
+#define GRPC_TEST_CORE_BAD_SSL_SERVER_H
 
-#include <grpc/support/slice.h>
+#include <grpc/grpc.h>
 
-/* Encodes data using base64. It is the caller's responsability to free
-   the returned char * using gpr_free. Returns NULL on NULL input. */
-char *grpc_base64_encode(const void *data, size_t data_size, int url_safe,
-                         int multiline);
+const char *bad_ssl_addr(int argc, char **argv);
+void bad_ssl_run(grpc_server *server);
 
-/* Decodes data according to the base64 specification. Returns an empty
-   slice in case of failure. */
-gpr_slice grpc_base64_decode(const char *b64, int url_safe);
-
-/* Same as above except that the length is provided by the caller. */
-gpr_slice grpc_base64_decode_with_len(const char *b64, size_t b64_len,
-                                      int url_safe);
-
-#endif /* GRPC_INTERNAL_CORE_SECURITY_BASE64_H */
+#endif /* GRPC_TEST_CORE_BAD_SSL_SERVER_H */

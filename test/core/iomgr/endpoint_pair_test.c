@@ -42,7 +42,7 @@
 #include "test/core/iomgr/endpoint_tests.h"
 #include "test/core/util/test_config.h"
 
-static gpr_mu g_mu;
+static gpr_mu *g_mu;
 static grpc_pollset *g_pollset;
 
 static void clean_up(void) {}
@@ -73,17 +73,15 @@ static void destroy_pollset(grpc_exec_ctx *exec_ctx, void *p, bool success) {
 int main(int argc, char **argv) {
   grpc_closure destroyed;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  gpr_mu_init(&g_mu);
   grpc_test_init(argc, argv);
   grpc_init();
   g_pollset = gpr_malloc(grpc_pollset_size());
   grpc_pollset_init(g_pollset, &g_mu);
-  grpc_endpoint_tests(configs[0], g_pollset, &g_mu);
+  grpc_endpoint_tests(configs[0], g_pollset, g_mu);
   grpc_closure_init(&destroyed, destroy_pollset, g_pollset);
   grpc_pollset_shutdown(&exec_ctx, g_pollset, &destroyed);
   grpc_exec_ctx_finish(&exec_ctx);
   grpc_shutdown();
-  gpr_mu_destroy(&g_mu);
   gpr_free(g_pollset);
 
   return 0;

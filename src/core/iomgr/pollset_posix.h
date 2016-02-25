@@ -69,7 +69,7 @@ struct grpc_pollset {
      For example, we may choose a poll() based implementation on linux for
      few fds, and an epoll() based implementation for many fds */
   const grpc_pollset_vtable *vtable;
-  gpr_mu *mu;
+  gpr_mu mu;
   grpc_pollset_worker root_worker;
   int in_flight_cbs;
   int shutting_down;

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,27 +31,25 @@
  *
  */
 
-#ifndef TEST_QPS_TIMER_H
-#define TEST_QPS_TIMER_H
+#ifndef GRPC_INTERNAL_CORE_SUPPORT_LOAD_FILE_H
+#define GRPC_INTERNAL_CORE_SUPPORT_LOAD_FILE_H
 
-class Timer {
- public:
-  Timer();
+#include <stdio.h>
 
-  struct Result {
-    double wall;
-    double user;
-    double system;
-  };
+#include <grpc/support/slice.h>
 
-  Result Mark() const;
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-  static double Now();
+/* Loads the content of a file into a slice. add_null_terminator will add
+   a NULL terminator if non-zero. The success parameter, if not NULL,
+   will be set to 1 in case of success and 0 in case of failure. */
+gpr_slice gpr_load_file(const char *filename, int add_null_terminator,
+                        int *success);
 
- private:
-  static Result Sample();
+#ifdef __cplusplus
+}
+#endif
 
-  const Result start_;
-};
-
-#endif  // TEST_QPS_TIMER_H
+#endif /* GRPC_INTERNAL_CORE_SUPPORT_LOAD_FILE_H */

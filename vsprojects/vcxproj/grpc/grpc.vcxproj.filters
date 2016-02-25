@@ -91,7 +91,7 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\client_config\uri_parser.c">
       <Filter>src\core\client_config</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\compression\algorithm.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\compression\compression_algorithm.c">
       <Filter>src\core\compression</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\compression\message_compress.c">
@@ -394,7 +394,7 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\httpcli\httpcli_security_connector.c">
       <Filter>src\core\httpcli</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\security\base64.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\security\b64.c">
       <Filter>src\core\security</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\security\client_auth_filter.c">
@@ -872,7 +872,7 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\security\auth_filters.h">
       <Filter>src\core\security</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\security\base64.h">
+    <ClInclude Include="$(SolutionDir)\..\src\core\security\b64.h">
       <Filter>src\core\security</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\security\credentials.h">
