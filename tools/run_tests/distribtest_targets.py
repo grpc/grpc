@@ -201,7 +201,7 @@ class RubyDistribTest(object):
 class PHPDistribTest(object):
   """Tests PHP package"""
 
-  def __init__(self, platform, arch, docker_suffix):
+  def __init__(self, platform, arch, docker_suffix=None):
     self.name = 'php_%s_%s_%s' % (platform, arch, docker_suffix)
     self.platform = platform
     self.arch = arch
@@ -212,14 +212,18 @@ class PHPDistribTest(object):
     return []
 
   def build_jobspec(self):
-    if not self.platform == 'linux':
+    if self.platform == 'linux':
+      return create_docker_jobspec(self.name,
+                                   'tools/dockerfile/distribtest/php_%s_%s' % (
+                                       self.docker_suffix,
+                                       self.arch),
+                                   'test/distrib/php/run_distrib_test.sh')
+    elif self.platform == 'macos':
+      return create_jobspec(self.name,
+          ['test/distrib/php/run_distrib_test.sh'],
+          environ={'EXTERNAL_GIT_ROOT': '../../..'})
+    else:
       raise Exception("Not supported yet.")
-
-    return create_docker_jobspec(self.name,
-          'tools/dockerfile/distribtest/php_%s_%s' % (
-              self.docker_suffix,
-              self.arch),
-          'test/distrib/php/run_distrib_test.sh')
 
   def __str__(self):
     return self.name
@@ -271,6 +275,7 @@ def targets():
           NodeDistribTest('macos', 'x64', None, '5'),
           NodeDistribTest('linux', 'x86', 'jessie', '4'),
           PHPDistribTest('linux', 'x64', 'jessie'),
+          PHPDistribTest('macos', 'x64'),
           ] + [
             NodeDistribTest('linux', 'x64', os, version)
             for os in ('wheezy', 'jessie', 'ubuntu1204', 'ubuntu1404',

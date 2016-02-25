@@ -58,7 +58,6 @@ void test_tcp_server_init(test_tcp_server *server,
   grpc_closure_init(&server->shutdown_complete, on_server_destroyed, server);
   server->shutdown = 0;
   server->pollset = gpr_malloc(grpc_pollset_size());
-  gpr_mu_init(&server->mu);
   grpc_pollset_init(server->pollset, &server->mu);
   server->on_connect = on_connect;
   server->cb_data = user_data;
@@ -91,10 +90,10 @@ void test_tcp_server_poll(test_tcp_server *server, int seconds) {
       gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
                    gpr_time_from_seconds(seconds, GPR_TIMESPAN));
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  gpr_mu_lock(&server->mu);
+  gpr_mu_lock(server->mu);
   grpc_pollset_work(&exec_ctx, server->pollset, &worker,
                     gpr_now(GPR_CLOCK_MONOTONIC), deadline);
-  gpr_mu_unlock(&server->mu);
+  gpr_mu_unlock(server->mu);
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
@@ -116,6 +115,5 @@ void test_tcp_server_destroy(test_tcp_server *server) {
   grpc_exec_ctx_finish(&exec_ctx);
   grpc_pollset_destroy(server->pollset);
   gpr_free(server->pollset);
-  gpr_mu_destroy(&server->mu);
   grpc_shutdown();
 }

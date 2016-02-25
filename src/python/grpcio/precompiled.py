@@ -100,3 +100,5 @@ def update_setup_arguments(setup_arguments):
     sys.stderr.write(
         'could not write precompiled extension to directory: {} -> {}\n'
             .format(url, target_path))
+    return
+  setup_arguments['package_data']['grpc._cython'].append('cygrpc.so')
