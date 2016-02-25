@@ -159,13 +159,21 @@ class CLanguage(object):
             target['name'])
       else:
         binary = 'bins/%s/%s' % (self.config.build_config, target['name'])
+      env = {}
+      shortname = ' '.join(cmdline)
+      if 'env' in target:
+        tenv = target['env']
+        env.update(tenv)
+        shortname += ' '
+        shortname += ' '.join('%s=%s' % (key, tenv[key]) for key in sorted(tenv.keys()))
+      env['GRPC_DEFAULT_SSL_ROOTS_FILE_PATH'] = (
+          _ROOT + '/src/core/tsi/test_creds/ca.pem')
       if os.path.isfile(binary):
         cmdline = [binary] + target['args']
         out.append(self.config.job_spec(cmdline, [binary],
                                         shortname=' '.join(cmdline),
                                         cpu_cost=target['cpu_cost'],
-                                        environ={'GRPC_DEFAULT_SSL_ROOTS_FILE_PATH':
-                                                 _ROOT + '/src/core/tsi/test_creds/ca.pem'}))
+                                        environ=env))
       elif self.args.regex == '.*' or self.platform == 'windows':
         print '\nWARNING: binary not found, skipping', binary
     return sorted(out)
