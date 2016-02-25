@@ -50,7 +50,7 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
-#include "src/core/iomgr/pollset_posix.h"
+#include "src/core/iomgr/iomgr.h"
 #include "test/core/util/test_config.h"
 
 static gpr_mu g_mu;
@@ -134,7 +134,7 @@ static void session_shutdown_cb(grpc_exec_ctx *exec_ctx, void *arg, /*session */
 static void session_read_cb(grpc_exec_ctx *exec_ctx, void *arg, /*session */
                             bool success) {
   session *se = arg;
-  int fd = se->em_fd->fd;
+  int fd = grpc_fd_wrapped_fd(se->em_fd);
 
   ssize_t read_once = 0;
   ssize_t read_total = 0;
@@ -204,7 +204,7 @@ static void listen_cb(grpc_exec_ctx *exec_ctx, void *arg, /*=sv_arg*/
     return;
   }
 
-  fd = accept(listen_em_fd->fd, (struct sockaddr *)&ss, &slen);
+  fd = accept(grpc_fd_wrapped_fd(listen_em_fd), (struct sockaddr *)&ss, &slen);
   GPR_ASSERT(fd >= 0);
   GPR_ASSERT(fd < FD_SETSIZE);
   flags = fcntl(fd, F_GETFL, 0);
@@ -306,7 +306,7 @@ static void client_session_shutdown_cb(grpc_exec_ctx *exec_ctx,
 static void client_session_write(grpc_exec_ctx *exec_ctx, void *arg, /*client */
                                  bool success) {
   client *cl = arg;
-  int fd = cl->em_fd->fd;
+  int fd = grpc_fd_wrapped_fd(cl->em_fd);
   ssize_t write_once = 0;
 
   if (!success) {

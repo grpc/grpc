@@ -45,11 +45,12 @@
 #include <grpc/support/time.h>
 
 #include "src/core/iomgr/iomgr.h"
+#include "src/core/iomgr/pollset_set.h"
 #include "src/core/iomgr/socket_utils_posix.h"
 #include "src/core/iomgr/timer.h"
 #include "test/core/util/test_config.h"
 
-static grpc_pollset_set g_pollset_set;
+static grpc_pollset_set *g_pollset_set;
 static gpr_mu g_mu;
 static grpc_pollset *g_pollset;
 static int g_connections_complete = 0;
@@ -108,7 +109,7 @@ void test_succeeds(void) {
   /* connect to it */
   GPR_ASSERT(getsockname(svr_fd, (struct sockaddr *)&addr, &addr_len) == 0);
   grpc_closure_init(&done, must_succeed, NULL);
-  grpc_tcp_client_connect(&exec_ctx, &done, &g_connecting, &g_pollset_set,
+  grpc_tcp_client_connect(&exec_ctx, &done, &g_connecting, g_pollset_set,
                           (struct sockaddr *)&addr, addr_len,
                           gpr_inf_future(GPR_CLOCK_REALTIME));
 
@@ -155,7 +156,7 @@ void test_fails(void) {
 
   /* connect to a broken address */
   grpc_closure_init(&done, must_fail, NULL);
-  grpc_tcp_client_connect(&exec_ctx, &done, &g_connecting, &g_pollset_set,
+  grpc_tcp_client_connect(&exec_ctx, &done, &g_connecting, g_pollset_set,
                           (struct sockaddr *)&addr, addr_len,
                           gpr_inf_future(GPR_CLOCK_REALTIME));
 
@@ -224,7 +225,7 @@ void test_times_out(void) {
   gpr_mu_unlock(&g_mu);
 
   grpc_closure_init(&done, must_fail, NULL);
-  grpc_tcp_client_connect(&exec_ctx, &done, &g_connecting, &g_pollset_set,
+  grpc_tcp_client_connect(&exec_ctx, &done, &g_connecting, g_pollset_set,
                           (struct sockaddr *)&addr, addr_len, connect_deadline);
 
   /* Make sure the event doesn't trigger early */
@@ -279,17 +280,17 @@ int main(int argc, char **argv) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_test_init(argc, argv);
   grpc_init();
-  grpc_pollset_set_init(&g_pollset_set);
+  g_pollset_set = grpc_pollset_set_create();
   g_pollset = gpr_malloc(grpc_pollset_size());
   gpr_mu_init(&g_mu);
   grpc_pollset_init(g_pollset, &g_mu);
-  grpc_pollset_set_add_pollset(&exec_ctx, &g_pollset_set, g_pollset);
+  grpc_pollset_set_add_pollset(&exec_ctx, g_pollset_set, g_pollset);
   grpc_exec_ctx_finish(&exec_ctx);
   test_succeeds();
   gpr_log(GPR_ERROR, "End of first test");
   test_fails();
   test_times_out();
-  grpc_pollset_set_destroy(&g_pollset_set);
+  grpc_pollset_set_destroy(g_pollset_set);
   grpc_closure_init(&destroyed, destroy_pollset, g_pollset);
   grpc_pollset_shutdown(&exec_ctx, g_pollset, &destroyed);
   grpc_exec_ctx_finish(&exec_ctx);

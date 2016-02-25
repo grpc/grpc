@@ -659,9 +659,6 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\iomgr\pollset_set.h">
       <Filter>src\core\iomgr</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\iomgr\pollset_set_posix.h">
-      <Filter>src\core\iomgr</Filter>
-    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\iomgr\pollset_set_windows.h">
       <Filter>src\core\iomgr</Filter>
     </ClInclude>
