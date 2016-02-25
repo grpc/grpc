@@ -161,6 +161,10 @@ class CLanguage(object):
         binary = 'bins/%s/%s' % (self.config.build_config, target['name'])
       if os.path.isfile(binary):
         if 'gtest' in target and target['gtest']:
+          # here we parse the output of --gtest_list_tests to build up a
+          # complete list of the tests contained in a binary
+          # for each test, we then add a job to run, filtering for just that
+          # test
           with open(os.devnull, 'w') as fnull:
             tests = subprocess.check_output([binary, '--gtest_list_tests'],
                                             stderr=fnull)
