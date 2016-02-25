@@ -64,8 +64,9 @@ grpc_alarm *grpc_alarm_create(grpc_completion_queue *cq, gpr_timespec deadline,
   alarm->tag = tag;
 
   grpc_cq_begin_op(cq, tag);
-  grpc_timer_init(&exec_ctx, &alarm->alarm, deadline, alarm_cb, alarm,
-                  gpr_now(GPR_CLOCK_MONOTONIC));
+  grpc_timer_init(&exec_ctx, &alarm->alarm,
+                  gpr_convert_clock_type(deadline, GPR_CLOCK_MONOTONIC),
+                  alarm_cb, alarm, gpr_now(GPR_CLOCK_MONOTONIC));
   grpc_exec_ctx_finish(&exec_ctx);
   return alarm;
 }
