@@ -31,41 +31,25 @@
  *
  */
 
-#import <GRPCClient/GRPCCall+Tests.h>
+#ifndef GRPC_INTERNAL_CORE_SUPPORT_TMPFILE_H
+#define GRPC_INTERNAL_CORE_SUPPORT_TMPFILE_H
 
-#import "InteropTests.h"
+#include <stdio.h>
 
-static NSString * const kLocalSSLHost = @"localhost:5051";
+#include <grpc/support/slice.h>
 
-/** Tests in InteropTests.m, sending the RPCs to a local SSL server. */
-@interface InteropTestsLocalSSL : InteropTests
-@end
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-@implementation InteropTestsLocalSSL
+/* Creates a temporary file from a prefix.
+   If tmp_filename is not NULL, *tmp_filename is assigned the name of the
+   created file and it is the responsibility of the caller to gpr_free it
+   unless an error occurs in which case it will be set to NULL. */
+FILE *gpr_tmpfile(const char *prefix, char **tmp_filename);
 
-+ (NSString *)host {
-  return kLocalSSLHost;
+#ifdef __cplusplus
 }
+#endif
 
-- (void)setUp {
-  // Register test server certificates and name.
-  NSBundle *bundle = [NSBundle bundleForClass:self.class];
-  NSString *certsPath = [bundle pathForResource:@"TestCertificates.bundle/test-certificates"
-                                         ofType:@"pem"];
-  [GRPCCall useTestCertsPath:certsPath testName:@"foo.test.google.fr" forHost:kLocalSSLHost];
-
-  [super setUp];
-}
-
-- (void)testExceptions {
-  // Try to set userAgentPrefix for host that is nil. This should cause
-  // an exception.
-  @try {
-    [GRPCCall useTestCertsPath:nil testName:nil forHost:nil];
-    XCTFail(@"Did not receive an exception when parameters are nil");
-  } @catch(NSException *theException) {
-    NSLog(@"Received exception as expected: %@", theException.name);
-  }
-}
-
-@end
+#endif /* GRPC_INTERNAL_CORE_SUPPORT_TMPFILE_H */

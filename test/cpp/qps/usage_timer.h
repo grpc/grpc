@@ -31,41 +31,27 @@
  *
  */
 
-#import <GRPCClient/GRPCCall+Tests.h>
+#ifndef TEST_QPS_USAGE_TIMER_H
+#define TEST_QPS_USAGE_TIMER_H
 
-#import "InteropTests.h"
+class UsageTimer {
+ public:
+  UsageTimer();
 
-static NSString * const kLocalSSLHost = @"localhost:5051";
+  struct Result {
+    double wall;
+    double user;
+    double system;
+  };
 
-/** Tests in InteropTests.m, sending the RPCs to a local SSL server. */
-@interface InteropTestsLocalSSL : InteropTests
-@end
+  Result Mark() const;
 
-@implementation InteropTestsLocalSSL
+  static double Now();
 
-+ (NSString *)host {
-  return kLocalSSLHost;
-}
+ private:
+  static Result Sample();
 
-- (void)setUp {
-  // Register test server certificates and name.
-  NSBundle *bundle = [NSBundle bundleForClass:self.class];
-  NSString *certsPath = [bundle pathForResource:@"TestCertificates.bundle/test-certificates"
-                                         ofType:@"pem"];
-  [GRPCCall useTestCertsPath:certsPath testName:@"foo.test.google.fr" forHost:kLocalSSLHost];
+  const Result start_;
+};
 
-  [super setUp];
-}
-
-- (void)testExceptions {
-  // Try to set userAgentPrefix for host that is nil. This should cause
-  // an exception.
-  @try {
-    [GRPCCall useTestCertsPath:nil testName:nil forHost:nil];
-    XCTFail(@"Did not receive an exception when parameters are nil");
-  } @catch(NSException *theException) {
-    NSLog(@"Received exception as expected: %@", theException.name);
-  }
-}
-
-@end
+#endif  // TEST_QPS_TIMER_H
