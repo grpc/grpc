@@ -36,6 +36,7 @@
 
 #include "src/core/iomgr/exec_ctx.h"
 #include "src/core/iomgr/pollset.h"
+#include "src/core/iomgr/pollset_set.h"
 
 typedef struct grpc_fd grpc_fd;
 

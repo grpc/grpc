@@ -63,6 +63,7 @@
 
 #include "src/core/iomgr/iomgr_internal.h"
 #include "src/core/iomgr/wakeup_fd_posix.h"
+#include "src/core/iomgr/pollset_set_posix.h"
 #include "src/core/profiling/timers.h"
 #include "src/core/support/block_annotate.h"
 
@@ -280,6 +281,26 @@ void grpc_remove_fd_from_all_epoll_sets(int fd);
 typedef int (*grpc_poll_function_type)(struct pollfd *, nfds_t, int);
 extern grpc_poll_function_type grpc_poll_function;
 extern grpc_wakeup_fd grpc_global_wakeup_fd;
+
+/*******************************************************************************
+ * pollset_set definitions
+ */
+
+struct grpc_pollset_set {
+  gpr_mu mu;
+
+  size_t pollset_count;
+  size_t pollset_capacity;
+  grpc_pollset **pollsets;
+
+  size_t pollset_set_count;
+  size_t pollset_set_capacity;
+  struct grpc_pollset_set **pollset_sets;
+
+  size_t fd_count;
+  size_t fd_capacity;
+  grpc_fd **fds;
+};
 
 /*******************************************************************************
  * fd_posix.c
