@@ -35,6 +35,7 @@ try:
   from mako import exceptions
 except (ImportError):
   pass  # Mako not installed but it is ok. 
+import json
 import os
 import string
 import xml.etree.cElementTree as ET
@@ -73,6 +74,22 @@ def render_junit_xml_report(resultset, xml_report):
         ET.SubElement(xml_test, 'error', message='Timeout')
   tree = ET.ElementTree(root)
   tree.write(xml_report, encoding='UTF-8')
+
+
+def render_json_report(resultset, json_report):
+  """Generate a machine-readable JSON report."""
+  report = {}
+  for shortname, results in resultset.iteritems():
+    if not report.has_key(shortname):
+      report[shortname] = []
+    for result in results:
+      r = {'state': result.state,
+           'elapsed_time': result.elapsed_time,
+           'message': result.message,
+           'returncode': result.returncode}
+      report[shortname].append(r)
+  with open(json_report, 'w') as f:
+    json.dump(report, f, indent=2)
 
 
 def render_interop_html_report(
