@@ -37,7 +37,7 @@
 #include <string.h>
 
 #include "src/core/httpcli/httpcli.h"
-#include "src/core/security/base64.h"
+#include "src/core/security/b64.h"
 #include "src/core/tsi/ssl_types.h"
 
 #include <grpc/support/alloc.h>

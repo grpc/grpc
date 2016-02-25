@@ -57,13 +57,14 @@ filegroups:
   - src/core/profiling/timers.h
   - src/core/support/block_annotate.h
   - src/core/support/env.h
-  - src/core/support/file.h
+  - src/core/support/load_file.h
   - src/core/support/murmur_hash.h
   - src/core/support/stack_lockfree.h
   - src/core/support/string.h
   - src/core/support/string_win32.h
   - src/core/support/thd_internal.h
   - src/core/support/time_precise.h
+  - src/core/support/tmpfile.h
   src:
   - src/core/profiling/basic_timers.c
   - src/core/profiling/stap_timers.c
@@ -77,11 +78,9 @@ filegroups:
   - src/core/support/env_linux.c
   - src/core/support/env_posix.c
   - src/core/support/env_win32.c
-  - src/core/support/file.c
-  - src/core/support/file_posix.c
-  - src/core/support/file_win32.c
   - src/core/support/histogram.c
   - src/core/support/host_port.c
+  - src/core/support/load_file.c
   - src/core/support/log.c
   - src/core/support/log_android.c
   - src/core/support/log_linux.c
@@ -107,6 +106,8 @@ filegroups:
   - src/core/support/time_precise.c
   - src/core/support/time_win32.c
   - src/core/support/tls_pthread.c
+  - src/core/support/tmpfile_posix.c
+  - src/core/support/tmpfile_win32.c
   - src/core/support/wrap_memcpy.c
 - name: gpr_codegen
   public_headers:
@@ -390,7 +391,7 @@ filegroups:
   - src/core/client_config/subchannel_factory.c
   - src/core/client_config/subchannel_index.c
   - src/core/client_config/uri_parser.c
-  - src/core/compression/algorithm.c
+  - src/core/compression/compression_algorithm.c
   - src/core/compression/message_compress.c
   - src/core/debug/trace.c
   - src/core/httpcli/format_request.c
@@ -501,7 +502,7 @@ filegroups:
 - name: grpc_secure
   headers:
   - src/core/security/auth_filters.h
-  - src/core/security/base64.h
+  - src/core/security/b64.h
   - src/core/security/credentials.h
   - src/core/security/handshake.h
   - src/core/security/json_token.h
@@ -516,7 +517,7 @@ filegroups:
   - src/core/tsi/transport_security_interface.h
   src:
   - src/core/httpcli/httpcli_security_connector.c
-  - src/core/security/base64.c
+  - src/core/security/b64.c
   - src/core/security/client_auth_filter.c
   - src/core/security/credentials.c
   - src/core/security/credentials_metadata.c
@@ -871,7 +872,7 @@ libs:
   - src/proto/grpc/testing/empty.proto
   - src/proto/grpc/testing/messages.proto
   - src/proto/grpc/testing/test.proto
-  - test/cpp/interop/server.cc
+  - test/cpp/interop/server_main.cc
   deps:
   - interop_server_helper
   - grpc++_test_util
@@ -895,7 +896,7 @@ libs:
   - test/cpp/qps/report.h
   - test/cpp/qps/server.h
   - test/cpp/qps/stats.h
-  - test/cpp/qps/timer.h
+  - test/cpp/qps/usage_timer.h
   - test/cpp/util/benchmark_config.h
   src:
   - src/proto/grpc/testing/messages.proto
@@ -913,7 +914,7 @@ libs:
   - test/cpp/qps/report.cc
   - test/cpp/qps/server_async.cc
   - test/cpp/qps/server_sync.cc
-  - test/cpp/qps/timer.cc
+  - test/cpp/qps/usage_timer.cc
   - test/cpp/util/benchmark_config.cc
   deps:
   - grpc_test_util
@@ -992,16 +993,6 @@ targets:
   language: c
   src:
   - test/core/census/context_test.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-- name: census_log_test
-  build: test
-  language: c
-  src:
-  - test/core/census/mlog_test.c
   deps:
   - grpc_test_util
   - grpc
@@ -1228,14 +1219,6 @@ targets:
   deps:
   - gpr_test_util
   - gpr
-- name: gpr_file_test
-  build: test
-  language: c
-  src:
-  - test/core/support/file_test.c
-  deps:
-  - gpr_test_util
-  - gpr
 - name: gpr_histogram_test
   build: test
   language: c
@@ -1249,6 +1232,14 @@ targets:
   language: c
   src:
   - test/core/support/host_port_test.c
+  deps:
+  - gpr_test_util
+  - gpr
+- name: gpr_load_file_test
+  build: test
+  language: c
+  src:
+  - test/core/support/load_file_test.c
   deps:
   - gpr_test_util
   - gpr
@@ -1345,11 +1336,11 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
-- name: grpc_base64_test
+- name: grpc_b64_test
   build: test
   language: c
   src:
-  - test/core/security/base64_test.c
+  - test/core/security/b64_test.c
   deps:
   - grpc_test_util
   - grpc
@@ -1661,6 +1652,16 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: mlog_test
+  build: test
+  language: c
+  src:
+  - test/core/census/mlog_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: multiple_server_queues_test
   build: test
   language: c
@@ -1953,6 +1954,7 @@ targets:
   - linux
   - posix
 - name: alarm_cpp_test
+  gtest: true
   build: test
   language: c++
   src:
@@ -1965,6 +1967,7 @@ targets:
   - gpr_test_util
   - gpr
 - name: async_end2end_test
+  gtest: true
   build: test
   language: c++
   src:
@@ -2011,6 +2014,7 @@ targets:
   - linux
   - posix
 - name: auth_property_iterator_test
+  gtest: true
   build: test
   language: c++
   src:
@@ -2023,6 +2027,7 @@ targets:
   - gpr_test_util
   - gpr
 - name: channel_arguments_test
+  gtest: true
   build: test
   language: c++
   src:
@@ -2032,6 +2037,7 @@ targets:
   - grpc
   - gpr
 - name: cli_call_test
+  gtest: true
   build: test
   language: c++
   src:
@@ -2044,6 +2050,7 @@ targets:
   - gpr_test_util
   - gpr
 - name: client_crash_test
+  gtest: true
   cpu_cost: 0.1
   build: test
   language: c++
@@ -2074,6 +2081,7 @@ targets:
   - gpr_test_util
   - gpr
 - name: credentials_test
+  gtest: true
   build: test
   language: c++
   src:
@@ -2083,6 +2091,7 @@ targets:
   - grpc
   - gpr
 - name: cxx_byte_buffer_test
+  gtest: true
   build: test
   language: c++
   src:
@@ -2094,6 +2103,7 @@ targets:
   - gpr_test_util
   - gpr
 - name: cxx_slice_test
+  gtest: true
   build: test
   language: c++
   src:
@@ -2105,6 +2115,7 @@ targets:
   - gpr_test_util
   - gpr
 - name: cxx_string_ref_test
+  gtest: true
   build: test
   language: c++
   src:
@@ -2112,6 +2123,7 @@ targets:
   deps:
   - grpc++
 - name: cxx_time_test
+  gtest: true
   build: test
   language: c++
   src:
@@ -2123,6 +2135,7 @@ targets:
   - gpr_test_util
   - gpr
 - name: end2end_test
+  gtest: true
   cpu_cost: 0.5
   build: test
   language: c++
@@ -2153,6 +2166,7 @@ targets:
   - linux
   - posix
 - name: generic_end2end_test
+  gtest: true
   build: test
   language: c++
   src:
@@ -2229,6 +2243,7 @@ targets:
   vs_config_type: Application
   vs_project_guid: '{069E9D05-B78B-4751-9252-D21EBAE7DE8E}'
 - name: grpclb_api_test
+  gtest: true
   build: test
   language: c++
   src:
@@ -2240,6 +2255,7 @@ targets:
   - grpc++
   - grpc
 - name: hybrid_end2end_test
+  gtest: true
   build: test
   language: c++
   src:
@@ -2319,6 +2335,7 @@ targets:
   - gpr
   - grpc++_test_config
 - name: mock_test
+  gtest: true
   build: test
   language: c++
   src:
@@ -2454,6 +2471,7 @@ targets:
   - gpr
   - grpc++_test_config
 - name: secure_auth_context_test
+  gtest: true
   build: test
   language: c++
   src:
@@ -2483,6 +2501,7 @@ targets:
   - linux
   - posix
 - name: server_crash_test
+  gtest: true
   cpu_cost: 0.1
   build: test
   language: c++
@@ -2513,6 +2532,7 @@ targets:
   - gpr_test_util
   - gpr
 - name: shutdown_test
+  gtest: true
   build: test
   language: c++
   src:
@@ -2536,6 +2556,7 @@ targets:
   - gpr_test_util
   - gpr
 - name: streaming_throughput_test
+  gtest: true
   build: test
   language: c++
   src:
@@ -2612,6 +2633,7 @@ targets:
   - linux
   - posix
 - name: thread_stress_test
+  gtest: true
   cpu_cost: 100
   build: test
   language: c++
@@ -2625,6 +2647,7 @@ targets:
   - gpr_test_util
   - gpr
 - name: zookeeper_test
+  gtest: true
   build: test
   run: false
   language: c++
@@ -2815,12 +2838,15 @@ node_modules:
   - src/node/ext/server.cc
   - src/node/ext/server_credentials.cc
   - src/node/ext/timeval.cc
+openssl_fallback:
+  base_uri: http://openssl.org/source/
+  extraction_dir: openssl-1.0.2f
+  tarball: openssl-1.0.2f.tar.gz
 php_config_m4:
   deps:
   - grpc
   - gpr
   - boringssl
-  - z
   headers:
   - src/php/ext/grpc/byte_buffer.h
   - src/php/ext/grpc/call.h

@@ -44,7 +44,7 @@
 #include "src/core/iomgr/pollset_posix.h"
 #include "src/core/security/credentials.h"
 #include "src/core/support/env.h"
-#include "src/core/support/file.h"
+#include "src/core/support/tmpfile.h"
 #include "src/core/support/string.h"
 #include "test/core/end2end/data/ssl_test_data.h"
 #include "test/core/util/port.h"

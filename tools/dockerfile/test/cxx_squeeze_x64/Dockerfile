@@ -1,4 +1,4 @@
-# Copyright 2015-2016, Google Inc.
+# Copyright 2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -68,6 +68,10 @@ RUN apt-get update && apt-get -y install libgtest-dev libc++-dev clang && apt-ge
 
 RUN apt-get update && apt-get -y install python-pip && apt-get clean
 RUN pip install argparse
+
+RUN wget http://openssl.org/source/openssl-1.0.2f.tar.gz
+
+ENV POST_GIT_STEP tools/dockerfile/test/cxx_squeeze_x64/post-git-setup.sh
 
 # Prepare ccache
 RUN ln -s /usr/bin/ccache /usr/local/bin/gcc

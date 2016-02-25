@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,12 +31,13 @@
  *
  */
 
-#ifndef GRPC_TEST_CORE_BAD_SSL_SERVER_H
-#define GRPC_TEST_CORE_BAD_SSL_SERVER_H
+// Check that boringssl is going to compile
 
-#include <grpc/grpc.h>
+#include <stdio.h>
+#include <unistd.h>
 
-const char *bad_ssl_addr(int argc, char **argv);
-void bad_ssl_run(grpc_server *server);
-
-#endif /* GRPC_TEST_CORE_BAD_SSL_SERVER_H */
+int main(void) {
+  const char *close = "this should not shadow";
+  printf("%s\n", close);
+  return 0;
+}
