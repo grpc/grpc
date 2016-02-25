@@ -4,6 +4,9 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup />
   <ItemDefinitionGroup>
+    <ClCompile>
+      <DisableSpecificWarnings>4244;4267;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+    </ClCompile>
     <Link>
       <AdditionalDependencies>libprotoc.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(SolutionDir)\..\third_party\protobuf\cmake\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>

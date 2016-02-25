@@ -485,7 +485,8 @@ struct grpc_chttp2_stream {
 
 /** Someone is unlocking the transport mutex: check to see if writes
     are required, and schedule them if so */
-int grpc_chttp2_unlocking_check_writes(grpc_chttp2_transport_global *global,
+int grpc_chttp2_unlocking_check_writes(grpc_exec_ctx *exec_ctx,
+                                       grpc_chttp2_transport_global *global,
                                        grpc_chttp2_transport_writing *writing,
                                        int is_parsing);
 void grpc_chttp2_perform_writes(
@@ -568,8 +569,12 @@ void grpc_chttp2_list_add_writing_stalled_by_transport(
     grpc_chttp2_transport_writing *transport_writing,
     grpc_chttp2_stream_writing *stream_writing);
 void grpc_chttp2_list_flush_writing_stalled_by_transport(
-    grpc_chttp2_transport_writing *transport_writing, bool is_window_available);
+    grpc_exec_ctx *exec_ctx, grpc_chttp2_transport_writing *transport_writing,
+    bool is_window_available);
 
+void grpc_chttp2_list_add_stalled_by_transport(
+    grpc_chttp2_transport_writing *transport_writing,
+    grpc_chttp2_stream_writing *stream_writing);
 int grpc_chttp2_list_pop_stalled_by_transport(
     grpc_chttp2_transport_global *transport_global,
     grpc_chttp2_stream_global **stream_global);
