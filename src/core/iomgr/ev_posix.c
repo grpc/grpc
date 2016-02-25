@@ -33,18 +33,93 @@
 
 #include "src/core/iomgr/ev_posix.h"
 
+#include <string.h>
+
+#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
+#include <grpc/support/useful.h>
 
 #include "src/core/iomgr/ev_poll_and_epoll_posix.h"
+#include "src/core/iomgr/ev_poll_posix.h"
+#include "src/core/support/env.h"
 
 static const grpc_event_engine_vtable *g_event_engine;
 
-void grpc_event_engine_init(void) {
-  if ((g_event_engine = grpc_init_poll_and_epoll_posix())) {
-    return;
+typedef const grpc_event_engine_vtable *(*event_engine_factory_fn)(void);
+
+typedef struct {
+  const char *name;
+  event_engine_factory_fn factory;
+} event_engine_factory;
+
+static const event_engine_factory g_factories[] = {
+    {"poll", grpc_init_poll_posix}, {"legacy", grpc_init_poll_and_epoll_posix},
+};
+
+static void add(const char *beg, const char *end, char ***ss, size_t *ns) {
+  size_t n = *ns;
+  size_t np = n + 1;
+  char *s;
+  size_t len;
+  GPR_ASSERT(end >= beg);
+  len = (size_t)(end - beg);
+  s = gpr_malloc(len + 1);
+  memcpy(s, beg, len);
+  s[len] = 0;
+  *ss = gpr_realloc(*ss, sizeof(char **) * np);
+  (*ss)[n] = s;
+  *ns = np;
+}
+
+static void split(const char *s, char ***ss, size_t *ns) {
+  const char *c = strchr(s, ',');
+  if (c == NULL) {
+    add(s, s + strlen(s), ss, ns);
+  } else {
+    add(s, c, ss, ns);
+    split(c + 1, ss, ns);
   }
-  gpr_log(GPR_ERROR, "No event engine could be initialized");
-  abort();
+}
+
+static bool is(const char *want, const char *have) {
+  return 0 == strcmp(want, "all") || 0 == strcmp(want, have);
+}
+
+static void try_engine(const char *engine) {
+  for (size_t i = 0; i < GPR_ARRAY_SIZE(g_factories); i++) {
+    if (is(engine, g_factories[i].name)) {
+      if ((g_event_engine = g_factories[i].factory())) {
+        return;
+      }
+    }
+  }
+}
+
+void grpc_event_engine_init(void) {
+  char *s = gpr_getenv("GRPC_POLL_STRATEGY");
+  if (s == NULL) {
+    s = gpr_strdup("all");
+  }
+
+  char **strings = NULL;
+  size_t nstrings = 0;
+  split(s, &strings, &nstrings);
+
+  for (size_t i = 0; g_event_engine == NULL && i < nstrings; i++) {
+    try_engine(strings[i]);
+  }
+
+  for (size_t i = 0; i < nstrings; i++) {
+    gpr_free(strings[i]);
+  }
+  gpr_free(strings);
+  gpr_free(s);
+
+  if (g_event_engine == NULL) {
+    gpr_log(GPR_ERROR, "No event engine could be initialized");
+    abort();
+  }
 }
 
 void grpc_event_engine_shutdown(void) { g_event_engine->shutdown_engine(); }
