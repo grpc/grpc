@@ -80,7 +80,7 @@ static void multipoll_with_poll_pollset_add_fd(grpc_exec_ctx *exec_ctx,
   GRPC_FD_REF(fd, "multipoller");
 exit:
   if (and_unlock_pollset) {
-    gpr_mu_unlock(pollset->mu);
+    gpr_mu_unlock(&pollset->mu);
   }
 }
 
@@ -132,7 +132,7 @@ static void multipoll_with_poll_pollset_maybe_work_and_unlock(
   }
   h->del_count = 0;
   h->fd_count = fd_count;
-  gpr_mu_unlock(pollset->mu);
+  gpr_mu_unlock(&pollset->mu);
 
   for (i = 2; i < pfd_count; i++) {
     pfds[i].events = (short)grpc_fd_begin_poll(watchers[i].fd, pollset, worker,

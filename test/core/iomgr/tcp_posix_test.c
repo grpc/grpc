@@ -48,7 +48,7 @@
 #include "test/core/iomgr/endpoint_tests.h"
 #include "test/core/util/test_config.h"
 
-static gpr_mu g_mu;
+static gpr_mu *g_mu;
 static grpc_pollset *g_pollset;
 
 /*
@@ -146,7 +146,7 @@ static void read_cb(grpc_exec_ctx *exec_ctx, void *user_data, bool success) {
 
   GPR_ASSERT(success);
 
-  gpr_mu_lock(&g_mu);
+  gpr_mu_lock(g_mu);
   current_data = state->read_bytes % 256;
   read_bytes = count_slices(state->incoming.slices, state->incoming.count,
                             &current_data);
@@ -154,10 +154,10 @@ static void read_cb(grpc_exec_ctx *exec_ctx, void *user_data, bool success) {
   gpr_log(GPR_INFO, "Read %d bytes of %d", read_bytes,
           state->target_read_bytes);
   if (state->read_bytes >= state->target_read_bytes) {
-    gpr_mu_unlock(&g_mu);
+    gpr_mu_unlock(g_mu);
   } else {
     grpc_endpoint_read(exec_ctx, state->ep, &state->incoming, &state->read_cb);
-    gpr_mu_unlock(&g_mu);
+    gpr_mu_unlock(g_mu);
   }
 }
 
@@ -189,17 +189,17 @@ static void read_test(size_t num_bytes, size_t slice_size) {
 
   grpc_endpoint_read(&exec_ctx, ep, &state.incoming, &state.read_cb);
 
-  gpr_mu_lock(&g_mu);
+  gpr_mu_lock(g_mu);
   while (state.read_bytes < state.target_read_bytes) {
     grpc_pollset_worker *worker = NULL;
     grpc_pollset_work(&exec_ctx, g_pollset, &worker,
                       gpr_now(GPR_CLOCK_MONOTONIC), deadline);
-    gpr_mu_unlock(&g_mu);
+    gpr_mu_unlock(g_mu);
     grpc_exec_ctx_finish(&exec_ctx);
-    gpr_mu_lock(&g_mu);
+    gpr_mu_lock(g_mu);
   }
   GPR_ASSERT(state.read_bytes == state.target_read_bytes);
-  gpr_mu_unlock(&g_mu);
+  gpr_mu_unlock(g_mu);
 
   gpr_slice_buffer_destroy(&state.incoming);
   grpc_endpoint_destroy(&exec_ctx, ep);
@@ -235,17 +235,17 @@ static void large_read_test(size_t slice_size) {
 
   grpc_endpoint_read(&exec_ctx, ep, &state.incoming, &state.read_cb);
 
-  gpr_mu_lock(&g_mu);
+  gpr_mu_lock(g_mu);
   while (state.read_bytes < state.target_read_bytes) {
     grpc_pollset_worker *worker = NULL;
     grpc_pollset_work(&exec_ctx, g_pollset, &worker,
                       gpr_now(GPR_CLOCK_MONOTONIC), deadline);
-    gpr_mu_unlock(&g_mu);
+    gpr_mu_unlock(g_mu);
     grpc_exec_ctx_finish(&exec_ctx);
-    gpr_mu_lock(&g_mu);
+    gpr_mu_lock(g_mu);
   }
   GPR_ASSERT(state.read_bytes == state.target_read_bytes);
-  gpr_mu_unlock(&g_mu);
+  gpr_mu_unlock(g_mu);
 
   gpr_slice_buffer_destroy(&state.incoming);
   grpc_endpoint_destroy(&exec_ctx, ep);
@@ -284,11 +284,11 @@ static void write_done(grpc_exec_ctx *exec_ctx,
                        void *user_data /* write_socket_state */, bool success) {
   struct write_socket_state *state = (struct write_socket_state *)user_data;
   gpr_log(GPR_INFO, "Write done callback called");
-  gpr_mu_lock(&g_mu);
+  gpr_mu_lock(g_mu);
   gpr_log(GPR_INFO, "Signalling write done");
   state->write_done = 1;
   grpc_pollset_kick(g_pollset, NULL);
-  gpr_mu_unlock(&g_mu);
+  gpr_mu_unlock(g_mu);
 }
 
 void drain_socket_blocking(int fd, size_t num_bytes, size_t read_size) {
@@ -305,11 +305,11 @@ void drain_socket_blocking(int fd, size_t num_bytes, size_t read_size) {
 
   for (;;) {
     grpc_pollset_worker *worker = NULL;
-    gpr_mu_lock(&g_mu);
+    gpr_mu_lock(g_mu);
     grpc_pollset_work(&exec_ctx, g_pollset, &worker,
                       gpr_now(GPR_CLOCK_MONOTONIC),
                       GRPC_TIMEOUT_MILLIS_TO_DEADLINE(10));
-    gpr_mu_unlock(&g_mu);
+    gpr_mu_unlock(g_mu);
     grpc_exec_ctx_finish(&exec_ctx);
     do {
       bytes_read =
@@ -364,7 +364,7 @@ static void write_test(size_t num_bytes, size_t slice_size) {
 
   grpc_endpoint_write(&exec_ctx, ep, &outgoing, &write_done_closure);
   drain_socket_blocking(sv[0], num_bytes, num_bytes);
-  gpr_mu_lock(&g_mu);
+  gpr_mu_lock(g_mu);
   for (;;) {
     grpc_pollset_worker *worker = NULL;
     if (state.write_done) {
@@ -372,11 +372,11 @@ static void write_test(size_t num_bytes, size_t slice_size) {
     }
     grpc_pollset_work(&exec_ctx, g_pollset, &worker,
                       gpr_now(GPR_CLOCK_MONOTONIC), deadline);
-    gpr_mu_unlock(&g_mu);
+    gpr_mu_unlock(g_mu);
     grpc_exec_ctx_finish(&exec_ctx);
-    gpr_mu_lock(&g_mu);
+    gpr_mu_lock(g_mu);
   }
-  gpr_mu_unlock(&g_mu);
+  gpr_mu_unlock(g_mu);
 
   gpr_slice_buffer_destroy(&outgoing);
   grpc_endpoint_destroy(&exec_ctx, ep);
@@ -424,27 +424,27 @@ static void release_fd_test(size_t num_bytes, size_t slice_size) {
 
   grpc_endpoint_read(&exec_ctx, ep, &state.incoming, &state.read_cb);
 
-  gpr_mu_lock(&g_mu);
+  gpr_mu_lock(g_mu);
   while (state.read_bytes < state.target_read_bytes) {
     grpc_pollset_worker *worker = NULL;
     grpc_pollset_work(&exec_ctx, g_pollset, &worker,
                       gpr_now(GPR_CLOCK_MONOTONIC), deadline);
-    gpr_mu_unlock(&g_mu);
+    gpr_mu_unlock(g_mu);
     grpc_exec_ctx_finish(&exec_ctx);
-    gpr_mu_lock(&g_mu);
+    gpr_mu_lock(g_mu);
   }
   GPR_ASSERT(state.read_bytes == state.target_read_bytes);
-  gpr_mu_unlock(&g_mu);
+  gpr_mu_unlock(g_mu);
 
   gpr_slice_buffer_destroy(&state.incoming);
   grpc_tcp_destroy_and_release_fd(&exec_ctx, ep, &fd, &fd_released_cb);
-  gpr_mu_lock(&g_mu);
+  gpr_mu_lock(g_mu);
   while (!fd_released_done) {
     grpc_pollset_worker *worker = NULL;
     grpc_pollset_work(&exec_ctx, g_pollset, &worker,
                       gpr_now(GPR_CLOCK_MONOTONIC), deadline);
   }
-  gpr_mu_unlock(&g_mu);
+  gpr_mu_unlock(g_mu);
   GPR_ASSERT(fd_released_done == 1);
   GPR_ASSERT(fd == sv[1]);
   grpc_exec_ctx_finish(&exec_ctx);
@@ -514,16 +514,14 @@ int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
   grpc_init();
   g_pollset = gpr_malloc(grpc_pollset_size());
-  gpr_mu_init(&g_mu);
   grpc_pollset_init(g_pollset, &g_mu);
   run_tests();
-  grpc_endpoint_tests(configs[0], g_pollset, &g_mu);
+  grpc_endpoint_tests(configs[0], g_pollset, g_mu);
   grpc_closure_init(&destroyed, destroy_pollset, g_pollset);
   grpc_pollset_shutdown(&exec_ctx, g_pollset, &destroyed);
   grpc_exec_ctx_finish(&exec_ctx);
   grpc_shutdown();
   gpr_free(g_pollset);
-  gpr_mu_destroy(&g_mu);
 
   return 0;
 }

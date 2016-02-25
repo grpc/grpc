@@ -52,7 +52,7 @@
 
 #define LOG_TEST(x) gpr_log(GPR_INFO, "%s", #x)
 
-static gpr_mu g_mu;
+static gpr_mu *g_mu;
 static grpc_pollset *g_pollset;
 static int g_nconnects = 0;
 
@@ -117,11 +117,11 @@ static void on_connect(grpc_exec_ctx *exec_ctx, void *arg, grpc_endpoint *tcp,
   grpc_endpoint_shutdown(exec_ctx, tcp);
   grpc_endpoint_destroy(exec_ctx, tcp);
 
-  gpr_mu_lock(&g_mu);
+  gpr_mu_lock(g_mu);
   on_connect_result_set(&g_result, acceptor);
   g_nconnects++;
   grpc_pollset_kick(g_pollset, NULL);
-  gpr_mu_unlock(&g_mu);
+  gpr_mu_unlock(g_mu);
 }
 
 static void test_no_op(void) {
@@ -178,7 +178,7 @@ static void tcp_connect(grpc_exec_ctx *exec_ctx, const struct sockaddr *remote,
   int clifd = socket(remote->sa_family, SOCK_STREAM, 0);
   int nconnects_before;
 
-  gpr_mu_lock(&g_mu);
+  gpr_mu_lock(g_mu);
   nconnects_before = g_nconnects;
   on_connect_result_init(&g_result);
   GPR_ASSERT(clifd >= 0);
@@ -190,16 +190,16 @@ static void tcp_connect(grpc_exec_ctx *exec_ctx, const struct sockaddr *remote,
     grpc_pollset_worker *worker = NULL;
     grpc_pollset_work(exec_ctx, g_pollset, &worker,
                       gpr_now(GPR_CLOCK_MONOTONIC), deadline);
-    gpr_mu_unlock(&g_mu);
+    gpr_mu_unlock(g_mu);
     grpc_exec_ctx_finish(exec_ctx);
-    gpr_mu_lock(&g_mu);
+    gpr_mu_lock(g_mu);
   }
   gpr_log(GPR_DEBUG, "wait done");
   GPR_ASSERT(g_nconnects == nconnects_before + 1);
   close(clifd);
   *result = g_result;
 
-  gpr_mu_unlock(&g_mu);
+  gpr_mu_unlock(g_mu);
 }
 
 /* Tests a tcp server with multiple ports. TODO(daniel-j-born): Multiple fds for
@@ -315,7 +315,6 @@ int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
   grpc_init();
   g_pollset = gpr_malloc(grpc_pollset_size());
-  gpr_mu_init(&g_mu);
   grpc_pollset_init(g_pollset, &g_mu);
 
   test_no_op();
@@ -330,6 +329,5 @@ int main(int argc, char **argv) {
   grpc_exec_ctx_finish(&exec_ctx);
   grpc_shutdown();
   gpr_free(g_pollset);
-  gpr_mu_destroy(&g_mu);
   return 0;
 }

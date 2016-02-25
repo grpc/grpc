@@ -52,10 +52,11 @@
 
 static grpc_channel_credentials *default_credentials = NULL;
 static int compute_engine_detection_done = 0;
-static gpr_mu g_mu;
+static gpr_mu g_state_mu;
+static gpr_mu *g_polling_mu;
 static gpr_once g_once = GPR_ONCE_INIT;
 
-static void init_default_credentials(void) { gpr_mu_init(&g_mu); }
+static void init_default_credentials(void) { gpr_mu_init(&g_state_mu); }
 
 typedef struct {
   grpc_pollset *pollset;
@@ -80,10 +81,10 @@ static void on_compute_engine_detection_http_response(
       }
     }
   }
-  gpr_mu_lock(&g_mu);
+  gpr_mu_lock(g_polling_mu);
   detector->is_done = 1;
   grpc_pollset_kick(detector->pollset, NULL);
-  gpr_mu_unlock(&g_mu);
+  gpr_mu_unlock(g_polling_mu);
 }
 
 static void destroy_pollset(grpc_exec_ctx *exec_ctx, void *p, bool s) {
@@ -102,7 +103,7 @@ static int is_stack_running_on_compute_engine(void) {
   gpr_timespec max_detection_delay = gpr_time_from_seconds(1, GPR_TIMESPAN);
 
   detector.pollset = gpr_malloc(grpc_pollset_size());
-  grpc_pollset_init(detector.pollset, &g_mu);
+  grpc_pollset_init(detector.pollset, &g_polling_mu);
   detector.is_done = 0;
   detector.success = 0;
 
@@ -121,19 +122,20 @@ static int is_stack_running_on_compute_engine(void) {
 
   /* Block until we get the response. This is not ideal but this should only be
      called once for the lifetime of the process by the default credentials. */
-  gpr_mu_lock(&g_mu);
+  gpr_mu_lock(g_polling_mu);
   while (!detector.is_done) {
     grpc_pollset_worker *worker = NULL;
     grpc_pollset_work(&exec_ctx, detector.pollset, &worker,
                       gpr_now(GPR_CLOCK_MONOTONIC),
                       gpr_inf_future(GPR_CLOCK_MONOTONIC));
   }
-  gpr_mu_unlock(&g_mu);
+  gpr_mu_unlock(g_polling_mu);
 
   grpc_httpcli_context_destroy(&context);
-  grpc_closure_init(&destroy_closure, destroy_pollset, &detector.pollset);
+  grpc_closure_init(&destroy_closure, destroy_pollset, detector.pollset);
   grpc_pollset_shutdown(&exec_ctx, detector.pollset, &destroy_closure);
   grpc_exec_ctx_finish(&exec_ctx);
+  g_polling_mu = NULL;
 
   gpr_free(detector.pollset);
 
@@ -187,7 +189,7 @@ grpc_channel_credentials *grpc_google_default_credentials_create(void) {
 
   gpr_once_init(&g_once, init_default_credentials);
 
-  gpr_mu_lock(&g_mu);
+  gpr_mu_lock(&g_state_mu);
 
   if (default_credentials != NULL) {
     result = grpc_channel_credentials_ref(default_credentials);
@@ -233,19 +235,19 @@ end:
       gpr_log(GPR_ERROR, "Could not create google default credentials.");
     }
   }
-  gpr_mu_unlock(&g_mu);
+  gpr_mu_unlock(&g_state_mu);
   return result;
 }
 
 void grpc_flush_cached_google_default_credentials(void) {
   gpr_once_init(&g_once, init_default_credentials);
-  gpr_mu_lock(&g_mu);
+  gpr_mu_lock(&g_state_mu);
   if (default_credentials != NULL) {
     grpc_channel_credentials_unref(default_credentials);
     default_credentials = NULL;
   }
   compute_engine_detection_done = 0;
-  gpr_mu_unlock(&g_mu);
+  gpr_mu_unlock(&g_state_mu);
 }
 
 /* -- Well known credentials path. -- */
