@@ -63,7 +63,9 @@ char *gpr_getenv(const char *name) {
   for (size_t i = 0; getenv_func == NULL && i < GPR_ARRAY_SIZE(names); i++) {
     getenv_func = (getenv_type)dlsym(RTLD_DEFAULT, names[i]);
     if (getenv_func != NULL && strstr(names[i], "secure") == NULL) {
-      gpr_log(GPR_DEBUG, "Warning: insecure environment read function '%s' used", names[i]);
+      gpr_log(GPR_DEBUG,
+              "Warning: insecure environment read function '%s' used",
+              names[i]);
     }
   }
   char *result = getenv_func(name);
@@ -72,7 +74,8 @@ char *gpr_getenv(const char *name) {
   char *result = secure_getenv(name);
   return result == NULL ? result : gpr_strdup(result);
 #else
-  gpr_log(GPR_DEBUG, "Warning: insecure environment read function '%s' used", "getenv");
+  gpr_log(GPR_DEBUG, "Warning: insecure environment read function '%s' used",
+          "getenv");
   char *result = getenv(name);
   return result == NULL ? result : gpr_strdup(result);
 #endif
