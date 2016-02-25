@@ -356,8 +356,6 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\client\insecure_credentials.cc">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\cpp\common\alarm.cc">
-    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\common\call.cc">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\common\channel_arguments.cc">
