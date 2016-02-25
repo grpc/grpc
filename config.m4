@@ -48,11 +48,9 @@ if test "$PHP_GRPC" != "no"; then
     src/core/support/env_linux.c \
     src/core/support/env_posix.c \
     src/core/support/env_win32.c \
-    src/core/support/file.c \
-    src/core/support/file_posix.c \
-    src/core/support/file_win32.c \
     src/core/support/histogram.c \
     src/core/support/host_port.c \
+    src/core/support/load_file.c \
     src/core/support/log.c \
     src/core/support/log_android.c \
     src/core/support/log_linux.c \
@@ -78,6 +76,8 @@ if test "$PHP_GRPC" != "no"; then
     src/core/support/time_precise.c \
     src/core/support/time_win32.c \
     src/core/support/tls_pthread.c \
+    src/core/support/tmpfile_posix.c \
+    src/core/support/tmpfile_win32.c \
     src/core/support/wrap_memcpy.c \
     src/core/census/grpc_context.c \
     src/core/census/grpc_filter.c \
@@ -109,7 +109,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/client_config/subchannel_factory.c \
     src/core/client_config/subchannel_index.c \
     src/core/client_config/uri_parser.c \
-    src/core/compression/algorithm.c \
+    src/core/compression/compression_algorithm.c \
     src/core/compression/message_compress.c \
     src/core/debug/trace.c \
     src/core/httpcli/format_request.c \
@@ -210,7 +210,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/transport/transport.c \
     src/core/transport/transport_op_string.c \
     src/core/httpcli/httpcli_security_connector.c \
-    src/core/security/base64.c \
+    src/core/security/b64.c \
     src/core/security/client_auth_filter.c \
     src/core/security/credentials.c \
     src/core/security/credentials_metadata.c \
@@ -533,22 +533,73 @@ if test "$PHP_GRPC" != "no"; then
     third_party/boringssl/ssl/t1_enc.c \
     third_party/boringssl/ssl/t1_lib.c \
     third_party/boringssl/ssl/tls_record.c \
-    third_party/zlib/adler32.c \
-    third_party/zlib/compress.c \
-    third_party/zlib/crc32.c \
-    third_party/zlib/deflate.c \
-    third_party/zlib/gzclose.c \
-    third_party/zlib/gzlib.c \
-    third_party/zlib/gzread.c \
-    third_party/zlib/gzwrite.c \
-    third_party/zlib/infback.c \
-    third_party/zlib/inffast.c \
-    third_party/zlib/inflate.c \
-    third_party/zlib/inftrees.c \
-    third_party/zlib/trees.c \
-    third_party/zlib/uncompr.c \
-    third_party/zlib/zutil.c \
     , $ext_shared, , -Wall -Werror -std=c11 \
     -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN \
     -D_HAS_EXCEPTIONS=0 -DNOMINMAX)
+
+  PHP_ADD_BUILD_DIR($ext_builddir/src/php/ext/grpc)
+
+  PHP_ADD_BUILD_DIR($ext_builddir/src/boringssl)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/census)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/channel)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/client_config)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/client_config/lb_policies)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/client_config/resolvers)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/compression)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/debug)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/httpcli)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/iomgr)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/json)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/profiling)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/proto/grpc/lb/v0)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/security)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/support)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/surface)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/transport)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/transport/chttp2)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/tsi)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/crypto)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/crypto/aes)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/crypto/asn1)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/crypto/base64)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/crypto/bio)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/crypto/bn)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/crypto/bn/asm)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/crypto/buf)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/crypto/bytestring)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/crypto/chacha)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/crypto/cipher)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/crypto/cmac)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/crypto/conf)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/crypto/curve25519)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/crypto/des)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/crypto/dh)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/crypto/digest)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/crypto/dsa)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/crypto/ec)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/crypto/ecdh)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/crypto/ecdsa)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/crypto/engine)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/crypto/err)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/crypto/evp)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/crypto/hkdf)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/crypto/hmac)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/crypto/lhash)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/crypto/md4)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/crypto/md5)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/crypto/modes)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/crypto/obj)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/crypto/pem)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/crypto/pkcs8)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/crypto/poly1305)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/crypto/rand)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/crypto/rc4)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/crypto/rsa)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/crypto/sha)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/crypto/stack)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/crypto/x509)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/crypto/x509v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/ssl)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/ssl/pqueue)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/nanopb)
 fi

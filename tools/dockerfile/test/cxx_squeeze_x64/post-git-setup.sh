@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2015, Google Inc.
+# Copyright 2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -28,9 +28,8 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# This is where you have cloned out the https://github.com/grpc/grpc repository
-# And built gRPC Python.
-# ADJUST THIS PATH TO WHERE YOUR ACTUAL LOCATION IS
-GRPC_ROOT=~/github/grpc
+set -ex
 
-$GRPC_ROOT/python2.7_virtual_environment/bin/python -B route_guide_server.py
+cd /var/local/git/grpc
+cp /openssl-1.0.2f.tar.gz third_party
+./tools/openssl/use_openssl.sh
