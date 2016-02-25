@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2015-2016, Google Inc.
+# Copyright 2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -27,41 +27,9 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# This script is invoked by build_docker_and_run_tests.sh inside a docker
-# container. You should never need to call this script on your own.
 
-set -e
+set -ex
 
-export CONFIG=$config
-export ASAN_SYMBOLIZER_PATH=/usr/bin/llvm-symbolizer-3.5
-
-# Ensure that programs depending on current-user-ownership of cache directories
-# are satisfied (it's being mounted from outside the image).
-chown $(whoami) $XDG_CACHE_HOME
-
-mkdir -p /var/local/git
-git clone --recursive /var/local/jenkins/grpc /var/local/git/grpc
-
-mkdir -p reports
-
-$POST_GIT_STEP
-
-exit_code=0
-
-$RUN_TESTS_COMMAND || exit_code=$?
-
-cd reports
-echo '<html><head></head><body>' > index.html
-find . -maxdepth 1 -mindepth 1 -type d | sort | while read d ; do
-  d=${d#*/}
-  n=${d//_/ }
-  echo "<a href='$d/index.html'>$n</a><br />" >> index.html
-done
-echo '</body></html>' >> index.html
-cd ..
-
-zip -r reports.zip reports
-find . -name report.xml | xargs zip reports.zip
-
-exit $exit_code
+cd /var/local/git/grpc
+cp /openssl-1.0.2f.tar.gz third_party
+./tools/openssl/use_openssl.sh
