@@ -1732,4 +1732,147 @@ void grpc_remove_fd_from_all_epoll_sets(int fd) {}
 
 #endif /* GPR_LINUX_MULTIPOLL_WITH_EPOLL */
 
+/*******************************************************************************
+ * pollset_set_posix.c
+ */
+
+grpc_pollset_set *grpc_pollset_set_create(void) {
+  grpc_pollset_set *pollset_set = gpr_malloc(sizeof(*pollset_set));
+  memset(pollset_set, 0, sizeof(*pollset_set));
+  gpr_mu_init(&pollset_set->mu);
+  return pollset_set;
+}
+
+void grpc_pollset_set_destroy(grpc_pollset_set *pollset_set) {
+  size_t i;
+  gpr_mu_destroy(&pollset_set->mu);
+  for (i = 0; i < pollset_set->fd_count; i++) {
+    GRPC_FD_UNREF(pollset_set->fds[i], "pollset_set");
+  }
+  gpr_free(pollset_set->pollsets);
+  gpr_free(pollset_set->pollset_sets);
+  gpr_free(pollset_set->fds);
+  gpr_free(pollset_set);
+}
+
+void grpc_pollset_set_add_pollset(grpc_exec_ctx *exec_ctx,
+                                  grpc_pollset_set *pollset_set,
+                                  grpc_pollset *pollset) {
+  size_t i, j;
+  gpr_mu_lock(&pollset_set->mu);
+  if (pollset_set->pollset_count == pollset_set->pollset_capacity) {
+    pollset_set->pollset_capacity =
+        GPR_MAX(8, 2 * pollset_set->pollset_capacity);
+    pollset_set->pollsets =
+        gpr_realloc(pollset_set->pollsets, pollset_set->pollset_capacity *
+                                               sizeof(*pollset_set->pollsets));
+  }
+  pollset_set->pollsets[pollset_set->pollset_count++] = pollset;
+  for (i = 0, j = 0; i < pollset_set->fd_count; i++) {
+    if (grpc_fd_is_orphaned(pollset_set->fds[i])) {
+      GRPC_FD_UNREF(pollset_set->fds[i], "pollset_set");
+    } else {
+      grpc_pollset_add_fd(exec_ctx, pollset, pollset_set->fds[i]);
+      pollset_set->fds[j++] = pollset_set->fds[i];
+    }
+  }
+  pollset_set->fd_count = j;
+  gpr_mu_unlock(&pollset_set->mu);
+}
+
+void grpc_pollset_set_del_pollset(grpc_exec_ctx *exec_ctx,
+                                  grpc_pollset_set *pollset_set,
+                                  grpc_pollset *pollset) {
+  size_t i;
+  gpr_mu_lock(&pollset_set->mu);
+  for (i = 0; i < pollset_set->pollset_count; i++) {
+    if (pollset_set->pollsets[i] == pollset) {
+      pollset_set->pollset_count--;
+      GPR_SWAP(grpc_pollset *, pollset_set->pollsets[i],
+               pollset_set->pollsets[pollset_set->pollset_count]);
+      break;
+    }
+  }
+  gpr_mu_unlock(&pollset_set->mu);
+}
+
+void grpc_pollset_set_add_pollset_set(grpc_exec_ctx *exec_ctx,
+                                      grpc_pollset_set *bag,
+                                      grpc_pollset_set *item) {
+  size_t i, j;
+  gpr_mu_lock(&bag->mu);
+  if (bag->pollset_set_count == bag->pollset_set_capacity) {
+    bag->pollset_set_capacity = GPR_MAX(8, 2 * bag->pollset_set_capacity);
+    bag->pollset_sets =
+        gpr_realloc(bag->pollset_sets,
+                    bag->pollset_set_capacity * sizeof(*bag->pollset_sets));
+  }
+  bag->pollset_sets[bag->pollset_set_count++] = item;
+  for (i = 0, j = 0; i < bag->fd_count; i++) {
+    if (grpc_fd_is_orphaned(bag->fds[i])) {
+      GRPC_FD_UNREF(bag->fds[i], "pollset_set");
+    } else {
+      grpc_pollset_set_add_fd(exec_ctx, item, bag->fds[i]);
+      bag->fds[j++] = bag->fds[i];
+    }
+  }
+  bag->fd_count = j;
+  gpr_mu_unlock(&bag->mu);
+}
+
+void grpc_pollset_set_del_pollset_set(grpc_exec_ctx *exec_ctx,
+                                      grpc_pollset_set *bag,
+                                      grpc_pollset_set *item) {
+  size_t i;
+  gpr_mu_lock(&bag->mu);
+  for (i = 0; i < bag->pollset_set_count; i++) {
+    if (bag->pollset_sets[i] == item) {
+      bag->pollset_set_count--;
+      GPR_SWAP(grpc_pollset_set *, bag->pollset_sets[i],
+               bag->pollset_sets[bag->pollset_set_count]);
+      break;
+    }
+  }
+  gpr_mu_unlock(&bag->mu);
+}
+
+void grpc_pollset_set_add_fd(grpc_exec_ctx *exec_ctx,
+                             grpc_pollset_set *pollset_set, grpc_fd *fd) {
+  size_t i;
+  gpr_mu_lock(&pollset_set->mu);
+  if (pollset_set->fd_count == pollset_set->fd_capacity) {
+    pollset_set->fd_capacity = GPR_MAX(8, 2 * pollset_set->fd_capacity);
+    pollset_set->fds = gpr_realloc(
+        pollset_set->fds, pollset_set->fd_capacity * sizeof(*pollset_set->fds));
+  }
+  GRPC_FD_REF(fd, "pollset_set");
+  pollset_set->fds[pollset_set->fd_count++] = fd;
+  for (i = 0; i < pollset_set->pollset_count; i++) {
+    grpc_pollset_add_fd(exec_ctx, pollset_set->pollsets[i], fd);
+  }
+  for (i = 0; i < pollset_set->pollset_set_count; i++) {
+    grpc_pollset_set_add_fd(exec_ctx, pollset_set->pollset_sets[i], fd);
+  }
+  gpr_mu_unlock(&pollset_set->mu);
+}
+
+void grpc_pollset_set_del_fd(grpc_exec_ctx *exec_ctx,
+                             grpc_pollset_set *pollset_set, grpc_fd *fd) {
+  size_t i;
+  gpr_mu_lock(&pollset_set->mu);
+  for (i = 0; i < pollset_set->fd_count; i++) {
+    if (pollset_set->fds[i] == fd) {
+      pollset_set->fd_count--;
+      GPR_SWAP(grpc_fd *, pollset_set->fds[i],
+               pollset_set->fds[pollset_set->fd_count]);
+      GRPC_FD_UNREF(fd, "pollset_set");
+      break;
+    }
+  }
+  for (i = 0; i < pollset_set->pollset_set_count; i++) {
+    grpc_pollset_set_del_fd(exec_ctx, pollset_set->pollset_sets[i], fd);
+  }
+  gpr_mu_unlock(&pollset_set->mu);
+}
+
 #endif

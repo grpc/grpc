@@ -192,7 +192,7 @@ done:
     remove_worker(&worker, GRPC_POLLSET_WORKER_LINK_GLOBAL);
     remove_worker(&worker, GRPC_POLLSET_WORKER_LINK_POLLSET);
   }
-  gpr_cv_destroy(&worker->cv);
+  gpr_cv_destroy(&worker.cv);
   *worker_hdl = NULL;
 }
 
