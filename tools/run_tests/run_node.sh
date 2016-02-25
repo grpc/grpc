@@ -58,7 +58,7 @@ then
   echo '<html><head><meta http-equiv="refresh" content="0;URL=lcov-report/index.html"></head></html>' > \
     ../reports/node_coverage/index.html
 else
-  JUNIT_REPORT_PATH=src/node/reports.xml JUNIT_REPORT_STACK=1 \
+  JUNIT_REPORT_PATH=src/node/report.xml JUNIT_REPORT_STACK=1 \
     ./node_modules/.bin/mocha --timeout $timeout \
     --reporter mocha-jenkins-reporter $test_directory
 fi

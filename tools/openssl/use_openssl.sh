@@ -1,4 +1,6 @@
-# Copyright 2015, Google Inc.
+#!/bin/bash
+
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -27,4 +29,33 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+set -ex
 
+cd $(dirname $0)/../..
+set root=`pwd`
+CC=${CC:-cc}
+
+# allow openssl to be pre-downloaded
+if [ ! -e third_party/openssl-1.0.2f.tar.gz ]
+then
+  echo "Downloading http://openssl.org/source/openssl-1.0.2f.tar.gz to third_party/openssl-1.0.2f.tar.gz"
+  wget http://openssl.org/source/openssl-1.0.2f.tar.gz -O third_party/openssl-1.0.2f.tar.gz
+fi
+
+# clean openssl directory
+rm -rf third_party/openssl-1.0.2f
+
+# extract archive
+cd third_party
+tar xfz openssl-1.0.2f.tar.gz
+
+# build openssl
+cd openssl-1.0.2f
+CC="$CC -fPIC -fvisibility=hidden" ./config no-asm
+make
+
+# generate the 'grpc_obj' directory needed by the makefile
+mkdir grpc_obj
+cd grpc_obj
+ar x ../libcrypto.a
+ar x ../libssl.a
