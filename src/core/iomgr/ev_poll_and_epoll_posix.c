@@ -271,11 +271,6 @@ static int pollset_has_workers(grpc_pollset *pollset);
 
 static void remove_fd_from_all_epoll_sets(int fd);
 
-/* override to allow tests to hook poll() usage */
-typedef int (*grpc_poll_function_type)(struct pollfd *, nfds_t, int);
-extern grpc_poll_function_type grpc_poll_function;
-extern grpc_wakeup_fd grpc_global_wakeup_fd;
-
 /*******************************************************************************
  * pollset_set definitions
  */
@@ -705,10 +700,6 @@ static void fd_become_writable(grpc_exec_ctx *exec_ctx, grpc_fd *fd) {
 
 GPR_TLS_DECL(g_current_thread_poller);
 GPR_TLS_DECL(g_current_thread_worker);
-
-/** Default poll() function - a pointer so that it can be overridden by some
- *  tests */
-grpc_poll_function_type grpc_poll_function = poll;
 
 /** The alarm system needs to be able to wakeup 'some poller' sometimes
  *  (specifically when a new alarm needs to be triggered earlier than the next

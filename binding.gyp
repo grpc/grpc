@@ -598,6 +598,7 @@
         'src/core/iomgr/endpoint_pair_posix.c',
         'src/core/iomgr/endpoint_pair_windows.c',
         'src/core/iomgr/ev_poll_and_epoll_posix.c',
+        'src/core/iomgr/ev_poll_posix.c',
         'src/core/iomgr/ev_posix.c',
         'src/core/iomgr/exec_ctx.c',
         'src/core/iomgr/executor.c',
