@@ -81,10 +81,9 @@ class BigQueryHelper:
         'event_type': event_type,
         'details': details
     }
-    # Something that uniquely identifies the row (Biquery needs it for duplicate
-    # detection).
+    # row_unique_id is something that uniquely identifies the row (BigQuery uses
+    # it for duplicate detection).
     row_unique_id = '%s_%s_%s' % (self.run_id, self.pod_name, event_type)
-
     row = bq_utils.make_row(row_unique_id, row_values_dict)
     return bq_utils.insert_rows(self.bq, self.project_id, self.dataset_id,
                                 self.summary_table_id, [row])
@@ -97,6 +96,8 @@ class BigQueryHelper:
         'qps': qps
     }
 
+    # row_unique_id is something that uniquely identifies the row (BigQuery uses
+    # it for duplicate detection).
     row_unique_id = '%s_%s_%s' % (self.run_id, self.pod_name, recorded_at)
     row = bq_utils.make_row(row_unique_id, row_values_dict)
     return bq_utils.insert_rows(self.bq, self.project_id, self.dataset_id,
@@ -109,7 +110,6 @@ class BigQueryHelper:
     query_job = bq_utils.sync_query_job(self.bq, self.project_id, query)
     page = self.bq.jobs().getQueryResults(**query_job['jobReference']).execute(
         num_retries=num_query_retries)
-    print page
     num_failures = int(page['totalRows'])
     print 'num rows: ', num_failures
     return num_failures > 0
@@ -118,7 +118,8 @@ class BigQueryHelper:
     line = '-' * 120
     print line
     print 'Summary records'
-    print 'Run Id', self.run_id
+    print 'Run Id: ', self.run_id
+    print 'Dataset Id: ', self.dataset_id
     print line
     query = ('SELECT pod_name, image_type, event_type, event_date, details'
              ' FROM %s.%s WHERE run_id = \'%s\' ORDER by event_date;') % (
@@ -147,6 +148,7 @@ class BigQueryHelper:
     print line
     print 'QPS Summary'
     print 'Run Id: ', self.run_id
+    print 'Dataset Id: ', self.dataset_id
     print line
     query = (
         'SELECT pod_name, recorded_at, qps FROM %s.%s WHERE run_id = \'%s\' '
