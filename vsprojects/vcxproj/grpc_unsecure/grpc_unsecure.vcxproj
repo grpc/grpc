@@ -320,7 +320,6 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\iomgr\iomgr_posix.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\iomgr\pollset.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\iomgr\pollset_set.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\iomgr\pollset_set_posix.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\iomgr\pollset_set_windows.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\iomgr\pollset_windows.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\iomgr\resolve_address.h" />

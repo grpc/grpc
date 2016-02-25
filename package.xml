@@ -207,7 +207,6 @@
     <file baseinstalldir="/" name="src/core/iomgr/iomgr_posix.h" role="src" />
     <file baseinstalldir="/" name="src/core/iomgr/pollset.h" role="src" />
     <file baseinstalldir="/" name="src/core/iomgr/pollset_set.h" role="src" />
-    <file baseinstalldir="/" name="src/core/iomgr/pollset_set_posix.h" role="src" />
     <file baseinstalldir="/" name="src/core/iomgr/pollset_set_windows.h" role="src" />
     <file baseinstalldir="/" name="src/core/iomgr/pollset_windows.h" role="src" />
     <file baseinstalldir="/" name="src/core/iomgr/resolve_address.h" role="src" />

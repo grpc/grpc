@@ -63,9 +63,32 @@ typedef struct grpc_event_engine_vtable {
                        gpr_timespec deadline);
   void (*pollset_kick)(grpc_pollset *pollset,
                        grpc_pollset_worker *specific_worker);
-} grpc_event_engine_vtable;
+  void (*pollset_add_fd)(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
+                         struct grpc_fd *fd);
 
-extern const grpc_event_engine_vtable *grpc_event_engine;
+  grpc_pollset_set *(*pollset_set_create)(void);
+  void (*pollset_set_destroy)(grpc_pollset_set *pollset_set);
+  void (*pollset_set_add_pollset)(grpc_exec_ctx *exec_ctx,
+                                  grpc_pollset_set *pollset_set,
+                                  grpc_pollset *pollset);
+  void (*pollset_set_del_pollset)(grpc_exec_ctx *exec_ctx,
+                                  grpc_pollset_set *pollset_set,
+                                  grpc_pollset *pollset);
+  void (*pollset_set_add_pollset_set)(grpc_exec_ctx *exec_ctx,
+                                      grpc_pollset_set *bag,
+                                      grpc_pollset_set *item);
+  void (*pollset_set_del_pollset_set)(grpc_exec_ctx *exec_ctx,
+                                      grpc_pollset_set *bag,
+                                      grpc_pollset_set *item);
+  void (*pollset_set_add_fd)(grpc_exec_ctx *exec_ctx,
+                             grpc_pollset_set *pollset_set, grpc_fd *fd);
+  void (*pollset_set_del_fd)(grpc_exec_ctx *exec_ctx,
+                             grpc_pollset_set *pollset_set, grpc_fd *fd);
+
+  void (*kick_poller)(void);
+
+  void (*shutdown_engine)(void);
+} grpc_event_engine_vtable;
 
 void grpc_event_engine_init(void);
 void grpc_event_engine_shutdown(void);
