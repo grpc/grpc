@@ -516,8 +516,6 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\iomgr\iomgr_windows.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\iomgr\pollset_set_posix.c">
-    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\iomgr\pollset_set_windows.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\iomgr\pollset_windows.c">

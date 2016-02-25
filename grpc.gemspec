@@ -339,7 +339,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/iomgr/iomgr.c )
   s.files += %w( src/core/iomgr/iomgr_posix.c )
   s.files += %w( src/core/iomgr/iomgr_windows.c )
-  s.files += %w( src/core/iomgr/pollset_set_posix.c )
   s.files += %w( src/core/iomgr/pollset_set_windows.c )
   s.files += %w( src/core/iomgr/pollset_windows.c )
   s.files += %w( src/core/iomgr/resolve_address_posix.c )
