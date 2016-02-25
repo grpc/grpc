@@ -40,6 +40,7 @@ TEST = (os.environ.get('TEST', 'false') == 'true')
 _TOP_LEVEL_KEYS = ['settings', 'proto_deps', 'filegroups', 'libs', 'targets', 'vspackages']
 _ELEM_KEYS = [
     'name',
+    'gtest',
     'cpu_cost',
     'flaky',
     'build',
@@ -98,4 +99,3 @@ for filename in sys.argv[1:]:
   else:
     with open(filename, 'w') as f:
       f.write(output)
-

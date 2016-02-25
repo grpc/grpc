@@ -94,7 +94,7 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\client_config\uri_parser.c">
       <Filter>src\core\client_config</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\compression\algorithm.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\compression\compression_algorithm.c">
       <Filter>src\core\compression</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\compression\message_compress.c">

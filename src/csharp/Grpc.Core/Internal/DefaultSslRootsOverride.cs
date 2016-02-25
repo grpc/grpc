@@ -56,7 +56,7 @@ namespace Grpc.Core.Internal
         {
             lock (staticLock)
             {
-                var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(RootsPemResourceName);
+                var stream = typeof(DefaultSslRootsOverride).GetTypeInfo().Assembly.GetManifestResourceStream(RootsPemResourceName);
                 if (stream == null)
                 {
                     throw new IOException(string.Format("Error loading the embedded resource \"{0}\"", RootsPemResourceName));   

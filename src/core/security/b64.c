@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/security/base64.h"
+#include "src/core/security/b64.h"
 
 #include <stdint.h>
 #include <string.h>
