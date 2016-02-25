@@ -904,9 +904,9 @@ TEST_P(End2endTest, SimultaneousReadWritesDone) {
   std::thread reader_thread(ReaderThreadFunc, stream.get(), &ev);
   gpr_event_wait(&ev, gpr_inf_future(GPR_CLOCK_REALTIME));
   stream->WritesDone();
+  reader_thread.join();
   Status s = stream->Finish();
   EXPECT_TRUE(s.ok());
-  reader_thread.join();
 }
 
 TEST_P(End2endTest, ChannelState) {

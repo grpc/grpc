@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -38,9 +38,9 @@ var grpc = require('../');
 var _ = require('lodash');
 
 var health_proto = grpc.load(__dirname +
-    '/../../proto/grpc/health/v1alpha/health.proto');
+    '/../../proto/grpc/health/v1/health.proto');
 
-var HealthClient = health_proto.grpc.health.v1alpha.Health;
+var HealthClient = health_proto.grpc.health.v1.Health;
 
 function HealthImplementation(statusMap) {
   this.statusMap = _.clone(statusMap);
