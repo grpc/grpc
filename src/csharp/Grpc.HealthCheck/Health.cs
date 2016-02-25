@@ -7,7 +7,7 @@ using pb = global::Google.Protobuf;
 using pbc = global::Google.Protobuf.Collections;
 using pbr = global::Google.Protobuf.Reflection;
 using scg = global::System.Collections.Generic;
-namespace Grpc.Health.V1Alpha {
+namespace Grpc.Health.V1 {
 
   /// <summary>Holder for reflection information generated from health.proto</summary>
   [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
@@ -23,20 +23,19 @@ namespace Grpc.Health.V1Alpha {
     static HealthReflection() {
       byte[] descriptorData = global::System.Convert.FromBase64String(
           string.Concat(
-            "CgxoZWFsdGgucHJvdG8SE2dycGMuaGVhbHRoLnYxYWxwaGEiMwoSSGVhbHRo",
-            "Q2hlY2tSZXF1ZXN0EgwKBGhvc3QYASABKAkSDwoHc2VydmljZRgCIAEoCSKZ",
-            "AQoTSGVhbHRoQ2hlY2tSZXNwb25zZRJGCgZzdGF0dXMYASABKA4yNi5ncnBj",
-            "LmhlYWx0aC52MWFscGhhLkhlYWx0aENoZWNrUmVzcG9uc2UuU2VydmluZ1N0",
-            "YXR1cyI6Cg1TZXJ2aW5nU3RhdHVzEgsKB1VOS05PV04QABILCgdTRVJWSU5H",
-            "EAESDwoLTk9UX1NFUlZJTkcQAjJkCgZIZWFsdGgSWgoFQ2hlY2sSJy5ncnBj",
-            "LmhlYWx0aC52MWFscGhhLkhlYWx0aENoZWNrUmVxdWVzdBooLmdycGMuaGVh",
-            "bHRoLnYxYWxwaGEuSGVhbHRoQ2hlY2tSZXNwb25zZUIWqgITR3JwYy5IZWFs",
-            "dGguVjFBbHBoYWIGcHJvdG8z"));
+            "CgxoZWFsdGgucHJvdG8SDmdycGMuaGVhbHRoLnYxIiUKEkhlYWx0aENoZWNr",
+            "UmVxdWVzdBIPCgdzZXJ2aWNlGAEgASgJIpQBChNIZWFsdGhDaGVja1Jlc3Bv",
+            "bnNlEkEKBnN0YXR1cxgBIAEoDjIxLmdycGMuaGVhbHRoLnYxLkhlYWx0aENo",
+            "ZWNrUmVzcG9uc2UuU2VydmluZ1N0YXR1cyI6Cg1TZXJ2aW5nU3RhdHVzEgsK",
+            "B1VOS05PV04QABILCgdTRVJWSU5HEAESDwoLTk9UX1NFUlZJTkcQAjJaCgZI",
+            "ZWFsdGgSUAoFQ2hlY2sSIi5ncnBjLmhlYWx0aC52MS5IZWFsdGhDaGVja1Jl",
+            "cXVlc3QaIy5ncnBjLmhlYWx0aC52MS5IZWFsdGhDaGVja1Jlc3BvbnNlQhGq",
+            "Ag5HcnBjLkhlYWx0aC5WMWIGcHJvdG8z"));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
           new pbr::GeneratedCodeInfo(null, new pbr::GeneratedCodeInfo[] {
-            new pbr::GeneratedCodeInfo(typeof(global::Grpc.Health.V1Alpha.HealthCheckRequest), global::Grpc.Health.V1Alpha.HealthCheckRequest.Parser, new[]{ "Host", "Service" }, null, null, null),
-            new pbr::GeneratedCodeInfo(typeof(global::Grpc.Health.V1Alpha.HealthCheckResponse), global::Grpc.Health.V1Alpha.HealthCheckResponse.Parser, new[]{ "Status" }, null, new[]{ typeof(global::Grpc.Health.V1Alpha.HealthCheckResponse.Types.ServingStatus) }, null)
+            new pbr::GeneratedCodeInfo(typeof(global::Grpc.Health.V1.HealthCheckRequest), global::Grpc.Health.V1.HealthCheckRequest.Parser, new[]{ "Service" }, null, null, null),
+            new pbr::GeneratedCodeInfo(typeof(global::Grpc.Health.V1.HealthCheckResponse), global::Grpc.Health.V1.HealthCheckResponse.Parser, new[]{ "Status" }, null, new[]{ typeof(global::Grpc.Health.V1.HealthCheckResponse.Types.ServingStatus) }, null)
           }));
     }
     #endregion
@@ -49,7 +48,7 @@ namespace Grpc.Health.V1Alpha {
     public static pb::MessageParser<HealthCheckRequest> Parser { get { return _parser; } }
 
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Grpc.Health.V1Alpha.HealthReflection.Descriptor.MessageTypes[0]; }
+      get { return global::Grpc.Health.V1.HealthReflection.Descriptor.MessageTypes[0]; }
     }
 
     pbr::MessageDescriptor pb::IMessage.Descriptor {
@@ -63,7 +62,6 @@ namespace Grpc.Health.V1Alpha {
     partial void OnConstruction();
 
     public HealthCheckRequest(HealthCheckRequest other) : this() {
-      host_ = other.host_;
       service_ = other.service_;
     }
 
@@ -71,18 +69,8 @@ namespace Grpc.Health.V1Alpha {
       return new HealthCheckRequest(this);
     }
 
-    /// <summary>Field number for the "host" field.</summary>
-    public const int HostFieldNumber = 1;
-    private string host_ = "";
-    public string Host {
-      get { return host_; }
-      set {
-        host_ = pb::Preconditions.CheckNotNull(value, "value");
-      }
-    }
-
     /// <summary>Field number for the "service" field.</summary>
-    public const int ServiceFieldNumber = 2;
+    public const int ServiceFieldNumber = 1;
     private string service_ = "";
     public string Service {
       get { return service_; }
@@ -102,14 +90,12 @@ namespace Grpc.Health.V1Alpha {
       if (ReferenceEquals(other, this)) {
         return true;
       }
-      if (Host != other.Host) return false;
       if (Service != other.Service) return false;
       return true;
     }
 
     public override int GetHashCode() {
       int hash = 1;
-      if (Host.Length != 0) hash ^= Host.GetHashCode();
       if (Service.Length != 0) hash ^= Service.GetHashCode();
       return hash;
     }
@@ -119,21 +105,14 @@ namespace Grpc.Health.V1Alpha {
     }
 
     public void WriteTo(pb::CodedOutputStream output) {
-      if (Host.Length != 0) {
-        output.WriteRawTag(10);
-        output.WriteString(Host);
-      }
       if (Service.Length != 0) {
-        output.WriteRawTag(18);
+        output.WriteRawTag(10);
         output.WriteString(Service);
       }
     }
 
     public int CalculateSize() {
       int size = 0;
-      if (Host.Length != 0) {
-        size += 1 + pb::CodedOutputStream.ComputeStringSize(Host);
-      }
       if (Service.Length != 0) {
         size += 1 + pb::CodedOutputStream.ComputeStringSize(Service);
       }
@@ -143,9 +122,6 @@ namespace Grpc.Health.V1Alpha {
     public void MergeFrom(HealthCheckRequest other) {
       if (other == null) {
         return;
-      }
-      if (other.Host.Length != 0) {
-        Host = other.Host;
       }
       if (other.Service.Length != 0) {
         Service = other.Service;
@@ -160,10 +136,6 @@ namespace Grpc.Health.V1Alpha {
             input.SkipLastField();
             break;
           case 10: {
-            Host = input.ReadString();
-            break;
-          }
-          case 18: {
             Service = input.ReadString();
             break;
           }
@@ -179,7 +151,7 @@ namespace Grpc.Health.V1Alpha {
     public static pb::MessageParser<HealthCheckResponse> Parser { get { return _parser; } }
 
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Grpc.Health.V1Alpha.HealthReflection.Descriptor.MessageTypes[1]; }
+      get { return global::Grpc.Health.V1.HealthReflection.Descriptor.MessageTypes[1]; }
     }
 
     pbr::MessageDescriptor pb::IMessage.Descriptor {
@@ -202,8 +174,8 @@ namespace Grpc.Health.V1Alpha {
 
     /// <summary>Field number for the "status" field.</summary>
     public const int StatusFieldNumber = 1;
-    private global::Grpc.Health.V1Alpha.HealthCheckResponse.Types.ServingStatus status_ = global::Grpc.Health.V1Alpha.HealthCheckResponse.Types.ServingStatus.UNKNOWN;
-    public global::Grpc.Health.V1Alpha.HealthCheckResponse.Types.ServingStatus Status {
+    private global::Grpc.Health.V1.HealthCheckResponse.Types.ServingStatus status_ = global::Grpc.Health.V1.HealthCheckResponse.Types.ServingStatus.UNKNOWN;
+    public global::Grpc.Health.V1.HealthCheckResponse.Types.ServingStatus Status {
       get { return status_; }
       set {
         status_ = value;
@@ -227,7 +199,7 @@ namespace Grpc.Health.V1Alpha {
 
     public override int GetHashCode() {
       int hash = 1;
-      if (Status != global::Grpc.Health.V1Alpha.HealthCheckResponse.Types.ServingStatus.UNKNOWN) hash ^= Status.GetHashCode();
+      if (Status != global::Grpc.Health.V1.HealthCheckResponse.Types.ServingStatus.UNKNOWN) hash ^= Status.GetHashCode();
       return hash;
     }
 
@@ -236,7 +208,7 @@ namespace Grpc.Health.V1Alpha {
     }
 
     public void WriteTo(pb::CodedOutputStream output) {
-      if (Status != global::Grpc.Health.V1Alpha.HealthCheckResponse.Types.ServingStatus.UNKNOWN) {
+      if (Status != global::Grpc.Health.V1.HealthCheckResponse.Types.ServingStatus.UNKNOWN) {
         output.WriteRawTag(8);
         output.WriteEnum((int) Status);
       }
@@ -244,7 +216,7 @@ namespace Grpc.Health.V1Alpha {
 
     public int CalculateSize() {
       int size = 0;
-      if (Status != global::Grpc.Health.V1Alpha.HealthCheckResponse.Types.ServingStatus.UNKNOWN) {
+      if (Status != global::Grpc.Health.V1.HealthCheckResponse.Types.ServingStatus.UNKNOWN) {
         size += 1 + pb::CodedOutputStream.ComputeEnumSize((int) Status);
       }
       return size;
@@ -254,7 +226,7 @@ namespace Grpc.Health.V1Alpha {
       if (other == null) {
         return;
       }
-      if (other.Status != global::Grpc.Health.V1Alpha.HealthCheckResponse.Types.ServingStatus.UNKNOWN) {
+      if (other.Status != global::Grpc.Health.V1.HealthCheckResponse.Types.ServingStatus.UNKNOWN) {
         Status = other.Status;
       }
     }
@@ -267,7 +239,7 @@ namespace Grpc.Health.V1Alpha {
             input.SkipLastField();
             break;
           case 8: {
-            status_ = (global::Grpc.Health.V1Alpha.HealthCheckResponse.Types.ServingStatus) input.ReadEnum();
+            status_ = (global::Grpc.Health.V1.HealthCheckResponse.Types.ServingStatus) input.ReadEnum();
             break;
           }
         }
