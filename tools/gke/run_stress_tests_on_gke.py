@@ -403,6 +403,7 @@ def run_test(skip_building_image, gcp_project_id, image_name, tag_name,
       break
     # Things seem to be running fine. Wait until next poll time to check the
     # status
+    print 'Sleeping for %d seconds..' % poll_interval_secs
     time.sleep(poll_interval_secs)
 
   # Print BiqQuery tables
@@ -418,7 +419,7 @@ if __name__ == '__main__':
   gcp_project_id = 'sree-gce'
   tag_name = 'gcr.io/%s/%s' % (gcp_project_id, image_name)
   num_client_instances = 3
-  poll_interval_secs = 5,
+  poll_interval_secs = 10
   test_duration_secs = 150
   run_test(True, gcp_project_id, image_name, tag_name, num_client_instances,
            poll_interval_secs, test_duration_secs)
