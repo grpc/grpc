@@ -149,7 +149,7 @@ static void perform_delayed_add(grpc_exec_ctx *exec_ctx, void *arg,
     finally_add_fd(exec_ctx, da->pollset, da->fd);
   }
 
-  gpr_mu_lock(da->pollset->mu);
+  gpr_mu_lock(&da->pollset->mu);
   da->pollset->in_flight_cbs--;
   if (da->pollset->shutting_down) {
     /* We don't care about this pollset anymore. */
@@ -158,7 +158,7 @@ static void perform_delayed_add(grpc_exec_ctx *exec_ctx, void *arg,
       grpc_exec_ctx_enqueue(exec_ctx, da->pollset->shutdown_done, true, NULL);
     }
   }
-  gpr_mu_unlock(da->pollset->mu);
+  gpr_mu_unlock(&da->pollset->mu);
 
   GRPC_FD_UNREF(da->fd, "delayed_add");
 
@@ -170,7 +170,7 @@ static void multipoll_with_epoll_pollset_add_fd(grpc_exec_ctx *exec_ctx,
                                                 grpc_fd *fd,
                                                 int and_unlock_pollset) {
   if (and_unlock_pollset) {
-    gpr_mu_unlock(pollset->mu);
+    gpr_mu_unlock(&pollset->mu);
     finally_add_fd(exec_ctx, pollset, fd);
   } else {
     delayed_add *da = gpr_malloc(sizeof(*da));
@@ -202,7 +202,7 @@ static void multipoll_with_epoll_pollset_maybe_work_and_unlock(
    * here.
    */
 
-  gpr_mu_unlock(pollset->mu);
+  gpr_mu_unlock(&pollset->mu);
 
   timeout_ms = grpc_poll_deadline_to_millis_timeout(deadline, now);
 

@@ -45,7 +45,7 @@
 #include "src/core/tsi/fake_transport_security.h"
 #include "test/core/util/test_config.h"
 
-static gpr_mu g_mu;
+static gpr_mu *g_mu;
 static grpc_pollset *g_pollset;
 
 static grpc_endpoint_test_fixture secure_endpoint_create_fixture_tcp_socketpair(
@@ -183,9 +183,8 @@ int main(int argc, char **argv) {
 
   grpc_init();
   g_pollset = gpr_malloc(grpc_pollset_size());
-  gpr_mu_init(&g_mu);
   grpc_pollset_init(g_pollset, &g_mu);
-  grpc_endpoint_tests(configs[0], g_pollset, &g_mu);
+  grpc_endpoint_tests(configs[0], g_pollset, g_mu);
   test_leftover(configs[1], 1);
   grpc_closure_init(&destroyed, destroy_pollset, g_pollset);
   grpc_pollset_shutdown(&exec_ctx, g_pollset, &destroyed);
@@ -193,7 +192,6 @@ int main(int argc, char **argv) {
   grpc_shutdown();
 
   gpr_free(g_pollset);
-  gpr_mu_destroy(&g_mu);
 
   return 0;
 }

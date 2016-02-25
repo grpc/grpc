@@ -44,6 +44,22 @@ namespace grpc {
 namespace testing {
 
 const char kInsecureCredentialsType[] = "INSECURE_CREDENTIALS";
+const char kTlsCredentialsType[] = "TLS_CREDENTIALS";
+
+class CredentialsProvider {
+ public:
+  virtual ~CredentialsProvider() {}
+
+  virtual std::shared_ptr<ChannelCredentials> GetChannelCredentials(
+      const grpc::string& type, ChannelArguments* args) = 0;
+  virtual std::shared_ptr<ServerCredentials> GetServerCredentials(
+      const grpc::string& type) = 0;
+  virtual std::vector<grpc::string> GetSecureCredentialsTypeList() = 0;
+};
+
+// Set the CredentialsProvider used by the other functions in this file. If this
+// is not set, a default provider will be used.
+void SetTestCredentialsProvider(std::unique_ptr<CredentialsProvider> provider);
 
 // Provide channel credentials according to the given type. Alter the channel
 // arguments if needed.

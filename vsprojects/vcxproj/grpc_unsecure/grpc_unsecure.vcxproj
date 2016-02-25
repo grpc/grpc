@@ -458,7 +458,7 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\client_config\uri_parser.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\compression\algorithm.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\compression\compression_algorithm.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\compression\message_compress.c">
     </ClCompile>

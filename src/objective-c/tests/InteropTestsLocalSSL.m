@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -55,6 +55,17 @@ static NSString * const kLocalSSLHost = @"localhost:5051";
   [GRPCCall useTestCertsPath:certsPath testName:@"foo.test.google.fr" forHost:kLocalSSLHost];
 
   [super setUp];
+}
+
+- (void)testExceptions {
+  // Try to set userAgentPrefix for host that is nil. This should cause
+  // an exception.
+  @try {
+    [GRPCCall useTestCertsPath:nil testName:nil forHost:nil];
+    XCTFail(@"Did not receive an exception when parameters are nil");
+  } @catch(NSException *theException) {
+    NSLog(@"Received exception as expected: %@", theException.name);
+  }
 }
 
 @end

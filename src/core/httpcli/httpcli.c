@@ -39,9 +39,11 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
+
 #include "src/core/httpcli/format_request.h"
 #include "src/core/httpcli/parser.h"
 #include "src/core/iomgr/endpoint.h"
+#include "src/core/iomgr/iomgr_internal.h"
 #include "src/core/iomgr/resolve_address.h"
 #include "src/core/iomgr/tcp_client.h"
 #include "src/core/support/string.h"

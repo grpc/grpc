@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -91,7 +91,7 @@ static void test_ping(grpc_end2end_test_config config) {
   cq_verifier_destroy(cqv);
 }
 
-void channel_ping(grpc_end2end_test_config config) {
+void ping(grpc_end2end_test_config config) {
   GPR_ASSERT(config.feature_mask & FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION);
   test_ping(config);
 }
