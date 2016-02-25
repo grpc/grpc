@@ -35,6 +35,7 @@
 #import <XCTest/XCTest.h>
 
 #import <GRPCClient/GRPCCall.h>
+#import <GRPCClient/GRPCCall+ChannelArg.h>
 #import <GRPCClient/GRPCCall+OAuth2.h>
 #import <GRPCClient/GRPCCall+Tests.h>
 #import <ProtoRPC/ProtoMethod.h>
@@ -45,6 +46,7 @@
 static NSString * const kHostAddress = @"localhost:5050";
 static NSString * const kPackage = @"grpc.testing";
 static NSString * const kService = @"TestService";
+static NSString * const kRemoteSSLHost = @"grpc-test.sandbox.googleapis.com";
 
 static ProtoMethod *kInexistentMethod;
 static ProtoMethod *kEmptyCallMethod;
@@ -127,8 +129,7 @@ static ProtoMethod *kUnaryCallMethod;
     XCTFail(@"Received unexpected response: %@", value);
   } completionHandler:^(NSError *errorOrNil) {
     XCTAssertNotNil(errorOrNil, @"Finished without error!");
-    // TODO(jcanizales): The server should return code 12 UNIMPLEMENTED, not 5 NOT FOUND.
-    XCTAssertEqual(errorOrNil.code, 5, @"Finished with unexpected error: %@", errorOrNil);
+    XCTAssertEqual(errorOrNil.code, 12, @"Finished with unexpected error: %@", errorOrNil);
     [expectation fulfill];
   }];
 
@@ -191,7 +192,6 @@ static ProtoMethod *kUnaryCallMethod;
   [self waitForExpectationsWithTimeout:8 handler:nil];
 }
 
-// TODO(jcanizales): Activate this test against the remote server.
 - (void)testMetadata {
   __weak XCTestExpectation *expectation = [self expectationWithDescription:@"RPC unauthorized."];
 
@@ -200,7 +200,7 @@ static ProtoMethod *kUnaryCallMethod;
   request.fillOauthScope = YES;
   GRXWriter *requestsWriter = [GRXWriter writerWithValue:[request data]];
 
-  GRPCCall *call = [[GRPCCall alloc] initWithHost:kHostAddress
+  GRPCCall *call = [[GRPCCall alloc] initWithHost:kRemoteSSLHost
                                              path:kUnaryCallMethod.HTTPPath
                                    requestsWriter:requestsWriter];
 
@@ -255,6 +255,42 @@ static ProtoMethod *kUnaryCallMethod;
   [call startWithWriteable:responsesWriteable];
   
   [self waitForExpectationsWithTimeout:8 handler:nil];
+}
+
+// TODO(makarandd): Move to a different file that contains only unit tests
+- (void)testExceptions {
+  // Try to set userAgentPrefix for host that is nil. This should cause
+  // an exception.
+  @try {
+    [GRPCCall setUserAgentPrefix:@"Foo" forHost:nil];
+    XCTFail(@"Did not receive an exception when host is nil");
+  } @catch(NSException *theException) {
+    NSLog(@"Received exception as expected: %@", theException.name);
+  }
+
+  // Try to set parameters to nil for GRPCCall. This should cause an exception
+  @try {
+    GRPCCall *call = [[GRPCCall alloc] initWithHost:nil
+                                               path:nil
+                                     requestsWriter:nil];
+    XCTFail(@"Did not receive an exception when parameters are nil");
+  } @catch(NSException *theException) {
+    NSLog(@"Received exception as expected: %@", theException.name);
+  }
+
+
+  // Set state to Finished by force
+  GRXWriter *requestsWriter = [GRXWriter emptyWriter];
+  [requestsWriter finishWithError:nil];
+  @try {
+    GRPCCall *call = [[GRPCCall alloc] initWithHost:kHostAddress
+                                               path:kUnaryCallMethod.HTTPPath
+                                     requestsWriter:requestsWriter];
+    XCTFail(@"Did not receive an exception when GRXWriter has incorrect state.");
+  } @catch(NSException *theException) {
+    NSLog(@"Received exception as expected: %@", theException.name);
+  }
+
 }
 
 @end
