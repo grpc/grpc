@@ -39,15 +39,15 @@
 
 #include "test/core/util/test_config.h"
 
-static gpr_mu g_mu;
+static gpr_mu *g_mu;
 static grpc_pollset *g_pollset;
 
 static void must_succeed(grpc_exec_ctx *exec_ctx, void *p, bool success) {
   GPR_ASSERT(success == 1);
-  gpr_mu_lock(&g_mu);
+  gpr_mu_lock(g_mu);
   *(int *)p = 1;
   grpc_pollset_kick(g_pollset, NULL);
-  gpr_mu_unlock(&g_mu);
+  gpr_mu_unlock(g_mu);
 }
 
 static void test_ref_unref(void) {
@@ -71,11 +71,11 @@ static void test_add_closure(void) {
   grpc_workqueue_push(wq, &c, 1);
   grpc_workqueue_add_to_pollset(&exec_ctx, wq, g_pollset);
 
-  gpr_mu_lock(&g_mu);
+  gpr_mu_lock(g_mu);
   GPR_ASSERT(!done);
   grpc_pollset_work(&exec_ctx, g_pollset, &worker, gpr_now(deadline.clock_type),
                     deadline);
-  gpr_mu_unlock(&g_mu);
+  gpr_mu_unlock(g_mu);
   grpc_exec_ctx_finish(&exec_ctx);
   GPR_ASSERT(done);
 
@@ -96,11 +96,11 @@ static void test_flush(void) {
   grpc_workqueue_flush(&exec_ctx, wq);
   grpc_workqueue_add_to_pollset(&exec_ctx, wq, g_pollset);
 
-  gpr_mu_lock(&g_mu);
+  gpr_mu_lock(g_mu);
   GPR_ASSERT(!done);
   grpc_pollset_work(&exec_ctx, g_pollset, &worker, gpr_now(deadline.clock_type),
                     deadline);
-  gpr_mu_unlock(&g_mu);
+  gpr_mu_unlock(g_mu);
   grpc_exec_ctx_finish(&exec_ctx);
   GPR_ASSERT(done);
 
@@ -117,7 +117,6 @@ int main(int argc, char **argv) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_test_init(argc, argv);
   grpc_init();
-  gpr_mu_init(&g_mu);
   g_pollset = gpr_malloc(grpc_pollset_size());
   grpc_pollset_init(g_pollset, &g_mu);
 
@@ -131,6 +130,5 @@ int main(int argc, char **argv) {
   grpc_shutdown();
 
   gpr_free(g_pollset);
-  gpr_mu_destroy(&g_mu);
   return 0;
 }

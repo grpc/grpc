@@ -47,7 +47,7 @@
 
 static int g_done = 0;
 static grpc_httpcli_context g_context;
-static gpr_mu g_mu;
+static gpr_mu *g_mu;
 static grpc_pollset *g_pollset;
 
 static gpr_timespec n_seconds_time(int seconds) {
@@ -64,10 +64,10 @@ static void on_finish(grpc_exec_ctx *exec_ctx, void *arg,
   GPR_ASSERT(response->status == 200);
   GPR_ASSERT(response->body_length == strlen(expect));
   GPR_ASSERT(0 == memcmp(expect, response->body, response->body_length));
-  gpr_mu_lock(&g_mu);
+  gpr_mu_lock(g_mu);
   g_done = 1;
   grpc_pollset_kick(g_pollset, NULL);
-  gpr_mu_unlock(&g_mu);
+  gpr_mu_unlock(g_mu);
 }
 
 static void test_get(int port) {
@@ -88,16 +88,16 @@ static void test_get(int port) {
 
   grpc_httpcli_get(&exec_ctx, &g_context, g_pollset, &req, n_seconds_time(15),
                    on_finish, (void *)42);
-  gpr_mu_lock(&g_mu);
+  gpr_mu_lock(g_mu);
   while (!g_done) {
     grpc_pollset_worker *worker = NULL;
     grpc_pollset_work(&exec_ctx, g_pollset, &worker,
                       gpr_now(GPR_CLOCK_MONOTONIC), n_seconds_time(20));
-    gpr_mu_unlock(&g_mu);
+    gpr_mu_unlock(g_mu);
     grpc_exec_ctx_finish(&exec_ctx);
-    gpr_mu_lock(&g_mu);
+    gpr_mu_lock(g_mu);
   }
-  gpr_mu_unlock(&g_mu);
+  gpr_mu_unlock(g_mu);
   gpr_free(host);
 }
 
@@ -119,16 +119,16 @@ static void test_post(int port) {
 
   grpc_httpcli_post(&exec_ctx, &g_context, g_pollset, &req, "hello", 5,
                     n_seconds_time(15), on_finish, (void *)42);
-  gpr_mu_lock(&g_mu);
+  gpr_mu_lock(g_mu);
   while (!g_done) {
     grpc_pollset_worker *worker = NULL;
     grpc_pollset_work(&exec_ctx, g_pollset, &worker,
                       gpr_now(GPR_CLOCK_MONOTONIC), n_seconds_time(20));
-    gpr_mu_unlock(&g_mu);
+    gpr_mu_unlock(g_mu);
     grpc_exec_ctx_finish(&exec_ctx);
-    gpr_mu_lock(&g_mu);
+    gpr_mu_lock(g_mu);
   }
-  gpr_mu_unlock(&g_mu);
+  gpr_mu_unlock(g_mu);
   gpr_free(host);
 }
 
@@ -177,7 +177,6 @@ int main(int argc, char **argv) {
   grpc_init();
   grpc_httpcli_context_init(&g_context);
   g_pollset = gpr_malloc(grpc_pollset_size());
-  gpr_mu_init(&g_mu);
   grpc_pollset_init(g_pollset, &g_mu);
 
   test_get(port);
@@ -189,7 +188,6 @@ int main(int argc, char **argv) {
   grpc_exec_ctx_finish(&exec_ctx);
   grpc_shutdown();
 
-  gpr_mu_destroy(&g_mu);
   gpr_free(g_pollset);
 
   gpr_subprocess_destroy(server);

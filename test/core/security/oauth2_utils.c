@@ -45,7 +45,7 @@
 #include "src/core/security/credentials.h"
 
 typedef struct {
-  gpr_mu mu;
+  gpr_mu *mu;
   grpc_pollset *pollset;
   int is_done;
   char *token;
@@ -67,11 +67,11 @@ static void on_oauth2_response(grpc_exec_ctx *exec_ctx, void *user_data,
            GPR_SLICE_LENGTH(token_slice));
     token[GPR_SLICE_LENGTH(token_slice)] = '\0';
   }
-  gpr_mu_lock(&request->mu);
+  gpr_mu_lock(request->mu);
   request->is_done = 1;
   request->token = token;
   grpc_pollset_kick(request->pollset, NULL);
-  gpr_mu_unlock(&request->mu);
+  gpr_mu_unlock(request->mu);
 }
 
 static void do_nothing(grpc_exec_ctx *exec_ctx, void *unused, bool success) {}
@@ -95,14 +95,14 @@ char *grpc_test_fetch_oauth2_token_with_credentials(
 
   grpc_exec_ctx_finish(&exec_ctx);
 
-  gpr_mu_lock(&request.mu);
+  gpr_mu_lock(request.mu);
   while (!request.is_done) {
     grpc_pollset_worker *worker = NULL;
     grpc_pollset_work(&exec_ctx, request.pollset, &worker,
                       gpr_now(GPR_CLOCK_MONOTONIC),
                       gpr_inf_future(GPR_CLOCK_MONOTONIC));
   }
-  gpr_mu_unlock(&request.mu);
+  gpr_mu_unlock(request.mu);
 
   grpc_pollset_shutdown(&exec_ctx, request.pollset, &do_nothing_closure);
   grpc_exec_ctx_finish(&exec_ctx);

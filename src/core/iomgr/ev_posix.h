@@ -34,9 +34,12 @@
 #ifndef GRPC_INTERNAL_CORE_IOMGR_EV_POSIX_H
 #define GRPC_INTERNAL_CORE_IOMGR_EV_POSIX_H
 
+#include <poll.h>
+
 #include "src/core/iomgr/exec_ctx.h"
 #include "src/core/iomgr/pollset.h"
 #include "src/core/iomgr/pollset_set.h"
+#include "src/core/iomgr/wakeup_fd_posix.h"
 
 typedef struct grpc_fd grpc_fd;
 
@@ -53,7 +56,7 @@ typedef struct grpc_event_engine_vtable {
   void (*fd_notify_on_write)(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
                              grpc_closure *closure);
 
-  void (*pollset_init)(grpc_pollset *pollset, gpr_mu *mu);
+  void (*pollset_init)(grpc_pollset *pollset, gpr_mu **mu);
   void (*pollset_shutdown)(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
                            grpc_closure *closure);
   void (*pollset_reset)(grpc_pollset *pollset);
@@ -146,5 +149,10 @@ void grpc_pollset_set_add_fd(grpc_exec_ctx *exec_ctx,
                              grpc_pollset_set *pollset_set, grpc_fd *fd);
 void grpc_pollset_set_del_fd(grpc_exec_ctx *exec_ctx,
                              grpc_pollset_set *pollset_set, grpc_fd *fd);
+
+/* override to allow tests to hook poll() usage */
+typedef int (*grpc_poll_function_type)(struct pollfd *, nfds_t, int);
+extern grpc_poll_function_type grpc_poll_function;
+extern grpc_wakeup_fd grpc_global_wakeup_fd;
 
 #endif  // GRPC_INTERNAL_CORE_IOMGR_EV_POSIX_H

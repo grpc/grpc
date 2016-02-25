@@ -3,11 +3,12 @@
   <%!
   import json
   %>
-  
+
   ${json.dumps([{"name": tgt.name,
                  "language": tgt.language,
                  "platforms": tgt.platforms,
                  "ci_platforms": tgt.ci_platforms,
+                 "gtest": tgt.gtest,
                  "exclude_configs": tgt.get("exclude_configs", []),
                  "args": [],
                  "flaky": tgt.flaky,
