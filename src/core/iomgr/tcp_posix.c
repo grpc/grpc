@@ -454,7 +454,7 @@ grpc_endpoint *grpc_tcp_create(grpc_fd *em_fd, size_t slice_size,
   grpc_tcp *tcp = (grpc_tcp *)gpr_malloc(sizeof(grpc_tcp));
   tcp->base.vtable = &vtable;
   tcp->peer_string = gpr_strdup(peer_string);
-  tcp->fd = em_fd->fd;
+  tcp->fd = grpc_fd_wrapped_fd(em_fd);
   tcp->read_cb = NULL;
   tcp->write_cb = NULL;
   tcp->release_fd_cb = NULL;

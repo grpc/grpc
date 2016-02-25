@@ -140,7 +140,8 @@ static void on_writable(grpc_exec_ctx *exec_ctx, void *acp, bool success) {
   if (success) {
     do {
       so_error_size = sizeof(so_error);
-      err = getsockopt(fd->fd, SOL_SOCKET, SO_ERROR, &so_error, &so_error_size);
+      err = getsockopt(grpc_fd_wrapped_fd(fd), SOL_SOCKET, SO_ERROR, &so_error,
+                       &so_error_size);
     } while (err < 0 && errno == EINTR);
     if (err < 0) {
       gpr_log(GPR_ERROR, "failed to connect to '%s': getsockopt(ERROR): %s",
