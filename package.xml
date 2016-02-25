@@ -10,7 +10,7 @@
   <email>grpc-packages@google.com</email>
   <active>yes</active>
  </lead>
- <date>2016-02-23</date>
+ <date>2016-02-25</date>
  <time>16:06:07</time>
  <version>
   <release>0.8.0</release>
@@ -95,13 +95,14 @@
     <file baseinstalldir="/" name="src/core/profiling/timers.h" role="src" />
     <file baseinstalldir="/" name="src/core/support/block_annotate.h" role="src" />
     <file baseinstalldir="/" name="src/core/support/env.h" role="src" />
-    <file baseinstalldir="/" name="src/core/support/file.h" role="src" />
+    <file baseinstalldir="/" name="src/core/support/load_file.h" role="src" />
     <file baseinstalldir="/" name="src/core/support/murmur_hash.h" role="src" />
     <file baseinstalldir="/" name="src/core/support/stack_lockfree.h" role="src" />
     <file baseinstalldir="/" name="src/core/support/string.h" role="src" />
     <file baseinstalldir="/" name="src/core/support/string_win32.h" role="src" />
     <file baseinstalldir="/" name="src/core/support/thd_internal.h" role="src" />
     <file baseinstalldir="/" name="src/core/support/time_precise.h" role="src" />
+    <file baseinstalldir="/" name="src/core/support/tmpfile.h" role="src" />
     <file baseinstalldir="/" name="src/core/profiling/basic_timers.c" role="src" />
     <file baseinstalldir="/" name="src/core/profiling/stap_timers.c" role="src" />
     <file baseinstalldir="/" name="src/core/support/alloc.c" role="src" />
@@ -114,11 +115,9 @@
     <file baseinstalldir="/" name="src/core/support/env_linux.c" role="src" />
     <file baseinstalldir="/" name="src/core/support/env_posix.c" role="src" />
     <file baseinstalldir="/" name="src/core/support/env_win32.c" role="src" />
-    <file baseinstalldir="/" name="src/core/support/file.c" role="src" />
-    <file baseinstalldir="/" name="src/core/support/file_posix.c" role="src" />
-    <file baseinstalldir="/" name="src/core/support/file_win32.c" role="src" />
     <file baseinstalldir="/" name="src/core/support/histogram.c" role="src" />
     <file baseinstalldir="/" name="src/core/support/host_port.c" role="src" />
+    <file baseinstalldir="/" name="src/core/support/load_file.c" role="src" />
     <file baseinstalldir="/" name="src/core/support/log.c" role="src" />
     <file baseinstalldir="/" name="src/core/support/log_android.c" role="src" />
     <file baseinstalldir="/" name="src/core/support/log_linux.c" role="src" />
@@ -144,6 +143,8 @@
     <file baseinstalldir="/" name="src/core/support/time_precise.c" role="src" />
     <file baseinstalldir="/" name="src/core/support/time_win32.c" role="src" />
     <file baseinstalldir="/" name="src/core/support/tls_pthread.c" role="src" />
+    <file baseinstalldir="/" name="src/core/support/tmpfile_posix.c" role="src" />
+    <file baseinstalldir="/" name="src/core/support/tmpfile_win32.c" role="src" />
     <file baseinstalldir="/" name="src/core/support/wrap_memcpy.c" role="src" />
     <file baseinstalldir="/" name="include/grpc/grpc_security.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/byte_buffer.h" role="src" />
@@ -274,7 +275,7 @@
     <file baseinstalldir="/" name="src/core/transport/transport.h" role="src" />
     <file baseinstalldir="/" name="src/core/transport/transport_impl.h" role="src" />
     <file baseinstalldir="/" name="src/core/security/auth_filters.h" role="src" />
-    <file baseinstalldir="/" name="src/core/security/base64.h" role="src" />
+    <file baseinstalldir="/" name="src/core/security/b64.h" role="src" />
     <file baseinstalldir="/" name="src/core/security/credentials.h" role="src" />
     <file baseinstalldir="/" name="src/core/security/handshake.h" role="src" />
     <file baseinstalldir="/" name="src/core/security/json_token.h" role="src" />
@@ -324,7 +325,7 @@
     <file baseinstalldir="/" name="src/core/client_config/subchannel_factory.c" role="src" />
     <file baseinstalldir="/" name="src/core/client_config/subchannel_index.c" role="src" />
     <file baseinstalldir="/" name="src/core/client_config/uri_parser.c" role="src" />
-    <file baseinstalldir="/" name="src/core/compression/algorithm.c" role="src" />
+    <file baseinstalldir="/" name="src/core/compression/compression_algorithm.c" role="src" />
     <file baseinstalldir="/" name="src/core/compression/message_compress.c" role="src" />
     <file baseinstalldir="/" name="src/core/debug/trace.c" role="src" />
     <file baseinstalldir="/" name="src/core/httpcli/format_request.c" role="src" />
@@ -425,7 +426,7 @@
     <file baseinstalldir="/" name="src/core/transport/transport.c" role="src" />
     <file baseinstalldir="/" name="src/core/transport/transport_op_string.c" role="src" />
     <file baseinstalldir="/" name="src/core/httpcli/httpcli_security_connector.c" role="src" />
-    <file baseinstalldir="/" name="src/core/security/base64.c" role="src" />
+    <file baseinstalldir="/" name="src/core/security/b64.c" role="src" />
     <file baseinstalldir="/" name="src/core/security/client_auth_filter.c" role="src" />
     <file baseinstalldir="/" name="src/core/security/credentials.c" role="src" />
     <file baseinstalldir="/" name="src/core/security/credentials_metadata.c" role="src" />
@@ -855,32 +856,6 @@
     <file baseinstalldir="/" name="third_party/boringssl/ssl/t1_enc.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/ssl/t1_lib.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/ssl/tls_record.c" role="src" />
-    <file baseinstalldir="/" name="third_party/zlib/crc32.h" role="src" />
-    <file baseinstalldir="/" name="third_party/zlib/deflate.h" role="src" />
-    <file baseinstalldir="/" name="third_party/zlib/gzguts.h" role="src" />
-    <file baseinstalldir="/" name="third_party/zlib/inffast.h" role="src" />
-    <file baseinstalldir="/" name="third_party/zlib/inffixed.h" role="src" />
-    <file baseinstalldir="/" name="third_party/zlib/inflate.h" role="src" />
-    <file baseinstalldir="/" name="third_party/zlib/inftrees.h" role="src" />
-    <file baseinstalldir="/" name="third_party/zlib/trees.h" role="src" />
-    <file baseinstalldir="/" name="third_party/zlib/zconf.h" role="src" />
-    <file baseinstalldir="/" name="third_party/zlib/zlib.h" role="src" />
-    <file baseinstalldir="/" name="third_party/zlib/zutil.h" role="src" />
-    <file baseinstalldir="/" name="third_party/zlib/adler32.c" role="src" />
-    <file baseinstalldir="/" name="third_party/zlib/compress.c" role="src" />
-    <file baseinstalldir="/" name="third_party/zlib/crc32.c" role="src" />
-    <file baseinstalldir="/" name="third_party/zlib/deflate.c" role="src" />
-    <file baseinstalldir="/" name="third_party/zlib/gzclose.c" role="src" />
-    <file baseinstalldir="/" name="third_party/zlib/gzlib.c" role="src" />
-    <file baseinstalldir="/" name="third_party/zlib/gzread.c" role="src" />
-    <file baseinstalldir="/" name="third_party/zlib/gzwrite.c" role="src" />
-    <file baseinstalldir="/" name="third_party/zlib/infback.c" role="src" />
-    <file baseinstalldir="/" name="third_party/zlib/inffast.c" role="src" />
-    <file baseinstalldir="/" name="third_party/zlib/inflate.c" role="src" />
-    <file baseinstalldir="/" name="third_party/zlib/inftrees.c" role="src" />
-    <file baseinstalldir="/" name="third_party/zlib/trees.c" role="src" />
-    <file baseinstalldir="/" name="third_party/zlib/uncompr.c" role="src" />
-    <file baseinstalldir="/" name="third_party/zlib/zutil.c" role="src" />
   </dir>
  </contents>
  <dependencies>
@@ -988,7 +963,7 @@ Update to wrap gRPC C Core version 0.10.0
     <release>beta</release>
     <api>beta</api>
    </stability>
-   <date>2016-02-23</date>
+   <date>2016-02-25</date>
    <license>BSD</license>
    <notes>
 - Simplify gRPC PHP installation #4517

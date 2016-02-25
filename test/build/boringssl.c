@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,41 +31,21 @@
  *
  */
 
-#import <GRPCClient/GRPCCall+Tests.h>
+// Check that boringssl is going to compile
 
-#import "InteropTests.h"
+#include <stdio.h>
+#include <unistd.h>
 
-static NSString * const kLocalSSLHost = @"localhost:5051";
+// boringssl uses anonymous unions
+struct foo {
+  union {
+    int a;
+    int b;
+  };
+};
 
-/** Tests in InteropTests.m, sending the RPCs to a local SSL server. */
-@interface InteropTestsLocalSSL : InteropTests
-@end
-
-@implementation InteropTestsLocalSSL
-
-+ (NSString *)host {
-  return kLocalSSLHost;
+int main(void) {
+  const char *close = "this should not shadow";
+  printf("%s\n", close);
+  return 0;
 }
-
-- (void)setUp {
-  // Register test server certificates and name.
-  NSBundle *bundle = [NSBundle bundleForClass:self.class];
-  NSString *certsPath = [bundle pathForResource:@"TestCertificates.bundle/test-certificates"
-                                         ofType:@"pem"];
-  [GRPCCall useTestCertsPath:certsPath testName:@"foo.test.google.fr" forHost:kLocalSSLHost];
-
-  [super setUp];
-}
-
-- (void)testExceptions {
-  // Try to set userAgentPrefix for host that is nil. This should cause
-  // an exception.
-  @try {
-    [GRPCCall useTestCertsPath:nil testName:nil forHost:nil];
-    XCTFail(@"Did not receive an exception when parameters are nil");
-  } @catch(NSException *theException) {
-    NSLog(@"Received exception as expected: %@", theException.name);
-  }
-}
-
-@end

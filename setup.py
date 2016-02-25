@@ -208,7 +208,6 @@ PACKAGE_DATA = {
         '_credentials/roots.pem',
         '_windows/grpc_c.32.python',
         '_windows/grpc_c.64.python',
-        'cygrpc.so',
     ],
 }
 if INSTALL_TESTS:

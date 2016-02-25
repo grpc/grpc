@@ -42,6 +42,8 @@ else
   cp -r "$EXTERNAL_GIT_ROOT/$RELATIVE_COPY_PATH"/* "/var/local/git/grpc/$RELATIVE_COPY_PATH"
 fi
 
+$POST_GIT_STEP
+
 if [ -x "$(command -v rvm)" ]
 then
   rvm use ruby-2.1
