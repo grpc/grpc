@@ -252,7 +252,7 @@ static void server_wait_and_shutdown(server *sv) {
   gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
   while (!sv->done) {
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-    grpc_pollset_worker worker;
+    grpc_pollset_worker *worker = NULL;
     grpc_pollset_work(&exec_ctx, &g_pollset, &worker,
                       gpr_now(GPR_CLOCK_MONOTONIC),
                       gpr_inf_future(GPR_CLOCK_MONOTONIC));
@@ -366,7 +366,7 @@ static void client_start(grpc_exec_ctx *exec_ctx, client *cl, int port) {
 static void client_wait_and_shutdown(client *cl) {
   gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
   while (!cl->done) {
-    grpc_pollset_worker worker;
+    grpc_pollset_worker *worker = NULL;
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
     grpc_pollset_work(&exec_ctx, &g_pollset, &worker,
                       gpr_now(GPR_CLOCK_MONOTONIC),
@@ -467,7 +467,7 @@ static void test_grpc_fd_change(void) {
   /* And now wait for it to run. */
   gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
   while (a.cb_that_ran == NULL) {
-    grpc_pollset_worker worker;
+    grpc_pollset_worker *worker = NULL;
     grpc_pollset_work(&exec_ctx, &g_pollset, &worker,
                       gpr_now(GPR_CLOCK_MONOTONIC),
                       gpr_inf_future(GPR_CLOCK_MONOTONIC));
@@ -491,7 +491,7 @@ static void test_grpc_fd_change(void) {
 
   gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
   while (b.cb_that_ran == NULL) {
-    grpc_pollset_worker worker;
+    grpc_pollset_worker *worker = NULL;
     grpc_pollset_work(&exec_ctx, &g_pollset, &worker,
                       gpr_now(GPR_CLOCK_MONOTONIC),
                       gpr_inf_future(GPR_CLOCK_MONOTONIC));
