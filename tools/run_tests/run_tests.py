@@ -174,11 +174,11 @@ class CLanguage(object):
             if i >= 0: line = line[:i]
             if not line: continue
             if line[0] != ' ':
-              base = line
+              base = line.strip()
             else:
               assert base is not None
               assert line[1] == ' '
-              test = base + line[2:]
+              test = base + line.strip()
               cmdline = [binary] + ['--gtest_filter=%s' % test]
               out.append(self.config.job_spec(cmdline, [binary],
                                               shortname='%s:%s' % (binary, test),
