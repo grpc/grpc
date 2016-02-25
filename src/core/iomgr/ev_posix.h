@@ -111,4 +111,17 @@ void grpc_fd_notify_on_read(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
 void grpc_fd_notify_on_write(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
                              grpc_closure *closure);
 
+/* pollset_posix functions */
+
+/* Add an fd to a pollset */
+void grpc_pollset_add_fd(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
+                         struct grpc_fd *fd);
+
+/* pollset_set_posix functions */
+
+void grpc_pollset_set_add_fd(grpc_exec_ctx *exec_ctx,
+                             grpc_pollset_set *pollset_set, grpc_fd *fd);
+void grpc_pollset_set_del_fd(grpc_exec_ctx *exec_ctx,
+                             grpc_pollset_set *pollset_set, grpc_fd *fd);
+
 #endif  // GRPC_INTERNAL_CORE_IOMGR_EV_POSIX_H

@@ -52,8 +52,7 @@
 #include <grpc/support/time.h>
 
 #include "src/core/debug/trace.h"
-#include "src/core/iomgr/pollset_posix.h"
-#include "src/core/iomgr/pollset_set_posix.h"
+#include "src/core/iomgr/ev_posix.h"
 #include "src/core/profiling/timers.h"
 #include "src/core/support/string.h"
 

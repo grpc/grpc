@@ -63,7 +63,6 @@
 
 #include "src/core/iomgr/iomgr_internal.h"
 #include "src/core/iomgr/wakeup_fd_posix.h"
-#include "src/core/iomgr/pollset_set_posix.h"
 #include "src/core/profiling/timers.h"
 #include "src/core/support/block_annotate.h"
 
