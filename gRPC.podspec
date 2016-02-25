@@ -356,7 +356,6 @@ Pod::Spec.new do |s|
                       'src/core/iomgr/iomgr.c',
                       'src/core/iomgr/iomgr_posix.c',
                       'src/core/iomgr/iomgr_windows.c',
-                      'src/core/iomgr/pollset_set_posix.c',
                       'src/core/iomgr/pollset_set_windows.c',
                       'src/core/iomgr/pollset_windows.c',
                       'src/core/iomgr/resolve_address_posix.c',
