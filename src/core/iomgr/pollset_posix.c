@@ -188,8 +188,9 @@ void grpc_kick_poller(void) { grpc_wakeup_fd_wakeup(&grpc_global_wakeup_fd); }
 
 static void become_basic_pollset(grpc_pollset *pollset, grpc_fd *fd_or_null);
 
-void grpc_pollset_init(grpc_pollset *pollset, gpr_mu *mu) {
-  pollset->mu = mu;
+void grpc_pollset_init(grpc_pollset *pollset, gpr_mu **mu) {
+  gpr_mu_init(&pollset->mu);
+  *mu = &pollset->mu;
   pollset->root_worker.next = pollset->root_worker.prev = &pollset->root_worker;
   pollset->in_flight_cbs = 0;
   pollset->shutting_down = 0;
@@ -228,15 +229,15 @@ void grpc_pollset_reset(grpc_pollset *pollset) {
 
 void grpc_pollset_add_fd(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
                          grpc_fd *fd) {
-  gpr_mu_lock(pollset->mu);
+  gpr_mu_lock(&pollset->mu);
   pollset->vtable->add_fd(exec_ctx, pollset, fd, 1);
 /* the following (enabled only in debug) will reacquire and then release
    our lock - meaning that if the unlocking flag passed to add_fd above is
    not respected, the code will deadlock (in a way that we have a chance of
    debugging) */
 #ifndef NDEBUG
-  gpr_mu_lock(pollset->mu);
-  gpr_mu_unlock(pollset->mu);
+  gpr_mu_lock(&pollset->mu);
+  gpr_mu_unlock(&pollset->mu);
 #endif
 }
 
@@ -285,7 +286,7 @@ void grpc_pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
   /* Give do_promote priority so we don't starve it out */
   if (pollset->in_flight_cbs) {
     GPR_TIMER_MARK("grpc_pollset_work.in_flight_cbs", 0);
-    gpr_mu_unlock(pollset->mu);
+    gpr_mu_unlock(&pollset->mu);
     locked = 0;
     goto done;
   }
@@ -319,7 +320,7 @@ void grpc_pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
   done:
     if (!locked) {
       queued_work |= grpc_exec_ctx_flush(exec_ctx);
-      gpr_mu_lock(pollset->mu);
+      gpr_mu_lock(&pollset->mu);
       locked = 1;
     }
     /* If we're forced to re-evaluate polling (via grpc_pollset_kick with
@@ -349,19 +350,19 @@ void grpc_pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
       grpc_pollset_kick(pollset, NULL);
     } else if (!pollset->called_shutdown && pollset->in_flight_cbs == 0) {
       pollset->called_shutdown = 1;
-      gpr_mu_unlock(pollset->mu);
+      gpr_mu_unlock(&pollset->mu);
       finish_shutdown(exec_ctx, pollset);
       grpc_exec_ctx_flush(exec_ctx);
       /* Continuing to access pollset here is safe -- it is the caller's
        * responsibility to not destroy when it has outstanding calls to
        * grpc_pollset_work.
        * TODO(dklempner): Can we refactor the shutdown logic to avoid this? */
-      gpr_mu_lock(pollset->mu);
+      gpr_mu_lock(&pollset->mu);
     } else if (!grpc_closure_list_empty(pollset->idle_jobs)) {
       grpc_exec_ctx_enqueue_list(exec_ctx, &pollset->idle_jobs, NULL);
-      gpr_mu_unlock(pollset->mu);
+      gpr_mu_unlock(&pollset->mu);
       grpc_exec_ctx_flush(exec_ctx);
-      gpr_mu_lock(pollset->mu);
+      gpr_mu_lock(&pollset->mu);
     }
   }
   *worker_hdl = NULL;
@@ -429,7 +430,7 @@ static void basic_do_promote(grpc_exec_ctx *exec_ctx, void *args,
    * 4. The pollset may be shutting down.
    */
 
-  gpr_mu_lock(pollset->mu);
+  gpr_mu_lock(&pollset->mu);
   /* First we need to ensure that nobody is polling concurrently */
   GPR_ASSERT(!grpc_pollset_has_workers(pollset));
 
@@ -470,7 +471,7 @@ static void basic_do_promote(grpc_exec_ctx *exec_ctx, void *args,
     }
   }
 
-  gpr_mu_unlock(pollset->mu);
+  gpr_mu_unlock(&pollset->mu);
 
   /* Matching ref in basic_pollset_add_fd */
   GRPC_FD_UNREF(fd, "basicpoll_add");
@@ -523,7 +524,7 @@ static void basic_pollset_add_fd(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
 
 exit:
   if (and_unlock_pollset) {
-    gpr_mu_unlock(pollset->mu);
+    gpr_mu_unlock(&pollset->mu);
   }
 }
 
@@ -559,14 +560,14 @@ static void basic_pollset_maybe_work_and_unlock(grpc_exec_ctx *exec_ctx,
     pfd[2].fd = fd->fd;
     pfd[2].revents = 0;
     GRPC_FD_REF(fd, "basicpoll_begin");
-    gpr_mu_unlock(pollset->mu);
+    gpr_mu_unlock(&pollset->mu);
     pfd[2].events = (short)grpc_fd_begin_poll(fd, pollset, worker, POLLIN,
                                               POLLOUT, &fd_watcher);
     if (pfd[2].events != 0) {
       nfds++;
     }
   } else {
-    gpr_mu_unlock(pollset->mu);
+    gpr_mu_unlock(&pollset->mu);
   }
 
   /* TODO(vpai): Consider first doing a 0 timeout poll here to avoid
