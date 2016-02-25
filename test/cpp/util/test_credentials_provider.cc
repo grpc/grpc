@@ -95,9 +95,7 @@ gpr_once g_once_init_provider_mu = GPR_ONCE_INIT;
 grpc::mutex* g_provider_mu = nullptr;
 CredentialsProvider* g_provider = nullptr;
 
-void InitProviderMu() {
-  g_provider_mu = new grpc::mutex;
-}
+void InitProviderMu() { g_provider_mu = new grpc::mutex; }
 
 grpc::mutex& GetMu() {
   gpr_once_init(&g_once_init_provider_mu, &InitProviderMu);
