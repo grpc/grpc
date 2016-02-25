@@ -59,7 +59,7 @@ static void httpcli_ssl_destroy(grpc_security_connector *sc) {
 }
 
 static void httpcli_ssl_do_handshake(grpc_exec_ctx *exec_ctx,
-                                     grpc_security_connector *sc,
+                                     grpc_channel_security_connector *sc,
                                      grpc_endpoint *nonsecure_endpoint,
                                      grpc_security_handshake_done_cb cb,
                                      void *user_data) {
@@ -78,8 +78,8 @@ static void httpcli_ssl_do_handshake(grpc_exec_ctx *exec_ctx,
             tsi_result_to_string(result));
     cb(exec_ctx, user_data, GRPC_SECURITY_ERROR, NULL, NULL);
   } else {
-    grpc_do_security_handshake(exec_ctx, handshaker, sc, nonsecure_endpoint, cb,
-                               user_data);
+    grpc_do_security_handshake(exec_ctx, handshaker, &sc->base, true,
+                               nonsecure_endpoint, cb, user_data);
   }
 }
 
@@ -103,7 +103,7 @@ static void httpcli_ssl_check_peer(grpc_exec_ctx *exec_ctx,
 }
 
 static grpc_security_connector_vtable httpcli_ssl_vtable = {
-    httpcli_ssl_destroy, httpcli_ssl_do_handshake, httpcli_ssl_check_peer};
+    httpcli_ssl_destroy, httpcli_ssl_check_peer};
 
 static grpc_security_status httpcli_ssl_channel_security_connector_create(
     const unsigned char *pem_root_certs, size_t pem_root_certs_size,
@@ -121,7 +121,6 @@ static grpc_security_status httpcli_ssl_channel_security_connector_create(
   memset(c, 0, sizeof(grpc_httpcli_ssl_channel_security_connector));
 
   gpr_ref_init(&c->base.base.refcount, 1);
-  c->base.base.is_client_side = 1;
   c->base.base.vtable = &httpcli_ssl_vtable;
   if (secure_peer_name != NULL) {
     c->secure_peer_name = gpr_strdup(secure_peer_name);
@@ -136,6 +135,7 @@ static grpc_security_status httpcli_ssl_channel_security_connector_create(
     *sc = NULL;
     return GRPC_SECURITY_ERROR;
   }
+  c->base.do_handshake = httpcli_ssl_do_handshake;
   *sc = &c->base;
   return GRPC_SECURITY_OK;
 }
@@ -180,8 +180,8 @@ static void ssl_handshake(grpc_exec_ctx *exec_ctx, void *arg,
   GPR_ASSERT(httpcli_ssl_channel_security_connector_create(
                  pem_root_certs, pem_root_certs_size, host, &sc) ==
              GRPC_SECURITY_OK);
-  grpc_security_connector_do_handshake(exec_ctx, &sc->base, tcp,
-                                       on_secure_transport_setup_done, c);
+  grpc_channel_security_connector_do_handshake(
+      exec_ctx, sc, tcp, on_secure_transport_setup_done, c);
   GRPC_SECURITY_CONNECTOR_UNREF(&sc->base, "httpcli");
 }
 

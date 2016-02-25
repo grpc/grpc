@@ -40,9 +40,6 @@
     <ClCompile Include="$(SolutionDir)\..\src\cpp\client\insecure_credentials.cc">
       <Filter>src\cpp\client</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\cpp\common\alarm.cc">
-      <Filter>src\cpp\common</Filter>
-    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\common\call.cc">
       <Filter>src\cpp\common</Filter>
     </ClCompile>
