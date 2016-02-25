@@ -60,10 +60,6 @@
 //   limit of 255 for both CENSUS_MAX_TAG_KV_LEN and CENSUS_MAX_PROPAGATED_TAGS.
 // * Keep all tag information (keys/values/flags) in a single memory buffer,
 //   that can be directly copied to the wire.
-// * Binary tags share the same structure as, but are encoded separately from,
-//   non-binary tags. This is primarily because non-binary tags are far more
-//   likely to be repeated across multiple RPC calls, so are more efficiently
-//   cached and compressed in any metadata schemes.
 
 // Structure representing a set of tags. Essentially a count of number of tags
 // present, and pointer to a chunk of memory that contains the per-tag details.
@@ -77,7 +73,7 @@ struct tag_set {
   char *kvm;        // key/value memory. Consists of repeated entries of:
   //   Offset  Size  Description
   //     0      1    Key length, including trailing 0. (K)
-  //     1      1    Value length. (V)
+  //     1      1    Value length, including trailing 0 (V)
   //     2      1    Flags
   //     3      K    Key bytes
   //     3 + K  V    Value bytes
@@ -108,19 +104,18 @@ struct raw_tag {
 #define CENSUS_TAG_DELETED CENSUS_TAG_RESERVED
 #define CENSUS_TAG_IS_DELETED(flags) (flags & CENSUS_TAG_DELETED)
 
-// Primary (external) representation of a context. Composed of 3 underlying
-// tag_set structs, one for each of the binary/printable propagated tags, and
-// one for everything else. This is to efficiently support tag
-// encoding/decoding.
+// Primary representation of a context. Composed of 2 underlying tag_set
+// structs, one each for propagated and local (non-propagated) tags. This is
+// to efficiently support tag encoding/decoding.
+// TODO(aveitch): need to add tracing id's/structure.
 struct census_context {
-  struct tag_set tags[3];
+  struct tag_set tags[2];
   census_context_status status;
 };
 
 // Indices into the tags member of census_context
 #define PROPAGATED_TAGS 0
-#define PROPAGATED_BINARY_TAGS 1
-#define LOCAL_TAGS 2
+#define LOCAL_TAGS 1
 
 // Extract a raw tag given a pointer (raw) to the tag header. Allow for some
 // extra bytes in the tag header (see encode/decode functions for usage: this
@@ -166,9 +161,7 @@ static bool context_delete_tag(census_context *context, const census_tag *tag,
                                size_t key_len) {
   return (
       tag_set_delete_tag(&context->tags[LOCAL_TAGS], tag->key, key_len) ||
-      tag_set_delete_tag(&context->tags[PROPAGATED_TAGS], tag->key, key_len) ||
-      tag_set_delete_tag(&context->tags[PROPAGATED_BINARY_TAGS], tag->key,
-                         key_len));
+      tag_set_delete_tag(&context->tags[PROPAGATED_TAGS], tag->key, key_len));
 }
 
 // Add a tag to a tag_set. Return true on success, false if the tag could
@@ -176,11 +169,11 @@ static bool context_delete_tag(census_context *context, const census_tag *tag,
 // not be called if the tag may already exist (in a non-deleted state) in
 // the tag_set, as that would result in two tags with the same key.
 static bool tag_set_add_tag(struct tag_set *tags, const census_tag *tag,
-                            size_t key_len) {
+                            size_t key_len, size_t value_len) {
   if (tags->ntags == CENSUS_MAX_PROPAGATED_TAGS) {
     return false;
   }
-  const size_t tag_size = key_len + tag->value_len + TAG_HEADER_SIZE;
+  const size_t tag_size = key_len + value_len + TAG_HEADER_SIZE;
   if (tags->kvm_used + tag_size > tags->kvm_size) {
     // allocate new memory if needed
     tags->kvm_size += 2 * CENSUS_MAX_TAG_KV_LEN + TAG_HEADER_SIZE;
@@ -191,13 +184,12 @@ static bool tag_set_add_tag(struct tag_set *tags, const census_tag *tag,
   }
   char *kvp = tags->kvm + tags->kvm_used;
   *kvp++ = (char)key_len;
-  *kvp++ = (char)tag->value_len;
+  *kvp++ = (char)value_len;
   // ensure reserved flags are not used.
-  *kvp++ = (char)(tag->flags & (CENSUS_TAG_PROPAGATE | CENSUS_TAG_STATS |
-                                CENSUS_TAG_BINARY));
+  *kvp++ = (char)(tag->flags & (CENSUS_TAG_PROPAGATE | CENSUS_TAG_STATS));
   memcpy(kvp, tag->key, key_len);
   kvp += key_len;
-  memcpy(kvp, tag->value, tag->value_len);
+  memcpy(kvp, tag->value, value_len);
   tags->kvm_used += tag_size;
   tags->ntags++;
   tags->ntags_alloc++;
@@ -207,30 +199,20 @@ static bool tag_set_add_tag(struct tag_set *tags, const census_tag *tag,
 // Add/modify/delete a tag to/in a context. Caller must validate that tag key
 // etc. are valid.
 static void context_modify_tag(census_context *context, const census_tag *tag,
-                               size_t key_len) {
+                               size_t key_len, size_t value_len) {
   // First delete the tag if it is already present.
   bool deleted = context_delete_tag(context, tag, key_len);
-  // Determine if we need to add it back.
-  bool call_add = tag->value != NULL && tag->value_len != 0;
   bool added = false;
-  if (call_add) {
-    if (CENSUS_TAG_IS_PROPAGATED(tag->flags)) {
-      if (CENSUS_TAG_IS_BINARY(tag->flags)) {
-        added = tag_set_add_tag(&context->tags[PROPAGATED_BINARY_TAGS], tag,
-                                key_len);
-      } else {
-        added = tag_set_add_tag(&context->tags[PROPAGATED_TAGS], tag, key_len);
-      }
-    } else {
-      added = tag_set_add_tag(&context->tags[LOCAL_TAGS], tag, key_len);
-    }
+  if (CENSUS_TAG_IS_PROPAGATED(tag->flags)) {
+    added = tag_set_add_tag(&context->tags[PROPAGATED_TAGS], tag, key_len,
+                            value_len);
+  } else {
+    added =
+        tag_set_add_tag(&context->tags[LOCAL_TAGS], tag, key_len, value_len);
   }
+
   if (deleted) {
-    if (call_add) {
-      context->status.n_modified_tags++;
-    } else {
-      context->status.n_deleted_tags++;
-    }
+    context->status.n_modified_tags++;
   } else {
     if (added) {
       context->status.n_added_tags++;
@@ -292,8 +274,6 @@ census_context *census_context_create(const census_context *base,
     memset(context, 0, sizeof(census_context));
   } else {
     tag_set_copy(&context->tags[PROPAGATED_TAGS], &base->tags[PROPAGATED_TAGS]);
-    tag_set_copy(&context->tags[PROPAGATED_BINARY_TAGS],
-                 &base->tags[PROPAGATED_BINARY_TAGS]);
     tag_set_copy(&context->tags[LOCAL_TAGS], &base->tags[LOCAL_TAGS]);
     memset(&context->status, 0, sizeof(context->status));
   }
@@ -303,20 +283,27 @@ census_context *census_context_create(const census_context *base,
     const census_tag *tag = &tags[i];
     size_t key_len = strlen(tag->key) + 1;
     // ignore the tag if it is too long/short.
-    if (key_len != 1 && key_len <= CENSUS_MAX_TAG_KV_LEN &&
-        tag->value_len <= CENSUS_MAX_TAG_KV_LEN) {
-      context_modify_tag(context, tag, key_len);
+    if (key_len != 1 && key_len <= CENSUS_MAX_TAG_KV_LEN) {
+      if (tag->value != NULL) {
+        size_t value_len = strlen(tag->value) + 1;
+        if (value_len <= CENSUS_MAX_TAG_KV_LEN) {
+          context_modify_tag(context, tag, key_len, value_len);
+        } else {
+          context->status.n_invalid_tags++;
+        }
+      } else {
+        if (context_delete_tag(context, tag, key_len)) {
+          context->status.n_deleted_tags++;
+        }
+      }
     } else {
       context->status.n_invalid_tags++;
     }
   }
   // Remove any deleted tags, update status if needed, and return.
   tag_set_flatten(&context->tags[PROPAGATED_TAGS]);
-  tag_set_flatten(&context->tags[PROPAGATED_BINARY_TAGS]);
   tag_set_flatten(&context->tags[LOCAL_TAGS]);
   context->status.n_propagated_tags = context->tags[PROPAGATED_TAGS].ntags;
-  context->status.n_propagated_binary_tags =
-      context->tags[PROPAGATED_BINARY_TAGS].ntags;
   context->status.n_local_tags = context->tags[LOCAL_TAGS].ntags;
   if (status) {
     *status = &context->status;
@@ -331,7 +318,6 @@ const census_context_status *census_context_get_status(
 
 void census_context_destroy(census_context *context) {
   gpr_free(context->tags[PROPAGATED_TAGS].kvm);
-  gpr_free(context->tags[PROPAGATED_BINARY_TAGS].kvm);
   gpr_free(context->tags[LOCAL_TAGS].kvm);
   gpr_free(context);
 }
@@ -343,9 +329,6 @@ void census_context_initialize_iterator(const census_context *context,
   if (context->tags[PROPAGATED_TAGS].ntags != 0) {
     iterator->base = PROPAGATED_TAGS;
     iterator->kvm = context->tags[PROPAGATED_TAGS].kvm;
-  } else if (context->tags[PROPAGATED_BINARY_TAGS].ntags != 0) {
-    iterator->base = PROPAGATED_BINARY_TAGS;
-    iterator->kvm = context->tags[PROPAGATED_BINARY_TAGS].kvm;
   } else if (context->tags[LOCAL_TAGS].ntags != 0) {
     iterator->base = LOCAL_TAGS;
     iterator->kvm = context->tags[LOCAL_TAGS].kvm;
@@ -363,7 +346,6 @@ int census_context_next_tag(census_context_iterator *iterator,
   iterator->kvm = decode_tag(&raw, iterator->kvm, 0);
   tag->key = raw.key;
   tag->value = raw.value;
-  tag->value_len = raw.value_len;
   tag->flags = raw.flags;
   if (++iterator->index == iterator->context->tags[iterator->base].ntags) {
     do {
@@ -388,7 +370,6 @@ static bool tag_set_get_tag(const struct tag_set *tags, const char *key,
     if (key_len == raw.key_len && memcmp(raw.key, key, key_len) == 0) {
       tag->key = raw.key;
       tag->value = raw.value;
-      tag->value_len = raw.value_len;
       tag->flags = raw.flags;
       return true;
     }
@@ -403,8 +384,6 @@ int census_context_get_tag(const census_context *context, const char *key,
     return 0;
   }
   if (tag_set_get_tag(&context->tags[PROPAGATED_TAGS], key, key_len, tag) ||
-      tag_set_get_tag(&context->tags[PROPAGATED_BINARY_TAGS], key, key_len,
-                      tag) ||
       tag_set_get_tag(&context->tags[LOCAL_TAGS], key, key_len, tag)) {
     return 1;
   }
@@ -447,21 +426,9 @@ static size_t tag_set_encode(const struct tag_set *tags, char *buffer,
   return ENCODED_HEADER_SIZE + tags->kvm_used;
 }
 
-char *census_context_encode(const census_context *context, char *buffer,
-                            size_t buf_size, size_t *print_buf_size,
-                            size_t *bin_buf_size) {
-  *print_buf_size =
-      tag_set_encode(&context->tags[PROPAGATED_TAGS], buffer, buf_size);
-  if (*print_buf_size == 0) {
-    return NULL;
-  }
-  char *b_buffer = buffer + *print_buf_size;
-  *bin_buf_size = tag_set_encode(&context->tags[PROPAGATED_BINARY_TAGS],
-                                 b_buffer, buf_size - *print_buf_size);
-  if (*bin_buf_size == 0) {
-    return NULL;
-  }
-  return b_buffer;
+size_t census_context_encode(const census_context *context, char *buffer,
+                             size_t buf_size) {
+  return tag_set_encode(&context->tags[PROPAGATED_TAGS], buffer, buf_size);
 }
 
 // Decode a tag set.
@@ -506,8 +473,7 @@ static void tag_set_decode(struct tag_set *tags, const char *buffer,
   }
 }
 
-census_context *census_context_decode(const char *buffer, size_t size,
-                                      const char *bin_buffer, size_t bin_size) {
+census_context *census_context_decode(const char *buffer, size_t size) {
   census_context *context = gpr_malloc(sizeof(census_context));
   memset(&context->tags[LOCAL_TAGS], 0, sizeof(struct tag_set));
   if (buffer == NULL) {
@@ -515,16 +481,7 @@ census_context *census_context_decode(const char *buffer, size_t size,
   } else {
     tag_set_decode(&context->tags[PROPAGATED_TAGS], buffer, size);
   }
-  if (bin_buffer == NULL) {
-    memset(&context->tags[PROPAGATED_BINARY_TAGS], 0, sizeof(struct tag_set));
-  } else {
-    tag_set_decode(&context->tags[PROPAGATED_BINARY_TAGS], bin_buffer,
-                   bin_size);
-  }
   memset(&context->status, 0, sizeof(context->status));
   context->status.n_propagated_tags = context->tags[PROPAGATED_TAGS].ntags;
-  context->status.n_propagated_binary_tags =
-      context->tags[PROPAGATED_BINARY_TAGS].ntags;
-  // TODO(aveitch): check that BINARY flag is correct for each type.
   return context;
 }
