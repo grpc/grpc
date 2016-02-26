@@ -39,6 +39,9 @@
 
 static const grpc_event_engine_vtable *g_event_engine;
 
+grpc_poll_function_type grpc_poll_function = poll;
+grpc_wakeup_fd grpc_global_wakeup_fd;
+
 void grpc_event_engine_init(void) {
   if ((g_event_engine = grpc_init_poll_and_epoll_posix())) {
     return;
@@ -78,7 +81,7 @@ void grpc_fd_notify_on_write(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
 
 size_t grpc_pollset_size(void) { return g_event_engine->pollset_size; }
 
-void grpc_pollset_init(grpc_pollset *pollset, gpr_mu *mu) {
+void grpc_pollset_init(grpc_pollset *pollset, gpr_mu **mu) {
   g_event_engine->pollset_init(pollset, mu);
 }
 
