@@ -603,6 +603,20 @@ static void update_reconnect_parameters(grpc_subchannel *c) {
             gpr_time_from_millis(c->args->args[i].value.integer, GPR_TIMESPAN));
         return;
       }
+      if (0 ==
+          strcmp(c->args->args[i].key, GRPC_ARG_MAX_RECONNECT_BACKOFF_MS)) {
+        if (c->args->args[i].type == GRPC_ARG_INTEGER) {
+          if (c->args->args[i].value.integer >= 0) {
+            max_backoff_millis = c->args->args[i].value.integer;
+          } else {
+            gpr_log(GPR_ERROR, GRPC_ARG_MAX_RECONNECT_BACKOFF_MS
+                    " : must be non-negative");
+          }
+        } else {
+          gpr_log(GPR_ERROR,
+                  GRPC_ARG_MAX_RECONNECT_BACKOFF_MS " : must be an integer");
+        }
+      }
     }
   }
 

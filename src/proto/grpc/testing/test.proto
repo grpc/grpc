@@ -1,5 +1,5 @@
 
-// Copyright 2015, Google Inc.
+// Copyright 2015-2016, Google Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -80,6 +80,6 @@ service UnimplementedService {
 
 // A service used to control reconnect server.
 service ReconnectService {
-  rpc Start(grpc.testing.Empty) returns (grpc.testing.Empty);
+  rpc Start(grpc.testing.ReconnectParams) returns (grpc.testing.Empty);
   rpc Stop(grpc.testing.Empty) returns (grpc.testing.ReconnectInfo);
 }
