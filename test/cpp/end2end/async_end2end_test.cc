@@ -53,7 +53,7 @@
 #include "test/cpp/util/string_ref_helper.h"
 
 #ifdef GPR_POSIX_SOCKET
-#include "src/core/iomgr/pollset_posix.h"
+#include "src/core/iomgr/ev_posix.h"
 #endif
 
 using grpc::testing::EchoRequest;
