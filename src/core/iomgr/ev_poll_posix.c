@@ -290,6 +290,7 @@ static void unref_by(grpc_fd *fd, int n) {
   old = gpr_atm_full_fetch_add(&fd->refst, -n);
   if (old == n) {
     gpr_mu_destroy(&fd->mu);
+    grpc_iomgr_unregister_object(&fd->iomgr_object);
     gpr_free(fd);
   } else {
     GPR_ASSERT(old > n);
@@ -692,7 +693,6 @@ static void pollset_kick(grpc_pollset *p,
 static void pollset_global_init(void) {
   gpr_tls_init(&g_current_thread_poller);
   gpr_tls_init(&g_current_thread_worker);
-  grpc_wakeup_fd_global_init();
   grpc_wakeup_fd_init(&grpc_global_wakeup_fd);
 }
 
@@ -700,7 +700,6 @@ static void pollset_global_shutdown(void) {
   grpc_wakeup_fd_destroy(&grpc_global_wakeup_fd);
   gpr_tls_destroy(&g_current_thread_poller);
   gpr_tls_destroy(&g_current_thread_worker);
-  grpc_wakeup_fd_global_destroy();
 }
 
 static void kick_poller(void) { grpc_wakeup_fd_wakeup(&grpc_global_wakeup_fd); }
@@ -719,7 +718,9 @@ static void pollset_init(grpc_pollset *pollset, gpr_mu **mu) {
   pollset->local_wakeup_cache = NULL;
   pollset->kicked_without_pollers = 0;
   pollset->fd_count = 0;
+  pollset->fd_capacity = 0;
   pollset->del_count = 0;
+  pollset->del_capacity = 0;
   pollset->fds = NULL;
   pollset->dels = NULL;
 }

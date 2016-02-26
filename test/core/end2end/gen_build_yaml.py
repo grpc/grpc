@@ -47,15 +47,6 @@ default_secure_fixture_options = default_unsecure_fixture_options._replace(secur
 uds_fixture_options = default_unsecure_fixture_options._replace(dns_resolver=False, platforms=['linux', 'mac', 'posix'])
 
 
-# map a platform to available polling strategies
-POLLING_STRATEGY = {
-'windows': ['all'],
-'linux': ['poll', 'legacy'],
-'mac': ['poll'],
-'posix': ['poll'],
-}
-
-
 # maps fixture name to whether it requires the security library
 END2END_FIXTURES = {
     'h2_compress': default_unsecure_fixture_options,
@@ -250,22 +241,17 @@ def main():
           {
               'name': '%s_test' % f,
               'args': [t],
-              'env': {
-                'GRPC_POLL_STRATEGY': poll_strategy
-              },
               'exclude_configs': [],
-              'platforms': [platform],
-              'ci_platforms': [platform],
+              'platforms': END2END_FIXTURES[f].platforms,
+              'ci_platforms': (END2END_FIXTURES[f].platforms
+                               if END2END_FIXTURES[f].ci_mac else without(
+                                   END2END_FIXTURES[f].platforms, 'mac')),
               'flaky': False,
               'language': 'c',
               'cpu_cost': END2END_TESTS[t].cpu_cost,
           }
           for f in sorted(END2END_FIXTURES.keys())
-          for t in sorted(END2END_TESTS.keys())
-          for platform in sorted(END2END_FIXTURES[f].platforms)
-          for poll_strategy in POLLING_STRATEGY[platform]
-          if compatible(f, t)
-          and (END2END_FIXTURES[f].ci_mac or platform != 'mac')
+          for t in sorted(END2END_TESTS.keys()) if compatible(f, t)
       ] + [
           {
               'name': '%s_nosec_test' % f,

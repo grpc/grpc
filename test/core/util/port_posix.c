@@ -77,7 +77,6 @@ typedef struct freereq {
 static void destroy_pollset_and_shutdown(grpc_exec_ctx *exec_ctx, void *p,
                                          bool success) {
   grpc_pollset_destroy(p);
-  grpc_shutdown();
 }
 
 static void freed_port_from_server(grpc_exec_ctx *exec_ctx, void *arg,
@@ -130,6 +129,8 @@ static void free_port_using_server(char *server, int port) {
   grpc_exec_ctx_finish(&exec_ctx);
   gpr_free(pr.pollset);
   gpr_free(path);
+
+  grpc_shutdown();
 }
 
 static void free_chosen_ports() {
