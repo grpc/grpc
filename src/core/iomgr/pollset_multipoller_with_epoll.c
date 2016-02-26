@@ -45,7 +45,6 @@
 #include <grpc/support/log.h>
 #include <grpc/support/useful.h>
 #include "src/core/iomgr/fd_posix.h"
-#include "src/core/iomgr/pollset_posix.h"
 #include "src/core/profiling/timers.h"
 #include "src/core/support/block_annotate.h"
 

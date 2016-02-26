@@ -34,6 +34,6 @@
 #ifndef GRPC_INTERNAL_CORE_IOMGR_POLLSET_SET_WINDOWS_H
 #define GRPC_INTERNAL_CORE_IOMGR_POLLSET_SET_WINDOWS_H
 
-#include "src/core/iomgr/pollset_set.h"
+typedef struct grpc_pollset_set { void *unused; } grpc_pollset_set;
 
 #endif /* GRPC_INTERNAL_CORE_IOMGR_POLLSET_WINDOWS_H */

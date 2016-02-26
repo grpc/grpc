@@ -89,17 +89,12 @@ static void push_front_worker(grpc_pollset_worker *root,
       worker->links[type].next->links[type].prev = worker;
 }
 
-size_t grpc_pollset_size(void) {
-  return sizeof(grpc_pollset);
-}
-
 /* There isn't really any such thing as a pollset under Windows, due to the
    nature of the IO completion ports. We're still going to provide a minimal
    set of features for the sake of the rest of grpc. But grpc_pollset_work
    won't actually do any polling, and return as quickly as possible. */
 
-void grpc_pollset_init(grpc_pollset *pollset, gpr_mu **mu) {
-  *mu = &grpc_polling_mu;
+void grpc_pollset_init(grpc_pollset *pollset) {
   memset(pollset, 0, sizeof(*pollset));
   pollset->root_worker.links[GRPC_POLLSET_WORKER_LINK_POLLSET].next =
       pollset->root_worker.links[GRPC_POLLSET_WORKER_LINK_POLLSET].prev =

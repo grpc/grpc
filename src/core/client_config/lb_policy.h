@@ -48,8 +48,7 @@ typedef void (*grpc_lb_completion)(void *cb_arg, grpc_subchannel *subchannel,
 struct grpc_lb_policy {
   const grpc_lb_policy_vtable *vtable;
   gpr_atm ref_pair;
-  /* owned pointer to interested parties in load balancing decisions */
-  grpc_pollset_set *interested_parties;
+  grpc_pollset_set interested_parties;
 };
 
 struct grpc_lb_policy_vtable {

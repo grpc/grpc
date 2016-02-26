@@ -39,7 +39,6 @@
 #include <grpc/support/time.h>
 
 #include "src/core/iomgr/endpoint.h"
-#include "src/core/iomgr/iomgr_internal.h"
 #include "src/core/iomgr/pollset_set.h"
 
 /* User agent this library reports */
@@ -57,7 +56,7 @@ typedef struct grpc_httpcli_header {
    TODO(ctiller): allow caching and capturing multiple requests for the
                   same content and combining them */
 typedef struct grpc_httpcli_context {
-  grpc_pollset_set *pollset_set;
+  grpc_pollset_set pollset_set;
 } grpc_httpcli_context;
 
 typedef struct {
