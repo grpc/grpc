@@ -53,7 +53,7 @@ typedef struct grpc_pollset grpc_pollset;
 typedef struct grpc_pollset_worker grpc_pollset_worker;
 
 size_t grpc_pollset_size(void);
-void grpc_pollset_init(grpc_pollset *pollset, gpr_mu *mu);
+void grpc_pollset_init(grpc_pollset *pollset, gpr_mu **mu);
 /* Begin shutting down the pollset, and call closure when done.
  * GRPC_POLLSET_MU(pollset) must be held */
 void grpc_pollset_shutdown(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,

@@ -41,7 +41,7 @@ typedef struct test_tcp_server {
   grpc_tcp_server *tcp_server;
   grpc_closure shutdown_complete;
   int shutdown;
-  gpr_mu mu;
+  gpr_mu *mu;
   grpc_pollset *pollset;
   grpc_tcp_server_cb on_connect;
   void *cb_data;

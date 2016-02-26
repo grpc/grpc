@@ -166,7 +166,7 @@ void grpc_server_credentials_release(grpc_server_credentials *creds) {
 }
 
 grpc_security_status grpc_server_credentials_create_security_connector(
-    grpc_server_credentials *creds, grpc_security_connector **sc) {
+    grpc_server_credentials *creds, grpc_server_security_connector **sc) {
   if (creds == NULL || creds->vtable->create_security_connector == NULL) {
     gpr_log(GPR_ERROR, "Server credentials cannot create security context.");
     return GRPC_SECURITY_ERROR;
@@ -298,7 +298,7 @@ static grpc_security_status ssl_create_security_connector(
 }
 
 static grpc_security_status ssl_server_create_security_connector(
-    grpc_server_credentials *creds, grpc_security_connector **sc) {
+    grpc_server_credentials *creds, grpc_server_security_connector **sc) {
   grpc_ssl_server_credentials *c = (grpc_ssl_server_credentials *)creds;
   return grpc_ssl_server_security_connector_create(&c->config, sc);
 }
@@ -894,7 +894,7 @@ static grpc_security_status fake_transport_security_create_security_connector(
 
 static grpc_security_status
 fake_transport_security_server_create_security_connector(
-    grpc_server_credentials *c, grpc_security_connector **sc) {
+    grpc_server_credentials *c, grpc_server_security_connector **sc) {
   *sc = grpc_fake_server_security_connector_create();
   return GRPC_SECURITY_OK;
 }

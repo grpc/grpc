@@ -1,5 +1,4 @@
-#!/bin/bash
-# Copyright 2015, Google Inc.
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -28,9 +27,4 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# This is where you have cloned out the https://github.com/grpc/grpc repository
-# And built gRPC Python.
-# ADJUST THIS PATH TO WHERE YOUR ACTUAL LOCATION IS
-GRPC_ROOT=~/github/grpc
 
-$GRPC_ROOT/python2.7_virtual_environment/bin/python greeter_client.py

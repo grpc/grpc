@@ -56,7 +56,7 @@ typedef struct grpc_event_engine_vtable {
   void (*fd_notify_on_write)(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
                              grpc_closure *closure);
 
-  void (*pollset_init)(grpc_pollset *pollset, gpr_mu *mu);
+  void (*pollset_init)(grpc_pollset *pollset, gpr_mu **mu);
   void (*pollset_shutdown)(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
                            grpc_closure *closure);
   void (*pollset_reset)(grpc_pollset *pollset);

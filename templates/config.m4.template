@@ -38,7 +38,22 @@
       % endfor
       % endif
       % endfor
-      , $ext_shared, , -Wall -Werror -std=c11 ${"\\"}
+      , $ext_shared, , -Wall -Werror ${"\\"}
+      -Wno-parentheses-equality -Wno-unused-value -std=c11 ${"\\"}
       -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN ${"\\"}
       -D_HAS_EXCEPTIONS=0 -DNOMINMAX)
+
+    PHP_ADD_BUILD_DIR($ext_builddir/src/php/ext/grpc)
+  <%
+    dirs = {}
+    for lib in libs:
+      if lib.name in php_config_m4.get('deps', []):
+        for source in lib.src:
+          dirs[source[:source.rfind('/')]] = 1
+    dirs = dirs.keys()
+    dirs.sort()
+  %>
+    % for dir in dirs:
+    PHP_ADD_BUILD_DIR($ext_builddir/${dir})
+    % endfor
   fi
