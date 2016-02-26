@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,8 +33,6 @@
 
 #ifndef GRPC_INTERNAL_CORE_IOMGR_WORKQUEUE_POSIX_H
 #define GRPC_INTERNAL_CORE_IOMGR_WORKQUEUE_POSIX_H
-
-#include "src/core/iomgr/wakeup_fd_posix.h"
 
 struct grpc_fd;
 
