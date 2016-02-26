@@ -530,7 +530,8 @@ if test "$PHP_GRPC" != "no"; then
     third_party/boringssl/ssl/t1_enc.c \
     third_party/boringssl/ssl/t1_lib.c \
     third_party/boringssl/ssl/tls_record.c \
-    , $ext_shared, , -Wall -Werror -std=c11 \
+    , $ext_shared, , -Wall -Werror \
+    -Wno-parentheses-equality -Wno-unused-value -std=c11 \
     -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN \
     -D_HAS_EXCEPTIONS=0 -DNOMINMAX)
 
