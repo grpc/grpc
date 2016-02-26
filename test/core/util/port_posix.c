@@ -297,7 +297,6 @@ static int pick_port_using_server(char *server) {
   grpc_pollset_shutdown(&exec_ctx, pr.pollset, &shutdown_closure);
   grpc_exec_ctx_finish(&exec_ctx);
   gpr_free(pr.pollset);
-  gpr_mu_destroy(pr.mu);
 
   return pr.port;
 }
