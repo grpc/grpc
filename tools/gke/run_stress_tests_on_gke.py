@@ -27,6 +27,7 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+import argparse
 import datetime
 import os
 import subprocess
@@ -40,17 +41,52 @@ from stress_test_utils import BigQueryHelper
 
 import kubernetes_api
 
-GRPC_ROOT = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), '../..'))
-os.chdir(GRPC_ROOT)
+_GRPC_ROOT = os.path.abspath(os.path.join(
+    os.path.dirname(sys.argv[0]), '../..'))
+os.chdir(_GRPC_ROOT)
 
+# num of seconds to wait for the GKE image to start and warmup
+_GKE_IMAGE_WARMUP_WAIT_SECS = 60
 
-class BigQuerySettings:
+_SERVER_POD_NAME = 'stress-server'
+_CLIENT_POD_NAME_PREFIX = 'stress-client'
+_DATASET_ID_PREFIX = 'stress_test'
+_SUMMARY_TABLE_ID = 'summary'
+_QPS_TABLE_ID = 'qps'
 
-  def __init__(self, run_id, dataset_id, summary_table_id, qps_table_id):
-    self.run_id = run_id
-    self.dataset_id = dataset_id
-    self.summary_table_id = summary_table_id
-    self.qps_table_id = qps_table_id
+_DEFAULT_DOCKER_IMAGE_NAME = 'grpc_stress_test'
+
+# The default port on which the kubernetes proxy server is started on localhost
+# (i.e kubectl proxy --port=<port>)
+_DEFAULT_KUBERNETES_PROXY_PORT = 8001
+
+# How frequently should the stress client wrapper script (running inside a GKE
+# container) poll the health of the stress client (also running inside the GKE
+# container) and upload metrics to BigQuery
+_DEFAULT_STRESS_CLIENT_POLL_INTERVAL_SECS = 60
+
+# The default setting for stress test server and client
+_DEFAULT_STRESS_SERVER_PORT = 8080
+_DEFAULT_METRICS_PORT = 8081
+_DEFAULT_TEST_CASES_STR = 'empty_unary:1,large_unary:1,client_streaming:1,server_streaming:1,empty_stream:1'
+_DEFAULT_NUM_CHANNELS_PER_SERVER = 5
+_DEFAULT_NUM_STUBS_PER_CHANNEL = 10
+_DEFAULT_METRICS_COLLECTION_INTERVAL_SECS = 30
+
+# Number of stress client instances to launch
+_DEFAULT_NUM_CLIENTS = 3
+
+# How frequently should this test monitor the health of Stress clients and
+# Servers running in GKE
+_DEFAULT_TEST_POLL_INTERVAL_SECS = 60
+
+# Default run time for this test (2 hour)
+_DEFAULT_TEST_DURATION_SECS = 7200
+
+# The number of seconds it would take a GKE pod to warm up (i.e get to 'Running'
+# state from the time of creation). Ideally this is something the test should
+# automatically determine by using Kubernetes API to poll the pods status.
+_DEFAULT_GKE_WARMUP_SECS = 60
 
 
 class KubernetesProxy:
@@ -76,11 +112,74 @@ class KubernetesProxy:
 
   def __del__(self):
     if self.p is not None:
+      print 'Shutting down Kubernetes proxy..'
       self.p.kill()
+
+
+class TestSettings:
+
+  def __init__(self, build_docker_image, test_poll_interval_secs,
+               test_duration_secs, kubernetes_proxy_port):
+    self.build_docker_image = build_docker_image
+    self.test_poll_interval_secs = test_poll_interval_secs
+    self.test_duration_secs = test_duration_secs
+    self.kubernetes_proxy_port = kubernetes_proxy_port
+
+
+class GkeSettings:
+
+  def __init__(self, project_id, docker_image_name):
+    self.project_id = project_id
+    self.docker_image_name = docker_image_name
+    self.tag_name = 'gcr.io/%s/%s' % (project_id, docker_image_name)
+
+
+class BigQuerySettings:
+
+  def __init__(self, run_id, dataset_id, summary_table_id, qps_table_id):
+    self.run_id = run_id
+    self.dataset_id = dataset_id
+    self.summary_table_id = summary_table_id
+    self.qps_table_id = qps_table_id
+
+
+class StressServerSettings:
+
+  def __init__(self, server_pod_name, server_port):
+    self.server_pod_name = server_pod_name
+    self.server_port = server_port
+
+
+class StressClientSettings:
+
+  def __init__(self, num_clients, client_pod_name_prefix, server_pod_name,
+               server_port, metrics_port, metrics_collection_interval_secs,
+               stress_client_poll_interval_secs, num_channels_per_server,
+               num_stubs_per_channel, test_cases_str):
+    self.num_clients = num_clients
+    self.client_pod_name_prefix = client_pod_name_prefix
+    self.server_pod_name = server_pod_name
+    self.server_port = server_port
+    self.metrics_port = metrics_port
+    self.metrics_collection_interval_secs = metrics_collection_interval_secs
+    self.stress_client_poll_interval_secs = stress_client_poll_interval_secs
+    self.num_channels_per_server = num_channels_per_server
+    self.num_stubs_per_channel = num_stubs_per_channel
+    self.test_cases_str = test_cases_str
+
+    # == Derived properties ==
+    # Note: Client can accept a list of server addresses (a comma separated list
+    # of 'server_name:server_port'). In this case, we only have one server
+    # address to pass
+    self.server_addresses = '%s.default.svc.cluster.local:%d' % (
+        server_pod_name, server_port)
+    self.client_pod_names_list = ['%s-%d' % (client_pod_name_prefix, i)
+                                  for i in range(1, num_clients + 1)]
 
 
 def _build_docker_image(image_name, tag_name):
   """ Build the docker image and add a tag """
+  print 'Building docker image: %s' % image_name
   os.environ['INTEROP_IMAGE'] = image_name
   # Note that 'BASE_NAME' HAS to be 'grpc_interop_stress_cxx' since the script
   # build_interop_stress_image.sh invokes the following script:
@@ -93,6 +192,7 @@ def _build_docker_image(image_name, tag_name):
     print 'Error in building docker image'
     return False
 
+  print 'Adding an additional tag %s to the image %s' % (tag_name, image_name)
   cmd = ['docker', 'tag', '-f', image_name, tag_name]
   p = subprocess.Popen(args=cmd)
   retcode = p.wait()
@@ -115,144 +215,86 @@ def _push_docker_image_to_gke_registry(docker_tag_name):
   return True
 
 
-def _launch_image_on_gke(kubernetes_api_server, kubernetes_api_port, namespace,
-                         pod_name, image_name, port_list, cmd_list, arg_list,
-                         env_dict, is_headless_service):
-  """Creates a GKE Pod and a Service object for a given image by calling Kubernetes API"""
-  is_success = kubernetes_api.create_pod(
-      kubernetes_api_server,
-      kubernetes_api_port,
-      namespace,
-      pod_name,
-      image_name,
-      port_list,  # The ports to be exposed on this container/pod
-      cmd_list,  # The command that launches the stress server
-      arg_list,
-      env_dict  # Environment variables to be passed to the pod
-  )
-  if not is_success:
-    print 'Error in creating Pod'
-    return False
-
-  is_success = kubernetes_api.create_service(
-      kubernetes_api_server,
-      kubernetes_api_port,
-      namespace,
-      pod_name,  # Use the pod name for service name as well
-      pod_name,
-      port_list,  # Service port list
-      port_list,  # Container port list (same as service port list)
-      is_headless_service)
-  if not is_success:
-    print 'Error in creating Service'
-    return False
-
-  print 'Successfully created the pod/service %s' % pod_name
-  return True
-
-
-def _delete_image_on_gke(kubernetes_proxy, pod_name_list):
-  """Deletes a GKE Pod and Service object for given list of Pods by calling Kubernetes API"""
-  if not kubernetes_proxy.is_started:
-    print 'Kubernetes proxy must be started before calling this function'
-    return False
-
-  is_success = True
-  for pod_name in pod_name_list:
-    is_success = kubernetes_api.delete_pod(
-        'localhost', kubernetes_proxy.get_port(), 'default', pod_name)
-    if not is_success:
-      print 'Error in deleting pod %s' % pod_name
-      break
-
-    is_success = kubernetes_api.delete_service(
-        'localhost', kubernetes_proxy.get_port(), 'default',
-        pod_name)  # service name same as pod name
-    if not is_success:
-      print 'Error in deleting service %s' % pod_name
-      break
-
-  if is_success:
-    print 'Successfully deleted the Pods/Services: %s' % ','.join(pod_name_list)
-
-  return is_success
-
-
-def _launch_server(gcp_project_id, docker_image_name, bq_settings,
-                   kubernetes_proxy, server_pod_name, server_port):
+def _launch_server(gke_settings, stress_server_settings, bq_settings,
+                   kubernetes_proxy):
   """ Launches a stress test server instance in GKE cluster """
   if not kubernetes_proxy.is_started:
     print 'Kubernetes proxy must be started before calling this function'
     return False
 
+  # This is the wrapper script that is run in the container. This script runs
+  # the actual stress test server
   server_cmd_list = [
       '/var/local/git/grpc/tools/run_tests/stress_test/run_server.py'
-  ]  # Process that is launched
-  server_arg_list = []  # run_server.py does not take any args (for now)
+  ]
 
-  # == Parameters to the server process launched in GKE ==
+  # run_server.py does not take any args from the command line. The args are
+  # instead passed via environment variables (see server_env below)
+  server_arg_list = []
+
+  # The parameters to the script run_server.py are injected into the container
+  # via environment variables
   server_env = {
       'STRESS_TEST_IMAGE_TYPE': 'SERVER',
       'STRESS_TEST_IMAGE': '/var/local/git/grpc/bins/opt/interop_server',
-      'STRESS_TEST_ARGS_STR': '--port=%s' % server_port,
+      'STRESS_TEST_ARGS_STR': '--port=%s' % stress_server_settings.server_port,
       'RUN_ID': bq_settings.run_id,
-      'POD_NAME': server_pod_name,
-      'GCP_PROJECT_ID': gcp_project_id,
+      'POD_NAME': stress_server_settings.server_pod_name,
+      'GCP_PROJECT_ID': gke_settings.project_id,
       'DATASET_ID': bq_settings.dataset_id,
       'SUMMARY_TABLE_ID': bq_settings.summary_table_id,
       'QPS_TABLE_ID': bq_settings.qps_table_id
   }
 
   # Launch Server
-  is_success = _launch_image_on_gke(
+  is_success = kubernetes_api.create_pod_and_service(
       'localhost',
       kubernetes_proxy.get_port(),
-      'default',
-      server_pod_name,
-      docker_image_name,
-      [server_port],  # Port that should be exposed on the container
+      'default',  # Use 'default' namespace
+      stress_server_settings.server_pod_name,
+      gke_settings.tag_name,
+      [stress_server_settings.server_port],  # Port that should be exposed
       server_cmd_list,
       server_arg_list,
       server_env,
-      True  # Headless = True for server. Since we want DNS records to be greated by GKE
+      True  # Headless = True for server. Since we want DNS records to be created by GKE
   )
 
   return is_success
 
 
-def _launch_client(gcp_project_id, docker_image_name, bq_settings,
-                   kubernetes_proxy, num_instances, client_pod_name_prefix,
-                   server_pod_name, server_port):
+def _launch_client(gke_settings, stress_server_settings, stress_client_settings,
+                   bq_settings, kubernetes_proxy):
   """ Launches a configurable number of stress test clients on GKE cluster """
   if not kubernetes_proxy.is_started:
     print 'Kubernetes proxy must be started before calling this function'
     return False
 
-  server_address = '%s.default.svc.cluster.local:%d' % (server_pod_name,
-                                                        server_port)
-  #TODO(sree) Make the whole client args configurable
-  test_cases_str = 'empty_unary:1,large_unary:1'
   stress_client_arg_list = [
-      '--server_addresses=%s' % server_address,
-      '--test_cases=%s' % test_cases_str, '--num_stubs_per_channel=10'
+      '--server_addresses=%s' % stress_client_settings.server_addresses,
+      '--test_cases=%s' % stress_client_settings.test_cases_str,
+      '--num_stubs_per_channel=%d' %
+      stress_client_settings.num_stubs_per_channel
   ]
 
+  # This is the wrapper script that is run in the container. This script runs
+  # the actual stress client
   client_cmd_list = [
       '/var/local/git/grpc/tools/run_tests/stress_test/run_client.py'
   ]
-  # run_client.py takes no args. All args are passed as env variables
+
+  # run_client.py takes no args. All args are passed as env variables (see
+  # client_env)
   client_arg_list = []
 
-  # TODO(sree) Make this configurable (and also less frequent)
-  poll_interval_secs = 30
-
-  metrics_port = 8081
-  metrics_server_address = 'localhost:%d' % metrics_port
+  metrics_server_address = 'localhost:%d' % stress_client_settings.metrics_port
   metrics_client_arg_list = [
       '--metrics_server_address=%s' % metrics_server_address,
       '--total_only=true'
   ]
 
+  # The parameters to the script run_client.py are injected into the container
+  # via environment variables
   client_env = {
       'STRESS_TEST_IMAGE_TYPE': 'CLIENT',
       'STRESS_TEST_IMAGE': '/var/local/git/grpc/bins/opt/stress_test',
@@ -260,27 +302,28 @@ def _launch_client(gcp_project_id, docker_image_name, bq_settings,
       'METRICS_CLIENT_IMAGE': '/var/local/git/grpc/bins/opt/metrics_client',
       'METRICS_CLIENT_ARGS_STR': ' '.join(metrics_client_arg_list),
       'RUN_ID': bq_settings.run_id,
-      'POLL_INTERVAL_SECS': str(poll_interval_secs),
-      'GCP_PROJECT_ID': gcp_project_id,
+      'POLL_INTERVAL_SECS':
+          str(stress_client_settings.stress_client_poll_interval_secs),
+      'GCP_PROJECT_ID': gke_settings.project_id,
       'DATASET_ID': bq_settings.dataset_id,
       'SUMMARY_TABLE_ID': bq_settings.summary_table_id,
       'QPS_TABLE_ID': bq_settings.qps_table_id
   }
 
-  for i in range(1, num_instances + 1):
-    pod_name = '%s-%d' % (client_pod_name_prefix, i)
+  for pod_name in stress_client_settings.client_pod_names_list:
     client_env['POD_NAME'] = pod_name
-    is_success = _launch_image_on_gke(
-        'localhost',
+    is_success = kubernetes_api.create_pod_and_service(
+        'localhost',  # Since proxy is running on localhost
         kubernetes_proxy.get_port(),
-        'default',
+        'default',  # default namespace
         pod_name,
-        docker_image_name,
-        [metrics_port],  # Client pods expose metrics port
+        gke_settings.tag_name,
+        [stress_client_settings.metrics_port
+        ],  # Client pods expose metrics port
         client_cmd_list,
         client_arg_list,
         client_env,
-        False  # Client is not a headless service.
+        False  # Client is not a headless service
     )
     if not is_success:
       print 'Error in launching client %s' % pod_name
@@ -289,20 +332,17 @@ def _launch_client(gcp_project_id, docker_image_name, bq_settings,
   return True
 
 
-def _launch_server_and_client(bq_settings, gcp_project_id, docker_image_name,
-                              num_client_instances):
+def _launch_server_and_client(gke_settings, stress_server_settings,
+                              stress_client_settings, bq_settings,
+                              kubernetes_proxy_port):
   # Start kubernetes proxy
-  kubernetes_api_port = 9001
-  kubernetes_proxy = KubernetesProxy(kubernetes_api_port)
+  print 'Kubernetes proxy'
+  kubernetes_proxy = KubernetesProxy(kubernetes_proxy_port)
   kubernetes_proxy.start()
 
-  # num of seconds to wait for the GKE image to start and warmup
-  image_warmp_secs = 60
-
-  server_pod_name = 'stress-server'
-  server_port = 8080
-  is_success = _launch_server(gcp_project_id, docker_image_name, bq_settings,
-                              kubernetes_proxy, server_pod_name, server_port)
+  print 'Launching server..'
+  is_success = _launch_server(gke_settings, stress_server_settings, bq_settings,
+                              kubernetes_proxy)
   if not is_success:
     print 'Error in launching server'
     return False
@@ -310,116 +350,217 @@ def _launch_server_and_client(bq_settings, gcp_project_id, docker_image_name,
   # Server takes a while to start.
   # TODO(sree) Use Kubernetes API to query the status of the server instead of
   # sleeping
-  print 'Waiting for %s seconds for the server to start...' % image_warmp_secs
-  time.sleep(image_warmp_secs)
+  print 'Waiting for %s seconds for the server to start...' % _GKE_IMAGE_WARMUP_WAIT_SECS
+  time.sleep(_GKE_IMAGE_WARMUP_WAIT_SECS)
 
   # Launch client
-  server_address = '%s.default.svc.cluster.local:%d' % (server_pod_name,
-                                                        server_port)
   client_pod_name_prefix = 'stress-client'
-  is_success = _launch_client(gcp_project_id, docker_image_name, bq_settings,
-                              kubernetes_proxy, num_client_instances,
-                              client_pod_name_prefix, server_pod_name,
-                              server_port)
+  is_success = _launch_client(gke_settings, stress_server_settings,
+                              stress_client_settings, bq_settings,
+                              kubernetes_proxy)
+
   if not is_success:
     print 'Error in launching client(s)'
     return False
 
-  print 'Waiting for %s seconds for the client images to start...' % image_warmp_secs
-  time.sleep(image_warmp_secs)
+  print 'Waiting for %s seconds for the client images to start...' % _GKE_IMAGE_WARMUP_WAIT_SECS
+  time.sleep(_GKE_IMAGE_WARMUP_WAIT_SECS)
   return True
 
 
-def _delete_server_and_client(num_client_instances):
-  kubernetes_api_port = 9001
-  kubernetes_proxy = KubernetesProxy(kubernetes_api_port)
+def _delete_server_and_client(stress_server_settings, stress_client_settings,
+                              kubernetes_proxy_port):
+  kubernetes_proxy = KubernetesProxy(kubernetes_proxy_port)
   kubernetes_proxy.start()
 
   # Delete clients first
-  client_pod_names = ['stress-client-%d' % i
-                      for i in range(1, num_client_instances + 1)]
-
-  is_success = _delete_image_on_gke(kubernetes_proxy, client_pod_names)
-  if not is_success:
-    return False
+  is_success = True
+  for pod_name in stress_client_settings.client_pod_names_list:
+    is_success = kubernetes_api.delete_pod_and_service(
+        'localhost', kubernetes_proxy_port, 'default', pod_name)
+    if not is_success:
+      return False
 
   # Delete server
-  server_pod_name = 'stress-server'
-  return _delete_image_on_gke(kubernetes_proxy, [server_pod_name])
+  is_success = kubernetes_api.delete_pod_and_service(
+      'localhost', kubernetes_proxy_port, 'default',
+      stress_server_settings.server_pod_name)
+  return is_success
 
 
-def _build_and_push_docker_image(gcp_project_id, docker_image_name, tag_name):
-  is_success = _build_docker_image(docker_image_name, tag_name)
-  if not is_success:
-    return False
-  return _push_docker_image_to_gke_registry(tag_name)
+def run_test_main(test_settings, gke_settings, stress_server_settings,
+                  stress_client_clients):
+  is_success = True
 
-
-# TODO(sree): This is just to test the above APIs. Rewrite this to make
-# everything configurable (like image names / number of instances etc)
-def run_test(skip_building_image, gcp_project_id, image_name, tag_name,
-             num_client_instances, poll_interval_secs, total_duration_secs):
-  if not skip_building_image:
-    is_success = _build_docker_image(image_name, tag_name)
+  if test_settings.build_docker_image:
+    is_success = _build_docker_image(gke_settings.docker_image_name,
+                                     gke_settings.tag_name)
     if not is_success:
       return False
 
-    is_success = _push_docker_image_to_gke_registry(tag_name)
+    is_success = _push_docker_image_to_gke_registry(gke_settings.tag_name)
     if not is_success:
       return False
-
-  # == Big Query tables related settings (Common for both server and client) ==
 
   # Create a unique id for this run (Note: Using timestamp instead of UUID to
   # make it easier to deduce the date/time of the run just by looking at the run
   # run id. This is useful in debugging when looking at records in Biq query)
   run_id = datetime.datetime.now().strftime('%Y_%m_%d_%H_%M_%S')
-  dataset_id = 'stress_test_%s' % run_id
-  summary_table_id = 'summary'
-  qps_table_id = 'qps'
-  bq_settings = BigQuerySettings(run_id, dataset_id, summary_table_id,
-                                 qps_table_id)
+  dataset_id = '%s_%s' % (_DATASET_ID_PREFIX, run_id)
 
-  bq_helper = BigQueryHelper(run_id, '', '', gcp_project_id, dataset_id,
-                             summary_table_id, qps_table_id)
+  # Big Query settings (common for both Stress Server and Client)
+  bq_settings = BigQuerySettings(run_id, dataset_id, _SUMMARY_TABLE_ID,
+                                 _QPS_TABLE_ID)
+
+  bq_helper = BigQueryHelper(run_id, '', '', args.project_id, dataset_id,
+                             _SUMMARY_TABLE_ID, _QPS_TABLE_ID)
   bq_helper.initialize()
-  is_success = _launch_server_and_client(bq_settings, gcp_project_id, tag_name,
-                                         num_client_instances)
-  if not is_success:
-    return False
 
-  start_time = datetime.datetime.now()
-  end_time = start_time + datetime.timedelta(seconds=total_duration_secs)
+  try:
+    is_success = _launch_server_and_client(gke_settings, stress_server_settings,
+                                           stress_client_settings, bq_settings,
+                                           test_settings.kubernetes_proxy_port)
+    if not is_success:
+      return False
 
-  while True:
-    if datetime.datetime.now() > end_time:
-      print 'Test was run for %d seconds' % total_duration_secs
-      break
+    start_time = datetime.datetime.now()
+    end_time = start_time + datetime.timedelta(
+        seconds=test_settings.test_duration_secs)
+    print 'Running the test until %s' % end_time.isoformat()
 
-    # Check if either stress server or clients have failed
-    if bq_helper.check_if_any_tests_failed():
-      is_success = False
-      print 'Some tests failed.'
-      break
-    # Things seem to be running fine. Wait until next poll time to check the
-    # status
-    print 'Sleeping for %d seconds..' % poll_interval_secs
-    time.sleep(poll_interval_secs)
+    while True:
+      if datetime.datetime.now() > end_time:
+        print 'Test was run for %d seconds' % test_settings.test_duration_secs
+        break
 
-  # Print BiqQuery tables
-  bq_helper.print_summary_records()
-  bq_helper.print_qps_records()
+      # Check if either stress server or clients have failed
+      if bq_helper.check_if_any_tests_failed():
+        is_success = False
+        print 'Some tests failed.'
+        break
 
-  _delete_server_and_client(num_client_instances)
+      # Things seem to be running fine. Wait until next poll time to check the
+      # status
+      print 'Sleeping for %d seconds..' % test_settings.test_poll_interval_secs
+      time.sleep(test_settings.test_poll_interval_secs)
+
+    # Print BiqQuery tables
+    bq_helper.print_summary_records()
+    bq_helper.print_qps_records()
+
+  finally:
+    # If is_success is False at this point, it means that the stress tests were
+    # started successfully but failed while running the tests. In this case we
+    # do should not delete the pods (since they contain all the failure
+    # information)
+    if is_success:
+      _delete_server_and_client(stress_server_settings, stress_client_settings,
+                                test_settings.kubernetes_proxy_port)
+
   return is_success
 
 
+argp = argparse.ArgumentParser(
+    description='Launch stress tests in GKE',
+    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+argp.add_argument('--project_id',
+                  required=True,
+                  help='The Google Cloud Platform Project Id')
+argp.add_argument('--num_clients',
+                  default=1,
+                  type=int,
+                  help='Number of client instances to start')
+argp.add_argument('--docker_image_name',
+                  default=_DEFAULT_DOCKER_IMAGE_NAME,
+                  help='The name of the docker image containing stress client '
+                  'and stress servers')
+argp.add_argument('--build_docker_image',
+                  dest='build_docker_image',
+                  action='store_true',
+                  help='Build a docker image and push to Google Container '
+                  'Registry')
+argp.add_argument('--do_not_build_docker_image',
+                  dest='build_docker_image',
+                  action='store_false',
+                  help='Do not build and push docker image to Google Container '
+                  'Registry')
+argp.set_defaults(build_docker_image=True)
+
+argp.add_argument('--test_poll_interval_secs',
+                  default=_DEFAULT_TEST_POLL_INTERVAL_SECS,
+                  type=int,
+                  help='How frequently should this script should monitor the '
+                  'health of stress clients and servers running in the GKE '
+                  'cluster')
+argp.add_argument('--test_duration_secs',
+                  default=_DEFAULT_TEST_DURATION_SECS,
+                  type=int,
+                  help='How long should this test be run')
+argp.add_argument('--kubernetes_proxy_port',
+                  default=_DEFAULT_KUBERNETES_PROXY_PORT,
+                  type=int,
+                  help='The port on which the kubernetes proxy (on localhost)'
+                  ' is started')
+argp.add_argument('--stress_server_port',
+                  default=_DEFAULT_STRESS_SERVER_PORT,
+                  type=int,
+                  help='The port on which the stress server (in GKE '
+                  'containers) listens')
+argp.add_argument('--stress_client_metrics_port',
+                  default=_DEFAULT_METRICS_PORT,
+                  type=int,
+                  help='The port on which the stress clients (in GKE '
+                  'containers) expose metrics')
+argp.add_argument('--stress_client_poll_interval_secs',
+                  default=_DEFAULT_STRESS_CLIENT_POLL_INTERVAL_SECS,
+                  type=int,
+                  help='How frequently should the stress client wrapper script'
+                  ' running inside GKE should monitor health of the actual '
+                  ' stress client process and upload the metrics to BigQuery')
+argp.add_argument('--stress_client_metrics_collection_interval_secs',
+                  default=_DEFAULT_METRICS_COLLECTION_INTERVAL_SECS,
+                  type=int,
+                  help='How frequently should metrics be collected in-memory on'
+                  ' the stress clients (running inside GKE containers). Note '
+                  'that this is NOT the same as the upload-to-BigQuery '
+                  'frequency. The metrics upload frequency is controlled by the'
+                  ' --stress_client_poll_interval_secs flag')
+argp.add_argument('--stress_client_num_channels_per_server',
+                  default=_DEFAULT_NUM_CHANNELS_PER_SERVER,
+                  type=int,
+                  help='The number of channels created to each server from a '
+                  'stress client')
+argp.add_argument('--stress_client_num_stubs_per_channel',
+                  default=_DEFAULT_NUM_STUBS_PER_CHANNEL,
+                  type=int,
+                  help='The number of stubs created per channel. This number '
+                  'indicates the max number of RPCs that can be made in '
+                  'parallel on each channel at any given time')
+argp.add_argument('--stress_client_test_cases',
+                  default=_DEFAULT_TEST_CASES_STR,
+                  help='List of test cases (with weights) to be executed by the'
+                  ' stress test client. The list is in the following format:\n'
+                  '  <testcase_1:w_1,<test_case2:w_2>..<testcase_n:w_n>\n'
+                  ' (Note: The weights do not have to add up to 100)')
+
 if __name__ == '__main__':
-  image_name = 'grpc_stress_test'
-  gcp_project_id = 'sree-gce'
-  tag_name = 'gcr.io/%s/%s' % (gcp_project_id, image_name)
-  num_client_instances = 3
-  poll_interval_secs = 10
-  test_duration_secs = 150
-  run_test(True, gcp_project_id, image_name, tag_name, num_client_instances,
-           poll_interval_secs, test_duration_secs)
+  args = argp.parse_args()
+
+  test_settings = TestSettings(
+      args.build_docker_image, args.test_poll_interval_secs,
+      args.test_duration_secs, args.kubernetes_proxy_port)
+
+  gke_settings = GkeSettings(args.project_id, args.docker_image_name)
+
+  stress_server_settings = StressServerSettings(_SERVER_POD_NAME,
+                                                args.stress_server_port)
+  stress_client_settings = StressClientSettings(
+      args.num_clients, _CLIENT_POD_NAME_PREFIX, _SERVER_POD_NAME,
+      args.stress_server_port, args.stress_client_metrics_port,
+      args.stress_client_metrics_collection_interval_secs,
+      args.stress_client_poll_interval_secs,
+      args.stress_client_num_channels_per_server,
+      args.stress_client_num_stubs_per_channel, args.stress_client_test_cases)
+
+  run_test_main(test_settings, gke_settings, stress_server_settings,
+                stress_client_settings)

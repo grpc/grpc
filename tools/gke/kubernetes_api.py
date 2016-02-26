@@ -50,7 +50,8 @@ def _make_pod_config(pod_name, image_name, container_port_list, cmd_list,
                   'name': pod_name,
                   'image': image_name,
                   'ports': [{'containerPort': port,
-                             'protocol': 'TCP'} for port in container_port_list],
+                             'protocol': 'TCP'}
+                            for port in container_port_list],
                   'imagePullPolicy': 'Always'
               }
           ]
@@ -222,3 +223,47 @@ def delete_pod(kube_host, kube_port, namespace, pod_name):
   del_url = 'http://%s:%d/api/v1/namespaces/%s/pods/%s' % (kube_host, kube_port,
                                                            namespace, pod_name)
   return _do_delete(del_url, 'Delete Pod')
+
+
+def create_pod_and_service(kube_host, kube_port, namespace, pod_name,
+                           image_name, container_port_list, cmd_list, arg_list,
+                           env_dict, is_headless_service):
+  """A simple helper function that creates a pod and a service (if pod creation was successful)."""
+  is_success = create_pod(kube_host, kube_port, namespace, pod_name, image_name,
+                          container_port_list, cmd_list, arg_list, env_dict)
+  if not is_success:
+    print 'Error in creating Pod'
+    return False
+
+  is_success = create_service(
+      kube_host,
+      kube_port,
+      namespace,
+      pod_name,  # Use pod_name for service
+      pod_name,
+      container_port_list,  # Service port list same as container port list
+      container_port_list,
+      is_headless_service)
+  if not is_success:
+    print 'Error in creating Service'
+    return False
+
+  print 'Successfully created the pod/service %s' % pod_name
+  return True
+
+
+def delete_pod_and_service(kube_host, kube_port, namespace, pod_name):
+  """ A simple helper function that calls delete_pod and delete_service """
+  is_success = delete_pod(kube_host, kube_port, namespace, pod_name)
+  if not is_success:
+    print 'Error in deleting pod %s' % pod_name
+    return False
+
+  # Note: service name assumed to the the same as pod name
+  is_success = delete_service(kube_host, kube_port, namespace, pod_name)
+  if not is_success:
+    print 'Error in deleting service %s' % pod_name
+    return False
+
+  print 'Successfully deleted the Pod/Service: %s' % pod_name
+  return True
