@@ -42,16 +42,16 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "src/core/iomgr/fd_posix.h"
-#include "src/core/iomgr/iomgr_internal.h"
-#include "src/core/iomgr/socket_utils_posix.h"
-#include "src/core/profiling/timers.h"
-#include "src/core/support/block_annotate.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/thd.h>
 #include <grpc/support/tls.h>
 #include <grpc/support/useful.h>
+#include "src/core/iomgr/fd_posix.h"
+#include "src/core/iomgr/iomgr_internal.h"
+#include "src/core/iomgr/socket_utils_posix.h"
+#include "src/core/profiling/timers.h"
+#include "src/core/support/block_annotate.h"
 
 GPR_TLS_DECL(g_current_thread_poller);
 GPR_TLS_DECL(g_current_thread_worker);
@@ -96,6 +96,8 @@ static void push_front_worker(grpc_pollset *p, grpc_pollset_worker *worker) {
   worker->next = worker->prev->next;
   worker->prev->next = worker->next->prev = worker;
 }
+
+size_t grpc_pollset_size(void) { return sizeof(grpc_pollset); }
 
 void grpc_pollset_kick_ext(grpc_pollset *p,
                            grpc_pollset_worker *specific_worker,
@@ -186,8 +188,9 @@ void grpc_kick_poller(void) { grpc_wakeup_fd_wakeup(&grpc_global_wakeup_fd); }
 
 static void become_basic_pollset(grpc_pollset *pollset, grpc_fd *fd_or_null);
 
-void grpc_pollset_init(grpc_pollset *pollset) {
+void grpc_pollset_init(grpc_pollset *pollset, gpr_mu **mu) {
   gpr_mu_init(&pollset->mu);
+  *mu = &pollset->mu;
   pollset->root_worker.next = pollset->root_worker.prev = &pollset->root_worker;
   pollset->in_flight_cbs = 0;
   pollset->shutting_down = 0;
@@ -204,7 +207,6 @@ void grpc_pollset_destroy(grpc_pollset *pollset) {
   GPR_ASSERT(!grpc_pollset_has_workers(pollset));
   GPR_ASSERT(pollset->idle_jobs.head == pollset->idle_jobs.tail);
   pollset->vtable->destroy(pollset);
-  gpr_mu_destroy(&pollset->mu);
   while (pollset->local_wakeup_cache) {
     grpc_cached_wakeup_fd *next = pollset->local_wakeup_cache->next;
     grpc_wakeup_fd_destroy(&pollset->local_wakeup_cache->fd);

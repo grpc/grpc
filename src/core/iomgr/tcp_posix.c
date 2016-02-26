@@ -40,8 +40,8 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/types.h>
 #include <unistd.h>
 
 #include <grpc/support/alloc.h>
@@ -51,9 +51,11 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
-#include "src/core/support/string.h"
 #include "src/core/debug/trace.h"
+#include "src/core/iomgr/pollset_posix.h"
+#include "src/core/iomgr/pollset_set_posix.h"
 #include "src/core/profiling/timers.h"
+#include "src/core/support/string.h"
 
 #ifdef GPR_HAVE_MSG_NOSIGNAL
 #define SENDMSG_FLAGS MSG_NOSIGNAL

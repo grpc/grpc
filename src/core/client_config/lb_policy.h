@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -48,7 +48,8 @@ typedef void (*grpc_lb_completion)(void *cb_arg, grpc_subchannel *subchannel,
 struct grpc_lb_policy {
   const grpc_lb_policy_vtable *vtable;
   gpr_atm ref_pair;
-  grpc_pollset_set interested_parties;
+  /* owned pointer to interested parties in load balancing decisions */
+  grpc_pollset_set *interested_parties;
 };
 
 struct grpc_lb_policy_vtable {
