@@ -63,7 +63,7 @@ static void test_add_closure(void) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_workqueue *wq = grpc_workqueue_create(&exec_ctx);
   gpr_timespec deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5);
-  grpc_pollset_worker worker;
+  grpc_pollset_worker *worker = NULL;
   grpc_closure_init(&c, must_succeed, &done);
 
   grpc_workqueue_push(wq, &c, 1);
@@ -87,7 +87,7 @@ static void test_flush(void) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_workqueue *wq = grpc_workqueue_create(&exec_ctx);
   gpr_timespec deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5);
-  grpc_pollset_worker worker;
+  grpc_pollset_worker *worker = NULL;
   grpc_closure_init(&c, must_succeed, &done);
 
   grpc_exec_ctx_enqueue(&exec_ctx, &c, true, NULL);

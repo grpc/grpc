@@ -46,10 +46,10 @@
 #include "src/proto/grpc/testing/payloads.grpc.pb.h"
 #include "src/proto/grpc/testing/services.grpc.pb.h"
 
-#include "test/cpp/qps/limit_cores.h"
 #include "test/cpp/qps/histogram.h"
 #include "test/cpp/qps/interarrival.h"
-#include "test/cpp/qps/timer.h"
+#include "test/cpp/qps/limit_cores.h"
+#include "test/cpp/qps/usage_timer.h"
 #include "test/cpp/util/create_test_channel.h"
 
 namespace grpc {
@@ -112,12 +112,12 @@ class ClientRequestCreator<ByteBuffer> {
 
 class Client {
  public:
-  Client() : timer_(new Timer), interarrival_timer_() {}
+  Client() : timer_(new UsageTimer), interarrival_timer_() {}
   virtual ~Client() {}
 
   ClientStats Mark(bool reset) {
     Histogram latencies;
-    Timer::Result timer_result;
+    UsageTimer::Result timer_result;
 
     // avoid std::vector for old compilers that expect a copy constructor
     if (reset) {
@@ -125,7 +125,7 @@ class Client {
       for (size_t i = 0; i < threads_.size(); i++) {
         threads_[i]->BeginSwap(&to_merge[i]);
       }
-      std::unique_ptr<Timer> timer(new Timer);
+      std::unique_ptr<UsageTimer> timer(new UsageTimer);
       timer_.swap(timer);
       for (size_t i = 0; i < threads_.size(); i++) {
         threads_[i]->EndSwap();
@@ -294,7 +294,7 @@ class Client {
   };
 
   std::vector<std::unique_ptr<Thread>> threads_;
-  std::unique_ptr<Timer> timer_;
+  std::unique_ptr<UsageTimer> timer_;
 
   InterarrivalTimer interarrival_timer_;
   std::vector<gpr_timespec> next_time_;

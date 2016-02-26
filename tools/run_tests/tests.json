@@ -12,6 +12,7 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
     "language": "c", 
     "name": "alarm_test", 
     "platforms": [
@@ -32,6 +33,7 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
     "language": "c", 
     "name": "algorithm_test", 
     "platforms": [
@@ -52,6 +54,7 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
     "language": "c", 
     "name": "alloc_test", 
     "platforms": [
@@ -72,6 +75,7 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
     "language": "c", 
     "name": "alpn_test", 
     "platforms": [
@@ -92,6 +96,7 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
     "language": "c", 
     "name": "bin_encoder_test", 
     "platforms": [
@@ -112,6 +117,7 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
     "language": "c", 
     "name": "census_context_test", 
     "platforms": [
@@ -132,26 +138,7 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
-    "language": "c", 
-    "name": "census_log_test", 
-    "platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ]
-  }, 
-  {
-    "args": [], 
-    "ci_platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "flaky": false, 
+    "gtest": false, 
     "language": "c", 
     "name": "channel_create_test", 
     "platforms": [
@@ -172,6 +159,7 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
     "language": "c", 
     "name": "chttp2_hpack_encoder_test", 
     "platforms": [
@@ -192,6 +180,7 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
     "language": "c", 
     "name": "chttp2_status_conversion_test", 
     "platforms": [
@@ -212,6 +201,7 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
     "language": "c", 
     "name": "chttp2_stream_map_test", 
     "platforms": [
@@ -232,6 +222,7 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
     "language": "c", 
     "name": "chttp2_varint_test", 
     "platforms": [
@@ -252,6 +243,7 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
     "language": "c", 
     "name": "compression_test", 
     "platforms": [
@@ -272,6 +264,7 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
     "language": "c", 
     "name": "dns_resolver_test", 
     "platforms": [
@@ -291,6 +284,7 @@
     "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
     "language": "c", 
     "name": "dualstack_socket_test", 
     "platforms": [
@@ -310,6 +304,7 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
     "language": "c", 
     "name": "endpoint_pair_test", 
     "platforms": [
@@ -329,6 +324,7 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
     "language": "c", 
     "name": "fd_conservation_posix_test", 
     "platforms": [
@@ -347,6 +343,7 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
     "language": "c", 
     "name": "fd_posix_test", 
     "platforms": [
@@ -365,6 +362,7 @@
     "cpu_cost": 2, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
     "language": "c", 
     "name": "fling_stream_test", 
     "platforms": [
@@ -383,6 +381,7 @@
     "cpu_cost": 2, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
     "language": "c", 
     "name": "fling_test", 
     "platforms": [
@@ -402,6 +401,7 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
     "language": "c", 
     "name": "gpr_avl_test", 
     "platforms": [
@@ -422,6 +422,7 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
     "language": "c", 
     "name": "gpr_cmdline_test", 
     "platforms": [
@@ -442,6 +443,7 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
     "language": "c", 
     "name": "gpr_cpu_test", 
     "platforms": [
@@ -462,6 +464,7 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
     "language": "c", 
     "name": "gpr_env_test", 
     "platforms": [
@@ -482,26 +485,7 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
-    "language": "c", 
-    "name": "gpr_file_test", 
-    "platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ]
-  }, 
-  {
-    "args": [], 
-    "ci_platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "flaky": false, 
+    "gtest": false, 
     "language": "c", 
     "name": "gpr_histogram_test", 
     "platforms": [
@@ -522,6 +506,7 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
     "language": "c", 
     "name": "gpr_host_port_test", 
     "platforms": [
@@ -542,6 +527,28 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
+    "language": "c", 
+    "name": "gpr_load_file_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ]
+  }, 
+  {
+    "args": [], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "gtest": false, 
     "language": "c", 
     "name": "gpr_log_test", 
     "platforms": [
@@ -562,6 +569,7 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
     "language": "c", 
     "name": "gpr_slice_buffer_test", 
     "platforms": [
@@ -582,6 +590,7 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
     "language": "c", 
     "name": "gpr_slice_test", 
     "platforms": [
@@ -602,6 +611,7 @@
     "cpu_cost": 10, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
     "language": "c", 
     "name": "gpr_stack_lockfree_test", 
     "platforms": [
@@ -622,6 +632,7 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
     "language": "c", 
     "name": "gpr_string_test", 
     "platforms": [
@@ -642,6 +653,7 @@
     "cpu_cost": 10, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
     "language": "c", 
     "name": "gpr_sync_test", 
     "platforms": [
@@ -662,6 +674,7 @@
     "cpu_cost": 10, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
     "language": "c", 
     "name": "gpr_thd_test", 
     "platforms": [
@@ -682,6 +695,7 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
     "language": "c", 
     "name": "gpr_time_test", 
     "platforms": [
@@ -702,6 +716,7 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
     "language": "c", 
     "name": "gpr_tls_test", 
     "platforms": [
@@ -722,6 +737,7 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
     "language": "c", 
     "name": "gpr_useful_test", 
     "platforms": [
@@ -742,6 +758,7 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
     "language": "c", 
     "name": "grpc_auth_context_test", 
     "platforms": [
@@ -762,8 +779,9 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
     "language": "c", 
-    "name": "grpc_base64_test", 
+    "name": "grpc_b64_test", 
     "platforms": [
       "linux", 
       "mac", 
@@ -782,6 +800,7 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
     "language": "c", 
     "name": "grpc_byte_buffer_reader_test", 
     "platforms": [
@@ -802,6 +821,7 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
     "language": "c", 
     "name": "grpc_channel_args_test", 
     "platforms": [
@@ -822,6 +842,7 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
     "language": "c", 
     "name": "grpc_channel_stack_test", 
     "platforms": [
@@ -842,6 +863,7 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
     "language": "c", 
     "name": "grpc_completion_queue_test", 
     "platforms": [
@@ -862,6 +884,7 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
     "language": "c", 
     "name": "grpc_credentials_test", 
     "platforms": [
@@ -882,6 +905,7 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
     "language": "c", 
     "name": "grpc_invalid_channel_args_test", 
     "platforms": [
@@ -901,6 +925,7 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
     "language": "c", 
     "name": "grpc_json_token_test", 
     "platforms": [
@@ -920,6 +945,7 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
     "language": "c", 
     "name": "grpc_jwt_verifier_test", 
     "platforms": [
@@ -940,6 +966,7 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
     "language": "c", 
     "name": "grpc_security_connector_test", 
     "platforms": [
@@ -960,6 +987,7 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
     "language": "c", 
     "name": "hpack_parser_test", 
     "platforms": [
@@ -980,6 +1008,7 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
     "language": "c", 
     "name": "hpack_table_test", 
     "platforms": [
@@ -1000,6 +1029,7 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
     "language": "c", 
     "name": "httpcli_format_request_test", 
     "platforms": [
@@ -1020,6 +1050,7 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
     "language": "c", 
     "name": "httpcli_parser_test", 
     "platforms": [
@@ -1039,6 +1070,7 @@
     "cpu_cost": 0.5, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
     "language": "c", 
     "name": "httpcli_test", 
     "platforms": [
@@ -1055,6 +1087,7 @@
     "cpu_cost": 0.5, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
     "language": "c", 
     "name": "httpscli_test", 
     "platforms": [
@@ -1072,6 +1105,7 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
     "language": "c", 
     "name": "init_test", 
     "platforms": [
@@ -1092,6 +1126,7 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
     "language": "c", 
     "name": "invalid_call_argument_test", 
     "platforms": [
@@ -1112,6 +1147,7 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
     "language": "c", 
     "name": "json_rewrite_test", 
     "platforms": [
@@ -1132,6 +1168,7 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
     "language": "c", 
     "name": "json_stream_error_test", 
     "platforms": [
@@ -1152,6 +1189,7 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
     "language": "c", 
     "name": "json_test", 
     "platforms": [
@@ -1172,6 +1210,7 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
     "language": "c", 
     "name": "lame_client_test", 
     "platforms": [
@@ -1192,6 +1231,7 @@
     "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
     "language": "c", 
     "name": "lb_policies_test", 
     "platforms": [
@@ -1212,6 +1252,7 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
     "language": "c", 
     "name": "message_compress_test", 
     "platforms": [
@@ -1232,6 +1273,28 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
+    "language": "c", 
+    "name": "mlog_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ]
+  }, 
+  {
+    "args": [], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "gtest": false, 
     "language": "c", 
     "name": "multiple_server_queues_test", 
     "platforms": [
@@ -1252,6 +1315,7 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
     "language": "c", 
     "name": "murmur_hash_test", 
     "platforms": [
@@ -1272,6 +1336,7 @@
     "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
     "language": "c", 
     "name": "no_server_test", 
     "platforms": [
@@ -1292,6 +1357,7 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
     "language": "c", 
     "name": "resolve_address_test", 
     "platforms": [
@@ -1312,6 +1378,7 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
     "language": "c", 
     "name": "secure_channel_create_test", 
     "platforms": [
@@ -1332,6 +1399,7 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
     "language": "c", 
     "name": "secure_endpoint_test", 
     "platforms": [
@@ -1352,6 +1420,7 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
     "language": "c", 
     "name": "server_chttp2_test", 
     "platforms": [
@@ -1372,6 +1441,7 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
     "language": "c", 
     "name": "server_test", 
     "platforms": [
@@ -1392,6 +1462,7 @@
     "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
     "language": "c", 
     "name": "set_initial_connect_string_test", 
     "platforms": [
@@ -1412,6 +1483,7 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
     "language": "c", 
     "name": "sockaddr_resolver_test", 
     "platforms": [
@@ -1432,6 +1504,7 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
     "language": "c", 
     "name": "sockaddr_utils_test", 
     "platforms": [
@@ -1451,6 +1524,7 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
     "language": "c", 
     "name": "socket_utils_test", 
     "platforms": [
@@ -1469,6 +1543,7 @@
     "cpu_cost": 0.5, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
     "language": "c", 
     "name": "tcp_client_posix_test", 
     "platforms": [
@@ -1487,6 +1562,7 @@
     "cpu_cost": 0.5, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
     "language": "c", 
     "name": "tcp_posix_test", 
     "platforms": [
@@ -1505,6 +1581,7 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
     "language": "c", 
     "name": "tcp_server_posix_test", 
     "platforms": [
@@ -1524,6 +1601,7 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
     "language": "c", 
     "name": "time_averaged_stats_test", 
     "platforms": [
@@ -1544,6 +1622,7 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
     "language": "c", 
     "name": "timeout_encoding_test", 
     "platforms": [
@@ -1564,6 +1643,7 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
     "language": "c", 
     "name": "timer_heap_test", 
     "platforms": [
@@ -1584,6 +1664,7 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
     "language": "c", 
     "name": "timer_list_test", 
     "platforms": [
@@ -1604,6 +1685,7 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
     "language": "c", 
     "name": "timers_test", 
     "platforms": [
@@ -1624,6 +1706,7 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
     "language": "c", 
     "name": "transport_connectivity_state_test", 
     "platforms": [
@@ -1644,6 +1727,7 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
     "language": "c", 
     "name": "transport_metadata_test", 
     "platforms": [
@@ -1663,6 +1747,7 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
     "language": "c", 
     "name": "transport_security_test", 
     "platforms": [
@@ -1681,6 +1766,7 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
     "language": "c", 
     "name": "udp_server_test", 
     "platforms": [
@@ -1700,6 +1786,7 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
     "language": "c", 
     "name": "uri_parser_test", 
     "platforms": [
@@ -1719,6 +1806,7 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
     "language": "c", 
     "name": "workqueue_test", 
     "platforms": [
@@ -1738,6 +1826,7 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": true, 
     "language": "c++", 
     "name": "alarm_cpp_test", 
     "platforms": [
@@ -1758,6 +1847,7 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": true, 
     "language": "c++", 
     "name": "async_end2end_test", 
     "platforms": [
@@ -1777,6 +1867,7 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
     "language": "c++", 
     "name": "async_streaming_ping_pong_test", 
     "platforms": [
@@ -1795,6 +1886,7 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
     "language": "c++", 
     "name": "async_unary_ping_pong_test", 
     "platforms": [
@@ -1814,6 +1906,7 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": true, 
     "language": "c++", 
     "name": "auth_property_iterator_test", 
     "platforms": [
@@ -1834,6 +1927,7 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": true, 
     "language": "c++", 
     "name": "channel_arguments_test", 
     "platforms": [
@@ -1854,6 +1948,7 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": true, 
     "language": "c++", 
     "name": "cli_call_test", 
     "platforms": [
@@ -1873,6 +1968,7 @@
     "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": true, 
     "language": "c++", 
     "name": "client_crash_test", 
     "platforms": [
@@ -1892,6 +1988,7 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": true, 
     "language": "c++", 
     "name": "credentials_test", 
     "platforms": [
@@ -1912,6 +2009,7 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": true, 
     "language": "c++", 
     "name": "cxx_byte_buffer_test", 
     "platforms": [
@@ -1932,6 +2030,7 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": true, 
     "language": "c++", 
     "name": "cxx_slice_test", 
     "platforms": [
@@ -1952,6 +2051,7 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": true, 
     "language": "c++", 
     "name": "cxx_string_ref_test", 
     "platforms": [
@@ -1972,6 +2072,7 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": true, 
     "language": "c++", 
     "name": "cxx_time_test", 
     "platforms": [
@@ -1992,6 +2093,7 @@
     "cpu_cost": 0.5, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": true, 
     "language": "c++", 
     "name": "end2end_test", 
     "platforms": [
@@ -2011,6 +2113,7 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
     "language": "c++", 
     "name": "generic_async_streaming_ping_pong_test", 
     "platforms": [
@@ -2030,6 +2133,7 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": true, 
     "language": "c++", 
     "name": "generic_end2end_test", 
     "platforms": [
@@ -2050,6 +2154,28 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": true, 
+    "language": "c++", 
+    "name": "grpclb_api_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ]
+  }, 
+  {
+    "args": [], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "gtest": true, 
     "language": "c++", 
     "name": "hybrid_end2end_test", 
     "platforms": [
@@ -2069,6 +2195,7 @@
     "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
     "language": "c++", 
     "name": "interop_test", 
     "platforms": [
@@ -2088,6 +2215,7 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": true, 
     "language": "c++", 
     "name": "mock_test", 
     "platforms": [
@@ -2104,9 +2232,10 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 10, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
     "language": "c++", 
     "name": "qps_openloop_test", 
     "platforms": [
@@ -2123,10 +2252,9 @@
       "posix"
     ], 
     "cpu_cost": 10, 
-    "exclude_configs": [
-      "tsan"
-    ], 
+    "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
     "language": "c++", 
     "name": "qps_test", 
     "platforms": [
@@ -2146,6 +2274,7 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": true, 
     "language": "c++", 
     "name": "secure_auth_context_test", 
     "platforms": [
@@ -2165,6 +2294,7 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
     "language": "c++", 
     "name": "secure_sync_unary_ping_pong_test", 
     "platforms": [
@@ -2183,6 +2313,7 @@
     "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": true, 
     "language": "c++", 
     "name": "server_crash_test", 
     "platforms": [
@@ -2202,6 +2333,7 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": true, 
     "language": "c++", 
     "name": "shutdown_test", 
     "platforms": [
@@ -2222,6 +2354,7 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
     "language": "c++", 
     "name": "status_test", 
     "platforms": [
@@ -2241,6 +2374,7 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": true, 
     "language": "c++", 
     "name": "streaming_throughput_test", 
     "platforms": [
@@ -2259,6 +2393,7 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
     "language": "c++", 
     "name": "sync_streaming_ping_pong_test", 
     "platforms": [
@@ -2277,6 +2412,7 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
     "language": "c++", 
     "name": "sync_unary_ping_pong_test", 
     "platforms": [
@@ -2296,6 +2432,7 @@
     "cpu_cost": 100, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": true, 
     "language": "c++", 
     "name": "thread_stress_test", 
     "platforms": [
@@ -2316,6 +2453,7 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
     "language": "c89", 
     "name": "public_headers_must_be_c89", 
     "platforms": [
@@ -2336,6 +2474,7 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
     "language": "c", 
     "name": "badreq_bad_client_test", 
     "platforms": [
@@ -2356,6 +2495,7 @@
     "cpu_cost": 0.2, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
     "language": "c", 
     "name": "connection_prefix_bad_client_test", 
     "platforms": [
@@ -2376,6 +2516,7 @@
     "cpu_cost": 0.2, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
     "language": "c", 
     "name": "headers_bad_client_test", 
     "platforms": [
@@ -2396,6 +2537,7 @@
     "cpu_cost": 0.2, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
     "language": "c", 
     "name": "initial_settings_frame_bad_client_test", 
     "platforms": [
@@ -2416,6 +2558,7 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
     "language": "c", 
     "name": "server_registered_method_bad_client_test", 
     "platforms": [
@@ -2436,6 +2579,7 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
     "language": "c", 
     "name": "simple_request_bad_client_test", 
     "platforms": [
@@ -2456,6 +2600,7 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
     "language": "c", 
     "name": "unknown_frame_bad_client_test", 
     "platforms": [
@@ -2476,6 +2621,7 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
     "language": "c", 
     "name": "window_overflow_bad_client_test", 
     "platforms": [
@@ -2495,6 +2641,7 @@
     "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
     "language": "c", 
     "name": "bad_ssl_alpn_test", 
     "platforms": [
@@ -2513,6 +2660,7 @@
     "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
     "language": "c", 
     "name": "bad_ssl_cert_test", 
     "platforms": [
@@ -4219,7 +4367,7 @@
   }, 
   {
     "args": [
-      "channel_connectivity"
+      "compressed_payload"
     ], 
     "ci_platforms": [
       "windows", 
@@ -4241,29 +4389,7 @@
   }, 
   {
     "args": [
-      "channel_ping"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_census_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "compressed_payload"
+      "connectivity"
     ], 
     "ci_platforms": [
       "windows", 
@@ -4505,28 +4631,6 @@
   }, 
   {
     "args": [
-      "metadata"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_census_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
       "negative_deadline"
     ], 
     "ci_platforms": [
@@ -4580,6 +4684,28 @@
       "posix"
     ], 
     "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_census_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "ping"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -4756,6 +4882,28 @@
       "posix"
     ], 
     "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_census_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "simple_metadata"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -5011,7 +5159,7 @@
   }, 
   {
     "args": [
-      "channel_connectivity"
+      "compressed_payload"
     ], 
     "ci_platforms": [
       "windows", 
@@ -5033,29 +5181,7 @@
   }, 
   {
     "args": [
-      "channel_ping"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_compress_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "compressed_payload"
+      "connectivity"
     ], 
     "ci_platforms": [
       "windows", 
@@ -5297,28 +5423,6 @@
   }, 
   {
     "args": [
-      "metadata"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_compress_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
       "negative_deadline"
     ], 
     "ci_platforms": [
@@ -5372,6 +5476,28 @@
       "posix"
     ], 
     "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_compress_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "ping"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -5548,6 +5674,28 @@
       "posix"
     ], 
     "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_compress_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "simple_metadata"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -5794,7 +5942,7 @@
   }, 
   {
     "args": [
-      "channel_connectivity"
+      "compressed_payload"
     ], 
     "ci_platforms": [
       "windows", 
@@ -5815,28 +5963,7 @@
   }, 
   {
     "args": [
-      "channel_ping"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_fakesec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "compressed_payload"
+      "connectivity"
     ], 
     "ci_platforms": [
       "windows", 
@@ -6067,27 +6194,6 @@
   }, 
   {
     "args": [
-      "metadata"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_fakesec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
       "negative_deadline"
     ], 
     "ci_platforms": [
@@ -6138,6 +6244,27 @@
       "posix"
     ], 
     "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_fakesec_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "ping"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -6306,6 +6433,27 @@
       "posix"
     ], 
     "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_fakesec_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "simple_metadata"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -6559,7 +6707,7 @@
   }, 
   {
     "args": [
-      "channel_connectivity"
+      "compressed_payload"
     ], 
     "ci_platforms": [
       "windows", 
@@ -6581,29 +6729,7 @@
   }, 
   {
     "args": [
-      "channel_ping"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_full_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "compressed_payload"
+      "connectivity"
     ], 
     "ci_platforms": [
       "windows", 
@@ -6845,28 +6971,6 @@
   }, 
   {
     "args": [
-      "metadata"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_full_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
       "negative_deadline"
     ], 
     "ci_platforms": [
@@ -6920,6 +7024,28 @@
       "posix"
     ], 
     "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_full_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "ping"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -7096,6 +7222,28 @@
       "posix"
     ], 
     "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_full_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "simple_metadata"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -7297,7 +7445,7 @@
   }, 
   {
     "args": [
-      "channel_connectivity"
+      "compressed_payload"
     ], 
     "ci_platforms": [
       "linux"
@@ -7313,23 +7461,7 @@
   }, 
   {
     "args": [
-      "channel_ping"
-    ], 
-    "ci_platforms": [
-      "linux"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_full+pipe_test", 
-    "platforms": [
-      "linux"
-    ]
-  }, 
-  {
-    "args": [
-      "compressed_payload"
+      "connectivity"
     ], 
     "ci_platforms": [
       "linux"
@@ -7505,22 +7637,6 @@
   }, 
   {
     "args": [
-      "metadata"
-    ], 
-    "ci_platforms": [
-      "linux"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_full+pipe_test", 
-    "platforms": [
-      "linux"
-    ]
-  }, 
-  {
-    "args": [
       "negative_deadline"
     ], 
     "ci_platforms": [
@@ -7559,6 +7675,22 @@
       "linux"
     ], 
     "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_full+pipe_test", 
+    "platforms": [
+      "linux"
+    ]
+  }, 
+  {
+    "args": [
+      "ping"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -7687,6 +7819,22 @@
       "linux"
     ], 
     "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_full+pipe_test", 
+    "platforms": [
+      "linux"
+    ]
+  }, 
+  {
+    "args": [
+      "simple_metadata"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -7873,7 +8021,7 @@
   }, 
   {
     "args": [
-      "channel_connectivity"
+      "compressed_payload"
     ], 
     "ci_platforms": [
       "linux"
@@ -7889,23 +8037,7 @@
   }, 
   {
     "args": [
-      "channel_ping"
-    ], 
-    "ci_platforms": [
-      "linux"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_full+poll_test", 
-    "platforms": [
-      "linux"
-    ]
-  }, 
-  {
-    "args": [
-      "compressed_payload"
+      "connectivity"
     ], 
     "ci_platforms": [
       "linux"
@@ -8081,22 +8213,6 @@
   }, 
   {
     "args": [
-      "metadata"
-    ], 
-    "ci_platforms": [
-      "linux"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_full+poll_test", 
-    "platforms": [
-      "linux"
-    ]
-  }, 
-  {
-    "args": [
       "negative_deadline"
     ], 
     "ci_platforms": [
@@ -8135,6 +8251,22 @@
       "linux"
     ], 
     "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_full+poll_test", 
+    "platforms": [
+      "linux"
+    ]
+  }, 
+  {
+    "args": [
+      "ping"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -8263,6 +8395,22 @@
       "linux"
     ], 
     "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_full+poll_test", 
+    "platforms": [
+      "linux"
+    ]
+  }, 
+  {
+    "args": [
+      "simple_metadata"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -8449,7 +8597,7 @@
   }, 
   {
     "args": [
-      "channel_connectivity"
+      "compressed_payload"
     ], 
     "ci_platforms": [
       "linux"
@@ -8465,23 +8613,7 @@
   }, 
   {
     "args": [
-      "channel_ping"
-    ], 
-    "ci_platforms": [
-      "linux"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_full+poll+pipe_test", 
-    "platforms": [
-      "linux"
-    ]
-  }, 
-  {
-    "args": [
-      "compressed_payload"
+      "connectivity"
     ], 
     "ci_platforms": [
       "linux"
@@ -8657,22 +8789,6 @@
   }, 
   {
     "args": [
-      "metadata"
-    ], 
-    "ci_platforms": [
-      "linux"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_full+poll+pipe_test", 
-    "platforms": [
-      "linux"
-    ]
-  }, 
-  {
-    "args": [
       "negative_deadline"
     ], 
     "ci_platforms": [
@@ -8711,6 +8827,22 @@
       "linux"
     ], 
     "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_full+poll+pipe_test", 
+    "platforms": [
+      "linux"
+    ]
+  }, 
+  {
+    "args": [
+      "ping"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -8839,6 +8971,22 @@
       "linux"
     ], 
     "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_full+poll+pipe_test", 
+    "platforms": [
+      "linux"
+    ]
+  }, 
+  {
+    "args": [
+      "simple_metadata"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -9079,7 +9227,7 @@
   }, 
   {
     "args": [
-      "channel_connectivity"
+      "compressed_payload"
     ], 
     "ci_platforms": [
       "windows", 
@@ -9101,29 +9249,7 @@
   }, 
   {
     "args": [
-      "channel_ping"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_full+trace_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "compressed_payload"
+      "connectivity"
     ], 
     "ci_platforms": [
       "windows", 
@@ -9343,28 +9469,6 @@
   }, 
   {
     "args": [
-      "metadata"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_full+trace_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
       "negative_deadline"
     ], 
     "ci_platforms": [
@@ -9418,6 +9522,28 @@
       "posix"
     ], 
     "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_full+trace_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "ping"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -9594,6 +9720,28 @@
       "posix"
     ], 
     "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_full+trace_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "simple_metadata"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -9840,7 +9988,7 @@
   }, 
   {
     "args": [
-      "channel_connectivity"
+      "compressed_payload"
     ], 
     "ci_platforms": [
       "windows", 
@@ -9861,28 +10009,7 @@
   }, 
   {
     "args": [
-      "channel_ping"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_oauth2_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "compressed_payload"
+      "connectivity"
     ], 
     "ci_platforms": [
       "windows", 
@@ -10113,27 +10240,6 @@
   }, 
   {
     "args": [
-      "metadata"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_oauth2_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
       "negative_deadline"
     ], 
     "ci_platforms": [
@@ -10184,6 +10290,27 @@
       "posix"
     ], 
     "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_oauth2_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "ping"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -10352,6 +10479,27 @@
       "posix"
     ], 
     "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_oauth2_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "simple_metadata"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -10764,27 +10912,6 @@
   }, 
   {
     "args": [
-      "metadata"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_proxy_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
       "negative_deadline"
     ], 
     "ci_platforms": [
@@ -10982,6 +11109,27 @@
       "posix"
     ], 
     "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_proxy_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "simple_metadata"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -11415,27 +11563,6 @@
   }, 
   {
     "args": [
-      "metadata"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_sockpair_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
       "negative_deadline"
     ], 
     "ci_platforms": [
@@ -11626,6 +11753,27 @@
   {
     "args": [
       "shutdown_finishes_tags"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_sockpair_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "simple_metadata"
     ], 
     "ci_platforms": [
       "windows", 
@@ -12045,27 +12193,6 @@
   }, 
   {
     "args": [
-      "metadata"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_sockpair+trace_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
       "negative_deadline"
     ], 
     "ci_platforms": [
@@ -12256,6 +12383,27 @@
   {
     "args": [
       "shutdown_finishes_tags"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_sockpair+trace_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "simple_metadata"
     ], 
     "ci_platforms": [
       "windows", 
@@ -12696,27 +12844,6 @@
   }, 
   {
     "args": [
-      "metadata"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_sockpair_1byte_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
       "negative_deadline"
     ], 
     "ci_platforms": [
@@ -12907,6 +13034,27 @@
   {
     "args": [
       "shutdown_finishes_tags"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_sockpair_1byte_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "simple_metadata"
     ], 
     "ci_platforms": [
       "windows", 
@@ -13167,7 +13315,7 @@
   }, 
   {
     "args": [
-      "channel_connectivity"
+      "compressed_payload"
     ], 
     "ci_platforms": [
       "windows", 
@@ -13189,29 +13337,7 @@
   }, 
   {
     "args": [
-      "channel_ping"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_ssl_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "compressed_payload"
+      "connectivity"
     ], 
     "ci_platforms": [
       "windows", 
@@ -13453,28 +13579,6 @@
   }, 
   {
     "args": [
-      "metadata"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_ssl_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
       "negative_deadline"
     ], 
     "ci_platforms": [
@@ -13528,6 +13632,28 @@
       "posix"
     ], 
     "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_ssl_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "ping"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -13704,6 +13830,28 @@
       "posix"
     ], 
     "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_ssl_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "simple_metadata"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -13905,7 +14053,7 @@
   }, 
   {
     "args": [
-      "channel_connectivity"
+      "compressed_payload"
     ], 
     "ci_platforms": [
       "linux"
@@ -13921,23 +14069,7 @@
   }, 
   {
     "args": [
-      "channel_ping"
-    ], 
-    "ci_platforms": [
-      "linux"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_ssl+poll_test", 
-    "platforms": [
-      "linux"
-    ]
-  }, 
-  {
-    "args": [
-      "compressed_payload"
+      "connectivity"
     ], 
     "ci_platforms": [
       "linux"
@@ -14113,22 +14245,6 @@
   }, 
   {
     "args": [
-      "metadata"
-    ], 
-    "ci_platforms": [
-      "linux"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_ssl+poll_test", 
-    "platforms": [
-      "linux"
-    ]
-  }, 
-  {
-    "args": [
       "negative_deadline"
     ], 
     "ci_platforms": [
@@ -14167,6 +14283,22 @@
       "linux"
     ], 
     "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_ssl+poll_test", 
+    "platforms": [
+      "linux"
+    ]
+  }, 
+  {
+    "args": [
+      "ping"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -14295,6 +14427,22 @@
       "linux"
     ], 
     "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_ssl+poll_test", 
+    "platforms": [
+      "linux"
+    ]
+  }, 
+  {
+    "args": [
+      "simple_metadata"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -14694,27 +14842,6 @@
   }, 
   {
     "args": [
-      "metadata"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_ssl_proxy_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
       "negative_deadline"
     ], 
     "ci_platforms": [
@@ -14912,6 +15039,27 @@
       "posix"
     ], 
     "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_ssl_proxy_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "simple_metadata"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -15363,28 +15511,6 @@
   }, 
   {
     "args": [
-      "metadata"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_uchannel_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
       "negative_deadline"
     ], 
     "ci_platforms": [
@@ -15584,6 +15710,28 @@
   {
     "args": [
       "shutdown_finishes_tags"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_uchannel_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "simple_metadata"
     ], 
     "ci_platforms": [
       "windows", 
@@ -15829,7 +15977,7 @@
   }, 
   {
     "args": [
-      "channel_connectivity"
+      "compressed_payload"
     ], 
     "ci_platforms": [
       "linux", 
@@ -15849,27 +15997,7 @@
   }, 
   {
     "args": [
-      "channel_ping"
-    ], 
-    "ci_platforms": [
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_uds_test", 
-    "platforms": [
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "compressed_payload"
+      "connectivity"
     ], 
     "ci_platforms": [
       "linux", 
@@ -16069,26 +16197,6 @@
   }, 
   {
     "args": [
-      "metadata"
-    ], 
-    "ci_platforms": [
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_uds_test", 
-    "platforms": [
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
       "negative_deadline"
     ], 
     "ci_platforms": [
@@ -16137,6 +16245,26 @@
       "posix"
     ], 
     "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_uds_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "ping"
+    ], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -16297,6 +16425,26 @@
       "posix"
     ], 
     "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_uds_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "simple_metadata"
+    ], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -16493,7 +16641,7 @@
   }, 
   {
     "args": [
-      "channel_connectivity"
+      "compressed_payload"
     ], 
     "ci_platforms": [
       "linux"
@@ -16509,23 +16657,7 @@
   }, 
   {
     "args": [
-      "channel_ping"
-    ], 
-    "ci_platforms": [
-      "linux"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_uds+poll_test", 
-    "platforms": [
-      "linux"
-    ]
-  }, 
-  {
-    "args": [
-      "compressed_payload"
+      "connectivity"
     ], 
     "ci_platforms": [
       "linux"
@@ -16685,22 +16817,6 @@
   }, 
   {
     "args": [
-      "metadata"
-    ], 
-    "ci_platforms": [
-      "linux"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_uds+poll_test", 
-    "platforms": [
-      "linux"
-    ]
-  }, 
-  {
-    "args": [
       "negative_deadline"
     ], 
     "ci_platforms": [
@@ -16739,6 +16855,22 @@
       "linux"
     ], 
     "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_uds+poll_test", 
+    "platforms": [
+      "linux"
+    ]
+  }, 
+  {
+    "args": [
+      "ping"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -16867,6 +16999,22 @@
       "linux"
     ], 
     "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_uds+poll_test", 
+    "platforms": [
+      "linux"
+    ]
+  }, 
+  {
+    "args": [
+      "simple_metadata"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -17085,7 +17233,7 @@
   }, 
   {
     "args": [
-      "channel_connectivity"
+      "compressed_payload"
     ], 
     "ci_platforms": [
       "windows", 
@@ -17107,29 +17255,7 @@
   }, 
   {
     "args": [
-      "channel_ping"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_census_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "compressed_payload"
+      "connectivity"
     ], 
     "ci_platforms": [
       "windows", 
@@ -17371,28 +17497,6 @@
   }, 
   {
     "args": [
-      "metadata"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_census_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
       "negative_deadline"
     ], 
     "ci_platforms": [
@@ -17446,6 +17550,28 @@
       "posix"
     ], 
     "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_census_nosec_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "ping"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -17622,6 +17748,28 @@
       "posix"
     ], 
     "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_census_nosec_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "simple_metadata"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -17855,7 +18003,7 @@
   }, 
   {
     "args": [
-      "channel_connectivity"
+      "compressed_payload"
     ], 
     "ci_platforms": [
       "windows", 
@@ -17877,29 +18025,7 @@
   }, 
   {
     "args": [
-      "channel_ping"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_compress_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "compressed_payload"
+      "connectivity"
     ], 
     "ci_platforms": [
       "windows", 
@@ -18141,28 +18267,6 @@
   }, 
   {
     "args": [
-      "metadata"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_compress_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
       "negative_deadline"
     ], 
     "ci_platforms": [
@@ -18216,6 +18320,28 @@
       "posix"
     ], 
     "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_compress_nosec_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "ping"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -18392,6 +18518,28 @@
       "posix"
     ], 
     "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_compress_nosec_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "simple_metadata"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -18625,7 +18773,7 @@
   }, 
   {
     "args": [
-      "channel_connectivity"
+      "compressed_payload"
     ], 
     "ci_platforms": [
       "windows", 
@@ -18647,29 +18795,7 @@
   }, 
   {
     "args": [
-      "channel_ping"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_full_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "compressed_payload"
+      "connectivity"
     ], 
     "ci_platforms": [
       "windows", 
@@ -18911,28 +19037,6 @@
   }, 
   {
     "args": [
-      "metadata"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_full_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
       "negative_deadline"
     ], 
     "ci_platforms": [
@@ -18986,6 +19090,28 @@
       "posix"
     ], 
     "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_full_nosec_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "ping"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -19175,6 +19301,28 @@
   }, 
   {
     "args": [
+      "simple_metadata"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_full_nosec_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
       "simple_request"
     ], 
     "ci_platforms": [
@@ -19347,7 +19495,7 @@
   }, 
   {
     "args": [
-      "channel_connectivity"
+      "compressed_payload"
     ], 
     "ci_platforms": [
       "linux"
@@ -19363,23 +19511,7 @@
   }, 
   {
     "args": [
-      "channel_ping"
-    ], 
-    "ci_platforms": [
-      "linux"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_full+pipe_nosec_test", 
-    "platforms": [
-      "linux"
-    ]
-  }, 
-  {
-    "args": [
-      "compressed_payload"
+      "connectivity"
     ], 
     "ci_platforms": [
       "linux"
@@ -19555,22 +19687,6 @@
   }, 
   {
     "args": [
-      "metadata"
-    ], 
-    "ci_platforms": [
-      "linux"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_full+pipe_nosec_test", 
-    "platforms": [
-      "linux"
-    ]
-  }, 
-  {
-    "args": [
       "negative_deadline"
     ], 
     "ci_platforms": [
@@ -19609,6 +19725,22 @@
       "linux"
     ], 
     "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_full+pipe_nosec_test", 
+    "platforms": [
+      "linux"
+    ]
+  }, 
+  {
+    "args": [
+      "ping"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -19737,6 +19869,22 @@
       "linux"
     ], 
     "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_full+pipe_nosec_test", 
+    "platforms": [
+      "linux"
+    ]
+  }, 
+  {
+    "args": [
+      "simple_metadata"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -19907,7 +20055,7 @@
   }, 
   {
     "args": [
-      "channel_connectivity"
+      "compressed_payload"
     ], 
     "ci_platforms": [
       "linux"
@@ -19923,23 +20071,7 @@
   }, 
   {
     "args": [
-      "channel_ping"
-    ], 
-    "ci_platforms": [
-      "linux"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_full+poll_nosec_test", 
-    "platforms": [
-      "linux"
-    ]
-  }, 
-  {
-    "args": [
-      "compressed_payload"
+      "connectivity"
     ], 
     "ci_platforms": [
       "linux"
@@ -20115,22 +20247,6 @@
   }, 
   {
     "args": [
-      "metadata"
-    ], 
-    "ci_platforms": [
-      "linux"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_full+poll_nosec_test", 
-    "platforms": [
-      "linux"
-    ]
-  }, 
-  {
-    "args": [
       "negative_deadline"
     ], 
     "ci_platforms": [
@@ -20169,6 +20285,22 @@
       "linux"
     ], 
     "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_full+poll_nosec_test", 
+    "platforms": [
+      "linux"
+    ]
+  }, 
+  {
+    "args": [
+      "ping"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -20297,6 +20429,22 @@
       "linux"
     ], 
     "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_full+poll_nosec_test", 
+    "platforms": [
+      "linux"
+    ]
+  }, 
+  {
+    "args": [
+      "simple_metadata"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -20467,7 +20615,7 @@
   }, 
   {
     "args": [
-      "channel_connectivity"
+      "compressed_payload"
     ], 
     "ci_platforms": [
       "linux"
@@ -20483,23 +20631,7 @@
   }, 
   {
     "args": [
-      "channel_ping"
-    ], 
-    "ci_platforms": [
-      "linux"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_full+poll+pipe_nosec_test", 
-    "platforms": [
-      "linux"
-    ]
-  }, 
-  {
-    "args": [
-      "compressed_payload"
+      "connectivity"
     ], 
     "ci_platforms": [
       "linux"
@@ -20675,22 +20807,6 @@
   }, 
   {
     "args": [
-      "metadata"
-    ], 
-    "ci_platforms": [
-      "linux"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_full+poll+pipe_nosec_test", 
-    "platforms": [
-      "linux"
-    ]
-  }, 
-  {
-    "args": [
       "negative_deadline"
     ], 
     "ci_platforms": [
@@ -20729,6 +20845,22 @@
       "linux"
     ], 
     "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_full+poll+pipe_nosec_test", 
+    "platforms": [
+      "linux"
+    ]
+  }, 
+  {
+    "args": [
+      "ping"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -20857,6 +20989,22 @@
       "linux"
     ], 
     "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_full+poll+pipe_nosec_test", 
+    "platforms": [
+      "linux"
+    ]
+  }, 
+  {
+    "args": [
+      "simple_metadata"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -21075,7 +21223,7 @@
   }, 
   {
     "args": [
-      "channel_connectivity"
+      "compressed_payload"
     ], 
     "ci_platforms": [
       "windows", 
@@ -21097,29 +21245,7 @@
   }, 
   {
     "args": [
-      "channel_ping"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_full+trace_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "compressed_payload"
+      "connectivity"
     ], 
     "ci_platforms": [
       "windows", 
@@ -21339,28 +21465,6 @@
   }, 
   {
     "args": [
-      "metadata"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_full+trace_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
       "negative_deadline"
     ], 
     "ci_platforms": [
@@ -21414,6 +21518,28 @@
       "posix"
     ], 
     "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_full+trace_nosec_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "ping"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -21590,6 +21716,28 @@
       "posix"
     ], 
     "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_full+trace_nosec_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "simple_metadata"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -21983,27 +22131,6 @@
   }, 
   {
     "args": [
-      "metadata"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_proxy_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
       "negative_deadline"
     ], 
     "ci_platforms": [
@@ -22214,6 +22341,27 @@
   }, 
   {
     "args": [
+      "simple_metadata"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_proxy_nosec_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
       "simple_request"
     ], 
     "ci_platforms": [
@@ -22613,27 +22761,6 @@
   }, 
   {
     "args": [
-      "metadata"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_sockpair_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
       "negative_deadline"
     ], 
     "ci_platforms": [
@@ -22824,6 +22951,27 @@
   {
     "args": [
       "shutdown_finishes_tags"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_sockpair_nosec_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "simple_metadata"
     ], 
     "ci_platforms": [
       "windows", 
@@ -23222,27 +23370,6 @@
   }, 
   {
     "args": [
-      "metadata"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_sockpair+trace_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
       "negative_deadline"
     ], 
     "ci_platforms": [
@@ -23433,6 +23560,27 @@
   {
     "args": [
       "shutdown_finishes_tags"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_sockpair+trace_nosec_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "simple_metadata"
     ], 
     "ci_platforms": [
       "windows", 
@@ -23852,27 +24000,6 @@
   }, 
   {
     "args": [
-      "metadata"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_sockpair_1byte_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
       "negative_deadline"
     ], 
     "ci_platforms": [
@@ -24063,6 +24190,27 @@
   {
     "args": [
       "shutdown_finishes_tags"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_sockpair_1byte_nosec_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "simple_metadata"
     ], 
     "ci_platforms": [
       "windows", 
@@ -24499,28 +24647,6 @@
   }, 
   {
     "args": [
-      "metadata"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_uchannel_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
       "negative_deadline"
     ], 
     "ci_platforms": [
@@ -24720,6 +24846,28 @@
   {
     "args": [
       "shutdown_finishes_tags"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_uchannel_nosec_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "simple_metadata"
     ], 
     "ci_platforms": [
       "windows", 
@@ -24945,7 +25093,7 @@
   }, 
   {
     "args": [
-      "channel_connectivity"
+      "compressed_payload"
     ], 
     "ci_platforms": [
       "linux", 
@@ -24965,27 +25113,7 @@
   }, 
   {
     "args": [
-      "channel_ping"
-    ], 
-    "ci_platforms": [
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_uds_nosec_test", 
-    "platforms": [
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "compressed_payload"
+      "connectivity"
     ], 
     "ci_platforms": [
       "linux", 
@@ -25185,26 +25313,6 @@
   }, 
   {
     "args": [
-      "metadata"
-    ], 
-    "ci_platforms": [
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_uds_nosec_test", 
-    "platforms": [
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
       "negative_deadline"
     ], 
     "ci_platforms": [
@@ -25253,6 +25361,26 @@
       "posix"
     ], 
     "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_uds_nosec_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "ping"
+    ], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -25413,6 +25541,26 @@
       "posix"
     ], 
     "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_uds_nosec_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "simple_metadata"
+    ], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -25593,7 +25741,7 @@
   }, 
   {
     "args": [
-      "channel_connectivity"
+      "compressed_payload"
     ], 
     "ci_platforms": [
       "linux"
@@ -25609,23 +25757,7 @@
   }, 
   {
     "args": [
-      "channel_ping"
-    ], 
-    "ci_platforms": [
-      "linux"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_uds+poll_nosec_test", 
-    "platforms": [
-      "linux"
-    ]
-  }, 
-  {
-    "args": [
-      "compressed_payload"
+      "connectivity"
     ], 
     "ci_platforms": [
       "linux"
@@ -25785,22 +25917,6 @@
   }, 
   {
     "args": [
-      "metadata"
-    ], 
-    "ci_platforms": [
-      "linux"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_uds+poll_nosec_test", 
-    "platforms": [
-      "linux"
-    ]
-  }, 
-  {
-    "args": [
       "negative_deadline"
     ], 
     "ci_platforms": [
@@ -25839,6 +25955,22 @@
       "linux"
     ], 
     "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_uds+poll_nosec_test", 
+    "platforms": [
+      "linux"
+    ]
+  }, 
+  {
+    "args": [
+      "ping"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -25967,6 +26099,22 @@
       "linux"
     ], 
     "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_uds+poll_nosec_test", 
+    "platforms": [
+      "linux"
+    ]
+  }, 
+  {
+    "args": [
+      "simple_metadata"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 

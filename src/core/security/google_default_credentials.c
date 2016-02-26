@@ -41,7 +41,7 @@
 
 #include "src/core/httpcli/httpcli.h"
 #include "src/core/support/env.h"
-#include "src/core/support/file.h"
+#include "src/core/support/load_file.h"
 #include "src/core/surface/api_trace.h"
 
 /* -- Constants. -- */
@@ -122,7 +122,7 @@ static int is_stack_running_on_compute_engine(void) {
      called once for the lifetime of the process by the default credentials. */
   gpr_mu_lock(GRPC_POLLSET_MU(&detector.pollset));
   while (!detector.is_done) {
-    grpc_pollset_worker worker;
+    grpc_pollset_worker *worker = NULL;
     grpc_pollset_work(&exec_ctx, &detector.pollset, &worker,
                       gpr_now(GPR_CLOCK_MONOTONIC),
                       gpr_inf_future(GPR_CLOCK_MONOTONIC));

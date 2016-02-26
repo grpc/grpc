@@ -34,21 +34,20 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "src/core/security/security_connector.h"
-#include "src/core/security/security_context.h"
-#include "src/core/support/env.h"
-#include "src/core/support/file.h"
-#include "src/core/support/string.h"
-#include "src/core/tsi/ssl_transport_security.h"
-#include "src/core/tsi/transport_security.h"
-#include "test/core/util/test_config.h"
-
 #include <grpc/grpc_security.h>
-
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/useful.h>
+
+#include "src/core/security/security_connector.h"
+#include "src/core/security/security_context.h"
+#include "src/core/support/env.h"
+#include "src/core/support/tmpfile.h"
+#include "src/core/support/string.h"
+#include "src/core/tsi/ssl_transport_security.h"
+#include "src/core/tsi/transport_security.h"
+#include "test/core/util/test_config.h"
 
 static int check_transport_security_type(const grpc_auth_context *ctx) {
   grpc_auth_property_iterator it = grpc_auth_context_find_properties_by_name(
