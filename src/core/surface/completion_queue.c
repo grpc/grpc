@@ -452,14 +452,15 @@ grpc_event grpc_completion_queue_pluck(grpc_completion_queue *cc, void *tag,
     gpr_timespec iteration_deadline = deadline;
     if (grpc_timer_check(&exec_ctx, now, &iteration_deadline)) {
       GPR_TIMER_MARK("alarm_triggered", 0);
+      del_plucker(cc, tag, &worker);
       gpr_mu_unlock(cc->mu);
       grpc_exec_ctx_flush(&exec_ctx);
       gpr_mu_lock(cc->mu);
     } else {
       grpc_pollset_work(&exec_ctx, POLLSET_FROM_CQ(cc), &worker, now,
                         iteration_deadline);
+      del_plucker(cc, tag, &worker);
     }
-    del_plucker(cc, tag, &worker);
   }
 done:
   GRPC_SURFACE_TRACE_RETURNED_EVENT(cc, &ret);
