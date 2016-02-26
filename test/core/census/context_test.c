@@ -196,6 +196,22 @@ static void invalid_test(void) {
   context = census_context_create(NULL, &tag, 1, &status);
   GPR_ASSERT(memcmp(status, &expected, sizeof(expected)) == 0);
   census_context_destroy(context);
+  // invalid key character
+  key[0] = 31;  // 32 (' ') is the first valid character value
+  key[1] = 0;
+  GPR_ASSERT(strlen(key) == 1);
+  context = census_context_create(NULL, &tag, 1, &status);
+  GPR_ASSERT(memcmp(status, &expected, sizeof(expected)) == 0);
+  census_context_destroy(context);
+  // invalid value character
+  key[0] = ' ';
+  value[5] = 127;  // 127 (DEL) is ('~' + 1)
+  value[8] = 0;
+  GPR_ASSERT(strlen(key) == 1);
+  GPR_ASSERT(strlen(value) == 8);
+  context = census_context_create(NULL, &tag, 1, &status);
+  GPR_ASSERT(memcmp(status, &expected, sizeof(expected)) == 0);
+  census_context_destroy(context);
 }
 
 // Make a copy of a context

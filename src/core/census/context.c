@@ -61,6 +61,10 @@
 // * Keep all tag information (keys/values/flags) in a single memory buffer,
 //   that can be directly copied to the wire.
 
+// min and max valid chars in tag keys and values. All printable ASCII is OK.
+#define MIN_VALID_TAG_CHAR 32   // ' '
+#define MAX_VALID_TAG_CHAR 126  // '~'
+
 // Structure representing a set of tags. Essentially a count of number of tags
 // present, and pointer to a chunk of memory that contains the per-tag details.
 struct tag_set {
@@ -116,6 +120,24 @@ struct census_context {
 // Indices into the tags member of census_context
 #define PROPAGATED_TAGS 0
 #define LOCAL_TAGS 1
+
+// Validate (check all characters are in range and size is less than limit) a
+// key or value string. Returns 0 if the string is invalid, or the length
+// (including terminator) if valid.
+static size_t validate_tag(const char *kv) {
+  size_t len = 1;
+  char ch;
+  while ((ch = *kv++) != 0) {
+    if (ch < MIN_VALID_TAG_CHAR || ch > MAX_VALID_TAG_CHAR) {
+      return 0;
+    }
+    len++;
+  }
+  if (len > CENSUS_MAX_TAG_KV_LEN) {
+    return 0;
+  }
+  return len;
+}
 
 // Extract a raw tag given a pointer (raw) to the tag header. Allow for some
 // extra bytes in the tag header (see encode/decode functions for usage: this
@@ -281,12 +303,14 @@ census_context *census_context_create(const census_context *base,
   // the context to add/replace/delete as required.
   for (int i = 0; i < ntags; i++) {
     const census_tag *tag = &tags[i];
-    size_t key_len = strlen(tag->key) + 1;
-    // ignore the tag if it is too long/short.
-    if (key_len != 1 && key_len <= CENSUS_MAX_TAG_KV_LEN) {
+    size_t key_len = validate_tag(tag->key);
+    // ignore the tag if it is invalid or too short.
+    if (key_len <= 1) {
+      context->status.n_invalid_tags++;
+    } else {
       if (tag->value != NULL) {
-        size_t value_len = strlen(tag->value) + 1;
-        if (value_len <= CENSUS_MAX_TAG_KV_LEN) {
+        size_t value_len = validate_tag(tag->value);
+        if (value_len != 0) {
           context_modify_tag(context, tag, key_len, value_len);
         } else {
           context->status.n_invalid_tags++;
@@ -296,8 +320,6 @@ census_context *census_context_create(const census_context *base,
           context->status.n_deleted_tags++;
         }
       }
-    } else {
-      context->status.n_invalid_tags++;
     }
   }
   // Remove any deleted tags, update status if needed, and return.
