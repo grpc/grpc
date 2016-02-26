@@ -35,6 +35,8 @@ set -x
 
 # Params:
 #  INTEROP_IMAGE - name of tag of the final interop image
+#  INTEROP_IMAGE_TAG - Optional. If set, the created image will be tagged using
+#    the command: 'docker tag $INTEROP_IMAGE $INTEROP_IMAGE_REPOSITORY_TAG'
 #  BASE_NAME - base name used to locate the base Dockerfile and build script
 #  TTY_FLAG - optional -t flag to make docker allocate tty
 #  BUILD_INTEROP_DOCKER_EXTRA_ARGS - optional args to be passed to the
@@ -77,6 +79,7 @@ CONTAINER_NAME="build_${BASE_NAME}_$(uuidgen)"
   $BASE_IMAGE \
   bash -l /var/local/jenkins/grpc/tools/dockerfile/$BASE_NAME/build_interop_stress.sh \
   && docker commit $CONTAINER_NAME $INTEROP_IMAGE \
+  && ( if [ -n $INTEROP_IMAGE_REPOSITORY_TAG ]; then docker tag $INTEROP_IMAGE $INTEROP_IMAGE_REPOSITORY_TAG ; fi ) \
   && echo "Successfully built image $INTEROP_IMAGE")
 EXITCODE=$?
 
