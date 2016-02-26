@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -53,6 +53,6 @@ struct grpc_endpoint_test_config {
 };
 
 void grpc_endpoint_tests(grpc_endpoint_test_config config,
-                         grpc_pollset *pollset);
+                         grpc_pollset *pollset, gpr_mu *mu);
 
 #endif /* GRPC_TEST_CORE_IOMGR_ENDPOINT_TESTS_H */
