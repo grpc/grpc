@@ -788,7 +788,6 @@ static void pollset_kick(grpc_pollset *p,
 static void pollset_global_init(void) {
   gpr_tls_init(&g_current_thread_poller);
   gpr_tls_init(&g_current_thread_worker);
-  grpc_wakeup_fd_global_init();
   grpc_wakeup_fd_init(&grpc_global_wakeup_fd);
 }
 
@@ -796,7 +795,6 @@ static void pollset_global_shutdown(void) {
   grpc_wakeup_fd_destroy(&grpc_global_wakeup_fd);
   gpr_tls_destroy(&g_current_thread_poller);
   gpr_tls_destroy(&g_current_thread_worker);
-  grpc_wakeup_fd_global_destroy();
 }
 
 static void kick_poller(void) { grpc_wakeup_fd_wakeup(&grpc_global_wakeup_fd); }
@@ -1881,8 +1879,8 @@ static void pollset_set_del_fd(grpc_exec_ctx *exec_ctx,
  */
 
 static void shutdown_engine(void) {
-  fd_global_shutdown();
   pollset_global_shutdown();
+  fd_global_shutdown();
 }
 
 static const grpc_event_engine_vtable vtable = {
