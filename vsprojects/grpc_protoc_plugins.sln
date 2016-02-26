@@ -24,6 +24,14 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "grpc_csharp_plugin", "vcxpr
 		{B6E81D84-2ACB-41B8-8781-493A944C7817} = {B6E81D84-2ACB-41B8-8781-493A944C7817}
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "grpc_node_plugin", "vcxproj\.\grpc_node_plugin\grpc_node_plugin.vcxproj", "{57ABD9A2-CE8E-CCA7-5171-35C4534F3595}"
+	ProjectSection(myProperties) = preProject
+        	lib = "False"
+	EndProjectSection
+	ProjectSection(ProjectDependencies) = postProject
+		{B6E81D84-2ACB-41B8-8781-493A944C7817} = {B6E81D84-2ACB-41B8-8781-493A944C7817}
+	EndProjectSection
+EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "grpc_objective_c_plugin", "vcxproj\.\grpc_objective_c_plugin\grpc_objective_c_plugin.vcxproj", "{19564640-CEE6-4921-ABA5-676ED79A36F6}"
 	ProjectSection(myProperties) = preProject
         	lib = "False"
@@ -80,6 +88,14 @@ Global
 		{3C813052-A49A-4662-B90A-1ADBEC7EE453}.Debug|x64.Build.0 = Debug|x64
 		{3C813052-A49A-4662-B90A-1ADBEC7EE453}.Release|Win32.Build.0 = Release|Win32
 		{3C813052-A49A-4662-B90A-1ADBEC7EE453}.Release|x64.Build.0 = Release|x64
+		{57ABD9A2-CE8E-CCA7-5171-35C4534F3595}.Debug|Win32.ActiveCfg = Debug|Win32
+		{57ABD9A2-CE8E-CCA7-5171-35C4534F3595}.Debug|x64.ActiveCfg = Debug|x64
+		{57ABD9A2-CE8E-CCA7-5171-35C4534F3595}.Release|Win32.ActiveCfg = Release|Win32
+		{57ABD9A2-CE8E-CCA7-5171-35C4534F3595}.Release|x64.ActiveCfg = Release|x64
+		{57ABD9A2-CE8E-CCA7-5171-35C4534F3595}.Debug|Win32.Build.0 = Debug|Win32
+		{57ABD9A2-CE8E-CCA7-5171-35C4534F3595}.Debug|x64.Build.0 = Debug|x64
+		{57ABD9A2-CE8E-CCA7-5171-35C4534F3595}.Release|Win32.Build.0 = Release|Win32
+		{57ABD9A2-CE8E-CCA7-5171-35C4534F3595}.Release|x64.Build.0 = Release|x64
 		{19564640-CEE6-4921-ABA5-676ED79A36F6}.Debug|Win32.ActiveCfg = Debug|Win32
 		{19564640-CEE6-4921-ABA5-676ED79A36F6}.Debug|x64.ActiveCfg = Debug|x64
 		{19564640-CEE6-4921-ABA5-676ED79A36F6}.Release|Win32.ActiveCfg = Release|Win32

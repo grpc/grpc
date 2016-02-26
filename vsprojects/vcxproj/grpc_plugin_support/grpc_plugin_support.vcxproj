@@ -207,6 +207,8 @@
     <ClInclude Include="$(SolutionDir)\..\src\compiler\csharp_generator.h" />
     <ClInclude Include="$(SolutionDir)\..\src\compiler\csharp_generator_helpers.h" />
     <ClInclude Include="$(SolutionDir)\..\src\compiler\generator_helpers.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\compiler\node_generator.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\compiler\node_generator_helpers.h" />
     <ClInclude Include="$(SolutionDir)\..\src\compiler\objective_c_generator.h" />
     <ClInclude Include="$(SolutionDir)\..\src\compiler\objective_c_generator_helpers.h" />
     <ClInclude Include="$(SolutionDir)\..\src\compiler\python_generator.h" />
@@ -219,6 +221,8 @@
     <ClCompile Include="$(SolutionDir)\..\src\compiler\cpp_generator.cc">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\compiler\csharp_generator.cc">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\compiler\node_generator.cc">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\compiler\objective_c_generator.cc">
     </ClCompile>
