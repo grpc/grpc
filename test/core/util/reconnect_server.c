@@ -60,8 +60,12 @@ static void pretty_print_backoffs(reconnect_server *server) {
             i, backoff / 1000.0, expected_backoff / 1000.0,
             (backoff - expected_backoff) * 100.0 / expected_backoff);
     expected_backoff *= 1.6;
-    if (expected_backoff > 120 * 1000) {
-      expected_backoff = 120 * 1000;
+    int max_reconnect_backoff_ms = 120 * 1000;
+    if (server->max_reconnect_backoff_ms > 0) {
+      max_reconnect_backoff_ms = server->max_reconnect_backoff_ms;
+    }
+    if (expected_backoff > max_reconnect_backoff_ms) {
+      expected_backoff = max_reconnect_backoff_ms;
     }
   }
 }
@@ -108,6 +112,7 @@ void reconnect_server_init(reconnect_server *server) {
   server->head = NULL;
   server->tail = NULL;
   server->peer = NULL;
+  server->max_reconnect_backoff_ms = 0;
 }
 
 void reconnect_server_start(reconnect_server *server, int port) {
