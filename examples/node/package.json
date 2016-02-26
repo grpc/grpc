@@ -2,6 +2,7 @@
   "name": "grpc-examples",
   "version": "0.1.0",
   "dependencies": {
-    "grpc": "0.13.0"
+    "grpc": "0.13.0",
+    "google-protobuf": "*"
   }
 }
