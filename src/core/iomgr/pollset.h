@@ -35,10 +35,7 @@
 #define GRPC_INTERNAL_CORE_IOMGR_POLLSET_H
 
 #include <grpc/support/port_platform.h>
-#include <grpc/support/sync.h>
 #include <grpc/support/time.h>
-
-#include "src/core/iomgr/exec_ctx.h"
 
 #define GRPC_POLLSET_KICK_BROADCAST ((grpc_pollset_worker *)1)
 
@@ -49,11 +46,15 @@
     - a completion queue might keep a pollset with an entry for each transport
       that is servicing a call that it's tracking */
 
-typedef struct grpc_pollset grpc_pollset;
-typedef struct grpc_pollset_worker grpc_pollset_worker;
+#ifdef GPR_POSIX_SOCKET
+#include "src/core/iomgr/pollset_posix.h"
+#endif
 
-size_t grpc_pollset_size(void);
-void grpc_pollset_init(grpc_pollset *pollset, gpr_mu **mu);
+#ifdef GPR_WIN32
+#include "src/core/iomgr/pollset_windows.h"
+#endif
+
+void grpc_pollset_init(grpc_pollset *pollset);
 /* Begin shutting down the pollset, and call closure when done.
  * GRPC_POLLSET_MU(pollset) must be held */
 void grpc_pollset_shutdown(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
