@@ -132,7 +132,7 @@ void grpc_event_engine_init(void) {
   }
 }
 
-void grpc_event_engine_shutdown(void) { g_event_engine->shutdown_engine(); }
+void grpc_event_engine_shutdown(void) { g_event_engine->shutdown_engine(); g_event_engine = NULL; }
 
 grpc_fd *grpc_fd_create(int fd, const char *name) {
   return g_event_engine->fd_create(fd, name);
