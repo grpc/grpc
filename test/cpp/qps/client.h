@@ -253,7 +253,7 @@ class Client {
 
     void ThreadFunc() {
       for (;;) {
-	// lock since the thread should only be doing one thing at a time
+        // lock since the thread should only be doing one thing at a time
         std::lock_guard<std::mutex> g(mu_);
         // run the loop body
         const bool thread_still_ok = client_->ThreadFunc(&histogram_, idx_);
