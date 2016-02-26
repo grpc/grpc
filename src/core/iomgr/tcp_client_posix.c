@@ -47,9 +47,8 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 
+#include "src/core/iomgr/ev_posix.h"
 #include "src/core/iomgr/iomgr_posix.h"
-#include "src/core/iomgr/pollset_posix.h"
-#include "src/core/iomgr/pollset_set_posix.h"
 #include "src/core/iomgr/sockaddr_utils.h"
 #include "src/core/iomgr/socket_utils_posix.h"
 #include "src/core/iomgr/tcp_posix.h"
@@ -140,7 +139,8 @@ static void on_writable(grpc_exec_ctx *exec_ctx, void *acp, bool success) {
   if (success) {
     do {
       so_error_size = sizeof(so_error);
-      err = getsockopt(fd->fd, SOL_SOCKET, SO_ERROR, &so_error, &so_error_size);
+      err = getsockopt(grpc_fd_wrapped_fd(fd), SOL_SOCKET, SO_ERROR, &so_error,
+                       &so_error_size);
     } while (err < 0 && errno == EINTR);
     if (err < 0) {
       gpr_log(GPR_ERROR, "failed to connect to '%s': getsockopt(ERROR): %s",
