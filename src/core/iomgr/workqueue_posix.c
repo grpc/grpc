@@ -43,8 +43,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/useful.h>
 
-#include "src/core/iomgr/fd_posix.h"
-#include "src/core/iomgr/pollset_posix.h"
+#include "src/core/iomgr/ev_posix.h"
 
 static void on_readable(grpc_exec_ctx *exec_ctx, void *arg, bool success);
 
