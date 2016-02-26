@@ -12,7 +12,7 @@
     <email>grpc-packages@google.com</email>
     <active>yes</active>
    </lead>
-   <%! from time import strftime %><date>${"%Y-%m-%d" | strftime}</date>
+   <date>2016-02-24</date>
    <time>16:06:07</time>
    <version>
     <release>0.8.0</release>
@@ -149,7 +149,7 @@
       <release>beta</release>
       <api>beta</api>
      </stability>
-     <date>${"%Y-%m-%d" | strftime}</date>
+     <date>2016-02-24</date>
      <license>BSD</license>
      <notes>
   - Simplify gRPC PHP installation #4517

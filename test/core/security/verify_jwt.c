@@ -46,7 +46,7 @@
 
 typedef struct {
   grpc_pollset *pollset;
-  gpr_mu mu;
+  gpr_mu *mu;
   int is_done;
   int success;
 } synchronizer;
@@ -79,10 +79,10 @@ static void on_jwt_verification_done(void *user_data,
             grpc_jwt_verifier_status_to_string(status));
   }
 
-  gpr_mu_lock(&sync->mu);
+  gpr_mu_lock(sync->mu);
   sync->is_done = 1;
   grpc_pollset_kick(sync->pollset, NULL);
-  gpr_mu_unlock(&sync->mu);
+  gpr_mu_unlock(sync->mu);
 }
 
 int main(int argc, char **argv) {
@@ -106,26 +106,24 @@ int main(int argc, char **argv) {
   grpc_init();
 
   sync.pollset = gpr_malloc(grpc_pollset_size());
-  gpr_mu_init(&sync.mu);
   grpc_pollset_init(sync.pollset, &sync.mu);
   sync.is_done = 0;
 
   grpc_jwt_verifier_verify(&exec_ctx, verifier, sync.pollset, jwt, aud,
                            on_jwt_verification_done, &sync);
 
-  gpr_mu_lock(&sync.mu);
+  gpr_mu_lock(sync.mu);
   while (!sync.is_done) {
     grpc_pollset_worker *worker = NULL;
     grpc_pollset_work(&exec_ctx, sync.pollset, &worker,
                       gpr_now(GPR_CLOCK_MONOTONIC),
                       gpr_inf_future(GPR_CLOCK_MONOTONIC));
-    gpr_mu_unlock(&sync.mu);
+    gpr_mu_unlock(sync.mu);
     grpc_exec_ctx_finish(&exec_ctx);
-    gpr_mu_lock(&sync.mu);
+    gpr_mu_lock(sync.mu);
   }
-  gpr_mu_unlock(&sync.mu);
+  gpr_mu_unlock(sync.mu);
 
-  gpr_mu_destroy(&sync.mu);
   gpr_free(sync.pollset);
 
   grpc_jwt_verifier_destroy(verifier);

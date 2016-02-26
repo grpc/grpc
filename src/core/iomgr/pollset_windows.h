@@ -72,6 +72,4 @@ struct grpc_pollset {
   grpc_closure *on_shutdown;
 };
 
-extern gpr_mu grpc_polling_mu;
-
 #endif /* GRPC_INTERNAL_CORE_IOMGR_POLLSET_WINDOWS_H */
