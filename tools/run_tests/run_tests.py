@@ -290,7 +290,10 @@ class NodeLanguage(object):
       return [['tools/run_tests/build_node.sh', self.node_version]]
 
   def post_tests_steps(self):
-    return []
+    if self.platform == 'windows':
+      return [['tools\\run_tests\\post_test_node.bat']]
+    else:
+      return []
 
   def makefile_name(self):
     return 'Makefile'
