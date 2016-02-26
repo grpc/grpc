@@ -152,13 +152,6 @@ static void fd_end_poll(grpc_exec_ctx *exec_ctx, grpc_fd_watcher *rec,
 /* Return 1 if this fd is orphaned, 0 otherwise */
 static bool fd_is_orphaned(grpc_fd *fd);
 
-/* Notification from the poller to an fd that it has become readable or
-   writable.
-   If allow_synchronous_callback is 1, allow running the fd callback inline
-   in this callstack, otherwise register an asynchronous callback and return */
-static void fd_become_readable(grpc_exec_ctx *exec_ctx, grpc_fd *fd);
-static void fd_become_writable(grpc_exec_ctx *exec_ctx, grpc_fd *fd);
-
 /* Reference counting for fds */
 /*#define GRPC_FD_REF_COUNT_DEBUG*/
 #ifdef GRPC_FD_REF_COUNT_DEBUG
@@ -550,14 +543,6 @@ static int set_ready_locked(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
   }
 }
 
-static void set_ready(grpc_exec_ctx *exec_ctx, grpc_fd *fd, grpc_closure **st) {
-  /* only one set_ready can be active at once (but there may be a racing
-     notify_on) */
-  gpr_mu_lock(&fd->mu);
-  set_ready_locked(exec_ctx, fd, st);
-  gpr_mu_unlock(&fd->mu);
-}
-
 static void fd_shutdown(grpc_exec_ctx *exec_ctx, grpc_fd *fd) {
   gpr_mu_lock(&fd->mu);
   GPR_ASSERT(!fd->shutdown);
@@ -684,14 +669,6 @@ static void fd_end_poll(grpc_exec_ctx *exec_ctx, grpc_fd_watcher *watcher,
   gpr_mu_unlock(&fd->mu);
 
   GRPC_FD_UNREF(fd, "poll");
-}
-
-static void fd_become_readable(grpc_exec_ctx *exec_ctx, grpc_fd *fd) {
-  set_ready(exec_ctx, fd, &fd->read_closure);
-}
-
-static void fd_become_writable(grpc_exec_ctx *exec_ctx, grpc_fd *fd) {
-  set_ready(exec_ctx, fd, &fd->write_closure);
 }
 
 /*******************************************************************************
@@ -1304,7 +1281,7 @@ static void multipoll_with_poll_pollset_add_fd(grpc_exec_ctx *exec_ctx,
   GRPC_FD_REF(fd, "multipoller");
 exit:
   if (and_unlock_pollset) {
-    gpr_mu_unlock(pollset->mu);
+    gpr_mu_unlock(&pollset->mu);
   }
 }
 
@@ -1356,7 +1333,7 @@ static void multipoll_with_poll_pollset_maybe_work_and_unlock(
   }
   h->del_count = 0;
   h->fd_count = fd_count;
-  gpr_mu_unlock(pollset->mu);
+  gpr_mu_unlock(&pollset->mu);
 
   for (i = 2; i < pfd_count; i++) {
     pfds[i].events = (short)fd_begin_poll(watchers[i].fd, pollset, worker,
@@ -1468,6 +1445,22 @@ static void poll_become_multipoller(grpc_exec_ctx *exec_ctx,
 #include "src/core/iomgr/ev_posix.h"
 #include "src/core/profiling/timers.h"
 #include "src/core/support/block_annotate.h"
+
+static void set_ready(grpc_exec_ctx *exec_ctx, grpc_fd *fd, grpc_closure **st) {
+  /* only one set_ready can be active at once (but there may be a racing
+     notify_on) */
+  gpr_mu_lock(&fd->mu);
+  set_ready_locked(exec_ctx, fd, st);
+  gpr_mu_unlock(&fd->mu);
+}
+
+static void fd_become_readable(grpc_exec_ctx *exec_ctx, grpc_fd *fd) {
+  set_ready(exec_ctx, fd, &fd->read_closure);
+}
+
+static void fd_become_writable(grpc_exec_ctx *exec_ctx, grpc_fd *fd) {
+  set_ready(exec_ctx, fd, &fd->write_closure);
+}
 
 struct epoll_fd_list {
   int *epoll_fds;
