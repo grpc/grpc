@@ -210,6 +210,8 @@ grpc::string GetImports(const FileDescriptor *file) {
       return output;
     }
 
+    out.Print("// GENERATED CODE -- DO NOT EDIT!\n\n");
+
     out.Print("var grpc = require('grpc');\n");
     if (file->message_type_count() > 0) {
       grpc::string file_path = GetRelativePath(file->name(),
