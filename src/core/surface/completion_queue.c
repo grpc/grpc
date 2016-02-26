@@ -455,7 +455,6 @@ grpc_event grpc_completion_queue_pluck(grpc_completion_queue *cc, void *tag,
       gpr_mu_unlock(cc->mu);
       grpc_exec_ctx_flush(&exec_ctx);
       gpr_mu_lock(cc->mu);
-      continue;
     } else {
       grpc_pollset_work(&exec_ctx, POLLSET_FROM_CQ(cc), &worker, now,
                         iteration_deadline);
