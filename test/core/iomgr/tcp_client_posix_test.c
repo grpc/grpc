@@ -121,7 +121,7 @@ void test_succeeds(void) {
   gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
 
   while (g_connections_complete == connections_complete_before) {
-    grpc_pollset_worker worker;
+    grpc_pollset_worker *worker = NULL;
     grpc_pollset_work(&exec_ctx, &g_pollset, &worker,
                       gpr_now(GPR_CLOCK_MONOTONIC),
                       GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5));
@@ -161,7 +161,7 @@ void test_fails(void) {
 
   /* wait for the connection callback to finish */
   while (g_connections_complete == connections_complete_before) {
-    grpc_pollset_worker worker;
+    grpc_pollset_worker *worker = NULL;
     gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
     gpr_timespec polling_deadline = test_deadline();
     if (!grpc_timer_check(&exec_ctx, now, &polling_deadline)) {
@@ -228,7 +228,7 @@ void test_times_out(void) {
   /* Make sure the event doesn't trigger early */
   gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
   for (;;) {
-    grpc_pollset_worker worker;
+    grpc_pollset_worker *worker = NULL;
     gpr_timespec now = gpr_now(connect_deadline.clock_type);
     gpr_timespec continue_verifying_time =
         gpr_time_from_seconds(5, GPR_TIMESPAN);

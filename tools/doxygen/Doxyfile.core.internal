@@ -789,6 +789,7 @@ src/core/channel/subchannel_call_holder.h \
 src/core/client_config/client_config.h \
 src/core/client_config/connector.h \
 src/core/client_config/initial_connect_string.h \
+src/core/client_config/lb_policies/load_balancer_api.h \
 src/core/client_config/lb_policies/pick_first.h \
 src/core/client_config/lb_policies/round_robin.h \
 src/core/client_config/lb_policy.h \
@@ -849,6 +850,7 @@ src/core/json/json.h \
 src/core/json/json_common.h \
 src/core/json/json_reader.h \
 src/core/json/json_writer.h \
+src/core/proto/grpc/lb/v0/load_balancer.pb.h \
 src/core/statistics/census_interface.h \
 src/core/statistics/census_rpc_stats.h \
 src/core/surface/api_trace.h \
@@ -892,7 +894,7 @@ src/core/transport/static_metadata.h \
 src/core/transport/transport.h \
 src/core/transport/transport_impl.h \
 src/core/security/auth_filters.h \
-src/core/security/base64.h \
+src/core/security/b64.h \
 src/core/security/credentials.h \
 src/core/security/handshake.h \
 src/core/security/json_token.h \
@@ -908,6 +910,10 @@ src/core/tsi/transport_security_interface.h \
 src/core/census/aggregation.h \
 src/core/census/mlog.h \
 src/core/census/rpc_metric_id.h \
+third_party/nanopb/pb.h \
+third_party/nanopb/pb_common.h \
+third_party/nanopb/pb_decode.h \
+third_party/nanopb/pb_encode.h \
 src/core/census/grpc_context.c \
 src/core/census/grpc_filter.c \
 src/core/census/grpc_plugin.c \
@@ -925,6 +931,7 @@ src/core/client_config/client_config.c \
 src/core/client_config/connector.c \
 src/core/client_config/default_initial_connect_string.c \
 src/core/client_config/initial_connect_string.c \
+src/core/client_config/lb_policies/load_balancer_api.c \
 src/core/client_config/lb_policies/pick_first.c \
 src/core/client_config/lb_policies/round_robin.c \
 src/core/client_config/lb_policy.c \
@@ -939,7 +946,7 @@ src/core/client_config/subchannel.c \
 src/core/client_config/subchannel_factory.c \
 src/core/client_config/subchannel_index.c \
 src/core/client_config/uri_parser.c \
-src/core/compression/algorithm.c \
+src/core/compression/compression_algorithm.c \
 src/core/compression/message_compress.c \
 src/core/debug/trace.c \
 src/core/httpcli/format_request.c \
@@ -989,6 +996,7 @@ src/core/json/json.c \
 src/core/json/json_reader.c \
 src/core/json/json_string.c \
 src/core/json/json_writer.c \
+src/core/proto/grpc/lb/v0/load_balancer.pb.c \
 src/core/surface/alarm.c \
 src/core/surface/api_trace.c \
 src/core/surface/byte_buffer.c \
@@ -1040,7 +1048,7 @@ src/core/transport/static_metadata.c \
 src/core/transport/transport.c \
 src/core/transport/transport_op_string.c \
 src/core/httpcli/httpcli_security_connector.c \
-src/core/security/base64.c \
+src/core/security/b64.c \
 src/core/security/client_auth_filter.c \
 src/core/security/credentials.c \
 src/core/security/credentials_metadata.c \
@@ -1066,6 +1074,9 @@ src/core/census/mlog.c \
 src/core/census/operation.c \
 src/core/census/placeholders.c \
 src/core/census/tracing.c \
+third_party/nanopb/pb_common.c \
+third_party/nanopb/pb_decode.c \
+third_party/nanopb/pb_encode.c \
 include/grpc/support/alloc.h \
 include/grpc/support/atm.h \
 include/grpc/support/atm_gcc_atomic.h \
@@ -1111,13 +1122,14 @@ include/grpc/impl/codegen/time.h \
 src/core/profiling/timers.h \
 src/core/support/block_annotate.h \
 src/core/support/env.h \
-src/core/support/file.h \
+src/core/support/load_file.h \
 src/core/support/murmur_hash.h \
 src/core/support/stack_lockfree.h \
 src/core/support/string.h \
 src/core/support/string_win32.h \
 src/core/support/thd_internal.h \
 src/core/support/time_precise.h \
+src/core/support/tmpfile.h \
 src/core/profiling/basic_timers.c \
 src/core/profiling/stap_timers.c \
 src/core/support/alloc.c \
@@ -1130,11 +1142,9 @@ src/core/support/cpu_windows.c \
 src/core/support/env_linux.c \
 src/core/support/env_posix.c \
 src/core/support/env_win32.c \
-src/core/support/file.c \
-src/core/support/file_posix.c \
-src/core/support/file_win32.c \
 src/core/support/histogram.c \
 src/core/support/host_port.c \
+src/core/support/load_file.c \
 src/core/support/log.c \
 src/core/support/log_android.c \
 src/core/support/log_linux.c \
@@ -1160,6 +1170,8 @@ src/core/support/time_posix.c \
 src/core/support/time_precise.c \
 src/core/support/time_win32.c \
 src/core/support/tls_pthread.c \
+src/core/support/tmpfile_posix.c \
+src/core/support/tmpfile_win32.c \
 src/core/support/wrap_memcpy.c
 
 # This tag can be used to specify the character encoding of the source files

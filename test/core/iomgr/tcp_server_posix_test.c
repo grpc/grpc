@@ -183,7 +183,7 @@ static void tcp_connect(grpc_exec_ctx *exec_ctx, const struct sockaddr *remote,
   gpr_log(GPR_DEBUG, "wait");
   while (g_nconnects == nconnects_before &&
          gpr_time_cmp(deadline, gpr_now(deadline.clock_type)) > 0) {
-    grpc_pollset_worker worker;
+    grpc_pollset_worker *worker = NULL;
     grpc_pollset_work(exec_ctx, &g_pollset, &worker,
                       gpr_now(GPR_CLOCK_MONOTONIC), deadline);
     gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));
