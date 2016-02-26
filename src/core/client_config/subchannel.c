@@ -108,7 +108,7 @@ struct grpc_subchannel {
 
   /** pollset_set tracking who's interested in a connection
       being setup */
-  grpc_pollset_set pollset_set;
+  grpc_pollset_set *pollset_set;
 
   /** active connection, or null; of type grpc_connected_subchannel */
   gpr_atm connected_subchannel;
@@ -209,7 +209,7 @@ static void subchannel_destroy(grpc_exec_ctx *exec_ctx, void *arg,
   gpr_slice_unref(c->initial_connect_string);
   grpc_connectivity_state_destroy(exec_ctx, &c->state_tracker);
   grpc_connector_unref(exec_ctx, c->connector);
-  grpc_pollset_set_destroy(&c->pollset_set);
+  grpc_pollset_set_destroy(c->pollset_set);
   grpc_subchannel_key_destroy(exec_ctx, c->key);
   gpr_free(c);
 }
@@ -326,7 +326,7 @@ grpc_subchannel *grpc_subchannel_create(grpc_exec_ctx *exec_ctx,
   }
   c->addr = gpr_malloc(args->addr_len);
   memcpy(c->addr, args->addr, args->addr_len);
-  grpc_pollset_set_init(&c->pollset_set);
+  c->pollset_set = grpc_pollset_set_create();
   c->addr_len = args->addr_len;
   grpc_set_initial_connect_string(&c->addr, &c->addr_len,
                                   &c->initial_connect_string);
@@ -345,7 +345,7 @@ grpc_subchannel *grpc_subchannel_create(grpc_exec_ctx *exec_ctx,
 static void continue_connect(grpc_exec_ctx *exec_ctx, grpc_subchannel *c) {
   grpc_connect_in_args args;
 
-  args.interested_parties = &c->pollset_set;
+  args.interested_parties = c->pollset_set;
   args.addr = c->addr;
   args.addr_len = c->addr_len;
   args.deadline = compute_connect_deadline(c);
@@ -379,7 +379,7 @@ static void on_external_state_watcher_done(grpc_exec_ctx *exec_ctx, void *arg,
   external_state_watcher *w = arg;
   grpc_closure *follow_up = w->notify;
   if (w->pollset_set != NULL) {
-    grpc_pollset_set_del_pollset_set(exec_ctx, &w->subchannel->pollset_set,
+    grpc_pollset_set_del_pollset_set(exec_ctx, w->subchannel->pollset_set,
                                      w->pollset_set);
   }
   gpr_mu_lock(&w->subchannel->mu);
@@ -415,7 +415,7 @@ void grpc_subchannel_notify_on_state_change(
     w->notify = notify;
     grpc_closure_init(&w->closure, on_external_state_watcher_done, w);
     if (interested_parties != NULL) {
-      grpc_pollset_set_add_pollset_set(exec_ctx, &c->pollset_set,
+      grpc_pollset_set_add_pollset_set(exec_ctx, c->pollset_set,
                                        interested_parties);
     }
     GRPC_SUBCHANNEL_WEAK_REF(c, "external_state_watcher");
@@ -573,7 +573,7 @@ static void publish_transport(grpc_exec_ctx *exec_ctx, grpc_subchannel *c) {
   GRPC_SUBCHANNEL_WEAK_REF(c, "state_watcher");
   GRPC_SUBCHANNEL_WEAK_UNREF(exec_ctx, c, "connecting");
   grpc_connected_subchannel_notify_on_state_change(
-      exec_ctx, con, &c->pollset_set, &sw_subchannel->connectivity_state,
+      exec_ctx, con, c->pollset_set, &sw_subchannel->connectivity_state,
       &sw_subchannel->closure);
 
   /* signal completion */
