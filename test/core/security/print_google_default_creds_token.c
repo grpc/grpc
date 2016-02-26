@@ -34,6 +34,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "src/core/security/credentials.h"
+#include "src/core/support/string.h"
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
@@ -42,12 +44,8 @@
 #include <grpc/support/slice.h>
 #include <grpc/support/sync.h>
 
-#include "src/core/security/credentials.h"
-#include "src/core/support/string.h"
-
 typedef struct {
-  gpr_mu *mu;
-  grpc_pollset *pollset;
+  grpc_pollset pollset;
   int is_done;
 } synchronizer;
 
@@ -64,10 +62,10 @@ static void on_metadata_response(grpc_exec_ctx *exec_ctx, void *user_data,
     printf("\nGot token: %s\n\n", token);
     gpr_free(token);
   }
-  gpr_mu_lock(sync->mu);
+  gpr_mu_lock(GRPC_POLLSET_MU(&sync->pollset));
   sync->is_done = 1;
-  grpc_pollset_kick(sync->pollset, NULL);
-  gpr_mu_unlock(sync->mu);
+  grpc_pollset_kick(&sync->pollset, NULL);
+  gpr_mu_unlock(GRPC_POLLSET_MU(&sync->pollset));
 }
 
 int main(int argc, char **argv) {
@@ -93,30 +91,26 @@ int main(int argc, char **argv) {
     goto end;
   }
 
-  sync.pollset = gpr_malloc(grpc_pollset_size());
-  grpc_pollset_init(sync.pollset, &sync.mu);
+  grpc_pollset_init(&sync.pollset);
   sync.is_done = 0;
 
   grpc_call_credentials_get_request_metadata(
       &exec_ctx, ((grpc_composite_channel_credentials *)creds)->call_creds,
-      sync.pollset, context, on_metadata_response, &sync);
+      &sync.pollset, context, on_metadata_response, &sync);
 
-  gpr_mu_lock(sync.mu);
+  gpr_mu_lock(GRPC_POLLSET_MU(&sync.pollset));
   while (!sync.is_done) {
     grpc_pollset_worker *worker = NULL;
-    grpc_pollset_work(&exec_ctx, sync.pollset, &worker,
+    grpc_pollset_work(&exec_ctx, &sync.pollset, &worker,
                       gpr_now(GPR_CLOCK_MONOTONIC),
                       gpr_inf_future(GPR_CLOCK_MONOTONIC));
-    gpr_mu_unlock(sync.mu);
-    grpc_exec_ctx_flush(&exec_ctx);
-    gpr_mu_lock(sync.mu);
+    gpr_mu_unlock(GRPC_POLLSET_MU(&sync.pollset));
+    grpc_exec_ctx_finish(&exec_ctx);
+    gpr_mu_lock(GRPC_POLLSET_MU(&sync.pollset));
   }
-  gpr_mu_unlock(sync.mu);
-
-  grpc_exec_ctx_finish(&exec_ctx);
+  gpr_mu_unlock(GRPC_POLLSET_MU(&sync.pollset));
 
   grpc_channel_credentials_release(creds);
-  gpr_free(sync.pollset);
 
 end:
   gpr_cmdline_destroy(cl);
