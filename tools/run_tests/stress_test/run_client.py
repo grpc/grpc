@@ -142,7 +142,6 @@ def run_client():
     # Check if stress_client is still running. If so, collect metrics and upload
     # to BigQuery status table
     if stress_p.poll() is not None:
-      # TODO(sree) Upload completion status to BigQuery
       end_time = datetime.datetime.now().isoformat()
       event_type = EventType.SUCCESS
       details = 'End time: %s' % end_time

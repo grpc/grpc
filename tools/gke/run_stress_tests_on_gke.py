@@ -178,28 +178,19 @@ class StressClientSettings:
 
 
 def _build_docker_image(image_name, tag_name):
-  """ Build the docker image and add a tag """
+  """ Build the docker image and add tag it to the GKE repository """
   print 'Building docker image: %s' % image_name
   os.environ['INTEROP_IMAGE'] = image_name
+  os.environ['INTEROP_IMAGE_REPOSITORY_TAG'] = tag_name
   # Note that 'BASE_NAME' HAS to be 'grpc_interop_stress_cxx' since the script
   # build_interop_stress_image.sh invokes the following script:
   #   tools/dockerfile/$BASE_NAME/build_interop_stress.sh
   os.environ['BASE_NAME'] = 'grpc_interop_stress_cxx'
   cmd = ['tools/jenkins/build_interop_stress_image.sh']
-  p = subprocess.Popen(args=cmd)
-  retcode = p.wait()
+  retcode = subprocess.call(args=cmd)
   if retcode != 0:
     print 'Error in building docker image'
     return False
-
-  print 'Adding an additional tag %s to the image %s' % (tag_name, image_name)
-  cmd = ['docker', 'tag', '-f', image_name, tag_name]
-  p = subprocess.Popen(args=cmd)
-  retcode = p.wait()
-  if retcode != 0:
-    print 'Error in creating the tag %s for %s' % (tag_name, image_name)
-    return False
-
   return True
 
 
@@ -207,8 +198,7 @@ def _push_docker_image_to_gke_registry(docker_tag_name):
   """Executes 'gcloud docker push <docker_tag_name>' to push the image to GKE registry"""
   cmd = ['gcloud', 'docker', 'push', docker_tag_name]
   print 'Pushing %s to GKE registry..' % docker_tag_name
-  p = subprocess.Popen(args=cmd)
-  retcode = p.wait()
+  retcode = subprocess.call(args=cmd)
   if retcode != 0:
     print 'Error in pushing docker image %s to the GKE registry' % docker_tag_name
     return False

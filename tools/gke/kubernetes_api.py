@@ -228,7 +228,7 @@ def delete_pod(kube_host, kube_port, namespace, pod_name):
 def create_pod_and_service(kube_host, kube_port, namespace, pod_name,
                            image_name, container_port_list, cmd_list, arg_list,
                            env_dict, is_headless_service):
-  """A simple helper function that creates a pod and a service (if pod creation was successful)."""
+  """A helper function that creates a pod and a service (if pod creation was successful)."""
   is_success = create_pod(kube_host, kube_port, namespace, pod_name, image_name,
                           container_port_list, cmd_list, arg_list, env_dict)
   if not is_success:
@@ -253,7 +253,7 @@ def create_pod_and_service(kube_host, kube_port, namespace, pod_name,
 
 
 def delete_pod_and_service(kube_host, kube_port, namespace, pod_name):
-  """ A simple helper function that calls delete_pod and delete_service """
+  """ A helper function that calls delete_pod and delete_service """
   is_success = delete_pod(kube_host, kube_port, namespace, pod_name)
   if not is_success:
     print 'Error in deleting pod %s' % pod_name
