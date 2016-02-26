@@ -1631,6 +1631,17 @@
     ], 
     "headers": [], 
     "language": "c++", 
+    "name": "grpc_node_plugin", 
+    "src": [
+      "src/compiler/node_plugin.cc"
+    ]
+  }, 
+  {
+    "deps": [
+      "grpc_plugin_support"
+    ], 
+    "headers": [], 
+    "language": "c++", 
     "name": "grpc_objective_c_plugin", 
     "src": [
       "src/compiler/objective_c_plugin.cc"
@@ -4462,6 +4473,8 @@
       "src/compiler/csharp_generator.h", 
       "src/compiler/csharp_generator_helpers.h", 
       "src/compiler/generator_helpers.h", 
+      "src/compiler/node_generator.h", 
+      "src/compiler/node_generator_helpers.h", 
       "src/compiler/objective_c_generator.h", 
       "src/compiler/objective_c_generator_helpers.h", 
       "src/compiler/python_generator.h", 
@@ -4533,6 +4546,9 @@
       "src/compiler/csharp_generator.h", 
       "src/compiler/csharp_generator_helpers.h", 
       "src/compiler/generator_helpers.h", 
+      "src/compiler/node_generator.cc", 
+      "src/compiler/node_generator.h", 
+      "src/compiler/node_generator_helpers.h", 
       "src/compiler/objective_c_generator.cc", 
       "src/compiler/objective_c_generator.h", 
       "src/compiler/objective_c_generator_helpers.h", 
