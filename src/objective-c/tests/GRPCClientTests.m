@@ -103,6 +103,8 @@ static ProtoMethod *kUnaryCallMethod;
 @implementation GRPCClientTests
 
 - (void)setUp {
+  // Add a custom user agent prefix that will be used in test
+  [GRPCCall setUserAgentPrefix:@"Foo" forHost:kHostAddress];
   // Register test server as non-SSL.
   [GRPCCall useInsecureConnectionsForHost:kHostAddress];
 
@@ -254,6 +256,36 @@ static ProtoMethod *kUnaryCallMethod;
   
   [call startWithWriteable:responsesWriteable];
   
+  [self waitForExpectationsWithTimeout:8 handler:nil];
+}
+
+- (void)testUserAgentPrefix {
+  __weak XCTestExpectation *response = [self expectationWithDescription:@"Empty response received."];
+  __weak XCTestExpectation *completion = [self expectationWithDescription:@"Empty RPC completed."];
+
+  GRPCCall *call = [[GRPCCall alloc] initWithHost:kHostAddress
+                                             path:kEmptyCallMethod.HTTPPath
+                                   requestsWriter:[GRXWriter writerWithValue:[NSData data]]];
+  // Setting this special key in the header will cause the interop server to echo back the
+  // user-agent value, which we confirm.
+  call.requestHeaders[@"x-grpc-test-echo-useragent"] = @"";
+
+  id<GRXWriteable> responsesWriteable = [[GRXWriteable alloc] initWithValueHandler:^(NSData *value) {
+    XCTAssertNotNil(value, @"nil value received as response.");
+    XCTAssertEqual([value length], 0, @"Non-empty response received: %@", value);
+    XCTAssertEqualObjects(call.responseHeaders[@"x-grpc-test-echo-useragent"],
+                    @"Foo grpc-objc/0.13.0 grpc-c/0.14.0-dev (ios)",
+                    @"Did not receive expected user agent %@",
+                    call.responseHeaders[@"x-grpc-test-echo-useragent"]);
+
+      [response fulfill];
+  } completionHandler:^(NSError *errorOrNil) {
+    XCTAssertNil(errorOrNil, @"Finished with unexpected error: %@", errorOrNil);
+    [completion fulfill];
+  }];
+
+  [call startWithWriteable:responsesWriteable];
+
   [self waitForExpectationsWithTimeout:8 handler:nil];
 }
 
