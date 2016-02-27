@@ -35,14 +35,18 @@ import sys
 import time
 
 stress_test_utils_dir = os.path.abspath(os.path.join(
-    os.path.dirname(__file__), '../run_tests/stress_test'))
+    os.path.dirname(__file__), '../../gcp/stress_test'))
 sys.path.append(stress_test_utils_dir)
 from stress_test_utils import BigQueryHelper
+
+kubernetes_api_dir = os.path.abspath(os.path.join(
+    os.path.dirname(__file__), '../../gcp/utils'))
+sys.path.append(kubernetes_api_dir)
 
 import kubernetes_api
 
 _GRPC_ROOT = os.path.abspath(os.path.join(
-    os.path.dirname(sys.argv[0]), '../..'))
+    os.path.dirname(sys.argv[0]), '../../..'))
 os.chdir(_GRPC_ROOT)
 
 # num of seconds to wait for the GKE image to start and warmup
@@ -214,9 +218,7 @@ def _launch_server(gke_settings, stress_server_settings, bq_settings,
 
   # This is the wrapper script that is run in the container. This script runs
   # the actual stress test server
-  server_cmd_list = [
-      '/var/local/git/grpc/tools/run_tests/stress_test/run_server.py'
-  ]
+  server_cmd_list = ['/var/local/git/grpc/tools/gcp/stress_test/run_server.py']
 
   # run_server.py does not take any args from the command line. The args are
   # instead passed via environment variables (see server_env below)
@@ -269,9 +271,7 @@ def _launch_client(gke_settings, stress_server_settings, stress_client_settings,
 
   # This is the wrapper script that is run in the container. This script runs
   # the actual stress client
-  client_cmd_list = [
-      '/var/local/git/grpc/tools/run_tests/stress_test/run_client.py'
-  ]
+  client_cmd_list = ['/var/local/git/grpc/tools/gcp/stress_test/run_client.py']
 
   # run_client.py takes no args. All args are passed as env variables (see
   # client_env)
