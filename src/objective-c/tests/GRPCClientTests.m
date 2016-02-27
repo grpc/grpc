@@ -277,8 +277,7 @@ static ProtoMethod *kUnaryCallMethod;
                     @"Foo grpc-objc/0.13.0 grpc-c/0.14.0-dev (ios)",
                     @"Did not receive expected user agent %@",
                     call.responseHeaders[@"x-grpc-test-echo-useragent"]);
-
-      [response fulfill];
+    [response fulfill];
   } completionHandler:^(NSError *errorOrNil) {
     XCTAssertNil(errorOrNil, @"Finished with unexpected error: %@", errorOrNil);
     [completion fulfill];
