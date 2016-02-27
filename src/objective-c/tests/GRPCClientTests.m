@@ -274,9 +274,9 @@ static ProtoMethod *kUnaryCallMethod;
     XCTAssertNotNil(value, @"nil value received as response.");
     XCTAssertEqual([value length], 0, @"Non-empty response received: %@", value);
     XCTAssertEqualObjects(call.responseHeaders[@"x-grpc-test-echo-useragent"],
-                    @"Foo grpc-objc/0.13.0 grpc-c/0.14.0-dev (ios)",
-                    @"Did not receive expected user agent %@",
-                    call.responseHeaders[@"x-grpc-test-echo-useragent"]);
+                          @"Foo grpc-objc/0.13.0 grpc-c/0.14.0-dev (ios)",
+                          @"Did not receive expected user agent %@",
+                          call.responseHeaders[@"x-grpc-test-echo-useragent"]);
     [response fulfill];
   } completionHandler:^(NSError *errorOrNil) {
     XCTAssertNil(errorOrNil, @"Finished with unexpected error: %@", errorOrNil);
