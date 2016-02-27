@@ -39,7 +39,7 @@ import time
 
 # Import big_query_utils module
 bq_utils_dir = os.path.abspath(os.path.join(
-    os.path.dirname(__file__), '../../big_query'))
+    os.path.dirname(__file__), '../utils'))
 sys.path.append(bq_utils_dir)
 import big_query_utils as bq_utils
 
