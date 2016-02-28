@@ -1,5 +1,10 @@
 %YAML 1.2
 ---
+output_name: .gitignore
+template: |
+  *.pb.h
+  *.pb.cc
+---
 foreach: protodirs
 output_name: ${selected}/CMakeLists.txt
 template: |

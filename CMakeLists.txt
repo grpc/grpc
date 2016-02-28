@@ -3,7 +3,7 @@ cmake_minimum_required (VERSION 2.8.4 FATAL_ERROR)
 
 
 set (PACKAGE_NAME      "grpc")
-set (PACKAGE_VERSION   "0.12.0")
+set (PACKAGE_VERSION   "0.14.0-dev")
 set (PACKAGE_STRING    "${PACKAGE_NAME} ${PACKAGE_VERSION}")
 set (PACKAGE_TARNAME   "${PACKAGE_NAME}-${PACKAGE_VERSION}")
 set (PACKAGE_BUGREPORT "https://github.com/grpc/grpc/issues/")
@@ -64,6 +64,7 @@ else()
   set(MATH_LIB)
 endif()
 
+add_subdirectory(tools/cmakelists/src/proto/grpc/lb/v0)
 add_subdirectory(tools/cmakelists/src/proto/grpc/testing)
 add_subdirectory(tools/cmakelists/src/proto/grpc/testing/duplicate)
 
@@ -80,11 +81,9 @@ add_library(gpr
   src/core/support/env_linux.c
   src/core/support/env_posix.c
   src/core/support/env_win32.c
-  src/core/support/file.c
-  src/core/support/file_posix.c
-  src/core/support/file_win32.c
   src/core/support/histogram.c
   src/core/support/host_port.c
+  src/core/support/load_file.c
   src/core/support/log.c
   src/core/support/log_android.c
   src/core/support/log_linux.c
@@ -98,6 +97,7 @@ add_library(gpr
   src/core/support/string_posix.c
   src/core/support/string_win32.c
   src/core/support/subprocess_posix.c
+  src/core/support/subprocess_windows.c
   src/core/support/sync.c
   src/core/support/sync_posix.c
   src/core/support/sync_win32.c
@@ -109,6 +109,9 @@ add_library(gpr
   src/core/support/time_precise.c
   src/core/support/time_win32.c
   src/core/support/tls_pthread.c
+  src/core/support/tmpfile_posix.c
+  src/core/support/tmpfile_win32.c
+  src/core/support/wrap_memcpy.c
 )
 target_link_libraries(gpr
 )
@@ -121,27 +124,6 @@ add_dependencies(gpr_test_util
 target_link_libraries(gpr_test_util
 )
 add_library(grpc
-  src/core/httpcli/httpcli_security_connector.c
-  src/core/security/base64.c
-  src/core/security/client_auth_filter.c
-  src/core/security/credentials.c
-  src/core/security/credentials_metadata.c
-  src/core/security/credentials_posix.c
-  src/core/security/credentials_win32.c
-  src/core/security/google_default_credentials.c
-  src/core/security/handshake.c
-  src/core/security/json_token.c
-  src/core/security/jwt_verifier.c
-  src/core/security/secure_endpoint.c
-  src/core/security/security_connector.c
-  src/core/security/security_context.c
-  src/core/security/server_auth_filter.c
-  src/core/security/server_secure_chttp2.c
-  src/core/surface/init_secure.c
-  src/core/surface/secure_channel_create.c
-  src/core/tsi/fake_transport_security.c
-  src/core/tsi/ssl_transport_security.c
-  src/core/tsi/transport_security.c
   src/core/census/grpc_context.c
   src/core/census/grpc_filter.c
   src/core/channel/channel_args.c
@@ -157,6 +139,7 @@ add_library(grpc
   src/core/client_config/connector.c
   src/core/client_config/default_initial_connect_string.c
   src/core/client_config/initial_connect_string.c
+  src/core/client_config/lb_policies/load_balancer_api.c
   src/core/client_config/lb_policies/pick_first.c
   src/core/client_config/lb_policies/round_robin.c
   src/core/client_config/lb_policy.c
@@ -169,8 +152,9 @@ add_library(grpc
   src/core/client_config/resolvers/sockaddr_resolver.c
   src/core/client_config/subchannel.c
   src/core/client_config/subchannel_factory.c
+  src/core/client_config/subchannel_index.c
   src/core/client_config/uri_parser.c
-  src/core/compression/algorithm.c
+  src/core/compression/compression_algorithm.c
   src/core/compression/message_compress.c
   src/core/debug/trace.c
   src/core/httpcli/format_request.c
@@ -220,6 +204,8 @@ add_library(grpc
   src/core/json/json_reader.c
   src/core/json/json_string.c
   src/core/json/json_writer.c
+  src/core/proto/grpc/lb/v0/load_balancer.pb.c
+  src/core/surface/alarm.c
   src/core/surface/api_trace.c
   src/core/surface/byte_buffer.c
   src/core/surface/byte_buffer_reader.c
@@ -238,6 +224,7 @@ add_library(grpc
   src/core/surface/server.c
   src/core/surface/server_chttp2.c
   src/core/surface/server_create.c
+  src/core/surface/validate_metadata.c
   src/core/surface/version.c
   src/core/transport/byte_stream.c
   src/core/transport/chttp2/alpn.c
@@ -267,15 +254,50 @@ add_library(grpc
   src/core/transport/static_metadata.c
   src/core/transport/transport.c
   src/core/transport/transport_op_string.c
+  src/core/httpcli/httpcli_security_connector.c
+  src/core/security/b64.c
+  src/core/security/client_auth_filter.c
+  src/core/security/credentials.c
+  src/core/security/credentials_metadata.c
+  src/core/security/credentials_posix.c
+  src/core/security/credentials_win32.c
+  src/core/security/google_default_credentials.c
+  src/core/security/handshake.c
+  src/core/security/json_token.c
+  src/core/security/jwt_verifier.c
+  src/core/security/secure_endpoint.c
+  src/core/security/security_connector.c
+  src/core/security/security_context.c
+  src/core/security/server_auth_filter.c
+  src/core/security/server_secure_chttp2.c
+  src/core/surface/init_secure.c
+  src/core/surface/secure_channel_create.c
+  src/core/tsi/fake_transport_security.c
+  src/core/tsi/ssl_transport_security.c
+  src/core/tsi/transport_security.c
   src/core/census/context.c
   src/core/census/initialize.c
+  src/core/census/mlog.c
   src/core/census/operation.c
+  src/core/census/placeholders.c
   src/core/census/tracing.c
+  third_party/nanopb/pb_common.c
+  third_party/nanopb/pb_decode.c
+  third_party/nanopb/pb_encode.c
 )
 add_dependencies(grpc
   gpr
 )
 target_link_libraries(grpc
+)
+add_library(grpc_dll
+  vsprojects/dummy.c
+)
+add_dependencies(grpc_dll
+  gpr
+  grpc
+)
+target_link_libraries(grpc_dll
 )
 add_library(grpc_test_util
   test/core/end2end/data/server1_cert.c
@@ -292,8 +314,8 @@ add_library(grpc_test_util
   test/core/util/slice_splitter.c
 )
 add_dependencies(grpc_test_util
-  gpr
   gpr_test_util
+  gpr
   grpc
 )
 target_link_libraries(grpc_test_util
@@ -332,6 +354,7 @@ add_library(grpc_unsecure
   src/core/client_config/connector.c
   src/core/client_config/default_initial_connect_string.c
   src/core/client_config/initial_connect_string.c
+  src/core/client_config/lb_policies/load_balancer_api.c
   src/core/client_config/lb_policies/pick_first.c
   src/core/client_config/lb_policies/round_robin.c
   src/core/client_config/lb_policy.c
@@ -344,8 +367,9 @@ add_library(grpc_unsecure
   src/core/client_config/resolvers/sockaddr_resolver.c
   src/core/client_config/subchannel.c
   src/core/client_config/subchannel_factory.c
+  src/core/client_config/subchannel_index.c
   src/core/client_config/uri_parser.c
-  src/core/compression/algorithm.c
+  src/core/compression/compression_algorithm.c
   src/core/compression/message_compress.c
   src/core/debug/trace.c
   src/core/httpcli/format_request.c
@@ -395,6 +419,8 @@ add_library(grpc_unsecure
   src/core/json/json_reader.c
   src/core/json/json_string.c
   src/core/json/json_writer.c
+  src/core/proto/grpc/lb/v0/load_balancer.pb.c
+  src/core/surface/alarm.c
   src/core/surface/api_trace.c
   src/core/surface/byte_buffer.c
   src/core/surface/byte_buffer_reader.c
@@ -413,6 +439,7 @@ add_library(grpc_unsecure
   src/core/surface/server.c
   src/core/surface/server_chttp2.c
   src/core/surface/server_create.c
+  src/core/surface/validate_metadata.c
   src/core/surface/version.c
   src/core/transport/byte_stream.c
   src/core/transport/chttp2/alpn.c
@@ -444,8 +471,13 @@ add_library(grpc_unsecure
   src/core/transport/transport_op_string.c
   src/core/census/context.c
   src/core/census/initialize.c
+  src/core/census/mlog.c
   src/core/census/operation.c
+  src/core/census/placeholders.c
   src/core/census/tracing.c
+  third_party/nanopb/pb_common.c
+  third_party/nanopb/pb_decode.c
+  third_party/nanopb/pb_encode.c
 )
 add_dependencies(grpc_unsecure
   gpr
@@ -508,7 +540,6 @@ add_library(grpc++
   src/cpp/server/async_generic_service.cc
   src/cpp/server/create_default_thread_pool.cc
   src/cpp/server/dynamic_thread_pool.cc
-  src/cpp/server/fixed_size_thread_pool.cc
   src/cpp/server/insecure_server_credentials.cc
   src/cpp/server/server.cc
   src/cpp/server/server_builder.cc
@@ -519,9 +550,9 @@ add_library(grpc++
   src/cpp/util/status.cc
   src/cpp/util/string_ref.cc
   src/cpp/util/time.cc
+  src/cpp/codegen/grpc_library.cc
 )
 add_dependencies(grpc++
-  gpr
   grpc
 )
 target_link_libraries(grpc++
@@ -532,10 +563,13 @@ add_library(grpc++_test_config
 target_link_libraries(grpc++_test_config
 )
 add_library(grpc++_test_util
+  test/cpp/end2end/test_service_impl.cc
+  test/cpp/util/byte_buffer_proto_helper.cc
   test/cpp/util/cli_call.cc
   test/cpp/util/create_test_channel.cc
   test/cpp/util/string_ref_helper.cc
   test/cpp/util/subprocess.cc
+  test/cpp/util/test_credentials_provider.cc
 )
 add_dependencies(grpc++_test_util
   grpc++
@@ -563,7 +597,6 @@ add_library(grpc++_unsecure
   src/cpp/server/async_generic_service.cc
   src/cpp/server/create_default_thread_pool.cc
   src/cpp/server/dynamic_thread_pool.cc
-  src/cpp/server/fixed_size_thread_pool.cc
   src/cpp/server/insecure_server_credentials.cc
   src/cpp/server/server.cc
   src/cpp/server/server_builder.cc
@@ -574,6 +607,7 @@ add_library(grpc++_unsecure
   src/cpp/util/status.cc
   src/cpp/util/string_ref.cc
   src/cpp/util/time.cc
+  src/cpp/codegen/grpc_library.cc
 )
 add_dependencies(grpc++_unsecure
   gpr
@@ -587,6 +621,7 @@ add_library(grpc_plugin_support
   src/compiler/objective_c_generator.cc
   src/compiler/python_generator.cc
   src/compiler/ruby_generator.cc
+  src/cpp/codegen/grpc_library.cc
 )
 target_link_libraries(grpc_plugin_support
 )
@@ -634,7 +669,7 @@ add_dependencies(interop_server_helper
 target_link_libraries(interop_server_helper
 )
 add_library(interop_server_main
-  test/cpp/interop/server.cc
+  test/cpp/interop/server_main.cc
 )
 add_dependencies(interop_server_main
   interop_server_helper
@@ -655,12 +690,13 @@ add_library(qps
   test/cpp/qps/client_async.cc
   test/cpp/qps/client_sync.cc
   test/cpp/qps/driver.cc
+  test/cpp/qps/limit_cores.cc
   test/cpp/qps/perf_db_client.cc
   test/cpp/qps/qps_worker.cc
   test/cpp/qps/report.cc
   test/cpp/qps/server_async.cc
   test/cpp/qps/server_sync.cc
-  test/cpp/qps/timer.cc
+  test/cpp/qps/usage_timer.cc
   test/cpp/util/benchmark_config.cc
 )
 add_dependencies(qps
@@ -670,18 +706,18 @@ add_dependencies(qps
 )
 target_link_libraries(qps
    src_proto_grpc_testing_messages
-   src_proto_grpc_testing_control
    src_proto_grpc_testing_payloads
-   src_proto_grpc_testing_services
    src_proto_grpc_testing_stats
+   src_proto_grpc_testing_control
+   src_proto_grpc_testing_services
    src_proto_grpc_testing_perf_db
 )
 add_library(grpc_csharp_ext
   src/csharp/ext/grpc_csharp_ext.c
 )
 add_dependencies(grpc_csharp_ext
-  gpr
   grpc
+  gpr
 )
 target_link_libraries(grpc_csharp_ext
 )
@@ -1314,6 +1350,49 @@ add_dependencies(boringssl_ssl_test_lib
 )
 target_link_libraries(boringssl_ssl_test_lib
 )
+add_library(z
+  third_party/zlib/adler32.c
+  third_party/zlib/compress.c
+  third_party/zlib/crc32.c
+  third_party/zlib/deflate.c
+  third_party/zlib/gzclose.c
+  third_party/zlib/gzlib.c
+  third_party/zlib/gzread.c
+  third_party/zlib/gzwrite.c
+  third_party/zlib/infback.c
+  third_party/zlib/inffast.c
+  third_party/zlib/inflate.c
+  third_party/zlib/inftrees.c
+  third_party/zlib/trees.c
+  third_party/zlib/uncompr.c
+  third_party/zlib/zutil.c
+)
+target_link_libraries(z
+)
+add_library(bad_client_test
+  test/core/bad_client/bad_client.c
+)
+add_dependencies(bad_client_test
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+)
+target_link_libraries(bad_client_test
+)
+if ((CMAKE_SYSTEM EQUAL Linux) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Darwin))
+add_library(bad_ssl_test_server
+  test/core/bad_ssl/server_common.c
+)
+add_dependencies(bad_ssl_test_server
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+)
+target_link_libraries(bad_ssl_test_server
+)
+endif()
 add_library(end2end_tests
   test/core/end2end/end2end_tests.c
   test/core/end2end/tests/bad_hostname.c
@@ -1325,9 +1404,8 @@ add_library(end2end_tests
   test/core/end2end/tests/cancel_before_invoke.c
   test/core/end2end/tests/cancel_in_a_vacuum.c
   test/core/end2end/tests/cancel_with_status.c
-  test/core/end2end/tests/channel_connectivity.c
-  test/core/end2end/tests/channel_ping.c
   test/core/end2end/tests/compressed_payload.c
+  test/core/end2end/tests/connectivity.c
   test/core/end2end/tests/default_host.c
   test/core/end2end/tests/disappearing_server.c
   test/core/end2end/tests/empty_batch.c
@@ -1338,10 +1416,10 @@ add_library(end2end_tests
   test/core/end2end/tests/large_metadata.c
   test/core/end2end/tests/max_concurrent_streams.c
   test/core/end2end/tests/max_message_length.c
-  test/core/end2end/tests/metadata.c
   test/core/end2end/tests/negative_deadline.c
   test/core/end2end/tests/no_op.c
   test/core/end2end/tests/payload.c
+  test/core/end2end/tests/ping.c
   test/core/end2end/tests/ping_pong_streaming.c
   test/core/end2end/tests/registered_call.c
   test/core/end2end/tests/request_with_flags.c
@@ -1350,6 +1428,7 @@ add_library(end2end_tests
   test/core/end2end/tests/shutdown_finishes_calls.c
   test/core/end2end/tests/shutdown_finishes_tags.c
   test/core/end2end/tests/simple_delayed_request.c
+  test/core/end2end/tests/simple_metadata.c
   test/core/end2end/tests/simple_request.c
   test/core/end2end/tests/trailing_metadata.c
 )
@@ -1372,9 +1451,8 @@ add_library(end2end_nosec_tests
   test/core/end2end/tests/cancel_before_invoke.c
   test/core/end2end/tests/cancel_in_a_vacuum.c
   test/core/end2end/tests/cancel_with_status.c
-  test/core/end2end/tests/channel_connectivity.c
-  test/core/end2end/tests/channel_ping.c
   test/core/end2end/tests/compressed_payload.c
+  test/core/end2end/tests/connectivity.c
   test/core/end2end/tests/default_host.c
   test/core/end2end/tests/disappearing_server.c
   test/core/end2end/tests/empty_batch.c
@@ -1385,10 +1463,10 @@ add_library(end2end_nosec_tests
   test/core/end2end/tests/large_metadata.c
   test/core/end2end/tests/max_concurrent_streams.c
   test/core/end2end/tests/max_message_length.c
-  test/core/end2end/tests/metadata.c
   test/core/end2end/tests/negative_deadline.c
   test/core/end2end/tests/no_op.c
   test/core/end2end/tests/payload.c
+  test/core/end2end/tests/ping.c
   test/core/end2end/tests/ping_pong_streaming.c
   test/core/end2end/tests/registered_call.c
   test/core/end2end/tests/request_with_flags.c
@@ -1397,6 +1475,7 @@ add_library(end2end_nosec_tests
   test/core/end2end/tests/shutdown_finishes_calls.c
   test/core/end2end/tests/shutdown_finishes_tags.c
   test/core/end2end/tests/simple_delayed_request.c
+  test/core/end2end/tests/simple_metadata.c
   test/core/end2end/tests/simple_request.c
   test/core/end2end/tests/trailing_metadata.c
 )
@@ -1415,31 +1494,23 @@ add_library(end2end_certs
 )
 target_link_libraries(end2end_certs
 )
-add_library(bad_client_test
-  test/core/bad_client/bad_client.c
+
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(alarm_test
+  test/core/surface/alarm_test.c
 )
-add_dependencies(bad_client_test
-  grpc_test_util_unsecure
-  grpc_unsecure
-  gpr_test_util
-  gpr
-)
-target_link_libraries(bad_client_test
-)
-if ((CMAKE_SYSTEM EQUAL Linux) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Darwin))
-add_library(bad_ssl_test_server
-  test/core/bad_ssl/server.c
-)
-add_dependencies(bad_ssl_test_server
+target_link_libraries(alarm_test
   grpc_test_util
   grpc
   gpr_test_util
   gpr
-)
-target_link_libraries(bad_ssl_test_server
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
-
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
 add_executable(algorithm_test
   test/core/compression/algorithm_test.c
@@ -1491,6 +1562,20 @@ add_executable(bin_encoder_test
   test/core/transport/chttp2/bin_encoder_test.c
 )
 target_link_libraries(bin_encoder_test
+  grpc_test_util
+  grpc
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(census_context_test
+  test/core/census/context_test.c
+)
+target_link_libraries(census_context_test
   grpc_test_util
   grpc
   gpr_test_util
@@ -1825,20 +1910,6 @@ target_link_libraries(gpr_env_test
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
-add_executable(gpr_file_test
-  test/core/support/file_test.c
-)
-target_link_libraries(gpr_file_test
-  gpr_test_util
-  gpr
-  ${PROTOBUF_LIBRARIES}
-  ${ZLIB_LIBRARIES}
-  ${OPENSSL_LIBRARIES}
-  ${CMAKE_THREAD_LIBS_INIT}
-  ${MATH_LIB}
-)
-endif()
-if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
 add_executable(gpr_histogram_test
   test/core/support/histogram_test.c
 )
@@ -1857,6 +1928,20 @@ add_executable(gpr_host_port_test
   test/core/support/host_port_test.c
 )
 target_link_libraries(gpr_host_port_test
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(gpr_load_file_test
+  test/core/support/load_file_test.c
+)
+target_link_libraries(gpr_load_file_test
   gpr_test_util
   gpr
   ${PROTOBUF_LIBRARIES}
@@ -2023,10 +2108,10 @@ target_link_libraries(grpc_auth_context_test
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
-add_executable(grpc_base64_test
-  test/core/security/base64_test.c
+add_executable(grpc_b64_test
+  test/core/security/b64_test.c
 )
-target_link_libraries(grpc_base64_test
+target_link_libraries(grpc_b64_test
   grpc_test_util
   grpc
   gpr_test_util
@@ -2501,6 +2586,22 @@ target_link_libraries(message_compress_test
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(mlog_test
+  test/core/census/mlog_test.c
+)
+target_link_libraries(mlog_test
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
 add_executable(multiple_server_queues_test
   test/core/end2end/multiple_server_queues_test.c
 )
@@ -2916,6 +3017,24 @@ target_link_libraries(workqueue_test
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(alarm_cpp_test
+  test/cpp/common/alarm_cpp_test.cc
+)
+target_link_libraries(alarm_cpp_test
+  grpc++_test_util
+  grpc_test_util
+  grpc++
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
 add_executable(async_end2end_test
   test/cpp/end2end/async_end2end_test.cc
 )
@@ -3155,6 +3274,25 @@ target_link_libraries(end2end_test
   ${MATH_LIB}
 )
 endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(generic_async_streaming_ping_pong_test
+  test/cpp/qps/generic_async_streaming_ping_pong_test.cc
+)
+target_link_libraries(generic_async_streaming_ping_pong_test
+  qps
+  grpc++_test_util
+  grpc_test_util
+  grpc++
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
 add_executable(generic_end2end_test
   test/cpp/end2end/generic_end2end_test.cc
@@ -3248,6 +3386,41 @@ target_link_libraries(grpc_ruby_plugin
   grpc_plugin_support
   ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(grpclb_api_test
+  test/cpp/grpclb/grpclb_api_test.cc
+)
+target_link_libraries(grpclb_api_test
+   src_proto_grpc_lb_v0_load_balancer
+  grpc++_test_util
+  grpc_test_util
+  grpc++
+  grpc
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(hybrid_end2end_test
+  test/cpp/end2end/hybrid_end2end_test.cc
+)
+target_link_libraries(hybrid_end2end_test
+  grpc++_test_util
+  grpc_test_util
+  grpc++
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
   ${MATH_LIB}
 )
@@ -4273,6 +4446,208 @@ target_link_libraries(boringssl_ssl_test
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(badreq_bad_client_test
+  test/core/bad_client/tests/badreq.c
+)
+target_link_libraries(badreq_bad_client_test
+  bad_client_test
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(connection_prefix_bad_client_test
+  test/core/bad_client/tests/connection_prefix.c
+)
+target_link_libraries(connection_prefix_bad_client_test
+  bad_client_test
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(headers_bad_client_test
+  test/core/bad_client/tests/headers.c
+)
+target_link_libraries(headers_bad_client_test
+  bad_client_test
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(initial_settings_frame_bad_client_test
+  test/core/bad_client/tests/initial_settings_frame.c
+)
+target_link_libraries(initial_settings_frame_bad_client_test
+  bad_client_test
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(server_registered_method_bad_client_test
+  test/core/bad_client/tests/server_registered_method.c
+)
+target_link_libraries(server_registered_method_bad_client_test
+  bad_client_test
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(simple_request_bad_client_test
+  test/core/bad_client/tests/simple_request.c
+)
+target_link_libraries(simple_request_bad_client_test
+  bad_client_test
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(unknown_frame_bad_client_test
+  test/core/bad_client/tests/unknown_frame.c
+)
+target_link_libraries(unknown_frame_bad_client_test
+  bad_client_test
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(window_overflow_bad_client_test
+  test/core/bad_client/tests/window_overflow.c
+)
+target_link_libraries(window_overflow_bad_client_test
+  bad_client_test
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(bad_ssl_alpn_server
+  test/core/bad_ssl/servers/alpn.c
+)
+target_link_libraries(bad_ssl_alpn_server
+  bad_ssl_test_server
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(bad_ssl_cert_server
+  test/core/bad_ssl/servers/cert.c
+)
+target_link_libraries(bad_ssl_cert_server
+  bad_ssl_test_server
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(bad_ssl_alpn_test
+  test/core/bad_ssl/bad_ssl_test.c
+)
+target_link_libraries(bad_ssl_alpn_test
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(bad_ssl_cert_test
+  test/core/bad_ssl/bad_ssl_test.c
+)
+target_link_libraries(bad_ssl_cert_test
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
 add_executable(h2_census_test
   test/core/end2end/fixtures/h2_census.c
 )
@@ -4808,208 +5183,6 @@ target_link_libraries(h2_uds+poll_nosec_test
   end2end_nosec_tests
   grpc_test_util_unsecure
   grpc_unsecure
-  gpr_test_util
-  gpr
-  ${PROTOBUF_LIBRARIES}
-  ${ZLIB_LIBRARIES}
-  ${OPENSSL_LIBRARIES}
-  ${CMAKE_THREAD_LIBS_INIT}
-  ${MATH_LIB}
-)
-endif()
-if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
-add_executable(badreq_bad_client_test
-  test/core/bad_client/tests/badreq.c
-)
-target_link_libraries(badreq_bad_client_test
-  bad_client_test
-  grpc_test_util_unsecure
-  grpc_unsecure
-  gpr_test_util
-  gpr
-  ${PROTOBUF_LIBRARIES}
-  ${ZLIB_LIBRARIES}
-  ${OPENSSL_LIBRARIES}
-  ${CMAKE_THREAD_LIBS_INIT}
-  ${MATH_LIB}
-)
-endif()
-if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
-add_executable(connection_prefix_bad_client_test
-  test/core/bad_client/tests/connection_prefix.c
-)
-target_link_libraries(connection_prefix_bad_client_test
-  bad_client_test
-  grpc_test_util_unsecure
-  grpc_unsecure
-  gpr_test_util
-  gpr
-  ${PROTOBUF_LIBRARIES}
-  ${ZLIB_LIBRARIES}
-  ${OPENSSL_LIBRARIES}
-  ${CMAKE_THREAD_LIBS_INIT}
-  ${MATH_LIB}
-)
-endif()
-if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
-add_executable(headers_bad_client_test
-  test/core/bad_client/tests/headers.c
-)
-target_link_libraries(headers_bad_client_test
-  bad_client_test
-  grpc_test_util_unsecure
-  grpc_unsecure
-  gpr_test_util
-  gpr
-  ${PROTOBUF_LIBRARIES}
-  ${ZLIB_LIBRARIES}
-  ${OPENSSL_LIBRARIES}
-  ${CMAKE_THREAD_LIBS_INIT}
-  ${MATH_LIB}
-)
-endif()
-if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
-add_executable(initial_settings_frame_bad_client_test
-  test/core/bad_client/tests/initial_settings_frame.c
-)
-target_link_libraries(initial_settings_frame_bad_client_test
-  bad_client_test
-  grpc_test_util_unsecure
-  grpc_unsecure
-  gpr_test_util
-  gpr
-  ${PROTOBUF_LIBRARIES}
-  ${ZLIB_LIBRARIES}
-  ${OPENSSL_LIBRARIES}
-  ${CMAKE_THREAD_LIBS_INIT}
-  ${MATH_LIB}
-)
-endif()
-if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
-add_executable(server_registered_method_bad_client_test
-  test/core/bad_client/tests/server_registered_method.c
-)
-target_link_libraries(server_registered_method_bad_client_test
-  bad_client_test
-  grpc_test_util_unsecure
-  grpc_unsecure
-  gpr_test_util
-  gpr
-  ${PROTOBUF_LIBRARIES}
-  ${ZLIB_LIBRARIES}
-  ${OPENSSL_LIBRARIES}
-  ${CMAKE_THREAD_LIBS_INIT}
-  ${MATH_LIB}
-)
-endif()
-if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
-add_executable(simple_request_bad_client_test
-  test/core/bad_client/tests/simple_request.c
-)
-target_link_libraries(simple_request_bad_client_test
-  bad_client_test
-  grpc_test_util_unsecure
-  grpc_unsecure
-  gpr_test_util
-  gpr
-  ${PROTOBUF_LIBRARIES}
-  ${ZLIB_LIBRARIES}
-  ${OPENSSL_LIBRARIES}
-  ${CMAKE_THREAD_LIBS_INIT}
-  ${MATH_LIB}
-)
-endif()
-if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
-add_executable(unknown_frame_bad_client_test
-  test/core/bad_client/tests/unknown_frame.c
-)
-target_link_libraries(unknown_frame_bad_client_test
-  bad_client_test
-  grpc_test_util_unsecure
-  grpc_unsecure
-  gpr_test_util
-  gpr
-  ${PROTOBUF_LIBRARIES}
-  ${ZLIB_LIBRARIES}
-  ${OPENSSL_LIBRARIES}
-  ${CMAKE_THREAD_LIBS_INIT}
-  ${MATH_LIB}
-)
-endif()
-if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
-add_executable(window_overflow_bad_client_test
-  test/core/bad_client/tests/window_overflow.c
-)
-target_link_libraries(window_overflow_bad_client_test
-  bad_client_test
-  grpc_test_util_unsecure
-  grpc_unsecure
-  gpr_test_util
-  gpr
-  ${PROTOBUF_LIBRARIES}
-  ${ZLIB_LIBRARIES}
-  ${OPENSSL_LIBRARIES}
-  ${CMAKE_THREAD_LIBS_INIT}
-  ${MATH_LIB}
-)
-endif()
-if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
-add_executable(bad_ssl_alpn_server
-  test/core/bad_ssl/servers/alpn.c
-)
-target_link_libraries(bad_ssl_alpn_server
-  bad_ssl_test_server
-  grpc_test_util
-  grpc
-  gpr_test_util
-  gpr
-  ${PROTOBUF_LIBRARIES}
-  ${ZLIB_LIBRARIES}
-  ${OPENSSL_LIBRARIES}
-  ${CMAKE_THREAD_LIBS_INIT}
-  ${MATH_LIB}
-)
-endif()
-if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
-add_executable(bad_ssl_cert_server
-  test/core/bad_ssl/servers/cert.c
-)
-target_link_libraries(bad_ssl_cert_server
-  bad_ssl_test_server
-  grpc_test_util
-  grpc
-  gpr_test_util
-  gpr
-  ${PROTOBUF_LIBRARIES}
-  ${ZLIB_LIBRARIES}
-  ${OPENSSL_LIBRARIES}
-  ${CMAKE_THREAD_LIBS_INIT}
-  ${MATH_LIB}
-)
-endif()
-if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
-add_executable(bad_ssl_alpn_test
-  test/core/bad_ssl/bad_ssl_test.c
-)
-target_link_libraries(bad_ssl_alpn_test
-  grpc_test_util
-  grpc
-  gpr_test_util
-  gpr
-  ${PROTOBUF_LIBRARIES}
-  ${ZLIB_LIBRARIES}
-  ${OPENSSL_LIBRARIES}
-  ${CMAKE_THREAD_LIBS_INIT}
-  ${MATH_LIB}
-)
-endif()
-if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
-add_executable(bad_ssl_cert_test
-  test/core/bad_ssl/bad_ssl_test.c
-)
-target_link_libraries(bad_ssl_cert_test
-  grpc_test_util
-  grpc
   gpr_test_util
   gpr
   ${PROTOBUF_LIBRARIES}
