@@ -30,6 +30,8 @@ else()
     message(STATUS "The compiler ${CMAKE_CXX_COMPILER} has no C++11 support. Please use a different C++ compiler.")
 endif()
 
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99")
+
 find_package(Protobuf REQUIRED)
 set(PROTOBUF_IMPORT_DIRS ${CMAKE_BINARY_DIR})
 if (PROTOBUF_FOUND)
@@ -566,28 +568,11 @@ target_link_libraries(grpc_create_jwt
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
-add_executable(grpc_fetch_oauth2
-  test/core/security/fetch_oauth2.c
-)
-target_link_libraries(grpc_fetch_oauth2
-  grpc_test_util
-  grpc
-  gpr_test_util
-  gpr
-  ${ZLIB_LIBRARIES}
-  ${OPENSSL_LIBRARIES}
-  ${CMAKE_THREAD_LIBS_INIT}
-  ${MATH_LIB}
-)
-endif()
-if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
 add_executable(grpc_print_google_default_creds_token
   test/core/security/print_google_default_creds_token.c
 )
 target_link_libraries(grpc_print_google_default_creds_token
-  grpc_test_util
   grpc
-  gpr_test_util
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
@@ -600,9 +585,7 @@ add_executable(grpc_verify_jwt
   test/core/security/verify_jwt.c
 )
 target_link_libraries(grpc_verify_jwt
-  grpc_test_util
   grpc
-  gpr_test_util
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
