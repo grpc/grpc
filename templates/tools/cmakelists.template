@@ -23,8 +23,9 @@ template: |
   INCLUDE(GRPC_PB)
   % for proto in protos:
   % if os.path.dirname(proto) == selected:
-  PROTOBUF_GENERATE_CPP(${protovars(proto, 'PROTO', False)} <%text>${CMAKE_SOURCE_DIR}</%text>/${proto}.proto)
-  GRPC_PB_GENERATE_CPP(${protovars(proto, 'GRPC', False)} <%text>${CMAKE_SOURCE_DIR}</%text>/${proto}.proto)
+  file(COPY <%text>${CMAKE_SOURCE_DIR}</%text>/${proto}.proto DESTINATION .)
+  PROTOBUF_GENERATE_CPP(${protovars(proto, 'PROTO', False)} ${os.path.basename(proto)}.proto)
+  GRPC_PB_GENERATE_CPP(${protovars(proto, 'GRPC', False)} ${os.path.basename(proto)}.proto)
   add_library(${proto_root(proto).lower()}
     ${protovars(proto, 'PROTO', True)}
     ${protovars(proto, 'GRPC', True)})
