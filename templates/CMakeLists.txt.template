@@ -43,6 +43,8 @@
       message(STATUS "The compiler <%text>${CMAKE_CXX_COMPILER}</%text> has no C++11 support. Please use a different C++ compiler.")
   endif()
 
+  set(CMAKE_C_FLAGS "<%text>${CMAKE_C_FLAGS}</%text> -std=c99")
+
   find_package(Protobuf REQUIRED)
   set(PROTOBUF_IMPORT_DIRS <%text>${CMAKE_BINARY_DIR}</%text>)
   if (PROTOBUF_FOUND)
