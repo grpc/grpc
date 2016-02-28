@@ -1391,10 +1391,9 @@ targets:
   src:
   - test/core/security/create_jwt.c
   deps:
-  - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
+  secure: true
 - name: grpc_credentials_test
   build: test
   language: c

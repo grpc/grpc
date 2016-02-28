@@ -1,7 +1,9 @@
 # C/C++ build outputs
 bins
+bin
 gens
 libs
+lib
 objs
 
 # Python items

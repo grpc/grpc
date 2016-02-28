@@ -12,8 +12,7 @@
     'posix': '(NOT (CMAKE_SYSTEM EQUAL Windows))'
   }
 
-  def proto_root(src):
-    return src.upper().replace('/', '_').replace('\\', '_').replace('.', '_')
+  THINGS_CMAKE_BUILDS = set(['all', 'protoc', 'tool'])
   %>
 
   set (PACKAGE_NAME      "grpc")
@@ -24,7 +23,6 @@
   set (CMAKE_ARCHIVE_OUTPUT_DIRECTORY <%text>${CMAKE_BINARY_DIR}/lib</%text>)
   set (CMAKE_LIBRARY_OUTPUT_DIRECTORY <%text>${CMAKE_BINARY_DIR}/lib</%text>)
   set (CMAKE_RUNTIME_OUTPUT_DIRECTORY <%text>${CMAKE_BINARY_DIR}/bin</%text>)
-  set (CMAKE_MODULE_PATH <%text>${CMAKE_MODULE_PATH} ${CMAKE_BINARY_DIR}/tools/cmake_modules</%text>)
 
   project (<%text>${PACKAGE_NAME}</%text> C CXX)
 
@@ -33,7 +31,6 @@
 
   include_directories(include)
   include_directories(third_party/googletest/include)
-  include_directories(tools/cmakelists)
 
   include(CheckCXXCompilerFlag)
   CHECK_CXX_COMPILER_FLAG("-std=c++11" COMPILER_SUPPORTS_CXX11)
@@ -78,65 +75,56 @@
     set(MATH_LIB)
   endif()
 
-  % for protodir in sorted(protodirs):
-  add_subdirectory(tools/cmakelists/${protodir})
-  % endfor
-
   % for lib in libs:
-  %  if lib.get('platforms', None) is not None:
+  %  if lib.build in THINGS_CMAKE_BUILDS:
+  %   if lib.get('platforms', None) is not None:
   if (${' OR '.join(PLATFORM_CHECK[chk] for chk in lib.platforms)})
-  %  endif
+  %   endif
   add_library(${lib.name}
-  %  for src in (lib.src if lib.src else ['vsprojects/dummy.c']):
-  %   if '.proto' not in src:
+  %   for src in (lib.src if lib.src else ['vsprojects/dummy.c']):
     ${src}
-  %   endif
-  %  endfor
+  %   endfor
   )
-  %  if lib.get('deps', []):
+  %   if lib.get('deps', []):
   add_dependencies(${lib.name}
-  %  for dep in lib.deps:
+  %   for dep in lib.deps:
     ${dep}
-  %  endfor
+  %   endfor
   )
-  %  endif
-  target_link_libraries(${lib.name}
-  %  for src in lib.src:
-  %   if '.proto' in src:
-     ${proto_root(src[0:-6]).lower()}
   %   endif
-  %  endfor
+  target_link_libraries(${lib.name}
   )
-  %  if lib.get('platforms', None) is not None:
+  %   if lib.get('platforms', None) is not None:
   endif()
+  %   endif
   %  endif
   % endfor
 
   % for tgt in targets:
+  %  if tgt.build in THINGS_CMAKE_BUILDS:
   if (${' OR '.join(PLATFORM_CHECK[chk] for chk in tgt.platforms)})
   add_executable(${tgt.name}
-  %  for src in (tgt.src if tgt.src else ['vsprojects/dummy.c']):
-  %   if '.proto' not in src:
+  %   for src in (tgt.src if tgt.src else ['vsprojects/dummy.c']):
     ${src}
-  %   endif
-  %  endfor
+  %   endfor
   )
   target_link_libraries(${tgt.name}
-  %  for src in tgt.src:
-  %   if '.proto' in src:
-     ${proto_root(src[0:-6]).lower()}
-  %   endif
-  %  endfor
-  %  for dep in tgt.deps:
+  %   for dep in tgt.deps:
     ${dep}
-  %  endfor
+  %   endfor
+  %   if tgt.build == 'protoc':
+    <%text>${PROTOBUF_PROTOC_LIBRARY}</%text>
+  %   endif
+  %   if tgt.language == 'c++':
     <%text>${PROTOBUF_LIBRARIES}</%text>
+  %   endif
     <%text>${ZLIB_LIBRARIES}</%text>
-  %  if tgt.get('secure', 'check'):
+  %   if tgt.get('secure', 'check'):
     <%text>${OPENSSL_LIBRARIES}</%text>
-  %  endif
+  %   endif
     <%text>${CMAKE_THREAD_LIBS_INIT}</%text>
     <%text>${MATH_LIB}</%text>
   )
   endif()
+  %  endif
   % endfor
