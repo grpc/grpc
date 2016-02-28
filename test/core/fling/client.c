@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -51,7 +51,7 @@ static grpc_channel *channel;
 static grpc_completion_queue *cq;
 static grpc_call *call;
 static grpc_op ops[6];
-static grpc_op stream_init_op;
+static grpc_op stream_init_ops[2];
 static grpc_op stream_step_ops[2];
 static grpc_metadata_array initial_metadata_recv;
 static grpc_metadata_array trailing_metadata_recv;
@@ -105,13 +105,17 @@ static void step_ping_pong_request(void) {
 }
 
 static void init_ping_pong_stream(void) {
+  grpc_metadata_array_init(&initial_metadata_recv);
+
   grpc_call_error error;
   call = grpc_channel_create_call(channel, NULL, GRPC_PROPAGATE_DEFAULTS, cq,
                                   "/Reflector/reflectStream", "localhost",
                                   gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
-  stream_init_op.op = GRPC_OP_SEND_INITIAL_METADATA;
-  stream_init_op.data.send_initial_metadata.count = 0;
-  error = grpc_call_start_batch(call, &stream_init_op, 1, (void *)1, NULL);
+  stream_init_ops[0].op = GRPC_OP_SEND_INITIAL_METADATA;
+  stream_init_ops[0].data.send_initial_metadata.count = 0;
+  stream_init_ops[1].op = GRPC_OP_RECV_INITIAL_METADATA;
+  stream_init_ops[1].data.recv_initial_metadata = &initial_metadata_recv;
+  error = grpc_call_start_batch(call, stream_init_ops, 2, (void *)1, NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
   grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
 
@@ -201,13 +205,16 @@ int main(int argc, char **argv) {
 
   sc.init();
 
-  for (i = 0; i < 1000; i++) {
+  gpr_timespec end_warmup = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(3);
+  gpr_timespec end_profiling = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(30);
+
+  while (gpr_time_cmp(gpr_now(end_warmup.clock_type), end_warmup) < 0) {
     sc.do_one_step();
   }
 
   gpr_log(GPR_INFO, "start profiling");
   grpc_profiler_start("client.prof");
-  for (i = 0; i < 100000; i++) {
+  while (gpr_time_cmp(gpr_now(end_profiling.clock_type), end_profiling) < 0) {
     start = now();
     sc.do_one_step();
     stop = now();

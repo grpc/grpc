@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -40,15 +40,18 @@
 #include <unistd.h>
 
 #include <grpc/grpc.h>
+#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
 #include "src/core/iomgr/iomgr.h"
 #include "src/core/iomgr/socket_utils_posix.h"
+#include "src/core/iomgr/timer.h"
 #include "test/core/util/test_config.h"
 
-static grpc_pollset_set g_pollset_set;
-static grpc_pollset g_pollset;
+static grpc_pollset_set *g_pollset_set;
+static gpr_mu *g_mu;
+static grpc_pollset *g_pollset;
 static int g_connections_complete = 0;
 static grpc_endpoint *g_connecting = NULL;
 
@@ -57,13 +60,13 @@ static gpr_timespec test_deadline(void) {
 }
 
 static void finish_connection() {
-  gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
+  gpr_mu_lock(g_mu);
   g_connections_complete++;
-  grpc_pollset_kick(&g_pollset, NULL);
-  gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));
+  grpc_pollset_kick(g_pollset, NULL);
+  gpr_mu_unlock(g_mu);
 }
 
-static void must_succeed(grpc_exec_ctx *exec_ctx, void *arg, int success) {
+static void must_succeed(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
   GPR_ASSERT(g_connecting != NULL);
   GPR_ASSERT(success);
   grpc_endpoint_shutdown(exec_ctx, g_connecting);
@@ -72,7 +75,7 @@ static void must_succeed(grpc_exec_ctx *exec_ctx, void *arg, int success) {
   finish_connection();
 }
 
-static void must_fail(grpc_exec_ctx *exec_ctx, void *arg, int success) {
+static void must_fail(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
   GPR_ASSERT(g_connecting == NULL);
   GPR_ASSERT(!success);
   finish_connection();
@@ -98,14 +101,14 @@ void test_succeeds(void) {
   GPR_ASSERT(0 == bind(svr_fd, (struct sockaddr *)&addr, addr_len));
   GPR_ASSERT(0 == listen(svr_fd, 1));
 
-  gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
+  gpr_mu_lock(g_mu);
   connections_complete_before = g_connections_complete;
-  gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));
+  gpr_mu_unlock(g_mu);
 
   /* connect to it */
   GPR_ASSERT(getsockname(svr_fd, (struct sockaddr *)&addr, &addr_len) == 0);
   grpc_closure_init(&done, must_succeed, NULL);
-  grpc_tcp_client_connect(&exec_ctx, &done, &g_connecting, &g_pollset_set,
+  grpc_tcp_client_connect(&exec_ctx, &done, &g_connecting, g_pollset_set,
                           (struct sockaddr *)&addr, addr_len,
                           gpr_inf_future(GPR_CLOCK_REALTIME));
 
@@ -117,19 +120,21 @@ void test_succeeds(void) {
   GPR_ASSERT(r >= 0);
   close(r);
 
-  gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
+  gpr_mu_lock(g_mu);
 
   while (g_connections_complete == connections_complete_before) {
-    grpc_pollset_worker worker;
-    grpc_pollset_work(&exec_ctx, &g_pollset, &worker,
+    grpc_pollset_worker *worker = NULL;
+    grpc_pollset_work(&exec_ctx, g_pollset, &worker,
                       gpr_now(GPR_CLOCK_MONOTONIC),
                       GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5));
-    gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));
-    grpc_exec_ctx_finish(&exec_ctx);
-    gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
+    gpr_mu_unlock(g_mu);
+    grpc_exec_ctx_flush(&exec_ctx);
+    gpr_mu_lock(g_mu);
   }
 
-  gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));
+  gpr_mu_unlock(g_mu);
+
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 void test_fails(void) {
@@ -144,29 +149,33 @@ void test_fails(void) {
   memset(&addr, 0, sizeof(addr));
   addr.sin_family = AF_INET;
 
-  gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
+  gpr_mu_lock(g_mu);
   connections_complete_before = g_connections_complete;
-  gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));
+  gpr_mu_unlock(g_mu);
 
   /* connect to a broken address */
   grpc_closure_init(&done, must_fail, NULL);
-  grpc_tcp_client_connect(&exec_ctx, &done, &g_connecting, &g_pollset_set,
+  grpc_tcp_client_connect(&exec_ctx, &done, &g_connecting, g_pollset_set,
                           (struct sockaddr *)&addr, addr_len,
                           gpr_inf_future(GPR_CLOCK_REALTIME));
 
-  gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
+  gpr_mu_lock(g_mu);
 
   /* wait for the connection callback to finish */
   while (g_connections_complete == connections_complete_before) {
-    grpc_pollset_worker worker;
-    grpc_pollset_work(&exec_ctx, &g_pollset, &worker,
-                      gpr_now(GPR_CLOCK_MONOTONIC), test_deadline());
-    gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));
-    grpc_exec_ctx_finish(&exec_ctx);
-    gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
+    grpc_pollset_worker *worker = NULL;
+    gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
+    gpr_timespec polling_deadline = test_deadline();
+    if (!grpc_timer_check(&exec_ctx, now, &polling_deadline)) {
+      grpc_pollset_work(&exec_ctx, g_pollset, &worker, now, polling_deadline);
+    }
+    gpr_mu_unlock(g_mu);
+    grpc_exec_ctx_flush(&exec_ctx);
+    gpr_mu_lock(g_mu);
   }
 
-  gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));
+  gpr_mu_unlock(g_mu);
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 void test_times_out(void) {
@@ -210,18 +219,18 @@ void test_times_out(void) {
 
   connect_deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(1);
 
-  gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
+  gpr_mu_lock(g_mu);
   connections_complete_before = g_connections_complete;
-  gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));
+  gpr_mu_unlock(g_mu);
 
   grpc_closure_init(&done, must_fail, NULL);
-  grpc_tcp_client_connect(&exec_ctx, &done, &g_connecting, &g_pollset_set,
+  grpc_tcp_client_connect(&exec_ctx, &done, &g_connecting, g_pollset_set,
                           (struct sockaddr *)&addr, addr_len, connect_deadline);
 
   /* Make sure the event doesn't trigger early */
-  gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
+  gpr_mu_lock(g_mu);
   for (;;) {
-    grpc_pollset_worker worker;
+    grpc_pollset_worker *worker = NULL;
     gpr_timespec now = gpr_now(connect_deadline.clock_type);
     gpr_timespec continue_verifying_time =
         gpr_time_from_seconds(5, GPR_TIMESPAN);
@@ -243,14 +252,17 @@ void test_times_out(void) {
       GPR_ASSERT(g_connections_complete ==
                  connections_complete_before + is_after_deadline);
     }
-    grpc_pollset_work(&exec_ctx, &g_pollset, &worker,
-                      gpr_now(GPR_CLOCK_MONOTONIC),
-                      GRPC_TIMEOUT_MILLIS_TO_DEADLINE(10));
-    gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));
-    grpc_exec_ctx_finish(&exec_ctx);
-    gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
+    gpr_timespec polling_deadline = GRPC_TIMEOUT_MILLIS_TO_DEADLINE(10);
+    if (!grpc_timer_check(&exec_ctx, now, &polling_deadline)) {
+      grpc_pollset_work(&exec_ctx, g_pollset, &worker, now, polling_deadline);
+    }
+    gpr_mu_unlock(g_mu);
+    grpc_exec_ctx_flush(&exec_ctx);
+    gpr_mu_lock(g_mu);
   }
-  gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));
+  gpr_mu_unlock(g_mu);
+
+  grpc_exec_ctx_finish(&exec_ctx);
 
   close(svr_fd);
   for (i = 0; i < NUM_CLIENT_CONNECTS; ++i) {
@@ -258,7 +270,7 @@ void test_times_out(void) {
   }
 }
 
-static void destroy_pollset(grpc_exec_ctx *exec_ctx, void *p, int success) {
+static void destroy_pollset(grpc_exec_ctx *exec_ctx, void *p, bool success) {
   grpc_pollset_destroy(p);
 }
 
@@ -267,18 +279,20 @@ int main(int argc, char **argv) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_test_init(argc, argv);
   grpc_init();
-  grpc_pollset_set_init(&g_pollset_set);
-  grpc_pollset_init(&g_pollset);
-  grpc_pollset_set_add_pollset(&exec_ctx, &g_pollset_set, &g_pollset);
+  g_pollset_set = grpc_pollset_set_create();
+  g_pollset = gpr_malloc(grpc_pollset_size());
+  grpc_pollset_init(g_pollset, &g_mu);
+  grpc_pollset_set_add_pollset(&exec_ctx, g_pollset_set, g_pollset);
   grpc_exec_ctx_finish(&exec_ctx);
   test_succeeds();
   gpr_log(GPR_ERROR, "End of first test");
   test_fails();
   test_times_out();
-  grpc_pollset_set_destroy(&g_pollset_set);
-  grpc_closure_init(&destroyed, destroy_pollset, &g_pollset);
-  grpc_pollset_shutdown(&exec_ctx, &g_pollset, &destroyed);
+  grpc_pollset_set_destroy(g_pollset_set);
+  grpc_closure_init(&destroyed, destroy_pollset, g_pollset);
+  grpc_pollset_shutdown(&exec_ctx, g_pollset, &destroyed);
   grpc_exec_ctx_finish(&exec_ctx);
   grpc_shutdown();
+  gpr_free(g_pollset);
   return 0;
 }

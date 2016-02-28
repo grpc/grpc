@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -38,7 +38,6 @@
 #include <grpc/support/log.h>
 #include <grpc/support/thd.h>
 
-#include "src/core/iomgr/timer_internal.h"
 #include "src/core/iomgr/iomgr_internal.h"
 #include "src/core/iomgr/iocp_windows.h"
 #include "src/core/iomgr/pollset.h"
@@ -81,15 +80,6 @@ static grpc_pollset_worker *pop_front_worker(
   }
 }
 
-static void push_back_worker(grpc_pollset_worker *root,
-                             grpc_pollset_worker_link_type type,
-                             grpc_pollset_worker *worker) {
-  worker->links[type].next = root;
-  worker->links[type].prev = worker->links[type].next->links[type].prev;
-  worker->links[type].prev->links[type].next =
-      worker->links[type].next->links[type].prev = worker;
-}
-
 static void push_front_worker(grpc_pollset_worker *root,
                               grpc_pollset_worker_link_type type,
                               grpc_pollset_worker *worker) {
@@ -99,12 +89,15 @@ static void push_front_worker(grpc_pollset_worker *root,
       worker->links[type].next->links[type].prev = worker;
 }
 
+size_t grpc_pollset_size(void) { return sizeof(grpc_pollset); }
+
 /* There isn't really any such thing as a pollset under Windows, due to the
    nature of the IO completion ports. We're still going to provide a minimal
    set of features for the sake of the rest of grpc. But grpc_pollset_work
    won't actually do any polling, and return as quickly as possible. */
 
-void grpc_pollset_init(grpc_pollset *pollset) {
+void grpc_pollset_init(grpc_pollset *pollset, gpr_mu **mu) {
+  *mu = &grpc_polling_mu;
   memset(pollset, 0, sizeof(*pollset));
   pollset->root_worker.links[GRPC_POLLSET_WORKER_LINK_POLLSET].next =
       pollset->root_worker.links[GRPC_POLLSET_WORKER_LINK_POLLSET].prev =
@@ -116,7 +109,7 @@ void grpc_pollset_shutdown(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
   pollset->shutting_down = 1;
   grpc_pollset_kick(pollset, GRPC_POLLSET_KICK_BROADCAST);
   if (!pollset->is_iocp_worker) {
-    grpc_exec_ctx_enqueue(exec_ctx, closure, 1);
+    grpc_exec_ctx_enqueue(exec_ctx, closure, true, NULL);
   } else {
     pollset->on_shutdown = closure;
   }
@@ -135,25 +128,25 @@ void grpc_pollset_reset(grpc_pollset *pollset) {
 }
 
 void grpc_pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
-                       grpc_pollset_worker *worker, gpr_timespec now,
+                       grpc_pollset_worker **worker_hdl, gpr_timespec now,
                        gpr_timespec deadline) {
+  grpc_pollset_worker worker;
+  *worker_hdl = &worker;
+
   int added_worker = 0;
-  worker->links[GRPC_POLLSET_WORKER_LINK_POLLSET].next =
-      worker->links[GRPC_POLLSET_WORKER_LINK_POLLSET].prev =
-          worker->links[GRPC_POLLSET_WORKER_LINK_GLOBAL].next =
-              worker->links[GRPC_POLLSET_WORKER_LINK_GLOBAL].prev = NULL;
-  worker->kicked = 0;
-  worker->pollset = pollset;
-  gpr_cv_init(&worker->cv);
-  if (grpc_timer_check(exec_ctx, now, &deadline)) {
-    goto done;
-  }
+  worker.links[GRPC_POLLSET_WORKER_LINK_POLLSET].next =
+      worker.links[GRPC_POLLSET_WORKER_LINK_POLLSET].prev =
+          worker.links[GRPC_POLLSET_WORKER_LINK_GLOBAL].next =
+              worker.links[GRPC_POLLSET_WORKER_LINK_GLOBAL].prev = NULL;
+  worker.kicked = 0;
+  worker.pollset = pollset;
+  gpr_cv_init(&worker.cv);
   if (!pollset->kicked_without_pollers && !pollset->shutting_down) {
     if (g_active_poller == NULL) {
       grpc_pollset_worker *next_worker;
       /* become poller */
       pollset->is_iocp_worker = 1;
-      g_active_poller = worker;
+      g_active_poller = &worker;
       gpr_mu_unlock(&grpc_polling_mu);
       grpc_iocp_work(exec_ctx, deadline);
       grpc_exec_ctx_flush(exec_ctx);
@@ -174,18 +167,18 @@ void grpc_pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
       }
 
       if (pollset->shutting_down && pollset->on_shutdown != NULL) {
-        grpc_exec_ctx_enqueue(exec_ctx, pollset->on_shutdown, 1);
+        grpc_exec_ctx_enqueue(exec_ctx, pollset->on_shutdown, true, NULL);
         pollset->on_shutdown = NULL;
       }
       goto done;
     }
     push_front_worker(&g_global_root_worker, GRPC_POLLSET_WORKER_LINK_GLOBAL,
-                      worker);
+                      &worker);
     push_front_worker(&pollset->root_worker, GRPC_POLLSET_WORKER_LINK_POLLSET,
-                      worker);
+                      &worker);
     added_worker = 1;
-    while (!worker->kicked) {
-      if (gpr_cv_wait(&worker->cv, &grpc_polling_mu, deadline)) {
+    while (!worker.kicked) {
+      if (gpr_cv_wait(&worker.cv, &grpc_polling_mu, deadline)) {
         break;
       }
     }
@@ -199,10 +192,11 @@ done:
     gpr_mu_lock(&grpc_polling_mu);
   }
   if (added_worker) {
-    remove_worker(worker, GRPC_POLLSET_WORKER_LINK_GLOBAL);
-    remove_worker(worker, GRPC_POLLSET_WORKER_LINK_POLLSET);
+    remove_worker(&worker, GRPC_POLLSET_WORKER_LINK_GLOBAL);
+    remove_worker(&worker, GRPC_POLLSET_WORKER_LINK_POLLSET);
   }
-  gpr_cv_destroy(&worker->cv);
+  gpr_cv_destroy(&worker.cv);
+  *worker_hdl = NULL;
 }
 
 void grpc_pollset_kick(grpc_pollset *p, grpc_pollset_worker *specific_worker) {
@@ -221,10 +215,8 @@ void grpc_pollset_kick(grpc_pollset *p, grpc_pollset_worker *specific_worker) {
         grpc_iocp_kick();
       }
     } else {
-      if (p->is_iocp_worker) {
-        if (g_active_poller == specific_worker) {
-          grpc_iocp_kick();
-        }
+      if (p->is_iocp_worker && g_active_poller == specific_worker) {
+        grpc_iocp_kick();
       } else {
         specific_worker->kicked = 1;
         gpr_cv_signal(&specific_worker->cv);

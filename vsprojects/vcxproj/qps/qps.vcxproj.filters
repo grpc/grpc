@@ -4,16 +4,16 @@
     <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\messages.proto">
       <Filter>src\proto\grpc\testing</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\control.proto">
-      <Filter>src\proto\grpc\testing</Filter>
-    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\payloads.proto">
       <Filter>src\proto\grpc\testing</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\services.proto">
+    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\stats.proto">
       <Filter>src\proto\grpc\testing</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\stats.proto">
+    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\control.proto">
+      <Filter>src\proto\grpc\testing</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\services.proto">
       <Filter>src\proto\grpc\testing</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\perf_db.proto">
@@ -26,6 +26,9 @@
       <Filter>test\cpp\qps</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\cpp\qps\driver.cc">
+      <Filter>test\cpp\qps</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\cpp\qps\limit_cores.cc">
       <Filter>test\cpp\qps</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\cpp\qps\perf_db_client.cc">
@@ -43,7 +46,7 @@
     <ClCompile Include="$(SolutionDir)\..\test\cpp\qps\server_sync.cc">
       <Filter>test\cpp\qps</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\test\cpp\qps\timer.cc">
+    <ClCompile Include="$(SolutionDir)\..\test\cpp\qps\usage_timer.cc">
       <Filter>test\cpp\qps</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\cpp\util\benchmark_config.cc">
@@ -63,6 +66,9 @@
     <ClInclude Include="$(SolutionDir)\..\test\cpp\qps\interarrival.h">
       <Filter>test\cpp\qps</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\test\cpp\qps\limit_cores.h">
+      <Filter>test\cpp\qps</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\test\cpp\qps\perf_db_client.h">
       <Filter>test\cpp\qps</Filter>
     </ClInclude>
@@ -78,7 +84,7 @@
     <ClInclude Include="$(SolutionDir)\..\test\cpp\qps\stats.h">
       <Filter>test\cpp\qps</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\test\cpp\qps\timer.h">
+    <ClInclude Include="$(SolutionDir)\..\test\cpp\qps\usage_timer.h">
       <Filter>test\cpp\qps</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\test\cpp\util\benchmark_config.h">

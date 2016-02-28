@@ -1,4 +1,4 @@
-// Copyright 2015, Google Inc.
+// Copyright 2015-2016, Google Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -42,6 +42,7 @@ enum ClientType {
 enum ServerType {
   SYNC_SERVER = 0;
   ASYNC_SERVER = 1;
+  ASYNC_GENERIC_SERVER = 2;
 }
 
 enum RpcType {
@@ -106,6 +107,10 @@ message ClientConfig {
   LoadParams load_params = 10;
   PayloadConfig payload_config = 11;
   HistogramParams histogram_params = 12;
+
+  // Specify the cores we should run the client on, if desired
+  repeated int32 core_list = 13;
+  int32 core_limit = 14;
 }
 
 message ClientStatus { ClientStats stats = 1; }
@@ -126,15 +131,17 @@ message ClientArgs {
 message ServerConfig {
   ServerType server_type = 1;
   SecurityParams security_params = 2;
-  // Host on which to listen.
-  string host = 3;
   // Port on which to listen. Zero means pick unused port.
   int32 port = 4;
   // Only for async server. Number of threads used to serve the requests.
   int32 async_server_threads = 7;
-  // restrict core usage, currently unused
+  // Specify the number of cores to limit server to, if desired
   int32 core_limit = 8;
+  // payload config, used in generic server
   PayloadConfig payload_config = 9;
+
+  // Specify the cores we should run the server on, if desired
+  repeated int32 core_list = 10;
 }
 
 message ServerArgs {
@@ -148,6 +155,17 @@ message ServerStatus {
   ServerStats stats = 1;
   // the port bound by the server
   int32 port = 2;
-  // Number of cores on the server. See gpr_cpu_num_cores.
+  // Number of cores available to the server
   int32 cores = 3;
+}
+
+message CoreRequest {
+}
+
+message CoreResponse {
+  // Number of cores available on the server
+  int32 cores = 1;
+}
+
+message Void {
 }

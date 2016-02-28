@@ -33,6 +33,8 @@ import sys
 import os
 import yaml
 
+sys.dont_write_bytecode = True
+
 boring_ssl_root = os.path.abspath(os.path.join(
     os.path.dirname(sys.argv[0]), 
     '../../third_party/boringssl'))
@@ -82,6 +84,7 @@ class Grpc(object):
               for f in files['ssl_headers'] + files['ssl_internal_headers'] + files['crypto_headers'] + files['crypto_internal_headers']
             ),
             'boringssl': True,
+            'defaults': 'boringssl',
           },
           {
             'name': 'boringssl_test_util',
@@ -89,6 +92,7 @@ class Grpc(object):
             'language': 'c++',
             'secure': 'no',
             'boringssl': True,
+            'defaults': 'boringssl',
             'src': [
               map_dir(f)
               for f in sorted(files['test_support'])
@@ -103,6 +107,7 @@ class Grpc(object):
             'src': [map_dir(test)],
             'vs_proj_dir': 'test/boringssl',
             'boringssl': True,
+            'defaults': 'boringssl',
             'deps': [
                 'boringssl_test_util',
                 'boringssl',
@@ -120,6 +125,7 @@ class Grpc(object):
             'src': [],
             'vs_proj_dir': 'test/boringssl',
             'boringssl': True,
+            'defaults': 'boringssl',
             'deps': [
                 'boringssl_%s_lib' % os.path.splitext(os.path.basename(test))[0],
                 'boringssl_test_util',
@@ -137,7 +143,9 @@ class Grpc(object):
             'platforms': ['linux', 'mac', 'posix', 'windows'],
             'flaky': False,
             'language': 'c++',
-            'boringssl': True
+            'boringssl': True,
+            'defaults': 'boringssl',
+            'cpu_cost': 1.0
           }
           for test in files['tests']
       ]

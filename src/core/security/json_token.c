@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -39,7 +39,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/security/base64.h"
+#include "src/core/security/b64.h"
 #include "src/core/support/string.h"
 
 #include <openssl/bio.h>
@@ -49,7 +49,13 @@
 /* --- Constants. --- */
 
 /* 1 hour max. */
-const gpr_timespec grpc_max_auth_token_lifetime = {3600, 0, GPR_TIMESPAN};
+gpr_timespec grpc_max_auth_token_lifetime() {
+  gpr_timespec out;
+  out.tv_sec = 3600;
+  out.tv_nsec = 0;
+  out.clock_type = GPR_TIMESPAN;
+  return out;
+}
 
 #define GRPC_JWT_RSA_SHA256_ALGORITHM "RS256"
 #define GRPC_JWT_TYPE "JWT"
@@ -211,9 +217,9 @@ static char *encoded_jwt_claim(const grpc_auth_json_key *json_key,
   gpr_timespec expiration = gpr_time_add(now, token_lifetime);
   char now_str[GPR_LTOA_MIN_BUFSIZE];
   char expiration_str[GPR_LTOA_MIN_BUFSIZE];
-  if (gpr_time_cmp(token_lifetime, grpc_max_auth_token_lifetime) > 0) {
+  if (gpr_time_cmp(token_lifetime, grpc_max_auth_token_lifetime()) > 0) {
     gpr_log(GPR_INFO, "Cropping token lifetime to maximum allowed value.");
-    expiration = gpr_time_add(now, grpc_max_auth_token_lifetime);
+    expiration = gpr_time_add(now, grpc_max_auth_token_lifetime());
   }
   int64_ttoa(now.tv_sec, now_str);
   int64_ttoa(expiration.tv_sec, expiration_str);

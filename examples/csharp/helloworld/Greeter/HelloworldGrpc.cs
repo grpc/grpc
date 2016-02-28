@@ -25,7 +25,7 @@ namespace Helloworld {
     // service descriptor
     public static global::Google.Protobuf.Reflection.ServiceDescriptor Descriptor
     {
-      get { return global::Helloworld.Helloworld.Descriptor.Services[0]; }
+      get { return global::Helloworld.HelloworldReflection.Descriptor.Services[0]; }
     }
 
     // client interface

@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2015, Google Inc.
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -35,7 +35,7 @@ cd $(dirname $0)/../../src/csharp
 
 root=`pwd`
 
-if [ -n "$NUGET" ]
+if [ -x "$(command -v nuget)" ]
 then
-  $NUGET restore Grpc.sln
+  nuget restore Grpc.sln
 fi

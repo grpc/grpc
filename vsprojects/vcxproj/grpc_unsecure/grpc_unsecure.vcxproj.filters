@@ -49,6 +49,9 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\client_config\initial_connect_string.c">
       <Filter>src\core\client_config</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\client_config\lb_policies\load_balancer_api.c">
+      <Filter>src\core\client_config\lb_policies</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\client_config\lb_policies\pick_first.c">
       <Filter>src\core\client_config\lb_policies</Filter>
     </ClCompile>
@@ -85,10 +88,13 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\client_config\subchannel_factory.c">
       <Filter>src\core\client_config</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\client_config\subchannel_index.c">
+      <Filter>src\core\client_config</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\client_config\uri_parser.c">
       <Filter>src\core\client_config</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\compression\algorithm.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\compression\compression_algorithm.c">
       <Filter>src\core\compression</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\compression\message_compress.c">
@@ -238,6 +244,12 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\json\json_writer.c">
       <Filter>src\core\json</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\proto\grpc\lb\v0\load_balancer.pb.c">
+      <Filter>src\core\proto\grpc\lb\v0</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\surface\alarm.c">
+      <Filter>src\core\surface</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\surface\api_trace.c">
       <Filter>src\core\surface</Filter>
     </ClCompile>
@@ -290,6 +302,9 @@
       <Filter>src\core\surface</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\surface\server_create.c">
+      <Filter>src\core\surface</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\surface\validate_metadata.c">
       <Filter>src\core\surface</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\surface\version.c">
@@ -385,11 +400,26 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\census\initialize.c">
       <Filter>src\core\census</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\census\mlog.c">
+      <Filter>src\core\census</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\census\operation.c">
+      <Filter>src\core\census</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\census\placeholders.c">
       <Filter>src\core\census</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\census\tracing.c">
       <Filter>src\core\census</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\third_party\nanopb\pb_common.c">
+      <Filter>third_party\nanopb</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\third_party\nanopb\pb_decode.c">
+      <Filter>third_party\nanopb</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\third_party\nanopb\pb_encode.c">
+      <Filter>third_party\nanopb</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -407,6 +437,24 @@
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc\status.h">
       <Filter>include\grpc</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\byte_buffer.h">
+      <Filter>include\grpc\impl\codegen</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\compression_types.h">
+      <Filter>include\grpc\impl\codegen</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\connectivity_state.h">
+      <Filter>include\grpc\impl\codegen</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\grpc_types.h">
+      <Filter>include\grpc\impl\codegen</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\propagation_bits.h">
+      <Filter>include\grpc\impl\codegen</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\status.h">
+      <Filter>include\grpc\impl\codegen</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc\census.h">
       <Filter>include\grpc</Filter>
@@ -455,6 +503,9 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\client_config\initial_connect_string.h">
       <Filter>src\core\client_config</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\client_config\lb_policies\load_balancer_api.h">
+      <Filter>src\core\client_config\lb_policies</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\client_config\lb_policies\pick_first.h">
       <Filter>src\core\client_config\lb_policies</Filter>
     </ClInclude>
@@ -489,6 +540,9 @@
       <Filter>src\core\client_config</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\client_config\subchannel_factory.h">
+      <Filter>src\core\client_config</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\client_config\subchannel_index.h">
       <Filter>src\core\client_config</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\client_config\uri_parser.h">
@@ -602,9 +656,6 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\iomgr\timer_heap.h">
       <Filter>src\core\iomgr</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\iomgr\timer_internal.h">
-      <Filter>src\core\iomgr</Filter>
-    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\iomgr\udp_server.h">
       <Filter>src\core\iomgr</Filter>
     </ClInclude>
@@ -634,6 +685,9 @@
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\json\json_writer.h">
       <Filter>src\core\json</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\proto\grpc\lb\v0\load_balancer.pb.h">
+      <Filter>src\core\proto\grpc\lb\v0</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\statistics\census_interface.h">
       <Filter>src\core\statistics</Filter>
@@ -755,11 +809,23 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\census\aggregation.h">
       <Filter>src\core\census</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\census\context.h">
+    <ClInclude Include="$(SolutionDir)\..\src\core\census\mlog.h">
       <Filter>src\core\census</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\census\rpc_metric_id.h">
       <Filter>src\core\census</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\third_party\nanopb\pb.h">
+      <Filter>third_party\nanopb</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\third_party\nanopb\pb_common.h">
+      <Filter>third_party\nanopb</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\third_party\nanopb\pb_decode.h">
+      <Filter>third_party\nanopb</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\third_party\nanopb\pb_encode.h">
+      <Filter>third_party\nanopb</Filter>
     </ClInclude>
   </ItemGroup>
 
@@ -769,6 +835,12 @@
     </Filter>
     <Filter Include="include\grpc">
       <UniqueIdentifier>{77b9717b-b8d8-dd5f-14bb-a3e96809a70a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\grpc\impl">
+      <UniqueIdentifier>{10cfa248-c60f-376f-e7ae-2a7d7d8e81f5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\grpc\impl\codegen">
+      <UniqueIdentifier>{03cc6735-c734-7017-4000-a435f29d55c3}</UniqueIdentifier>
     </Filter>
     <Filter Include="src">
       <UniqueIdentifier>{aaf326a1-c884-46ea-875a-cbbd9983e539}</UniqueIdentifier>
@@ -806,6 +878,18 @@
     <Filter Include="src\core\json">
       <UniqueIdentifier>{443ffc61-1bea-2477-6e54-1ddf8c139264}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\core\proto">
+      <UniqueIdentifier>{7f4bb22a-65ba-0f8f-6387-66b1f6677a80}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\proto\grpc">
+      <UniqueIdentifier>{9c2bd164-c317-8a13-564d-3b28b0fd79cf}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\proto\grpc\lb">
+      <UniqueIdentifier>{2bad8e10-4fc5-d8b3-e026-4abbd0c25cda}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\proto\grpc\lb\v0">
+      <UniqueIdentifier>{4475c8ed-e01b-8906-47d0-8a504189c0d5}</UniqueIdentifier>
+    </Filter>
     <Filter Include="src\core\statistics">
       <UniqueIdentifier>{e084164c-a069-00e3-db35-4e0b1cd6f0b7}</UniqueIdentifier>
     </Filter>
@@ -817,6 +901,12 @@
     </Filter>
     <Filter Include="src\core\transport\chttp2">
       <UniqueIdentifier>{5fcd6206-f774-9ae6-4b85-305d6a723843}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party">
+      <UniqueIdentifier>{025c051e-8eba-125b-67f9-173f95176eb2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party\nanopb">
+      <UniqueIdentifier>{6511f77d-f28c-80e0-0889-8975e688e344}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

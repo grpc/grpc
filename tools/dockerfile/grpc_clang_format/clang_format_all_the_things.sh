@@ -44,9 +44,15 @@ for dir in $DIRS
 do
   for glob in $GLOB
   do
-    files="$files `find /local-code/$dir -name $glob`"
+    files="$files `find /local-code/$dir -name $glob -and -not -name *.generated.* -and -not -name *.pb.h -and -not -name *.pb.c`"
   done
 done
+
+# The CHANGED_FILES variable is used to restrict the set of files to check.
+# Here we set files to the intersection of files and CHANGED_FILES
+if [ -n "$CHANGED_FILES" ]; then
+  files=$(comm -12 <(echo $files | tr ' ' '\n' | sort -u) <(echo $CHANGED_FILES | tr ' ' '\n' | sort -u))
+fi
 
 if [ "x$TEST" = "x" ]
 then
@@ -65,4 +71,3 @@ else
     false
   fi
 fi
-

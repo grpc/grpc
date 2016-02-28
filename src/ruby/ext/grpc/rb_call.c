@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,6 +31,8 @@
  *
  */
 
+#include <ruby/ruby.h>
+#include "rb_grpc_imports.generated.h"
 #include "rb_call.h"
 
 #include <ruby/ruby.h>
@@ -310,33 +312,61 @@ static int grpc_rb_md_ary_fill_hash_cb(VALUE key, VALUE val, VALUE md_ary_obj) {
   grpc_metadata_array *md_ary = NULL;
   long array_length;
   long i;
+  char *key_str;
+  size_t key_len;
+  char *value_str;
+  size_t value_len;
+
+  if (TYPE(key) == T_SYMBOL) {
+    key_str = (char *)rb_id2name(SYM2ID(key));
+    key_len = strlen(key_str);
+  } else { /* StringValueCStr does all other type exclusions for us */
+    key_str = StringValueCStr(key);
+    key_len = RSTRING_LEN(key);
+  }
+
+  if (!grpc_header_key_is_legal(key_str, key_len)) {
+    rb_raise(rb_eArgError,
+             "'%s' is an invalid header key, must match [a-z0-9-_.]+",
+             key_str);
+    return ST_STOP;
+  }
 
   /* Construct a metadata object from key and value and add it */
   TypedData_Get_Struct(md_ary_obj, grpc_metadata_array,
                        &grpc_rb_md_ary_data_type, md_ary);
 
   if (TYPE(val) == T_ARRAY) {
-    /* If the value is an array, add capacity for each value in the array */
     array_length = RARRAY_LEN(val);
+    /* If the value is an array, add capacity for each value in the array */
     for (i = 0; i < array_length; i++) {
-      if (TYPE(key) == T_SYMBOL) {
-        md_ary->metadata[md_ary->count].key = (char *)rb_id2name(SYM2ID(key));
-      } else { /* StringValueCStr does all other type exclusions for us */
-        md_ary->metadata[md_ary->count].key = StringValueCStr(key);
+      value_str = RSTRING_PTR(rb_ary_entry(val, i));
+      value_len = RSTRING_LEN(rb_ary_entry(val, i));
+      if (!grpc_is_binary_header(key_str, key_len) &&
+          !grpc_header_nonbin_value_is_legal(value_str, value_len)) {
+        // The value has invalid characters
+        rb_raise(rb_eArgError,
+                 "Header value '%s' has invalid characters", value_str);
+        return ST_STOP;
       }
-      md_ary->metadata[md_ary->count].value = RSTRING_PTR(rb_ary_entry(val, i));
-      md_ary->metadata[md_ary->count].value_length =
-          RSTRING_LEN(rb_ary_entry(val, i));
+      md_ary->metadata[md_ary->count].key = key_str;
+      md_ary->metadata[md_ary->count].value = value_str;
+      md_ary->metadata[md_ary->count].value_length = value_len;
       md_ary->count += 1;
     }
   } else {
-    if (TYPE(key) == T_SYMBOL) {
-      md_ary->metadata[md_ary->count].key = (char *)rb_id2name(SYM2ID(key));
-    } else { /* StringValueCStr does all other type exclusions for us */
-      md_ary->metadata[md_ary->count].key = StringValueCStr(key);
+    value_str = RSTRING_PTR(val);
+    value_len = RSTRING_LEN(val);
+    if (!grpc_is_binary_header(key_str, key_len) &&
+        !grpc_header_nonbin_value_is_legal(value_str, value_len)) {
+      // The value has invalid characters
+      rb_raise(rb_eArgError,
+               "Header value '%s' has invalid characters", value_str);
+      return ST_STOP;
     }
-    md_ary->metadata[md_ary->count].value = RSTRING_PTR(val);
-    md_ary->metadata[md_ary->count].value_length = RSTRING_LEN(val);
+    md_ary->metadata[md_ary->count].key = key_str;
+    md_ary->metadata[md_ary->count].value = value_str;
+    md_ary->metadata[md_ary->count].value_length = value_len;
     md_ary->count += 1;
   }
 
@@ -497,12 +527,13 @@ typedef struct run_batch_stack {
   grpc_status_code recv_status;
   char *recv_status_details;
   size_t recv_status_details_capacity;
-  uint write_flag;
+  unsigned write_flag;
 } run_batch_stack;
 
 /* grpc_run_batch_stack_init ensures the run_batch_stack is properly
  * initialized */
-static void grpc_run_batch_stack_init(run_batch_stack *st, uint write_flag) {
+static void grpc_run_batch_stack_init(run_batch_stack *st,
+                                      unsigned write_flag) {
   MEMZERO(st, run_batch_stack, 1);
   grpc_metadata_array_init(&st->send_metadata);
   grpc_metadata_array_init(&st->send_trailing_metadata);
@@ -668,7 +699,7 @@ static VALUE grpc_rb_call_run_batch(VALUE self, VALUE cqueue, VALUE tag,
   grpc_call_error err;
   VALUE result = Qnil;
   VALUE rb_write_flag = rb_ivar_get(self, id_write_flag);
-  uint write_flag = 0;
+  unsigned write_flag = 0;
   TypedData_Get_Struct(self, grpc_call, &grpc_call_data_type, call);
 
   /* Validate the ops args, adding them to a ruby array */

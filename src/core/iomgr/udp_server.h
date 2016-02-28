@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -35,6 +35,7 @@
 #define GRPC_INTERNAL_CORE_IOMGR_UDP_SERVER_H
 
 #include "src/core/iomgr/endpoint.h"
+#include "src/core/iomgr/fd_posix.h"
 
 /* Forward decl of grpc_server */
 typedef struct grpc_server grpc_server;
@@ -71,13 +72,5 @@ int grpc_udp_server_add_port(grpc_udp_server *s, const void *addr,
 
 void grpc_udp_server_destroy(grpc_exec_ctx *exec_ctx, grpc_udp_server *server,
                              grpc_closure *on_done);
-
-/* Write the contents of buffer to the underlying UDP socket. */
-/*
-void grpc_udp_server_write(grpc_udp_server *s,
-                           const char *buffer,
-                           int buf_len,
-                           const struct sockaddr* to);
-                           */
 
 #endif /* GRPC_INTERNAL_CORE_IOMGR_UDP_SERVER_H */

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,20 +31,22 @@
  *
  */
 
-#include "src/core/iomgr/sockaddr.h"
 #include "src/core/httpcli/httpcli.h"
+#include "src/core/iomgr/sockaddr.h"
 
 #include <string.h>
 
-#include "src/core/iomgr/endpoint.h"
-#include "src/core/iomgr/resolve_address.h"
-#include "src/core/iomgr/tcp_client.h"
-#include "src/core/httpcli/format_request.h"
-#include "src/core/httpcli/parser.h"
-#include "src/core/support/string.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
+
+#include "src/core/httpcli/format_request.h"
+#include "src/core/httpcli/parser.h"
+#include "src/core/iomgr/endpoint.h"
+#include "src/core/iomgr/iomgr_internal.h"
+#include "src/core/iomgr/resolve_address.h"
+#include "src/core/iomgr/tcp_client.h"
+#include "src/core/support/string.h"
 
 typedef struct {
   gpr_slice request_text;
@@ -84,18 +86,18 @@ const grpc_httpcli_handshaker grpc_httpcli_plaintext = {"http",
                                                         plaintext_handshake};
 
 void grpc_httpcli_context_init(grpc_httpcli_context *context) {
-  grpc_pollset_set_init(&context->pollset_set);
+  context->pollset_set = grpc_pollset_set_create();
 }
 
 void grpc_httpcli_context_destroy(grpc_httpcli_context *context) {
-  grpc_pollset_set_destroy(&context->pollset_set);
+  grpc_pollset_set_destroy(context->pollset_set);
 }
 
 static void next_address(grpc_exec_ctx *exec_ctx, internal_request *req);
 
 static void finish(grpc_exec_ctx *exec_ctx, internal_request *req,
                    int success) {
-  grpc_pollset_set_del_pollset(exec_ctx, &req->context->pollset_set,
+  grpc_pollset_set_del_pollset(exec_ctx, req->context->pollset_set,
                                req->pollset);
   req->on_response(exec_ctx, req->user_data, success ? &req->parser.r : NULL);
   grpc_httpcli_parser_destroy(&req->parser);
@@ -114,13 +116,13 @@ static void finish(grpc_exec_ctx *exec_ctx, internal_request *req,
   gpr_free(req);
 }
 
-static void on_read(grpc_exec_ctx *exec_ctx, void *user_data, int success);
+static void on_read(grpc_exec_ctx *exec_ctx, void *user_data, bool success);
 
 static void do_read(grpc_exec_ctx *exec_ctx, internal_request *req) {
   grpc_endpoint_read(exec_ctx, req->ep, &req->incoming, &req->on_read);
 }
 
-static void on_read(grpc_exec_ctx *exec_ctx, void *user_data, int success) {
+static void on_read(grpc_exec_ctx *exec_ctx, void *user_data, bool success) {
   internal_request *req = user_data;
   size_t i;
 
@@ -147,7 +149,7 @@ static void on_written(grpc_exec_ctx *exec_ctx, internal_request *req) {
   do_read(exec_ctx, req);
 }
 
-static void done_write(grpc_exec_ctx *exec_ctx, void *arg, int success) {
+static void done_write(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
   internal_request *req = arg;
   if (success) {
     on_written(exec_ctx, req);
@@ -175,7 +177,7 @@ static void on_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
   start_write(exec_ctx, req);
 }
 
-static void on_connected(grpc_exec_ctx *exec_ctx, void *arg, int success) {
+static void on_connected(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
   internal_request *req = arg;
 
   if (!req->ep) {
@@ -197,7 +199,7 @@ static void next_address(grpc_exec_ctx *exec_ctx, internal_request *req) {
   addr = &req->addresses->addrs[req->next_address++];
   grpc_closure_init(&req->connected, on_connected, req);
   grpc_tcp_client_connect(
-      exec_ctx, &req->connected, &req->ep, &req->context->pollset_set,
+      exec_ctx, &req->connected, &req->ep, req->context->pollset_set,
       (struct sockaddr *)&addr->addr, addr->len, req->deadline);
 }
 
@@ -237,7 +239,7 @@ static void internal_request_begin(
   req->host = gpr_strdup(request->host);
   req->ssl_host_override = gpr_strdup(request->ssl_host_override);
 
-  grpc_pollset_set_add_pollset(exec_ctx, &req->context->pollset_set,
+  grpc_pollset_set_add_pollset(exec_ctx, req->context->pollset_set,
                                req->pollset);
   grpc_resolve_address(request->host, req->handshaker->default_port,
                        on_resolved, req);

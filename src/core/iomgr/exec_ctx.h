@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -57,22 +57,29 @@ struct grpc_exec_ctx {
   grpc_closure_list closure_list;
 };
 
+/** A workqueue represents a list of work to be executed asynchronously.
+    Forward declared here to avoid a circular dependency with workqueue.h. */
+struct grpc_workqueue;
+typedef struct grpc_workqueue grpc_workqueue;
+
 #define GRPC_EXEC_CTX_INIT \
   { GRPC_CLOSURE_LIST_INIT }
 
 /** Flush any work that has been enqueued onto this grpc_exec_ctx.
  *  Caller must guarantee that no interfering locks are held.
- *  Returns 1 if work was performed, 0 otherwise. */
-int grpc_exec_ctx_flush(grpc_exec_ctx *exec_ctx);
+ *  Returns true if work was performed, false otherwise. */
+bool grpc_exec_ctx_flush(grpc_exec_ctx *exec_ctx);
 /** Finish any pending work for a grpc_exec_ctx. Must be called before
  *  the instance is destroyed, or work may be lost. */
 void grpc_exec_ctx_finish(grpc_exec_ctx *exec_ctx);
 /** Add a closure to be executed at the next flush/finish point */
 void grpc_exec_ctx_enqueue(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
-                           int success);
+                           bool success,
+                           grpc_workqueue *offload_target_or_null);
 /** Add a list of closures to be executed at the next flush/finish point.
  *  Leaves \a list empty. */
 void grpc_exec_ctx_enqueue_list(grpc_exec_ctx *exec_ctx,
-                                grpc_closure_list *list);
+                                grpc_closure_list *list,
+                                grpc_workqueue *offload_target_or_null);
 
 #endif

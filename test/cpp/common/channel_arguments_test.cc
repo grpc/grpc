@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -41,94 +41,141 @@ namespace testing {
 
 class ChannelArgumentsTest : public ::testing::Test {
  protected:
+  ChannelArgumentsTest()
+      : pointer_vtable_({&ChannelArguments::PointerVtableMembers::Copy,
+                         &ChannelArguments::PointerVtableMembers::Destroy,
+                         &ChannelArguments::PointerVtableMembers::Compare}) {}
+
   void SetChannelArgs(const ChannelArguments& channel_args,
                       grpc_channel_args* args) {
     channel_args.SetChannelArgs(args);
   }
+
+  grpc::string GetDefaultUserAgentPrefix() {
+    std::ostringstream user_agent_prefix;
+    user_agent_prefix << "grpc-c++/" << grpc_version_string();
+    return user_agent_prefix.str();
+  }
+
+  void VerifyDefaultChannelArgs() {
+    grpc_channel_args args;
+    SetChannelArgs(channel_args_, &args);
+    EXPECT_EQ(static_cast<size_t>(1), args.num_args);
+    EXPECT_STREQ(GRPC_ARG_PRIMARY_USER_AGENT_STRING, args.args[0].key);
+    EXPECT_EQ(GetDefaultUserAgentPrefix(),
+              grpc::string(args.args[0].value.string));
+  }
+
+  bool HasArg(grpc_arg expected_arg) {
+    grpc_channel_args args;
+    SetChannelArgs(channel_args_, &args);
+    for (size_t i = 0; i < args.num_args; i++) {
+      const grpc_arg& arg = args.args[i];
+      if (arg.type == expected_arg.type &&
+          grpc::string(arg.key) == expected_arg.key) {
+        if (arg.type == GRPC_ARG_INTEGER) {
+          return arg.value.integer == expected_arg.value.integer;
+        } else if (arg.type == GRPC_ARG_STRING) {
+          return grpc::string(arg.value.string) == expected_arg.value.string;
+        } else if (arg.type == GRPC_ARG_POINTER) {
+          return arg.value.pointer.p == expected_arg.value.pointer.p &&
+                 arg.value.pointer.vtable->copy ==
+                     expected_arg.value.pointer.vtable->copy &&
+                 arg.value.pointer.vtable->destroy ==
+                     expected_arg.value.pointer.vtable->destroy;
+        }
+      }
+    }
+    return false;
+  }
+  grpc_arg_pointer_vtable pointer_vtable_;
+  ChannelArguments channel_args_;
 };
 
 TEST_F(ChannelArgumentsTest, SetInt) {
-  grpc_channel_args args;
-  ChannelArguments channel_args;
-  // Empty arguments.
-  SetChannelArgs(channel_args, &args);
-  EXPECT_EQ(static_cast<size_t>(0), args.num_args);
+  VerifyDefaultChannelArgs();
+  grpc::string key0("key0");
+  grpc_arg arg0;
+  arg0.type = GRPC_ARG_INTEGER;
+  arg0.key = const_cast<char*>(key0.c_str());
+  arg0.value.integer = 0;
+  grpc::string key1("key1");
+  grpc_arg arg1;
+  arg1.type = GRPC_ARG_INTEGER;
+  arg1.key = const_cast<char*>(key1.c_str());
+  arg1.value.integer = 1;
 
-  grpc::string key("key0");
-  channel_args.SetInt(key, 0);
+  grpc::string arg_key0(key0);
+  channel_args_.SetInt(arg_key0, arg0.value.integer);
   // Clear key early to make sure channel_args takes a copy
-  key = "";
-  SetChannelArgs(channel_args, &args);
-  EXPECT_EQ(static_cast<size_t>(1), args.num_args);
-  EXPECT_EQ(GRPC_ARG_INTEGER, args.args[0].type);
-  EXPECT_STREQ("key0", args.args[0].key);
-  EXPECT_EQ(0, args.args[0].value.integer);
+  arg_key0.clear();
+  EXPECT_TRUE(HasArg(arg0));
 
-  key = "key1";
-  channel_args.SetInt(key, 1);
-  key = "";
-  SetChannelArgs(channel_args, &args);
-  EXPECT_EQ(static_cast<size_t>(2), args.num_args);
-  // We do not enforce order on the arguments.
-  for (size_t i = 0; i < args.num_args; i++) {
-    EXPECT_EQ(GRPC_ARG_INTEGER, args.args[i].type);
-    if (grpc::string(args.args[i].key) == "key0") {
-      EXPECT_EQ(0, args.args[i].value.integer);
-    } else if (grpc::string(args.args[i].key) == "key1") {
-      EXPECT_EQ(1, args.args[i].value.integer);
-    }
-  }
+  grpc::string arg_key1(key1);
+  channel_args_.SetInt(arg_key1, arg1.value.integer);
+  arg_key1.clear();
+  EXPECT_TRUE(HasArg(arg0));
+  EXPECT_TRUE(HasArg(arg1));
 }
 
 TEST_F(ChannelArgumentsTest, SetString) {
-  grpc_channel_args args;
-  ChannelArguments channel_args;
-  // Empty arguments.
-  SetChannelArgs(channel_args, &args);
-  EXPECT_EQ(static_cast<size_t>(0), args.num_args);
+  VerifyDefaultChannelArgs();
+  grpc::string key0("key0");
+  grpc::string val0("val0");
+  grpc_arg arg0;
+  arg0.type = GRPC_ARG_STRING;
+  arg0.key = const_cast<char*>(key0.c_str());
+  arg0.value.string = const_cast<char*>(val0.c_str());
+  grpc::string key1("key1");
+  grpc::string val1("val1");
+  grpc_arg arg1;
+  arg1.type = GRPC_ARG_STRING;
+  arg1.key = const_cast<char*>(key1.c_str());
+  arg1.value.string = const_cast<char*>(val1.c_str());
 
-  grpc::string key("key0");
-  grpc::string val("val0");
-  channel_args.SetString(key, val);
+  grpc::string key(key0);
+  grpc::string val(val0);
+  channel_args_.SetString(key, val);
   // Clear key/val early to make sure channel_args takes a copy
   key = "";
   val = "";
-  SetChannelArgs(channel_args, &args);
-  EXPECT_EQ(static_cast<size_t>(1), args.num_args);
-  EXPECT_EQ(GRPC_ARG_STRING, args.args[0].type);
-  EXPECT_STREQ("key0", args.args[0].key);
-  EXPECT_STREQ("val0", args.args[0].value.string);
+  EXPECT_TRUE(HasArg(arg0));
 
-  key = "key1";
-  val = "val1";
-  channel_args.SetString(key, val);
-  SetChannelArgs(channel_args, &args);
-  EXPECT_EQ(static_cast<size_t>(2), args.num_args);
-  // We do not enforce order on the arguments.
-  for (size_t i = 0; i < args.num_args; i++) {
-    EXPECT_EQ(GRPC_ARG_STRING, args.args[i].type);
-    if (grpc::string(args.args[i].key) == "key0") {
-      EXPECT_STREQ("val0", args.args[i].value.string);
-    } else if (grpc::string(args.args[i].key) == "key1") {
-      EXPECT_STREQ("val1", args.args[i].value.string);
-    }
-  }
+  key = key1;
+  val = val1;
+  channel_args_.SetString(key, val);
+  // Clear key/val early to make sure channel_args takes a copy
+  key = "";
+  val = "";
+  EXPECT_TRUE(HasArg(arg0));
+  EXPECT_TRUE(HasArg(arg1));
 }
 
 TEST_F(ChannelArgumentsTest, SetPointer) {
-  grpc_channel_args args;
-  ChannelArguments channel_args;
-  // Empty arguments.
-  SetChannelArgs(channel_args, &args);
-  EXPECT_EQ(static_cast<size_t>(0), args.num_args);
+  VerifyDefaultChannelArgs();
+  grpc::string key0("key0");
+  grpc_arg arg0;
+  arg0.type = GRPC_ARG_POINTER;
+  arg0.key = const_cast<char*>(key0.c_str());
+  arg0.value.pointer.p = &key0;
+  arg0.value.pointer.vtable = &pointer_vtable_;
 
-  grpc::string key("key0");
-  channel_args.SetPointer(key, &key);
-  SetChannelArgs(channel_args, &args);
-  EXPECT_EQ(static_cast<size_t>(1), args.num_args);
-  EXPECT_EQ(GRPC_ARG_POINTER, args.args[0].type);
-  EXPECT_STREQ("key0", args.args[0].key);
-  EXPECT_EQ(&key, args.args[0].value.pointer.p);
+  grpc::string key(key0);
+  channel_args_.SetPointer(key, arg0.value.pointer.p);
+  EXPECT_TRUE(HasArg(arg0));
+}
+
+TEST_F(ChannelArgumentsTest, SetUserAgentPrefix) {
+  VerifyDefaultChannelArgs();
+  grpc::string prefix("prefix");
+  grpc::string whole_prefix = prefix + " " + GetDefaultUserAgentPrefix();
+  grpc_arg arg0;
+  arg0.type = GRPC_ARG_STRING;
+  arg0.key = const_cast<char*>(GRPC_ARG_PRIMARY_USER_AGENT_STRING);
+  arg0.value.string = const_cast<char*>(whole_prefix.c_str());
+
+  channel_args_.SetUserAgentPrefix(prefix);
+  EXPECT_TRUE(HasArg(arg0));
 }
 
 }  // namespace testing

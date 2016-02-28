@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -42,17 +42,19 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "src/core/iomgr/timer.h"
-#include "src/core/iomgr/iomgr_posix.h"
-#include "src/core/iomgr/pollset_posix.h"
-#include "src/core/iomgr/sockaddr_utils.h"
-#include "src/core/iomgr/socket_utils_posix.h"
-#include "src/core/iomgr/tcp_posix.h"
-#include "src/core/support/string.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
+
+#include "src/core/iomgr/iomgr_posix.h"
+#include "src/core/iomgr/pollset_posix.h"
+#include "src/core/iomgr/pollset_set_posix.h"
+#include "src/core/iomgr/sockaddr_utils.h"
+#include "src/core/iomgr/socket_utils_posix.h"
+#include "src/core/iomgr/tcp_posix.h"
+#include "src/core/iomgr/timer.h"
+#include "src/core/support/string.h"
 
 extern int grpc_tcp_trace;
 
@@ -91,7 +93,7 @@ error:
   return 0;
 }
 
-static void tc_on_alarm(grpc_exec_ctx *exec_ctx, void *acp, int success) {
+static void tc_on_alarm(grpc_exec_ctx *exec_ctx, void *acp, bool success) {
   int done;
   async_connect *ac = acp;
   if (grpc_tcp_trace) {
@@ -111,7 +113,7 @@ static void tc_on_alarm(grpc_exec_ctx *exec_ctx, void *acp, int success) {
   }
 }
 
-static void on_writable(grpc_exec_ctx *exec_ctx, void *acp, int success) {
+static void on_writable(grpc_exec_ctx *exec_ctx, void *acp, bool success) {
   async_connect *ac = acp;
   int so_error = 0;
   socklen_t so_error_size;
@@ -206,7 +208,7 @@ finish:
     gpr_free(ac->addr_str);
     gpr_free(ac);
   }
-  grpc_exec_ctx_enqueue(exec_ctx, closure, *ep != NULL);
+  grpc_exec_ctx_enqueue(exec_ctx, closure, *ep != NULL, NULL);
 }
 
 void grpc_tcp_client_connect(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
@@ -243,7 +245,7 @@ void grpc_tcp_client_connect(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
     addr_len = sizeof(addr4_copy);
   }
   if (!prepare_socket(addr, fd)) {
-    grpc_exec_ctx_enqueue(exec_ctx, closure, 0);
+    grpc_exec_ctx_enqueue(exec_ctx, closure, false, NULL);
     return;
   }
 
@@ -259,14 +261,14 @@ void grpc_tcp_client_connect(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
 
   if (err >= 0) {
     *ep = grpc_tcp_create(fdobj, GRPC_TCP_DEFAULT_READ_SLICE_SIZE, addr_str);
-    grpc_exec_ctx_enqueue(exec_ctx, closure, 1);
+    grpc_exec_ctx_enqueue(exec_ctx, closure, true, NULL);
     goto done;
   }
 
   if (errno != EWOULDBLOCK && errno != EINPROGRESS) {
     gpr_log(GPR_ERROR, "connect error to '%s': %s", addr_str, strerror(errno));
     grpc_fd_orphan(exec_ctx, fdobj, NULL, NULL, "tcp_client_connect_error");
-    grpc_exec_ctx_enqueue(exec_ctx, closure, 0);
+    grpc_exec_ctx_enqueue(exec_ctx, closure, false, NULL);
     goto done;
   }
 

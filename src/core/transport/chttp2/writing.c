@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@ static void finalize_outbuf(grpc_exec_ctx *exec_ctx,
                             grpc_chttp2_transport_writing *transport_writing);
 
 int grpc_chttp2_unlocking_check_writes(
-    grpc_chttp2_transport_global *transport_global,
+    grpc_exec_ctx *exec_ctx, grpc_chttp2_transport_global *transport_global,
     grpc_chttp2_transport_writing *transport_writing, int is_parsing) {
   grpc_chttp2_stream_global *stream_global;
   grpc_chttp2_stream_writing *stream_writing;
@@ -75,6 +75,9 @@ int grpc_chttp2_unlocking_check_writes(
 
   GRPC_CHTTP2_FLOW_MOVE_TRANSPORT("write", transport_writing, outgoing_window,
                                   transport_global, outgoing_window);
+  bool is_window_available = transport_writing->outgoing_window > 0;
+  grpc_chttp2_list_flush_writing_stalled_by_transport(
+      exec_ctx, transport_writing, is_window_available);
 
   /* for each grpc_chttp2_stream that's become writable, frame it's data
      (according to available window sizes) and add to the output buffer */
@@ -188,7 +191,7 @@ void grpc_chttp2_perform_writes(
     grpc_endpoint_write(exec_ctx, endpoint, &transport_writing->outbuf,
                         &transport_writing->done_cb);
   } else {
-    grpc_exec_ctx_enqueue(exec_ctx, &transport_writing->done_cb, 1);
+    grpc_exec_ctx_enqueue(exec_ctx, &transport_writing->done_cb, true, NULL);
   }
 }
 
@@ -273,8 +276,8 @@ static void finalize_outbuf(grpc_exec_ctx *exec_ctx,
           stream_writing->sent_message = 1;
         }
       } else if (transport_writing->outgoing_window == 0) {
-        grpc_chttp2_list_add_stalled_by_transport(transport_writing,
-                                                  stream_writing);
+        grpc_chttp2_list_add_writing_stalled_by_transport(transport_writing,
+                                                          stream_writing);
         grpc_chttp2_list_add_written_stream(transport_writing, stream_writing);
       }
     }
@@ -312,8 +315,8 @@ static void finalize_outbuf(grpc_exec_ctx *exec_ctx,
           /* do nothing - already reffed */
         }
       } else {
-        grpc_chttp2_list_add_stalled_by_transport(transport_writing,
-                                                  stream_writing);
+        grpc_chttp2_list_add_writing_stalled_by_transport(transport_writing,
+                                                          stream_writing);
         grpc_chttp2_list_add_written_stream(transport_writing, stream_writing);
       }
     } else {

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -53,12 +53,11 @@ static void RunQPS() {
   client_config.set_outstanding_rpcs_per_channel(1000);
   client_config.set_client_channels(8);
   client_config.set_async_client_threads(8);
-  client_config.set_rpc_type(UNARY);
+  client_config.set_rpc_type(STREAMING);
   client_config.mutable_load_params()->mutable_closed_loop();
 
   ServerConfig server_config;
   server_config.set_server_type(ASYNC_SERVER);
-  server_config.set_host("localhost");
   server_config.set_async_server_threads(8);
 
   const auto result =

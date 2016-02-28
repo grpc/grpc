@@ -1,0 +1,6 @@
+packages
+*.userprefs
+*.csproj.user
+*.suo
+/TestNugetFeed
+

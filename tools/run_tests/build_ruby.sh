@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright 2015, Google Inc.
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -34,7 +34,7 @@ set -ex
 export GRPC_CONFIG=${CONFIG:-opt}
 
 # change to grpc's ruby directory
-cd $(dirname $0)/../../src/ruby
+cd $(dirname $0)/../..
 
 rm -rf ./tmp
-rake compile:grpc
+rake compile

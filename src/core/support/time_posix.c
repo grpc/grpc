@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -39,6 +39,9 @@
 #include <stdlib.h>
 #include <time.h>
 #include <unistd.h>
+#ifdef __linux__
+#include <sys/syscall.h>
+#endif
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 #include "src/core/support/block_annotate.h"
@@ -70,7 +73,8 @@ static gpr_timespec gpr_from_timespec(struct timespec ts,
 }
 
 /** maps gpr_clock_type --> clockid_t for clock_gettime */
-static clockid_t clockid_for_gpr_clock[] = {CLOCK_MONOTONIC, CLOCK_REALTIME};
+static const clockid_t clockid_for_gpr_clock[] = {CLOCK_MONOTONIC,
+                                                  CLOCK_REALTIME};
 
 void gpr_time_init(void) { gpr_precise_clock_init(); }
 
@@ -82,7 +86,12 @@ gpr_timespec gpr_now(gpr_clock_type clock_type) {
     gpr_precise_clock_now(&ret);
     return ret;
   } else {
+#if defined(GPR_BACKWARDS_COMPATIBILITY_MODE) && defined(__linux__)
+    /* avoid ABI problems by invoking syscalls directly */
+    syscall(SYS_clock_gettime, clockid_for_gpr_clock[clock_type], &now);
+#else
     clock_gettime(clockid_for_gpr_clock[clock_type], &now);
+#endif
     return gpr_from_timespec(now, clock_type);
   }
 }

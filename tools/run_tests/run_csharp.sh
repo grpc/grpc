@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2015, Google Inc.
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -35,9 +35,6 @@ NUNIT_CONSOLE="mono packages/NUnit.Runners.2.6.4/tools/nunit-console.exe"
 
 # change to gRPC repo root
 cd $(dirname $0)/../..
-
-# path needs to be absolute
-export LD_LIBRARY_PATH=$(pwd)/libs/$CONFIG
 
 (cd src/csharp; $NUNIT_CONSOLE $@)
 

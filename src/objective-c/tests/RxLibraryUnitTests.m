@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -135,6 +135,26 @@
   XCTAssertEqual(handler.timesCalled, 1);
   XCTAssertEqualObjects(handler.value, nil);
   XCTAssertEqualObjects(handler.errorOrNil, anyError);
+}
+
+- (void)testBufferedPipeFinishWriteWhilePaused {
+  // Given:
+  CapturingSingleValueHandler *handler = [CapturingSingleValueHandler handler];
+  id<GRXWriteable> writeable = [GRXWriteable writeableWithSingleHandler:handler.block];
+  id anyValue = @7;
+
+  // If:
+  GRXBufferedPipe *pipe = [GRXBufferedPipe pipe];
+  // Write something, then finish
+  [pipe writeValue:anyValue];
+  [pipe writesFinishedWithError:nil];
+  // then start the writeable
+  [pipe startWithWriteable:writeable];
+
+  // Then:
+  XCTAssertEqual(handler.timesCalled, 1);
+  XCTAssertEqualObjects(handler.value, anyValue);
+  XCTAssertEqualObjects(handler.errorOrNil, nil);
 }
 
 @end
