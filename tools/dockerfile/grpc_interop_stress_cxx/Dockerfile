@@ -59,6 +59,8 @@ RUN apt-get update && apt-get install -y \
   wget \
   zip && apt-get clean
 
+RUN easy_install -U pip
+
 # Prepare ccache
 RUN ln -s /usr/bin/ccache /usr/local/bin/gcc
 RUN ln -s /usr/bin/ccache /usr/local/bin/g++
@@ -70,6 +72,9 @@ RUN ln -s /usr/bin/ccache /usr/local/bin/clang++
 ##################
 # C++ dependencies
 RUN apt-get update && apt-get -y install libgflags-dev libgtest-dev libc++-dev clang
+
+# Google Cloud platform API libraries (for BigQuery)
+RUN pip install --upgrade google-api-python-client
 
 # Define the default command.
 CMD ["bash"]
