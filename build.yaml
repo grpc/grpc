@@ -2725,8 +2725,18 @@ configs:
     CPPFLAGS: -O0
     DEFINES: _DEBUG DEBUG
   esan:
-    CPPFLAGS: -O0
+    CC: clang
+    CPPFLAGS: -O0 -fsanitize=thread -fno-omit-frame-pointer -Wno-unused-command-line-argument
+      -fPIE -pie -DGPR_NO_DIRECT_SYSCALLS
+    CXX: clang++
     DEFINES: _DEBUG DEBUG GRPC_EXECUTION_CONTEXT_SANITIZER
+    LD: clang
+    LDFLAGS: -fsanitize=thread -fPIE -pie $(if $(JENKINS_BUILD),-Wl$(comma)-Ttext-segment=0x7e0000000000,)
+    LDXX: clang++
+    compile_the_world: true
+    test_environ:
+      TSAN_OPTIONS: suppressions=tools/tsan_suppressions.txt:halt_on_error=1:second_deadlock_stack=1
+    timeout_multiplier: 5
   gcov:
     CC: gcc
     CPPFLAGS: -O0 -fprofile-arcs -ftest-coverage -Wno-return-type

@@ -210,12 +210,15 @@ LDFLAGS_mutrace = -rdynamic
 DEFINES_mutrace = _DEBUG DEBUG
 
 VALID_CONFIG_esan = 1
-CC_esan = $(DEFAULT_CC)
-CXX_esan = $(DEFAULT_CXX)
-LD_esan = $(DEFAULT_CC)
-LDXX_esan = $(DEFAULT_CXX)
-CPPFLAGS_esan = -O0
+REQUIRE_CUSTOM_LIBRARIES_esan = 1
+CC_esan = clang
+CXX_esan = clang++
+LD_esan = clang
+LDXX_esan = clang++
+CPPFLAGS_esan = -O0 -fsanitize=thread -fno-omit-frame-pointer -Wno-unused-command-line-argument -fPIE -pie -DGPR_NO_DIRECT_SYSCALLS
+LDFLAGS_esan = -fsanitize=thread -fPIE -pie $(if $(JENKINS_BUILD),-Wl$(comma)-Ttext-segment=0x7e0000000000,)
 DEFINES_esan = _DEBUG DEBUG GRPC_EXECUTION_CONTEXT_SANITIZER
+DEFINES_esan += GRPC_TEST_SLOWDOWN_BUILD_FACTOR=5
 
 
 
