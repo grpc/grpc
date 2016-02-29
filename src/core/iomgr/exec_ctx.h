@@ -36,6 +36,14 @@
 
 #include "src/core/iomgr/closure.h"
 
+/* #define GRPC_EXECUTION_CONTEXT_SANITIZER 1 */
+
+/** A workqueue represents a list of work to be executed asynchronously.
+    Forward declared here to avoid a circular dependency with workqueue.h. */
+struct grpc_workqueue;
+typedef struct grpc_workqueue grpc_workqueue;
+
+#ifndef GRPC_EXECUTION_CONTEXT_SANITIZER
 /** Execution context.
  *  A bag of data that collects information along a callstack.
  *  Generally created at public API entry points, and passed down as
@@ -57,13 +65,12 @@ struct grpc_exec_ctx {
   grpc_closure_list closure_list;
 };
 
-/** A workqueue represents a list of work to be executed asynchronously.
-    Forward declared here to avoid a circular dependency with workqueue.h. */
-struct grpc_workqueue;
-typedef struct grpc_workqueue grpc_workqueue;
-
 #define GRPC_EXEC_CTX_INIT \
   { GRPC_CLOSURE_LIST_INIT }
+#else
+struct grpc_exec_ctx {};
+#define GRPC_EXEC_CTX_INIT {}
+#endif
 
 /** Flush any work that has been enqueued onto this grpc_exec_ctx.
  *  Caller must guarantee that no interfering locks are held.
@@ -81,5 +88,8 @@ void grpc_exec_ctx_enqueue(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
 void grpc_exec_ctx_enqueue_list(grpc_exec_ctx *exec_ctx,
                                 grpc_closure_list *list,
                                 grpc_workqueue *offload_target_or_null);
+
+void grpc_exec_ctx_global_init(void);
+void grpc_exec_ctx_global_shutdown(void);
 
 #endif
