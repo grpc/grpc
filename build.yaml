@@ -2724,7 +2724,24 @@ configs:
   dbg:
     CPPFLAGS: -O0
     DEFINES: _DEBUG DEBUG
-  esan:
+  easan:
+    CC: clang
+    CPPFLAGS: -O0 -fsanitize=address -fno-omit-frame-pointer -Wno-unused-command-line-argument
+      -DGPR_NO_DIRECT_SYSCALLS
+    CXX: clang++
+    DEFINES: _DEBUG DEBUG GRPC_EXECUTION_CONTEXT_SANITIZER
+    LD: clang
+    LDFLAGS: -fsanitize=address
+    LDXX: clang++
+    compile_the_world: true
+    test_environ:
+      ASAN_OPTIONS: detect_leaks=1:color=always
+      LSAN_OPTIONS: suppressions=tools/lsan_suppressions.txt:report_objects=1
+    timeout_multiplier: 3
+  edbg:
+    CPPFLAGS: -O0
+    DEFINES: _DEBUG DEBUG GRPC_EXECUTION_CONTEXT_SANITIZER
+  etsan:
     CC: clang
     CPPFLAGS: -O0 -fsanitize=thread -fno-omit-frame-pointer -Wno-unused-command-line-argument
       -fPIE -pie -DGPR_NO_DIRECT_SYSCALLS

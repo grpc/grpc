@@ -69,7 +69,8 @@ struct grpc_exec_ctx {
   { GRPC_CLOSURE_LIST_INIT }
 #else
 struct grpc_exec_ctx {};
-#define GRPC_EXEC_CTX_INIT {}
+#define GRPC_EXEC_CTX_INIT \
+  {}
 #endif
 
 /** Flush any work that has been enqueued onto this grpc_exec_ctx.

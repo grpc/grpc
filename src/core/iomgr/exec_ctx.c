@@ -105,17 +105,15 @@ static void start_closure(grpc_closure *closure) {
   gpr_thd_new(&id, run_closure, closure, NULL);
 }
 
-bool grpc_exec_ctx_flush(grpc_exec_ctx *exec_ctx) {
-  return false;
-}
+bool grpc_exec_ctx_flush(grpc_exec_ctx *exec_ctx) { return false; }
 
-void grpc_exec_ctx_finish(grpc_exec_ctx *exec_ctx) {
-}
+void grpc_exec_ctx_finish(grpc_exec_ctx *exec_ctx) {}
 
 void grpc_exec_ctx_enqueue(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
                            bool success,
                            grpc_workqueue *offload_target_or_null) {
   GPR_ASSERT(offload_target_or_null == NULL);
+  if (closure == NULL) return;
   closure->final_data = success;
   start_closure(closure);
 }
@@ -123,7 +121,8 @@ void grpc_exec_ctx_enqueue(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
 void grpc_exec_ctx_enqueue_list(grpc_exec_ctx *exec_ctx,
                                 grpc_closure_list *list,
                                 grpc_workqueue *offload_target_or_null) {
-                                  GPR_ASSERT(offload_target_or_null == NULL);
+  GPR_ASSERT(offload_target_or_null == NULL);
+  if (list == NULL) return;
   grpc_closure *p = list->head;
   while (p) {
     grpc_closure *start = p;
