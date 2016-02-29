@@ -209,6 +209,14 @@ CPPFLAGS_mutrace = -O0
 LDFLAGS_mutrace = -rdynamic
 DEFINES_mutrace = _DEBUG DEBUG
 
+VALID_CONFIG_esan = 1
+CC_esan = $(DEFAULT_CC)
+CXX_esan = $(DEFAULT_CXX)
+LD_esan = $(DEFAULT_CC)
+LDXX_esan = $(DEFAULT_CXX)
+CPPFLAGS_esan = -O0
+DEFINES_esan = _DEBUG DEBUG GRPC_EXECUTION_CONTEXT_SANITIZER
+
 
 
 # General settings.

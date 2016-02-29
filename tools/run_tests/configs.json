@@ -63,5 +63,8 @@
   }, 
   {
     "config": "mutrace"
+  }, 
+  {
+    "config": "esan"
   }
 ]
