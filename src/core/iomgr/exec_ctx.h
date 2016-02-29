@@ -68,7 +68,7 @@ struct grpc_exec_ctx {
 #define GRPC_EXEC_CTX_INIT \
   { GRPC_CLOSURE_LIST_INIT }
 #else
-struct grpc_exec_ctx {};
+struct grpc_exec_ctx { int unused; };
 #define GRPC_EXEC_CTX_INIT \
   {}
 #endif
