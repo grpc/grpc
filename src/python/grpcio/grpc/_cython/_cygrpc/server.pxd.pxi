@@ -39,4 +39,5 @@ cdef class Server:
   cdef list references
   cdef list registered_completion_queues
 
+  cdef _c_shutdown(self, CompletionQueue queue, tag)
   cdef notify_shutdown_complete(self)
