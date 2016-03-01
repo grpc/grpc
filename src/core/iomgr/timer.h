@@ -54,9 +54,9 @@ typedef struct grpc_timer {
    and application code should check the status to determine how it was
    invoked. The application callback is also responsible for maintaining
    information about when to free up any user-level state. */
-void grpc_timer_init(grpc_exec_ctx *exec_ctx, grpc_timer *timer,
-                     gpr_timespec deadline, grpc_iomgr_cb_func timer_cb,
-                     void *timer_cb_arg, gpr_timespec now);
+void grpc_timer_init(grpc_timer *timer, gpr_timespec deadline,
+                     grpc_iomgr_cb_func timer_cb, void *timer_cb_arg,
+                     gpr_timespec now);
 
 /* Note that there is no timer destroy function. This is because the
    timer is a one-time occurrence with a guarantee that the callback will
