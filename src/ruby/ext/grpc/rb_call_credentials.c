@@ -83,13 +83,13 @@ static VALUE grpc_rb_call_credentials_callback_rescue(VALUE args,
                                                       VALUE exception_object) {
   VALUE result = rb_hash_new();
   VALUE backtrace = rb_funcall(
-      rb_ivar_get(exception_object, rb_intern("backtrace")),
+      rb_funcall(exception_object, rb_intern("backtrace"), 0),
       rb_intern("join"),
       1, rb_str_new2("\n\tfrom "));
   VALUE exception_info = rb_funcall(exception_object, rb_intern("to_s"), 0);
   const char *exception_classname = rb_obj_classname(exception_object);
   (void)args;
-  gpr_log(GPR_INFO, "Call credentials callback failed: %s %s\n%s",
+  gpr_log(GPR_INFO, "Call credentials callback failed: %s: %s\n%s",
           exception_classname, StringValueCStr(exception_info),
           StringValueCStr(backtrace));
   rb_hash_aset(result, rb_str_new2("metadata"), Qnil);
