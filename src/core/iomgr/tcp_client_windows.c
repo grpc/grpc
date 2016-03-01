@@ -201,7 +201,7 @@ void grpc_tcp_client_connect(grpc_exec_ctx *exec_ctx, grpc_closure *on_done,
   ac->endpoint = endpoint;
   grpc_closure_init(&ac->on_connect, on_connect, ac);
 
-  grpc_timer_init(exec_ctx, &ac->alarm, deadline, on_alarm, ac,
+  grpc_timer_init(&ac->alarm, deadline, on_alarm, ac,
                   gpr_now(GPR_CLOCK_MONOTONIC));
   grpc_socket_notify_on_write(exec_ctx, socket, &ac->on_connect);
   return;

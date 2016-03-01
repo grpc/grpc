@@ -788,7 +788,7 @@ static void set_deadline_alarm(grpc_exec_ctx *exec_ctx, grpc_call *call,
   GRPC_CALL_INTERNAL_REF(call, "alarm");
   call->have_alarm = 1;
   call->send_deadline = gpr_convert_clock_type(deadline, GPR_CLOCK_MONOTONIC);
-  grpc_timer_init(exec_ctx, &call->alarm, call->send_deadline, call_alarm, call,
+  grpc_timer_init(&call->alarm, call->send_deadline, call_alarm, call,
                   gpr_now(GPR_CLOCK_MONOTONIC));
 }
 
