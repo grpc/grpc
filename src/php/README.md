@@ -33,44 +33,11 @@ $ sudo mv phpunit.phar /usr/local/bin/phpunit
 
 ## Quick Install
 
-**Linux (Debian):**
-
-Add [Debian jessie-backports][] to your `sources.list` file. Example:
-
-```sh
-echo "deb http://http.debian.net/debian jessie-backports main" | \
-sudo tee -a /etc/apt/sources.list
-```
-
-Install the gRPC Debian package
-
-```sh
-sudo apt-get update
-sudo apt-get install libgrpc-dev
-```
-
 Install the gRPC PHP extension
 
 ```sh
 sudo pecl install grpc-beta
 ```
-
-**Mac OS X:**
-
-Install [homebrew][]. Example:
-
-```sh
-ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
-```
-
-Install the gRPC core library and the PHP extension in one step
-
-```sh
-$ curl -fsSL https://goo.gl/getgrpc | bash -s php
-```
-
-This will download and run the [gRPC install script][] and compile the gRPC PHP extension.
-
 
 ## Build from Source
 
@@ -297,7 +264,4 @@ Connect to `localhost/math_client.php` in your browser, or run this from command
 $ curl localhost/math_client.php
 ```
 
-[homebrew]:http://brew.sh
-[gRPC install script]:https://raw.githubusercontent.com/grpc/homebrew-grpc/master/scripts/install
 [Node]:https://github.com/grpc/grpc/tree/master/src/node/examples
-[Debian jessie-backports]:http://backports.debian.org/Instructions/
