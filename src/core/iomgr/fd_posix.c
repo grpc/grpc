@@ -93,6 +93,7 @@ static grpc_fd *alloc_fd(int fd) {
   }
 
   gpr_atm_rel_store(&r->refst, 1);
+  gpr_mu_lock(&r->mu);
   r->shutdown = 0;
   r->read_closure = CLOSURE_NOT_READY;
   r->write_closure = CLOSURE_NOT_READY;
@@ -104,6 +105,7 @@ static grpc_fd *alloc_fd(int fd) {
   r->on_done_closure = NULL;
   r->closed = 0;
   r->released = 0;
+  gpr_mu_unlock(&r->mu);
   return r;
 }
 
