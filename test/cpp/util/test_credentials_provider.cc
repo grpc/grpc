@@ -139,9 +139,7 @@ class DefaultCredentialsProvider : public CredentialsProvider {
 gpr_once g_once_init_provider = GPR_ONCE_INIT;
 CredentialsProvider* g_provider = nullptr;
 
-void CreateDefaultProvider() {
-  g_provider = new DefaultCredentialsProvider;
-}
+void CreateDefaultProvider() { g_provider = new DefaultCredentialsProvider; }
 
 CredentialsProvider* GetProvider() {
   gpr_once_init(&g_once_init_provider, &CreateDefaultProvider);
