@@ -35,6 +35,9 @@
 
 #import <grpc/grpc.h>
 
+
+const int64_t kGRPCCompletionQueueDefaultTimeoutSecs = 60;
+
 @implementation GRPCCompletionQueue
 
 + (instancetype)completionQueue {
@@ -42,8 +45,13 @@
 }
 
 - (instancetype)init {
+  return [self initWithTimeout:kGRPCCompletionQueueDefaultTimeoutSecs];
+}
+
+- (instancetype)initWithTimeout:(int64_t)timeoutSecs {
   if ((self = [super init])) {
     _unmanagedQueue = grpc_completion_queue_create(NULL);
+    _timeoutSecs = timeoutSecs;
 
     // This is for the following block to capture the pointer by value (instead
     // of retaining self and doing self->_unmanagedQueue). This is essential
@@ -52,6 +60,7 @@
     // anymore (i.e. on self dealloc). So the block would never end if it
     // retained self.
     grpc_completion_queue *unmanagedQueue = _unmanagedQueue;
+    int64_t lTimeoutSecs = _timeoutSecs;
 
     // Start a loop on a concurrent queue to read events from the completion
     // queue and dispatch each.
@@ -61,22 +70,24 @@
       gDefaultConcurrentQueue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0);
     });
     dispatch_async(gDefaultConcurrentQueue, ^{
+      gpr_timespec deadline = gpr_time_from_seconds(lTimeoutSecs, GPR_CLOCK_REALTIME);
       while (YES) {
-        // The following call blocks until an event is available.
-        grpc_event event = grpc_completion_queue_next(unmanagedQueue,
-                                                      gpr_inf_future(GPR_CLOCK_REALTIME),
-                                                      NULL);
+        // The following call blocks until an event is available or the deadline elapses.
+        grpc_event event = grpc_completion_queue_next(unmanagedQueue, deadline, NULL);
         GRPCQueueCompletionHandler handler;
         switch (event.type) {
-          case GRPC_OP_COMPLETE:
+          case GRPC_OP_COMPLETE: // Falling through deliberately
+          case GRPC_QUEUE_TIMEOUT:
             handler = (__bridge_transfer GRPCQueueCompletionHandler)event.tag;
-            handler(event.success);
+            if (handler) {
+              handler(event.success);
+            }
             break;
           case GRPC_QUEUE_SHUTDOWN:
             grpc_completion_queue_destroy(unmanagedQueue);
             return;
           default:
-            [NSException raise:@"Unrecognized completion type" format:@""];
+            [NSException raise:@"Unrecognized completion type" format:@"type=%d", event.type];
         }
       };
     });
