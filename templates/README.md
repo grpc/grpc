@@ -11,19 +11,19 @@ targets and files needed to build grpc and its tests, as well as a basic system
 for dependency description.
 
 * Each project file (Makefile, Visual Studio project files, Bazel's BUILD) is
-a plain-text template that uses the `build.yaml` file to generate the final
-output file.
+a [YAML](http://yaml.org) file used by the `build.yaml` file to generate the
+final output file.
 
 This way we can maintain as many project system as we see fit, without having
 to manually maintain them when we add or remove new code to the repository.
 Only the structure of the project file is relevant to the template. The actual
 list of source code and targets isn't.
 
-We currently have template files for GNU Make, Visual Studio 2010 to 2015,
-and [Bazel](http://bazel.io). In the future, we would like to expand to
-generating [gyp](https://gyp.gsrc.io/) or [cmake](https://cmake.org)
-project files (or potentially both), XCode project files, and an Android.mk
-file to be able to compile gRPC using Android's NDK.
+We currently have template files for GNU Make, Visual Studio 2013,
+[Bazel](http://bazel.io) and [gyp](https://gyp.gsrc.io/). In the future, we
+would like to expand to also generate [cmake](https://cmake.org)
+project files, XCode project files, and an Android.mk file allowing to compile
+gRPC using Android's NDK.
 
 We'll gladly accept contribution that'd create additional project files
 using that system.
@@ -163,4 +163,3 @@ The structure of a plugin is simple. The plugin must defined the function
 `mako_plugin` that takes a Python dictionary. That dictionary represents the
 current state of the build.json contents. The plugin can alter it to whatever
 feature it needs to add.
-
