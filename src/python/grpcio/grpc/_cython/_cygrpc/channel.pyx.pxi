@@ -1,4 +1,4 @@
-# Copyright 2015, Google Inc.
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -89,12 +89,13 @@ cdef class Channel:
 
   def check_connectivity_state(self, bint try_to_connect):
     return grpc_channel_check_connectivity_state(self.c_channel,
-                                                      try_to_connect)
+                                                 try_to_connect)
 
   def watch_connectivity_state(
-      self, last_observed_state, Timespec deadline not None,
-      CompletionQueue queue not None, tag):
+      self, grpc_connectivity_state last_observed_state,
+      Timespec deadline not None, CompletionQueue queue not None, tag):
     cdef OperationTag operation_tag = OperationTag(tag)
+    operation_tag.references = [self, queue]
     cpython.Py_INCREF(operation_tag)
     grpc_channel_watch_connectivity_state(
         self.c_channel, last_observed_state, deadline.c_time,
