@@ -70,7 +70,7 @@ struct grpc_exec_ctx {
 #else
 struct grpc_exec_ctx { int unused; };
 #define GRPC_EXEC_CTX_INIT \
-  {}
+  {0}
 #endif
 
 /** Flush any work that has been enqueued onto this grpc_exec_ctx.
