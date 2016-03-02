@@ -1,5 +1,4 @@
-#!/bin/bash
-# Copyright 2015-2016, Google Inc.
+# Copyright 2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -28,22 +27,27 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-set -ex
+import json
+import unittest
 
-# change to grpc repo root
-cd $(dirname $0)/../..
+import tests
 
-ROOT=`pwd`
-export LD_LIBRARY_PATH=$ROOT/libs/$CONFIG
-export DYLD_LIBRARY_PATH=$ROOT/libs/$CONFIG
-export PATH=$ROOT/bins/$CONFIG:$ROOT/bins/$CONFIG/protobuf:$PATH
-export CFLAGS="-I$ROOT/include -std=gnu99"
-export LDFLAGS="-L$ROOT/libs/$CONFIG"
-export GRPC_PYTHON_BUILD_WITH_CYTHON=1
-export GRPC_PYTHON_ENABLE_CYTHON_TRACING=1
 
-tox --notest
+class Sanity(unittest.TestCase):
 
-$ROOT/.tox/py27/bin/python $ROOT/setup.py build
-$ROOT/.tox/py27/bin/python $ROOT/setup.py build_py
-$ROOT/.tox/py27/bin/python $ROOT/setup.py gather --test
+  def testTestsJsonUpToDate(self):
+    """Autodiscovers all test suites and checks that tests.json is up to date"""
+    loader = tests.Loader()
+    loader.loadTestsFromNames(['tests'])
+    test_suite_names = [
+        test_case_class.id().rsplit('.', 1)[0]
+        for test_case_class in tests._loader.iterate_suite_cases(loader.suite)]
+    test_suite_names = sorted(set(test_suite_names))
+
+    with open('src/python/grpcio/tests/tests.json') as tests_json_file:
+      tests_json = json.load(tests_json_file)
+    self.assertListEqual(test_suite_names, tests_json)
+
+
+if __name__ == '__main__':
+  unittest.main(verbosity=2)
