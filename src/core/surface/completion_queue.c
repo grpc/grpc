@@ -94,6 +94,8 @@ static void on_pollset_shutdown_done(grpc_exec_ctx *exec_ctx, void *cc,
 void grpc_cq_global_init(void) { gpr_mu_init(&g_freelist_mu); }
 
 void grpc_cq_global_shutdown(void) {
+  gpr_mu_lock(&g_freelist_mu);
+  gpr_mu_unlock(&g_freelist_mu);
   gpr_mu_destroy(&g_freelist_mu);
   while (g_freelist) {
     grpc_completion_queue *next = g_freelist->next_free;
