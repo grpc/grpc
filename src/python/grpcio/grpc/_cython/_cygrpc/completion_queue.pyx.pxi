@@ -87,19 +87,16 @@ cdef class CompletionQueue:
       c_deadline = deadline.c_time
     cdef grpc_event event
 
-    # Poll within a critical section
-    # TODO(atash) consider making queue polling contention a hard error to
-    # enable easier bug discovery
+    # Poll within a critical section to detect contention
     with self.poll_condition:
-      while self.is_polling:
-        self.poll_condition.wait(float(deadline) - time.time())
+      assert not self.is_polling, (
+          'queue contention from multiple threads')
       self.is_polling = True
     with nogil:
       event = grpc_completion_queue_next(
           self.c_completion_queue, c_deadline, NULL)
     with self.poll_condition:
       self.is_polling = False
-      self.poll_condition.notify()
     return self._interpret_event(event)
 
   def pluck(self, OperationTag tag, Timespec deadline=None):
@@ -111,19 +108,16 @@ cdef class CompletionQueue:
       c_deadline = deadline.c_time
     cdef grpc_event event
 
-    # Poll within a critical section
-    # TODO(atash) consider making queue polling contention a hard error to
-    # enable easier bug discovery
+    # Pluck within a critical section to detect contention
     with self.poll_condition:
-      while self.is_polling:
-        self.poll_condition.wait(float(deadline) - time.time())
+      assert not self.is_polling, (
+          'queue contention from multiple threads')
       self.is_polling = True
     with nogil:
       event = grpc_completion_queue_pluck(
           self.c_completion_queue, <cpython.PyObject *>tag, c_deadline, NULL)
     with self.poll_condition:
       self.is_polling = False
-      self.poll_condition.notify()
     return self._interpret_event(event)
 
   def shutdown(self):
