@@ -20,7 +20,8 @@ Only the structure of the project file is relevant to the template. The actual
 list of source code and targets isn't.
 
 We currently have template files for GNU Make, Visual Studio 2013,
-[Bazel](http://bazel.io) and [gyp](https://gyp.gsrc.io/). In the future, we
+[Bazel](http://bazel.io) and [gyp](https://gyp.gsrc.io/) (albeit only for
+Node.js). In the future, we
 would like to expand to also generate [cmake](https://cmake.org)
 project files, XCode project files, and an Android.mk file allowing to compile
 gRPC using Android's NDK.
