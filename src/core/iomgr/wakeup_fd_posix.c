@@ -54,6 +54,7 @@ void grpc_wakeup_fd_global_init(void) {
 void grpc_wakeup_fd_global_destroy(void) { wakeup_fd_vtable = NULL; }
 
 void grpc_wakeup_fd_init(grpc_wakeup_fd *fd_info) {
+  grpc_iomgr_register_object(&fd_info->iomgr_object, "wakeup_fd");
   wakeup_fd_vtable->init(fd_info);
 }
 
@@ -67,6 +68,7 @@ void grpc_wakeup_fd_wakeup(grpc_wakeup_fd *fd_info) {
 
 void grpc_wakeup_fd_destroy(grpc_wakeup_fd *fd_info) {
   wakeup_fd_vtable->destroy(fd_info);
+  grpc_iomgr_unregister_object(&fd_info->iomgr_object);
 }
 
 #endif /* GPR_POSIX_WAKEUP_FD */
