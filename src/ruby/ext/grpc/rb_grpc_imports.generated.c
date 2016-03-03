@@ -220,6 +220,7 @@ gpr_event_get_type gpr_event_get_import;
 gpr_event_wait_type gpr_event_wait_import;
 gpr_ref_init_type gpr_ref_init_import;
 gpr_ref_type gpr_ref_import;
+gpr_ref_non_zero_type gpr_ref_non_zero_import;
 gpr_refn_type gpr_refn_import;
 gpr_unref_type gpr_unref_import;
 gpr_stats_init_type gpr_stats_init_import;
@@ -481,6 +482,7 @@ void grpc_rb_load_imports(HMODULE library) {
   gpr_event_wait_import = (gpr_event_wait_type) GetProcAddress(library, "gpr_event_wait");
   gpr_ref_init_import = (gpr_ref_init_type) GetProcAddress(library, "gpr_ref_init");
   gpr_ref_import = (gpr_ref_type) GetProcAddress(library, "gpr_ref");
+  gpr_ref_non_zero_import = (gpr_ref_non_zero_type) GetProcAddress(library, "gpr_ref_non_zero");
   gpr_refn_import = (gpr_refn_type) GetProcAddress(library, "gpr_refn");
   gpr_unref_import = (gpr_unref_type) GetProcAddress(library, "gpr_unref");
   gpr_stats_init_import = (gpr_stats_init_type) GetProcAddress(library, "gpr_stats_init");

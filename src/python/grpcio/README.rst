@@ -42,3 +42,17 @@ package named :code:`python-dev`).
 
 Note that :code:`$REPO_ROOT` can be assigned to whatever directory name floats
 your fancy.
+
+Troubleshooting
+~~~~~~~~~~~~~~~
+
+Help, I ...
+
+* **... see a** :code:`pkg_resources.VersionConflict` **when I try to install
+  grpc!**
+
+  This is likely because :code:`pip` doesn't own the offending dependency,
+  which in turn is likely because your operating system's package manager owns
+  it. You'll need to force the installation of the dependency:
+
+  :code:`pip install --ignore-installed $OFFENDING_DEPENDENCY`
