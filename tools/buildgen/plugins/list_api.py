@@ -37,7 +37,7 @@ import sys
 import yaml
 
 
-_RE_API = r'(?:GPR_API|GRPC_API|CENSUS_API)([^;]*);'
+_RE_API = r'(?:GPRAPI|GRPCAPI|CENSUSAPI)([^;]*);'
 
 
 def list_c_apis(filenames):

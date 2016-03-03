@@ -99,6 +99,7 @@ EXPORTS
     grpc_auth_context_set_peer_identity_property_name
     grpc_channel_credentials_release
     grpc_google_default_credentials_create
+    grpc_set_ssl_roots_override_callback
     grpc_ssl_credentials_create
     grpc_call_credentials_release
     grpc_composite_channel_credentials_create
@@ -181,6 +182,7 @@ EXPORTS
     gpr_event_wait
     gpr_ref_init
     gpr_ref
+    gpr_ref_non_zero
     gpr_refn
     gpr_unref
     gpr_stats_init

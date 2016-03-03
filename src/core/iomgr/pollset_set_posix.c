@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -41,11 +41,30 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/useful.h>
 
-#include "src/core/iomgr/pollset_set.h"
+#include "src/core/iomgr/pollset_posix.h"
+#include "src/core/iomgr/pollset_set_posix.h"
 
-void grpc_pollset_set_init(grpc_pollset_set *pollset_set) {
+struct grpc_pollset_set {
+  gpr_mu mu;
+
+  size_t pollset_count;
+  size_t pollset_capacity;
+  grpc_pollset **pollsets;
+
+  size_t pollset_set_count;
+  size_t pollset_set_capacity;
+  struct grpc_pollset_set **pollset_sets;
+
+  size_t fd_count;
+  size_t fd_capacity;
+  grpc_fd **fds;
+};
+
+grpc_pollset_set *grpc_pollset_set_create(void) {
+  grpc_pollset_set *pollset_set = gpr_malloc(sizeof(*pollset_set));
   memset(pollset_set, 0, sizeof(*pollset_set));
   gpr_mu_init(&pollset_set->mu);
+  return pollset_set;
 }
 
 void grpc_pollset_set_destroy(grpc_pollset_set *pollset_set) {
@@ -57,6 +76,7 @@ void grpc_pollset_set_destroy(grpc_pollset_set *pollset_set) {
   gpr_free(pollset_set->pollsets);
   gpr_free(pollset_set->pollset_sets);
   gpr_free(pollset_set->fds);
+  gpr_free(pollset_set);
 }
 
 void grpc_pollset_set_add_pollset(grpc_exec_ctx *exec_ctx,

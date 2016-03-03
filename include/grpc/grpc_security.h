@@ -65,39 +65,39 @@ typedef struct grpc_auth_property {
 } grpc_auth_property;
 
 /* Returns NULL when the iterator is at the end. */
-GRPC_API const grpc_auth_property *grpc_auth_property_iterator_next(
+GRPCAPI const grpc_auth_property *grpc_auth_property_iterator_next(
     grpc_auth_property_iterator *it);
 
 /* Iterates over the auth context. */
-GRPC_API grpc_auth_property_iterator
+GRPCAPI grpc_auth_property_iterator
 grpc_auth_context_property_iterator(const grpc_auth_context *ctx);
 
 /* Gets the peer identity. Returns an empty iterator (first _next will return
    NULL) if the peer is not authenticated. */
-GRPC_API grpc_auth_property_iterator
+GRPCAPI grpc_auth_property_iterator
 grpc_auth_context_peer_identity(const grpc_auth_context *ctx);
 
 /* Finds a property in the context. May return an empty iterator (first _next
    will return NULL) if no property with this name was found in the context. */
-GRPC_API grpc_auth_property_iterator
+GRPCAPI grpc_auth_property_iterator
 grpc_auth_context_find_properties_by_name(const grpc_auth_context *ctx,
                                           const char *name);
 
 /* Gets the name of the property that indicates the peer identity. Will return
    NULL if the peer is not authenticated. */
-GRPC_API const char *grpc_auth_context_peer_identity_property_name(
+GRPCAPI const char *grpc_auth_context_peer_identity_property_name(
     const grpc_auth_context *ctx);
 
 /* Returns 1 if the peer is authenticated, 0 otherwise. */
-GRPC_API int grpc_auth_context_peer_is_authenticated(
+GRPCAPI int grpc_auth_context_peer_is_authenticated(
     const grpc_auth_context *ctx);
 
 /* Gets the auth context from the call. Caller needs to call
    grpc_auth_context_release on the returned context. */
-GRPC_API grpc_auth_context *grpc_call_auth_context(grpc_call *call);
+GRPCAPI grpc_auth_context *grpc_call_auth_context(grpc_call *call);
 
 /* Releases the auth context returned from grpc_call_auth_context. */
-GRPC_API void grpc_auth_context_release(grpc_auth_context *context);
+GRPCAPI void grpc_auth_context_release(grpc_auth_context *context);
 
 /* --
    The following auth context methods should only be called by a server metadata
@@ -105,19 +105,18 @@ GRPC_API void grpc_auth_context_release(grpc_auth_context *context);
    -- */
 
 /* Add a property. */
-GRPC_API void grpc_auth_context_add_property(grpc_auth_context *ctx,
-                                             const char *name,
-                                             const char *value,
-                                             size_t value_length);
+GRPCAPI void grpc_auth_context_add_property(grpc_auth_context *ctx,
+                                            const char *name, const char *value,
+                                            size_t value_length);
 
 /* Add a C string property. */
-GRPC_API void grpc_auth_context_add_cstring_property(grpc_auth_context *ctx,
-                                                     const char *name,
-                                                     const char *value);
+GRPCAPI void grpc_auth_context_add_cstring_property(grpc_auth_context *ctx,
+                                                    const char *name,
+                                                    const char *value);
 
 /* Sets the property name. Returns 1 if successful or 0 in case of failure
    (which means that no property with this name exists). */
-GRPC_API int grpc_auth_context_set_peer_identity_property_name(
+GRPCAPI int grpc_auth_context_set_peer_identity_property_name(
     grpc_auth_context *ctx, const char *name);
 
 /* --- grpc_channel_credentials object. ---
@@ -129,7 +128,7 @@ typedef struct grpc_channel_credentials grpc_channel_credentials;
 
 /* Releases a channel credentials object.
    The creator of the credentials object is responsible for its release. */
-GRPC_API void grpc_channel_credentials_release(grpc_channel_credentials *creds);
+GRPCAPI void grpc_channel_credentials_release(grpc_channel_credentials *creds);
 
 /* Environment variable that points to the google default application
    credentials json key or refresh token. Used in the
@@ -139,7 +138,7 @@ GRPC_API void grpc_channel_credentials_release(grpc_channel_credentials *creds);
 /* Creates default credentials to connect to a google gRPC service.
    WARNING: Do NOT use this credentials to connect to a non-google service as
    this could result in an oauth2 token leak. */
-GRPC_API grpc_channel_credentials *grpc_google_default_credentials_create(void);
+GRPCAPI grpc_channel_credentials *grpc_google_default_credentials_create(void);
 
 /* Environment variable that points to the default SSL roots file. This file
    must be a PEM encoded file with all the roots such as the one that can be
@@ -168,7 +167,8 @@ typedef grpc_ssl_roots_override_result (*grpc_ssl_roots_override_callback)(
    before any ssl credentials are created to have the desired side effect.
    If GRPC_DEFAULT_SSL_ROOTS_FILE_PATH environment is set to a valid path, the
    callback will not be called. */
-void grpc_set_ssl_roots_override_callback(grpc_ssl_roots_override_callback cb);
+GRPCAPI void grpc_set_ssl_roots_override_callback(
+    grpc_ssl_roots_override_callback cb);
 
 /* Object that holds a private key / certificate chain pair in PEM format. */
 typedef struct {
@@ -192,7 +192,7 @@ typedef struct {
    - pem_key_cert_pair is a pointer on the object containing client's private
      key and certificate chain. This parameter can be NULL if the client does
      not have such a key/cert pair. */
-GRPC_API grpc_channel_credentials *grpc_ssl_credentials_create(
+GRPCAPI grpc_channel_credentials *grpc_ssl_credentials_create(
     const char *pem_root_certs, grpc_ssl_pem_key_cert_pair *pem_key_cert_pair,
     void *reserved);
 
@@ -206,32 +206,32 @@ typedef struct grpc_call_credentials grpc_call_credentials;
 
 /* Releases a call credentials object.
    The creator of the credentials object is responsible for its release. */
-GRPC_API void grpc_call_credentials_release(grpc_call_credentials *creds);
+GRPCAPI void grpc_call_credentials_release(grpc_call_credentials *creds);
 
 /* Creates a composite channel credentials object. */
-GRPC_API grpc_channel_credentials *grpc_composite_channel_credentials_create(
+GRPCAPI grpc_channel_credentials *grpc_composite_channel_credentials_create(
     grpc_channel_credentials *channel_creds, grpc_call_credentials *call_creds,
     void *reserved);
 
 /* Creates a composite call credentials object. */
-GRPC_API grpc_call_credentials *grpc_composite_call_credentials_create(
+GRPCAPI grpc_call_credentials *grpc_composite_call_credentials_create(
     grpc_call_credentials *creds1, grpc_call_credentials *creds2,
     void *reserved);
 
 /* Creates a compute engine credentials object for connecting to Google.
    WARNING: Do NOT use this credentials to connect to a non-google service as
    this could result in an oauth2 token leak. */
-GRPC_API grpc_call_credentials *grpc_google_compute_engine_credentials_create(
+GRPCAPI grpc_call_credentials *grpc_google_compute_engine_credentials_create(
     void *reserved);
 
-GRPC_API gpr_timespec grpc_max_auth_token_lifetime();
+GRPCAPI gpr_timespec grpc_max_auth_token_lifetime();
 
 /* Creates a JWT credentials object. May return NULL if the input is invalid.
    - json_key is the JSON key string containing the client's private key.
    - token_lifetime is the lifetime of each Json Web Token (JWT) created with
      this credentials.  It should not exceed grpc_max_auth_token_lifetime or
      will be cropped to this value.  */
-GRPC_API grpc_call_credentials *
+GRPCAPI grpc_call_credentials *
 grpc_service_account_jwt_access_credentials_create(const char *json_key,
                                                    gpr_timespec token_lifetime,
                                                    void *reserved);
@@ -242,16 +242,16 @@ grpc_service_account_jwt_access_credentials_create(const char *json_key,
    this could result in an oauth2 token leak.
    - json_refresh_token is the JSON string containing the refresh token itself
      along with a client_id and client_secret. */
-GRPC_API grpc_call_credentials *grpc_google_refresh_token_credentials_create(
+GRPCAPI grpc_call_credentials *grpc_google_refresh_token_credentials_create(
     const char *json_refresh_token, void *reserved);
 
 /* Creates an Oauth2 Access Token credentials with an access token that was
    aquired by an out of band mechanism. */
-GRPC_API grpc_call_credentials *grpc_access_token_credentials_create(
+GRPCAPI grpc_call_credentials *grpc_access_token_credentials_create(
     const char *access_token, void *reserved);
 
 /* Creates an IAM credentials object for connecting to Google. */
-GRPC_API grpc_call_credentials *grpc_google_iam_credentials_create(
+GRPCAPI grpc_call_credentials *grpc_google_iam_credentials_create(
     const char *authorization_token, const char *authority_selector,
     void *reserved);
 
@@ -313,13 +313,13 @@ typedef struct {
 } grpc_metadata_credentials_plugin;
 
 /* Creates a credentials object from a plugin. */
-GRPC_API grpc_call_credentials *grpc_metadata_credentials_create_from_plugin(
+GRPCAPI grpc_call_credentials *grpc_metadata_credentials_create_from_plugin(
     grpc_metadata_credentials_plugin plugin, void *reserved);
 
 /* --- Secure channel creation. --- */
 
 /* Creates a secure channel using the passed-in credentials. */
-GRPC_API grpc_channel *grpc_secure_channel_create(
+GRPCAPI grpc_channel *grpc_secure_channel_create(
     grpc_channel_credentials *creds, const char *target,
     const grpc_channel_args *args, void *reserved);
 
@@ -332,7 +332,7 @@ typedef struct grpc_server_credentials grpc_server_credentials;
 /* Releases a server_credentials object.
    The creator of the server_credentials object is responsible for its release.
    */
-GRPC_API void grpc_server_credentials_release(grpc_server_credentials *creds);
+GRPCAPI void grpc_server_credentials_release(grpc_server_credentials *creds);
 
 /* Creates an SSL server_credentials object.
    - pem_roots_cert is the NULL-terminated string containing the PEM encoding of
@@ -345,7 +345,7 @@ GRPC_API void grpc_server_credentials_release(grpc_server_credentials *creds);
    - force_client_auth, if set to non-zero will force the client to authenticate
      with an SSL cert. Note that this option is ignored if pem_root_certs is
      NULL. */
-GRPC_API grpc_server_credentials *grpc_ssl_server_credentials_create(
+GRPCAPI grpc_server_credentials *grpc_ssl_server_credentials_create(
     const char *pem_root_certs, grpc_ssl_pem_key_cert_pair *pem_key_cert_pairs,
     size_t num_key_cert_pairs, int force_client_auth, void *reserved);
 
@@ -354,15 +354,15 @@ GRPC_API grpc_server_credentials *grpc_ssl_server_credentials_create(
 /* Add a HTTP2 over an encrypted link over tcp listener.
    Returns bound port number on success, 0 on failure.
    REQUIRES: server not started */
-GRPC_API int grpc_server_add_secure_http2_port(grpc_server *server,
-                                               const char *addr,
-                                               grpc_server_credentials *creds);
+GRPCAPI int grpc_server_add_secure_http2_port(grpc_server *server,
+                                              const char *addr,
+                                              grpc_server_credentials *creds);
 
 /* --- Call specific credentials. --- */
 
 /* Sets a credentials to a call. Can only be called on the client side before
    grpc_call_start_batch. */
-GRPC_API grpc_call_error
+GRPCAPI grpc_call_error
 grpc_call_set_credentials(grpc_call *call, grpc_call_credentials *creds);
 
 /* --- Auth Metadata Processing --- */
@@ -394,7 +394,7 @@ typedef struct {
   void *state;
 } grpc_auth_metadata_processor;
 
-GRPC_API void grpc_server_credentials_set_auth_metadata_processor(
+GRPCAPI void grpc_server_credentials_set_auth_metadata_processor(
     grpc_server_credentials *creds, grpc_auth_metadata_processor processor);
 
 #ifdef __cplusplus

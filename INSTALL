@@ -141,15 +141,7 @@ Then execute the following for all the needed build dependencies
   $ make gtest.a gtest_main.a
   $ sudo cp libgtest.a libgtest_main.a /opt/local/lib
   $ sudo mkdir /opt/local/include/gtest
-  $ sudo cp -pr ../gtest-svn/include/gtest /opt/local/include/gtest 
-
-We will also need to make openssl and install it appropriately
-
-  $ cd <git directory>
-  $ cd third_party/openssl
-  $ ./config
-  $ sudo make install
-  $ cd ../../
+  $ sudo cp -pr ../gtest-svn/include/gtest /opt/local/include/gtest
 
 If you are going to make changes and need to regenerate the projects file,
 you will need to install certain modules for python.

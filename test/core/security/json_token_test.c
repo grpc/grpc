@@ -33,16 +33,17 @@
 
 #include "src/core/security/json_token.h"
 
+#include <openssl/evp.h>
 #include <string.h>
 
-#include "src/core/security/base64.h"
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/slice.h>
-#include "test/core/util/test_config.h"
+
 #include "src/core/json/json.h"
-#include <openssl/evp.h>
+#include "src/core/security/b64.h"
+#include "test/core/util/test_config.h"
 
 /* This JSON key was generated with the GCE console and revoked immediately.
    The identifiers have been changed as well.

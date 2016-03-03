@@ -39,7 +39,7 @@
   def grpc_files(libs):
     out = []
     for lib in libs:
-      if lib.name in ("grpc"):
+      if lib.name in ("grpc", "gpr"):
         out += lib.get('headers', [])
         out += lib.get('public_headers', [])
         out += lib.get('src', [])
@@ -48,7 +48,7 @@
   def grpc_private_headers(libs):
     out = []
     for lib in libs:
-      if lib.name in ("grpc"):
+      if lib.name in ("grpc", "gpr"):
         out += lib.get('headers', [])
     return out
   %>

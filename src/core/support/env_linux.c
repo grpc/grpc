@@ -43,7 +43,9 @@
 #include "src/core/support/env.h"
 
 #include <dlfcn.h>
+#include <features.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
@@ -52,6 +54,7 @@
 #include "src/core/support/string.h"
 
 char *gpr_getenv(const char *name) {
+#if defined(GPR_BACKWARDS_COMPATIBILITY_MODE)
   typedef char *(*getenv_type)(const char *);
   static getenv_type getenv_func = NULL;
   /* Check to see which getenv variant is supported (go from most
@@ -59,9 +62,23 @@ char *gpr_getenv(const char *name) {
   const char *names[] = {"secure_getenv", "__secure_getenv", "getenv"};
   for (size_t i = 0; getenv_func == NULL && i < GPR_ARRAY_SIZE(names); i++) {
     getenv_func = (getenv_type)dlsym(RTLD_DEFAULT, names[i]);
+    if (getenv_func != NULL && strstr(names[i], "secure") == NULL) {
+      gpr_log(GPR_DEBUG,
+              "Warning: insecure environment read function '%s' used",
+              names[i]);
+    }
   }
   char *result = getenv_func(name);
   return result == NULL ? result : gpr_strdup(result);
+#elif __GLIBC__ > 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 17)
+  char *result = secure_getenv(name);
+  return result == NULL ? result : gpr_strdup(result);
+#else
+  gpr_log(GPR_DEBUG, "Warning: insecure environment read function '%s' used",
+          "getenv");
+  char *result = getenv(name);
+  return result == NULL ? result : gpr_strdup(result);
+#endif
 }
 
 void gpr_setenv(const char *name, const char *value) {

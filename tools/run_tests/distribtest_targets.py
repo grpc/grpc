@@ -96,6 +96,15 @@ class CSharpDistribTest(object):
       return create_jobspec(self.name,
           ['test/distrib/csharp/run_distrib_test.sh'],
           environ={'EXTERNAL_GIT_ROOT': '../../..'})
+    elif self.platform == 'windows':
+      if self.arch == 'x64':
+        environ={'MSBUILD_EXTRA_ARGS': '/p:Platform=x64',
+                 'DISTRIBTEST_OUTPATH': 'DistribTest\\bin\\x64\\Debug'}
+      else:
+        environ={'DISTRIBTEST_OUTPATH': 'DistribTest\\bin\\\Debug'}
+      return create_jobspec(self.name,
+          ['test\\distrib\\csharp\\run_distrib_test.bat'],
+          environ=environ)
     else:
       raise Exception("Not supported yet.")
 
@@ -111,21 +120,26 @@ class NodeDistribTest(object):
     self.arch = arch
     self.node_version = node_version
     self.labels = ['distribtest', 'node', platform, arch,
-                   docker_suffix, 'node-%s' % node_version]
+                   'node-%s' % node_version]
     if docker_suffix is not None:
       self.name += '_%s' % docker_suffix
       self.docker_suffix = docker_suffix
+      self.labels.append(docker_suffix)
 
   def pre_build_jobspecs(self):
     return []
 
   def build_jobspec(self):
     if self.platform == 'linux':
+      linux32 = ''
+      if self.arch == 'x86':
+        linux32 = 'linux32'
       return create_docker_jobspec(self.name,
                                    'tools/dockerfile/distribtest/node_%s_%s' % (
                                        self.docker_suffix,
                                        self.arch),
-                                   'test/distrib/node/run_distrib_test.sh %s' % (
+                                   '%s test/distrib/node/run_distrib_test.sh %s' % (
+                                       linux32,
                                        self.node_version))
     elif self.platform == 'macos':
       return create_jobspec(self.name,
@@ -193,6 +207,37 @@ class RubyDistribTest(object):
     return self.name
 
 
+class PHPDistribTest(object):
+  """Tests PHP package"""
+
+  def __init__(self, platform, arch, docker_suffix=None):
+    self.name = 'php_%s_%s_%s' % (platform, arch, docker_suffix)
+    self.platform = platform
+    self.arch = arch
+    self.docker_suffix = docker_suffix
+    self.labels = ['distribtest', 'php', platform, arch, docker_suffix]
+
+  def pre_build_jobspecs(self):
+    return []
+
+  def build_jobspec(self):
+    if self.platform == 'linux':
+      return create_docker_jobspec(self.name,
+                                   'tools/dockerfile/distribtest/php_%s_%s' % (
+                                       self.docker_suffix,
+                                       self.arch),
+                                   'test/distrib/php/run_distrib_test.sh')
+    elif self.platform == 'macos':
+      return create_jobspec(self.name,
+          ['test/distrib/php/run_distrib_test.sh'],
+          environ={'EXTERNAL_GIT_ROOT': '../../..'})
+    else:
+      raise Exception("Not supported yet.")
+
+  def __str__(self):
+    return self.name
+
+
 def targets():
   """Gets list of supported targets"""
   return [CSharpDistribTest('linux', 'x64', 'wheezy'),
@@ -204,6 +249,8 @@ def targets():
           CSharpDistribTest('linux', 'x64', 'ubuntu1510'),
           CSharpDistribTest('linux', 'x64', 'ubuntu1604'),
           CSharpDistribTest('macos', 'x86'),
+          CSharpDistribTest('windows', 'x86'),
+          CSharpDistribTest('windows', 'x64'),
           PythonDistribTest('linux', 'x64', 'wheezy'),
           PythonDistribTest('linux', 'x64', 'jessie'),
           PythonDistribTest('linux', 'x86', 'jessie'),
@@ -235,15 +282,14 @@ def targets():
           RubyDistribTest('linux', 'x64', 'ubuntu1504'),
           RubyDistribTest('linux', 'x64', 'ubuntu1510'),
           RubyDistribTest('linux', 'x64', 'ubuntu1604'),
-          NodeDistribTest('macos', 'x64', None, '0.10'),
-          NodeDistribTest('macos', 'x64', None, '0.12'),
-          NodeDistribTest('macos', 'x64', None, '3'),
           NodeDistribTest('macos', 'x64', None, '4'),
           NodeDistribTest('macos', 'x64', None, '5'),
-          NodeDistribTest('linux', 'x86', 'jessie', '4')
+          NodeDistribTest('linux', 'x86', 'jessie', '4'),
+          PHPDistribTest('linux', 'x64', 'jessie'),
+          PHPDistribTest('macos', 'x64'),
           ] + [
             NodeDistribTest('linux', 'x64', os, version)
             for os in ('wheezy', 'jessie', 'ubuntu1204', 'ubuntu1404',
                        'ubuntu1504', 'ubuntu1510', 'ubuntu1604')
-            for version in ('0.10', '0.12', '3', '4', '5')
+            for version in ('0.12', '3', '4', '5')
           ]
