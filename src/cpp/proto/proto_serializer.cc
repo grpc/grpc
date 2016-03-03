@@ -31,9 +31,9 @@
  *
  */
 
-// TODO(dgq): This file is part of a temporary fix to work around codegen issues
-// related to
-// a certain sharp-sounding build system.
+// TODO(dgq): This file is part of a temporary fix to work around codegen
+// issues.
+//
 // This whole file will be removed in the future.
 
 #include <grpc++/impl/proto_utils.h>
