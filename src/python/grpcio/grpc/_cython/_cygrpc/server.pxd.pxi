@@ -1,4 +1,4 @@
-# Copyright 2015, Google Inc.
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -39,4 +39,5 @@ cdef class Server:
   cdef list references
   cdef list registered_completion_queues
 
+  cdef _c_shutdown(self, CompletionQueue queue, tag)
   cdef notify_shutdown_complete(self)

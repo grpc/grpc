@@ -4,7 +4,7 @@
     <id>Grpc.HealthCheck</id>
     <title>gRPC C# Healthchecking</title>
     <summary>Implementation of gRPC health service</summary>
-    <description>Example implementation of grpc.health.v1alpha service that can be used for health-checking.</description>
+    <description>Example implementation of grpc.health.v1 service that can be used for health-checking.</description>
     <version>$version$</version>
     <authors>Google Inc.</authors>
     <owners>grpc-packages</owners>
