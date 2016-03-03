@@ -24695,5 +24695,197 @@
     "platforms": [
       "linux"
     ]
+  }, 
+  {
+    "args": [
+      "test/cpp/qps/generated/run_tests_configs/generic_async_streaming_ping_pong_secure"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 1000, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "json_run_localhost", 
+    "platforms": [
+      "linux"
+    ]
+  }, 
+  {
+    "args": [
+      "test/cpp/qps/generated/run_tests_configs/generic_async_streaming_qps_unconstrained_secure"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 1000, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "json_run_localhost", 
+    "platforms": [
+      "linux"
+    ]
+  }, 
+  {
+    "args": [
+      "test/cpp/qps/generated/run_tests_configs/generic_async_streaming_qps_one_server_core_secure"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 1000, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "json_run_localhost", 
+    "platforms": [
+      "linux"
+    ]
+  }, 
+  {
+    "args": [
+      "test/cpp/qps/generated/run_tests_configs/protobuf_async_qps_unconstrained_secure"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 1000, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "json_run_localhost", 
+    "platforms": [
+      "linux"
+    ]
+  }, 
+  {
+    "args": [
+      "test/cpp/qps/generated/run_tests_configs/single_channel_throughput_secure"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 1000, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "json_run_localhost", 
+    "platforms": [
+      "linux"
+    ]
+  }, 
+  {
+    "args": [
+      "test/cpp/qps/generated/run_tests_configs/protobuf_async_ping_pong_secure"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 1000, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "json_run_localhost", 
+    "platforms": [
+      "linux"
+    ]
+  }, 
+  {
+    "args": [
+      "test/cpp/qps/generated/run_tests_configs/generic_async_streaming_ping_pong_insecure"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 1000, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "json_run_localhost", 
+    "platforms": [
+      "linux"
+    ]
+  }, 
+  {
+    "args": [
+      "test/cpp/qps/generated/run_tests_configs/generic_async_streaming_qps_unconstrained_insecure"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 1000, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "json_run_localhost", 
+    "platforms": [
+      "linux"
+    ]
+  }, 
+  {
+    "args": [
+      "test/cpp/qps/generated/run_tests_configs/generic_async_streaming_qps_one_server_core_insecure"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 1000, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "json_run_localhost", 
+    "platforms": [
+      "linux"
+    ]
+  }, 
+  {
+    "args": [
+      "test/cpp/qps/generated/run_tests_configs/protobuf_async_qps_unconstrained_insecure"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 1000, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "json_run_localhost", 
+    "platforms": [
+      "linux"
+    ]
+  }, 
+  {
+    "args": [
+      "test/cpp/qps/generated/run_tests_configs/single_channel_throughput_insecure"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 1000, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "json_run_localhost", 
+    "platforms": [
+      "linux"
+    ]
+  }, 
+  {
+    "args": [
+      "test/cpp/qps/generated/run_tests_configs/protobuf_async_ping_pong_insecure"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 1000, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "json_run_localhost", 
+    "platforms": [
+      "linux"
+    ]
   }
 ]
