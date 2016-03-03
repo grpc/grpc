@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -149,7 +149,7 @@ void grpc_chttp2_publish_reads(
   if (was_zero && !is_zero) {
     while (grpc_chttp2_list_pop_stalled_by_transport(transport_global,
                                                      &stream_global)) {
-      grpc_chttp2_list_add_writable_stream(transport_global, stream_global);
+      grpc_chttp2_become_writable(transport_global, stream_global);
     }
   }
 
@@ -178,7 +178,7 @@ void grpc_chttp2_publish_reads(
                                  outgoing_window);
     is_zero = stream_global->outgoing_window <= 0;
     if (was_zero && !is_zero) {
-      grpc_chttp2_list_add_writable_stream(transport_global, stream_global);
+      grpc_chttp2_become_writable(transport_global, stream_global);
     }
 
     stream_global->max_recv_bytes -= (uint32_t)GPR_MIN(
