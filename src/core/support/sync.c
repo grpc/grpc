@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -97,6 +97,11 @@ void *gpr_event_wait(gpr_event *ev, gpr_timespec abs_deadline) {
 void gpr_ref_init(gpr_refcount *r, int n) { gpr_atm_rel_store(&r->count, n); }
 
 void gpr_ref(gpr_refcount *r) { gpr_atm_no_barrier_fetch_add(&r->count, 1); }
+
+void gpr_ref_non_zero(gpr_refcount *r) {
+  gpr_atm prior = gpr_atm_no_barrier_fetch_add(&r->count, 1);
+  GPR_ASSERT(prior > 0);
+}
 
 void gpr_refn(gpr_refcount *r, int n) {
   gpr_atm_no_barrier_fetch_add(&r->count, n);
