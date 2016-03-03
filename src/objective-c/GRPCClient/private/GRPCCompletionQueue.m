@@ -60,7 +60,6 @@ const int64_t kGRPCCompletionQueueDefaultTimeoutSecs = 60;
     // anymore (i.e. on self dealloc). So the block would never end if it
     // retained self.
     grpc_completion_queue *unmanagedQueue = _unmanagedQueue;
-    int64_t lTimeoutSecs = _timeoutSecs;
 
     // Start a loop on a concurrent queue to read events from the completion
     // queue and dispatch each.
@@ -70,18 +69,18 @@ const int64_t kGRPCCompletionQueueDefaultTimeoutSecs = 60;
       gDefaultConcurrentQueue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0);
     });
     dispatch_async(gDefaultConcurrentQueue, ^{
-      gpr_timespec deadline = gpr_time_from_seconds(lTimeoutSecs, GPR_CLOCK_REALTIME);
+      gpr_timespec deadline = gpr_time_from_seconds(timeoutSecs, GPR_CLOCK_REALTIME);
       while (YES) {
         // The following call blocks until an event is available or the deadline elapses.
         grpc_event event = grpc_completion_queue_next(unmanagedQueue, deadline, NULL);
         GRPCQueueCompletionHandler handler;
         switch (event.type) {
-          case GRPC_OP_COMPLETE: // Falling through deliberately
-          case GRPC_QUEUE_TIMEOUT:
+          case GRPC_OP_COMPLETE:
             handler = (__bridge_transfer GRPCQueueCompletionHandler)event.tag;
-            if (handler) {
-              handler(event.success);
-            }
+            handler(event.success);
+            break;
+          case GRPC_QUEUE_TIMEOUT:
+            // Nothing to do here
             break;
           case GRPC_QUEUE_SHUTDOWN:
             grpc_completion_queue_destroy(unmanagedQueue);
