@@ -1,4 +1,4 @@
-# Copyright 2015, Google Inc.
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -29,6 +29,8 @@
 
 import abc
 import collections
+
+import six
 
 # face_interfaces is referenced from specification in this module.
 from grpc.framework.common import cardinality
@@ -111,7 +113,7 @@ def break_down_invocation(service_name, method_descriptions):
   face_cardinalities = {}
   request_serializers = {}
   response_deserializers = {}
-  for name, method_description in method_descriptions.iteritems():
+  for name, method_description in six.iteritems(method_descriptions):
     qualified_name = _qualified_name(service_name, name)
     method_cardinality = method_description.cardinality()
     cardinalities[name] = method_description.cardinality()
@@ -139,7 +141,7 @@ def break_down_service(service_name, method_descriptions):
   implementations = {}
   request_deserializers = {}
   response_serializers = {}
-  for name, method_description in method_descriptions.iteritems():
+  for name, method_description in six.iteritems(method_descriptions):
     qualified_name = _qualified_name(service_name, name)
     method_cardinality = method_description.cardinality()
     if method_cardinality is interfaces.Cardinality.UNARY_UNARY:
