@@ -30,7 +30,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
-// Test description at doc/connection-backoff-interop-test-description.md
+
 #include <memory>
 #include <sstream>
 
