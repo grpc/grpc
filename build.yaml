@@ -2379,7 +2379,8 @@ targets:
   - linux
   - posix
 - name: qps_json_driver
-  build: benchmark
+  build: test
+  run: false
   language: c++
   src:
   - test/cpp/qps/qps_json_driver.cc

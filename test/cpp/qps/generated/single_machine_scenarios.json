@@ -24,7 +24,7 @@
           "use_test_ca": true
         }
       }, 
-      "name": "generic_async_streaming_ping_pong.secure", 
+      "name": "generic_async_streaming_ping_pong_secure", 
       "num_clients": 1, 
       "num_servers": 1, 
       "server_config": {
@@ -273,7 +273,7 @@
         "rpc_type": "STREAMING", 
         "security_params": null
       }, 
-      "name": "generic_async_streaming_ping_pong.insecure", 
+      "name": "generic_async_streaming_ping_pong_insecure", 
       "num_clients": 1, 
       "num_servers": 1, 
       "server_config": {

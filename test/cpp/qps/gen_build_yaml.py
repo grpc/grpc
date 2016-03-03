@@ -75,7 +75,7 @@ for secure in [True, False]:
   scenarios.append({
     'single_machine': True,
     'config_protobuf': {
-      'name': 'generic_async_streaming_ping_pong.%s'
+      'name': 'generic_async_streaming_ping_pong_%s'
               % secstr,
       'num_servers': 1,
       'num_clients': 1,
