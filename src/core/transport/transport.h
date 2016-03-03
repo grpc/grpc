@@ -139,8 +139,10 @@ typedef struct grpc_transport_op {
   gpr_slice *goaway_message;
   /** set the callback for accepting new streams;
       this is a permanent callback, unlike the other one-shot closures */
-  void (*set_accept_stream)(grpc_exec_ctx *exec_ctx, void *user_data,
-                            grpc_transport *transport, const void *server_data);
+  bool set_accept_stream;
+  void (*set_accept_stream_fn)(grpc_exec_ctx *exec_ctx, void *user_data,
+                               grpc_transport *transport,
+                               const void *server_data);
   void *set_accept_stream_user_data;
   /** add this transport to a pollset */
   grpc_pollset *bind_pollset;
