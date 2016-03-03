@@ -24,7 +24,7 @@
           "use_test_ca": true
         }
       }, 
-      "name": "generic async streaming ping-pong (contentionless latency) (secure)", 
+      "name": "generic_async_streaming_ping_pong.secure", 
       "num_clients": 1, 
       "num_servers": 1, 
       "server_config": {
@@ -66,7 +66,7 @@
           "use_test_ca": true
         }
       }, 
-      "name": "generic async streaming \"unconstrained\" (QPS) (secure)", 
+      "name": "generic_async_streaming_qps_unconstrained_secure", 
       "num_clients": 0, 
       "num_servers": 1, 
       "server_config": {
@@ -108,7 +108,7 @@
           "use_test_ca": true
         }
       }, 
-      "name": "QPS with a single server core (secure)", 
+      "name": "generic_async_streaming_qps_one_server_core_secure", 
       "num_clients": 0, 
       "num_servers": 1, 
       "server_config": {
@@ -150,7 +150,7 @@
           "use_test_ca": true
         }
       }, 
-      "name": "protobuf-based QPS (secure)", 
+      "name": "protobuf_async_qps_unconstrained_secure", 
       "num_clients": 0, 
       "num_servers": 1, 
       "server_config": {
@@ -192,7 +192,7 @@
           "use_test_ca": true
         }
       }, 
-      "name": "Single-channel bidirectional throughput test (like TCP_STREAM) (secure)", 
+      "name": "single_channel_throughput_secure", 
       "num_clients": 1, 
       "num_servers": 1, 
       "server_config": {
@@ -234,7 +234,7 @@
           "use_test_ca": true
         }
       }, 
-      "name": "Sync unary ping-pong with protobufs (secure)", 
+      "name": "protobuf_async_ping_pong_secure", 
       "num_clients": 1, 
       "num_servers": 1, 
       "server_config": {
@@ -273,7 +273,7 @@
         "rpc_type": "STREAMING", 
         "security_params": null
       }, 
-      "name": "generic async streaming ping-pong (contentionless latency) (insecure)", 
+      "name": "generic_async_streaming_ping_pong.insecure", 
       "num_clients": 1, 
       "num_servers": 1, 
       "server_config": {
@@ -309,7 +309,7 @@
         "rpc_type": "STREAMING", 
         "security_params": null
       }, 
-      "name": "generic async streaming \"unconstrained\" (QPS) (insecure)", 
+      "name": "generic_async_streaming_qps_unconstrained_insecure", 
       "num_clients": 0, 
       "num_servers": 1, 
       "server_config": {
@@ -345,7 +345,7 @@
         "rpc_type": "STREAMING", 
         "security_params": null
       }, 
-      "name": "QPS with a single server core (insecure)", 
+      "name": "generic_async_streaming_qps_one_server_core_insecure", 
       "num_clients": 0, 
       "num_servers": 1, 
       "server_config": {
@@ -381,7 +381,7 @@
         "rpc_type": "STREAMING", 
         "security_params": null
       }, 
-      "name": "protobuf-based QPS (insecure)", 
+      "name": "protobuf_async_qps_unconstrained_insecure", 
       "num_clients": 0, 
       "num_servers": 1, 
       "server_config": {
@@ -417,7 +417,7 @@
         "rpc_type": "STREAMING", 
         "security_params": null
       }, 
-      "name": "Single-channel bidirectional throughput test (like TCP_STREAM) (insecure)", 
+      "name": "single_channel_throughput_insecure", 
       "num_clients": 1, 
       "num_servers": 1, 
       "server_config": {
@@ -453,7 +453,7 @@
         "rpc_type": "STREAMING", 
         "security_params": null
       }, 
-      "name": "Sync unary ping-pong with protobufs (insecure)", 
+      "name": "protobuf_async_ping_pong_insecure", 
       "num_clients": 1, 
       "num_servers": 1, 
       "server_config": {

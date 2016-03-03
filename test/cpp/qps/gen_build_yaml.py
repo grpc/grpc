@@ -75,7 +75,7 @@ for secure in [True, False]:
   scenarios.append({
     'single_machine': True,
     'config_protobuf': {
-      'name': 'generic async streaming ping-pong (contentionless latency) (%s)'
+      'name': 'generic_async_streaming_ping_pong.%s'
               % secstr,
       'num_servers': 1,
       'num_clients': 1,
@@ -105,7 +105,7 @@ for secure in [True, False]:
   scenarios.append({
     'single_machine': True,
     'config_protobuf': {
-      'name': 'generic async streaming "unconstrained" (QPS) (%s)'
+      'name': 'generic_async_streaming_qps_unconstrained_%s'
               % secstr,
       'num_servers': 1,
       'num_clients': 0,
@@ -135,7 +135,7 @@ for secure in [True, False]:
   scenarios.append({
     'single_machine': True,
     'config_protobuf': {
-      'name': 'QPS with a single server core (%s)'
+      'name': 'generic_async_streaming_qps_one_server_core_%s'
               % secstr,
       'num_servers': 1,
       'num_clients': 0,
@@ -165,7 +165,7 @@ for secure in [True, False]:
   scenarios.append({
     'single_machine': True,
     'config_protobuf': {
-      'name': 'protobuf-based QPS (%s)'
+      'name': 'protobuf_async_qps_unconstrained_%s'
               % secstr,
       'num_servers': 1,
       'num_clients': 0,
@@ -195,7 +195,7 @@ for secure in [True, False]:
   scenarios.append({
     'single_machine': True,
     'config_protobuf': {
-      'name': 'Single-channel bidirectional throughput test (like TCP_STREAM) (%s)'
+      'name': 'single_channel_throughput_%s'
               % secstr,
       'num_servers': 1,
       'num_clients': 1,
@@ -225,7 +225,7 @@ for secure in [True, False]:
   scenarios.append({
     'single_machine': True,
     'config_protobuf': {
-      'name': 'Sync unary ping-pong with protobufs (%s)'
+      'name': 'protobuf_async_ping_pong_%s'
               % secstr,
       'num_servers': 1,
       'num_clients': 1,
