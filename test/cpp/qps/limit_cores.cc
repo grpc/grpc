@@ -37,7 +37,6 @@
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
-
 #ifdef GPR_CPU_LINUX
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
