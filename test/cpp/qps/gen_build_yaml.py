@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env python2.7
 # Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
@@ -28,18 +28,60 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-gen_build_yaml_dirs="  \
-  src/boringssl        \
-  src/proto            \
-  src/zlib             \
-  test/core/bad_client \
-  test/core/bad_ssl    \
-  test/core/end2end    \
-  test/cpp/qps"
-gen_build_files=""
-for gen_build_yaml in $gen_build_yaml_dirs
-do
-  output_file=`mktemp /tmp/genXXXXXX`
-  $gen_build_yaml/gen_build_yaml.py > $output_file
-  gen_build_files="$gen_build_files $output_file"
-done
+"""Generates the appropriate build.yaml data for performance tests."""
+
+import yaml
+
+SINGLE_MACHINE_CORES=8
+WARMUP_SECONDS=5
+BENCHMARK_SECONDS=30
+
+EMPTY_GENERIC_PAYLOAD = {
+  'bytebuf_params': {
+    'req_size': 0,
+    'resp_size': 0,
+  }
+}
+
+scenarios = []
+for secure in [True, False]:
+  if secure:
+    secstr = 'secure'
+    secargs = {'use_test_ca': True,
+               'server_host_override': 'foo.test.google.fr'}
+  else:
+    secstr = 'insecure'
+    secargs = None
+
+  scenarios.append({
+    'single_machine': True,
+    'config_protobuf': {
+      'name': 'generic async streaming ping-pong (contentionless latency) (%s)'
+              % secstr,
+      'num_servers': 1,
+      'num_clients': 1,
+      'client_config': {
+        'client_type': 'ASYNC_CLIENT',
+        'security_params': secargs,
+        'outstanding_rpcs_per_channel': 1,
+        'client_channels': 1,
+        'async_client_threads': 1,
+        'rpc_type': 'STREAMING',
+        'load_params': {
+          'closed_loop': {}
+        },
+        'payload_config': EMPTY_GENERIC_PAYLOAD,
+      },
+      'server_config': {
+        'server_type': 'ASYNC_GENERIC_SERVER',
+        'security_params': secargs,
+        'core_limit': SINGLE_MACHINE_CORES/2,
+        'async_server_threads': 1,
+        'payload_config': EMPTY_GENERIC_PAYLOAD,
+      },
+      'warmup_seconds': WARMUP_SECONDS,
+      'benchmark_seconds': BENCHMARK_SECONDS
+    }
+  })
+
+print yaml.dump({'performance_scenarios': scenarios})

@@ -1,0 +1,12 @@
+%YAML 1.2
+--- |
+  <%!
+  import json
+  %>
+
+  ${json.dumps({'scenarios': [
+      scenario.config_protobuf
+      for scenario in performance_scenarios
+      if scenario.single_machine
+    ]},
+    sort_keys=True, indent=2)}

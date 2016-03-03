@@ -169,3 +169,18 @@ message CoreResponse {
 
 message Void {
 }
+
+message Scenario {
+  string name = 1;
+  ClientConfig client_config = 2;
+  int32 num_clients = 3;
+  ServerConfig server_config = 4;
+  int32 num_servers = 5;
+  int32 warmup_seconds = 6;
+  int32 benchmark_seconds = 7;
+  int32 spawn_local_worker_count = 8;
+}
+
+message Scenarios {
+  repeated Scenario scenarios = 1;
+}
