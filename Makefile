@@ -963,6 +963,7 @@ hybrid_end2end_test: $(BINDIR)/$(CONFIG)/hybrid_end2end_test
 interop_client: $(BINDIR)/$(CONFIG)/interop_client
 interop_server: $(BINDIR)/$(CONFIG)/interop_server
 interop_test: $(BINDIR)/$(CONFIG)/interop_test
+json_run_localhost: $(BINDIR)/$(CONFIG)/json_run_localhost
 metrics_client: $(BINDIR)/$(CONFIG)/metrics_client
 mock_test: $(BINDIR)/$(CONFIG)/mock_test
 qps_driver: $(BINDIR)/$(CONFIG)/qps_driver
@@ -1309,6 +1310,7 @@ buildtests_cxx: buildtests_zookeeper privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/interop_client \
   $(BINDIR)/$(CONFIG)/interop_server \
   $(BINDIR)/$(CONFIG)/interop_test \
+  $(BINDIR)/$(CONFIG)/json_run_localhost \
   $(BINDIR)/$(CONFIG)/metrics_client \
   $(BINDIR)/$(CONFIG)/mock_test \
   $(BINDIR)/$(CONFIG)/qps_interarrival_test \
@@ -9949,6 +9951,49 @@ deps_interop_test: $(INTEROP_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(INTEROP_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+JSON_RUN_LOCALHOST_SRC = \
+    test/cpp/qps/json_run_localhost.cc \
+
+JSON_RUN_LOCALHOST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(JSON_RUN_LOCALHOST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/json_run_localhost: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/json_run_localhost: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/json_run_localhost: $(PROTOBUF_DEP) $(JSON_RUN_LOCALHOST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(JSON_RUN_LOCALHOST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/json_run_localhost
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/cpp/qps/json_run_localhost.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
+
+deps_json_run_localhost: $(JSON_RUN_LOCALHOST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(JSON_RUN_LOCALHOST_OBJS:.o=.dep)
 endif
 endif
 

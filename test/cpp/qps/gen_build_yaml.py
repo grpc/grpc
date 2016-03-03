@@ -253,4 +253,17 @@ for secure in [True, False]:
     }
   })
 
-print yaml.dump({'performance_scenarios': scenarios})
+# go through scenarios and produce a test runner for each one
+tests = [{
+  'name': 'json_run_localhost',
+  'args': ['test/cpp/qps/generated/run_tests_configs/%s' %
+           scenario['config_protobuf']['name']],
+  'exclude_configs': [],
+  'platforms': ['linux'],
+  'ci_platforms': ['linux'],
+  'flaky': False,
+  'language': 'c',
+  'cpu_cost': 1000 # TODO(ctiller): can we compute this?
+} for scenario in scenarios]
+
+print yaml.dump({'performance_scenarios': scenarios, 'tests': tests})
