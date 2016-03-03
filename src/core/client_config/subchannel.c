@@ -36,15 +36,16 @@
 #include <string.h>
 
 #include <grpc/support/alloc.h>
+#include <grpc/support/avl.h>
 
 #include "src/core/channel/channel_args.h"
 #include "src/core/channel/client_channel.h"
 #include "src/core/channel/connected_channel.h"
 #include "src/core/client_config/initial_connect_string.h"
+#include "src/core/client_config/subchannel_index.h"
 #include "src/core/iomgr/timer.h"
 #include "src/core/profiling/timers.h"
 #include "src/core/surface/channel.h"
-#include "src/core/transport/connectivity_state.h"
 #include "src/core/transport/connectivity_state.h"
 
 #define INTERNAL_REF_BITS 16
@@ -94,6 +95,8 @@ struct grpc_subchannel {
   struct sockaddr *addr;
   size_t addr_len;
 
+  grpc_subchannel_key *key;
+
   /** initial string to send to peer */
   gpr_slice initial_connect_string;
 
@@ -105,7 +108,7 @@ struct grpc_subchannel {
 
   /** pollset_set tracking who's interested in a connection
       being setup */
-  grpc_pollset_set pollset_set;
+  grpc_pollset_set *pollset_set;
 
   /** active connection, or null; of type grpc_connected_subchannel */
   gpr_atm connected_subchannel;
@@ -206,7 +209,8 @@ static void subchannel_destroy(grpc_exec_ctx *exec_ctx, void *arg,
   gpr_slice_unref(c->initial_connect_string);
   grpc_connectivity_state_destroy(exec_ctx, &c->state_tracker);
   grpc_connector_unref(exec_ctx, c->connector);
-  grpc_pollset_set_destroy(&c->pollset_set);
+  grpc_pollset_set_destroy(c->pollset_set);
+  grpc_subchannel_key_destroy(exec_ctx, c->key);
   gpr_free(c);
 }
 
@@ -222,22 +226,42 @@ static gpr_atm ref_mutate(grpc_subchannel *c, gpr_atm delta,
   return old_val;
 }
 
-void grpc_subchannel_ref(grpc_subchannel *c GRPC_SUBCHANNEL_REF_EXTRA_ARGS) {
+grpc_subchannel *grpc_subchannel_ref(grpc_subchannel *c
+                                         GRPC_SUBCHANNEL_REF_EXTRA_ARGS) {
   gpr_atm old_refs;
   old_refs = ref_mutate(c, (1 << INTERNAL_REF_BITS),
                         0 REF_MUTATE_PURPOSE("STRONG_REF"));
   GPR_ASSERT((old_refs & STRONG_REF_MASK) != 0);
+  return c;
 }
 
-void grpc_subchannel_weak_ref(grpc_subchannel *c
-                                  GRPC_SUBCHANNEL_REF_EXTRA_ARGS) {
+grpc_subchannel *grpc_subchannel_weak_ref(grpc_subchannel *c
+                                              GRPC_SUBCHANNEL_REF_EXTRA_ARGS) {
   gpr_atm old_refs;
   old_refs = ref_mutate(c, 1, 0 REF_MUTATE_PURPOSE("WEAK_REF"));
   GPR_ASSERT(old_refs != 0);
+  return c;
+}
+
+grpc_subchannel *grpc_subchannel_ref_from_weak_ref(
+    grpc_subchannel *c GRPC_SUBCHANNEL_REF_EXTRA_ARGS) {
+  if (!c) return NULL;
+  for (;;) {
+    gpr_atm old_refs = gpr_atm_acq_load(&c->ref_pair);
+    if (old_refs >= (1 << INTERNAL_REF_BITS)) {
+      gpr_atm new_refs = old_refs + (1 << INTERNAL_REF_BITS);
+      if (gpr_atm_rel_cas(&c->ref_pair, old_refs, new_refs)) {
+        return c;
+      }
+    } else {
+      return NULL;
+    }
+  }
 }
 
 static void disconnect(grpc_exec_ctx *exec_ctx, grpc_subchannel *c) {
   grpc_connected_subchannel *con;
+  grpc_subchannel_index_unregister(exec_ctx, c->key, c);
   gpr_mu_lock(&c->mu);
   GPR_ASSERT(!c->disconnected);
   c->disconnected = 1;
@@ -276,10 +300,19 @@ static uint32_t random_seed() {
   return (uint32_t)(gpr_time_to_millis(gpr_now(GPR_CLOCK_MONOTONIC)));
 }
 
-grpc_subchannel *grpc_subchannel_create(grpc_connector *connector,
+grpc_subchannel *grpc_subchannel_create(grpc_exec_ctx *exec_ctx,
+                                        grpc_connector *connector,
                                         grpc_subchannel_args *args) {
-  grpc_subchannel *c = gpr_malloc(sizeof(*c));
+  grpc_subchannel_key *key = grpc_subchannel_key_create(connector, args);
+  grpc_subchannel *c = grpc_subchannel_index_find(exec_ctx, key);
+  if (c) {
+    grpc_subchannel_key_destroy(exec_ctx, key);
+    return c;
+  }
+
+  c = gpr_malloc(sizeof(*c));
   memset(c, 0, sizeof(*c));
+  c->key = key;
   gpr_atm_no_barrier_store(&c->ref_pair, 1 << INTERNAL_REF_BITS);
   c->connector = connector;
   grpc_connector_ref(c->connector);
@@ -293,7 +326,7 @@ grpc_subchannel *grpc_subchannel_create(grpc_connector *connector,
   }
   c->addr = gpr_malloc(args->addr_len);
   memcpy(c->addr, args->addr, args->addr_len);
-  grpc_pollset_set_init(&c->pollset_set);
+  c->pollset_set = grpc_pollset_set_create();
   c->addr_len = args->addr_len;
   grpc_set_initial_connect_string(&c->addr, &c->addr_len,
                                   &c->initial_connect_string);
@@ -305,13 +338,14 @@ grpc_subchannel *grpc_subchannel_create(grpc_connector *connector,
   grpc_connectivity_state_init(&c->state_tracker, GRPC_CHANNEL_IDLE,
                                "subchannel");
   gpr_mu_init(&c->mu);
-  return c;
+
+  return grpc_subchannel_index_register(exec_ctx, key, c);
 }
 
 static void continue_connect(grpc_exec_ctx *exec_ctx, grpc_subchannel *c) {
   grpc_connect_in_args args;
 
-  args.interested_parties = &c->pollset_set;
+  args.interested_parties = c->pollset_set;
   args.addr = c->addr;
   args.addr_len = c->addr_len;
   args.deadline = compute_connect_deadline(c);
@@ -345,7 +379,7 @@ static void on_external_state_watcher_done(grpc_exec_ctx *exec_ctx, void *arg,
   external_state_watcher *w = arg;
   grpc_closure *follow_up = w->notify;
   if (w->pollset_set != NULL) {
-    grpc_pollset_set_del_pollset_set(exec_ctx, &w->subchannel->pollset_set,
+    grpc_pollset_set_del_pollset_set(exec_ctx, w->subchannel->pollset_set,
                                      w->pollset_set);
   }
   gpr_mu_lock(&w->subchannel->mu);
@@ -361,7 +395,6 @@ void grpc_subchannel_notify_on_state_change(
     grpc_exec_ctx *exec_ctx, grpc_subchannel *c,
     grpc_pollset_set *interested_parties, grpc_connectivity_state *state,
     grpc_closure *notify) {
-  int do_connect = 0;
   external_state_watcher *w;
 
   if (state == NULL) {
@@ -381,7 +414,7 @@ void grpc_subchannel_notify_on_state_change(
     w->notify = notify;
     grpc_closure_init(&w->closure, on_external_state_watcher_done, w);
     if (interested_parties != NULL) {
-      grpc_pollset_set_add_pollset_set(exec_ctx, &c->pollset_set,
+      grpc_pollset_set_add_pollset_set(exec_ctx, c->pollset_set,
                                        interested_parties);
     }
     GRPC_SUBCHANNEL_WEAK_REF(c, "external_state_watcher");
@@ -391,16 +424,12 @@ void grpc_subchannel_notify_on_state_change(
     w->next->prev = w->prev->next = w;
     if (grpc_connectivity_state_notify_on_state_change(
             exec_ctx, &c->state_tracker, state, &w->closure)) {
-      do_connect = 1;
       c->connecting = 1;
       /* released by connection */
       GRPC_SUBCHANNEL_WEAK_REF(c, "connecting");
+      start_connect(exec_ctx, c);
     }
     gpr_mu_unlock(&c->mu);
-  }
-
-  if (do_connect) {
-    start_connect(exec_ctx, c);
   }
 }
 
@@ -539,7 +568,7 @@ static void publish_transport(grpc_exec_ctx *exec_ctx, grpc_subchannel *c) {
   GRPC_SUBCHANNEL_WEAK_REF(c, "state_watcher");
   GRPC_SUBCHANNEL_WEAK_UNREF(exec_ctx, c, "connecting");
   grpc_connected_subchannel_notify_on_state_change(
-      exec_ctx, con, &c->pollset_set, &sw_subchannel->connectivity_state,
+      exec_ctx, con, c->pollset_set, &sw_subchannel->connectivity_state,
       &sw_subchannel->closure);
 
   /* signal completion */
@@ -601,11 +630,12 @@ static void on_alarm(grpc_exec_ctx *exec_ctx, void *arg, bool iomgr_success) {
   if (c->disconnected) {
     iomgr_success = 0;
   }
-  gpr_mu_unlock(&c->mu);
   if (iomgr_success) {
     update_reconnect_parameters(c);
     continue_connect(exec_ctx, c);
+    gpr_mu_unlock(&c->mu);
   } else {
+    gpr_mu_unlock(&c->mu);
     GRPC_SUBCHANNEL_WEAK_UNREF(exec_ctx, c, "connecting");
   }
 }

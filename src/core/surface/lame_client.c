@@ -78,8 +78,7 @@ static void lame_start_transport_stream_op(grpc_exec_ctx *exec_ctx,
   } else if (op->recv_trailing_metadata != NULL) {
     fill_metadata(elem, op->recv_trailing_metadata);
   }
-  grpc_exec_ctx_enqueue(exec_ctx, op->on_complete, false, NULL);
-  grpc_exec_ctx_enqueue(exec_ctx, op->recv_message_ready, false, NULL);
+  grpc_transport_stream_op_finish_with_failure(exec_ctx, op);
 }
 
 static char *lame_get_peer(grpc_exec_ctx *exec_ctx, grpc_call_element *elem) {

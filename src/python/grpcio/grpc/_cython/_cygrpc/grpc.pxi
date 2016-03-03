@@ -36,7 +36,7 @@ cdef extern from "grpc/_cython/loader.h":
   ctypedef unsigned uint32_t
   ctypedef long int64_t
 
-  int pygrpc_load_core(const char*)
+  int pygrpc_load_core(char*)
 
   void *gpr_malloc(size_t size)
   void gpr_free(void *ptr)
@@ -137,6 +137,8 @@ cdef extern from "grpc/_cython/loader.h":
   const int GRPC_WRITE_BUFFER_HINT
   const int GRPC_WRITE_NO_COMPRESS
   const int GRPC_WRITE_USED_MASK
+
+  const int GRPC_MAX_COMPLETION_QUEUE_PLUCKERS
 
   ctypedef struct grpc_completion_queue:
     # We don't care about the internals (and in fact don't know them)

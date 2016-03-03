@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -75,6 +75,7 @@ class InteropClient {
   void DoTimeoutOnSleepingServer();
   void DoEmptyStream();
   void DoStatusWithMessage();
+  void DoCustomMetadata();
   // Auth tests.
   // username is a string containing the user email
   void DoJwtTokenCreds(const grpc::string& username);

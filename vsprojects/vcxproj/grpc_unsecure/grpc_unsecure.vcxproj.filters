@@ -4,135 +4,6 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\surface\init_unsecure.c">
       <Filter>src\core\surface</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\profiling\basic_timers.c">
-      <Filter>src\core\profiling</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\profiling\stap_timers.c">
-      <Filter>src\core\profiling</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\support\alloc.c">
-      <Filter>src\core\support</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\support\avl.c">
-      <Filter>src\core\support</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\support\cmdline.c">
-      <Filter>src\core\support</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\support\cpu_iphone.c">
-      <Filter>src\core\support</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\support\cpu_linux.c">
-      <Filter>src\core\support</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\support\cpu_posix.c">
-      <Filter>src\core\support</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\support\cpu_windows.c">
-      <Filter>src\core\support</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\support\env_linux.c">
-      <Filter>src\core\support</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\support\env_posix.c">
-      <Filter>src\core\support</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\support\env_win32.c">
-      <Filter>src\core\support</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\support\file.c">
-      <Filter>src\core\support</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\support\file_posix.c">
-      <Filter>src\core\support</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\support\file_win32.c">
-      <Filter>src\core\support</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\support\histogram.c">
-      <Filter>src\core\support</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\support\host_port.c">
-      <Filter>src\core\support</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\support\log.c">
-      <Filter>src\core\support</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\support\log_android.c">
-      <Filter>src\core\support</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\support\log_linux.c">
-      <Filter>src\core\support</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\support\log_posix.c">
-      <Filter>src\core\support</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\support\log_win32.c">
-      <Filter>src\core\support</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\support\murmur_hash.c">
-      <Filter>src\core\support</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\support\slice.c">
-      <Filter>src\core\support</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\support\slice_buffer.c">
-      <Filter>src\core\support</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\support\stack_lockfree.c">
-      <Filter>src\core\support</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\support\string.c">
-      <Filter>src\core\support</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\support\string_posix.c">
-      <Filter>src\core\support</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\support\string_win32.c">
-      <Filter>src\core\support</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\support\subprocess_posix.c">
-      <Filter>src\core\support</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\support\subprocess_windows.c">
-      <Filter>src\core\support</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\support\sync.c">
-      <Filter>src\core\support</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\support\sync_posix.c">
-      <Filter>src\core\support</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\support\sync_win32.c">
-      <Filter>src\core\support</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\support\thd.c">
-      <Filter>src\core\support</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\support\thd_posix.c">
-      <Filter>src\core\support</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\support\thd_win32.c">
-      <Filter>src\core\support</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\support\time.c">
-      <Filter>src\core\support</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\support\time_posix.c">
-      <Filter>src\core\support</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\support\time_precise.c">
-      <Filter>src\core\support</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\support\time_win32.c">
-      <Filter>src\core\support</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\support\tls_pthread.c">
-      <Filter>src\core\support</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\support\wrap_memcpy.c">
-      <Filter>src\core\support</Filter>
-    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\census\grpc_context.c">
       <Filter>src\core\census</Filter>
     </ClCompile>
@@ -178,6 +49,9 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\client_config\initial_connect_string.c">
       <Filter>src\core\client_config</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\client_config\lb_policies\load_balancer_api.c">
+      <Filter>src\core\client_config\lb_policies</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\client_config\lb_policies\pick_first.c">
       <Filter>src\core\client_config\lb_policies</Filter>
     </ClCompile>
@@ -214,10 +88,13 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\client_config\subchannel_factory.c">
       <Filter>src\core\client_config</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\client_config\subchannel_index.c">
+      <Filter>src\core\client_config</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\client_config\uri_parser.c">
       <Filter>src\core\client_config</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\compression\algorithm.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\compression\compression_algorithm.c">
       <Filter>src\core\compression</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\compression\message_compress.c">
@@ -366,6 +243,9 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\json\json_writer.c">
       <Filter>src\core\json</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\proto\grpc\lb\v0\load_balancer.pb.c">
+      <Filter>src\core\proto\grpc\lb\v0</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\surface\alarm.c">
       <Filter>src\core\surface</Filter>
@@ -520,6 +400,9 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\census\initialize.c">
       <Filter>src\core\census</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\census\mlog.c">
+      <Filter>src\core\census</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\census\operation.c">
       <Filter>src\core\census</Filter>
     </ClCompile>
@@ -529,152 +412,17 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\census\tracing.c">
       <Filter>src\core\census</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\third_party\nanopb\pb_common.c">
+      <Filter>third_party\nanopb</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\third_party\nanopb\pb_decode.c">
+      <Filter>third_party\nanopb</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\third_party\nanopb\pb_encode.c">
+      <Filter>third_party\nanopb</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\support\alloc.h">
-      <Filter>include\grpc\support</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\support\atm.h">
-      <Filter>include\grpc\support</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\support\atm_gcc_atomic.h">
-      <Filter>include\grpc\support</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\support\atm_gcc_sync.h">
-      <Filter>include\grpc\support</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\support\atm_win32.h">
-      <Filter>include\grpc\support</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\support\avl.h">
-      <Filter>include\grpc\support</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\support\cmdline.h">
-      <Filter>include\grpc\support</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\support\cpu.h">
-      <Filter>include\grpc\support</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\support\histogram.h">
-      <Filter>include\grpc\support</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\support\host_port.h">
-      <Filter>include\grpc\support</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\support\log.h">
-      <Filter>include\grpc\support</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\support\log_win32.h">
-      <Filter>include\grpc\support</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\support\port_platform.h">
-      <Filter>include\grpc\support</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\support\slice.h">
-      <Filter>include\grpc\support</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\support\slice_buffer.h">
-      <Filter>include\grpc\support</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\support\string_util.h">
-      <Filter>include\grpc\support</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\support\subprocess.h">
-      <Filter>include\grpc\support</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\support\sync.h">
-      <Filter>include\grpc\support</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\support\sync_generic.h">
-      <Filter>include\grpc\support</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\support\sync_posix.h">
-      <Filter>include\grpc\support</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\support\sync_win32.h">
-      <Filter>include\grpc\support</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\support\thd.h">
-      <Filter>include\grpc\support</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\support\time.h">
-      <Filter>include\grpc\support</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\support\tls.h">
-      <Filter>include\grpc\support</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\support\tls_gcc.h">
-      <Filter>include\grpc\support</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\support\tls_msvc.h">
-      <Filter>include\grpc\support</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\support\tls_pthread.h">
-      <Filter>include\grpc\support</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\support\useful.h">
-      <Filter>include\grpc\support</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\alloc.h">
-      <Filter>include\grpc\impl\codegen</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm.h">
-      <Filter>include\grpc\impl\codegen</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm_gcc_atomic.h">
-      <Filter>include\grpc\impl\codegen</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm_gcc_sync.h">
-      <Filter>include\grpc\impl\codegen</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm_win32.h">
-      <Filter>include\grpc\impl\codegen</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\byte_buffer.h">
-      <Filter>include\grpc\impl\codegen</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\compression_types.h">
-      <Filter>include\grpc\impl\codegen</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\connectivity_state.h">
-      <Filter>include\grpc\impl\codegen</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\grpc_types.h">
-      <Filter>include\grpc\impl\codegen</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\log.h">
-      <Filter>include\grpc\impl\codegen</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\port_platform.h">
-      <Filter>include\grpc\impl\codegen</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\propagation_bits.h">
-      <Filter>include\grpc\impl\codegen</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\slice.h">
-      <Filter>include\grpc\impl\codegen</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\slice_buffer.h">
-      <Filter>include\grpc\impl\codegen</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\status.h">
-      <Filter>include\grpc\impl\codegen</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync.h">
-      <Filter>include\grpc\impl\codegen</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_generic.h">
-      <Filter>include\grpc\impl\codegen</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_posix.h">
-      <Filter>include\grpc\impl\codegen</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_win32.h">
-      <Filter>include\grpc\impl\codegen</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\time.h">
-      <Filter>include\grpc\impl\codegen</Filter>
-    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc\byte_buffer.h">
       <Filter>include\grpc</Filter>
     </ClInclude>
@@ -690,41 +438,29 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc\status.h">
       <Filter>include\grpc</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\byte_buffer.h">
+      <Filter>include\grpc\impl\codegen</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\compression_types.h">
+      <Filter>include\grpc\impl\codegen</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\connectivity_state.h">
+      <Filter>include\grpc\impl\codegen</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\grpc_types.h">
+      <Filter>include\grpc\impl\codegen</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\propagation_bits.h">
+      <Filter>include\grpc\impl\codegen</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\status.h">
+      <Filter>include\grpc\impl\codegen</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc\census.h">
       <Filter>include\grpc</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="$(SolutionDir)\..\src\core\profiling\timers.h">
-      <Filter>src\core\profiling</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\support\block_annotate.h">
-      <Filter>src\core\support</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\support\env.h">
-      <Filter>src\core\support</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\support\file.h">
-      <Filter>src\core\support</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\support\murmur_hash.h">
-      <Filter>src\core\support</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\support\stack_lockfree.h">
-      <Filter>src\core\support</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\support\string.h">
-      <Filter>src\core\support</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\support\string_win32.h">
-      <Filter>src\core\support</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\support\thd_internal.h">
-      <Filter>src\core\support</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\support\time_precise.h">
-      <Filter>src\core\support</Filter>
-    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\census\grpc_filter.h">
       <Filter>src\core\census</Filter>
     </ClInclude>
@@ -767,6 +503,9 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\client_config\initial_connect_string.h">
       <Filter>src\core\client_config</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\client_config\lb_policies\load_balancer_api.h">
+      <Filter>src\core\client_config\lb_policies</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\client_config\lb_policies\pick_first.h">
       <Filter>src\core\client_config\lb_policies</Filter>
     </ClInclude>
@@ -801,6 +540,9 @@
       <Filter>src\core\client_config</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\client_config\subchannel_factory.h">
+      <Filter>src\core\client_config</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\client_config\subchannel_index.h">
       <Filter>src\core\client_config</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\client_config\uri_parser.h">
@@ -914,9 +656,6 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\iomgr\timer_heap.h">
       <Filter>src\core\iomgr</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\iomgr\timer_internal.h">
-      <Filter>src\core\iomgr</Filter>
-    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\iomgr\udp_server.h">
       <Filter>src\core\iomgr</Filter>
     </ClInclude>
@@ -946,6 +685,9 @@
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\json\json_writer.h">
       <Filter>src\core\json</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\proto\grpc\lb\v0\load_balancer.pb.h">
+      <Filter>src\core\proto\grpc\lb\v0</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\statistics\census_interface.h">
       <Filter>src\core\statistics</Filter>
@@ -1067,8 +809,23 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\census\aggregation.h">
       <Filter>src\core\census</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\census\mlog.h">
+      <Filter>src\core\census</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\census\rpc_metric_id.h">
       <Filter>src\core\census</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\third_party\nanopb\pb.h">
+      <Filter>third_party\nanopb</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\third_party\nanopb\pb_common.h">
+      <Filter>third_party\nanopb</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\third_party\nanopb\pb_decode.h">
+      <Filter>third_party\nanopb</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\third_party\nanopb\pb_encode.h">
+      <Filter>third_party\nanopb</Filter>
     </ClInclude>
   </ItemGroup>
 
@@ -1084,9 +841,6 @@
     </Filter>
     <Filter Include="include\grpc\impl\codegen">
       <UniqueIdentifier>{03cc6735-c734-7017-4000-a435f29d55c3}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="include\grpc\support">
-      <UniqueIdentifier>{a553e3dc-8973-1b23-8be4-31852fd9e429}</UniqueIdentifier>
     </Filter>
     <Filter Include="src">
       <UniqueIdentifier>{aaf326a1-c884-46ea-875a-cbbd9983e539}</UniqueIdentifier>
@@ -1124,14 +878,20 @@
     <Filter Include="src\core\json">
       <UniqueIdentifier>{443ffc61-1bea-2477-6e54-1ddf8c139264}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\core\profiling">
-      <UniqueIdentifier>{7f91d9bf-c9de-835a-d74d-b16f843b89a9}</UniqueIdentifier>
+    <Filter Include="src\core\proto">
+      <UniqueIdentifier>{7f4bb22a-65ba-0f8f-6387-66b1f6677a80}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\proto\grpc">
+      <UniqueIdentifier>{9c2bd164-c317-8a13-564d-3b28b0fd79cf}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\proto\grpc\lb">
+      <UniqueIdentifier>{2bad8e10-4fc5-d8b3-e026-4abbd0c25cda}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\proto\grpc\lb\v0">
+      <UniqueIdentifier>{4475c8ed-e01b-8906-47d0-8a504189c0d5}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\core\statistics">
       <UniqueIdentifier>{e084164c-a069-00e3-db35-4e0b1cd6f0b7}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="src\core\support">
-      <UniqueIdentifier>{1dcca8bf-f195-179c-4909-72c689fdd1a9}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\core\surface">
       <UniqueIdentifier>{6cd0127e-c24b-d43c-38f5-198db8d4322a}</UniqueIdentifier>
@@ -1141,6 +901,12 @@
     </Filter>
     <Filter Include="src\core\transport\chttp2">
       <UniqueIdentifier>{5fcd6206-f774-9ae6-4b85-305d6a723843}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party">
+      <UniqueIdentifier>{025c051e-8eba-125b-67f9-173f95176eb2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party\nanopb">
+      <UniqueIdentifier>{6511f77d-f28c-80e0-0889-8975e688e344}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

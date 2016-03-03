@@ -69,23 +69,24 @@ typedef struct gpr_avl {
 } gpr_avl;
 
 /** create an immutable AVL tree */
-GPR_API gpr_avl gpr_avl_create(const gpr_avl_vtable *vtable);
+GPRAPI gpr_avl gpr_avl_create(const gpr_avl_vtable *vtable);
 /** add a reference to an existing tree - returns
     the tree as a convenience */
-GPR_API gpr_avl gpr_avl_ref(gpr_avl avl);
+GPRAPI gpr_avl gpr_avl_ref(gpr_avl avl);
 /** remove a reference to a tree - destroying it if there
     are no references left */
-GPR_API void gpr_avl_unref(gpr_avl avl);
+GPRAPI void gpr_avl_unref(gpr_avl avl);
 /** return a new tree with (key, value) added to avl.
     implicitly unrefs avl to allow easy chaining.
     if key exists in avl, the new tree's key entry updated
     (i.e. a duplicate is not created) */
-GPR_API gpr_avl gpr_avl_add(gpr_avl avl, void *key, void *value);
-/** return a new tree with key deleted */
-GPR_API gpr_avl gpr_avl_remove(gpr_avl avl, void *key);
+GPRAPI gpr_avl gpr_avl_add(gpr_avl avl, void *key, void *value);
+/** return a new tree with key deleted
+    implicitly unrefs avl to allow easy chaining. */
+GPRAPI gpr_avl gpr_avl_remove(gpr_avl avl, void *key);
 /** lookup key, and return the associated value.
     does not mutate avl.
     returns NULL if key is not found. */
-GPR_API void *gpr_avl_get(gpr_avl avl, void *key);
+GPRAPI void *gpr_avl_get(gpr_avl avl, void *key);
 
-#endif
+#endif /* GRPC_SUPPORT_AVL_H */

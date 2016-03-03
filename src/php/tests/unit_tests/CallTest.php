@@ -1,7 +1,7 @@
 <?php
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -91,4 +91,32 @@ class CallTest extends PHPUnit_Framework_TestCase
     {
         $this->assertTrue(is_string($this->call->getPeer()));
     }
+
+    public function testCancel()
+    {
+      $this->assertNull($this->call->cancel());
+    }
+
+    /**
+     * @expectedException InvalidArgumentException
+     */
+    public function testInvalidMetadataKey()
+    {
+        $batch = [
+            'invalid' => ['key1' => 'value1'],
+        ];
+        $result = $this->call->startBatch($batch);
+    }
+
+    /**
+     * @expectedException InvalidArgumentException
+     */
+    public function testInvalidMetadataInnerValue()
+    {
+        $batch = [
+            Grpc\OP_SEND_INITIAL_METADATA => ['key1' => 'value1'],
+        ];
+        $result = $this->call->startBatch($batch);
+    }
+
 }

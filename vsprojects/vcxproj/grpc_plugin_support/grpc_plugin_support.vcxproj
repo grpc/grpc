@@ -53,6 +53,7 @@
   <ImportGroup Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="$(SolutionDir)\..\vsprojects\global.props" />
+    <Import Project="$(SolutionDir)\..\vsprojects\protoc.props" />
     <Import Project="$(SolutionDir)\..\vsprojects\winsock.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
@@ -177,21 +178,21 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\sync_no_cxx11.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\sync_stream.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\time.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\byte_buffer.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\compression_types.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\connectivity_state.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\grpc_types.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\propagation_bits.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\status.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\alloc.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm_gcc_atomic.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm_gcc_sync.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm_win32.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\byte_buffer.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\compression_types.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\connectivity_state.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\grpc_types.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\log.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\port_platform.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\propagation_bits.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\slice.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\slice_buffer.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\status.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_generic.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_posix.h" />

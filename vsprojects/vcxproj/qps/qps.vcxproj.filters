@@ -46,7 +46,7 @@
     <ClCompile Include="$(SolutionDir)\..\test\cpp\qps\server_sync.cc">
       <Filter>test\cpp\qps</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\test\cpp\qps\timer.cc">
+    <ClCompile Include="$(SolutionDir)\..\test\cpp\qps\usage_timer.cc">
       <Filter>test\cpp\qps</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\cpp\util\benchmark_config.cc">
@@ -84,7 +84,7 @@
     <ClInclude Include="$(SolutionDir)\..\test\cpp\qps\stats.h">
       <Filter>test\cpp\qps</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\test\cpp\qps\timer.h">
+    <ClInclude Include="$(SolutionDir)\..\test\cpp\qps\usage_timer.h">
       <Filter>test\cpp\qps</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\test\cpp\util\benchmark_config.h">

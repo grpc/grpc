@@ -91,10 +91,10 @@ extern census_context_next_tag_type census_context_next_tag_import;
 typedef int(*census_context_get_tag_type)(const census_context *context, const char *key, census_tag *tag);
 extern census_context_get_tag_type census_context_get_tag_import;
 #define census_context_get_tag census_context_get_tag_import
-typedef char *(*census_context_encode_type)(const census_context *context, char *buffer, size_t buf_size, size_t *print_buf_size, size_t *bin_buf_size);
+typedef size_t(*census_context_encode_type)(const census_context *context, char *buffer, size_t buf_size);
 extern census_context_encode_type census_context_encode_import;
 #define census_context_encode census_context_encode_import
-typedef census_context *(*census_context_decode_type)(const char *buffer, size_t size, const char *bin_buffer, size_t bin_size);
+typedef census_context *(*census_context_decode_type)(const char *buffer, size_t size);
 extern census_context_decode_type census_context_decode_import;
 #define census_context_decode census_context_decode_import
 typedef int(*census_trace_mask_type)(const census_context *context);
@@ -361,6 +361,9 @@ extern grpc_channel_credentials_release_type grpc_channel_credentials_release_im
 typedef grpc_channel_credentials *(*grpc_google_default_credentials_create_type)(void);
 extern grpc_google_default_credentials_create_type grpc_google_default_credentials_create_import;
 #define grpc_google_default_credentials_create grpc_google_default_credentials_create_import
+typedef void(*grpc_set_ssl_roots_override_callback_type)(grpc_ssl_roots_override_callback cb);
+extern grpc_set_ssl_roots_override_callback_type grpc_set_ssl_roots_override_callback_import;
+#define grpc_set_ssl_roots_override_callback grpc_set_ssl_roots_override_callback_import
 typedef grpc_channel_credentials *(*grpc_ssl_credentials_create_type)(const char *pem_root_certs, grpc_ssl_pem_key_cert_pair *pem_key_cert_pair, void *reserved);
 extern grpc_ssl_credentials_create_type grpc_ssl_credentials_create_import;
 #define grpc_ssl_credentials_create grpc_ssl_credentials_create_import
@@ -607,6 +610,9 @@ extern gpr_ref_init_type gpr_ref_init_import;
 typedef void(*gpr_ref_type)(gpr_refcount *r);
 extern gpr_ref_type gpr_ref_import;
 #define gpr_ref gpr_ref_import
+typedef void(*gpr_ref_non_zero_type)(gpr_refcount *r);
+extern gpr_ref_non_zero_type gpr_ref_non_zero_import;
+#define gpr_ref_non_zero gpr_ref_non_zero_import
 typedef void(*gpr_refn_type)(gpr_refcount *r, int n);
 extern gpr_refn_type gpr_refn_import;
 #define gpr_refn gpr_refn_import
@@ -836,7 +842,15 @@ typedef void(*gpr_thd_join_type)(gpr_thd_id t);
 extern gpr_thd_join_type gpr_thd_join_import;
 #define gpr_thd_join gpr_thd_join_import
 
+#ifdef __cplusplus
+extern "C" {
+#endif  /* __cpluslus */
+
 void pygrpc_load_imports(HMODULE library);
+
+#ifdef __cplusplus
+}
+#endif  /* __cpluslus */
 
 #else /* !GPR_WIN32 */
 

@@ -58,7 +58,7 @@
 #include "test/cpp/qps/client.h"
 #include "test/cpp/qps/histogram.h"
 #include "test/cpp/qps/interarrival.h"
-#include "test/cpp/qps/timer.h"
+#include "test/cpp/qps/usage_timer.h"
 
 namespace grpc {
 namespace testing {
@@ -84,11 +84,8 @@ class SynchronousClient
 
  protected:
   void WaitToIssue(int thread_idx) {
-    grpc_time next_time;
-    if (NextIssueTime(thread_idx, &next_time)) {
-      gpr_timespec next_timespec;
-      TimepointHR2Timespec(next_time, &next_timespec);
-      gpr_sleep_until(next_timespec);
+    if (!closed_loop_) {
+      gpr_sleep_until(NextIssueTime(thread_idx));
     }
   }
 
@@ -107,12 +104,12 @@ class SynchronousUnaryClient GRPC_FINAL : public SynchronousClient {
   bool ThreadFunc(Histogram* histogram, size_t thread_idx) GRPC_OVERRIDE {
     WaitToIssue(thread_idx);
     auto* stub = channels_[thread_idx % channels_.size()].get_stub();
-    double start = Timer::Now();
+    double start = UsageTimer::Now();
     GPR_TIMER_SCOPE("SynchronousUnaryClient::ThreadFunc", 0);
     grpc::ClientContext context;
     grpc::Status s =
         stub->UnaryCall(&context, request_, &responses_[thread_idx]);
-    histogram->Add((Timer::Now() - start) * 1e9);
+    histogram->Add((UsageTimer::Now() - start) * 1e9);
     return s.ok();
   }
 };
@@ -146,10 +143,10 @@ class SynchronousStreamingClient GRPC_FINAL : public SynchronousClient {
   bool ThreadFunc(Histogram* histogram, size_t thread_idx) GRPC_OVERRIDE {
     WaitToIssue(thread_idx);
     GPR_TIMER_SCOPE("SynchronousStreamingClient::ThreadFunc", 0);
-    double start = Timer::Now();
+    double start = UsageTimer::Now();
     if (stream_[thread_idx]->Write(request_) &&
         stream_[thread_idx]->Read(&responses_[thread_idx])) {
-      histogram->Add((Timer::Now() - start) * 1e9);
+      histogram->Add((UsageTimer::Now() - start) * 1e9);
       return true;
     }
     return false;
