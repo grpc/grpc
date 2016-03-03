@@ -1,7 +1,7 @@
 #If you are in a hurry
 
-For language-specific installation instructions, please refer to these
-documents
+For language-specific installation instructions for gRPC runtime, please
+refer to these documents
 
  * [C++](examples/cpp)
  * [C#](src/csharp): NuGet package `Grpc`
@@ -34,7 +34,8 @@ terminal:
 
 #Build from Source
 
-This is for compiling just the gRPC C Core library.
+For developers who are interested to contribute, here is how to compile the
+gRPC C Core library.
 
 ```sh
  $ git clone https://github.com/grpc/grpc.git
