@@ -59,10 +59,9 @@ class ProtoSerializerInterface {
                                   int max_message_size) = 0;
 };
 
-// TODO(dgq): This is a temporary fix to work around codegen issues related to
-// a certain sharp-sounding build system. Its purpose is to hold a polymorphic
-// proto serializer/deserializer instance. It's initialized as part of
-// src/cpp/proto/proto_serializer.cc.
+// TODO(dgq): This is a temporary fix to work around codegen issues. Its purpose
+// is to hold a polymorphic proto serializer/deserializer instance. It's
+// initialized as part of src/cpp/proto/proto_serializer.cc.
 //
 // This global variable plus all related code (ProtoSerializerInteface,
 // ProtoSerializer) will be removed in the future.
