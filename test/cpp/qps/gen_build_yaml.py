@@ -42,6 +42,25 @@ EMPTY_GENERIC_PAYLOAD = {
     'resp_size': 0,
   }
 }
+EMPTY_PROTO_PAYLOAD = {
+  'simple_params': {
+    'req_size': 0,
+    'resp_size': 0,
+  }
+}
+BIG_GENERIC_PAYLOAD = {
+  'bytebuf_params': {
+    'req_size': 65536,
+    'resp_size': 65536,
+  }
+}
+
+# deep is the number of RPCs outstanding on a channel in non-ping-pong tests
+# (the value used is 1 otherwise)
+DEEP=100
+
+# wide is the number of client channels in multi-channel tests (1 otherwise)
+WIDE=64
 
 scenarios = []
 for secure in [True, False]:
@@ -78,6 +97,156 @@ for secure in [True, False]:
         'core_limit': SINGLE_MACHINE_CORES/2,
         'async_server_threads': 1,
         'payload_config': EMPTY_GENERIC_PAYLOAD,
+      },
+      'warmup_seconds': WARMUP_SECONDS,
+      'benchmark_seconds': BENCHMARK_SECONDS
+    }
+  })
+  scenarios.append({
+    'single_machine': True,
+    'config_protobuf': {
+      'name': 'generic async streaming "unconstrained" (QPS) (%s)'
+              % secstr,
+      'num_servers': 1,
+      'num_clients': 0,
+      'client_config': {
+        'client_type': 'ASYNC_CLIENT',
+        'security_params': secargs,
+        'outstanding_rpcs_per_channel': DEEP,
+        'client_channels': WIDE,
+        'async_client_threads': 1,
+        'rpc_type': 'STREAMING',
+        'load_params': {
+          'closed_loop': {}
+        },
+        'payload_config': EMPTY_GENERIC_PAYLOAD,
+      },
+      'server_config': {
+        'server_type': 'ASYNC_GENERIC_SERVER',
+        'security_params': secargs,
+        'core_limit': SINGLE_MACHINE_CORES/2,
+        'async_server_threads': 1,
+        'payload_config': EMPTY_GENERIC_PAYLOAD,
+      },
+      'warmup_seconds': WARMUP_SECONDS,
+      'benchmark_seconds': BENCHMARK_SECONDS
+    }
+  })
+  scenarios.append({
+    'single_machine': True,
+    'config_protobuf': {
+      'name': 'QPS with a single server core (%s)'
+              % secstr,
+      'num_servers': 1,
+      'num_clients': 0,
+      'client_config': {
+        'client_type': 'ASYNC_CLIENT',
+        'security_params': secargs,
+        'outstanding_rpcs_per_channel': DEEP,
+        'client_channels': WIDE,
+        'async_client_threads': 1,
+        'rpc_type': 'STREAMING',
+        'load_params': {
+          'closed_loop': {}
+        },
+        'payload_config': EMPTY_GENERIC_PAYLOAD,
+      },
+      'server_config': {
+        'server_type': 'ASYNC_GENERIC_SERVER',
+        'security_params': secargs,
+        'core_limit': 1,
+        'async_server_threads': 1,
+        'payload_config': EMPTY_GENERIC_PAYLOAD,
+      },
+      'warmup_seconds': WARMUP_SECONDS,
+      'benchmark_seconds': BENCHMARK_SECONDS
+    }
+  })
+  scenarios.append({
+    'single_machine': True,
+    'config_protobuf': {
+      'name': 'protobuf-based QPS (%s)'
+              % secstr,
+      'num_servers': 1,
+      'num_clients': 0,
+      'client_config': {
+        'client_type': 'ASYNC_CLIENT',
+        'security_params': secargs,
+        'outstanding_rpcs_per_channel': DEEP,
+        'client_channels': WIDE,
+        'async_client_threads': 1,
+        'rpc_type': 'STREAMING',
+        'load_params': {
+          'closed_loop': {}
+        },
+        'payload_config': EMPTY_GENERIC_PAYLOAD,
+      },
+      'server_config': {
+        'server_type': 'ASYNC_GENERIC_SERVER',
+        'security_params': secargs,
+        'core_limit': SINGLE_MACHINE_CORES/2,
+        'async_server_threads': 1,
+        'payload_config': EMPTY_GENERIC_PAYLOAD,
+      },
+      'warmup_seconds': WARMUP_SECONDS,
+      'benchmark_seconds': BENCHMARK_SECONDS
+    }
+  })
+  scenarios.append({
+    'single_machine': True,
+    'config_protobuf': {
+      'name': 'Single-channel bidirectional throughput test (like TCP_STREAM) (%s)'
+              % secstr,
+      'num_servers': 1,
+      'num_clients': 1,
+      'client_config': {
+        'client_type': 'ASYNC_CLIENT',
+        'security_params': secargs,
+        'outstanding_rpcs_per_channel': 1,
+        'client_channels': 1,
+        'async_client_threads': 1,
+        'rpc_type': 'STREAMING',
+        'load_params': {
+          'closed_loop': {}
+        },
+        'payload_config': BIG_GENERIC_PAYLOAD,
+      },
+      'server_config': {
+        'server_type': 'ASYNC_GENERIC_SERVER',
+        'security_params': secargs,
+        'core_limit': SINGLE_MACHINE_CORES/2,
+        'async_server_threads': 1,
+        'payload_config': BIG_GENERIC_PAYLOAD,
+      },
+      'warmup_seconds': WARMUP_SECONDS,
+      'benchmark_seconds': BENCHMARK_SECONDS
+    }
+  })
+  scenarios.append({
+    'single_machine': True,
+    'config_protobuf': {
+      'name': 'Sync unary ping-pong with protobufs (%s)'
+              % secstr,
+      'num_servers': 1,
+      'num_clients': 1,
+      'client_config': {
+        'client_type': 'ASYNC_CLIENT',
+        'security_params': secargs,
+        'outstanding_rpcs_per_channel': 1,
+        'client_channels': 1,
+        'async_client_threads': 1,
+        'rpc_type': 'STREAMING',
+        'load_params': {
+          'closed_loop': {}
+        },
+        'payload_config': EMPTY_PROTO_PAYLOAD,
+      },
+      'server_config': {
+        'server_type': 'ASYNC_GENERIC_SERVER',
+        'security_params': secargs,
+        'core_limit': SINGLE_MACHINE_CORES/2,
+        'async_server_threads': 1,
+        'payload_config': EMPTY_PROTO_PAYLOAD,
       },
       'warmup_seconds': WARMUP_SECONDS,
       'benchmark_seconds': BENCHMARK_SECONDS
