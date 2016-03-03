@@ -807,7 +807,11 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
     EXPECT_FALSE(context->IsCancelled());
     context->TryCancel();
     gpr_log(GPR_INFO, "Server called TryCancel()");
-    EXPECT_TRUE(context->IsCancelled());
+    while (!context->IsCancelled()) {
+      gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                                   gpr_time_from_micros(1000, GPR_TIMESPAN)));
+    }
+    gpr_log(GPR_INFO, "RPC Cancelled on the server");
   }
 
   // Helper for testing client-streaming RPCs which are cancelled on the server.
