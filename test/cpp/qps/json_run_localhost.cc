@@ -31,6 +31,7 @@
  *
  */
 
+#include <memory>
 #include <sstream>
 #include <string>
 

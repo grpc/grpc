@@ -262,7 +262,7 @@ tests = [{
   'platforms': ['linux'],
   'ci_platforms': ['linux'],
   'flaky': False,
-  'language': 'c',
+  'language': 'c++',
   'cpu_cost': 1000 # TODO(ctiller): can we compute this?
 } for scenario in scenarios]
 

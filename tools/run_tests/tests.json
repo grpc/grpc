@@ -24706,7 +24706,7 @@
     "cpu_cost": 1000, 
     "exclude_configs": [], 
     "flaky": false, 
-    "language": "c", 
+    "language": "c++", 
     "name": "json_run_localhost", 
     "platforms": [
       "linux"
@@ -24722,7 +24722,7 @@
     "cpu_cost": 1000, 
     "exclude_configs": [], 
     "flaky": false, 
-    "language": "c", 
+    "language": "c++", 
     "name": "json_run_localhost", 
     "platforms": [
       "linux"
@@ -24738,7 +24738,7 @@
     "cpu_cost": 1000, 
     "exclude_configs": [], 
     "flaky": false, 
-    "language": "c", 
+    "language": "c++", 
     "name": "json_run_localhost", 
     "platforms": [
       "linux"
@@ -24754,7 +24754,7 @@
     "cpu_cost": 1000, 
     "exclude_configs": [], 
     "flaky": false, 
-    "language": "c", 
+    "language": "c++", 
     "name": "json_run_localhost", 
     "platforms": [
       "linux"
@@ -24770,7 +24770,7 @@
     "cpu_cost": 1000, 
     "exclude_configs": [], 
     "flaky": false, 
-    "language": "c", 
+    "language": "c++", 
     "name": "json_run_localhost", 
     "platforms": [
       "linux"
@@ -24786,7 +24786,7 @@
     "cpu_cost": 1000, 
     "exclude_configs": [], 
     "flaky": false, 
-    "language": "c", 
+    "language": "c++", 
     "name": "json_run_localhost", 
     "platforms": [
       "linux"
@@ -24802,7 +24802,7 @@
     "cpu_cost": 1000, 
     "exclude_configs": [], 
     "flaky": false, 
-    "language": "c", 
+    "language": "c++", 
     "name": "json_run_localhost", 
     "platforms": [
       "linux"
@@ -24818,7 +24818,7 @@
     "cpu_cost": 1000, 
     "exclude_configs": [], 
     "flaky": false, 
-    "language": "c", 
+    "language": "c++", 
     "name": "json_run_localhost", 
     "platforms": [
       "linux"
@@ -24834,7 +24834,7 @@
     "cpu_cost": 1000, 
     "exclude_configs": [], 
     "flaky": false, 
-    "language": "c", 
+    "language": "c++", 
     "name": "json_run_localhost", 
     "platforms": [
       "linux"
@@ -24850,7 +24850,7 @@
     "cpu_cost": 1000, 
     "exclude_configs": [], 
     "flaky": false, 
-    "language": "c", 
+    "language": "c++", 
     "name": "json_run_localhost", 
     "platforms": [
       "linux"
@@ -24866,7 +24866,7 @@
     "cpu_cost": 1000, 
     "exclude_configs": [], 
     "flaky": false, 
-    "language": "c", 
+    "language": "c++", 
     "name": "json_run_localhost", 
     "platforms": [
       "linux"
@@ -24882,7 +24882,7 @@
     "cpu_cost": 1000, 
     "exclude_configs": [], 
     "flaky": false, 
-    "language": "c", 
+    "language": "c++", 
     "name": "json_run_localhost", 
     "platforms": [
       "linux"
