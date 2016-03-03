@@ -876,8 +876,8 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
     auto verif = Verifier(GetParam());
 
     if (server_try_cancel == CANCEL_DURING_PROCESSING) {
-      server_try_cancel_thd = new std::thread(
-          &ServerContext::TryCancel, &srv_ctx);
+      server_try_cancel_thd =
+          new std::thread(&ServerContext::TryCancel, &srv_ctx);
       // Server will cancel the RPC in a parallel thread while reading the
       // requests from the client. Since the cancellation can happen at anytime,
       // some of the cq results (i.e those until cancellation) might be true but
@@ -897,7 +897,7 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
       // something was seen, but it might be tag 11 and not what we
       // just added
       int got_tag = verif.Expect(tag_idx, expected_server_cq_result)
-          .Next(cq_.get(), ignore_cq_result);
+                        .Next(cq_.get(), ignore_cq_result);
       GPR_ASSERT((got_tag == tag_idx) || (got_tag == 11 && want_done_tag));
       if (got_tag == 11) {
         EXPECT_TRUE(srv_ctx.IsCancelled());
@@ -999,8 +999,8 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
     auto verif = Verifier(GetParam());
 
     if (server_try_cancel == CANCEL_DURING_PROCESSING) {
-      server_try_cancel_thd = new std::thread(
-          &ServerContext::TryCancel, &srv_ctx);
+      server_try_cancel_thd =
+          new std::thread(&ServerContext::TryCancel, &srv_ctx);
 
       // Server will cancel the RPC in a parallel thread while writing responses
       // to the client. Since the cancellation can happen at anytime, some of
@@ -1022,7 +1022,7 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
       // something was seen, but it might be tag 11 and not what we
       // just added
       int got_tag = verif.Expect(tag_idx, expected_cq_result)
-          .Next(cq_.get(), ignore_cq_result);
+                        .Next(cq_.get(), ignore_cq_result);
       GPR_ASSERT((got_tag == tag_idx) || (got_tag == 11 && want_done_tag));
       if (got_tag == 11) {
         EXPECT_TRUE(srv_ctx.IsCancelled());
@@ -1139,8 +1139,8 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
     auto verif = Verifier(GetParam());
 
     if (server_try_cancel == CANCEL_DURING_PROCESSING) {
-      server_try_cancel_thd = new std::thread(
-          &ServerContext::TryCancel, &srv_ctx);
+      server_try_cancel_thd =
+          new std::thread(&ServerContext::TryCancel, &srv_ctx);
 
       // Since server is going to cancel the RPC in a parallel thread, some of
       // the cq results (i.e those until the cancellation) might be true. Since
