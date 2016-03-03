@@ -331,6 +331,7 @@ void TestServiceImpl::ServerTryCancel(ServerContext* context) {
     gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
                                  gpr_time_from_micros(1000, GPR_TIMESPAN)));
   }
+  gpr_log(GPR_INFO, "RPC Cancelled on the server");
 }
 
 }  // namespace testing
