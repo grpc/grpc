@@ -94,3 +94,6 @@ Pods/
 
 # Artifacts directory
 artifacts/
+
+# Ruby
+Gemfile.lock

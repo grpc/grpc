@@ -143,6 +143,11 @@ Then execute the following for all the needed build dependencies
   $ sudo mkdir /opt/local/include/gtest
   $ sudo cp -pr ../gtest-svn/include/gtest /opt/local/include/gtest
 
+or if you use homebrew
+
+  $ brew install openssl
+  $ export PKG_CONFIG_PATH=/usr/local/opt/openssl/lib/pkgconfig
+
 If you are going to make changes and need to regenerate the projects file,
 you will need to install certain modules for python.
 
