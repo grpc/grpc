@@ -75,14 +75,13 @@ class ProtoSerializer : public ProtoSerializerInterface {
   // fails,
   // false is returned and buffer is left unchanged.
   Status SerializeProto(const grpc::protobuf::Message& msg,
-                                grpc_byte_buffer** buffer) override;
+                        grpc_byte_buffer** buffer) override;
 
   // The caller keeps ownership of buffer and msg.
   Status DeserializeProto(grpc_byte_buffer* buffer,
-                                  grpc::protobuf::Message* msg,
-                                  int max_message_size) override;
+                          grpc::protobuf::Message* msg,
+                          int max_message_size) override;
 };
-
 
 template <class T>
 class SerializationTraits<T, typename std::enable_if<std::is_base_of<
@@ -92,14 +91,16 @@ class SerializationTraits<T, typename std::enable_if<std::is_base_of<
                           grpc_byte_buffer** buffer, bool* own_buffer) {
     *own_buffer = true;
     GPR_ASSERT(g_proto_serializer != nullptr &&
-               "No ProtoSerializer instance registered. Make sure grpc++ is being initialized.");
+               "No ProtoSerializer instance registered. Make sure grpc++ is "
+               "being initialized.");
     return g_proto_serializer->SerializeProto(msg, buffer);
   }
   static Status Deserialize(grpc_byte_buffer* buffer,
                             grpc::protobuf::Message* msg,
                             int max_message_size) {
     GPR_ASSERT(g_proto_serializer != nullptr &&
-               "No ProtoSerializer instance registered. Make sure grpc++ is being initialized.");
+               "No ProtoSerializer instance registered. Make sure grpc++ is "
+               "being initialized.");
     auto status =
         g_proto_serializer->DeserializeProto(buffer, msg, max_message_size);
     grpc_byte_buffer_destroy(buffer);

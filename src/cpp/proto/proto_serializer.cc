@@ -31,7 +31,8 @@
  *
  */
 
-// TODO(dgq): This file is part of a temporary fix to work around codegen issues related to
+// TODO(dgq): This file is part of a temporary fix to work around codegen issues
+// related to
 // a certain sharp-sounding build system.
 // This whole file will be removed in the future.
 
