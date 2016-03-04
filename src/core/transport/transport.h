@@ -123,7 +123,8 @@ typedef struct grpc_transport_stream_op {
 
 /** Transport op: a set of operations to perform on a transport as a whole */
 typedef struct grpc_transport_op {
-  /** called when processing of this op is done */
+  /** Called when processing of this op is done.
+      Only one transport_op is allowed to be outstanding at any time. */
   grpc_closure *on_consumed;
   /** connectivity monitoring - set connectivity_state to NULL to unsubscribe */
   grpc_closure *on_connectivity_state_change;
@@ -138,7 +139,9 @@ typedef struct grpc_transport_op {
   grpc_status_code goaway_status;
   gpr_slice *goaway_message;
   /** set the callback for accepting new streams;
-      this is a permanent callback, unlike the other one-shot closures */
+      this is a permanent callback, unlike the other one-shot closures.
+      If true, the callback is set to set_accept_stream_fn, with its
+      user_data argument set to set_accept_stream_user_data */
   bool set_accept_stream;
   void (*set_accept_stream_fn)(grpc_exec_ctx *exec_ctx, void *user_data,
                                grpc_transport *transport,
