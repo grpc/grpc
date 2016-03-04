@@ -107,7 +107,7 @@ static void cuc_start_transport_op(grpc_exec_ctx *exec_ctx,
 
   grpc_exec_ctx_enqueue(exec_ctx, op->on_consumed, true, NULL);
 
-  GPR_ASSERT(op->set_accept_stream == NULL);
+  GPR_ASSERT(op->set_accept_stream == false);
   GPR_ASSERT(op->bind_pollset == NULL);
 
   if (op->on_connectivity_state_change != NULL) {
