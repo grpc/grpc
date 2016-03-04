@@ -1008,7 +1008,7 @@ static void perform_transport_op(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
 
   /* If there's a set_accept_stream ensure that we're not parsing
      to avoid changing things out from underneath */
-  if (t->parsing_active && t->set_accept_stream) {
+  if (t->parsing_active && op->set_accept_stream) {
     GPR_ASSERT(t->post_parsing_op == NULL);
     t->post_parsing_op = gpr_malloc(sizeof(*op));
     memcpy(t->post_parsing_op, op, sizeof(*op));
