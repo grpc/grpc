@@ -1,4 +1,4 @@
-# Copyright 2015, Google Inc.
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -60,6 +60,9 @@ class CancellableIterator(object):
   def __iter__(self):
     """Returns the self object in accordance with the Iterator protocol."""
     raise NotImplementedError()
+
+  def __next__(self):
+    return self.next()
 
   @abc.abstractmethod
   def next(self):

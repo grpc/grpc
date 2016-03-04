@@ -1,4 +1,4 @@
-# Copyright 2015, Google Inc.
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -65,6 +65,9 @@ class _PauseableIterator(object):
 
   def __iter__(self):
     return self
+
+  def __next__(self):
+    return self.next()
 
   def next(self):
     with self._condition:
