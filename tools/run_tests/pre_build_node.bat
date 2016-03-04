@@ -27,6 +27,8 @@
 @rem (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 @rem OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+set PATH=%PATH%;C:\Program Files\nodejs\;%APPDATA%\npm
+
 @rem Expire cache after 1 week
 call npm update --cache-min 604800
 

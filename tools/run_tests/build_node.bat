@@ -27,6 +27,10 @@
 @rem (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 @rem OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+set PATH=%PATH%;C:\Program Files\nodejs\;%APPDATA%\npm
+
+del /f /q BUILD || rmdir build /s /q
+
 call npm install --build-from-source
 
 @rem delete the redundant openssl headers
