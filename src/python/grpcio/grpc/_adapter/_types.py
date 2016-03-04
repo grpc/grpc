@@ -1,4 +1,4 @@
-# Copyright 2015, Google Inc.
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -261,6 +261,9 @@ class CompletionQueue:
     deadline of None (i.e. no deadline).
     """
     return self
+
+  def __next__(self):
+    return self.next()
 
   @abc.abstractmethod
   def next(self, deadline=float('+inf')):
