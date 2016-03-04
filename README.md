@@ -13,7 +13,7 @@ You can find more detailed documentation and examples in the [doc](doc) and [exa
 
 #Installation
 
-See [grpc/INSTALL](INSTALL) for installation instructions for various platforms.
+See [INSTALL](INSTALL.md) for installation instructions for various platforms.
 
 #Repository Structure & Status
 
