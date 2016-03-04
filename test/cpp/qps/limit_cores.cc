@@ -42,10 +42,12 @@
 #define _GNU_SOURCE
 #endif
 #include <sched.h>
+#endif
 
 namespace grpc {
 namespace testing {
 
+#ifdef GPR_CPU_LINUX
 int LimitCores(const int* cores, int cores_size) {
   const int num_cores = gpr_cpu_num_cores();
   int cores_set = 0;
