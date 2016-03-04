@@ -37,15 +37,14 @@
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
+namespace grpc {
+namespace testing {
+
 #ifdef GPR_CPU_LINUX
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
 #endif
 #include <sched.h>
-
-namespace grpc {
-namespace testing {
-
 int LimitCores(const int* cores, int cores_size) {
   const int num_cores = gpr_cpu_num_cores();
   int cores_set = 0;
