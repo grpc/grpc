@@ -123,8 +123,7 @@ typedef struct grpc_transport_stream_op {
 
 /** Transport op: a set of operations to perform on a transport as a whole */
 typedef struct grpc_transport_op {
-  /** Called when processing of this op is done.
-      Only one transport_op is allowed to be outstanding at any time. */
+  /** Called when processing of this op is done. */
   grpc_closure *on_consumed;
   /** connectivity monitoring - set connectivity_state to NULL to unsubscribe */
   grpc_closure *on_connectivity_state_change;
