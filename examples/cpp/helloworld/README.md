@@ -2,7 +2,7 @@
 
 ### Install gRPC
 Make sure you have installed gRPC on your system. Follow the instructions here:
-[https://github.com/grpc/grpc/blob/master/INSTALL](../../../INSTALL).
+[https://github.com/grpc/grpc/blob/master/INSTALL](../../../INSTALL.md).
 
 ### Get the tutorial source code
 
