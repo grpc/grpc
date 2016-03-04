@@ -35,7 +35,7 @@ call npm install --build-from-source
 
 @rem delete the redundant openssl headers
 for /f "delims=v" %%v in ('node --version') do (
-  rmdir "%HOMEDRIVE%%HOMEPATH%\.node-gyp\%%v\include\node\openssl" /S /Q
+  rmdir "%USERPROFILE%\.node-gyp\%%v\include\node\openssl" /S /Q
 )
 
 @rem rebuild, because it probably failed the first time
