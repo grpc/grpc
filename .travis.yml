@@ -15,6 +15,7 @@ install:
   - pushd src/objective-c/tests
   # Needs to be verbose, or otherwise OpenSSL's prepare_command makes Travis
   # time out:
+  - pod --version
   - pod install --verbose
   - popd
 before_script:
