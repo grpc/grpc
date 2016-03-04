@@ -107,11 +107,14 @@ class PollingOverrider {
 class Verifier {
  public:
   explicit Verifier(bool spin) : spin_(spin) {}
+  // Expect sets the expected ok value for a specific tag
   Verifier& Expect(int i, bool expect_ok) {
     expectations_[tag(i)] = expect_ok;
     return *this;
   }
 
+  // Next waits for 1 async tag to complete, checks its
+  // expectations, and returns the tag
   int Next(CompletionQueue* cq, bool ignore_ok) {
     bool ok;
     void* got_tag;
@@ -135,14 +138,19 @@ class Verifier {
     return detag(got_tag);
   }
 
+  // Verify keeps calling Next until all currently set
+  // expected tags are complete
   void Verify(CompletionQueue* cq) { Verify(cq, false); }
 
+  // This version of Verify allows optionally ignoring the
+  // outcome of the expectation
   void Verify(CompletionQueue* cq, bool ignore_ok) {
     GPR_ASSERT(!expectations_.empty());
     while (!expectations_.empty()) {
       Next(cq, ignore_ok);
     }
   }
+  // This version of Verify stops after a certain deadline
   void Verify(CompletionQueue* cq,
               std::chrono::system_clock::time_point deadline) {
     if (expectations_.empty()) {
