@@ -617,6 +617,7 @@ static void unlock(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t) {
 void grpc_chttp2_become_writable(grpc_chttp2_transport_global *transport_global,
                                  grpc_chttp2_stream_global *stream_global) {
   if (!TRANSPORT_FROM_GLOBAL(transport_global)->closed &&
+      !stream_global->write_closed &&
       grpc_chttp2_list_add_writable_stream(transport_global, stream_global)) {
     GRPC_CHTTP2_STREAM_REF(stream_global, "chttp2_writing");
   }
