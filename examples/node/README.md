@@ -20,7 +20,7 @@ TRY IT!
  - Run the server
 
    ```sh
-   $ # from this directory (grpc_common/node).
+   $ # from this directory
    $ node ./greeter_server.js &
    ```
 
