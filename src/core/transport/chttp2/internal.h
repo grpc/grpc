@@ -358,6 +358,9 @@ struct grpc_chttp2_transport {
     /** connectivity tracking */
     grpc_connectivity_state_tracker state_tracker;
   } channel_callback;
+
+  /** Transport op to be applied post-parsing */
+  grpc_transport_op *post_parsing_op;
 };
 
 typedef struct {
