@@ -432,6 +432,14 @@ static void close_transport_locked(grpc_exec_ctx *exec_ctx,
     if (t->ep) {
       allow_endpoint_shutdown_locked(exec_ctx, t);
     }
+
+    /* flush writable stream list to avoid dangling references */
+    grpc_chttp2_stream_global *stream_global;
+    grpc_chttp2_stream_writing *stream_writing;
+    while (grpc_chttp2_list_pop_writable_stream(
+        &t->global, &t->writing, &stream_global, &stream_writing)) {
+      GRPC_CHTTP2_STREAM_UNREF(exec_ctx, stream_global, "chttp2_writing");
+    }
   }
 }
 
