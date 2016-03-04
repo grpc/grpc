@@ -226,6 +226,9 @@ class CLanguage(object):
     else:
       return [['tools/run_tests/post_tests_c.sh']]
 
+  def finally_steps(self):
+    return []
+
   def makefile_name(self):
     return 'Makefile'
 
@@ -290,8 +293,11 @@ class NodeLanguage(object):
       return [['tools/run_tests/build_node.sh', self.node_version]]
 
   def post_tests_steps(self):
+    return []
+
+  def finally_steps(self):
     if self.platform == 'windows':
-      return [['tools\\run_tests\\post_test_node.bat']]
+      return [['tools\\run_tests\\finally_node.bat']]
     else:
       return []
 
@@ -330,6 +336,9 @@ class PhpLanguage(object):
 
   def post_tests_steps(self):
     return [['tools/run_tests/post_tests_php.sh']]
+
+  def finally_steps(self):
+    return []
 
   def makefile_name(self):
     return 'Makefile'
@@ -401,6 +410,9 @@ class PythonLanguage(object):
   def post_tests_steps(self):
     return []
 
+  def finally_steps(self):
+    return []
+
   def makefile_name(self):
     return 'Makefile'
 
@@ -437,6 +449,9 @@ class RubyLanguage(object):
 
   def post_tests_steps(self):
     return [['tools/run_tests/post_tests_ruby.sh']]
+
+  def finally_steps(self):
+    return []
 
   def makefile_name(self):
     return 'Makefile'
@@ -526,6 +541,9 @@ class CSharpLanguage(object):
   def post_tests_steps(self):
     return []
 
+  def finally_steps(self):
+    return []
+
   def makefile_name(self):
     return 'Makefile'
 
@@ -560,6 +578,9 @@ class ObjCLanguage(object):
     return [['src/objective-c/tests/build_tests.sh']]
 
   def post_tests_steps(self):
+    return []
+
+  def finally_steps(self):
     return []
 
   def makefile_name(self):
@@ -600,6 +621,9 @@ class Sanity(object):
     return []
 
   def post_tests_steps(self):
+    return []
+
+  def finally_steps(self):
     return []
 
   def makefile_name(self):
@@ -947,6 +971,10 @@ post_tests_steps = list(set(
                         jobset.JobSpec(cmdline, environ=build_step_environ(build_config))
                         for l in languages
                         for cmdline in l.post_tests_steps()))
+finally_steps = list(set(
+    jobset.JobSpec(cmdline, environ=build_step_environ(build_config))
+    for l in languages
+    for cmdline in l.finally_steps()))
 runs_per_test = args.runs_per_test
 forever = args.forever
 
@@ -1190,6 +1218,13 @@ def _build_and_run(
 
   return out
 
+# returns a list of things that failed (or an empty list on success)
+def build_and_run(
+    check_cancelled, newline_on_success, cache, xml_report=None, build_only=False):
+  result = _build_and_run(check_cancelled, newline_on_success, cache, xml_report, build_only)
+  jobset.run(finally_steps, maxjobs=1, stop_on_failure=False,
+             newline_on_success=newline_on_success, travis=args.travis)
+  return result
 
 test_cache = TestCache(runs_per_test == 1)
 test_cache.maybe_load()
@@ -1201,10 +1236,10 @@ if forever:
     initial_time = dw.most_recent_change()
     have_files_changed = lambda: dw.most_recent_change() != initial_time
     previous_success = success
-    errors = _build_and_run(check_cancelled=have_files_changed,
-                            newline_on_success=False,
-                            cache=test_cache,
-                            build_only=args.build_only) == 0
+    errors = build_and_run(check_cancelled=have_files_changed,
+                           newline_on_success=False,
+                           cache=test_cache,
+                           build_only=args.build_only) == 0
     if not previous_success and not errors:
       jobset.message('SUCCESS',
                      'All tests are now passing properly',
@@ -1213,11 +1248,11 @@ if forever:
     while not have_files_changed():
       time.sleep(1)
 else:
-  errors = _build_and_run(check_cancelled=lambda: False,
-                          newline_on_success=args.newline_on_success,
-                          cache=test_cache,
-                          xml_report=args.xml_report,
-                          build_only=args.build_only)
+  errors = build_and_run(check_cancelled=lambda: False,
+                         newline_on_success=args.newline_on_success,
+                         cache=test_cache,
+                         xml_report=args.xml_report,
+                         build_only=args.build_only)
   if not errors:
     jobset.message('SUCCESS', 'All tests passed', do_newline=True)
   else:
