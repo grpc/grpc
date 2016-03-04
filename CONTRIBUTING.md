@@ -13,7 +13,7 @@ In order to protect both you and ourselves, you will need to sign the
 ### Technical requirements
 
 You will need several tools to work with this repository. In addition to all of
-the packages described in the [INSTALL](INSTALL) file, you will also need
+the packages described in the [INSTALL](INSTALL.md) file, you will also need
 python, and the mako template renderer. To install the latter, using pip, one
 should simply be able to do `pip install mako`.
 
