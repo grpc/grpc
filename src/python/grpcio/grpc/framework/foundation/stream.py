@@ -1,4 +1,4 @@
-# Copyright 2015, Google Inc.
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -31,10 +31,10 @@
 
 import abc
 
+import six
 
-class Consumer(object):
+class Consumer(six.with_metaclass(abc.ABCMeta)):
   """Interface for consumers of finite streams of values or objects."""
-  __metaclass__ = abc.ABCMeta
 
   @abc.abstractmethod
   def consume(self, value):
