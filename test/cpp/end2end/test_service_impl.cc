@@ -62,9 +62,10 @@ void MaybeEchoDeadline(ServerContext* context, const EchoRequest* request,
   }
 }
 
-void CheckServerAuthContext(const ServerContext* context,
-                            const grpc::string& expected_transport_security_type,
-                            const grpc::string& expected_client_identity) {
+void CheckServerAuthContext(
+    const ServerContext* context,
+    const grpc::string& expected_transport_security_type,
+    const grpc::string& expected_client_identity) {
   std::shared_ptr<const AuthContext> auth_ctx = context->auth_context();
   std::vector<grpc::string_ref> tst =
       auth_ctx->FindPropertyValues("transport_security_type");
