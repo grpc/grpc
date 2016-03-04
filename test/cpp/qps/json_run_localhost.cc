@@ -60,7 +60,7 @@ int main(int argc, char **argv) {
   std::ostringstream env;
   bool first = true;
 
-  for (int i=0; i<5; i++) {
+  for (int i=0; i<2; i++) {
     auto port = grpc_pick_unused_port_or_die();
     std::vector<std::string> args = {
       bin_dir + "/qps_worker",
@@ -70,12 +70,15 @@ int main(int argc, char **argv) {
     jobs.emplace_back(new SubProcess(args));
     if (!first) env << ",";
     env << "localhost:" << port;
+    first = false;
   }
 
   gpr_setenv("QPS_WORKERS", env.str().c_str());
-  SubProcess({
-    bin_dir + "/qps_json_driver"
-  }).Join();
+  std::vector<std::string> args = {bin_dir + "/qps_json_driver"};
+  for (int i = 1; i < argc; i++) {
+    args.push_back(argv[i]);
+  }
+  SubProcess(args).Join();
 
   for (auto it = jobs.begin(); it != jobs.end(); ++it) {
     (*it)->Interrupt();

@@ -2446,7 +2446,8 @@ targets:
   - linux
   - posix
 - name: qps_worker
-  build: benchmark
+  build: test
+  run: false
   language: c++
   headers:
   - test/cpp/qps/client.h

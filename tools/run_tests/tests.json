@@ -24698,7 +24698,8 @@
   }, 
   {
     "args": [
-      "test/cpp/qps/generated/run_tests_configs/generic_async_streaming_ping_pong_secure"
+      "--scenarios_file", 
+      "test/cpp/qps/generated/run_tests_configs/generic_async_streaming_ping_pong_secure.json"
     ], 
     "ci_platforms": [
       "linux"
@@ -24714,7 +24715,8 @@
   }, 
   {
     "args": [
-      "test/cpp/qps/generated/run_tests_configs/generic_async_streaming_qps_unconstrained_secure"
+      "--scenarios_file", 
+      "test/cpp/qps/generated/run_tests_configs/generic_async_streaming_qps_unconstrained_secure.json"
     ], 
     "ci_platforms": [
       "linux"
@@ -24730,7 +24732,8 @@
   }, 
   {
     "args": [
-      "test/cpp/qps/generated/run_tests_configs/generic_async_streaming_qps_one_server_core_secure"
+      "--scenarios_file", 
+      "test/cpp/qps/generated/run_tests_configs/generic_async_streaming_qps_one_server_core_secure.json"
     ], 
     "ci_platforms": [
       "linux"
@@ -24746,7 +24749,8 @@
   }, 
   {
     "args": [
-      "test/cpp/qps/generated/run_tests_configs/protobuf_async_qps_unconstrained_secure"
+      "--scenarios_file", 
+      "test/cpp/qps/generated/run_tests_configs/protobuf_async_qps_unconstrained_secure.json"
     ], 
     "ci_platforms": [
       "linux"
@@ -24762,7 +24766,8 @@
   }, 
   {
     "args": [
-      "test/cpp/qps/generated/run_tests_configs/single_channel_throughput_secure"
+      "--scenarios_file", 
+      "test/cpp/qps/generated/run_tests_configs/single_channel_throughput_secure.json"
     ], 
     "ci_platforms": [
       "linux"
@@ -24778,7 +24783,8 @@
   }, 
   {
     "args": [
-      "test/cpp/qps/generated/run_tests_configs/protobuf_async_ping_pong_secure"
+      "--scenarios_file", 
+      "test/cpp/qps/generated/run_tests_configs/protobuf_async_ping_pong_secure.json"
     ], 
     "ci_platforms": [
       "linux"
@@ -24794,7 +24800,8 @@
   }, 
   {
     "args": [
-      "test/cpp/qps/generated/run_tests_configs/generic_async_streaming_ping_pong_insecure"
+      "--scenarios_file", 
+      "test/cpp/qps/generated/run_tests_configs/generic_async_streaming_ping_pong_insecure.json"
     ], 
     "ci_platforms": [
       "linux"
@@ -24810,7 +24817,8 @@
   }, 
   {
     "args": [
-      "test/cpp/qps/generated/run_tests_configs/generic_async_streaming_qps_unconstrained_insecure"
+      "--scenarios_file", 
+      "test/cpp/qps/generated/run_tests_configs/generic_async_streaming_qps_unconstrained_insecure.json"
     ], 
     "ci_platforms": [
       "linux"
@@ -24826,7 +24834,8 @@
   }, 
   {
     "args": [
-      "test/cpp/qps/generated/run_tests_configs/generic_async_streaming_qps_one_server_core_insecure"
+      "--scenarios_file", 
+      "test/cpp/qps/generated/run_tests_configs/generic_async_streaming_qps_one_server_core_insecure.json"
     ], 
     "ci_platforms": [
       "linux"
@@ -24842,7 +24851,8 @@
   }, 
   {
     "args": [
-      "test/cpp/qps/generated/run_tests_configs/protobuf_async_qps_unconstrained_insecure"
+      "--scenarios_file", 
+      "test/cpp/qps/generated/run_tests_configs/protobuf_async_qps_unconstrained_insecure.json"
     ], 
     "ci_platforms": [
       "linux"
@@ -24858,7 +24868,8 @@
   }, 
   {
     "args": [
-      "test/cpp/qps/generated/run_tests_configs/single_channel_throughput_insecure"
+      "--scenarios_file", 
+      "test/cpp/qps/generated/run_tests_configs/single_channel_throughput_insecure.json"
     ], 
     "ci_platforms": [
       "linux"
@@ -24874,7 +24885,8 @@
   }, 
   {
     "args": [
-      "test/cpp/qps/generated/run_tests_configs/protobuf_async_ping_pong_insecure"
+      "--scenarios_file", 
+      "test/cpp/qps/generated/run_tests_configs/protobuf_async_ping_pong_insecure.json"
     ], 
     "ci_platforms": [
       "linux"

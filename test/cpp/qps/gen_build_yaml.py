@@ -256,7 +256,8 @@ for secure in [True, False]:
 # go through scenarios and produce a test runner for each one
 tests = [{
   'name': 'json_run_localhost',
-  'args': ['test/cpp/qps/generated/run_tests_configs/%s' %
+  'args': ['--scenarios_file',
+           'test/cpp/qps/generated/run_tests_configs/%s.json' %
            scenario['config_protobuf']['name']],
   'exclude_configs': [],
   'platforms': ['linux'],
