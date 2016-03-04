@@ -69,7 +69,11 @@ const int64_t kGRPCCompletionQueueDefaultTimeoutSecs = 60;
       gDefaultConcurrentQueue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0);
     });
     dispatch_async(gDefaultConcurrentQueue, ^{
-      gpr_timespec deadline = gpr_time_from_seconds(timeoutSecs, GPR_CLOCK_REALTIME);
+      // Using a non-infinite deadline to re-enter grpc_completion_queue_next()
+      // alleviates https://github.com/grpc/grpc/issues/5593
+      gpr_timespec deadline = (timeoutSecs < 0)
+          ? gpr_inf_future(GPR_CLOCK_REALTIME)
+          : gpr_time_from_seconds(timeoutSecs, GPR_CLOCK_REALTIME);
       while (YES) {
         // The following call blocks until an event is available or the deadline elapses.
         grpc_event event = grpc_completion_queue_next(unmanagedQueue, deadline, NULL);
