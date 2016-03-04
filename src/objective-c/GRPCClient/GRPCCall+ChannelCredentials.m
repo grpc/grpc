@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,44 +31,36 @@
  *
  */
 
-#import <Foundation/Foundation.h>
+#import "GRPCCall+ChannelCredentials.h"
 
-#include <grpc/grpc.h>
+#import "private/GRPCHost.h"
 
-@class GRPCCompletionQueue;
-struct grpc_channel_credentials;
+@implementation GRPCCall (ChannelCredentials)
 
++ (BOOL)setTLSPEMRootCerts:(nullable NSString *)pemRootCerts
+            withPrivateKey:(nullable NSString *)pemPrivateKey
+             withCertChain:(nullable NSString *)pemCertChain
+                   forHost:(nonnull NSString *)host
+                     error:(NSError **)errorPtr {
+  if (!host) {
+    [NSException raise:NSInvalidArgumentException
+                format:@"host must be provided."];
+  }
+  GRPCHost *hostConfig = [GRPCHost hostWithAddress:host];
+  return [hostConfig setTLSPEMRootCerts:pemRootCerts
+                 withPrivateKey:pemPrivateKey
+                  withCertChain:pemCertChain
+                          error:errorPtr];
+}
 
-/**
- * Each separate instance of this class represents at least one TCP connection to the provided host.
- */
-@interface GRPCChannel : NSObject
++ (BOOL)setTLSPEMRootCerts:(nullable NSString *)pemRootCerts
+                   forHost:(nonnull NSString *)host
+                     error:(NSError **)errorPtr {
+  return [GRPCCall setTLSPEMRootCerts:pemRootCerts
+               withPrivateKey:nil
+                withCertChain:nil
+                      forHost:host
+                      error:errorPtr];
+}
 
-@property(nonatomic, readonly, nonnull) struct grpc_channel *unmanagedChannel;
-
-- (nullable instancetype)init NS_UNAVAILABLE;
-
-/**
- * Creates a secure channel to the specified @c host using default credentials and channel
- * arguments. If certificates could not be found to create a secure channel, then @c nil is
- * returned.
- */
-+ (nullable GRPCChannel *)secureChannelWithHost:(nonnull NSString *)host;
-
-/**
- * Creates a secure channel to the specified @c host using the specified @c credentials and
- * @c channelArgs. Only in tests should @c GRPC_SSL_TARGET_NAME_OVERRIDE_ARG channel arg be set.
- */
-+ (nonnull GRPCChannel *)secureChannelWithHost:(nonnull NSString *)host
-    credentials:(nonnull struct grpc_channel_credentials *)credentials
-    channelArgs:(nullable NSDictionary *)channelArgs;
-
-/**
- * Creates an insecure channel to the specified @c host using the specified @c channelArgs.
- */
-+ (nonnull GRPCChannel *)insecureChannelWithHost:(nonnull NSString *)host
-                                     channelArgs:(nullable NSDictionary *)channelArgs;
-
-- (nullable grpc_call *)unmanagedCallWithPath:(nonnull NSString *)path
-                              completionQueue:(nonnull GRPCCompletionQueue *)queue;
 @end
