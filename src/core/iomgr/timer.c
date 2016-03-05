@@ -169,9 +169,9 @@ static void note_deadline_change(shard_type *shard) {
   }
 }
 
-void grpc_timer_init(grpc_exec_ctx *exec_ctx, grpc_timer *timer,
-                     gpr_timespec deadline, grpc_iomgr_cb_func timer_cb,
-                     void *timer_cb_arg, gpr_timespec now) {
+void grpc_timer_init(grpc_timer *timer, gpr_timespec deadline,
+                     grpc_iomgr_cb_func timer_cb, void *timer_cb_arg,
+                     gpr_timespec now) {
   int is_first_timer = 0;
   shard_type *shard = &g_shards[shard_idx(timer)];
   GPR_ASSERT(deadline.clock_type == g_clock_type);

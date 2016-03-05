@@ -292,7 +292,7 @@ void grpc_tcp_client_connect(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
   }
 
   gpr_mu_lock(&ac->mu);
-  grpc_timer_init(exec_ctx, &ac->alarm,
+  grpc_timer_init(&ac->alarm,
                   gpr_convert_clock_type(deadline, GPR_CLOCK_MONOTONIC),
                   tc_on_alarm, ac, gpr_now(GPR_CLOCK_MONOTONIC));
   grpc_fd_notify_on_write(exec_ctx, ac->fd, &ac->write_closure);
