@@ -1684,6 +1684,32 @@
   }, 
   {
     "deps": [
+      "grpc++_codegen_lib"
+    ], 
+    "headers": [
+      "src/proto/grpc/testing/control.grpc.pb.h", 
+      "src/proto/grpc/testing/control.pb.h", 
+      "src/proto/grpc/testing/messages.grpc.pb.h", 
+      "src/proto/grpc/testing/messages.pb.h", 
+      "src/proto/grpc/testing/payloads.grpc.pb.h", 
+      "src/proto/grpc/testing/payloads.pb.h", 
+      "src/proto/grpc/testing/perf_db.grpc.pb.h", 
+      "src/proto/grpc/testing/perf_db.pb.h", 
+      "src/proto/grpc/testing/services.grpc.pb.h", 
+      "src/proto/grpc/testing/services.pb.h", 
+      "src/proto/grpc/testing/stats.grpc.pb.h", 
+      "src/proto/grpc/testing/stats.pb.h"
+    ], 
+    "language": "c++", 
+    "name": "codegen_test", 
+    "src": [
+      "test/cpp/codegen/codegen_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
       "gpr", 
       "grpc", 
       "grpc++"
