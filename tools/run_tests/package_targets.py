@@ -139,9 +139,27 @@ class PythonPackage:
         'tools/run_tests/build_package_python.sh')
 
 
+class PHPPackage:
+  """Copy PHP PECL package artifact"""
+
+  def __init__(self):
+    self.name = 'php_package'
+    self.labels = ['package', 'php', 'linux']
+
+  def pre_build_jobspecs(self):
+    return []
+
+  def build_jobspec(self):
+    return create_docker_jobspec(
+        self.name,
+        'tools/dockerfile/grpc_artifact_linux_x64',
+        'tools/run_tests/build_package_php.sh')
+
+
 def targets():
   """Gets list of supported targets"""
   return [CSharpPackage(),
           NodePackage(),
           RubyPackage(),
-          PythonPackage()]
+          PythonPackage(),
+          PHPPackage()]

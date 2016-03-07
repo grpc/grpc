@@ -55,8 +55,8 @@ import report_utils
 import watch_dirs
 
 
-ROOT = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), '../..'))
-os.chdir(ROOT)
+_ROOT = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), '../..'))
+os.chdir(_ROOT)
 
 
 _FORCE_ENVIRON_FOR_WRAPPERS = {}
@@ -118,6 +118,16 @@ def get_c_tests(travis, test_lang) :
                 not (travis and tgt['flaky'])]
 
 
+def _check_compiler(compiler, supported_compilers):
+  if compiler not in supported_compilers:
+    raise Exception('Compiler %s not supported.' % compiler)
+
+
+def _is_use_docker_child():
+  """Returns True if running running as a --use_docker child."""
+  return True if os.getenv('RUN_TESTS_COMMAND') else False
+
+
 class CLanguage(object):
 
   def __init__(self, make_target, test_lang):
@@ -125,44 +135,81 @@ class CLanguage(object):
     self.platform = platform_string()
     self.test_lang = test_lang
 
-  def test_specs(self, config, args):
+  def configure(self, config, args):
+    self.config = config
+    self.args = args
+    if self.platform == 'windows':
+      self._make_options = [_windows_toolset_option(self.args.compiler),
+                            _windows_arch_option(self.args.arch)]
+    else:
+      self._make_options = []
+      self._docker_distro = self._get_docker_distro(self.args.use_docker,
+                                                    self.args.compiler)
+
+  def test_specs(self):
     out = []
-    binaries = get_c_tests(args.travis, self.test_lang)
+    binaries = get_c_tests(self.args.travis, self.test_lang)
     for target in binaries:
-      if config.build_config in target['exclude_configs']:
+      if self.config.build_config in target['exclude_configs']:
         continue
       if self.platform == 'windows':
         binary = 'vsprojects/%s%s/%s.exe' % (
-            'x64/' if args.arch == 'x64' else '',
-            _WINDOWS_CONFIG[config.build_config],
+            'x64/' if self.args.arch == 'x64' else '',
+            _MSBUILD_CONFIG[self.config.build_config],
             target['name'])
       else:
-        binary = 'bins/%s/%s' % (config.build_config, target['name'])
+        binary = 'bins/%s/%s' % (self.config.build_config, target['name'])
       if os.path.isfile(binary):
-        cmdline = [binary] + target['args']
-        out.append(config.job_spec(cmdline, [binary],
-                                   shortname=' '.join(cmdline),
-                                   cpu_cost=target['cpu_cost'],
-                                   environ={'GRPC_DEFAULT_SSL_ROOTS_FILE_PATH':
-                                            os.path.abspath(os.path.dirname(
-                                                sys.argv[0]) + '/../../src/core/tsi/test_creds/ca.pem')}))
-      elif args.regex == '.*' or platform_string() == 'windows':
+        if 'gtest' in target and target['gtest']:
+          # here we parse the output of --gtest_list_tests to build up a
+          # complete list of the tests contained in a binary
+          # for each test, we then add a job to run, filtering for just that
+          # test
+          with open(os.devnull, 'w') as fnull:
+            tests = subprocess.check_output([binary, '--gtest_list_tests'],
+                                            stderr=fnull)
+          base = None
+          for line in tests.split('\n'):
+            i = line.find('#')
+            if i >= 0: line = line[:i]
+            if not line: continue
+            if line[0] != ' ':
+              base = line.strip()
+            else:
+              assert base is not None
+              assert line[1] == ' '
+              test = base + line.strip()
+              cmdline = [binary] + ['--gtest_filter=%s' % test]
+              out.append(self.config.job_spec(cmdline, [binary],
+                                              shortname='%s:%s' % (binary, test),
+                                              cpu_cost=target['cpu_cost'],
+                                              environ={'GRPC_DEFAULT_SSL_ROOTS_FILE_PATH':
+                                                       _ROOT + '/src/core/tsi/test_creds/ca.pem'}))
+        else:
+          cmdline = [binary] + target['args']
+          out.append(self.config.job_spec(cmdline, [binary],
+                                          shortname=' '.join(cmdline),
+                                          cpu_cost=target['cpu_cost'],
+                                          environ={'GRPC_DEFAULT_SSL_ROOTS_FILE_PATH':
+                                                   _ROOT + '/src/core/tsi/test_creds/ca.pem'}))
+      elif self.args.regex == '.*' or self.platform == 'windows':
         print '\nWARNING: binary not found, skipping', binary
     return sorted(out)
 
-  def make_targets(self, test_regex):
-    if platform_string() != 'windows' and test_regex != '.*':
+  def make_targets(self):
+    test_regex = self.args.regex
+    if self.platform != 'windows' and self.args.regex != '.*':
       # use the regex to minimize the number of things to build
       return [os.path.basename(target['name'])
               for target in get_c_tests(False, self.test_lang)
               if re.search(test_regex, '/' + target['name'])]
-    if platform_string() == 'windows':
+    if self.platform == 'windows':
       # don't build tools on windows just yet
       return ['buildtests_%s' % self.make_target]
     return ['buildtests_%s' % self.make_target, 'tools_%s' % self.make_target]
 
   def make_options(self):
-    return []
+    return self._make_options;
 
   def pre_build_steps(self):
     if self.platform == 'windows':
@@ -182,11 +229,24 @@ class CLanguage(object):
   def makefile_name(self):
     return 'Makefile'
 
-  def supports_multi_config(self):
-    return True
+  def _get_docker_distro(self, use_docker, compiler):
+    if _is_use_docker_child():
+      return "already_under_docker"
+    if not use_docker:
+      _check_compiler(compiler, ['default'])
 
-  def dockerfile_dir(self, config, arch):
-    return 'tools/dockerfile/test/cxx_jessie_%s' % _docker_arch_suffix(arch)
+    if compiler == 'gcc4.9' or compiler == 'default':
+      return 'jessie'
+    elif compiler == 'gcc4.4':
+      return 'squeeze'
+    elif compiler == 'gcc5.3':
+      return 'ubuntu1604'
+    else:
+      raise Exception('Compiler %s not supported.' % compiler)
+
+  def dockerfile_dir(self):
+    return 'tools/dockerfile/test/cxx_%s_%s' % (self._docker_distro,
+                                                _docker_arch_suffix(self.args.arch))
 
   def __str__(self):
     return self.make_target
@@ -198,13 +258,18 @@ class NodeLanguage(object):
     self.platform = platform_string()
     self.node_version = '0.12'
 
-  def test_specs(self, config, args):
+  def configure(self, config, args):
+    self.config = config
+    self.args = args
+    _check_compiler(self.args.compiler, ['default'])
+
+  def test_specs(self):
     if self.platform == 'windows':
-      return [config.job_spec(['tools\\run_tests\\run_node.bat'], None)]
+      return [self.config.job_spec(['tools\\run_tests\\run_node.bat'], None)]
     else:
-      return [config.job_spec(['tools/run_tests/run_node.sh', self.node_version],
-                              None,
-                              environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
+      return [self.config.job_spec(['tools/run_tests/run_node.sh', self.node_version],
+                                   None,
+                                   environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
 
   def pre_build_steps(self):
     if self.platform == 'windows':
@@ -212,7 +277,7 @@ class NodeLanguage(object):
     else:
       return [['tools/run_tests/pre_build_node.sh', self.node_version]]
 
-  def make_targets(self, test_regex):
+  def make_targets(self):
     return []
 
   def make_options(self):
@@ -225,16 +290,16 @@ class NodeLanguage(object):
       return [['tools/run_tests/build_node.sh', self.node_version]]
 
   def post_tests_steps(self):
-    return []
+    if self.platform == 'windows':
+      return [['tools\\run_tests\\post_test_node.bat']]
+    else:
+      return []
 
   def makefile_name(self):
     return 'Makefile'
 
-  def supports_multi_config(self):
-    return False
-
-  def dockerfile_dir(self, config, arch):
-    return 'tools/dockerfile/test/node_jessie_%s' % _docker_arch_suffix(arch)
+  def dockerfile_dir(self):
+    return 'tools/dockerfile/test/node_jessie_%s' % _docker_arch_suffix(self.args.arch)
 
   def __str__(self):
     return 'node'
@@ -242,14 +307,19 @@ class NodeLanguage(object):
 
 class PhpLanguage(object):
 
-  def test_specs(self, config, args):
-    return [config.job_spec(['src/php/bin/run_tests.sh'], None,
-                            environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
+  def configure(self, config, args):
+    self.config = config
+    self.args = args
+    _check_compiler(self.args.compiler, ['default'])
+
+  def test_specs(self):
+    return [self.config.job_spec(['src/php/bin/run_tests.sh'], None,
+                                  environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
 
   def pre_build_steps(self):
     return []
 
-  def make_targets(self, test_regex):
+  def make_targets(self):
     return ['static_c', 'shared_c']
 
   def make_options(self):
@@ -264,11 +334,8 @@ class PhpLanguage(object):
   def makefile_name(self):
     return 'Makefile'
 
-  def supports_multi_config(self):
-    return False
-
-  def dockerfile_dir(self, config, arch):
-    return 'tools/dockerfile/test/php_jessie_%s' % _docker_arch_suffix(arch)
+  def dockerfile_dir(self):
+    return 'tools/dockerfile/test/php_jessie_%s' % _docker_arch_suffix(self.args.arch)
 
   def __str__(self):
     return 'php'
@@ -280,10 +347,15 @@ class PythonLanguage(object):
     self._build_python_versions = ['2.7']
     self._has_python_versions = []
 
-  def test_specs(self, config, args):
+  def configure(self, config, args):
+    self.config = config
+    self.args = args
+    _check_compiler(self.args.compiler, ['default'])
+
+  def test_specs(self):
     environment = dict(_FORCE_ENVIRON_FOR_WRAPPERS)
     environment['PYVER'] = '2.7'
-    return [config.job_spec(
+    return [self.config.job_spec(
         ['tools/run_tests/run_python.sh'],
         None,
         environ=environment,
@@ -294,7 +366,7 @@ class PythonLanguage(object):
   def pre_build_steps(self):
     return []
 
-  def make_targets(self, test_regex):
+  def make_targets(self):
     return ['static_c', 'grpc_python_plugin', 'shared_c']
 
   def make_options(self):
@@ -320,11 +392,8 @@ class PythonLanguage(object):
   def makefile_name(self):
     return 'Makefile'
 
-  def supports_multi_config(self):
-    return False
-
-  def dockerfile_dir(self, config, arch):
-    return 'tools/dockerfile/test/python_jessie_%s' % _docker_arch_suffix(arch)
+  def dockerfile_dir(self):
+    return 'tools/dockerfile/test/python_jessie_%s' % _docker_arch_suffix(self.args.arch)
 
   def __str__(self):
     return 'python'
@@ -332,15 +401,20 @@ class PythonLanguage(object):
 
 class RubyLanguage(object):
 
-  def test_specs(self, config, args):
-    return [config.job_spec(['tools/run_tests/run_ruby.sh'], None,
-                            timeout_seconds=10*60,
-                            environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
+  def configure(self, config, args):
+    self.config = config
+    self.args = args
+    _check_compiler(self.args.compiler, ['default'])
+
+  def test_specs(self):
+    return [self.config.job_spec(['tools/run_tests/run_ruby.sh'], None,
+                                 timeout_seconds=10*60,
+                                 environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
 
   def pre_build_steps(self):
     return [['tools/run_tests/pre_build_ruby.sh']]
 
-  def make_targets(self, test_regex):
+  def make_targets(self):
     return []
 
   def make_options(self):
@@ -355,27 +429,30 @@ class RubyLanguage(object):
   def makefile_name(self):
     return 'Makefile'
 
-  def supports_multi_config(self):
-    return False
-
-  def dockerfile_dir(self, config, arch):
-    return 'tools/dockerfile/test/ruby_jessie_%s' % _docker_arch_suffix(arch)
+  def dockerfile_dir(self):
+    return 'tools/dockerfile/test/ruby_jessie_%s' % _docker_arch_suffix(self.args.arch)
 
   def __str__(self):
     return 'ruby'
 
 
 class CSharpLanguage(object):
+
   def __init__(self):
     self.platform = platform_string()
 
-  def test_specs(self, config, args):
+  def configure(self, config, args):
+    self.config = config
+    self.args = args
+    _check_compiler(self.args.compiler, ['default'])
+
+  def test_specs(self):
     with open('src/csharp/tests.json') as f:
       tests_json = json.load(f)
     assemblies = tests_json['assemblies']
     tests = tests_json['tests']
 
-    msbuild_config = _WINDOWS_CONFIG[config.build_config]
+    msbuild_config = _MSBUILD_CONFIG[self.config.build_config]
     assembly_files = ['%s/bin/%s/%s.dll' % (a, msbuild_config, a)
                       for a in assemblies]
 
@@ -387,13 +464,13 @@ class CSharpLanguage(object):
     else:
       script_name = 'tools/run_tests/run_csharp.sh'
 
-    if config.build_config == 'gcov':
+    if self.config.build_config == 'gcov':
       # On Windows, we only collect C# code coverage.
       # On Linux, we only collect coverage for native extension.
       # For code coverage all tests need to run as one suite.
-      return [config.job_spec([script_name] + extra_args, None,
-                              shortname='csharp.coverage',
-                              environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
+      return [self.config.job_spec([script_name] + extra_args, None,
+                                    shortname='csharp.coverage',
+                                    environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
     else:
       specs = []
       for test in tests:
@@ -402,9 +479,9 @@ class CSharpLanguage(object):
           # use different output directory for each test to prevent
           # TestResult.xml clash between parallel test runs.
           cmdline += ['-work=test-result/%s' % uuid.uuid4()]
-        specs.append(config.job_spec(cmdline, None,
-                                     shortname='csharp.%s' % test,
-                                     environ=_FORCE_ENVIRON_FOR_WRAPPERS))
+        specs.append(self.config.job_spec(cmdline, None,
+                                          shortname='csharp.%s' % test,
+                                          environ=_FORCE_ENVIRON_FOR_WRAPPERS))
       return specs
 
   def pre_build_steps(self):
@@ -413,7 +490,7 @@ class CSharpLanguage(object):
     else:
       return [['tools/run_tests/pre_build_csharp.sh']]
 
-  def make_targets(self, test_regex):
+  def make_targets(self):
     # For Windows, this target doesn't really build anything,
     # everything is build by buildall script later.
     if self.platform == 'windows':
@@ -440,11 +517,8 @@ class CSharpLanguage(object):
   def makefile_name(self):
     return 'Makefile'
 
-  def supports_multi_config(self):
-    return False
-
-  def dockerfile_dir(self, config, arch):
-    return 'tools/dockerfile/test/csharp_jessie_%s' % _docker_arch_suffix(arch)
+  def dockerfile_dir(self):
+    return 'tools/dockerfile/test/csharp_jessie_%s' % _docker_arch_suffix(self.args.arch)
 
   def __str__(self):
     return 'csharp'
@@ -452,14 +526,19 @@ class CSharpLanguage(object):
 
 class ObjCLanguage(object):
 
-  def test_specs(self, config, args):
-    return [config.job_spec(['src/objective-c/tests/run_tests.sh'], None,
-                            environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
+  def configure(self, config, args):
+    self.config = config
+    self.args = args
+    _check_compiler(self.args.compiler, ['default'])
+
+  def test_specs(self):
+    return [self.config.job_spec(['src/objective-c/tests/run_tests.sh'], None,
+                                  environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
 
   def pre_build_steps(self):
     return []
 
-  def make_targets(self, test_regex):
+  def make_targets(self):
     return ['grpc_objective_c_plugin', 'interop_server']
 
   def make_options(self):
@@ -474,10 +553,7 @@ class ObjCLanguage(object):
   def makefile_name(self):
     return 'Makefile'
 
-  def supports_multi_config(self):
-    return False
-
-  def dockerfile_dir(self, config, arch):
+  def dockerfile_dir(self):
     return None
 
   def __str__(self):
@@ -486,18 +562,23 @@ class ObjCLanguage(object):
 
 class Sanity(object):
 
-  def test_specs(self, config, args):
+  def configure(self, config, args):
+    self.config = config
+    self.args = args
+    _check_compiler(self.args.compiler, ['default'])
+
+  def test_specs(self):
     import yaml
     with open('tools/run_tests/sanity/sanity_tests.yaml', 'r') as f:
-      return [config.job_spec(cmd['script'].split(), None,
-                              timeout_seconds=None, environ={'TEST': 'true'},
-                              cpu_cost=cmd.get('cpu_cost', 1))
+      return [self.config.job_spec(cmd['script'].split(), None,
+                                   timeout_seconds=None, environ={'TEST': 'true'},
+                                   cpu_cost=cmd.get('cpu_cost', 1))
               for cmd in yaml.load(f)]
 
   def pre_build_steps(self):
     return []
 
-  def make_targets(self, test_regex):
+  def make_targets(self):
     return ['run_dep_checks']
 
   def make_options(self):
@@ -512,47 +593,11 @@ class Sanity(object):
   def makefile_name(self):
     return 'Makefile'
 
-  def supports_multi_config(self):
-    return False
-
-  def dockerfile_dir(self, config, arch):
+  def dockerfile_dir(self):
     return 'tools/dockerfile/test/sanity'
 
   def __str__(self):
     return 'sanity'
-
-
-class Build(object):
-
-  def test_specs(self, config, args):
-    return []
-
-  def pre_build_steps(self):
-    return []
-
-  def make_targets(self, test_regex):
-    return ['static']
-
-  def make_options(self):
-    return []
-
-  def build_steps(self):
-    return []
-
-  def post_tests_steps(self):
-    return []
-
-  def makefile_name(self):
-    return 'Makefile'
-
-  def supports_multi_config(self):
-    return True
-
-  def dockerfile_dir(self, config, arch):
-    return None
-
-  def __str__(self):
-    return self.make_target
 
 
 # different configurations we can run under
@@ -560,7 +605,6 @@ with open('tools/run_tests/configs.json') as f:
   _CONFIGS = dict((cfg['config'], Config(**cfg)) for cfg in ast.literal_eval(f.read()))
 
 
-_DEFAULT = ['opt']
 _LANGUAGES = {
     'c++': CLanguage('cxx', 'c++'),
     'c': CLanguage('c', 'c'),
@@ -570,11 +614,11 @@ _LANGUAGES = {
     'ruby': RubyLanguage(),
     'csharp': CSharpLanguage(),
     'objc' : ObjCLanguage(),
-    'sanity': Sanity(),
-    'build': Build(),
+    'sanity': Sanity()
     }
 
-_WINDOWS_CONFIG = {
+
+_MSBUILD_CONFIG = {
     'dbg': 'Debug',
     'opt': 'Release',
     'gcov': 'Debug',
@@ -651,14 +695,6 @@ def _docker_arch_suffix(arch):
     sys.exit(1)
 
 
-def _get_dockerfile_dir(language, cfg, arch):
-  """Returns dockerfile to use"""
-  custom = language.dockerfile_dir(cfg, arch)
-  if custom:
-    return custom
-  else:
-    return 'tools/dockerfile/grpc_tests_multilang_%s' % _docker_arch_suffix(arch)
-
 def runs_per_test_type(arg_str):
     """Auxilary function to parse the "runs_per_test" flag.
 
@@ -682,9 +718,8 @@ def runs_per_test_type(arg_str):
 # parse command line
 argp = argparse.ArgumentParser(description='Run grpc tests.')
 argp.add_argument('-c', '--config',
-                  choices=['all'] + sorted(_CONFIGS.keys()),
-                  nargs='+',
-                  default=_DEFAULT)
+                  choices=sorted(_CONFIGS.keys()),
+                  default='opt')
 argp.add_argument('-n', '--runs_per_test', default=1, type=runs_per_test_type,
         help='A positive integer or "inf". If "inf", all tests will run in an '
              'infinite loop. Especially useful in combination with "-f"')
@@ -728,9 +763,11 @@ argp.add_argument('--arch',
                   default='default',
                   help='Selects architecture to target. For some platforms "default" is the only supported choice.')
 argp.add_argument('--compiler',
-                  choices=['default', 'vs2010', 'vs2013', 'vs2015'],
+                  choices=['default',
+                           'gcc4.4', 'gcc4.9', 'gcc5.3',
+                           'vs2010', 'vs2013', 'vs2015'],
                   default='default',
-                  help='Selects compiler to use. For some platforms "default" is the only supported choice.')
+                  help='Selects compiler to use. Allowed values depend on the platform and language.')
 argp.add_argument('--build_only',
                   default=False,
                   action='store_const',
@@ -776,11 +813,8 @@ if need_to_regenerate_projects:
 
 
 # grab config
-run_configs = set(_CONFIGS[cfg]
-                  for cfg in itertools.chain.from_iterable(
-                      _CONFIGS.iterkeys() if x == 'all' else [x]
-                      for x in args.config))
-build_configs = set(cfg.build_config for cfg in run_configs)
+run_config = _CONFIGS[args.config]
+build_config = run_config.build_config
 
 if args.travis:
   _FORCE_ENVIRON_FOR_WRAPPERS = {'GRPC_TRACE': 'api'}
@@ -791,17 +825,13 @@ else:
   lang_list = args.language
 # We don't support code coverage on some languages
 if 'gcov' in args.config:
-  for bad in ['objc', 'sanity', 'build']:
+  for bad in ['objc', 'sanity']:
     if bad in lang_list:
       lang_list.remove(bad)
 
 languages = set(_LANGUAGES[l] for l in lang_list)
-
-if len(build_configs) > 1:
-  for language in languages:
-    if not language.supports_multi_config():
-      print language, 'does not support multiple build configurations'
-      sys.exit(1)
+for l in languages:
+  l.configure(run_config, args)
 
 language_make_options=[]
 if any(language.make_options() for language in languages):
@@ -810,10 +840,6 @@ if any(language.make_options() for language in languages):
     sys.exit(1)
   else:
     language_make_options = next(iter(languages)).make_options()
-
-if len(languages) != 1 or len(build_configs) != 1:
-  print 'Multi-language and multi-config testing is not supported.'
-  sys.exit(1)
 
 if args.use_docker:
   if not args.travis:
@@ -824,14 +850,18 @@ if args.use_docker:
     print 'copied to the docker environment.'
     time.sleep(5)
 
+  dockerfile_dirs = set([l.dockerfile_dir() for l in languages])
+  if len(dockerfile_dirs) > 1:
+    print 'Languages to be tested require running under different docker images.'
+    sys.exit(1)
+  dockerfile_dir = next(iter(dockerfile_dirs))
+
   child_argv = [ arg for arg in sys.argv if not arg == '--use_docker' ]
   run_tests_cmd = 'python tools/run_tests/run_tests.py %s' % ' '.join(child_argv[1:])
 
   env = os.environ.copy()
   env['RUN_TESTS_COMMAND'] = run_tests_cmd
-  env['DOCKERFILE_DIR'] = _get_dockerfile_dir(next(iter(languages)),
-                                              next(iter(build_configs)),
-                                              args.arch)
+  env['DOCKERFILE_DIR'] = dockerfile_dir
   env['DOCKER_RUN_SCRIPT'] = 'tools/jenkins/docker_run_tests.sh'
   if args.xml_report:
     env['XML_REPORT'] = args.xml_report
@@ -842,10 +872,6 @@ if args.use_docker:
                         shell=True,
                         env=env)
   sys.exit(0)
-
-if platform_string() != 'windows' and args.compiler != 'default':
-    print 'Compiler %s not supported on current platform.' % args.compiler
-    sys.exit(1)
 
 _check_arch_option(args.arch)
 
@@ -861,9 +887,7 @@ def make_jobspec(cfg, targets, makefile='Makefile'):
     return [
       jobset.JobSpec([_windows_build_bat(args.compiler),
                       'vsprojects\\%s.sln' % target,
-                      '/p:Configuration=%s' % _WINDOWS_CONFIG[cfg],
-                      _windows_toolset_option(args.compiler),
-                      _windows_arch_option(args.arch)] +
+                      '/p:Configuration=%s' % _MSBUILD_CONFIG[cfg]] +
                       extra_args +
                       language_make_options,
                       shell=True, timeout_seconds=None)
@@ -886,32 +910,29 @@ make_targets = {}
 for l in languages:
   makefile = l.makefile_name()
   make_targets[makefile] = make_targets.get(makefile, set()).union(
-      set(l.make_targets(args.regex)))
+      set(l.make_targets()))
 
 def build_step_environ(cfg):
   environ = {'CONFIG': cfg}
-  msbuild_cfg = _WINDOWS_CONFIG.get(cfg)
+  msbuild_cfg = _MSBUILD_CONFIG.get(cfg)
   if msbuild_cfg:
     environ['MSBUILD_CONFIG'] = msbuild_cfg
   return environ
 
 build_steps = list(set(
-                   jobset.JobSpec(cmdline, environ=build_step_environ(cfg), flake_retries=5)
-                   for cfg in build_configs
+                   jobset.JobSpec(cmdline, environ=build_step_environ(build_config), flake_retries=5)
                    for l in languages
                    for cmdline in l.pre_build_steps()))
 if make_targets:
-  make_commands = itertools.chain.from_iterable(make_jobspec(cfg, list(targets), makefile) for cfg in build_configs for (makefile, targets) in make_targets.iteritems())
+  make_commands = itertools.chain.from_iterable(make_jobspec(build_config, list(targets), makefile) for (makefile, targets) in make_targets.iteritems())
   build_steps.extend(set(make_commands))
 build_steps.extend(set(
-                   jobset.JobSpec(cmdline, environ=build_step_environ(cfg), timeout_seconds=None)
-                   for cfg in build_configs
+                   jobset.JobSpec(cmdline, environ=build_step_environ(build_config), timeout_seconds=None)
                    for l in languages
                    for cmdline in l.build_steps()))
 
 post_tests_steps = list(set(
-                        jobset.JobSpec(cmdline, environ=build_step_environ(cfg))
-                        for cfg in build_configs
+                        jobset.JobSpec(cmdline, environ=build_step_environ(build_config))
                         for l in languages
                         for cmdline in l.post_tests_steps()))
 runs_per_test = args.runs_per_test
@@ -1024,7 +1045,7 @@ def _start_port_server(port_server_port):
           print 'last ditch attempt to contact port server succeeded'
           break
         except:
-          traceback.print_exc();
+          traceback.print_exc()
           port_log = open(logfile, 'r').read()
           print port_log
           sys.exit(1)
@@ -1044,7 +1065,7 @@ def _start_port_server(port_server_port):
         time.sleep(1)
         waits += 1
       except:
-        traceback.print_exc();
+        traceback.print_exc()
         port_server.kill()
         raise
 
@@ -1102,9 +1123,8 @@ def _build_and_run(
     infinite_runs = runs_per_test == 0
     one_run = set(
       spec
-      for config in run_configs
       for language in languages
-      for spec in language.test_specs(config, args)
+      for spec in language.test_specs()
       if re.search(args.regex, spec.shortname))
     # When running on travis, we want out test runs to be as similar as possible
     # for reproducibility purposes.

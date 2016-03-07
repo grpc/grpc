@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\test\core\security\b64_test.c">
+      <Filter>test\core\security</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="test">
+      <UniqueIdentifier>{61d5c8e1-ac27-5bd0-d581-aeb585f0157e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core">
+      <UniqueIdentifier>{409b4a57-584c-1dc5-db72-1e8d4c462e9d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core\security">
+      <UniqueIdentifier>{0cb2c3ef-ed46-78ae-140c-29f21dc6fdb1}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

@@ -37,21 +37,50 @@
 #include <type_traits>
 
 #include <grpc/impl/codegen/byte_buffer.h>
+#include <grpc/impl/codegen/log.h>
 #include <grpc++/impl/codegen/serialization_traits.h>
 #include <grpc++/impl/codegen/config_protobuf.h>
 #include <grpc++/impl/codegen/status.h>
 
 namespace grpc {
 
-// Serialize the msg into a buffer created inside the function. The caller
-// should destroy the returned buffer when done with it. If serialization fails,
-// false is returned and buffer is left unchanged.
-Status SerializeProto(const grpc::protobuf::Message& msg,
-                      grpc_byte_buffer** buffer);
+class ProtoSerializerInterface {
+ public:
+  // Serialize the msg into a buffer created inside the function. The caller
+  // should destroy the returned buffer when done with it. If serialization
+  // fails,
+  // false is returned and buffer is left unchanged.
+  virtual Status SerializeProto(const grpc::protobuf::Message& msg,
+                                grpc_byte_buffer** buffer) = 0;
 
-// The caller keeps ownership of buffer and msg.
-Status DeserializeProto(grpc_byte_buffer* buffer, grpc::protobuf::Message* msg,
-                        int max_message_size);
+  // The caller keeps ownership of buffer and msg.
+  virtual Status DeserializeProto(grpc_byte_buffer* buffer,
+                                  grpc::protobuf::Message* msg,
+                                  int max_message_size) = 0;
+};
+
+// TODO(dgq): This is a temporary fix to work around codegen issues. Its purpose
+// is to hold a polymorphic proto serializer/deserializer instance. It's
+// initialized as part of src/cpp/proto/proto_serializer.cc.
+//
+// This global variable plus all related code (ProtoSerializerInteface,
+// ProtoSerializer) will be removed in the future.
+extern ProtoSerializerInterface* g_proto_serializer;
+
+class ProtoSerializer : public ProtoSerializerInterface {
+ public:
+  // Serialize the msg into a buffer created inside the function. The caller
+  // should destroy the returned buffer when done with it. If serialization
+  // fails,
+  // false is returned and buffer is left unchanged.
+  Status SerializeProto(const grpc::protobuf::Message& msg,
+                        grpc_byte_buffer** buffer) override;
+
+  // The caller keeps ownership of buffer and msg.
+  Status DeserializeProto(grpc_byte_buffer* buffer,
+                          grpc::protobuf::Message* msg,
+                          int max_message_size) override;
+};
 
 template <class T>
 class SerializationTraits<T, typename std::enable_if<std::is_base_of<
@@ -60,12 +89,19 @@ class SerializationTraits<T, typename std::enable_if<std::is_base_of<
   static Status Serialize(const grpc::protobuf::Message& msg,
                           grpc_byte_buffer** buffer, bool* own_buffer) {
     *own_buffer = true;
-    return SerializeProto(msg, buffer);
+    GPR_ASSERT(g_proto_serializer != nullptr &&
+               "No ProtoSerializer instance registered. Make sure grpc++ is "
+               "being initialized.");
+    return g_proto_serializer->SerializeProto(msg, buffer);
   }
   static Status Deserialize(grpc_byte_buffer* buffer,
                             grpc::protobuf::Message* msg,
                             int max_message_size) {
-    auto status = DeserializeProto(buffer, msg, max_message_size);
+    GPR_ASSERT(g_proto_serializer != nullptr &&
+               "No ProtoSerializer instance registered. Make sure grpc++ is "
+               "being initialized.");
+    auto status =
+        g_proto_serializer->DeserializeProto(buffer, msg, max_message_size);
     grpc_byte_buffer_destroy(buffer);
     return status;
   }

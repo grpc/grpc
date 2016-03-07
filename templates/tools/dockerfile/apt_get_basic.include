@@ -1,3 +1,4 @@
+<%page args="skip_golang=False"/>\
 # Install Git and basic packages.
 RUN apt-get update && apt-get install -y ${'\\'}
   autoconf ${'\\'}
@@ -9,7 +10,9 @@ RUN apt-get update && apt-get install -y ${'\\'}
   gcc ${'\\'}
   gcc-multilib ${'\\'}
   git ${'\\'}
+% if not skip_golang:
   golang ${'\\'}
+% endif
   gyp ${'\\'}
   lcov ${'\\'}
   libc6 ${'\\'}

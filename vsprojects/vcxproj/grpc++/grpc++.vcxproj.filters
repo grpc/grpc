@@ -43,9 +43,6 @@
     <ClCompile Include="$(SolutionDir)\..\src\cpp\client\insecure_credentials.cc">
       <Filter>src\cpp\client</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\cpp\common\alarm.cc">
-      <Filter>src\cpp\common</Filter>
-    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\common\call.cc">
       <Filter>src\cpp\common</Filter>
     </ClCompile>
@@ -57,6 +54,9 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\common\rpc_method.cc">
       <Filter>src\cpp\common</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\cpp\proto\proto_serializer.cc">
+      <Filter>src\cpp\proto</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\proto\proto_utils.cc">
       <Filter>src\cpp\proto</Filter>

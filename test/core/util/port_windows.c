@@ -129,7 +129,8 @@ static int is_port_available(int *port, int is_tcp) {
 }
 
 typedef struct portreq {
-  grpc_pollset pollset;
+  grpc_pollset *pollset;
+  gpr_mu *mu;
   int port;
 } portreq;
 
@@ -145,10 +146,10 @@ static void got_port_from_server(grpc_exec_ctx *exec_ctx, void *arg,
     port = port * 10 + response->body[i] - '0';
   }
   GPR_ASSERT(port > 1024);
-  gpr_mu_lock(GRPC_POLLSET_MU(&pr->pollset));
+  gpr_mu_lock(pr->mu);
   pr->port = port;
-  grpc_pollset_kick(&pr->pollset, NULL);
-  gpr_mu_unlock(GRPC_POLLSET_MU(&pr->pollset));
+  grpc_pollset_kick(pr->pollset, NULL);
+  gpr_mu_unlock(pr->mu);
 }
 
 static void destroy_pollset_and_shutdown(grpc_exec_ctx *exec_ctx, void *p,
@@ -168,32 +169,34 @@ static int pick_port_using_server(char *server) {
 
   memset(&pr, 0, sizeof(pr));
   memset(&req, 0, sizeof(req));
-  grpc_pollset_init(&pr.pollset);
+  pr.pollset = gpr_malloc(grpc_pollset_size());
+  grpc_pollset_init(pr.pollset, &pr.mu);
   pr.port = -1;
 
   req.host = server;
   req.path = "/get";
 
   grpc_httpcli_context_init(&context);
-  grpc_httpcli_get(&exec_ctx, &context, &pr.pollset, &req,
+  grpc_httpcli_get(&exec_ctx, &context, pr.pollset, &req,
                    GRPC_TIMEOUT_SECONDS_TO_DEADLINE(10), got_port_from_server,
                    &pr);
-  gpr_mu_lock(GRPC_POLLSET_MU(&pr.pollset));
+  gpr_mu_lock(pr.mu);
   while (pr.port == -1) {
-    grpc_pollset_worker worker;
-    grpc_pollset_work(&exec_ctx, &pr.pollset, &worker,
+    grpc_pollset_worker *worker = NULL;
+    grpc_pollset_work(&exec_ctx, pr.pollset, &worker,
                       gpr_now(GPR_CLOCK_MONOTONIC),
                       GRPC_TIMEOUT_SECONDS_TO_DEADLINE(1));
-    gpr_mu_unlock(GRPC_POLLSET_MU(&pr.pollset));
+    gpr_mu_unlock(pr.mu);
     grpc_exec_ctx_flush(&exec_ctx);
-    gpr_mu_lock(GRPC_POLLSET_MU(&pr.pollset));
+    gpr_mu_lock(pr.mu);
   }
-  gpr_mu_unlock(GRPC_POLLSET_MU(&pr.pollset));
+  gpr_mu_unlock(pr.mu);
 
   grpc_httpcli_context_destroy(&context);
   grpc_closure_init(&destroy_pollset_closure, destroy_pollset_and_shutdown,
                     &pr.pollset);
-  grpc_pollset_shutdown(&exec_ctx, &pr.pollset, &destroy_pollset_closure);
+  grpc_pollset_shutdown(&exec_ctx, pr.pollset, &destroy_pollset_closure);
+  gpr_free(pr.pollset);
 
   grpc_exec_ctx_finish(&exec_ctx);
   return pr.port;

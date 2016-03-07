@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -38,7 +38,6 @@
 #include <grpc/grpc.h>
 #include <grpc/byte_buffer.h>
 #include <grpc/byte_buffer_reader.h>
-#include <grpc/support/log.h>
 #include <grpc/support/slice.h>
 #include <grpc/support/slice_buffer.h>
 #include <grpc/support/port_platform.h>
@@ -164,8 +163,8 @@ class GrpcBufferReader GRPC_FINAL
 
 namespace grpc {
 
-Status SerializeProto(const grpc::protobuf::Message& msg,
-                      grpc_byte_buffer** bp) {
+Status ProtoSerializer::SerializeProto(const grpc::protobuf::Message& msg,
+                                       grpc_byte_buffer** bp) {
   GPR_TIMER_SCOPE("SerializeProto", 0);
   int byte_size = msg.ByteSize();
   if (byte_size <= kMaxBufferLength) {
@@ -183,8 +182,9 @@ Status SerializeProto(const grpc::protobuf::Message& msg,
   }
 }
 
-Status DeserializeProto(grpc_byte_buffer* buffer, grpc::protobuf::Message* msg,
-                        int max_message_size) {
+Status ProtoSerializer::DeserializeProto(grpc_byte_buffer* buffer,
+                                         grpc::protobuf::Message* msg,
+                                         int max_message_size) {
   GPR_TIMER_SCOPE("DeserializeProto", 0);
   if (!buffer) {
     return Status(StatusCode::INTERNAL, "No payload");
