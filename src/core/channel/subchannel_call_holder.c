@@ -176,10 +176,9 @@ static void subchannel_ready(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
     fail_locked(exec_ctx, holder);
   } else {
     if (!gpr_atm_rel_cas(
-        &holder->subchannel_call,
-        0,
-        (gpr_atm)(uintptr_t)grpc_connected_subchannel_create_call(
-            exec_ctx, holder->connected_subchannel, holder->pollset))) {
+            &holder->subchannel_call, 0,
+            (gpr_atm)(uintptr_t)grpc_connected_subchannel_create_call(
+                exec_ctx, holder->connected_subchannel, holder->pollset))) {
       GPR_ASSERT(gpr_atm_acq_load(&holder->subchannel_call) == 1);
       /* if this cas fails, the call was cancelled before the pick completed */
       fail_locked(exec_ctx, holder);
