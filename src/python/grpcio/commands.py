@@ -264,6 +264,41 @@ class Gather(setuptools.Command):
       self.distribution.fetch_build_eggs(self.distribution.tests_require)
 
 
+class TestLite(setuptools.Command):
+  """Command to run tests without fetching or building anything."""
+
+  description = 'run tests without fetching or building anything.'
+  user_options = []
+
+  def initialize_options(self):
+    pass
+
+  def finalize_options(self):
+    # distutils requires this override.
+    pass
+
+  def run(self):
+    self._add_eggs_to_path()
+
+    import tests
+    loader = tests.Loader()
+    loader.loadTestsFromNames(['tests'])
+    runner = tests.Runner()
+    result = runner.run(loader.suite)
+    if not result.wasSuccessful():
+      sys.exit(1)
+
+  def _add_eggs_to_path(self):
+    """Adds all egg files under .eggs to sys.path"""
+    import pkg_resources
+    eggs_dir = os.path.join(PYTHON_STEM, '../../../.eggs')
+    eggs = [os.path.join(eggs_dir, filename)
+            for filename in os.listdir(eggs_dir)
+            if filename.endswith('.egg')]
+    for egg in eggs:
+      sys.path.insert(0, pkg_resources.normalize_path(egg))
+
+
 class RunInterop(test.test):
 
   description = 'run interop test client/server'
