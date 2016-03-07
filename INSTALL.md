@@ -37,9 +37,10 @@ terminal:
 By default gRPC uses [protocol buffers](https://github.com/google/protobuf),
 you will need the `protoc` compiler to generate stub server and client code.
 
-If you compile from source, see below, the Makefile will automatically try
-and compile the one present in third_party if you cloned the repository
-recursively, and that it detects your system is lacking it.
+If you compile gRPC from source, as described below, the Makefile will
+automatically try and compile the `protoc` in third_party if you cloned the
+repository recursively and it detects that you don't already have it
+installed.
 
 
 #Build from Source
