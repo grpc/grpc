@@ -26,7 +26,9 @@ Although gflags is provided in third_party, you will need to manually install
 that dependency on your system to run these tests. Under a Debian or Ubuntu
 system, you can install the gtests and gflags packages using apt-get:
 
-`apt-get install libgflags-dev libgtest-dev`
+```sh
+ $ [sudo] apt-get install libgflags-dev libgtest-dev
+```
 
 If you are planning to work on any of the languages other than C and C++, you
 will also need their appropriate development environments.
