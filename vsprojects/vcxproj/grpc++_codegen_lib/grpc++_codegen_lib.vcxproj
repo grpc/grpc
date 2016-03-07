@@ -193,7 +193,7 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\time.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="$(SolutionDir)\..\vsprojects\dummy.c">
+    <ClCompile Include="$(SolutionDir)\..\include\grpc++\impl\codegen\proto_serializer.cc">
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
