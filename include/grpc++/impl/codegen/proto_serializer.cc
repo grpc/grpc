@@ -38,5 +38,4 @@
 
 #include <grpc++/impl/codegen/proto_utils.h>
 
-static grpc::ProtoSerializer proto_serializer;
-grpc::ProtoSerializerInterface* grpc::g_proto_serializer = &proto_serializer;
+grpc::ProtoSerializerInterface* grpc::g_proto_serializer = nullptr;

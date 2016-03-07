@@ -3153,6 +3153,7 @@ endif
 
 
 LIBGRPC++_CODEGEN_LIB_SRC = \
+    include/grpc++/impl/codegen/proto_serializer.cc \
 
 PUBLIC_HEADERS_CXX += \
     include/grpc++/impl/codegen/async_stream.h \
