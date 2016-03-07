@@ -43,11 +43,13 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
+
 #include "src/core/profiling/timers.h"
 #include "src/core/support/murmur_hash.h"
 #include "src/core/support/string.h"
 #include "src/core/transport/chttp2/bin_encoder.h"
 #include "src/core/transport/static_metadata.h"
+#include "src/core/iomgr/iomgr_internal.h"
 
 /* There are two kinds of mdelem and mdstr instances.
  * Static instances are declared in static_metadata.{h,c} and
@@ -227,6 +229,9 @@ void grpc_mdctx_global_shutdown(void) {
     if (shard->count != 0) {
       gpr_log(GPR_DEBUG, "WARNING: %d metadata elements were leaked",
               shard->count);
+      if (grpc_iomgr_abort_on_leaks()) {
+        abort();
+      }
     }
     gpr_free(shard->elems);
   }
@@ -237,6 +242,9 @@ void grpc_mdctx_global_shutdown(void) {
     if (shard->count != 0) {
       gpr_log(GPR_DEBUG, "WARNING: %d metadata strings were leaked",
               shard->count);
+      if (grpc_iomgr_abort_on_leaks()) {
+        abort();
+      }
     }
     gpr_free(shard->strs);
   }

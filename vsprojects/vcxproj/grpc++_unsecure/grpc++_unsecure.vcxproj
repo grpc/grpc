@@ -326,8 +326,6 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\client\insecure_credentials.cc">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\cpp\common\alarm.cc">
-    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\common\call.cc">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\common\channel_arguments.cc">
@@ -335,6 +333,8 @@
     <ClCompile Include="$(SolutionDir)\..\src\cpp\common\completion_queue.cc">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\common\rpc_method.cc">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\cpp\proto\proto_serializer.cc">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\proto\proto_utils.cc">
     </ClCompile>

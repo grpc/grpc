@@ -272,6 +272,7 @@ namespace CallOpGenericRecvMessageHelper {
 class DeserializeFunc {
  public:
   virtual Status Deserialize(grpc_byte_buffer* buf, int max_message_size) = 0;
+  virtual ~DeserializeFunc() {}
 };
 
 template <class R>
@@ -282,6 +283,8 @@ class DeserializeFuncType GRPC_FINAL : public DeserializeFunc {
                      int max_message_size) GRPC_OVERRIDE {
     return SerializationTraits<R>::Deserialize(buf, message_, max_message_size);
   }
+
+  ~DeserializeFuncType() override {}
 
  private:
   R* message_;  // Not a managed pointer because management is external to this
