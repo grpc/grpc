@@ -1338,7 +1338,7 @@ static void multipoll_with_poll_pollset_maybe_work_and_unlock(
 
   for (i = 2; i < pfd_count; i++) {
     grpc_fd *fd = watchers[i].fd;
-    pfds[i].events = (short)grpc_fd_begin_poll(fd, pollset, worker, POLLIN,
+    pfds[i].events = (short)fd_begin_poll(fd, pollset, worker, POLLIN,
                                                POLLOUT, &watchers[i]);
     GRPC_FD_UNREF(fd, "multipoller_start");
   }
