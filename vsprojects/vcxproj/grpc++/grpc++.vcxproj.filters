@@ -88,6 +88,9 @@
     <ClCompile Include="$(SolutionDir)\..\src\cpp\util\status.cc">
       <Filter>src\cpp\util</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\cpp\util\string_ref.cc">
+      <Filter>src\cpp\util</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\util\time.cc">
       <Filter>src\cpp\util</Filter>
     </ClCompile>

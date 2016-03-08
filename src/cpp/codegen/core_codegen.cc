@@ -31,9 +31,10 @@
  *
  */
 
+#include "src/cpp/codegen/core_codegen.h"
+
 #include <stdlib.h>
 
-#include <grpc++/impl/codegen/core_codegen_interface.h>
 #include <grpc++/support/config.h>
 #include <grpc/byte_buffer.h>
 #include <grpc/byte_buffer_reader.h>
@@ -46,6 +47,8 @@
 #include <grpc/support/slice_buffer.h>
 
 #include "src/core/profiling/timers.h"
+
+grpc::CoreCodegenInterface* grpc::g_core_codegen_interface = nullptr;
 
 namespace {
 
@@ -167,86 +170,84 @@ class GrpcBufferReader GRPC_FINAL
 
 namespace grpc {
 
-class CoreCodegen : public CoreCodegenInterface {
- private:
-  grpc_completion_queue* grpc_completion_queue_create(void* reserved) override {
-    return ::grpc_completion_queue_create(reserved);
-  }
+grpc_completion_queue* CoreCodegen::grpc_completion_queue_create(
+    void* reserved) {
+  return ::grpc_completion_queue_create(reserved);
+}
 
-  void grpc_completion_queue_destroy(grpc_completion_queue* cq) override {
-    ::grpc_completion_queue_destroy(cq);
-  }
+void CoreCodegen::grpc_completion_queue_destroy(grpc_completion_queue* cq) {
+  ::grpc_completion_queue_destroy(cq);
+}
 
-  grpc_event grpc_completion_queue_pluck(grpc_completion_queue* cq, void* tag,
-                                         gpr_timespec deadline,
-                                         void* reserved) override {
-    return ::grpc_completion_queue_pluck(cq, tag, deadline, reserved);
-  }
+grpc_event CoreCodegen::grpc_completion_queue_pluck(grpc_completion_queue* cq,
+                                                    void* tag,
+                                                    gpr_timespec deadline,
+                                                    void* reserved) {
+  return ::grpc_completion_queue_pluck(cq, tag, deadline, reserved);
+}
 
-  void* gpr_malloc(size_t size) override { return ::gpr_malloc(size); }
+void* CoreCodegen::gpr_malloc(size_t size) { return ::gpr_malloc(size); }
 
-  void gpr_free(void* p) override { return ::gpr_free(p); }
+void CoreCodegen::gpr_free(void* p) { return ::gpr_free(p); }
 
-  void grpc_byte_buffer_destroy(grpc_byte_buffer* bb) override {
-    ::grpc_byte_buffer_destroy(bb);
-  }
+void CoreCodegen::grpc_byte_buffer_destroy(grpc_byte_buffer* bb) {
+  ::grpc_byte_buffer_destroy(bb);
+}
 
-  void grpc_metadata_array_init(grpc_metadata_array* array) override {
-    ::grpc_metadata_array_init(array);
-  }
+void CoreCodegen::grpc_metadata_array_init(grpc_metadata_array* array) {
+  ::grpc_metadata_array_init(array);
+}
 
-  void grpc_metadata_array_destroy(grpc_metadata_array* array) override {
-    ::grpc_metadata_array_destroy(array);
-  }
+void CoreCodegen::grpc_metadata_array_destroy(grpc_metadata_array* array) {
+  ::grpc_metadata_array_destroy(array);
+}
 
-  void assert_fail(const char* failed_assertion) override {
-    gpr_log(GPR_ERROR, "assertion failed: %s", failed_assertion);
-    abort();
-  }
+void CoreCodegen::assert_fail(const char* failed_assertion) {
+  gpr_log(GPR_ERROR, "assertion failed: %s", failed_assertion);
+  abort();
+}
 
-  Status SerializeProto(const grpc::protobuf::Message& msg,
-                        grpc_byte_buffer** bp) override {
-    GPR_TIMER_SCOPE("SerializeProto", 0);
-    int byte_size = msg.ByteSize();
-    if (byte_size <= kGrpcBufferWriterMaxBufferLength) {
-      gpr_slice slice = gpr_slice_malloc(byte_size);
-      GPR_ASSERT(
-          GPR_SLICE_END_PTR(slice) ==
-          msg.SerializeWithCachedSizesToArray(GPR_SLICE_START_PTR(slice)));
-      *bp = grpc_raw_byte_buffer_create(&slice, 1);
-      gpr_slice_unref(slice);
-      return Status::OK;
-    } else {
-      GrpcBufferWriter writer(bp, kGrpcBufferWriterMaxBufferLength);
-      return msg.SerializeToZeroCopyStream(&writer)
-                 ? Status::OK
-                 : Status(StatusCode::INTERNAL, "Failed to serialize message");
-    }
-  }
-
-  Status DeserializeProto(grpc_byte_buffer* buffer,
-                          grpc::protobuf::Message* msg,
-                          int max_message_size) override {
-    GPR_TIMER_SCOPE("DeserializeProto", 0);
-    if (buffer == nullptr) {
-      return Status(StatusCode::INTERNAL, "No payload");
-    }
-    GrpcBufferReader reader(buffer);
-    ::grpc::protobuf::io::CodedInputStream decoder(&reader);
-    if (max_message_size > 0) {
-      decoder.SetTotalBytesLimit(max_message_size, max_message_size);
-    }
-    if (!msg->ParseFromCodedStream(&decoder)) {
-      grpc_byte_buffer_destroy(buffer);
-      return Status(StatusCode::INTERNAL, msg->InitializationErrorString());
-    }
-    if (!decoder.ConsumedEntireMessage()) {
-      grpc_byte_buffer_destroy(buffer);
-      return Status(StatusCode::INTERNAL, "Did not read entire message");
-    }
-    grpc_byte_buffer_destroy(buffer);
+Status CoreCodegen::SerializeProto(const grpc::protobuf::Message& msg,
+                                   grpc_byte_buffer** bp) {
+  GPR_TIMER_SCOPE("SerializeProto", 0);
+  int byte_size = msg.ByteSize();
+  if (byte_size <= kGrpcBufferWriterMaxBufferLength) {
+    gpr_slice slice = gpr_slice_malloc(byte_size);
+    GPR_ASSERT(GPR_SLICE_END_PTR(slice) ==
+               msg.SerializeWithCachedSizesToArray(GPR_SLICE_START_PTR(slice)));
+    *bp = grpc_raw_byte_buffer_create(&slice, 1);
+    gpr_slice_unref(slice);
     return Status::OK;
+  } else {
+    GrpcBufferWriter writer(bp, kGrpcBufferWriterMaxBufferLength);
+    return msg.SerializeToZeroCopyStream(&writer)
+               ? Status::OK
+               : Status(StatusCode::INTERNAL, "Failed to serialize message");
   }
-};
+}
+
+Status CoreCodegen::DeserializeProto(grpc_byte_buffer* buffer,
+                                     grpc::protobuf::Message* msg,
+                                     int max_message_size) {
+  GPR_TIMER_SCOPE("DeserializeProto", 0);
+  if (buffer == nullptr) {
+    return Status(StatusCode::INTERNAL, "No payload");
+  }
+  GrpcBufferReader reader(buffer);
+  ::grpc::protobuf::io::CodedInputStream decoder(&reader);
+  if (max_message_size > 0) {
+    decoder.SetTotalBytesLimit(max_message_size, max_message_size);
+  }
+  if (!msg->ParseFromCodedStream(&decoder)) {
+    grpc_byte_buffer_destroy(buffer);
+    return Status(StatusCode::INTERNAL, msg->InitializationErrorString());
+  }
+  if (!decoder.ConsumedEntireMessage()) {
+    grpc_byte_buffer_destroy(buffer);
+    return Status(StatusCode::INTERNAL, "Did not read entire message");
+  }
+  grpc_byte_buffer_destroy(buffer);
+  return Status::OK;
+}
 
 }  // namespace grpc

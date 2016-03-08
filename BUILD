@@ -824,6 +824,7 @@ cc_library(
     "src/cpp/util/byte_buffer.cc",
     "src/cpp/util/slice.cc",
     "src/cpp/util/status.cc",
+    "src/cpp/util/string_ref.cc",
     "src/cpp/util/time.cc",
   ],
   hdrs = [
@@ -914,6 +915,7 @@ cc_library(
     "src/cpp/util/byte_buffer.cc",
     "src/cpp/util/slice.cc",
     "src/cpp/util/status.cc",
+    "src/cpp/util/string_ref.cc",
     "src/cpp/util/time.cc",
   ],
   hdrs = [

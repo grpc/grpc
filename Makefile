@@ -3042,6 +3042,7 @@ LIBGRPC++_SRC = \
     src/cpp/util/byte_buffer.cc \
     src/cpp/util/slice.cc \
     src/cpp/util/status.cc \
+    src/cpp/util/string_ref.cc \
     src/cpp/util/time.cc \
 
 PUBLIC_HEADERS_CXX += \
@@ -3154,6 +3155,7 @@ endif
 
 
 LIBGRPC++_CODEGEN_LIB_SRC = \
+    src/cpp/codegen/codegen_init.cc \
 
 PUBLIC_HEADERS_CXX += \
     include/grpc++/impl/codegen/async_stream.h \
@@ -3368,6 +3370,7 @@ LIBGRPC++_UNSECURE_SRC = \
     src/cpp/util/byte_buffer.cc \
     src/cpp/util/slice.cc \
     src/cpp/util/status.cc \
+    src/cpp/util/string_ref.cc \
     src/cpp/util/time.cc \
 
 PUBLIC_HEADERS_CXX += \
