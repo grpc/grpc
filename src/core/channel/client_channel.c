@@ -251,7 +251,7 @@ static void cc_start_transport_op(grpc_exec_ctx *exec_ctx,
 
   grpc_exec_ctx_enqueue(exec_ctx, op->on_consumed, true, NULL);
 
-  GPR_ASSERT(op->set_accept_stream == NULL);
+  GPR_ASSERT(op->set_accept_stream == false);
   if (op->bind_pollset != NULL) {
     grpc_pollset_set_add_pollset(exec_ctx, chand->interested_parties,
                                  op->bind_pollset);
