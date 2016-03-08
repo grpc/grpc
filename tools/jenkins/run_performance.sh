@@ -50,7 +50,7 @@ PID2=$!
 #
 # Put a timeout on these tests
 #
-((sleep 900; kill $$ && killall qps_worker && rm -f /tmp/qps-test.$$ )&)
+((sleep 900; kill $PID1; kill $PID2; rm -f /tmp/qps-test.$$; kill $$ )&)
 
 export QPS_WORKERS="localhost:10000,localhost:10010"
 
