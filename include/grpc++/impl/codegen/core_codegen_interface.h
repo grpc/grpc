@@ -41,6 +41,10 @@
 
 namespace grpc {
 
+class CoreCodegenInterface;
+
+extern CoreCodegenInterface* g_core_codegen_interface;
+
 class CoreCodegenInterface {
  public:
   virtual grpc_completion_queue* grpc_completion_queue_create(
@@ -74,12 +78,11 @@ class CoreCodegenInterface {
 };
 
 /* XXX */
-#define GPR_CODEGEN_ASSERT(x)                                \
-  do {                                                       \
-    if (!(x)) {                                              \
-      extern CoreCodegenInterface* g_core_codegen_interface; \
-      g_core_codegen_interface->assert_fail(#x);             \
-    }                                                        \
+#define GPR_CODEGEN_ASSERT(x)                                            \
+  do {                                                                   \
+    if (!(x)) {                                                          \
+      grpc::g_core_codegen_interface->assert_fail(#x);                   \
+    }                                                                    \
   } while (0)
 
 }  // namespace grpc

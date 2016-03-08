@@ -198,6 +198,7 @@ filegroups:
   - src/cpp/util/byte_buffer.cc
   - src/cpp/util/slice.cc
   - src/cpp/util/status.cc
+  - src/cpp/util/string_ref.cc
   - src/cpp/util/time.cc
 - name: grpc_base
   public_headers:
@@ -746,7 +747,8 @@ libs:
   - include/grpc++/impl/codegen/sync_stream.h
   - include/grpc++/impl/codegen/time.h
   headers: []
-  src: []
+  src:
+  - src/cpp/codegen/codegen_init.cc
   deps:
   - grpc_codegen_lib
   filegroups:

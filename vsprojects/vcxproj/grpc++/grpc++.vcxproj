@@ -371,6 +371,8 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\util\status.cc">
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\cpp\util\string_ref.cc">
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\util\time.cc">
     </ClCompile>
   </ItemGroup>

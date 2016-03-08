@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,43 +31,40 @@
  *
  */
 
-#ifndef GRPCXX_IMPL_GRPC_LIBRARY_H
-#define GRPCXX_IMPL_GRPC_LIBRARY_H
-
-#include <iostream>
-
-#include <grpc++/impl/codegen/config.h>
-#include <grpc++/impl/codegen/grpc_library.h>
-#include <grpc/grpc.h>
-
-#include "src/cpp/codegen/core_codegen.h"
+#include <grpc++/impl/codegen/core_codegen_interface.h>
+#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/byte_buffer.h>
 
 namespace grpc {
 
-namespace internal {
-class GrpcLibrary GRPC_FINAL : public GrpcLibraryInterface {
- public:
-  void init() GRPC_OVERRIDE { grpc_init(); }
+class CoreCodegen : public CoreCodegenInterface {
+ private:
+  grpc_completion_queue* grpc_completion_queue_create(void* reserved) override;
 
-  void shutdown() GRPC_OVERRIDE { grpc_shutdown(); }
+  void grpc_completion_queue_destroy(grpc_completion_queue* cq) override;
+
+  grpc_event grpc_completion_queue_pluck(grpc_completion_queue* cq, void* tag,
+                                         gpr_timespec deadline,
+                                         void* reserved) override;
+
+  void* gpr_malloc(size_t size) override;
+
+  void gpr_free(void* p) override;
+
+  void grpc_byte_buffer_destroy(grpc_byte_buffer* bb) override;
+
+  void grpc_metadata_array_init(grpc_metadata_array* array) override;
+
+  void grpc_metadata_array_destroy(grpc_metadata_array* array) override;
+
+  void assert_fail(const char* failed_assertion) override;
+
+  Status SerializeProto(const grpc::protobuf::Message& msg,
+                        grpc_byte_buffer** bp) override;
+
+  Status DeserializeProto(grpc_byte_buffer* buffer,
+                          grpc::protobuf::Message* msg,
+                          int max_message_size) override;
 };
 
-static GrpcLibrary g_gli;
-static CoreCodegen g_core_codegen;
-
-class GrpcLibraryInitializer GRPC_FINAL {
- public:
-  GrpcLibraryInitializer() {
-    grpc::g_glip = &g_gli;
-    grpc::g_core_codegen_interface = &g_core_codegen;
-  }
-
-  /// A no-op method to force the linker to reference this class, which will
-  /// take care of initializing and shutting down the gRPC runtime.
-  int summon() { return 0; }
-};
-
-}  // namespace internal
 }  // namespace grpc
-
-#endif  // GRPCXX_IMPL_GRPC_LIBRARY_H
