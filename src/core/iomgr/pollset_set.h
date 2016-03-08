@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -41,15 +41,9 @@
    fd's (etc) that have been registered with the set_set to that pollset.
    Registering fd's automatically adds them to all current pollsets. */
 
-#ifdef GPR_POSIX_SOCKET
-#include "src/core/iomgr/pollset_set_posix.h"
-#endif
+typedef struct grpc_pollset_set grpc_pollset_set;
 
-#ifdef GPR_WIN32
-#include "src/core/iomgr/pollset_set_windows.h"
-#endif
-
-void grpc_pollset_set_init(grpc_pollset_set *pollset_set);
+grpc_pollset_set *grpc_pollset_set_create(void);
 void grpc_pollset_set_destroy(grpc_pollset_set *pollset_set);
 void grpc_pollset_set_add_pollset(grpc_exec_ctx *exec_ctx,
                                   grpc_pollset_set *pollset_set,

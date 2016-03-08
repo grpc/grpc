@@ -27,13 +27,8 @@
 @rem (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 @rem OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+set PATH=%PATH%;C:\Program Files\nodejs\;%APPDATA%\npm
+
 @rem Expire cache after 1 week
-npm update --cache-min 604800
+call npm update --cache-min 604800
 
-npm install node-gyp-install
-.\node_modules\.bin\node-gyp-install.cmd
-
-@rem delete the redundant openssl headers
-for /f "delims=v" %%v in ('node --version') do (
-  rmdir "%HOMEDRIVE%%HOMEPATH%\.node-gyp\%%v\include\node\openssl" /S /Q
-)
