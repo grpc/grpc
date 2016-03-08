@@ -40,7 +40,7 @@
 #include <grpc++/impl/codegen/grpc_library.h>
 #include <grpc/grpc.h>
 
-#include "src/cpp/codegen/core_codegen.h"
+#include "src/cpp/common/core_codegen.h"
 
 namespace grpc {
 
