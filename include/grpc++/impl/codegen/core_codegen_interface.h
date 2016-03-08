@@ -43,9 +43,13 @@ namespace grpc {
 
 class CoreCodegenInterface {
  public:
-  virtual grpc_completion_queue* CompletionQueueCreate() = 0;
-  virtual grpc_event CompletionQueuePluck(grpc_completion_queue* cq, void* tag,
-                                          gpr_timespec deadline) = 0;
+  virtual grpc_completion_queue* grpc_completion_queue_create(
+      void* reserved) = 0;
+  virtual void grpc_completion_queue_destroy(grpc_completion_queue* cq) = 0;
+  virtual grpc_event grpc_completion_queue_pluck(grpc_completion_queue* cq,
+                                                 void* tag,
+                                                 gpr_timespec deadline,
+                                                 void* reserved) = 0;
 
   // Serialize the msg into a buffer created inside the function. The caller
   // should destroy the returned buffer when done with it. If serialization
@@ -70,11 +74,12 @@ class CoreCodegenInterface {
 };
 
 /* XXX */
-#define GPR_CODEGEN_ASSERT(x)                    \
-  do {                                           \
-    if (!(x)) {                                  \
-      g_core_codegen_interface->assert_fail(#x); \
-    }                                            \
+#define GPR_CODEGEN_ASSERT(x)                                \
+  do {                                                       \
+    if (!(x)) {                                              \
+      extern CoreCodegenInterface* g_core_codegen_interface; \
+      g_core_codegen_interface->assert_fail(#x);             \
+    }                                                        \
   } while (0)
 
 }  // namespace grpc
