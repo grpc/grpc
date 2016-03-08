@@ -395,7 +395,6 @@ void grpc_subchannel_notify_on_state_change(
     grpc_exec_ctx *exec_ctx, grpc_subchannel *c,
     grpc_pollset_set *interested_parties, grpc_connectivity_state *state,
     grpc_closure *notify) {
-  int do_connect = 0;
   external_state_watcher *w;
 
   if (state == NULL) {
@@ -425,16 +424,12 @@ void grpc_subchannel_notify_on_state_change(
     w->next->prev = w->prev->next = w;
     if (grpc_connectivity_state_notify_on_state_change(
             exec_ctx, &c->state_tracker, state, &w->closure)) {
-      do_connect = 1;
       c->connecting = 1;
       /* released by connection */
       GRPC_SUBCHANNEL_WEAK_REF(c, "connecting");
+      start_connect(exec_ctx, c);
     }
     gpr_mu_unlock(&c->mu);
-  }
-
-  if (do_connect) {
-    start_connect(exec_ctx, c);
   }
 }
 
@@ -635,11 +630,12 @@ static void on_alarm(grpc_exec_ctx *exec_ctx, void *arg, bool iomgr_success) {
   if (c->disconnected) {
     iomgr_success = 0;
   }
-  gpr_mu_unlock(&c->mu);
   if (iomgr_success) {
     update_reconnect_parameters(c);
     continue_connect(exec_ctx, c);
+    gpr_mu_unlock(&c->mu);
   } else {
+    gpr_mu_unlock(&c->mu);
     GRPC_SUBCHANNEL_WEAK_UNREF(exec_ctx, c, "connecting");
   }
 }

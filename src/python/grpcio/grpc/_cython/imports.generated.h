@@ -91,10 +91,10 @@ extern census_context_next_tag_type census_context_next_tag_import;
 typedef int(*census_context_get_tag_type)(const census_context *context, const char *key, census_tag *tag);
 extern census_context_get_tag_type census_context_get_tag_import;
 #define census_context_get_tag census_context_get_tag_import
-typedef char *(*census_context_encode_type)(const census_context *context, char *buffer, size_t buf_size, size_t *print_buf_size, size_t *bin_buf_size);
+typedef size_t(*census_context_encode_type)(const census_context *context, char *buffer, size_t buf_size);
 extern census_context_encode_type census_context_encode_import;
 #define census_context_encode census_context_encode_import
-typedef census_context *(*census_context_decode_type)(const char *buffer, size_t size, const char *bin_buffer, size_t bin_size);
+typedef census_context *(*census_context_decode_type)(const char *buffer, size_t size);
 extern census_context_decode_type census_context_decode_import;
 #define census_context_decode census_context_decode_import
 typedef int(*census_trace_mask_type)(const census_context *context);
@@ -610,6 +610,9 @@ extern gpr_ref_init_type gpr_ref_init_import;
 typedef void(*gpr_ref_type)(gpr_refcount *r);
 extern gpr_ref_type gpr_ref_import;
 #define gpr_ref gpr_ref_import
+typedef void(*gpr_ref_non_zero_type)(gpr_refcount *r);
+extern gpr_ref_non_zero_type gpr_ref_non_zero_import;
+#define gpr_ref_non_zero gpr_ref_non_zero_import
 typedef void(*gpr_refn_type)(gpr_refcount *r, int n);
 extern gpr_refn_type gpr_refn_import;
 #define gpr_refn gpr_refn_import
