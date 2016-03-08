@@ -37,8 +37,10 @@
 #include <poll.h>
 
 #include <grpc/support/sync.h>
+
 #include "src/core/iomgr/exec_ctx.h"
 #include "src/core/iomgr/iomgr.h"
+#include "src/core/iomgr/pollset.h"
 #include "src/core/iomgr/wakeup_fd_posix.h"
 
 typedef struct grpc_pollset_vtable grpc_pollset_vtable;
@@ -53,15 +55,15 @@ typedef struct grpc_cached_wakeup_fd {
   struct grpc_cached_wakeup_fd *next;
 } grpc_cached_wakeup_fd;
 
-typedef struct grpc_pollset_worker {
+struct grpc_pollset_worker {
   grpc_cached_wakeup_fd *wakeup_fd;
   int reevaluate_polling_on_wakeup;
   int kicked_specifically;
   struct grpc_pollset_worker *next;
   struct grpc_pollset_worker *prev;
-} grpc_pollset_worker;
+};
 
-typedef struct grpc_pollset {
+struct grpc_pollset {
   /* pollsets under posix can mutate representation as fds are added and
      removed.
      For example, we may choose a poll() based implementation on linux for
@@ -81,7 +83,7 @@ typedef struct grpc_pollset {
   } data;
   /* Local cache of eventfds for workers */
   grpc_cached_wakeup_fd *local_wakeup_cache;
-} grpc_pollset;
+};
 
 struct grpc_pollset_vtable {
   void (*add_fd)(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
@@ -92,8 +94,6 @@ struct grpc_pollset_vtable {
   void (*finish_shutdown)(grpc_pollset *pollset);
   void (*destroy)(grpc_pollset *pollset);
 };
-
-#define GRPC_POLLSET_MU(pollset) (&(pollset)->mu)
 
 /* Add an fd to a pollset */
 void grpc_pollset_add_fd(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,

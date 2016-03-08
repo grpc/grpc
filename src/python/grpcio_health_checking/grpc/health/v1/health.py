@@ -1,4 +1,4 @@
-# Copyright 2015, Google Inc.
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -33,7 +33,7 @@ import abc
 import enum
 import threading
 
-from grpc.health.v1alpha import health_pb2
+from grpc.health.v1 import health_pb2
 
 
 @enum.unique
@@ -64,7 +64,7 @@ class _HealthServicer(health_pb2.EarlyAdopterHealthServicer):
 
   def set(service, status):
     if not isinstance(status, HealthStatus):
-      raise TypeError('expected grpc.health.v1alpha.health.HealthStatus '
+      raise TypeError('expected grpc.health.v1.health.HealthStatus '
                       'for argument `status` but got {}'.format(status))
     with self._server_status_lock:
       self._server_status[service] = status

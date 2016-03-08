@@ -10,11 +10,11 @@
   <email>grpc-packages@google.com</email>
   <active>yes</active>
  </lead>
- <date>2016-02-25</date>
+ <date>2016-03-01</date>
  <time>16:06:07</time>
  <version>
-  <release>0.8.0</release>
-  <api>0.8.0</api>
+  <release>0.14.0</release>
+  <api>0.14.0</api>
  </version>
  <stability>
   <release>beta</release>
@@ -22,7 +22,7 @@
  </stability>
  <license>BSD</license>
  <notes>
-- Simplify gRPC PHP installation #4517
+- Increase unit test code coverage #5225
  </notes>
  <contents>
   <dir baseinstalldir="/" name="/">
@@ -856,32 +856,6 @@
     <file baseinstalldir="/" name="third_party/boringssl/ssl/t1_enc.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/ssl/t1_lib.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/ssl/tls_record.c" role="src" />
-    <file baseinstalldir="/" name="third_party/zlib/crc32.h" role="src" />
-    <file baseinstalldir="/" name="third_party/zlib/deflate.h" role="src" />
-    <file baseinstalldir="/" name="third_party/zlib/gzguts.h" role="src" />
-    <file baseinstalldir="/" name="third_party/zlib/inffast.h" role="src" />
-    <file baseinstalldir="/" name="third_party/zlib/inffixed.h" role="src" />
-    <file baseinstalldir="/" name="third_party/zlib/inflate.h" role="src" />
-    <file baseinstalldir="/" name="third_party/zlib/inftrees.h" role="src" />
-    <file baseinstalldir="/" name="third_party/zlib/trees.h" role="src" />
-    <file baseinstalldir="/" name="third_party/zlib/zconf.h" role="src" />
-    <file baseinstalldir="/" name="third_party/zlib/zlib.h" role="src" />
-    <file baseinstalldir="/" name="third_party/zlib/zutil.h" role="src" />
-    <file baseinstalldir="/" name="third_party/zlib/adler32.c" role="src" />
-    <file baseinstalldir="/" name="third_party/zlib/compress.c" role="src" />
-    <file baseinstalldir="/" name="third_party/zlib/crc32.c" role="src" />
-    <file baseinstalldir="/" name="third_party/zlib/deflate.c" role="src" />
-    <file baseinstalldir="/" name="third_party/zlib/gzclose.c" role="src" />
-    <file baseinstalldir="/" name="third_party/zlib/gzlib.c" role="src" />
-    <file baseinstalldir="/" name="third_party/zlib/gzread.c" role="src" />
-    <file baseinstalldir="/" name="third_party/zlib/gzwrite.c" role="src" />
-    <file baseinstalldir="/" name="third_party/zlib/infback.c" role="src" />
-    <file baseinstalldir="/" name="third_party/zlib/inffast.c" role="src" />
-    <file baseinstalldir="/" name="third_party/zlib/inflate.c" role="src" />
-    <file baseinstalldir="/" name="third_party/zlib/inftrees.c" role="src" />
-    <file baseinstalldir="/" name="third_party/zlib/trees.c" role="src" />
-    <file baseinstalldir="/" name="third_party/zlib/uncompr.c" role="src" />
-    <file baseinstalldir="/" name="third_party/zlib/zutil.c" role="src" />
   </dir>
  </contents>
  <dependencies>
@@ -989,10 +963,25 @@ Update to wrap gRPC C Core version 0.10.0
     <release>beta</release>
     <api>beta</api>
    </stability>
-   <date>2016-02-25</date>
+   <date>2016-02-24</date>
    <license>BSD</license>
    <notes>
 - Simplify gRPC PHP installation #4517
+   </notes>
+  </release>
+  <release>
+   <version>
+    <release>0.14.0</release>
+    <api>0.14.0</api>
+   </version>
+   <stability>
+    <release>beta</release>
+    <api>beta</api>
+   </stability>
+   <date>2016-03-01</date>
+   <license>BSD</license>
+   <notes>
+- Increase unit test code coverage #5225
    </notes>
   </release>
  </changelog>
