@@ -27,4 +27,16 @@
 @rem (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 @rem OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-npm install --build-from-source
+set PATH=%PATH%;C:\Program Files\nodejs\;%APPDATA%\npm
+
+del /f /q BUILD || rmdir build /s /q
+
+call npm install --build-from-source
+
+@rem delete the redundant openssl headers
+for /f "delims=v" %%v in ('node --version') do (
+  rmdir "%USERPROFILE%\.node-gyp\%%v\include\node\openssl" /S /Q
+)
+
+@rem rebuild, because it probably failed the first time
+call npm install --build-from-source
