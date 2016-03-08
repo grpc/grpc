@@ -46,6 +46,8 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/useful.h>
 
+#include "src/core/iomgr/pollset_posix.h"
+
 #define CLOSURE_NOT_READY ((grpc_closure *)0)
 #define CLOSURE_READY ((grpc_closure *)1)
 
@@ -175,11 +177,11 @@ int grpc_fd_is_orphaned(grpc_fd *fd) {
 }
 
 static void pollset_kick_locked(grpc_fd_watcher *watcher) {
-  gpr_mu_lock(GRPC_POLLSET_MU(watcher->pollset));
+  gpr_mu_lock(&watcher->pollset->mu);
   GPR_ASSERT(watcher->worker);
   grpc_pollset_kick_ext(watcher->pollset, watcher->worker,
                         GRPC_POLLSET_REEVALUATE_POLLING_ON_WAKEUP);
-  gpr_mu_unlock(GRPC_POLLSET_MU(watcher->pollset));
+  gpr_mu_unlock(&watcher->pollset->mu);
 }
 
 static void maybe_wake_one_watcher_locked(grpc_fd *fd) {

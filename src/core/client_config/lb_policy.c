@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -39,7 +39,7 @@ void grpc_lb_policy_init(grpc_lb_policy *policy,
                          const grpc_lb_policy_vtable *vtable) {
   policy->vtable = vtable;
   gpr_atm_no_barrier_store(&policy->ref_pair, 1 << WEAK_REF_BITS);
-  grpc_pollset_set_init(&policy->interested_parties);
+  policy->interested_parties = grpc_pollset_set_create();
 }
 
 #ifdef GRPC_LB_POLICY_REFCOUNT_DEBUG
@@ -93,7 +93,7 @@ void grpc_lb_policy_weak_unref(grpc_exec_ctx *exec_ctx,
   gpr_atm old_val =
       ref_mutate(policy, -(gpr_atm)1, 1 REF_MUTATE_PASS_ARGS("WEAK_UNREF"));
   if (old_val == 1) {
-    grpc_pollset_set_destroy(&policy->interested_parties);
+    grpc_pollset_set_destroy(policy->interested_parties);
     policy->vtable->destroy(exec_ctx, policy);
   }
 }

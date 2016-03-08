@@ -41,6 +41,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/channel/channel_args.h"
+#include "src/core/iomgr/pollset_posix.h"
 #include "src/core/security/credentials.h"
 #include "src/core/support/env.h"
 #include "src/core/support/tmpfile.h"

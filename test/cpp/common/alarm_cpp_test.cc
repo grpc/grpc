@@ -55,6 +55,23 @@ TEST(AlarmTest, RegularExpiry) {
   EXPECT_EQ(junk, output_tag);
 }
 
+TEST(AlarmTest, RegularExpiryChrono) {
+  CompletionQueue cq;
+  void* junk = reinterpret_cast<void*>(1618033);
+  std::chrono::system_clock::time_point one_sec_deadline =
+      std::chrono::system_clock::now() + std::chrono::seconds(1);
+  Alarm alarm(&cq, one_sec_deadline, junk);
+
+  void* output_tag;
+  bool ok;
+  const CompletionQueue::NextStatus status = cq.AsyncNext(
+      (void**)&output_tag, &ok, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(2));
+
+  EXPECT_EQ(status, CompletionQueue::GOT_EVENT);
+  EXPECT_TRUE(ok);
+  EXPECT_EQ(junk, output_tag);
+}
+
 TEST(AlarmTest, ZeroExpiry) {
   CompletionQueue cq;
   void* junk = reinterpret_cast<void*>(1618033);

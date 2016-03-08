@@ -39,6 +39,14 @@ then
   pip install -rrequirements.txt
 fi
 
+# Build the source distribution first because MANIFEST.in cannot override
+# exclusion of built shared objects among package resources (for some
+# inexplicable reason).
+GRPC_PYTHON_USE_CUSTOM_BDIST=0  \
+GRPC_PYTHON_BUILD_WITH_CYTHON=1 \
+${SETARCH_CMD} python setup.py  \
+    sdist
+
 # The bdist_wheel_grpc_custom command is finicky about command output ordering
 # and thus ought to be run in a shell command separate of others. Further, it
 # trashes the actual bdist_wheel output, so it should be run first so that
@@ -48,11 +56,12 @@ GRPC_PYTHON_BUILD_WITH_CYTHON=1 \
 ${SETARCH_CMD} python setup.py  \
     build_tagged_ext
 
+# Wheel has a bug where directories don't get excluded.
+# https://bitbucket.org/pypa/wheel/issues/99/cannot-exclude-directory
 GRPC_PYTHON_USE_CUSTOM_BDIST=0  \
 GRPC_PYTHON_BUILD_WITH_CYTHON=1 \
 ${SETARCH_CMD} python setup.py  \
-    bdist_wheel                 \
-    sdist
+    bdist_wheel
 
 mkdir -p artifacts
 

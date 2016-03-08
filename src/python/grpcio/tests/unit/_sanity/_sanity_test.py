@@ -1,5 +1,4 @@
-#!/bin/bash
-# Copyright 2015, Google Inc.
+# Copyright 2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -28,9 +27,27 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# This is where you have cloned out the https://github.com/grpc/grpc repository
-# And built gRPC Python.
-# ADJUST THIS PATH TO WHERE YOUR ACTUAL LOCATION IS
-GRPC_ROOT=~/github/grpc
+import json
+import unittest
 
-$GRPC_ROOT/python2.7_virtual_environment/bin/python greeter_client.py
+import tests
+
+
+class Sanity(unittest.TestCase):
+
+  def testTestsJsonUpToDate(self):
+    """Autodiscovers all test suites and checks that tests.json is up to date"""
+    loader = tests.Loader()
+    loader.loadTestsFromNames(['tests'])
+    test_suite_names = [
+        test_case_class.id().rsplit('.', 1)[0]
+        for test_case_class in tests._loader.iterate_suite_cases(loader.suite)]
+    test_suite_names = sorted(set(test_suite_names))
+
+    with open('src/python/grpcio/tests/tests.json') as tests_json_file:
+      tests_json = json.load(tests_json_file)
+    self.assertListEqual(test_suite_names, tests_json)
+
+
+if __name__ == '__main__':
+  unittest.main(verbosity=2)

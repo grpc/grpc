@@ -1,5 +1,5 @@
 #!/bin/sh
-# Copyright 2015, Google Inc.
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -35,7 +35,7 @@ cd $(dirname $0)/../../..
 PROTOC=bins/opt/protobuf/protoc
 PLUGIN=protoc-gen-grpc=bins/opt/grpc_ruby_plugin
 
-$PROTOC -I src/proto src/proto/grpc/health/v1alpha/health.proto \
+$PROTOC -I src/proto src/proto/grpc/health/v1/health.proto \
     --grpc_out=src/ruby/pb \
     --ruby_out=src/ruby/pb \
     --plugin=$PLUGIN

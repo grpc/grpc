@@ -1,4 +1,5 @@
-graft src/python/grpcio/grpc
+recursive-include src/python/grpcio/grpc *.c *.h *.py *.pyx *.pxd *.pxi *.python *.pem
+recursive-exclude src/python/grpcio/grpc/_cython *.so *.pyd
 graft src/python/grpcio/tests
 graft src/core
 graft include/grpc
