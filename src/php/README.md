@@ -48,7 +48,7 @@ sudo pecl install grpc-beta
 
 This will compile and install the gRPC PHP extension into the standard PHP extension directory. You should be able to run the [unit tests](#unit-tests), with the PHP extension installed.
 
-To run tests with generated stub code from `.proto` files, you will need the `composer`, `protoc` and `protoc-gen-php` binaries additionally. See sections [below](#generated-code-tests).
+To run tests with generated stub code from `.proto` files, you will also need the `composer`, `protoc` and `protoc-gen-php` binaries. You can find out how to get these [below](#generated-code-tests).
 
 ## Build from Source
 
@@ -115,9 +115,11 @@ $ ./bin/run_tests.sh
 
 ## Generated Code Tests
 
+This section specifies the prerequisites for running the generated code tests, as well as how to run the tests themselves.
+
 ### Composer
 
-You need to install `composer`, to pull in some runtime dependencies based on the `composer.json` file.
+If you don't have it already, install `composer` to pull in some runtime dependencies based on the `composer.json` file.
 
 ```sh
 $ curl -sS https://getcomposer.org/installer | php
@@ -129,21 +131,21 @@ $ composer install
 
 ### Protobuf compiler
 
-You need the install the protobuf compiler, `protoc`, 3.0.0+.
+Again if you don't have it already, you need to install the protobuf compiler `protoc`, version 3.0.0+.
 
-If you had compiled the gRPC C core library from source above, the `protoc` binary should have been installed as well. In the case it wasn't, you can run the following commands to install it.
+If you compiled the gRPC C core library from source above, the `protoc` binary should have been installed as well. If it hasn't been installed, you can run the following commands to install it.
 
 ```sh
 $ cd grpc/third_party/protobuf
 $ sudo make install   # 'make' should have been run by core grpc
 ```
 
-Or you can download a `protoc` binaries from [here](https://github.com/google/protobuf/releases).
+Alternatively, you can download `protoc` binaries from [the protocol buffers Github repository](https://github.com/google/protobuf/releases).
 
 
 ### PHP protobuf compiler
 
-You need to install `protoc-gen-php`, so that you can generate stub classes `.php` files from service definition `.proto` files.
+You need to install `protoc-gen-php` to generate stub class `.php` files from service definition `.proto` files.
 
 ```sh
 $ cd grpc/src/php/vendor/datto/protobuf-php # if you had run `composer install` in the previous step
@@ -168,7 +170,7 @@ $ ./bin/generate_proto_php.sh
 
 ### Run test server
 
-Run a local server serving the math services. Please see [Node][] on how to run an example server
+Run a local server serving the math services. Please see [Node][] for how to run an example server.
 
 ```sh
 $ cd grpc
