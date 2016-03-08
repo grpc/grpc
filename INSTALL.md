@@ -3,7 +3,7 @@
 For language-specific installation instructions for gRPC runtime, please
 refer to these documents
 
- * [C++](examples/cpp)
+ * [C++](examples/cpp): Currently to install gRPC for C++, you need to build from source as described below.
  * [C#](src/csharp): NuGet package `Grpc`
  * [Go](https://github.com/grpc/grpc-go): `go get google.golang.org/grpc`
  * [Java](https://github.com/grpc/grpc-java)
