@@ -315,6 +315,8 @@
   <ItemGroup>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\client\secure_credentials.cc">
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\cpp\codegen\core_codegen.cc">
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\codegen\grpc_library.cc">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\common\auth_property_iterator.cc">
@@ -341,17 +343,11 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\client\insecure_credentials.cc">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\cpp\common\call.cc">
-    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\common\channel_arguments.cc">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\common\completion_queue.cc">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\common\rpc_method.cc">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\cpp\proto\proto_serializer.cc">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\cpp\proto\proto_utils.cc">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\server\async_generic_service.cc">
     </ClCompile>
@@ -374,8 +370,6 @@
     <ClCompile Include="$(SolutionDir)\..\src\cpp\util\slice.cc">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\util\status.cc">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\cpp\util\string_ref.cc">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\util\time.cc">
     </ClCompile>

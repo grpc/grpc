@@ -3014,6 +3014,7 @@ endif
 
 LIBGRPC++_SRC = \
     src/cpp/client/secure_credentials.cc \
+    src/cpp/codegen/core_codegen.cc \
     src/cpp/codegen/grpc_library.cc \
     src/cpp/common/auth_property_iterator.cc \
     src/cpp/common/secure_auth_context.cc \
@@ -3027,12 +3028,9 @@ LIBGRPC++_SRC = \
     src/cpp/client/credentials.cc \
     src/cpp/client/generic_stub.cc \
     src/cpp/client/insecure_credentials.cc \
-    src/cpp/common/call.cc \
     src/cpp/common/channel_arguments.cc \
     src/cpp/common/completion_queue.cc \
     src/cpp/common/rpc_method.cc \
-    src/cpp/proto/proto_serializer.cc \
-    src/cpp/proto/proto_utils.cc \
     src/cpp/server/async_generic_service.cc \
     src/cpp/server/create_default_thread_pool.cc \
     src/cpp/server/dynamic_thread_pool.cc \
@@ -3044,7 +3042,6 @@ LIBGRPC++_SRC = \
     src/cpp/util/byte_buffer.cc \
     src/cpp/util/slice.cc \
     src/cpp/util/status.cc \
-    src/cpp/util/string_ref.cc \
     src/cpp/util/time.cc \
 
 PUBLIC_HEADERS_CXX += \
@@ -3157,7 +3154,6 @@ endif
 
 
 LIBGRPC++_CODEGEN_LIB_SRC = \
-    include/grpc++/impl/codegen/proto_serializer.cc \
 
 PUBLIC_HEADERS_CXX += \
     include/grpc++/impl/codegen/async_stream.h \
@@ -3171,6 +3167,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/impl/codegen/completion_queue_tag.h \
     include/grpc++/impl/codegen/config.h \
     include/grpc++/impl/codegen/config_protobuf.h \
+    include/grpc++/impl/codegen/core_codegen_interface.h \
     include/grpc++/impl/codegen/grpc_library.h \
     include/grpc++/impl/codegen/method_handler_impl.h \
     include/grpc++/impl/codegen/proto_utils.h \
@@ -3357,12 +3354,9 @@ LIBGRPC++_UNSECURE_SRC = \
     src/cpp/client/credentials.cc \
     src/cpp/client/generic_stub.cc \
     src/cpp/client/insecure_credentials.cc \
-    src/cpp/common/call.cc \
     src/cpp/common/channel_arguments.cc \
     src/cpp/common/completion_queue.cc \
     src/cpp/common/rpc_method.cc \
-    src/cpp/proto/proto_serializer.cc \
-    src/cpp/proto/proto_utils.cc \
     src/cpp/server/async_generic_service.cc \
     src/cpp/server/create_default_thread_pool.cc \
     src/cpp/server/dynamic_thread_pool.cc \
@@ -3374,7 +3368,6 @@ LIBGRPC++_UNSECURE_SRC = \
     src/cpp/util/byte_buffer.cc \
     src/cpp/util/slice.cc \
     src/cpp/util/status.cc \
-    src/cpp/util/string_ref.cc \
     src/cpp/util/time.cc \
 
 PUBLIC_HEADERS_CXX += \
@@ -13151,6 +13144,7 @@ src/core/tsi/fake_transport_security.c: $(OPENSSL_DEP)
 src/core/tsi/ssl_transport_security.c: $(OPENSSL_DEP)
 src/core/tsi/transport_security.c: $(OPENSSL_DEP)
 src/cpp/client/secure_credentials.cc: $(OPENSSL_DEP)
+src/cpp/codegen/core_codegen.cc: $(OPENSSL_DEP)
 src/cpp/codegen/grpc_library.cc: $(OPENSSL_DEP)
 src/cpp/common/auth_property_iterator.cc: $(OPENSSL_DEP)
 src/cpp/common/secure_auth_context.cc: $(OPENSSL_DEP)
