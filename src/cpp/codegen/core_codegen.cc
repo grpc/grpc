@@ -54,8 +54,7 @@ const int kGrpcBufferWriterMaxBufferLength = 8192;
 class GrpcBufferWriter GRPC_FINAL
     : public ::grpc::protobuf::io::ZeroCopyOutputStream {
  public:
-  explicit GrpcBufferWriter(grpc_byte_buffer** bp,
-                            int block_size)
+  explicit GrpcBufferWriter(grpc_byte_buffer** bp, int block_size)
       : block_size_(block_size), byte_count_(0), have_backup_(false) {
     *bp = grpc_raw_byte_buffer_create(NULL, 0);
     slice_buffer_ = &(*bp)->data.raw.slice_buffer;
@@ -170,22 +169,23 @@ namespace grpc {
 
 class CoreCodegen : public CoreCodegenInterface {
  private:
-  grpc_completion_queue* CompletionQueueCreate() override {
-    return grpc_completion_queue_create(nullptr);
+  grpc_completion_queue* grpc_completion_queue_create(void* reserved) override {
+    return ::grpc_completion_queue_create(reserved);
   }
 
-  grpc_event CompletionQueuePluck(grpc_completion_queue* cq, void* tag,
-      gpr_timespec deadline) override {
-    return grpc_completion_queue_pluck(cq, tag, deadline, nullptr);
+  void grpc_completion_queue_destroy(grpc_completion_queue* cq) override {
+    ::grpc_completion_queue_destroy(cq);
   }
 
-  void* gpr_malloc(size_t size) override {
-    return ::gpr_malloc(size);
+  grpc_event grpc_completion_queue_pluck(grpc_completion_queue* cq, void* tag,
+                                         gpr_timespec deadline,
+                                         void* reserved) override {
+    return ::grpc_completion_queue_pluck(cq, tag, deadline, reserved);
   }
 
-  void gpr_free(void* p) override {
-    return ::gpr_free(p);
-  }
+  void* gpr_malloc(size_t size) override { return ::gpr_malloc(size); }
+
+  void gpr_free(void* p) override { return ::gpr_free(p); }
 
   void grpc_byte_buffer_destroy(grpc_byte_buffer* bb) override {
     ::grpc_byte_buffer_destroy(bb);
@@ -205,13 +205,14 @@ class CoreCodegen : public CoreCodegenInterface {
   }
 
   Status SerializeProto(const grpc::protobuf::Message& msg,
-                                         grpc_byte_buffer** bp) override {
+                        grpc_byte_buffer** bp) override {
     GPR_TIMER_SCOPE("SerializeProto", 0);
     int byte_size = msg.ByteSize();
     if (byte_size <= kGrpcBufferWriterMaxBufferLength) {
       gpr_slice slice = gpr_slice_malloc(byte_size);
-      GPR_ASSERT(GPR_SLICE_END_PTR(slice) ==
-                 msg.SerializeWithCachedSizesToArray(GPR_SLICE_START_PTR(slice)));
+      GPR_ASSERT(
+          GPR_SLICE_END_PTR(slice) ==
+          msg.SerializeWithCachedSizesToArray(GPR_SLICE_START_PTR(slice)));
       *bp = grpc_raw_byte_buffer_create(&slice, 1);
       gpr_slice_unref(slice);
       return Status::OK;
@@ -224,7 +225,8 @@ class CoreCodegen : public CoreCodegenInterface {
   }
 
   Status DeserializeProto(grpc_byte_buffer* buffer,
-                          grpc::protobuf::Message* msg, int max_message_size) override {
+                          grpc::protobuf::Message* msg,
+                          int max_message_size) override {
     GPR_TIMER_SCOPE("DeserializeProto", 0);
     if (buffer == nullptr) {
       return Status(StatusCode::INTERNAL, "No payload");
