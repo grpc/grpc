@@ -34,6 +34,7 @@
 #ifndef GRPCXX_IMPL_CODEGEN_METHOD_HANDLER_IMPL_H
 #define GRPCXX_IMPL_CODEGEN_METHOD_HANDLER_IMPL_H
 
+#include <grpc++/impl/codegen/core_codegen_interface.h>
 #include <grpc++/impl/codegen/rpc_service_method.h>
 #include <grpc++/impl/codegen/sync_stream.h>
 
@@ -58,7 +59,7 @@ class RpcMethodHandler : public MethodHandler {
       status = func_(service_, param.server_context, &req, &rsp);
     }
 
-    GPR_ASSERT(!param.server_context->sent_initial_metadata_);
+    GPR_CODEGEN_ASSERT(!param.server_context->sent_initial_metadata_);
     CallOpSet<CallOpSendInitialMetadata, CallOpSendMessage,
               CallOpServerSendStatus> ops;
     ops.SendInitialMetadata(param.server_context->initial_metadata_);
@@ -93,7 +94,7 @@ class ClientStreamingHandler : public MethodHandler {
     ResponseType rsp;
     Status status = func_(service_, param.server_context, &reader, &rsp);
 
-    GPR_ASSERT(!param.server_context->sent_initial_metadata_);
+    GPR_CODEGEN_ASSERT(!param.server_context->sent_initial_metadata_);
     CallOpSet<CallOpSendInitialMetadata, CallOpSendMessage,
               CallOpServerSendStatus> ops;
     ops.SendInitialMetadata(param.server_context->initial_metadata_);

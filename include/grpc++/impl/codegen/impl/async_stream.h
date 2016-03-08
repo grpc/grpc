@@ -35,7 +35,6 @@
 #define GRPCXX_IMPL_CODEGEN_ASYNC_STREAM_H
 
 #include <grpc++/impl/codegen/channel_interface.h>
-#include <grpc++/impl/codegen/core_codegen_interface.h>
 #include <grpc++/impl/codegen/call.h>
 #include <grpc++/impl/codegen/service_type.h>
 #include <grpc++/impl/codegen/server_context.h>
@@ -110,13 +109,13 @@ class ClientAsyncReader GRPC_FINAL : public ClientAsyncReaderInterface<R> {
     init_ops_.set_output_tag(tag);
     init_ops_.SendInitialMetadata(context->send_initial_metadata_);
     // TODO(ctiller): don't assert
-    GPR_CODEGEN_ASSERT(init_ops_.SendMessage(request).ok());
+    GPR_ASSERT(init_ops_.SendMessage(request).ok());
     init_ops_.ClientSendClose();
     call_.PerformOps(&init_ops_);
   }
 
   void ReadInitialMetadata(void* tag) GRPC_OVERRIDE {
-    GPR_CODEGEN_ASSERT(!context_->initial_metadata_received_);
+    GPR_ASSERT(!context_->initial_metadata_received_);
 
     meta_ops_.set_output_tag(tag);
     meta_ops_.RecvInitialMetadata(context_);
@@ -178,7 +177,7 @@ class ClientAsyncWriter GRPC_FINAL : public ClientAsyncWriterInterface<W> {
   }
 
   void ReadInitialMetadata(void* tag) GRPC_OVERRIDE {
-    GPR_CODEGEN_ASSERT(!context_->initial_metadata_received_);
+    GPR_ASSERT(!context_->initial_metadata_received_);
 
     meta_ops_.set_output_tag(tag);
     meta_ops_.RecvInitialMetadata(context_);
@@ -188,7 +187,7 @@ class ClientAsyncWriter GRPC_FINAL : public ClientAsyncWriterInterface<W> {
   void Write(const W& msg, void* tag) GRPC_OVERRIDE {
     write_ops_.set_output_tag(tag);
     // TODO(ctiller): don't assert
-    GPR_CODEGEN_ASSERT(write_ops_.SendMessage(msg).ok());
+    GPR_ASSERT(write_ops_.SendMessage(msg).ok());
     call_.PerformOps(&write_ops_);
   }
 
@@ -244,7 +243,7 @@ class ClientAsyncReaderWriter GRPC_FINAL
   }
 
   void ReadInitialMetadata(void* tag) GRPC_OVERRIDE {
-    GPR_CODEGEN_ASSERT(!context_->initial_metadata_received_);
+    GPR_ASSERT(!context_->initial_metadata_received_);
 
     meta_ops_.set_output_tag(tag);
     meta_ops_.RecvInitialMetadata(context_);
@@ -263,7 +262,7 @@ class ClientAsyncReaderWriter GRPC_FINAL
   void Write(const W& msg, void* tag) GRPC_OVERRIDE {
     write_ops_.set_output_tag(tag);
     // TODO(ctiller): don't assert
-    GPR_CODEGEN_ASSERT(write_ops_.SendMessage(msg).ok());
+    GPR_ASSERT(write_ops_.SendMessage(msg).ok());
     call_.PerformOps(&write_ops_);
   }
 
@@ -301,7 +300,7 @@ class ServerAsyncReader GRPC_FINAL : public ServerAsyncStreamingInterface,
       : call_(nullptr, nullptr, nullptr), ctx_(ctx) {}
 
   void SendInitialMetadata(void* tag) GRPC_OVERRIDE {
-    GPR_CODEGEN_ASSERT(!ctx_->sent_initial_metadata_);
+    GPR_ASSERT(!ctx_->sent_initial_metadata_);
 
     meta_ops_.set_output_tag(tag);
     meta_ops_.SendInitialMetadata(ctx_->initial_metadata_);
@@ -332,7 +331,7 @@ class ServerAsyncReader GRPC_FINAL : public ServerAsyncStreamingInterface,
   }
 
   void FinishWithError(const Status& status, void* tag) {
-    GPR_CODEGEN_ASSERT(!status.ok());
+    GPR_ASSERT(!status.ok());
     finish_ops_.set_output_tag(tag);
     if (!ctx_->sent_initial_metadata_) {
       finish_ops_.SendInitialMetadata(ctx_->initial_metadata_);
@@ -361,7 +360,7 @@ class ServerAsyncWriter GRPC_FINAL : public ServerAsyncStreamingInterface,
       : call_(nullptr, nullptr, nullptr), ctx_(ctx) {}
 
   void SendInitialMetadata(void* tag) GRPC_OVERRIDE {
-    GPR_CODEGEN_ASSERT(!ctx_->sent_initial_metadata_);
+    GPR_ASSERT(!ctx_->sent_initial_metadata_);
 
     meta_ops_.set_output_tag(tag);
     meta_ops_.SendInitialMetadata(ctx_->initial_metadata_);
@@ -376,7 +375,7 @@ class ServerAsyncWriter GRPC_FINAL : public ServerAsyncStreamingInterface,
       ctx_->sent_initial_metadata_ = true;
     }
     // TODO(ctiller): don't assert
-    GPR_CODEGEN_ASSERT(write_ops_.SendMessage(msg).ok());
+    GPR_ASSERT(write_ops_.SendMessage(msg).ok());
     call_.PerformOps(&write_ops_);
   }
 
@@ -410,7 +409,7 @@ class ServerAsyncReaderWriter GRPC_FINAL : public ServerAsyncStreamingInterface,
       : call_(nullptr, nullptr, nullptr), ctx_(ctx) {}
 
   void SendInitialMetadata(void* tag) GRPC_OVERRIDE {
-    GPR_CODEGEN_ASSERT(!ctx_->sent_initial_metadata_);
+    GPR_ASSERT(!ctx_->sent_initial_metadata_);
 
     meta_ops_.set_output_tag(tag);
     meta_ops_.SendInitialMetadata(ctx_->initial_metadata_);
@@ -431,7 +430,7 @@ class ServerAsyncReaderWriter GRPC_FINAL : public ServerAsyncStreamingInterface,
       ctx_->sent_initial_metadata_ = true;
     }
     // TODO(ctiller): don't assert
-    GPR_CODEGEN_ASSERT(write_ops_.SendMessage(msg).ok());
+    GPR_ASSERT(write_ops_.SendMessage(msg).ok());
     call_.PerformOps(&write_ops_);
   }
 
