@@ -447,4 +447,4 @@ $ greeter_client
 ## Read more!
 
 - You can find links to language-specific tutorials, examples, and other docs in each language's [quick start](#quickstart).
-- [gRPC Authentication Support](doc/grpc-auth-support.md) introduces authentication support in gRPC with supported mechanisms and examples.
+- [gRPC Authentication Support](http://www.grpc.io/docs/guides/auth.html) introduces authentication support in gRPC with supported mechanisms and examples.

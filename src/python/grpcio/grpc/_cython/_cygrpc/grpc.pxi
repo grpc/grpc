@@ -138,6 +138,8 @@ cdef extern from "grpc/_cython/loader.h":
   const int GRPC_WRITE_NO_COMPRESS
   const int GRPC_WRITE_USED_MASK
 
+  const int GRPC_MAX_COMPLETION_QUEUE_PLUCKERS
+
   ctypedef struct grpc_completion_queue:
     # We don't care about the internals (and in fact don't know them)
     pass
