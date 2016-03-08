@@ -192,7 +192,7 @@ class CLanguage(object):
                 test = base + line.strip()
                 cmdline = [binary] + ['--gtest_filter=%s' % test]
                 out.append(self.config.job_spec(cmdline, [binary],
-                                                shortname='%s:%s' % (binary, test, shortname_ext),
+                                                shortname='%s:%s %s' % (binary, test, shortname_ext),
                                                 cpu_cost=target['cpu_cost'],
                                                 environ=env))
           else:
