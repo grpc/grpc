@@ -877,6 +877,7 @@ static void pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
         } else {
           pollset->fds[fd_count++] = pollset->fds[i];
           watchers[pfd_count].fd = pollset->fds[i];
+          GRPC_FD_REF(watchers[pfd_count].fd, "multipoller_start");
           pfds[pfd_count].fd = pollset->fds[i]->fd;
           pfds[pfd_count].revents = 0;
           pfd_count++;
@@ -890,8 +891,10 @@ static void pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
       gpr_mu_unlock(&pollset->mu);
 
       for (i = 2; i < pfd_count; i++) {
-        pfds[i].events = (short)fd_begin_poll(watchers[i].fd, pollset, &worker,
-                                              POLLIN, POLLOUT, &watchers[i]);
+        grpc_fd *fd = watchers[i].fd;
+        pfds[i].events = (short)fd_begin_poll(fd, pollset, &worker, POLLIN,
+                                                   POLLOUT, &watchers[i]);
+        GRPC_FD_UNREF(fd, "multipoller_start");
       }
 
       /* TODO(vpai): Consider first doing a 0 timeout poll here to avoid
