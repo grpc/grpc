@@ -34,7 +34,8 @@
 #ifndef GRPC_INTERNAL_CORE_IOMGR_IOMGR_INTERNAL_H
 #define GRPC_INTERNAL_CORE_IOMGR_IOMGR_INTERNAL_H
 
-#include <grpc/support/sync.h>
+#include <stdbool.h>
+
 #include "src/core/iomgr/iomgr.h"
 
 typedef struct grpc_iomgr_object {
@@ -51,5 +52,7 @@ void grpc_iomgr_platform_init(void);
 void grpc_iomgr_platform_flush(void);
 /** tear down all platform specific global iomgr structures */
 void grpc_iomgr_platform_shutdown(void);
+
+bool grpc_iomgr_abort_on_leaks(void);
 
 #endif /* GRPC_INTERNAL_CORE_IOMGR_IOMGR_INTERNAL_H */

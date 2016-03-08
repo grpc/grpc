@@ -96,6 +96,15 @@ class CSharpDistribTest(object):
       return create_jobspec(self.name,
           ['test/distrib/csharp/run_distrib_test.sh'],
           environ={'EXTERNAL_GIT_ROOT': '../../..'})
+    elif self.platform == 'windows':
+      if self.arch == 'x64':
+        environ={'MSBUILD_EXTRA_ARGS': '/p:Platform=x64',
+                 'DISTRIBTEST_OUTPATH': 'DistribTest\\bin\\x64\\Debug'}
+      else:
+        environ={'DISTRIBTEST_OUTPATH': 'DistribTest\\bin\\\Debug'}
+      return create_jobspec(self.name,
+          ['test\\distrib\\csharp\\run_distrib_test.bat'],
+          environ=environ)
     else:
       raise Exception("Not supported yet.")
 
@@ -240,6 +249,8 @@ def targets():
           CSharpDistribTest('linux', 'x64', 'ubuntu1510'),
           CSharpDistribTest('linux', 'x64', 'ubuntu1604'),
           CSharpDistribTest('macos', 'x86'),
+          CSharpDistribTest('windows', 'x86'),
+          CSharpDistribTest('windows', 'x64'),
           PythonDistribTest('linux', 'x64', 'wheezy'),
           PythonDistribTest('linux', 'x64', 'jessie'),
           PythonDistribTest('linux', 'x86', 'jessie'),

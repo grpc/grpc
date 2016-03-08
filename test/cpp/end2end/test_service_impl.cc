@@ -326,7 +326,11 @@ void TestServiceImpl::ServerTryCancel(ServerContext* context) {
   EXPECT_FALSE(context->IsCancelled());
   context->TryCancel();
   gpr_log(GPR_INFO, "Server called TryCancel() to cancel the request");
-  EXPECT_TRUE(context->IsCancelled());
+  // Now wait until it's really canceled
+  while (!context->IsCancelled()) {
+    gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                                 gpr_time_from_micros(1000, GPR_TIMESPAN)));
+  }
 }
 
 }  // namespace testing
