@@ -192,7 +192,7 @@ class CLanguage(object):
                 test = base + line.strip()
                 cmdline = [binary] + ['--gtest_filter=%s' % test]
                 out.append(self.config.job_spec(cmdline, [binary],
-                                                shortname='%s:%s' % (binary, test, shortname_ext),
+                                                shortname='%s:%s %s' % (binary, test, shortname_ext),
                                                 cpu_cost=target['cpu_cost'],
                                                 environ=env))
           else:
@@ -359,15 +359,27 @@ class PythonLanguage(object):
     _check_compiler(self.args.compiler, ['default'])
 
   def test_specs(self):
+    # load list of known test suites
+    with open('src/python/grpcio/tests/tests.json') as tests_json_file:
+      tests_json = json.load(tests_json_file)
     environment = dict(_FORCE_ENVIRON_FOR_WRAPPERS)
     environment['PYVER'] = '2.7'
-    return [self.config.job_spec(
-        ['tools/run_tests/run_python.sh'],
-        None,
-        environ=environment,
-        shortname='py.test',
-        timeout_seconds=15*60
-    )]
+    if self.config.build_config != 'gcov':
+      return [self.config.job_spec(
+          ['tools/run_tests/run_python.sh'],
+          None,
+          environ=dict(environment.items() +
+                       [('GPRC_PYTHON_TESTRUNNER_FILTER', suite_name)]),
+          shortname='py.test.%s' % suite_name,
+          timeout_seconds=5*60)
+          for suite_name in tests_json]
+    else:
+      return [self.config.job_spec(['tools/run_tests/run_python.sh'],
+                                   None,
+                                   environ=environment,
+                                   shortname='py.test.coverage',
+                                   timeout_seconds=15*60)]
+
 
   def pre_build_steps(self):
     return []
