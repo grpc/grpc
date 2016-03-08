@@ -32,9 +32,11 @@
  */
 
 #include <grpc++/impl/codegen/grpc_library.h>
+#include <grpc++/impl/codegen/core_codegen_interface.h>
 
 namespace grpc {
 
 GrpcLibraryInterface *g_glip = nullptr;
+CoreCodegenInterface *g_core_codegen_interface = nullptr;
 
 }  // namespace grpc

@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/cpp/codegen/core_codegen.h"
+#include "src/cpp/common/core_codegen.h"
 
 #include <stdlib.h>
 
@@ -47,8 +47,6 @@
 #include <grpc/support/slice_buffer.h>
 
 #include "src/core/profiling/timers.h"
-
-grpc::CoreCodegenInterface* grpc::g_core_codegen_interface = nullptr;
 
 namespace {
 
