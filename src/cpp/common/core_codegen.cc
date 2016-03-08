@@ -231,21 +231,22 @@ Status CoreCodegen::DeserializeProto(grpc_byte_buffer* buffer,
   if (buffer == nullptr) {
     return Status(StatusCode::INTERNAL, "No payload");
   }
-  GrpcBufferReader reader(buffer);
-  ::grpc::protobuf::io::CodedInputStream decoder(&reader);
-  if (max_message_size > 0) {
-    decoder.SetTotalBytesLimit(max_message_size, max_message_size);
-  }
-  if (!msg->ParseFromCodedStream(&decoder)) {
-    grpc_byte_buffer_destroy(buffer);
-    return Status(StatusCode::INTERNAL, msg->InitializationErrorString());
-  }
-  if (!decoder.ConsumedEntireMessage()) {
-    grpc_byte_buffer_destroy(buffer);
-    return Status(StatusCode::INTERNAL, "Did not read entire message");
+  Status result = Status::OK;
+  {
+    GrpcBufferReader reader(buffer);
+    ::grpc::protobuf::io::CodedInputStream decoder(&reader);
+    if (max_message_size > 0) {
+      decoder.SetTotalBytesLimit(max_message_size, max_message_size);
+    }
+    if (!msg->ParseFromCodedStream(&decoder)) {
+      result = Status(StatusCode::INTERNAL, msg->InitializationErrorString());
+    }
+    if (!decoder.ConsumedEntireMessage()) {
+      result = Status(StatusCode::INTERNAL, "Did not read entire message");
+    }
   }
   grpc_byte_buffer_destroy(buffer);
-  return Status::OK;
+  return result;
 }
 
 }  // namespace grpc
