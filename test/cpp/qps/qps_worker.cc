@@ -103,7 +103,7 @@ static std::unique_ptr<Server> CreateServer(const ServerConfig& config) {
 
 class ScopedProfile GRPC_FINAL {
  public:
-  ScopedProfile(const char *filename, bool enable) : enable_(enable) {
+  ScopedProfile(const char* filename, bool enable) : enable_(enable) {
     if (enable_) grpc_profiler_start(filename);
   }
   ~ScopedProfile() {
