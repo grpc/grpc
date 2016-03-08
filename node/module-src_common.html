@@ -138,7 +138,7 @@ code. None of them should be used directly by gRPC users.</div>
 
     
 
-    <h4 class="name" id=".deserializeCls"><span class="type-signature">(static) </span>deserializeCls<span class="signature">(cls)</span><span class="type-signature"> &rarr; {function}</span></h4>
+    <h4 class="name" id=".deserializeCls"><span class="type-signature">(static) </span>deserializeCls<span class="signature">(cls, binaryAsBase64<span class="signature-attributes">opt</span>, longsAsStrings<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {function}</span></h4>
 
     
 
@@ -169,6 +169,8 @@ code. None of them should be used directly by gRPC users.</div>
         <th>Type</th>
 
         
+        <th>Attributes</th>
+        
 
         
 
@@ -194,10 +196,86 @@ code. None of them should be used directly by gRPC users.</div>
             </td>
 
             
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
 
             
 
             <td class="description last">The constructor of the message type to deserialize</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>binaryAsBase64</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">bool</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last">Deserialize bytes fields as base64 strings
+    instead of Buffers. Defaults to false</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>longsAsStrings</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">bool</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last">Deserialize long values as strings instead of
+    objects. Defaults to true</td>
         </tr>
 
     
@@ -238,7 +316,7 @@ code. None of them should be used directly by gRPC users.</div>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_common.js.html">src/common.js</a>, <a href="src_common.js.html#line49">line 49</a>
+        <a href="src_common.js.html">src/common.js</a>, <a href="src_common.js.html#line53">line 53</a>
     </li></ul></dd>
     
 
@@ -391,7 +469,7 @@ code. None of them should be used directly by gRPC users.</div>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_common.js.html">src/common.js</a>, <a href="src_common.js.html#line87">line 87</a>
+        <a href="src_common.js.html">src/common.js</a>, <a href="src_common.js.html#line98">line 98</a>
     </li></ul></dd>
     
 
@@ -444,7 +522,7 @@ code. None of them should be used directly by gRPC users.</div>
 
     
 
-    <h4 class="name" id=".getProtobufServiceAttrs"><span class="type-signature">(static) </span>getProtobufServiceAttrs<span class="signature">(service)</span><span class="type-signature"> &rarr; {Object}</span></h4>
+    <h4 class="name" id=".getProtobufServiceAttrs"><span class="type-signature">(static) </span>getProtobufServiceAttrs<span class="signature">(service, options<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {Object}</span></h4>
 
     
 
@@ -475,6 +553,8 @@ code. None of them should be used directly by gRPC users.</div>
         <th>Type</th>
 
         
+        <th>Attributes</th>
+        
 
         
 
@@ -500,10 +580,51 @@ code. None of them should be used directly by gRPC users.</div>
             </td>
 
             
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
 
             
 
             <td class="description last">The service to get attributes for</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>options</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last">Options to apply to these attributes</td>
         </tr>
 
     
@@ -544,7 +665,7 @@ code. None of them should be used directly by gRPC users.</div>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_common.js.html">src/common.js</a>, <a href="src_common.js.html#line124">line 124</a>
+        <a href="src_common.js.html">src/common.js</a>, <a href="src_common.js.html#line136">line 136</a>
     </li></ul></dd>
     
 
@@ -697,7 +818,7 @@ code. None of them should be used directly by gRPC users.</div>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_common.js.html">src/common.js</a>, <a href="src_common.js.html#line69">line 69</a>
+        <a href="src_common.js.html">src/common.js</a>, <a href="src_common.js.html#line80">line 80</a>
     </li></ul></dd>
     
 
@@ -863,7 +984,7 @@ function is given, just uses the identity;
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_common.js.html">src/common.js</a>, <a href="src_common.js.html#line107">line 107</a>
+        <a href="src_common.js.html">src/common.js</a>, <a href="src_common.js.html#line118">line 118</a>
     </li></ul></dd>
     
 
@@ -933,7 +1054,7 @@ function is given, just uses the identity;
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.0</a> on Thu Jan 14 2016 16:17:15 GMT-0800 (PST)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.0</a> on Tue Mar 08 2016 10:29:45 GMT-0800 (PST)
 </footer>
 
 <script> prettyPrint(); </script>
