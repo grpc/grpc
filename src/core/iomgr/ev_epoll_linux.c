@@ -39,7 +39,7 @@
 struct grpc_fd {
   int fd;
   grpc_iomgr_object iomgr_object;
-  grpc_fd *next;
+  grpc_fd *next_free;
 };
 
 struct grpc_pollset_worker {
