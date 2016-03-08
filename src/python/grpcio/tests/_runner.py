@@ -1,4 +1,4 @@
-# Copyright 2015, Google Inc.
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -143,10 +143,17 @@ class Runner(object):
 
   def run(self, suite):
     """See setuptools' test_runner setup argument for information."""
+    # only run test cases with id starting with given prefix
+    testcase_filter = os.getenv('GPRC_PYTHON_TESTRUNNER_FILTER')
+    filtered_cases = []
+    for case in _loader.iterate_suite_cases(suite):
+      if not testcase_filter or case.id().startswith(testcase_filter):
+        filtered_cases.append(case)
+
     # Ensure that every test case has no collision with any other test case in
     # the augmented results.
     augmented_cases = [AugmentedCase(case, uuid.uuid4())
-                       for case in _loader.iterate_suite_cases(suite)]
+                       for case in filtered_cases]
     case_id_by_case = dict((augmented_case.case, augmented_case.id)
                            for augmented_case in augmented_cases)
     result_out = StringIO.StringIO()
