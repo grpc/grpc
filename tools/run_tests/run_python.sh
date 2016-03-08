@@ -46,7 +46,7 @@ if [ "$CONFIG" = "gcov" ]
 then
   tox
 else
-  $ROOT/.tox/py27/bin/python $ROOT/setup.py test
+  $ROOT/.tox/py27/bin/python $ROOT/setup.py test_lite
 fi
 
 mkdir -p $ROOT/reports
