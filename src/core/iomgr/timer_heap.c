@@ -46,7 +46,7 @@
 static void adjust_upwards(grpc_timer **first, uint32_t i, grpc_timer *t) {
   while (i > 0) {
     uint32_t parent = (uint32_t)(((int)i - 1) / 2);
-    if (gpr_time_cmp(first[parent]->deadline, t->deadline) >= 0) break;
+    if (gpr_time_cmp(first[parent]->deadline, t->deadline) <= 0) break;
     first[i] = first[parent];
     first[i]->heap_index = i;
     i = parent;
@@ -62,16 +62,14 @@ static void adjust_downwards(grpc_timer **first, uint32_t i, uint32_t length,
                              grpc_timer *t) {
   for (;;) {
     uint32_t left_child = 1u + 2u * i;
-    uint32_t right_child;
-    uint32_t next_i;
     if (left_child >= length) break;
-    right_child = left_child + 1;
-    next_i = right_child < length &&
+    uint32_t right_child = left_child + 1;
+    uint32_t next_i = right_child < length &&
                      gpr_time_cmp(first[left_child]->deadline,
-                                  first[right_child]->deadline) < 0
+                                  first[right_child]->deadline) > 0
                  ? right_child
                  : left_child;
-    if (gpr_time_cmp(t->deadline, first[next_i]->deadline) >= 0) break;
+    if (gpr_time_cmp(t->deadline, first[next_i]->deadline) <= 0) break;
     first[i] = first[next_i];
     first[i]->heap_index = i;
     i = next_i;
@@ -95,7 +93,7 @@ static void maybe_shrink(grpc_timer_heap *heap) {
 static void note_changed_priority(grpc_timer_heap *heap, grpc_timer *timer) {
   uint32_t i = timer->heap_index;
   uint32_t parent = (uint32_t)(((int)i - 1) / 2);
-  if (gpr_time_cmp(heap->timers[parent]->deadline, timer->deadline) < 0) {
+  if (gpr_time_cmp(heap->timers[parent]->deadline, timer->deadline) > 0) {
     adjust_upwards(heap->timers, i, timer);
   } else {
     adjust_downwards(heap->timers, i, heap->timer_count, timer);
