@@ -133,8 +133,8 @@ class CompletionQueue : private GrpcLibrary {
   ///
   /// \return true if read a regular event, false if the queue is shutting down.
   bool Next(void** tag, bool* ok) {
-    return (AsyncNextInternal(tag, ok, gpr_inf_future(GPR_CLOCK_REALTIME)) !=
-            SHUTDOWN);
+    return (AsyncNextInternal(tag, ok, g_core_codegen_interface->gpr_inf_future(
+                                           GPR_CLOCK_REALTIME)) != SHUTDOWN);
   }
 
   /// Request the shutdown of the queue.
@@ -191,7 +191,7 @@ class CompletionQueue : private GrpcLibrary {
   /// Wraps \a grpc_completion_queue_pluck.
   /// \warning Must not be mixed with calls to \a Next.
   bool Pluck(CompletionQueueTag* tag) {
-    auto deadline = gpr_inf_future(GPR_CLOCK_REALTIME);
+    auto deadline = g_core_codegen_interface->gpr_inf_future(GPR_CLOCK_REALTIME);
     auto ev = g_core_codegen_interface->grpc_completion_queue_pluck(
         cq_, tag, deadline, nullptr);
     bool ok = ev.success != 0;
