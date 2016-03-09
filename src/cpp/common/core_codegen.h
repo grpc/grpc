@@ -57,6 +57,8 @@ class CoreCodegen : public CoreCodegenInterface {
 
   void grpc_metadata_array_destroy(grpc_metadata_array* array) override;
 
+  void gpr_inf_future(gpr_clock_type type) override;
+
   void assert_fail(const char* failed_assertion) override;
 
   Status SerializeProto(const grpc::protobuf::Message& msg,

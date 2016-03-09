@@ -56,6 +56,30 @@ gpr_timespec gpr_time_max(gpr_timespec a, gpr_timespec b) {
   return gpr_time_cmp(a, b) > 0 ? a : b;
 }
 
+gpr_timespec gpr_time_0(gpr_clock_type type) {
+  gpr_timespec out;
+  out.tv_sec = 0;
+  out.tv_nsec = 0;
+  out.clock_type = type;
+  return out;
+}
+
+gpr_timespec gpr_inf_future(gpr_clock_type type) {
+  gpr_timespec out;
+  out.tv_sec = INT64_MAX;
+  out.tv_nsec = 0;
+  out.clock_type = type;
+  return out;
+}
+
+gpr_timespec gpr_inf_past(gpr_clock_type type) {
+  gpr_timespec out;
+  out.tv_sec = INT64_MIN;
+  out.tv_nsec = 0;
+  out.clock_type = type;
+  return out;
+}
+
 /* TODO(ctiller): consider merging _nanos, _micros, _millis into a single
    function for maintainability. Similarly for _seconds, _minutes, and _hours */
 
