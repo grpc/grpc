@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -34,8 +34,50 @@
 #ifndef GRPC_SUPPORT_TLS_GCC_H
 #define GRPC_SUPPORT_TLS_GCC_H
 
+#include <stdbool.h>
+
+#include <grpc/support/log.h>
+
 /* Thread local storage based on gcc compiler primitives.
    #include tls.h to use this - and see that file for documentation */
+
+#ifndef NDEBUG
+
+struct gpr_gcc_thread_local {
+  intptr_t value;
+  bool *inited;
+};
+
+#define GPR_TLS_DECL(name)           \
+  static bool name##_inited = false; \
+  static __thread struct gpr_gcc_thread_local name = {0, &(name##_inited)}
+
+#define gpr_tls_init(tls)                  \
+  do {                                     \
+    GPR_ASSERT(*((tls)->inited) == false); \
+    *((tls)->inited) = true;               \
+  } while (0)
+
+/* It is allowed to call gpr_tls_init after gpr_tls_destroy is called. */
+#define gpr_tls_destroy(tls)      \
+  do {                            \
+    GPR_ASSERT(*((tls)->inited)); \
+    *((tls)->inited) = false;     \
+  } while (0)
+
+#define gpr_tls_set(tls, new_value) \
+  do {                              \
+    GPR_ASSERT(*((tls)->inited));   \
+    (tls)->value = (new_value);     \
+  } while (0)
+
+#define gpr_tls_get(tls)          \
+  ({                              \
+    GPR_ASSERT(*((tls)->inited)); \
+    (tls)->value;                 \
+  })
+
+#else /* NDEBUG */
 
 struct gpr_gcc_thread_local {
   intptr_t value;
@@ -52,5 +94,7 @@ struct gpr_gcc_thread_local {
   } while (0)
 #define gpr_tls_set(tls, new_value) (((tls)->value) = (new_value))
 #define gpr_tls_get(tls) ((tls)->value)
+
+#endif /* NDEBUG */
 
 #endif
