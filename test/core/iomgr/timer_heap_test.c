@@ -38,6 +38,8 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/useful.h>
+
 #include "test/core/util/test_config.h"
 
 static gpr_timespec random_deadline(void) {
@@ -81,6 +83,10 @@ static void check_valid(grpc_timer_heap *pq) {
   }
 }
 
+/*******************************************************************************
+ * test1
+ */
+
 static void test1(void) {
   grpc_timer_heap pq;
   const size_t num_test_elements = 200;
@@ -89,7 +95,7 @@ static void test1(void) {
   grpc_timer *test_elements = create_test_elements(num_test_elements);
   uint8_t *inpq = gpr_malloc(num_test_elements);
 
-  gpr_log(GPR_DEBUG, "******************************************* test1");
+  gpr_log(GPR_INFO, "test1");
 
   grpc_timer_heap_init(&pq);
   memset(inpq, 0, num_test_elements);
@@ -136,7 +142,106 @@ static void test1(void) {
   gpr_free(inpq);
 }
 
+/*******************************************************************************
+ * test2
+ */
+
+typedef struct {
+  grpc_timer elem;
+  bool inserted;
+} elem_struct;
+
+static elem_struct *search_elems(elem_struct *elems, size_t count, bool inserted) {
+  size_t *search_order = gpr_malloc(count * sizeof(*search_order));
+  for (size_t i = 0; i < count; i++) {
+    search_order[i] = i;
+  }
+  for (size_t i = 0; i < count * 2; i++) {
+    size_t a = (size_t)rand() % count;
+    size_t b = (size_t)rand() % count;
+    GPR_SWAP(size_t, search_order[a], search_order[b]);
+  }
+  elem_struct *out = NULL;
+  for (size_t i = 0; out == NULL && i < count; i++) {
+    if (elems[search_order[i]].inserted == inserted) {
+      out = &elems[search_order[i]];
+    }
+  }
+  gpr_free(search_order);
+  return out;
+}
+
+static void test2(void) {
+gpr_log(GPR_INFO, "test2");
+
+  grpc_timer_heap pq;
+
+  elem_struct elems[1000];
+  size_t num_inserted = 0;
+
+  grpc_timer_heap_init(&pq);
+  memset(elems, 0, sizeof(elems));
+
+  for (size_t round = 0; round < 10000; round++) {
+    int r = (size_t)rand() % 1000;
+    if (r <= 550) {
+      /* 55% of the time we try to add something */
+      elem_struct *el = search_elems(elems, GPR_ARRAY_SIZE(elems), false);
+      if (el != NULL) {
+        el->elem.deadline = random_deadline();
+        grpc_timer_heap_add(&pq, &el->elem);
+        el->inserted = true;
+        num_inserted++;
+        check_valid(&pq);
+      }
+    } else if (r <= 650) {
+      /* 10% of the time we try to remove something */
+      elem_struct *el = search_elems(elems, GPR_ARRAY_SIZE(elems), true);
+      if (el != NULL) {
+        grpc_timer_heap_remove(&pq, &el->elem);
+        el->inserted = false;
+        num_inserted--;
+        check_valid(&pq);
+      }
+    } else {
+      /* the remaining times we pop */
+      if (num_inserted > 0) {
+        grpc_timer *top = grpc_timer_heap_top(&pq);
+        grpc_timer_heap_pop(&pq);
+        for (size_t i = 0; i < GPR_ARRAY_SIZE(elems); i++) {
+          if (top == &elems[i].elem) {
+            GPR_ASSERT(elems[i].inserted);
+            elems[i].inserted = false;
+          }
+        }
+        num_inserted--;
+        check_valid(&pq);
+      }
+    }
+
+    if (num_inserted) {
+      gpr_timespec *min_deadline = NULL;
+      for (size_t i = 0; i < GPR_ARRAY_SIZE(elems); i++) {
+        if (elems[i].inserted) {
+          if (min_deadline == NULL) {
+            min_deadline = &elems[i].elem.deadline;
+          } else {
+            if (gpr_time_cmp(elems[i].elem.deadline, *min_deadline) < 0) {
+              min_deadline = &elems[i].elem.deadline;
+            }
+          }
+        }
+      }
+      GPR_ASSERT(0 == gpr_time_cmp(grpc_timer_heap_top(&pq)->deadline, *min_deadline));
+    }
+  }
+
+  grpc_timer_heap_destroy(&pq);
+}
+
 static void shrink_test(void) {
+  gpr_log(GPR_INFO, "shrink_test");
+
   grpc_timer_heap pq;
   size_t i;
   size_t expected_size;
@@ -200,6 +305,7 @@ int main(int argc, char **argv) {
 
   for (i = 0; i < 5; i++) {
     test1();
+    test2();
     shrink_test();
   }
 
