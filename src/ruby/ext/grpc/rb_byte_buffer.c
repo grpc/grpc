@@ -53,12 +53,14 @@ VALUE grpc_rb_byte_buffer_to_s(grpc_byte_buffer *buffer) {
   size_t length = 0;
   char *string = NULL;
   size_t offset = 0;
+  VALUE output_rb_string = NULL;
+
   grpc_byte_buffer_reader reader;
   gpr_slice next;
   if (buffer == NULL) {
     return Qnil;
-
   }
+
   length = grpc_byte_buffer_length(buffer);
   string = xmalloc(length + 1);
   grpc_byte_buffer_reader_init(&reader, buffer);
@@ -67,5 +69,9 @@ VALUE grpc_rb_byte_buffer_to_s(grpc_byte_buffer *buffer) {
     offset += GPR_SLICE_LENGTH(next);
     gpr_slice_unref(next);
   }
-  return rb_str_new(string, length);
+
+  output_rb_string = rb_str_new(string, length);
+  xfree(string);
+
+  return output_rb_string;
 }
