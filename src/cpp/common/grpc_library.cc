@@ -34,6 +34,9 @@
 #include <grpc++/impl/codegen/core_codegen_interface.h>
 #include <grpc++/impl/codegen/grpc_library.h>
 
+/// Definition of gRPC's globals. These should be associated with actual
+/// as part of the instantiation of a \a grpc::GrpcLibraryInitializer variable.
+
 namespace grpc {
 
 GrpcLibraryInterface *g_glip = nullptr;

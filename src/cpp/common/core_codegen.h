@@ -31,42 +31,41 @@
  *
  */
 
+// This file should be compiled as part of grpc++.
+
 #include <grpc++/impl/codegen/core_codegen_interface.h>
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/byte_buffer.h>
 
 namespace grpc {
 
+/// Implementation of the core codegen interface.
 class CoreCodegen : public CoreCodegenInterface {
  private:
-  grpc_completion_queue* grpc_completion_queue_create(void* reserved) override;
-
-  void grpc_completion_queue_destroy(grpc_completion_queue* cq) override;
-
-  grpc_event grpc_completion_queue_pluck(grpc_completion_queue* cq, void* tag,
-                                         gpr_timespec deadline,
-                                         void* reserved) override;
-
-  void* gpr_malloc(size_t size) override;
-
-  void gpr_free(void* p) override;
-
-  void grpc_byte_buffer_destroy(grpc_byte_buffer* bb) override;
-
-  void grpc_metadata_array_init(grpc_metadata_array* array) override;
-
-  void grpc_metadata_array_destroy(grpc_metadata_array* array) override;
-
-  gpr_timespec gpr_inf_future(gpr_clock_type type) override;
-
-  void assert_fail(const char* failed_assertion) override;
-
   Status SerializeProto(const grpc::protobuf::Message& msg,
                         grpc_byte_buffer** bp) override;
 
   Status DeserializeProto(grpc_byte_buffer* buffer,
                           grpc::protobuf::Message* msg,
                           int max_message_size) override;
+
+  grpc_completion_queue* grpc_completion_queue_create(void* reserved) override;
+  void grpc_completion_queue_destroy(grpc_completion_queue* cq) override;
+  grpc_event grpc_completion_queue_pluck(grpc_completion_queue* cq, void* tag,
+                                         gpr_timespec deadline,
+                                         void* reserved) override;
+
+  void* gpr_malloc(size_t size) override;
+  void gpr_free(void* p) override;
+
+  void grpc_byte_buffer_destroy(grpc_byte_buffer* bb) override;
+
+  void grpc_metadata_array_init(grpc_metadata_array* array) override;
+  void grpc_metadata_array_destroy(grpc_metadata_array* array) override;
+
+  gpr_timespec gpr_inf_future(gpr_clock_type type) override;
+
+  void assert_fail(const char* failed_assertion) override;
 };
 
 }  // namespace grpc

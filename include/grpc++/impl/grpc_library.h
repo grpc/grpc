@@ -48,13 +48,13 @@ namespace internal {
 class GrpcLibrary GRPC_FINAL : public GrpcLibraryInterface {
  public:
   void init() GRPC_OVERRIDE { grpc_init(); }
-
   void shutdown() GRPC_OVERRIDE { grpc_shutdown(); }
 };
 
 static GrpcLibrary g_gli;
 static CoreCodegen g_core_codegen;
 
+/// Instantiating this class ensures the proper initialization of gRPC.
 class GrpcLibraryInitializer GRPC_FINAL {
  public:
   GrpcLibraryInitializer() {

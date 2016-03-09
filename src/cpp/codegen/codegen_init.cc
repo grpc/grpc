@@ -34,5 +34,11 @@
 #include <grpc++/impl/codegen/core_codegen_interface.h>
 #include <grpc++/impl/codegen/grpc_library.h>
 
+/// Initializes the global gRPC variables for the codegen library. These will
+/// stay null in the absence of of grpc++ library. In this case, no gRPC
+/// features such as the ability to perform calls will be available. Trying to
+/// perform them would result in a segmentation fault when trying to deference
+/// the following nulled globals.
+
 grpc::CoreCodegenInterface* grpc::g_core_codegen_interface = nullptr;
 grpc::GrpcLibraryInterface* grpc::g_glip = nullptr;

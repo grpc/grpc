@@ -83,7 +83,7 @@ extern CoreCodegenInterface* g_core_codegen_interface;
 
 /// A thin wrapper around \a grpc_completion_queue (see / \a
 /// src/core/surface/completion_queue.h).
-class CompletionQueue : private GrpcLibrary {
+class CompletionQueue : private GrpcLibraryCodegen {
  public:
   /// Default constructor. Implicitly creates a \a grpc_completion_queue
   /// instance.
