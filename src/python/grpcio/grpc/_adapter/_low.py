@@ -182,6 +182,9 @@ class CompletionQueue(_types.CompletionQueue):
   def shutdown(self):
     self.completion_queue.shutdown()
 
+  def __del__(self):
+    self.completion_queue.close()
+
 
 class Call(_types.Call):
 

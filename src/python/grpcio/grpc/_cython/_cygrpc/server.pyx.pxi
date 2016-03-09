@@ -128,6 +128,7 @@ cdef class Server:
   cdef notify_shutdown_complete(self):
     # called only by a completion queue on receiving our shutdown operation tag
     self.is_shutdown = True
+    self.backup_shutdown_queue.close()
 
   def cancel_all_calls(self):
     if not self.is_shutting_down:
