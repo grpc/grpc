@@ -38,7 +38,12 @@
 /// stay null in the absence of of grpc++ library. In this case, no gRPC
 /// features such as the ability to perform calls will be available. Trying to
 /// perform them would result in a segmentation fault when trying to deference
-/// the following nulled globals.
+/// the following nulled globals. These should be associated with actual
+/// as part of the instantiation of a \a grpc::GrpcLibraryInitializer variable.
+
+namespace grpc {
 
 grpc::CoreCodegenInterface* grpc::g_core_codegen_interface = nullptr;
 grpc::GrpcLibraryInterface* grpc::g_glip = nullptr;
+
+}  // namespace grpc

@@ -305,9 +305,11 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(SolutionDir)\..\src\cpp\client\secure_credentials.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\cpp\common\core_codegen.h" />
     <ClInclude Include="$(SolutionDir)\..\src\cpp\common\secure_auth_context.h" />
     <ClInclude Include="$(SolutionDir)\..\src\cpp\server\secure_server_credentials.h" />
     <ClInclude Include="$(SolutionDir)\..\src\cpp\client\create_channel_internal.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\cpp\common\core_codegen.h" />
     <ClInclude Include="$(SolutionDir)\..\src\cpp\common\create_auth_context.h" />
     <ClInclude Include="$(SolutionDir)\..\src\cpp\server\dynamic_thread_pool.h" />
     <ClInclude Include="$(SolutionDir)\..\src\cpp\server\thread_pool_interface.h" />
@@ -318,8 +320,6 @@
     <ClCompile Include="$(SolutionDir)\..\src\cpp\common\auth_property_iterator.cc">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\common\core_codegen.cc">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\cpp\common\grpc_library.cc">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\common\secure_auth_context.cc">
     </ClCompile>
