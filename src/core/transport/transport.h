@@ -36,11 +36,11 @@
 
 #include <stddef.h>
 
+#include "src/core/channel/context.h"
 #include "src/core/iomgr/pollset.h"
 #include "src/core/iomgr/pollset_set.h"
-#include "src/core/transport/metadata_batch.h"
 #include "src/core/transport/byte_stream.h"
-#include "src/core/channel/context.h"
+#include "src/core/transport/metadata_batch.h"
 
 /* forward declarations */
 typedef struct grpc_transport grpc_transport;
@@ -153,6 +153,19 @@ typedef struct grpc_transport_op {
   /** send a ping, call this back if not NULL */
   grpc_closure *send_ping;
 } grpc_transport_op;
+
+typedef struct {
+  gpr_stats_counter framing_bytes;
+  gpr_stats_counter data_bytes;
+  gpr_stats_counter header_bytes;
+} grpc_transport_one_way_stats;
+
+typedef struct grpc_transport_stream_stats {
+  grpc_transport_one_way_stats incoming;
+  grpc_transport_one_way_stats outgoing;
+} grpc_transport_stream_stats;
+
+void grpc_transport_stream_stats_init(grpc_transport_stream_stats *stats);
 
 /* Returns the amount of memory required to store a grpc_stream for this
    transport */
