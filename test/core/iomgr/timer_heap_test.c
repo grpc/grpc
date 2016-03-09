@@ -151,7 +151,8 @@ typedef struct {
   bool inserted;
 } elem_struct;
 
-static elem_struct *search_elems(elem_struct *elems, size_t count, bool inserted) {
+static elem_struct *search_elems(elem_struct *elems, size_t count,
+                                 bool inserted) {
   size_t *search_order = gpr_malloc(count * sizeof(*search_order));
   for (size_t i = 0; i < count; i++) {
     search_order[i] = i;
@@ -172,7 +173,7 @@ static elem_struct *search_elems(elem_struct *elems, size_t count, bool inserted
 }
 
 static void test2(void) {
-gpr_log(GPR_INFO, "test2");
+  gpr_log(GPR_INFO, "test2");
 
   grpc_timer_heap pq;
 
@@ -232,7 +233,8 @@ gpr_log(GPR_INFO, "test2");
           }
         }
       }
-      GPR_ASSERT(0 == gpr_time_cmp(grpc_timer_heap_top(&pq)->deadline, *min_deadline));
+      GPR_ASSERT(
+          0 == gpr_time_cmp(grpc_timer_heap_top(&pq)->deadline, *min_deadline));
     }
   }
 
