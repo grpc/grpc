@@ -34,13 +34,11 @@
 #ifndef GRPCXX_IMPL_CODEGEN_CALL_H
 #define GRPCXX_IMPL_CODEGEN_CALL_H
 
-#include <functional>
-#include <memory>
-#include <map>
 #include <cstring>
+#include <functional>
+#include <map>
+#include <memory>
 
-#include <grpc/impl/codegen/alloc.h>
-#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc++/impl/codegen/call_hook.h>
 #include <grpc++/impl/codegen/client_context.h>
 #include <grpc++/impl/codegen/completion_queue_tag.h>
@@ -49,6 +47,8 @@
 #include <grpc++/impl/codegen/serialization_traits.h>
 #include <grpc++/impl/codegen/status.h>
 #include <grpc++/impl/codegen/string_ref.h>
+#include <grpc/impl/codegen/alloc.h>
+#include <grpc/impl/codegen/grpc_types.h>
 
 struct grpc_byte_buffer;
 
@@ -280,7 +280,8 @@ class CallOpRecvMessage {
       if (*status) {
         got_message = true;
         *status = SerializationTraits<R>::Deserialize(recv_buf_, message_,
-                                                      max_message_size).ok();
+                                                      max_message_size)
+                      .ok();
       } else {
         got_message = false;
         g_core_codegen_interface->grpc_byte_buffer_destroy(recv_buf_);
@@ -606,14 +607,14 @@ class Call GRPC_FINAL {
  public:
   /* call is owned by the caller */
   Call(grpc_call* call, CallHook* call_hook, CompletionQueue* cq)
-    : call_hook_(call_hook), cq_(cq), call_(call), max_message_size_(-1) {}
+      : call_hook_(call_hook), cq_(cq), call_(call), max_message_size_(-1) {}
 
   Call(grpc_call* call, CallHook* call_hook, CompletionQueue* cq,
        int max_message_size)
-    : call_hook_(call_hook),
-      cq_(cq),
-      call_(call),
-      max_message_size_(max_message_size) {}
+      : call_hook_(call_hook),
+        cq_(cq),
+        call_(call),
+        max_message_size_(max_message_size) {}
 
   void PerformOps(CallOpSetInterface* ops) {
     if (max_message_size_ > 0) {

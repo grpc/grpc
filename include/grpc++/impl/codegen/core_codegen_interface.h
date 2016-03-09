@@ -35,9 +35,9 @@
 #ifndef GRPCXX_IMPL_CODEGEN_CORE_CODEGEN_INTERFACE_H
 #define GRPCXX_IMPL_CODEGEN_CORE_CODEGEN_INTERFACE_H
 
-#include <grpc/impl/codegen/grpc_types.h>
-#include <grpc++/impl/codegen/status.h>
 #include <grpc++/impl/codegen/config_protobuf.h>
+#include <grpc++/impl/codegen/status.h>
+#include <grpc/impl/codegen/grpc_types.h>
 
 namespace grpc {
 
@@ -80,11 +80,11 @@ class CoreCodegenInterface {
 };
 
 /* XXX */
-#define GPR_CODEGEN_ASSERT(x)                                            \
-  do {                                                                   \
-    if (!(x)) {                                                          \
-      grpc::g_core_codegen_interface->assert_fail(#x);                   \
-    }                                                                    \
+#define GPR_CODEGEN_ASSERT(x)                          \
+  do {                                                 \
+    if (!(x)) {                                        \
+      grpc::g_core_codegen_interface->assert_fail(#x); \
+    }                                                  \
   } while (0)
 
 }  // namespace grpc

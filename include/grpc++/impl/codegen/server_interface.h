@@ -34,11 +34,11 @@
 #ifndef GRPCXX_IMPL_CODEGEN_SERVER_INTERFACE_H
 #define GRPCXX_IMPL_CODEGEN_SERVER_INTERFACE_H
 
-#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc++/impl/codegen/call_hook.h>
 #include <grpc++/impl/codegen/completion_queue_tag.h>
 #include <grpc++/impl/codegen/core_codegen_interface.h>
 #include <grpc++/impl/codegen/rpc_service_method.h>
+#include <grpc/impl/codegen/grpc_types.h>
 
 namespace grpc {
 
@@ -192,10 +192,11 @@ class ServerInterface : public CallHook {
     bool FinalizeResult(void** tag, bool* status) GRPC_OVERRIDE {
       bool serialization_status =
           *status && payload_ &&
-          SerializationTraits<Message>::Deserialize(
-              payload_, request_, server_->max_message_size()).ok();
+          SerializationTraits<Message>::Deserialize(payload_, request_,
+                                                    server_->max_message_size())
+              .ok();
       bool ret = RegisteredAsyncRequest::FinalizeResult(tag, status);
-      *status = serialization_status&&* status;
+      *status = serialization_status && *status;
       return ret;
     }
 

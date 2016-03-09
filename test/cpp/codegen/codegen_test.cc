@@ -38,8 +38,7 @@ namespace {
 
 class CodegenTest : public ::testing::Test {};
 
-TEST_F(CodegenTest, Build) {
-}
+TEST_F(CodegenTest, Build) {}
 
 }  // namespace
 }  // namespace grpc

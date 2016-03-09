@@ -36,12 +36,12 @@
 
 #include <type_traits>
 
+#include <grpc++/impl/codegen/config_protobuf.h>
+#include <grpc++/impl/codegen/core_codegen_interface.h>
+#include <grpc++/impl/codegen/serialization_traits.h>
+#include <grpc++/impl/codegen/status.h>
 #include <grpc/impl/codegen/byte_buffer.h>
 #include <grpc/impl/codegen/log.h>
-#include <grpc++/impl/codegen/serialization_traits.h>
-#include <grpc++/impl/codegen/config_protobuf.h>
-#include <grpc++/impl/codegen/status.h>
-#include <grpc++/impl/codegen/core_codegen_interface.h>
 
 namespace grpc {
 
@@ -59,7 +59,8 @@ class SerializationTraits<T, typename std::enable_if<std::is_base_of<
   static Status Deserialize(grpc_byte_buffer* buffer,
                             grpc::protobuf::Message* msg,
                             int max_message_size) {
-    return g_core_codegen_interface->DeserializeProto(buffer, msg, max_message_size);
+    return g_core_codegen_interface->DeserializeProto(buffer, msg,
+                                                      max_message_size);
   }
 };
 
