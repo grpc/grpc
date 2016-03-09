@@ -31,7 +31,6 @@
  *
  */
 
-/// XXX
 #ifndef GRPCXX_IMPL_CODEGEN_CORE_CODEGEN_INTERFACE_H
 #define GRPCXX_IMPL_CODEGEN_CORE_CODEGEN_INTERFACE_H
 
@@ -41,20 +40,15 @@
 
 namespace grpc {
 
-class CoreCodegenInterface;
-
-extern CoreCodegenInterface* g_core_codegen_interface;
-
+/// Interface between the codegen library and the minimal subset of core
+/// features required by the generated code.
+///
+/// All undocumented methods are simply forwarding the call to their namesakes.
+/// Please refer to their corresponding documentation for details.
+///
+/// \warning This interface should be considered internal and private.
 class CoreCodegenInterface {
  public:
-  virtual grpc_completion_queue* grpc_completion_queue_create(
-      void* reserved) = 0;
-  virtual void grpc_completion_queue_destroy(grpc_completion_queue* cq) = 0;
-  virtual grpc_event grpc_completion_queue_pluck(grpc_completion_queue* cq,
-                                                 void* tag,
-                                                 gpr_timespec deadline,
-                                                 void* reserved) = 0;
-
   // Serialize the msg into a buffer created inside the function. The caller
   // should destroy the returned buffer when done with it. If serialization
   // fails,
@@ -67,6 +61,17 @@ class CoreCodegenInterface {
                                   grpc::protobuf::Message* msg,
                                   int max_message_size) = 0;
 
+  /// Upon a failed assertion, log the error.
+  virtual void assert_fail(const char* failed_assertion) = 0;
+
+  virtual grpc_completion_queue* grpc_completion_queue_create(
+      void* reserved) = 0;
+  virtual void grpc_completion_queue_destroy(grpc_completion_queue* cq) = 0;
+  virtual grpc_event grpc_completion_queue_pluck(grpc_completion_queue* cq,
+                                                 void* tag,
+                                                 gpr_timespec deadline,
+                                                 void* reserved) = 0;
+
   virtual void* gpr_malloc(size_t size) = 0;
   virtual void gpr_free(void* p) = 0;
 
@@ -75,11 +80,11 @@ class CoreCodegenInterface {
   virtual void grpc_metadata_array_destroy(grpc_metadata_array* array) = 0;
 
   virtual gpr_timespec gpr_inf_future(gpr_clock_type type) = 0;
-
-  virtual void assert_fail(const char* failed_assertion) = 0;
 };
 
-/* XXX */
+extern CoreCodegenInterface* g_core_codegen_interface;
+
+/// Codegen specific version of \a GPR_ASSERT.
 #define GPR_CODEGEN_ASSERT(x)                          \
   do {                                                 \
     if (!(x)) {                                        \
