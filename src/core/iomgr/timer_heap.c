@@ -65,10 +65,10 @@ static void adjust_downwards(grpc_timer **first, uint32_t i, uint32_t length,
     if (left_child >= length) break;
     uint32_t right_child = left_child + 1;
     uint32_t next_i = right_child < length &&
-                     gpr_time_cmp(first[left_child]->deadline,
-                                  first[right_child]->deadline) > 0
-                 ? right_child
-                 : left_child;
+                              gpr_time_cmp(first[left_child]->deadline,
+                                           first[right_child]->deadline) > 0
+                          ? right_child
+                          : left_child;
     if (gpr_time_cmp(t->deadline, first[next_i]->deadline) <= 0) break;
     first[i] = first[next_i];
     first[i]->heap_index = i;
