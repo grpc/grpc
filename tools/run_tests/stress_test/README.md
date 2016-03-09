@@ -14,10 +14,10 @@
 3. Create a Project from the [GCP console](https://console.cloud.google.com) 
 4. Enable the Container Engine API. Instructions [here](https://cloud.google.com/container-engine/docs/before-you-begin)  (See the '*Enable the Container Engine API*’ section). 
 5. Create a Cluster from the GCP console. i.e Go to the Container Engine section from GCP console and click ‘Create Container Cluster’ and follow the instructions.
-5.1. The instructions for Name/Zone/MachineType etc are [here](https://cloud.google.com/container-engine/docs/clusters/operations) (**NOTE**: The page also has instructions to setting up default clusters and configuring `kubectl`. We will be doing that later)
-5.2. For the cluster size, a smaller size of < 10 GCE instances is good enough for our use cases - assuming that we are planning to run a reasonably small number of stress client instances.
-5.3. **IMPORTANT**: Before hitting the "Create" button, click on “More” link just above the "Create" button and Select "Enabled" for BigQuery , "Enabled" for Cloud Platform and "Read/Write" for Cloud User Accounts.
-5.4. Create the cluster by clicking "Create" button.
+    5.1. The instructions for Name/Zone/MachineType etc are [here](https://cloud.google.com/container-engine/docs/clusters/operations) (**NOTE**: The page also has instructions to setting up default clusters and configuring `kubectl`. We will be doing that later)
+    5.2. For the cluster size, a smaller size of < 10 GCE instances is good enough for our use cases - assuming that we are planning to run a reasonably small number of stress client instances.
+    5.3. **IMPORTANT**: Before hitting the "Create" button, click on “More” link just above the "Create" button and Select "Enabled" for BigQuery , "Enabled" for Cloud Platform and "Read/Write" for Cloud User Accounts.
+    5.4. Create the cluster by clicking "Create" button.
 
 #### *On your machine* (or the machine from which stress tests on GKE are launched): 
 1. You need a working gRPC repository on your machine. If you do not have it, clone the grpc repository from github (https://github.com/grpc/grpc) and follow the instructions at https://github.com/grpc/grpc/blob/master/INSTALL.md 
