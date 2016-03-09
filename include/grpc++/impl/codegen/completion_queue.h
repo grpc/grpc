@@ -36,12 +36,12 @@
 #ifndef GRPCXX_IMPL_CODEGEN_COMPLETION_QUEUE_H
 #define GRPCXX_IMPL_CODEGEN_COMPLETION_QUEUE_H
 
-#include <grpc/impl/codegen/time.h>
 #include <grpc++/impl/codegen/completion_queue_tag.h>
 #include <grpc++/impl/codegen/core_codegen_interface.h>
 #include <grpc++/impl/codegen/grpc_library.h>
 #include <grpc++/impl/codegen/status.h>
 #include <grpc++/impl/codegen/time.h>
+#include <grpc/impl/codegen/time.h>
 
 struct grpc_completion_queue;
 
@@ -191,7 +191,8 @@ class CompletionQueue : private GrpcLibrary {
   /// Wraps \a grpc_completion_queue_pluck.
   /// \warning Must not be mixed with calls to \a Next.
   bool Pluck(CompletionQueueTag* tag) {
-    auto deadline = g_core_codegen_interface->gpr_inf_future(GPR_CLOCK_REALTIME);
+    auto deadline =
+        g_core_codegen_interface->gpr_inf_future(GPR_CLOCK_REALTIME);
     auto ev = g_core_codegen_interface->grpc_completion_queue_pluck(
         cq_, tag, deadline, nullptr);
     bool ok = ev.success != 0;

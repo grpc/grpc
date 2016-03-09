@@ -200,7 +200,6 @@ void CoreCodegen::grpc_metadata_array_destroy(grpc_metadata_array* array) {
   ::grpc_metadata_array_destroy(array);
 }
 
-
 gpr_timespec CoreCodegen::gpr_inf_future(gpr_clock_type type) {
   return ::gpr_inf_future(type);
 }

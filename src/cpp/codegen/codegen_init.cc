@@ -34,5 +34,5 @@
 #include <grpc++/impl/codegen/core_codegen_interface.h>
 #include <grpc++/impl/codegen/grpc_library.h>
 
-grpc::CoreCodegenInterface *grpc::g_core_codegen_interface = nullptr;
+grpc::CoreCodegenInterface* grpc::g_core_codegen_interface = nullptr;
 grpc::GrpcLibraryInterface* grpc::g_glip = nullptr;

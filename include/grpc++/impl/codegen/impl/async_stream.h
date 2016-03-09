@@ -34,11 +34,11 @@
 #ifndef GRPCXX_IMPL_CODEGEN_ASYNC_STREAM_H
 #define GRPCXX_IMPL_CODEGEN_ASYNC_STREAM_H
 
-#include <grpc++/impl/codegen/channel_interface.h>
 #include <grpc++/impl/codegen/call.h>
+#include <grpc++/impl/codegen/channel_interface.h>
 #include <grpc++/impl/codegen/core_codegen_interface.h>
-#include <grpc++/impl/codegen/service_type.h>
 #include <grpc++/impl/codegen/server_context.h>
+#include <grpc++/impl/codegen/service_type.h>
 #include <grpc++/impl/codegen/status.h>
 
 namespace grpc {
@@ -215,7 +215,8 @@ class ClientAsyncWriter GRPC_FINAL : public ClientAsyncWriterInterface<W> {
   CallOpSet<CallOpSendMessage> write_ops_;
   CallOpSet<CallOpClientSendClose> writes_done_ops_;
   CallOpSet<CallOpRecvInitialMetadata, CallOpGenericRecvMessage,
-            CallOpClientRecvStatus> finish_ops_;
+            CallOpClientRecvStatus>
+      finish_ops_;
 };
 
 /// Client-side interface for asynchronous bi-directional streaming.
@@ -350,7 +351,8 @@ class ServerAsyncReader GRPC_FINAL : public ServerAsyncStreamingInterface,
   CallOpSet<CallOpSendInitialMetadata> meta_ops_;
   CallOpSet<CallOpRecvMessage<R>> read_ops_;
   CallOpSet<CallOpSendInitialMetadata, CallOpSendMessage,
-            CallOpServerSendStatus> finish_ops_;
+            CallOpServerSendStatus>
+      finish_ops_;
 };
 
 template <class W>

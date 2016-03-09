@@ -31,8 +31,8 @@
  *
  */
 
-#include <grpc++/impl/codegen/grpc_library.h>
 #include <grpc++/impl/codegen/core_codegen_interface.h>
+#include <grpc++/impl/codegen/grpc_library.h>
 
 namespace grpc {
 
