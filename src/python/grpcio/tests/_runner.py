@@ -144,7 +144,7 @@ class Runner(object):
   def run(self, suite):
     """See setuptools' test_runner setup argument for information."""
     # only run test cases with id starting with given prefix
-    testcase_filter = os.getenv('GPRC_PYTHON_TESTRUNNER_FILTER')
+    testcase_filter = os.getenv('GRPC_PYTHON_TESTRUNNER_FILTER')
     filtered_cases = []
     for case in _loader.iterate_suite_cases(suite):
       if not testcase_filter or case.id().startswith(testcase_filter):
