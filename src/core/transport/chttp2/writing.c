@@ -328,17 +328,19 @@ void grpc_chttp2_cleanup_writing(
       transport_global, transport_writing, &stream_global, &stream_writing)) {
     if (stream_writing->sent_initial_metadata) {
       grpc_chttp2_complete_closure_step(
-          exec_ctx, &stream_global->send_initial_metadata_finished, 1);
+          exec_ctx, stream_global,
+          &stream_global->send_initial_metadata_finished, 1);
     }
     if (stream_writing->sent_message) {
       GPR_ASSERT(stream_writing->send_message == NULL);
       grpc_chttp2_complete_closure_step(
-          exec_ctx, &stream_global->send_message_finished, 1);
+          exec_ctx, stream_global, &stream_global->send_message_finished, 1);
       stream_writing->sent_message = 0;
     }
     if (stream_writing->sent_trailing_metadata) {
       grpc_chttp2_complete_closure_step(
-          exec_ctx, &stream_global->send_trailing_metadata_finished, 1);
+          exec_ctx, stream_global,
+          &stream_global->send_trailing_metadata_finished, 1);
     }
     if (stream_writing->sent_trailing_metadata) {
       grpc_chttp2_mark_stream_closed(exec_ctx, transport_global, stream_global,

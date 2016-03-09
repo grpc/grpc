@@ -394,6 +394,9 @@ typedef struct {
   grpc_metadata_batch *recv_trailing_metadata;
   grpc_closure *recv_trailing_metadata_finished;
 
+  grpc_transport_stream_stats *collecting_stats;
+  grpc_transport_stream_stats stats;
+
   /** when the application requests writes be closed, the write_closed is
       'queued'; when the close is flow controlled into the send path, we are
       'sending' it; when the write has been performed it is 'sent' */
@@ -635,6 +638,7 @@ void grpc_chttp2_parsing_become_skip_parser(
     grpc_exec_ctx *exec_ctx, grpc_chttp2_transport_parsing *transport_parsing);
 
 void grpc_chttp2_complete_closure_step(grpc_exec_ctx *exec_ctx,
+                                       grpc_chttp2_stream_global *stream_global,
                                        grpc_closure **pclosure, int success);
 
 #define GRPC_CHTTP2_CLIENT_CONNECT_STRING "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"
