@@ -2098,6 +2098,7 @@ targets:
   - gpr_test_util
   - gpr
 - name: codegen_test
+  gtest: true
   build: test
   language: c++
   src:
