@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">0.12.0.0</span>
+   &#160;<span id="projectnumber">0.13.1-pre1</span>
    </div>
   </td>
  </tr>
@@ -88,6 +88,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!-- top -->
 <div class="header">
   <div class="summary">
+<a href="#nested-classes">Data Structures</a> &#124;
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="#friends">Friends</a>  </div>
   <div class="headertitle">
@@ -113,7 +114,7 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a3ff4f22c2cf31c01885b2aaefbdd227d"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_channel_arguments.html#a3ff4f22c2cf31c01885b2aaefbdd227d">Swap</a> (<a class="el" href="classgrpc_1_1_channel_arguments.html">ChannelArguments</a> &amp;other)</td></tr>
 <tr class="separator:a3ff4f22c2cf31c01885b2aaefbdd227d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a90ce1857947d36ff894402ad10cb6048"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_channel_arguments.html#a90ce1857947d36ff894402ad10cb6048">SetChannelArgs</a> (grpc_channel_args *channel_args) const </td></tr>
-<tr class="memdesc:a90ce1857947d36ff894402ad10cb6048"><td class="mdescLeft">&#160;</td><td class="mdescRight">Populates this instance with the arguments from <em>channel_args</em>.  <a href="#a90ce1857947d36ff894402ad10cb6048">More...</a><br/></td></tr>
+<tr class="memdesc:a90ce1857947d36ff894402ad10cb6048"><td class="mdescLeft">&#160;</td><td class="mdescRight">Dump arguments in this instance to <em>channel_args</em>.  <a href="#a90ce1857947d36ff894402ad10cb6048">More...</a><br/></td></tr>
 <tr class="separator:a90ce1857947d36ff894402ad10cb6048"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af4182e659448184f9618f079a1570328"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_channel_arguments.html#af4182e659448184f9618f079a1570328">SetSslTargetNameOverride</a> (const <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &amp;name)</td></tr>
 <tr class="memdesc:af4182e659448184f9618f079a1570328"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set target name override for SSL host name checking.  <a href="#af4182e659448184f9618f079a1570328">More...</a><br/></td></tr>
@@ -121,6 +122,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:aaf332071bbdff5e4a7f3352f4ad564d5"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_channel_arguments.html#aaf332071bbdff5e4a7f3352f4ad564d5">SetCompressionAlgorithm</a> (grpc_compression_algorithm algorithm)</td></tr>
 <tr class="memdesc:aaf332071bbdff5e4a7f3352f4ad564d5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the compression algorithm for the channel.  <a href="#aaf332071bbdff5e4a7f3352f4ad564d5">More...</a><br/></td></tr>
 <tr class="separator:aaf332071bbdff5e4a7f3352f4ad564d5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0d6080324cabd7ba0833b95c77c0c907"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_channel_arguments.html#a0d6080324cabd7ba0833b95c77c0c907">SetUserAgentPrefix</a> (const <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &amp;user_agent_prefix)</td></tr>
+<tr class="memdesc:a0d6080324cabd7ba0833b95c77c0c907"><td class="mdescLeft">&#160;</td><td class="mdescRight">The given string will be sent at the front of the user agent string.  <a href="#a0d6080324cabd7ba0833b95c77c0c907">More...</a><br/></td></tr>
+<tr class="separator:a0d6080324cabd7ba0833b95c77c0c907"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2b1c60568a4906bfe0b21781b09cdbbf"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_channel_arguments.html#a2b1c60568a4906bfe0b21781b09cdbbf">SetInt</a> (const <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &amp;key, int value)</td></tr>
 <tr class="memdesc:a2b1c60568a4906bfe0b21781b09cdbbf"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set an integer argument <em>value</em> under <em>key</em>.  <a href="#a2b1c60568a4906bfe0b21781b09cdbbf">More...</a><br/></td></tr>
 <tr class="separator:a2b1c60568a4906bfe0b21781b09cdbbf"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -145,9 +149,6 @@ Friends</h2></td></tr>
 <a class="anchor" id="aecabf1ea1c78a3202544571cf857e8eb"></a>
 <div class="memitem">
 <div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
       <table class="memname">
         <tr>
           <td class="memname">grpc::ChannelArguments::ChannelArguments </td>
@@ -156,11 +157,6 @@ Friends</h2></td></tr>
           <td></td>
         </tr>
       </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
-  </tr>
-</table>
 </div><div class="memdoc">
 
 </div>
@@ -243,7 +239,7 @@ Friends</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Populates this instance with the arguments from <em>channel_args</em>. </p>
+<p>Dump arguments in this instance to <em>channel_args</em>. </p>
 <p>Does not take ownership of <em>channel_args</em>.</p>
 <p>Note that the underlying arguments are shared. Changes made to either <em>channel_args</em> or this instance would be reflected on both. </p>
 
@@ -370,6 +366,24 @@ Friends</h2></td></tr>
 
 </div>
 </div>
+<a class="anchor" id="a0d6080324cabd7ba0833b95c77c0c907"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void grpc::ChannelArguments::SetUserAgentPrefix </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &amp;&#160;</td>
+          <td class="paramname"><em>user_agent_prefix</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>The given string will be sent at the front of the user agent string. </p>
+
+</div>
+</div>
 <a class="anchor" id="a3ff4f22c2cf31c01885b2aaefbdd227d"></a>
 <div class="memitem">
 <div class="memproto">
@@ -433,7 +447,7 @@ Friends</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Jan 15 2016 00:21:23 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Mar 8 2016 15:59:03 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

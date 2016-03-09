@@ -9,14 +9,16 @@ var searchData=
   ['cert_5fchain',['cert_chain',['../structgrpc__ssl__pem__key__cert__pair.html#a483c3601705853f48dfbc8ee66d5e656',1,'grpc_ssl_pem_key_cert_pair']]],
   ['channel_5fauth_5fcontext',['channel_auth_context',['../structgrpc__auth__metadata__context.html#a7cb596d3af7463816fdde64f3e18dbde',1,'grpc_auth_metadata_context']]],
   ['clock_5ftype',['clock_type',['../structgpr__timespec.html#a6dd26976820fa71a7c5a710d4c1845ff',1,'gpr_timespec']]],
+  ['cmp',['cmp',['../structgrpc__arg__pointer__vtable.html#a1037c7866bb3f070f4689b4a8ad04c09',1,'grpc_arg_pointer_vtable']]],
   ['compare_5fkeys',['compare_keys',['../structgpr__avl__vtable.html#a66727a55e5deb998ba07b96fab8e53d9',1,'gpr_avl_vtable']]],
   ['compression',['compression',['../structgrpc__byte__buffer.html#a3663648016e1076b82c5e731dc5b2399',1,'grpc_byte_buffer']]],
-  ['copy',['copy',['../structgrpc__arg.html#abef4f8be0109b19fcbe7f614f1243303',1,'grpc_arg']]],
+  ['context',['context',['../structcensus__context__iterator.html#a729daa66104d74f11aa6c5b25c27f563',1,'census_context_iterator']]],
+  ['copy',['copy',['../structgrpc__arg__pointer__vtable.html#a4b937861a8c7c8165fcb3bfc831dd95e',1,'grpc_arg_pointer_vtable']]],
   ['copy_5fkey',['copy_key',['../structgpr__avl__vtable.html#aaf2b05b749fa808f45b50e5b20d959ac',1,'gpr_avl_vtable']]],
   ['copy_5fvalue',['copy_value',['../structgpr__avl__vtable.html#a92e4dbcc6b3a3964dfe12f51e81f3fbd',1,'gpr_avl_vtable']]],
   ['count',['count',['../structgrpc__metadata__array.html#a314ce51b22a5934cc672f3736d44b9e4',1,'grpc_metadata_array::count()'],['../structgrpc__op.html#ac5983d0a5d60c26ca2d1b37d31ba2e2a',1,'grpc_op::count()'],['../structgpr__slice__buffer.html#a3adc77c3ef399ae0aa1ce1377e0e9fff',1,'gpr_slice_buffer::count()'],['../structgpr__refcount.html#ae1e2d58344b59ff6c0db0dc4f2953470',1,'gpr_refcount::count()']]],
   ['create_5farg',['create_arg',['../structcensus__aggregation.html#a5b2ce3ab21a88058ea67c944d6a37426',1,'census_aggregation']]],
   ['cs',['cs',['../structgpr__mu.html#abab5a72a693be27488fb7a9b2cb23e5c',1,'gpr_mu']]],
   ['ctx',['ctx',['../structgrpc__auth__property__iterator.html#a971904d29fa6f6ca6a853d078cae2f58',1,'grpc_auth_property_iterator']]],
-  ['current',['current',['../structgrpc__byte__buffer__reader.html#acebe9b66a2fb35a613f9342de0f6ca91',1,'grpc_byte_buffer_reader']]]
+  ['current',['current',['../structgrpc__byte__buffer__reader.html#a41e703f2766cc44a92c611bd255901a8',1,'grpc_byte_buffer_reader']]]
 ];

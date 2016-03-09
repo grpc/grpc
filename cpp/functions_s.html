@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">0.12.0.0</span>
+   &#160;<span id="projectnumber">0.13.1-pre1</span>
    </div>
   </td>
  </tr>
@@ -123,6 +123,9 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="textblock">Here is a list of all struct and union fields with links to the structures/unions they belong to:</div>
 
 <h3><a class="anchor" id="index_s"></a>- s -</h3><ul>
+<li>ScheduleCallback()
+: <a class="el" href="classgrpc_1_1_server_interface.html#a0e95f7753d8569fe645b20104c20cef8">grpc::ServerInterface</a>
+</li>
 <li>SecureAuthContext
 : <a class="el" href="classgrpc_1_1_auth_property_iterator.html#a18a70918b1f73cdd22cb263845b78d6d">grpc::AuthPropertyIterator</a>
 </li>
@@ -135,12 +138,12 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <li>SendInitialMetadata()
 : <a class="el" href="classgrpc_1_1_call_op_send_initial_metadata.html#a1d7682714b83f3bf495be8a7804fd34d">grpc::CallOpSendInitialMetadata</a>
 , <a class="el" href="classgrpc_1_1_server_async_reader.html#a5d05028563e789203225c0ba548710b6">grpc::ServerAsyncReader&lt; W, R &gt;</a>
-, <a class="el" href="classgrpc_1_1_server_async_reader_writer.html#ab40293c8bda8123b5c0e7a0455860533">grpc::ServerAsyncReaderWriter&lt; R, W &gt;</a>
+, <a class="el" href="classgrpc_1_1_server_async_reader_writer.html#a228b8570e133b732fdfb7bbf738ba3c4">grpc::ServerAsyncReaderWriter&lt; W, R &gt;</a>
 , <a class="el" href="classgrpc_1_1_server_async_response_writer.html#a76be68485a36629af40560aa1f1de0b7">grpc::ServerAsyncResponseWriter&lt; W &gt;</a>
 , <a class="el" href="classgrpc_1_1_server_async_streaming_interface.html#ab2d5db2b2ca3032994396543a8bb044c">grpc::ServerAsyncStreamingInterface</a>
 , <a class="el" href="classgrpc_1_1_server_async_writer.html#ad3a6ab6a46639131770efd0149d04455">grpc::ServerAsyncWriter&lt; W &gt;</a>
 , <a class="el" href="classgrpc_1_1_server_reader.html#ad2cc630d207d246a851daa339bda479b">grpc::ServerReader&lt; R &gt;</a>
-, <a class="el" href="classgrpc_1_1_server_reader_writer.html#a91d0c7316a266b7e8f5447a6f3362fe5">grpc::ServerReaderWriter&lt; R, W &gt;</a>
+, <a class="el" href="classgrpc_1_1_server_reader_writer.html#a2fc5a9d1d29fd7a28852d73309e63aa9">grpc::ServerReaderWriter&lt; W, R &gt;</a>
 , <a class="el" href="classgrpc_1_1_server_writer.html#aa53df518d62478d0dbbe6f2f6ec44274">grpc::ServerWriter&lt; W &gt;</a>
 </li>
 <li>SendMessage()
@@ -155,9 +158,16 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </li>
 <li>Server
 : <a class="el" href="classgrpc_1_1_async_generic_service.html#ac2055578ac48afabe5af487878450f68">grpc::AsyncGenericService</a>
-, <a class="el" href="classgrpc_1_1_asynchronous_service.html#ac2055578ac48afabe5af487878450f68">grpc::AsynchronousService</a>
 , <a class="el" href="classgrpc_1_1_generic_server_context.html#ac2055578ac48afabe5af487878450f68">grpc::GenericServerContext</a>
-, <a class="el" href="classgrpc_1_1_server_async_streaming_interface.html#ac2055578ac48afabe5af487878450f68">grpc::ServerAsyncStreamingInterface</a>
+</li>
+<li>server()
+: <a class="el" href="classgrpc_1_1_server_interface.html#a8e9cf80377d3fd1f110089ad16ec79e7">grpc::ServerInterface</a>
+</li>
+<li>Server
+: <a class="el" href="classgrpc_1_1_service.html#ac2055578ac48afabe5af487878450f68">grpc::Service</a>
+</li>
+<li>server_
+: <a class="el" href="classgrpc_1_1_server_interface_1_1_base_async_request.html#aacf318c2080831d73f7f02469fa045dc">grpc::ServerInterface::BaseAsyncRequest</a>
 </li>
 <li>server_context
 : <a class="el" href="structgrpc_1_1_method_handler_1_1_handler_parameter.html#a281166394b3ec1fc0962f3841ef22c3c">grpc::MethodHandler::HandlerParameter</a>
@@ -165,11 +175,14 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <li>SERVER_STREAMING
 : <a class="el" href="classgrpc_1_1_rpc_method.html#ace95416ed07409e43059a0dfe9e23688a86f700048be78a1204139f70912f7775">grpc::RpcMethod</a>
 </li>
+<li>server_tag()
+: <a class="el" href="classgrpc_1_1_rpc_service_method.html#a55a18bd91dd4c800e26ea3a92b5bc64d">grpc::RpcServiceMethod</a>
+</li>
 <li>ServerAsyncReader()
 : <a class="el" href="classgrpc_1_1_server_async_reader.html#a7f351e1d526b250336402ee03b8cc75e">grpc::ServerAsyncReader&lt; W, R &gt;</a>
 </li>
 <li>ServerAsyncReaderWriter()
-: <a class="el" href="classgrpc_1_1_server_async_reader_writer.html#af2b106bee556273e61541950502237ef">grpc::ServerAsyncReaderWriter&lt; R, W &gt;</a>
+: <a class="el" href="classgrpc_1_1_server_async_reader_writer.html#a6471b2baeaad0a1952628c67f948a703">grpc::ServerAsyncReaderWriter&lt; W, R &gt;</a>
 </li>
 <li>ServerAsyncResponseWriter()
 : <a class="el" href="classgrpc_1_1_server_async_response_writer.html#a3c97a19ba6eaa0b9eef9b6b86dbad9e9">grpc::ServerAsyncResponseWriter&lt; W &gt;</a>
@@ -185,11 +198,16 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <li>ServerContext()
 : <a class="el" href="classgrpc_1_1_server_context.html#a10f47e15934195dcaed6b756498b8fff">grpc::ServerContext</a>
 </li>
+<li>ServerInterface
+: <a class="el" href="classgrpc_1_1_generic_server_context.html#ad0907065db479dc47b2fa752d7782b6f">grpc::GenericServerContext</a>
+, <a class="el" href="classgrpc_1_1_server_async_streaming_interface.html#ad0907065db479dc47b2fa752d7782b6f">grpc::ServerAsyncStreamingInterface</a>
+, <a class="el" href="classgrpc_1_1_service.html#ad0907065db479dc47b2fa752d7782b6f">grpc::Service</a>
+</li>
 <li>ServerReader()
 : <a class="el" href="classgrpc_1_1_server_reader.html#a43e6b5258cfc623fa719884fce957521">grpc::ServerReader&lt; R &gt;</a>
 </li>
 <li>ServerReaderWriter()
-: <a class="el" href="classgrpc_1_1_server_reader_writer.html#a8dfe4a7bf682d51c423c2cb2a71e8b52">grpc::ServerReaderWriter&lt; R, W &gt;</a>
+: <a class="el" href="classgrpc_1_1_server_reader_writer.html#a2c342fd7dd134133878700f8f31b36ef">grpc::ServerReaderWriter&lt; W, R &gt;</a>
 </li>
 <li>ServerSendStatus()
 : <a class="el" href="classgrpc_1_1_call_op_server_send_status.html#ac2720fa707f1fe321afdf3a971bebcf7">grpc::CallOpServerSendStatus</a>
@@ -202,8 +220,9 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <li>ServerWriter()
 : <a class="el" href="classgrpc_1_1_server_writer.html#a119c720c14d6835a8bc40a4ed615f0f2">grpc::ServerWriter&lt; W &gt;</a>
 </li>
-<li>service()
-: <a class="el" href="classgrpc_1_1_synchronous_service.html#ad9eb51c9dc0cedfd838c23db47349796">grpc::SynchronousService</a>
+<li>Service
+: <a class="el" href="classgrpc_1_1_server_interface.html#a6474ceb8669761e879329b39c3afb899">grpc::ServerInterface</a>
+, <a class="el" href="classgrpc_1_1_service.html#aacae94e74fed99c259fddd89f94536c8">grpc::Service</a>
 </li>
 <li>set_authority()
 : <a class="el" href="classgrpc_1_1_client_context.html#a43bb17bbd6ab49face3793e8883c5682">grpc::ClientContext</a>
@@ -236,11 +255,17 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <li>set_output_tag()
 : <a class="el" href="classgrpc_1_1_call_op_set.html#a798d253af317730a5b996a4a55d86274">grpc::CallOpSet&lt; Op1, Op2, Op3, Op4, Op5, Op6 &gt;</a>
 </li>
+<li>set_server_tag()
+: <a class="el" href="classgrpc_1_1_rpc_service_method.html#adaac8ae1916d1828fd6792e88e9dc206">grpc::RpcServiceMethod</a>
+</li>
 <li>SetAuthMetadataProcessor()
 : <a class="el" href="classgrpc_1_1_server_credentials.html#a72cd4ae61b6c43024df0ffb3f1d51650">grpc::ServerCredentials</a>
 </li>
 <li>SetChannelArgs()
 : <a class="el" href="classgrpc_1_1_channel_arguments.html#a90ce1857947d36ff894402ad10cb6048">grpc::ChannelArguments</a>
+</li>
+<li>SetCollection()
+: <a class="el" href="classgrpc_1_1_call_op_set_interface.html#a7c0e4962b0ddc592cbc6469442c38268">grpc::CallOpSetInterface</a>
 </li>
 <li>SetCompressionAlgorithm()
 : <a class="el" href="classgrpc_1_1_channel_arguments.html#aaf332071bbdff5e4a7f3352f4ad564d5">grpc::ChannelArguments</a>
@@ -273,24 +298,37 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <li>SetString()
 : <a class="el" href="classgrpc_1_1_channel_arguments.html#a852ac2fe0ac7421fa82927ddda612947">grpc::ChannelArguments</a>
 </li>
+<li>SetUserAgentPrefix()
+: <a class="el" href="classgrpc_1_1_channel_arguments.html#a0d6080324cabd7ba0833b95c77c0c907">grpc::ChannelArguments</a>
+</li>
 <li>Shutdown()
 : <a class="el" href="classgrpc_1_1_completion_queue.html#a40efddadd9073386fbcb4f46e8325670">grpc::CompletionQueue</a>
 </li>
 <li>SHUTDOWN
 : <a class="el" href="classgrpc_1_1_completion_queue.html#a6227657fb2f29291f80cd092f9baf572a5d05c1c970154dad10e5f648890c215b">grpc::CompletionQueue</a>
 </li>
+<li>shutdown()
+: <a class="el" href="classgrpc_1_1_grpc_library_interface.html#a012f005b6db4bf82a691d738ebe59fd7">grpc::GrpcLibraryInterface</a>
+, <a class="el" href="classgrpc_1_1internal_1_1_grpc_library.html#a9f162b5baa880bcd1525266944a2aa0c">grpc::internal::GrpcLibrary</a>
+</li>
 <li>Shutdown()
-: <a class="el" href="classgrpc_1_1_server.html#aeadfd93954df3fdfe1ddcccc4e681f17">grpc::Server</a>
+: <a class="el" href="classgrpc_1_1_server_interface.html#a6a1d337270116c95f387e0abf01f6c6c">grpc::ServerInterface</a>
+</li>
+<li>ShutdownInternal()
+: <a class="el" href="classgrpc_1_1_server_interface.html#a862fd9a2d64e66447d41d0aba40af2f9">grpc::ServerInterface</a>
 </li>
 <li>size()
 : <a class="el" href="classgrpc_1_1_slice.html#aa216fa6d6e98e5e2677b7d33fb4af724">grpc::Slice</a>
 , <a class="el" href="classgrpc_1_1string__ref.html#a8073fdd95b162727457efba52efc2a40">grpc::string_ref</a>
 </li>
 <li>Slice()
-: <a class="el" href="classgrpc_1_1_slice.html#ad952f787620a1fe4c519e53e9e1aa921">grpc::Slice</a>
+: <a class="el" href="classgrpc_1_1_slice.html#a0a6b936d72f7ae35f083d003d3e0c8a3">grpc::Slice</a>
 </li>
 <li>SslServerCredentialsOptions()
 : <a class="el" href="structgrpc_1_1_ssl_server_credentials_options.html#ae85661f17b0dd9f4fc27275203e5f105">grpc::SslServerCredentialsOptions</a>
+</li>
+<li>Start()
+: <a class="el" href="classgrpc_1_1_server_interface.html#aa0bd69382b7e6d35e34190d4faefa039">grpc::ServerInterface</a>
 </li>
 <li>starts_with()
 : <a class="el" href="classgrpc_1_1string__ref.html#a4d4b90bdcb6634690e989daa4234bdd6">grpc::string_ref</a>
@@ -304,11 +342,17 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <li>StealRef
 : <a class="el" href="classgrpc_1_1_slice.html#a13fbbec0e9121a8b948d563f9730d75a">grpc::Slice</a>
 </li>
+<li>stream_
+: <a class="el" href="classgrpc_1_1_server_interface_1_1_base_async_request.html#accd5864295988f21537b0185b9dd148f">grpc::ServerInterface::BaseAsyncRequest</a>
+</li>
 <li>string_ref()
-: <a class="el" href="classgrpc_1_1string__ref.html#a10c3455e679004ab4c61708ce0403601">grpc::string_ref</a>
+: <a class="el" href="classgrpc_1_1string__ref.html#a3b6c90d10321a5636a134be68f2f6f18">grpc::string_ref</a>
 </li>
 <li>substr()
 : <a class="el" href="classgrpc_1_1string__ref.html#a09ee02dfcf385769503beae677266a57">grpc::string_ref</a>
+</li>
+<li>summon()
+: <a class="el" href="classgrpc_1_1internal_1_1_grpc_library_initializer.html#afdf0f7de75fd586c503d21387957e3be">grpc::internal::GrpcLibraryInitializer</a>
 </li>
 <li>Swap()
 : <a class="el" href="classgrpc_1_1_channel_arguments.html#a3ff4f22c2cf31c01885b2aaefbdd227d">grpc::ChannelArguments</a>
@@ -317,7 +361,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Jan 15 2016 00:21:23 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Mar 8 2016 15:59:03 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">0.12.0.0</span>
+   &#160;<span id="projectnumber">0.13.1-pre1</span>
    </div>
   </td>
  </tr>
@@ -80,7 +80,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><a class="el" href="dir_d44c64559bbebec7f509842c48db8b23.html">include</a></li><li class="navelem"><a class="el" href="dir_9d7a14d6d9adcbe4c35dbdb88d867e2e.html">grpc</a></li><li class="navelem"><a class="el" href="dir_cad3142e04109052413f2d2a2d1813b0.html">support</a></li>  </ul>
+<li class="navelem"><a class="el" href="dir_46bdc5f5041a35984eb5db24b2392107.html">include</a></li><li class="navelem"><a class="el" href="dir_a0198a417c8cbac4868821a6e2669c2e.html">grpc</a></li><li class="navelem"><a class="el" href="dir_90ccf1281bf3a02b4003b436b02b7d1d.html">support</a></li>  </ul>
 </div>
 </div><!-- top -->
 <div class="header">
@@ -92,7 +92,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="title">thd.h File Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><code>#include &lt;<a class="el" href="port__platform_8h_source.html">grpc/support/port_platform.h</a>&gt;</code><br/>
+<div class="textblock"><code>#include &lt;<a class="el" href="support_2port__platform_8h_source.html">grpc/support/port_platform.h</a>&gt;</code><br/>
 </div>
 <p><a href="thd_8h_source.html">Go to the source code of this file.</a></p>
 <table class="memberdecls">
@@ -103,35 +103,35 @@ Data Structures</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="typedef-members"></a>
 Typedefs</h2></td></tr>
-<tr class="memitem:a04194350e2fb18edc439ab0a9d355a72"><td class="memItemLeft" align="right" valign="top">typedef <a class="el" href="port__platform_8h.html#a737bb95b7b58d90b4215602d36ed65b6">gpr_uint64</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="thd_8h.html#a04194350e2fb18edc439ab0a9d355a72">gpr_thd_id</a></td></tr>
-<tr class="separator:a04194350e2fb18edc439ab0a9d355a72"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a568f2dcd15b98e9e93063eb04ad36a90"><td class="memItemLeft" align="right" valign="top">typedef uintptr_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="thd_8h.html#a568f2dcd15b98e9e93063eb04ad36a90">gpr_thd_id</a></td></tr>
+<tr class="separator:a568f2dcd15b98e9e93063eb04ad36a90"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions</h2></td></tr>
-<tr class="memitem:a9184cf0e025d8a9b098af6c08755b8ea"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="thd_8h.html#a9184cf0e025d8a9b098af6c08755b8ea">gpr_thd_new</a> (<a class="el" href="thd_8h.html#a04194350e2fb18edc439ab0a9d355a72">gpr_thd_id</a> *t, void(*thd_body)(void *arg), void *arg, const <a class="el" href="structgpr__thd__options.html">gpr_thd_options</a> *options)</td></tr>
-<tr class="separator:a9184cf0e025d8a9b098af6c08755b8ea"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:abf8bb34ba7d26ddab0696e24b1fcc862"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgpr__thd__options.html">gpr_thd_options</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="thd_8h.html#abf8bb34ba7d26ddab0696e24b1fcc862">gpr_thd_options_default</a> (void)</td></tr>
-<tr class="separator:abf8bb34ba7d26ddab0696e24b1fcc862"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a704882e5c65d29c817fae9173085e5ba"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="thd_8h.html#a704882e5c65d29c817fae9173085e5ba">gpr_thd_options_set_detached</a> (<a class="el" href="structgpr__thd__options.html">gpr_thd_options</a> *options)</td></tr>
-<tr class="separator:a704882e5c65d29c817fae9173085e5ba"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a87ad3ff4d439450ae1318151c1526745"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="thd_8h.html#a87ad3ff4d439450ae1318151c1526745">gpr_thd_options_set_joinable</a> (<a class="el" href="structgpr__thd__options.html">gpr_thd_options</a> *options)</td></tr>
-<tr class="separator:a87ad3ff4d439450ae1318151c1526745"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1647c2e991d269cdaf146dc33f61ce89"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="thd_8h.html#a1647c2e991d269cdaf146dc33f61ce89">gpr_thd_options_is_detached</a> (const <a class="el" href="structgpr__thd__options.html">gpr_thd_options</a> *options)</td></tr>
-<tr class="separator:a1647c2e991d269cdaf146dc33f61ce89"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:afb8d6ad4dcc8ebcdb6a786e8f4ef442b"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="thd_8h.html#afb8d6ad4dcc8ebcdb6a786e8f4ef442b">gpr_thd_options_is_joinable</a> (const <a class="el" href="structgpr__thd__options.html">gpr_thd_options</a> *options)</td></tr>
-<tr class="separator:afb8d6ad4dcc8ebcdb6a786e8f4ef442b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a8c875ae5410d10d658cfb7b917909624"><td class="memItemLeft" align="right" valign="top"><a class="el" href="thd_8h.html#a04194350e2fb18edc439ab0a9d355a72">gpr_thd_id</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="thd_8h.html#a8c875ae5410d10d658cfb7b917909624">gpr_thd_currentid</a> (void)</td></tr>
-<tr class="separator:a8c875ae5410d10d658cfb7b917909624"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a73509f851051b4d5f02ca1982d216776"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="thd_8h.html#a73509f851051b4d5f02ca1982d216776">gpr_thd_join</a> (<a class="el" href="thd_8h.html#a04194350e2fb18edc439ab0a9d355a72">gpr_thd_id</a> t)</td></tr>
-<tr class="separator:a73509f851051b4d5f02ca1982d216776"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1512fb59795f3c7acf6f1d25dd188a86"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="thd_8h.html#a1512fb59795f3c7acf6f1d25dd188a86">gpr_thd_new</a> (<a class="el" href="thd_8h.html#a568f2dcd15b98e9e93063eb04ad36a90">gpr_thd_id</a> *t, void(*thd_body)(void *arg), void *arg, const <a class="el" href="structgpr__thd__options.html">gpr_thd_options</a> *options)</td></tr>
+<tr class="separator:a1512fb59795f3c7acf6f1d25dd188a86"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae568dd50aa735eb5b5bc9cd7f0a511b2"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> <a class="el" href="structgpr__thd__options.html">gpr_thd_options</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="thd_8h.html#ae568dd50aa735eb5b5bc9cd7f0a511b2">gpr_thd_options_default</a> (void)</td></tr>
+<tr class="separator:ae568dd50aa735eb5b5bc9cd7f0a511b2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a378bba9e91aea353a95cdf22bfca0e8f"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="thd_8h.html#a378bba9e91aea353a95cdf22bfca0e8f">gpr_thd_options_set_detached</a> (<a class="el" href="structgpr__thd__options.html">gpr_thd_options</a> *options)</td></tr>
+<tr class="separator:a378bba9e91aea353a95cdf22bfca0e8f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2e7d20212eaad5c06a0cbd554eec01e9"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="thd_8h.html#a2e7d20212eaad5c06a0cbd554eec01e9">gpr_thd_options_set_joinable</a> (<a class="el" href="structgpr__thd__options.html">gpr_thd_options</a> *options)</td></tr>
+<tr class="separator:a2e7d20212eaad5c06a0cbd554eec01e9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9733626e12522fd2f04095a2d4c61cf5"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="thd_8h.html#a9733626e12522fd2f04095a2d4c61cf5">gpr_thd_options_is_detached</a> (const <a class="el" href="structgpr__thd__options.html">gpr_thd_options</a> *options)</td></tr>
+<tr class="separator:a9733626e12522fd2f04095a2d4c61cf5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a77574a5c01a28e81b8bdc0d2b9ffb6df"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="thd_8h.html#a77574a5c01a28e81b8bdc0d2b9ffb6df">gpr_thd_options_is_joinable</a> (const <a class="el" href="structgpr__thd__options.html">gpr_thd_options</a> *options)</td></tr>
+<tr class="separator:a77574a5c01a28e81b8bdc0d2b9ffb6df"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a31f4f0f3d23991877b30e44a966d3306"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> <a class="el" href="thd_8h.html#a568f2dcd15b98e9e93063eb04ad36a90">gpr_thd_id</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="thd_8h.html#a31f4f0f3d23991877b30e44a966d3306">gpr_thd_currentid</a> (void)</td></tr>
+<tr class="separator:a31f4f0f3d23991877b30e44a966d3306"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4735072c325ed1c09d1ca41033cdb362"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="thd_8h.html#a4735072c325ed1c09d1ca41033cdb362">gpr_thd_join</a> (<a class="el" href="thd_8h.html#a568f2dcd15b98e9e93063eb04ad36a90">gpr_thd_id</a> t)</td></tr>
+<tr class="separator:a4735072c325ed1c09d1ca41033cdb362"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Typedef Documentation</h2>
-<a class="anchor" id="a04194350e2fb18edc439ab0a9d355a72"></a>
+<a class="anchor" id="a568f2dcd15b98e9e93063eb04ad36a90"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">typedef <a class="el" href="port__platform_8h.html#a737bb95b7b58d90b4215602d36ed65b6">gpr_uint64</a> <a class="el" href="thd_8h.html#a04194350e2fb18edc439ab0a9d355a72">gpr_thd_id</a></td>
+          <td class="memname">typedef uintptr_t <a class="el" href="thd_8h.html#a568f2dcd15b98e9e93063eb04ad36a90">gpr_thd_id</a></td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -139,12 +139,12 @@ Functions</h2></td></tr>
 </div>
 </div>
 <h2 class="groupheader">Function Documentation</h2>
-<a class="anchor" id="a8c875ae5410d10d658cfb7b917909624"></a>
+<a class="anchor" id="a31f4f0f3d23991877b30e44a966d3306"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="thd_8h.html#a04194350e2fb18edc439ab0a9d355a72">gpr_thd_id</a> gpr_thd_currentid </td>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> <a class="el" href="thd_8h.html#a568f2dcd15b98e9e93063eb04ad36a90">gpr_thd_id</a> gpr_thd_currentid </td>
           <td>(</td>
           <td class="paramtype">void&#160;</td>
           <td class="paramname"></td><td>)</td>
@@ -155,14 +155,14 @@ Functions</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="a73509f851051b4d5f02ca1982d216776"></a>
+<a class="anchor" id="a4735072c325ed1c09d1ca41033cdb362"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">void gpr_thd_join </td>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void gpr_thd_join </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="thd_8h.html#a04194350e2fb18edc439ab0a9d355a72">gpr_thd_id</a>&#160;</td>
+          <td class="paramtype"><a class="el" href="thd_8h.html#a568f2dcd15b98e9e93063eb04ad36a90">gpr_thd_id</a>&#160;</td>
           <td class="paramname"><em>t</em></td><td>)</td>
           <td></td>
         </tr>
@@ -171,14 +171,14 @@ Functions</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="a9184cf0e025d8a9b098af6c08755b8ea"></a>
+<a class="anchor" id="a1512fb59795f3c7acf6f1d25dd188a86"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">int gpr_thd_new </td>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> int gpr_thd_new </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="thd_8h.html#a04194350e2fb18edc439ab0a9d355a72">gpr_thd_id</a> *&#160;</td>
+          <td class="paramtype"><a class="el" href="thd_8h.html#a568f2dcd15b98e9e93063eb04ad36a90">gpr_thd_id</a> *&#160;</td>
           <td class="paramname"><em>t</em>, </td>
         </tr>
         <tr>
@@ -209,12 +209,12 @@ Functions</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="abf8bb34ba7d26ddab0696e24b1fcc862"></a>
+<a class="anchor" id="ae568dd50aa735eb5b5bc9cd7f0a511b2"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="structgpr__thd__options.html">gpr_thd_options</a> gpr_thd_options_default </td>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> <a class="el" href="structgpr__thd__options.html">gpr_thd_options</a> gpr_thd_options_default </td>
           <td>(</td>
           <td class="paramtype">void&#160;</td>
           <td class="paramname"></td><td>)</td>
@@ -225,12 +225,12 @@ Functions</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="a1647c2e991d269cdaf146dc33f61ce89"></a>
+<a class="anchor" id="a9733626e12522fd2f04095a2d4c61cf5"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">int gpr_thd_options_is_detached </td>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> int gpr_thd_options_is_detached </td>
           <td>(</td>
           <td class="paramtype">const <a class="el" href="structgpr__thd__options.html">gpr_thd_options</a> *&#160;</td>
           <td class="paramname"><em>options</em></td><td>)</td>
@@ -241,12 +241,12 @@ Functions</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="afb8d6ad4dcc8ebcdb6a786e8f4ef442b"></a>
+<a class="anchor" id="a77574a5c01a28e81b8bdc0d2b9ffb6df"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">int gpr_thd_options_is_joinable </td>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> int gpr_thd_options_is_joinable </td>
           <td>(</td>
           <td class="paramtype">const <a class="el" href="structgpr__thd__options.html">gpr_thd_options</a> *&#160;</td>
           <td class="paramname"><em>options</em></td><td>)</td>
@@ -257,12 +257,12 @@ Functions</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="a704882e5c65d29c817fae9173085e5ba"></a>
+<a class="anchor" id="a378bba9e91aea353a95cdf22bfca0e8f"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">void gpr_thd_options_set_detached </td>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void gpr_thd_options_set_detached </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="structgpr__thd__options.html">gpr_thd_options</a> *&#160;</td>
           <td class="paramname"><em>options</em></td><td>)</td>
@@ -273,12 +273,12 @@ Functions</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="a87ad3ff4d439450ae1318151c1526745"></a>
+<a class="anchor" id="a2e7d20212eaad5c06a0cbd554eec01e9"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">void gpr_thd_options_set_joinable </td>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void gpr_thd_options_set_joinable </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="structgpr__thd__options.html">gpr_thd_options</a> *&#160;</td>
           <td class="paramname"><em>options</em></td><td>)</td>
@@ -292,7 +292,7 @@ Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Jan 15 2016 00:21:22 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Mar 8 2016 15:59:02 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

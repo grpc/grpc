@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">0.12.0.0</span>
+   &#160;<span id="projectnumber">0.13.1-pre1</span>
    </div>
   </td>
  </tr>
@@ -96,7 +96,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!--header-->
 <div class="contents">
 
-<p>A wrapper around <em>grpc_slice</em>.  
+<p>A wrapper around <em>gpr_slice</em>.  
  <a href="classgrpc_1_1_slice.html#details">More...</a></p>
 
 <p><code>#include &lt;<a class="el" href="slice_8h_source.html">slice.h</a>&gt;</code></p>
@@ -132,12 +132,12 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:aa216fa6d6e98e5e2677b7d33fb4af724"><td class="memItemLeft" align="right" valign="top">size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_slice.html#aa216fa6d6e98e5e2677b7d33fb4af724">size</a> () const </td></tr>
 <tr class="memdesc:aa216fa6d6e98e5e2677b7d33fb4af724"><td class="mdescLeft">&#160;</td><td class="mdescRight">Byte size.  <a href="#aa216fa6d6e98e5e2677b7d33fb4af724">More...</a><br/></td></tr>
 <tr class="separator:aa216fa6d6e98e5e2677b7d33fb4af724"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad7b0a21bd37c2ed9899c369777cc9fb8"><td class="memItemLeft" align="right" valign="top">const gpr_uint8 *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_slice.html#ad7b0a21bd37c2ed9899c369777cc9fb8">begin</a> () const </td></tr>
-<tr class="memdesc:ad7b0a21bd37c2ed9899c369777cc9fb8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Raw pointer to the beginning (first element) of the slice.  <a href="#ad7b0a21bd37c2ed9899c369777cc9fb8">More...</a><br/></td></tr>
-<tr class="separator:ad7b0a21bd37c2ed9899c369777cc9fb8"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a15f9576be1afa1048ed8963d50581b60"><td class="memItemLeft" align="right" valign="top">const gpr_uint8 *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_slice.html#a15f9576be1afa1048ed8963d50581b60">end</a> () const </td></tr>
-<tr class="memdesc:a15f9576be1afa1048ed8963d50581b60"><td class="mdescLeft">&#160;</td><td class="mdescRight">Raw pointer to the end (one byte <em>past</em> the last element) of the slice.  <a href="#a15f9576be1afa1048ed8963d50581b60">More...</a><br/></td></tr>
-<tr class="separator:a15f9576be1afa1048ed8963d50581b60"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af5dff4917f91b67d7fc18ddc789cc893"><td class="memItemLeft" align="right" valign="top">const uint8_t *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_slice.html#af5dff4917f91b67d7fc18ddc789cc893">begin</a> () const </td></tr>
+<tr class="memdesc:af5dff4917f91b67d7fc18ddc789cc893"><td class="mdescLeft">&#160;</td><td class="mdescRight">Raw pointer to the beginning (first element) of the slice.  <a href="#af5dff4917f91b67d7fc18ddc789cc893">More...</a><br/></td></tr>
+<tr class="separator:af5dff4917f91b67d7fc18ddc789cc893"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a61a8cc0f3ccffcd6ab53dd660bdbaa79"><td class="memItemLeft" align="right" valign="top">const uint8_t *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_slice.html#a61a8cc0f3ccffcd6ab53dd660bdbaa79">end</a> () const </td></tr>
+<tr class="memdesc:a61a8cc0f3ccffcd6ab53dd660bdbaa79"><td class="mdescLeft">&#160;</td><td class="mdescRight">Raw pointer to the end (one byte <em>past</em> the last element) of the slice.  <a href="#a61a8cc0f3ccffcd6ab53dd660bdbaa79">More...</a><br/></td></tr>
+<tr class="separator:a61a8cc0f3ccffcd6ab53dd660bdbaa79"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="friends"></a>
 Friends</h2></td></tr>
@@ -145,7 +145,7 @@ Friends</h2></td></tr>
 <tr class="separator:ac6c83f28f4b17ae317094a794e92e99e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock"><p>A wrapper around <em>grpc_slice</em>. </p>
+<div class="textblock"><p>A wrapper around <em>gpr_slice</em>. </p>
 <p>A slice represents a contiguous reference counted array of bytes. It is cheap to take references to a slice, and it is cheap to create a slice pointing to a subset of another slice. </p>
 </div><h2 class="groupheader">Member Enumeration Documentation</h2>
 <a class="anchor" id="ac1e8469bbb6dfa9ab9e646e0b48f5fe2"></a>
@@ -288,7 +288,7 @@ Friends</h2></td></tr>
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a class="anchor" id="ad7b0a21bd37c2ed9899c369777cc9fb8"></a>
+<a class="anchor" id="af5dff4917f91b67d7fc18ddc789cc893"></a>
 <div class="memitem">
 <div class="memproto">
 <table class="mlabels">
@@ -296,7 +296,7 @@ Friends</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">const gpr_uint8* grpc::Slice::begin </td>
+          <td class="memname">const uint8_t* grpc::Slice::begin </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td> const</td>
@@ -313,7 +313,7 @@ Friends</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="a15f9576be1afa1048ed8963d50581b60"></a>
+<a class="anchor" id="a61a8cc0f3ccffcd6ab53dd660bdbaa79"></a>
 <div class="memitem">
 <div class="memproto">
 <table class="mlabels">
@@ -321,7 +321,7 @@ Friends</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">const gpr_uint8* grpc::Slice::end </td>
+          <td class="memname">const uint8_t* grpc::Slice::end </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td> const</td>
@@ -416,7 +416,7 @@ Friends</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Jan 15 2016 00:21:23 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Mar 8 2016 15:59:03 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">0.12.0.0</span>
+   &#160;<span id="projectnumber">0.13.1-pre1</span>
    </div>
   </td>
  </tr>
@@ -80,7 +80,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><a class="el" href="dir_d44c64559bbebec7f509842c48db8b23.html">include</a></li><li class="navelem"><a class="el" href="dir_9d7a14d6d9adcbe4c35dbdb88d867e2e.html">grpc</a></li><li class="navelem"><a class="el" href="dir_cad3142e04109052413f2d2a2d1813b0.html">support</a></li>  </ul>
+<li class="navelem"><a class="el" href="dir_46bdc5f5041a35984eb5db24b2392107.html">include</a></li><li class="navelem"><a class="el" href="dir_a0198a417c8cbac4868821a6e2669c2e.html">grpc</a></li><li class="navelem"><a class="el" href="dir_90ccf1281bf3a02b4003b436b02b7d1d.html">support</a></li>  </ul>
 </div>
 </div><!-- top -->
 <div class="header">
@@ -91,7 +91,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="title">histogram.h File Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><code>#include &lt;<a class="el" href="port__platform_8h_source.html">grpc/support/port_platform.h</a>&gt;</code><br/>
+<div class="textblock"><code>#include &lt;<a class="el" href="support_2port__platform_8h_source.html">grpc/support/port_platform.h</a>&gt;</code><br/>
 <code>#include &lt;stddef.h&gt;</code><br/>
 </div>
 <p><a href="histogram_8h_source.html">Go to the source code of this file.</a></p>
@@ -103,36 +103,36 @@ Typedefs</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions</h2></td></tr>
-<tr class="memitem:a5da9d3dac4262c5ae1e974a649edbd5c"><td class="memItemLeft" align="right" valign="top"><a class="el" href="histogram_8h.html#a7125b0cef0e61a441a17f887dbc073fc">gpr_histogram</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="histogram_8h.html#a5da9d3dac4262c5ae1e974a649edbd5c">gpr_histogram_create</a> (double resolution, double max_bucket_start)</td></tr>
-<tr class="separator:a5da9d3dac4262c5ae1e974a649edbd5c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7411a760aa075c1c27eeb9249d951c6c"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="histogram_8h.html#a7411a760aa075c1c27eeb9249d951c6c">gpr_histogram_destroy</a> (<a class="el" href="histogram_8h.html#a7125b0cef0e61a441a17f887dbc073fc">gpr_histogram</a> *h)</td></tr>
-<tr class="separator:a7411a760aa075c1c27eeb9249d951c6c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a63815a52b0236626a30480915ff51847"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="histogram_8h.html#a63815a52b0236626a30480915ff51847">gpr_histogram_add</a> (<a class="el" href="histogram_8h.html#a7125b0cef0e61a441a17f887dbc073fc">gpr_histogram</a> *h, double x)</td></tr>
-<tr class="separator:a63815a52b0236626a30480915ff51847"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2fc0bc3b68b1d5d83d4fa8adbd058c65"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="histogram_8h.html#a2fc0bc3b68b1d5d83d4fa8adbd058c65">gpr_histogram_merge</a> (<a class="el" href="histogram_8h.html#a7125b0cef0e61a441a17f887dbc073fc">gpr_histogram</a> *dst, const <a class="el" href="histogram_8h.html#a7125b0cef0e61a441a17f887dbc073fc">gpr_histogram</a> *src)</td></tr>
-<tr class="separator:a2fc0bc3b68b1d5d83d4fa8adbd058c65"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1a0a1b854c2af4d29175872fe5bb4431"><td class="memItemLeft" align="right" valign="top">double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="histogram_8h.html#a1a0a1b854c2af4d29175872fe5bb4431">gpr_histogram_percentile</a> (<a class="el" href="histogram_8h.html#a7125b0cef0e61a441a17f887dbc073fc">gpr_histogram</a> *histogram, double percentile)</td></tr>
-<tr class="separator:a1a0a1b854c2af4d29175872fe5bb4431"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a14d68ff71978bda93a07d019d993d83c"><td class="memItemLeft" align="right" valign="top">double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="histogram_8h.html#a14d68ff71978bda93a07d019d993d83c">gpr_histogram_mean</a> (<a class="el" href="histogram_8h.html#a7125b0cef0e61a441a17f887dbc073fc">gpr_histogram</a> *histogram)</td></tr>
-<tr class="separator:a14d68ff71978bda93a07d019d993d83c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a0979c6470e9192e5f83bcab01542dd91"><td class="memItemLeft" align="right" valign="top">double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="histogram_8h.html#a0979c6470e9192e5f83bcab01542dd91">gpr_histogram_stddev</a> (<a class="el" href="histogram_8h.html#a7125b0cef0e61a441a17f887dbc073fc">gpr_histogram</a> *histogram)</td></tr>
-<tr class="separator:a0979c6470e9192e5f83bcab01542dd91"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4ef00ceaa619ca09da4de17fc5a5769b"><td class="memItemLeft" align="right" valign="top">double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="histogram_8h.html#a4ef00ceaa619ca09da4de17fc5a5769b">gpr_histogram_variance</a> (<a class="el" href="histogram_8h.html#a7125b0cef0e61a441a17f887dbc073fc">gpr_histogram</a> *histogram)</td></tr>
-<tr class="separator:a4ef00ceaa619ca09da4de17fc5a5769b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a71e5aa88087c8595c7f5d01750f919cb"><td class="memItemLeft" align="right" valign="top">double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="histogram_8h.html#a71e5aa88087c8595c7f5d01750f919cb">gpr_histogram_maximum</a> (<a class="el" href="histogram_8h.html#a7125b0cef0e61a441a17f887dbc073fc">gpr_histogram</a> *histogram)</td></tr>
-<tr class="separator:a71e5aa88087c8595c7f5d01750f919cb"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab89af54f76a690d82d1f065ceeda6a76"><td class="memItemLeft" align="right" valign="top">double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="histogram_8h.html#ab89af54f76a690d82d1f065ceeda6a76">gpr_histogram_minimum</a> (<a class="el" href="histogram_8h.html#a7125b0cef0e61a441a17f887dbc073fc">gpr_histogram</a> *histogram)</td></tr>
-<tr class="separator:ab89af54f76a690d82d1f065ceeda6a76"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a242b0541ee25271812d867d8f2734255"><td class="memItemLeft" align="right" valign="top">double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="histogram_8h.html#a242b0541ee25271812d867d8f2734255">gpr_histogram_count</a> (<a class="el" href="histogram_8h.html#a7125b0cef0e61a441a17f887dbc073fc">gpr_histogram</a> *histogram)</td></tr>
-<tr class="separator:a242b0541ee25271812d867d8f2734255"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a0332c47f841d8b0607e3327d8bc9a933"><td class="memItemLeft" align="right" valign="top">double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="histogram_8h.html#a0332c47f841d8b0607e3327d8bc9a933">gpr_histogram_sum</a> (<a class="el" href="histogram_8h.html#a7125b0cef0e61a441a17f887dbc073fc">gpr_histogram</a> *histogram)</td></tr>
-<tr class="separator:a0332c47f841d8b0607e3327d8bc9a933"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5788652eb5350afcc534f563fd0265d3"><td class="memItemLeft" align="right" valign="top">double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="histogram_8h.html#a5788652eb5350afcc534f563fd0265d3">gpr_histogram_sum_of_squares</a> (<a class="el" href="histogram_8h.html#a7125b0cef0e61a441a17f887dbc073fc">gpr_histogram</a> *histogram)</td></tr>
-<tr class="separator:a5788652eb5350afcc534f563fd0265d3"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa7807dc3f06172d1513498761c3ad8c4"><td class="memItemLeft" align="right" valign="top">const <a class="el" href="port__platform_8h.html#aa6abd4df815a5498d1a04b5e691a74a9">gpr_uint32</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="histogram_8h.html#aa7807dc3f06172d1513498761c3ad8c4">gpr_histogram_get_contents</a> (<a class="el" href="histogram_8h.html#a7125b0cef0e61a441a17f887dbc073fc">gpr_histogram</a> *histogram, size_t *count)</td></tr>
-<tr class="separator:aa7807dc3f06172d1513498761c3ad8c4"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa1acf09b75809398b4e45729e6a3ba30"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="histogram_8h.html#aa1acf09b75809398b4e45729e6a3ba30">gpr_histogram_merge_contents</a> (<a class="el" href="histogram_8h.html#a7125b0cef0e61a441a17f887dbc073fc">gpr_histogram</a> *histogram, const <a class="el" href="port__platform_8h.html#aa6abd4df815a5498d1a04b5e691a74a9">gpr_uint32</a> *data, size_t data_count, double min_seen, double max_seen, double sum, double sum_of_squares, double count)</td></tr>
-<tr class="separator:aa1acf09b75809398b4e45729e6a3ba30"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac75fa96472e23bfddd0405d8bef13b6c"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> <a class="el" href="histogram_8h.html#a7125b0cef0e61a441a17f887dbc073fc">gpr_histogram</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="histogram_8h.html#ac75fa96472e23bfddd0405d8bef13b6c">gpr_histogram_create</a> (double resolution, double max_bucket_start)</td></tr>
+<tr class="separator:ac75fa96472e23bfddd0405d8bef13b6c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8bced3cdf59ba9c9c6da6c13be8afd77"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="histogram_8h.html#a8bced3cdf59ba9c9c6da6c13be8afd77">gpr_histogram_destroy</a> (<a class="el" href="histogram_8h.html#a7125b0cef0e61a441a17f887dbc073fc">gpr_histogram</a> *h)</td></tr>
+<tr class="separator:a8bced3cdf59ba9c9c6da6c13be8afd77"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1fdd2db0df7d78e170d5d2c3878bd7e3"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="histogram_8h.html#a1fdd2db0df7d78e170d5d2c3878bd7e3">gpr_histogram_add</a> (<a class="el" href="histogram_8h.html#a7125b0cef0e61a441a17f887dbc073fc">gpr_histogram</a> *h, double x)</td></tr>
+<tr class="separator:a1fdd2db0df7d78e170d5d2c3878bd7e3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a199efc11a0cef2daaf27d2869cd07cce"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="histogram_8h.html#a199efc11a0cef2daaf27d2869cd07cce">gpr_histogram_merge</a> (<a class="el" href="histogram_8h.html#a7125b0cef0e61a441a17f887dbc073fc">gpr_histogram</a> *dst, const <a class="el" href="histogram_8h.html#a7125b0cef0e61a441a17f887dbc073fc">gpr_histogram</a> *src)</td></tr>
+<tr class="separator:a199efc11a0cef2daaf27d2869cd07cce"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acb1c9b30e0473ad37a4e0899d9bb058d"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="histogram_8h.html#acb1c9b30e0473ad37a4e0899d9bb058d">gpr_histogram_percentile</a> (<a class="el" href="histogram_8h.html#a7125b0cef0e61a441a17f887dbc073fc">gpr_histogram</a> *histogram, double percentile)</td></tr>
+<tr class="separator:acb1c9b30e0473ad37a4e0899d9bb058d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abc9e00d4f5410abaadc2a98dc95d178d"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="histogram_8h.html#abc9e00d4f5410abaadc2a98dc95d178d">gpr_histogram_mean</a> (<a class="el" href="histogram_8h.html#a7125b0cef0e61a441a17f887dbc073fc">gpr_histogram</a> *histogram)</td></tr>
+<tr class="separator:abc9e00d4f5410abaadc2a98dc95d178d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af8710eaa83e60a3210834a144af90158"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="histogram_8h.html#af8710eaa83e60a3210834a144af90158">gpr_histogram_stddev</a> (<a class="el" href="histogram_8h.html#a7125b0cef0e61a441a17f887dbc073fc">gpr_histogram</a> *histogram)</td></tr>
+<tr class="separator:af8710eaa83e60a3210834a144af90158"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aff7334c462f915cb7bba90cb735a3bf5"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="histogram_8h.html#aff7334c462f915cb7bba90cb735a3bf5">gpr_histogram_variance</a> (<a class="el" href="histogram_8h.html#a7125b0cef0e61a441a17f887dbc073fc">gpr_histogram</a> *histogram)</td></tr>
+<tr class="separator:aff7334c462f915cb7bba90cb735a3bf5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a205494285effe5a2a9dfbff208fd426f"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="histogram_8h.html#a205494285effe5a2a9dfbff208fd426f">gpr_histogram_maximum</a> (<a class="el" href="histogram_8h.html#a7125b0cef0e61a441a17f887dbc073fc">gpr_histogram</a> *histogram)</td></tr>
+<tr class="separator:a205494285effe5a2a9dfbff208fd426f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a91ccdae54fa075df03fc12fca721ec34"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="histogram_8h.html#a91ccdae54fa075df03fc12fca721ec34">gpr_histogram_minimum</a> (<a class="el" href="histogram_8h.html#a7125b0cef0e61a441a17f887dbc073fc">gpr_histogram</a> *histogram)</td></tr>
+<tr class="separator:a91ccdae54fa075df03fc12fca721ec34"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad50537b777606a64d612c4345c94c5cd"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="histogram_8h.html#ad50537b777606a64d612c4345c94c5cd">gpr_histogram_count</a> (<a class="el" href="histogram_8h.html#a7125b0cef0e61a441a17f887dbc073fc">gpr_histogram</a> *histogram)</td></tr>
+<tr class="separator:ad50537b777606a64d612c4345c94c5cd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a72e9910135fb7e3c89a4a4c753dfd9df"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="histogram_8h.html#a72e9910135fb7e3c89a4a4c753dfd9df">gpr_histogram_sum</a> (<a class="el" href="histogram_8h.html#a7125b0cef0e61a441a17f887dbc073fc">gpr_histogram</a> *histogram)</td></tr>
+<tr class="separator:a72e9910135fb7e3c89a4a4c753dfd9df"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8ac634323fb67a8c0122ad675e925784"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="histogram_8h.html#a8ac634323fb67a8c0122ad675e925784">gpr_histogram_sum_of_squares</a> (<a class="el" href="histogram_8h.html#a7125b0cef0e61a441a17f887dbc073fc">gpr_histogram</a> *histogram)</td></tr>
+<tr class="separator:a8ac634323fb67a8c0122ad675e925784"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab4234b040a3fc306166aa1a340a49988"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> const uint32_t *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="histogram_8h.html#ab4234b040a3fc306166aa1a340a49988">gpr_histogram_get_contents</a> (<a class="el" href="histogram_8h.html#a7125b0cef0e61a441a17f887dbc073fc">gpr_histogram</a> *histogram, size_t *count)</td></tr>
+<tr class="separator:ab4234b040a3fc306166aa1a340a49988"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3b28613ce094fefa707dec5b9a599e79"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="histogram_8h.html#a3b28613ce094fefa707dec5b9a599e79">gpr_histogram_merge_contents</a> (<a class="el" href="histogram_8h.html#a7125b0cef0e61a441a17f887dbc073fc">gpr_histogram</a> *histogram, const uint32_t *data, size_t data_count, double min_seen, double max_seen, double sum, double sum_of_squares, double count)</td></tr>
+<tr class="separator:a3b28613ce094fefa707dec5b9a599e79"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Typedef Documentation</h2>
 <a class="anchor" id="a7125b0cef0e61a441a17f887dbc073fc"></a>
@@ -148,12 +148,12 @@ Functions</h2></td></tr>
 </div>
 </div>
 <h2 class="groupheader">Function Documentation</h2>
-<a class="anchor" id="a63815a52b0236626a30480915ff51847"></a>
+<a class="anchor" id="a1fdd2db0df7d78e170d5d2c3878bd7e3"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">void gpr_histogram_add </td>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void gpr_histogram_add </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="histogram_8h.html#a7125b0cef0e61a441a17f887dbc073fc">gpr_histogram</a> *&#160;</td>
           <td class="paramname"><em>h</em>, </td>
@@ -174,12 +174,12 @@ Functions</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="a242b0541ee25271812d867d8f2734255"></a>
+<a class="anchor" id="ad50537b777606a64d612c4345c94c5cd"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">double gpr_histogram_count </td>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> double gpr_histogram_count </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="histogram_8h.html#a7125b0cef0e61a441a17f887dbc073fc">gpr_histogram</a> *&#160;</td>
           <td class="paramname"><em>histogram</em></td><td>)</td>
@@ -190,12 +190,12 @@ Functions</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="a5da9d3dac4262c5ae1e974a649edbd5c"></a>
+<a class="anchor" id="ac75fa96472e23bfddd0405d8bef13b6c"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="histogram_8h.html#a7125b0cef0e61a441a17f887dbc073fc">gpr_histogram</a>* gpr_histogram_create </td>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> <a class="el" href="histogram_8h.html#a7125b0cef0e61a441a17f887dbc073fc">gpr_histogram</a>* gpr_histogram_create </td>
           <td>(</td>
           <td class="paramtype">double&#160;</td>
           <td class="paramname"><em>resolution</em>, </td>
@@ -216,12 +216,12 @@ Functions</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="a7411a760aa075c1c27eeb9249d951c6c"></a>
+<a class="anchor" id="a8bced3cdf59ba9c9c6da6c13be8afd77"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">void gpr_histogram_destroy </td>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void gpr_histogram_destroy </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="histogram_8h.html#a7125b0cef0e61a441a17f887dbc073fc">gpr_histogram</a> *&#160;</td>
           <td class="paramname"><em>h</em></td><td>)</td>
@@ -232,12 +232,12 @@ Functions</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="aa7807dc3f06172d1513498761c3ad8c4"></a>
+<a class="anchor" id="ab4234b040a3fc306166aa1a340a49988"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">const <a class="el" href="port__platform_8h.html#aa6abd4df815a5498d1a04b5e691a74a9">gpr_uint32</a>* gpr_histogram_get_contents </td>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> const uint32_t* gpr_histogram_get_contents </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="histogram_8h.html#a7125b0cef0e61a441a17f887dbc073fc">gpr_histogram</a> *&#160;</td>
           <td class="paramname"><em>histogram</em>, </td>
@@ -258,12 +258,12 @@ Functions</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="a71e5aa88087c8595c7f5d01750f919cb"></a>
+<a class="anchor" id="a205494285effe5a2a9dfbff208fd426f"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">double gpr_histogram_maximum </td>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> double gpr_histogram_maximum </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="histogram_8h.html#a7125b0cef0e61a441a17f887dbc073fc">gpr_histogram</a> *&#160;</td>
           <td class="paramname"><em>histogram</em></td><td>)</td>
@@ -274,12 +274,12 @@ Functions</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="a14d68ff71978bda93a07d019d993d83c"></a>
+<a class="anchor" id="abc9e00d4f5410abaadc2a98dc95d178d"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">double gpr_histogram_mean </td>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> double gpr_histogram_mean </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="histogram_8h.html#a7125b0cef0e61a441a17f887dbc073fc">gpr_histogram</a> *&#160;</td>
           <td class="paramname"><em>histogram</em></td><td>)</td>
@@ -290,12 +290,12 @@ Functions</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="a2fc0bc3b68b1d5d83d4fa8adbd058c65"></a>
+<a class="anchor" id="a199efc11a0cef2daaf27d2869cd07cce"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">int gpr_histogram_merge </td>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> int gpr_histogram_merge </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="histogram_8h.html#a7125b0cef0e61a441a17f887dbc073fc">gpr_histogram</a> *&#160;</td>
           <td class="paramname"><em>dst</em>, </td>
@@ -316,12 +316,12 @@ Functions</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="aa1acf09b75809398b4e45729e6a3ba30"></a>
+<a class="anchor" id="a3b28613ce094fefa707dec5b9a599e79"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">void gpr_histogram_merge_contents </td>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void gpr_histogram_merge_contents </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="histogram_8h.html#a7125b0cef0e61a441a17f887dbc073fc">gpr_histogram</a> *&#160;</td>
           <td class="paramname"><em>histogram</em>, </td>
@@ -329,7 +329,7 @@ Functions</h2></td></tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">const <a class="el" href="port__platform_8h.html#aa6abd4df815a5498d1a04b5e691a74a9">gpr_uint32</a> *&#160;</td>
+          <td class="paramtype">const uint32_t *&#160;</td>
           <td class="paramname"><em>data</em>, </td>
         </tr>
         <tr>
@@ -378,12 +378,12 @@ Functions</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="ab89af54f76a690d82d1f065ceeda6a76"></a>
+<a class="anchor" id="a91ccdae54fa075df03fc12fca721ec34"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">double gpr_histogram_minimum </td>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> double gpr_histogram_minimum </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="histogram_8h.html#a7125b0cef0e61a441a17f887dbc073fc">gpr_histogram</a> *&#160;</td>
           <td class="paramname"><em>histogram</em></td><td>)</td>
@@ -394,12 +394,12 @@ Functions</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="a1a0a1b854c2af4d29175872fe5bb4431"></a>
+<a class="anchor" id="acb1c9b30e0473ad37a4e0899d9bb058d"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">double gpr_histogram_percentile </td>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> double gpr_histogram_percentile </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="histogram_8h.html#a7125b0cef0e61a441a17f887dbc073fc">gpr_histogram</a> *&#160;</td>
           <td class="paramname"><em>histogram</em>, </td>
@@ -420,12 +420,12 @@ Functions</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="a0979c6470e9192e5f83bcab01542dd91"></a>
+<a class="anchor" id="af8710eaa83e60a3210834a144af90158"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">double gpr_histogram_stddev </td>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> double gpr_histogram_stddev </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="histogram_8h.html#a7125b0cef0e61a441a17f887dbc073fc">gpr_histogram</a> *&#160;</td>
           <td class="paramname"><em>histogram</em></td><td>)</td>
@@ -436,12 +436,12 @@ Functions</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="a0332c47f841d8b0607e3327d8bc9a933"></a>
+<a class="anchor" id="a72e9910135fb7e3c89a4a4c753dfd9df"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">double gpr_histogram_sum </td>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> double gpr_histogram_sum </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="histogram_8h.html#a7125b0cef0e61a441a17f887dbc073fc">gpr_histogram</a> *&#160;</td>
           <td class="paramname"><em>histogram</em></td><td>)</td>
@@ -452,12 +452,12 @@ Functions</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="a5788652eb5350afcc534f563fd0265d3"></a>
+<a class="anchor" id="a8ac634323fb67a8c0122ad675e925784"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">double gpr_histogram_sum_of_squares </td>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> double gpr_histogram_sum_of_squares </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="histogram_8h.html#a7125b0cef0e61a441a17f887dbc073fc">gpr_histogram</a> *&#160;</td>
           <td class="paramname"><em>histogram</em></td><td>)</td>
@@ -468,12 +468,12 @@ Functions</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="a4ef00ceaa619ca09da4de17fc5a5769b"></a>
+<a class="anchor" id="aff7334c462f915cb7bba90cb735a3bf5"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">double gpr_histogram_variance </td>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> double gpr_histogram_variance </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="histogram_8h.html#a7125b0cef0e61a441a17f887dbc073fc">gpr_histogram</a> *&#160;</td>
           <td class="paramname"><em>histogram</em></td><td>)</td>
@@ -487,7 +487,7 @@ Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Jan 15 2016 00:21:22 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Mar 8 2016 15:59:02 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

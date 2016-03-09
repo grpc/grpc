@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">0.12.0.0</span>
+   &#160;<span id="projectnumber">0.13.1-pre1</span>
    </div>
   </td>
  </tr>
@@ -118,6 +118,8 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:ac30e12c4ee3ca008522b24157f4f886c inherit pub_methods_classgrpc_1_1_server_context"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae52a89bbf70c27be3325080000757864 inherit pub_methods_classgrpc_1_1_server_context"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_context.html#ae52a89bbf70c27be3325080000757864">IsCancelled</a> () const </td></tr>
 <tr class="separator:ae52a89bbf70c27be3325080000757864 inherit pub_methods_classgrpc_1_1_server_context"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a63842068a68fbc886254bc3251f95155 inherit pub_methods_classgrpc_1_1_server_context"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_context.html#a63842068a68fbc886254bc3251f95155">TryCancel</a> () const </td></tr>
+<tr class="separator:a63842068a68fbc886254bc3251f95155 inherit pub_methods_classgrpc_1_1_server_context"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a144de24bd56a8950676ba91913cc74ce inherit pub_methods_classgrpc_1_1_server_context"><td class="memItemLeft" align="right" valign="top">const std::multimap<br class="typebreak"/>
 &lt; <a class="el" href="classgrpc_1_1string__ref.html">grpc::string_ref</a>, <br class="typebreak"/>
 <a class="el" href="classgrpc_1_1string__ref.html">grpc::string_ref</a> &gt; &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_context.html#a144de24bd56a8950676ba91913cc74ce">client_metadata</a> ()</td></tr>
@@ -144,6 +146,8 @@ Public Member Functions</h2></td></tr>
 Friends</h2></td></tr>
 <tr class="memitem:ac2055578ac48afabe5af487878450f68"><td class="memItemLeft" align="right" valign="top">class&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_generic_server_context.html#ac2055578ac48afabe5af487878450f68">Server</a></td></tr>
 <tr class="separator:ac2055578ac48afabe5af487878450f68"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad0907065db479dc47b2fa752d7782b6f"><td class="memItemLeft" align="right" valign="top">class&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_generic_server_context.html#ad0907065db479dc47b2fa752d7782b6f">ServerInterface</a></td></tr>
+<tr class="separator:ad0907065db479dc47b2fa752d7782b6f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Member Function Documentation</h2>
 <a class="anchor" id="a2962278c0c6280a2d95f5747ea03babc"></a>
@@ -213,13 +217,33 @@ Friends</h2></td></tr>
 
 </div>
 </div>
+<a class="anchor" id="ad0907065db479dc47b2fa752d7782b6f"></a>
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">friend class <a class="el" href="classgrpc_1_1_server_interface.html">ServerInterface</a></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">friend</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <hr/>The documentation for this class was generated from the following file:<ul>
 <li>include/grpc++/generic/<a class="el" href="async__generic__service_8h_source.html">async_generic_service.h</a></li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Jan 15 2016 00:21:23 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Mar 8 2016 15:59:03 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

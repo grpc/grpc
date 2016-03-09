@@ -1,5 +1,5 @@
 var searchData=
 [
-  ['initial_5fmetadata_5f',['initial_metadata_',['../classgrpc_1_1_call_op_send_initial_metadata.html#a032d474971352a0f3ca5b1a468fa5fd4',1,'grpc::CallOpSendInitialMetadata']]],
-  ['initial_5fmetadata_5fcount_5f',['initial_metadata_count_',['../classgrpc_1_1_call_op_send_initial_metadata.html#a19f3366cf32ceb0199e7f636f870dd63',1,'grpc::CallOpSendInitialMetadata']]]
+  ['g_5fglip',['g_glip',['../namespacegrpc.html#ae98af9599a8d1a02e75bae1a9250e1dc',1,'grpc']]],
+  ['got_5fmessage',['got_message',['../classgrpc_1_1_call_op_recv_message.html#a95f94e74f704a7f40e1f2e30aba24c57',1,'grpc::CallOpRecvMessage::got_message()'],['../classgrpc_1_1_call_op_generic_recv_message.html#a1dc0ca6159bc74ec6cbfeacb06c697a0',1,'grpc::CallOpGenericRecvMessage::got_message()']]]
 ];

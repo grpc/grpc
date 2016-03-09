@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">0.12.0.0</span>
+   &#160;<span id="projectnumber">0.13.1-pre1</span>
    </div>
   </td>
  </tr>
@@ -97,7 +97,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!--header-->
 <div class="contents">
 
-<p><code>#include &lt;<a class="el" href="client__context_8h_source.html">client_context.h</a>&gt;</code></p>
+<p><code>#include &lt;<a class="el" href="impl_2codegen_2client__context_8h_source.html">client_context.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
 Data Structures</h2></td></tr>
@@ -187,7 +187,7 @@ Friends</h2></td></tr>
 <tr class="memitem:a4498fada67d531d99a8642f47d746544"><td class="memTemplParams" colspan="2">template&lt;class W &gt; </td></tr>
 <tr class="memitem:a4498fada67d531d99a8642f47d746544"><td class="memTemplItemLeft" align="right" valign="top">class&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_context.html#a4498fada67d531d99a8642f47d746544">::grpc::ClientWriter</a></td></tr>
 <tr class="separator:a4498fada67d531d99a8642f47d746544"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a6d5659aa24edba057895be774e2752ec"><td class="memTemplParams" colspan="2">template&lt;class R , class W &gt; </td></tr>
+<tr class="memitem:a6d5659aa24edba057895be774e2752ec"><td class="memTemplParams" colspan="2">template&lt;class W , class R &gt; </td></tr>
 <tr class="memitem:a6d5659aa24edba057895be774e2752ec"><td class="memTemplItemLeft" align="right" valign="top">class&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_context.html#a6d5659aa24edba057895be774e2752ec">::grpc::ClientReaderWriter</a></td></tr>
 <tr class="separator:a6d5659aa24edba057895be774e2752ec"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af5343062a44a5633b144751e59969237"><td class="memTemplParams" colspan="2">template&lt;class R &gt; </td></tr>
@@ -196,15 +196,15 @@ Friends</h2></td></tr>
 <tr class="memitem:af3547958eadfaeb18692865bd73999ad"><td class="memTemplParams" colspan="2">template&lt;class W &gt; </td></tr>
 <tr class="memitem:af3547958eadfaeb18692865bd73999ad"><td class="memTemplItemLeft" align="right" valign="top">class&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_context.html#af3547958eadfaeb18692865bd73999ad">::grpc::ClientAsyncWriter</a></td></tr>
 <tr class="separator:af3547958eadfaeb18692865bd73999ad"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5c0c96957129933bfe94a299c764eaa7"><td class="memTemplParams" colspan="2">template&lt;class R , class W &gt; </td></tr>
+<tr class="memitem:a5c0c96957129933bfe94a299c764eaa7"><td class="memTemplParams" colspan="2">template&lt;class W , class R &gt; </td></tr>
 <tr class="memitem:a5c0c96957129933bfe94a299c764eaa7"><td class="memTemplItemLeft" align="right" valign="top">class&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_context.html#a5c0c96957129933bfe94a299c764eaa7">::grpc::ClientAsyncReaderWriter</a></td></tr>
 <tr class="separator:a5c0c96957129933bfe94a299c764eaa7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4b00162a9bd86e07669f2af67f85c73a"><td class="memTemplParams" colspan="2">template&lt;class R &gt; </td></tr>
 <tr class="memitem:a4b00162a9bd86e07669f2af67f85c73a"><td class="memTemplItemLeft" align="right" valign="top">class&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_context.html#a4b00162a9bd86e07669f2af67f85c73a">::grpc::ClientAsyncResponseReader</a></td></tr>
 <tr class="separator:a4b00162a9bd86e07669f2af67f85c73a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac574143322bf2bc6bd324ccb22d40756"><td class="memTemplParams" colspan="2">template&lt;class InputMessage , class OutputMessage &gt; </td></tr>
-<tr class="memitem:ac574143322bf2bc6bd324ccb22d40756"><td class="memTemplItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_status.html">Status</a>&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_context.html#ac574143322bf2bc6bd324ccb22d40756">BlockingUnaryCall</a> (<a class="el" href="classgrpc_1_1_channel.html">Channel</a> *channel, const <a class="el" href="classgrpc_1_1_rpc_method.html">RpcMethod</a> &amp;method, <a class="el" href="classgrpc_1_1_client_context.html">ClientContext</a> *context, const InputMessage &amp;request, OutputMessage *result)</td></tr>
-<tr class="separator:ac574143322bf2bc6bd324ccb22d40756"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4aac0a120f3498d1151460ef89ce8446"><td class="memTemplParams" colspan="2">template&lt;class InputMessage , class OutputMessage &gt; </td></tr>
+<tr class="memitem:a4aac0a120f3498d1151460ef89ce8446"><td class="memTemplItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_status.html">Status</a>&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_context.html#a4aac0a120f3498d1151460ef89ce8446">BlockingUnaryCall</a> (<a class="el" href="classgrpc_1_1_channel_interface.html">ChannelInterface</a> *channel, const <a class="el" href="classgrpc_1_1_rpc_method.html">RpcMethod</a> &amp;method, <a class="el" href="classgrpc_1_1_client_context.html">ClientContext</a> *context, const InputMessage &amp;request, OutputMessage *result)</td></tr>
+<tr class="separator:a4aac0a120f3498d1151460ef89ce8446"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a class="anchor" id="acabbcf3c160a0628da8a9274b10f54b9"></a>
@@ -720,7 +720,7 @@ template&lt;class R &gt; </div>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;class R , class W &gt; </div>
+template&lt;class W , class R &gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
@@ -808,7 +808,7 @@ template&lt;class R &gt; </div>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;class R , class W &gt; </div>
+template&lt;class W , class R &gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
@@ -868,7 +868,7 @@ template&lt;class W &gt; </div>
 
 </div>
 </div>
-<a class="anchor" id="ac574143322bf2bc6bd324ccb22d40756"></a>
+<a class="anchor" id="a4aac0a120f3498d1151460ef89ce8446"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
@@ -880,7 +880,7 @@ template&lt;class InputMessage , class OutputMessage &gt; </div>
         <tr>
           <td class="memname"><a class="el" href="classgrpc_1_1_status.html">Status</a> BlockingUnaryCall </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="classgrpc_1_1_channel.html">Channel</a> *&#160;</td>
+          <td class="paramtype"><a class="el" href="classgrpc_1_1_channel_interface.html">ChannelInterface</a> *&#160;</td>
           <td class="paramname"><em>channel</em>, </td>
         </tr>
         <tr>
@@ -983,12 +983,12 @@ template&lt;class InputMessage , class OutputMessage &gt; </div>
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>include/grpc++/<a class="el" href="client__context_8h_source.html">client_context.h</a></li>
+<li>include/grpc++/impl/codegen/<a class="el" href="impl_2codegen_2client__context_8h_source.html">client_context.h</a></li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Jan 15 2016 00:21:23 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Mar 8 2016 15:59:03 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

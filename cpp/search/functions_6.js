@@ -1,20 +1,20 @@
 var searchData=
 [
-  ['genericstub',['GenericStub',['../classgrpc_1_1_generic_stub.html#ad7555683fb9225ea12330146f5b95a75',1,'grpc::GenericStub']]],
+  ['genericasyncrequest',['GenericAsyncRequest',['../classgrpc_1_1_server_interface_1_1_generic_async_request.html#af588508a3869908791dbd814597b7f42',1,'grpc::ServerInterface::GenericAsyncRequest']]],
+  ['genericstub',['GenericStub',['../classgrpc_1_1_generic_stub.html#a1523f381907ac18b841bb4064f2a3b88',1,'grpc::GenericStub']]],
   ['get_5fbuffer_5fhint',['get_buffer_hint',['../classgrpc_1_1_write_options.html#a58a983a81a17d0b8f3996164f55912ef',1,'grpc::WriteOptions']]],
   ['get_5fno_5fcompression',['get_no_compression',['../classgrpc_1_1_write_options.html#accb16dd92f4001a6d024ffb01178d4bf',1,'grpc::WriteOptions']]],
   ['getmetadata',['GetMetadata',['../classgrpc_1_1_metadata_credentials_plugin.html#af39ac20596099995ddb1a80462ac2f0a',1,'grpc::MetadataCredentialsPlugin']]],
-  ['getmethod',['GetMethod',['../classgrpc_1_1_rpc_service.html#adb8bee7f95fdd7bfb12e9c510fbdd192',1,'grpc::RpcService']]],
-  ['getmethodcount',['GetMethodCount',['../classgrpc_1_1_rpc_service.html#a779c023a42b33893a5ae2b7ca0ef5191',1,'grpc::RpcService']]],
   ['getpeeridentity',['GetPeerIdentity',['../classgrpc_1_1_auth_context.html#a56a84468c1c3814a185cb6a2a3badf99',1,'grpc::AuthContext']]],
   ['getpeeridentitypropertyname',['GetPeerIdentityPropertyName',['../classgrpc_1_1_auth_context.html#ad7b2e589590246b953decd05cdaa4465',1,'grpc::AuthContext']]],
   ['getserverinitialmetadata',['GetServerInitialMetadata',['../classgrpc_1_1_client_context.html#a3dd6ec0742cbc84e5a83acab009c5f38',1,'grpc::ClientContext']]],
   ['getservertrailingmetadata',['GetServerTrailingMetadata',['../classgrpc_1_1_client_context.html#a06cd5278c2d242bdd6a8f62fd6c87a93',1,'grpc::ClientContext']]],
-  ['getstate',['GetState',['../classgrpc_1_1_channel.html#a3070c1bf22839a01d80db4dfb7199c81',1,'grpc::Channel']]],
+  ['getstate',['GetState',['../classgrpc_1_1_channel.html#a6535c47d280d9b44fd74c9efcd93f9d8',1,'grpc::Channel::GetState()'],['../classgrpc_1_1_channel_interface.html#a68e987e7b87ca5a2668419736f9ee9b1',1,'grpc::ChannelInterface::GetState()']]],
   ['gettype',['GetType',['../classgrpc_1_1_metadata_credentials_plugin.html#a3b3a43e2ad1343ce57aa677c010ba7f3',1,'grpc::MetadataCredentialsPlugin']]],
   ['googlecomputeenginecredentials',['GoogleComputeEngineCredentials',['../namespacegrpc.html#ad9eda8fa85bd833730a40697278e9fe6',1,'grpc']]],
   ['googledefaultcredentials',['GoogleDefaultCredentials',['../namespacegrpc.html#a6beb3ac70ff94bd2ebbd89b8f21d1f61',1,'grpc']]],
   ['googleiamcredentials',['GoogleIAMCredentials',['../namespacegrpc.html#a9fc1fc101b41e680d47028166e76f9d0',1,'grpc']]],
   ['googlerefreshtokencredentials',['GoogleRefreshTokenCredentials',['../namespacegrpc.html#a96901c997b91bc6513b08491e0dca37c',1,'grpc']]],
-  ['grpclibrary',['GrpcLibrary',['../classgrpc_1_1_grpc_library.html#af026f86430cf235d7eaf532231a44528',1,'grpc::GrpcLibrary']]]
+  ['grpclibrary',['GrpcLibrary',['../classgrpc_1_1_grpc_library.html#af026f86430cf235d7eaf532231a44528',1,'grpc::GrpcLibrary']]],
+  ['grpclibraryinitializer',['GrpcLibraryInitializer',['../classgrpc_1_1internal_1_1_grpc_library_initializer.html#a71b365fd27307fc2ff820dea2d9ee561',1,'grpc::internal::GrpcLibraryInitializer']]]
 ];

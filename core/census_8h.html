@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">0.12.0.0</span>
+   &#160;<span id="projectnumber">0.13.1-pre1</span>
    </div>
   </td>
  </tr>
@@ -80,7 +80,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><a class="el" href="dir_d44c64559bbebec7f509842c48db8b23.html">include</a></li><li class="navelem"><a class="el" href="dir_9d7a14d6d9adcbe4c35dbdb88d867e2e.html">grpc</a></li>  </ul>
+<li class="navelem"><a class="el" href="dir_46bdc5f5041a35984eb5db24b2392107.html">include</a></li><li class="navelem"><a class="el" href="dir_a0198a417c8cbac4868821a6e2669c2e.html">grpc</a></li>  </ul>
 </div>
 </div><!-- top -->
 <div class="header">
@@ -101,6 +101,12 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
 Data Structures</h2></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcensus__tag.html">census_tag</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcensus__context__status.html">census_context_status</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcensus__context__iterator.html">census_context_iterator</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcensus__timestamp.html">census_timestamp</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">This structure represents a timestamp as used by census to record the time at which an operation begins.  <a href="structcensus__timestamp.html#details">More...</a><br/></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -109,8 +115,6 @@ Data Structures</h2></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcensus__trace__record.html">census_trace_record</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Trace record.  <a href="structcensus__trace__record.html#details">More...</a><br/></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcensus__tag__const.html">census_tag_const</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcensus__value.html">census_value</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -121,30 +125,39 @@ Data Structures</h2></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Holds all the aggregation data for a particular view instantiation.  <a href="structcensus__view__aggregation__data.html#details">More...</a><br/></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcensus__view__data.html">census_view_data</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Census view data as returned by <a class="el" href="census_8h.html#ab7146edc8582fe2e6dc537f006e29cc5" title="Get data from aggregations associated with a view. ">census_view_get_data()</a>.  <a href="structcensus__view__data.html#details">More...</a><br/></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Census view data as returned by <a class="el" href="census_8h.html#a1d2f0b30386e8772c09694dfc74d686c" title="Get data from aggregations associated with a view. ">census_view_get_data()</a>.  <a href="structcensus__view__data.html#details">More...</a><br/></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="define-members"></a>
 Macros</h2></td></tr>
-<tr class="memitem:acb35403ed23ba2615457fabaa0b430e7"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#acb35403ed23ba2615457fabaa0b430e7">CENSUS_TRACE_RECORD_START_OP</a>&#160;&#160;&#160;((<a class="el" href="port__platform_8h.html#aa6abd4df815a5498d1a04b5e691a74a9">gpr_uint32</a>)0)</td></tr>
+<tr class="memitem:ac3fa459cd0c1621953c46b07bac2faa7"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#ac3fa459cd0c1621953c46b07bac2faa7">CENSUS_MAX_TAG_KV_LEN</a>&#160;&#160;&#160;255</td></tr>
+<tr class="separator:ac3fa459cd0c1621953c46b07bac2faa7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a487ca94a4b349f1a7d3d28a21b154f4e"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#a487ca94a4b349f1a7d3d28a21b154f4e">CENSUS_MAX_PROPAGATED_TAGS</a>&#160;&#160;&#160;255</td></tr>
+<tr class="separator:a487ca94a4b349f1a7d3d28a21b154f4e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac116a5843bd29f43a949c56ef5ae619a"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#ac116a5843bd29f43a949c56ef5ae619a">CENSUS_TAG_PROPAGATE</a>&#160;&#160;&#160;1 /* Tag should be propagated over RPC */</td></tr>
+<tr class="separator:ac116a5843bd29f43a949c56ef5ae619a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab3c3a66a8c2f392d4a14e75dc44e8931"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#ab3c3a66a8c2f392d4a14e75dc44e8931">CENSUS_TAG_STATS</a>&#160;&#160;&#160;2     /* Tag will be used for statistics aggregation */</td></tr>
+<tr class="separator:ab3c3a66a8c2f392d4a14e75dc44e8931"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a718a086bf7a282a0b5ae1d2fd8c6666c"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#a718a086bf7a282a0b5ae1d2fd8c6666c">CENSUS_TAG_BINARY</a>&#160;&#160;&#160;4    /* Tag value is not printable */</td></tr>
+<tr class="separator:a718a086bf7a282a0b5ae1d2fd8c6666c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a070dd8c57a1a31ced0c7ead5a5910df7"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#a070dd8c57a1a31ced0c7ead5a5910df7">CENSUS_TAG_RESERVED</a>&#160;&#160;&#160;8  /* Reserved for internal use. */</td></tr>
+<tr class="separator:a070dd8c57a1a31ced0c7ead5a5910df7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afa3a818c132d55bb1f0afb7442d8f848"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#afa3a818c132d55bb1f0afb7442d8f848">CENSUS_TAG_IS_PROPAGATED</a>(flags)&#160;&#160;&#160;(flags &amp; <a class="el" href="census_8h.html#ac116a5843bd29f43a949c56ef5ae619a">CENSUS_TAG_PROPAGATE</a>)</td></tr>
+<tr class="separator:afa3a818c132d55bb1f0afb7442d8f848"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aaca94b54b685c481236dfb913fef8b4c"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#aaca94b54b685c481236dfb913fef8b4c">CENSUS_TAG_IS_STATS</a>(flags)&#160;&#160;&#160;(flags &amp; <a class="el" href="census_8h.html#ab3c3a66a8c2f392d4a14e75dc44e8931">CENSUS_TAG_STATS</a>)</td></tr>
+<tr class="separator:aaca94b54b685c481236dfb913fef8b4c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3c63d07ee49c74c1a987949156163f47"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#a3c63d07ee49c74c1a987949156163f47">CENSUS_TAG_IS_BINARY</a>(flags)&#160;&#160;&#160;(flags &amp; <a class="el" href="census_8h.html#a718a086bf7a282a0b5ae1d2fd8c6666c">CENSUS_TAG_BINARY</a>)</td></tr>
+<tr class="separator:a3c63d07ee49c74c1a987949156163f47"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acb35403ed23ba2615457fabaa0b430e7"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#acb35403ed23ba2615457fabaa0b430e7">CENSUS_TRACE_RECORD_START_OP</a>&#160;&#160;&#160;((uint32_t)0)</td></tr>
 <tr class="separator:acb35403ed23ba2615457fabaa0b430e7"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a003fb5bda98c95408a21d3a47571a1e9"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#a003fb5bda98c95408a21d3a47571a1e9">CENSUS_TRACE_RECORD_END_OP</a>&#160;&#160;&#160;((<a class="el" href="port__platform_8h.html#aa6abd4df815a5498d1a04b5e691a74a9">gpr_uint32</a>)1)</td></tr>
+<tr class="memitem:a003fb5bda98c95408a21d3a47571a1e9"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#a003fb5bda98c95408a21d3a47571a1e9">CENSUS_TRACE_RECORD_END_OP</a>&#160;&#160;&#160;((uint32_t)1)</td></tr>
 <tr class="separator:a003fb5bda98c95408a21d3a47571a1e9"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa89c96f0f32d85a1b28b68f0ef326dd4"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#aa89c96f0f32d85a1b28b68f0ef326dd4">CENSUS_MAX_TAG_KEY_LENGTH</a>&#160;&#160;&#160;20</td></tr>
-<tr class="separator:aa89c96f0f32d85a1b28b68f0ef326dd4"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a22d6971ca41fd944e13e5b4c2a42bf8c"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#a22d6971ca41fd944e13e5b4c2a42bf8c">CENSUS_MAX_TAG_VALUE_LENGTH</a>&#160;&#160;&#160;50</td></tr>
-<tr class="separator:a22d6971ca41fd944e13e5b4c2a42bf8c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="typedef-members"></a>
 Typedefs</h2></td></tr>
 <tr class="memitem:a27fc8788690179599713226f1f054736"><td class="memItemLeft" align="right" valign="top">typedef struct <a class="el" href="census_8h.html#a27fc8788690179599713226f1f054736">census_context</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#a27fc8788690179599713226f1f054736">census_context</a></td></tr>
-<tr class="memdesc:a27fc8788690179599713226f1f054736"><td class="mdescLeft">&#160;</td><td class="mdescRight">Context is a handle used by census to represent the current tracing and tagging information.  <a href="#a27fc8788690179599713226f1f054736">More...</a><br/></td></tr>
+<tr class="memdesc:a27fc8788690179599713226f1f054736"><td class="mdescLeft">&#160;</td><td class="mdescRight">A Census Context is a handle used by Census to represent the current tracing and stats collection information.  <a href="#a27fc8788690179599713226f1f054736">More...</a><br/></td></tr>
 <tr class="separator:a27fc8788690179599713226f1f054736"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:afc68a73849e0d1565e74c28c822bb086"><td class="memItemLeft" align="right" valign="top">typedef struct <a class="el" href="census_8h.html#afc68a73849e0d1565e74c28c822bb086">census_tag_set</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#afc68a73849e0d1565e74c28c822bb086">census_tag_set</a></td></tr>
-<tr class="separator:afc68a73849e0d1565e74c28c822bb086"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a22a740b7e9e3798cb9208b3bd6ea31a7"><td class="memItemLeft" align="right" valign="top">typedef struct <br class="typebreak"/>
-<a class="el" href="census_8h.html#a22a740b7e9e3798cb9208b3bd6ea31a7">census_tag_set_iterator</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#a22a740b7e9e3798cb9208b3bd6ea31a7">census_tag_set_iterator</a></td></tr>
-<tr class="separator:a22a740b7e9e3798cb9208b3bd6ea31a7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2b2990a51808c9177b14476195a9fb94"><td class="memItemLeft" align="right" valign="top">typedef struct <br class="typebreak"/>
 <a class="el" href="census_8h.html#a2b2990a51808c9177b14476195a9fb94">census_aggregation_ops</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#a2b2990a51808c9177b14476195a9fb94">census_aggregation_ops</a></td></tr>
 <tr class="memdesc:a2b2990a51808c9177b14476195a9fb94"><td class="mdescLeft">&#160;</td><td class="mdescRight">Type representing a particular aggregation.  <a href="#a2b2990a51808c9177b14476195a9fb94">More...</a><br/></td></tr>
@@ -172,95 +185,97 @@ Enumerations</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions</h2></td></tr>
-<tr class="memitem:a4cea92157f3de215724f6bf4aeaee1b6"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#a4cea92157f3de215724f6bf4aeaee1b6">census_initialize</a> (int features)</td></tr>
-<tr class="memdesc:a4cea92157f3de215724f6bf4aeaee1b6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Shutdown and startup census subsystem.  <a href="#a4cea92157f3de215724f6bf4aeaee1b6">More...</a><br/></td></tr>
-<tr class="separator:a4cea92157f3de215724f6bf4aeaee1b6"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa792b067548ecdd987d560b492c83d85"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#aa792b067548ecdd987d560b492c83d85">census_shutdown</a> (void)</td></tr>
-<tr class="separator:aa792b067548ecdd987d560b492c83d85"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad5f627a64ac4febbc61d2b89801d40e9"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#ad5f627a64ac4febbc61d2b89801d40e9">census_supported</a> (void)</td></tr>
-<tr class="memdesc:ad5f627a64ac4febbc61d2b89801d40e9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the features supported by the current census implementation (not all features will be available on all platforms).  <a href="#ad5f627a64ac4febbc61d2b89801d40e9">More...</a><br/></td></tr>
-<tr class="separator:ad5f627a64ac4febbc61d2b89801d40e9"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a742616973e78aaf969389cea20feea9f"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#a742616973e78aaf969389cea20feea9f">census_enabled</a> (void)</td></tr>
-<tr class="memdesc:a742616973e78aaf969389cea20feea9f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the census features currently enabled.  <a href="#a742616973e78aaf969389cea20feea9f">More...</a><br/></td></tr>
-<tr class="separator:a742616973e78aaf969389cea20feea9f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad9a7d3170ecf720e1b22a4f255605748"><td class="memItemLeft" align="right" valign="top">size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#ad9a7d3170ecf720e1b22a4f255605748">census_context_serialize</a> (const <a class="el" href="census_8h.html#a27fc8788690179599713226f1f054736">census_context</a> *context, char *buffer, size_t buf_size)</td></tr>
-<tr class="separator:ad9a7d3170ecf720e1b22a4f255605748"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:afeb62854542a09290181209ea72b9158"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#afeb62854542a09290181209ea72b9158">census_trace_mask</a> (const <a class="el" href="census_8h.html#a27fc8788690179599713226f1f054736">census_context</a> *context)</td></tr>
-<tr class="memdesc:afeb62854542a09290181209ea72b9158"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the current trace mask associated with this context.  <a href="#afeb62854542a09290181209ea72b9158">More...</a><br/></td></tr>
-<tr class="separator:afeb62854542a09290181209ea72b9158"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2762b05c4e9bb8a6994519725cb69a84"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#a2762b05c4e9bb8a6994519725cb69a84">census_set_trace_mask</a> (int trace_mask)</td></tr>
-<tr class="memdesc:a2762b05c4e9bb8a6994519725cb69a84"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the trace mask associated with a context.  <a href="#a2762b05c4e9bb8a6994519725cb69a84">More...</a><br/></td></tr>
-<tr class="separator:a2762b05c4e9bb8a6994519725cb69a84"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a71b2afd7a1663c2a716af7242895442b"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structcensus__timestamp.html">census_timestamp</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#a71b2afd7a1663c2a716af7242895442b">census_start_rpc_op_timestamp</a> (void)</td></tr>
-<tr class="memdesc:a71b2afd7a1663c2a716af7242895442b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Mark the beginning of an RPC operation.  <a href="#a71b2afd7a1663c2a716af7242895442b">More...</a><br/></td></tr>
-<tr class="separator:a71b2afd7a1663c2a716af7242895442b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a0f2a69b151eac68f3c50806d2162d9f4"><td class="memItemLeft" align="right" valign="top"><a class="el" href="census_8h.html#a27fc8788690179599713226f1f054736">census_context</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#a0f2a69b151eac68f3c50806d2162d9f4">census_start_client_rpc_op</a> (const <a class="el" href="census_8h.html#a27fc8788690179599713226f1f054736">census_context</a> *context, <a class="el" href="port__platform_8h.html#a71edab4bc3421f129764e5cb342f7181">gpr_int64</a> rpc_name_id, const <a class="el" href="structcensus__rpc__name__info.html">census_rpc_name_info</a> *rpc_name_info, const char *peer, int trace_mask, const <a class="el" href="structcensus__timestamp.html">census_timestamp</a> *start_time)</td></tr>
-<tr class="memdesc:a0f2a69b151eac68f3c50806d2162d9f4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Start a client rpc operation.  <a href="#a0f2a69b151eac68f3c50806d2162d9f4">More...</a><br/></td></tr>
-<tr class="separator:a0f2a69b151eac68f3c50806d2162d9f4"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a06407a753c261626b4e25c4f6fe0b840"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#a06407a753c261626b4e25c4f6fe0b840">census_set_rpc_client_peer</a> (<a class="el" href="census_8h.html#a27fc8788690179599713226f1f054736">census_context</a> *context, const char *peer)</td></tr>
-<tr class="memdesc:a06407a753c261626b4e25c4f6fe0b840"><td class="mdescLeft">&#160;</td><td class="mdescRight">Add peer information to a context representing a client RPC operation.  <a href="#a06407a753c261626b4e25c4f6fe0b840">More...</a><br/></td></tr>
-<tr class="separator:a06407a753c261626b4e25c4f6fe0b840"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab7014fb10de411a91588f05658148177"><td class="memItemLeft" align="right" valign="top"><a class="el" href="census_8h.html#a27fc8788690179599713226f1f054736">census_context</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#ab7014fb10de411a91588f05658148177">census_start_server_rpc_op</a> (const char *buffer, <a class="el" href="port__platform_8h.html#a71edab4bc3421f129764e5cb342f7181">gpr_int64</a> rpc_name_id, const <a class="el" href="structcensus__rpc__name__info.html">census_rpc_name_info</a> *rpc_name_info, const char *peer, int trace_mask, <a class="el" href="structcensus__timestamp.html">census_timestamp</a> *start_time)</td></tr>
-<tr class="memdesc:ab7014fb10de411a91588f05658148177"><td class="mdescLeft">&#160;</td><td class="mdescRight">Start a server RPC operation.  <a href="#ab7014fb10de411a91588f05658148177">More...</a><br/></td></tr>
-<tr class="separator:ab7014fb10de411a91588f05658148177"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a14287fdb8adc322c1801435eb121e642"><td class="memItemLeft" align="right" valign="top"><a class="el" href="census_8h.html#a27fc8788690179599713226f1f054736">census_context</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#a14287fdb8adc322c1801435eb121e642">census_start_op</a> (<a class="el" href="census_8h.html#a27fc8788690179599713226f1f054736">census_context</a> *context, const char *family, const char *name, int trace_mask)</td></tr>
-<tr class="memdesc:a14287fdb8adc322c1801435eb121e642"><td class="mdescLeft">&#160;</td><td class="mdescRight">Start a new, non-RPC operation.  <a href="#a14287fdb8adc322c1801435eb121e642">More...</a><br/></td></tr>
-<tr class="separator:a14287fdb8adc322c1801435eb121e642"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a97a3300020cdacd7149e0efae9f5541e"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#a97a3300020cdacd7149e0efae9f5541e">census_end_op</a> (<a class="el" href="census_8h.html#a27fc8788690179599713226f1f054736">census_context</a> *context, int status)</td></tr>
-<tr class="memdesc:a97a3300020cdacd7149e0efae9f5541e"><td class="mdescLeft">&#160;</td><td class="mdescRight">End an operation started by any of the census_start_*_op*() calls.  <a href="#a97a3300020cdacd7149e0efae9f5541e">More...</a><br/></td></tr>
-<tr class="separator:a97a3300020cdacd7149e0efae9f5541e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af3822f36fcbca23a3af9d3e8b3fb3317"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#af3822f36fcbca23a3af9d3e8b3fb3317">census_trace_print</a> (<a class="el" href="census_8h.html#a27fc8788690179599713226f1f054736">census_context</a> *context, <a class="el" href="port__platform_8h.html#aa6abd4df815a5498d1a04b5e691a74a9">gpr_uint32</a> type, const char *buffer, size_t n)</td></tr>
-<tr class="memdesc:af3822f36fcbca23a3af9d3e8b3fb3317"><td class="mdescLeft">&#160;</td><td class="mdescRight">Insert a trace record into the trace stream.  <a href="#af3822f36fcbca23a3af9d3e8b3fb3317">More...</a><br/></td></tr>
-<tr class="separator:af3822f36fcbca23a3af9d3e8b3fb3317"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab93305c7e6b04cd51f95aa497227f53a"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#ab93305c7e6b04cd51f95aa497227f53a">census_trace_scan_start</a> (int consume)</td></tr>
-<tr class="memdesc:ab93305c7e6b04cd51f95aa497227f53a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Start a scan of existing trace records.  <a href="#ab93305c7e6b04cd51f95aa497227f53a">More...</a><br/></td></tr>
-<tr class="separator:ab93305c7e6b04cd51f95aa497227f53a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a31151a1bca352d6046e6039fa864808c"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#a31151a1bca352d6046e6039fa864808c">census_get_trace_record</a> (<a class="el" href="structcensus__trace__record.html">census_trace_record</a> *trace_record)</td></tr>
-<tr class="memdesc:a31151a1bca352d6046e6039fa864808c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get a trace record.  <a href="#a31151a1bca352d6046e6039fa864808c">More...</a><br/></td></tr>
-<tr class="separator:a31151a1bca352d6046e6039fa864808c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:adee01ffd0c56ca2c8c90919a73c3f8ba"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#adee01ffd0c56ca2c8c90919a73c3f8ba">census_trace_scan_end</a> ()</td></tr>
-<tr class="memdesc:adee01ffd0c56ca2c8c90919a73c3f8ba"><td class="mdescLeft">&#160;</td><td class="mdescRight">End a scan previously started by <a class="el" href="census_8h.html#ab93305c7e6b04cd51f95aa497227f53a" title="Start a scan of existing trace records. ">census_trace_scan_start()</a>  <a href="#adee01ffd0c56ca2c8c90919a73c3f8ba">More...</a><br/></td></tr>
-<tr class="separator:adee01ffd0c56ca2c8c90919a73c3f8ba"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a14f21902360aa221e6307cec05a110a5"><td class="memItemLeft" align="right" valign="top"><a class="el" href="census_8h.html#afc68a73849e0d1565e74c28c822bb086">census_tag_set</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#a14f21902360aa221e6307cec05a110a5">census_tag_set_create</a> (size_t size_hint)</td></tr>
-<tr class="separator:a14f21902360aa221e6307cec05a110a5"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac690af8a7c06c6fb152fc9b0b8efc142"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#ac690af8a7c06c6fb152fc9b0b8efc142">census_tag_set_add</a> (<a class="el" href="census_8h.html#afc68a73849e0d1565e74c28c822bb086">census_tag_set</a> *tags, const char *key, const char *value)</td></tr>
-<tr class="separator:ac690af8a7c06c6fb152fc9b0b8efc142"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a07ccf6250c7e2d4ef7180c510fd68ab2"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#a07ccf6250c7e2d4ef7180c510fd68ab2">census_tag_set_destroy</a> (<a class="el" href="census_8h.html#afc68a73849e0d1565e74c28c822bb086">census_tag_set</a> *tags)</td></tr>
-<tr class="separator:a07ccf6250c7e2d4ef7180c510fd68ab2"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a78ec7fa52ea54e631bb11d59a8adba33"><td class="memItemLeft" align="right" valign="top"><a class="el" href="census_8h.html#afc68a73849e0d1565e74c28c822bb086">census_tag_set</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#a78ec7fa52ea54e631bb11d59a8adba33">census_context_tag_set</a> (<a class="el" href="census_8h.html#a27fc8788690179599713226f1f054736">census_context</a> *context)</td></tr>
-<tr class="separator:a78ec7fa52ea54e631bb11d59a8adba33"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aae5c38cb581600a401d1f8dca741bf63"><td class="memItemLeft" align="right" valign="top"><a class="el" href="census_8h.html#a22a740b7e9e3798cb9208b3bd6ea31a7">census_tag_set_iterator</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#aae5c38cb581600a401d1f8dca741bf63">census_tag_set_open</a> (<a class="el" href="census_8h.html#afc68a73849e0d1565e74c28c822bb086">census_tag_set</a> *tags)</td></tr>
-<tr class="separator:aae5c38cb581600a401d1f8dca741bf63"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a03847b518034c5c3b801fdd95569f400"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#a03847b518034c5c3b801fdd95569f400">census_tag_set_next</a> (<a class="el" href="census_8h.html#a22a740b7e9e3798cb9208b3bd6ea31a7">census_tag_set_iterator</a> *it, <a class="el" href="structcensus__tag__const.html">census_tag_const</a> *tag)</td></tr>
-<tr class="separator:a03847b518034c5c3b801fdd95569f400"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:acbca4449a68fd3e2c17f1e0bcf1e663a"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#acbca4449a68fd3e2c17f1e0bcf1e663a">census_tag_set_close</a> (<a class="el" href="census_8h.html#a22a740b7e9e3798cb9208b3bd6ea31a7">census_tag_set_iterator</a> *it)</td></tr>
-<tr class="separator:acbca4449a68fd3e2c17f1e0bcf1e663a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1225e8bbc14ff51173b6485940940572"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#a1225e8bbc14ff51173b6485940940572">census_record_values</a> (<a class="el" href="census_8h.html#a27fc8788690179599713226f1f054736">census_context</a> *context, <a class="el" href="structcensus__value.html">census_value</a> *values, size_t nvalues)</td></tr>
-<tr class="separator:a1225e8bbc14ff51173b6485940940572"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3bf772ddda26227f485b375192af85f2"><td class="memItemLeft" align="right" valign="top"><a class="el" href="census_8h.html#ae43cfb236f1c79eeefb4d9bdf91e3aed">census_view</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#a3bf772ddda26227f485b375192af85f2">census_view_create</a> (<a class="el" href="port__platform_8h.html#aa6abd4df815a5498d1a04b5e691a74a9">gpr_uint32</a> metric_id, const <a class="el" href="census_8h.html#afc68a73849e0d1565e74c28c822bb086">census_tag_set</a> *tags, const <a class="el" href="structcensus__aggregation.html">census_aggregation</a> *aggregations, size_t naggregations)</td></tr>
-<tr class="memdesc:a3bf772ddda26227f485b375192af85f2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a new view.  <a href="#a3bf772ddda26227f485b375192af85f2">More...</a><br/></td></tr>
-<tr class="separator:a3bf772ddda26227f485b375192af85f2"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a529bb89984b69da3b4cab9deb68175a9"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#a529bb89984b69da3b4cab9deb68175a9">census_view_delete</a> (<a class="el" href="census_8h.html#ae43cfb236f1c79eeefb4d9bdf91e3aed">census_view</a> *view)</td></tr>
-<tr class="memdesc:a529bb89984b69da3b4cab9deb68175a9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Destroy a previously created view.  <a href="#a529bb89984b69da3b4cab9deb68175a9">More...</a><br/></td></tr>
-<tr class="separator:a529bb89984b69da3b4cab9deb68175a9"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa5741f85edf5b3e72f89797ae85463b0"><td class="memItemLeft" align="right" valign="top">size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#aa5741f85edf5b3e72f89797ae85463b0">census_view_metric</a> (const <a class="el" href="census_8h.html#ae43cfb236f1c79eeefb4d9bdf91e3aed">census_view</a> *view)</td></tr>
-<tr class="memdesc:aa5741f85edf5b3e72f89797ae85463b0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Metric ID associated with a view.  <a href="#aa5741f85edf5b3e72f89797ae85463b0">More...</a><br/></td></tr>
-<tr class="separator:aa5741f85edf5b3e72f89797ae85463b0"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac993f47fe73f67e5f8c8f4b00c358144"><td class="memItemLeft" align="right" valign="top">size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#ac993f47fe73f67e5f8c8f4b00c358144">census_view_naggregations</a> (const <a class="el" href="census_8h.html#ae43cfb236f1c79eeefb4d9bdf91e3aed">census_view</a> *view)</td></tr>
-<tr class="memdesc:ac993f47fe73f67e5f8c8f4b00c358144"><td class="mdescLeft">&#160;</td><td class="mdescRight">Number of aggregations associated with view.  <a href="#ac993f47fe73f67e5f8c8f4b00c358144">More...</a><br/></td></tr>
-<tr class="separator:ac993f47fe73f67e5f8c8f4b00c358144"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a054543816f063d003a36316fda4547b8"><td class="memItemLeft" align="right" valign="top">const <a class="el" href="census_8h.html#afc68a73849e0d1565e74c28c822bb086">census_tag_set</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#a054543816f063d003a36316fda4547b8">census_view_tags</a> (const <a class="el" href="census_8h.html#ae43cfb236f1c79eeefb4d9bdf91e3aed">census_view</a> *view)</td></tr>
-<tr class="memdesc:a054543816f063d003a36316fda4547b8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get tags associated with view.  <a href="#a054543816f063d003a36316fda4547b8">More...</a><br/></td></tr>
-<tr class="separator:a054543816f063d003a36316fda4547b8"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab40a6a544d107b067eb5ca8326efeded"><td class="memItemLeft" align="right" valign="top">const <a class="el" href="structcensus__aggregation.html">census_aggregation</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#ab40a6a544d107b067eb5ca8326efeded">census_view_aggregrations</a> (const <a class="el" href="census_8h.html#ae43cfb236f1c79eeefb4d9bdf91e3aed">census_view</a> *view)</td></tr>
-<tr class="memdesc:ab40a6a544d107b067eb5ca8326efeded"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get aggregation descriptors associated with a view.  <a href="#ab40a6a544d107b067eb5ca8326efeded">More...</a><br/></td></tr>
-<tr class="separator:ab40a6a544d107b067eb5ca8326efeded"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab7146edc8582fe2e6dc537f006e29cc5"><td class="memItemLeft" align="right" valign="top">const <a class="el" href="structcensus__view__data.html">census_view_data</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#ab7146edc8582fe2e6dc537f006e29cc5">census_view_get_data</a> (const <a class="el" href="census_8h.html#ae43cfb236f1c79eeefb4d9bdf91e3aed">census_view</a> *view)</td></tr>
-<tr class="memdesc:ab7146edc8582fe2e6dc537f006e29cc5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get data from aggregations associated with a view.  <a href="#ab7146edc8582fe2e6dc537f006e29cc5">More...</a><br/></td></tr>
-<tr class="separator:ab7146edc8582fe2e6dc537f006e29cc5"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad150387e14628665613f1d9a3d27a418"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#ad150387e14628665613f1d9a3d27a418">census_view_reset</a> (<a class="el" href="census_8h.html#ae43cfb236f1c79eeefb4d9bdf91e3aed">census_view</a> *view)</td></tr>
-<tr class="memdesc:ad150387e14628665613f1d9a3d27a418"><td class="mdescLeft">&#160;</td><td class="mdescRight">Reset all view data to zero for the specified view.  <a href="#ad150387e14628665613f1d9a3d27a418">More...</a><br/></td></tr>
-<tr class="separator:ad150387e14628665613f1d9a3d27a418"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a850c1ca105245a514e76519d5edaad2c"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a3f6006f19ae6445e4a42f9d16b720ad7">CENSUSAPI</a> int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#a850c1ca105245a514e76519d5edaad2c">census_initialize</a> (int features)</td></tr>
+<tr class="memdesc:a850c1ca105245a514e76519d5edaad2c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Shutdown and startup census subsystem.  <a href="#a850c1ca105245a514e76519d5edaad2c">More...</a><br/></td></tr>
+<tr class="separator:a850c1ca105245a514e76519d5edaad2c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad21073b22ae5c30cad63a29340f54048"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a3f6006f19ae6445e4a42f9d16b720ad7">CENSUSAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#ad21073b22ae5c30cad63a29340f54048">census_shutdown</a> (void)</td></tr>
+<tr class="separator:ad21073b22ae5c30cad63a29340f54048"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae22d3c8dfe3bfac5e831b0135ff7a536"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a3f6006f19ae6445e4a42f9d16b720ad7">CENSUSAPI</a> int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#ae22d3c8dfe3bfac5e831b0135ff7a536">census_supported</a> (void)</td></tr>
+<tr class="memdesc:ae22d3c8dfe3bfac5e831b0135ff7a536"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the features supported by the current census implementation (not all features will be available on all platforms).  <a href="#ae22d3c8dfe3bfac5e831b0135ff7a536">More...</a><br/></td></tr>
+<tr class="separator:ae22d3c8dfe3bfac5e831b0135ff7a536"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6964222b3c20833883d7d05ab6b6e67e"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a3f6006f19ae6445e4a42f9d16b720ad7">CENSUSAPI</a> int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#a6964222b3c20833883d7d05ab6b6e67e">census_enabled</a> (void)</td></tr>
+<tr class="memdesc:a6964222b3c20833883d7d05ab6b6e67e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the census features currently enabled.  <a href="#a6964222b3c20833883d7d05ab6b6e67e">More...</a><br/></td></tr>
+<tr class="separator:a6964222b3c20833883d7d05ab6b6e67e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a63289de665c241f31e9c32666310ec3a"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a3f6006f19ae6445e4a42f9d16b720ad7">CENSUSAPI</a> <a class="el" href="census_8h.html#a27fc8788690179599713226f1f054736">census_context</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#a63289de665c241f31e9c32666310ec3a">census_context_create</a> (const <a class="el" href="census_8h.html#a27fc8788690179599713226f1f054736">census_context</a> *base, const <a class="el" href="structcensus__tag.html">census_tag</a> *tags, int ntags, <a class="el" href="structcensus__context__status.html">census_context_status</a> const **status)</td></tr>
+<tr class="separator:a63289de665c241f31e9c32666310ec3a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6e29f72138aac3eac75ef13a7bd25560"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a3f6006f19ae6445e4a42f9d16b720ad7">CENSUSAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#a6e29f72138aac3eac75ef13a7bd25560">census_context_destroy</a> (<a class="el" href="census_8h.html#a27fc8788690179599713226f1f054736">census_context</a> *context)</td></tr>
+<tr class="separator:a6e29f72138aac3eac75ef13a7bd25560"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a12077dda197a10bf2198203eac1a348a"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a3f6006f19ae6445e4a42f9d16b720ad7">CENSUSAPI</a> const <br class="typebreak"/>
+<a class="el" href="structcensus__context__status.html">census_context_status</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#a12077dda197a10bf2198203eac1a348a">census_context_get_status</a> (const <a class="el" href="census_8h.html#a27fc8788690179599713226f1f054736">census_context</a> *context)</td></tr>
+<tr class="separator:a12077dda197a10bf2198203eac1a348a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac19f91fc3442073217752ce4abf5dfc4"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a3f6006f19ae6445e4a42f9d16b720ad7">CENSUSAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#ac19f91fc3442073217752ce4abf5dfc4">census_context_initialize_iterator</a> (const <a class="el" href="census_8h.html#a27fc8788690179599713226f1f054736">census_context</a> *context, <a class="el" href="structcensus__context__iterator.html">census_context_iterator</a> *iterator)</td></tr>
+<tr class="separator:ac19f91fc3442073217752ce4abf5dfc4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a756d86b68b73a9ad9dacdfdaeb2a865c"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a3f6006f19ae6445e4a42f9d16b720ad7">CENSUSAPI</a> int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#a756d86b68b73a9ad9dacdfdaeb2a865c">census_context_next_tag</a> (<a class="el" href="structcensus__context__iterator.html">census_context_iterator</a> *iterator, <a class="el" href="structcensus__tag.html">census_tag</a> *tag)</td></tr>
+<tr class="separator:a756d86b68b73a9ad9dacdfdaeb2a865c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a610c654980b00da26ed7b2becca79f94"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a3f6006f19ae6445e4a42f9d16b720ad7">CENSUSAPI</a> int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#a610c654980b00da26ed7b2becca79f94">census_context_get_tag</a> (const <a class="el" href="census_8h.html#a27fc8788690179599713226f1f054736">census_context</a> *context, const char *key, <a class="el" href="structcensus__tag.html">census_tag</a> *tag)</td></tr>
+<tr class="separator:a610c654980b00da26ed7b2becca79f94"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a339fd5da5a7b080a9f98c9a0ed22ad28"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a3f6006f19ae6445e4a42f9d16b720ad7">CENSUSAPI</a> char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#a339fd5da5a7b080a9f98c9a0ed22ad28">census_context_encode</a> (const <a class="el" href="census_8h.html#a27fc8788690179599713226f1f054736">census_context</a> *context, char *buffer, size_t buf_size, size_t *print_buf_size, size_t *bin_buf_size)</td></tr>
+<tr class="separator:a339fd5da5a7b080a9f98c9a0ed22ad28"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:add1983e11e6bfbb6e3eafd085c8f2e5d"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a3f6006f19ae6445e4a42f9d16b720ad7">CENSUSAPI</a> <a class="el" href="census_8h.html#a27fc8788690179599713226f1f054736">census_context</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#add1983e11e6bfbb6e3eafd085c8f2e5d">census_context_decode</a> (const char *buffer, size_t size, const char *bin_buffer, size_t bin_size)</td></tr>
+<tr class="separator:add1983e11e6bfbb6e3eafd085c8f2e5d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2a2dfc973cd259d93b0901c8b32e8f34"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a3f6006f19ae6445e4a42f9d16b720ad7">CENSUSAPI</a> int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#a2a2dfc973cd259d93b0901c8b32e8f34">census_trace_mask</a> (const <a class="el" href="census_8h.html#a27fc8788690179599713226f1f054736">census_context</a> *context)</td></tr>
+<tr class="memdesc:a2a2dfc973cd259d93b0901c8b32e8f34"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the current trace mask associated with this context.  <a href="#a2a2dfc973cd259d93b0901c8b32e8f34">More...</a><br/></td></tr>
+<tr class="separator:a2a2dfc973cd259d93b0901c8b32e8f34"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2088bf00a48a7a9b0a6e659fa5161ef9"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a3f6006f19ae6445e4a42f9d16b720ad7">CENSUSAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#a2088bf00a48a7a9b0a6e659fa5161ef9">census_set_trace_mask</a> (int trace_mask)</td></tr>
+<tr class="memdesc:a2088bf00a48a7a9b0a6e659fa5161ef9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the trace mask associated with a context.  <a href="#a2088bf00a48a7a9b0a6e659fa5161ef9">More...</a><br/></td></tr>
+<tr class="separator:a2088bf00a48a7a9b0a6e659fa5161ef9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a57255eb87c6ade8ee6eb8856d3ecfc11"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a3f6006f19ae6445e4a42f9d16b720ad7">CENSUSAPI</a> <a class="el" href="structcensus__timestamp.html">census_timestamp</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#a57255eb87c6ade8ee6eb8856d3ecfc11">census_start_rpc_op_timestamp</a> (void)</td></tr>
+<tr class="memdesc:a57255eb87c6ade8ee6eb8856d3ecfc11"><td class="mdescLeft">&#160;</td><td class="mdescRight">Mark the beginning of an RPC operation.  <a href="#a57255eb87c6ade8ee6eb8856d3ecfc11">More...</a><br/></td></tr>
+<tr class="separator:a57255eb87c6ade8ee6eb8856d3ecfc11"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abd6d5aa344819ec9d73c79b9fe6778dc"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a3f6006f19ae6445e4a42f9d16b720ad7">CENSUSAPI</a> <a class="el" href="census_8h.html#a27fc8788690179599713226f1f054736">census_context</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#abd6d5aa344819ec9d73c79b9fe6778dc">census_start_client_rpc_op</a> (const <a class="el" href="census_8h.html#a27fc8788690179599713226f1f054736">census_context</a> *context, int64_t rpc_name_id, const <a class="el" href="structcensus__rpc__name__info.html">census_rpc_name_info</a> *rpc_name_info, const char *peer, int trace_mask, const <a class="el" href="structcensus__timestamp.html">census_timestamp</a> *start_time)</td></tr>
+<tr class="memdesc:abd6d5aa344819ec9d73c79b9fe6778dc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Start a client rpc operation.  <a href="#abd6d5aa344819ec9d73c79b9fe6778dc">More...</a><br/></td></tr>
+<tr class="separator:abd6d5aa344819ec9d73c79b9fe6778dc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab20a8e42995181004f5fbc9a87e339d3"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a3f6006f19ae6445e4a42f9d16b720ad7">CENSUSAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#ab20a8e42995181004f5fbc9a87e339d3">census_set_rpc_client_peer</a> (<a class="el" href="census_8h.html#a27fc8788690179599713226f1f054736">census_context</a> *context, const char *peer)</td></tr>
+<tr class="memdesc:ab20a8e42995181004f5fbc9a87e339d3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Add peer information to a context representing a client RPC operation.  <a href="#ab20a8e42995181004f5fbc9a87e339d3">More...</a><br/></td></tr>
+<tr class="separator:ab20a8e42995181004f5fbc9a87e339d3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a18e3c1cddf38f66a5e8cbf79d7084369"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a3f6006f19ae6445e4a42f9d16b720ad7">CENSUSAPI</a> <a class="el" href="census_8h.html#a27fc8788690179599713226f1f054736">census_context</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#a18e3c1cddf38f66a5e8cbf79d7084369">census_start_server_rpc_op</a> (const char *buffer, int64_t rpc_name_id, const <a class="el" href="structcensus__rpc__name__info.html">census_rpc_name_info</a> *rpc_name_info, const char *peer, int trace_mask, <a class="el" href="structcensus__timestamp.html">census_timestamp</a> *start_time)</td></tr>
+<tr class="memdesc:a18e3c1cddf38f66a5e8cbf79d7084369"><td class="mdescLeft">&#160;</td><td class="mdescRight">Start a server RPC operation.  <a href="#a18e3c1cddf38f66a5e8cbf79d7084369">More...</a><br/></td></tr>
+<tr class="separator:a18e3c1cddf38f66a5e8cbf79d7084369"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae1536ef86b12a6904cb1de3a47f0ca1b"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a3f6006f19ae6445e4a42f9d16b720ad7">CENSUSAPI</a> <a class="el" href="census_8h.html#a27fc8788690179599713226f1f054736">census_context</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#ae1536ef86b12a6904cb1de3a47f0ca1b">census_start_op</a> (<a class="el" href="census_8h.html#a27fc8788690179599713226f1f054736">census_context</a> *context, const char *family, const char *name, int trace_mask)</td></tr>
+<tr class="memdesc:ae1536ef86b12a6904cb1de3a47f0ca1b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Start a new, non-RPC operation.  <a href="#ae1536ef86b12a6904cb1de3a47f0ca1b">More...</a><br/></td></tr>
+<tr class="separator:ae1536ef86b12a6904cb1de3a47f0ca1b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aee31ac081d81e46746025b06071f1f0e"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a3f6006f19ae6445e4a42f9d16b720ad7">CENSUSAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#aee31ac081d81e46746025b06071f1f0e">census_end_op</a> (<a class="el" href="census_8h.html#a27fc8788690179599713226f1f054736">census_context</a> *context, int status)</td></tr>
+<tr class="memdesc:aee31ac081d81e46746025b06071f1f0e"><td class="mdescLeft">&#160;</td><td class="mdescRight">End an operation started by any of the census_start_*_op*() calls.  <a href="#aee31ac081d81e46746025b06071f1f0e">More...</a><br/></td></tr>
+<tr class="separator:aee31ac081d81e46746025b06071f1f0e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aacf722bf9259354d1ab7a81a6c2fd666"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a3f6006f19ae6445e4a42f9d16b720ad7">CENSUSAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#aacf722bf9259354d1ab7a81a6c2fd666">census_trace_print</a> (<a class="el" href="census_8h.html#a27fc8788690179599713226f1f054736">census_context</a> *context, uint32_t type, const char *buffer, size_t n)</td></tr>
+<tr class="memdesc:aacf722bf9259354d1ab7a81a6c2fd666"><td class="mdescLeft">&#160;</td><td class="mdescRight">Insert a trace record into the trace stream.  <a href="#aacf722bf9259354d1ab7a81a6c2fd666">More...</a><br/></td></tr>
+<tr class="separator:aacf722bf9259354d1ab7a81a6c2fd666"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad78c02761da0d8a7a70bf4add263f91f"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a3f6006f19ae6445e4a42f9d16b720ad7">CENSUSAPI</a> int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#ad78c02761da0d8a7a70bf4add263f91f">census_trace_scan_start</a> (int consume)</td></tr>
+<tr class="memdesc:ad78c02761da0d8a7a70bf4add263f91f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Start a scan of existing trace records.  <a href="#ad78c02761da0d8a7a70bf4add263f91f">More...</a><br/></td></tr>
+<tr class="separator:ad78c02761da0d8a7a70bf4add263f91f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aeb5d22e80a87eabe9880f08c56e95bf1"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a3f6006f19ae6445e4a42f9d16b720ad7">CENSUSAPI</a> int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#aeb5d22e80a87eabe9880f08c56e95bf1">census_get_trace_record</a> (<a class="el" href="structcensus__trace__record.html">census_trace_record</a> *trace_record)</td></tr>
+<tr class="memdesc:aeb5d22e80a87eabe9880f08c56e95bf1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get a trace record.  <a href="#aeb5d22e80a87eabe9880f08c56e95bf1">More...</a><br/></td></tr>
+<tr class="separator:aeb5d22e80a87eabe9880f08c56e95bf1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a22eb7df4c9b232d8962592d738007ecb"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a3f6006f19ae6445e4a42f9d16b720ad7">CENSUSAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#a22eb7df4c9b232d8962592d738007ecb">census_trace_scan_end</a> ()</td></tr>
+<tr class="memdesc:a22eb7df4c9b232d8962592d738007ecb"><td class="mdescLeft">&#160;</td><td class="mdescRight">End a scan previously started by <a class="el" href="census_8h.html#ad78c02761da0d8a7a70bf4add263f91f" title="Start a scan of existing trace records. ">census_trace_scan_start()</a>  <a href="#a22eb7df4c9b232d8962592d738007ecb">More...</a><br/></td></tr>
+<tr class="separator:a22eb7df4c9b232d8962592d738007ecb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a26acfcba7f6b3f2b86d0a7fdc45e32ba"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a3f6006f19ae6445e4a42f9d16b720ad7">CENSUSAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#a26acfcba7f6b3f2b86d0a7fdc45e32ba">census_record_values</a> (<a class="el" href="census_8h.html#a27fc8788690179599713226f1f054736">census_context</a> *context, <a class="el" href="structcensus__value.html">census_value</a> *values, size_t nvalues)</td></tr>
+<tr class="separator:a26acfcba7f6b3f2b86d0a7fdc45e32ba"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8ac9c2a6718e812bf8f42a2016738408"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a3f6006f19ae6445e4a42f9d16b720ad7">CENSUSAPI</a> <a class="el" href="census_8h.html#ae43cfb236f1c79eeefb4d9bdf91e3aed">census_view</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#a8ac9c2a6718e812bf8f42a2016738408">census_view_create</a> (uint32_t metric_id, const <a class="el" href="census_8h.html#a27fc8788690179599713226f1f054736">census_context</a> *tags, const <a class="el" href="structcensus__aggregation.html">census_aggregation</a> *aggregations, size_t naggregations)</td></tr>
+<tr class="memdesc:a8ac9c2a6718e812bf8f42a2016738408"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a new view.  <a href="#a8ac9c2a6718e812bf8f42a2016738408">More...</a><br/></td></tr>
+<tr class="separator:a8ac9c2a6718e812bf8f42a2016738408"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a156998a6bc44f6c336d427d006044759"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a3f6006f19ae6445e4a42f9d16b720ad7">CENSUSAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#a156998a6bc44f6c336d427d006044759">census_view_delete</a> (<a class="el" href="census_8h.html#ae43cfb236f1c79eeefb4d9bdf91e3aed">census_view</a> *view)</td></tr>
+<tr class="memdesc:a156998a6bc44f6c336d427d006044759"><td class="mdescLeft">&#160;</td><td class="mdescRight">Destroy a previously created view.  <a href="#a156998a6bc44f6c336d427d006044759">More...</a><br/></td></tr>
+<tr class="separator:a156998a6bc44f6c336d427d006044759"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af1387180cddfb7a2df512a21aaaae42b"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a3f6006f19ae6445e4a42f9d16b720ad7">CENSUSAPI</a> size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#af1387180cddfb7a2df512a21aaaae42b">census_view_metric</a> (const <a class="el" href="census_8h.html#ae43cfb236f1c79eeefb4d9bdf91e3aed">census_view</a> *view)</td></tr>
+<tr class="memdesc:af1387180cddfb7a2df512a21aaaae42b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Metric ID associated with a view.  <a href="#af1387180cddfb7a2df512a21aaaae42b">More...</a><br/></td></tr>
+<tr class="separator:af1387180cddfb7a2df512a21aaaae42b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac20c30b46592a991ba098c43fc7e2d2f"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a3f6006f19ae6445e4a42f9d16b720ad7">CENSUSAPI</a> size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#ac20c30b46592a991ba098c43fc7e2d2f">census_view_naggregations</a> (const <a class="el" href="census_8h.html#ae43cfb236f1c79eeefb4d9bdf91e3aed">census_view</a> *view)</td></tr>
+<tr class="memdesc:ac20c30b46592a991ba098c43fc7e2d2f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Number of aggregations associated with view.  <a href="#ac20c30b46592a991ba098c43fc7e2d2f">More...</a><br/></td></tr>
+<tr class="separator:ac20c30b46592a991ba098c43fc7e2d2f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a50f2d9352480dbd7756d31b38d78745c"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a3f6006f19ae6445e4a42f9d16b720ad7">CENSUSAPI</a> const <a class="el" href="census_8h.html#a27fc8788690179599713226f1f054736">census_context</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#a50f2d9352480dbd7756d31b38d78745c">census_view_tags</a> (const <a class="el" href="census_8h.html#ae43cfb236f1c79eeefb4d9bdf91e3aed">census_view</a> *view)</td></tr>
+<tr class="memdesc:a50f2d9352480dbd7756d31b38d78745c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get tags associated with view.  <a href="#a50f2d9352480dbd7756d31b38d78745c">More...</a><br/></td></tr>
+<tr class="separator:a50f2d9352480dbd7756d31b38d78745c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1a7c785d959d32b0c7f45fbf8b9210af"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a3f6006f19ae6445e4a42f9d16b720ad7">CENSUSAPI</a> const <br class="typebreak"/>
+<a class="el" href="structcensus__aggregation.html">census_aggregation</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#a1a7c785d959d32b0c7f45fbf8b9210af">census_view_aggregrations</a> (const <a class="el" href="census_8h.html#ae43cfb236f1c79eeefb4d9bdf91e3aed">census_view</a> *view)</td></tr>
+<tr class="memdesc:a1a7c785d959d32b0c7f45fbf8b9210af"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get aggregation descriptors associated with a view.  <a href="#a1a7c785d959d32b0c7f45fbf8b9210af">More...</a><br/></td></tr>
+<tr class="separator:a1a7c785d959d32b0c7f45fbf8b9210af"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1d2f0b30386e8772c09694dfc74d686c"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a3f6006f19ae6445e4a42f9d16b720ad7">CENSUSAPI</a> const <a class="el" href="structcensus__view__data.html">census_view_data</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#a1d2f0b30386e8772c09694dfc74d686c">census_view_get_data</a> (const <a class="el" href="census_8h.html#ae43cfb236f1c79eeefb4d9bdf91e3aed">census_view</a> *view)</td></tr>
+<tr class="memdesc:a1d2f0b30386e8772c09694dfc74d686c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get data from aggregations associated with a view.  <a href="#a1d2f0b30386e8772c09694dfc74d686c">More...</a><br/></td></tr>
+<tr class="separator:a1d2f0b30386e8772c09694dfc74d686c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8aaadf898da63f9438e3262822234c6d"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a3f6006f19ae6445e4a42f9d16b720ad7">CENSUSAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="census_8h.html#a8aaadf898da63f9438e3262822234c6d">census_view_reset</a> (<a class="el" href="census_8h.html#ae43cfb236f1c79eeefb4d9bdf91e3aed">census_view</a> *view)</td></tr>
+<tr class="memdesc:a8aaadf898da63f9438e3262822234c6d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Reset all view data to zero for the specified view.  <a href="#a8aaadf898da63f9438e3262822234c6d">More...</a><br/></td></tr>
+<tr class="separator:a8aaadf898da63f9438e3262822234c6d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="var-members"></a>
 Variables</h2></td></tr>
@@ -274,24 +289,120 @@ Variables</h2></td></tr>
 <tr class="separator:a4b8a7f096dcd85c93f823cddb2bf960e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Macro Definition Documentation</h2>
-<a class="anchor" id="aa89c96f0f32d85a1b28b68f0ef326dd4"></a>
+<a class="anchor" id="a487ca94a4b349f1a7d3d28a21b154f4e"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">#define CENSUS_MAX_TAG_KEY_LENGTH&#160;&#160;&#160;20</td>
+          <td class="memname">#define CENSUS_MAX_PROPAGATED_TAGS&#160;&#160;&#160;255</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
 </div>
 </div>
-<a class="anchor" id="a22d6971ca41fd944e13e5b4c2a42bf8c"></a>
+<a class="anchor" id="ac3fa459cd0c1621953c46b07bac2faa7"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">#define CENSUS_MAX_TAG_VALUE_LENGTH&#160;&#160;&#160;50</td>
+          <td class="memname">#define CENSUS_MAX_TAG_KV_LEN&#160;&#160;&#160;255</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a class="anchor" id="a718a086bf7a282a0b5ae1d2fd8c6666c"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define CENSUS_TAG_BINARY&#160;&#160;&#160;4    /* Tag value is not printable */</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a class="anchor" id="a3c63d07ee49c74c1a987949156163f47"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define CENSUS_TAG_IS_BINARY</td>
+          <td>(</td>
+          <td class="paramtype">&#160;</td>
+          <td class="paramname">flags</td><td>)</td>
+          <td>&#160;&#160;&#160;(flags &amp; <a class="el" href="census_8h.html#a718a086bf7a282a0b5ae1d2fd8c6666c">CENSUS_TAG_BINARY</a>)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a class="anchor" id="afa3a818c132d55bb1f0afb7442d8f848"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define CENSUS_TAG_IS_PROPAGATED</td>
+          <td>(</td>
+          <td class="paramtype">&#160;</td>
+          <td class="paramname">flags</td><td>)</td>
+          <td>&#160;&#160;&#160;(flags &amp; <a class="el" href="census_8h.html#ac116a5843bd29f43a949c56ef5ae619a">CENSUS_TAG_PROPAGATE</a>)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a class="anchor" id="aaca94b54b685c481236dfb913fef8b4c"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define CENSUS_TAG_IS_STATS</td>
+          <td>(</td>
+          <td class="paramtype">&#160;</td>
+          <td class="paramname">flags</td><td>)</td>
+          <td>&#160;&#160;&#160;(flags &amp; <a class="el" href="census_8h.html#ab3c3a66a8c2f392d4a14e75dc44e8931">CENSUS_TAG_STATS</a>)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a class="anchor" id="ac116a5843bd29f43a949c56ef5ae619a"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define CENSUS_TAG_PROPAGATE&#160;&#160;&#160;1 /* Tag should be propagated over RPC */</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a class="anchor" id="a070dd8c57a1a31ced0c7ead5a5910df7"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define CENSUS_TAG_RESERVED&#160;&#160;&#160;8  /* Reserved for internal use. */</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a class="anchor" id="ab3c3a66a8c2f392d4a14e75dc44e8931"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define CENSUS_TAG_STATS&#160;&#160;&#160;2     /* Tag will be used for statistics aggregation */</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -303,7 +414,7 @@ Variables</h2></td></tr>
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">#define CENSUS_TRACE_RECORD_END_OP&#160;&#160;&#160;((<a class="el" href="port__platform_8h.html#aa6abd4df815a5498d1a04b5e691a74a9">gpr_uint32</a>)1)</td>
+          <td class="memname">#define CENSUS_TRACE_RECORD_END_OP&#160;&#160;&#160;((uint32_t)1)</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -315,7 +426,7 @@ Variables</h2></td></tr>
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">#define CENSUS_TRACE_RECORD_START_OP&#160;&#160;&#160;((<a class="el" href="port__platform_8h.html#aa6abd4df815a5498d1a04b5e691a74a9">gpr_uint32</a>)0)</td>
+          <td class="memname">#define CENSUS_TRACE_RECORD_START_OP&#160;&#160;&#160;((uint32_t)0)</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -347,32 +458,8 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Context is a handle used by census to represent the current tracing and tagging information. </p>
-<p>Contexts should be propagated across RPC's. Contexts are created by any of the census_start_*_op() functions. A context is typically used as argument to most census functions. Conceptually, contexts should be thought of as specific to single RPC/thread. The context can be serialized for passing across the wire, via <a class="el" href="census_8h.html#ad9a7d3170ecf720e1b22a4f255605748">census_context_serialize()</a>. </p>
-
-</div>
-</div>
-<a class="anchor" id="afc68a73849e0d1565e74c28c822bb086"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">typedef struct <a class="el" href="census_8h.html#afc68a73849e0d1565e74c28c822bb086">census_tag_set</a> <a class="el" href="census_8h.html#afc68a73849e0d1565e74c28c822bb086">census_tag_set</a></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a class="anchor" id="a22a740b7e9e3798cb9208b3bd6ea31a7"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">typedef struct <a class="el" href="census_8h.html#a22a740b7e9e3798cb9208b3bd6ea31a7">census_tag_set_iterator</a> <a class="el" href="census_8h.html#a22a740b7e9e3798cb9208b3bd6ea31a7">census_tag_set_iterator</a></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
+<p>A Census Context is a handle used by Census to represent the current tracing and stats collection information. </p>
+<p>Contexts should be propagated across RPC's (this is the responsibility of the local RPC system). A context is typically used as the first argument to most census functions. Conceptually, they should be thought of as specific to a single RPC/thread. The user visible context representation is that of a collection of key:value string pairs, each of which is termed a 'tag'; these form the basis against which Census metrics will be recorded. Keys are unique within a context. </p>
 
 </div>
 </div>
@@ -435,12 +522,104 @@ Variables</h2></td></tr>
 </div>
 </div>
 <h2 class="groupheader">Function Documentation</h2>
-<a class="anchor" id="ad9a7d3170ecf720e1b22a4f255605748"></a>
+<a class="anchor" id="a63289de665c241f31e9c32666310ec3a"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">size_t census_context_serialize </td>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a3f6006f19ae6445e4a42f9d16b720ad7">CENSUSAPI</a> <a class="el" href="census_8h.html#a27fc8788690179599713226f1f054736">census_context</a>* census_context_create </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="census_8h.html#a27fc8788690179599713226f1f054736">census_context</a> *&#160;</td>
+          <td class="paramname"><em>base</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="structcensus__tag.html">census_tag</a> *&#160;</td>
+          <td class="paramname"><em>tags</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>ntags</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="structcensus__context__status.html">census_context_status</a> const **&#160;</td>
+          <td class="paramname"><em>status</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a class="anchor" id="add1983e11e6bfbb6e3eafd085c8f2e5d"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a3f6006f19ae6445e4a42f9d16b720ad7">CENSUSAPI</a> <a class="el" href="census_8h.html#a27fc8788690179599713226f1f054736">census_context</a>* census_context_decode </td>
+          <td>(</td>
+          <td class="paramtype">const char *&#160;</td>
+          <td class="paramname"><em>buffer</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">size_t&#160;</td>
+          <td class="paramname"><em>size</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const char *&#160;</td>
+          <td class="paramname"><em>bin_buffer</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">size_t&#160;</td>
+          <td class="paramname"><em>bin_size</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a class="anchor" id="a6e29f72138aac3eac75ef13a7bd25560"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a3f6006f19ae6445e4a42f9d16b720ad7">CENSUSAPI</a> void census_context_destroy </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="census_8h.html#a27fc8788690179599713226f1f054736">census_context</a> *&#160;</td>
+          <td class="paramname"><em>context</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a class="anchor" id="a339fd5da5a7b080a9f98c9a0ed22ad28"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a3f6006f19ae6445e4a42f9d16b720ad7">CENSUSAPI</a> char* census_context_encode </td>
           <td>(</td>
           <td class="paramtype">const <a class="el" href="census_8h.html#a27fc8788690179599713226f1f054736">census_context</a> *&#160;</td>
           <td class="paramname"><em>context</em>, </td>
@@ -455,7 +634,19 @@ Variables</h2></td></tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">size_t&#160;</td>
-          <td class="paramname"><em>buf_size</em>&#160;</td>
+          <td class="paramname"><em>buf_size</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">size_t *&#160;</td>
+          <td class="paramname"><em>print_buf_size</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">size_t *&#160;</td>
+          <td class="paramname"><em>bin_buf_size</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -467,14 +658,14 @@ Variables</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="a78ec7fa52ea54e631bb11d59a8adba33"></a>
+<a class="anchor" id="a12077dda197a10bf2198203eac1a348a"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="census_8h.html#afc68a73849e0d1565e74c28c822bb086">census_tag_set</a>* census_context_tag_set </td>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a3f6006f19ae6445e4a42f9d16b720ad7">CENSUSAPI</a> const <a class="el" href="structcensus__context__status.html">census_context_status</a>* census_context_get_status </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="census_8h.html#a27fc8788690179599713226f1f054736">census_context</a> *&#160;</td>
+          <td class="paramtype">const <a class="el" href="census_8h.html#a27fc8788690179599713226f1f054736">census_context</a> *&#160;</td>
           <td class="paramname"><em>context</em></td><td>)</td>
           <td></td>
         </tr>
@@ -483,12 +674,96 @@ Variables</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="a742616973e78aaf969389cea20feea9f"></a>
+<a class="anchor" id="a610c654980b00da26ed7b2becca79f94"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">int census_enabled </td>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a3f6006f19ae6445e4a42f9d16b720ad7">CENSUSAPI</a> int census_context_get_tag </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="census_8h.html#a27fc8788690179599713226f1f054736">census_context</a> *&#160;</td>
+          <td class="paramname"><em>context</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const char *&#160;</td>
+          <td class="paramname"><em>key</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="structcensus__tag.html">census_tag</a> *&#160;</td>
+          <td class="paramname"><em>tag</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a class="anchor" id="ac19f91fc3442073217752ce4abf5dfc4"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a3f6006f19ae6445e4a42f9d16b720ad7">CENSUSAPI</a> void census_context_initialize_iterator </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="census_8h.html#a27fc8788690179599713226f1f054736">census_context</a> *&#160;</td>
+          <td class="paramname"><em>context</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="structcensus__context__iterator.html">census_context_iterator</a> *&#160;</td>
+          <td class="paramname"><em>iterator</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a class="anchor" id="a756d86b68b73a9ad9dacdfdaeb2a865c"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a3f6006f19ae6445e4a42f9d16b720ad7">CENSUSAPI</a> int census_context_next_tag </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="structcensus__context__iterator.html">census_context_iterator</a> *&#160;</td>
+          <td class="paramname"><em>iterator</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="structcensus__tag.html">census_tag</a> *&#160;</td>
+          <td class="paramname"><em>tag</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a class="anchor" id="a6964222b3c20833883d7d05ab6b6e67e"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a3f6006f19ae6445e4a42f9d16b720ad7">CENSUSAPI</a> int census_enabled </td>
           <td>(</td>
           <td class="paramtype">void&#160;</td>
           <td class="paramname"></td><td>)</td>
@@ -501,12 +776,12 @@ Variables</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="a97a3300020cdacd7149e0efae9f5541e"></a>
+<a class="anchor" id="aee31ac081d81e46746025b06071f1f0e"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">void census_end_op </td>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a3f6006f19ae6445e4a42f9d16b720ad7">CENSUSAPI</a> void census_end_op </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="census_8h.html#a27fc8788690179599713226f1f054736">census_context</a> *&#160;</td>
           <td class="paramname"><em>context</em>, </td>
@@ -537,12 +812,12 @@ Variables</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="a31151a1bca352d6046e6039fa864808c"></a>
+<a class="anchor" id="aeb5d22e80a87eabe9880f08c56e95bf1"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">int census_get_trace_record </td>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a3f6006f19ae6445e4a42f9d16b720ad7">CENSUSAPI</a> int census_get_trace_record </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="structcensus__trace__record.html">census_trace_record</a> *&#160;</td>
           <td class="paramname"><em>trace_record</em></td><td>)</td>
@@ -552,23 +827,23 @@ Variables</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Get a trace record. </p>
-<p>The data pointed to by the trace buffer is guaranteed stable until the next <a class="el" href="census_8h.html#a31151a1bca352d6046e6039fa864808c" title="Get a trace record. ">census_get_trace_record()</a> call (if the consume argument to census_trace_scan_start was non-zero) or <a class="el" href="census_8h.html#adee01ffd0c56ca2c8c90919a73c3f8ba" title="End a scan previously started by census_trace_scan_start() ">census_trace_scan_end()</a> is called (otherwise). </p>
+<p>The data pointed to by the trace buffer is guaranteed stable until the next <a class="el" href="census_8h.html#aeb5d22e80a87eabe9880f08c56e95bf1" title="Get a trace record. ">census_get_trace_record()</a> call (if the consume argument to census_trace_scan_start was non-zero) or <a class="el" href="census_8h.html#a22eb7df4c9b232d8962592d738007ecb" title="End a scan previously started by census_trace_scan_start() ">census_trace_scan_end()</a> is called (otherwise). </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">trace_record</td><td>structure that will be filled in with oldest trace record. </td></tr>
   </table>
   </dd>
 </dl>
-<dl class="section return"><dt>Returns</dt><dd>-1 if an error occurred (e.g. no previous call to <a class="el" href="census_8h.html#ab93305c7e6b04cd51f95aa497227f53a" title="Start a scan of existing trace records. ">census_trace_scan_start()</a>), 0 if there is no more trace data (and trace_record will not be modified) or 1 otherwise. </dd></dl>
+<dl class="section return"><dt>Returns</dt><dd>-1 if an error occurred (e.g. no previous call to <a class="el" href="census_8h.html#ad78c02761da0d8a7a70bf4add263f91f" title="Start a scan of existing trace records. ">census_trace_scan_start()</a>), 0 if there is no more trace data (and trace_record will not be modified) or 1 otherwise. </dd></dl>
 
 </div>
 </div>
-<a class="anchor" id="a4cea92157f3de215724f6bf4aeaee1b6"></a>
+<a class="anchor" id="a850c1ca105245a514e76519d5edaad2c"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">int census_initialize </td>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a3f6006f19ae6445e4a42f9d16b720ad7">CENSUSAPI</a> int census_initialize </td>
           <td>(</td>
           <td class="paramtype">int&#160;</td>
           <td class="paramname"><em>features</em></td><td>)</td>
@@ -578,16 +853,16 @@ Variables</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Shutdown and startup census subsystem. </p>
-<p>The 'features' argument should be the OR (|) of census_features values. If census fails to initialize, then <a class="el" href="census_8h.html#a4cea92157f3de215724f6bf4aeaee1b6" title="Shutdown and startup census subsystem. ">census_initialize()</a> will return a non-zero value. It is an error to call <a class="el" href="census_8h.html#a4cea92157f3de215724f6bf4aeaee1b6" title="Shutdown and startup census subsystem. ">census_initialize()</a> more than once (without an intervening <a class="el" href="census_8h.html#aa792b067548ecdd987d560b492c83d85">census_shutdown()</a>). </p>
+<p>The 'features' argument should be the OR (|) of census_features values. If census fails to initialize, then <a class="el" href="census_8h.html#a850c1ca105245a514e76519d5edaad2c" title="Shutdown and startup census subsystem. ">census_initialize()</a> will return a non-zero value. It is an error to call <a class="el" href="census_8h.html#a850c1ca105245a514e76519d5edaad2c" title="Shutdown and startup census subsystem. ">census_initialize()</a> more than once (without an intervening <a class="el" href="census_8h.html#ad21073b22ae5c30cad63a29340f54048">census_shutdown()</a>). </p>
 
 </div>
 </div>
-<a class="anchor" id="a1225e8bbc14ff51173b6485940940572"></a>
+<a class="anchor" id="a26acfcba7f6b3f2b86d0a7fdc45e32ba"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">void census_record_values </td>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a3f6006f19ae6445e4a42f9d16b720ad7">CENSUSAPI</a> void census_record_values </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="census_8h.html#a27fc8788690179599713226f1f054736">census_context</a> *&#160;</td>
           <td class="paramname"><em>context</em>, </td>
@@ -614,12 +889,12 @@ Variables</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="a06407a753c261626b4e25c4f6fe0b840"></a>
+<a class="anchor" id="ab20a8e42995181004f5fbc9a87e339d3"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">void census_set_rpc_client_peer </td>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a3f6006f19ae6445e4a42f9d16b720ad7">CENSUSAPI</a> void census_set_rpc_client_peer </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="census_8h.html#a27fc8788690179599713226f1f054736">census_context</a> *&#160;</td>
           <td class="paramname"><em>context</em>, </td>
@@ -642,12 +917,12 @@ Variables</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="a2762b05c4e9bb8a6994519725cb69a84"></a>
+<a class="anchor" id="a2088bf00a48a7a9b0a6e659fa5161ef9"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">void census_set_trace_mask </td>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a3f6006f19ae6445e4a42f9d16b720ad7">CENSUSAPI</a> void census_set_trace_mask </td>
           <td>(</td>
           <td class="paramtype">int&#160;</td>
           <td class="paramname"><em>trace_mask</em></td><td>)</td>
@@ -660,12 +935,12 @@ Variables</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="aa792b067548ecdd987d560b492c83d85"></a>
+<a class="anchor" id="ad21073b22ae5c30cad63a29340f54048"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">void census_shutdown </td>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a3f6006f19ae6445e4a42f9d16b720ad7">CENSUSAPI</a> void census_shutdown </td>
           <td>(</td>
           <td class="paramtype">void&#160;</td>
           <td class="paramname"></td><td>)</td>
@@ -676,12 +951,12 @@ Variables</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="a0f2a69b151eac68f3c50806d2162d9f4"></a>
+<a class="anchor" id="abd6d5aa344819ec9d73c79b9fe6778dc"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="census_8h.html#a27fc8788690179599713226f1f054736">census_context</a>* census_start_client_rpc_op </td>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a3f6006f19ae6445e4a42f9d16b720ad7">CENSUSAPI</a> <a class="el" href="census_8h.html#a27fc8788690179599713226f1f054736">census_context</a>* census_start_client_rpc_op </td>
           <td>(</td>
           <td class="paramtype">const <a class="el" href="census_8h.html#a27fc8788690179599713226f1f054736">census_context</a> *&#160;</td>
           <td class="paramname"><em>context</em>, </td>
@@ -689,7 +964,7 @@ Variables</h2></td></tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype"><a class="el" href="port__platform_8h.html#a71edab4bc3421f129764e5cb342f7181">gpr_int64</a>&#160;</td>
+          <td class="paramtype">int64_t&#160;</td>
           <td class="paramname"><em>rpc_name_id</em>, </td>
         </tr>
         <tr>
@@ -731,15 +1006,15 @@ Variables</h2></td></tr>
 <li>use the new RPC path and peer information for tracing and stats collection purposes, rather than those from the original context</li>
 </ul>
 <p>If the context argument is NULL, then a new root context is created. This is particularly important for tracing purposes (the trace spans generated will be unassociated with any other trace spans, except those downstream). The trace_mask will be used for tracing operations associated with the new context.</p>
-<p>In some RPC systems (e.g. where load balancing is used), peer information may not be available at the time the operation starts. In this case, use a NULL value for peer, and set it later using the <a class="el" href="census_8h.html#a06407a753c261626b4e25c4f6fe0b840" title="Add peer information to a context representing a client RPC operation. ">census_set_rpc_client_peer()</a> function.</p>
+<p>In some RPC systems (e.g. where load balancing is used), peer information may not be available at the time the operation starts. In this case, use a NULL value for peer, and set it later using the <a class="el" href="census_8h.html#ab20a8e42995181004f5fbc9a87e339d3" title="Add peer information to a context representing a client RPC operation. ">census_set_rpc_client_peer()</a> function.</p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">context</td><td>The parent context. Can be NULL. </td></tr>
     <tr><td class="paramname">rpc_name_id</td><td>The rpc name identifier to be associated with this RPC. </td></tr>
     <tr><td class="paramname">rpc_name_info</td><td>Used to decode rpc_name_id. </td></tr>
-    <tr><td class="paramname">peer</td><td>RPC peer. If not available at the time, NULL can be used, and a later <a class="el" href="census_8h.html#a06407a753c261626b4e25c4f6fe0b840" title="Add peer information to a context representing a client RPC operation. ">census_set_rpc_client_peer()</a> call made. </td></tr>
+    <tr><td class="paramname">peer</td><td>RPC peer. If not available at the time, NULL can be used, and a later <a class="el" href="census_8h.html#ab20a8e42995181004f5fbc9a87e339d3" title="Add peer information to a context representing a client RPC operation. ">census_set_rpc_client_peer()</a> call made. </td></tr>
     <tr><td class="paramname">trace_mask</td><td>An OR of census_trace_mask_values values. Only used in the creation of a new root context (context == NULL). </td></tr>
-    <tr><td class="paramname">start_time</td><td>A timestamp returned from <a class="el" href="census_8h.html#a71b2afd7a1663c2a716af7242895442b" title="Mark the beginning of an RPC operation. ">census_start_rpc_op_timestamp()</a>. Can be NULL. Used to set the true time the operation begins.</td></tr>
+    <tr><td class="paramname">start_time</td><td>A timestamp returned from <a class="el" href="census_8h.html#a57255eb87c6ade8ee6eb8856d3ecfc11" title="Mark the beginning of an RPC operation. ">census_start_rpc_op_timestamp()</a>. Can be NULL. Used to set the true time the operation begins.</td></tr>
   </table>
   </dd>
 </dl>
@@ -747,12 +1022,12 @@ Variables</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="a14287fdb8adc322c1801435eb121e642"></a>
+<a class="anchor" id="ae1536ef86b12a6904cb1de3a47f0ca1b"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="census_8h.html#a27fc8788690179599713226f1f054736">census_context</a>* census_start_op </td>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a3f6006f19ae6445e4a42f9d16b720ad7">CENSUSAPI</a> <a class="el" href="census_8h.html#a27fc8788690179599713226f1f054736">census_context</a>* census_start_op </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="census_8h.html#a27fc8788690179599713226f1f054736">census_context</a> *&#160;</td>
           <td class="paramname"><em>context</em>, </td>
@@ -803,12 +1078,12 @@ Variables</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="a71b2afd7a1663c2a716af7242895442b"></a>
+<a class="anchor" id="a57255eb87c6ade8ee6eb8856d3ecfc11"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="structcensus__timestamp.html">census_timestamp</a> census_start_rpc_op_timestamp </td>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a3f6006f19ae6445e4a42f9d16b720ad7">CENSUSAPI</a> <a class="el" href="structcensus__timestamp.html">census_timestamp</a> census_start_rpc_op_timestamp </td>
           <td>(</td>
           <td class="paramtype">void&#160;</td>
           <td class="paramname"></td><td>)</td>
@@ -823,12 +1098,12 @@ Variables</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="ab7014fb10de411a91588f05658148177"></a>
+<a class="anchor" id="a18e3c1cddf38f66a5e8cbf79d7084369"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="census_8h.html#a27fc8788690179599713226f1f054736">census_context</a>* census_start_server_rpc_op </td>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a3f6006f19ae6445e4a42f9d16b720ad7">CENSUSAPI</a> <a class="el" href="census_8h.html#a27fc8788690179599713226f1f054736">census_context</a>* census_start_server_rpc_op </td>
           <td>(</td>
           <td class="paramtype">const char *&#160;</td>
           <td class="paramname"><em>buffer</em>, </td>
@@ -836,7 +1111,7 @@ Variables</h2></td></tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype"><a class="el" href="port__platform_8h.html#a71edab4bc3421f129764e5cb342f7181">gpr_int64</a>&#160;</td>
+          <td class="paramtype">int64_t&#160;</td>
           <td class="paramname"><em>rpc_name_id</em>, </td>
         </tr>
         <tr>
@@ -872,15 +1147,15 @@ Variables</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Start a server RPC operation. </p>
-<p>Returns a new context to be used in future census calls. If buffer is non-NULL, then the buffer contents should represent the client context, as generated by <a class="el" href="census_8h.html#ad9a7d3170ecf720e1b22a4f255605748">census_context_serialize()</a>. If buffer is NULL, a new root context is created.</p>
+<p>Returns a new context to be used in future census calls. If buffer is non-NULL, then the buffer contents should represent the client context, as generated by census_context_serialize(). If buffer is NULL, a new root context is created.</p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramname">buffer</td><td>Buffer containing bytes output from <a class="el" href="census_8h.html#ad9a7d3170ecf720e1b22a4f255605748">census_context_serialize()</a>. </td></tr>
+    <tr><td class="paramname">buffer</td><td>Buffer containing bytes output from census_context_serialize(). </td></tr>
     <tr><td class="paramname">rpc_name_id</td><td>The rpc name identifier to be associated with this RPC. </td></tr>
     <tr><td class="paramname">rpc_name_info</td><td>Used to decode rpc_name_id. </td></tr>
     <tr><td class="paramname">peer</td><td>RPC peer. </td></tr>
     <tr><td class="paramname">trace_mask</td><td>An OR of census_trace_mask_values values. Only used in the creation of a new root context (buffer == NULL). </td></tr>
-    <tr><td class="paramname">start_time</td><td>A timestamp returned from <a class="el" href="census_8h.html#a71b2afd7a1663c2a716af7242895442b" title="Mark the beginning of an RPC operation. ">census_start_rpc_op_timestamp()</a>. Can be NULL. Used to set the true time the operation begins.</td></tr>
+    <tr><td class="paramname">start_time</td><td>A timestamp returned from <a class="el" href="census_8h.html#a57255eb87c6ade8ee6eb8856d3ecfc11" title="Mark the beginning of an RPC operation. ">census_start_rpc_op_timestamp()</a>. Can be NULL. Used to set the true time the operation begins.</td></tr>
   </table>
   </dd>
 </dl>
@@ -888,12 +1163,12 @@ Variables</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="ad5f627a64ac4febbc61d2b89801d40e9"></a>
+<a class="anchor" id="ae22d3c8dfe3bfac5e831b0135ff7a536"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">int census_supported </td>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a3f6006f19ae6445e4a42f9d16b720ad7">CENSUSAPI</a> int census_supported </td>
           <td>(</td>
           <td class="paramtype">void&#160;</td>
           <td class="paramname"></td><td>)</td>
@@ -906,134 +1181,12 @@ Variables</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="ac690af8a7c06c6fb152fc9b0b8efc142"></a>
+<a class="anchor" id="a2a2dfc973cd259d93b0901c8b32e8f34"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">int census_tag_set_add </td>
-          <td>(</td>
-          <td class="paramtype"><a class="el" href="census_8h.html#afc68a73849e0d1565e74c28c822bb086">census_tag_set</a> *&#160;</td>
-          <td class="paramname"><em>tags</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">const char *&#160;</td>
-          <td class="paramname"><em>key</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">const char *&#160;</td>
-          <td class="paramname"><em>value</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a class="anchor" id="acbca4449a68fd3e2c17f1e0bcf1e663a"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">void census_tag_set_close </td>
-          <td>(</td>
-          <td class="paramtype"><a class="el" href="census_8h.html#a22a740b7e9e3798cb9208b3bd6ea31a7">census_tag_set_iterator</a> *&#160;</td>
-          <td class="paramname"><em>it</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a class="anchor" id="a14f21902360aa221e6307cec05a110a5"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname"><a class="el" href="census_8h.html#afc68a73849e0d1565e74c28c822bb086">census_tag_set</a>* census_tag_set_create </td>
-          <td>(</td>
-          <td class="paramtype">size_t&#160;</td>
-          <td class="paramname"><em>size_hint</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a class="anchor" id="a07ccf6250c7e2d4ef7180c510fd68ab2"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">void census_tag_set_destroy </td>
-          <td>(</td>
-          <td class="paramtype"><a class="el" href="census_8h.html#afc68a73849e0d1565e74c28c822bb086">census_tag_set</a> *&#160;</td>
-          <td class="paramname"><em>tags</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a class="anchor" id="a03847b518034c5c3b801fdd95569f400"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">int census_tag_set_next </td>
-          <td>(</td>
-          <td class="paramtype"><a class="el" href="census_8h.html#a22a740b7e9e3798cb9208b3bd6ea31a7">census_tag_set_iterator</a> *&#160;</td>
-          <td class="paramname"><em>it</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype"><a class="el" href="structcensus__tag__const.html">census_tag_const</a> *&#160;</td>
-          <td class="paramname"><em>tag</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a class="anchor" id="aae5c38cb581600a401d1f8dca741bf63"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname"><a class="el" href="census_8h.html#a22a740b7e9e3798cb9208b3bd6ea31a7">census_tag_set_iterator</a>* census_tag_set_open </td>
-          <td>(</td>
-          <td class="paramtype"><a class="el" href="census_8h.html#afc68a73849e0d1565e74c28c822bb086">census_tag_set</a> *&#160;</td>
-          <td class="paramname"><em>tags</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a class="anchor" id="afeb62854542a09290181209ea72b9158"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">int census_trace_mask </td>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a3f6006f19ae6445e4a42f9d16b720ad7">CENSUSAPI</a> int census_trace_mask </td>
           <td>(</td>
           <td class="paramtype">const <a class="el" href="census_8h.html#a27fc8788690179599713226f1f054736">census_context</a> *&#160;</td>
           <td class="paramname"><em>context</em></td><td>)</td>
@@ -1047,12 +1200,12 @@ Variables</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="af3822f36fcbca23a3af9d3e8b3fb3317"></a>
+<a class="anchor" id="aacf722bf9259354d1ab7a81a6c2fd666"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">void census_trace_print </td>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a3f6006f19ae6445e4a42f9d16b720ad7">CENSUSAPI</a> void census_trace_print </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="census_8h.html#a27fc8788690179599713226f1f054736">census_context</a> *&#160;</td>
           <td class="paramname"><em>context</em>, </td>
@@ -1060,7 +1213,7 @@ Variables</h2></td></tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype"><a class="el" href="port__platform_8h.html#aa6abd4df815a5498d1a04b5e691a74a9">gpr_uint32</a>&#160;</td>
+          <td class="paramtype">uint32_t&#160;</td>
           <td class="paramname"><em>type</em>, </td>
         </tr>
         <tr>
@@ -1097,12 +1250,12 @@ Variables</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="adee01ffd0c56ca2c8c90919a73c3f8ba"></a>
+<a class="anchor" id="a22eb7df4c9b232d8962592d738007ecb"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">void census_trace_scan_end </td>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a3f6006f19ae6445e4a42f9d16b720ad7">CENSUSAPI</a> void census_trace_scan_end </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
@@ -1110,16 +1263,16 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>End a scan previously started by <a class="el" href="census_8h.html#ab93305c7e6b04cd51f95aa497227f53a" title="Start a scan of existing trace records. ">census_trace_scan_start()</a> </p>
+<p>End a scan previously started by <a class="el" href="census_8h.html#ad78c02761da0d8a7a70bf4add263f91f" title="Start a scan of existing trace records. ">census_trace_scan_start()</a> </p>
 
 </div>
 </div>
-<a class="anchor" id="ab93305c7e6b04cd51f95aa497227f53a"></a>
+<a class="anchor" id="ad78c02761da0d8a7a70bf4add263f91f"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">int census_trace_scan_start </td>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a3f6006f19ae6445e4a42f9d16b720ad7">CENSUSAPI</a> int census_trace_scan_start </td>
           <td>(</td>
           <td class="paramtype">int&#160;</td>
           <td class="paramname"><em>consume</em></td><td>)</td>
@@ -1140,12 +1293,12 @@ Variables</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="ab40a6a544d107b067eb5ca8326efeded"></a>
+<a class="anchor" id="a1a7c785d959d32b0c7f45fbf8b9210af"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">const <a class="el" href="structcensus__aggregation.html">census_aggregation</a>* census_view_aggregrations </td>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a3f6006f19ae6445e4a42f9d16b720ad7">CENSUSAPI</a> const <a class="el" href="structcensus__aggregation.html">census_aggregation</a>* census_view_aggregrations </td>
           <td>(</td>
           <td class="paramtype">const <a class="el" href="census_8h.html#ae43cfb236f1c79eeefb4d9bdf91e3aed">census_view</a> *&#160;</td>
           <td class="paramname"><em>view</em></td><td>)</td>
@@ -1158,20 +1311,20 @@ Variables</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="a3bf772ddda26227f485b375192af85f2"></a>
+<a class="anchor" id="a8ac9c2a6718e812bf8f42a2016738408"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="census_8h.html#ae43cfb236f1c79eeefb4d9bdf91e3aed">census_view</a>* census_view_create </td>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a3f6006f19ae6445e4a42f9d16b720ad7">CENSUSAPI</a> <a class="el" href="census_8h.html#ae43cfb236f1c79eeefb4d9bdf91e3aed">census_view</a>* census_view_create </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="port__platform_8h.html#aa6abd4df815a5498d1a04b5e691a74a9">gpr_uint32</a>&#160;</td>
+          <td class="paramtype">uint32_t&#160;</td>
           <td class="paramname"><em>metric_id</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">const <a class="el" href="census_8h.html#afc68a73849e0d1565e74c28c822bb086">census_tag_set</a> *&#160;</td>
+          <td class="paramtype">const <a class="el" href="census_8h.html#a27fc8788690179599713226f1f054736">census_context</a> *&#160;</td>
           <td class="paramname"><em>tags</em>, </td>
         </tr>
         <tr>
@@ -1198,7 +1351,7 @@ Variables</h2></td></tr>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">metric_id</td><td>Metric with which this view is associated. </td></tr>
-    <tr><td class="paramname">tags</td><td>tags that define the view </td></tr>
+    <tr><td class="paramname">tags</td><td>tags that define the view. </td></tr>
     <tr><td class="paramname">aggregations</td><td>aggregations to associate with the view </td></tr>
     <tr><td class="paramname">naggregations</td><td>number of aggregations</td></tr>
   </table>
@@ -1208,12 +1361,12 @@ Variables</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="a529bb89984b69da3b4cab9deb68175a9"></a>
+<a class="anchor" id="a156998a6bc44f6c336d427d006044759"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">void census_view_delete </td>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a3f6006f19ae6445e4a42f9d16b720ad7">CENSUSAPI</a> void census_view_delete </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="census_8h.html#ae43cfb236f1c79eeefb4d9bdf91e3aed">census_view</a> *&#160;</td>
           <td class="paramname"><em>view</em></td><td>)</td>
@@ -1226,12 +1379,12 @@ Variables</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="ab7146edc8582fe2e6dc537f006e29cc5"></a>
+<a class="anchor" id="a1d2f0b30386e8772c09694dfc74d686c"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">const <a class="el" href="structcensus__view__data.html">census_view_data</a>* census_view_get_data </td>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a3f6006f19ae6445e4a42f9d16b720ad7">CENSUSAPI</a> const <a class="el" href="structcensus__view__data.html">census_view_data</a>* census_view_get_data </td>
           <td>(</td>
           <td class="paramtype">const <a class="el" href="census_8h.html#ae43cfb236f1c79eeefb4d9bdf91e3aed">census_view</a> *&#160;</td>
           <td class="paramname"><em>view</em></td><td>)</td>
@@ -1251,12 +1404,12 @@ Variables</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="aa5741f85edf5b3e72f89797ae85463b0"></a>
+<a class="anchor" id="af1387180cddfb7a2df512a21aaaae42b"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">size_t census_view_metric </td>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a3f6006f19ae6445e4a42f9d16b720ad7">CENSUSAPI</a> size_t census_view_metric </td>
           <td>(</td>
           <td class="paramtype">const <a class="el" href="census_8h.html#ae43cfb236f1c79eeefb4d9bdf91e3aed">census_view</a> *&#160;</td>
           <td class="paramname"><em>view</em></td><td>)</td>
@@ -1269,12 +1422,12 @@ Variables</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="ac993f47fe73f67e5f8c8f4b00c358144"></a>
+<a class="anchor" id="ac20c30b46592a991ba098c43fc7e2d2f"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">size_t census_view_naggregations </td>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a3f6006f19ae6445e4a42f9d16b720ad7">CENSUSAPI</a> size_t census_view_naggregations </td>
           <td>(</td>
           <td class="paramtype">const <a class="el" href="census_8h.html#ae43cfb236f1c79eeefb4d9bdf91e3aed">census_view</a> *&#160;</td>
           <td class="paramname"><em>view</em></td><td>)</td>
@@ -1287,12 +1440,12 @@ Variables</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="ad150387e14628665613f1d9a3d27a418"></a>
+<a class="anchor" id="a8aaadf898da63f9438e3262822234c6d"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">void census_view_reset </td>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a3f6006f19ae6445e4a42f9d16b720ad7">CENSUSAPI</a> void census_view_reset </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="census_8h.html#ae43cfb236f1c79eeefb4d9bdf91e3aed">census_view</a> *&#160;</td>
           <td class="paramname"><em>view</em></td><td>)</td>
@@ -1305,12 +1458,12 @@ Variables</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="a054543816f063d003a36316fda4547b8"></a>
+<a class="anchor" id="a50f2d9352480dbd7756d31b38d78745c"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">const <a class="el" href="census_8h.html#afc68a73849e0d1565e74c28c822bb086">census_tag_set</a>* census_view_tags </td>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a3f6006f19ae6445e4a42f9d16b720ad7">CENSUSAPI</a> const <a class="el" href="census_8h.html#a27fc8788690179599713226f1f054736">census_context</a>* census_view_tags </td>
           <td>(</td>
           <td class="paramtype">const <a class="el" href="census_8h.html#ae43cfb236f1c79eeefb4d9bdf91e3aed">census_view</a> *&#160;</td>
           <td class="paramname"><em>view</em></td><td>)</td>
@@ -1375,7 +1528,7 @@ Variables</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Jan 15 2016 00:21:22 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Mar 8 2016 15:59:02 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

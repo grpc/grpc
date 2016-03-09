@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">0.12.0.0</span>
+   &#160;<span id="projectnumber">0.13.1-pre1</span>
    </div>
   </td>
  </tr>
@@ -80,7 +80,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><a class="el" href="dir_d44c64559bbebec7f509842c48db8b23.html">include</a></li><li class="navelem"><a class="el" href="dir_9d7a14d6d9adcbe4c35dbdb88d867e2e.html">grpc</a></li><li class="navelem"><a class="el" href="dir_cad3142e04109052413f2d2a2d1813b0.html">support</a></li>  </ul>
+<li class="navelem"><a class="el" href="dir_46bdc5f5041a35984eb5db24b2392107.html">include</a></li><li class="navelem"><a class="el" href="dir_a0198a417c8cbac4868821a6e2669c2e.html">grpc</a></li><li class="navelem"><a class="el" href="dir_90ccf1281bf3a02b4003b436b02b7d1d.html">support</a></li>  </ul>
 </div>
 </div><!-- top -->
 <div class="header">
@@ -91,7 +91,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="title">cmdline.h File Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
-
+<div class="textblock"><code>#include &lt;<a class="el" href="support_2port__platform_8h_source.html">grpc/support/port_platform.h</a>&gt;</code><br/>
+</div>
 <p><a href="cmdline_8h_source.html">Go to the source code of this file.</a></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="typedef-members"></a>
@@ -101,24 +102,24 @@ Typedefs</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions</h2></td></tr>
-<tr class="memitem:a608f6fbc4edfb4d2c18e3c0660fd8773"><td class="memItemLeft" align="right" valign="top"><a class="el" href="cmdline_8h.html#aaad93cd9bfc32c54fc89f7c2f3b74eb6">gpr_cmdline</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="cmdline_8h.html#a608f6fbc4edfb4d2c18e3c0660fd8773">gpr_cmdline_create</a> (const char *description)</td></tr>
-<tr class="separator:a608f6fbc4edfb4d2c18e3c0660fd8773"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a0fc8cd330751e9876e8635189a1bc10f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="cmdline_8h.html#a0fc8cd330751e9876e8635189a1bc10f">gpr_cmdline_add_int</a> (<a class="el" href="cmdline_8h.html#aaad93cd9bfc32c54fc89f7c2f3b74eb6">gpr_cmdline</a> *cl, const char *name, const char *help, int *value)</td></tr>
-<tr class="separator:a0fc8cd330751e9876e8635189a1bc10f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac5ecfdfc605896c29df846b1e268045e"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="cmdline_8h.html#ac5ecfdfc605896c29df846b1e268045e">gpr_cmdline_add_flag</a> (<a class="el" href="cmdline_8h.html#aaad93cd9bfc32c54fc89f7c2f3b74eb6">gpr_cmdline</a> *cl, const char *name, const char *help, int *value)</td></tr>
-<tr class="separator:ac5ecfdfc605896c29df846b1e268045e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a34568676c089f3284dc8f7d8d706b1d3"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="cmdline_8h.html#a34568676c089f3284dc8f7d8d706b1d3">gpr_cmdline_add_string</a> (<a class="el" href="cmdline_8h.html#aaad93cd9bfc32c54fc89f7c2f3b74eb6">gpr_cmdline</a> *cl, const char *name, const char *help, char **value)</td></tr>
-<tr class="separator:a34568676c089f3284dc8f7d8d706b1d3"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:afcf023a5eb082034a650a0f0177d1fe9"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="cmdline_8h.html#afcf023a5eb082034a650a0f0177d1fe9">gpr_cmdline_on_extra_arg</a> (<a class="el" href="cmdline_8h.html#aaad93cd9bfc32c54fc89f7c2f3b74eb6">gpr_cmdline</a> *cl, const char *name, const char *help, void(*on_extra_arg)(void *user_data, const char *arg), void *user_data)</td></tr>
-<tr class="separator:afcf023a5eb082034a650a0f0177d1fe9"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa85c002541277838249914eeff500f4b"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="cmdline_8h.html#aa85c002541277838249914eeff500f4b">gpr_cmdline_set_survive_failure</a> (<a class="el" href="cmdline_8h.html#aaad93cd9bfc32c54fc89f7c2f3b74eb6">gpr_cmdline</a> *cl)</td></tr>
-<tr class="separator:aa85c002541277838249914eeff500f4b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab2d345de98143036a0b9fe31b6fa2cd7"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="cmdline_8h.html#ab2d345de98143036a0b9fe31b6fa2cd7">gpr_cmdline_parse</a> (<a class="el" href="cmdline_8h.html#aaad93cd9bfc32c54fc89f7c2f3b74eb6">gpr_cmdline</a> *cl, int argc, char **argv)</td></tr>
-<tr class="separator:ab2d345de98143036a0b9fe31b6fa2cd7"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a018f826ce313b02d2773ef97b8df5f98"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="cmdline_8h.html#a018f826ce313b02d2773ef97b8df5f98">gpr_cmdline_destroy</a> (<a class="el" href="cmdline_8h.html#aaad93cd9bfc32c54fc89f7c2f3b74eb6">gpr_cmdline</a> *cl)</td></tr>
-<tr class="separator:a018f826ce313b02d2773ef97b8df5f98"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4eac81d047bdc6e679079309bf60f030"><td class="memItemLeft" align="right" valign="top">char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="cmdline_8h.html#a4eac81d047bdc6e679079309bf60f030">gpr_cmdline_usage_string</a> (<a class="el" href="cmdline_8h.html#aaad93cd9bfc32c54fc89f7c2f3b74eb6">gpr_cmdline</a> *cl, const char *argv0)</td></tr>
-<tr class="separator:a4eac81d047bdc6e679079309bf60f030"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a31fa94e5c43847c82e90bb40087f5aa9"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> <a class="el" href="cmdline_8h.html#aaad93cd9bfc32c54fc89f7c2f3b74eb6">gpr_cmdline</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="cmdline_8h.html#a31fa94e5c43847c82e90bb40087f5aa9">gpr_cmdline_create</a> (const char *description)</td></tr>
+<tr class="separator:a31fa94e5c43847c82e90bb40087f5aa9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a87c433155b5df21be39818d658cfe93f"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="cmdline_8h.html#a87c433155b5df21be39818d658cfe93f">gpr_cmdline_add_int</a> (<a class="el" href="cmdline_8h.html#aaad93cd9bfc32c54fc89f7c2f3b74eb6">gpr_cmdline</a> *cl, const char *name, const char *help, int *value)</td></tr>
+<tr class="separator:a87c433155b5df21be39818d658cfe93f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aea1a46a5feb84307dc9e3796ca13c481"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="cmdline_8h.html#aea1a46a5feb84307dc9e3796ca13c481">gpr_cmdline_add_flag</a> (<a class="el" href="cmdline_8h.html#aaad93cd9bfc32c54fc89f7c2f3b74eb6">gpr_cmdline</a> *cl, const char *name, const char *help, int *value)</td></tr>
+<tr class="separator:aea1a46a5feb84307dc9e3796ca13c481"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad361141d2df046516b472df11e2712fb"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="cmdline_8h.html#ad361141d2df046516b472df11e2712fb">gpr_cmdline_add_string</a> (<a class="el" href="cmdline_8h.html#aaad93cd9bfc32c54fc89f7c2f3b74eb6">gpr_cmdline</a> *cl, const char *name, const char *help, char **value)</td></tr>
+<tr class="separator:ad361141d2df046516b472df11e2712fb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac3b6905c4e9c88abd4936c593b0f5b12"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="cmdline_8h.html#ac3b6905c4e9c88abd4936c593b0f5b12">gpr_cmdline_on_extra_arg</a> (<a class="el" href="cmdline_8h.html#aaad93cd9bfc32c54fc89f7c2f3b74eb6">gpr_cmdline</a> *cl, const char *name, const char *help, void(*on_extra_arg)(void *user_data, const char *arg), void *user_data)</td></tr>
+<tr class="separator:ac3b6905c4e9c88abd4936c593b0f5b12"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a191878e568149fffade0786592d13c37"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="cmdline_8h.html#a191878e568149fffade0786592d13c37">gpr_cmdline_set_survive_failure</a> (<a class="el" href="cmdline_8h.html#aaad93cd9bfc32c54fc89f7c2f3b74eb6">gpr_cmdline</a> *cl)</td></tr>
+<tr class="separator:a191878e568149fffade0786592d13c37"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acc2f66f6bcdf05c8b761419bf2d40509"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="cmdline_8h.html#acc2f66f6bcdf05c8b761419bf2d40509">gpr_cmdline_parse</a> (<a class="el" href="cmdline_8h.html#aaad93cd9bfc32c54fc89f7c2f3b74eb6">gpr_cmdline</a> *cl, int argc, char **argv)</td></tr>
+<tr class="separator:acc2f66f6bcdf05c8b761419bf2d40509"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acfe85f2db2b17fc82e614618ce5a09a8"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="cmdline_8h.html#acfe85f2db2b17fc82e614618ce5a09a8">gpr_cmdline_destroy</a> (<a class="el" href="cmdline_8h.html#aaad93cd9bfc32c54fc89f7c2f3b74eb6">gpr_cmdline</a> *cl)</td></tr>
+<tr class="separator:acfe85f2db2b17fc82e614618ce5a09a8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af9bfcaca695b8e0f84fa410f733dced5"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="cmdline_8h.html#af9bfcaca695b8e0f84fa410f733dced5">gpr_cmdline_usage_string</a> (<a class="el" href="cmdline_8h.html#aaad93cd9bfc32c54fc89f7c2f3b74eb6">gpr_cmdline</a> *cl, const char *argv0)</td></tr>
+<tr class="separator:af9bfcaca695b8e0f84fa410f733dced5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Typedef Documentation</h2>
 <a class="anchor" id="aaad93cd9bfc32c54fc89f7c2f3b74eb6"></a>
@@ -134,12 +135,12 @@ Functions</h2></td></tr>
 </div>
 </div>
 <h2 class="groupheader">Function Documentation</h2>
-<a class="anchor" id="ac5ecfdfc605896c29df846b1e268045e"></a>
+<a class="anchor" id="aea1a46a5feb84307dc9e3796ca13c481"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">void gpr_cmdline_add_flag </td>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void gpr_cmdline_add_flag </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="cmdline_8h.html#aaad93cd9bfc32c54fc89f7c2f3b74eb6">gpr_cmdline</a> *&#160;</td>
           <td class="paramname"><em>cl</em>, </td>
@@ -172,12 +173,12 @@ Functions</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="a0fc8cd330751e9876e8635189a1bc10f"></a>
+<a class="anchor" id="a87c433155b5df21be39818d658cfe93f"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">void gpr_cmdline_add_int </td>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void gpr_cmdline_add_int </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="cmdline_8h.html#aaad93cd9bfc32c54fc89f7c2f3b74eb6">gpr_cmdline</a> *&#160;</td>
           <td class="paramname"><em>cl</em>, </td>
@@ -210,12 +211,12 @@ Functions</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="a34568676c089f3284dc8f7d8d706b1d3"></a>
+<a class="anchor" id="ad361141d2df046516b472df11e2712fb"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">void gpr_cmdline_add_string </td>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void gpr_cmdline_add_string </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="cmdline_8h.html#aaad93cd9bfc32c54fc89f7c2f3b74eb6">gpr_cmdline</a> *&#160;</td>
           <td class="paramname"><em>cl</em>, </td>
@@ -248,12 +249,12 @@ Functions</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="a608f6fbc4edfb4d2c18e3c0660fd8773"></a>
+<a class="anchor" id="a31fa94e5c43847c82e90bb40087f5aa9"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="cmdline_8h.html#aaad93cd9bfc32c54fc89f7c2f3b74eb6">gpr_cmdline</a>* gpr_cmdline_create </td>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> <a class="el" href="cmdline_8h.html#aaad93cd9bfc32c54fc89f7c2f3b74eb6">gpr_cmdline</a>* gpr_cmdline_create </td>
           <td>(</td>
           <td class="paramtype">const char *&#160;</td>
           <td class="paramname"><em>description</em></td><td>)</td>
@@ -264,12 +265,12 @@ Functions</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="a018f826ce313b02d2773ef97b8df5f98"></a>
+<a class="anchor" id="acfe85f2db2b17fc82e614618ce5a09a8"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">void gpr_cmdline_destroy </td>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void gpr_cmdline_destroy </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="cmdline_8h.html#aaad93cd9bfc32c54fc89f7c2f3b74eb6">gpr_cmdline</a> *&#160;</td>
           <td class="paramname"><em>cl</em></td><td>)</td>
@@ -280,12 +281,12 @@ Functions</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="afcf023a5eb082034a650a0f0177d1fe9"></a>
+<a class="anchor" id="ac3b6905c4e9c88abd4936c593b0f5b12"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">void gpr_cmdline_on_extra_arg </td>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void gpr_cmdline_on_extra_arg </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="cmdline_8h.html#aaad93cd9bfc32c54fc89f7c2f3b74eb6">gpr_cmdline</a> *&#160;</td>
           <td class="paramname"><em>cl</em>, </td>
@@ -324,12 +325,12 @@ Functions</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="ab2d345de98143036a0b9fe31b6fa2cd7"></a>
+<a class="anchor" id="acc2f66f6bcdf05c8b761419bf2d40509"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">int gpr_cmdline_parse </td>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> int gpr_cmdline_parse </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="cmdline_8h.html#aaad93cd9bfc32c54fc89f7c2f3b74eb6">gpr_cmdline</a> *&#160;</td>
           <td class="paramname"><em>cl</em>, </td>
@@ -356,12 +357,12 @@ Functions</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="aa85c002541277838249914eeff500f4b"></a>
+<a class="anchor" id="a191878e568149fffade0786592d13c37"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">void gpr_cmdline_set_survive_failure </td>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void gpr_cmdline_set_survive_failure </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="cmdline_8h.html#aaad93cd9bfc32c54fc89f7c2f3b74eb6">gpr_cmdline</a> *&#160;</td>
           <td class="paramname"><em>cl</em></td><td>)</td>
@@ -372,12 +373,12 @@ Functions</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="a4eac81d047bdc6e679079309bf60f030"></a>
+<a class="anchor" id="af9bfcaca695b8e0f84fa410f733dced5"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">char* gpr_cmdline_usage_string </td>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> char* gpr_cmdline_usage_string </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="cmdline_8h.html#aaad93cd9bfc32c54fc89f7c2f3b74eb6">gpr_cmdline</a> *&#160;</td>
           <td class="paramname"><em>cl</em>, </td>
@@ -401,7 +402,7 @@ Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Jan 15 2016 00:21:22 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Mar 8 2016 15:59:02 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

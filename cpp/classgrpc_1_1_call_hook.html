@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">0.12.0.0</span>
+   &#160;<span id="projectnumber">0.13.1-pre1</span>
    </div>
   </td>
  </tr>
@@ -94,7 +94,10 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!--header-->
 <div class="contents">
 
-<p><code>#include &lt;<a class="el" href="call_8h_source.html">call.h</a>&gt;</code></p>
+<p><a class="el" href="classgrpc_1_1_channel.html" title="Channels represent a connection to an endpoint. Created by CreateChannel. ">Channel</a> and <a class="el" href="classgrpc_1_1_server.html" title="Models a gRPC server. ">Server</a> implement this to allow them to hook performing ops.  
+ <a href="classgrpc_1_1_call_hook.html#details">More...</a></p>
+
+<p><code>#include &lt;<a class="el" href="call__hook_8h_source.html">call_hook.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
@@ -103,7 +106,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:acf08b6dd7d1faba4efeeb4937bc81d29"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_call_hook.html#acf08b6dd7d1faba4efeeb4937bc81d29">PerformOpsOnCall</a> (<a class="el" href="classgrpc_1_1_call_op_set_interface.html">CallOpSetInterface</a> *ops, <a class="el" href="classgrpc_1_1_call.html">Call</a> *call)=0</td></tr>
 <tr class="separator:acf08b6dd7d1faba4efeeb4937bc81d29"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
+<a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
+<div class="textblock"><p><a class="el" href="classgrpc_1_1_channel.html" title="Channels represent a connection to an endpoint. Created by CreateChannel. ">Channel</a> and <a class="el" href="classgrpc_1_1_server.html" title="Models a gRPC server. ">Server</a> implement this to allow them to hook performing ops. </p>
+</div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a class="anchor" id="a4aa1cf199f80f6475c6da0ad679c5d9d"></a>
 <div class="memitem">
 <div class="memproto">
@@ -160,15 +165,17 @@ Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
+<p>Implemented in <a class="el" href="classgrpc_1_1_server_interface.html#a16320b2185bda0965e51a73bf0fb9472">grpc::ServerInterface</a>.</p>
+
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>include/grpc++/impl/<a class="el" href="call_8h_source.html">call.h</a></li>
+<li>include/grpc++/impl/codegen/<a class="el" href="call__hook_8h_source.html">call_hook.h</a></li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Jan 15 2016 00:21:23 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Mar 8 2016 15:59:03 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">0.12.0.0</span>
+   &#160;<span id="projectnumber">0.13.1-pre1</span>
    </div>
   </td>
  </tr>
@@ -91,7 +91,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="contents">
 <a href="generic__stub_8h.html">Go to the documentation of this file.</a><div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno">    1</span>&#160;<span class="comment">/*</span></div>
 <div class="line"><a name="l00002"></a><span class="lineno">    2</span>&#160;<span class="comment"> *</span></div>
-<div class="line"><a name="l00003"></a><span class="lineno">    3</span>&#160;<span class="comment"> * Copyright 2015, Google Inc.</span></div>
+<div class="line"><a name="l00003"></a><span class="lineno">    3</span>&#160;<span class="comment"> * Copyright 2015-2016, Google Inc.</span></div>
 <div class="line"><a name="l00004"></a><span class="lineno">    4</span>&#160;<span class="comment"> * All rights reserved.</span></div>
 <div class="line"><a name="l00005"></a><span class="lineno">    5</span>&#160;<span class="comment"> *</span></div>
 <div class="line"><a name="l00006"></a><span class="lineno">    6</span>&#160;<span class="comment"> * Redistribution and use in source and binary forms, with or without</span></div>
@@ -125,7 +125,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;<span class="preprocessor">#ifndef GRPCXX_GENERIC_GENERIC_STUB_H</span></div>
 <div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#define GRPCXX_GENERIC_GENERIC_STUB_H</span></div>
 <div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;<span class="preprocessor"></span></div>
-<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="async__stream_8h.html">grpc++/support/async_stream.h</a>&gt;</span></div>
+<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="support_2async__stream_8h.html">grpc++/support/async_stream.h</a>&gt;</span></div>
 <div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="byte__buffer_8h.html">grpc++/support/byte_buffer.h</a>&gt;</span></div>
 <div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;</div>
 <div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;<span class="keyword">namespace </span>grpc {</div>
@@ -136,37 +136,38 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;</div>
 <div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;<span class="comment">// Generic stubs provide a type-unsafe interface to call gRPC methods</span></div>
 <div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;<span class="comment">// by name.</span></div>
-<div class="line"><a name="l00048"></a><span class="lineno"><a class="line" href="classgrpc_1_1_generic_stub.html">   48</a></span>&#160;<span class="keyword">class </span><a class="code" href="classgrpc_1_1_generic_stub.html">GenericStub</a> <a class="code" href="config_8h.html#ab2216aa6e0ffe505e1ec362a9621a7f9">GRPC_FINAL</a> {</div>
+<div class="line"><a name="l00048"></a><span class="lineno"><a class="line" href="classgrpc_1_1_generic_stub.html">   48</a></span>&#160;<span class="keyword">class </span><a class="code" href="classgrpc_1_1_generic_stub.html">GenericStub</a> <a class="code" href="impl_2codegen_2config_8h.html#ab2216aa6e0ffe505e1ec362a9621a7f9">GRPC_FINAL</a> {</div>
 <div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160; <span class="keyword">public</span>:</div>
-<div class="line"><a name="l00050"></a><span class="lineno"><a class="line" href="classgrpc_1_1_generic_stub.html#ad7555683fb9225ea12330146f5b95a75">   50</a></span>&#160;  <span class="keyword">explicit</span> <a class="code" href="classgrpc_1_1_generic_stub.html#ad7555683fb9225ea12330146f5b95a75">GenericStub</a>(std::shared_ptr&lt;Channel&gt; channel) : channel_(channel) {}</div>
-<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;</div>
-<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;  <span class="comment">// begin a call to a named method</span></div>
-<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;  std::unique_ptr&lt;GenericClientAsyncReaderWriter&gt; <a class="code" href="classgrpc_1_1_generic_stub.html#a29d999cf06468cfe12d3cdc912cb0afb">Call</a>(</div>
-<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;      <a class="code" href="classgrpc_1_1_client_context.html">ClientContext</a>* context, <span class="keyword">const</span> <a class="code" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a>&amp; method, <a class="code" href="classgrpc_1_1_completion_queue.html">CompletionQueue</a>* cq,</div>
-<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;      <span class="keywordtype">void</span>* tag);</div>
-<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;</div>
-<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160; <span class="keyword">private</span>:</div>
-<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;  std::shared_ptr&lt;Channel&gt; channel_;</div>
-<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;};</div>
-<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;</div>
-<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;}  <span class="comment">// namespace grpc</span></div>
-<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;</div>
-<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;<span class="preprocessor">#endif  // GRPCXX_GENERIC_GENERIC_STUB_H</span></div>
-<div class="ttc" id="classgrpc_1_1_client_async_reader_writer_html"><div class="ttname"><a href="classgrpc_1_1_client_async_reader_writer.html">grpc::ClientAsyncReaderWriter</a></div><div class="ttdef"><b>Definition:</b> channel.h:64</div></div>
+<div class="line"><a name="l00050"></a><span class="lineno"><a class="line" href="classgrpc_1_1_generic_stub.html#a1523f381907ac18b841bb4064f2a3b88">   50</a></span>&#160;  <span class="keyword">explicit</span> <a class="code" href="classgrpc_1_1_generic_stub.html#a1523f381907ac18b841bb4064f2a3b88">GenericStub</a>(std::shared_ptr&lt;ChannelInterface&gt; channel)</div>
+<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;      : channel_(channel) {}</div>
+<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;</div>
+<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;  <span class="comment">// begin a call to a named method</span></div>
+<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;  std::unique_ptr&lt;GenericClientAsyncReaderWriter&gt; <a class="code" href="classgrpc_1_1_generic_stub.html#a29d999cf06468cfe12d3cdc912cb0afb">Call</a>(</div>
+<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;      <a class="code" href="classgrpc_1_1_client_context.html">ClientContext</a>* context, <span class="keyword">const</span> <a class="code" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a>&amp; method, <a class="code" href="classgrpc_1_1_completion_queue.html">CompletionQueue</a>* cq,</div>
+<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;      <span class="keywordtype">void</span>* tag);</div>
+<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;</div>
+<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160; <span class="keyword">private</span>:</div>
+<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;  std::shared_ptr&lt;ChannelInterface&gt; channel_;</div>
+<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;};</div>
+<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;</div>
+<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;}  <span class="comment">// namespace grpc</span></div>
+<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;</div>
+<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;<span class="preprocessor">#endif  // GRPCXX_GENERIC_GENERIC_STUB_H</span></div>
+<div class="ttc" id="classgrpc_1_1_client_async_reader_writer_html"><div class="ttname"><a href="classgrpc_1_1_client_async_reader_writer.html">grpc::ClientAsyncReaderWriter</a></div><div class="ttdef"><b>Definition:</b> async_stream.h:233</div></div>
 <div class="ttc" id="namespacegrpc_html_ab04a87625da3bf85cdaf5e7856b00203"><div class="ttname"><a href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a></div><div class="ttdeci">std::string string</div><div class="ttdef"><b>Definition:</b> config.h:112</div></div>
 <div class="ttc" id="byte__buffer_8h_html"><div class="ttname"><a href="byte__buffer_8h.html">byte_buffer.h</a></div></div>
-<div class="ttc" id="classgrpc_1_1_generic_stub_html_ad7555683fb9225ea12330146f5b95a75"><div class="ttname"><a href="classgrpc_1_1_generic_stub.html#ad7555683fb9225ea12330146f5b95a75">grpc::GenericStub::GenericStub</a></div><div class="ttdeci">GenericStub(std::shared_ptr&lt; Channel &gt; channel)</div><div class="ttdef"><b>Definition:</b> generic_stub.h:50</div></div>
-<div class="ttc" id="config_8h_html_ab2216aa6e0ffe505e1ec362a9621a7f9"><div class="ttname"><a href="config_8h.html#ab2216aa6e0ffe505e1ec362a9621a7f9">GRPC_FINAL</a></div><div class="ttdeci">#define GRPC_FINAL</div><div class="ttdef"><b>Definition:</b> config.h:71</div></div>
-<div class="ttc" id="classgrpc_1_1_client_context_html"><div class="ttname"><a href="classgrpc_1_1_client_context.html">grpc::ClientContext</a></div><div class="ttdef"><b>Definition:</b> client_context.h:150</div></div>
+<div class="ttc" id="classgrpc_1_1_client_context_html"><div class="ttname"><a href="classgrpc_1_1_client_context.html">grpc::ClientContext</a></div><div class="ttdef"><b>Definition:</b> client_context.h:152</div></div>
 <div class="ttc" id="classgrpc_1_1_generic_stub_html_a29d999cf06468cfe12d3cdc912cb0afb"><div class="ttname"><a href="classgrpc_1_1_generic_stub.html#a29d999cf06468cfe12d3cdc912cb0afb">grpc::GenericStub::Call</a></div><div class="ttdeci">std::unique_ptr&lt; GenericClientAsyncReaderWriter &gt; Call(ClientContext *context, const grpc::string &amp;method, CompletionQueue *cq, void *tag)</div></div>
-<div class="ttc" id="async__stream_8h_html"><div class="ttname"><a href="async__stream_8h.html">async_stream.h</a></div></div>
 <div class="ttc" id="classgrpc_1_1_completion_queue_html"><div class="ttname"><a href="classgrpc_1_1_completion_queue.html">grpc::CompletionQueue</a></div><div class="ttdoc">A thin wrapper around grpc_completion_queue (see / src/core/surface/completion_queue.h). </div><div class="ttdef"><b>Definition:</b> completion_queue.h:81</div></div>
+<div class="ttc" id="impl_2codegen_2config_8h_html_ab2216aa6e0ffe505e1ec362a9621a7f9"><div class="ttname"><a href="impl_2codegen_2config_8h.html#ab2216aa6e0ffe505e1ec362a9621a7f9">GRPC_FINAL</a></div><div class="ttdeci">#define GRPC_FINAL</div><div class="ttdef"><b>Definition:</b> config.h:71</div></div>
 <div class="ttc" id="namespacegrpc_html_aba53fb6f2502caa167e9528e5c560539"><div class="ttname"><a href="namespacegrpc.html#aba53fb6f2502caa167e9528e5c560539">grpc::GenericClientAsyncReaderWriter</a></div><div class="ttdeci">ClientAsyncReaderWriter&lt; ByteBuffer, ByteBuffer &gt; GenericClientAsyncReaderWriter</div><div class="ttdef"><b>Definition:</b> generic_stub.h:42</div></div>
 <div class="ttc" id="classgrpc_1_1_generic_stub_html"><div class="ttname"><a href="classgrpc_1_1_generic_stub.html">grpc::GenericStub</a></div><div class="ttdef"><b>Definition:</b> generic_stub.h:48</div></div>
+<div class="ttc" id="classgrpc_1_1_generic_stub_html_a1523f381907ac18b841bb4064f2a3b88"><div class="ttname"><a href="classgrpc_1_1_generic_stub.html#a1523f381907ac18b841bb4064f2a3b88">grpc::GenericStub::GenericStub</a></div><div class="ttdeci">GenericStub(std::shared_ptr&lt; ChannelInterface &gt; channel)</div><div class="ttdef"><b>Definition:</b> generic_stub.h:50</div></div>
+<div class="ttc" id="support_2async__stream_8h_html"><div class="ttname"><a href="support_2async__stream_8h.html">async_stream.h</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Jan 15 2016 00:21:23 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Mar 8 2016 15:59:03 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>
