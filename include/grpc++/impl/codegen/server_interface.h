@@ -192,11 +192,10 @@ class ServerInterface : public CallHook {
     bool FinalizeResult(void** tag, bool* status) GRPC_OVERRIDE {
       bool serialization_status =
           *status && payload_ &&
-          SerializationTraits<Message>::Deserialize(payload_, request_,
-                                                    server_->max_message_size())
-              .ok();
+          SerializationTraits<Message>::Deserialize(
+              payload_, request_, server_->max_message_size()).ok();
       bool ret = RegisteredAsyncRequest::FinalizeResult(tag, status);
-      *status = serialization_status && *status;
+      *status = serialization_status&&* status;
       return ret;
     }
 
