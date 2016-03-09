@@ -77,15 +77,22 @@ void grpc_stream_ref_init(grpc_stream_refcount *refcount, int initial_refs,
   grpc_closure_init(&refcount->destroy, cb, cb_arg);
 }
 
-static void one_way_stats_init(grpc_transport_one_way_stats *stats) {
-  gpr_stats_init(&stats->framing_bytes, 0);
-  gpr_stats_init(&stats->data_bytes, 0);
-  gpr_stats_init(&stats->header_bytes, 0);
+static void move64(uint64_t *from, uint64_t *to) {
+  *to += *from;
+  *from = 0;
 }
 
-void grpc_transport_stream_stats_init(grpc_transport_stream_stats *stats) {
-  one_way_stats_init(&stats->incoming);
-  one_way_stats_init(&stats->outgoing);
+void grpc_transport_move_one_way_stats(grpc_transport_one_way_stats *from,
+                                       grpc_transport_one_way_stats *to) {
+  move64(&from->framing_bytes, &to->framing_bytes);
+  move64(&from->data_bytes, &to->data_bytes);
+  move64(&from->header_bytes, &to->header_bytes);
+}
+
+void grpc_transport_move_stats(grpc_transport_stream_stats *from,
+                               grpc_transport_stream_stats *to) {
+  grpc_transport_move_one_way_stats(&from->incoming, &to->incoming);
+  grpc_transport_move_one_way_stats(&from->outgoing, &to->outgoing);
 }
 
 size_t grpc_transport_stream_size(grpc_transport *transport) {
