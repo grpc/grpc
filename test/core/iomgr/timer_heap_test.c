@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -184,7 +184,7 @@ static void test2(void) {
   memset(elems, 0, sizeof(elems));
 
   for (size_t round = 0; round < 10000; round++) {
-    int r = (size_t)rand() % 1000;
+    int r = rand() % 1000;
     if (r <= 550) {
       /* 55% of the time we try to add something */
       elem_struct *el = search_elems(elems, GPR_ARRAY_SIZE(elems), false);
