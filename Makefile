@@ -5544,7 +5544,6 @@ LIBEND2END_TESTS_SRC = \
     test/core/end2end/tests/ping.c \
     test/core/end2end/tests/ping_pong_streaming.c \
     test/core/end2end/tests/registered_call.c \
-    test/core/end2end/tests/registered_idempotent.c \
     test/core/end2end/tests/request_with_flags.c \
     test/core/end2end/tests/request_with_payload.c \
     test/core/end2end/tests/server_finishes_request.c \
@@ -5619,7 +5618,6 @@ LIBEND2END_NOSEC_TESTS_SRC = \
     test/core/end2end/tests/ping.c \
     test/core/end2end/tests/ping_pong_streaming.c \
     test/core/end2end/tests/registered_call.c \
-    test/core/end2end/tests/registered_idempotent.c \
     test/core/end2end/tests/request_with_flags.c \
     test/core/end2end/tests/request_with_payload.c \
     test/core/end2end/tests/server_finishes_request.c \

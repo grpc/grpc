@@ -65,7 +65,6 @@ extern void payload(grpc_end2end_test_config config);
 extern void ping(grpc_end2end_test_config config);
 extern void ping_pong_streaming(grpc_end2end_test_config config);
 extern void registered_call(grpc_end2end_test_config config);
-extern void registered_idempotent(grpc_end2end_test_config config);
 extern void request_with_flags(grpc_end2end_test_config config);
 extern void request_with_payload(grpc_end2end_test_config config);
 extern void server_finishes_request(grpc_end2end_test_config config);
@@ -108,7 +107,6 @@ void grpc_end2end_tests(int argc, char **argv,
     ping(config);
     ping_pong_streaming(config);
     registered_call(config);
-    registered_idempotent(config);
     request_with_flags(config);
     request_with_payload(config);
     server_finishes_request(config);
@@ -228,10 +226,6 @@ void grpc_end2end_tests(int argc, char **argv,
     }
     if (0 == strcmp("registered_call", argv[i])) {
       registered_call(config);
-      continue;
-    }
-    if (0 == strcmp("registered_idempotent", argv[i])) {
-      registered_idempotent(config);
       continue;
     }
     if (0 == strcmp("request_with_flags", argv[i])) {

@@ -88,9 +88,6 @@
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\registered_call.c">
       <Filter>test\core\end2end\tests</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\registered_idempotent.c">
-      <Filter>test\core\end2end\tests</Filter>
-    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\request_with_flags.c">
       <Filter>test\core\end2end\tests</Filter>
     </ClCompile>
