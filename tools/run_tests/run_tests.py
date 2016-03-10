@@ -790,6 +790,8 @@ argp.add_argument('--update_submodules', default=[], nargs='*',
 argp.add_argument('-a', '--antagonists', default=0, type=int)
 argp.add_argument('-x', '--xml_report', default=None, type=str,
         help='Generates a JUnit-compatible XML report')
+argp.add_argument('--json_report', default=None, type=str,
+        help='Generates a machine readable JSON report')
 args = argp.parse_args()
 
 jobset.measure_cpu_costs = args.measure_cpu_costs
@@ -1172,6 +1174,8 @@ def _build_and_run(
       antagonist.kill()
     if xml_report and resultset:
       report_utils.render_junit_xml_report(resultset, xml_report)
+    if args.json_report and resultset:
+      report_utils.render_json_report(resultset, args.json_report)
 
   number_failures, _ = jobset.run(
       post_tests_steps, maxjobs=1, stop_on_failure=True,

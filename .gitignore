@@ -51,6 +51,7 @@ Gemfile.lock
 
 # Temporary test reports
 report.xml
+report.json
 latency_trace.txt
 latency_trace.*.txt
 

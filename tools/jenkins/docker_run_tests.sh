@@ -62,6 +62,8 @@ echo '</body></html>' >> index.html
 cd ..
 
 zip -r reports.zip reports
-find . -name report.xml | xargs zip reports.zip
+# Look for report.xml and report.json files to include in reports.zip
+find . -name report.xml | xargs zip reports.zip || true
+find . -name report.json | xargs zip reports.zip || true
 
 exit $exit_code
