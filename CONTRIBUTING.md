@@ -36,7 +36,7 @@ In order to run most of the available tests, one would need to run:
 
 `./tools/run_tests/run_tests.py`
 
-If you want to run tests for any of the languages {all, c, c++, csharp, node, objc, php, python, ruby}, do this:
+If you want to run tests for any of the languages {c, c++, csharp, node, objc, php, python, ruby}, do this:
 
 `./tools/run_tests/run_tests.py -l <lang>`
 
