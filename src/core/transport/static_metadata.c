@@ -1,5 +1,4 @@
 /*
- *
  * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
@@ -7,13 +6,13 @@
  * modification, are permitted provided that the following conditions are
  * met:
  *
- *     * Redistributions of source code must retain the above copyright
+ * * Redistributions of source code must retain the above copyright
  * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
+ * * Redistributions in binary form must reproduce the above
  * copyright notice, this list of conditions and the following disclaimer
  * in the documentation and/or other materials provided with the
  * distribution.
- *     * Neither the name of Google Inc. nor the names of its
+ * * Neither the name of Google Inc. nor the names of its
  * contributors may be used to endorse or promote products derived from
  * this software without specific prior written permission.
  *
@@ -28,7 +27,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
  */
 
 /*
@@ -52,7 +50,7 @@ uintptr_t grpc_static_mdelem_user_data[GRPC_STATIC_MDELEM_COUNT] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 3, 7, 5, 2, 4, 8, 6, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
 const uint8_t grpc_static_metadata_elem_indices[GRPC_STATIC_MDELEM_COUNT * 2] =
     {11, 35, 10, 35, 12, 35, 12, 49, 13, 35, 14, 35, 15, 35, 16, 35, 17, 35,
@@ -60,30 +58,102 @@ const uint8_t grpc_static_metadata_elem_indices[GRPC_STATIC_MDELEM_COUNT * 2] =
      30, 18, 30, 35, 31, 35, 32, 35, 36, 35, 37, 35, 38, 35, 39, 35, 42, 33,
      42, 34, 42, 48, 42, 53, 42, 54, 42, 55, 42, 56, 43, 33, 43, 48, 43, 53,
      46, 0,  46, 1,  46, 2,  50, 35, 57, 35, 58, 35, 59, 35, 60, 35, 61, 35,
-     62, 35, 63, 35, 64, 35, 65, 35, 66, 40, 66, 68, 67, 78, 67, 79, 69, 35,
-     70, 35, 71, 35, 72, 35, 73, 35, 74, 35, 75, 41, 75, 51, 75, 52, 76, 35,
-     77, 35, 80, 3,  80, 4,  80, 5,  80, 6,  80, 7,  80, 8,  80, 9,  81, 35,
-     82, 83, 84, 35, 85, 35, 86, 35, 87, 35, 88, 35};
+     62, 35, 63, 35, 64, 35, 65, 35, 66, 40, 66, 68, 66, 71, 67, 79, 67, 80,
+     69, 35, 70, 35, 72, 35, 73, 35, 74, 35, 75, 35, 76, 41, 76, 51, 76, 52,
+     77, 35, 78, 35, 81, 3,  81, 4,  81, 5,  81, 6,  81, 7,  81, 8,  81, 9,
+     82, 35, 83, 84, 85, 35, 86, 35, 87, 35, 88, 35, 89, 35};
 
 const char *const grpc_static_metadata_strings[GRPC_STATIC_MDSTR_COUNT] = {
-    "0", "1", "2", "200", "204", "206", "304", "400", "404", "500", "accept",
-    "accept-charset", "accept-encoding", "accept-language", "accept-ranges",
-    "access-control-allow-origin", "age", "allow", "application/grpc",
-    ":authority", "authorization", "cache-control", "census-bin",
-    "census-binary-bin", "content-disposition", "content-encoding",
-    "content-language", "content-length", "content-location", "content-range",
-    "content-type", "cookie", "date", "deflate", "deflate,gzip", "", "etag",
-    "expect", "expires", "from", "GET", "grpc", "grpc-accept-encoding",
-    "grpc-encoding", "grpc-internal-encoding-request", "grpc-message",
-    "grpc-status", "grpc-timeout", "gzip", "gzip, deflate", "host", "http",
-    "https", "identity", "identity,deflate", "identity,deflate,gzip",
-    "identity,gzip", "if-match", "if-modified-since", "if-none-match",
-    "if-range", "if-unmodified-since", "last-modified", "link", "location",
-    "max-forwards", ":method", ":path", "POST", "proxy-authenticate",
-    "proxy-authorization", "range", "referer", "refresh", "retry-after",
-    ":scheme", "server", "set-cookie", "/", "/index.html", ":status",
-    "strict-transport-security", "te", "trailers", "transfer-encoding",
-    "user-agent", "vary", "via", "www-authenticate"};
+    "0",
+    "1",
+    "2",
+    "200",
+    "204",
+    "206",
+    "304",
+    "400",
+    "404",
+    "500",
+    "accept",
+    "accept-charset",
+    "accept-encoding",
+    "accept-language",
+    "accept-ranges",
+    "access-control-allow-origin",
+    "age",
+    "allow",
+    "application/grpc",
+    ":authority",
+    "authorization",
+    "cache-control",
+    "census-bin",
+    "census-binary-bin",
+    "content-disposition",
+    "content-encoding",
+    "content-language",
+    "content-length",
+    "content-location",
+    "content-range",
+    "content-type",
+    "cookie",
+    "date",
+    "deflate",
+    "deflate,gzip",
+    "",
+    "etag",
+    "expect",
+    "expires",
+    "from",
+    "GET",
+    "grpc",
+    "grpc-accept-encoding",
+    "grpc-encoding",
+    "grpc-internal-encoding-request",
+    "grpc-message",
+    "grpc-status",
+    "grpc-timeout",
+    "gzip",
+    "gzip, deflate",
+    "host",
+    "http",
+    "https",
+    "identity",
+    "identity,deflate",
+    "identity,deflate,gzip",
+    "identity,gzip",
+    "if-match",
+    "if-modified-since",
+    "if-none-match",
+    "if-range",
+    "if-unmodified-since",
+    "last-modified",
+    "link",
+    "location",
+    "max-forwards",
+    ":method",
+    ":path",
+    "POST",
+    "proxy-authenticate",
+    "proxy-authorization",
+    "PUT",
+    "range",
+    "referer",
+    "refresh",
+    "retry-after",
+    ":scheme",
+    "server",
+    "set-cookie",
+    "/",
+    "/index.html",
+    ":status",
+    "strict-transport-security",
+    "te",
+    "trailers",
+    "transfer-encoding",
+    "user-agent",
+    "vary",
+    "via",
+    "www-authenticate"};
 
 const uint8_t grpc_static_accept_encoding_metadata[8] = {0,  29, 26, 30,
                                                          28, 32, 27, 31};

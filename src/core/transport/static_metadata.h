@@ -1,5 +1,4 @@
 /*
- *
  * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
@@ -7,13 +6,13 @@
  * modification, are permitted provided that the following conditions are
  * met:
  *
- *     * Redistributions of source code must retain the above copyright
+ * * Redistributions of source code must retain the above copyright
  * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
+ * * Redistributions in binary form must reproduce the above
  * copyright notice, this list of conditions and the following disclaimer
  * in the documentation and/or other materials provided with the
  * distribution.
- *     * Neither the name of Google Inc. nor the names of its
+ * * Neither the name of Google Inc. nor the names of its
  * contributors may be used to endorse or promote products derived from
  * this software without specific prior written permission.
  *
@@ -28,7 +27,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
  */
 
 /*
@@ -48,7 +46,7 @@
 
 #include "src/core/transport/metadata.h"
 
-#define GRPC_STATIC_MDSTR_COUNT 89
+#define GRPC_STATIC_MDSTR_COUNT 90
 extern grpc_mdstr grpc_static_mdstr_table[GRPC_STATIC_MDSTR_COUNT];
 /* "0" */
 #define GRPC_MDSTR_0 (&grpc_static_mdstr_table[0])
@@ -193,44 +191,46 @@ extern grpc_mdstr grpc_static_mdstr_table[GRPC_STATIC_MDSTR_COUNT];
 #define GRPC_MDSTR_PROXY_AUTHENTICATE (&grpc_static_mdstr_table[69])
 /* "proxy-authorization" */
 #define GRPC_MDSTR_PROXY_AUTHORIZATION (&grpc_static_mdstr_table[70])
+/* "PUT" */
+#define GRPC_MDSTR_PUT (&grpc_static_mdstr_table[71])
 /* "range" */
-#define GRPC_MDSTR_RANGE (&grpc_static_mdstr_table[71])
+#define GRPC_MDSTR_RANGE (&grpc_static_mdstr_table[72])
 /* "referer" */
-#define GRPC_MDSTR_REFERER (&grpc_static_mdstr_table[72])
+#define GRPC_MDSTR_REFERER (&grpc_static_mdstr_table[73])
 /* "refresh" */
-#define GRPC_MDSTR_REFRESH (&grpc_static_mdstr_table[73])
+#define GRPC_MDSTR_REFRESH (&grpc_static_mdstr_table[74])
 /* "retry-after" */
-#define GRPC_MDSTR_RETRY_AFTER (&grpc_static_mdstr_table[74])
+#define GRPC_MDSTR_RETRY_AFTER (&grpc_static_mdstr_table[75])
 /* ":scheme" */
-#define GRPC_MDSTR_SCHEME (&grpc_static_mdstr_table[75])
+#define GRPC_MDSTR_SCHEME (&grpc_static_mdstr_table[76])
 /* "server" */
-#define GRPC_MDSTR_SERVER (&grpc_static_mdstr_table[76])
+#define GRPC_MDSTR_SERVER (&grpc_static_mdstr_table[77])
 /* "set-cookie" */
-#define GRPC_MDSTR_SET_COOKIE (&grpc_static_mdstr_table[77])
+#define GRPC_MDSTR_SET_COOKIE (&grpc_static_mdstr_table[78])
 /* "/" */
-#define GRPC_MDSTR_SLASH (&grpc_static_mdstr_table[78])
+#define GRPC_MDSTR_SLASH (&grpc_static_mdstr_table[79])
 /* "/index.html" */
-#define GRPC_MDSTR_SLASH_INDEX_DOT_HTML (&grpc_static_mdstr_table[79])
+#define GRPC_MDSTR_SLASH_INDEX_DOT_HTML (&grpc_static_mdstr_table[80])
 /* ":status" */
-#define GRPC_MDSTR_STATUS (&grpc_static_mdstr_table[80])
+#define GRPC_MDSTR_STATUS (&grpc_static_mdstr_table[81])
 /* "strict-transport-security" */
-#define GRPC_MDSTR_STRICT_TRANSPORT_SECURITY (&grpc_static_mdstr_table[81])
+#define GRPC_MDSTR_STRICT_TRANSPORT_SECURITY (&grpc_static_mdstr_table[82])
 /* "te" */
-#define GRPC_MDSTR_TE (&grpc_static_mdstr_table[82])
+#define GRPC_MDSTR_TE (&grpc_static_mdstr_table[83])
 /* "trailers" */
-#define GRPC_MDSTR_TRAILERS (&grpc_static_mdstr_table[83])
+#define GRPC_MDSTR_TRAILERS (&grpc_static_mdstr_table[84])
 /* "transfer-encoding" */
-#define GRPC_MDSTR_TRANSFER_ENCODING (&grpc_static_mdstr_table[84])
+#define GRPC_MDSTR_TRANSFER_ENCODING (&grpc_static_mdstr_table[85])
 /* "user-agent" */
-#define GRPC_MDSTR_USER_AGENT (&grpc_static_mdstr_table[85])
+#define GRPC_MDSTR_USER_AGENT (&grpc_static_mdstr_table[86])
 /* "vary" */
-#define GRPC_MDSTR_VARY (&grpc_static_mdstr_table[86])
+#define GRPC_MDSTR_VARY (&grpc_static_mdstr_table[87])
 /* "via" */
-#define GRPC_MDSTR_VIA (&grpc_static_mdstr_table[87])
+#define GRPC_MDSTR_VIA (&grpc_static_mdstr_table[88])
 /* "www-authenticate" */
-#define GRPC_MDSTR_WWW_AUTHENTICATE (&grpc_static_mdstr_table[88])
+#define GRPC_MDSTR_WWW_AUTHENTICATE (&grpc_static_mdstr_table[89])
 
-#define GRPC_STATIC_MDELEM_COUNT 78
+#define GRPC_STATIC_MDELEM_COUNT 79
 extern grpc_mdelem grpc_static_mdelem_table[GRPC_STATIC_MDELEM_COUNT];
 extern uintptr_t grpc_static_mdelem_user_data[GRPC_STATIC_MDELEM_COUNT];
 /* "accept-charset": "" */
@@ -343,61 +343,63 @@ extern uintptr_t grpc_static_mdelem_user_data[GRPC_STATIC_MDELEM_COUNT];
 #define GRPC_MDELEM_METHOD_GET (&grpc_static_mdelem_table[49])
 /* ":method": "POST" */
 #define GRPC_MDELEM_METHOD_POST (&grpc_static_mdelem_table[50])
+/* ":method": "PUT" */
+#define GRPC_MDELEM_METHOD_PUT (&grpc_static_mdelem_table[51])
 /* ":path": "/" */
-#define GRPC_MDELEM_PATH_SLASH (&grpc_static_mdelem_table[51])
+#define GRPC_MDELEM_PATH_SLASH (&grpc_static_mdelem_table[52])
 /* ":path": "/index.html" */
-#define GRPC_MDELEM_PATH_SLASH_INDEX_DOT_HTML (&grpc_static_mdelem_table[52])
+#define GRPC_MDELEM_PATH_SLASH_INDEX_DOT_HTML (&grpc_static_mdelem_table[53])
 /* "proxy-authenticate": "" */
-#define GRPC_MDELEM_PROXY_AUTHENTICATE_EMPTY (&grpc_static_mdelem_table[53])
+#define GRPC_MDELEM_PROXY_AUTHENTICATE_EMPTY (&grpc_static_mdelem_table[54])
 /* "proxy-authorization": "" */
-#define GRPC_MDELEM_PROXY_AUTHORIZATION_EMPTY (&grpc_static_mdelem_table[54])
+#define GRPC_MDELEM_PROXY_AUTHORIZATION_EMPTY (&grpc_static_mdelem_table[55])
 /* "range": "" */
-#define GRPC_MDELEM_RANGE_EMPTY (&grpc_static_mdelem_table[55])
+#define GRPC_MDELEM_RANGE_EMPTY (&grpc_static_mdelem_table[56])
 /* "referer": "" */
-#define GRPC_MDELEM_REFERER_EMPTY (&grpc_static_mdelem_table[56])
+#define GRPC_MDELEM_REFERER_EMPTY (&grpc_static_mdelem_table[57])
 /* "refresh": "" */
-#define GRPC_MDELEM_REFRESH_EMPTY (&grpc_static_mdelem_table[57])
+#define GRPC_MDELEM_REFRESH_EMPTY (&grpc_static_mdelem_table[58])
 /* "retry-after": "" */
-#define GRPC_MDELEM_RETRY_AFTER_EMPTY (&grpc_static_mdelem_table[58])
+#define GRPC_MDELEM_RETRY_AFTER_EMPTY (&grpc_static_mdelem_table[59])
 /* ":scheme": "grpc" */
-#define GRPC_MDELEM_SCHEME_GRPC (&grpc_static_mdelem_table[59])
+#define GRPC_MDELEM_SCHEME_GRPC (&grpc_static_mdelem_table[60])
 /* ":scheme": "http" */
-#define GRPC_MDELEM_SCHEME_HTTP (&grpc_static_mdelem_table[60])
+#define GRPC_MDELEM_SCHEME_HTTP (&grpc_static_mdelem_table[61])
 /* ":scheme": "https" */
-#define GRPC_MDELEM_SCHEME_HTTPS (&grpc_static_mdelem_table[61])
+#define GRPC_MDELEM_SCHEME_HTTPS (&grpc_static_mdelem_table[62])
 /* "server": "" */
-#define GRPC_MDELEM_SERVER_EMPTY (&grpc_static_mdelem_table[62])
+#define GRPC_MDELEM_SERVER_EMPTY (&grpc_static_mdelem_table[63])
 /* "set-cookie": "" */
-#define GRPC_MDELEM_SET_COOKIE_EMPTY (&grpc_static_mdelem_table[63])
+#define GRPC_MDELEM_SET_COOKIE_EMPTY (&grpc_static_mdelem_table[64])
 /* ":status": "200" */
-#define GRPC_MDELEM_STATUS_200 (&grpc_static_mdelem_table[64])
+#define GRPC_MDELEM_STATUS_200 (&grpc_static_mdelem_table[65])
 /* ":status": "204" */
-#define GRPC_MDELEM_STATUS_204 (&grpc_static_mdelem_table[65])
+#define GRPC_MDELEM_STATUS_204 (&grpc_static_mdelem_table[66])
 /* ":status": "206" */
-#define GRPC_MDELEM_STATUS_206 (&grpc_static_mdelem_table[66])
+#define GRPC_MDELEM_STATUS_206 (&grpc_static_mdelem_table[67])
 /* ":status": "304" */
-#define GRPC_MDELEM_STATUS_304 (&grpc_static_mdelem_table[67])
+#define GRPC_MDELEM_STATUS_304 (&grpc_static_mdelem_table[68])
 /* ":status": "400" */
-#define GRPC_MDELEM_STATUS_400 (&grpc_static_mdelem_table[68])
+#define GRPC_MDELEM_STATUS_400 (&grpc_static_mdelem_table[69])
 /* ":status": "404" */
-#define GRPC_MDELEM_STATUS_404 (&grpc_static_mdelem_table[69])
+#define GRPC_MDELEM_STATUS_404 (&grpc_static_mdelem_table[70])
 /* ":status": "500" */
-#define GRPC_MDELEM_STATUS_500 (&grpc_static_mdelem_table[70])
+#define GRPC_MDELEM_STATUS_500 (&grpc_static_mdelem_table[71])
 /* "strict-transport-security": "" */
 #define GRPC_MDELEM_STRICT_TRANSPORT_SECURITY_EMPTY \
-  (&grpc_static_mdelem_table[71])
+  (&grpc_static_mdelem_table[72])
 /* "te": "trailers" */
-#define GRPC_MDELEM_TE_TRAILERS (&grpc_static_mdelem_table[72])
+#define GRPC_MDELEM_TE_TRAILERS (&grpc_static_mdelem_table[73])
 /* "transfer-encoding": "" */
-#define GRPC_MDELEM_TRANSFER_ENCODING_EMPTY (&grpc_static_mdelem_table[73])
+#define GRPC_MDELEM_TRANSFER_ENCODING_EMPTY (&grpc_static_mdelem_table[74])
 /* "user-agent": "" */
-#define GRPC_MDELEM_USER_AGENT_EMPTY (&grpc_static_mdelem_table[74])
+#define GRPC_MDELEM_USER_AGENT_EMPTY (&grpc_static_mdelem_table[75])
 /* "vary": "" */
-#define GRPC_MDELEM_VARY_EMPTY (&grpc_static_mdelem_table[75])
+#define GRPC_MDELEM_VARY_EMPTY (&grpc_static_mdelem_table[76])
 /* "via": "" */
-#define GRPC_MDELEM_VIA_EMPTY (&grpc_static_mdelem_table[76])
+#define GRPC_MDELEM_VIA_EMPTY (&grpc_static_mdelem_table[77])
 /* "www-authenticate": "" */
-#define GRPC_MDELEM_WWW_AUTHENTICATE_EMPTY (&grpc_static_mdelem_table[77])
+#define GRPC_MDELEM_WWW_AUTHENTICATE_EMPTY (&grpc_static_mdelem_table[78])
 
 extern const uint8_t
     grpc_static_metadata_elem_indices[GRPC_STATIC_MDELEM_COUNT * 2];

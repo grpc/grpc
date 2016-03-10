@@ -36,11 +36,11 @@
 
 #include <stddef.h>
 
+#include "src/core/channel/context.h"
 #include "src/core/iomgr/pollset.h"
 #include "src/core/iomgr/pollset_set.h"
-#include "src/core/transport/metadata_batch.h"
 #include "src/core/transport/byte_stream.h"
-#include "src/core/channel/context.h"
+#include "src/core/transport/metadata_batch.h"
 
 /* forward declarations */
 typedef struct grpc_transport grpc_transport;
@@ -81,8 +81,12 @@ void grpc_stream_unref(grpc_exec_ctx *exec_ctx, grpc_stream_refcount *refcount);
 /* Transport stream op: a set of operations to perform on a transport
    against a single stream */
 typedef struct grpc_transport_stream_op {
-  /** Send initial metadata to the peer, from the provided metadata batch. */
+  /** Send initial metadata to the peer, from the provided metadata batch.
+      idempotent_request MUST be set if this is non-null */
   grpc_metadata_batch *send_initial_metadata;
+  /** Iff send_initial_metadata != NULL, flags if this is an idempotent request
+      or not */
+  bool idempotent_request;
 
   /** Send trailing metadata to the peer, from the provided metadata batch. */
   grpc_metadata_batch *send_trailing_metadata;
