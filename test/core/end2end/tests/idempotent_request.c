@@ -135,7 +135,7 @@ static void simple_request_body(grpc_end2end_test_fixture f) {
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
-  op->flags = 0;
+  op->flags = GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST;
   op->reserved = NULL;
   op++;
   op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
@@ -203,6 +203,7 @@ static void simple_request_body(grpc_end2end_test_fixture f) {
   GPR_ASSERT(0 == strcmp(details, "xyz"));
   GPR_ASSERT(0 == strcmp(call_details.method, "/foo"));
   GPR_ASSERT(0 == strcmp(call_details.host, "foo.test.google.fr:1234"));
+  GPR_ASSERT(GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST == call_details.flags);
   GPR_ASSERT(was_cancelled == 1);
 
   gpr_free(details);
@@ -238,7 +239,7 @@ static void test_invoke_10_simple_requests(grpc_end2end_test_config config) {
   config.tear_down_data(&f);
 }
 
-void simple_request(grpc_end2end_test_config config) {
+void idempotent_request(grpc_end2end_test_config config) {
   int i;
   for (i = 0; i < 10; i++) {
     test_invoke_simple_request(config);
