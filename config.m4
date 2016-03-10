@@ -48,11 +48,9 @@ if test "$PHP_GRPC" != "no"; then
     src/core/support/env_linux.c \
     src/core/support/env_posix.c \
     src/core/support/env_win32.c \
-    src/core/support/file.c \
-    src/core/support/file_posix.c \
-    src/core/support/file_win32.c \
     src/core/support/histogram.c \
     src/core/support/host_port.c \
+    src/core/support/load_file.c \
     src/core/support/log.c \
     src/core/support/log_android.c \
     src/core/support/log_linux.c \
@@ -78,6 +76,8 @@ if test "$PHP_GRPC" != "no"; then
     src/core/support/time_precise.c \
     src/core/support/time_win32.c \
     src/core/support/tls_pthread.c \
+    src/core/support/tmpfile_posix.c \
+    src/core/support/tmpfile_win32.c \
     src/core/support/wrap_memcpy.c \
     src/core/census/grpc_context.c \
     src/core/census/grpc_filter.c \
@@ -94,6 +94,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/client_config/connector.c \
     src/core/client_config/default_initial_connect_string.c \
     src/core/client_config/initial_connect_string.c \
+    src/core/client_config/lb_policies/load_balancer_api.c \
     src/core/client_config/lb_policies/pick_first.c \
     src/core/client_config/lb_policies/round_robin.c \
     src/core/client_config/lb_policy.c \
@@ -108,7 +109,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/client_config/subchannel_factory.c \
     src/core/client_config/subchannel_index.c \
     src/core/client_config/uri_parser.c \
-    src/core/compression/algorithm.c \
+    src/core/compression/compression_algorithm.c \
     src/core/compression/message_compress.c \
     src/core/debug/trace.c \
     src/core/httpcli/format_request.c \
@@ -158,6 +159,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/json/json_reader.c \
     src/core/json/json_string.c \
     src/core/json/json_writer.c \
+    src/core/proto/grpc/lb/v0/load_balancer.pb.c \
     src/core/surface/alarm.c \
     src/core/surface/api_trace.c \
     src/core/surface/byte_buffer.c \
@@ -208,7 +210,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/transport/transport.c \
     src/core/transport/transport_op_string.c \
     src/core/httpcli/httpcli_security_connector.c \
-    src/core/security/base64.c \
+    src/core/security/b64.c \
     src/core/security/client_auth_filter.c \
     src/core/security/credentials.c \
     src/core/security/credentials_metadata.c \
@@ -234,6 +236,9 @@ if test "$PHP_GRPC" != "no"; then
     src/core/census/operation.c \
     src/core/census/placeholders.c \
     src/core/census/tracing.c \
+    third_party/nanopb/pb_common.c \
+    third_party/nanopb/pb_decode.c \
+    third_party/nanopb/pb_encode.c \
     src/boringssl/err_data.c \
     third_party/boringssl/crypto/aes/aes.c \
     third_party/boringssl/crypto/aes/mode_wrappers.c \
@@ -547,6 +552,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/iomgr)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/json)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/profiling)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/proto/grpc/lb/v0)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/security)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/support)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/surface)
@@ -596,4 +602,5 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/crypto/x509v3)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/ssl)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/ssl/pqueue)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/nanopb)
 fi

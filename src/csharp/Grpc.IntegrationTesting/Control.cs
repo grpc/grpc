@@ -38,7 +38,7 @@ namespace Grpc.Testing {
             "LmdycGMudGVzdGluZy5EZXRlcm1pbmlzdGljUGFyYW1zSAASLAoGcGFyZXRv",
             "GAUgASgLMhouZ3JwYy50ZXN0aW5nLlBhcmV0b1BhcmFtc0gAQgYKBGxvYWQi",
             "QwoOU2VjdXJpdHlQYXJhbXMSEwoLdXNlX3Rlc3RfY2EYASABKAgSHAoUc2Vy",
-            "dmVyX2hvc3Rfb3ZlcnJpZGUYAiABKAkirwMKDENsaWVudENvbmZpZxIWCg5z",
+            "dmVyX2hvc3Rfb3ZlcnJpZGUYAiABKAki1gMKDENsaWVudENvbmZpZxIWCg5z",
             "ZXJ2ZXJfdGFyZ2V0cxgBIAMoCRItCgtjbGllbnRfdHlwZRgCIAEoDjIYLmdy",
             "cGMudGVzdGluZy5DbGllbnRUeXBlEjUKD3NlY3VyaXR5X3BhcmFtcxgDIAEo",
             "CzIcLmdycGMudGVzdGluZy5TZWN1cml0eVBhcmFtcxIkChxvdXRzdGFuZGlu",
@@ -48,24 +48,27 @@ namespace Grpc.Testing {
             "GAogASgLMhguZ3JwYy50ZXN0aW5nLkxvYWRQYXJhbXMSMwoOcGF5bG9hZF9j",
             "b25maWcYCyABKAsyGy5ncnBjLnRlc3RpbmcuUGF5bG9hZENvbmZpZxI3ChBo",
             "aXN0b2dyYW1fcGFyYW1zGAwgASgLMh0uZ3JwYy50ZXN0aW5nLkhpc3RvZ3Jh",
-            "bVBhcmFtcyI4CgxDbGllbnRTdGF0dXMSKAoFc3RhdHMYASABKAsyGS5ncnBj",
-            "LnRlc3RpbmcuQ2xpZW50U3RhdHMiFQoETWFyaxINCgVyZXNldBgBIAEoCCJo",
-            "CgpDbGllbnRBcmdzEisKBXNldHVwGAEgASgLMhouZ3JwYy50ZXN0aW5nLkNs",
-            "aWVudENvbmZpZ0gAEiIKBG1hcmsYAiABKAsyEi5ncnBjLnRlc3RpbmcuTWFy",
-            "a0gAQgkKB2FyZ3R5cGUi9wEKDFNlcnZlckNvbmZpZxItCgtzZXJ2ZXJfdHlw",
-            "ZRgBIAEoDjIYLmdycGMudGVzdGluZy5TZXJ2ZXJUeXBlEjUKD3NlY3VyaXR5",
-            "X3BhcmFtcxgCIAEoCzIcLmdycGMudGVzdGluZy5TZWN1cml0eVBhcmFtcxIM",
-            "CgRob3N0GAMgASgJEgwKBHBvcnQYBCABKAUSHAoUYXN5bmNfc2VydmVyX3Ro",
-            "cmVhZHMYByABKAUSEgoKY29yZV9saW1pdBgIIAEoBRIzCg5wYXlsb2FkX2Nv",
-            "bmZpZxgJIAEoCzIbLmdycGMudGVzdGluZy5QYXlsb2FkQ29uZmlnImgKClNl",
-            "cnZlckFyZ3MSKwoFc2V0dXAYASABKAsyGi5ncnBjLnRlc3RpbmcuU2VydmVy",
-            "Q29uZmlnSAASIgoEbWFyaxgCIAEoCzISLmdycGMudGVzdGluZy5NYXJrSABC",
-            "CQoHYXJndHlwZSJVCgxTZXJ2ZXJTdGF0dXMSKAoFc3RhdHMYASABKAsyGS5n",
-            "cnBjLnRlc3RpbmcuU2VydmVyU3RhdHMSDAoEcG9ydBgCIAEoBRINCgVjb3Jl",
-            "cxgDIAEoBSovCgpDbGllbnRUeXBlEg8KC1NZTkNfQ0xJRU5UEAASEAoMQVNZ",
-            "TkNfQ0xJRU5UEAEqLwoKU2VydmVyVHlwZRIPCgtTWU5DX1NFUlZFUhAAEhAK",
-            "DEFTWU5DX1NFUlZFUhABKiMKB1JwY1R5cGUSCQoFVU5BUlkQABINCglTVFJF",
-            "QU1JTkcQAWIGcHJvdG8z"));
+            "bVBhcmFtcxIRCgljb3JlX2xpc3QYDSADKAUSEgoKY29yZV9saW1pdBgOIAEo",
+            "BSI4CgxDbGllbnRTdGF0dXMSKAoFc3RhdHMYASABKAsyGS5ncnBjLnRlc3Rp",
+            "bmcuQ2xpZW50U3RhdHMiFQoETWFyaxINCgVyZXNldBgBIAEoCCJoCgpDbGll",
+            "bnRBcmdzEisKBXNldHVwGAEgASgLMhouZ3JwYy50ZXN0aW5nLkNsaWVudENv",
+            "bmZpZ0gAEiIKBG1hcmsYAiABKAsyEi5ncnBjLnRlc3RpbmcuTWFya0gAQgkK",
+            "B2FyZ3R5cGUi/AEKDFNlcnZlckNvbmZpZxItCgtzZXJ2ZXJfdHlwZRgBIAEo",
+            "DjIYLmdycGMudGVzdGluZy5TZXJ2ZXJUeXBlEjUKD3NlY3VyaXR5X3BhcmFt",
+            "cxgCIAEoCzIcLmdycGMudGVzdGluZy5TZWN1cml0eVBhcmFtcxIMCgRwb3J0",
+            "GAQgASgFEhwKFGFzeW5jX3NlcnZlcl90aHJlYWRzGAcgASgFEhIKCmNvcmVf",
+            "bGltaXQYCCABKAUSMwoOcGF5bG9hZF9jb25maWcYCSABKAsyGy5ncnBjLnRl",
+            "c3RpbmcuUGF5bG9hZENvbmZpZxIRCgljb3JlX2xpc3QYCiADKAUiaAoKU2Vy",
+            "dmVyQXJncxIrCgVzZXR1cBgBIAEoCzIaLmdycGMudGVzdGluZy5TZXJ2ZXJD",
+            "b25maWdIABIiCgRtYXJrGAIgASgLMhIuZ3JwYy50ZXN0aW5nLk1hcmtIAEIJ",
+            "Cgdhcmd0eXBlIlUKDFNlcnZlclN0YXR1cxIoCgVzdGF0cxgBIAEoCzIZLmdy",
+            "cGMudGVzdGluZy5TZXJ2ZXJTdGF0cxIMCgRwb3J0GAIgASgFEg0KBWNvcmVz",
+            "GAMgASgFIg0KC0NvcmVSZXF1ZXN0Ih0KDENvcmVSZXNwb25zZRINCgVjb3Jl",
+            "cxgBIAEoBSIGCgRWb2lkKi8KCkNsaWVudFR5cGUSDwoLU1lOQ19DTElFTlQQ",
+            "ABIQCgxBU1lOQ19DTElFTlQQASpJCgpTZXJ2ZXJUeXBlEg8KC1NZTkNfU0VS",
+            "VkVSEAASEAoMQVNZTkNfU0VSVkVSEAESGAoUQVNZTkNfR0VORVJJQ19TRVJW",
+            "RVIQAiojCgdScGNUeXBlEgkKBVVOQVJZEAASDQoJU1RSRUFNSU5HEAFiBnBy",
+            "b3RvMw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Grpc.Testing.PayloadsReflection.Descriptor, global::Grpc.Testing.StatsReflection.Descriptor, },
           new pbr::GeneratedCodeInfo(new[] {typeof(global::Grpc.Testing.ClientType), typeof(global::Grpc.Testing.ServerType), typeof(global::Grpc.Testing.RpcType), }, new pbr::GeneratedCodeInfo[] {
@@ -76,13 +79,16 @@ namespace Grpc.Testing {
             new pbr::GeneratedCodeInfo(typeof(global::Grpc.Testing.ClosedLoopParams), global::Grpc.Testing.ClosedLoopParams.Parser, null, null, null, null),
             new pbr::GeneratedCodeInfo(typeof(global::Grpc.Testing.LoadParams), global::Grpc.Testing.LoadParams.Parser, new[]{ "ClosedLoop", "Poisson", "Uniform", "Determ", "Pareto" }, new[]{ "Load" }, null, null),
             new pbr::GeneratedCodeInfo(typeof(global::Grpc.Testing.SecurityParams), global::Grpc.Testing.SecurityParams.Parser, new[]{ "UseTestCa", "ServerHostOverride" }, null, null, null),
-            new pbr::GeneratedCodeInfo(typeof(global::Grpc.Testing.ClientConfig), global::Grpc.Testing.ClientConfig.Parser, new[]{ "ServerTargets", "ClientType", "SecurityParams", "OutstandingRpcsPerChannel", "ClientChannels", "AsyncClientThreads", "RpcType", "LoadParams", "PayloadConfig", "HistogramParams" }, null, null, null),
+            new pbr::GeneratedCodeInfo(typeof(global::Grpc.Testing.ClientConfig), global::Grpc.Testing.ClientConfig.Parser, new[]{ "ServerTargets", "ClientType", "SecurityParams", "OutstandingRpcsPerChannel", "ClientChannels", "AsyncClientThreads", "RpcType", "LoadParams", "PayloadConfig", "HistogramParams", "CoreList", "CoreLimit" }, null, null, null),
             new pbr::GeneratedCodeInfo(typeof(global::Grpc.Testing.ClientStatus), global::Grpc.Testing.ClientStatus.Parser, new[]{ "Stats" }, null, null, null),
             new pbr::GeneratedCodeInfo(typeof(global::Grpc.Testing.Mark), global::Grpc.Testing.Mark.Parser, new[]{ "Reset" }, null, null, null),
             new pbr::GeneratedCodeInfo(typeof(global::Grpc.Testing.ClientArgs), global::Grpc.Testing.ClientArgs.Parser, new[]{ "Setup", "Mark" }, new[]{ "Argtype" }, null, null),
-            new pbr::GeneratedCodeInfo(typeof(global::Grpc.Testing.ServerConfig), global::Grpc.Testing.ServerConfig.Parser, new[]{ "ServerType", "SecurityParams", "Host", "Port", "AsyncServerThreads", "CoreLimit", "PayloadConfig" }, null, null, null),
+            new pbr::GeneratedCodeInfo(typeof(global::Grpc.Testing.ServerConfig), global::Grpc.Testing.ServerConfig.Parser, new[]{ "ServerType", "SecurityParams", "Port", "AsyncServerThreads", "CoreLimit", "PayloadConfig", "CoreList" }, null, null, null),
             new pbr::GeneratedCodeInfo(typeof(global::Grpc.Testing.ServerArgs), global::Grpc.Testing.ServerArgs.Parser, new[]{ "Setup", "Mark" }, new[]{ "Argtype" }, null, null),
-            new pbr::GeneratedCodeInfo(typeof(global::Grpc.Testing.ServerStatus), global::Grpc.Testing.ServerStatus.Parser, new[]{ "Stats", "Port", "Cores" }, null, null, null)
+            new pbr::GeneratedCodeInfo(typeof(global::Grpc.Testing.ServerStatus), global::Grpc.Testing.ServerStatus.Parser, new[]{ "Stats", "Port", "Cores" }, null, null, null),
+            new pbr::GeneratedCodeInfo(typeof(global::Grpc.Testing.CoreRequest), global::Grpc.Testing.CoreRequest.Parser, null, null, null, null),
+            new pbr::GeneratedCodeInfo(typeof(global::Grpc.Testing.CoreResponse), global::Grpc.Testing.CoreResponse.Parser, new[]{ "Cores" }, null, null, null),
+            new pbr::GeneratedCodeInfo(typeof(global::Grpc.Testing.Void), global::Grpc.Testing.Void.Parser, null, null, null, null)
           }));
     }
     #endregion
@@ -97,6 +103,7 @@ namespace Grpc.Testing {
   public enum ServerType {
     SYNC_SERVER = 0,
     ASYNC_SERVER = 1,
+    ASYNC_GENERIC_SERVER = 2,
   }
 
   public enum RpcType {
@@ -1097,6 +1104,8 @@ namespace Grpc.Testing {
       LoadParams = other.loadParams_ != null ? other.LoadParams.Clone() : null;
       PayloadConfig = other.payloadConfig_ != null ? other.PayloadConfig.Clone() : null;
       HistogramParams = other.histogramParams_ != null ? other.HistogramParams.Clone() : null;
+      coreList_ = other.coreList_.Clone();
+      coreLimit_ = other.coreLimit_;
     }
 
     public ClientConfig Clone() {
@@ -1219,6 +1228,28 @@ namespace Grpc.Testing {
       }
     }
 
+    /// <summary>Field number for the "core_list" field.</summary>
+    public const int CoreListFieldNumber = 13;
+    private static readonly pb::FieldCodec<int> _repeated_coreList_codec
+        = pb::FieldCodec.ForInt32(106);
+    private readonly pbc::RepeatedField<int> coreList_ = new pbc::RepeatedField<int>();
+    /// <summary>
+    ///  Specify the cores we should run the client on, if desired
+    /// </summary>
+    public pbc::RepeatedField<int> CoreList {
+      get { return coreList_; }
+    }
+
+    /// <summary>Field number for the "core_limit" field.</summary>
+    public const int CoreLimitFieldNumber = 14;
+    private int coreLimit_;
+    public int CoreLimit {
+      get { return coreLimit_; }
+      set {
+        coreLimit_ = value;
+      }
+    }
+
     public override bool Equals(object other) {
       return Equals(other as ClientConfig);
     }
@@ -1240,6 +1271,8 @@ namespace Grpc.Testing {
       if (!object.Equals(LoadParams, other.LoadParams)) return false;
       if (!object.Equals(PayloadConfig, other.PayloadConfig)) return false;
       if (!object.Equals(HistogramParams, other.HistogramParams)) return false;
+      if(!coreList_.Equals(other.coreList_)) return false;
+      if (CoreLimit != other.CoreLimit) return false;
       return true;
     }
 
@@ -1255,6 +1288,8 @@ namespace Grpc.Testing {
       if (loadParams_ != null) hash ^= LoadParams.GetHashCode();
       if (payloadConfig_ != null) hash ^= PayloadConfig.GetHashCode();
       if (histogramParams_ != null) hash ^= HistogramParams.GetHashCode();
+      hash ^= coreList_.GetHashCode();
+      if (CoreLimit != 0) hash ^= CoreLimit.GetHashCode();
       return hash;
     }
 
@@ -1300,6 +1335,11 @@ namespace Grpc.Testing {
         output.WriteRawTag(98);
         output.WriteMessage(HistogramParams);
       }
+      coreList_.WriteTo(output, _repeated_coreList_codec);
+      if (CoreLimit != 0) {
+        output.WriteRawTag(112);
+        output.WriteInt32(CoreLimit);
+      }
     }
 
     public int CalculateSize() {
@@ -1331,6 +1371,10 @@ namespace Grpc.Testing {
       }
       if (histogramParams_ != null) {
         size += 1 + pb::CodedOutputStream.ComputeMessageSize(HistogramParams);
+      }
+      size += coreList_.CalculateSize(_repeated_coreList_codec);
+      if (CoreLimit != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeInt32Size(CoreLimit);
       }
       return size;
     }
@@ -1378,6 +1422,10 @@ namespace Grpc.Testing {
           histogramParams_ = new global::Grpc.Testing.HistogramParams();
         }
         HistogramParams.MergeFrom(other.HistogramParams);
+      }
+      coreList_.Add(other.coreList_);
+      if (other.CoreLimit != 0) {
+        CoreLimit = other.CoreLimit;
       }
     }
 
@@ -1438,6 +1486,15 @@ namespace Grpc.Testing {
               histogramParams_ = new global::Grpc.Testing.HistogramParams();
             }
             input.ReadMessage(histogramParams_);
+            break;
+          }
+          case 106:
+          case 104: {
+            coreList_.AddEntriesFrom(input, _repeated_coreList_codec);
+            break;
+          }
+          case 112: {
+            CoreLimit = input.ReadInt32();
             break;
           }
         }
@@ -1855,11 +1912,11 @@ namespace Grpc.Testing {
     public ServerConfig(ServerConfig other) : this() {
       serverType_ = other.serverType_;
       SecurityParams = other.securityParams_ != null ? other.SecurityParams.Clone() : null;
-      host_ = other.host_;
       port_ = other.port_;
       asyncServerThreads_ = other.asyncServerThreads_;
       coreLimit_ = other.coreLimit_;
       PayloadConfig = other.payloadConfig_ != null ? other.PayloadConfig.Clone() : null;
+      coreList_ = other.coreList_.Clone();
     }
 
     public ServerConfig Clone() {
@@ -1883,19 +1940,6 @@ namespace Grpc.Testing {
       get { return securityParams_; }
       set {
         securityParams_ = value;
-      }
-    }
-
-    /// <summary>Field number for the "host" field.</summary>
-    public const int HostFieldNumber = 3;
-    private string host_ = "";
-    /// <summary>
-    ///  Host on which to listen.
-    /// </summary>
-    public string Host {
-      get { return host_; }
-      set {
-        host_ = pb::Preconditions.CheckNotNull(value, "value");
       }
     }
 
@@ -1929,7 +1973,7 @@ namespace Grpc.Testing {
     public const int CoreLimitFieldNumber = 8;
     private int coreLimit_;
     /// <summary>
-    ///  restrict core usage, currently unused
+    ///  Specify the number of cores to limit server to, if desired
     /// </summary>
     public int CoreLimit {
       get { return coreLimit_; }
@@ -1941,11 +1985,26 @@ namespace Grpc.Testing {
     /// <summary>Field number for the "payload_config" field.</summary>
     public const int PayloadConfigFieldNumber = 9;
     private global::Grpc.Testing.PayloadConfig payloadConfig_;
+    /// <summary>
+    ///  payload config, used in generic server
+    /// </summary>
     public global::Grpc.Testing.PayloadConfig PayloadConfig {
       get { return payloadConfig_; }
       set {
         payloadConfig_ = value;
       }
+    }
+
+    /// <summary>Field number for the "core_list" field.</summary>
+    public const int CoreListFieldNumber = 10;
+    private static readonly pb::FieldCodec<int> _repeated_coreList_codec
+        = pb::FieldCodec.ForInt32(82);
+    private readonly pbc::RepeatedField<int> coreList_ = new pbc::RepeatedField<int>();
+    /// <summary>
+    ///  Specify the cores we should run the server on, if desired
+    /// </summary>
+    public pbc::RepeatedField<int> CoreList {
+      get { return coreList_; }
     }
 
     public override bool Equals(object other) {
@@ -1961,11 +2020,11 @@ namespace Grpc.Testing {
       }
       if (ServerType != other.ServerType) return false;
       if (!object.Equals(SecurityParams, other.SecurityParams)) return false;
-      if (Host != other.Host) return false;
       if (Port != other.Port) return false;
       if (AsyncServerThreads != other.AsyncServerThreads) return false;
       if (CoreLimit != other.CoreLimit) return false;
       if (!object.Equals(PayloadConfig, other.PayloadConfig)) return false;
+      if(!coreList_.Equals(other.coreList_)) return false;
       return true;
     }
 
@@ -1973,11 +2032,11 @@ namespace Grpc.Testing {
       int hash = 1;
       if (ServerType != global::Grpc.Testing.ServerType.SYNC_SERVER) hash ^= ServerType.GetHashCode();
       if (securityParams_ != null) hash ^= SecurityParams.GetHashCode();
-      if (Host.Length != 0) hash ^= Host.GetHashCode();
       if (Port != 0) hash ^= Port.GetHashCode();
       if (AsyncServerThreads != 0) hash ^= AsyncServerThreads.GetHashCode();
       if (CoreLimit != 0) hash ^= CoreLimit.GetHashCode();
       if (payloadConfig_ != null) hash ^= PayloadConfig.GetHashCode();
+      hash ^= coreList_.GetHashCode();
       return hash;
     }
 
@@ -1993,10 +2052,6 @@ namespace Grpc.Testing {
       if (securityParams_ != null) {
         output.WriteRawTag(18);
         output.WriteMessage(SecurityParams);
-      }
-      if (Host.Length != 0) {
-        output.WriteRawTag(26);
-        output.WriteString(Host);
       }
       if (Port != 0) {
         output.WriteRawTag(32);
@@ -2014,6 +2069,7 @@ namespace Grpc.Testing {
         output.WriteRawTag(74);
         output.WriteMessage(PayloadConfig);
       }
+      coreList_.WriteTo(output, _repeated_coreList_codec);
     }
 
     public int CalculateSize() {
@@ -2023,9 +2079,6 @@ namespace Grpc.Testing {
       }
       if (securityParams_ != null) {
         size += 1 + pb::CodedOutputStream.ComputeMessageSize(SecurityParams);
-      }
-      if (Host.Length != 0) {
-        size += 1 + pb::CodedOutputStream.ComputeStringSize(Host);
       }
       if (Port != 0) {
         size += 1 + pb::CodedOutputStream.ComputeInt32Size(Port);
@@ -2039,6 +2092,7 @@ namespace Grpc.Testing {
       if (payloadConfig_ != null) {
         size += 1 + pb::CodedOutputStream.ComputeMessageSize(PayloadConfig);
       }
+      size += coreList_.CalculateSize(_repeated_coreList_codec);
       return size;
     }
 
@@ -2055,9 +2109,6 @@ namespace Grpc.Testing {
         }
         SecurityParams.MergeFrom(other.SecurityParams);
       }
-      if (other.Host.Length != 0) {
-        Host = other.Host;
-      }
       if (other.Port != 0) {
         Port = other.Port;
       }
@@ -2073,6 +2124,7 @@ namespace Grpc.Testing {
         }
         PayloadConfig.MergeFrom(other.PayloadConfig);
       }
+      coreList_.Add(other.coreList_);
     }
 
     public void MergeFrom(pb::CodedInputStream input) {
@@ -2093,10 +2145,6 @@ namespace Grpc.Testing {
             input.ReadMessage(securityParams_);
             break;
           }
-          case 26: {
-            Host = input.ReadString();
-            break;
-          }
           case 32: {
             Port = input.ReadInt32();
             break;
@@ -2114,6 +2162,11 @@ namespace Grpc.Testing {
               payloadConfig_ = new global::Grpc.Testing.PayloadConfig();
             }
             input.ReadMessage(payloadConfig_);
+            break;
+          }
+          case 82:
+          case 80: {
+            coreList_.AddEntriesFrom(input, _repeated_coreList_codec);
             break;
           }
         }
@@ -2347,7 +2400,7 @@ namespace Grpc.Testing {
     public const int CoresFieldNumber = 3;
     private int cores_;
     /// <summary>
-    ///  Number of cores on the server. See gpr_cpu_num_cores.
+    ///  Number of cores available to the server
     /// </summary>
     public int Cores {
       get { return cores_; }
@@ -2454,6 +2507,264 @@ namespace Grpc.Testing {
             Cores = input.ReadInt32();
             break;
           }
+        }
+      }
+    }
+
+  }
+
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+  public sealed partial class CoreRequest : pb::IMessage<CoreRequest> {
+    private static readonly pb::MessageParser<CoreRequest> _parser = new pb::MessageParser<CoreRequest>(() => new CoreRequest());
+    public static pb::MessageParser<CoreRequest> Parser { get { return _parser; } }
+
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Grpc.Testing.ControlReflection.Descriptor.MessageTypes[14]; }
+    }
+
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    public CoreRequest() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    public CoreRequest(CoreRequest other) : this() {
+    }
+
+    public CoreRequest Clone() {
+      return new CoreRequest(this);
+    }
+
+    public override bool Equals(object other) {
+      return Equals(other as CoreRequest);
+    }
+
+    public bool Equals(CoreRequest other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      return true;
+    }
+
+    public override int GetHashCode() {
+      int hash = 1;
+      return hash;
+    }
+
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    public void WriteTo(pb::CodedOutputStream output) {
+    }
+
+    public int CalculateSize() {
+      int size = 0;
+      return size;
+    }
+
+    public void MergeFrom(CoreRequest other) {
+      if (other == null) {
+        return;
+      }
+    }
+
+    public void MergeFrom(pb::CodedInputStream input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+        switch(tag) {
+          default:
+            input.SkipLastField();
+            break;
+        }
+      }
+    }
+
+  }
+
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+  public sealed partial class CoreResponse : pb::IMessage<CoreResponse> {
+    private static readonly pb::MessageParser<CoreResponse> _parser = new pb::MessageParser<CoreResponse>(() => new CoreResponse());
+    public static pb::MessageParser<CoreResponse> Parser { get { return _parser; } }
+
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Grpc.Testing.ControlReflection.Descriptor.MessageTypes[15]; }
+    }
+
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    public CoreResponse() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    public CoreResponse(CoreResponse other) : this() {
+      cores_ = other.cores_;
+    }
+
+    public CoreResponse Clone() {
+      return new CoreResponse(this);
+    }
+
+    /// <summary>Field number for the "cores" field.</summary>
+    public const int CoresFieldNumber = 1;
+    private int cores_;
+    /// <summary>
+    ///  Number of cores available on the server
+    /// </summary>
+    public int Cores {
+      get { return cores_; }
+      set {
+        cores_ = value;
+      }
+    }
+
+    public override bool Equals(object other) {
+      return Equals(other as CoreResponse);
+    }
+
+    public bool Equals(CoreResponse other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      if (Cores != other.Cores) return false;
+      return true;
+    }
+
+    public override int GetHashCode() {
+      int hash = 1;
+      if (Cores != 0) hash ^= Cores.GetHashCode();
+      return hash;
+    }
+
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    public void WriteTo(pb::CodedOutputStream output) {
+      if (Cores != 0) {
+        output.WriteRawTag(8);
+        output.WriteInt32(Cores);
+      }
+    }
+
+    public int CalculateSize() {
+      int size = 0;
+      if (Cores != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeInt32Size(Cores);
+      }
+      return size;
+    }
+
+    public void MergeFrom(CoreResponse other) {
+      if (other == null) {
+        return;
+      }
+      if (other.Cores != 0) {
+        Cores = other.Cores;
+      }
+    }
+
+    public void MergeFrom(pb::CodedInputStream input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+        switch(tag) {
+          default:
+            input.SkipLastField();
+            break;
+          case 8: {
+            Cores = input.ReadInt32();
+            break;
+          }
+        }
+      }
+    }
+
+  }
+
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+  public sealed partial class Void : pb::IMessage<Void> {
+    private static readonly pb::MessageParser<Void> _parser = new pb::MessageParser<Void>(() => new Void());
+    public static pb::MessageParser<Void> Parser { get { return _parser; } }
+
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Grpc.Testing.ControlReflection.Descriptor.MessageTypes[16]; }
+    }
+
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    public Void() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    public Void(Void other) : this() {
+    }
+
+    public Void Clone() {
+      return new Void(this);
+    }
+
+    public override bool Equals(object other) {
+      return Equals(other as Void);
+    }
+
+    public bool Equals(Void other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      return true;
+    }
+
+    public override int GetHashCode() {
+      int hash = 1;
+      return hash;
+    }
+
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    public void WriteTo(pb::CodedOutputStream output) {
+    }
+
+    public int CalculateSize() {
+      int size = 0;
+      return size;
+    }
+
+    public void MergeFrom(Void other) {
+      if (other == null) {
+        return;
+      }
+    }
+
+    public void MergeFrom(pb::CodedInputStream input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+        switch(tag) {
+          default:
+            input.SkipLastField();
+            break;
         }
       }
     }

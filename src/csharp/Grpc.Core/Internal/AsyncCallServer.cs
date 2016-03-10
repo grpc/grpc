@@ -193,16 +193,6 @@ namespace Grpc.Core.Internal
             lock (myLock)
             {
                 finished = true;
-
-                if (cancelled)
-                {
-                    // Once we cancel, we don't have to care that much 
-                    // about reads and writes.
-
-                    // TODO(jtattermusch): is this still necessary?
-                    Cancel();
-                }
-
                 ReleaseResourcesIfPossible();
             }
             // TODO(jtattermusch): handle error
