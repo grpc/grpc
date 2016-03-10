@@ -1,4 +1,4 @@
-# Copyright 2015, Google Inc.
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -577,5 +577,6 @@ def pool_wrap(behavior, operation_context):
         operation_context.fail(e)
     except Exception as e:
       operation_context.fail(e)
+      raise
   return callable_util.with_exceptions_logged(
       translation, _INTERNAL_ERROR_LOG_MESSAGE)
