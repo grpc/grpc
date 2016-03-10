@@ -5533,6 +5533,7 @@ LIBEND2END_TESTS_SRC = \
     test/core/end2end/tests/graceful_server_shutdown.c \
     test/core/end2end/tests/high_initial_seqno.c \
     test/core/end2end/tests/hpack_size.c \
+    test/core/end2end/tests/idempotent_request.c \
     test/core/end2end/tests/invoke_large_request.c \
     test/core/end2end/tests/large_metadata.c \
     test/core/end2end/tests/max_concurrent_streams.c \
@@ -5543,6 +5544,7 @@ LIBEND2END_TESTS_SRC = \
     test/core/end2end/tests/ping.c \
     test/core/end2end/tests/ping_pong_streaming.c \
     test/core/end2end/tests/registered_call.c \
+    test/core/end2end/tests/registered_idempotent.c \
     test/core/end2end/tests/request_with_flags.c \
     test/core/end2end/tests/request_with_payload.c \
     test/core/end2end/tests/server_finishes_request.c \
@@ -5606,6 +5608,7 @@ LIBEND2END_NOSEC_TESTS_SRC = \
     test/core/end2end/tests/graceful_server_shutdown.c \
     test/core/end2end/tests/high_initial_seqno.c \
     test/core/end2end/tests/hpack_size.c \
+    test/core/end2end/tests/idempotent_request.c \
     test/core/end2end/tests/invoke_large_request.c \
     test/core/end2end/tests/large_metadata.c \
     test/core/end2end/tests/max_concurrent_streams.c \
@@ -5616,6 +5619,7 @@ LIBEND2END_NOSEC_TESTS_SRC = \
     test/core/end2end/tests/ping.c \
     test/core/end2end/tests/ping_pong_streaming.c \
     test/core/end2end/tests/registered_call.c \
+    test/core/end2end/tests/registered_idempotent.c \
     test/core/end2end/tests/request_with_flags.c \
     test/core/end2end/tests/request_with_payload.c \
     test/core/end2end/tests/server_finishes_request.c \
