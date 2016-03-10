@@ -270,9 +270,6 @@ module GRPC
       # :stopped. State transitions can only proceed in that order.
       @running_state = :not_started
       @server = RpcServer.setup_srv(server_override, @cq, **kw)
-      # Mutex to synchronize registration of services and registered service
-      # count. @run_mutex should not be acquired while holding @handle_mutex
-      @handle_mutex = Mutex.new
     end
 
     # stops a running server
@@ -283,7 +280,7 @@ module GRPC
       @run_mutex.synchronize do
         fail 'Cannot stop before starting' if @running_state == :not_started
         return if @running_state != :running
-        @running_state = :stopping
+        transition_running_state(:stopping)
       end
       deadline = from_relative_time(@poll_period)
       @server.close(@cq, deadline)
@@ -293,6 +290,20 @@ module GRPC
     def running_state
       @run_mutex.synchronize do
         return @running_state
+      end
+    end
+
+    # Can only be called while holding @run_mutex
+    def transition_running_state(target_state)
+      state_transitions = {
+        not_started: :running,
+        running: :stopping,
+        stopping: :stopped
+      }
+      if state_transitions[@running_state] == target_state
+        @running_state = target_state
+      else
+        fail "Bad server state transition: #{@running_state}->#{target_state}"
       end
     end
 
@@ -370,9 +381,7 @@ module GRPC
         end
         cls = service.is_a?(Class) ? service : service.class
         assert_valid_service_class(cls)
-        @handle_mutex.synchronize do
-          add_rpc_descs_for(service)
-        end
+        add_rpc_descs_for(service)
       end
     end
 
@@ -388,7 +397,7 @@ module GRPC
         fail 'cannot run without registering services' if rpc_descs.size.zero?
         @pool.start
         @server.start
-        @running_state = :running
+        transition_running_state(:running)
         @run_cond.broadcast
       end
       loop_handle_server_calls
@@ -443,7 +452,7 @@ module GRPC
         end
       end
       # @running_state should be :stopping here
-      @run_mutex.synchronize { @running_state = :stopped }
+      @run_mutex.synchronize { transition_running_state(:stopped) }
       GRPC.logger.info("stopped: #{self}")
     end
 
@@ -476,15 +485,11 @@ module GRPC
     protected
 
     def rpc_descs
-      @handle_mutex.synchronize do
-        return @rpc_descs ||= {}
-      end
+      @rpc_descs ||= {}
     end
 
     def rpc_handlers
-      @handle_mutex.synchronize do
-        @rpc_handlers ||= {}
-      end
+      @rpc_handlers ||= {}
     end
 
     def assert_valid_service_class(cls)
@@ -497,7 +502,7 @@ module GRPC
       cls.assert_rpc_descs_have_methods
     end
 
-    # This should be called while holding @handle_mutex
+    # This should be called while holding @run_mutex
     def add_rpc_descs_for(service)
       cls = service.is_a?(Class) ? service : service.class
       specs, handlers = (@rpc_descs ||= {}), (@rpc_handlers ||= {})
