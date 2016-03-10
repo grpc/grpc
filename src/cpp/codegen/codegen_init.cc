@@ -41,9 +41,5 @@
 /// the following nulled globals. These should be associated with actual
 /// as part of the instantiation of a \a grpc::GrpcLibraryInitializer variable.
 
-namespace grpc {
-
 grpc::CoreCodegenInterface* grpc::g_core_codegen_interface = nullptr;
 grpc::GrpcLibraryInterface* grpc::g_glip = nullptr;
-
-}  // namespace grpc
