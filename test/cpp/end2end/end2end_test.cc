@@ -1371,11 +1371,12 @@ TEST_P(SecureEnd2endTest, ClientAuthContext) {
   if (GetParam().credentials_type == kTlsCredentialsType) {
     EXPECT_EQ("x509_subject_alternative_name",
               auth_ctx->GetPeerIdentityPropertyName());
-    EXPECT_EQ(3u, auth_ctx->GetPeerIdentity().size());
+    EXPECT_EQ(4u, auth_ctx->GetPeerIdentity().size());
     EXPECT_EQ("*.test.google.fr", ToString(auth_ctx->GetPeerIdentity()[0]));
     EXPECT_EQ("waterzooi.test.google.be",
               ToString(auth_ctx->GetPeerIdentity()[1]));
     EXPECT_EQ("*.test.youtube.com", ToString(auth_ctx->GetPeerIdentity()[2]));
+    EXPECT_EQ("192.168.1.3", ToString(auth_ctx->GetPeerIdentity()[3]));
   }
 }
 

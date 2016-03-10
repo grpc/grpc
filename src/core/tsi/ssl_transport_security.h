@@ -162,8 +162,7 @@ void tsi_ssl_handshaker_factory_destroy(tsi_ssl_handshaker_factory *self);
    Still TODO(jboeuf):
    - handle mixed case.
    - handle %encoded chars.
-   - handle public suffix wildchar more strictly (e.g. *.co.uk)
-   - handle IP addresses in SAN. */
+   - handle public suffix wildchar more strictly (e.g. *.co.uk) */
 int tsi_ssl_peer_matches_name(const tsi_peer *peer, const char *name);
 
 #ifdef __cplusplus
