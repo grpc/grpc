@@ -166,6 +166,7 @@ COMMAND_CLASS = {
     'build_tagged_ext': precompiled.BuildTaggedExt,
     'gather': commands.Gather,
     'run_interop': commands.RunInterop,
+    'test_lite': commands.TestLite
 }
 
 # Ensure that package data is copied over before any commands have been run:

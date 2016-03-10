@@ -55,7 +55,7 @@
 typedef struct grpc_server_secure_state {
   grpc_server *server;
   grpc_tcp_server *tcp;
-  grpc_security_connector *sc;
+  grpc_server_security_connector *sc;
   grpc_server_credentials *creds;
   int is_shutdown;
   gpr_mu mu;
@@ -74,7 +74,7 @@ static void state_unref(grpc_server_secure_state *state) {
     gpr_mu_lock(&state->mu);
     gpr_mu_unlock(&state->mu);
     /* clean up */
-    GRPC_SECURITY_CONNECTOR_UNREF(state->sc, "server");
+    GRPC_SECURITY_CONNECTOR_UNREF(&state->sc->base, "server");
     grpc_server_credentials_unref(state->creds);
     gpr_free(state);
   }
@@ -130,8 +130,8 @@ static void on_accept(grpc_exec_ctx *exec_ctx, void *statep, grpc_endpoint *tcp,
                       grpc_tcp_server_acceptor *acceptor) {
   grpc_server_secure_state *state = statep;
   state_ref(state);
-  grpc_security_connector_do_handshake(exec_ctx, state->sc, tcp,
-                                       on_secure_handshake_done, state);
+  grpc_server_security_connector_do_handshake(
+      exec_ctx, state->sc, acceptor, tcp, on_secure_handshake_done, state);
 }
 
 /* Server callback: start listening on our ports */
@@ -148,7 +148,7 @@ static void destroy_done(grpc_exec_ctx *exec_ctx, void *statep, bool success) {
     state->destroy_callback->cb(exec_ctx, state->destroy_callback->cb_arg,
                                 success);
   }
-  grpc_security_connector_shutdown(exec_ctx, state->sc);
+  grpc_server_security_connector_shutdown(exec_ctx, state->sc);
   state_unref(state);
 }
 
@@ -176,7 +176,7 @@ int grpc_server_add_secure_http2_port(grpc_server *server, const char *addr,
   int port_num = -1;
   int port_temp;
   grpc_security_status status = GRPC_SECURITY_ERROR;
-  grpc_security_connector *sc = NULL;
+  grpc_server_security_connector *sc = NULL;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
   GRPC_API_TRACE(
@@ -256,7 +256,7 @@ error:
     grpc_tcp_server_unref(&exec_ctx, tcp);
   } else {
     if (sc) {
-      GRPC_SECURITY_CONNECTOR_UNREF(sc, "server");
+      GRPC_SECURITY_CONNECTOR_UNREF(&sc->base, "server");
     }
     if (state) {
       gpr_free(state);

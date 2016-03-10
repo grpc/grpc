@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -34,6 +34,6 @@
 #ifndef GRPC_INTERNAL_CORE_IOMGR_POLLSET_SET_WINDOWS_H
 #define GRPC_INTERNAL_CORE_IOMGR_POLLSET_SET_WINDOWS_H
 
-typedef struct grpc_pollset_set { void *unused; } grpc_pollset_set;
+#include "src/core/iomgr/pollset_set.h"
 
 #endif /* GRPC_INTERNAL_CORE_IOMGR_POLLSET_WINDOWS_H */
