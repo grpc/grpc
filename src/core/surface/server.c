@@ -153,6 +153,7 @@ struct call_data {
   grpc_completion_queue *cq_new;
 
   grpc_metadata_batch *recv_initial_metadata;
+  bool recv_idempotent_request;
   grpc_metadata_array initial_metadata;
 
   grpc_closure got_initial_metadata;
@@ -602,9 +603,11 @@ static void server_mutate_op(grpc_call_element *elem,
   call_data *calld = elem->call_data;
 
   if (op->recv_initial_metadata != NULL) {
+    GPR_ASSERT(op->recv_idempotent_request == NULL);
     calld->recv_initial_metadata = op->recv_initial_metadata;
     calld->on_done_recv_initial_metadata = op->recv_initial_metadata_ready;
     op->recv_initial_metadata_ready = &calld->server_on_recv_initial_metadata;
+    op->recv_idempotent_request = &calld->recv_idempotent_request;
   }
 }
 
