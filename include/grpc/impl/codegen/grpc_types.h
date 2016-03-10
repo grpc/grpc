@@ -199,6 +199,12 @@ typedef enum grpc_call_error {
 /** Mask of all valid flags. */
 #define GRPC_WRITE_USED_MASK (GRPC_WRITE_BUFFER_HINT | GRPC_WRITE_NO_COMPRESS)
 
+/* Initial metadata flags */
+/** Signal that the call is idempotent */
+#define GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST (0x00000010u)
+/** Mask of all valid flags */
+#define GRPC_INITIAL_METADATA_USED_MASK GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST
+
 /** A single metadata element */
 typedef struct grpc_metadata {
   const char *key;

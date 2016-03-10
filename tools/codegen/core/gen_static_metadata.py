@@ -69,6 +69,7 @@ CONFIG = [
     (':scheme', 'grpc'),
     (':authority', ''),
     (':method', 'GET'),
+    (':method', 'PUT'),
     (':path', '/'),
     (':path', '/index.html'),
     (':status', '204'),
@@ -264,13 +265,13 @@ print >>C
 
 print >>H, '#define GRPC_STATIC_MDELEM_COUNT %d' % len(all_elems)
 print >>H, 'extern grpc_mdelem grpc_static_mdelem_table[GRPC_STATIC_MDELEM_COUNT];'
-print >>H, 'extern gpr_uintptr grpc_static_mdelem_user_data[GRPC_STATIC_MDELEM_COUNT];'
+print >>H, 'extern uintptr_t grpc_static_mdelem_user_data[GRPC_STATIC_MDELEM_COUNT];'
 for i, elem in enumerate(all_elems):
   print >>H, '/* "%s": "%s" */' % elem
   print >>H, '#define %s (&grpc_static_mdelem_table[%d])' % (mangle(elem).upper(), i)
 print >>H
 print >>C, 'grpc_mdelem grpc_static_mdelem_table[GRPC_STATIC_MDELEM_COUNT];'
-print >>C, 'gpr_uintptr grpc_static_mdelem_user_data[GRPC_STATIC_MDELEM_COUNT] = {'
+print >>C, 'uintptr_t grpc_static_mdelem_user_data[GRPC_STATIC_MDELEM_COUNT] = {'
 print >>C, '  %s' % ','.join('%d' % static_userdata.get(elem, 0) for elem in all_elems)
 print >>C, '};'
 print >>C
@@ -285,8 +286,8 @@ def md_idx(m):
     if m == m2:
       return i
 
-print >>H, 'extern const gpr_uint8 grpc_static_metadata_elem_indices[GRPC_STATIC_MDELEM_COUNT*2];'
-print >>C, 'const gpr_uint8 grpc_static_metadata_elem_indices[GRPC_STATIC_MDELEM_COUNT*2] = {'
+print >>H, 'extern const uint8_t grpc_static_metadata_elem_indices[GRPC_STATIC_MDELEM_COUNT*2];'
+print >>C, 'const uint8_t grpc_static_metadata_elem_indices[GRPC_STATIC_MDELEM_COUNT*2] = {'
 print >>C, ','.join('%d' % str_idx(x) for x in itertools.chain.from_iterable([a,b] for a, b in all_elems))
 print >>C, '};'
 print >>C
@@ -297,8 +298,8 @@ print >>C, '%s' % ',\n'.join('  "%s"' % s for s in all_strs)
 print >>C, '};'
 print >>C
 
-print >>H, 'extern const gpr_uint8 grpc_static_accept_encoding_metadata[%d];' % (1 << len(COMPRESSION_ALGORITHMS))
-print >>C, 'const gpr_uint8 grpc_static_accept_encoding_metadata[%d] = {' % (1 << len(COMPRESSION_ALGORITHMS))
+print >>H, 'extern const uint8_t grpc_static_accept_encoding_metadata[%d];' % (1 << len(COMPRESSION_ALGORITHMS))
+print >>C, 'const uint8_t grpc_static_accept_encoding_metadata[%d] = {' % (1 << len(COMPRESSION_ALGORITHMS))
 print >>C, '0,%s' % ','.join('%d' % md_idx(elem) for elem in compression_elems)
 print >>C, '};'
 print >>C
@@ -309,4 +310,3 @@ print >>H, '#endif /* GRPC_INTERNAL_CORE_TRANSPORT_STATIC_METADATA_H */'
 
 H.close()
 C.close()
-
