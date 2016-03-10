@@ -438,6 +438,8 @@ typedef struct {
   gpr_slice fetching_slice;
   size_t stream_fetched;
   grpc_closure finished_fetch;
+  /** stats gathered during the write */
+  grpc_transport_one_way_stats stats;
 } grpc_chttp2_stream_writing;
 
 struct grpc_chttp2_stream_parsing {
@@ -463,6 +465,8 @@ struct grpc_chttp2_stream_parsing {
   int64_t outgoing_window;
   /** number of bytes received - reset at end of parse thread execution */
   int64_t received_bytes;
+  /** stats gathered during the parse */
+  grpc_transport_stream_stats stats;
 
   /** incoming metadata */
   grpc_chttp2_incoming_metadata_buffer metadata_buffer[2];

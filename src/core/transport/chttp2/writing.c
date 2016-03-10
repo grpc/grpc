@@ -161,8 +161,10 @@ int grpc_chttp2_unlocking_check_writes(
         transport_global->announce_incoming_window, UINT32_MAX);
     GRPC_CHTTP2_FLOW_DEBIT_TRANSPORT("write", transport_global,
                                      announce_incoming_window, announced);
-    gpr_slice_buffer_add(&transport_writing->outbuf,
-                         grpc_chttp2_window_update_create(0, announced));
+    grpc_transport_one_way_stats throwaway_stats;
+    gpr_slice_buffer_add(
+        &transport_writing->outbuf,
+        grpc_chttp2_window_update_create(0, announced, &throwaway_stats));
   }
 
   GPR_TIMER_END("grpc_chttp2_unlocking_check_writes", 0);
@@ -205,7 +207,8 @@ static void finalize_outbuf(grpc_exec_ctx *exec_ctx,
     if (stream_writing->send_initial_metadata != NULL) {
       grpc_chttp2_encode_header(
           &transport_writing->hpack_compressor, stream_writing->id,
-          stream_writing->send_initial_metadata, 0, &transport_writing->outbuf);
+          stream_writing->send_initial_metadata, 0, &stream_writing->stats,
+          &transport_writing->outbuf);
       stream_writing->send_initial_metadata = NULL;
       stream_writing->sent_initial_metadata = 1;
     }
@@ -216,7 +219,8 @@ static void finalize_outbuf(grpc_exec_ctx *exec_ctx,
       gpr_slice_buffer_add(
           &transport_writing->outbuf,
           grpc_chttp2_window_update_create(stream_writing->id,
-                                           stream_writing->announce_window));
+                                           stream_writing->announce_window,
+                                           &stream_writing->stats));
       GRPC_CHTTP2_FLOW_DEBIT_STREAM("write", transport_writing, stream_writing,
                                     announce_window, announce);
       stream_writing->announce_window = 0;
@@ -255,7 +259,8 @@ static void finalize_outbuf(grpc_exec_ctx *exec_ctx,
                                 stream_writing->send_trailing_metadata);
         grpc_chttp2_encode_data(
             stream_writing->id, &stream_writing->flow_controlled_buffer,
-            send_bytes, is_last_frame, &transport_writing->outbuf);
+            send_bytes, is_last_frame, &stream_writing->stats,
+            &transport_writing->outbuf);
         GRPC_CHTTP2_FLOW_DEBIT_STREAM("write", transport_writing,
                                       stream_writing, outgoing_window,
                                       send_bytes);
@@ -281,19 +286,20 @@ static void finalize_outbuf(grpc_exec_ctx *exec_ctx,
         stream_writing->send_trailing_metadata != NULL) {
       if (grpc_metadata_batch_is_empty(
               stream_writing->send_trailing_metadata)) {
-        grpc_chttp2_encode_data(stream_writing->id,
-                                &stream_writing->flow_controlled_buffer, 0, 1,
-                                &transport_writing->outbuf);
+        grpc_chttp2_encode_data(
+            stream_writing->id, &stream_writing->flow_controlled_buffer, 0, 1,
+            &stream_writing->stats, &transport_writing->outbuf);
       } else {
-        grpc_chttp2_encode_header(&transport_writing->hpack_compressor,
-                                  stream_writing->id,
-                                  stream_writing->send_trailing_metadata, 1,
-                                  &transport_writing->outbuf);
+        grpc_chttp2_encode_header(
+            &transport_writing->hpack_compressor, stream_writing->id,
+            stream_writing->send_trailing_metadata, 1, &stream_writing->stats,
+            &transport_writing->outbuf);
       }
       if (!transport_writing->is_client && !stream_writing->read_closed) {
         gpr_slice_buffer_add(&transport_writing->outbuf,
                              grpc_chttp2_rst_stream_create(
-                                 stream_writing->id, GRPC_CHTTP2_NO_ERROR));
+                                 stream_writing->id, GRPC_CHTTP2_NO_ERROR,
+                                 &stream_writing->stats));
       }
       stream_writing->send_trailing_metadata = NULL;
       stream_writing->sent_trailing_metadata = 1;
@@ -331,6 +337,8 @@ void grpc_chttp2_cleanup_writing(
           exec_ctx, stream_global,
           &stream_global->send_initial_metadata_finished, 1);
     }
+    grpc_transport_move_one_way_stats(&stream_writing->stats,
+                                      &stream_global->stats.outgoing);
     if (stream_writing->sent_message) {
       GPR_ASSERT(stream_writing->send_message == NULL);
       grpc_chttp2_complete_closure_step(

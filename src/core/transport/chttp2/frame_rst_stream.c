@@ -38,8 +38,10 @@
 
 #include "src/core/transport/chttp2/frame.h"
 
-gpr_slice grpc_chttp2_rst_stream_create(uint32_t id, uint32_t code) {
+gpr_slice grpc_chttp2_rst_stream_create(uint32_t id, uint32_t code,
+                                        grpc_transport_one_way_stats *stats) {
   gpr_slice slice = gpr_slice_malloc(13);
+  stats->framing_bytes += 13;
   uint8_t *p = GPR_SLICE_START_PTR(slice);
 
   *p++ = 0;
@@ -84,6 +86,7 @@ grpc_chttp2_parse_error grpc_chttp2_rst_stream_parser_parse(
     cur++;
     p->byte++;
   }
+  stream_parsing->stats.incoming.framing_bytes += (uint64_t)(end - cur);
 
   if (p->byte == 4) {
     GPR_ASSERT(is_last);

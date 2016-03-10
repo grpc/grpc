@@ -1150,7 +1150,8 @@ static void cancel_from_api(grpc_exec_ctx *exec_ctx,
         &transport_global->qbuf,
         grpc_chttp2_rst_stream_create(
             stream_global->id,
-            (uint32_t)grpc_chttp2_grpc_status_to_http2_error(status)));
+            (uint32_t)grpc_chttp2_grpc_status_to_http2_error(status),
+            &stream_global->stats.outgoing));
   }
   grpc_chttp2_fake_status(exec_ctx, transport_global, stream_global, status,
                           NULL);
@@ -1340,7 +1341,8 @@ static void close_from_api(grpc_exec_ctx *exec_ctx,
 
   gpr_slice_buffer_add(
       &transport_global->qbuf,
-      grpc_chttp2_rst_stream_create(stream_global->id, GRPC_CHTTP2_NO_ERROR));
+      grpc_chttp2_rst_stream_create(stream_global->id, GRPC_CHTTP2_NO_ERROR,
+                                    &stream_global->stats.outgoing));
 
   if (optional_message) {
     gpr_slice_ref(*optional_message);

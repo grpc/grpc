@@ -34,9 +34,9 @@
 #include "src/core/transport/chttp2/hpack_parser.h"
 #include "src/core/transport/chttp2/internal.h"
 
+#include <assert.h>
 #include <stddef.h>
 #include <string.h>
-#include <assert.h>
 
 /* This is here for grpc_is_binary_header
  * TODO(murgatroid99): Remove this
@@ -1412,6 +1412,9 @@ grpc_chttp2_parse_error grpc_chttp2_header_parser_parse(
     grpc_chttp2_stream_parsing *stream_parsing, gpr_slice slice, int is_last) {
   grpc_chttp2_hpack_parser *parser = hpack_parser;
   GPR_TIMER_BEGIN("grpc_chttp2_hpack_parser_parse", 0);
+  if (stream_parsing != NULL) {
+    stream_parsing->stats.incoming.header_bytes += GPR_SLICE_LENGTH(slice);
+  }
   if (!grpc_chttp2_hpack_parser_parse(parser, GPR_SLICE_START_PTR(slice),
                                       GPR_SLICE_END_PTR(slice))) {
     GPR_TIMER_END("grpc_chttp2_hpack_parser_parse", 0);

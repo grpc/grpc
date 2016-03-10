@@ -36,11 +36,12 @@
 
 /* Parser for GRPC streams embedded in DATA frames */
 
-#include "src/core/iomgr/exec_ctx.h"
 #include <grpc/support/slice.h>
 #include <grpc/support/slice_buffer.h>
+#include "src/core/iomgr/exec_ctx.h"
 #include "src/core/transport/byte_stream.h"
 #include "src/core/transport/chttp2/frame.h"
+#include "src/core/transport/transport.h"
 
 typedef enum {
   GRPC_CHTTP2_DATA_FH_0,
@@ -96,6 +97,7 @@ grpc_chttp2_parse_error grpc_chttp2_data_parser_parse(
 
 void grpc_chttp2_encode_data(uint32_t id, gpr_slice_buffer *inbuf,
                              uint32_t write_bytes, int is_eof,
+                             grpc_transport_one_way_stats *stats,
                              gpr_slice_buffer *outbuf);
 
 #endif /* GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_FRAME_DATA_H */
