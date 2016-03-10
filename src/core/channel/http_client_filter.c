@@ -244,14 +244,7 @@ static void destroy_channel_elem(grpc_exec_ctx *exec_ctx,
 }
 
 const grpc_channel_filter grpc_http_client_filter = {
-    hc_start_transport_op,
-    grpc_channel_next_op,
-    sizeof(call_data),
-    init_call_elem,
-    grpc_call_stack_ignore_set_pollset,
-    destroy_call_elem,
-    sizeof(channel_data),
-    init_channel_elem,
-    destroy_channel_elem,
-    grpc_call_next_get_peer,
-    "http-client"};
+    hc_start_transport_op, grpc_channel_next_op, sizeof(call_data),
+    init_call_elem, grpc_call_stack_ignore_set_pollset, destroy_call_elem,
+    sizeof(channel_data), init_channel_elem, destroy_channel_elem,
+    grpc_call_next_get_peer, "http-client"};
