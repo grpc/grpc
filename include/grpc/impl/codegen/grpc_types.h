@@ -250,6 +250,7 @@ typedef struct {
   char *host;
   size_t host_capacity;
   gpr_timespec deadline;
+  uint32_t flags;
   void *reserved;
 } grpc_call_details;
 
