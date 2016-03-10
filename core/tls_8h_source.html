@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">0.12.0.0</span>
+   &#160;<span id="projectnumber">0.13.1-pre1</span>
    </div>
   </td>
  </tr>
@@ -80,7 +80,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><a class="el" href="dir_d44c64559bbebec7f509842c48db8b23.html">include</a></li><li class="navelem"><a class="el" href="dir_9d7a14d6d9adcbe4c35dbdb88d867e2e.html">grpc</a></li><li class="navelem"><a class="el" href="dir_cad3142e04109052413f2d2a2d1813b0.html">support</a></li>  </ul>
+<li class="navelem"><a class="el" href="dir_46bdc5f5041a35984eb5db24b2392107.html">include</a></li><li class="navelem"><a class="el" href="dir_a0198a417c8cbac4868821a6e2669c2e.html">grpc</a></li><li class="navelem"><a class="el" href="dir_90ccf1281bf3a02b4003b436b02b7d1d.html">support</a></li>  </ul>
 </div>
 </div><!-- top -->
 <div class="header">
@@ -124,14 +124,14 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;<span class="preprocessor">#ifndef GRPC_SUPPORT_TLS_H</span></div>
 <div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#define GRPC_SUPPORT_TLS_H</span></div>
 <div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;<span class="preprocessor"></span></div>
-<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="port__platform_8h.html">grpc/support/port_platform.h</a>&gt;</span></div>
+<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="support_2port__platform_8h.html">grpc/support/port_platform.h</a>&gt;</span></div>
 <div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;</div>
 <div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;<span class="comment">/* Thread local storage.</span></div>
 <div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;<span class="comment"></span></div>
 <div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;<span class="comment">   A minimal wrapper that should be implementable across many compilers,</span></div>
 <div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;<span class="comment">   and implementable efficiently across most modern compilers.</span></div>
 <div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;<span class="comment"></span></div>
-<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;<span class="comment">   Thread locals have type gpr_intptr.</span></div>
+<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;<span class="comment">   Thread locals have type intptr_t.</span></div>
 <div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;<span class="comment"></span></div>
 <div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;<span class="comment">   Declaring a thread local variable &#39;foo&#39;:</span></div>
 <div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;<span class="comment">     GPR_TLS_DECL(foo);</span></div>
@@ -165,14 +165,14 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;<span class="preprocessor">#endif</span></div>
 <div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;<span class="preprocessor"></span></div>
 <div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="ttc" id="port__platform_8h_html"><div class="ttname"><a href="port__platform_8h.html">port_platform.h</a></div></div>
 <div class="ttc" id="tls__pthread_8h_html"><div class="ttname"><a href="tls__pthread_8h.html">tls_pthread.h</a></div></div>
 <div class="ttc" id="tls__msvc_8h_html"><div class="ttname"><a href="tls__msvc_8h.html">tls_msvc.h</a></div></div>
 <div class="ttc" id="tls__gcc_8h_html"><div class="ttname"><a href="tls__gcc_8h.html">tls_gcc.h</a></div></div>
+<div class="ttc" id="support_2port__platform_8h_html"><div class="ttname"><a href="support_2port__platform_8h.html">port_platform.h</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Jan 15 2016 00:21:22 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Mar 8 2016 15:59:02 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

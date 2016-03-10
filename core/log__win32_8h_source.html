@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">0.12.0.0</span>
+   &#160;<span id="projectnumber">0.13.1-pre1</span>
    </div>
   </td>
  </tr>
@@ -80,7 +80,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><a class="el" href="dir_d44c64559bbebec7f509842c48db8b23.html">include</a></li><li class="navelem"><a class="el" href="dir_9d7a14d6d9adcbe4c35dbdb88d867e2e.html">grpc</a></li><li class="navelem"><a class="el" href="dir_cad3142e04109052413f2d2a2d1813b0.html">support</a></li>  </ul>
+<li class="navelem"><a class="el" href="dir_46bdc5f5041a35984eb5db24b2392107.html">include</a></li><li class="navelem"><a class="el" href="dir_a0198a417c8cbac4868821a6e2669c2e.html">grpc</a></li><li class="navelem"><a class="el" href="dir_90ccf1281bf3a02b4003b436b02b7d1d.html">support</a></li>  </ul>
 </div>
 </div><!-- top -->
 <div class="header">
@@ -90,7 +90,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="contents">
 <a href="log__win32_8h.html">Go to the documentation of this file.</a><div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno">    1</span>&#160;<span class="comment">/*</span></div>
 <div class="line"><a name="l00002"></a><span class="lineno">    2</span>&#160;<span class="comment"> *</span></div>
-<div class="line"><a name="l00003"></a><span class="lineno">    3</span>&#160;<span class="comment"> * Copyright 2015, Google Inc.</span></div>
+<div class="line"><a name="l00003"></a><span class="lineno">    3</span>&#160;<span class="comment"> * Copyright 2015-2016, Google Inc.</span></div>
 <div class="line"><a name="l00004"></a><span class="lineno">    4</span>&#160;<span class="comment"> * All rights reserved.</span></div>
 <div class="line"><a name="l00005"></a><span class="lineno">    5</span>&#160;<span class="comment"> *</span></div>
 <div class="line"><a name="l00006"></a><span class="lineno">    6</span>&#160;<span class="comment"> * Redistribution and use in source and binary forms, with or without</span></div>
@@ -132,18 +132,19 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;<span class="comment"> * formatted error message, corresponding to the error messageid.</span></div>
 <div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;<span class="comment"> * Use in conjunction with GetLastError() et al.</span></div>
 <div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;<span class="comment"> */</span></div>
-<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;<span class="keywordtype">char</span> *<a class="code" href="log__win32_8h.html#ad8115cf8df2332d225d12cb87c21f536">gpr_format_message</a>(DWORD messageid);</div>
+<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;<a class="code" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> <span class="keywordtype">char</span> *<a class="code" href="log__win32_8h.html#ade349fc3117c965de259a75ea4f1e071">gpr_format_message</a>(<span class="keywordtype">int</span> messageid);</div>
 <div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;</div>
 <div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;<span class="preprocessor">#ifdef __cplusplus</span></div>
 <div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;<span class="preprocessor"></span>}</div>
 <div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;<span class="preprocessor">#endif</span></div>
 <div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;<span class="preprocessor"></span></div>
 <div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* GRPC_SUPPORT_LOG_WIN32_H */</span><span class="preprocessor"></span></div>
-<div class="ttc" id="log__win32_8h_html_ad8115cf8df2332d225d12cb87c21f536"><div class="ttname"><a href="log__win32_8h.html#ad8115cf8df2332d225d12cb87c21f536">gpr_format_message</a></div><div class="ttdeci">char * gpr_format_message(DWORD messageid)</div></div>
+<div class="ttc" id="impl_2codegen_2port__platform_8h_html_af89d3610372fc35178e83e06916aa808"><div class="ttname"><a href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a></div><div class="ttdeci">#define GPRAPI</div><div class="ttdef"><b>Definition:</b> port_platform.h:359</div></div>
+<div class="ttc" id="log__win32_8h_html_ade349fc3117c965de259a75ea4f1e071"><div class="ttname"><a href="log__win32_8h.html#ade349fc3117c965de259a75ea4f1e071">gpr_format_message</a></div><div class="ttdeci">GPRAPI char * gpr_format_message(int messageid)</div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Jan 15 2016 00:21:22 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Mar 8 2016 15:59:02 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

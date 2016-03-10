@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">0.12.0.0</span>
+   &#160;<span id="projectnumber">0.13.1-pre1</span>
    </div>
   </td>
  </tr>
@@ -80,7 +80,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><a class="el" href="dir_d44c64559bbebec7f509842c48db8b23.html">include</a></li><li class="navelem"><a class="el" href="dir_9d7a14d6d9adcbe4c35dbdb88d867e2e.html">grpc</a></li><li class="navelem"><a class="el" href="dir_cad3142e04109052413f2d2a2d1813b0.html">support</a></li>  </ul>
+<li class="navelem"><a class="el" href="dir_46bdc5f5041a35984eb5db24b2392107.html">include</a></li><li class="navelem"><a class="el" href="dir_a0198a417c8cbac4868821a6e2669c2e.html">grpc</a></li><li class="navelem"><a class="el" href="dir_90ccf1281bf3a02b4003b436b02b7d1d.html">support</a></li>  </ul>
 </div>
 </div><!-- top -->
 <div class="header">
@@ -92,7 +92,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="title">tls_pthread.h File Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><code>#include &lt;<a class="el" href="log_8h_source.html">grpc/support/log.h</a>&gt;</code><br/>
+<div class="textblock"><code>#include &lt;<a class="el" href="support_2log_8h_source.html">grpc/support/log.h</a>&gt;</code><br/>
 <code>#include &lt;pthread.h&gt;</code><br/>
 </div>
 <p><a href="tls__pthread_8h_source.html">Go to the source code of this file.</a></p>
@@ -106,17 +106,17 @@ Data Structures</h2></td></tr>
 Macros</h2></td></tr>
 <tr class="memitem:ab2c3baa4e4ceb366668aaf51379340fd"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="tls__pthread_8h.html#ab2c3baa4e4ceb366668aaf51379340fd">GPR_TLS_DECL</a>(name)&#160;&#160;&#160;static struct <a class="el" href="structgpr__pthread__thread__local.html">gpr_pthread_thread_local</a> name = {0}</td></tr>
 <tr class="separator:ab2c3baa4e4ceb366668aaf51379340fd"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a43768a42ff705cc028b4a483dc3b65c5"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="tls__pthread_8h.html#a43768a42ff705cc028b4a483dc3b65c5">gpr_tls_init</a>(tls)&#160;&#160;&#160;<a class="el" href="log_8h.html#a6ccf52ff690655cc22cd9d053650876f">GPR_ASSERT</a>(0 == pthread_key_create(&amp;(tls)-&gt;key, NULL))</td></tr>
+<tr class="memitem:a43768a42ff705cc028b4a483dc3b65c5"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="tls__pthread_8h.html#a43768a42ff705cc028b4a483dc3b65c5">gpr_tls_init</a>(tls)&#160;&#160;&#160;<a class="el" href="impl_2codegen_2log_8h.html#a6ccf52ff690655cc22cd9d053650876f">GPR_ASSERT</a>(0 == pthread_key_create(&amp;(tls)-&gt;key, NULL))</td></tr>
 <tr class="separator:a43768a42ff705cc028b4a483dc3b65c5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a187108e1078d2ce05388cb17bc59ce74"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="tls__pthread_8h.html#a187108e1078d2ce05388cb17bc59ce74">gpr_tls_destroy</a>(tls)&#160;&#160;&#160;pthread_key_delete((tls)-&gt;key)</td></tr>
 <tr class="separator:a187108e1078d2ce05388cb17bc59ce74"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9aa9e55eddbe7fed424526c23e1b55a3"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="tls__pthread_8h.html#a9aa9e55eddbe7fed424526c23e1b55a3">gpr_tls_get</a>(tls)&#160;&#160;&#160;((<a class="el" href="port__platform_8h.html#a72d9d0d00bd576cfc8eab61aaea76db2">gpr_intptr</a>)pthread_getspecific((tls)-&gt;key))</td></tr>
+<tr class="memitem:a9aa9e55eddbe7fed424526c23e1b55a3"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="tls__pthread_8h.html#a9aa9e55eddbe7fed424526c23e1b55a3">gpr_tls_get</a>(tls)&#160;&#160;&#160;((intptr_t)pthread_getspecific((tls)-&gt;key))</td></tr>
 <tr class="separator:a9aa9e55eddbe7fed424526c23e1b55a3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions</h2></td></tr>
-<tr class="memitem:a02e97731a7a6668a2cb73a7e791e93ea"><td class="memItemLeft" align="right" valign="top"><a class="el" href="port__platform_8h.html#a72d9d0d00bd576cfc8eab61aaea76db2">gpr_intptr</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="tls__pthread_8h.html#a02e97731a7a6668a2cb73a7e791e93ea">gpr_tls_set</a> (struct <a class="el" href="structgpr__pthread__thread__local.html">gpr_pthread_thread_local</a> *tls, <a class="el" href="port__platform_8h.html#a72d9d0d00bd576cfc8eab61aaea76db2">gpr_intptr</a> value)</td></tr>
-<tr class="separator:a02e97731a7a6668a2cb73a7e791e93ea"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1851838d725310f7c043ba49fc5357c8"><td class="memItemLeft" align="right" valign="top">intptr_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="tls__pthread_8h.html#a1851838d725310f7c043ba49fc5357c8">gpr_tls_set</a> (struct <a class="el" href="structgpr__pthread__thread__local.html">gpr_pthread_thread_local</a> *tls, intptr_t value)</td></tr>
+<tr class="separator:a1851838d725310f7c043ba49fc5357c8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Macro Definition Documentation</h2>
 <a class="anchor" id="ab2c3baa4e4ceb366668aaf51379340fd"></a>
@@ -160,7 +160,7 @@ Functions</h2></td></tr>
           <td>(</td>
           <td class="paramtype">&#160;</td>
           <td class="paramname">tls</td><td>)</td>
-          <td>&#160;&#160;&#160;((<a class="el" href="port__platform_8h.html#a72d9d0d00bd576cfc8eab61aaea76db2">gpr_intptr</a>)pthread_getspecific((tls)-&gt;key))</td>
+          <td>&#160;&#160;&#160;((intptr_t)pthread_getspecific((tls)-&gt;key))</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -176,7 +176,7 @@ Functions</h2></td></tr>
           <td>(</td>
           <td class="paramtype">&#160;</td>
           <td class="paramname">tls</td><td>)</td>
-          <td>&#160;&#160;&#160;<a class="el" href="log_8h.html#a6ccf52ff690655cc22cd9d053650876f">GPR_ASSERT</a>(0 == pthread_key_create(&amp;(tls)-&gt;key, NULL))</td>
+          <td>&#160;&#160;&#160;<a class="el" href="impl_2codegen_2log_8h.html#a6ccf52ff690655cc22cd9d053650876f">GPR_ASSERT</a>(0 == pthread_key_create(&amp;(tls)-&gt;key, NULL))</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -184,12 +184,12 @@ Functions</h2></td></tr>
 </div>
 </div>
 <h2 class="groupheader">Function Documentation</h2>
-<a class="anchor" id="a02e97731a7a6668a2cb73a7e791e93ea"></a>
+<a class="anchor" id="a1851838d725310f7c043ba49fc5357c8"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="port__platform_8h.html#a72d9d0d00bd576cfc8eab61aaea76db2">gpr_intptr</a> gpr_tls_set </td>
+          <td class="memname">intptr_t gpr_tls_set </td>
           <td>(</td>
           <td class="paramtype">struct <a class="el" href="structgpr__pthread__thread__local.html">gpr_pthread_thread_local</a> *&#160;</td>
           <td class="paramname"><em>tls</em>, </td>
@@ -197,7 +197,7 @@ Functions</h2></td></tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype"><a class="el" href="port__platform_8h.html#a72d9d0d00bd576cfc8eab61aaea76db2">gpr_intptr</a>&#160;</td>
+          <td class="paramtype">intptr_t&#160;</td>
           <td class="paramname"><em>value</em>&#160;</td>
         </tr>
         <tr>
@@ -213,7 +213,7 @@ Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Jan 15 2016 00:21:22 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Mar 8 2016 15:59:02 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

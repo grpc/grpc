@@ -1,8 +1,8 @@
 var searchData=
 [
-  ['send_5finitial_5fmetadata',['send_initial_metadata',['../structgrpc__op.html#a78da22d732e2ce599173f66fe2e6fd37',1,'grpc_op']]],
+  ['send_5finitial_5fmetadata',['send_initial_metadata',['../structgrpc__op.html#a51437bb549e0fb5af11d2c3c6f2a6f2f',1,'grpc_op']]],
   ['send_5fmessage',['send_message',['../structgrpc__op.html#a3b6c1b3456306a802f6eb0e3e8d0e434',1,'grpc_op']]],
-  ['send_5fstatus_5ffrom_5fserver',['send_status_from_server',['../structgrpc__op.html#acf3e5de9ed08917992cdd9a9c6e69725',1,'grpc_op']]],
+  ['send_5fstatus_5ffrom_5fserver',['send_status_from_server',['../structgrpc__op.html#ab0c699375ae02b3e6064591603dbddc2',1,'grpc_op']]],
   ['service_5furl',['service_url',['../structgrpc__auth__metadata__context.html#a67ff8c2ebf38b5511da3d3194d72e01d',1,'grpc_auth_metadata_context']]],
   ['severity',['severity',['../structgpr__log__func__args.html#af0b4b9d8beace1cae0d1a24783d70ccc',1,'gpr_log_func_args']]],
   ['slice_5fbuffer',['slice_buffer',['../structgrpc__byte__buffer.html#ae93126777b4832bc327b7e10104f0eae',1,'grpc_byte_buffer']]],

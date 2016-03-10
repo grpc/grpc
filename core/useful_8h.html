@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">0.12.0.0</span>
+   &#160;<span id="projectnumber">0.13.1-pre1</span>
    </div>
   </td>
  </tr>
@@ -80,7 +80,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><a class="el" href="dir_d44c64559bbebec7f509842c48db8b23.html">include</a></li><li class="navelem"><a class="el" href="dir_9d7a14d6d9adcbe4c35dbdb88d867e2e.html">grpc</a></li><li class="navelem"><a class="el" href="dir_cad3142e04109052413f2d2a2d1813b0.html">support</a></li>  </ul>
+<li class="navelem"><a class="el" href="dir_46bdc5f5041a35984eb5db24b2392107.html">include</a></li><li class="navelem"><a class="el" href="dir_a0198a417c8cbac4868821a6e2669c2e.html">grpc</a></li><li class="navelem"><a class="el" href="dir_90ccf1281bf3a02b4003b436b02b7d1d.html">support</a></li>  </ul>
 </div>
 </div><!-- top -->
 <div class="header">
@@ -123,6 +123,8 @@ Macros</h2></td></tr>
 <tr class="memitem:a8f51444fe97eb3f83184b98035e3357f"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="useful_8h.html#a8f51444fe97eb3f83184b98035e3357f">GPR_BITCOUNT</a>(i)</td></tr>
 <tr class="memdesc:a8f51444fe97eb3f83184b98035e3357f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns number of bits set in bitset <em>i</em>.  <a href="#a8f51444fe97eb3f83184b98035e3357f">More...</a><br/></td></tr>
 <tr class="separator:a8f51444fe97eb3f83184b98035e3357f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0f5453aa5dc6d3314ad8a894177d257b"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="useful_8h.html#a0f5453aa5dc6d3314ad8a894177d257b">GPR_ICMP</a>(a, b)&#160;&#160;&#160;((a) &lt; (b) ? -1 : ((a) &gt; (b) ? 1 : 0))</td></tr>
+<tr class="separator:a0f5453aa5dc6d3314ad8a894177d257b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Macro Definition Documentation</h2>
 <a class="anchor" id="a0e411d4f81a169c97c319d4e84df5747"></a>
@@ -274,6 +276,32 @@ Macros</h2></td></tr>
           <td></td>
           <td>)</td>
           <td></td><td>&#160;&#160;&#160;((a) &lt; (min) ? (min) : (a) &gt; (max) ? (max) : (a))</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a class="anchor" id="a0f5453aa5dc6d3314ad8a894177d257b"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define GPR_ICMP</td>
+          <td>(</td>
+          <td class="paramtype">&#160;</td>
+          <td class="paramname">a, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">&#160;</td>
+          <td class="paramname">b&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td>&#160;&#160;&#160;((a) &lt; (b) ? -1 : ((a) &gt; (b) ? 1 : 0))</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -442,7 +470,7 @@ Macros</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Jan 15 2016 00:21:22 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Mar 8 2016 15:59:02 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

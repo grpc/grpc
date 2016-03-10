@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">0.12.0.0</span>
+   &#160;<span id="projectnumber">0.13.1-pre1</span>
    </div>
   </td>
  </tr>
@@ -91,7 +91,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="contents">
 <a href="serialization__traits_8h.html">Go to the documentation of this file.</a><div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno">    1</span>&#160;<span class="comment">/*</span></div>
 <div class="line"><a name="l00002"></a><span class="lineno">    2</span>&#160;<span class="comment"> *</span></div>
-<div class="line"><a name="l00003"></a><span class="lineno">    3</span>&#160;<span class="comment"> * Copyright 2015, Google Inc.</span></div>
+<div class="line"><a name="l00003"></a><span class="lineno">    3</span>&#160;<span class="comment"> * Copyright 2015-2016, Google Inc.</span></div>
 <div class="line"><a name="l00004"></a><span class="lineno">    4</span>&#160;<span class="comment"> * All rights reserved.</span></div>
 <div class="line"><a name="l00005"></a><span class="lineno">    5</span>&#160;<span class="comment"> *</span></div>
 <div class="line"><a name="l00006"></a><span class="lineno">    6</span>&#160;<span class="comment"> * Redistribution and use in source and binary forms, with or without</span></div>
@@ -125,22 +125,14 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;<span class="preprocessor">#ifndef GRPCXX_IMPL_SERIALIZATION_TRAITS_H</span></div>
 <div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#define GRPCXX_IMPL_SERIALIZATION_TRAITS_H</span></div>
 <div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;<span class="preprocessor"></span></div>
-<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;<span class="keyword">namespace </span>grpc {</div>
+<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="codegen_2serialization__traits_8h.html">grpc++/impl/codegen/serialization_traits.h</a>&gt;</span></div>
 <div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;</div>
-<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;<span class="comment">//                            bool* own_buffer);</span></div>
-<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;<span class="comment"></span><span class="keyword">template</span> &lt;<span class="keyword">class </span><a class="code" href="namespacegrpc_1_1protobuf.html#a58557bfd4af54f1c54a6de69ab1fb43c">Message</a>,</div>
-<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;          <span class="keyword">class </span>UnusedButHereForPartialTemplateSpecialization = <span class="keywordtype">void</span>&gt;</div>
-<div class="line"><a name="l00064"></a><span class="lineno"><a class="line" href="classgrpc_1_1_serialization_traits.html">   64</a></span>&#160;<span class="keyword">class </span><a class="code" href="classgrpc_1_1_serialization_traits.html">SerializationTraits</a>;</div>
-<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;</div>
-<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;}  <span class="comment">// namespace grpc</span></div>
-<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;</div>
-<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;<span class="preprocessor">#endif  // GRPCXX_IMPL_SERIALIZATION_TRAITS_H</span></div>
-<div class="ttc" id="classgrpc_1_1_serialization_traits_html"><div class="ttname"><a href="classgrpc_1_1_serialization_traits.html">grpc::SerializationTraits</a></div><div class="ttdoc">Defines how to serialize and deserialize some type. </div><div class="ttdef"><b>Definition:</b> serialization_traits.h:64</div></div>
-<div class="ttc" id="namespacegrpc_1_1protobuf_html_a58557bfd4af54f1c54a6de69ab1fb43c"><div class="ttname"><a href="namespacegrpc_1_1protobuf.html#a58557bfd4af54f1c54a6de69ab1fb43c">grpc::protobuf::Message</a></div><div class="ttdeci">::google::protobuf::Message Message</div><div class="ttdef"><b>Definition:</b> config_protobuf.h:60</div></div>
+<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;<span class="preprocessor">#endif  // GRPCXX_IMPL_SERIALIZATION_TRAITS_H</span></div>
+<div class="ttc" id="codegen_2serialization__traits_8h_html"><div class="ttname"><a href="codegen_2serialization__traits_8h.html">serialization_traits.h</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Jan 15 2016 00:21:23 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Mar 8 2016 15:59:03 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

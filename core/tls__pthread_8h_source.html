@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">0.12.0.0</span>
+   &#160;<span id="projectnumber">0.13.1-pre1</span>
    </div>
   </td>
  </tr>
@@ -80,7 +80,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><a class="el" href="dir_d44c64559bbebec7f509842c48db8b23.html">include</a></li><li class="navelem"><a class="el" href="dir_9d7a14d6d9adcbe4c35dbdb88d867e2e.html">grpc</a></li><li class="navelem"><a class="el" href="dir_cad3142e04109052413f2d2a2d1813b0.html">support</a></li>  </ul>
+<li class="navelem"><a class="el" href="dir_46bdc5f5041a35984eb5db24b2392107.html">include</a></li><li class="navelem"><a class="el" href="dir_a0198a417c8cbac4868821a6e2669c2e.html">grpc</a></li><li class="navelem"><a class="el" href="dir_90ccf1281bf3a02b4003b436b02b7d1d.html">support</a></li>  </ul>
 </div>
 </div><!-- top -->
 <div class="header">
@@ -124,7 +124,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;<span class="preprocessor">#ifndef GRPC_SUPPORT_TLS_PTHREAD_H</span></div>
 <div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#define GRPC_SUPPORT_TLS_PTHREAD_H</span></div>
 <div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;<span class="preprocessor"></span></div>
-<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="log_8h.html">grpc/support/log.h</a>&gt;</span> <span class="comment">/* for GPR_ASSERT */</span></div>
+<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="support_2log_8h.html">grpc/support/log.h</a>&gt;</span> <span class="comment">/* for GPR_ASSERT */</span></div>
 <div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;<span class="preprocessor">#include &lt;pthread.h&gt;</span></div>
 <div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;</div>
 <div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;<span class="comment">/* Thread local storage based on pthread library calls.</span></div>
@@ -138,25 +138,24 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;<span class="preprocessor"></span></div>
 <div class="line"><a name="l00049"></a><span class="lineno"><a class="line" href="tls__pthread_8h.html#a43768a42ff705cc028b4a483dc3b65c5">   49</a></span>&#160;<span class="preprocessor">#define gpr_tls_init(tls) GPR_ASSERT(0 == pthread_key_create(&amp;(tls)-&gt;key, NULL))</span></div>
 <div class="line"><a name="l00050"></a><span class="lineno"><a class="line" href="tls__pthread_8h.html#a187108e1078d2ce05388cb17bc59ce74">   50</a></span>&#160;<span class="preprocessor"></span><span class="preprocessor">#define gpr_tls_destroy(tls) pthread_key_delete((tls)-&gt;key)</span></div>
-<div class="line"><a name="l00051"></a><span class="lineno"><a class="line" href="tls__pthread_8h.html#a9aa9e55eddbe7fed424526c23e1b55a3">   51</a></span>&#160;<span class="preprocessor"></span><span class="preprocessor">#define gpr_tls_get(tls) ((gpr_intptr)pthread_getspecific((tls)-&gt;key))</span></div>
+<div class="line"><a name="l00051"></a><span class="lineno"><a class="line" href="tls__pthread_8h.html#a9aa9e55eddbe7fed424526c23e1b55a3">   51</a></span>&#160;<span class="preprocessor"></span><span class="preprocessor">#define gpr_tls_get(tls) ((intptr_t)pthread_getspecific((tls)-&gt;key))</span></div>
 <div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#ifdef __cplusplus</span></div>
 <div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;<span class="preprocessor"></span><span class="keyword">extern</span> <span class="stringliteral">&quot;C&quot;</span> {</div>
 <div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;<span class="preprocessor"></span><a class="code" href="port__platform_8h.html#a72d9d0d00bd576cfc8eab61aaea76db2">gpr_intptr</a> <a class="code" href="tls__pthread_8h.html#a02e97731a7a6668a2cb73a7e791e93ea">gpr_tls_set</a>(<span class="keyword">struct</span> <a class="code" href="structgpr__pthread__thread__local.html">gpr_pthread_thread_local</a> *tls, <a class="code" href="port__platform_8h.html#a72d9d0d00bd576cfc8eab61aaea76db2">gpr_intptr</a> value);</div>
+<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;<span class="preprocessor"></span>intptr_t <a class="code" href="tls__pthread_8h.html#a1851838d725310f7c043ba49fc5357c8">gpr_tls_set</a>(<span class="keyword">struct</span> <a class="code" href="structgpr__pthread__thread__local.html">gpr_pthread_thread_local</a> *tls, intptr_t value);</div>
 <div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;<span class="preprocessor">#ifdef __cplusplus</span></div>
 <div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;<span class="preprocessor"></span>}</div>
 <div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;<span class="preprocessor">#endif</span></div>
 <div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;<span class="preprocessor"></span></div>
 <div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="ttc" id="port__platform_8h_html_a72d9d0d00bd576cfc8eab61aaea76db2"><div class="ttname"><a href="port__platform_8h.html#a72d9d0d00bd576cfc8eab61aaea76db2">gpr_intptr</a></div><div class="ttdeci">intptr_t gpr_intptr</div><div class="ttdef"><b>Definition:</b> port_platform.h:325</div></div>
-<div class="ttc" id="tls__pthread_8h_html_a02e97731a7a6668a2cb73a7e791e93ea"><div class="ttname"><a href="tls__pthread_8h.html#a02e97731a7a6668a2cb73a7e791e93ea">gpr_tls_set</a></div><div class="ttdeci">gpr_intptr gpr_tls_set(struct gpr_pthread_thread_local *tls, gpr_intptr value)</div></div>
 <div class="ttc" id="structgpr__pthread__thread__local_html"><div class="ttname"><a href="structgpr__pthread__thread__local.html">gpr_pthread_thread_local</a></div><div class="ttdef"><b>Definition:</b> tls_pthread.h:43</div></div>
 <div class="ttc" id="structgpr__pthread__thread__local_html_a006cbb5f30eb7c7c53a99a19f242fece"><div class="ttname"><a href="structgpr__pthread__thread__local.html#a006cbb5f30eb7c7c53a99a19f242fece">gpr_pthread_thread_local::key</a></div><div class="ttdeci">pthread_key_t key</div><div class="ttdef"><b>Definition:</b> tls_pthread.h:44</div></div>
-<div class="ttc" id="log_8h_html"><div class="ttname"><a href="log_8h.html">log.h</a></div></div>
+<div class="ttc" id="support_2log_8h_html"><div class="ttname"><a href="support_2log_8h.html">log.h</a></div></div>
+<div class="ttc" id="tls__pthread_8h_html_a1851838d725310f7c043ba49fc5357c8"><div class="ttname"><a href="tls__pthread_8h.html#a1851838d725310f7c043ba49fc5357c8">gpr_tls_set</a></div><div class="ttdeci">intptr_t gpr_tls_set(struct gpr_pthread_thread_local *tls, intptr_t value)</div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Jan 15 2016 00:21:22 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Mar 8 2016 15:59:02 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

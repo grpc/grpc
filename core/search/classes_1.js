@@ -18,6 +18,7 @@ var searchData=
   ['gpr_5fthd_5foptions',['gpr_thd_options',['../structgpr__thd__options.html',1,'']]],
   ['gpr_5ftimespec',['gpr_timespec',['../structgpr__timespec.html',1,'']]],
   ['grpc_5farg',['grpc_arg',['../structgrpc__arg.html',1,'']]],
+  ['grpc_5farg_5fpointer_5fvtable',['grpc_arg_pointer_vtable',['../structgrpc__arg__pointer__vtable.html',1,'']]],
   ['grpc_5fauth_5fmetadata_5fcontext',['grpc_auth_metadata_context',['../structgrpc__auth__metadata__context.html',1,'']]],
   ['grpc_5fauth_5fmetadata_5fprocessor',['grpc_auth_metadata_processor',['../structgrpc__auth__metadata__processor.html',1,'']]],
   ['grpc_5fauth_5fproperty',['grpc_auth_property',['../structgrpc__auth__property.html',1,'']]],

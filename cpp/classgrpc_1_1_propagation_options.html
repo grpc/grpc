@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">0.12.0.0</span>
+   &#160;<span id="projectnumber">0.13.1-pre1</span>
    </div>
   </td>
  </tr>
@@ -97,7 +97,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <p>Options for <em><a class="el" href="classgrpc_1_1_client_context.html#a88cbf7ae863d5fcb382c9e22160f4707" title="Create a new ClientContext as a child of an incoming server call, according to options (...">ClientContext::FromServerContext</a></em> specifying which traits from the <em><a class="el" href="classgrpc_1_1_server_context.html">ServerContext</a></em> to propagate (copy) from it into a new <em><a class="el" href="classgrpc_1_1_client_context.html">ClientContext</a></em>.  
  <a href="classgrpc_1_1_propagation_options.html#details">More...</a></p>
 
-<p><code>#include &lt;<a class="el" href="client__context_8h_source.html">client_context.h</a>&gt;</code></p>
+<p><code>#include &lt;<a class="el" href="impl_2codegen_2client__context_8h_source.html">client_context.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
@@ -119,8 +119,8 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:a6ead0d0f5eba28ffbfb47de32b64bfc9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1ed5f38fd16b830a300f09dd3cd0b9d1"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_propagation_options.html">PropagationOptions</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_propagation_options.html#a1ed5f38fd16b830a300f09dd3cd0b9d1">disable_cancellation_propagation</a> ()</td></tr>
 <tr class="separator:a1ed5f38fd16b830a300f09dd3cd0b9d1"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3507b18b73820e1ffaa6bdcafeb3b4f2"><td class="memItemLeft" align="right" valign="top">gpr_uint32&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_propagation_options.html#a3507b18b73820e1ffaa6bdcafeb3b4f2">c_bitmask</a> () const </td></tr>
-<tr class="separator:a3507b18b73820e1ffaa6bdcafeb3b4f2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa4845c50ba91dfd526a225adc81fcd36"><td class="memItemLeft" align="right" valign="top">uint32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_propagation_options.html#aa4845c50ba91dfd526a225adc81fcd36">c_bitmask</a> () const </td></tr>
+<tr class="separator:aa4845c50ba91dfd526a225adc81fcd36"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Options for <em><a class="el" href="classgrpc_1_1_client_context.html#a88cbf7ae863d5fcb382c9e22160f4707" title="Create a new ClientContext as a child of an incoming server call, according to options (...">ClientContext::FromServerContext</a></em> specifying which traits from the <em><a class="el" href="classgrpc_1_1_server_context.html">ServerContext</a></em> to propagate (copy) from it into a new <em><a class="el" href="classgrpc_1_1_client_context.html">ClientContext</a></em>. </p>
@@ -150,7 +150,7 @@ Public Member Functions</h2></td></tr>
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a class="anchor" id="a3507b18b73820e1ffaa6bdcafeb3b4f2"></a>
+<a class="anchor" id="aa4845c50ba91dfd526a225adc81fcd36"></a>
 <div class="memitem">
 <div class="memproto">
 <table class="mlabels">
@@ -158,7 +158,7 @@ Public Member Functions</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">gpr_uint32 grpc::PropagationOptions::c_bitmask </td>
+          <td class="memname">uint32_t grpc::PropagationOptions::c_bitmask </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td> const</td>
@@ -358,12 +358,12 @@ Public Member Functions</h2></td></tr>
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>include/grpc++/<a class="el" href="client__context_8h_source.html">client_context.h</a></li>
+<li>include/grpc++/impl/codegen/<a class="el" href="impl_2codegen_2client__context_8h_source.html">client_context.h</a></li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Jan 15 2016 00:21:23 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Mar 8 2016 15:59:03 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

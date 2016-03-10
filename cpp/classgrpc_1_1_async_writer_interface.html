@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">0.12.0.0</span>
+   &#160;<span id="projectnumber">0.13.1-pre1</span>
    </div>
   </td>
  </tr>
@@ -97,7 +97,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <p>An interface that can be fed a sequence of messages of type <em>W</em>.  
  <a href="classgrpc_1_1_async_writer_interface.html#details">More...</a></p>
 
-<p><code>#include &lt;<a class="el" href="async__stream_8h_source.html">async_stream.h</a>&gt;</code></p>
+<p><code>#include &lt;<a class="el" href="impl_2codegen_2async__stream_8h_source.html">async_stream.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
@@ -174,6 +174,7 @@ template&lt;class W &gt; </div>
 </div><div class="memdoc">
 
 <p>Request the writing of <em>msg</em> with identifying tag <em>tag</em>. </p>
+<p>Only one write may be outstanding at any given time. This means that after calling Write, one must wait to receive <em>tag</em> from the completion queue BEFORE calling Write again.</p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramdir">[in]</td><td class="paramname">msg</td><td>The message to be written. </td></tr>
@@ -182,17 +183,17 @@ template&lt;class W &gt; </div>
   </dd>
 </dl>
 
-<p>Implemented in <a class="el" href="classgrpc_1_1_server_async_reader_writer.html#ad0d2750db5e195d053e3361e1ff0df35">grpc::ServerAsyncReaderWriter&lt; R, W &gt;</a>, <a class="el" href="classgrpc_1_1_server_async_writer.html#a7027a65f3d84ff275b130cf9a0f170f5">grpc::ServerAsyncWriter&lt; W &gt;</a>, <a class="el" href="classgrpc_1_1_client_async_reader_writer.html#ac3cb288c3bd9d1b826fd726bd2655be3">grpc::ClientAsyncReaderWriter&lt; R, W &gt;</a>, and <a class="el" href="classgrpc_1_1_client_async_writer.html#a544f9e4c310b251bf3c7b84fd035d20a">grpc::ClientAsyncWriter&lt; W &gt;</a>.</p>
+<p>Implemented in <a class="el" href="classgrpc_1_1_server_async_reader_writer.html#a640c86c1d3a2e47c6efe6838d8954c82">grpc::ServerAsyncReaderWriter&lt; W, R &gt;</a>, <a class="el" href="classgrpc_1_1_server_async_writer.html#a7027a65f3d84ff275b130cf9a0f170f5">grpc::ServerAsyncWriter&lt; W &gt;</a>, <a class="el" href="classgrpc_1_1_client_async_reader_writer.html#a585ad2f181b1b5041349243861f15994">grpc::ClientAsyncReaderWriter&lt; W, R &gt;</a>, and <a class="el" href="classgrpc_1_1_client_async_writer.html#a544f9e4c310b251bf3c7b84fd035d20a">grpc::ClientAsyncWriter&lt; W &gt;</a>.</p>
 
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>include/grpc++/support/<a class="el" href="async__stream_8h_source.html">async_stream.h</a></li>
+<li>include/grpc++/impl/codegen/<a class="el" href="impl_2codegen_2async__stream_8h_source.html">async_stream.h</a></li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Jan 15 2016 00:21:23 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Mar 8 2016 15:59:03 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>
