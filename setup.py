@@ -154,6 +154,7 @@ INSTALL_REQUIRES = (
 
 SETUP_REQUIRES = (
     'sphinx>=1.3',
+    'sphinx_rtd_theme>=0.1.8'
 ) + INSTALL_REQUIRES
 
 COMMAND_CLASS = {
