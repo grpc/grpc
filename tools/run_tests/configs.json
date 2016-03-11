@@ -18,7 +18,7 @@
     "environ": {
       "ASAN_OPTIONS": "detect_leaks=0:color=always"
     }, 
-    "timeout_multiplier": 1.5
+    "timeout_multiplier": 3
   }, 
   {
     "config": "ubsan", 
@@ -48,18 +48,18 @@
       "ASAN_OPTIONS": "detect_leaks=1:color=always", 
       "LSAN_OPTIONS": "suppressions=tools/lsan_suppressions.txt:report_objects=1"
     }, 
-    "timeout_multiplier": 1.5
+    "timeout_multiplier": 3
   }, 
   {
     "config": "tsan", 
     "environ": {
       "TSAN_OPTIONS": "suppressions=tools/tsan_suppressions.txt:halt_on_error=1:second_deadlock_stack=1"
     }, 
-    "timeout_multiplier": 2
+    "timeout_multiplier": 5
   }, 
   {
     "config": "msan", 
-    "timeout_multiplier": 2
+    "timeout_multiplier": 4
   }, 
   {
     "config": "mutrace"

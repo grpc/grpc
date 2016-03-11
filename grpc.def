@@ -182,6 +182,7 @@ EXPORTS
     gpr_event_wait
     gpr_ref_init
     gpr_ref
+    gpr_ref_non_zero
     gpr_refn
     gpr_unref
     gpr_stats_init
