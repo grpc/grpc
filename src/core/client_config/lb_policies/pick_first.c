@@ -42,6 +42,7 @@
 typedef struct pending_pick {
   struct pending_pick *next;
   grpc_pollset *pollset;
+  uint32_t initial_metadata_flags;
   grpc_connected_subchannel **target;
   grpc_closure *on_complete;
 } pending_pick;
@@ -151,6 +152,32 @@ static void pf_cancel_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
   gpr_mu_unlock(&p->mu);
 }
 
+static void pf_cancel_picks(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
+                            uint32_t initial_metadata_flags_mask,
+                            uint32_t initial_metadata_flags_eq) {
+  pick_first_lb_policy *p = (pick_first_lb_policy *)pol;
+  pending_pick *pp;
+  gpr_mu_lock(&p->mu);
+  pp = p->pending_picks;
+  p->pending_picks = NULL;
+  while (pp != NULL) {
+    pending_pick *next = pp->next;
+    if ((pp->initial_metadata_flags & initial_metadata_flags_mask) ==
+        initial_metadata_flags_eq) {
+      grpc_pollset_set_del_pollset(exec_ctx, p->base.interested_parties,
+                                   pp->pollset);
+      *pp->target = NULL;
+      grpc_exec_ctx_enqueue(exec_ctx, pp->on_complete, false, NULL);
+      gpr_free(pp);
+    } else {
+      pp->next = p->pending_picks;
+      p->pending_picks = pp;
+    }
+    pp = next;
+  }
+  gpr_mu_unlock(&p->mu);
+}
+
 static void start_picking(grpc_exec_ctx *exec_ctx, pick_first_lb_policy *p) {
   p->started_picking = 1;
   p->checking_subchannel = 0;
@@ -173,7 +200,8 @@ void pf_exit_idle(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
 
 int pf_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol, grpc_pollset *pollset,
             grpc_metadata_batch *initial_metadata,
-            grpc_connected_subchannel **target, grpc_closure *on_complete) {
+            uint32_t initial_metadata_flags, grpc_connected_subchannel **target,
+            grpc_closure *on_complete) {
   pick_first_lb_policy *p = (pick_first_lb_policy *)pol;
   pending_pick *pp;
 
@@ -200,6 +228,7 @@ int pf_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol, grpc_pollset *pollset,
     pp->next = p->pending_picks;
     pp->pollset = pollset;
     pp->target = target;
+    pp->initial_metadata_flags = initial_metadata_flags;
     pp->on_complete = on_complete;
     p->pending_picks = pp;
     gpr_mu_unlock(&p->mu);
@@ -378,8 +407,9 @@ void pf_ping_one(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
 }
 
 static const grpc_lb_policy_vtable pick_first_lb_policy_vtable = {
-    pf_destroy, pf_shutdown, pf_pick, pf_cancel_pick, pf_ping_one, pf_exit_idle,
-    pf_check_connectivity, pf_notify_on_state_change};
+    pf_destroy, pf_shutdown, pf_pick, pf_cancel_pick, pf_cancel_picks,
+    pf_ping_one, pf_exit_idle, pf_check_connectivity,
+    pf_notify_on_state_change};
 
 static void pick_first_factory_ref(grpc_lb_policy_factory *factory) {}
 
