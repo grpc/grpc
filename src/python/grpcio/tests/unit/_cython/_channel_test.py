@@ -35,6 +35,7 @@ from grpc._cython import cygrpc
 
 # TODO(nathaniel): This should be at least one hundred. Why not one thousand?
 _PARALLELISM = 4
+_CONNECTIVITY_TIMEOUT = 0.05
 
 
 def _channel_and_completion_queue():
@@ -44,12 +45,16 @@ def _channel_and_completion_queue():
 
 
 def _connectivity_loop(channel, completion_queue):
-  for _ in range(100):
+  for _ in range(50):
     connectivity = channel.check_connectivity_state(True)
+    watch_deadline = time.time() + _CONNECTIVITY_TIMEOUT
     channel.watch_connectivity_state(
-        connectivity, cygrpc.Timespec(time.time() + 0.2), completion_queue,
+        connectivity, cygrpc.Timespec(watch_deadline), completion_queue,
         None)
-    completion_queue.poll(deadline=cygrpc.Timespec(float('+inf')))
+    poll_deadline = time.time() + _CONNECTIVITY_TIMEOUT * _PARALLELISM
+    event = completion_queue.poll(deadline=cygrpc.Timespec(poll_deadline))
+    assert event.type == cygrpc.CompletionType.operation_complete, (
+        'Operation expected to complete timed out instead.')
 
 
 def _create_loop_destroy():
@@ -59,13 +64,27 @@ def _create_loop_destroy():
 
 
 def _in_parallel(behavior, arguments):
+  errors = []
+  def try_except():
+    try:
+      behavior(*arguments)
+    except Exception as error:
+      errors.append(error)
   threads = tuple(
-      threading.Thread(target=behavior, args=arguments)
+      threading.Thread(target=try_except)
       for _ in range(_PARALLELISM))
   for thread in threads:
+    thread.daemon = True
     thread.start()
-  for thread in threads:
-    thread.join()
+  while threads:
+    next_threads = []
+    for thread in threads:
+      thread.join(2)
+      if thread.isAlive():
+        next_threads.append(thread)
+    threads = next_threads
+    if errors:
+      raise Exception('Failure: {}'.format(errors))
 
 
 class ChannelTest(unittest.TestCase):
