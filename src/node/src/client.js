@@ -408,7 +408,7 @@ function makeUnaryRequestFunction(method, serialize, deserialize) {
         }
       }
       if (status.code !== grpc.status.OK) {
-        error = new Error(response.status.details);
+        error = new Error(status.details);
         error.code = status.code;
         error.metadata = status.metadata;
         callback(error);
