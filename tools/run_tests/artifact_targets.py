@@ -69,16 +69,6 @@ def create_jobspec(name, cmdline, environ=None, shell=False,
   return jobspec
 
 
-def macos_arch_env(arch):
-  """Returns environ specifying -arch arguments for make."""
-  if arch == 'x86':
-    arch_arg = '-arch i386'
-  elif arch == 'x64':
-    arch_arg = '-arch x86_64'
-  else:
-    raise Exception('Unsupported arch')
-  return {'CFLAGS': arch_arg, 'LDFLAGS': arch_arg}
-
 _MACOS_COMPAT_FLAG = '-mmacosx-version-min=10.7'
 
 _ARCH_FLAG_MAP = {
@@ -191,13 +181,17 @@ class CSharpExtArtifact:
       environ = {'CONFIG': 'opt',
                  'EMBED_OPENSSL': 'true',
                  'EMBED_ZLIB': 'true',
-                 'CFLAGS': '-DGPR_BACKWARDS_COMPATIBILITY_MODE'}
+                 'CFLAGS': '-DGPR_BACKWARDS_COMPATIBILITY_MODE',
+                 'LDFLAGS': ''}
       if self.platform == 'linux':
         return create_docker_jobspec(self.name,
             'tools/dockerfile/grpc_artifact_linux_%s' % self.arch,
-            'tools/run_tests/build_artifact_csharp.sh')
+            'tools/run_tests/build_artifact_csharp.sh',
+            environ=environ)
       else:
-        environ.update(macos_arch_env(self.arch))
+        archflag = _ARCH_FLAG_MAP[self.arch]
+        environ['CFLAGS'] += ' %s %s' % (archflag, _MACOS_COMPAT_FLAG)
+        environ['LDFLAGS'] += ' %s' % archflag
         return create_jobspec(self.name,
                               ['tools/run_tests/build_artifact_csharp.sh'],
                               environ=environ)

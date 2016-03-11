@@ -360,7 +360,7 @@ class PythonLanguage(object):
           ['tools/run_tests/run_python.sh'],
           None,
           environ=dict(environment.items() +
-                       [('GPRC_PYTHON_TESTRUNNER_FILTER', suite_name)]),
+                       [('GRPC_PYTHON_TESTRUNNER_FILTER', suite_name)]),
           shortname='py.test.%s' % suite_name,
           timeout_seconds=5*60)
           for suite_name in tests_json]
