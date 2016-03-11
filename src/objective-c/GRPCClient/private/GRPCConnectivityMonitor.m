@@ -106,13 +106,16 @@
 
 #pragma mark Connectivity Monitor
 
-// Assumes the third argument is a block that accepts SCNetworkReachabilityFlags, and passes the
+// Assumes the third argument is a block that accepts a GRPCReachabilityFlags object, and passes the
 // received ones to it.
 static void PassFlagsToContextInfoBlock(SCNetworkReachabilityRef target,
                                         SCNetworkReachabilityFlags flags,
                                         void *info) {
   #pragma unused (target)
-  ((__bridge void (^)(SCNetworkReachabilityFlags))info)(flags);
+  // This can be called many times with the same info. The info is retained by SCNetworkReachability
+  // while this function is being executed.
+  void (^handler)(GRPCReachabilityFlags *) = (__bridge void (^)(GRPCReachabilityFlags *))info;
+  handler([[GRPCReachabilityFlags alloc] initWithFlags:flags]);
 }
 
 @implementation GRPCConnectivityMonitor {
@@ -147,29 +150,30 @@ static void PassFlagsToContextInfoBlock(SCNetworkReachabilityRef target,
 }
 
 - (void)handleLossWithHandler:(void (^)())handler {
-  __weak typeof(self) weakSelf = self;
   [self startListeningWithHandler:^(GRPCReachabilityFlags *flags) {
     if (!flags.isHostReachable) {
-      [weakSelf stopListening];
       handler();
     }
   }];
 }
 
 - (void)startListeningWithHandler:(void (^)(GRPCReachabilityFlags *))handler {
+  // Copy to ensure the handler block is in the heap (and so can't be deallocated when this method
+  // returns).
+  void (^copiedHandler)(GRPCReachabilityFlags *) = [handler copy];
   SCNetworkReachabilityContext context = {
     .version = 0,
-    .info = (__bridge_retained void *)^(SCNetworkReachabilityFlags flags){
-      // Pass the flags as as Objective-C wrapper.
-      handler([[GRPCReachabilityFlags alloc] initWithFlags:flags]);
-    },
-    .release = CFRelease
+    .info = (__bridge void *)copiedHandler,
+    .retain = CFRetain,
+    .release = CFRelease,
   };
+  // The following will retain context.info, and release it when the callback is set to NULL.
   SCNetworkReachabilitySetCallback(_reachabilityRef, PassFlagsToContextInfoBlock, &context);
   SCNetworkReachabilitySetDispatchQueue(_reachabilityRef, _queue);
 }
 
 - (void)stopListening {
+  // This releases the block on context.info.
   SCNetworkReachabilitySetCallback(_reachabilityRef, NULL, NULL);
   SCNetworkReachabilitySetDispatchQueue(_reachabilityRef, NULL);
 }
