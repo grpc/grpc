@@ -93,6 +93,7 @@
     <file baseinstalldir="/" name="include/grpc/impl/codegen/sync_win32.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/time.h" role="src" />
     <file baseinstalldir="/" name="src/core/profiling/timers.h" role="src" />
+    <file baseinstalldir="/" name="src/core/support/backoff.h" role="src" />
     <file baseinstalldir="/" name="src/core/support/block_annotate.h" role="src" />
     <file baseinstalldir="/" name="src/core/support/env.h" role="src" />
     <file baseinstalldir="/" name="src/core/support/load_file.h" role="src" />
@@ -107,6 +108,7 @@
     <file baseinstalldir="/" name="src/core/profiling/stap_timers.c" role="src" />
     <file baseinstalldir="/" name="src/core/support/alloc.c" role="src" />
     <file baseinstalldir="/" name="src/core/support/avl.c" role="src" />
+    <file baseinstalldir="/" name="src/core/support/backoff.c" role="src" />
     <file baseinstalldir="/" name="src/core/support/cmdline.c" role="src" />
     <file baseinstalldir="/" name="src/core/support/cpu_iphone.c" role="src" />
     <file baseinstalldir="/" name="src/core/support/cpu_linux.c" role="src" />
