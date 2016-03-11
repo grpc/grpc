@@ -66,7 +66,7 @@ void grpc_resolved_addresses_destroy(grpc_resolved_addresses *addresses);
 
 /* Resolve addr in a blocking fashion. Returns NULL on failure. On success,
    result must be freed with grpc_resolved_addresses_destroy. */
-grpc_resolved_addresses *grpc_blocking_resolve_address(
-    const char *addr, const char *default_port);
+extern grpc_resolved_addresses *(*grpc_blocking_resolve_address)(
+    const char *name, const char *default_port);
 
 #endif /* GRPC_INTERNAL_CORE_IOMGR_RESOLVE_ADDRESS_H */
