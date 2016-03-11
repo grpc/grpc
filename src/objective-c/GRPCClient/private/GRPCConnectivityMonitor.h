@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,40 +32,46 @@
  */
 
 #import <Foundation/Foundation.h>
+#import <SystemConfiguration/SystemConfiguration.h>
 
-NS_ASSUME_NONNULL_BEGIN
+@interface GRPCReachabilityFlags : NSObject
 
-@class GRPCCompletionQueue;
-struct grpc_call;
++ (nonnull instancetype)flagsWithFlags:(SCNetworkReachabilityFlags)flags;
 
-@interface GRPCHost : NSObject
+/**
+ * One accessor method to query each of the different flags. Example:
 
-@property(nonatomic, readonly) NSString *address;
-@property(nonatomic, copy, nullable) NSString *userAgentPrefix;
+@property(nonatomic, readonly) BOOL isCell;
 
-/** The following properties should only be modified for testing: */
+ */
+#define GRPC_XMACRO_ITEM(methodName, FlagName) \
+@property(nonatomic, readonly) BOOL methodName;
 
-@property(nonatomic, getter=isSecure) BOOL secure;
+#include "GRPCReachabilityFlagNames.xmacro.h"
+#undef GRPC_XMACRO_ITEM
 
-@property(nonatomic, copy, nullable) NSString *pathToCertificates;
-@property(nonatomic, copy, nullable) NSString *hostNameOverride;
-
-- (nullable instancetype)init NS_UNAVAILABLE;
-/** Host objects initialized with the same address are the same. */
-+ (nullable instancetype)hostWithAddress:(NSString *)address;
-- (nullable instancetype)initWithAddress:(NSString *)address NS_DESIGNATED_INITIALIZER;
-
-/** Create a grpc_call object to the provided path on this host. */
-- (nullable struct grpc_call *)unmanagedCallWithPath:(NSString *)path
-                                     completionQueue:(GRPCCompletionQueue *)queue;
-
-// TODO: There's a race when a new RPC is coming through just as an existing one is getting
-// notified that there's no connectivity. If connectivity comes back at that moment, the new RPC
-// will have its channel destroyed by the other RPC, and will never get notified of a problem, so
-// it'll hang (the C layer logs a timeout, with exponential back off). One solution could be to pass
-// the GRPCChannel to the GRPCCall, renaming this as "disconnectChannel:channel", which would only
-// act on that specific channel.
-- (void)disconnect;
+@property(nonatomic, readonly) BOOL isHostReachable;
 @end
 
-NS_ASSUME_NONNULL_END
+
+@interface GRPCConnectivityMonitor : NSObject
+
++ (nullable instancetype)monitorWithHost:(nonnull NSString *)hostName;
+
+- (nonnull instancetype)init NS_UNAVAILABLE;
+
+/**
+ * Queue on which callbacks will be dispatched. Default is the main queue. Set it before calling
+ * handleLossWithHandler:.
+ */
+// TODO(jcanizales): Default to a serial background queue instead.
+@property(nonatomic, strong, null_resettable) dispatch_queue_t queue;
+
+/**
+ * Calls handler every time the connectivity to this instance's host is lost. If this instance is
+ * released before that happens, the handler won't be called.
+ * Only one handler is active at a time, so if this method is called again before the previous
+ * handler has been called, it might never be called at all (or yes, if it has already been queued).
+ */
+- (void)handleLossWithHandler:(nonnull void (^)())handler;
+@end
