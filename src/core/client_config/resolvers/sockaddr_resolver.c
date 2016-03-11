@@ -37,7 +37,7 @@
 
 #include <stdio.h>
 #include <string.h>
-#ifdef GPR_POSIX_SOCKET
+#ifdef GPR_HAVE_UNIX_SOCKET
 #include <sys/un.h>
 #endif
 
@@ -168,7 +168,7 @@ static void sockaddr_destroy(grpc_exec_ctx *exec_ctx, grpc_resolver *gr) {
   gpr_free(r);
 }
 
-#ifdef GPR_POSIX_SOCKET
+#ifdef GPR_HAVE_UNIX_SOCKET
 static int parse_unix(grpc_uri *uri, struct sockaddr_storage *addr,
                       size_t *len) {
   struct sockaddr_un *un = (struct sockaddr_un *)addr;

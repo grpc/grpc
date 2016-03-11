@@ -52,7 +52,9 @@
 
 static void create_sockets(int sv[2]) {
   int flags;
+#ifdef GPR_HAVE_UNIX_SOCKET
   GPR_ASSERT(socketpair(AF_UNIX, SOCK_STREAM, 0, sv) == 0);
+#endif
   flags = fcntl(sv[0], F_GETFL, 0);
   GPR_ASSERT(fcntl(sv[0], F_SETFL, flags | O_NONBLOCK) == 0);
   flags = fcntl(sv[1], F_GETFL, 0);
