@@ -1107,6 +1107,9 @@ static void finish_batch(grpc_exec_ctx *exec_ctx, void *bctlp, bool success) {
 
   gpr_mu_lock(&call->mu);
   if (bctl->send_initial_metadata) {
+    if (!success) {
+      set_status_code(call, STATUS_FROM_CORE, GRPC_STATUS_UNAVAILABLE);
+    }
     grpc_metadata_batch_destroy(
         &call->metadata_batch[0 /* is_receiving */][0 /* is_trailing */]);
   }
