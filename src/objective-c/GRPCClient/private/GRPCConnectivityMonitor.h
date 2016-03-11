@@ -68,7 +68,7 @@
 @property(nonatomic, strong, null_resettable) dispatch_queue_t queue;
 
 /**
- * Calls handler the next time the connectivity to this instance's host is lost. If this instance is
+ * Calls handler every time the connectivity to this instance's host is lost. If this instance is
  * released before that happens, the handler won't be called.
  * Only one handler is active at a time, so if this method is called again before the previous
  * handler has been called, it might never be called at all (or yes, if it has already been queued).
