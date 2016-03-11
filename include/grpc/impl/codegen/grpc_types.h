@@ -202,8 +202,12 @@ typedef enum grpc_call_error {
 /* Initial metadata flags */
 /** Signal that the call is idempotent */
 #define GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST (0x00000010u)
+/** Signal that the call should not return UNAVAILABLE before it has started */
+#define GRPC_INITIAL_METADATA_IGNORE_CONNECTIVITY (0x00000020u)
 /** Mask of all valid flags */
-#define GRPC_INITIAL_METADATA_USED_MASK GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST
+#define GRPC_INITIAL_METADATA_USED_MASK       \
+  (GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST | \
+   GRPC_INITIAL_METADATA_IGNORE_CONNECTIVITY)
 
 /** A single metadata element */
 typedef struct grpc_metadata {

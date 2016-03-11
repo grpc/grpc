@@ -126,6 +126,7 @@ static void cuc_start_transport_op(grpc_exec_ctx *exec_ctx,
 
 static int cuc_pick_subchannel(grpc_exec_ctx *exec_ctx, void *arg,
                                grpc_metadata_batch *initial_metadata,
+                               uint32_t initial_metadata_flags,
                                grpc_connected_subchannel **connected_subchannel,
                                grpc_closure *on_ready) {
   channel_data *chand = arg;

@@ -1229,8 +1229,7 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
         call->metadata_batch[0][0].deadline = call->send_deadline;
         stream_op.send_initial_metadata =
             &call->metadata_batch[0 /* is_receiving */][0 /* is_trailing */];
-        stream_op.send_idempotent_request =
-            (op->flags & GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST) != 0;
+        stream_op.send_initial_metadata_flags = op->flags;
         break;
       case GRPC_OP_SEND_MESSAGE:
         if (!are_write_flags_valid(op->flags)) {

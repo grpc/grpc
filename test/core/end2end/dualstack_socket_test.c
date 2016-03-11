@@ -39,9 +39,9 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/support/string.h"
 #include "src/core/iomgr/resolve_address.h"
 #include "src/core/iomgr/socket_utils_posix.h"
+#include "src/core/support/string.h"
 
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/util/port.h"
@@ -237,7 +237,7 @@ void test_connect(const char *server_host, const char *client_host, int port,
     cq_expect_completion(cqv, tag(1), 1);
     cq_verify(cqv);
 
-    GPR_ASSERT(status == GRPC_STATUS_DEADLINE_EXCEEDED);
+    GPR_ASSERT(status == GRPC_STATUS_UNAVAILABLE);
   }
 
   grpc_call_destroy(c);
