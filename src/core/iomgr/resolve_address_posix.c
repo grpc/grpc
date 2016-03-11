@@ -39,7 +39,10 @@
 
 #include <string.h>
 #include <sys/types.h>
+#ifdef GPR_HAVE_UNIX_SOCKET
 #include <sys/un.h>
+#endif
+#include <string.h>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/host_port.h>
@@ -71,6 +74,7 @@ static grpc_resolved_addresses *blocking_resolve_address_impl(
   int s;
   size_t i;
   grpc_resolved_addresses *addrs = NULL;
+#ifdef GPR_HAVE_UNIX_SOCKET
   struct sockaddr_un *un;
 
   if (name[0] == 'u' && name[1] == 'n' && name[2] == 'i' && name[3] == 'x' &&
@@ -84,6 +88,7 @@ static grpc_resolved_addresses *blocking_resolve_address_impl(
     addrs->addrs->len = strlen(un->sun_path) + sizeof(un->sun_family) + 1;
     return addrs;
   }
+#endif
 
   /* parse name, splitting it into host and port parts */
   gpr_split_host_port(name, &host, &port);

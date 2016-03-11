@@ -36,7 +36,7 @@
 #include <errno.h>
 #include <string.h>
 
-#ifdef GPR_POSIX_SOCKET
+#ifdef GPR_HAVE_UNIX_SOCKET
 #include <sys/un.h>
 #endif
 
@@ -191,7 +191,7 @@ char *grpc_sockaddr_to_uri(const struct sockaddr *addr) {
       gpr_asprintf(&result, "ipv6:%s", temp);
       gpr_free(temp);
       return result;
-#ifdef GPR_POSIX_SOCKET
+#ifdef GPR_HAVE_UNIX_SOCKET
     case AF_UNIX:
       gpr_asprintf(&result, "unix:%s", ((struct sockaddr_un *)addr)->sun_path);
       return result;
@@ -207,8 +207,10 @@ int grpc_sockaddr_get_port(const struct sockaddr *addr) {
       return ntohs(((struct sockaddr_in *)addr)->sin_port);
     case AF_INET6:
       return ntohs(((struct sockaddr_in6 *)addr)->sin6_port);
+#ifdef GPR_HAVE_UNIX_SOCKET
     case AF_UNIX:
       return 1;
+#endif
     default:
       gpr_log(GPR_ERROR, "Unknown socket family %d in grpc_sockaddr_get_port",
               addr->sa_family);
