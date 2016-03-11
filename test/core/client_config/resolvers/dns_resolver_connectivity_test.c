@@ -39,6 +39,7 @@
 #include <grpc/support/alloc.h>
 
 #include "src/core/iomgr/resolve_address.h"
+#include "src/core/iomgr/timer.h"
 #include "test/core/util/test_config.h"
 
 static void subchannel_factory_ref(grpc_subchannel_factory *scv) {}
@@ -47,7 +48,7 @@ static void subchannel_factory_unref(grpc_exec_ctx *exec_ctx,
 static grpc_subchannel *subchannel_factory_create_subchannel(
     grpc_exec_ctx *exec_ctx, grpc_subchannel_factory *factory,
     grpc_subchannel_args *args) {
-  GPR_UNREACHABLE_CODE(return NULL);
+  return NULL;
 }
 
 static const grpc_subchannel_factory_vtable sc_vtable = {
@@ -96,6 +97,20 @@ static void on_done(grpc_exec_ctx *exec_ctx, void *ev, bool success) {
   gpr_event_set(ev, (void *)1);
 }
 
+// interleave waiting for an event with a timer check
+static bool wait_loop(int deadline_seconds, gpr_event *ev) {
+  while (deadline_seconds) {
+    gpr_log(GPR_DEBUG, "Test: waiting for %d more seconds", deadline_seconds);
+    if (gpr_event_wait(ev, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(1))) return true;
+    deadline_seconds--;
+
+    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    grpc_timer_check(&exec_ctx, gpr_now(GPR_CLOCK_MONOTONIC), NULL);
+    grpc_exec_ctx_finish(&exec_ctx);
+  }
+  return false;
+}
+
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
 
@@ -113,7 +128,7 @@ int main(int argc, char **argv) {
   grpc_resolver_next(&exec_ctx, resolver, &config,
                      grpc_closure_create(on_done, &ev1));
   grpc_exec_ctx_flush(&exec_ctx);
-  GPR_ASSERT(gpr_event_wait(&ev1, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5)));
+  GPR_ASSERT(wait_loop(5, &ev1));
   GPR_ASSERT(config == NULL);
 
   gpr_event ev2;
@@ -121,7 +136,7 @@ int main(int argc, char **argv) {
   grpc_resolver_next(&exec_ctx, resolver, &config,
                      grpc_closure_create(on_done, &ev2));
   grpc_exec_ctx_flush(&exec_ctx);
-  GPR_ASSERT(gpr_event_wait(&ev2, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5)));
+  GPR_ASSERT(wait_loop(30, &ev2));
   GPR_ASSERT(config != NULL);
 
   grpc_client_config_unref(&exec_ctx, config);
