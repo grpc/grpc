@@ -41,6 +41,7 @@
 
 #include "src/core/client_config/lb_policy_registry.h"
 #include "src/core/iomgr/resolve_address.h"
+#include "src/core/iomgr/timer.h"
 #include "src/core/support/string.h"
 
 typedef struct {
@@ -71,6 +72,9 @@ typedef struct {
   grpc_client_config **target_config;
   /** current (fully resolved) config */
   grpc_client_config *resolved_config;
+  /** retry timer */
+  bool have_retry_timer;
+  grpc_timer retry_timer;
 } dns_resolver;
 
 static void dns_destroy(grpc_exec_ctx *exec_ctx, grpc_resolver *r);
@@ -91,6 +95,9 @@ static const grpc_resolver_vtable dns_resolver_vtable = {
 static void dns_shutdown(grpc_exec_ctx *exec_ctx, grpc_resolver *resolver) {
   dns_resolver *r = (dns_resolver *)resolver;
   gpr_mu_lock(&r->mu);
+  if (r->have_retry_timer) {
+    grpc_timer_cancel(exec_ctx, &r->retry_timer);
+  }
   if (r->next_completion != NULL) {
     *r->target_config = NULL;
     grpc_exec_ctx_enqueue(exec_ctx, r->next_completion, true, NULL);
@@ -125,6 +132,22 @@ static void dns_next(grpc_exec_ctx *exec_ctx, grpc_resolver *resolver,
   gpr_mu_unlock(&r->mu);
 }
 
+static void dns_on_retry_timer(grpc_exec_ctx *exec_ctx, void *arg,
+                               bool success) {
+  dns_resolver *r = arg;
+
+  gpr_mu_lock(&r->mu);
+  r->have_retry_timer = false;
+  if (success) {
+    if (!r->resolving) {
+      dns_start_resolving_locked(r);
+    }
+  }
+  gpr_mu_unlock(&r->mu);
+
+  GRPC_RESOLVER_UNREF(exec_ctx, &r->base, "retry-timer");
+}
+
 static void dns_on_resolved(grpc_exec_ctx *exec_ctx, void *arg,
                             grpc_resolved_addresses *addresses) {
   dns_resolver *r = arg;
@@ -133,29 +156,47 @@ static void dns_on_resolved(grpc_exec_ctx *exec_ctx, void *arg,
   grpc_subchannel_args args;
   grpc_lb_policy *lb_policy;
   size_t i;
-  if (addresses) {
+  gpr_mu_lock(&r->mu);
+  GPR_ASSERT(r->resolving);
+  r->resolving = 0;
+  if (addresses != NULL) {
     grpc_lb_policy_args lb_policy_args;
     config = grpc_client_config_create();
     subchannels = gpr_malloc(sizeof(grpc_subchannel *) * addresses->naddrs);
+    size_t naddrs = 0;
     for (i = 0; i < addresses->naddrs; i++) {
       memset(&args, 0, sizeof(args));
       args.addr = (struct sockaddr *)(addresses->addrs[i].addr);
       args.addr_len = (size_t)addresses->addrs[i].len;
-      subchannels[i] = grpc_subchannel_factory_create_subchannel(
+      grpc_subchannel *subchannel = grpc_subchannel_factory_create_subchannel(
           exec_ctx, r->subchannel_factory, &args);
+      if (subchannel != NULL) {
+        subchannels[naddrs++] = subchannel;
+      }
     }
     memset(&lb_policy_args, 0, sizeof(lb_policy_args));
     lb_policy_args.subchannels = subchannels;
-    lb_policy_args.num_subchannels = addresses->naddrs;
+    lb_policy_args.num_subchannels = naddrs;
     lb_policy = grpc_lb_policy_create(r->lb_policy_name, &lb_policy_args);
-    grpc_client_config_set_lb_policy(config, lb_policy);
-    GRPC_LB_POLICY_UNREF(exec_ctx, lb_policy, "construction");
+    if (lb_policy != NULL) {
+      grpc_client_config_set_lb_policy(config, lb_policy);
+      GRPC_LB_POLICY_UNREF(exec_ctx, lb_policy, "construction");
+    }
     grpc_resolved_addresses_destroy(addresses);
     gpr_free(subchannels);
+  } else {
+    int retry_seconds = 15;
+    gpr_log(GPR_DEBUG, "dns resolution failed: retrying in %d seconds",
+            retry_seconds);
+    GPR_ASSERT(!r->have_retry_timer);
+    r->have_retry_timer = true;
+    gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
+    GRPC_RESOLVER_REF(&r->base, "retry-timer");
+    grpc_timer_init(
+        exec_ctx, &r->retry_timer,
+        gpr_time_add(now, gpr_time_from_seconds(retry_seconds, GPR_TIMESPAN)),
+        dns_on_retry_timer, r, now);
   }
-  gpr_mu_lock(&r->mu);
-  GPR_ASSERT(r->resolving);
-  r->resolving = 0;
   if (r->resolved_config) {
     grpc_client_config_unref(exec_ctx, r->resolved_config);
   }
