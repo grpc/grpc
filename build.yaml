@@ -1058,6 +1058,7 @@ targets:
   - gpr_test_util
   - gpr
 - name: dns_resolver_connectivity_test
+  cpu_cost: 0.1
   build: test
   language: c
   src:

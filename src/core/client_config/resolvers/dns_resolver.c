@@ -95,6 +95,9 @@ static const grpc_resolver_vtable dns_resolver_vtable = {
 static void dns_shutdown(grpc_exec_ctx *exec_ctx, grpc_resolver *resolver) {
   dns_resolver *r = (dns_resolver *)resolver;
   gpr_mu_lock(&r->mu);
+  if (r->have_retry_timer) {
+    grpc_timer_cancel(exec_ctx, &r->retry_timer);
+  }
   if (r->next_completion != NULL) {
     *r->target_config = NULL;
     grpc_exec_ctx_enqueue(exec_ctx, r->next_completion, true, NULL);
@@ -133,13 +136,14 @@ static void dns_on_retry_timer(grpc_exec_ctx *exec_ctx, void *arg,
                                bool success) {
   dns_resolver *r = arg;
 
+  gpr_mu_lock(&r->mu);
+  r->have_retry_timer = false;
   if (success) {
-    gpr_mu_lock(&r->mu);
     if (!r->resolving) {
       dns_start_resolving_locked(r);
     }
-    gpr_mu_unlock(&r->mu);
   }
+  gpr_mu_unlock(&r->mu);
 
   GRPC_RESOLVER_UNREF(exec_ctx, &r->base, "retry-timer");
 }
