@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -234,7 +234,7 @@ grpc_refresh_token_credentials_create_from_auth_refresh_token(
 typedef struct {
   void (*destruct)(grpc_server_credentials *c);
   grpc_security_status (*create_security_connector)(
-      grpc_server_credentials *c, grpc_security_connector **sc);
+      grpc_server_credentials *c, grpc_server_security_connector **sc);
 } grpc_server_credentials_vtable;
 
 struct grpc_server_credentials {
@@ -245,7 +245,7 @@ struct grpc_server_credentials {
 };
 
 grpc_security_status grpc_server_credentials_create_security_connector(
-    grpc_server_credentials *creds, grpc_security_connector **sc);
+    grpc_server_credentials *creds, grpc_server_security_connector **sc);
 
 grpc_server_credentials *grpc_server_credentials_ref(
     grpc_server_credentials *creds);

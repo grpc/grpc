@@ -437,9 +437,10 @@ class End2endServerTryCancelTest : public End2endTest {
         break;
 
       case CANCEL_AFTER_PROCESSING:
-        // Server cancelled after writing all messages. Client must have read
-        // all messages
-        EXPECT_EQ(num_msgs_read, kNumResponseStreamsMsgs);
+        // Even though the Server cancelled after writing all messages, the RPC
+        // may be cancelled before the Client got a chance to read all the
+        // messages.
+        EXPECT_LE(num_msgs_read, kNumResponseStreamsMsgs);
         break;
 
       default: {
@@ -519,7 +520,11 @@ class End2endServerTryCancelTest : public End2endTest {
 
       case CANCEL_AFTER_PROCESSING:
         EXPECT_EQ(num_msgs_sent, num_messages);
-        EXPECT_EQ(num_msgs_read, num_msgs_sent);
+
+        // The Server cancelled after reading the last message and after writing
+        // the message to the client. However, the RPC cancellation might have
+        // taken effect before the client actually read the response.
+        EXPECT_LE(num_msgs_read, num_msgs_sent);
         break;
 
       default:
@@ -904,9 +909,9 @@ TEST_P(End2endTest, SimultaneousReadWritesDone) {
   std::thread reader_thread(ReaderThreadFunc, stream.get(), &ev);
   gpr_event_wait(&ev, gpr_inf_future(GPR_CLOCK_REALTIME));
   stream->WritesDone();
+  reader_thread.join();
   Status s = stream->Finish();
   EXPECT_TRUE(s.ok());
-  reader_thread.join();
 }
 
 TEST_P(End2endTest, ChannelState) {

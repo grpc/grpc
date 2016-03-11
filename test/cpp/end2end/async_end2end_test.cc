@@ -989,6 +989,10 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
 
     if (server_try_cancel == CANCEL_AFTER_PROCESSING) {
       ServerTryCancel(&srv_ctx);
+
+      // Client reads may fail bacause it is notified that the stream is
+      // cancelled.
+      ignore_cq_result = true;
     }
 
     // Client attemts to read the three messages from the server

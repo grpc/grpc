@@ -103,7 +103,7 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
   args.SetInt(GRPC_COMPRESSION_ALGORITHM_STATE_ARG,
               compression_options_.enabled_algorithms_bitset);
   std::unique_ptr<Server> server(
-      new Server(thread_pool.release(), true, max_message_size_, args));
+      new Server(thread_pool.release(), true, max_message_size_, &args));
   for (auto cq = cqs_.begin(); cq != cqs_.end(); ++cq) {
     grpc_server_register_completion_queue(server->server_, (*cq)->cq(),
                                           nullptr);

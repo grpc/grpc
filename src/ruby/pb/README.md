@@ -11,7 +11,7 @@ The code is is generated using the protoc (> 3.0.0.alpha.1) and the
 grpc_ruby_plugin.  These must be installed to regenerate the IDL defined
 classes, but that's not necessary just to use them.
 
-health_check/v1alpha
+health_check/v1
 --------------------
 
 This package defines the surface of a simple health check service that gRPC
@@ -20,7 +20,7 @@ re-generate the surface.
 
 ```bash
 $ # (from this directory)
-$ protoc -I ../../proto ../../proto/grpc/health/v1alpha/health.proto \
+$ protoc -I ../../proto ../../proto/grpc/health/v1/health.proto \
     --grpc_out=. \
     --ruby_out=. \
     --plugin=protoc-gen-grpc=`which grpc_ruby_plugin`

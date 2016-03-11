@@ -130,9 +130,9 @@ static void on_secure_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
 static void on_initial_connect_string_sent(grpc_exec_ctx *exec_ctx, void *arg,
                                            bool success) {
   connector *c = arg;
-  grpc_security_connector_do_handshake(exec_ctx, &c->security_connector->base,
-                                       c->connecting_endpoint,
-                                       on_secure_handshake_done, c);
+  grpc_channel_security_connector_do_handshake(exec_ctx, c->security_connector,
+                                               c->connecting_endpoint,
+                                               on_secure_handshake_done, c);
 }
 
 static void connected(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
@@ -153,9 +153,8 @@ static void connected(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
       grpc_endpoint_write(exec_ctx, tcp, &c->initial_string_buffer,
                           &c->initial_string_sent);
     } else {
-      grpc_security_connector_do_handshake(exec_ctx,
-                                           &c->security_connector->base, tcp,
-                                           on_secure_handshake_done, c);
+      grpc_channel_security_connector_do_handshake(
+          exec_ctx, c->security_connector, tcp, on_secure_handshake_done, c);
     }
   } else {
     memset(c->result, 0, sizeof(*c->result));

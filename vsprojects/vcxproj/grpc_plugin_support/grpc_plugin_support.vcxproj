@@ -53,6 +53,7 @@
   <ImportGroup Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="$(SolutionDir)\..\vsprojects\global.props" />
+    <Import Project="$(SolutionDir)\..\vsprojects\protoc.props" />
     <Import Project="$(SolutionDir)\..\vsprojects\winsock.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
