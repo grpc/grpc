@@ -142,9 +142,8 @@ class CLanguage(object):
       self._make_options = [_windows_toolset_option(self.args.compiler),
                             _windows_arch_option(self.args.arch)]
     else:
-      self._make_options = []
-      self._docker_distro = self._get_docker_distro(self.args.use_docker,
-                                                    self.args.compiler)
+      self._docker_distro, self._make_options = self._compiler_options(self.args.use_docker,
+                                                                       self.args.compiler)
 
   def test_specs(self):
     out = []
@@ -229,18 +228,26 @@ class CLanguage(object):
   def makefile_name(self):
     return 'Makefile'
 
-  def _get_docker_distro(self, use_docker, compiler):
+  def _clang_make_options(self):
+    return ['CC=clang', 'CXX=clang++', 'LD=clang', 'LDXX=clang++']
+
+  def _compiler_options(self, use_docker, compiler):
+    """Returns docker distro and make options to use for given compiler."""
     if _is_use_docker_child():
-      return "already_under_docker"
+      return ("already_under_docker", [])
     if not use_docker:
       _check_compiler(compiler, ['default'])
 
     if compiler == 'gcc4.9' or compiler == 'default':
-      return 'jessie'
+      return ('jessie', [])
     elif compiler == 'gcc4.4':
-      return 'squeeze'
+      return ('squeeze', [])
     elif compiler == 'gcc5.3':
-      return 'ubuntu1604'
+      return ('ubuntu1604', [])
+    elif compiler == 'clang3.4':
+      return ('ubuntu1404', self._clang_make_options())
+    elif compiler == 'clang3.6':
+      return ('ubuntu1604', self._clang_make_options())
     else:
       raise Exception('Compiler %s not supported.' % compiler)
 
@@ -774,6 +781,7 @@ argp.add_argument('--arch',
 argp.add_argument('--compiler',
                   choices=['default',
                            'gcc4.4', 'gcc4.9', 'gcc5.3',
+                           'clang3.4', 'clang3.6',
                            'vs2010', 'vs2013', 'vs2015'],
                   default='default',
                   help='Selects compiler to use. Allowed values depend on the platform and language.')
