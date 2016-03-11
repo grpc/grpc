@@ -94,12 +94,15 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (nullable grpc_call *)unmanagedCallWithPath:(NSString *)path
                               completionQueue:(GRPCCompletionQueue *)queue {
+  GRPCChannel *channel;
+  // This is racing -[GRPCHost disconnect].
   @synchronized(self) {
     if (!_channel) {
       _channel = [self newChannel];
     }
-    return [_channel unmanagedCallWithPath:path completionQueue:queue];
+    channel = _channel;
   }
+  return [channel unmanagedCallWithPath:path completionQueue:queue];
 }
 
 - (NSDictionary *)channelArgs {
@@ -136,6 +139,7 @@ NS_ASSUME_NONNULL_BEGIN
 }
 
 - (void)disconnect {
+  // This is racing -[GRPCHost unmanagedCallWithPath:completionQueue:].
   @synchronized(self) {
     _channel = nil;
   }
