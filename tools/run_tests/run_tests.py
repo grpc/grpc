@@ -153,7 +153,7 @@ class CLanguage(object):
       'windows': ['all'],
       'mac': ['all'],
       'posix': ['all'],
-      'linux': ['poll', 'legacy']
+      'linux': ['epoll', 'poll', 'legacy']
     }
     for polling_strategy in POLLING_STRATEGIES[self.platform]:
       env={'GRPC_DEFAULT_SSL_ROOTS_FILE_PATH':
