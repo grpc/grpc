@@ -68,7 +68,11 @@
       // of gRPC take care of two different error domains and error code enums. A possibility is to
       // add error handling to GRXWriters or GRXWriteables, and use them to translate errors between
       // the two domains.
-      singleHandler(nil, [NSError errorWithDomain:@"io.grpc" code:13 userInfo:userInfo]);
+      static NSString *kGRPCErrorDomain = @"io.grpc";
+      static NSUInteger kGRPCErrorCodeInternal = 13;
+      singleHandler(nil, [NSError errorWithDomain:kGRPCErrorDomain
+                                             code:kGRPCErrorCodeInternal
+                                         userInfo:userInfo]);
     }
   };
   return [self writeableWithEventHandler:^(BOOL done, id value, NSError *error) {
