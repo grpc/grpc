@@ -330,6 +330,9 @@ static int run_some_expired_timers(grpc_exec_ctx *exec_ctx, gpr_timespec now,
 
     gpr_mu_unlock(&g_mu);
     gpr_mu_unlock(&g_checker_mu);
+  } else if (next != NULL) {
+    *next = gpr_time_min(
+        *next, gpr_time_add(now, gpr_time_from_millis(100, GPR_TIMESPAN)));
   }
 
   return (int)n;
