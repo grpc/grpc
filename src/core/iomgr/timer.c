@@ -33,11 +33,11 @@
 
 #include "src/core/iomgr/timer.h"
 
-#include "src/core/iomgr/timer_heap.h"
-#include "src/core/iomgr/time_averaged_stats.h"
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/useful.h>
+#include "src/core/iomgr/time_averaged_stats.h"
+#include "src/core/iomgr/timer_heap.h"
 
 #define INVALID_HEAP_INDEX 0xffffffffu
 
@@ -331,8 +331,17 @@ static int run_some_expired_timers(grpc_exec_ctx *exec_ctx, gpr_timespec now,
     gpr_mu_unlock(&g_mu);
     gpr_mu_unlock(&g_checker_mu);
   } else if (next != NULL) {
+    /* TODO(ctiller): this forces calling code to do an short poll, and
+       then retry the timer check (because this time through the timer list was
+       contended).
+
+       We could reduce the cost here dramatically by keeping a count of how many
+       currently active pollers got through the uncontended case above
+       successfully, and waking up other pollers IFF that count drops to zero.
+
+       Once that count is in place, this entire else branch could disappear. */
     *next = gpr_time_min(
-        *next, gpr_time_add(now, gpr_time_from_millis(100, GPR_TIMESPAN)));
+        *next, gpr_time_add(now, gpr_time_from_millis(1, GPR_TIMESPAN)));
   }
 
   return (int)n;
