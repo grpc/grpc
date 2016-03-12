@@ -11,7 +11,7 @@ static grpc_channel* channels[NUM_THREADS];
 static grpc_completion_queue* queues[NUM_THREADS];
 
 void create_loop_destroy(void* actually_an_int) {
-  int thread_index = (int)(actually_an_int);
+  int thread_index = (int)(intptr_t)(actually_an_int);
   for (int i = 0; i < 10; ++i) {
     grpc_completion_queue* cq = grpc_completion_queue_create(NULL);
     grpc_channel* chan = grpc_insecure_channel_create("localhost", NULL, NULL);
