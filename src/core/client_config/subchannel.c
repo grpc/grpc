@@ -184,8 +184,8 @@ static void connection_destroy(grpc_exec_ctx *exec_ctx, void *arg,
   gpr_free(c);
 }
 
-void grpc_connected_subchannel_ref(grpc_connected_subchannel *c
-                                       GRPC_SUBCHANNEL_REF_EXTRA_ARGS) {
+void grpc_connected_subchannel_ref(
+    grpc_connected_subchannel *c GRPC_SUBCHANNEL_REF_EXTRA_ARGS) {
   GRPC_CHANNEL_STACK_REF(CHANNEL_STACK_FROM_CONNECTION(c), REF_REASON);
 }
 
@@ -226,8 +226,8 @@ static gpr_atm ref_mutate(grpc_subchannel *c, gpr_atm delta,
   return old_val;
 }
 
-grpc_subchannel *grpc_subchannel_ref(grpc_subchannel *c
-                                         GRPC_SUBCHANNEL_REF_EXTRA_ARGS) {
+grpc_subchannel *grpc_subchannel_ref(
+    grpc_subchannel *c GRPC_SUBCHANNEL_REF_EXTRA_ARGS) {
   gpr_atm old_refs;
   old_refs = ref_mutate(c, (1 << INTERNAL_REF_BITS),
                         0 REF_MUTATE_PURPOSE("STRONG_REF"));
@@ -235,8 +235,8 @@ grpc_subchannel *grpc_subchannel_ref(grpc_subchannel *c
   return c;
 }
 
-grpc_subchannel *grpc_subchannel_weak_ref(grpc_subchannel *c
-                                              GRPC_SUBCHANNEL_REF_EXTRA_ARGS) {
+grpc_subchannel *grpc_subchannel_weak_ref(
+    grpc_subchannel *c GRPC_SUBCHANNEL_REF_EXTRA_ARGS) {
   gpr_atm old_refs;
   old_refs = ref_mutate(c, 1, 0 REF_MUTATE_PURPOSE("WEAK_REF"));
   GPR_ASSERT(old_refs != 0);
@@ -646,19 +646,23 @@ static void subchannel_connected(grpc_exec_ctx *exec_ctx, void *arg,
 
   if (c->connecting_result.transport != NULL) {
     publish_transport(exec_ctx, c);
-  } else if (c->disconnected) {
+  }
+
+  GRPC_SUBCHANNEL_WEAK_REF(c, "connected");
+  gpr_mu_lock(&c->mu);
+  if (c->disconnected) {
     GRPC_SUBCHANNEL_WEAK_UNREF(exec_ctx, c, "connecting");
   } else {
     gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
-    gpr_mu_lock(&c->mu);
     GPR_ASSERT(!c->have_alarm);
     c->have_alarm = 1;
     grpc_connectivity_state_set(exec_ctx, &c->state_tracker,
                                 GRPC_CHANNEL_TRANSIENT_FAILURE,
                                 "connect_failed");
     grpc_timer_init(exec_ctx, &c->alarm, c->next_attempt, on_alarm, c, now);
-    gpr_mu_unlock(&c->mu);
   }
+  gpr_mu_unlock(&c->mu);
+  GRPC_SUBCHANNEL_WEAK_UNREF(exec_ctx, c, "connecting");
 }
 
 static gpr_timespec compute_connect_deadline(grpc_subchannel *c) {
@@ -686,8 +690,8 @@ static void subchannel_call_destroy(grpc_exec_ctx *exec_ctx, void *call,
   GPR_TIMER_END("grpc_subchannel_call_unref.destroy", 0);
 }
 
-void grpc_subchannel_call_ref(grpc_subchannel_call *c
-                                  GRPC_SUBCHANNEL_REF_EXTRA_ARGS) {
+void grpc_subchannel_call_ref(
+    grpc_subchannel_call *c GRPC_SUBCHANNEL_REF_EXTRA_ARGS) {
   GRPC_CALL_STACK_REF(SUBCHANNEL_CALL_TO_CALL_STACK(c), REF_REASON);
 }
 
