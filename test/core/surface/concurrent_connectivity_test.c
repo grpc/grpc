@@ -25,7 +25,7 @@ void create_loop_destroy(void* actually_an_int) {
           grpc_channel_check_connectivity_state(chan, 1);
       grpc_channel_watch_connectivity_state(chan, state, later_time, cq, NULL);
       GPR_ASSERT(grpc_completion_queue_next(
-                     cq, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(3), NULL)
+                     cq, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(30), NULL)
                      .type == GRPC_OP_COMPLETE);
     }
     grpc_channel_destroy(channels[thread_index]);
