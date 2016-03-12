@@ -2,7 +2,9 @@
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 #include <grpc/support/thd.h>
+#include "test/core/util/test_config.h"
 
 #define NUM_THREADS 100
 static grpc_channel* channels[NUM_THREADS];
@@ -17,22 +19,22 @@ void create_loop_destroy(void* actually_an_int) {
     channels[thread_index] = chan;
     queues[thread_index] = cq;
 
-    gpr_timespec inf_future = gpr_inf_future(GPR_CLOCK_REALTIME);
-    gpr_timespec delta = gpr_time_from_millis(10, GPR_TIMESPAN);
     for (int j = 0; j < 10; ++j) {
-      gpr_timespec later_time =
-          gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), delta);
+      gpr_timespec later_time = GRPC_TIMEOUT_MILLIS_TO_DEADLINE(10);
       grpc_connectivity_state state =
           grpc_channel_check_connectivity_state(chan, 1);
       grpc_channel_watch_connectivity_state(chan, state, later_time, cq, NULL);
-      grpc_completion_queue_next(cq, inf_future, NULL);
+      GPR_ASSERT(grpc_completion_queue_next(
+                     cq, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(3), NULL)
+                     .type == GRPC_OP_COMPLETE);
     }
     grpc_channel_destroy(channels[thread_index]);
     grpc_completion_queue_destroy(queues[thread_index]);
   }
 }
 
-int main() {
+int main(int argc, char** argv) {
+  grpc_test_init(argc, argv);
   grpc_init();
   gpr_thd_id threads[NUM_THREADS];
   for (intptr_t i = 0; i < NUM_THREADS; ++i) {
