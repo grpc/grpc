@@ -32,6 +32,7 @@
  */
 
 #import "GRPCChannel.h"
+#import "GRPCCompletionQueue.h"
 
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
