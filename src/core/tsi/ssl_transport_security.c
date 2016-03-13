@@ -37,6 +37,8 @@
 
 #include <limits.h>
 #include <string.h>
+
+/* TODO(jboeuf): refactor inet_ntop into a portability header. */
 #ifdef GPR_WINSOCK_SOCKET
 #include <ws2tcpip.h>
 #else
