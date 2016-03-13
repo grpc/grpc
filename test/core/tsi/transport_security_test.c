@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -194,6 +194,13 @@ const cert_name_test_entry cert_name_test_entries[] = {
     {0, "173.194.195.139", "foo.example.com", NULL, "8.8.8.8,8.8.4.4"},
     {1, "173.194.195.139", "foo.example.com", NULL, "8.8.8.8,173.194.195.139"},
     {0, "173.194.195.139", "foo.example.com", NULL, "173.194.195.13"},
+    {0, "2001:db8:a0b:12f0::1", "foo.example.com", NULL, "173.194.195.13"},
+    {1, "2001:db8:a0b:12f0::1", "foo.example.com", NULL,
+     "2001:db8:a0b:12f0::1"},
+    {0, "2001:db8:a0b:12f0::1", "foo.example.com", NULL,
+     "2001:db8:a0b:12f0::2"},
+    {1, "2001:db8:a0b:12f0::1", "foo.example.com", NULL,
+     "2001:db8:a0b:12f0::2,2001:db8:a0b:12f0::1,8.8.8.8"},
 };
 
 typedef struct name_list {

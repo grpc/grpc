@@ -206,13 +206,16 @@ static void ssl_info_callback(const SSL *ssl, int where, int ret) {
 }
 
 /* Returns 1 if name looks like an IP address, 0 otherwise.
-   This is a very rough heuristic as it does not handle IPV6 or things like:
-   0300.0250.00.01, 0xC0.0Xa8.0x0.0x1, 000030052000001, 0xc0.052000001 */
+   This is a very rough heuristic, and only handles IPv6 in hexadecimal form. */
 static int looks_like_ip_address(const char *name) {
   size_t i;
   size_t dot_count = 0;
   size_t num_size = 0;
   for (i = 0; i < strlen(name); i++) {
+    if (name[i] == ':') {
+      /* IPv6 Address in hexadecimal form, : is not allowed in DNS names. */
+      return 1;
+    }
     if (name[i] >= '0' && name[i] <= '9') {
       if (num_size > 3) return 0;
       num_size++;
