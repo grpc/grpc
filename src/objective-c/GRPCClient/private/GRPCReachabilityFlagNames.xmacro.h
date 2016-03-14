@@ -1,7 +1,6 @@
-<?php
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,19 +31,35 @@
  *
  */
 
-require dirname(__FILE__) . '/vendor/autoload.php';
-require dirname(__FILE__) . '/helloworld.php';
+/**
+ * "X-macro" file that lists the flags names of Apple's Network Reachability API, along with a nice
+ * Objective-C method name used to query each of them.
+ *
+ * Example usage: To generate a dictionary from flag value to name, one can do:
 
-function greet($name) {
-  $client = new helloworld\GreeterClient('localhost:50051', [
-    'credentials' => Grpc\ChannelCredentials::createInsecure()
-  ]);
-  $request = new helloworld\HelloRequest();
-  $request->setName($name);
-  list($reply, $status) = $client->SayHello($request)->wait();
-  $message = $reply->getMessage();
-  return $message;
-}
+  NSDictionary *flagNames = @{
+#define GRPC_XMACRO_ITEM(methodName, FlagName) \
+    @(kSCNetworkReachabilityFlags ## FlagName): @#methodName,
+#include "GRXReachabilityFlagNames.xmacro.h"
+#undef GRPC_XMACRO_ITEM
+  };
 
-$name = !empty($argv[1]) ? $argv[1] : 'world';
-print(greet($name)."\n");
+  XCTAssertEqualObjects(flagNames[@(kSCNetworkReachabilityFlagsIsWWAN)], @"isCell");
+
+ */
+
+#ifndef GRPC_XMACRO_ITEM
+#error This file is to be used with the "X-macro" pattern: Please #define \
+       GRPC_XMACRO_ITEM(methodName, FlagName), then #include this file, and then #undef \
+       GRPC_XMACRO_ITEM.
+#endif
+
+GRPC_XMACRO_ITEM(isCell, IsWWAN)
+GRPC_XMACRO_ITEM(reachable, Reachable)
+GRPC_XMACRO_ITEM(transientConnection, TransientConnection)
+GRPC_XMACRO_ITEM(connectionRequired, ConnectionRequired)
+GRPC_XMACRO_ITEM(connectionOnTraffic, ConnectionOnTraffic)
+GRPC_XMACRO_ITEM(interventionRequired, InterventionRequired)
+GRPC_XMACRO_ITEM(connectionOnDemand, ConnectionOnDemand)
+GRPC_XMACRO_ITEM(isLocalAddress, IsLocalAddress)
+GRPC_XMACRO_ITEM(isDirect, IsDirect)
