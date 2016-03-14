@@ -57,6 +57,10 @@ typedef struct grpc_rb_call_credentials {
   /* Holder of ruby objects involved in contructing the credentials */
   VALUE mark;
 
+  /* The proc called when getting the credentials. Same pointer as
+     wrapped->state */
+  VALUE proc;
+
   /* The actual credentials */
   grpc_call_credentials *wrapped;
 } grpc_rb_call_credentials;
@@ -164,11 +168,11 @@ static void grpc_rb_call_credentials_mark(void *p) {
     return;
   }
   wrapper = (grpc_rb_call_credentials *)p;
-
   /* If it's not already cleaned up, mark the mark object */
   if (wrapper->mark != Qnil) {
     rb_gc_mark(wrapper->mark);
   }
+  rb_gc_mark(wrapper->proc);
 }
 
 static rb_data_type_t grpc_rb_call_credentials_data_type = {
@@ -187,6 +191,7 @@ static rb_data_type_t grpc_rb_call_credentials_data_type = {
 static VALUE grpc_rb_call_credentials_alloc(VALUE cls) {
   grpc_rb_call_credentials *wrapper = ALLOC(grpc_rb_call_credentials);
   wrapper->wrapped = NULL;
+  wrapper->proc = Qnil;
   wrapper->mark = Qnil;
   return TypedData_Wrap_Struct(cls, &grpc_rb_call_credentials_data_type, wrapper);
 }
@@ -267,6 +272,7 @@ static VALUE grpc_rb_call_credentials_init(VALUE self, VALUE proc) {
     return Qnil;
   }
 
+  wrapper->proc = proc;
   wrapper->wrapped = creds;
   rb_ivar_set(self, id_callback, proc);
 
