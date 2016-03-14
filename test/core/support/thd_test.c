@@ -79,9 +79,9 @@ static void test_options(void) {
 static void test(void) {
   int i;
   gpr_thd_id thd;
-  gpr_thd_id thds[1000];
+  gpr_thd_id thds[300];
   struct test t;
-  int n = 1000;
+  int n = 300;
   gpr_thd_options options = gpr_thd_options_default();
   gpr_mu_init(&t.mu);
   gpr_cv_init(&t.done_cv);
