@@ -50,16 +50,12 @@
  * grpc_call_credentials */
 static VALUE grpc_rb_cCallCredentials = Qnil;
 
-/* grpc_rb_call_credentials wraps a grpc_call_credentials. It provides a peer
- * ruby object, 'mark' to minimize copying when a credential is created from
- * ruby. */
+/* grpc_rb_call_credentials wraps a grpc_call_credentials. It provides a mark
+ * object that is used to hold references to any objects used to create the
+ * credentials. */
 typedef struct grpc_rb_call_credentials {
   /* Holder of ruby objects involved in contructing the credentials */
   VALUE mark;
-
-  /* The proc called when getting the credentials. Same pointer as
-     wrapped->state */
-  VALUE proc;
 
   /* The actual credentials */
   grpc_call_credentials *wrapped;
@@ -150,13 +146,8 @@ static void grpc_rb_call_credentials_free(void *p) {
     return;
   }
   wrapper = (grpc_rb_call_credentials *)p;
-
-  /* Delete the wrapped object if the mark object is Qnil, which indicates that
-   * no other object is the actual owner. */
-  if (wrapper->wrapped != NULL && wrapper->mark == Qnil) {
-    grpc_call_credentials_release(wrapper->wrapped);
-    wrapper->wrapped = NULL;
-  }
+  grpc_call_credentials_release(wrapper->wrapped);
+  wrapper->wrapped = NULL;
 
   xfree(p);
 }
@@ -168,11 +159,9 @@ static void grpc_rb_call_credentials_mark(void *p) {
     return;
   }
   wrapper = (grpc_rb_call_credentials *)p;
-  /* If it's not already cleaned up, mark the mark object */
   if (wrapper->mark != Qnil) {
     rb_gc_mark(wrapper->mark);
   }
-  rb_gc_mark(wrapper->proc);
 }
 
 static rb_data_type_t grpc_rb_call_credentials_data_type = {
@@ -191,7 +180,6 @@ static rb_data_type_t grpc_rb_call_credentials_data_type = {
 static VALUE grpc_rb_call_credentials_alloc(VALUE cls) {
   grpc_rb_call_credentials *wrapper = ALLOC(grpc_rb_call_credentials);
   wrapper->wrapped = NULL;
-  wrapper->proc = Qnil;
   wrapper->mark = Qnil;
   return TypedData_Wrap_Struct(cls, &grpc_rb_call_credentials_data_type, wrapper);
 }
@@ -199,7 +187,7 @@ static VALUE grpc_rb_call_credentials_alloc(VALUE cls) {
 /* Creates a wrapping object for a given call credentials. This should only be
  * called with grpc_call_credentials objects that are not already associated
  * with any Ruby object */
-VALUE grpc_rb_wrap_call_credentials(grpc_call_credentials *c) {
+VALUE grpc_rb_wrap_call_credentials(grpc_call_credentials *c, VALUE mark) {
   VALUE rb_wrapper;
   grpc_rb_call_credentials *wrapper;
   if (c == NULL) {
@@ -209,6 +197,7 @@ VALUE grpc_rb_wrap_call_credentials(grpc_call_credentials *c) {
   TypedData_Get_Struct(rb_wrapper, grpc_rb_call_credentials,
                        &grpc_rb_call_credentials_data_type, wrapper);
   wrapper->wrapped = c;
+  wrapper->mark = mark;
   return rb_wrapper;
 }
 
@@ -272,7 +261,7 @@ static VALUE grpc_rb_call_credentials_init(VALUE self, VALUE proc) {
     return Qnil;
   }
 
-  wrapper->proc = proc;
+  wrapper->mark = proc;
   wrapper->wrapped = creds;
   rb_ivar_set(self, id_callback, proc);
 
@@ -283,15 +272,18 @@ static VALUE grpc_rb_call_credentials_compose(int argc, VALUE *argv,
                                               VALUE self) {
   grpc_call_credentials *creds;
   grpc_call_credentials *other;
+  VALUE mark;
   if (argc == 0) {
     return self;
   }
+  mark = rb_ary_new();
   creds = grpc_rb_get_wrapped_call_credentials(self);
   for (int i = 0; i < argc; i++) {
+    rb_ary_push(mark, argv[i]);
     other = grpc_rb_get_wrapped_call_credentials(argv[i]);
     creds = grpc_composite_call_credentials_create(creds, other, NULL);
   }
-  return grpc_rb_wrap_call_credentials(creds);
+  return grpc_rb_wrap_call_credentials(creds, mark);
 }
 
 void Init_grpc_call_credentials() {
