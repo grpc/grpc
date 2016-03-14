@@ -281,6 +281,26 @@ static tsi_result peer_property_from_x509_common_name(
   return result;
 }
 
+/* Gets the X509 cert in PEM format as a tsi_peer_property. */
+static tsi_result add_pem_certificate(X509 *cert, tsi_peer_property *property) {
+  BIO *bio = BIO_new(BIO_s_mem());
+  if (!PEM_write_bio_X509(bio, cert)) {
+    BIO_free(bio);
+    return TSI_INTERNAL_ERROR;
+  }
+  char *contents;
+  long len = BIO_get_mem_data(bio, &contents);
+  if (len <= 0) {
+    BIO_free(bio);
+    return TSI_INTERNAL_ERROR;
+  }
+  tsi_result result = tsi_construct_string_peer_property(
+      TSI_X509_PEM_CERT_PROPERTY, (const char *)contents, (size_t)len,
+      property);
+  BIO_free(bio);
+  return result;
+}
+
 /* Gets the subject SANs from an X509 cert as a tsi_peer_property. */
 static tsi_result add_subject_alt_names_properties_to_peer(
     tsi_peer *peer, GENERAL_NAMES *subject_alt_names,
@@ -328,7 +348,8 @@ static tsi_result peer_from_x509(X509 *cert, int include_certificate_type,
   tsi_result result;
   GPR_ASSERT(subject_alt_name_count >= 0);
   property_count = (include_certificate_type ? (size_t)1 : 0) +
-                   1 /* common name */ + (size_t)subject_alt_name_count;
+                   2 /* common name, certificate */ +
+                   (size_t)subject_alt_name_count;
   result = tsi_construct_peer(property_count, peer);
   if (result != TSI_OK) return result;
   do {
@@ -340,6 +361,10 @@ static tsi_result peer_from_x509(X509 *cert, int include_certificate_type,
     }
     result = peer_property_from_x509_common_name(
         cert, &peer->properties[include_certificate_type ? 1 : 0]);
+    if (result != TSI_OK) break;
+
+    result = add_pem_certificate(
+        cert, &peer->properties[include_certificate_type ? 2 : 1]);
     if (result != TSI_OK) break;
 
     if (subject_alt_name_count != 0) {
