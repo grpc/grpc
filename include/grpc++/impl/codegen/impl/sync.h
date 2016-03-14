@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2016, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,41 +31,15 @@
  *
  */
 
-#ifndef GRPCXX_IMPL_CODEGEN_GRPC_LIBRARY_H
-#define GRPCXX_IMPL_CODEGEN_GRPC_LIBRARY_H
+#ifndef GRPCXX_IMPL_CODEGEN_SYNC_H
+#define GRPCXX_IMPL_CODEGEN_SYNC_H
 
-#include <grpc++/impl/codegen/core_codegen_interface.h>
-#include <grpc/impl/codegen/log.h>
+#include <grpc++/impl/codegen/config.h>
 
-namespace grpc {
+#ifdef GRPC_CXX0X_NO_THREAD
+#include <grpc++/impl/codegen/sync_no_cxx11.h>
+#else
+#include <grpc++/impl/codegen/sync_cxx11.h>
+#endif
 
-class GrpcLibraryInterface {
- public:
-  virtual void init() = 0;
-  virtual void shutdown() = 0;
-};
-
-/// Initialized by \a grpc::GrpcLibraryInitializer from
-/// <grpc++/impl/grpc_library.h>
-extern GrpcLibraryInterface* g_glip;
-
-/// Classes that require gRPC to be initialized should inherit from this class.
-class GrpcLibraryCodegen {
- public:
-  GrpcLibraryCodegen() {
-    GPR_CODEGEN_ASSERT(g_glip &&
-                       "gRPC library not initialized. See "
-                       "grpc::internal::GrpcLibraryInitializer.");
-    g_glip->init();
-  }
-  virtual ~GrpcLibraryCodegen() {
-    GPR_CODEGEN_ASSERT(g_glip &&
-                       "gRPC library not initialized. See "
-                       "grpc::internal::GrpcLibraryInitializer.");
-    g_glip->shutdown();
-  }
-};
-
-}  // namespace grpc
-
-#endif  // GRPCXX_IMPL_CODEGEN_GRPC_LIBRARY_H
+#endif  // GRPCXX_IMPL_CODEGEN_SYNC_H

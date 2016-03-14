@@ -803,37 +803,7 @@ include/grpc++/support/status_code_enum.h \
 include/grpc++/support/string_ref.h \
 include/grpc++/support/stub_options.h \
 include/grpc++/support/sync_stream.h \
-include/grpc++/support/time.h \
-include/grpc++/impl/codegen/async_stream.h \
-include/grpc++/impl/codegen/async_unary_call.h \
-include/grpc++/impl/codegen/call.h \
-include/grpc++/impl/codegen/call_hook.h \
-include/grpc++/impl/codegen/channel_interface.h \
-include/grpc++/impl/codegen/client_context.h \
-include/grpc++/impl/codegen/client_unary_call.h \
-include/grpc++/impl/codegen/completion_queue.h \
-include/grpc++/impl/codegen/completion_queue_tag.h \
-include/grpc++/impl/codegen/config.h \
-include/grpc++/impl/codegen/config_protobuf.h \
-include/grpc++/impl/codegen/grpc_library.h \
-include/grpc++/impl/codegen/method_handler_impl.h \
-include/grpc++/impl/codegen/proto_utils.h \
-include/grpc++/impl/codegen/rpc_method.h \
-include/grpc++/impl/codegen/rpc_service_method.h \
-include/grpc++/impl/codegen/security/auth_context.h \
-include/grpc++/impl/codegen/serialization_traits.h \
-include/grpc++/impl/codegen/server_context.h \
-include/grpc++/impl/codegen/server_interface.h \
-include/grpc++/impl/codegen/service_type.h \
-include/grpc++/impl/codegen/status.h \
-include/grpc++/impl/codegen/status_code_enum.h \
-include/grpc++/impl/codegen/string_ref.h \
-include/grpc++/impl/codegen/stub_options.h \
-include/grpc++/impl/codegen/sync.h \
-include/grpc++/impl/codegen/sync_cxx11.h \
-include/grpc++/impl/codegen/sync_no_cxx11.h \
-include/grpc++/impl/codegen/sync_stream.h \
-include/grpc++/impl/codegen/time.h
+include/grpc++/support/time.h
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding. Doxygen uses

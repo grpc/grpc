@@ -40,21 +40,27 @@
 #include <grpc++/impl/codegen/grpc_library.h>
 #include <grpc/grpc.h>
 
+#include "src/cpp/common/core_codegen.h"
+
 namespace grpc {
 
 namespace internal {
 class GrpcLibrary GRPC_FINAL : public GrpcLibraryInterface {
  public:
   void init() GRPC_OVERRIDE { grpc_init(); }
-
   void shutdown() GRPC_OVERRIDE { grpc_shutdown(); }
 };
 
 static GrpcLibrary g_gli;
+static CoreCodegen g_core_codegen;
 
+/// Instantiating this class ensures the proper initialization of gRPC.
 class GrpcLibraryInitializer GRPC_FINAL {
  public:
-  GrpcLibraryInitializer() { grpc::g_glip = &g_gli; }
+  GrpcLibraryInitializer() {
+    grpc::g_glip = &g_gli;
+    grpc::g_core_codegen_interface = &g_core_codegen;
+  }
 
   /// A no-op method to force the linker to reference this class, which will
   /// take care of initializing and shutting down the gRPC runtime.
