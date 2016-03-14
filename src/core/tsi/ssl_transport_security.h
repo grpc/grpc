@@ -48,6 +48,8 @@ extern "C" {
 #define TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY \
   "x509_subject_alternative_name"
 
+#define TSI_X509_PEM_CERT_PROPERTY "x509_pem_cert"
+
 #define TSI_SSL_ALPN_SELECTED_PROTOCOL "ssl_alpn_selected_protocol"
 
 /* --- tsi_ssl_handshaker_factory object ---
