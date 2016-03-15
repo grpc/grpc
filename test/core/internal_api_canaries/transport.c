@@ -45,14 +45,11 @@
 static void test_code(void) {
   /* transport_impl.h */
   grpc_transport transport;
-  grpc_transport_vtable vtable = {12345,
-                                  grpc_transport_init_stream,
-                                  grpc_transport_set_pollset,
-                                  grpc_transport_perform_stream_op,
-                                  grpc_transport_perform_op,
-                                  grpc_transport_destroy_stream,
-                                  grpc_transport_destroy,
-                                  grpc_transport_get_peer};
+  grpc_transport_vtable vtable = {
+      12345, grpc_transport_init_stream, grpc_transport_set_pollset,
+      grpc_transport_perform_stream_op, grpc_transport_perform_op,
+      grpc_transport_destroy_stream, grpc_transport_destroy,
+      grpc_transport_get_peer};
   transport.vtable = &vtable;
 
   /* transport.h */
