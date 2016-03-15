@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -87,4 +87,4 @@ void *gpr_malloc_aligned(size_t size, size_t alignment_log) {
   return (void *)ret;
 }
 
-void gpr_free_aligned(void *ptr) { free(((void **)ptr)[-1]); }
+void gpr_free_aligned(void *ptr) { gpr_free(((void **)ptr)[-1]); }
