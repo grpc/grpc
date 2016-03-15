@@ -42,7 +42,7 @@ class Defect(Exception):
   """
 
 
-class Control(object):
+class Control(object, metaclass=abc.ABCMeta):
   """An object that accepts program control from a system under test.
 
   Systems under test passed a Control should call its control() method
@@ -50,8 +50,6 @@ class Control(object):
   exception, or do nothing, all according to the enclosing test's desire for
   the system under test to simulate hanging, failing, or functioning.
   """
-
-  __metaclass__ = abc.ABCMeta
 
   @abc.abstractmethod
   def control(self):

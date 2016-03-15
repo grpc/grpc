@@ -105,19 +105,17 @@ def grpc_call_options(disable_compression=False, credentials=None):
   return GRPCCallOptions(disable_compression, None, credentials)
 
 
-class GRPCAuthMetadataContext(object):
+class GRPCAuthMetadataContext(object, metaclass=abc.ABCMeta):
   """Provides information to call credentials metadata plugins.
 
   Attributes:
     service_url: A string URL of the service being called into.
     method_name: A string of the fully qualified method name being called.
   """
-  __metaclass__ = abc.ABCMeta
 
 
-class GRPCAuthMetadataPluginCallback(object):
+class GRPCAuthMetadataPluginCallback(object, metaclass=abc.ABCMeta):
   """Callback object received by a metadata plugin."""
-  __metaclass__ = abc.ABCMeta
 
   def __call__(self, metadata, error):
     """Inform the gRPC runtime of the metadata to construct a CallCredentials.
@@ -130,10 +128,9 @@ class GRPCAuthMetadataPluginCallback(object):
     raise NotImplementedError()
 
 
-class GRPCAuthMetadataPlugin(object):
+class GRPCAuthMetadataPlugin(object, metaclass=abc.ABCMeta):
   """
   """
-  __metaclass__ = abc.ABCMeta
 
   def __call__(self, context, callback):
     """Invoke the plugin.
@@ -149,9 +146,8 @@ class GRPCAuthMetadataPlugin(object):
     raise NotImplementedError()
 
 
-class GRPCServicerContext(object):
+class GRPCServicerContext(object, metaclass=abc.ABCMeta):
   """Exposes gRPC-specific options and behaviors to code servicing RPCs."""
-  __metaclass__ = abc.ABCMeta
 
   @abc.abstractmethod
   def peer(self):
@@ -168,9 +164,8 @@ class GRPCServicerContext(object):
     raise NotImplementedError()
 
 
-class GRPCInvocationContext(object):
+class GRPCInvocationContext(object, metaclass=abc.ABCMeta):
   """Exposes gRPC-specific options and behaviors to code invoking RPCs."""
-  __metaclass__ = abc.ABCMeta
 
   @abc.abstractmethod
   def disable_next_request_compression(self):
@@ -178,9 +173,8 @@ class GRPCInvocationContext(object):
     raise NotImplementedError()
 
 
-class Server(object):
+class Server(object, metaclass=abc.ABCMeta):
   """Services RPCs."""
-  __metaclass__ = abc.ABCMeta
 
   @abc.abstractmethod
   def add_insecure_port(self, address):

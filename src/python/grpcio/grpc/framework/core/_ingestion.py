@@ -70,9 +70,8 @@ class _SubscriptionCreation(
     ABANDONED = 'abandoned'
 
 
-class _SubscriptionCreator(object):
+class _SubscriptionCreator(object, metaclass=abc.ABCMeta):
   """Common specification of subscription-creating behavior."""
-  __metaclass__ = abc.ABCMeta
 
   @abc.abstractmethod
   def create(self, group, method):

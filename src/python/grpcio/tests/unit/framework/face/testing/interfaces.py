@@ -35,9 +35,8 @@ import abc
 from grpc.framework.common import cardinality  # pylint: disable=unused-import
 
 
-class Method(object):
+class Method(object, metaclass=abc.ABCMeta):
   """An RPC method to be used in tests of RPC implementations."""
-  __metaclass__ = abc.ABCMeta
 
   @abc.abstractmethod
   def name(self):

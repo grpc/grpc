@@ -32,9 +32,8 @@
 import abc
 
 
-class Consumer(object):
+class Consumer(object, metaclass=abc.ABCMeta):
   """Interface for consumers of finite streams of values or objects."""
-  __metaclass__ = abc.ABCMeta
 
   @abc.abstractmethod
   def consume(self, value):

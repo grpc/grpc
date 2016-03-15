@@ -39,14 +39,13 @@ from grpc.framework.foundation import logging_pool
 _NULL_BEHAVIOR = lambda unused_value: None
 
 
-class Relay(object):
+class Relay(object, metaclass=abc.ABCMeta):
   """Performs work submitted to it in another thread.
 
   Performs work in the order in which work was submitted to it; otherwise there
   would be no reason to use an implementation of this interface instead of a
   thread pool.
   """
-  __metaclass__ = abc.ABCMeta
 
   @abc.abstractmethod
   def add_value(self, value):

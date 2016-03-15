@@ -77,9 +77,8 @@ _ABORTION_OUTCOME_TO_BACK_TO_FRONT_TICKET_KIND = {
 }
 
 
-class _Ticketizer(object):
+class _Ticketizer(object, metaclass=abc.ABCMeta):
   """Common specification of different ticket-creating behavior."""
-  __metaclass__ = abc.ABCMeta
 
   @abc.abstractmethod
   def ticketize(self, operation_id, sequence_number, payload, complete):
@@ -187,9 +186,8 @@ class _BackTicketizer(_Ticketizer):
           operation_id, sequence_number, kind, None)
 
 
-class TransmissionManager(_interfaces.TransmissionManager):
+class TransmissionManager(_interfaces.TransmissionManager, metaclass=abc.ABCMeta):
   """A _interfaces.TransmissionManager on which other managers may be set."""
-  __metaclass__ = abc.ABCMeta
 
   @abc.abstractmethod
   def set_ingestion_and_expiration_managers(

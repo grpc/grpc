@@ -50,9 +50,8 @@ def _service_completion_predicate(
   return transmission_complete and ingestion_complete
 
 
-class TerminationManager(_interfaces.TerminationManager):
+class TerminationManager(_interfaces.TerminationManager, metaclass=abc.ABCMeta):
   """A _interfaces.TransmissionManager on which another manager may be set."""
-  __metaclass__ = abc.ABCMeta
 
   @abc.abstractmethod
   def set_expiration_manager(self, expiration_manager):

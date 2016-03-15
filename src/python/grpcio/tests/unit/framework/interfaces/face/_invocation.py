@@ -62,9 +62,8 @@ _CARDINALITY_TO_MULTI_CALLABLE_ATTRIBUTE = {
 }
 
 
-class Invoker(object):
+class Invoker(object, metaclass=abc.ABCMeta):
   """A type used to invoke test RPCs."""
-  __metaclass__ = abc.ABCMeta
 
   @abc.abstractmethod
   def blocking(self, group, name):
@@ -82,9 +81,8 @@ class Invoker(object):
     raise NotImplementedError()
 
 
-class InvokerConstructor(object):
+class InvokerConstructor(object, metaclass=abc.ABCMeta):
   """A type used to create Invokers."""
-  __metaclass__ = abc.ABCMeta
 
   @abc.abstractmethod
   def name(self):

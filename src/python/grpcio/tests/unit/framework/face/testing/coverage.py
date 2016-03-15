@@ -35,10 +35,8 @@ import abc
 # pylint: disable=invalid-name
 
 
-class BlockingCoverage(object):
+class BlockingCoverage(object, metaclass=abc.ABCMeta):
   """Specification of test coverage for blocking behaviors."""
-
-  __metaclass__ = abc.ABCMeta
 
   @abc.abstractmethod
   def testSuccessfulUnaryRequestUnaryResponse(self):
@@ -93,10 +91,8 @@ class BlockingCoverage(object):
     raise NotImplementedError()
 
 
-class FullCoverage(BlockingCoverage):
+class FullCoverage(BlockingCoverage, metaclass=abc.ABCMeta):
   """Specification of test coverage for non-blocking behaviors."""
-
-  __metaclass__ = abc.ABCMeta
 
   @abc.abstractmethod
   def testParallelInvocations(self):

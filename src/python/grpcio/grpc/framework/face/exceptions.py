@@ -49,12 +49,11 @@ class NoSuchMethodError(Exception):
     self.name = name
 
 
-class RpcError(Exception):
+class RpcError(Exception, metaclass=abc.ABCMeta):
   """Common super type for all exceptions raised by the Face layer.
 
   Only RPC Framework should instantiate and raise these exceptions.
   """
-  __metaclass__ = abc.ABCMeta
 
 
 class CancellationError(RpcError):

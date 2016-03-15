@@ -247,9 +247,7 @@ class Event(collections.namedtuple(
   """
 
 
-class CompletionQueue:
-  __metaclass__ = abc.ABCMeta
-
+class CompletionQueue(metaclass=abc.ABCMeta):
   @abc.abstractmethod
   def __init__(self):
     pass
@@ -285,9 +283,7 @@ class CompletionQueue:
     return None
 
 
-class Call:
-  __metaclass__ = abc.ABCMeta
-
+class Call(metaclass=abc.ABCMeta):
   @abc.abstractmethod
   def start_batch(self, ops, tag):
     """Start a batch of operations.
@@ -334,9 +330,7 @@ class Call:
     return None
 
 
-class Channel:
-  __metaclass__ = abc.ABCMeta
-
+class Channel(metaclass=abc.ABCMeta):
   @abc.abstractmethod
   def __init__(self, target, args, credentials=None):
     """Initialize a Channel.
@@ -399,9 +393,7 @@ class Channel:
     return None
 
 
-class Server:
-  __metaclass__ = abc.ABCMeta
-
+class Server(metaclass=abc.ABCMeta):
   @abc.abstractmethod
   def __init__(self, completion_queue, args):
     """Initialize a server.

@@ -35,9 +35,8 @@ import abc
 # pylint: disable=invalid-name
 
 
-class Coverage(object):
+class Coverage(object, metaclass=abc.ABCMeta):
   """Specification of test coverage."""
-  __metaclass__ = abc.ABCMeta
 
   @abc.abstractmethod
   def testSuccessfulUnaryRequestUnaryResponse(self):

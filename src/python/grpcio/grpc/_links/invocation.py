@@ -372,12 +372,11 @@ class _Kernel(object):
     pool.shutdown(wait=True)
 
 
-class InvocationLink(links.Link, activated.Activated):
+class InvocationLink(links.Link, activated.Activated, metaclass=abc.ABCMeta):
   """A links.Link for use on the invocation-side of a gRPC connection.
 
   Implementations of this interface are only valid for use when activated.
   """
-  __metaclass__ = abc.ABCMeta
 
 
 class _InvocationLink(InvocationLink):

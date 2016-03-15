@@ -43,15 +43,13 @@ _POOL_SIZE_LIMIT = 5
 _MAXIMUM_TIMEOUT = 90
 
 
-class LinkedPair(object):
+class LinkedPair(object, metaclass=abc.ABCMeta):
   """A Front and Back that are linked to one another.
 
   Attributes:
     front: An interfaces.Front.
     back: An interfaces.Back.
   """
-
-  __metaclass__ = abc.ABCMeta
 
   @abc.abstractmethod
   def shut_down(self):
