@@ -42,7 +42,6 @@
 #ifdef GPR_HAVE_UNIX_SOCKET
 #include <sys/un.h>
 #endif
-#include <string.h>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/host_port.h>
