@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_TRANSPORT_H
-#define GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_TRANSPORT_H
+#ifndef GRPC_CORE_TRANSPORT_CHTTP2_TRANSPORT_H
+#define GRPC_CORE_TRANSPORT_CHTTP2_TRANSPORT_H
 
 #include "src/core/iomgr/endpoint.h"
 #include "src/core/transport/transport.h"
@@ -48,4 +48,4 @@ void grpc_chttp2_transport_start_reading(grpc_exec_ctx *exec_ctx,
                                          grpc_transport *transport,
                                          gpr_slice *slices, size_t nslices);
 
-#endif /* GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_TRANSPORT_H */
+#endif /* GRPC_CORE_TRANSPORT_CHTTP2_TRANSPORT_H */

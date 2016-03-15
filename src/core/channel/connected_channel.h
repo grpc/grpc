@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_CHANNEL_CONNECTED_CHANNEL_H
-#define GRPC_INTERNAL_CORE_CHANNEL_CONNECTED_CHANNEL_H
+#ifndef GRPC_CORE_CHANNEL_CONNECTED_CHANNEL_H
+#define GRPC_CORE_CHANNEL_CONNECTED_CHANNEL_H
 
 #include "src/core/channel/channel_stack.h"
 
@@ -48,4 +48,4 @@ void grpc_connected_channel_bind_transport(grpc_channel_stack* channel_stack,
 
 grpc_stream* grpc_connected_channel_get_stream(grpc_call_element* elem);
 
-#endif /* GRPC_INTERNAL_CORE_CHANNEL_CONNECTED_CHANNEL_H */
+#endif /* GRPC_CORE_CHANNEL_CONNECTED_CHANNEL_H */

@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_IOMGR_EXEC_CTX_H
-#define GRPC_INTERNAL_CORE_IOMGR_EXEC_CTX_H
+#ifndef GRPC_CORE_IOMGR_EXEC_CTX_H
+#define GRPC_CORE_IOMGR_EXEC_CTX_H
 
 #include "src/core/iomgr/closure.h"
 
@@ -82,4 +82,4 @@ void grpc_exec_ctx_enqueue_list(grpc_exec_ctx *exec_ctx,
                                 grpc_closure_list *list,
                                 grpc_workqueue *offload_target_or_null);
 
-#endif
+#endif /* GRPC_CORE_IOMGR_EXEC_CTX_H */
