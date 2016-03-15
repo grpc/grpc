@@ -363,7 +363,7 @@ def _assemble(
   events = {}
   adaptations = {}
   messages = {}
-  for identifier, scenario in scenarios.iteritems():
+  for identifier, scenario in scenarios.items():
     if identifier in identifiers:
       raise ValueError('Repeated identifier "(%s, %s)"!' % identifier)
 

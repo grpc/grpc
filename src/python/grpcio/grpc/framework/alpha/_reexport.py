@@ -181,7 +181,7 @@ def common_cardinality(early_adopter_cardinality):
 
 def common_cardinalities(early_adopter_cardinalities):
   common_cardinalities = {}
-  for name, early_adopter_cardinality in early_adopter_cardinalities.iteritems():
+  for name, early_adopter_cardinality in early_adopter_cardinalities.items():
     common_cardinalities[name] = _EARLY_ADOPTER_CARDINALITY_TO_COMMON_CARDINALITY[
         early_adopter_cardinality]
   return common_cardinalities

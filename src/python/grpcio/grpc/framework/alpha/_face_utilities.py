@@ -111,7 +111,7 @@ def break_down_invocation(service_name, method_descriptions):
   face_cardinalities = {}
   request_serializers = {}
   response_deserializers = {}
-  for name, method_description in method_descriptions.iteritems():
+  for name, method_description in method_descriptions.items():
     qualified_name = _qualified_name(service_name, name)
     method_cardinality = method_description.cardinality()
     cardinalities[name] = method_description.cardinality()
@@ -139,7 +139,7 @@ def break_down_service(service_name, method_descriptions):
   implementations = {}
   request_deserializers = {}
   response_serializers = {}
-  for name, method_description in method_descriptions.iteritems():
+  for name, method_description in method_descriptions.items():
     qualified_name = _qualified_name(service_name, name)
     method_cardinality = method_description.cardinality()
     if method_cardinality is interfaces.Cardinality.UNARY_UNARY:

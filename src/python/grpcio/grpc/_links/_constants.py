@@ -38,5 +38,5 @@ LOW_STATUS_CODE_TO_HIGH_STATUS_CODE = {
 }
 
 HIGH_STATUS_CODE_TO_LOW_STATUS_CODE = {
-    high: low for low, high in LOW_STATUS_CODE_TO_HIGH_STATUS_CODE.items()
+    high: low for low, high in list(LOW_STATUS_CODE_TO_HIGH_STATUS_CODE.items())
 }
