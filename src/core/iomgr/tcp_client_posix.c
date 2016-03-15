@@ -57,6 +57,8 @@
 #include "src/core/support/string.h"
 
 extern int grpc_tcp_trace;
+size_t grpc_tcp_client_default_read_slice_size =
+    GRPC_TCP_DEFAULT_READ_SLICE_SIZE;
 
 typedef struct {
   gpr_mu mu;
@@ -183,7 +185,8 @@ static void on_writable(grpc_exec_ctx *exec_ctx, void *acp, bool success) {
       }
     } else {
       grpc_pollset_set_del_fd(exec_ctx, ac->interested_parties, fd);
-      *ep = grpc_tcp_create(fd, GRPC_TCP_DEFAULT_READ_SLICE_SIZE, ac->addr_str);
+      *ep = grpc_tcp_create(fd, grpc_tcp_client_default_read_slice_size,
+                            ac->addr_str);
       fd = NULL;
       goto finish;
     }
@@ -260,7 +263,8 @@ void grpc_tcp_client_connect(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
   fdobj = grpc_fd_create(fd, name);
 
   if (err >= 0) {
-    *ep = grpc_tcp_create(fdobj, GRPC_TCP_DEFAULT_READ_SLICE_SIZE, addr_str);
+    *ep = grpc_tcp_create(fdobj, grpc_tcp_client_default_read_slice_size,
+                          addr_str);
     grpc_exec_ctx_enqueue(exec_ctx, closure, true, NULL);
     goto done;
   }

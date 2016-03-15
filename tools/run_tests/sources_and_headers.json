@@ -2493,6 +2493,19 @@
   {
     "deps": [
       "boringssl", 
+      "boringssl_asn1_test_lib", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "boringssl_asn1_test", 
+    "src": [], 
+    "third_party": true, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
       "boringssl_base64_test_lib", 
       "boringssl_test_util"
     ], 
@@ -3377,6 +3390,24 @@
     "name": "h2_ssl_test", 
     "src": [
       "test/core/end2end/fixtures/h2_ssl.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "end2end_certs", 
+      "end2end_tests", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_ssl+1byte_test", 
+    "src": [
+      "test/core/end2end/fixtures/h2_ssl+1byte.c"
     ], 
     "third_party": false, 
     "type": "target"
@@ -5814,6 +5845,18 @@
     "headers": [], 
     "language": "c++", 
     "name": "boringssl_aes_test_lib", 
+    "src": [], 
+    "third_party": true, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "boringssl_asn1_test_lib", 
     "src": [], 
     "third_party": true, 
     "type": "lib"
