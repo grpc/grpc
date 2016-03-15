@@ -313,6 +313,7 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\completion_queue_tag.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\config.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\config_protobuf.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\core_codegen_interface.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\grpc_library.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\method_handler_impl.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\proto_utils.h" />
@@ -335,9 +336,11 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(SolutionDir)\..\src\cpp\client\secure_credentials.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\cpp\common\core_codegen.h" />
     <ClInclude Include="$(SolutionDir)\..\src\cpp\common\secure_auth_context.h" />
     <ClInclude Include="$(SolutionDir)\..\src\cpp\server\secure_server_credentials.h" />
     <ClInclude Include="$(SolutionDir)\..\src\cpp\client\create_channel_internal.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\cpp\common\core_codegen.h" />
     <ClInclude Include="$(SolutionDir)\..\src\cpp\common\create_auth_context.h" />
     <ClInclude Include="$(SolutionDir)\..\src\cpp\server\dynamic_thread_pool.h" />
     <ClInclude Include="$(SolutionDir)\..\src\cpp\server\thread_pool_interface.h" />
@@ -346,6 +349,8 @@
     <ClCompile Include="$(SolutionDir)\..\src\cpp\client\secure_credentials.cc">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\common\auth_property_iterator.cc">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\cpp\common\core_codegen.cc">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\common\secure_auth_context.cc">
     </ClCompile>
@@ -369,15 +374,11 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\client\insecure_credentials.cc">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\cpp\common\call.cc">
-    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\common\channel_arguments.cc">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\common\completion_queue.cc">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\common\rpc_method.cc">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\cpp\proto\proto_utils.cc">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\server\async_generic_service.cc">
     </ClCompile>
@@ -405,7 +406,7 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\util\time.cc">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\cpp\codegen\grpc_library.cc">
+    <ClCompile Include="$(SolutionDir)\..\src\cpp\codegen\codegen_init.cc">
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
