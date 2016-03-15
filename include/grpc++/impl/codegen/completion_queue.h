@@ -184,6 +184,7 @@ class CompletionQueue : private GrpcLibrary {
   bool Pluck(CompletionQueueTag* tag);
 
   /// Performs a single polling pluck on \a tag.
+  /// \warning Must not be mixed with calls to \a Next.
   void TryPluck(CompletionQueueTag* tag);
 
   grpc_completion_queue* cq_;  // owned
