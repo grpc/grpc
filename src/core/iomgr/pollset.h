@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_IOMGR_POLLSET_H
-#define GRPC_INTERNAL_CORE_IOMGR_POLLSET_H
+#ifndef GRPC_CORE_IOMGR_POLLSET_H
+#define GRPC_CORE_IOMGR_POLLSET_H
 
 #include <grpc/support/port_platform.h>
 #include <grpc/support/sync.h>
@@ -91,4 +91,4 @@ void grpc_pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
 void grpc_pollset_kick(grpc_pollset *pollset,
                        grpc_pollset_worker *specific_worker);
 
-#endif /* GRPC_INTERNAL_CORE_IOMGR_POLLSET_H */
+#endif /* GRPC_CORE_IOMGR_POLLSET_H */
