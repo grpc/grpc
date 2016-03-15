@@ -338,8 +338,8 @@ std::unique_ptr<ScenarioResult> RunScenario(
   // Use gpr_sleep_until rather than this_thread::sleep_until to support
   // compilers that don't work with this_thread
   gpr_sleep_until(gpr_time_add(
-      start, gpr_time_from_seconds(warmup_seconds + benchmark_seconds,
-				   GPR_TIMESPAN)));
+      start,
+      gpr_time_from_seconds(warmup_seconds + benchmark_seconds, GPR_TIMESPAN)));
 
   // Finish a run
   std::unique_ptr<ScenarioResult> result(new ScenarioResult);
@@ -388,7 +388,7 @@ void RunQuit() {
   // Get client, server lists
   auto workers = get_workers("QPS_WORKERS");
   for (size_t i = 0; i < workers.size(); i++) {
-g    auto stub = WorkerService::NewStub(
+    auto stub = WorkerService::NewStub(
         CreateChannel(workers[i], InsecureChannelCredentials()));
     Void dummy;
     grpc::ClientContext ctx;
