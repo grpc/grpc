@@ -1,7 +1,7 @@
 <?php
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -36,7 +36,9 @@ require dirname(__FILE__) . '/vendor/autoload.php';
 require dirname(__FILE__) . '/helloworld.php';
 
 function greet($name) {
-  $client = new helloworld\GreeterClient('localhost:50051', []);
+  $client = new helloworld\GreeterClient('localhost:50051', [
+    'credentials' => Grpc\ChannelCredentials::createInsecure()
+  ]);
   $request = new helloworld\HelloRequest();
   $request->setName($name);
   list($reply, $status) = $client->SayHello($request)->wait();
