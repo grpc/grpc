@@ -38,6 +38,8 @@
 #include "src/core/support/string.h"
 #include <stdlib.h>
 #include <signal.h>
+#include <stdio.h>
+#include <stdbool.h>
 
 double g_fixture_slowdown_factor = 1.0;
 
@@ -52,14 +54,115 @@ static unsigned seed(void) { return _getpid(); }
 #endif
 
 #if GPR_WINDOWS_CRASH_HANDLER
-LONG crash_handler(struct _EXCEPTION_POINTERS *ex_info) {
-  gpr_log(GPR_DEBUG, "Exception handler called, dumping information");
-  while (ex_info->ExceptionRecord) {
-    DWORD code = ex_info->ExceptionRecord->ExceptionCode;
-    DWORD flgs = ex_info->ExceptionRecord->ExceptionFlags;
-    PVOID addr = ex_info->ExceptionRecord->ExceptionAddress;
-    gpr_log("code: %x - flags: %d - address: %p", code, flgs, addr);
-    ex_info->ExceptionRecord = ex_info->ExceptionRecord->ExceptionRecord;
+#include "DbgHelp.h"
+
+#pragma comment(lib, "dbghelp.lib")
+
+static void print_current_stack() {
+  typedef USHORT(WINAPI *CaptureStackBackTraceType)(__in ULONG, __in ULONG, __out PVOID*, __out_opt PULONG);
+  CaptureStackBackTraceType func = (CaptureStackBackTraceType)(GetProcAddress(LoadLibrary(L"kernel32.dll"), "RtlCaptureStackBackTrace"));
+
+  if (func == NULL)
+    return; // WOE 29.SEP.2010
+
+  // Quote from Microsoft Documentation:
+  // ## Windows Server 2003 and Windows XP:  
+  // ## The sum of the FramesToSkip and FramesToCapture parameters must be less than 63.
+#define MAX_CALLERS 62
+
+  void         * callers_stack[MAX_CALLERS];
+  unsigned short frames;
+  SYMBOL_INFOW  * symbol;
+  HANDLE         process;
+  process = GetCurrentProcess();
+  SymInitialize(process, NULL, TRUE);
+  frames = (func)(0, MAX_CALLERS, callers_stack, NULL);
+  symbol = (SYMBOL_INFOW *)calloc(sizeof(SYMBOL_INFOW) + 256 * sizeof(char), 1);
+  symbol->MaxNameLen = 255;
+  symbol->SizeOfStruct = sizeof(SYMBOL_INFOW);
+
+  const unsigned short  MAX_CALLERS_SHOWN = 32;
+  frames = frames < MAX_CALLERS_SHOWN ? frames : MAX_CALLERS_SHOWN;
+  for (unsigned int i = 0; i < frames; i++) {
+    SymFromAddrW(process, (DWORD64)(callers_stack[i]), 0, symbol);
+    fwprintf(stderr, L"*** %d: %016I64LX %ls - 0x%0X\n", i, (DWORD64)callers_stack[i], symbol->Name, symbol->Address);
+  }
+
+  free(symbol);
+}
+
+static void print_stack_from_context(CONTEXT c) {
+  STACKFRAME s; // in/out stackframe
+  memset(&s, 0, sizeof(s));
+  DWORD imageType;
+#ifdef _M_IX86
+  // normally, call ImageNtHeader() and use machine info from PE header
+  imageType = IMAGE_FILE_MACHINE_I386;
+  s.AddrPC.Offset = c.Eip;
+  s.AddrPC.Mode = AddrModeFlat;
+  s.AddrFrame.Offset = c.Ebp;
+  s.AddrFrame.Mode = AddrModeFlat;
+  s.AddrStack.Offset = c.Esp;
+  s.AddrStack.Mode = AddrModeFlat;
+#elif _M_X64
+  imageType = IMAGE_FILE_MACHINE_AMD64;
+  s.AddrPC.Offset = c.Rip;
+  s.AddrPC.Mode = AddrModeFlat;
+  s.AddrFrame.Offset = c.Rsp;
+  s.AddrFrame.Mode = AddrModeFlat;
+  s.AddrStack.Offset = c.Rsp;
+  s.AddrStack.Mode = AddrModeFlat;
+#elif _M_IA64
+  imageType = IMAGE_FILE_MACHINE_IA64;
+  s.AddrPC.Offset = c.StIIP;
+  s.AddrPC.Mode = AddrModeFlat;
+  s.AddrFrame.Offset = c.IntSp;
+  s.AddrFrame.Mode = AddrModeFlat;
+  s.AddrBStore.Offset = c.RsBSP;
+  s.AddrBStore.Mode = AddrModeFlat;
+  s.AddrStack.Offset = c.IntSp;
+  s.AddrStack.Mode = AddrModeFlat;
+#else
+#error "Platform not supported!"
+#endif
+
+  HANDLE process = GetCurrentProcess();
+  HANDLE thread = GetCurrentThread();
+
+  SYMBOL_INFOW *symbol = (SYMBOL_INFOW *)calloc(sizeof(SYMBOL_INFOW) + 256 * sizeof(char), 1);
+  symbol->MaxNameLen = 255;
+  symbol->SizeOfStruct = sizeof(SYMBOL_INFOW);
+
+  while (StackWalk(imageType,
+    process,
+    thread,
+    &s,
+    &c,
+    0,
+    SymFunctionTableAccess,
+    SymGetModuleBase,
+    0)) {
+    BOOL has_symbol = SymFromAddrW(process, (DWORD64)(s.AddrPC.Offset), 0, symbol);
+    fwprintf(stderr, L"*** %016I64LX %ls - 0x%0X\n", (DWORD64)(s.AddrPC.Offset), has_symbol ? symbol->Name : L"<<no symbol>>", symbol->Address);
+  }
+
+  free(symbol);
+}
+
+static LONG crash_handler(struct _EXCEPTION_POINTERS *ex_info) {
+  fprintf(stderr, "Exception handler called, dumping information\n");
+  bool try_to_print_stack = true;
+  PEXCEPTION_RECORD exrec = ex_info->ExceptionRecord;
+  while (exrec) {
+    DWORD code = exrec->ExceptionCode;
+    DWORD flgs = exrec->ExceptionFlags;
+    PVOID addr = exrec->ExceptionAddress;
+    if (code == EXCEPTION_STACK_OVERFLOW) try_to_print_stack = false;
+    fprintf(stderr, "code: %x - flags: %d - address: %p\n", code, flgs, addr);
+    exrec = exrec->ExceptionRecord;
+  }
+  if (try_to_print_stack) {
+    print_stack_from_context(*ex_info->ContextRecord);
   }
   if (IsDebuggerPresent()) {
     __debugbreak();
@@ -69,8 +172,9 @@ LONG crash_handler(struct _EXCEPTION_POINTERS *ex_info) {
   return EXCEPTION_EXECUTE_HANDLER;
 }
 
-void abort_handler(int sig) {
-  gpr_log(GPR_DEBUG, "Abort handler called.");
+static void abort_handler(int sig) {
+  fprintf(stderr, "Abort handler called.");
+  print_current_stack(NULL);
   if (IsDebuggerPresent()) {
     __debugbreak();
   } else {
@@ -79,6 +183,9 @@ void abort_handler(int sig) {
 }
 
 static void install_crash_handler() {
+  if (!SymInitialize(GetCurrentProcess(), NULL, TRUE)) {
+    fprintf(stderr, "SymInitialize failed: %d", GetLastError());
+  }
   SetUnhandledExceptionFilter((LPTOP_LEVEL_EXCEPTION_FILTER)crash_handler);
   _set_abort_behavior(0, _WRITE_ABORT_MSG);
   _set_abort_behavior(0, _CALL_REPORTFAULT);
