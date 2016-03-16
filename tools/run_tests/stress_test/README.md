@@ -13,14 +13,14 @@
 2. Enable billing on Google cloud platform. Instructions [here](https://cloud.google.com/container-engine/docs/before-you-begin)  (see the '*Enable billing*' section).
 3. Create a Project from the [GCP console](https://console.cloud.google.com).i.e Click on the project dropdown box on the top right (to the right if the search box) and click '*Create a project*' option.
 4. Enable the Container Engine API. Instructions [here](https://cloud.google.com/container-engine/docs/before-you-begin)  (See the '*Enable the Container Engine API*’ section). Alternatively, you can do the following:
-    - 4.1 Click on the '*Products & Services*' icon on the top left (i.e the icon with three horizontal bars) and select '*API Manager*'
-    - 4.2 Select the '*Container Engine API*' under '*Google Cloud APIs*' on the main page. Note that you might have to click on '*More*' under '*Google Cloud APIs*' to see the '*Container Engine API*' link
-    - 4.3 Click on the '*Enable*' button. If the API is already enabled, the button's label would be '*Disable*' instead (do NOT click the button if its label is '*Disable*')
+    - Click on the '*Products & Services*' icon on the top left (i.e the icon with three horizontal bars) and select '*API Manager*'
+    - Select the '*Container Engine API*' under '*Google Cloud APIs*' on the main page. Note that you might have to click on '*More*' under '*Google Cloud APIs*' to see the '*Container Engine API*' link
+    - Click on the '*Enable*' button. If the API is already enabled, the button's label would be '*Disable*' instead (do NOT click the button if its label is '*Disable*')
 5. Create a Cluster from the GCP console. i.e Go to the Container Engine section from GCP console and click '*Create Container Cluster*' and follow the instructions.
-    - 5.1. The instructions for 'Name/Zone/MachineType' etc are [here](https://cloud.google.com/container-engine/docs/clusters/operations) (**NOTE**: The page also has instructions to setting up default clusters and configuring `kubectl`. We will be doing that later)
-    - 5.2. For the cluster size, a smaller size of < 10 GCE instances is good enough for our use cases - assuming that we are planning to run a reasonably small number of stress client instances. For the machine type, something like '2 vCPUs 7.5 GB' (available in the drop down box) should be good enough.
-    - 5.3. **IMPORTANT**: Before hitting the '*Create*' button, click on '*More*' link just above the '*Create*' button and Select '*Enabled*' for BigQuery , '*Enabled*' for Cloud Platform and '*Read/Write*' for Cloud User Accounts.
-    - 5.4. Create the cluster by clicking '*Create*' button.
+    - The instructions for 'Name/Zone/MachineType' etc are [here](https://cloud.google.com/container-engine/docs/clusters/operations) (**NOTE**: The page also has instructions to setting up default clusters and configuring `kubectl`. We will be doing that later)
+    - For the cluster size, a smaller size of < 10 GCE instances is good enough for our use cases - assuming that we are planning to run a reasonably small number of stress client instances. For the machine type, something like '2 vCPUs 7.5 GB' (available in the drop down box) should be good enough.
+    - **IMPORTANT**: Before hitting the '*Create*' button, click on '*More*' link just above the '*Create*' button and Select '*Enabled*' for BigQuery , '*Enabled*' for Cloud Platform and '*Read/Write*' for Cloud User Accounts.
+    - Create the cluster by clicking '*Create*' button.
 
 #### *On your machine* (or the machine from which stress tests on GKE are launched):
 1. You need a working gRPC repository on your machine. If you do not have it, clone the grpc repository from github (https://github.com/grpc/grpc) and follow the instructions [here](https://github.com/grpc/grpc/blob/master/INSTALL.md)
