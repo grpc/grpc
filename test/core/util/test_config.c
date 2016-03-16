@@ -59,21 +59,23 @@ static unsigned seed(void) { return _getpid(); }
 #pragma comment(lib, "dbghelp.lib")
 
 static void print_current_stack() {
-  typedef USHORT(WINAPI *CaptureStackBackTraceType)(__in ULONG, __in ULONG, __out PVOID*, __out_opt PULONG);
-  CaptureStackBackTraceType func = (CaptureStackBackTraceType)(GetProcAddress(LoadLibrary(L"kernel32.dll"), "RtlCaptureStackBackTrace"));
+  typedef USHORT(WINAPI * CaptureStackBackTraceType)(
+      __in ULONG, __in ULONG, __out PVOID *, __out_opt PULONG);
+  CaptureStackBackTraceType func = (CaptureStackBackTraceType)(
+      GetProcAddress(LoadLibrary(L"kernel32.dll"), "RtlCaptureStackBackTrace"));
 
-  if (func == NULL)
-    return; // WOE 29.SEP.2010
+  if (func == NULL) return;  // WOE 29.SEP.2010
 
-  // Quote from Microsoft Documentation:
-  // ## Windows Server 2003 and Windows XP:  
-  // ## The sum of the FramesToSkip and FramesToCapture parameters must be less than 63.
+// Quote from Microsoft Documentation:
+// ## Windows Server 2003 and Windows XP:
+// ## The sum of the FramesToSkip and FramesToCapture parameters must be less
+// than 63.
 #define MAX_CALLERS 62
 
-  void         * callers_stack[MAX_CALLERS];
+  void *callers_stack[MAX_CALLERS];
   unsigned short frames;
-  SYMBOL_INFOW  * symbol;
-  HANDLE         process;
+  SYMBOL_INFOW *symbol;
+  HANDLE process;
   process = GetCurrentProcess();
   SymInitialize(process, NULL, TRUE);
   frames = (func)(0, MAX_CALLERS, callers_stack, NULL);
@@ -81,18 +83,19 @@ static void print_current_stack() {
   symbol->MaxNameLen = 255;
   symbol->SizeOfStruct = sizeof(SYMBOL_INFOW);
 
-  const unsigned short  MAX_CALLERS_SHOWN = 32;
+  const unsigned short MAX_CALLERS_SHOWN = 32;
   frames = frames < MAX_CALLERS_SHOWN ? frames : MAX_CALLERS_SHOWN;
   for (unsigned int i = 0; i < frames; i++) {
     SymFromAddrW(process, (DWORD64)(callers_stack[i]), 0, symbol);
-    fwprintf(stderr, L"*** %d: %016I64LX %ls - 0x%0X\n", i, (DWORD64)callers_stack[i], symbol->Name, symbol->Address);
+    fwprintf(stderr, L"*** %d: %016I64LX %ls - 0x%0X\n", i,
+             (DWORD64)callers_stack[i], symbol->Name, symbol->Address);
   }
 
   free(symbol);
 }
 
 static void print_stack_from_context(CONTEXT c) {
-  STACKFRAME s; // in/out stackframe
+  STACKFRAME s;  // in/out stackframe
   memset(&s, 0, sizeof(s));
   DWORD imageType;
 #ifdef _M_IX86
@@ -129,21 +132,17 @@ static void print_stack_from_context(CONTEXT c) {
   HANDLE process = GetCurrentProcess();
   HANDLE thread = GetCurrentThread();
 
-  SYMBOL_INFOW *symbol = (SYMBOL_INFOW *)calloc(sizeof(SYMBOL_INFOW) + 256 * sizeof(char), 1);
+  SYMBOL_INFOW *symbol =
+      (SYMBOL_INFOW *)calloc(sizeof(SYMBOL_INFOW) + 256 * sizeof(char), 1);
   symbol->MaxNameLen = 255;
   symbol->SizeOfStruct = sizeof(SYMBOL_INFOW);
 
-  while (StackWalk(imageType,
-    process,
-    thread,
-    &s,
-    &c,
-    0,
-    SymFunctionTableAccess,
-    SymGetModuleBase,
-    0)) {
-    BOOL has_symbol = SymFromAddrW(process, (DWORD64)(s.AddrPC.Offset), 0, symbol);
-    fwprintf(stderr, L"*** %016I64LX %ls - 0x%0X\n", (DWORD64)(s.AddrPC.Offset), has_symbol ? symbol->Name : L"<<no symbol>>", symbol->Address);
+  while (StackWalk(imageType, process, thread, &s, &c, 0,
+                   SymFunctionTableAccess, SymGetModuleBase, 0)) {
+    BOOL has_symbol =
+        SymFromAddrW(process, (DWORD64)(s.AddrPC.Offset), 0, symbol);
+    fwprintf(stderr, L"*** %016I64LX %ls - 0x%0X\n", (DWORD64)(s.AddrPC.Offset),
+             has_symbol ? symbol->Name : L"<<no symbol>>", symbol->Address);
   }
 
   free(symbol);
