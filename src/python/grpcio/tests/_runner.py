@@ -43,6 +43,13 @@ import uuid
 from tests import _loader
 from tests import _result
 
+# This number needs to be large enough to outpace output on stdout and stderr
+# from the gRPC core, otherwise we could end up in a potential deadlock. This
+# stems from the OS waiting on someone to clear a filled pipe buffer while the
+# GIL is held from a write to stderr from gRPC core, but said someone is in
+# Python code thus necessitating GIL acquisition.
+_READ_BYTES = 2**20
+
 
 class CapturePipe(object):
   """A context-manager pipe to redirect output to a byte array.
@@ -76,6 +83,10 @@ class CapturePipe(object):
     flags = fcntl.fcntl(self._read_fd, fcntl.F_GETFL)
     fcntl.fcntl(self._read_fd, fcntl.F_SETFL, flags | os.O_NONBLOCK)
     self._read_thread = threading.Thread(target=self._read)
+    # If the user wants to exit from the Python program and hits ctrl-C and the
+    # read thread is somehow deadlocked with something else, the Python code may
+    # refuse to exit. This prevents that by making the read thread second-class.
+    self._read_thread.daemon = True
     self._read_thread.start()
 
   def stop(self):
@@ -93,7 +104,7 @@ class CapturePipe(object):
     self.output = bytearray()
     while True:
       select.select([self._read_fd], [], [])
-      read_bytes = os.read(self._read_fd, 1024)
+      read_bytes = os.read(self._read_fd, _READ_BYTES)
       if read_bytes:
         self.output.extend(read_bytes)
       else:
