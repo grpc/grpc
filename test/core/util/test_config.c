@@ -66,8 +66,8 @@ static unsigned seed(void) { return _getpid(); }
 static void print_current_stack() {
   typedef USHORT(WINAPI * CaptureStackBackTraceType)(
       __in ULONG, __in ULONG, __out PVOID *, __out_opt PULONG);
-  CaptureStackBackTraceType func = (CaptureStackBackTraceType)(
-      GetProcAddress(LoadLibrary(_T("kernel32.dll")), "RtlCaptureStackBackTrace"));
+  CaptureStackBackTraceType func = (CaptureStackBackTraceType)(GetProcAddress(
+      LoadLibrary(_T("kernel32.dll")), "RtlCaptureStackBackTrace"));
 
   if (func == NULL) return;  // WOE 29.SEP.2010
 
@@ -84,7 +84,8 @@ static void print_current_stack() {
   process = GetCurrentProcess();
   SymInitialize(process, NULL, TRUE);
   frames = (func)(0, MAX_CALLERS, callers_stack, NULL);
-  symbol = (SYMBOL_INFOW *)calloc(sizeof(SYMBOL_INFOW) + 256 * sizeof(wchar_t), 1);
+  symbol =
+      (SYMBOL_INFOW *)calloc(sizeof(SYMBOL_INFOW) + 256 * sizeof(wchar_t), 1);
   symbol->MaxNameLen = 255;
   symbol->SizeOfStruct = sizeof(SYMBOL_INFOW);
 
