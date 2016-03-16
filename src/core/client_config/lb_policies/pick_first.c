@@ -417,8 +417,8 @@ static void pick_first_factory_unref(grpc_lb_policy_factory *factory) {}
 
 static grpc_lb_policy *create_pick_first(grpc_lb_policy_factory *factory,
                                          grpc_lb_policy_args *args) {
+  if (args->num_subchannels == 0) return NULL;
   pick_first_lb_policy *p = gpr_malloc(sizeof(*p));
-  GPR_ASSERT(args->num_subchannels > 0);
   memset(p, 0, sizeof(*p));
   grpc_lb_policy_init(&p->base, &pick_first_lb_policy_vtable);
   p->subchannels =
