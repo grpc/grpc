@@ -358,6 +358,9 @@ struct grpc_chttp2_transport {
     /** connectivity tracking */
     grpc_connectivity_state_tracker state_tracker;
   } channel_callback;
+
+  /** Transport op to be applied post-parsing */
+  grpc_transport_op *post_parsing_op;
 };
 
 typedef struct {
@@ -417,7 +420,7 @@ typedef struct {
   /** HTTP2 stream id for this stream, or zero if one has not been assigned */
   uint32_t id;
   uint8_t fetching;
-  uint8_t sent_initial_metadata;
+  bool sent_initial_metadata;
   uint8_t sent_message;
   uint8_t sent_trailing_metadata;
   uint8_t read_closed;
@@ -509,7 +512,7 @@ void grpc_chttp2_publish_reads(grpc_exec_ctx *exec_ctx,
                                grpc_chttp2_transport_global *global,
                                grpc_chttp2_transport_parsing *parsing);
 
-void grpc_chttp2_list_add_writable_stream(
+bool grpc_chttp2_list_add_writable_stream(
     grpc_chttp2_transport_global *transport_global,
     grpc_chttp2_stream_global *stream_global);
 /** Get a writable stream
@@ -519,14 +522,13 @@ int grpc_chttp2_list_pop_writable_stream(
     grpc_chttp2_transport_writing *transport_writing,
     grpc_chttp2_stream_global **stream_global,
     grpc_chttp2_stream_writing **stream_writing);
-void grpc_chttp2_list_remove_writable_stream(
+bool grpc_chttp2_list_remove_writable_stream(
     grpc_chttp2_transport_global *transport_global,
-    grpc_chttp2_stream_global *stream_global);
+    grpc_chttp2_stream_global *stream_global) GRPC_MUST_USE_RESULT;
 
-/* returns 1 if stream added, 0 if it was already present */
-int grpc_chttp2_list_add_writing_stream(
+void grpc_chttp2_list_add_writing_stream(
     grpc_chttp2_transport_writing *transport_writing,
-    grpc_chttp2_stream_writing *stream_writing) GRPC_MUST_USE_RESULT;
+    grpc_chttp2_stream_writing *stream_writing);
 int grpc_chttp2_list_have_writing_streams(
     grpc_chttp2_transport_writing *transport_writing);
 int grpc_chttp2_list_pop_writing_stream(
@@ -769,5 +771,10 @@ void grpc_chttp2_incoming_byte_stream_finished(
 void grpc_chttp2_ack_ping(grpc_exec_ctx *exec_ctx,
                           grpc_chttp2_transport_parsing *parsing,
                           const uint8_t *opaque_8bytes);
+
+/** add a ref to the stream and add it to the writable list;
+    ref will be dropped in writing.c */
+void grpc_chttp2_become_writable(grpc_chttp2_transport_global *transport_global,
+                                 grpc_chttp2_stream_global *stream_global);
 
 #endif
