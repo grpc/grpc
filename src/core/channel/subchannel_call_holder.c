@@ -174,17 +174,15 @@ static void subchannel_ready(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
   holder->creation_phase = GRPC_SUBCHANNEL_CALL_HOLDER_NOT_CREATING;
   if (holder->connected_subchannel == NULL) {
     fail_locked(exec_ctx, holder);
+  } else if (1 == gpr_atm_acq_load(&holder->subchannel_call)) {
+    /* already cancelled before subchannel became ready */
+    fail_locked(exec_ctx, holder);
   } else {
-    if (!gpr_atm_rel_cas(
-            &holder->subchannel_call, 0,
-            (gpr_atm)(uintptr_t)grpc_connected_subchannel_create_call(
-                exec_ctx, holder->connected_subchannel, holder->pollset))) {
-      GPR_ASSERT(gpr_atm_acq_load(&holder->subchannel_call) == 1);
-      /* if this cas fails, the call was cancelled before the pick completed */
-      fail_locked(exec_ctx, holder);
-    } else {
-      retry_waiting_locked(exec_ctx, holder);
-    }
+    gpr_atm_rel_store(
+        &holder->subchannel_call,
+        (gpr_atm)(uintptr_t)grpc_connected_subchannel_create_call(
+            exec_ctx, holder->connected_subchannel, holder->pollset));
+    retry_waiting_locked(exec_ctx, holder);
   }
   gpr_mu_unlock(&holder->mu);
   GRPC_CALL_STACK_UNREF(exec_ctx, holder->owning_call, "pick_subchannel");
