@@ -5532,6 +5532,7 @@
       "src/cpp/codegen/codegen_init.cc", 
       "src/cpp/common/channel_arguments.cc", 
       "src/cpp/common/completion_queue.cc", 
+      "src/cpp/common/core_codegen.cc", 
       "src/cpp/common/core_codegen.h", 
       "src/cpp/common/create_auth_context.h", 
       "src/cpp/common/insecure_create_auth_context.cc", 
