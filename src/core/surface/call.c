@@ -81,11 +81,11 @@ typedef enum {
   /* Status came from the application layer overriding whatever
      the wire says */
   STATUS_FROM_API_OVERRIDE = 0,
-  /* Status was created by some internal channel stack operation */
-  STATUS_FROM_CORE,
   /* Status came from 'the wire' - or somewhere below the surface
      layer */
   STATUS_FROM_WIRE,
+  /* Status was created by some internal channel stack operation */
+  STATUS_FROM_CORE,
   /* Status came from the server sending status */
   STATUS_FROM_SERVER_STATUS,
   STATUS_SOURCE_COUNT
