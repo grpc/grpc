@@ -182,6 +182,10 @@ GPRAPI void gpr_ref_init(gpr_refcount *r, int n);
 /* Increment the reference count *r.  Requires *r initialized. */
 GPRAPI void gpr_ref(gpr_refcount *r);
 
+/* Increment the reference count *r.  Requires *r initialized.
+   Crashes if refcount is zero */
+GPRAPI void gpr_ref_non_zero(gpr_refcount *r);
+
 /* Increment the reference count *r by n.  Requires *r initialized, n > 0. */
 GPRAPI void gpr_refn(gpr_refcount *r, int n);
 

@@ -1,4 +1,4 @@
-# Copyright 2015, Google Inc.
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -102,6 +102,15 @@ cdef class Server:
     else:
       return grpc_server_add_insecure_http2_port(self.c_server, address)
 
+  cdef _c_shutdown(self, CompletionQueue queue, tag):
+    self.is_shutting_down = True
+    operation_tag = OperationTag(tag)
+    operation_tag.shutting_down_server = self
+    cpython.Py_INCREF(operation_tag)
+    grpc_server_shutdown_and_notify(
+        self.c_server, queue.c_completion_queue,
+        <cpython.PyObject *>operation_tag)
+
   def shutdown(self, CompletionQueue queue not None, tag):
     cdef OperationTag operation_tag
     if queue.is_shutting_down:
@@ -113,14 +122,7 @@ cdef class Server:
     elif queue not in self.registered_completion_queues:
       raise ValueError("expected registered completion queue")
     else:
-      self.is_shutting_down = True
-      operation_tag = OperationTag(tag)
-      operation_tag.shutting_down_server = self
-      operation_tag.references.extend([self, queue])
-      cpython.Py_INCREF(operation_tag)
-      grpc_server_shutdown_and_notify(
-          self.c_server, queue.c_completion_queue,
-          <cpython.PyObject *>operation_tag)
+      self._c_shutdown(queue, tag)
 
   cdef notify_shutdown_complete(self):
     # called only by a completion queue on receiving our shutdown operation tag
@@ -142,7 +144,7 @@ cdef class Server:
         pass
       elif not self.is_shutting_down:
         # the user didn't call shutdown - use our backup queue
-        self.shutdown(self.backup_shutdown_queue, None)
+        self._c_shutdown(self.backup_shutdown_queue, None)
         # and now we wait
         while not self.is_shutdown:
           self.backup_shutdown_queue.poll()

@@ -10,11 +10,11 @@
   <email>grpc-packages@google.com</email>
   <active>yes</active>
  </lead>
- <date>2016-02-24</date>
+ <date>2016-03-01</date>
  <time>16:06:07</time>
  <version>
-  <release>0.8.0</release>
-  <api>0.8.0</api>
+  <release>0.14.0</release>
+  <api>0.14.0</api>
  </version>
  <stability>
   <release>beta</release>
@@ -22,14 +22,14 @@
  </stability>
  <license>BSD</license>
  <notes>
-- Simplify gRPC PHP installation #4517
+- Increase unit test code coverage #5225
  </notes>
  <contents>
   <dir baseinstalldir="/" name="/">
     <file baseinstalldir="/" name="config.m4" role="src" />
+    <file baseinstalldir="/" name="src/php/README.md" role="src" />
     <file baseinstalldir="/" name="src/php/ext/grpc/CREDITS" role="src" />
     <file baseinstalldir="/" name="src/php/ext/grpc/LICENSE" role="src" />
-    <file baseinstalldir="/" name="src/php/ext/grpc/README.md" role="src" />
     <file baseinstalldir="/" name="src/php/ext/grpc/byte_buffer.c" role="src" />
     <file baseinstalldir="/" name="src/php/ext/grpc/call.c" role="src" />
     <file baseinstalldir="/" name="src/php/ext/grpc/call_credentials.c" role="src" />
@@ -967,6 +967,21 @@ Update to wrap gRPC C Core version 0.10.0
    <license>BSD</license>
    <notes>
 - Simplify gRPC PHP installation #4517
+   </notes>
+  </release>
+  <release>
+   <version>
+    <release>0.14.0</release>
+    <api>0.14.0</api>
+   </version>
+   <stability>
+    <release>beta</release>
+    <api>beta</api>
+   </stability>
+   <date>2016-03-01</date>
+   <license>BSD</license>
+   <notes>
+- Increase unit test code coverage #5225
    </notes>
   </release>
  </changelog>

@@ -849,6 +849,8 @@ chttp2_status_conversion_test: $(BINDIR)/$(CONFIG)/chttp2_status_conversion_test
 chttp2_stream_map_test: $(BINDIR)/$(CONFIG)/chttp2_stream_map_test
 chttp2_varint_test: $(BINDIR)/$(CONFIG)/chttp2_varint_test
 compression_test: $(BINDIR)/$(CONFIG)/compression_test
+concurrent_connectivity_test: $(BINDIR)/$(CONFIG)/concurrent_connectivity_test
+dns_resolver_connectivity_test: $(BINDIR)/$(CONFIG)/dns_resolver_connectivity_test
 dns_resolver_test: $(BINDIR)/$(CONFIG)/dns_resolver_test
 dualstack_socket_test: $(BINDIR)/$(CONFIG)/dualstack_socket_test
 endpoint_pair_test: $(BINDIR)/$(CONFIG)/endpoint_pair_test
@@ -1159,6 +1161,8 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/chttp2_stream_map_test \
   $(BINDIR)/$(CONFIG)/chttp2_varint_test \
   $(BINDIR)/$(CONFIG)/compression_test \
+  $(BINDIR)/$(CONFIG)/concurrent_connectivity_test \
+  $(BINDIR)/$(CONFIG)/dns_resolver_connectivity_test \
   $(BINDIR)/$(CONFIG)/dns_resolver_test \
   $(BINDIR)/$(CONFIG)/dualstack_socket_test \
   $(BINDIR)/$(CONFIG)/endpoint_pair_test \
@@ -1403,6 +1407,10 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/chttp2_varint_test || ( echo test chttp2_varint_test failed ; exit 1 )
 	$(E) "[RUN]     Testing compression_test"
 	$(Q) $(BINDIR)/$(CONFIG)/compression_test || ( echo test compression_test failed ; exit 1 )
+	$(E) "[RUN]     Testing concurrent_connectivity_test"
+	$(Q) $(BINDIR)/$(CONFIG)/concurrent_connectivity_test || ( echo test concurrent_connectivity_test failed ; exit 1 )
+	$(E) "[RUN]     Testing dns_resolver_connectivity_test"
+	$(Q) $(BINDIR)/$(CONFIG)/dns_resolver_connectivity_test || ( echo test dns_resolver_connectivity_test failed ; exit 1 )
 	$(E) "[RUN]     Testing dns_resolver_test"
 	$(Q) $(BINDIR)/$(CONFIG)/dns_resolver_test || ( echo test dns_resolver_test failed ; exit 1 )
 	$(E) "[RUN]     Testing dualstack_socket_test"
@@ -6072,6 +6080,70 @@ deps_compression_test: $(COMPRESSION_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(COMPRESSION_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+CONCURRENT_CONNECTIVITY_TEST_SRC = \
+    test/core/surface/concurrent_connectivity_test.c \
+
+CONCURRENT_CONNECTIVITY_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CONCURRENT_CONNECTIVITY_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/concurrent_connectivity_test: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/concurrent_connectivity_test: $(CONCURRENT_CONNECTIVITY_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(CONCURRENT_CONNECTIVITY_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/concurrent_connectivity_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/surface/concurrent_connectivity_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_concurrent_connectivity_test: $(CONCURRENT_CONNECTIVITY_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(CONCURRENT_CONNECTIVITY_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+DNS_RESOLVER_CONNECTIVITY_TEST_SRC = \
+    test/core/client_config/resolvers/dns_resolver_connectivity_test.c \
+
+DNS_RESOLVER_CONNECTIVITY_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(DNS_RESOLVER_CONNECTIVITY_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/dns_resolver_connectivity_test: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/dns_resolver_connectivity_test: $(DNS_RESOLVER_CONNECTIVITY_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(DNS_RESOLVER_CONNECTIVITY_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/dns_resolver_connectivity_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/client_config/resolvers/dns_resolver_connectivity_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_dns_resolver_connectivity_test: $(DNS_RESOLVER_CONNECTIVITY_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(DNS_RESOLVER_CONNECTIVITY_TEST_OBJS:.o=.dep)
 endif
 endif
 

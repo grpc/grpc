@@ -60,6 +60,8 @@ _SKIP_COMPRESSION = ['large_compressed_unary',
 _SKIP_ADVANCED = ['custom_metadata', 'status_code_and_message',
                   'unimplemented_method']
 
+_TEST_TIMEOUT = 3*60
+
 class CXXLanguage:
 
   def __init__(self):
@@ -459,7 +461,7 @@ def cloud_to_prod_jobspec(language, test_case, server_host_name,
           environ=environ,
           shortname='%s:%s:%s:%s' % (suite_name, server_host_name, language,
                                      test_case),
-          timeout_seconds=90,
+          timeout_seconds=_TEST_TIMEOUT,
           flake_retries=5 if args.allow_flakes else 0,
           timeout_retries=2 if args.allow_flakes else 0,
           kill_handler=_job_kill_handler)
@@ -495,7 +497,7 @@ def cloud_to_cloud_jobspec(language, test_case, server_name, server_host,
           environ=environ,
           shortname='cloud_to_cloud:%s:%s_server:%s' % (language, server_name,
                                                         test_case),
-          timeout_seconds=90,
+          timeout_seconds=_TEST_TIMEOUT,
           flake_retries=5 if args.allow_flakes else 0,
           timeout_retries=2 if args.allow_flakes else 0,
           kill_handler=_job_kill_handler)
@@ -587,7 +589,11 @@ prod_servers = {
     'cloud_gateway': ('216.239.32.255', 'grpc-test.sandbox.googleapis.com',
                       False),
     'cloud_gateway_v2': ('216.239.32.255', 'grpc-test2.sandbox.googleapis.com',
-                         True)
+                         True),
+    'gateway_v4': ('grpc-test4.sandbox.googleapis.com', 
+                   'grpc-test4.sandbox.googleapis.com', True), 
+    'cloud_gateway_v4': ('216.239.32.255', 'grpc-test4.sandbox.googleapis.com',
+                         True),
 }
 
 argp = argparse.ArgumentParser(description='Run interop tests.')

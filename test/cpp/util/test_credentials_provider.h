@@ -44,22 +44,26 @@ namespace grpc {
 namespace testing {
 
 const char kInsecureCredentialsType[] = "INSECURE_CREDENTIALS";
-const char kTlsCredentialsType[] = "TLS_CREDENTIALS";
 
-class CredentialsProvider {
+// For real credentials, like tls/ssl, this name should match the AuthContext
+// property "transport_security_type".
+const char kTlsCredentialsType[] = "ssl";
+
+// Provide test credentials of a particular type.
+class CredentialTypeProvider {
  public:
-  virtual ~CredentialsProvider() {}
+  virtual ~CredentialTypeProvider() {}
 
   virtual std::shared_ptr<ChannelCredentials> GetChannelCredentials(
-      const grpc::string& type, ChannelArguments* args) = 0;
-  virtual std::shared_ptr<ServerCredentials> GetServerCredentials(
-      const grpc::string& type) = 0;
-  virtual std::vector<grpc::string> GetSecureCredentialsTypeList() = 0;
+      ChannelArguments* args) = 0;
+  virtual std::shared_ptr<ServerCredentials> GetServerCredentials() = 0;
 };
 
-// Set the CredentialsProvider used by the other functions in this file. If this
-// is not set, a default provider will be used.
-void SetTestCredentialsProvider(std::unique_ptr<CredentialsProvider> provider);
+// Add a secure type in addition to the defaults above
+// (kInsecureCredentialsType, kTlsCredentialsType) that can be returned from the
+// functions below.
+void AddSecureType(const grpc::string& type,
+                   std::unique_ptr<CredentialTypeProvider> type_provider);
 
 // Provide channel credentials according to the given type. Alter the channel
 // arguments if needed.

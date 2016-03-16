@@ -45,7 +45,7 @@ void grpc_stream_ref(grpc_stream_refcount *refcount, const char *reason) {
 #else
 void grpc_stream_ref(grpc_stream_refcount *refcount) {
 #endif
-  gpr_ref(&refcount->refs);
+  gpr_ref_non_zero(&refcount->refs);
 }
 
 #ifdef GRPC_STREAM_REFCOUNT_DEBUG
