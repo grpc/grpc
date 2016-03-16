@@ -35,7 +35,6 @@
 #include <nan.h>
 #include <v8.h>
 #include "grpc/grpc.h"
-#include "grpc/support/log.h"
 
 #include "call.h"
 #include "call_credentials.h"
