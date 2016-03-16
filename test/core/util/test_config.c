@@ -54,15 +54,20 @@ static unsigned seed(void) { return _getpid(); }
 #endif
 
 #if GPR_WINDOWS_CRASH_HANDLER
-#include "DbgHelp.h"
+#include <windows.h>
+#include <tchar.h>
+#define DBGHELP_TRANSLATE_TCHAR
+#include <dbghelp.h>
 
+#ifdef _MSC_VER
 #pragma comment(lib, "dbghelp.lib")
+#endif
 
 static void print_current_stack() {
   typedef USHORT(WINAPI * CaptureStackBackTraceType)(
       __in ULONG, __in ULONG, __out PVOID *, __out_opt PULONG);
   CaptureStackBackTraceType func = (CaptureStackBackTraceType)(
-      GetProcAddress(LoadLibrary(L"kernel32.dll"), "RtlCaptureStackBackTrace"));
+      GetProcAddress(LoadLibrary(_T("kernel32.dll")), "RtlCaptureStackBackTrace"));
 
   if (func == NULL) return;  // WOE 29.SEP.2010
 
@@ -79,7 +84,7 @@ static void print_current_stack() {
   process = GetCurrentProcess();
   SymInitialize(process, NULL, TRUE);
   frames = (func)(0, MAX_CALLERS, callers_stack, NULL);
-  symbol = (SYMBOL_INFOW *)calloc(sizeof(SYMBOL_INFOW) + 256 * sizeof(char), 1);
+  symbol = (SYMBOL_INFOW *)calloc(sizeof(SYMBOL_INFOW) + 256 * sizeof(wchar_t), 1);
   symbol->MaxNameLen = 255;
   symbol->SizeOfStruct = sizeof(SYMBOL_INFOW);
 
@@ -133,7 +138,7 @@ static void print_stack_from_context(CONTEXT c) {
   HANDLE thread = GetCurrentThread();
 
   SYMBOL_INFOW *symbol =
-      (SYMBOL_INFOW *)calloc(sizeof(SYMBOL_INFOW) + 256 * sizeof(char), 1);
+      (SYMBOL_INFOW *)calloc(sizeof(SYMBOL_INFOW) + 256 * sizeof(wchar_t), 1);
   symbol->MaxNameLen = 255;
   symbol->SizeOfStruct = sizeof(SYMBOL_INFOW);
 
