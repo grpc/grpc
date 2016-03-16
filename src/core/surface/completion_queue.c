@@ -86,7 +86,7 @@ struct grpc_completion_queue {
 #define POLLSET_FROM_CQ(cq) ((grpc_pollset *)(cq + 1))
 
 static gpr_mu g_freelist_mu;
-grpc_completion_queue *g_freelist;
+static grpc_completion_queue *g_freelist;
 
 static void on_pollset_shutdown_done(grpc_exec_ctx *exec_ctx, void *cc,
                                      bool success);

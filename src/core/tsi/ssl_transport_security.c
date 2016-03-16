@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,8 +33,17 @@
 
 #include "src/core/tsi/ssl_transport_security.h"
 
+#include <grpc/support/port_platform.h>
+
 #include <limits.h>
 #include <string.h>
+
+/* TODO(jboeuf): refactor inet_ntop into a portability header. */
+#ifdef GPR_WINSOCK_SOCKET
+#include <ws2tcpip.h>
+#else
+#include <arpa/inet.h>
+#endif
 
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
@@ -197,13 +206,16 @@ static void ssl_info_callback(const SSL *ssl, int where, int ret) {
 }
 
 /* Returns 1 if name looks like an IP address, 0 otherwise.
-   This is a very rough heuristic as it does not handle IPV6 or things like:
-   0300.0250.00.01, 0xC0.0Xa8.0x0.0x1, 000030052000001, 0xc0.052000001 */
+   This is a very rough heuristic, and only handles IPv6 in hexadecimal form. */
 static int looks_like_ip_address(const char *name) {
   size_t i;
   size_t dot_count = 0;
   size_t num_size = 0;
   for (i = 0; i < strlen(name); i++) {
+    if (name[i] == ':') {
+      /* IPv6 Address in hexadecimal form, : is not allowed in DNS names. */
+      return 1;
+    }
     if (name[i] >= '0' && name[i] <= '9') {
       if (num_size > 3) return 0;
       num_size++;
@@ -296,21 +308,44 @@ static tsi_result add_subject_alt_names_properties_to_peer(
         sk_GENERAL_NAME_value(subject_alt_names, TSI_SIZE_AS_SIZE(i));
     /* Filter out the non-dns entries names. */
     if (subject_alt_name->type == GEN_DNS) {
-      unsigned char *dns_name = NULL;
-      int dns_name_size =
-          ASN1_STRING_to_UTF8(&dns_name, subject_alt_name->d.dNSName);
-      if (dns_name_size < 0) {
+      unsigned char *name = NULL;
+      int name_size;
+      name_size = ASN1_STRING_to_UTF8(&name, subject_alt_name->d.dNSName);
+      if (name_size < 0) {
         gpr_log(GPR_ERROR, "Could not get utf8 from asn1 string.");
         result = TSI_INTERNAL_ERROR;
         break;
       }
       result = tsi_construct_string_peer_property(
-          TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY,
-          (const char *)dns_name, (size_t)dns_name_size,
+          TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY, (const char *)name,
+          (size_t)name_size, &peer->properties[peer->property_count++]);
+      OPENSSL_free(name);
+    } else if (subject_alt_name->type == GEN_IPADD) {
+      char ntop_buf[INET6_ADDRSTRLEN];
+      int af;
+
+      if (subject_alt_name->d.iPAddress->length == 4) {
+        af = AF_INET;
+      } else if (subject_alt_name->d.iPAddress->length == 16) {
+        af = AF_INET6;
+      } else {
+        gpr_log(GPR_ERROR, "SAN IP Address contained invalid IP");
+        result = TSI_INTERNAL_ERROR;
+        break;
+      }
+      const char *name = inet_ntop(af, subject_alt_name->d.iPAddress->data,
+                                   ntop_buf, INET6_ADDRSTRLEN);
+      if (name == NULL) {
+        gpr_log(GPR_ERROR, "Could not get IP string from asn1 octet.");
+        result = TSI_INTERNAL_ERROR;
+        break;
+      }
+
+      result = tsi_construct_string_peer_property_from_cstring(
+          TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY, name,
           &peer->properties[peer->property_count++]);
-      OPENSSL_free(dns_name);
-      if (result != TSI_OK) break;
     }
+    if (result != TSI_OK) break;
   }
   return result;
 }
@@ -1436,9 +1471,7 @@ int tsi_ssl_peer_matches_name(const tsi_peer *peer, const char *name) {
   size_t i = 0;
   size_t san_count = 0;
   const tsi_peer_property *cn_property = NULL;
-
-  /* For now reject what looks like an IP address. */
-  if (looks_like_ip_address(name)) return 0;
+  int like_ip = looks_like_ip_address(name);
 
   /* Check the SAN first. */
   for (i = 0; i < peer->property_count; i++) {
@@ -1447,8 +1480,15 @@ int tsi_ssl_peer_matches_name(const tsi_peer *peer, const char *name) {
     if (strcmp(property->name,
                TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY) == 0) {
       san_count++;
-      if (does_entry_match_name(property->value.data, property->value.length,
-                                name)) {
+
+      if (!like_ip && does_entry_match_name(property->value.data,
+                                            property->value.length, name)) {
+        return 1;
+      } else if (like_ip &&
+                 strncmp(name, property->value.data, property->value.length) ==
+                     0 &&
+                 strlen(name) == property->value.length) {
+        /* IP Addresses are exact matches only. */
         return 1;
       }
     } else if (strcmp(property->name,
@@ -1457,8 +1497,8 @@ int tsi_ssl_peer_matches_name(const tsi_peer *peer, const char *name) {
     }
   }
 
-  /* If there's no SAN, try the CN. */
-  if (san_count == 0 && cn_property != NULL) {
+  /* If there's no SAN, try the CN, but only if its not like an IP Address */
+  if (san_count == 0 && cn_property != NULL && !like_ip) {
     if (does_entry_match_name(cn_property->value.data,
                               cn_property->value.length, name)) {
       return 1;

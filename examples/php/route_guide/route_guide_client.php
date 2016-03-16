@@ -1,7 +1,7 @@
 <?php
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -37,7 +37,9 @@ require dirname(__FILE__) . '/route_guide.php';
 
 define('COORD_FACTOR', 1e7);
 
-$client = new routeguide\RouteGuideClient('localhost:50051', []);
+$client = new routeguide\RouteGuideClient('localhost:50051', [
+  'credentials' => Grpc\ChannelCredentials::createInsecure()
+]);
 
 function printFeature($feature) {
   $name = $feature->getName();
