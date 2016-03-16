@@ -34,7 +34,6 @@
 #import <Foundation/Foundation.h>
 #include <grpc/grpc.h>
 
-#import "GRPCChannel.h"
 #import "GRPCRequestHeaders.h"
 
 @interface GRPCOperation : NSObject
@@ -94,4 +93,5 @@
 - (void)startBatchWithOperations:(NSArray *)ops;
 
 - (void)cancel;
+
 @end
