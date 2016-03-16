@@ -505,7 +505,8 @@ void grpc_connected_subchannel_ping(grpc_exec_ctx *exec_ctx,
   elem->filter->start_transport_op(exec_ctx, elem, &op);
 }
 
-static void publish_transport(grpc_exec_ctx *exec_ctx, grpc_subchannel *c) {
+static void publish_transport_locked(grpc_exec_ctx *exec_ctx,
+                                     grpc_subchannel *c) {
   size_t channel_stack_size;
   grpc_connected_subchannel *con;
   grpc_channel_stack *stk;
@@ -541,8 +542,6 @@ static void publish_transport(grpc_exec_ctx *exec_ctx, grpc_subchannel *c) {
   grpc_closure_init(&sw_subchannel->closure, subchannel_on_child_state_changed,
                     sw_subchannel);
 
-  gpr_mu_lock(&c->mu);
-
   if (c->disconnected) {
     gpr_mu_unlock(&c->mu);
     gpr_free(sw_subchannel);
@@ -575,7 +574,6 @@ static void publish_transport(grpc_exec_ctx *exec_ctx, grpc_subchannel *c) {
   grpc_connectivity_state_set(exec_ctx, &c->state_tracker, GRPC_CHANNEL_READY,
                               "connected");
 
-  gpr_mu_unlock(&c->mu);
   gpr_free((void *)filters);
 }
 
@@ -644,21 +642,23 @@ static void subchannel_connected(grpc_exec_ctx *exec_ctx, void *arg,
                                  bool iomgr_success) {
   grpc_subchannel *c = arg;
 
+  GRPC_SUBCHANNEL_WEAK_REF(c, "connected");
+  gpr_mu_lock(&c->mu);
   if (c->connecting_result.transport != NULL) {
-    publish_transport(exec_ctx, c);
+    publish_transport_locked(exec_ctx, c);
   } else if (c->disconnected) {
     GRPC_SUBCHANNEL_WEAK_UNREF(exec_ctx, c, "connecting");
   } else {
     gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
-    gpr_mu_lock(&c->mu);
     GPR_ASSERT(!c->have_alarm);
     c->have_alarm = 1;
     grpc_connectivity_state_set(exec_ctx, &c->state_tracker,
                                 GRPC_CHANNEL_TRANSIENT_FAILURE,
                                 "connect_failed");
     grpc_timer_init(exec_ctx, &c->alarm, c->next_attempt, on_alarm, c, now);
-    gpr_mu_unlock(&c->mu);
   }
+  gpr_mu_unlock(&c->mu);
+  GRPC_SUBCHANNEL_WEAK_UNREF(exec_ctx, c, "connecting");
 }
 
 static gpr_timespec compute_connect_deadline(grpc_subchannel *c) {
