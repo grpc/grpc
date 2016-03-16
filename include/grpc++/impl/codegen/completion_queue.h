@@ -204,6 +204,7 @@ class CompletionQueue : private GrpcLibraryCodegen {
   }
 
   /// Performs a single polling pluck on \a tag.
+  /// \warning Must not be mixed with calls to \a Next.
   void TryPluck(CompletionQueueTag* tag) {
     auto deadline = gpr_time_0(GPR_CLOCK_REALTIME);
     auto ev = g_core_codegen_interface->grpc_completion_queue_pluck(

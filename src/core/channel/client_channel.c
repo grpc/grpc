@@ -165,7 +165,6 @@ static void cc_on_config_changed(grpc_exec_ctx *exec_ctx, void *arg,
   channel_data *chand = arg;
   grpc_lb_policy *lb_policy = NULL;
   grpc_lb_policy *old_lb_policy;
-  grpc_resolver *old_resolver;
   grpc_connectivity_state state = GRPC_CHANNEL_TRANSIENT_FAILURE;
   int exit_idle = 0;
 
@@ -201,28 +200,25 @@ static void cc_on_config_changed(grpc_exec_ctx *exec_ctx, void *arg,
   }
 
   if (iomgr_success && chand->resolver) {
-    grpc_resolver *resolver = chand->resolver;
-    GRPC_RESOLVER_REF(resolver, "channel-next");
     grpc_connectivity_state_set(exec_ctx, &chand->state_tracker, state,
                                 "new_lb+resolver");
     if (lb_policy != NULL) {
       watch_lb_policy(exec_ctx, chand, lb_policy, state);
     }
-    gpr_mu_unlock(&chand->mu_config);
     GRPC_CHANNEL_STACK_REF(chand->owning_stack, "resolver");
-    grpc_resolver_next(exec_ctx, resolver, &chand->incoming_configuration,
+    grpc_resolver_next(exec_ctx, chand->resolver,
+                       &chand->incoming_configuration,
                        &chand->on_config_changed);
-    GRPC_RESOLVER_UNREF(exec_ctx, resolver, "channel-next");
+    gpr_mu_unlock(&chand->mu_config);
   } else {
-    old_resolver = chand->resolver;
-    chand->resolver = NULL;
+    if (chand->resolver != NULL) {
+      grpc_resolver_shutdown(exec_ctx, chand->resolver);
+      GRPC_RESOLVER_UNREF(exec_ctx, chand->resolver, "channel");
+      chand->resolver = NULL;
+    }
     grpc_connectivity_state_set(exec_ctx, &chand->state_tracker,
                                 GRPC_CHANNEL_FATAL_FAILURE, "resolver_gone");
     gpr_mu_unlock(&chand->mu_config);
-    if (old_resolver != NULL) {
-      grpc_resolver_shutdown(exec_ctx, old_resolver);
-      GRPC_RESOLVER_UNREF(exec_ctx, old_resolver, "channel");
-    }
   }
 
   if (exit_idle) {
@@ -247,7 +243,6 @@ static void cc_start_transport_op(grpc_exec_ctx *exec_ctx,
                                   grpc_channel_element *elem,
                                   grpc_transport_op *op) {
   channel_data *chand = elem->channel_data;
-  grpc_resolver *destroy_resolver = NULL;
 
   grpc_exec_ctx_enqueue(exec_ctx, op->on_consumed, true, NULL);
 
@@ -279,7 +274,8 @@ static void cc_start_transport_op(grpc_exec_ctx *exec_ctx,
   if (op->disconnect && chand->resolver != NULL) {
     grpc_connectivity_state_set(exec_ctx, &chand->state_tracker,
                                 GRPC_CHANNEL_FATAL_FAILURE, "disconnect");
-    destroy_resolver = chand->resolver;
+    grpc_resolver_shutdown(exec_ctx, chand->resolver);
+    GRPC_RESOLVER_UNREF(exec_ctx, chand->resolver, "channel");
     chand->resolver = NULL;
     if (chand->lb_policy != NULL) {
       grpc_pollset_set_del_pollset_set(exec_ctx,
@@ -290,11 +286,6 @@ static void cc_start_transport_op(grpc_exec_ctx *exec_ctx,
     }
   }
   gpr_mu_unlock(&chand->mu_config);
-
-  if (destroy_resolver) {
-    grpc_resolver_shutdown(exec_ctx, destroy_resolver);
-    GRPC_RESOLVER_UNREF(exec_ctx, destroy_resolver, "channel");
-  }
 }
 
 typedef struct {
