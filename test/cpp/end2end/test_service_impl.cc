@@ -62,14 +62,16 @@ void MaybeEchoDeadline(ServerContext* context, const EchoRequest* request,
   }
 }
 
-void CheckServerAuthContext(const ServerContext* context,
-                            const grpc::string& expected_client_identity) {
+void CheckServerAuthContext(
+    const ServerContext* context,
+    const grpc::string& expected_transport_security_type,
+    const grpc::string& expected_client_identity) {
   std::shared_ptr<const AuthContext> auth_ctx = context->auth_context();
-  std::vector<grpc::string_ref> ssl =
+  std::vector<grpc::string_ref> tst =
       auth_ctx->FindPropertyValues("transport_security_type");
-  EXPECT_EQ(1u, ssl.size());
-  EXPECT_EQ("ssl", ToString(ssl[0]));
-  if (expected_client_identity.length() == 0) {
+  EXPECT_EQ(1u, tst.size());
+  EXPECT_EQ(expected_transport_security_type, ToString(tst[0]));
+  if (expected_client_identity.empty()) {
     EXPECT_TRUE(auth_ctx->GetPeerIdentityPropertyName().empty());
     EXPECT_TRUE(auth_ctx->GetPeerIdentity().empty());
     EXPECT_FALSE(auth_ctx->IsPeerAuthenticated());
@@ -139,6 +141,7 @@ Status TestServiceImpl::Echo(ServerContext* context, const EchoRequest* request,
       (request->param().expected_client_identity().length() > 0 ||
        request->param().check_auth_context())) {
     CheckServerAuthContext(context,
+                           request->param().expected_transport_security_type(),
                            request->param().expected_client_identity());
   }
   if (request->has_param() && request->param().response_message_length() > 0) {
