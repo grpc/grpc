@@ -106,7 +106,6 @@ cdef class Server:
     self.is_shutting_down = True
     operation_tag = OperationTag(tag)
     operation_tag.shutting_down_server = self
-    operation_tag.references.extend([self, queue])
     cpython.Py_INCREF(operation_tag)
     grpc_server_shutdown_and_notify(
         self.c_server, queue.c_completion_queue,

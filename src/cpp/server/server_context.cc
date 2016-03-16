@@ -62,7 +62,11 @@ class ServerContext::CompletionOp GRPC_FINAL : public CallOpSetInterface {
   void FillOps(grpc_op* ops, size_t* nops) GRPC_OVERRIDE;
   bool FinalizeResult(void** tag, bool* status) GRPC_OVERRIDE;
 
-  bool CheckCancelled(CompletionQueue* cq);
+  bool CheckCancelled(CompletionQueue* cq) {
+    cq->TryPluck(this);
+    return CheckCancelledNoPluck();
+  }
+  bool CheckCancelledAsync() { return CheckCancelledNoPluck(); }
 
   void set_tag(void* tag) {
     has_tag_ = true;
@@ -72,6 +76,11 @@ class ServerContext::CompletionOp GRPC_FINAL : public CallOpSetInterface {
   void Unref();
 
  private:
+  bool CheckCancelledNoPluck() {
+    grpc::lock_guard<grpc::mutex> g(mu_);
+    return finalized_ ? (cancelled_ != 0) : false;
+  }
+
   bool has_tag_;
   void* tag_;
   grpc::mutex mu_;
@@ -86,12 +95,6 @@ void ServerContext::CompletionOp::Unref() {
     lock.unlock();
     delete this;
   }
-}
-
-bool ServerContext::CompletionOp::CheckCancelled(CompletionQueue* cq) {
-  cq->TryPluck(this);
-  grpc::lock_guard<grpc::mutex> g(mu_);
-  return finalized_ ? cancelled_ != 0 : false;
 }
 
 void ServerContext::CompletionOp::FillOps(grpc_op* ops, size_t* nops) {
@@ -182,7 +185,14 @@ void ServerContext::TryCancel() const {
 }
 
 bool ServerContext::IsCancelled() const {
-  return completion_op_ && completion_op_->CheckCancelled(cq_);
+  if (has_notify_when_done_tag_) {
+    // when using async API, but the result is only valid
+    // if the tag has already been delivered at the completion queue
+    return completion_op_ && completion_op_->CheckCancelledAsync();
+  } else {
+    // when using sync API
+    return completion_op_ && completion_op_->CheckCancelled(cq_);
+  }
 }
 
 void ServerContext::set_compression_level(grpc_compression_level level) {
