@@ -278,6 +278,11 @@ add_dependencies(grpc
 )
 target_link_libraries(grpc
 )
+add_library(grpc_codegen_lib
+  vsprojects/dummy.c
+)
+target_link_libraries(grpc_codegen_lib
+)
 add_library(grpc_unsecure
   src/core/surface/init_unsecure.c
   src/core/census/grpc_context.c
@@ -450,11 +455,10 @@ add_library(grpc++
   src/cpp/client/credentials.cc
   src/cpp/client/generic_stub.cc
   src/cpp/client/insecure_credentials.cc
-  src/cpp/common/call.cc
   src/cpp/common/channel_arguments.cc
   src/cpp/common/completion_queue.cc
+  src/cpp/common/core_codegen.cc
   src/cpp/common/rpc_method.cc
-  src/cpp/proto/proto_utils.cc
   src/cpp/server/async_generic_service.cc
   src/cpp/server/create_default_thread_pool.cc
   src/cpp/server/dynamic_thread_pool.cc
@@ -468,12 +472,17 @@ add_library(grpc++
   src/cpp/util/status.cc
   src/cpp/util/string_ref.cc
   src/cpp/util/time.cc
-  src/cpp/codegen/grpc_library.cc
+  src/cpp/codegen/codegen_init.cc
 )
 add_dependencies(grpc++
   grpc
 )
 target_link_libraries(grpc++
+)
+add_library(grpc++_codegen_lib
+  src/cpp/codegen/codegen_init.cc
+)
+target_link_libraries(grpc++_codegen_lib
 )
 add_library(grpc++_unsecure
   src/cpp/common/insecure_create_auth_context.cc
@@ -484,11 +493,10 @@ add_library(grpc++_unsecure
   src/cpp/client/credentials.cc
   src/cpp/client/generic_stub.cc
   src/cpp/client/insecure_credentials.cc
-  src/cpp/common/call.cc
   src/cpp/common/channel_arguments.cc
   src/cpp/common/completion_queue.cc
+  src/cpp/common/core_codegen.cc
   src/cpp/common/rpc_method.cc
-  src/cpp/proto/proto_utils.cc
   src/cpp/server/async_generic_service.cc
   src/cpp/server/create_default_thread_pool.cc
   src/cpp/server/dynamic_thread_pool.cc
@@ -502,7 +510,7 @@ add_library(grpc++_unsecure
   src/cpp/util/status.cc
   src/cpp/util/string_ref.cc
   src/cpp/util/time.cc
-  src/cpp/codegen/grpc_library.cc
+  src/cpp/codegen/codegen_init.cc
 )
 add_dependencies(grpc++_unsecure
   gpr
@@ -516,7 +524,9 @@ add_library(grpc_plugin_support
   src/compiler/objective_c_generator.cc
   src/compiler/python_generator.cc
   src/compiler/ruby_generator.cc
-  src/cpp/codegen/grpc_library.cc
+)
+add_dependencies(grpc_plugin_support
+  grpc++_codegen_lib
 )
 target_link_libraries(grpc_plugin_support
 )
