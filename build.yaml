@@ -175,6 +175,7 @@ filegroups:
   - include/grpc++/support/time.h
   headers:
   - src/cpp/client/create_channel_internal.h
+  - src/cpp/common/core_codegen.h
   - src/cpp/common/create_auth_context.h
   - src/cpp/server/dynamic_thread_pool.h
   - src/cpp/server/thread_pool_interface.h
@@ -186,11 +187,10 @@ filegroups:
   - src/cpp/client/credentials.cc
   - src/cpp/client/generic_stub.cc
   - src/cpp/client/insecure_credentials.cc
-  - src/cpp/common/call.cc
   - src/cpp/common/channel_arguments.cc
   - src/cpp/common/completion_queue.cc
+  - src/cpp/common/core_codegen.cc
   - src/cpp/common/rpc_method.cc
-  - src/cpp/proto/proto_utils.cc
   - src/cpp/server/async_generic_service.cc
   - src/cpp/server/create_default_thread_pool.cc
   - src/cpp/server/dynamic_thread_pool.cc
@@ -217,6 +217,7 @@ filegroups:
   - include/grpc++/impl/codegen/completion_queue_tag.h
   - include/grpc++/impl/codegen/config.h
   - include/grpc++/impl/codegen/config_protobuf.h
+  - include/grpc++/impl/codegen/core_codegen_interface.h
   - include/grpc++/impl/codegen/grpc_library.h
   - include/grpc++/impl/codegen/method_handler_impl.h
   - include/grpc++/impl/codegen/proto_utils.h
@@ -237,7 +238,7 @@ filegroups:
   - include/grpc++/impl/codegen/sync_stream.h
   - include/grpc++/impl/codegen/time.h
   src:
-  - src/cpp/codegen/grpc_library.cc
+  - src/cpp/codegen/codegen_init.cc
 - name: grpc_base
   public_headers:
   - include/grpc/byte_buffer.h
@@ -597,9 +598,9 @@ libs:
   deps_linkage: static
   dll: true
   filegroups:
-  - grpc_codegen
   - grpc_base
   - grpc_secure
+  - grpc_codegen
   - census
   - nanopb
   secure: true
@@ -607,6 +608,16 @@ libs:
   - grpc.dependencies.openssl
   - grpc.dependencies.zlib
   vs_project_guid: '{29D16885-7228-4C31-81ED-5F9187C7F2A9}'
+- name: grpc_codegen_lib
+  build: protoc
+  language: c
+  headers: []
+  src: []
+  filegroups:
+  - gpr_codegen
+  - grpc_codegen
+  secure: false
+  vs_project_guid: '{A828FD72-44CE-4EA5-8966-6E4624458D58}'
 - name: grpc_dll
   build: private
   language: c
@@ -721,6 +732,7 @@ libs:
   language: c++
   headers:
   - src/cpp/client/secure_credentials.h
+  - src/cpp/common/core_codegen.h
   - src/cpp/common/secure_auth_context.h
   - src/cpp/server/secure_server_credentials.h
   src:
@@ -739,6 +751,17 @@ libs:
   - grpc++_codegen
   secure: check
   vs_project_guid: '{C187A093-A0FE-489D-A40A-6E33DE0F9FEB}'
+- name: grpc++_codegen_lib
+  build: protoc
+  language: c++
+  headers: []
+  src: []
+  filegroups:
+  - gpr_codegen
+  - grpc_codegen
+  - grpc++_codegen
+  secure: false
+  vs_project_guid: '{AAC6AF12-94C8-4A3C-A1BF-DAA4738F4500}'
 - name: grpc++_test_config
   build: private
   language: c++
@@ -811,10 +834,9 @@ libs:
   - src/compiler/objective_c_generator.cc
   - src/compiler/python_generator.cc
   - src/compiler/ruby_generator.cc
-  deps: []
+  deps:
+  - grpc++_codegen_lib
   filegroups:
-  - grpc++_codegen
-  - grpc_codegen
   - gpr_codegen
   secure: false
   vs_project_guid: '{B6E81D84-2ACB-41B8-8781-493A944C7817}'
@@ -2110,6 +2132,20 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: codegen_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - src/proto/grpc/testing/control.proto
+  - src/proto/grpc/testing/messages.proto
+  - src/proto/grpc/testing/payloads.proto
+  - src/proto/grpc/testing/perf_db.proto
+  - src/proto/grpc/testing/services.proto
+  - src/proto/grpc/testing/stats.proto
+  - test/cpp/codegen/codegen_test.cc
+  deps:
+  - grpc++_codegen_lib
 - name: credentials_test
   gtest: true
   build: test
@@ -2755,6 +2791,36 @@ configs:
   dbg:
     CPPFLAGS: -O0
     DEFINES: _DEBUG DEBUG
+  easan:
+    CC: clang
+    CPPFLAGS: -O0 -fsanitize=address -fno-omit-frame-pointer -Wno-unused-command-line-argument
+      -DGPR_NO_DIRECT_SYSCALLS
+    CXX: clang++
+    DEFINES: _DEBUG DEBUG GRPC_EXECUTION_CONTEXT_SANITIZER
+    LD: clang
+    LDFLAGS: -fsanitize=address
+    LDXX: clang++
+    compile_the_world: true
+    test_environ:
+      ASAN_OPTIONS: detect_leaks=1:color=always
+      LSAN_OPTIONS: suppressions=tools/lsan_suppressions.txt:report_objects=1
+    timeout_multiplier: 3
+  edbg:
+    CPPFLAGS: -O0
+    DEFINES: _DEBUG DEBUG GRPC_EXECUTION_CONTEXT_SANITIZER
+  etsan:
+    CC: clang
+    CPPFLAGS: -O0 -fsanitize=thread -fno-omit-frame-pointer -Wno-unused-command-line-argument
+      -fPIE -pie -DGPR_NO_DIRECT_SYSCALLS
+    CXX: clang++
+    DEFINES: _DEBUG DEBUG GRPC_EXECUTION_CONTEXT_SANITIZER
+    LD: clang
+    LDFLAGS: -fsanitize=thread -fPIE -pie $(if $(JENKINS_BUILD),-Wl$(comma)-Ttext-segment=0x7e0000000000,)
+    LDXX: clang++
+    compile_the_world: true
+    test_environ:
+      TSAN_OPTIONS: suppressions=tools/tsan_suppressions.txt:halt_on_error=1:second_deadlock_stack=1
+    timeout_multiplier: 5
   gcov:
     CC: gcc
     CPPFLAGS: -O0 -fprofile-arcs -ftest-coverage -Wno-return-type
