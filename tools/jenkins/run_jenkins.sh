@@ -49,8 +49,6 @@ fi
 
 unset platform  # variable named 'platform' breaks the windows build
 
-echo "int main(){}" > a.cc; clang -fsanitize=thread a.cc && ./a.out
-
 python tools/run_tests/run_tests.py \
   $PLATFORM_SPECIFIC_ARGS           \
   -t                                \
