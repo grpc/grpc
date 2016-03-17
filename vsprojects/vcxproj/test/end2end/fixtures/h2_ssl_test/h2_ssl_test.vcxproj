@@ -165,9 +165,6 @@
     <ProjectReference Include="$(SolutionDir)\..\vsprojects\vcxproj\test/end2end/tests\end2end_tests\end2end_tests.vcxproj">
       <Project>{1F1F9084-2A93-B80E-364F-5754894AFAB4}</Project>
     </ProjectReference>
-    <ProjectReference Include="$(SolutionDir)\..\vsprojects\vcxproj\test/end2end\end2end_certs\end2end_certs.vcxproj">
-      <Project>{80EA2691-C037-6DD3-D3AB-21510BF0E64B}</Project>
-    </ProjectReference>
     <ProjectReference Include="$(SolutionDir)\..\vsprojects\vcxproj\.\grpc_test_util\grpc_test_util.vcxproj">
       <Project>{17BCAFC0-5FDC-4C94-AEB9-95F3E220614B}</Project>
     </ProjectReference>
