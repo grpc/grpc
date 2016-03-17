@@ -67,7 +67,7 @@ static int has_port_been_chosen(int port) {
   return 0;
 }
 
-static void free_chosen_ports() {
+static void free_chosen_ports(void) {
   char *env = gpr_getenv("GRPC_TEST_PORT_SERVER");
   if (env != NULL) {
     size_t i;
