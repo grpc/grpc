@@ -31,5 +31,6 @@
 
 set -ex
 
-make CONFIG=$config $1 Q=
+git submodule update --init
+make CONFIG=$config $1
 bins/$config/$1
