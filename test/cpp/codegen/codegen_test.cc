@@ -31,41 +31,19 @@
  *
  */
 
-#ifndef GRPCXX_IMPL_CODEGEN_GRPC_LIBRARY_H
-#define GRPCXX_IMPL_CODEGEN_GRPC_LIBRARY_H
-
-#include <grpc++/impl/codegen/core_codegen_interface.h>
-#include <grpc/impl/codegen/log.h>
+#include <gtest/gtest.h>
 
 namespace grpc {
+namespace {
 
-class GrpcLibraryInterface {
- public:
-  virtual void init() = 0;
-  virtual void shutdown() = 0;
-};
+class CodegenTest : public ::testing::Test {};
 
-/// Initialized by \a grpc::GrpcLibraryInitializer from
-/// <grpc++/impl/grpc_library.h>
-extern GrpcLibraryInterface* g_glip;
+TEST_F(CodegenTest, Build) {}
 
-/// Classes that require gRPC to be initialized should inherit from this class.
-class GrpcLibraryCodegen {
- public:
-  GrpcLibraryCodegen() {
-    GPR_CODEGEN_ASSERT(g_glip &&
-                       "gRPC library not initialized. See "
-                       "grpc::internal::GrpcLibraryInitializer.");
-    g_glip->init();
-  }
-  virtual ~GrpcLibraryCodegen() {
-    GPR_CODEGEN_ASSERT(g_glip &&
-                       "gRPC library not initialized. See "
-                       "grpc::internal::GrpcLibraryInitializer.");
-    g_glip->shutdown();
-  }
-};
-
+}  // namespace
 }  // namespace grpc
 
-#endif  // GRPCXX_IMPL_CODEGEN_GRPC_LIBRARY_H
+int main(int argc, char** argv) {
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
+}
