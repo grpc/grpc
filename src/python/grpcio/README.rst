@@ -35,13 +35,14 @@ package named :code:`python-dev`).
 
 ::
 
-  $ export REPO_ROOT=grpc
+  $ export REPO_ROOT=grpc  # REPO_ROOT can be any directory of your choice
   $ git clone https://github.com/grpc/grpc.git $REPO_ROOT
   $ cd $REPO_ROOT
-  $ pip install .
 
-Note that :code:`$REPO_ROOT` can be assigned to whatever directory name floats
-your fancy.
+  # For the next two commands do `sudo pip install` if you get permission-denied errors
+  $ pip install -rrequirements.txt
+  $ GRPC_PYTHON_BUILD_WITH_CYTHON=1 pip install .
+
 
 Troubleshooting
 ~~~~~~~~~~~~~~~
