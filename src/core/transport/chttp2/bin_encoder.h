@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -50,7 +50,5 @@ gpr_slice grpc_chttp2_huffman_compress(gpr_slice input);
    gpr_slice_unref(x);
    return y; */
 gpr_slice grpc_chttp2_base64_encode_and_huffman_compress(gpr_slice input);
-
-int grpc_is_binary_header(const char *key, size_t length);
 
 #endif /* GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_BIN_ENCODER_H */

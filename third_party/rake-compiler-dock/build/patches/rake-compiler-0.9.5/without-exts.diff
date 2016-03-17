@@ -1,0 +1,14 @@
+diff --git a/tasks/bin/cross-ruby.rake b/tasks/bin/cross-ruby.rake
+index 6acc816..6aa2a49 100644
+--- a/tasks/bin/cross-ruby.rake
++++ b/tasks/bin/cross-ruby.rake
+@@ -135,8 +135,7 @@ file "#{USER_HOME}/builds/#{MINGW_HOST}/#{RUBY_CC_VERSION}/Makefile" => ["#{USER
+     "--build=#{RUBY_BUILD}",
+     '--enable-shared',
+     '--disable-install-doc',
+-    '--without-tk',
+-    '--without-tcl'
++    '--with-ext='
+   ]
+
+   # Force Winsock2 for Ruby 1.8, 1.9 defaults to it

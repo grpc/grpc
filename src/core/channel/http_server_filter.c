@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -131,7 +131,7 @@ static grpc_mdelem *server_filter(void *user_data, grpc_mdelem *md) {
   }
 }
 
-static void hs_on_recv(grpc_exec_ctx *exec_ctx, void *user_data, int success) {
+static void hs_on_recv(grpc_exec_ctx *exec_ctx, void *user_data, bool success) {
   grpc_call_element *elem = user_data;
   call_data *calld = elem->call_data;
   if (success) {
@@ -186,8 +186,8 @@ static void hs_mutate_op(grpc_call_element *elem,
   if (op->recv_initial_metadata) {
     /* substitute our callback for the higher callback */
     calld->recv_initial_metadata = op->recv_initial_metadata;
-    calld->on_done_recv = op->on_complete;
-    op->on_complete = &calld->hs_on_recv;
+    calld->on_done_recv = op->recv_initial_metadata_ready;
+    op->recv_initial_metadata_ready = &calld->hs_on_recv;
   }
 }
 

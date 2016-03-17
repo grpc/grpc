@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -55,7 +55,13 @@ class ByteBuffer GRPC_FINAL {
   /// Construct buffer from \a slices, of which there are \a nslices.
   ByteBuffer(const Slice* slices, size_t nslices);
 
+  /// Constuct a byte buffer by referencing elements of existing buffer
+  /// \a buf. Wrapper of core function grpc_byte_buffer_copy
+  ByteBuffer(const ByteBuffer& buf);
+
   ~ByteBuffer();
+
+  ByteBuffer& operator=(const ByteBuffer&);
 
   /// Dump (read) the buffer contents into \a slices.
   void Dump(std::vector<Slice>* slices) const;
@@ -68,9 +74,6 @@ class ByteBuffer GRPC_FINAL {
 
  private:
   friend class SerializationTraits<ByteBuffer, void>;
-
-  ByteBuffer(const ByteBuffer&);
-  ByteBuffer& operator=(const ByteBuffer&);
 
   // takes ownership
   void set_buffer(grpc_byte_buffer* buf) {

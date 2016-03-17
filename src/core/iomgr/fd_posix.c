@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -45,6 +45,8 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/useful.h>
+
+#include "src/core/iomgr/pollset_posix.h"
 
 #define CLOSURE_NOT_READY ((grpc_closure *)0)
 #define CLOSURE_READY ((grpc_closure *)1)
@@ -175,11 +177,11 @@ int grpc_fd_is_orphaned(grpc_fd *fd) {
 }
 
 static void pollset_kick_locked(grpc_fd_watcher *watcher) {
-  gpr_mu_lock(GRPC_POLLSET_MU(watcher->pollset));
+  gpr_mu_lock(&watcher->pollset->mu);
   GPR_ASSERT(watcher->worker);
   grpc_pollset_kick_ext(watcher->pollset, watcher->worker,
                         GRPC_POLLSET_REEVALUATE_POLLING_ON_WAKEUP);
-  gpr_mu_unlock(GRPC_POLLSET_MU(watcher->pollset));
+  gpr_mu_unlock(&watcher->pollset->mu);
 }
 
 static void maybe_wake_one_watcher_locked(grpc_fd *fd) {
@@ -218,7 +220,7 @@ static void close_fd_locked(grpc_exec_ctx *exec_ctx, grpc_fd *fd) {
   } else {
     grpc_remove_fd_from_all_epoll_sets(fd->fd);
   }
-  grpc_exec_ctx_enqueue(exec_ctx, fd->on_done_closure, 1);
+  grpc_exec_ctx_enqueue(exec_ctx, fd->on_done_closure, true, NULL);
 }
 
 int grpc_fd_wrapped_fd(grpc_fd *fd) {
@@ -273,7 +275,7 @@ static void notify_on_locked(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
   } else if (*st == CLOSURE_READY) {
     /* already ready ==> queue the closure to run immediately */
     *st = CLOSURE_NOT_READY;
-    grpc_exec_ctx_enqueue(exec_ctx, closure, !fd->shutdown);
+    grpc_exec_ctx_enqueue(exec_ctx, closure, !fd->shutdown, NULL);
     maybe_wake_one_watcher_locked(fd);
   } else {
     /* upcallptr was set to a different closure.  This is an error! */
@@ -296,7 +298,7 @@ static int set_ready_locked(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
     return 0;
   } else {
     /* waiting ==> queue closure */
-    grpc_exec_ctx_enqueue(exec_ctx, *st, !fd->shutdown);
+    grpc_exec_ctx_enqueue(exec_ctx, *st, !fd->shutdown, NULL);
     *st = CLOSURE_NOT_READY;
     return 1;
   }

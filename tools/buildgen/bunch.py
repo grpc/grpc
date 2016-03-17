@@ -1,4 +1,4 @@
-# Copyright 2015, Google Inc.
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -64,4 +64,5 @@ def merge_json(dst, add):
   elif isinstance(dst, list) and isinstance(add, list):
     dst.extend(add)
   else:
-    raise Exception('Tried to merge incompatible objects %r, %r' % (dst, add))
+    raise Exception('Tried to merge incompatible objects %s %s\n\n%r\n\n%r' % (type(dst).__name__, type(add).__name__, dst, add))
+

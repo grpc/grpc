@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -37,9 +37,12 @@
 
 #ifdef GPR_WIN32
 
+#include <grpc/support/log.h>
 #include <grpc/support/time.h>
 #include <src/core/support/time_precise.h>
 #include <sys/timeb.h>
+#include <process.h>
+#include <limits.h>
 
 #include "src/core/support/block_annotate.h"
 
@@ -50,11 +53,12 @@ void gpr_time_init(void) {
   LARGE_INTEGER frequency;
   QueryPerformanceFrequency(&frequency);
   QueryPerformanceCounter(&g_start_time);
-  g_time_scale = 1.0 / frequency.QuadPart;
+  g_time_scale = 1.0 / (double)frequency.QuadPart;
 }
 
 gpr_timespec gpr_now(gpr_clock_type clock) {
   gpr_timespec now_tv;
+  LONGLONG diff;
   struct _timeb now_tb;
   LARGE_INTEGER timestamp;
   double now_dbl;
@@ -68,9 +72,13 @@ gpr_timespec gpr_now(gpr_clock_type clock) {
     case GPR_CLOCK_MONOTONIC:
     case GPR_CLOCK_PRECISE:
       QueryPerformanceCounter(&timestamp);
-      now_dbl = (timestamp.QuadPart - g_start_time.QuadPart) * g_time_scale;
+      diff = timestamp.QuadPart - g_start_time.QuadPart;
+      now_dbl = (double)diff * g_time_scale;
       now_tv.tv_sec = (int64_t)now_dbl;
       now_tv.tv_nsec = (int32_t)((now_dbl - (double)now_tv.tv_sec) * 1e9);
+      break;
+    case GPR_TIMESPAN:
+      abort();
       break;
   }
   return now_tv;
@@ -79,7 +87,7 @@ gpr_timespec gpr_now(gpr_clock_type clock) {
 void gpr_sleep_until(gpr_timespec until) {
   gpr_timespec now;
   gpr_timespec delta;
-  DWORD sleep_millis;
+  int64_t sleep_millis;
 
   for (;;) {
     /* We could simplify by using clock_nanosleep instead, but it might be
@@ -91,9 +99,10 @@ void gpr_sleep_until(gpr_timespec until) {
 
     delta = gpr_time_sub(until, now);
     sleep_millis =
-        (DWORD)delta.tv_sec * GPR_MS_PER_SEC + delta.tv_nsec / GPR_NS_PER_MS;
+        delta.tv_sec * GPR_MS_PER_SEC + delta.tv_nsec / GPR_NS_PER_MS;
+    GPR_ASSERT((sleep_millis >= 0) && (sleep_millis <= INT_MAX));
     GRPC_SCHEDULING_START_BLOCKING_REGION;
-    Sleep(sleep_millis);
+    Sleep((DWORD)sleep_millis);
     GRPC_SCHEDULING_END_BLOCKING_REGION;
   }
 }

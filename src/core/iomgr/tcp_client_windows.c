@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -74,7 +74,7 @@ static void async_connect_unlock_and_cleanup(async_connect *ac) {
   }
 }
 
-static void on_alarm(grpc_exec_ctx *exec_ctx, void *acp, int occured) {
+static void on_alarm(grpc_exec_ctx *exec_ctx, void *acp, bool occured) {
   async_connect *ac = acp;
   gpr_mu_lock(&ac->mu);
   /* If the alarm didn't occur, it got cancelled. */
@@ -84,7 +84,7 @@ static void on_alarm(grpc_exec_ctx *exec_ctx, void *acp, int occured) {
   async_connect_unlock_and_cleanup(ac);
 }
 
-static void on_connect(grpc_exec_ctx *exec_ctx, void *acp, int from_iocp) {
+static void on_connect(grpc_exec_ctx *exec_ctx, void *acp, bool from_iocp) {
   async_connect *ac = acp;
   SOCKET sock = ac->socket->socket;
   grpc_endpoint **ep = ac->endpoint;
@@ -215,7 +215,7 @@ failure:
   } else if (sock != INVALID_SOCKET) {
     closesocket(sock);
   }
-  grpc_exec_ctx_enqueue(exec_ctx, on_done, 0);
+  grpc_exec_ctx_enqueue(exec_ctx, on_done, false, NULL);
 }
 
 #endif /* GPR_WINSOCK_SOCKET */

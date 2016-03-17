@@ -151,12 +151,13 @@
     <ClInclude Include="$(SolutionDir)\..\test\cpp\qps\driver.h" />
     <ClInclude Include="$(SolutionDir)\..\test\cpp\qps\histogram.h" />
     <ClInclude Include="$(SolutionDir)\..\test\cpp\qps\interarrival.h" />
+    <ClInclude Include="$(SolutionDir)\..\test\cpp\qps\limit_cores.h" />
     <ClInclude Include="$(SolutionDir)\..\test\cpp\qps\perf_db_client.h" />
     <ClInclude Include="$(SolutionDir)\..\test\cpp\qps\qps_worker.h" />
     <ClInclude Include="$(SolutionDir)\..\test\cpp\qps\report.h" />
     <ClInclude Include="$(SolutionDir)\..\test\cpp\qps\server.h" />
     <ClInclude Include="$(SolutionDir)\..\test\cpp\qps\stats.h" />
-    <ClInclude Include="$(SolutionDir)\..\test\cpp\qps\timer.h" />
+    <ClInclude Include="$(SolutionDir)\..\test\cpp\qps\usage_timer.h" />
     <ClInclude Include="$(SolutionDir)\..\test\cpp\util\benchmark_config.h" />
   </ItemGroup>
   <ItemGroup>
@@ -168,14 +169,6 @@
     </ClCompile>
     <ClInclude Include="$(SolutionDir)\..\src\proto\grpc\testing\messages.grpc.pb.h">
     </ClInclude>
-    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\control.pb.cc">
-    </ClCompile>
-    <ClInclude Include="$(SolutionDir)\..\src\proto\grpc\testing\control.pb.h">
-    </ClInclude>
-    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\control.grpc.pb.cc">
-    </ClCompile>
-    <ClInclude Include="$(SolutionDir)\..\src\proto\grpc\testing\control.grpc.pb.h">
-    </ClInclude>
     <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\payloads.pb.cc">
     </ClCompile>
     <ClInclude Include="$(SolutionDir)\..\src\proto\grpc\testing\payloads.pb.h">
@@ -184,14 +177,6 @@
     </ClCompile>
     <ClInclude Include="$(SolutionDir)\..\src\proto\grpc\testing\payloads.grpc.pb.h">
     </ClInclude>
-    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\services.pb.cc">
-    </ClCompile>
-    <ClInclude Include="$(SolutionDir)\..\src\proto\grpc\testing\services.pb.h">
-    </ClInclude>
-    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\services.grpc.pb.cc">
-    </ClCompile>
-    <ClInclude Include="$(SolutionDir)\..\src\proto\grpc\testing\services.grpc.pb.h">
-    </ClInclude>
     <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\stats.pb.cc">
     </ClCompile>
     <ClInclude Include="$(SolutionDir)\..\src\proto\grpc\testing\stats.pb.h">
@@ -199,6 +184,22 @@
     <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\stats.grpc.pb.cc">
     </ClCompile>
     <ClInclude Include="$(SolutionDir)\..\src\proto\grpc\testing\stats.grpc.pb.h">
+    </ClInclude>
+    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\control.pb.cc">
+    </ClCompile>
+    <ClInclude Include="$(SolutionDir)\..\src\proto\grpc\testing\control.pb.h">
+    </ClInclude>
+    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\control.grpc.pb.cc">
+    </ClCompile>
+    <ClInclude Include="$(SolutionDir)\..\src\proto\grpc\testing\control.grpc.pb.h">
+    </ClInclude>
+    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\services.pb.cc">
+    </ClCompile>
+    <ClInclude Include="$(SolutionDir)\..\src\proto\grpc\testing\services.pb.h">
+    </ClInclude>
+    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\services.grpc.pb.cc">
+    </ClCompile>
+    <ClInclude Include="$(SolutionDir)\..\src\proto\grpc\testing\services.grpc.pb.h">
     </ClInclude>
     <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\perf_db.pb.cc">
     </ClCompile>
@@ -214,6 +215,8 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\cpp\qps\driver.cc">
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\cpp\qps\limit_cores.cc">
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\cpp\qps\perf_db_client.cc">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\cpp\qps\qps_worker.cc">
@@ -224,7 +227,7 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\cpp\qps\server_sync.cc">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\test\cpp\qps\timer.cc">
+    <ClCompile Include="$(SolutionDir)\..\test\cpp\qps\usage_timer.cc">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\cpp\util\benchmark_config.cc">
     </ClCompile>

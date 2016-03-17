@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -45,7 +45,7 @@ void grpc_executor_init();
 
 /** Enqueue \a closure for its eventual execution of \a f(arg) on a separate
  * thread */
-void grpc_executor_enqueue(grpc_closure *closure, int success);
+void grpc_executor_enqueue(grpc_closure *closure, bool success);
 
 /** Shutdown the executor, running all pending work as part of the call */
 void grpc_executor_shutdown();

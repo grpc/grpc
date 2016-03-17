@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,12 +33,11 @@
 
 #include "src/core/iomgr/timer.h"
 
-#include "src/core/iomgr/timer_heap.h"
-#include "src/core/iomgr/timer_internal.h"
-#include "src/core/iomgr/time_averaged_stats.h"
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/useful.h>
+#include "src/core/iomgr/time_averaged_stats.h"
+#include "src/core/iomgr/timer_heap.h"
 
 #define INVALID_HEAP_INDEX 0xffffffffu
 
@@ -224,7 +223,7 @@ void grpc_timer_cancel(grpc_exec_ctx *exec_ctx, grpc_timer *timer) {
   shard_type *shard = &g_shards[shard_idx(timer)];
   gpr_mu_lock(&shard->mu);
   if (!timer->triggered) {
-    grpc_exec_ctx_enqueue(exec_ctx, &timer->closure, 0);
+    grpc_exec_ctx_enqueue(exec_ctx, &timer->closure, false, NULL);
     timer->triggered = 1;
     if (timer->heap_index == INVALID_HEAP_INDEX) {
       list_remove(timer);
@@ -290,7 +289,7 @@ static size_t pop_timers(grpc_exec_ctx *exec_ctx, shard_type *shard,
   grpc_timer *timer;
   gpr_mu_lock(&shard->mu);
   while ((timer = pop_one(shard, now))) {
-    grpc_exec_ctx_enqueue(exec_ctx, &timer->closure, success);
+    grpc_exec_ctx_enqueue(exec_ctx, &timer->closure, success, NULL);
     n++;
   }
   *new_min_deadline = compute_min_deadline(shard);
@@ -331,13 +330,25 @@ static int run_some_expired_timers(grpc_exec_ctx *exec_ctx, gpr_timespec now,
 
     gpr_mu_unlock(&g_mu);
     gpr_mu_unlock(&g_checker_mu);
+  } else if (next != NULL) {
+    /* TODO(ctiller): this forces calling code to do an short poll, and
+       then retry the timer check (because this time through the timer list was
+       contended).
+
+       We could reduce the cost here dramatically by keeping a count of how many
+       currently active pollers got through the uncontended case above
+       successfully, and waking up other pollers IFF that count drops to zero.
+
+       Once that count is in place, this entire else branch could disappear. */
+    *next = gpr_time_min(
+        *next, gpr_time_add(now, gpr_time_from_millis(1, GPR_TIMESPAN)));
   }
 
   return (int)n;
 }
 
-int grpc_timer_check(grpc_exec_ctx *exec_ctx, gpr_timespec now,
-                     gpr_timespec *next) {
+bool grpc_timer_check(grpc_exec_ctx *exec_ctx, gpr_timespec now,
+                      gpr_timespec *next) {
   GPR_ASSERT(now.clock_type == g_clock_type);
   return run_some_expired_timers(
       exec_ctx, now, next,

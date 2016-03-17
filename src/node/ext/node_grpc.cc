@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -44,6 +44,7 @@
 #include "completion_queue_async_worker.h"
 #include "server_credentials.h"
 
+using v8::FunctionTemplate;
 using v8::Local;
 using v8::Value;
 using v8::Object;
@@ -111,8 +112,8 @@ void InitCallErrorConstants(Local<Object> exports) {
   Nan::Set(exports, Nan::New("callError").ToLocalChecked(), call_error);
   Local<Value> OK(Nan::New<Uint32, uint32_t>(GRPC_CALL_OK));
   Nan::Set(call_error, Nan::New("OK").ToLocalChecked(), OK);
-  Local<Value> ERROR(Nan::New<Uint32, uint32_t>(GRPC_CALL_ERROR));
-  Nan::Set(call_error, Nan::New("ERROR").ToLocalChecked(), ERROR);
+  Local<Value> CALL_ERROR(Nan::New<Uint32, uint32_t>(GRPC_CALL_ERROR));
+  Nan::Set(call_error, Nan::New("ERROR").ToLocalChecked(), CALL_ERROR);
   Local<Value> NOT_ON_SERVER(
       Nan::New<Uint32, uint32_t>(GRPC_CALL_ERROR_NOT_ON_SERVER));
   Nan::Set(call_error, Nan::New("NOT_ON_SERVER").ToLocalChecked(),
@@ -230,6 +231,43 @@ void InitWriteFlags(Local<Object> exports) {
   Nan::Set(write_flags, Nan::New("NO_COMPRESS").ToLocalChecked(), NO_COMPRESS);
 }
 
+NAN_METHOD(MetadataKeyIsLegal) {
+  if (!info[0]->IsString()) {
+    return Nan::ThrowTypeError(
+        "headerKeyIsLegal's argument must be a string");
+  }
+  Local<String> key = Nan::To<String>(info[0]).ToLocalChecked();
+  Nan::Utf8String key_utf8_str(key);
+  char *key_str = *key_utf8_str;
+  info.GetReturnValue().Set(static_cast<bool>(
+      grpc_header_key_is_legal(key_str, static_cast<size_t>(key->Length()))));
+}
+
+NAN_METHOD(MetadataNonbinValueIsLegal) {
+  if (!info[0]->IsString()) {
+    return Nan::ThrowTypeError(
+        "metadataNonbinValueIsLegal's argument must be a string");
+  }
+  Local<String> value = Nan::To<String>(info[0]).ToLocalChecked();
+  Nan::Utf8String value_utf8_str(value);
+  char *value_str = *value_utf8_str;
+  info.GetReturnValue().Set(static_cast<bool>(
+      grpc_header_nonbin_value_is_legal(
+          value_str, static_cast<size_t>(value->Length()))));
+}
+
+NAN_METHOD(MetadataKeyIsBinary) {
+  if (!info[0]->IsString()) {
+    return Nan::ThrowTypeError(
+        "metadataKeyIsLegal's argument must be a string");
+  }
+  Local<String> key = Nan::To<String>(info[0]).ToLocalChecked();
+  Nan::Utf8String key_utf8_str(key);
+  char *key_str = *key_utf8_str;
+  info.GetReturnValue().Set(static_cast<bool>(
+      grpc_is_binary_header(key_str, static_cast<size_t>(key->Length()))));
+}
+
 void init(Local<Object> exports) {
   Nan::HandleScope scope;
   grpc_init();
@@ -247,6 +285,19 @@ void init(Local<Object> exports) {
   grpc::node::Server::Init(exports);
   grpc::node::CompletionQueueAsyncWorker::Init(exports);
   grpc::node::ServerCredentials::Init(exports);
+
+  // Attach a few utility functions directly to the module
+  Nan::Set(exports, Nan::New("metadataKeyIsLegal").ToLocalChecked(),
+           Nan::GetFunction(
+               Nan::New<FunctionTemplate>(MetadataKeyIsLegal)).ToLocalChecked());
+  Nan::Set(exports, Nan::New("metadataNonbinValueIsLegal").ToLocalChecked(),
+           Nan::GetFunction(
+               Nan::New<FunctionTemplate>(MetadataNonbinValueIsLegal)
+                            ).ToLocalChecked());
+  Nan::Set(exports, Nan::New("metadataKeyIsBinary").ToLocalChecked(),
+           Nan::GetFunction(
+               Nan::New<FunctionTemplate>(MetadataKeyIsBinary)
+                            ).ToLocalChecked());
 }
 
 NODE_MODULE(grpc_node, init)

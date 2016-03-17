@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -47,7 +47,8 @@ typedef ClientAsyncReaderWriter<ByteBuffer, ByteBuffer>
 // by name.
 class GenericStub GRPC_FINAL {
  public:
-  explicit GenericStub(std::shared_ptr<Channel> channel) : channel_(channel) {}
+  explicit GenericStub(std::shared_ptr<ChannelInterface> channel)
+      : channel_(channel) {}
 
   // begin a call to a named method
   std::unique_ptr<GenericClientAsyncReaderWriter> Call(
@@ -55,7 +56,7 @@ class GenericStub GRPC_FINAL {
       void* tag);
 
  private:
-  std::shared_ptr<Channel> channel_;
+  std::shared_ptr<ChannelInterface> channel_;
 };
 
 }  // namespace grpc

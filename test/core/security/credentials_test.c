@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,25 +32,24 @@
  */
 
 #include <grpc/support/port_platform.h>
+
 #include "src/core/security/credentials.h"
 
+#include <openssl/rsa.h>
 #include <stdlib.h>
 #include <string.h>
-
-#include "src/core/httpcli/httpcli.h"
-#include "src/core/security/json_token.h"
-#include "src/core/support/env.h"
-#include "src/core/support/file.h"
-#include "src/core/support/string.h"
-
-#include "test/core/util/test_config.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 
-#include <openssl/rsa.h>
+#include "src/core/httpcli/httpcli.h"
+#include "src/core/security/json_token.h"
+#include "src/core/support/env.h"
+#include "src/core/support/tmpfile.h"
+#include "src/core/support/string.h"
+#include "test/core/util/test_config.h"
 
 /* -- Mock channel credentials. -- */
 
@@ -734,7 +733,7 @@ static void validate_jwt_encode_and_sign_params(
                     "777-abaslkan11hlb6nmim3bpspl31ud@developer."
                     "gserviceaccount.com") == 0);
   if (scope != NULL) GPR_ASSERT(strcmp(scope, test_scope) == 0);
-  GPR_ASSERT(!gpr_time_cmp(token_lifetime, grpc_max_auth_token_lifetime));
+  GPR_ASSERT(!gpr_time_cmp(token_lifetime, grpc_max_auth_token_lifetime()));
 }
 
 static char *encode_and_sign_jwt_success(const grpc_auth_json_key *json_key,
@@ -794,7 +793,7 @@ static void test_jwt_creds_success(void) {
                                             NULL};
   grpc_call_credentials *jwt_creds =
       grpc_service_account_jwt_access_credentials_create(
-          json_key_string, grpc_max_auth_token_lifetime, NULL);
+          json_key_string, grpc_max_auth_token_lifetime(), NULL);
 
   /* First request: jwt_encode_and_sign should be called. */
   grpc_jwt_encode_and_sign_set_override(encode_and_sign_jwt_success);
@@ -832,7 +831,7 @@ static void test_jwt_creds_signing_failure(void) {
                                             NULL};
   grpc_call_credentials *jwt_creds =
       grpc_service_account_jwt_access_credentials_create(
-          json_key_string, grpc_max_auth_token_lifetime, NULL);
+          json_key_string, grpc_max_auth_token_lifetime(), NULL);
 
   grpc_jwt_encode_and_sign_set_override(encode_and_sign_jwt_failure);
   grpc_call_credentials_get_request_metadata(

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -48,20 +48,21 @@ DEFINE_int32(warmup_seconds, 5, "Warmup time (in seconds)");
 DEFINE_int32(benchmark_seconds, 30, "Benchmark time (in seconds)");
 DEFINE_int32(local_workers, 0, "Number of local workers to start");
 
-// Common config
-DEFINE_string(rpc_type, "UNARY", "Type of RPC: UNARY or STREAMING");
-
 // Server config
 DEFINE_int32(async_server_threads, 1, "Number of threads for async servers");
 DEFINE_string(server_type, "SYNC_SERVER", "Server type");
+DEFINE_int32(server_core_limit, -1, "Limit on server cores to use");
 
 // Client config
+DEFINE_string(rpc_type, "UNARY", "Type of RPC: UNARY or STREAMING");
 DEFINE_int32(outstanding_rpcs_per_channel, 1,
              "Number of outstanding rpcs per channel");
 DEFINE_int32(client_channels, 1, "Number of client channels");
 
 DEFINE_int32(simple_req_size, -1, "Simple proto request payload size");
 DEFINE_int32(simple_resp_size, -1, "Simple proto response payload size");
+DEFINE_int32(bbuf_req_size, -1, "Byte-buffer request payload size");
+DEFINE_int32(bbuf_resp_size, -1, "Byte-buffer response payload size");
 
 DEFINE_string(client_type, "SYNC_CLIENT", "Client type");
 DEFINE_int32(async_client_threads, 1, "Async client threads");
@@ -73,7 +74,11 @@ DEFINE_double(determ_load, -1.0, "Deterministic offered load (qps)");
 DEFINE_double(pareto_base, -1.0, "Pareto base interarrival time (us)");
 DEFINE_double(pareto_alpha, -1.0, "Pareto alpha value");
 
+DEFINE_int32(client_core_limit, -1, "Limit on client cores to use");
+
 DEFINE_bool(secure_test, false, "Run a secure test");
+
+DEFINE_bool(quit, false, "Quit the workers");
 
 using grpc::testing::ClientConfig;
 using grpc::testing::ServerConfig;
@@ -87,6 +92,11 @@ namespace grpc {
 namespace testing {
 
 static void QpsDriver() {
+  if (FLAGS_quit) {
+    RunQuit();
+    return;
+  }
+
   RpcType rpc_type;
   GPR_ASSERT(RpcType_Parse(FLAGS_rpc_type, &rpc_type));
 
@@ -108,6 +118,13 @@ static void QpsDriver() {
     params->set_resp_size(FLAGS_simple_resp_size);
     if (FLAGS_simple_req_size >= 0) {
       params->set_req_size(FLAGS_simple_req_size);
+    }
+  } else if (FLAGS_bbuf_resp_size >= 0) {
+    auto params =
+        client_config.mutable_payload_config()->mutable_bytebuf_params();
+    params->set_resp_size(FLAGS_bbuf_resp_size);
+    if (FLAGS_bbuf_req_size >= 0) {
+      params->set_req_size(FLAGS_bbuf_req_size);
     }
   } else {
     // set a reasonable default: proto but no payload
@@ -142,10 +159,17 @@ static void QpsDriver() {
   client_config.mutable_histogram_params()->set_max_possible(
       Histogram::default_max_possible());
 
+  if (FLAGS_client_core_limit > 0) {
+    client_config.set_core_limit(FLAGS_client_core_limit);
+  }
+
   ServerConfig server_config;
   server_config.set_server_type(server_type);
-  server_config.set_host("localhost");
   server_config.set_async_server_threads(FLAGS_async_server_threads);
+
+  if (FLAGS_server_core_limit > 0) {
+    server_config.set_core_limit(FLAGS_server_core_limit);
+  }
 
   if (FLAGS_secure_test) {
     // Set up security params
@@ -155,6 +179,13 @@ static void QpsDriver() {
     client_config.mutable_security_params()->CopyFrom(security);
     server_config.mutable_security_params()->CopyFrom(security);
   }
+
+  // Make sure that if we are performing a generic (bytebuf) test
+  // that we are also using async streaming
+  GPR_ASSERT(!client_config.payload_config().has_bytebuf_params() ||
+             (client_config.client_type() == ASYNC_CLIENT &&
+              client_config.rpc_type() == STREAMING &&
+              server_config.server_type() == ASYNC_GENERIC_SERVER));
 
   const auto result = RunScenario(
       client_config, FLAGS_num_clients, server_config, FLAGS_num_servers,

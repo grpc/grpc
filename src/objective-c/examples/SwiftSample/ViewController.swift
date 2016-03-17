@@ -38,7 +38,7 @@ class ViewController: UIViewController {
   override func viewDidLoad() {
     super.viewDidLoad()
 
-    let RemoteHost = "grpc-test.sandbox.google.com"
+    let RemoteHost = "grpc-test.sandbox.googleapis.com"
 
     let request = RMTSimpleRequest()
     request.responseSize = 10

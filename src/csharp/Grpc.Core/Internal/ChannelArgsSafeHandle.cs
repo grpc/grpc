@@ -1,5 +1,5 @@
 #region Copyright notice and license
-// Copyright 2015, Google Inc.
+// Copyright 2015-2016, Google Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -39,17 +39,7 @@ namespace Grpc.Core.Internal
     /// </summary>
     internal class ChannelArgsSafeHandle : SafeHandleZeroIsInvalid
     {
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern ChannelArgsSafeHandle grpcsharp_channel_args_create(UIntPtr numArgs);
-
-        [DllImport("grpc_csharp_ext.dll", CharSet = CharSet.Ansi)]
-        static extern void grpcsharp_channel_args_set_string(ChannelArgsSafeHandle args, UIntPtr index, string key, string value);
-
-        [DllImport("grpc_csharp_ext.dll", CharSet = CharSet.Ansi)]
-        static extern void grpcsharp_channel_args_set_integer(ChannelArgsSafeHandle args, UIntPtr index, string key, int value);
-
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern void grpcsharp_channel_args_destroy(IntPtr args);
+        static readonly NativeMethods Native = NativeMethods.Get();
 
         private ChannelArgsSafeHandle()
         {
@@ -62,22 +52,22 @@ namespace Grpc.Core.Internal
 
         public static ChannelArgsSafeHandle Create(int size)
         {
-            return grpcsharp_channel_args_create(new UIntPtr((uint)size));
+            return Native.grpcsharp_channel_args_create(new UIntPtr((uint)size));
         }
 
         public void SetString(int index, string key, string value)
         {
-            grpcsharp_channel_args_set_string(this, new UIntPtr((uint)index), key, value);
+            Native.grpcsharp_channel_args_set_string(this, new UIntPtr((uint)index), key, value);
         }
 
         public void SetInteger(int index, string key, int value)
         {
-            grpcsharp_channel_args_set_integer(this, new UIntPtr((uint)index), key, value);
+            Native.grpcsharp_channel_args_set_integer(this, new UIntPtr((uint)index), key, value);
         }
 
         protected override bool ReleaseHandle()
         {
-            grpcsharp_channel_args_destroy(handle);
+            Native.grpcsharp_channel_args_destroy(handle);
             return true;
         }
     }

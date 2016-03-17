@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,9 +31,9 @@
  *
  */
 
-var PROTO_PATH = __dirname + '/helloworld.proto';
+var PROTO_PATH = __dirname + '/../protos/helloworld.proto';
 
-var grpc = require('../../');
+var grpc = require('grpc');
 var hello_proto = grpc.load(PROTO_PATH).helloworld;
 
 /**

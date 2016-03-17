@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -36,7 +36,7 @@
 #include <string.h>
 
 #include "src/core/httpcli/httpcli.h"
-#include "src/core/security/base64.h"
+#include "src/core/security/b64.h"
 #include "src/core/security/json_token.h"
 #include "test/core/util/test_config.h"
 

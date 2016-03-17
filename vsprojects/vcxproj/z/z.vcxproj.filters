@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\third_party\zlib\adler32.c">
+      <Filter>third_party\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\third_party\zlib\compress.c">
+      <Filter>third_party\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\third_party\zlib\crc32.c">
+      <Filter>third_party\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\third_party\zlib\deflate.c">
+      <Filter>third_party\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\third_party\zlib\gzclose.c">
+      <Filter>third_party\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\third_party\zlib\gzlib.c">
+      <Filter>third_party\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\third_party\zlib\gzread.c">
+      <Filter>third_party\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\third_party\zlib\gzwrite.c">
+      <Filter>third_party\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\third_party\zlib\infback.c">
+      <Filter>third_party\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\third_party\zlib\inffast.c">
+      <Filter>third_party\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\third_party\zlib\inflate.c">
+      <Filter>third_party\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\third_party\zlib\inftrees.c">
+      <Filter>third_party\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\third_party\zlib\trees.c">
+      <Filter>third_party\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\third_party\zlib\uncompr.c">
+      <Filter>third_party\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\third_party\zlib\zutil.c">
+      <Filter>third_party\zlib</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="$(SolutionDir)\..\third_party\zlib\crc32.h">
+      <Filter>third_party\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\third_party\zlib\deflate.h">
+      <Filter>third_party\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\third_party\zlib\gzguts.h">
+      <Filter>third_party\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\third_party\zlib\inffast.h">
+      <Filter>third_party\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\third_party\zlib\inffixed.h">
+      <Filter>third_party\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\third_party\zlib\inflate.h">
+      <Filter>third_party\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\third_party\zlib\inftrees.h">
+      <Filter>third_party\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\third_party\zlib\trees.h">
+      <Filter>third_party\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\third_party\zlib\zconf.h">
+      <Filter>third_party\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\third_party\zlib\zlib.h">
+      <Filter>third_party\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\third_party\zlib\zutil.h">
+      <Filter>third_party\zlib</Filter>
+    </ClInclude>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="third_party">
+      <UniqueIdentifier>{ec647746-5bc0-66f4-80c6-a5dbd9f9db6f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party\zlib">
+      <UniqueIdentifier>{3c4d2d48-67ef-199d-360e-79e7f5cad175}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

@@ -1,4 +1,4 @@
-# Copyright 2015, Google Inc.
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -29,11 +29,27 @@
 
 """Tests for grpc.framework.foundation.logging_pool."""
 
+import threading
 import unittest
 
 from grpc.framework.foundation import logging_pool
 
 _POOL_SIZE = 16
+
+
+class _CallableObject(object):
+
+  def __init__(self):
+    self._lock = threading.Lock()
+    self._passed_values = []
+
+  def __call__(self, value):
+    with self._lock:
+      self._passed_values.append(value)
+
+  def passed_values(self):
+    with self._lock:
+      return tuple(self._passed_values)
 
 
 class LoggingPoolTest(unittest.TestCase):
@@ -58,6 +74,14 @@ class LoggingPoolTest(unittest.TestCase):
       raised_exception = pool.submit(lambda: 1/0).exception()
 
     self.assertIsNotNone(raised_exception)
+
+  def testCallableObjectExecuted(self):
+    callable_object = _CallableObject()
+    passed_object = object()
+    with logging_pool.pool(_POOL_SIZE) as pool:
+      future = pool.submit(callable_object, passed_object)
+    self.assertIsNone(future.result())
+    self.assertSequenceEqual((passed_object,), callable_object.passed_values())
 
 
 if __name__ == '__main__':

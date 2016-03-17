@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -51,7 +51,7 @@
 
 var _ = require('lodash');
 
-var grpc = require('bindings')('grpc_node');
+var grpc = require('./grpc_extension');
 
 var common = require('./common');
 
@@ -737,7 +737,12 @@ Server.prototype.addService = function(service, implementation) {
  *     method implementation for the provided service.
  */
 Server.prototype.addProtoService = function(service, implementation) {
-  this.addService(common.getProtobufServiceAttrs(service), implementation);
+  var options;
+  if (service.grpc_options) {
+    options = service.grpc_options;
+  }
+  this.addService(common.getProtobufServiceAttrs(service, options),
+                  implementation);
 };
 
 /**

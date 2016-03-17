@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -45,7 +45,7 @@ namespace {
 class TimeTest : public ::testing::Test {};
 
 TEST_F(TimeTest, AbsolutePointTest) {
-  long us = 10000000L;
+  int64_t us = 10000000L;
   gpr_timespec ts = gpr_time_from_micros(us, GPR_TIMESPAN);
   ts.clock_type = GPR_CLOCK_REALTIME;
   system_clock::time_point tp{microseconds(us)};

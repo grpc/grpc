@@ -1,6 +1,6 @@
 #region Copyright notice and license
 
-// Copyright 2015, Google Inc.
+// Copyright 2015-2016, Google Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -59,7 +59,7 @@ namespace Grpc.Core.Internal
         public void Register(IntPtr key, OpCompletionDelegate callback)
         {
             environment.DebugStats.PendingBatchCompletions.Increment();
-            Preconditions.CheckState(dict.TryAdd(key, callback));
+            GrpcPreconditions.CheckState(dict.TryAdd(key, callback));
         }
 
         public void RegisterBatchCompletion(BatchContextSafeHandle ctx, BatchCompletionDelegate callback)
@@ -71,7 +71,7 @@ namespace Grpc.Core.Internal
         public OpCompletionDelegate Extract(IntPtr key)
         {
             OpCompletionDelegate value;
-            Preconditions.CheckState(dict.TryRemove(key, out value));
+            GrpcPreconditions.CheckState(dict.TryRemove(key, out value));
             environment.DebugStats.PendingBatchCompletions.Decrement();
             return value;
         }

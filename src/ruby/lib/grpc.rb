@@ -1,4 +1,4 @@
-# Copyright 2015, Google Inc.
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -26,6 +26,11 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+ssl_roots_path = File.expand_path('../../../../etc/roots.pem', __FILE__)
+unless ENV['GRPC_DEFAULT_SSL_ROOTS_FILE_PATH']
+  ENV['GRPC_DEFAULT_SSL_ROOTS_FILE_PATH'] = ssl_roots_path
+end
 
 require 'grpc/errors'
 require 'grpc/grpc'

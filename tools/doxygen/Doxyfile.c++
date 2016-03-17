@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC C++"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 0.12.0.0
+PROJECT_NUMBER         = 0.14.0-dev
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -760,7 +760,8 @@ WARN_LOGFILE           =
 # spaces.
 # Note: If this tag is empty the current directory is searched.
 
-INPUT                  = include/grpc++/channel.h \
+INPUT                  = include/grpc++/alarm.h \
+include/grpc++/channel.h \
 include/grpc++/client_context.h \
 include/grpc++/completion_queue.h \
 include/grpc++/create_channel.h \
@@ -770,6 +771,7 @@ include/grpc++/grpc++.h \
 include/grpc++/impl/call.h \
 include/grpc++/impl/client_unary_call.h \
 include/grpc++/impl/grpc_library.h \
+include/grpc++/impl/method_handler_impl.h \
 include/grpc++/impl/proto_utils.h \
 include/grpc++/impl/rpc_method.h \
 include/grpc++/impl/rpc_service_method.h \
@@ -801,7 +803,38 @@ include/grpc++/support/status_code_enum.h \
 include/grpc++/support/string_ref.h \
 include/grpc++/support/stub_options.h \
 include/grpc++/support/sync_stream.h \
-include/grpc++/support/time.h
+include/grpc++/support/time.h \
+include/grpc++/impl/codegen/async_stream.h \
+include/grpc++/impl/codegen/async_unary_call.h \
+include/grpc++/impl/codegen/call.h \
+include/grpc++/impl/codegen/call_hook.h \
+include/grpc++/impl/codegen/channel_interface.h \
+include/grpc++/impl/codegen/client_context.h \
+include/grpc++/impl/codegen/client_unary_call.h \
+include/grpc++/impl/codegen/completion_queue.h \
+include/grpc++/impl/codegen/completion_queue_tag.h \
+include/grpc++/impl/codegen/config.h \
+include/grpc++/impl/codegen/config_protobuf.h \
+include/grpc++/impl/codegen/core_codegen_interface.h \
+include/grpc++/impl/codegen/grpc_library.h \
+include/grpc++/impl/codegen/method_handler_impl.h \
+include/grpc++/impl/codegen/proto_utils.h \
+include/grpc++/impl/codegen/rpc_method.h \
+include/grpc++/impl/codegen/rpc_service_method.h \
+include/grpc++/impl/codegen/security/auth_context.h \
+include/grpc++/impl/codegen/serialization_traits.h \
+include/grpc++/impl/codegen/server_context.h \
+include/grpc++/impl/codegen/server_interface.h \
+include/grpc++/impl/codegen/service_type.h \
+include/grpc++/impl/codegen/status.h \
+include/grpc++/impl/codegen/status_code_enum.h \
+include/grpc++/impl/codegen/string_ref.h \
+include/grpc++/impl/codegen/stub_options.h \
+include/grpc++/impl/codegen/sync.h \
+include/grpc++/impl/codegen/sync_cxx11.h \
+include/grpc++/impl/codegen/sync_no_cxx11.h \
+include/grpc++/impl/codegen/sync_stream.h \
+include/grpc++/impl/codegen/time.h
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding. Doxygen uses

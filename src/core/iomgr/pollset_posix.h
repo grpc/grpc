@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -37,8 +37,10 @@
 #include <poll.h>
 
 #include <grpc/support/sync.h>
+
 #include "src/core/iomgr/exec_ctx.h"
 #include "src/core/iomgr/iomgr.h"
+#include "src/core/iomgr/pollset.h"
 #include "src/core/iomgr/wakeup_fd_posix.h"
 
 typedef struct grpc_pollset_vtable grpc_pollset_vtable;
@@ -53,15 +55,15 @@ typedef struct grpc_cached_wakeup_fd {
   struct grpc_cached_wakeup_fd *next;
 } grpc_cached_wakeup_fd;
 
-typedef struct grpc_pollset_worker {
+struct grpc_pollset_worker {
   grpc_cached_wakeup_fd *wakeup_fd;
   int reevaluate_polling_on_wakeup;
   int kicked_specifically;
   struct grpc_pollset_worker *next;
   struct grpc_pollset_worker *prev;
-} grpc_pollset_worker;
+};
 
-typedef struct grpc_pollset {
+struct grpc_pollset {
   /* pollsets under posix can mutate representation as fds are added and
      removed.
      For example, we may choose a poll() based implementation on linux for
@@ -81,7 +83,7 @@ typedef struct grpc_pollset {
   } data;
   /* Local cache of eventfds for workers */
   grpc_cached_wakeup_fd *local_wakeup_cache;
-} grpc_pollset;
+};
 
 struct grpc_pollset_vtable {
   void (*add_fd)(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
@@ -92,8 +94,6 @@ struct grpc_pollset_vtable {
   void (*finish_shutdown)(grpc_pollset *pollset);
   void (*destroy)(grpc_pollset *pollset);
 };
-
-#define GRPC_POLLSET_MU(pollset) (&(pollset)->mu)
 
 /* Add an fd to a pollset */
 void grpc_pollset_add_fd(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
@@ -142,6 +142,10 @@ int grpc_pollset_has_workers(grpc_pollset *pollset);
 void grpc_remove_fd_from_all_epoll_sets(int fd);
 
 /* override to allow tests to hook poll() usage */
+/* NOTE: Any changes to grpc_poll_function must take place when the gRPC
+   is certainly not doing any polling anywhere.
+   Otherwise, there might be a race between changing the variable and actually
+   doing a polling operation */
 typedef int (*grpc_poll_function_type)(struct pollfd *, nfds_t, int);
 extern grpc_poll_function_type grpc_poll_function;
 extern grpc_wakeup_fd grpc_global_wakeup_fd;

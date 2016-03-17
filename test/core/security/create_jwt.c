@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -36,7 +36,7 @@
 
 #include "src/core/security/credentials.h"
 #include "src/core/security/json_token.h"
-#include "src/core/support/file.h"
+#include "src/core/support/load_file.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/cmdline.h>
@@ -62,7 +62,7 @@ void create_jwt(const char *json_key_file_path, const char *service_url,
   }
   jwt = grpc_jwt_encode_and_sign(
       &key, service_url == NULL ? GRPC_JWT_OAUTH2_AUDIENCE : service_url,
-      grpc_max_auth_token_lifetime, scope);
+      grpc_max_auth_token_lifetime(), scope);
   grpc_auth_json_key_destruct(&key);
   if (jwt == NULL) {
     fprintf(stderr, "Could not create JWT.\n");

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -45,6 +45,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/useful.h>
 #include "src/core/iomgr/fd_posix.h"
+#include "src/core/iomgr/pollset_posix.h"
 #include "src/core/profiling/timers.h"
 #include "src/core/support/block_annotate.h"
 
@@ -90,8 +91,10 @@ static void remove_epoll_fd_from_global_list(int epoll_fd) {
 
 void grpc_remove_fd_from_all_epoll_sets(int fd) {
   int err;
+  gpr_once_init(&init_epoll_fd_list_mu, init_mu);
   gpr_mu_lock(&epoll_fd_list_mu);
   if (epoll_fd_global_list.count == 0) {
+    gpr_mu_unlock(&epoll_fd_list_mu);
     return;
   }
   for (size_t i = 0; i < epoll_fd_global_list.count; i++) {
@@ -139,7 +142,7 @@ static void finally_add_fd(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
 }
 
 static void perform_delayed_add(grpc_exec_ctx *exec_ctx, void *arg,
-                                int iomgr_status) {
+                                bool iomgr_status) {
   delayed_add *da = arg;
 
   if (!grpc_fd_is_orphaned(da->fd)) {
@@ -152,7 +155,7 @@ static void perform_delayed_add(grpc_exec_ctx *exec_ctx, void *arg,
     /* We don't care about this pollset anymore. */
     if (da->pollset->in_flight_cbs == 0 && !da->pollset->called_shutdown) {
       da->pollset->called_shutdown = 1;
-      grpc_exec_ctx_enqueue(exec_ctx, da->pollset->shutdown_done, 1);
+      grpc_exec_ctx_enqueue(exec_ctx, da->pollset->shutdown_done, true, NULL);
     }
   }
   gpr_mu_unlock(&da->pollset->mu);
@@ -176,7 +179,7 @@ static void multipoll_with_epoll_pollset_add_fd(grpc_exec_ctx *exec_ctx,
     GRPC_FD_REF(fd, "delayed_add");
     grpc_closure_init(&da->closure, perform_delayed_add, da);
     pollset->in_flight_cbs++;
-    grpc_exec_ctx_enqueue(exec_ctx, &da->closure, 1);
+    grpc_exec_ctx_enqueue(exec_ctx, &da->closure, true, NULL);
   }
 }
 

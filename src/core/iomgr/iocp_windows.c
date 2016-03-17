@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -42,7 +42,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/thd.h>
 
-#include "src/core/iomgr/timer_internal.h"
+#include "src/core/iomgr/timer.h"
 #include "src/core/iomgr/iocp_windows.h"
 #include "src/core/iomgr/iomgr_internal.h"
 #include "src/core/iomgr/socket_windows.h"
@@ -57,7 +57,7 @@ static HANDLE g_iocp;
 static DWORD deadline_to_millis_timeout(gpr_timespec deadline,
                                         gpr_timespec now) {
   gpr_timespec timeout;
-  static const int max_spin_polling_us = 10;
+  static const int64_t max_spin_polling_us = 10;
   if (gpr_time_cmp(deadline, gpr_inf_future(deadline.clock_type)) == 0) {
     return INFINITE;
   }
@@ -67,11 +67,12 @@ static DWORD deadline_to_millis_timeout(gpr_timespec deadline,
     return 0;
   }
   timeout = gpr_time_sub(deadline, now);
-  return gpr_time_to_millis(gpr_time_add(
+  return (DWORD)gpr_time_to_millis(gpr_time_add(
       timeout, gpr_time_from_nanos(GPR_NS_PER_MS - 1, GPR_TIMESPAN)));
 }
 
-void grpc_iocp_work(grpc_exec_ctx *exec_ctx, gpr_timespec deadline) {
+grpc_iocp_work_status grpc_iocp_work(grpc_exec_ctx *exec_ctx,
+                                     gpr_timespec deadline) {
   BOOL success;
   DWORD bytes = 0;
   DWORD flags = 0;
@@ -84,14 +85,14 @@ void grpc_iocp_work(grpc_exec_ctx *exec_ctx, gpr_timespec deadline) {
       g_iocp, &bytes, &completion_key, &overlapped,
       deadline_to_millis_timeout(deadline, gpr_now(deadline.clock_type)));
   if (success == 0 && overlapped == NULL) {
-    return;
+    return GRPC_IOCP_WORK_TIMEOUT;
   }
   GPR_ASSERT(completion_key && overlapped);
   if (overlapped == &g_iocp_custom_overlap) {
     gpr_atm_full_fetch_add(&g_custom_events, -1);
     if (completion_key == (ULONG_PTR)&g_iocp_kick_token) {
       /* We were awoken from a kick. */
-      return;
+      return GRPC_IOCP_WORK_KICK;
     }
     gpr_log(GPR_ERROR, "Unknown custom completion key.");
     abort();
@@ -120,7 +121,8 @@ void grpc_iocp_work(grpc_exec_ctx *exec_ctx, gpr_timespec deadline) {
     info->has_pending_iocp = 1;
   }
   gpr_mu_unlock(&socket->state_mu);
-  grpc_exec_ctx_enqueue(exec_ctx, closure, 1);
+  grpc_exec_ctx_enqueue(exec_ctx, closure, true, NULL);
+  return GRPC_IOCP_WORK_WORK;
 }
 
 void grpc_iocp_init(void) {
@@ -140,10 +142,12 @@ void grpc_iocp_kick(void) {
 
 void grpc_iocp_flush(void) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_iocp_work_status work_status;
 
   do {
-    grpc_iocp_work(&exec_ctx, gpr_inf_past(GPR_CLOCK_MONOTONIC));
-  } while (grpc_exec_ctx_flush(&exec_ctx));
+    work_status = grpc_iocp_work(&exec_ctx, gpr_inf_past(GPR_CLOCK_MONOTONIC));
+  } while (work_status == GRPC_IOCP_WORK_KICK ||
+           grpc_exec_ctx_flush(&exec_ctx));
 }
 
 void grpc_iocp_shutdown(void) {
@@ -179,13 +183,11 @@ void grpc_iocp_add_socket(grpc_winsocket *socket) {
 static void socket_notify_on_iocp(grpc_exec_ctx *exec_ctx,
                                   grpc_winsocket *socket, grpc_closure *closure,
                                   grpc_winsocket_callback_info *info) {
-  int run_now = 0;
   GPR_ASSERT(info->closure == NULL);
   gpr_mu_lock(&socket->state_mu);
   if (info->has_pending_iocp) {
-    run_now = 1;
     info->has_pending_iocp = 0;
-    grpc_exec_ctx_enqueue(exec_ctx, closure, 1);
+    grpc_exec_ctx_enqueue(exec_ctx, closure, true, NULL);
   } else {
     info->closure = closure;
   }

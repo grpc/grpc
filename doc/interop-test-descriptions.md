@@ -2,9 +2,8 @@ Interoperability Test Case Descriptions
 =======================================
 
 Client and server use
-[test.proto](https://github.com/grpc/grpc/blob/master/test/proto/test.proto)
-and the [gRPC over HTTP/2 v2
-protocol](https://github.com/grpc/grpc/blob/master/doc/PROTOCOL-HTTP2.md).
+[test.proto](../src/proto/grpc/testing/test.proto)
+and the [gRPC over HTTP/2 v2 protocol](./PROTOCOL-HTTP2.md).
 
 Client
 ------
@@ -471,7 +470,7 @@ with desired oauth scope.
 
 The test uses `--default_service_account` with GCE service account email and
 `--oauth_scope` with the OAuth scope to use. For testing against
-grpc-test.sandbox.google.com, "https://www.googleapis.com/auth/xapi.zoo" should
+grpc-test.sandbox.googleapis.com, "https://www.googleapis.com/auth/xapi.zoo" should
 be passed in as `--oauth_scope`.
 
 Server features:
@@ -568,7 +567,7 @@ variable GOOGLE_APPLICATION_CREDENTIALS, *OR* if GCE credentials is used to
 fetch the token, `--default_service_account` can be used to pass in GCE service
 account email.
 - uses the flag `--oauth_scope` for the oauth scope.  For testing against
-grpc-test.sandbox.google.com, "https://www.googleapis.com/auth/xapi.zoo" should
+grpc-test.sandbox.googleapis.com, "https://www.googleapis.com/auth/xapi.zoo" should
 be passed as the `--oauth_scope`.
 
 Server features:
@@ -610,7 +609,7 @@ usable auth implementation, it may specify the file location in the environment
 variable GOOGLE_APPLICATION_CREDENTIALS
 - optionally uses the flag `--oauth_scope` for the oauth scope if implementator 
 wishes to use service account credential instead of JWT credential. For testing
-against grpc-test.sandbox.google.com, oauth scope 
+against grpc-test.sandbox.googleapis.com, oauth scope 
 "https://www.googleapis.com/auth/xapi.zoo" should be used.
 
 Server features:
@@ -1033,7 +1032,7 @@ authenticated via OAuth, then the SimpleResponse should have oauth_scope filled
 with the scope of the method being invoked.
 
 Although a general server-side feature, most test servers won't implement this
-feature. The TLS server grpc-test.sandbox.google.com:443 supports this feature.
+feature. The TLS server grpc-test.sandbox.googleapis.com:443 supports this feature.
 It requires at least the OAuth scope
 `https://www.googleapis.com/auth/xapi.zoo` for authentication to succeed.
 

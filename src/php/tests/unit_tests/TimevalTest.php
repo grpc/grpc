@@ -1,7 +1,7 @@
 <?php
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -91,4 +91,69 @@ class TimevalTest extends PHPUnit_Framework_TestCase
         $back_to_now = $deadline->subtract($delta);
         $this->assertSame(0, Grpc\Timeval::compare($back_to_now, $now));
     }
+
+    public function testSimilar()
+    {
+      $a = Grpc\Timeval::now();
+      $delta = new Grpc\Timeval(1000);
+      $b = $a->add($delta);
+      $thresh = new Grpc\Timeval(1100);
+      $this->assertTrue(Grpc\Timeval::similar($a, $b, $thresh));
+      $thresh = new Grpc\Timeval(900);
+      $this->assertFalse(Grpc\Timeval::similar($a, $b, $thresh));
+    }
+
+    public function testSleepUntil()
+    {
+        $curr_microtime = microtime(true);
+        $now = Grpc\Timeval::now();
+        $delta = new Grpc\Timeval(1000);
+        $deadline = $now->add($delta);
+        $deadline->sleepUntil();
+        $done_microtime = microtime(true);
+        $this->assertTrue(($done_microtime - $curr_microtime) > 0.0009);
+    }
+
+    /**
+     * @expectedException InvalidArgumentException
+     */
+    public function testConstructorInvalidParam()
+    {
+        $delta = new Grpc\Timeval('abc');
+    }
+
+    /**
+     * @expectedException InvalidArgumentException
+     */
+    public function testAddInvalidParam()
+    {
+        $a = Grpc\Timeval::now();
+        $a->add(1000);
+    }
+
+    /**
+     * @expectedException InvalidArgumentException
+     */
+    public function testSubtractInvalidParam()
+    {
+        $a = Grpc\Timeval::now();
+        $a->subtract(1000);
+    }
+
+    /**
+     * @expectedException InvalidArgumentException
+     */
+    public function testCompareInvalidParam()
+    {
+        $a = Grpc\Timeval::compare(1000, 1100);
+    }
+
+    /**
+     * @expectedException InvalidArgumentException
+     */
+    public function testSimilarInvalidParam()
+    {
+        $a = Grpc\Timeval::similar(1000, 1100, 1200);
+    }
+
 }

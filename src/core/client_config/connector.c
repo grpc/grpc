@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,8 +33,9 @@
 
 #include "src/core/client_config/connector.h"
 
-void grpc_connector_ref(grpc_connector* connector) {
+grpc_connector* grpc_connector_ref(grpc_connector* connector) {
   connector->vtable->ref(connector);
+  return connector;
 }
 
 void grpc_connector_unref(grpc_exec_ctx* exec_ctx, grpc_connector* connector) {

@@ -101,7 +101,7 @@ describe GRPC::Core::Call do
   let(:fake_host) { 'localhost:10101' }
 
   before(:each) do
-    @ch = GRPC::Core::Channel.new(fake_host, nil)
+    @ch = GRPC::Core::Channel.new(fake_host, nil, :this_channel_is_insecure)
   end
 
   describe '#status' do

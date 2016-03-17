@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2015, Google Inc.
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -47,11 +47,11 @@ if [ "$platform" == "linux" ]; then
 
   if [ "$dist_channel" == "homebrew" ]; then
 
-    sha1=$(sha1sum tools/jenkins/grpc_linuxbrew/Dockerfile | cut -f1 -d\ )
+    sha1=$(sha1sum tools/dockerfile/grpc_linuxbrew/Dockerfile | cut -f1 -d\ )
     DOCKER_IMAGE_NAME=grpc_linuxbrew_$sha1
 
     # build docker image, contains all pre-requisites
-    docker build -t $DOCKER_IMAGE_NAME tools/jenkins/grpc_linuxbrew
+    docker build -t $DOCKER_IMAGE_NAME tools/dockerfile/grpc_linuxbrew
 
     # run per-language homebrew installation script
     docker run --rm=true $DOCKER_IMAGE_NAME bash -l \

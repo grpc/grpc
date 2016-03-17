@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -137,7 +137,7 @@ grpc_udp_server *grpc_udp_server_create(void) {
 }
 
 static void finish_shutdown(grpc_exec_ctx *exec_ctx, grpc_udp_server *s) {
-  grpc_exec_ctx_enqueue(exec_ctx, s->shutdown_complete, 1);
+  grpc_exec_ctx_enqueue(exec_ctx, s->shutdown_complete, 1, NULL);
 
   gpr_mu_destroy(&s->mu);
   gpr_cv_destroy(&s->cv);
@@ -146,7 +146,8 @@ static void finish_shutdown(grpc_exec_ctx *exec_ctx, grpc_udp_server *s) {
   gpr_free(s);
 }
 
-static void destroyed_port(grpc_exec_ctx *exec_ctx, void *server, int success) {
+static void destroyed_port(grpc_exec_ctx *exec_ctx, void *server,
+                           bool success) {
   grpc_udp_server *s = server;
   gpr_mu_lock(&s->mu);
   s->destroyed_ports++;
@@ -263,10 +264,10 @@ error:
 }
 
 /* event manager callback when reads are ready */
-static void on_read(grpc_exec_ctx *exec_ctx, void *arg, int success) {
+static void on_read(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
   server_port *sp = arg;
 
-  if (success == 0) {
+  if (!success) {
     gpr_mu_lock(&sp->server->mu);
     if (0 == --sp->server->active_ports) {
       gpr_mu_unlock(&sp->server->mu);
@@ -423,16 +424,6 @@ void grpc_udp_server_start(grpc_exec_ctx *exec_ctx, grpc_udp_server *s,
     s->active_ports++;
   }
   gpr_mu_unlock(&s->mu);
-}
-
-/* TODO(rjshade): Add a test for this method. */
-void grpc_udp_server_write(server_port *sp, const char *buffer, size_t buf_len,
-                           const struct sockaddr *peer_address) {
-  ssize_t rc;
-  rc = sendto(sp->fd, buffer, buf_len, 0, peer_address, sizeof(peer_address));
-  if (rc < 0) {
-    gpr_log(GPR_ERROR, "Unable to send data: %s", strerror(errno));
-  }
 }
 
 #endif

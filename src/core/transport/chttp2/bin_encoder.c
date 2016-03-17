@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -282,9 +282,4 @@ gpr_slice grpc_chttp2_base64_encode_and_huffman_compress(gpr_slice input) {
 
   GPR_ASSERT(in == GPR_SLICE_END_PTR(input));
   return output;
-}
-
-int grpc_is_binary_header(const char *key, size_t length) {
-  if (length < 5) return 0;
-  return 0 == memcmp(key + length - 4, "-bin", 4);
 }

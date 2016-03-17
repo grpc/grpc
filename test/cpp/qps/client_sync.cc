@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -35,38 +35,45 @@
 #include <chrono>
 #include <memory>
 #include <mutex>
+#include <sstream>
 #include <string>
 #include <thread>
 #include <vector>
-#include <sstream>
 
 #include <gflags/gflags.h>
+#include <grpc++/channel.h>
+#include <grpc++/client_context.h>
+#include <grpc++/server.h>
+#include <grpc++/server_builder.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/histogram.h>
 #include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
-#include <grpc++/client_context.h>
-#include <grpc++/server.h>
-#include <grpc++/server_builder.h>
 #include <gtest/gtest.h>
 
-#include "test/cpp/util/create_test_channel.h"
+#include "src/core/profiling/timers.h"
+#include "src/proto/grpc/testing/services.grpc.pb.h"
 #include "test/cpp/qps/client.h"
 #include "test/cpp/qps/histogram.h"
 #include "test/cpp/qps/interarrival.h"
-#include "test/cpp/qps/timer.h"
-#include "src/proto/grpc/testing/services.grpc.pb.h"
-
-#include "src/core/profiling/timers.h"
+#include "test/cpp/qps/usage_timer.h"
 
 namespace grpc {
 namespace testing {
 
-class SynchronousClient : public Client {
+static std::unique_ptr<BenchmarkService::Stub> BenchmarkStubCreator(
+    std::shared_ptr<Channel> ch) {
+  return BenchmarkService::NewStub(ch);
+}
+
+class SynchronousClient
+    : public ClientImpl<BenchmarkService::Stub, SimpleRequest> {
  public:
-  SynchronousClient(const ClientConfig& config) : Client(config) {
+  SynchronousClient(const ClientConfig& config)
+      : ClientImpl<BenchmarkService::Stub, SimpleRequest>(
+            config, BenchmarkStubCreator) {
     num_threads_ =
         config.outstanding_rpcs_per_channel() * config.client_channels();
     responses_.resize(num_threads_);
@@ -77,11 +84,8 @@ class SynchronousClient : public Client {
 
  protected:
   void WaitToIssue(int thread_idx) {
-    grpc_time next_time;
-    if (NextIssueTime(thread_idx, &next_time)) {
-      gpr_timespec next_timespec;
-      TimepointHR2Timespec(next_time, &next_timespec);
-      gpr_sleep_until(next_timespec);
+    if (!closed_loop_) {
+      gpr_sleep_until(NextIssueTime(thread_idx));
     }
   }
 
@@ -100,12 +104,12 @@ class SynchronousUnaryClient GRPC_FINAL : public SynchronousClient {
   bool ThreadFunc(Histogram* histogram, size_t thread_idx) GRPC_OVERRIDE {
     WaitToIssue(thread_idx);
     auto* stub = channels_[thread_idx % channels_.size()].get_stub();
-    double start = Timer::Now();
+    double start = UsageTimer::Now();
     GPR_TIMER_SCOPE("SynchronousUnaryClient::ThreadFunc", 0);
     grpc::ClientContext context;
     grpc::Status s =
         stub->UnaryCall(&context, request_, &responses_[thread_idx]);
-    histogram->Add((Timer::Now() - start) * 1e9);
+    histogram->Add((UsageTimer::Now() - start) * 1e9);
     return s.ok();
   }
 };
@@ -139,10 +143,10 @@ class SynchronousStreamingClient GRPC_FINAL : public SynchronousClient {
   bool ThreadFunc(Histogram* histogram, size_t thread_idx) GRPC_OVERRIDE {
     WaitToIssue(thread_idx);
     GPR_TIMER_SCOPE("SynchronousStreamingClient::ThreadFunc", 0);
-    double start = Timer::Now();
+    double start = UsageTimer::Now();
     if (stream_[thread_idx]->Write(request_) &&
         stream_[thread_idx]->Read(&responses_[thread_idx])) {
-      histogram->Add((Timer::Now() - start) * 1e9);
+      histogram->Add((UsageTimer::Now() - start) * 1e9);
       return true;
     }
     return false;

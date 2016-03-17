@@ -39,7 +39,9 @@ static void *fake_malloc(size_t size) { return (void *)size; }
 
 static void *fake_realloc(void *addr, size_t size) { return (void *)size; }
 
-static void fake_free(void *addr) { *((intptr_t *)addr) = 0xdeadd00d; }
+static void fake_free(void *addr) {
+  *((intptr_t *)addr) = (intptr_t)0xdeadd00d;
+}
 
 static void test_custom_allocs() {
   const gpr_allocation_functions default_fns = gpr_get_allocation_functions();
@@ -52,7 +54,7 @@ static void test_custom_allocs() {
   GPR_ASSERT((void *)(size_t)0xcafed00d == gpr_realloc(0, 0xcafed00d));
 
   gpr_free(&addr_to_free);
-  GPR_ASSERT(addr_to_free == 0xdeadd00d);
+  GPR_ASSERT(addr_to_free == (intptr_t)0xdeadd00d);
 
   /* Restore and check we don't get funky values and that we don't leak */
   gpr_set_allocation_functions(default_fns);

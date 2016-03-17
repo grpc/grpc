@@ -1,4 +1,4 @@
-# Copyright 2015, Google Inc.
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -46,8 +46,8 @@ def _invocation_completion_predicate(
 
 def _service_completion_predicate(
     unused_emission_complete, transmission_complete, unused_reception_complete,
-    unused_ingestion_complete):
-  return transmission_complete
+    ingestion_complete):
+  return transmission_complete and ingestion_complete
 
 
 class TerminationManager(_interfaces.TerminationManager):

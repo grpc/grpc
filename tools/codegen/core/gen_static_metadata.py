@@ -1,6 +1,6 @@
 #!/usr/bin/env python2.7
 
-# Copyright 2015, Google Inc.
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -50,8 +50,8 @@ CONFIG = [
     'host',
     'grpc-message',
     'grpc-status',
-    'census',
     'census-bin',
+    'census-binary-bin',
     '',
     ('grpc-status', '0'),
     ('grpc-status', '1'),
