@@ -31,5 +31,6 @@
 
 set -ex
 
+du
 make CONFIG=$config $1
 bins/$config/$1
