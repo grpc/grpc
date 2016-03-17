@@ -1057,6 +1057,27 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: concurrent_connectivity_test
+  build: test
+  language: c
+  src:
+  - test/core/surface/concurrent_connectivity_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: dns_resolver_connectivity_test
+  cpu_cost: 0.1
+  build: test
+  language: c
+  src:
+  - test/core/client_config/resolvers/dns_resolver_connectivity_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: dns_resolver_test
   build: test
   language: c
@@ -2724,6 +2745,36 @@ configs:
   dbg:
     CPPFLAGS: -O0
     DEFINES: _DEBUG DEBUG
+  easan:
+    CC: clang
+    CPPFLAGS: -O0 -fsanitize=address -fno-omit-frame-pointer -Wno-unused-command-line-argument
+      -DGPR_NO_DIRECT_SYSCALLS
+    CXX: clang++
+    DEFINES: _DEBUG DEBUG GRPC_EXECUTION_CONTEXT_SANITIZER
+    LD: clang
+    LDFLAGS: -fsanitize=address
+    LDXX: clang++
+    compile_the_world: true
+    test_environ:
+      ASAN_OPTIONS: detect_leaks=1:color=always
+      LSAN_OPTIONS: suppressions=tools/lsan_suppressions.txt:report_objects=1
+    timeout_multiplier: 3
+  edbg:
+    CPPFLAGS: -O0
+    DEFINES: _DEBUG DEBUG GRPC_EXECUTION_CONTEXT_SANITIZER
+  etsan:
+    CC: clang
+    CPPFLAGS: -O0 -fsanitize=thread -fno-omit-frame-pointer -Wno-unused-command-line-argument
+      -fPIE -pie -DGPR_NO_DIRECT_SYSCALLS
+    CXX: clang++
+    DEFINES: _DEBUG DEBUG GRPC_EXECUTION_CONTEXT_SANITIZER
+    LD: clang
+    LDFLAGS: -fsanitize=thread -fPIE -pie $(if $(JENKINS_BUILD),-Wl$(comma)-Ttext-segment=0x7e0000000000,)
+    LDXX: clang++
+    compile_the_world: true
+    test_environ:
+      TSAN_OPTIONS: suppressions=tools/tsan_suppressions.txt:halt_on_error=1:second_deadlock_stack=1
+    timeout_multiplier: 5
   gcov:
     CC: gcc
     CPPFLAGS: -O0 -fprofile-arcs -ftest-coverage -Wno-return-type
