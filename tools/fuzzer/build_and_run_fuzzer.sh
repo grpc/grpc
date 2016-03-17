@@ -32,7 +32,7 @@
 set -ex
 
 git submodule update --init
-ls -R
+find . | sort
 make run_dep_checks
 make CONFIG=$config $1
 bins/$config/$1
