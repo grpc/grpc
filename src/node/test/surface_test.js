@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -952,6 +952,7 @@ describe('Call propagation', function() {
   describe('Cancellation', function() {
     it('With a unary call', function(done) {
       done = multiDone(done, 2);
+      var call;
       proxy_impl.unary = function(parent, callback) {
         client.unary(parent.request, function(err, value) {
           try {
@@ -969,12 +970,11 @@ describe('Call propagation', function() {
       proxy.start();
       var proxy_client = new Client('localhost:' + proxy_port,
                                     grpc.credentials.createInsecure());
-      var call = proxy_client.unary({}, function(err, value) {
-        done();
-      });
+      call = proxy_client.unary({}, function(err, value) { done(); });
     });
     it('With a client stream call', function(done) {
       done = multiDone(done, 2);
+      var call;
       proxy_impl.clientStream = function(parent, callback) {
         client.clientStream(function(err, value) {
           try {
@@ -992,15 +992,15 @@ describe('Call propagation', function() {
       proxy.start();
       var proxy_client = new Client('localhost:' + proxy_port,
                                     grpc.credentials.createInsecure());
-      var call = proxy_client.clientStream(function(err, value) {
-        done();
-      });
+      call = proxy_client.clientStream(function(err, value) { done(); });
     });
     it('With a server stream call', function(done) {
       done = multiDone(done, 2);
+      var call;
       proxy_impl.serverStream = function(parent) {
         var child = client.serverStream(parent.request, null,
                                         {parent: parent});
+        child.on('data', function() {});
         child.on('error', function(err) {
           assert(err);
           assert.strictEqual(err.code, grpc.status.CANCELLED);
@@ -1013,15 +1013,18 @@ describe('Call propagation', function() {
       proxy.start();
       var proxy_client = new Client('localhost:' + proxy_port,
                                     grpc.credentials.createInsecure());
-      var call = proxy_client.serverStream({});
+      call = proxy_client.serverStream({});
+      call.on('data', function() {});
       call.on('error', function(err) {
         done();
       });
     });
     it('With a bidi stream call', function(done) {
       done = multiDone(done, 2);
+      var call;
       proxy_impl.bidiStream = function(parent) {
         var child = client.bidiStream(null, {parent: parent});
+        child.on('data', function() {});
         child.on('error', function(err) {
           assert(err);
           assert.strictEqual(err.code, grpc.status.CANCELLED);
@@ -1034,7 +1037,8 @@ describe('Call propagation', function() {
       proxy.start();
       var proxy_client = new Client('localhost:' + proxy_port,
                                     grpc.credentials.createInsecure());
-      var call = proxy_client.bidiStream();
+      call = proxy_client.bidiStream();
+      call.on('data', function() {});
       call.on('error', function(err) {
         done();
       });
@@ -1074,6 +1078,7 @@ describe('Call propagation', function() {
       proxy_impl.bidiStream = function(parent) {
         var child = client.bidiStream(
             null, {parent: parent, propagate_flags: deadline_flags});
+        child.on('data', function() {});
         child.on('error', function(err) {
           assert(err);
           assert(err.code === grpc.status.DEADLINE_EXCEEDED ||
@@ -1089,6 +1094,7 @@ describe('Call propagation', function() {
       var deadline = new Date();
       deadline.setSeconds(deadline.getSeconds() + 1);
       var call = proxy_client.bidiStream(null, {deadline: deadline});
+      call.on('data', function() {});
       call.on('error', function(err) {
         done();
       });
@@ -1130,6 +1136,7 @@ describe('Cancelling surface client', function() {
   });
   it('Should correctly cancel a server stream call', function(done) {
     var call = client.fib({'limit': 5});
+    call.on('data', function() {});
     call.on('error', function(error) {
       assert.strictEqual(error.code, surface_client.status.CANCELLED);
       done();
@@ -1138,6 +1145,7 @@ describe('Cancelling surface client', function() {
   });
   it('Should correctly cancel a bidi stream call', function(done) {
     var call = client.divMany();
+    call.on('data', function() {});
     call.on('error', function(error) {
       assert.strictEqual(error.code, surface_client.status.CANCELLED);
       done();

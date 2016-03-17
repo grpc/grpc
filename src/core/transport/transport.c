@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -45,7 +45,7 @@ void grpc_stream_ref(grpc_stream_refcount *refcount, const char *reason) {
 #else
 void grpc_stream_ref(grpc_stream_refcount *refcount) {
 #endif
-  gpr_ref(&refcount->refs);
+  gpr_ref_non_zero(&refcount->refs);
 }
 
 #ifdef GRPC_STREAM_REFCOUNT_DEBUG
@@ -59,7 +59,7 @@ void grpc_stream_unref(grpc_exec_ctx *exec_ctx,
                        grpc_stream_refcount *refcount) {
 #endif
   if (gpr_unref(&refcount->refs)) {
-    grpc_exec_ctx_enqueue(exec_ctx, &refcount->destroy, 1);
+    grpc_exec_ctx_enqueue(exec_ctx, &refcount->destroy, true, NULL);
   }
 }
 
@@ -125,8 +125,9 @@ char *grpc_transport_get_peer(grpc_exec_ctx *exec_ctx,
 
 void grpc_transport_stream_op_finish_with_failure(
     grpc_exec_ctx *exec_ctx, grpc_transport_stream_op *op) {
-  grpc_exec_ctx_enqueue(exec_ctx, op->recv_message_ready, 0);
-  grpc_exec_ctx_enqueue(exec_ctx, op->on_complete, 0);
+  grpc_exec_ctx_enqueue(exec_ctx, op->recv_message_ready, false, NULL);
+  grpc_exec_ctx_enqueue(exec_ctx, op->recv_initial_metadata_ready, false, NULL);
+  grpc_exec_ctx_enqueue(exec_ctx, op->on_complete, false, NULL);
 }
 
 void grpc_transport_stream_op_add_cancellation(grpc_transport_stream_op *op,
@@ -150,7 +151,7 @@ typedef struct {
   grpc_closure closure;
 } close_message_data;
 
-static void free_message(grpc_exec_ctx *exec_ctx, void *p, int iomgr_success) {
+static void free_message(grpc_exec_ctx *exec_ctx, void *p, bool iomgr_success) {
   close_message_data *cmd = p;
   gpr_slice_unref(cmd->message);
   if (cmd->then_call != NULL) {

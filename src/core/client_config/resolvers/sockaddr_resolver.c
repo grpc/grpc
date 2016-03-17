@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -98,7 +98,7 @@ static void sockaddr_shutdown(grpc_exec_ctx *exec_ctx,
   gpr_mu_lock(&r->mu);
   if (r->next_completion != NULL) {
     *r->target_config = NULL;
-    grpc_exec_ctx_enqueue(exec_ctx, r->next_completion, 1);
+    grpc_exec_ctx_enqueue(exec_ctx, r->next_completion, true, NULL);
     r->next_completion = NULL;
   }
   gpr_mu_unlock(&r->mu);
@@ -153,7 +153,7 @@ static void sockaddr_maybe_finish_next_locked(grpc_exec_ctx *exec_ctx,
     GRPC_LB_POLICY_UNREF(exec_ctx, lb_policy, "sockaddr");
     r->published = 1;
     *r->target_config = cfg;
-    grpc_exec_ctx_enqueue(exec_ctx, r->next_completion, 1);
+    grpc_exec_ctx_enqueue(exec_ctx, r->next_completion, true, NULL);
     r->next_completion = NULL;
   }
 }

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -40,8 +40,8 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/types.h>
 #include <unistd.h>
 
 #include <grpc/support/alloc.h>
@@ -51,9 +51,11 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
-#include "src/core/support/string.h"
 #include "src/core/debug/trace.h"
+#include "src/core/iomgr/pollset_posix.h"
+#include "src/core/iomgr/pollset_set_posix.h"
 #include "src/core/profiling/timers.h"
+#include "src/core/support/string.h"
 
 #ifdef GPR_HAVE_MSG_NOSIGNAL
 #define SENDMSG_FLAGS MSG_NOSIGNAL
@@ -100,9 +102,9 @@ typedef struct {
 } grpc_tcp;
 
 static void tcp_handle_read(grpc_exec_ctx *exec_ctx, void *arg /* grpc_tcp */,
-                            int success);
+                            bool success);
 static void tcp_handle_write(grpc_exec_ctx *exec_ctx, void *arg /* grpc_tcp */,
-                             int success);
+                             bool success);
 
 static void tcp_shutdown(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep) {
   grpc_tcp *tcp = (grpc_tcp *)ep;
@@ -247,7 +249,7 @@ static void tcp_continue_read(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp) {
 }
 
 static void tcp_handle_read(grpc_exec_ctx *exec_ctx, void *arg /* grpc_tcp */,
-                            int success) {
+                            bool success) {
   grpc_tcp *tcp = (grpc_tcp *)arg;
   GPR_ASSERT(!tcp->finished_edge);
 
@@ -273,7 +275,7 @@ static void tcp_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
     tcp->finished_edge = 0;
     grpc_fd_notify_on_read(exec_ctx, tcp->em_fd, &tcp->read_closure);
   } else {
-    grpc_exec_ctx_enqueue(exec_ctx, &tcp->read_closure, 1);
+    grpc_exec_ctx_enqueue(exec_ctx, &tcp->read_closure, true, NULL);
   }
 }
 
@@ -360,7 +362,7 @@ static flush_result tcp_flush(grpc_tcp *tcp) {
 }
 
 static void tcp_handle_write(grpc_exec_ctx *exec_ctx, void *arg /* grpc_tcp */,
-                             int success) {
+                             bool success) {
   grpc_tcp *tcp = (grpc_tcp *)arg;
   flush_result status;
   grpc_closure *cb;
@@ -407,7 +409,7 @@ static void tcp_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
 
   if (buf->length == 0) {
     GPR_TIMER_END("tcp_write", 0);
-    grpc_exec_ctx_enqueue(exec_ctx, cb, 1);
+    grpc_exec_ctx_enqueue(exec_ctx, cb, true, NULL);
     return;
   }
   tcp->outgoing_buffer = buf;
@@ -420,7 +422,7 @@ static void tcp_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
     tcp->write_cb = cb;
     grpc_fd_notify_on_write(exec_ctx, tcp->em_fd, &tcp->write_closure);
   } else {
-    grpc_exec_ctx_enqueue(exec_ctx, cb, status == FLUSH_DONE);
+    grpc_exec_ctx_enqueue(exec_ctx, cb, status == FLUSH_DONE, NULL);
   }
 
   GPR_TIMER_END("tcp_write", 0);

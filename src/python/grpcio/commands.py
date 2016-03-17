@@ -1,4 +1,4 @@
-# Copyright 2015, Google Inc.
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -30,15 +30,26 @@
 """Provides distutils command classes for the GRPC Python setup process."""
 
 import distutils
+import glob
 import os
 import os.path
+import platform
 import re
+import shutil
 import subprocess
 import sys
+import traceback
 
 import setuptools
+from setuptools.command import build_ext
 from setuptools.command import build_py
+from setuptools.command import easy_install
+from setuptools.command import install
 from setuptools.command import test
+
+import support
+
+PYTHON_STEM = os.path.dirname(os.path.abspath(__file__))
 
 CONF_PY_ADDENDUM = """
 extensions.append('sphinx.ext.napoleon')
@@ -47,6 +58,47 @@ napoleon_numpy_docstring = True
 
 html_theme = 'sphinx_rtd_theme'
 """
+
+
+class CommandError(Exception):
+  """Simple exception class for GRPC custom commands."""
+
+
+# TODO(atash): Remove this once PyPI has better Linux bdist support. See
+# https://bitbucket.org/pypa/pypi/issues/120/binary-wheels-for-linux-are-not-supported
+def _get_grpc_custom_bdist(decorated_basename, target_bdist_basename):
+  """Returns a string path to a bdist file for Linux to install.
+
+  If we can retrieve a pre-compiled bdist from online, uses it. Else, emits a
+  warning and builds from source.
+  """
+  # TODO(atash): somehow the name that's returned from `wheel` is different
+  # between different versions of 'wheel' (but from a compatibility standpoint,
+  # the names are compatible); we should have some way of determining name
+  # compatibility in the same way `wheel` does to avoid having to rename all of
+  # the custom wheels that we build/upload to GCS.
+
+  # Break import style to ensure that setup.py has had a chance to install the
+  # relevant package.
+  from six.moves.urllib import request
+  decorated_path = decorated_basename + GRPC_CUSTOM_BDIST_EXT
+  try:
+    url = BINARIES_REPOSITORY + '/{target}'.format(target=decorated_path)
+    bdist_data = request.urlopen(url).read()
+  except IOError as error:
+    raise CommandError(
+        '{}\n\nCould not find the bdist {}: {}'
+            .format(traceback.format_exc(), decorated_path, error.message))
+  # Our chosen local bdist path.
+  bdist_path = target_bdist_basename + GRPC_CUSTOM_BDIST_EXT
+  try:
+    with open(bdist_path, 'w') as bdist_file:
+      bdist_file.write(bdist_data)
+  except IOError as error:
+    raise CommandError(
+        '{}\n\nCould not write grpcio bdist: {}'
+            .format(traceback.format_exc(), error.message))
+  return bdist_path
 
 
 class SphinxDocumentation(setuptools.Command):
@@ -67,8 +119,7 @@ class SphinxDocumentation(setuptools.Command):
     import sphinx
     import sphinx.apidoc
     metadata = self.distribution.metadata
-    src_dir = os.path.join(
-        os.getcwd(), self.distribution.package_dir[''], 'grpc')
+    src_dir = os.path.join(PYTHON_STEM, 'grpc')
     sys.path.append(src_dir)
     sphinx.apidoc.main([
         '', '--force', '--full', '-H', metadata.name, '-A', metadata.author,
@@ -101,10 +152,15 @@ class BuildProtoModules(setuptools.Command):
         'grpc_python_plugin')
 
   def run(self):
+    if not self.protoc_command:
+      raise CommandError('could not find protoc')
+    if not self.grpc_python_plugin_command:
+      raise CommandError('could not find grpc_python_plugin '
+                         '(protoc plugin for GRPC Python)')
     include_regex = re.compile(self.include)
     exclude_regex = re.compile(self.exclude) if self.exclude else None
     paths = []
-    root_directory = os.getcwd()
+    root_directory = PYTHON_STEM
     for walk_root, directories, filenames in os.walk(root_directory):
       for filename in filenames:
         path = os.path.join(walk_root, filename)
@@ -123,7 +179,7 @@ class BuildProtoModules(setuptools.Command):
       subprocess.check_output(' '.join(command), cwd=root_directory, shell=True,
                               stderr=subprocess.STDOUT)
     except subprocess.CalledProcessError as e:
-      raise Exception('Command:\n{}\nMessage:\n{}\nOutput:\n{}'.format(
+      raise CommandError('Command:\n{}\nMessage:\n{}\nOutput:\n{}'.format(
           command, e.message, e.output))
 
 
@@ -140,7 +196,7 @@ class BuildProjectMetadata(setuptools.Command):
     pass
 
   def run(self):
-    with open('grpc/_grpcio_metadata.py', 'w') as module_file:
+    with open(os.path.join(PYTHON_STEM, 'grpc/_grpcio_metadata.py'), 'w') as module_file:
       module_file.write('__version__ = """{}"""'.format(
           self.distribution.get_version()))
 
@@ -149,9 +205,38 @@ class BuildPy(build_py.build_py):
   """Custom project build command."""
 
   def run(self):
-    self.run_command('build_proto_modules')
+    try:
+      self.run_command('build_proto_modules')
+    except CommandError as error:
+      sys.stderr.write('warning: %s\n' % error.message)
     self.run_command('build_project_metadata')
     build_py.build_py.run(self)
+
+
+class BuildExt(build_ext.build_ext):
+  """Custom build_ext command to enable compiler-specific flags."""
+
+  C_OPTIONS = {
+      'unix': ('-pthread', '-std=gnu99'),
+      'msvc': (),
+  }
+  LINK_OPTIONS = {}
+
+  def build_extensions(self):
+    compiler = self.compiler.compiler_type
+    if compiler in BuildExt.C_OPTIONS:
+      for extension in self.extensions:
+        extension.extra_compile_args += list(BuildExt.C_OPTIONS[compiler])
+    if compiler in BuildExt.LINK_OPTIONS:
+      for extension in self.extensions:
+        extension.extra_link_args += list(BuildExt.LINK_OPTIONS[compiler])
+    try:
+      build_ext.build_ext.build_extensions(self)
+    except Exception as error:
+      formatted_exception = traceback.format_exc()
+      support.diagnose_build_ext_error(self, error, formatted_exception)
+      raise CommandError(
+          "Failed `build_ext` step:\n{}".format(formatted_exception))
 
 
 class Gather(setuptools.Command):
@@ -176,6 +261,42 @@ class Gather(setuptools.Command):
       self.distribution.fetch_build_eggs(self.distribution.install_requires)
     if self.test and self.distribution.tests_require:
       self.distribution.fetch_build_eggs(self.distribution.tests_require)
+
+
+class TestLite(setuptools.Command):
+  """Command to run tests without fetching or building anything."""
+
+  description = 'run tests without fetching or building anything.'
+  user_options = []
+
+  def initialize_options(self):
+    pass
+
+  def finalize_options(self):
+    # distutils requires this override.
+    pass
+
+  def run(self):
+    self._add_eggs_to_path()
+
+    import tests
+    loader = tests.Loader()
+    loader.loadTestsFromNames(['tests'])
+    runner = tests.Runner()
+    result = runner.run(loader.suite)
+    if not result.wasSuccessful():
+      sys.exit('Test failure')
+
+  def _add_eggs_to_path(self):
+    """Adds all egg files under .eggs to sys.path"""
+    # TODO(jtattemusch): there has to be a cleaner way to do this
+    import pkg_resources
+    eggs_dir = os.path.join(PYTHON_STEM, '../../../.eggs')
+    eggs = [os.path.join(eggs_dir, filename)
+            for filename in os.listdir(eggs_dir)
+            if filename.endswith('.egg')]
+    for egg in eggs:
+      sys.path.insert(0, pkg_resources.normalize_path(egg))
 
 
 class RunInterop(test.test):

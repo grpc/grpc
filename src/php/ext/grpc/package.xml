@@ -10,8 +10,8 @@
   <email>grpc-packages@google.com</email>
   <active>yes</active>
  </lead>
- <date>2015-12-16</date>
- <time>12:56:11</time>
+ <date>2016-01-13</date>
+ <time>16:06:07</time>
  <version>
   <release>0.7.0</release>
   <api>0.7.0</api>
@@ -29,6 +29,7 @@
  </notes>
  <contents>
   <dir baseinstalldir="/" name="/">
+   <file baseinstalldir="/" md5sum="f201d644fdbd8228ffd1d4a69cc44f1f" name="tests/grpc-basic.phpt" role="test" />
    <file baseinstalldir="/" md5sum="6f19828fb869b7b8a590cbb76b4f996d" name="byte_buffer.c" role="src" />
    <file baseinstalldir="/" md5sum="c8de0f819499c48adfc8d7f472c0196b" name="byte_buffer.h" role="src" />
    <file baseinstalldir="/" md5sum="ee7eb7757f9e6f0e36f8f616b6bd0af5" name="call.c" role="src" />
@@ -41,9 +42,9 @@
    <file baseinstalldir="/" md5sum="a86250e03f610ce6c2c7595a84e08821" name="channel_credentials.h" role="src" />
    <file baseinstalldir="/" md5sum="55ab7a42f9dd9bfc7e28a61cfc5fca63" name="completion_queue.c" role="src" />
    <file baseinstalldir="/" md5sum="f10b5bb232d74a6878e829e2e76cdaa2" name="completion_queue.h" role="src" />
-   <file baseinstalldir="/" md5sum="c7bba7f0f00d1b1483de457d55311382" name="config.m4" role="src" />
+   <file baseinstalldir="/" md5sum="cafed254127007ff2271dad7d56a06c8" name="config.m4" role="src" />
    <file baseinstalldir="/" md5sum="38a1bc979d810c36ebc2a52d4b7b5319" name="CREDITS" role="doc" />
-   <file baseinstalldir="/" md5sum="3f35b472bbdef5a788cd90617d7d0847" name="LICENSE" role="doc" />
+   <file baseinstalldir="/" md5sum="8847cf67b1b54c981d47ecbb0d139a0c" name="LICENSE" role="doc" />
    <file baseinstalldir="/" md5sum="3131a8af38fe5918e5409016b89d6cdb" name="php_grpc.c" role="src" />
    <file baseinstalldir="/" md5sum="673b07859d9f69232f8a754c56780686" name="php_grpc.h" role="src" />
    <file baseinstalldir="/" md5sum="7533a6d3ea02c78cad23a9651de0825d" name="README.md" role="doc" />
@@ -142,7 +143,7 @@ Update to wrap gRPC C Core version 0.10.0
     <release>beta</release>
     <api>beta</api>
    </stability>
-   <date>2015-12-16</date>
+   <date>2016-01-13</date>
    <license>BSD</license>
    <notes>
 - Breaking change to Credentials class (removed) #3765

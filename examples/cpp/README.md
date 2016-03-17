@@ -2,7 +2,7 @@
 
 ## Installation
 
-To install gRPC on your system, follow the instructions [here](../../INSTALL).
+To install gRPC on your system, follow the instructions to build from source [here](../../INSTALL.md). This also installs the protocol buffer compiler `protoc` (if you don't have it already), and the C++ gRPC plugin for `protoc`.
 
 ## Hello C++ gRPC!
 
@@ -21,21 +21,6 @@ Change your current directory to examples/cpp/helloworld
 
 ```sh
 $ cd examples/cpp/helloworld/
-```
-
-
-### Generating gRPC code
-
-To generate the client and server side interfaces:
-
-```sh
-$ make helloworld.grpc.pb.cc helloworld.pb.cc
-```
-Which internally invokes the proto-compiler as:
-
-```sh
-$ protoc -I ../../protos/ --grpc_out=. --plugin=protoc-gen-grpc=grpc_cpp_plugin ../../protos/helloworld.proto
-$ protoc -I ../../protos/ --cpp_out=. ../../protos/helloworld.proto
 ```
 
 ### Client and server implementations

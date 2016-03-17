@@ -37,11 +37,12 @@
 #include <map>
 #include <memory>
 
-#include <grpc++/impl/grpc_library.h>
+#include <grpc++/impl/codegen/grpc_library.h>
 #include <grpc++/security/auth_context.h>
-#include <grpc++/support/config.h>
 #include <grpc++/support/status.h>
 #include <grpc++/support/string_ref.h>
+
+struct grpc_call;
 
 namespace grpc {
 class ChannelArguments;
@@ -55,10 +56,11 @@ class SecureCallCredentials;
 /// It can make various assertions, e.g., about the client’s identity, role
 /// for all the calls on that channel.
 ///
-/// \see https://github.com/grpc/grpc/blob/master/doc/grpc-auth-support.md
-class ChannelCredentials : public GrpcLibrary {
+/// \see http://www.grpc.io/docs/guides/auth.html
+class ChannelCredentials : private GrpcLibraryCodegen {
  public:
-  ~ChannelCredentials() GRPC_OVERRIDE;
+  ChannelCredentials();
+  ~ChannelCredentials();
 
  protected:
   friend std::shared_ptr<ChannelCredentials> CompositeChannelCredentials(
@@ -81,9 +83,10 @@ class ChannelCredentials : public GrpcLibrary {
 /// authenticate with a server for a given call on a channel.
 ///
 /// \see http://www.grpc.io/docs/guides/auth.html
-class CallCredentials : public GrpcLibrary {
+class CallCredentials : private GrpcLibraryCodegen {
  public:
-  ~CallCredentials() GRPC_OVERRIDE;
+  CallCredentials();
+  ~CallCredentials();
 
   /// Apply this instance's credentials to \a call.
   virtual bool ApplyToCall(grpc_call* call) = 0;

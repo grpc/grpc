@@ -1,5 +1,5 @@
 #!/usr/bin/env python2.7
-# Copyright 2015, Google Inc.
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -38,9 +38,10 @@ import yaml
 TEST = (os.environ.get('TEST', 'false') == 'true')
 
 _TOP_LEVEL_KEYS = ['settings', 'proto_deps', 'filegroups', 'libs', 'targets', 'vspackages']
-_VERSION_KEYS = ['major', 'minor', 'micro', 'build']
 _ELEM_KEYS = [
     'name',
+    'gtest',
+    'cpu_cost',
     'flaky',
     'build',
     'run',
@@ -82,8 +83,6 @@ for filename in sys.argv[1:]:
   with open(filename) as f:
     js = yaml.load(f)
   js = rebuild_as_ordered_dict(js, _TOP_LEVEL_KEYS)
-  js['settings']['version'] = rebuild_as_ordered_dict(
-      js['settings']['version'], _VERSION_KEYS)
   for grp in ['filegroups', 'libs', 'targets']:
     if grp not in js: continue
     js[grp] = sorted([clean_elem(x) for x in js[grp]],
@@ -100,4 +99,3 @@ for filename in sys.argv[1:]:
   else:
     with open(filename, 'w') as f:
       f.write(output)
-

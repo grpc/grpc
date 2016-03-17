@@ -53,6 +53,7 @@
   <ImportGroup Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="$(SolutionDir)\..\vsprojects\global.props" />
+    <Import Project="$(SolutionDir)\..\vsprojects\protoc.props" />
     <Import Project="$(SolutionDir)\..\vsprojects\winsock.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
@@ -147,6 +148,22 @@
   </ItemDefinitionGroup>
 
   <ItemGroup>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\alloc.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm_gcc_atomic.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm_gcc_sync.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm_win32.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\log.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\port_platform.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\slice.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\slice_buffer.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_generic.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_posix.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_win32.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\time.h" />
+  </ItemGroup>
+  <ItemGroup>
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\support\config.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\support\config_protobuf.h" />
     <ClInclude Include="$(SolutionDir)\..\src\compiler\config.h" />
@@ -174,6 +191,11 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\compiler\ruby_generator.cc">
     </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="$(SolutionDir)\..\vsprojects\vcxproj\.\grpc++_codegen_lib\grpc++_codegen_lib.vcxproj">
+      <Project>{AAC6AF12-94C8-4A3C-A1BF-DAA4738F4500}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

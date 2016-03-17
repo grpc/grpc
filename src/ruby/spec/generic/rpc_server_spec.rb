@@ -1,4 +1,4 @@
-# Copyright 2015, Google Inc.
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -141,7 +141,7 @@ describe GRPC::RpcServer do
     @server = GRPC::Core::Server.new(@server_queue, nil)
     server_port = @server.add_http2_port(server_host, :this_port_is_insecure)
     @host = "localhost:#{server_port}"
-    @ch = GRPC::Core::Channel.new(@host, nil)
+    @ch = GRPC::Core::Channel.new(@host, nil, :this_channel_is_insecure)
   end
 
   describe '#new' do
@@ -220,16 +220,7 @@ describe GRPC::RpcServer do
       @srv = RpcServer.new(**opts)
     end
 
-    after(:each) do
-      @srv.stop
-    end
-
     it 'starts out false' do
-      expect(@srv.stopped?).to be(false)
-    end
-
-    it 'stays false after a #stop is called before #run' do
-      @srv.stop
       expect(@srv.stopped?).to be(false)
     end
 
@@ -247,8 +238,8 @@ describe GRPC::RpcServer do
       t = Thread.new { @srv.run }
       @srv.wait_till_running
       @srv.stop
-      expect(@srv.stopped?).to be(true)
       t.join
+      expect(@srv.stopped?).to be(true)
     end
   end
 
@@ -266,9 +257,7 @@ describe GRPC::RpcServer do
         server_override: @server
       }
       r = RpcServer.new(**opts)
-      r.run
-      expect(r.running?).to be(false)
-      r.stop
+      expect { r.run }.to raise_error(RuntimeError)
     end
 
     it 'is true after run is called with a registered service' do
@@ -291,10 +280,6 @@ describe GRPC::RpcServer do
     before(:each) do
       @opts = { a_channel_arg: 'an_arg', poll_period: 1 }
       @srv = RpcServer.new(**@opts)
-    end
-
-    after(:each) do
-      @srv.stop
     end
 
     it 'raises if #run has already been called' do
@@ -355,7 +340,8 @@ describe GRPC::RpcServer do
         req = EchoMsg.new
         blk = proc do
           cq = GRPC::Core::CompletionQueue.new
-          stub = GRPC::ClientStub.new(@host, cq, **client_opts)
+          stub = GRPC::ClientStub.new(@host, cq, :this_channel_is_insecure,
+                                      **client_opts)
           stub.request_response('/unknown', req, marshal, unmarshal)
         end
         expect(&blk).to raise_error GRPC::BadStatus
@@ -369,7 +355,7 @@ describe GRPC::RpcServer do
         @srv.wait_till_running
         req = EchoMsg.new
         n = 5  # arbitrary
-        stub = EchoStub.new(@host, **client_opts)
+        stub = EchoStub.new(@host, :this_channel_is_insecure, **client_opts)
         n.times { expect(stub.an_rpc(req)).to be_a(EchoMsg) }
         @srv.stop
         t.join
@@ -381,7 +367,7 @@ describe GRPC::RpcServer do
         t = Thread.new { @srv.run }
         @srv.wait_till_running
         req = EchoMsg.new
-        stub = EchoStub.new(@host, **client_opts)
+        stub = EchoStub.new(@host, :this_channel_is_insecure, **client_opts)
         expect(stub.an_rpc(req, k1: 'v1', k2: 'v2')).to be_a(EchoMsg)
         wanted_md = [{ 'k1' => 'v1', 'k2' => 'v2' }]
         check_md(wanted_md, service.received_md)
@@ -395,7 +381,7 @@ describe GRPC::RpcServer do
         t = Thread.new { @srv.run }
         @srv.wait_till_running
         req = EchoMsg.new
-        stub = SlowStub.new(@host, **client_opts)
+        stub = SlowStub.new(@host, :this_channel_is_insecure, **client_opts)
         timeout = service.delay + 1.0 # wait for long enough
         resp = stub.an_rpc(req, timeout: timeout, k1: 'v1', k2: 'v2')
         expect(resp).to be_a(EchoMsg)
@@ -411,7 +397,7 @@ describe GRPC::RpcServer do
         t = Thread.new { @srv.run }
         @srv.wait_till_running
         req = EchoMsg.new
-        stub = SlowStub.new(@host, **client_opts)
+        stub = SlowStub.new(@host, :this_channel_is_insecure, **client_opts)
         op = stub.an_rpc(req, k1: 'v1', k2: 'v2', return_op: true)
         Thread.new do  # cancel the call
           sleep 0.1
@@ -431,7 +417,7 @@ describe GRPC::RpcServer do
         threads = [t]
         n.times do
           threads << Thread.new do
-            stub = EchoStub.new(@host, **client_opts)
+            stub = EchoStub.new(@host, :this_channel_is_insecure, **client_opts)
             q << stub.an_rpc(req)
           end
         end
@@ -459,7 +445,7 @@ describe GRPC::RpcServer do
         one_failed_as_unavailable = false
         n.times do
           threads << Thread.new do
-            stub = SlowStub.new(@host, **client_opts)
+            stub = SlowStub.new(@host, :this_channel_is_insecure, **client_opts)
             begin
               stub.an_rpc(req)
             rescue GRPC::BadStatus => e
@@ -499,7 +485,7 @@ describe GRPC::RpcServer do
         t = Thread.new { @srv.run }
         @srv.wait_till_running
         req = EchoMsg.new
-        stub = EchoStub.new(@host, **client_opts)
+        stub = EchoStub.new(@host, :this_channel_is_insecure, **client_opts)
         op = stub.an_rpc(req, k1: 'v1', k2: 'v2', return_op: true)
         expect(op.metadata).to be nil
         expect(op.execute).to be_a(EchoMsg)
@@ -527,17 +513,13 @@ describe GRPC::RpcServer do
         @srv = RpcServer.new(**server_opts)
       end
 
-      after(:each) do
-        @srv.stop
-      end
-
       it 'should be added to BadStatus when requests fail', server: true do
         service = FailingService.new
         @srv.handle(service)
         t = Thread.new { @srv.run }
         @srv.wait_till_running
         req = EchoMsg.new
-        stub = FailingStub.new(@host, **client_opts)
+        stub = FailingStub.new(@host, :this_channel_is_insecure, **client_opts)
         blk = proc { stub.an_rpc(req) }
 
         # confirm it raise the expected error
@@ -562,7 +544,7 @@ describe GRPC::RpcServer do
         t = Thread.new { @srv.run }
         @srv.wait_till_running
         req = EchoMsg.new
-        stub = EchoStub.new(@host, **client_opts)
+        stub = EchoStub.new(@host, :this_channel_is_insecure, **client_opts)
         op = stub.an_rpc(req, k1: 'v1', k2: 'v2', return_op: true)
         expect(op.metadata).to be nil
         expect(op.execute).to be_a(EchoMsg)

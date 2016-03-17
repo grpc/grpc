@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -76,7 +76,7 @@ function unaryCall(call, callback) {
  */
 function streamingCall(call) {
   call.on('data', function(value) {
-    var payload = {body: zeroBuffer(value.repsonse_size)};
+    var payload = {body: zeroBuffer(value.response_size)};
     call.write({payload: payload});
   });
   call.on('end', function() {

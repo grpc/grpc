@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -36,6 +36,8 @@
 
 #include <memory>
 
+#include <grpc/support/atm.h>
+
 namespace grpc {
 
 class Server;
@@ -46,12 +48,17 @@ class WorkerServiceImpl;
 
 class QpsWorker {
  public:
-  explicit QpsWorker(int driver_port);
+  explicit QpsWorker(int driver_port, int server_port = 0);
   ~QpsWorker();
+
+  bool Done() const;
+  void MarkDone();
 
  private:
   std::unique_ptr<WorkerServiceImpl> impl_;
   std::unique_ptr<Server> server_;
+
+  gpr_atm done_;
 };
 
 }  // namespace testing

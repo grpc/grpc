@@ -13,6 +13,9 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\support\avl.c">
       <Filter>src\core\support</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\support\backoff.c">
+      <Filter>src\core\support</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\support\cmdline.c">
       <Filter>src\core\support</Filter>
     </ClCompile>
@@ -37,19 +40,13 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\support\env_win32.c">
       <Filter>src\core\support</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\support\file.c">
-      <Filter>src\core\support</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\support\file_posix.c">
-      <Filter>src\core\support</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\support\file_win32.c">
-      <Filter>src\core\support</Filter>
-    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\support\histogram.c">
       <Filter>src\core\support</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\support\host_port.c">
+      <Filter>src\core\support</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\support\load_file.c">
       <Filter>src\core\support</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\support\log.c">
@@ -91,6 +88,9 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\support\subprocess_posix.c">
       <Filter>src\core\support</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\support\subprocess_windows.c">
+      <Filter>src\core\support</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\support\sync.c">
       <Filter>src\core\support</Filter>
     </ClCompile>
@@ -122,6 +122,15 @@
       <Filter>src\core\support</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\support\tls_pthread.c">
+      <Filter>src\core\support</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\support\tmpfile_posix.c">
+      <Filter>src\core\support</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\support\tmpfile_win32.c">
+      <Filter>src\core\support</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\support\wrap_memcpy.c">
       <Filter>src\core\support</Filter>
     </ClCompile>
   </ItemGroup>
@@ -210,10 +219,55 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc\support\useful.h">
       <Filter>include\grpc\support</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\alloc.h">
+      <Filter>include\grpc\impl\codegen</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm.h">
+      <Filter>include\grpc\impl\codegen</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm_gcc_atomic.h">
+      <Filter>include\grpc\impl\codegen</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm_gcc_sync.h">
+      <Filter>include\grpc\impl\codegen</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm_win32.h">
+      <Filter>include\grpc\impl\codegen</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\log.h">
+      <Filter>include\grpc\impl\codegen</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\port_platform.h">
+      <Filter>include\grpc\impl\codegen</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\slice.h">
+      <Filter>include\grpc\impl\codegen</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\slice_buffer.h">
+      <Filter>include\grpc\impl\codegen</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync.h">
+      <Filter>include\grpc\impl\codegen</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_generic.h">
+      <Filter>include\grpc\impl\codegen</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_posix.h">
+      <Filter>include\grpc\impl\codegen</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_win32.h">
+      <Filter>include\grpc\impl\codegen</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\time.h">
+      <Filter>include\grpc\impl\codegen</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(SolutionDir)\..\src\core\profiling\timers.h">
       <Filter>src\core\profiling</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\support\backoff.h">
+      <Filter>src\core\support</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\support\block_annotate.h">
       <Filter>src\core\support</Filter>
@@ -221,7 +275,7 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\support\env.h">
       <Filter>src\core\support</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\support\file.h">
+    <ClInclude Include="$(SolutionDir)\..\src\core\support\load_file.h">
       <Filter>src\core\support</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\support\murmur_hash.h">
@@ -242,6 +296,9 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\support\time_precise.h">
       <Filter>src\core\support</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\support\tmpfile.h">
+      <Filter>src\core\support</Filter>
+    </ClInclude>
   </ItemGroup>
 
   <ItemGroup>
@@ -250,6 +307,12 @@
     </Filter>
     <Filter Include="include\grpc">
       <UniqueIdentifier>{e6957ec1-85ba-6515-03c0-e12878045b1f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\grpc\impl">
+      <UniqueIdentifier>{4c72091a-872d-10da-2694-ce5a7b069a1f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\grpc\impl\codegen">
+      <UniqueIdentifier>{e52e0384-d0d3-1475-0d4e-11719aac8f2a}</UniqueIdentifier>
     </Filter>
     <Filter Include="include\grpc\support">
       <UniqueIdentifier>{31c42000-3ed7-95e1-d076-df814b72cdee}</UniqueIdentifier>

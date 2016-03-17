@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -43,9 +43,6 @@ grpc_server *grpc_server_create(const grpc_channel_args *args, void *reserved) {
   const grpc_channel_filter *filters[3];
   size_t num_filters = 0;
   filters[num_filters++] = &grpc_compress_filter;
-  if (grpc_channel_args_is_census_enabled(args)) {
-    filters[num_filters++] = &grpc_server_census_filter;
-  }
   GRPC_API_TRACE("grpc_server_create(%p, %p)", 2, (args, reserved));
   return grpc_server_create_from_filters(filters, num_filters, args);
 }

@@ -1,4 +1,4 @@
-# Copyright 2015, Google Inc.
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -50,9 +50,8 @@ module GRPC
         return alt_chan
       end
       kw['grpc.primary_user_agent'] = "grpc-ruby/#{VERSION}"
-      return Core::Channel.new(host, kw) if creds.nil?
-      unless creds.is_a?(Core::ChannelCredentials)
-        fail(TypeError, '!ChannelCredentials')
+      unless creds.is_a?(Core::ChannelCredentials) || creds.is_a?(Symbol)
+        fail(TypeError, '!ChannelCredentials or Symbol')
       end
       Core::Channel.new(host, kw, creds)
     end
@@ -68,7 +67,8 @@ module GRPC
     # Minimally, a stub is created with the just the host of the gRPC service
     # it wishes to access, e.g.,
     #
-    # my_stub = ClientStub.new(example.host.com:50505)
+    # my_stub = ClientStub.new(example.host.com:50505,
+    #                          :this_channel_is_insecure)
     #
     # Any arbitrary keyword arguments are treated as channel arguments used to
     # configure the RPC connection to the host.
@@ -86,14 +86,14 @@ module GRPC
     #
     # @param host [String] the host the stub connects to
     # @param q [Core::CompletionQueue] used to wait for events
+    # @param creds [Core::ChannelCredentials|Symbol] the channel credentials, or
+    #     :this_channel_is_insecure
     # @param channel_override [Core::Channel] a pre-created channel
     # @param timeout [Number] the default timeout to use in requests
-    # @param creds [Core::ChannelCredentials] the channel credentials
     # @param kw [KeywordArgs]the channel arguments
-    def initialize(host, q,
+    def initialize(host, q, creds,
                    channel_override: nil,
                    timeout: nil,
-                   creds: nil,
                    propagate_mask: nil,
                    **kw)
       fail(TypeError, '!CompletionQueue') unless q.is_a?(Core::CompletionQueue)
@@ -464,7 +464,7 @@ module GRPC
                              method,
                              nil, # host use nil,
                              deadline)
-      call.set_credentials credentials unless credentials.nil?
+      call.set_credentials! credentials unless credentials.nil?
       ActiveCall.new(call, @queue, marshal, unmarshal, deadline, started: false)
     end
   end

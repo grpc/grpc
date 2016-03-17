@@ -1,5 +1,5 @@
 #!/usr/bin/env python2.7
-# Copyright 2015, Google Inc.
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -36,21 +36,36 @@ import os
 import re
 import sys
 
+def update_deps(key, proto_filename, deps, is_trans, visited):
+  if not proto_filename in visited:
+    visited.append(proto_filename)
+    with open(proto_filename) as inp:
+      for line in inp:
+        imp = re.search(r'import "([^"]*)"', line)
+        if not imp: continue
+        imp_proto = imp.group(1)
+        if key not in deps: deps[key] = []
+        deps[key].append(imp_proto[:-6])
+        if is_trans:
+          update_deps(key, imp_proto, deps, is_trans, visited)
+
 def main():
+  proto_dir = os.path.abspath(os.path.dirname(sys.argv[0]))
+  os.chdir(os.path.join(proto_dir, '../..'))
+
   deps = {}
-  for root, dirs, files in os.walk(os.path.dirname(sys.argv[0])):
+  deps_trans = {}
+  for root, dirs, files in os.walk('src/proto'):
     for f in files:
       if f[-6:] != '.proto': continue
       look_at = os.path.join(root, f)
-      with open(look_at) as inp:
-        for line in inp:
-          imp = re.search(r'import "([^"]*)"', line)
-          if not imp: continue
-          if look_at[:-6] not in deps: deps[look_at[:-6]] = []
-          deps[look_at[:-6]].append(imp.group(1)[:-6])
+      deps_for = look_at[:-6]
+      update_deps(deps_for, look_at, deps, False, [])      # First level deps
+      update_deps(deps_for, look_at, deps_trans, True, []) # Transitive deps
 
   json = {
-    'proto_deps': deps
+    'proto_deps': deps,
+    'proto_transitive_deps': deps_trans
   }
 
   print yaml.dump(json)

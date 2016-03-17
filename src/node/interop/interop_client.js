@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -290,6 +290,7 @@ function timeoutOnSleepingServer(client, done) {
   call.write({
     payload: {body: zeroBuffer(27182)}
   });
+  call.on('data', function() {});
   call.on('error', function(error) {
 
     assert(error.code === grpc.status.DEADLINE_EXCEEDED ||
@@ -336,6 +337,7 @@ function customMetadata(client, done) {
                      ['test_initial_metadata_value']);
     done();
   });
+  stream.on('data', function() {});
   stream.on('status', function(status) {
     var echo_trailer = status.metadata.get(ECHO_TRAILING_KEY);
     assert(echo_trailer.length > 0);
@@ -361,6 +363,7 @@ function statusCodeAndMessage(client, done) {
     done();
   });
   var duplex = client.fullDuplexCall();
+  duplex.on('data', function() {});
   duplex.on('status', function(status) {
     assert(status);
     assert.strictEqual(status.code, 2);

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -45,11 +45,8 @@ namespace grpc {
 
 class SecureChannelCredentials GRPC_FINAL : public ChannelCredentials {
  public:
-  explicit SecureChannelCredentials(grpc_channel_credentials* c_creds)
-      : c_creds_(c_creds) {}
-  ~SecureChannelCredentials() GRPC_OVERRIDE {
-    grpc_channel_credentials_release(c_creds_);
-  }
+  explicit SecureChannelCredentials(grpc_channel_credentials* c_creds);
+  ~SecureChannelCredentials() { grpc_channel_credentials_release(c_creds_); }
   grpc_channel_credentials* GetRawCreds() { return c_creds_; }
 
   std::shared_ptr<grpc::Channel> CreateChannel(
@@ -62,11 +59,8 @@ class SecureChannelCredentials GRPC_FINAL : public ChannelCredentials {
 
 class SecureCallCredentials GRPC_FINAL : public CallCredentials {
  public:
-  explicit SecureCallCredentials(grpc_call_credentials* c_creds)
-      : c_creds_(c_creds) {}
-  ~SecureCallCredentials() GRPC_OVERRIDE {
-    grpc_call_credentials_release(c_creds_);
-  }
+  explicit SecureCallCredentials(grpc_call_credentials* c_creds);
+  ~SecureCallCredentials() { grpc_call_credentials_release(c_creds_); }
   grpc_call_credentials* GetRawCreds() { return c_creds_; }
 
   bool ApplyToCall(grpc_call* call) GRPC_OVERRIDE;

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -43,13 +43,13 @@
 
 int g_counter;
 
-static void must_succeed(grpc_exec_ctx *exec_ctx, void *arg, int success) {
+static void must_succeed(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
   GPR_ASSERT(success);
   GPR_ASSERT(arg == THE_ARG);
   g_counter++;
 }
 
-static void must_fail(grpc_exec_ctx *exec_ctx, void *arg, int success) {
+static void must_fail(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
   GPR_ASSERT(!success);
   GPR_ASSERT(arg == THE_ARG);
   g_counter++;

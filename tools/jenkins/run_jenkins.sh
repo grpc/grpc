@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Copyright 2015, Google Inc.
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -39,48 +39,24 @@
 # NOTE: No empty lines should appear in this file before igncr is set!
 set -ex -o igncr || set -ex
 
-# Grabbing the machine's architecture
-arch=`uname -m`
-
-case $platform in
-  i386)
-    arch="i386"
-    platform="linux"
-    docker_suffix=_32bits
-    ;;
-esac
-
 if [ "$platform" == "linux" ]
 then
-  echo "building $language on Linux"
-
-  ./tools/run_tests/run_tests.py --use_docker -t -l $language -c $config -x report.xml $@ || TESTS_FAILED="true"
-
-elif [ "$platform" == "windows" ]
-then
-  echo "building $language on Windows"
-
-  # Prevent msbuild from picking up "platform" env variable, which would break the build
-  unset platform
-
-  python tools/run_tests/run_tests.py -t -l $language -c $config -x report.xml $@ || TESTS_FAILED="true"
-
-elif [ "$platform" == "macos" ]
-then
-  echo "building $language on MacOS"
-
-  ./tools/run_tests/run_tests.py -t -l $language -c $config -x report.xml $@ || TESTS_FAILED="true"
-
+  PLATFORM_SPECIFIC_ARGS="--use_docker --measure_cpu_costs"
 elif [ "$platform" == "freebsd" ]
 then
-  echo "building $language on FreeBSD"
-
-  MAKE=gmake ./tools/run_tests/run_tests.py -t -l $language -c $config -x report.xml $@ || TESTS_FAILED="true"
-
-else
-  echo "Unknown platform $platform"
-  exit 1
+  export MAKE=gmake
 fi
+
+unset platform  # variable named 'platform' breaks the windows build
+
+python tools/run_tests/run_tests.py \
+  $PLATFORM_SPECIFIC_ARGS           \
+  -t                                \
+  -l $language                      \
+  -c $config                        \
+  -x report.xml                     \
+  -j 2                              \
+  $@ || TESTS_FAILED="true"
 
 if [ ! -e reports/index.html ]
 then
@@ -92,4 +68,3 @@ if [ "$TESTS_FAILED" != "" ]
 then
   exit 1
 fi
-

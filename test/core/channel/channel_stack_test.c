@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -81,12 +81,12 @@ static char *get_peer(grpc_exec_ctx *exec_ctx, grpc_call_element *elem) {
   return gpr_strdup("peer");
 }
 
-static void free_channel(grpc_exec_ctx *exec_ctx, void *arg, int success) {
+static void free_channel(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
   grpc_channel_stack_destroy(exec_ctx, arg);
   gpr_free(arg);
 }
 
-static void free_call(grpc_exec_ctx *exec_ctx, void *arg, int success) {
+static void free_call(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
   grpc_call_stack_destroy(exec_ctx, arg);
   gpr_free(arg);
 }

@@ -63,12 +63,14 @@
     <TargetName>h2_sockpair_1byte_test</TargetName>
     <Linkage-grpc_dependencies_zlib>static</Linkage-grpc_dependencies_zlib>
     <Configuration-grpc_dependencies_zlib>Debug</Configuration-grpc_dependencies_zlib>
+    <Linkage-grpc_dependencies_openssl>static</Linkage-grpc_dependencies_openssl>
     <Configuration-grpc_dependencies_openssl>Debug</Configuration-grpc_dependencies_openssl>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)'=='Release'">
     <TargetName>h2_sockpair_1byte_test</TargetName>
     <Linkage-grpc_dependencies_zlib>static</Linkage-grpc_dependencies_zlib>
     <Configuration-grpc_dependencies_zlib>Release</Configuration-grpc_dependencies_zlib>
+    <Linkage-grpc_dependencies_openssl>static</Linkage-grpc_dependencies_openssl>
     <Configuration-grpc_dependencies_openssl>Release</Configuration-grpc_dependencies_openssl>
   </PropertyGroup>
     <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -162,9 +164,6 @@
   <ItemGroup>
     <ProjectReference Include="$(SolutionDir)\..\vsprojects\vcxproj\test/end2end/tests\end2end_tests\end2end_tests.vcxproj">
       <Project>{1F1F9084-2A93-B80E-364F-5754894AFAB4}</Project>
-    </ProjectReference>
-    <ProjectReference Include="$(SolutionDir)\..\vsprojects\vcxproj\test/end2end\end2end_certs\end2end_certs.vcxproj">
-      <Project>{80EA2691-C037-6DD3-D3AB-21510BF0E64B}</Project>
     </ProjectReference>
     <ProjectReference Include="$(SolutionDir)\..\vsprojects\vcxproj\.\grpc_test_util\grpc_test_util.vcxproj">
       <Project>{17BCAFC0-5FDC-4C94-AEB9-95F3E220614B}</Project>

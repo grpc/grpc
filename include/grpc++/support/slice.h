@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -39,7 +39,7 @@
 
 namespace grpc {
 
-/// A wrapper around \a grpc_slice.
+/// A wrapper around \a gpr_slice.
 ///
 /// A slice represents a contiguous reference counted array of bytes.
 /// It is cheap to take references to a slice, and it is cheap to create a

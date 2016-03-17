@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -81,16 +81,32 @@ void grpc_stream_unref(grpc_exec_ctx *exec_ctx, grpc_stream_refcount *refcount);
 /* Transport stream op: a set of operations to perform on a transport
    against a single stream */
 typedef struct grpc_transport_stream_op {
+  /** Send initial metadata to the peer, from the provided metadata batch. */
   grpc_metadata_batch *send_initial_metadata;
+
+  /** Send trailing metadata to the peer, from the provided metadata batch. */
   grpc_metadata_batch *send_trailing_metadata;
 
+  /** Send message data to the peer, from the provided byte stream. */
   grpc_byte_stream *send_message;
 
+  /** Receive initial metadata from the stream, into provided metadata batch. */
   grpc_metadata_batch *recv_initial_metadata;
+  /** Should be enqueued when initial metadata is ready to be processed. */
+  grpc_closure *recv_initial_metadata_ready;
+
+  /** Receive message data from the stream, into provided byte stream. */
   grpc_byte_stream **recv_message;
+  /** Should be enqueued when one message is ready to be processed. */
   grpc_closure *recv_message_ready;
+
+  /** Receive trailing metadata from the stream, into provided metadata batch.
+   */
   grpc_metadata_batch *recv_trailing_metadata;
 
+  /** Should be enqueued when all requested operations (excluding recv_message
+      and recv_initial_metadata which have their own closures) in a given batch
+      have been completed. */
   grpc_closure *on_complete;
 
   /** If != GRPC_STATUS_OK, cancel this stream */
@@ -107,7 +123,7 @@ typedef struct grpc_transport_stream_op {
 
 /** Transport op: a set of operations to perform on a transport as a whole */
 typedef struct grpc_transport_op {
-  /** called when processing of this op is done */
+  /** Called when processing of this op is done. */
   grpc_closure *on_consumed;
   /** connectivity monitoring - set connectivity_state to NULL to unsubscribe */
   grpc_closure *on_connectivity_state_change;
@@ -122,9 +138,13 @@ typedef struct grpc_transport_op {
   grpc_status_code goaway_status;
   gpr_slice *goaway_message;
   /** set the callback for accepting new streams;
-      this is a permanent callback, unlike the other one-shot closures */
-  void (*set_accept_stream)(grpc_exec_ctx *exec_ctx, void *user_data,
-                            grpc_transport *transport, const void *server_data);
+      this is a permanent callback, unlike the other one-shot closures.
+      If true, the callback is set to set_accept_stream_fn, with its
+      user_data argument set to set_accept_stream_user_data */
+  bool set_accept_stream;
+  void (*set_accept_stream_fn)(grpc_exec_ctx *exec_ctx, void *user_data,
+                               grpc_transport *transport,
+                               const void *server_data);
   void *set_accept_stream_user_data;
   /** add this transport to a pollset */
   grpc_pollset *bind_pollset;

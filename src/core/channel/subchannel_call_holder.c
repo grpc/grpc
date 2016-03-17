@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -43,9 +43,9 @@
 #define CANCELLED_CALL ((grpc_subchannel_call *)1)
 
 static void subchannel_ready(grpc_exec_ctx *exec_ctx, void *holder,
-                             int success);
+                             bool success);
 static void retry_ops(grpc_exec_ctx *exec_ctx, void *retry_ops_args,
-                      int success);
+                      bool success);
 
 static void add_waiting_locked(grpc_subchannel_call_holder *holder,
                                grpc_transport_stream_op *op);
@@ -166,16 +166,16 @@ retry:
   GPR_TIMER_END("grpc_subchannel_call_holder_perform_op", 0);
 }
 
-static void subchannel_ready(grpc_exec_ctx *exec_ctx, void *arg, int success) {
+static void subchannel_ready(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
   grpc_subchannel_call_holder *holder = arg;
-  grpc_subchannel_call *call;
   gpr_mu_lock(&holder->mu);
   GPR_ASSERT(holder->creation_phase ==
              GRPC_SUBCHANNEL_CALL_HOLDER_PICKING_SUBCHANNEL);
-  call = GET_CALL(holder);
-  GPR_ASSERT(call == NULL || call == CANCELLED_CALL);
   holder->creation_phase = GRPC_SUBCHANNEL_CALL_HOLDER_NOT_CREATING;
   if (holder->connected_subchannel == NULL) {
+    fail_locked(exec_ctx, holder);
+  } else if (1 == gpr_atm_acq_load(&holder->subchannel_call)) {
+    /* already cancelled before subchannel became ready */
     fail_locked(exec_ctx, holder);
   } else {
     gpr_atm_rel_store(
@@ -209,10 +209,11 @@ static void retry_waiting_locked(grpc_exec_ctx *exec_ctx,
   holder->waiting_ops_count = 0;
   holder->waiting_ops_capacity = 0;
   GRPC_SUBCHANNEL_CALL_REF(a->call, "retry_ops");
-  grpc_exec_ctx_enqueue(exec_ctx, grpc_closure_create(retry_ops, a), 1);
+  grpc_exec_ctx_enqueue(exec_ctx, grpc_closure_create(retry_ops, a), true,
+                        NULL);
 }
 
-static void retry_ops(grpc_exec_ctx *exec_ctx, void *args, int success) {
+static void retry_ops(grpc_exec_ctx *exec_ctx, void *args, bool success) {
   retry_ops_args *a = args;
   size_t i;
   for (i = 0; i < a->nops; i++) {
@@ -240,9 +241,8 @@ static void fail_locked(grpc_exec_ctx *exec_ctx,
                         grpc_subchannel_call_holder *holder) {
   size_t i;
   for (i = 0; i < holder->waiting_ops_count; i++) {
-    grpc_exec_ctx_enqueue(exec_ctx, holder->waiting_ops[i].on_complete, 0);
-    grpc_exec_ctx_enqueue(exec_ctx, holder->waiting_ops[i].recv_message_ready,
-                          0);
+    grpc_transport_stream_op_finish_with_failure(exec_ctx,
+                                                 &holder->waiting_ops[i]);
   }
   holder->waiting_ops_count = 0;
 }

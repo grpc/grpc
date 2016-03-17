@@ -94,10 +94,10 @@ extern grpc_mdstr grpc_static_mdstr_table[GRPC_STATIC_MDSTR_COUNT];
 #define GRPC_MDSTR_AUTHORIZATION (&grpc_static_mdstr_table[20])
 /* "cache-control" */
 #define GRPC_MDSTR_CACHE_CONTROL (&grpc_static_mdstr_table[21])
-/* "census" */
-#define GRPC_MDSTR_CENSUS (&grpc_static_mdstr_table[22])
 /* "census-bin" */
-#define GRPC_MDSTR_CENSUS_BIN (&grpc_static_mdstr_table[23])
+#define GRPC_MDSTR_CENSUS_BIN (&grpc_static_mdstr_table[22])
+/* "census-binary-bin" */
+#define GRPC_MDSTR_CENSUS_BINARY_BIN (&grpc_static_mdstr_table[23])
 /* "content-disposition" */
 #define GRPC_MDSTR_CONTENT_DISPOSITION (&grpc_static_mdstr_table[24])
 /* "content-encoding" */

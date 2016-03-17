@@ -1,6 +1,6 @@
 #region Copyright notice and license
 
-// Copyright 2015, Google Inc.
+// Copyright 2015-2016, Google Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -61,8 +61,8 @@ namespace Grpc.Core
         /// </summary>
         public AuthInterceptorContext(string serviceUrl, string methodName)
         {
-            this.serviceUrl = Preconditions.CheckNotNull(serviceUrl);
-            this.methodName = Preconditions.CheckNotNull(methodName);
+            this.serviceUrl = GrpcPreconditions.CheckNotNull(serviceUrl);
+            this.methodName = GrpcPreconditions.CheckNotNull(methodName);
         }
 
         /// <summary>

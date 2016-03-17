@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -34,41 +34,6 @@
 #ifndef GRPCXX_IMPL_CLIENT_UNARY_CALL_H
 #define GRPCXX_IMPL_CLIENT_UNARY_CALL_H
 
-#include <grpc++/impl/call.h>
-#include <grpc++/support/config.h>
-#include <grpc++/support/status.h>
-
-namespace grpc {
-
-class Channel;
-class ClientContext;
-class CompletionQueue;
-class RpcMethod;
-
-// Wrapper that performs a blocking unary call
-template <class InputMessage, class OutputMessage>
-Status BlockingUnaryCall(Channel* channel, const RpcMethod& method,
-                         ClientContext* context, const InputMessage& request,
-                         OutputMessage* result) {
-  CompletionQueue cq;
-  Call call(channel->CreateCall(method, context, &cq));
-  CallOpSet<CallOpSendInitialMetadata, CallOpSendMessage,
-            CallOpRecvInitialMetadata, CallOpRecvMessage<OutputMessage>,
-            CallOpClientSendClose, CallOpClientRecvStatus> ops;
-  Status status = ops.SendMessage(request);
-  if (!status.ok()) {
-    return status;
-  }
-  ops.SendInitialMetadata(context->send_initial_metadata_);
-  ops.RecvInitialMetadata(context);
-  ops.RecvMessage(result);
-  ops.ClientSendClose();
-  ops.ClientRecvStatus(context, &status);
-  call.PerformOps(&ops);
-  GPR_ASSERT((cq.Pluck(&ops) && ops.got_message) || !status.ok());
-  return status;
-}
-
-}  // namespace grpc
+#include <grpc++/impl/codegen/client_unary_call.h>
 
 #endif  // GRPCXX_IMPL_CLIENT_UNARY_CALL_H

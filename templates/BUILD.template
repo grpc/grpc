@@ -104,6 +104,11 @@
       "${dep}",
   % endfor
     ],
+  % if lib.name in ("grpc", "grpc_unsecure"):
+    copts = [
+      "-std=gnu99",
+    ],
+  % endif
   )
   </%def>
   

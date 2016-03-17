@@ -1,6 +1,6 @@
 #region Copyright notice and license
 
-// Copyright 2015, Google Inc.
+// Copyright 2015-2016, Google Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -90,11 +90,11 @@ namespace Grpc.Core
         public SslServerCredentials(IEnumerable<KeyCertificatePair> keyCertificatePairs, string rootCertificates, bool forceClientAuth)
         {
             this.keyCertificatePairs = new List<KeyCertificatePair>(keyCertificatePairs).AsReadOnly();
-            Preconditions.CheckArgument(this.keyCertificatePairs.Count > 0,
+            GrpcPreconditions.CheckArgument(this.keyCertificatePairs.Count > 0,
                 "At least one KeyCertificatePair needs to be provided.");
             if (forceClientAuth)
             {
-                Preconditions.CheckNotNull(rootCertificates,
+                GrpcPreconditions.CheckNotNull(rootCertificates,
                     "Cannot force client authentication unless you provide rootCertificates.");
             }
             this.rootCertificates = rootCertificates;

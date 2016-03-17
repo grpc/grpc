@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -165,11 +165,11 @@ static void partly_done(grpc_exec_ctx *exec_ctx, state_watcher *w,
   }
 }
 
-static void watch_complete(grpc_exec_ctx *exec_ctx, void *pw, int success) {
+static void watch_complete(grpc_exec_ctx *exec_ctx, void *pw, bool success) {
   partly_done(exec_ctx, pw, 1);
 }
 
-static void timeout_complete(grpc_exec_ctx *exec_ctx, void *pw, int success) {
+static void timeout_complete(grpc_exec_ctx *exec_ctx, void *pw, bool success) {
   partly_done(exec_ctx, pw, 0);
 }
 

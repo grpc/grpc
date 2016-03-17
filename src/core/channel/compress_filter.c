@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -153,7 +153,7 @@ static void process_send_initial_metadata(
 static void continue_send_message(grpc_exec_ctx *exec_ctx,
                                   grpc_call_element *elem);
 
-static void send_done(grpc_exec_ctx *exec_ctx, void *elemp, int success) {
+static void send_done(grpc_exec_ctx *exec_ctx, void *elemp, bool success) {
   grpc_call_element *elem = elemp;
   call_data *calld = elem->call_data;
   gpr_slice_buffer_reset_and_unref(&calld->slices);
@@ -183,7 +183,7 @@ static void finish_send_message(grpc_exec_ctx *exec_ctx,
   grpc_call_next_op(exec_ctx, elem, &calld->send_op);
 }
 
-static void got_slice(grpc_exec_ctx *exec_ctx, void *elemp, int success) {
+static void got_slice(grpc_exec_ctx *exec_ctx, void *elemp, bool success) {
   grpc_call_element *elem = elemp;
   call_data *calld = elem->call_data;
   gpr_slice_buffer_add(&calld->slices, calld->incoming_slice);

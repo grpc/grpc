@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,24 +31,26 @@
  *
  */
 
+#include <deque>
 #include <list>
 #include <thread>
-#include <deque>
+#include <unordered_map>
 #include <vector>
 
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/host_port.h>
+#include <grpc++/channel.h>
 #include <grpc++/client_context.h>
 #include <grpc++/create_channel.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/host_port.h>
+#include <grpc/support/log.h>
 
 #include "src/core/support/env.h"
+#include "src/proto/grpc/testing/services.grpc.pb.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/qps/driver.h"
 #include "test/cpp/qps/histogram.h"
 #include "test/cpp/qps/qps_worker.h"
-#include "src/proto/grpc/testing/services.grpc.pb.h"
 
 using std::list;
 using std::thread;
@@ -58,7 +60,42 @@ using std::vector;
 
 namespace grpc {
 namespace testing {
-static deque<string> get_hosts(const string& name) {
+static std::string get_host(const std::string& worker) {
+  char* host;
+  char* port;
+
+  gpr_split_host_port(worker.c_str(), &host, &port);
+  const string s(host);
+
+  gpr_free(host);
+  gpr_free(port);
+  return s;
+}
+
+static std::unordered_map<string, std::deque<int>> get_hosts_and_cores(
+    const deque<string>& workers) {
+  std::unordered_map<string, std::deque<int>> hosts;
+  for (auto it = workers.begin(); it != workers.end(); it++) {
+    const string host = get_host(*it);
+    if (hosts.find(host) == hosts.end()) {
+      auto stub = WorkerService::NewStub(
+          CreateChannel(*it, InsecureChannelCredentials()));
+      grpc::ClientContext ctx;
+      CoreRequest dummy;
+      CoreResponse cores;
+      grpc::Status s = stub->CoreCount(&ctx, dummy, &cores);
+      assert(s.ok());
+      std::deque<int> dq;
+      for (int i = 0; i < cores.cores(); i++) {
+        dq.push_back(i);
+      }
+      hosts[host] = dq;
+    }
+  }
+  return hosts;
+}
+
+static deque<string> get_workers(const string& name) {
   char* env = gpr_getenv(name.c_str());
   if (!env) return deque<string>();
 
@@ -104,18 +141,18 @@ struct ClientData {
 
 std::unique_ptr<ScenarioResult> RunScenario(
     const ClientConfig& initial_client_config, size_t num_clients,
-    const ServerConfig& server_config, size_t num_servers, int warmup_seconds,
-    int benchmark_seconds, int spawn_local_worker_count) {
+    const ServerConfig& initial_server_config, size_t num_servers,
+    int warmup_seconds, int benchmark_seconds, int spawn_local_worker_count) {
   // ClientContext allocations (all are destroyed at scope exit)
   list<ClientContext> contexts;
 
   // To be added to the result, containing the final configuration used for
   // client and config (including host, etc.)
   ClientConfig result_client_config;
-  ServerConfig result_server_config;
+  const ServerConfig result_server_config = initial_server_config;
 
   // Get client, server lists
-  auto workers = get_hosts("QPS_WORKERS");
+  auto workers = get_workers("QPS_WORKERS");
   ClientConfig client_config = initial_client_config;
 
   // Spawn some local workers if desired
@@ -142,6 +179,15 @@ std::unique_ptr<ScenarioResult> RunScenario(
     }
   }
 
+  // Setup the hosts and core counts
+  auto hosts_cores = get_hosts_and_cores(workers);
+
+  // if num_clients is set to <=0, do dynamic sizing: all workers
+  // except for servers are clients
+  if (num_clients <= 0) {
+    num_clients = workers.size() - num_servers;
+  }
+
   // TODO(ctiller): support running multiple configurations, and binpack
   // client/server pairs
   // to available workers
@@ -151,9 +197,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
   workers.resize(num_clients + num_servers);
 
   gpr_timespec deadline =
-      gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                   gpr_time_from_seconds(
-                       warmup_seconds + benchmark_seconds + 20, GPR_TIMESPAN));
+      GRPC_TIMEOUT_SECONDS_TO_DEADLINE(warmup_seconds + benchmark_seconds + 20);
 
   // Start servers
   using runsc::ServerData;
@@ -161,20 +205,53 @@ std::unique_ptr<ScenarioResult> RunScenario(
   // where class contained in std::vector must have a copy constructor
   auto* servers = new ServerData[num_servers];
   for (size_t i = 0; i < num_servers; i++) {
+    gpr_log(GPR_INFO, "Starting server on %s (worker #%d)", workers[i].c_str(),
+            i);
     servers[i].stub = WorkerService::NewStub(
         CreateChannel(workers[i], InsecureChannelCredentials()));
+
+    ServerConfig server_config = initial_server_config;
+    char* host;
+    char* driver_port;
+    char* cli_target;
+    gpr_split_host_port(workers[i].c_str(), &host, &driver_port);
+    string host_str(host);
+    int server_core_limit = initial_server_config.core_limit();
+    int client_core_limit = initial_client_config.core_limit();
+
+    if (server_core_limit == 0 && client_core_limit > 0) {
+      // In this case, limit the server cores if it matches the
+      // same host as one or more clients
+      const auto& dq = hosts_cores.at(host_str);
+      bool match = false;
+      int limit = dq.size();
+      for (size_t cli = 0; cli < num_clients; cli++) {
+        if (host_str == get_host(workers[cli + num_servers])) {
+          limit -= client_core_limit;
+          match = true;
+        }
+      }
+      if (match) {
+        GPR_ASSERT(limit > 0);
+        server_core_limit = limit;
+      }
+    }
+    if (server_core_limit > 0) {
+      auto& dq = hosts_cores.at(host_str);
+      GPR_ASSERT(dq.size() >= static_cast<size_t>(server_core_limit));
+      for (int core = 0; core < server_core_limit; core++) {
+        server_config.add_core_list(dq.front());
+        dq.pop_front();
+      }
+    }
+
     ServerArgs args;
-    result_server_config = server_config;
     *args.mutable_setup() = server_config;
     servers[i].stream =
         servers[i].stub->RunServer(runsc::AllocContext(&contexts, deadline));
     GPR_ASSERT(servers[i].stream->Write(args));
     ServerStatus init_status;
     GPR_ASSERT(servers[i].stream->Read(&init_status));
-    char* host;
-    char* driver_port;
-    char* cli_target;
-    gpr_split_host_port(workers[i].c_str(), &host, &driver_port);
     gpr_join_host_port(&cli_target, host, init_status.port());
     client_config.add_server_targets(cli_target);
     gpr_free(host);
@@ -182,17 +259,50 @@ std::unique_ptr<ScenarioResult> RunScenario(
     gpr_free(cli_target);
   }
 
+  // Targets are all set by now
+  result_client_config = client_config;
   // Start clients
   using runsc::ClientData;
   // clients is array rather than std::vector to avoid gcc-4.4 issues
   // where class contained in std::vector must have a copy constructor
   auto* clients = new ClientData[num_clients];
   for (size_t i = 0; i < num_clients; i++) {
+    const auto& worker = workers[i + num_servers];
+    gpr_log(GPR_INFO, "Starting client on %s (worker #%d)", worker.c_str(),
+            i + num_servers);
     clients[i].stub = WorkerService::NewStub(
-        CreateChannel(workers[i + num_servers], InsecureChannelCredentials()));
+        CreateChannel(worker, InsecureChannelCredentials()));
+    ClientConfig per_client_config = client_config;
+
+    int server_core_limit = initial_server_config.core_limit();
+    int client_core_limit = initial_client_config.core_limit();
+    if ((server_core_limit > 0) || (client_core_limit > 0)) {
+      auto& dq = hosts_cores.at(get_host(worker));
+      if (client_core_limit == 0) {
+        // limit client cores if it matches a server host
+        bool match = false;
+        int limit = dq.size();
+        for (size_t srv = 0; srv < num_servers; srv++) {
+          if (get_host(worker) == get_host(workers[srv])) {
+            match = true;
+          }
+        }
+        if (match) {
+          GPR_ASSERT(limit > 0);
+          client_core_limit = limit;
+        }
+      }
+      if (client_core_limit > 0) {
+        GPR_ASSERT(dq.size() >= static_cast<size_t>(client_core_limit));
+        for (int core = 0; core < client_core_limit; core++) {
+          per_client_config.add_core_list(dq.front());
+          dq.pop_front();
+        }
+      }
+    }
+
     ClientArgs args;
-    result_client_config = client_config;
-    *args.mutable_setup() = client_config;
+    *args.mutable_setup() = per_client_config;
     clients[i].stream =
         clients[i].stub->RunClient(runsc::AllocContext(&contexts, deadline));
     GPR_ASSERT(clients[i].stream->Write(args));
@@ -238,19 +348,10 @@ std::unique_ptr<ScenarioResult> RunScenario(
   std::unique_ptr<ScenarioResult> result(new ScenarioResult);
   result->client_config = result_client_config;
   result->server_config = result_server_config;
-  gpr_log(GPR_INFO, "Finishing");
-  for (auto server = &servers[0]; server != &servers[num_servers]; server++) {
-    GPR_ASSERT(server->stream->Write(server_mark));
-  }
+  gpr_log(GPR_INFO, "Finishing clients");
   for (auto client = &clients[0]; client != &clients[num_clients]; client++) {
     GPR_ASSERT(client->stream->Write(client_mark));
-  }
-  for (auto server = &servers[0]; server != &servers[num_servers]; server++) {
-    GPR_ASSERT(server->stream->Read(&server_status));
-    const auto& stats = server_status.stats();
-    result->server_resources.emplace_back(
-        stats.time_elapsed(), stats.time_user(), stats.time_system(),
-        server_status.cores());
+    GPR_ASSERT(client->stream->WritesDone());
   }
   for (auto client = &clients[0]; client != &clients[num_clients]; client++) {
     GPR_ASSERT(client->stream->Read(&client_status));
@@ -258,19 +359,45 @@ std::unique_ptr<ScenarioResult> RunScenario(
     result->latencies.MergeProto(stats.latencies());
     result->client_resources.emplace_back(
         stats.time_elapsed(), stats.time_user(), stats.time_system(), -1);
+    GPR_ASSERT(!client->stream->Read(&client_status));
   }
-
   for (auto client = &clients[0]; client != &clients[num_clients]; client++) {
-    GPR_ASSERT(client->stream->WritesDone());
     GPR_ASSERT(client->stream->Finish().ok());
   }
+  delete[] clients;
+
+  gpr_log(GPR_INFO, "Finishing servers");
   for (auto server = &servers[0]; server != &servers[num_servers]; server++) {
+    GPR_ASSERT(server->stream->Write(server_mark));
     GPR_ASSERT(server->stream->WritesDone());
+  }
+  for (auto server = &servers[0]; server != &servers[num_servers]; server++) {
+    GPR_ASSERT(server->stream->Read(&server_status));
+    const auto& stats = server_status.stats();
+    result->server_resources.emplace_back(
+        stats.time_elapsed(), stats.time_user(), stats.time_system(),
+        server_status.cores());
+    GPR_ASSERT(!server->stream->Read(&server_status));
+  }
+  for (auto server = &servers[0]; server != &servers[num_servers]; server++) {
     GPR_ASSERT(server->stream->Finish().ok());
   }
-  delete[] clients;
+
   delete[] servers;
   return result;
 }
+
+void RunQuit() {
+  // Get client, server lists
+  auto workers = get_workers("QPS_WORKERS");
+  for (size_t i = 0; i < workers.size(); i++) {
+    auto stub = WorkerService::NewStub(
+        CreateChannel(workers[i], InsecureChannelCredentials()));
+    Void dummy;
+    grpc::ClientContext ctx;
+    GPR_ASSERT(stub->QuitWorker(&ctx, dummy, &dummy).ok());
+  }
+}
+
 }  // namespace testing
 }  // namespace grpc

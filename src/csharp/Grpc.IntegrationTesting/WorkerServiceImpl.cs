@@ -1,6 +1,6 @@
 #region Copyright notice and license
 
-// Copyright 2015, Google Inc.
+// Copyright 2015-2016, Google Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -47,9 +47,16 @@ namespace Grpc.Testing
     /// </summary>
     public class WorkerServiceImpl : WorkerService.IWorkerService
     {
+        readonly Action stopRequestHandler;
+
+        public WorkerServiceImpl(Action stopRequestHandler)
+        {
+            this.stopRequestHandler = GrpcPreconditions.CheckNotNull(stopRequestHandler);
+        }
+        
         public async Task RunServer(IAsyncStreamReader<ServerArgs> requestStream, IServerStreamWriter<ServerStatus> responseStream, ServerCallContext context)
         {
-            Grpc.Core.Utils.Preconditions.CheckState(await requestStream.MoveNext());
+            GrpcPreconditions.CheckState(await requestStream.MoveNext());
             var serverConfig = requestStream.Current.Setup;
             var runner = ServerRunners.CreateStarted(serverConfig);
 
@@ -73,7 +80,7 @@ namespace Grpc.Testing
 
         public async Task RunClient(IAsyncStreamReader<ClientArgs> requestStream, IServerStreamWriter<ClientStatus> responseStream, ServerCallContext context)
         {
-            Grpc.Core.Utils.Preconditions.CheckState(await requestStream.MoveNext());
+            GrpcPreconditions.CheckState(await requestStream.MoveNext());
             var clientConfig = requestStream.Current.Setup;
             var runner = ClientRunners.CreateStarted(clientConfig);
 
@@ -91,6 +98,17 @@ namespace Grpc.Testing
                 });
             }
             await runner.StopAsync();
+        }
+
+        public Task<CoreResponse> CoreCount(CoreRequest request, ServerCallContext context)
+        {
+            return Task.FromResult(new CoreResponse { Cores = Environment.ProcessorCount });
+        }
+
+        public Task<Void> QuitWorker(Void request, ServerCallContext context)
+        {
+            stopRequestHandler();
+            return Task.FromResult(new Void());
         }
     }
 }

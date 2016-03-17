@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -420,7 +420,7 @@ static void zookeeper_maybe_finish_next_locked(grpc_exec_ctx *exec_ctx,
     if (r->resolved_config != NULL) {
       grpc_client_config_ref(r->resolved_config);
     }
-    grpc_exec_ctx_enqueue(exec_ctx, r->next_completion, 1);
+    grpc_exec_ctx_enqueue(exec_ctx, r->next_completion, true, NULL);
     r->next_completion = NULL;
     r->published_version = r->resolved_version;
   }

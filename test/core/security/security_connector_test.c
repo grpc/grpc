@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -34,17 +34,20 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <grpc/grpc_security.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
+#include <grpc/support/useful.h>
+
 #include "src/core/security/security_connector.h"
 #include "src/core/security/security_context.h"
+#include "src/core/support/env.h"
+#include "src/core/support/tmpfile.h"
+#include "src/core/support/string.h"
 #include "src/core/tsi/ssl_transport_security.h"
 #include "src/core/tsi/transport_security.h"
 #include "test/core/util/test_config.h"
-
-#include <grpc/grpc_security.h>
-
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/useful.h>
 
 static int check_transport_security_type(const grpc_auth_context *ctx) {
   grpc_auth_property_iterator it = grpc_auth_context_find_properties_by_name(
@@ -297,7 +300,66 @@ static void test_cn_and_multiple_sans_and_others_ssl_peer_to_auth_context(
   GRPC_AUTH_CONTEXT_UNREF(ctx, "test");
 }
 
-/* TODO(jboeuf): Unit-test tsi_shallow_peer_from_auth_context. */
+static const char *roots_for_override_api = "roots for override api";
+
+static grpc_ssl_roots_override_result override_roots_success(
+    char **pem_root_certs) {
+  *pem_root_certs = gpr_strdup(roots_for_override_api);
+  return GRPC_SSL_ROOTS_OVERRIDE_OK;
+}
+
+static grpc_ssl_roots_override_result override_roots_permanent_failure(
+    char **pem_root_certs) {
+  return GRPC_SSL_ROOTS_OVERRIDE_FAIL_PERMANENTLY;
+}
+
+static void test_default_ssl_roots(void) {
+  const char *roots_for_env_var = "roots for env var";
+
+  char *roots_env_var_file_path;
+  FILE *roots_env_var_file =
+      gpr_tmpfile("test_roots_for_env_var", &roots_env_var_file_path);
+  fwrite(roots_for_env_var, 1, strlen(roots_for_env_var), roots_env_var_file);
+  fclose(roots_env_var_file);
+
+  /* First let's get the root through the override: set the env to an invalid
+     value. */
+  gpr_setenv(GRPC_DEFAULT_SSL_ROOTS_FILE_PATH_ENV_VAR, "");
+  grpc_set_ssl_roots_override_callback(override_roots_success);
+  gpr_slice roots = grpc_get_default_ssl_roots_for_testing();
+  char *roots_contents = gpr_dump_slice(roots, GPR_DUMP_ASCII);
+  gpr_slice_unref(roots);
+  GPR_ASSERT(strcmp(roots_contents, roots_for_override_api) == 0);
+  gpr_free(roots_contents);
+
+  /* Now let's set the env var: We should get the contents pointed value
+     instead. */
+  gpr_setenv(GRPC_DEFAULT_SSL_ROOTS_FILE_PATH_ENV_VAR, roots_env_var_file_path);
+  roots = grpc_get_default_ssl_roots_for_testing();
+  roots_contents = gpr_dump_slice(roots, GPR_DUMP_ASCII);
+  gpr_slice_unref(roots);
+  GPR_ASSERT(strcmp(roots_contents, roots_for_env_var) == 0);
+  gpr_free(roots_contents);
+
+  /* Now reset the env var. We should fall back to the value overridden using
+     the api. */
+  gpr_setenv(GRPC_DEFAULT_SSL_ROOTS_FILE_PATH_ENV_VAR, "");
+  roots = grpc_get_default_ssl_roots_for_testing();
+  roots_contents = gpr_dump_slice(roots, GPR_DUMP_ASCII);
+  gpr_slice_unref(roots);
+  GPR_ASSERT(strcmp(roots_contents, roots_for_override_api) == 0);
+  gpr_free(roots_contents);
+
+  /* Now setup a permanent failure for the overridden roots and we should get
+     an empty slice. */
+  grpc_set_ssl_roots_override_callback(override_roots_permanent_failure);
+  roots = grpc_get_default_ssl_roots_for_testing();
+  GPR_ASSERT(GPR_SLICE_IS_EMPTY(roots));
+
+  /* Cleanup. */
+  remove(roots_env_var_file_path);
+  gpr_free(roots_env_var_file_path);
+}
 
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
@@ -308,6 +370,7 @@ int main(int argc, char **argv) {
   test_cn_and_one_san_ssl_peer_to_auth_context();
   test_cn_and_multiple_sans_ssl_peer_to_auth_context();
   test_cn_and_multiple_sans_and_others_ssl_peer_to_auth_context();
+  test_default_ssl_roots();
 
   grpc_shutdown();
   return 0;

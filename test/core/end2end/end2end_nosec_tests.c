@@ -46,9 +46,8 @@ extern void cancel_after_invoke(grpc_end2end_test_config config);
 extern void cancel_before_invoke(grpc_end2end_test_config config);
 extern void cancel_in_a_vacuum(grpc_end2end_test_config config);
 extern void cancel_with_status(grpc_end2end_test_config config);
-extern void channel_connectivity(grpc_end2end_test_config config);
-extern void channel_ping(grpc_end2end_test_config config);
 extern void compressed_payload(grpc_end2end_test_config config);
+extern void connectivity(grpc_end2end_test_config config);
 extern void default_host(grpc_end2end_test_config config);
 extern void disappearing_server(grpc_end2end_test_config config);
 extern void empty_batch(grpc_end2end_test_config config);
@@ -59,10 +58,10 @@ extern void invoke_large_request(grpc_end2end_test_config config);
 extern void large_metadata(grpc_end2end_test_config config);
 extern void max_concurrent_streams(grpc_end2end_test_config config);
 extern void max_message_length(grpc_end2end_test_config config);
-extern void metadata(grpc_end2end_test_config config);
 extern void negative_deadline(grpc_end2end_test_config config);
 extern void no_op(grpc_end2end_test_config config);
 extern void payload(grpc_end2end_test_config config);
+extern void ping(grpc_end2end_test_config config);
 extern void ping_pong_streaming(grpc_end2end_test_config config);
 extern void registered_call(grpc_end2end_test_config config);
 extern void request_with_flags(grpc_end2end_test_config config);
@@ -71,6 +70,7 @@ extern void server_finishes_request(grpc_end2end_test_config config);
 extern void shutdown_finishes_calls(grpc_end2end_test_config config);
 extern void shutdown_finishes_tags(grpc_end2end_test_config config);
 extern void simple_delayed_request(grpc_end2end_test_config config);
+extern void simple_metadata(grpc_end2end_test_config config);
 extern void simple_request(grpc_end2end_test_config config);
 extern void trailing_metadata(grpc_end2end_test_config config);
 
@@ -87,9 +87,8 @@ void grpc_end2end_tests(int argc, char **argv,
     cancel_before_invoke(config);
     cancel_in_a_vacuum(config);
     cancel_with_status(config);
-    channel_connectivity(config);
-    channel_ping(config);
     compressed_payload(config);
+    connectivity(config);
     default_host(config);
     disappearing_server(config);
     empty_batch(config);
@@ -100,10 +99,10 @@ void grpc_end2end_tests(int argc, char **argv,
     large_metadata(config);
     max_concurrent_streams(config);
     max_message_length(config);
-    metadata(config);
     negative_deadline(config);
     no_op(config);
     payload(config);
+    ping(config);
     ping_pong_streaming(config);
     registered_call(config);
     request_with_flags(config);
@@ -112,6 +111,7 @@ void grpc_end2end_tests(int argc, char **argv,
     shutdown_finishes_calls(config);
     shutdown_finishes_tags(config);
     simple_delayed_request(config);
+    simple_metadata(config);
     simple_request(config);
     trailing_metadata(config);
     return;
@@ -150,16 +150,12 @@ void grpc_end2end_tests(int argc, char **argv,
       cancel_with_status(config);
       continue;
     }
-    if (0 == strcmp("channel_connectivity", argv[i])) {
-      channel_connectivity(config);
-      continue;
-    }
-    if (0 == strcmp("channel_ping", argv[i])) {
-      channel_ping(config);
-      continue;
-    }
     if (0 == strcmp("compressed_payload", argv[i])) {
       compressed_payload(config);
+      continue;
+    }
+    if (0 == strcmp("connectivity", argv[i])) {
+      connectivity(config);
       continue;
     }
     if (0 == strcmp("default_host", argv[i])) {
@@ -202,10 +198,6 @@ void grpc_end2end_tests(int argc, char **argv,
       max_message_length(config);
       continue;
     }
-    if (0 == strcmp("metadata", argv[i])) {
-      metadata(config);
-      continue;
-    }
     if (0 == strcmp("negative_deadline", argv[i])) {
       negative_deadline(config);
       continue;
@@ -216,6 +208,10 @@ void grpc_end2end_tests(int argc, char **argv,
     }
     if (0 == strcmp("payload", argv[i])) {
       payload(config);
+      continue;
+    }
+    if (0 == strcmp("ping", argv[i])) {
+      ping(config);
       continue;
     }
     if (0 == strcmp("ping_pong_streaming", argv[i])) {
@@ -248,6 +244,10 @@ void grpc_end2end_tests(int argc, char **argv,
     }
     if (0 == strcmp("simple_delayed_request", argv[i])) {
       simple_delayed_request(config);
+      continue;
+    }
+    if (0 == strcmp("simple_metadata", argv[i])) {
+      simple_metadata(config);
       continue;
     }
     if (0 == strcmp("simple_request", argv[i])) {

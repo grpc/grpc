@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -57,7 +57,6 @@ static void RunSynchronousUnaryPingPong() {
 
   ServerConfig server_config;
   server_config.set_server_type(SYNC_SERVER);
-  server_config.set_host("localhost");
 
   // Set up security params
   SecurityParams security;

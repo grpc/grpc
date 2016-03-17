@@ -1,5 +1,5 @@
 #!/usr/bin/env python2.7
-# Copyright 2015, Google Inc.
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -35,15 +35,15 @@
 import collections
 import yaml
 
-TestOptions = collections.namedtuple('TestOptions', 'flaky')
-default_test_options = TestOptions(False)
+TestOptions = collections.namedtuple('TestOptions', 'flaky cpu_cost')
+default_test_options = TestOptions(False, 1.0)
 
 # maps test names to options
 BAD_CLIENT_TESTS = {
     'badreq': default_test_options,
-    'connection_prefix': default_test_options,
-    'headers': default_test_options,
-    'initial_settings_frame': default_test_options,
+    'connection_prefix': default_test_options._replace(cpu_cost=0.2),
+    'headers': default_test_options._replace(cpu_cost=0.2),
+    'initial_settings_frame': default_test_options._replace(cpu_cost=0.2),
     'server_registered_method': default_test_options,
     'simple_request': default_test_options,
     'window_overflow': default_test_options,
@@ -75,6 +75,7 @@ def main():
       'targets': [
           {
               'name': '%s_bad_client_test' % t,
+              'cpu_cost': BAD_CLIENT_TESTS[t].cpu_cost,
               'build': 'test',
               'language': 'c',
               'secure': 'no',

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,8 +33,14 @@
 
 'use strict';
 
+var os = require('os');
 var BenchmarkClient = require('./benchmark_client');
 var BenchmarkServer = require('./benchmark_server');
+
+exports.quitWorker = function quitWorker(call, callback) {
+  callback(null, {});
+  process.exit(0);
+}
 
 exports.runClient = function runClient(call) {
   var client;
@@ -99,7 +105,7 @@ exports.runServer = function runServer(call) {
     var stats;
     switch (request.argtype) {
       case 'setup':
-      server = new BenchmarkServer(request.setup.host, request.setup.port,
+      server = new BenchmarkServer('[::]', request.setup.port,
                                    request.setup.security_params);
       server.start();
       stats = server.mark();
@@ -129,4 +135,8 @@ exports.runServer = function runServer(call) {
       call.end();
     });
   });
+};
+
+exports.coreCount = function coreCount(call, callback) {
+  callback(null, {cores: os.cpus().length});
 };

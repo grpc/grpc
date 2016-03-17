@@ -1,4 +1,4 @@
-# Copyright 2015, Google Inc.
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -76,7 +76,7 @@ class Receiver(face.ResponseReceiver):
   def unary_response(self):
     with self._condition:
       if self._abortion is not None:
-        raise AssertionError('Aborted with abortion "%s"!' % self._abortion)
+        raise AssertionError('Aborted: "{}"!'.format(self._abortion))
       elif len(self._responses) != 1:
         raise AssertionError(
             '%d responses received, not exactly one!', len(self._responses))
@@ -88,7 +88,7 @@ class Receiver(face.ResponseReceiver):
       if self._abortion is None:
         return list(self._responses)
       else:
-        raise AssertionError('Aborted with abortion "%s"!' % self._abortion)
+        raise AssertionError('Aborted: "{}"!'.format(self._abortion))
 
   def abortion(self):
     with self._condition:

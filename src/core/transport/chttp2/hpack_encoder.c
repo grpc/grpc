@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -35,6 +35,11 @@
 
 #include <assert.h>
 #include <string.h>
+
+/* This is here for grpc_is_binary_header
+ * TODO(murgatroid99): Remove this
+ */
+#include <grpc/grpc.h>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -278,7 +283,7 @@ static void emit_lithdr_incidx(grpc_chttp2_hpack_compressor *c,
   len_val_len = GRPC_CHTTP2_VARINT_LENGTH((uint32_t)len_val, 1);
   GRPC_CHTTP2_WRITE_VARINT(key_index, 2, 0x40,
                            add_tiny_header_data(st, len_pfx), len_pfx);
-  GRPC_CHTTP2_WRITE_VARINT((uint32_t)len_val, 1, 0x00,
+  GRPC_CHTTP2_WRITE_VARINT((uint32_t)len_val, 1, huffman_prefix,
                            add_tiny_header_data(st, len_val_len), len_val_len);
   add_header_data(st, gpr_slice_ref(value_slice));
 }
@@ -295,7 +300,7 @@ static void emit_lithdr_noidx(grpc_chttp2_hpack_compressor *c,
   len_val_len = GRPC_CHTTP2_VARINT_LENGTH((uint32_t)len_val, 1);
   GRPC_CHTTP2_WRITE_VARINT(key_index, 4, 0x00,
                            add_tiny_header_data(st, len_pfx), len_pfx);
-  GRPC_CHTTP2_WRITE_VARINT((uint32_t)len_val, 1, 0x00,
+  GRPC_CHTTP2_WRITE_VARINT((uint32_t)len_val, 1, huffman_prefix,
                            add_tiny_header_data(st, len_val_len), len_val_len);
   add_header_data(st, gpr_slice_ref(value_slice));
 }

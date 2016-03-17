@@ -1,4 +1,4 @@
-# Copyright 2015, Google Inc.
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -198,6 +198,7 @@ shared_examples 'basic GRPC message delivery is OK' do
     # confirm the client can receive the server response and status.
     client_ops = {
       CallOps::SEND_CLOSE_FROM_CLIENT => nil,
+      CallOps::RECV_INITIAL_METADATA => nil,
       CallOps::RECV_MESSAGE => nil,
       CallOps::RECV_STATUS_ON_CLIENT => nil
     }
@@ -397,7 +398,7 @@ describe 'the http client/server' do
     @server = GRPC::Core::Server.new(@server_queue, nil)
     server_port = @server.add_http2_port(server_host, :this_port_is_insecure)
     @server.start
-    @ch = Channel.new("0.0.0.0:#{server_port}", nil)
+    @ch = Channel.new("0.0.0.0:#{server_port}", nil, :this_channel_is_insecure)
   end
 
   after(:example) do

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -109,13 +109,13 @@ void gpr_default_log(gpr_log_func_args *args) {
   fflush(stderr);
 }
 
-char *gpr_format_message(DWORD messageid) {
+char *gpr_format_message(int messageid) {
   LPTSTR tmessage;
   char *message;
   DWORD status = FormatMessage(
       FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM |
           FORMAT_MESSAGE_IGNORE_INSERTS,
-      NULL, messageid, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+      NULL, (DWORD)messageid, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
       (LPTSTR)(&tmessage), 0, NULL);
   if (status == 0) return gpr_strdup("Unable to retrieve error string");
   message = gpr_tchar_to_char(tmessage);

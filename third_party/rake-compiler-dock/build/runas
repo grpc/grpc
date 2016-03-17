@@ -1,0 +1,12 @@
+#!/bin/bash
+
+groupadd -g "$GID" "$GROUP"
+mkdir -p /tmp/home
+useradd -g "$GID" -u "$UID" -G rvm,sudo -p "" -b /tmp/home -m "$USER"
+
+HOME=$(bash <<< "echo ~$USER")
+ln -s /usr/local/rake-compiler "$HOME"/.rake-compiler
+
+sudo -u "$USER" --set-home \
+    BASH_ENV=/etc/rubybashrc \
+    -- "$@"

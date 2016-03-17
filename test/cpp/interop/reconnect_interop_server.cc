@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,6 +31,8 @@
  *
  */
 
+// Test description at doc/connection-backoff-interop-test-description.md
+
 #include <signal.h>
 #include <unistd.h>
 
@@ -40,17 +42,17 @@
 #include <sstream>
 
 #include <gflags/gflags.h>
-#include <grpc/grpc.h>
-#include <grpc/support/log.h>
 #include <grpc++/server.h>
 #include <grpc++/server_builder.h>
 #include <grpc++/server_context.h>
+#include <grpc/grpc.h>
+#include <grpc/support/log.h>
 
-#include "test/core/util/reconnect_server.h"
-#include "test/cpp/util/test_config.h"
-#include "src/proto/grpc/testing/test.grpc.pb.h"
 #include "src/proto/grpc/testing/empty.grpc.pb.h"
 #include "src/proto/grpc/testing/messages.grpc.pb.h"
+#include "src/proto/grpc/testing/test.grpc.pb.h"
+#include "test/core/util/reconnect_server.h"
+#include "test/cpp/util/test_config.h"
 
 DEFINE_int32(control_port, 0, "Server port for controlling the server.");
 DEFINE_int32(retry_port, 0,
