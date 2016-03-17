@@ -144,7 +144,6 @@ def without(l, e):
 
 def main():
   sec_deps = [
-    'end2end_certs',
     'grpc_test_util',
     'grpc',
     'gpr_test_util',
@@ -186,18 +185,6 @@ def main():
                           'test/core/end2end/end2end_tests.h'],
               'deps': unsec_deps,
               'vs_proj_dir': 'test/end2end/tests',
-          }
-      ] + [
-          {
-              'name': 'end2end_certs',
-              'build': 'private',
-              'language': 'c',
-              'src': [
-                  "test/core/end2end/data/test_root_cert.c",
-                  "test/core/end2end/data/server1_cert.c",
-                  "test/core/end2end/data/server1_key.c"
-              ],
-              'vs_proj_dir': 'test/end2end',
           }
       ],
       'targets': [
