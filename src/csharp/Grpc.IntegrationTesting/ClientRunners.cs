@@ -1,6 +1,6 @@
 #region Copyright notice and license
 
-// Copyright 2015, Google Inc.
+// Copyright 2015-2016, Google Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -58,7 +58,7 @@ namespace Grpc.IntegrationTesting
         public static IClientRunner CreateStarted(ClientConfig config)
         {
             string target = config.ServerTargets.Single();
-            Grpc.Core.Utils.Preconditions.CheckArgument(config.LoadParams.LoadCase == LoadParams.LoadOneofCase.ClosedLoop);
+            GrpcPreconditions.CheckArgument(config.LoadParams.LoadCase == LoadParams.LoadOneofCase.ClosedLoop);
 
             var credentials = config.SecurityParams != null ? TestCredentials.CreateSslCredentials() : ChannelCredentials.Insecure;
             var channel = new Channel(target, credentials);
@@ -95,7 +95,7 @@ namespace Grpc.IntegrationTesting
         
         public SyncUnaryClientRunner(Channel channel, int payloadSize, HistogramParams histogramParams)
         {
-            this.channel = Grpc.Core.Utils.Preconditions.CheckNotNull(channel);
+            this.channel = GrpcPreconditions.CheckNotNull(channel);
             this.payloadSize = payloadSize;
             this.histogram = new Histogram(histogramParams.Resolution, histogramParams.MaxPossible);
 

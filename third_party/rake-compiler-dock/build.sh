@@ -4,4 +4,4 @@
 
 echo 'RUN echo \\'
 tar cz build | base64 | sed 's/$/\\/'
-echo '| base64 -d | tar xzC /'
+echo '| base64 -d | tar xzC /tmp'

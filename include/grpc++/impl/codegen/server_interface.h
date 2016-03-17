@@ -36,12 +36,13 @@
 
 #include <grpc++/impl/codegen/call_hook.h>
 #include <grpc++/impl/codegen/completion_queue_tag.h>
+#include <grpc++/impl/codegen/core_codegen_interface.h>
 #include <grpc++/impl/codegen/rpc_service_method.h>
+#include <grpc/impl/codegen/grpc_types.h>
 
 namespace grpc {
 
 class AsyncGenericService;
-class AsynchronousService;
 class GenericServerContext;
 class RpcService;
 class ServerAsyncStreamingInterface;
@@ -78,7 +79,6 @@ class ServerInterface : public CallHook {
   virtual void Wait() = 0;
 
  protected:
-  friend class AsynchronousService;
   friend class Service;
 
   /// Register a service. This call does not take ownership of the service.
@@ -224,7 +224,7 @@ class ServerInterface : public CallHook {
                         CompletionQueue* call_cq,
                         ServerCompletionQueue* notification_cq, void* tag,
                         Message* message) {
-    GPR_ASSERT(method);
+    GPR_CODEGEN_ASSERT(method);
     new PayloadAsyncRequest<Message>(method->server_tag(), this, context,
                                      stream, call_cq, notification_cq, tag,
                                      message);
@@ -234,7 +234,7 @@ class ServerInterface : public CallHook {
                         ServerAsyncStreamingInterface* stream,
                         CompletionQueue* call_cq,
                         ServerCompletionQueue* notification_cq, void* tag) {
-    GPR_ASSERT(method);
+    GPR_CODEGEN_ASSERT(method);
     new NoPayloadAsyncRequest(method->server_tag(), this, context, stream,
                               call_cq, notification_cq, tag);
   }

@@ -94,9 +94,8 @@ END2END_TESTS = {
     'cancel_before_invoke': default_test_options._replace(cpu_cost=LOWCPU),
     'cancel_in_a_vacuum': default_test_options._replace(cpu_cost=LOWCPU),
     'cancel_with_status': default_test_options._replace(cpu_cost=LOWCPU),
-    'channel_connectivity': connectivity_test_options._replace(proxyable=False, cpu_cost=LOWCPU),
-    'channel_ping': connectivity_test_options._replace(proxyable=False),
     'compressed_payload': default_test_options._replace(proxyable=False, cpu_cost=LOWCPU),
+    'connectivity': connectivity_test_options._replace(proxyable=False, cpu_cost=LOWCPU),
     'default_host': default_test_options._replace(needs_fullstack=True,
                                                   needs_dns=True),
     'disappearing_server': connectivity_test_options,
@@ -109,11 +108,11 @@ END2END_TESTS = {
     'large_metadata': default_test_options,
     'max_concurrent_streams': default_test_options._replace(proxyable=False),
     'max_message_length': default_test_options._replace(cpu_cost=LOWCPU),
-    'metadata': default_test_options,
     'negative_deadline': default_test_options,
     'no_op': default_test_options,
     'payload': default_test_options._replace(cpu_cost=LOWCPU),
     'ping_pong_streaming': default_test_options,
+    'ping': connectivity_test_options._replace(proxyable=False),
     'registered_call': default_test_options,
     'request_with_flags': default_test_options._replace(proxyable=False),
     'request_with_payload': default_test_options,
@@ -121,6 +120,7 @@ END2END_TESTS = {
     'shutdown_finishes_calls': default_test_options,
     'shutdown_finishes_tags': default_test_options,
     'simple_delayed_request': connectivity_test_options._replace(cpu_cost=LOWCPU),
+    'simple_metadata': default_test_options,
     'simple_request': default_test_options,
     'trailing_metadata': default_test_options,
 }
@@ -150,13 +150,16 @@ def without(l, e):
 
 def main():
   sec_deps = [
-    'end2end_certs',
     'grpc_test_util',
-    'grpc'
+    'grpc',
+    'gpr_test_util',
+    'gpr'
   ]
   unsec_deps = [
     'grpc_test_util_unsecure',
-    'grpc_unsecure'
+    'grpc_unsecure',
+    'gpr_test_util',
+    'gpr'
   ]
   json = {
       '#': 'generated with test/end2end/gen_build_json.py',
@@ -188,18 +191,6 @@ def main():
                           'test/core/end2end/end2end_tests.h'],
               'deps': unsec_deps,
               'vs_proj_dir': 'test/end2end/tests',
-          }
-      ] + [
-          {
-              'name': 'end2end_certs',
-              'build': 'private',
-              'language': 'c',
-              'src': [
-                  "test/core/end2end/data/test_root_cert.c",
-                  "test/core/end2end/data/server1_cert.c",
-                  "test/core/end2end/data/server1_key.c"
-              ],
-              'vs_proj_dir': 'test/end2end',
           }
       ],
       'targets': [

@@ -59,13 +59,13 @@ typedef struct {
 } gpr_slice_buffer;
 
 /* initialize a slice buffer */
-GPR_API void gpr_slice_buffer_init(gpr_slice_buffer *sb);
+GPRAPI void gpr_slice_buffer_init(gpr_slice_buffer *sb);
 /* destroy a slice buffer - unrefs any held elements */
-GPR_API void gpr_slice_buffer_destroy(gpr_slice_buffer *sb);
+GPRAPI void gpr_slice_buffer_destroy(gpr_slice_buffer *sb);
 /* Add an element to a slice buffer - takes ownership of the slice.
    This function is allowed to concatenate the passed in slice to the end of
    some other slice if desired by the slice buffer. */
-GPR_API void gpr_slice_buffer_add(gpr_slice_buffer *sb, gpr_slice slice);
+GPRAPI void gpr_slice_buffer_add(gpr_slice_buffer *sb, gpr_slice slice);
 /* add an element to a slice buffer - takes ownership of the slice and returns
    the index of the slice.
    Guarantees that the slice will not be concatenated at the end of another
@@ -73,30 +73,30 @@ GPR_API void gpr_slice_buffer_add(gpr_slice_buffer *sb, gpr_slice slice);
    slice at the returned index in sb->slices)
    The implementation MAY decide to concatenate data at the end of a small
    slice added in this fashion. */
-GPR_API size_t
+GPRAPI size_t
 gpr_slice_buffer_add_indexed(gpr_slice_buffer *sb, gpr_slice slice);
-GPR_API void gpr_slice_buffer_addn(gpr_slice_buffer *sb, gpr_slice *slices,
-                                   size_t n);
+GPRAPI void gpr_slice_buffer_addn(gpr_slice_buffer *sb, gpr_slice *slices,
+                                  size_t n);
 /* add a very small (less than 8 bytes) amount of data to the end of a slice
    buffer: returns a pointer into which to add the data */
-GPR_API uint8_t *gpr_slice_buffer_tiny_add(gpr_slice_buffer *sb, size_t len);
+GPRAPI uint8_t *gpr_slice_buffer_tiny_add(gpr_slice_buffer *sb, size_t len);
 /* pop the last buffer, but don't unref it */
-GPR_API void gpr_slice_buffer_pop(gpr_slice_buffer *sb);
+GPRAPI void gpr_slice_buffer_pop(gpr_slice_buffer *sb);
 /* clear a slice buffer, unref all elements */
-GPR_API void gpr_slice_buffer_reset_and_unref(gpr_slice_buffer *sb);
+GPRAPI void gpr_slice_buffer_reset_and_unref(gpr_slice_buffer *sb);
 /* swap the contents of two slice buffers */
-GPR_API void gpr_slice_buffer_swap(gpr_slice_buffer *a, gpr_slice_buffer *b);
+GPRAPI void gpr_slice_buffer_swap(gpr_slice_buffer *a, gpr_slice_buffer *b);
 /* move all of the elements of src into dst */
-GPR_API void gpr_slice_buffer_move_into(gpr_slice_buffer *src,
-                                        gpr_slice_buffer *dst);
+GPRAPI void gpr_slice_buffer_move_into(gpr_slice_buffer *src,
+                                       gpr_slice_buffer *dst);
 /* remove n bytes from the end of a slice buffer */
-GPR_API void gpr_slice_buffer_trim_end(gpr_slice_buffer *src, size_t n,
-                                       gpr_slice_buffer *garbage);
+GPRAPI void gpr_slice_buffer_trim_end(gpr_slice_buffer *src, size_t n,
+                                      gpr_slice_buffer *garbage);
 /* move the first n bytes of src into dst */
-GPR_API void gpr_slice_buffer_move_first(gpr_slice_buffer *src, size_t n,
-                                         gpr_slice_buffer *dst);
+GPRAPI void gpr_slice_buffer_move_first(gpr_slice_buffer *src, size_t n,
+                                        gpr_slice_buffer *dst);
 /* take the first slice in the slice buffer */
-GPR_API gpr_slice gpr_slice_buffer_take_first(gpr_slice_buffer *src);
+GPRAPI gpr_slice gpr_slice_buffer_take_first(gpr_slice_buffer *src);
 
 #ifdef __cplusplus
 }

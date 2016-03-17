@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -51,7 +51,7 @@ class ChannelArgumentsTest;
 /// concrete setters are provided.
 class ChannelArguments {
  public:
-  ChannelArguments() {}
+  ChannelArguments();
   ~ChannelArguments() {}
 
   ChannelArguments(const ChannelArguments& other);
@@ -62,8 +62,8 @@ class ChannelArguments {
 
   void Swap(ChannelArguments& other);
 
-  /// Populates this instance with the arguments from \a channel_args. Does not
-  /// take ownership of \a channel_args.
+  /// Dump arguments in this instance to \a channel_args. Does not take
+  /// ownership of \a channel_args.
   ///
   /// Note that the underlying arguments are shared. Changes made to either \a
   /// channel_args or this instance would be reflected on both.
@@ -76,6 +76,9 @@ class ChannelArguments {
   // TODO(yangg) add flow control options
   /// Set the compression algorithm for the channel.
   void SetCompressionAlgorithm(grpc_compression_algorithm algorithm);
+
+  /// The given string will be sent at the front of the user agent string.
+  void SetUserAgentPrefix(const grpc::string& user_agent_prefix);
 
   // Generic channel argument setters. Only for advanced use cases.
   /// Set an integer argument \a value under \a key.
@@ -91,6 +94,17 @@ class ChannelArguments {
  private:
   friend class SecureChannelCredentials;
   friend class testing::ChannelArgumentsTest;
+
+  /// Default pointer argument operations.
+  struct PointerVtableMembers {
+    static void* Copy(void* in) { return in; }
+    static void Destroy(void* in) {}
+    static int Compare(void* a, void* b) {
+      if (a < b) return -1;
+      if (a > b) return 1;
+      return 0;
+    }
+  };
 
   // Returns empty string when it is not set.
   grpc::string GetSslTargetNameOverride() const;

@@ -1,6 +1,6 @@
 #region Copyright notice and license
 
-// Copyright 2015, Google Inc.
+// Copyright 2015-2016, Google Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -68,7 +68,7 @@ namespace Grpc.Core
 
         internal ContextPropagationToken(CallSafeHandle parentCall, DateTime deadline, CancellationToken cancellationToken, ContextPropagationOptions options)
         {
-            this.parentCall = Preconditions.CheckNotNull(parentCall);
+            this.parentCall = GrpcPreconditions.CheckNotNull(parentCall);
             this.deadline = deadline;
             this.cancellationToken = cancellationToken;
             this.options = options ?? ContextPropagationOptions.Default;

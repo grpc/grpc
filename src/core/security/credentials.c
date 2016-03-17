@@ -166,7 +166,7 @@ void grpc_server_credentials_release(grpc_server_credentials *creds) {
 }
 
 grpc_security_status grpc_server_credentials_create_security_connector(
-    grpc_server_credentials *creds, grpc_security_connector **sc) {
+    grpc_server_credentials *creds, grpc_server_security_connector **sc) {
   if (creds == NULL || creds->vtable->create_security_connector == NULL) {
     gpr_log(GPR_ERROR, "Server credentials cannot create security context.");
     return GRPC_SECURITY_ERROR;
@@ -196,14 +196,21 @@ static void *server_credentials_pointer_arg_copy(void *p) {
   return grpc_server_credentials_ref(p);
 }
 
+static int server_credentials_pointer_cmp(void *a, void *b) {
+  return GPR_ICMP(a, b);
+}
+
+static const grpc_arg_pointer_vtable cred_ptr_vtable = {
+    server_credentials_pointer_arg_copy, server_credentials_pointer_arg_destroy,
+    server_credentials_pointer_cmp};
+
 grpc_arg grpc_server_credentials_to_arg(grpc_server_credentials *p) {
   grpc_arg arg;
   memset(&arg, 0, sizeof(grpc_arg));
   arg.type = GRPC_ARG_POINTER;
   arg.key = GRPC_SERVER_CREDENTIALS_ARG;
   arg.value.pointer.p = p;
-  arg.value.pointer.copy = server_credentials_pointer_arg_copy;
-  arg.value.pointer.destroy = server_credentials_pointer_arg_destroy;
+  arg.value.pointer.vtable = &cred_ptr_vtable;
   return arg;
 }
 
@@ -291,7 +298,7 @@ static grpc_security_status ssl_create_security_connector(
 }
 
 static grpc_security_status ssl_server_create_security_connector(
-    grpc_server_credentials *creds, grpc_security_connector **sc) {
+    grpc_server_credentials *creds, grpc_server_security_connector **sc) {
   grpc_ssl_server_credentials *c = (grpc_ssl_server_credentials *)creds;
   return grpc_ssl_server_security_connector_create(&c->config, sc);
 }
@@ -887,7 +894,7 @@ static grpc_security_status fake_transport_security_create_security_connector(
 
 static grpc_security_status
 fake_transport_security_server_create_security_connector(
-    grpc_server_credentials *c, grpc_security_connector **sc) {
+    grpc_server_credentials *c, grpc_server_security_connector **sc) {
   *sc = grpc_fake_server_security_connector_create();
   return GRPC_SECURITY_OK;
 }

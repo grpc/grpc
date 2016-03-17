@@ -51,6 +51,7 @@ LANGUAGES = [
 class Version:
 
   def __init__(self, s):
+    self.tag = None
     if '-' in s:
       s, self.tag = s.split('-')
     self.major, self.minor, self.patch = [int(x) for x in s.split('.')]
@@ -75,6 +76,13 @@ class Version:
       else:
         raise Exception('Don\'t know how to translate version tag "%s" to pep440' % self.tag)
     return s
+
+  def ruby(self):
+    """Version string in Ruby style"""
+    if self.tag:
+      return '%d.%d.%d.%s' % (self.major, self.minor, self.patch, self.tag)
+    else:
+      return '%d.%d.%d' % (self.major, self.minor, self.patch)
 
 def mako_plugin(dictionary):
   """Expand version numbers:

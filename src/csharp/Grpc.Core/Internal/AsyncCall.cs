@@ -99,7 +99,7 @@ namespace Grpc.Core.Internal
 
                 lock (myLock)
                 {
-                    Preconditions.CheckState(!started);
+                    GrpcPreconditions.CheckState(!started);
                     started = true;
                     Initialize(cq);
 
@@ -141,7 +141,7 @@ namespace Grpc.Core.Internal
         {
             lock (myLock)
             {
-                Preconditions.CheckState(!started);
+                GrpcPreconditions.CheckState(!started);
                 started = true;
 
                 Initialize(environment.CompletionQueue);
@@ -168,7 +168,7 @@ namespace Grpc.Core.Internal
         {
             lock (myLock)
             {
-                Preconditions.CheckState(!started);
+                GrpcPreconditions.CheckState(!started);
                 started = true;
 
                 Initialize(environment.CompletionQueue);
@@ -192,7 +192,7 @@ namespace Grpc.Core.Internal
         {
             lock (myLock)
             {
-                Preconditions.CheckState(!started);
+                GrpcPreconditions.CheckState(!started);
                 started = true;
 
                 Initialize(environment.CompletionQueue);
@@ -217,7 +217,7 @@ namespace Grpc.Core.Internal
         {
             lock (myLock)
             {
-                Preconditions.CheckState(!started);
+                GrpcPreconditions.CheckState(!started);
                 started = true;
 
                 Initialize(environment.CompletionQueue);
@@ -257,7 +257,7 @@ namespace Grpc.Core.Internal
         {
             lock (myLock)
             {
-                Preconditions.CheckNotNull(completionDelegate, "Completion delegate cannot be null");
+                GrpcPreconditions.CheckNotNull(completionDelegate, "Completion delegate cannot be null");
                 CheckSendingAllowed();
 
                 call.StartSendCloseFromClient(HandleHalfclosed);
@@ -297,7 +297,7 @@ namespace Grpc.Core.Internal
         {
             lock (myLock)
             {
-                Preconditions.CheckState(finishedStatus.HasValue, "Status can only be accessed once the call has finished.");
+                GrpcPreconditions.CheckState(finishedStatus.HasValue, "Status can only be accessed once the call has finished.");
                 return finishedStatus.Value.Status;
             }
         }
@@ -310,7 +310,7 @@ namespace Grpc.Core.Internal
         {
             lock (myLock)
             {
-                Preconditions.CheckState(finishedStatus.HasValue, "Trailers can only be accessed once the call has finished.");
+                GrpcPreconditions.CheckState(finishedStatus.HasValue, "Trailers can only be accessed once the call has finished.");
                 return finishedStatus.Value.Trailers;
             }
         }

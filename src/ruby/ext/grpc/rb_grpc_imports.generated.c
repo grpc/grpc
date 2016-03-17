@@ -137,6 +137,7 @@ grpc_auth_context_add_cstring_property_type grpc_auth_context_add_cstring_proper
 grpc_auth_context_set_peer_identity_property_name_type grpc_auth_context_set_peer_identity_property_name_import;
 grpc_channel_credentials_release_type grpc_channel_credentials_release_import;
 grpc_google_default_credentials_create_type grpc_google_default_credentials_create_import;
+grpc_set_ssl_roots_override_callback_type grpc_set_ssl_roots_override_callback_import;
 grpc_ssl_credentials_create_type grpc_ssl_credentials_create_import;
 grpc_call_credentials_release_type grpc_call_credentials_release_import;
 grpc_composite_channel_credentials_create_type grpc_composite_channel_credentials_create_import;
@@ -219,6 +220,7 @@ gpr_event_get_type gpr_event_get_import;
 gpr_event_wait_type gpr_event_wait_import;
 gpr_ref_init_type gpr_ref_init_import;
 gpr_ref_type gpr_ref_import;
+gpr_ref_non_zero_type gpr_ref_non_zero_import;
 gpr_refn_type gpr_refn_import;
 gpr_unref_type gpr_unref_import;
 gpr_stats_init_type gpr_stats_init_import;
@@ -397,6 +399,7 @@ void grpc_rb_load_imports(HMODULE library) {
   grpc_auth_context_set_peer_identity_property_name_import = (grpc_auth_context_set_peer_identity_property_name_type) GetProcAddress(library, "grpc_auth_context_set_peer_identity_property_name");
   grpc_channel_credentials_release_import = (grpc_channel_credentials_release_type) GetProcAddress(library, "grpc_channel_credentials_release");
   grpc_google_default_credentials_create_import = (grpc_google_default_credentials_create_type) GetProcAddress(library, "grpc_google_default_credentials_create");
+  grpc_set_ssl_roots_override_callback_import = (grpc_set_ssl_roots_override_callback_type) GetProcAddress(library, "grpc_set_ssl_roots_override_callback");
   grpc_ssl_credentials_create_import = (grpc_ssl_credentials_create_type) GetProcAddress(library, "grpc_ssl_credentials_create");
   grpc_call_credentials_release_import = (grpc_call_credentials_release_type) GetProcAddress(library, "grpc_call_credentials_release");
   grpc_composite_channel_credentials_create_import = (grpc_composite_channel_credentials_create_type) GetProcAddress(library, "grpc_composite_channel_credentials_create");
@@ -479,6 +482,7 @@ void grpc_rb_load_imports(HMODULE library) {
   gpr_event_wait_import = (gpr_event_wait_type) GetProcAddress(library, "gpr_event_wait");
   gpr_ref_init_import = (gpr_ref_init_type) GetProcAddress(library, "gpr_ref_init");
   gpr_ref_import = (gpr_ref_type) GetProcAddress(library, "gpr_ref");
+  gpr_ref_non_zero_import = (gpr_ref_non_zero_type) GetProcAddress(library, "gpr_ref_non_zero");
   gpr_refn_import = (gpr_refn_type) GetProcAddress(library, "gpr_refn");
   gpr_unref_import = (gpr_unref_type) GetProcAddress(library, "gpr_unref");
   gpr_stats_init_import = (gpr_stats_init_type) GetProcAddress(library, "gpr_stats_init");

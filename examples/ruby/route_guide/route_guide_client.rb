@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 
-# Copyright 2015, Google Inc.
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -147,7 +147,7 @@ def run_route_chat(stub)
 end
 
 def main
-  stub = RouteGuide::Stub.new('localhost:50051')
+  stub = RouteGuide::Stub.new('localhost:50051', :this_channel_is_insecure)
   run_get_feature(stub)
   run_list_features(stub)
   run_route_chat(stub)

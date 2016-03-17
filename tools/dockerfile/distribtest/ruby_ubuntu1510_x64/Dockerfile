@@ -30,3 +30,5 @@
 FROM ubuntu:15.10
 
 RUN apt-get update -y && apt-get install -y ruby-full
+
+RUN gem install bundler

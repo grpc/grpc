@@ -53,6 +53,7 @@ sys.path.insert(0, os.path.abspath(PYTHON_STEM))
 
 # Break import-style to ensure we can actually find our in-repo dependencies.
 import commands
+import precompiled
 import grpc_core_dependencies
 import grpc_version
 
@@ -94,10 +95,10 @@ if "linux" in sys.platform:
 if not "win32" in sys.platform:
   EXTENSION_LIBRARIES += ('m',)
 
-DEFINE_MACROS = (('OPENSSL_NO_ASM', 1), ('_WIN32_WINNT', 0x600))
+DEFINE_MACROS = (('OPENSSL_NO_ASM', 1), ('_WIN32_WINNT', 0x600), ('GPR_BACKWARDS_COMPATIBILITY_MODE', 1),)
 
-CFLAGS = ()
 LDFLAGS = ()
+CFLAGS = ()
 if "linux" in sys.platform:
   LDFLAGS += ('-Wl,-wrap,memcpy',)
 if "linux" in sys.platform or "darwin" in sys.platform:
@@ -107,8 +108,13 @@ if "linux" in sys.platform or "darwin" in sys.platform:
 
 def cython_extensions(package_names, module_names, extra_sources, include_dirs,
                       libraries, define_macros, build_with_cython=False):
+  # Set compiler directives linetrace argument only if we care about tracing;
+  # this is due to Cython having different behavior between linetrace being
+  # False and linetrace being unset. See issue #5689.
+  cython_compiler_directives = {}
   if ENABLE_CYTHON_TRACING:
     define_macros = define_macros + [('CYTHON_TRACE_NOGIL', 1)]
+    cython_compiler_directives['linetrace'] = True
   file_extension = 'pyx' if build_with_cython else 'c'
   module_files = [os.path.join(PYTHON_STEM,
                                name.replace('.', '/') + '.' + file_extension)
@@ -128,7 +134,7 @@ def cython_extensions(package_names, module_names, extra_sources, include_dirs,
     return Cython.Build.cythonize(
         extensions,
         include_path=include_dirs,
-        compiler_directives={'linetrace': bool(ENABLE_CYTHON_TRACING)})
+        compiler_directives=cython_compiler_directives)
   else:
     return extensions
 
@@ -153,18 +159,19 @@ INSTALL_REQUIRES = (
 
 SETUP_REQUIRES = (
     'sphinx>=1.3',
+    'sphinx_rtd_theme>=0.1.8'
 ) + INSTALL_REQUIRES
 
 COMMAND_CLASS = {
-    'install': commands.Install,
     'doc': commands.SphinxDocumentation,
     'build_proto_modules': commands.BuildProtoModules,
     'build_project_metadata': commands.BuildProjectMetadata,
     'build_py': commands.BuildPy,
     'build_ext': commands.BuildExt,
+    'build_tagged_ext': precompiled.BuildTaggedExt,
     'gather': commands.Gather,
     'run_interop': commands.RunInterop,
-    'bdist_egg_grpc_custom': commands.BdistEggCustomName,
+    'test_lite': commands.TestLite
 }
 
 # Ensure that package data is copied over before any commands have been run:
@@ -202,6 +209,8 @@ TEST_LOADER = 'tests:Loader'
 TEST_RUNNER = 'tests:Runner'
 
 PACKAGE_DATA = {
+    # Binaries that may or may not be present in the final installation, but are
+    # mentioned here for completeness.
     'grpc._cython': [
         '_credentials/roots.pem',
         '_windows/grpc_c.32.python',
@@ -215,19 +224,23 @@ else:
   PACKAGES = setuptools.find_packages(
       PYTHON_STEM, exclude=['tests', 'tests.*'])
 
-setuptools.setup(
-    name='grpcio',
-    version=grpc_version.VERSION,
-    license=LICENSE,
-    ext_modules=CYTHON_EXTENSION_MODULES,
-    packages=list(PACKAGES),
-    package_dir=PACKAGE_DIRECTORIES,
-    package_data=PACKAGE_DATA,
-    install_requires=INSTALL_REQUIRES,
-    setup_requires=SETUP_REQUIRES,
-    cmdclass=COMMAND_CLASS,
-    tests_require=TESTS_REQUIRE,
-    test_suite=TEST_SUITE,
-    test_loader=TEST_LOADER,
-    test_runner=TEST_RUNNER,
-)
+setup_arguments = {
+    'name': 'grpcio',
+    'version': grpc_version.VERSION,
+    'license': LICENSE,
+    'ext_modules': CYTHON_EXTENSION_MODULES,
+    'packages': list(PACKAGES),
+    'package_dir': PACKAGE_DIRECTORIES,
+    'package_data': PACKAGE_DATA,
+    'install_requires': INSTALL_REQUIRES,
+    'setup_requires': SETUP_REQUIRES,
+    'cmdclass': COMMAND_CLASS,
+    'tests_require': TESTS_REQUIRE,
+    'test_suite': TEST_SUITE,
+    'test_loader': TEST_LOADER,
+    'test_runner': TEST_RUNNER,
+}
+
+precompiled.update_setup_arguments(setup_arguments)
+
+setuptools.setup(**setup_arguments)

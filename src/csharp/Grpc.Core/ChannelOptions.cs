@@ -1,5 +1,5 @@
 #region Copyright notice and license
-// Copyright 2015, Google Inc.
+// Copyright 2015-2016, Google Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -73,8 +73,8 @@ namespace Grpc.Core
         public ChannelOption(string name, string stringValue)
         {
             this.type = OptionType.String;
-            this.name = Preconditions.CheckNotNull(name, "name");
-            this.stringValue = Preconditions.CheckNotNull(stringValue, "stringValue");
+            this.name = GrpcPreconditions.CheckNotNull(name, "name");
+            this.stringValue = GrpcPreconditions.CheckNotNull(stringValue, "stringValue");
         }
 
         /// <summary>
@@ -85,7 +85,7 @@ namespace Grpc.Core
         public ChannelOption(string name, int intValue)
         {
             this.type = OptionType.Integer;
-            this.name = Preconditions.CheckNotNull(name, "name");
+            this.name = GrpcPreconditions.CheckNotNull(name, "name");
             this.intValue = intValue;
         }
 
@@ -118,7 +118,7 @@ namespace Grpc.Core
         {
             get
             {
-                Preconditions.CheckState(type == OptionType.Integer);
+                GrpcPreconditions.CheckState(type == OptionType.Integer);
                 return intValue;
             }
         }
@@ -130,7 +130,7 @@ namespace Grpc.Core
         {
             get
             {
-                Preconditions.CheckState(type == OptionType.String);
+                GrpcPreconditions.CheckState(type == OptionType.String);
                 return stringValue;
             }
         }
