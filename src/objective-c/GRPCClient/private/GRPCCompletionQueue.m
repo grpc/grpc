@@ -41,7 +41,12 @@ const int64_t kGRPCCompletionQueueDefaultTimeoutSecs = 60;
 @implementation GRPCCompletionQueue
 
 + (instancetype)completionQueue {
-  return [[self alloc] init];
+  static GRPCCompletionQueue *singleton = nil;
+  static dispatch_once_t onceToken;
+  dispatch_once(&onceToken, ^{
+    singleton = [[self alloc] init];
+  });
+  return singleton;
 }
 
 - (instancetype)init {
