@@ -173,20 +173,6 @@ class Client {
         random_dist.reset(
             new ExpDist(load.poisson().offered_load() / num_threads));
         break;
-      case LoadParams::kUniform:
-        random_dist.reset(
-            new UniformDist(load.uniform().interarrival_lo() * num_threads,
-                            load.uniform().interarrival_hi() * num_threads));
-        break;
-      case LoadParams::kDeterm:
-        random_dist.reset(
-            new DetDist(num_threads / load.determ().offered_load()));
-        break;
-      case LoadParams::kPareto:
-        random_dist.reset(
-            new ParetoDist(load.pareto().interarrival_base() * num_threads,
-                           load.pareto().alpha()));
-        break;
       default:
         GPR_ASSERT(false);
     }

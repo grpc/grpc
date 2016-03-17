@@ -57,18 +57,6 @@ message PoissonParams {
   double offered_load = 1;
 }
 
-message UniformParams {
-  double interarrival_lo = 1;
-  double interarrival_hi = 2;
-}
-
-message DeterministicParams { double offered_load = 1; }
-
-message ParetoParams {
-  double interarrival_base = 1;
-  double alpha = 2;
-}
-
 // Once an RPC finishes, immediately start a new one.
 // No configuration parameters needed.
 message ClosedLoopParams {}
@@ -77,9 +65,6 @@ message LoadParams {
   oneof load {
     ClosedLoopParams closed_loop = 1;
     PoissonParams poisson = 2;
-    UniformParams uniform = 3;
-    DeterministicParams determ = 4;
-    ParetoParams pareto = 5;
   };
 }
 
