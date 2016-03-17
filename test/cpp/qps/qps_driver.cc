@@ -79,6 +79,7 @@ DEFINE_int32(client_core_limit, -1, "Limit on client cores to use");
 DEFINE_bool(secure_test, false, "Run a secure test");
 
 DEFINE_bool(quit, false, "Quit the workers");
+DEFINE_bool(core_count_only, false, "Just count the cores at each worker");
 
 using grpc::testing::ClientConfig;
 using grpc::testing::ServerConfig;
@@ -94,6 +95,10 @@ namespace testing {
 static void QpsDriver() {
   if (FLAGS_quit) {
     RunQuit();
+    return;
+  }
+  if (FLAGS_core_count_only) {
+    RunCoreCountOnly();
     return;
   }
 
