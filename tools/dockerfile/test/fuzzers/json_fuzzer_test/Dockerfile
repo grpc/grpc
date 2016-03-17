@@ -90,6 +90,5 @@ RUN clang++ -c -g -O2 -std=c++11 llvm/lib/Fuzzer/*.cpp -IFuzzer
 RUN ar ruv libFuzzer.a Fuzzer*.o
 RUN mv libFuzzer.a /usr/lib
 RUN rm -f Fuzzer*.o
-RUN mkdir /var/local/jenkins
 # Define the default command.
 CMD ["bash"]

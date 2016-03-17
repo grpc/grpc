@@ -32,5 +32,5 @@
 set -ex
 
 git submodule update --init
-make CONFIG=$config $1
+make CONFIG=$config $1 -j3
 bins/$config/$1
