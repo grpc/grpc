@@ -58,6 +58,8 @@ static unsigned seed(void) { return _getpid(); }
 
 #include <tchar.h>
 
+// disable warning 4091 - dbghelp.h is broken for msvc2015
+#pragma warning(disable : 4091)
 #define DBGHELP_TRANSLATE_TCHAR
 #include <dbghelp.h>
 
