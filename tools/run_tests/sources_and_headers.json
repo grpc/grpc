@@ -3311,7 +3311,6 @@
   }, 
   {
     "deps": [
-      "end2end_certs", 
       "end2end_tests", 
       "gpr", 
       "gpr_test_util", 
