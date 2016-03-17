@@ -37,9 +37,6 @@
 
 #include <stdio.h>
 #include <string.h>
-#ifdef GPR_HAVE_UNIX_SOCKET
-#include <sys/un.h>
-#endif
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/host_port.h>
@@ -47,6 +44,7 @@
 
 #include "src/core/client_config/lb_policy_registry.h"
 #include "src/core/iomgr/resolve_address.h"
+#include "src/core/iomgr/unix_sockets_posix.h"
 #include "src/core/support/string.h"
 
 typedef struct {
@@ -167,24 +165,6 @@ static void sockaddr_destroy(grpc_exec_ctx *exec_ctx, grpc_resolver *gr) {
   gpr_free(r->lb_policy_name);
   gpr_free(r);
 }
-
-#ifdef GPR_HAVE_UNIX_SOCKET
-static int parse_unix(grpc_uri *uri, struct sockaddr_storage *addr,
-                      size_t *len) {
-  struct sockaddr_un *un = (struct sockaddr_un *)addr;
-
-  un->sun_family = AF_UNIX;
-  strcpy(un->sun_path, uri->path);
-  *len = strlen(un->sun_path) + sizeof(un->sun_family) + 1;
-
-  return 1;
-}
-
-static char *unix_get_default_authority(grpc_resolver_factory *factory,
-                                        grpc_uri *uri) {
-  return gpr_strdup("localhost");
-}
-#endif
 
 static char *ip_get_default_authority(grpc_uri *uri) {
   const char *path = uri->path;

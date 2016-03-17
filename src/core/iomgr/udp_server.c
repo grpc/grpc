@@ -52,9 +52,6 @@
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#ifdef GPR_HAVE_UNIX_SOCKET
-#include <sys/un.h>
-#endif
 #include <unistd.h>
 
 #include "src/core/iomgr/fd_posix.h"
@@ -62,6 +59,7 @@
 #include "src/core/iomgr/resolve_address.h"
 #include "src/core/iomgr/sockaddr_utils.h"
 #include "src/core/iomgr/socket_utils_posix.h"
+#include "src/core/iomgr/unix_sockets_posix.h"
 #include "src/core/support/string.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -79,25 +77,12 @@ typedef struct {
   union {
     uint8_t untyped[GRPC_MAX_SOCKADDR_SIZE];
     struct sockaddr sockaddr;
-#ifdef GPR_HAVE_UNIX_SOCKET
-    struct sockaddr_un un;
-#endif
   } addr;
   size_t addr_len;
   grpc_closure read_closure;
   grpc_closure destroyed_closure;
   grpc_udp_server_read_cb read_cb;
 } server_port;
-
-#ifdef GPR_HAVE_UNIX_SOCKET
-static void unlink_if_unix_domain_socket(const struct sockaddr_un *un) {
-  struct stat st;
-
-  if (stat(un->sun_path, &st) == 0 && (st.st_mode & S_IFMT) == S_IFSOCK) {
-    unlink(un->sun_path);
-  }
-}
-#endif
 
 /* the overall server */
 struct grpc_udp_server {
@@ -182,11 +167,7 @@ static void deactivated_all_ports(grpc_exec_ctx *exec_ctx, grpc_udp_server *s) {
   if (s->nports) {
     for (i = 0; i < s->nports; i++) {
       server_port *sp = &s->ports[i];
-#ifdef GPR_HAVE_UNIX_SOCKET
-      if (sp->addr.sockaddr.sa_family == AF_UNIX) {
-        unlink_if_unix_domain_socket(&sp->addr.un);
-      }
-#endif
+      unlink_if_unix_domain_socket(&sp->addr.sockaddr);
       sp->destroyed_closure.cb = destroyed_port;
       sp->destroyed_closure.cb_arg = s;
       grpc_fd_orphan(exec_ctx, sp->emfd, &sp->destroyed_closure, NULL,
@@ -344,11 +325,7 @@ int grpc_udp_server_add_port(grpc_udp_server *s, const void *addr,
   socklen_t sockname_len;
   int port;
 
-#ifdef GPR_HAVE_UNIX_SOCKET
-  if (((struct sockaddr *)addr)->sa_family == AF_UNIX) {
-    unlink_if_unix_domain_socket(addr);
-  }
-#endif
+  unlink_if_unix_domain_socket((struct sockaddr *)addr);
 
   /* Check if this is a wildcard port, and if so, try to keep the port the same
      as some previously created listener. */
