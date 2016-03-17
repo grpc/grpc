@@ -37,6 +37,7 @@ template: |
 
   <%include file="../apt_get_basic.include"/>
   <%include file="../cxx_deps.include"/>
+  <%include file="../run_tests_addons.include"/>
   RUN git clone -n -b master http://llvm.org/git/llvm.git && ${'\\'}
     cd llvm && ${'\\'}
     git checkout 308857f && ${'\\'}
