@@ -36,6 +36,10 @@ set -e
 export CONFIG=$config
 export ASAN_SYMBOLIZER_PATH=/usr/bin/llvm-symbolizer-3.5
 
+
+echo "int main(){}" > a.cc; clang -fsanitize=thread a.cc && ./a.out
+
+
 # Ensure that programs depending on current-user-ownership of cache directories
 # are satisfied (it's being mounted from outside the image).
 chown $(whoami) $XDG_CACHE_HOME

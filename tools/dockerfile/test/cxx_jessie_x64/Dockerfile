@@ -100,8 +100,6 @@ RUN cd llvm-build && cmake \
   ../llvm
 RUN make -C llvm-build && make -C llvm-build install && rm -rf llvm-build
 
-RUN echo "int main(){}" > a.cc; clang -fsanitize=thread a.cc && ./a.out
-
 # Prepare ccache
 RUN ln -s /usr/bin/ccache /usr/local/bin/gcc
 RUN ln -s /usr/bin/ccache /usr/local/bin/g++
