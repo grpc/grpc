@@ -76,24 +76,14 @@ static int prepare_socket(const struct sockaddr *addr, int fd) {
     goto error;
   }
 
-#ifdef GPR_HAVE_UNIX_SOCKET
   if (!grpc_set_socket_nonblocking(fd, 1) || !grpc_set_socket_cloexec(fd, 1) ||
-      (addr->sa_family != AF_UNIX && !grpc_set_socket_low_latency(fd, 1)) ||
+      (!grpc_is_unix_socket(addr->sa_family) &&
+       !grpc_set_socket_low_latency(fd, 1)) ||
       !grpc_set_socket_no_sigpipe_if_possible(fd)) {
     gpr_log(GPR_ERROR, "Unable to configure socket %d: %s", fd,
             strerror(errno));
     goto error;
   }
-#else
-  if (!grpc_set_socket_nonblocking(fd, 1) || !grpc_set_socket_cloexec(fd, 1) ||
-      !grpc_set_socket_low_latency(fd, 1) ||
-      !grpc_set_socket_no_sigpipe_if_possible(fd)) {
-    gpr_log(GPR_ERROR, "Unable to configure socket %d: %s", fd,
-            strerror(errno));
-    goto error;
-  }
-#endif
-
   return 1;
 
 error:
