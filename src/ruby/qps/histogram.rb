@@ -1,5 +1,6 @@
-#!/bin/sh
-# Copyright 2015-2016, Google Inc.
+#!/usr/bin/env ruby
+
+# Copyright 2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -28,31 +29,60 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# Regenerates gRPC service stubs from proto files.
-set +e
-cd $(dirname $0)/../../..
+# Histogram class for use in performance testing and measurement
 
-PROTOC=bins/opt/protobuf/protoc
-PLUGIN=protoc-gen-grpc=bins/opt/grpc_ruby_plugin
-
-$PROTOC -I src/proto src/proto/grpc/health/v1/health.proto \
-    --grpc_out=src/ruby/pb \
-    --ruby_out=src/ruby/pb \
-    --plugin=$PLUGIN
-
-$PROTOC -I . \
-    src/proto/grpc/testing/{messages,test,empty}.proto \
-    --grpc_out=src/ruby/pb \
-    --ruby_out=src/ruby/pb \
-    --plugin=$PLUGIN
-
-$PROTOC -I . \
-    src/proto/grpc/testing/{messages,payloads,stats,services,control}.proto \
-    --grpc_out=src/ruby/qps \
-    --ruby_out=src/ruby/qps \
-    --plugin=$PLUGIN
-
-$PROTOC -I src/proto/math src/proto/math/math.proto \
-    --grpc_out=src/ruby/bin \
-    --ruby_out=src/ruby/bin \
-    --plugin=$PLUGIN
+class Histogram
+  # Determine the bucket index for a given value
+  # @param {number} value The value to check
+  # @return {number} The bucket index
+  def bucket_for(value)
+    return (Math.log(value)/Math.log(@multiplier)).to_i
+  end
+  # Initialize an empty histogram
+  # @param {number} resolution The resolution of the histogram
+  # @param {number} max_possible The maximum value for the histogram
+  def initialize(resolution, max_possible)
+    @resolution=resolution
+    @max_possible=max_possible
+    @sum=0
+    @sum_of_squares=0
+    @multiplier=1+resolution
+    @count=0
+    @min_seen=max_possible
+    @max_seen=0
+    @buckets=Array.new(bucket_for(max_possible)+1, 0)
+  end
+  # Add a value to the histogram. This updates all statistics with the new
+  # value. Those statistics should not be modified except with this function
+  # @param {number} value The value to add
+  def add(value)
+    @sum += value
+    @sum_of_squares += value * value
+    @count += 1
+    if value < @min_seen
+      @min_seen = value
+    end
+    if value > @max_seen
+      @max_seen = value
+    end
+    @buckets[bucket_for(value)] += 1
+  end
+  def minimum
+    return @min_seen
+  end
+  def maximum
+    return @max_seen
+  end
+  def sum
+    return @sum
+  end
+  def sum_of_squares
+    return @sum_of_squares
+  end
+  def count
+    return @count
+  end
+  def contents
+    return @buckets
+  end
+end

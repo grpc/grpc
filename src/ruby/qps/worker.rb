@@ -1,5 +1,6 @@
-#!/bin/sh
-# Copyright 2015-2016, Google Inc.
+#!/usr/bin/env ruby
+
+# Copyright 2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -28,31 +29,55 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# Regenerates gRPC service stubs from proto files.
-set +e
-cd $(dirname $0)/../../..
+# Worker and worker service implementation
 
-PROTOC=bins/opt/protobuf/protoc
-PLUGIN=protoc-gen-grpc=bins/opt/grpc_ruby_plugin
+this_dir = File.expand_path(File.dirname(__FILE__))
+lib_dir = File.join(File.dirname(this_dir), 'lib')
+$LOAD_PATH.unshift(lib_dir) unless $LOAD_PATH.include?(lib_dir)
+$LOAD_PATH.unshift(this_dir) unless $LOAD_PATH.include?(this_dir)
 
-$PROTOC -I src/proto src/proto/grpc/health/v1/health.proto \
-    --grpc_out=src/ruby/pb \
-    --ruby_out=src/ruby/pb \
-    --plugin=$PLUGIN
+require 'grpc'
+require 'optparse'
+require 'histogram'
+require 'etc'
+require 'facter'
+require 'src/proto/grpc/testing/services_services'
 
-$PROTOC -I . \
-    src/proto/grpc/testing/{messages,test,empty}.proto \
-    --grpc_out=src/ruby/pb \
-    --ruby_out=src/ruby/pb \
-    --plugin=$PLUGIN
+class WorkerServiceImpl < Grpc::Testing::WorkerService::Service
+  def run_server(call)
+  end
+  def run_client(call)
+  end
+  def core_count(_args, _call)
+    Grpc::Testing::CoreResponse.new(cores: Facter.value('processors')['count'])
+  end
+  def quit_worker(_args, _call)
+    Thread.new {
+      sleep 3
+      @server.stop
+    }
+    Grpc::Testing::Void.new
+  end
+  def initialize(s)
+    @server = s
+  end
+end
 
-$PROTOC -I . \
-    src/proto/grpc/testing/{messages,payloads,stats,services,control}.proto \
-    --grpc_out=src/ruby/qps \
-    --ruby_out=src/ruby/qps \
-    --plugin=$PLUGIN
+def main
+  options = {
+    'driver_port' => 0
+  }
+  OptionParser.new do |opts|
+    opts.banner = 'Usage: [--driver_port <port>]'
+    opts.on('--driver_port PORT', '<port>') do |v|
+      options['driver_port'] = v
+    end
+  end.parse!
+  s = GRPC::RpcServer.new
+  s.add_http2_port("0.0.0.0:" + options['driver_port'].to_s,
+                   :this_port_is_insecure)
+  s.handle(WorkerServiceImpl.new(s))
+  s.run
+end
 
-$PROTOC -I src/proto/math src/proto/math/math.proto \
-    --grpc_out=src/ruby/bin \
-    --ruby_out=src/ruby/bin \
-    --plugin=$PLUGIN
+main
