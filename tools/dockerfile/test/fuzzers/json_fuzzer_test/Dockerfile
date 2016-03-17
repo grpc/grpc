@@ -67,6 +67,21 @@ RUN apt-get update && apt-get install -y time && apt-get clean
 # C++ dependencies
 RUN apt-get update && apt-get -y install libgflags-dev libgtest-dev libc++-dev clang && apt-get clean
 
+# Prepare ccache
+RUN ln -s /usr/bin/ccache /usr/local/bin/gcc
+RUN ln -s /usr/bin/ccache /usr/local/bin/g++
+RUN ln -s /usr/bin/ccache /usr/local/bin/cc
+RUN ln -s /usr/bin/ccache /usr/local/bin/c++
+RUN ln -s /usr/bin/ccache /usr/local/bin/clang
+RUN ln -s /usr/bin/ccache /usr/local/bin/clang++
+
+#======================
+# Zookeeper dependencies
+# TODO(jtattermusch): is zookeeper still needed?
+RUN apt-get install -y libzookeeper-mt-dev
+
+RUN mkdir /var/local/jenkins
+
 RUN git clone -n -b master http://llvm.org/git/llvm.git && \
   cd llvm && \
   git checkout 308857f && \

@@ -32,6 +32,5 @@
 set -ex
 
 git submodule update --init
-make run_dep_checks
 make CONFIG=$config $1
 bins/$config/$1
