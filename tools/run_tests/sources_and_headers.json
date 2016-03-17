@@ -3149,7 +3149,6 @@
   }, 
   {
     "deps": [
-      "end2end_certs", 
       "end2end_tests", 
       "gpr", 
       "gpr_test_util", 
@@ -3167,7 +3166,6 @@
   }, 
   {
     "deps": [
-      "end2end_certs", 
       "end2end_tests", 
       "gpr", 
       "gpr_test_util", 
@@ -3185,7 +3183,6 @@
   }, 
   {
     "deps": [
-      "end2end_certs", 
       "end2end_tests", 
       "gpr", 
       "gpr_test_util", 
@@ -3203,7 +3200,6 @@
   }, 
   {
     "deps": [
-      "end2end_certs", 
       "end2end_tests", 
       "gpr", 
       "gpr_test_util", 
@@ -3221,7 +3217,6 @@
   }, 
   {
     "deps": [
-      "end2end_certs", 
       "end2end_tests", 
       "gpr", 
       "gpr_test_util", 
@@ -3239,7 +3234,6 @@
   }, 
   {
     "deps": [
-      "end2end_certs", 
       "end2end_tests", 
       "gpr", 
       "gpr_test_util", 
@@ -3257,7 +3251,6 @@
   }, 
   {
     "deps": [
-      "end2end_certs", 
       "end2end_tests", 
       "gpr", 
       "gpr_test_util", 
@@ -3275,7 +3268,6 @@
   }, 
   {
     "deps": [
-      "end2end_certs", 
       "end2end_tests", 
       "gpr", 
       "gpr_test_util", 
@@ -3293,7 +3285,6 @@
   }, 
   {
     "deps": [
-      "end2end_certs", 
       "end2end_tests", 
       "gpr", 
       "gpr_test_util", 
@@ -3311,7 +3302,6 @@
   }, 
   {
     "deps": [
-      "end2end_certs", 
       "end2end_tests", 
       "gpr", 
       "gpr_test_util", 
@@ -3329,7 +3319,6 @@
   }, 
   {
     "deps": [
-      "end2end_certs", 
       "end2end_tests", 
       "gpr", 
       "gpr_test_util", 
@@ -3347,7 +3336,6 @@
   }, 
   {
     "deps": [
-      "end2end_certs", 
       "end2end_tests", 
       "gpr", 
       "gpr_test_util", 
@@ -3365,7 +3353,6 @@
   }, 
   {
     "deps": [
-      "end2end_certs", 
       "end2end_tests", 
       "gpr", 
       "gpr_test_util", 
@@ -3383,7 +3370,6 @@
   }, 
   {
     "deps": [
-      "end2end_certs", 
       "end2end_tests", 
       "gpr", 
       "gpr_test_util", 
@@ -3401,7 +3387,6 @@
   }, 
   {
     "deps": [
-      "end2end_certs", 
       "end2end_tests", 
       "gpr", 
       "gpr_test_util", 
@@ -3419,7 +3404,6 @@
   }, 
   {
     "deps": [
-      "end2end_certs", 
       "end2end_tests", 
       "gpr", 
       "gpr_test_util", 
@@ -3437,7 +3421,6 @@
   }, 
   {
     "deps": [
-      "end2end_certs", 
       "end2end_tests", 
       "gpr", 
       "gpr_test_util", 
@@ -3455,7 +3438,6 @@
   }, 
   {
     "deps": [
-      "end2end_certs", 
       "end2end_tests", 
       "gpr", 
       "gpr_test_util", 
@@ -6299,7 +6281,6 @@
   }, 
   {
     "deps": [
-      "end2end_certs", 
       "gpr", 
       "gpr_test_util", 
       "grpc", 
@@ -6407,19 +6388,6 @@
       "test/core/end2end/tests/simple_metadata.c", 
       "test/core/end2end/tests/simple_request.c", 
       "test/core/end2end/tests/trailing_metadata.c"
-    ], 
-    "third_party": false, 
-    "type": "lib"
-  }, 
-  {
-    "deps": [], 
-    "headers": [], 
-    "language": "c", 
-    "name": "end2end_certs", 
-    "src": [
-      "test/core/end2end/data/server1_cert.c", 
-      "test/core/end2end/data/server1_key.c", 
-      "test/core/end2end/data/test_root_cert.c"
     ], 
     "third_party": false, 
     "type": "lib"
