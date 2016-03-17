@@ -147,17 +147,17 @@
     <file baseinstalldir="/" name="src/core/support/tmpfile_win32.c" role="src" />
     <file baseinstalldir="/" name="src/core/support/wrap_memcpy.c" role="src" />
     <file baseinstalldir="/" name="include/grpc/grpc_security.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/byte_buffer.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/byte_buffer_reader.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/compression.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/grpc.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/status.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/byte_buffer.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/compression_types.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/connectivity_state.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/grpc_types.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/propagation_bits.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/status.h" role="src" />
-    <file baseinstalldir="/" name="include/grpc/byte_buffer.h" role="src" />
-    <file baseinstalldir="/" name="include/grpc/byte_buffer_reader.h" role="src" />
-    <file baseinstalldir="/" name="include/grpc/compression.h" role="src" />
-    <file baseinstalldir="/" name="include/grpc/grpc.h" role="src" />
-    <file baseinstalldir="/" name="include/grpc/status.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/census.h" role="src" />
     <file baseinstalldir="/" name="src/core/census/grpc_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/channel/channel_args.h" role="src" />
