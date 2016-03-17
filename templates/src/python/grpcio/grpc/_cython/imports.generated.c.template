@@ -43,10 +43,19 @@
   ${api.name}_type ${api.name}_import;
   %endfor
 
+  #ifdef __cplusplus
+  extern "C" {
+  #endif  /* __cpluslus */
+
   void pygrpc_load_imports(HMODULE library) {
   %for api in c_apis:
     ${api.name}_import = (${api.name}_type) GetProcAddress(library, "${api.name}");
   %endfor
   }
 
+  #ifdef __cplusplus
+  }
+  #endif  /* __cpluslus */
+
   #endif /* !GPR_WIN32 */
+

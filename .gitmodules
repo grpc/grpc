@@ -4,7 +4,7 @@
 [submodule "third_party/protobuf"]
 	path = third_party/protobuf
 	url = https://github.com/google/protobuf.git
-	branch = v3.0.0-alpha-4.1
+	branch = v3.0.0-beta-2
 [submodule "third_party/gflags"]
 	path = third_party/gflags
 	url = https://github.com/gflags/gflags.git
@@ -14,3 +14,6 @@
 [submodule "third_party/boringssl"]
 	path = third_party/boringssl
 	url = https://boringssl.googlesource.com/boringssl
+[submodule "third_party/nanopb"]
+	path = third_party/nanopb
+	url = https://github.com/nanopb/nanopb.git

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,13 +30,22 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
-
 #include <grpc++/support/channel_arguments.h>
 
+#include <sstream>
+
+#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/log.h>
 #include "src/core/channel/channel_args.h"
 
 namespace grpc {
+
+ChannelArguments::ChannelArguments() {
+  std::ostringstream user_agent_prefix;
+  user_agent_prefix << "grpc-c++/" << grpc_version_string();
+  // This will be ignored if used on the server side.
+  SetString(GRPC_ARG_PRIMARY_USER_AGENT_STRING, user_agent_prefix.str());
+}
 
 ChannelArguments::ChannelArguments(const ChannelArguments& other)
     : strings_(other.strings_) {
@@ -62,9 +71,7 @@ ChannelArguments::ChannelArguments(const ChannelArguments& other)
         break;
       case GRPC_ARG_POINTER:
         ap.value.pointer = a->value.pointer;
-        ap.value.pointer.p = a->value.pointer.copy
-                                 ? a->value.pointer.copy(ap.value.pointer.p)
-                                 : ap.value.pointer.p;
+        ap.value.pointer.p = a->value.pointer.vtable->copy(ap.value.pointer.p);
         break;
     }
     args_.push_back(ap);
@@ -81,6 +88,31 @@ void ChannelArguments::SetCompressionAlgorithm(
   SetInt(GRPC_COMPRESSION_ALGORITHM_ARG, algorithm);
 }
 
+// Note: a second call to this will add in front the result of the first call.
+// An example is calling this on a copy of ChannelArguments which already has a
+// prefix. The user can build up a prefix string by calling this multiple times,
+// each with more significant identifier.
+void ChannelArguments::SetUserAgentPrefix(
+    const grpc::string& user_agent_prefix) {
+  if (user_agent_prefix.empty()) {
+    return;
+  }
+  bool replaced = false;
+  for (auto it = args_.begin(); it != args_.end(); ++it) {
+    const grpc_arg& arg = *it;
+    if (arg.type == GRPC_ARG_STRING &&
+        grpc::string(arg.key) == GRPC_ARG_PRIMARY_USER_AGENT_STRING) {
+      strings_.push_back(user_agent_prefix + " " + arg.value.string);
+      it->value.string = const_cast<char*>(strings_.back().c_str());
+      replaced = true;
+      break;
+    }
+  }
+  if (!replaced) {
+    SetString(GRPC_ARG_PRIMARY_USER_AGENT_STRING, user_agent_prefix);
+  }
+}
+
 void ChannelArguments::SetInt(const grpc::string& key, int value) {
   grpc_arg arg;
   arg.type = GRPC_ARG_INTEGER;
@@ -92,13 +124,15 @@ void ChannelArguments::SetInt(const grpc::string& key, int value) {
 }
 
 void ChannelArguments::SetPointer(const grpc::string& key, void* value) {
+  static const grpc_arg_pointer_vtable vtable = {
+      &PointerVtableMembers::Copy, &PointerVtableMembers::Destroy,
+      &PointerVtableMembers::Compare};
   grpc_arg arg;
   arg.type = GRPC_ARG_POINTER;
   strings_.push_back(key);
   arg.key = const_cast<char*>(strings_.back().c_str());
   arg.value.pointer.p = value;
-  arg.value.pointer.copy = nullptr;
-  arg.value.pointer.destroy = nullptr;
+  arg.value.pointer.vtable = &vtable;
   args_.push_back(arg);
 }
 

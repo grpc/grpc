@@ -29,4 +29,15 @@
 
 FROM centos:6
 
-RUN yum install -y ruby
+RUN yum install -y curl
+
+RUN yum install -y tar which
+
+# Install rvm
+RUN gpg --keyserver hkp://keys.gnupg.net --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3
+# Running the installation twice to work around docker issue when using overlay.
+# https://github.com/docker/docker/issues/10180
+RUN (curl -sSL https://get.rvm.io | bash -s stable --ruby) || (curl -sSL https://get.rvm.io | bash -s stable --ruby)
+
+RUN /bin/bash -l -c "echo '. /etc/profile.d/rvm.sh' >> ~/.bashrc"
+RUN /bin/bash -l -c "gem install --update bundler"

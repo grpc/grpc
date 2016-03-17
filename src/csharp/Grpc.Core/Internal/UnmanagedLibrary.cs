@@ -65,7 +65,7 @@ namespace Grpc.Core.Internal
 
         public UnmanagedLibrary(string libraryPath)
         {
-            this.libraryPath = Preconditions.CheckNotNull(libraryPath);
+            this.libraryPath = GrpcPreconditions.CheckNotNull(libraryPath);
 
             if (!File.Exists(this.libraryPath))
             {

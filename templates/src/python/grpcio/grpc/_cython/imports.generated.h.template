@@ -52,7 +52,15 @@
   #define ${api.name} ${api.name}_import
   %endfor
 
+  #ifdef __cplusplus
+  extern "C" {
+  #endif  /* __cpluslus */
+
   void pygrpc_load_imports(HMODULE library);
+
+  #ifdef __cplusplus
+  }
+  #endif  /* __cpluslus */
 
   #else /* !GPR_WIN32 */
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 
-# Copyright 2015, Google Inc.
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -41,7 +41,7 @@ require 'grpc'
 require 'helloworld_services'
 
 def main
-  stub = Helloworld::Greeter::Stub.new('localhost:50051')
+  stub = Helloworld::Greeter::Stub.new('localhost:50051', :this_channel_is_insecure)
   user = ARGV.size > 0 ?  ARGV[0] : 'world'
   message = stub.say_hello(Helloworld::HelloRequest.new(name: user)).message
   p "Greeting: #{message}"

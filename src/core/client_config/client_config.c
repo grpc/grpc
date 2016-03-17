@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -53,7 +53,9 @@ void grpc_client_config_ref(grpc_client_config *c) { gpr_ref(&c->refs); }
 
 void grpc_client_config_unref(grpc_exec_ctx *exec_ctx, grpc_client_config *c) {
   if (gpr_unref(&c->refs)) {
-    GRPC_LB_POLICY_UNREF(exec_ctx, c->lb_policy, "client_config");
+    if (c->lb_policy != NULL) {
+      GRPC_LB_POLICY_UNREF(exec_ctx, c->lb_policy, "client_config");
+    }
     gpr_free(c);
   }
 }

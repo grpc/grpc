@@ -107,8 +107,8 @@ static void server_mutate_op(grpc_call_element *elem,
   if (op->recv_initial_metadata) {
     /* substitute our callback for the op callback */
     calld->recv_initial_metadata = op->recv_initial_metadata;
-    calld->on_done_recv = op->on_complete;
-    op->on_complete = &calld->finish_recv;
+    calld->on_done_recv = op->recv_initial_metadata_ready;
+    op->recv_initial_metadata_ready = &calld->finish_recv;
   }
 }
 

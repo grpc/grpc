@@ -310,7 +310,6 @@ static void init_channel_elem(grpc_exec_ctx *exec_ctx,
   GPR_ASSERT(auth_context != NULL);
 
   /* initialize members */
-  GPR_ASSERT(sc->is_client_side);
   chand->security_connector =
       (grpc_channel_security_connector *)GRPC_SECURITY_CONNECTOR_REF(
           sc, "client_auth_filter");

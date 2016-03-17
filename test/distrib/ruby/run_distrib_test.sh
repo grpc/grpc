@@ -32,5 +32,13 @@ set -ex
 
 cd $(dirname $0)
 
-# do something ruby-ish
+# Create an indexed local gem source with gRPC gems to test
+GEM_SOURCE=../../../gem_source
+mkdir -p ${GEM_SOURCE}/gems
+cp -r $EXTERNAL_GIT_ROOT/input_artifacts/*.gem ${GEM_SOURCE}/gems
+gem install builder
+gem generate_index --directory ${GEM_SOURCE}
 
+bundle install
+
+bundle exec ./distribtest.rb

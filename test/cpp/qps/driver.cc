@@ -197,9 +197,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
   workers.resize(num_clients + num_servers);
 
   gpr_timespec deadline =
-      gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                   gpr_time_from_seconds(
-                       warmup_seconds + benchmark_seconds + 20, GPR_TIMESPAN));
+      GRPC_TIMEOUT_SECONDS_TO_DEADLINE(warmup_seconds + benchmark_seconds + 20);
 
   // Start servers
   using runsc::ServerData;
@@ -350,19 +348,10 @@ std::unique_ptr<ScenarioResult> RunScenario(
   std::unique_ptr<ScenarioResult> result(new ScenarioResult);
   result->client_config = result_client_config;
   result->server_config = result_server_config;
-  gpr_log(GPR_INFO, "Finishing");
-  for (auto server = &servers[0]; server != &servers[num_servers]; server++) {
-    GPR_ASSERT(server->stream->Write(server_mark));
-  }
+  gpr_log(GPR_INFO, "Finishing clients");
   for (auto client = &clients[0]; client != &clients[num_clients]; client++) {
     GPR_ASSERT(client->stream->Write(client_mark));
-  }
-  for (auto server = &servers[0]; server != &servers[num_servers]; server++) {
-    GPR_ASSERT(server->stream->Read(&server_status));
-    const auto& stats = server_status.stats();
-    result->server_resources.emplace_back(
-        stats.time_elapsed(), stats.time_user(), stats.time_system(),
-        server_status.cores());
+    GPR_ASSERT(client->stream->WritesDone());
   }
   for (auto client = &clients[0]; client != &clients[num_clients]; client++) {
     GPR_ASSERT(client->stream->Read(&client_status));
@@ -370,17 +359,30 @@ std::unique_ptr<ScenarioResult> RunScenario(
     result->latencies.MergeProto(stats.latencies());
     result->client_resources.emplace_back(
         stats.time_elapsed(), stats.time_user(), stats.time_system(), -1);
+    GPR_ASSERT(!client->stream->Read(&client_status));
   }
-
   for (auto client = &clients[0]; client != &clients[num_clients]; client++) {
-    GPR_ASSERT(client->stream->WritesDone());
     GPR_ASSERT(client->stream->Finish().ok());
   }
+  delete[] clients;
+
+  gpr_log(GPR_INFO, "Finishing servers");
   for (auto server = &servers[0]; server != &servers[num_servers]; server++) {
+    GPR_ASSERT(server->stream->Write(server_mark));
     GPR_ASSERT(server->stream->WritesDone());
+  }
+  for (auto server = &servers[0]; server != &servers[num_servers]; server++) {
+    GPR_ASSERT(server->stream->Read(&server_status));
+    const auto& stats = server_status.stats();
+    result->server_resources.emplace_back(
+        stats.time_elapsed(), stats.time_user(), stats.time_system(),
+        server_status.cores());
+    GPR_ASSERT(!server->stream->Read(&server_status));
+  }
+  for (auto server = &servers[0]; server != &servers[num_servers]; server++) {
     GPR_ASSERT(server->stream->Finish().ok());
   }
-  delete[] clients;
+
   delete[] servers;
   return result;
 }

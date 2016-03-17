@@ -407,8 +407,15 @@ static void destroy_channel(grpc_exec_ctx *exec_ctx, channel_data *chand) {
   maybe_finish_shutdown(exec_ctx, chand->server);
   chand->finish_destroy_channel_closure.cb = finish_destroy_channel;
   chand->finish_destroy_channel_closure.cb_arg = chand;
-  grpc_exec_ctx_enqueue(exec_ctx, &chand->finish_destroy_channel_closure, true,
-                        NULL);
+
+  grpc_transport_op op;
+  memset(&op, 0, sizeof(op));
+  op.set_accept_stream = true;
+  op.on_consumed = &chand->finish_destroy_channel_closure;
+  grpc_channel_next_op(exec_ctx,
+                       grpc_channel_stack_element(
+                           grpc_channel_get_channel_stack(chand->channel), 0),
+                       &op);
 }
 
 static void finish_start_new_rpc(grpc_exec_ctx *exec_ctx, grpc_server *server,
@@ -596,8 +603,8 @@ static void server_mutate_op(grpc_call_element *elem,
 
   if (op->recv_initial_metadata != NULL) {
     calld->recv_initial_metadata = op->recv_initial_metadata;
-    calld->on_done_recv_initial_metadata = op->on_complete;
-    op->on_complete = &calld->server_on_recv_initial_metadata;
+    calld->on_done_recv_initial_metadata = op->recv_initial_metadata_ready;
+    op->recv_initial_metadata_ready = &calld->server_on_recv_initial_metadata;
   }
 }
 
@@ -971,7 +978,8 @@ void grpc_server_setup_transport(grpc_exec_ctx *exec_ctx, grpc_server *s,
 
   GRPC_CHANNEL_INTERNAL_REF(channel, "connectivity");
   memset(&op, 0, sizeof(op));
-  op.set_accept_stream = accept_stream;
+  op.set_accept_stream = true;
+  op.set_accept_stream_fn = accept_stream;
   op.set_accept_stream_user_data = chand;
   op.on_connectivity_state_change = &chand->channel_connectivity_changed;
   op.connectivity_state = &chand->connectivity_state;
