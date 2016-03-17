@@ -54,8 +54,10 @@ static unsigned seed(void) { return _getpid(); }
 #endif
 
 #if GPR_WINDOWS_CRASH_HANDLER
-#include <tchar.h>
 #include <windows.h>
+
+#include <tchar.h>
+
 #define DBGHELP_TRANSLATE_TCHAR
 #include <dbghelp.h>
 
@@ -93,7 +95,7 @@ static void print_current_stack() {
   frames = frames < MAX_CALLERS_SHOWN ? frames : MAX_CALLERS_SHOWN;
   for (unsigned int i = 0; i < frames; i++) {
     SymFromAddrW(process, (DWORD64)(callers_stack[i]), 0, symbol);
-    fwprintf(stderr, L"*** %d: %016I64LX %ls - %016I64LX\n", i,
+    fwprintf(stderr, L"*** %d: %016I64X %ls - %016I64X\n", i,
              (DWORD64)callers_stack[i], symbol->Name, (DWORD64)symbol->Address);
   }
 
@@ -148,7 +150,7 @@ static void print_stack_from_context(CONTEXT c) {
     BOOL has_symbol =
         SymFromAddrW(process, (DWORD64)(s.AddrPC.Offset), 0, symbol);
     fwprintf(
-        stderr, L"*** %016I64LX %ls - %016I64LX\n", (DWORD64)(s.AddrPC.Offset),
+        stderr, L"*** %016I64X %ls - %016I64X\n", (DWORD64)(s.AddrPC.Offset),
         has_symbol ? symbol->Name : L"<<no symbol>>", (DWORD64)symbol->Address);
   }
 
