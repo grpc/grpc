@@ -168,6 +168,7 @@ NAN_METHOD(CallCredentials::CreateFromPlugin) {
   uv_async_init(uv_default_loop(),
                 &state->plugin_async,
                 SendPluginCallback);
+  uv_unref((uv_handle_t*)&state->plugin_async);
 
   state->plugin_async.data = state;
 
@@ -271,7 +272,6 @@ void plugin_uv_close_cb(uv_handle_t *handle) {
 
 void plugin_destroy_state(void *ptr) {
   plugin_state *state = reinterpret_cast<plugin_state *>(ptr);
-  uv_unref((uv_handle_t*)&state->plugin_async);
   uv_close((uv_handle_t*)&state->plugin_async, plugin_uv_close_cb);
 }
 
