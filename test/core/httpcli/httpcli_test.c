@@ -164,7 +164,6 @@ int main(int argc, char **argv) {
     gpr_asprintf(&args[1], "%s/../../test/core/httpcli/test_server.py", root);
   }
 
-  gpr_free(root);
   /* start the server */
   args[1 + arg_shift] = "--port";
   gpr_asprintf(&args[2 + arg_shift], "%d", port);
