@@ -761,17 +761,17 @@ WARN_LOGFILE           =
 # Note: If this tag is empty the current directory is searched.
 
 INPUT                  = include/grpc/grpc_security.h \
+include/grpc/byte_buffer.h \
+include/grpc/byte_buffer_reader.h \
+include/grpc/compression.h \
+include/grpc/grpc.h \
+include/grpc/status.h \
 include/grpc/impl/codegen/byte_buffer.h \
 include/grpc/impl/codegen/compression_types.h \
 include/grpc/impl/codegen/connectivity_state.h \
 include/grpc/impl/codegen/grpc_types.h \
 include/grpc/impl/codegen/propagation_bits.h \
 include/grpc/impl/codegen/status.h \
-include/grpc/byte_buffer.h \
-include/grpc/byte_buffer_reader.h \
-include/grpc/compression.h \
-include/grpc/grpc.h \
-include/grpc/status.h \
 include/grpc/census.h \
 src/core/census/grpc_filter.h \
 src/core/channel/channel_args.h \
