@@ -33,13 +33,13 @@
 
 #include "test/core/util/test_config.h"
 
-#include <grpc/support/port_platform.h>
 #include <grpc/support/log.h>
-#include "src/core/support/string.h"
-#include <stdlib.h>
+#include <grpc/support/port_platform.h>
 #include <signal.h>
-#include <stdio.h>
 #include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include "src/core/support/string.h"
 
 double g_fixture_slowdown_factor = 1.0;
 
@@ -54,8 +54,8 @@ static unsigned seed(void) { return _getpid(); }
 #endif
 
 #if GPR_WINDOWS_CRASH_HANDLER
-#include <windows.h>
 #include <tchar.h>
+#include <windows.h>
 #define DBGHELP_TRANSLATE_TCHAR
 #include <dbghelp.h>
 
@@ -93,8 +93,8 @@ static void print_current_stack() {
   frames = frames < MAX_CALLERS_SHOWN ? frames : MAX_CALLERS_SHOWN;
   for (unsigned int i = 0; i < frames; i++) {
     SymFromAddrW(process, (DWORD64)(callers_stack[i]), 0, symbol);
-    fwprintf(stderr, L"*** %d: %016I64LX %ls - 0x%0X\n", i,
-             (DWORD64)callers_stack[i], symbol->Name, symbol->Address);
+    fwprintf(stderr, L"*** %d: %016I64LX %ls - %016I64LX\n", i,
+             (DWORD64)callers_stack[i], symbol->Name, (DWORD64)symbol->Address);
   }
 
   free(symbol);
@@ -147,8 +147,9 @@ static void print_stack_from_context(CONTEXT c) {
                    SymFunctionTableAccess, SymGetModuleBase, 0)) {
     BOOL has_symbol =
         SymFromAddrW(process, (DWORD64)(s.AddrPC.Offset), 0, symbol);
-    fwprintf(stderr, L"*** %016I64LX %ls - 0x%0X\n", (DWORD64)(s.AddrPC.Offset),
-             has_symbol ? symbol->Name : L"<<no symbol>>", symbol->Address);
+    fwprintf(
+        stderr, L"*** %016I64LX %ls - %016I64LX\n", (DWORD64)(s.AddrPC.Offset),
+        has_symbol ? symbol->Name : L"<<no symbol>>", (DWORD64)symbol->Address);
   }
 
   free(symbol);
@@ -178,7 +179,7 @@ static LONG crash_handler(struct _EXCEPTION_POINTERS *ex_info) {
 }
 
 static void abort_handler(int sig) {
-  fprintf(stderr, "Abort handler called.");
+  fprintf(stderr, "Abort handler called.\n");
   print_current_stack(NULL);
   if (IsDebuggerPresent()) {
     __debugbreak();
@@ -189,7 +190,7 @@ static void abort_handler(int sig) {
 
 static void install_crash_handler() {
   if (!SymInitialize(GetCurrentProcess(), NULL, TRUE)) {
-    fprintf(stderr, "SymInitialize failed: %d", GetLastError());
+    fprintf(stderr, "SymInitialize failed: %d\n", GetLastError());
   }
   SetUnhandledExceptionFilter((LPTOP_LEVEL_EXCEPTION_FILTER)crash_handler);
   _set_abort_behavior(0, _WRITE_ABORT_MSG);
@@ -197,11 +198,11 @@ static void install_crash_handler() {
   signal(SIGABRT, abort_handler);
 }
 #elif GPR_POSIX_CRASH_HANDLER
+#include <errno.h>
 #include <execinfo.h>
+#include <grpc/support/useful.h>
 #include <stdio.h>
 #include <string.h>
-#include <grpc/support/useful.h>
-#include <errno.h>
 
 static char g_alt_stack[MINSIGSTKSZ];
 
