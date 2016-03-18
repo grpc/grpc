@@ -39,6 +39,13 @@ export ASAN_SYMBOLIZER_PATH=/usr/bin/llvm-symbolizer-3.5
 
 echo "int main(){}" > a.c; clang -fsanitize=thread a.c && ./a.out
 
+clang -fvisibility=hidden  -std=c99 a.c -o b.out && ./b.out
+clang -fPIC  -fvisibility=hidden  -std=c99 a.c -o b.out && ./b.out
+clang -pie -fPIC  -fvisibility=hidden  -std=c99 a.c -o b.out && ./b.out
+clang -fPIE -pie -fPIC  -fvisibility=hidden  -std=c99 a.c -o b.out && ./b.out
+clang -fno-omit-frame-pointer -fPIE -pie -fPIC  -fvisibility=hidden  -std=c99 a.c -o b.out && ./b.out
+clang  -O0 -fsanitize=thread -fno-omit-frame-pointer -fPIE -pie -fPIC  -fvisibility=hidden  -std=c99 a.c -o b.out && ./b.out
+clang  -g -O0 -fsanitize=thread -fno-omit-frame-pointer -fPIE -pie -fPIC  -fvisibility=hidden  -std=c99 a.c -o b.out && ./b.out
 clang -Ithird_party/protobuf/src  -g -O0 -fsanitize=thread -fno-omit-frame-pointer -fPIE -pie -fPIC  -fvisibility=hidden  -std=c99 a.c -o b.out && ./b.out
 
 # Ensure that programs depending on current-user-ownership of cache directories
