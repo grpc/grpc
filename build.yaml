@@ -1532,6 +1532,18 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: hpack_parser_fuzzer_test
+  build: fuzzer
+  language: c
+  src:
+  - test/core/transport/chttp2/hpack_parser_fuzzer_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  corpus_dirs:
+  - test/core/transport/chttp2/hpack_parser_corpus
 - name: hpack_parser_test
   build: test
   language: c
@@ -1562,6 +1574,18 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: httpcli_fuzzer_test
+  build: fuzzer
+  language: c
+  src:
+  - test/core/httpcli/fuzzer.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  corpus_dirs:
+  - test/core/httpcli/corpus
 - name: httpcli_parser_test
   build: test
   language: c
@@ -1993,6 +2017,18 @@ targets:
   - mac
   - linux
   - posix
+- name: uri_fuzzer_test
+  build: fuzzer
+  language: c
+  src:
+  - test/core/client_config/uri_fuzzer_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  corpus_dirs:
+  - test/core/client_config/uri_corpus
 - name: uri_parser_test
   build: test
   language: c
