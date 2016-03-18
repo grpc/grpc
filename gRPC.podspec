@@ -64,6 +64,7 @@ Pod::Spec.new do |s|
   # Core cross-platform gRPC library, written in C.
   s.subspec 'C-Core' do |ss|
     ss.source_files = 'src/core/profiling/timers.h',
+                      'src/core/support/backoff.h',
                       'src/core/support/block_annotate.h',
                       'src/core/support/env.h',
                       'src/core/support/load_file.h',
@@ -120,6 +121,7 @@ Pod::Spec.new do |s|
                       'src/core/profiling/stap_timers.c',
                       'src/core/support/alloc.c',
                       'src/core/support/avl.c',
+                      'src/core/support/backoff.c',
                       'src/core/support/cmdline.c',
                       'src/core/support/cpu_iphone.c',
                       'src/core/support/cpu_linux.c',
@@ -470,6 +472,7 @@ Pod::Spec.new do |s|
                       'third_party/nanopb/pb_encode.c'
 
     ss.private_header_files = 'src/core/profiling/timers.h',
+                              'src/core/support/backoff.h',
                               'src/core/support/block_annotate.h',
                               'src/core/support/env.h',
                               'src/core/support/load_file.h',
