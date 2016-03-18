@@ -54,6 +54,7 @@
 #include "src/core/iomgr/socket_utils_posix.h"
 #include "src/core/iomgr/tcp_posix.h"
 #include "src/core/iomgr/timer.h"
+#include "src/core/iomgr/unix_sockets_posix.h"
 #include "src/core/support/string.h"
 
 extern int grpc_tcp_trace;
@@ -77,8 +78,7 @@ static int prepare_socket(const struct sockaddr *addr, int fd) {
   }
 
   if (!grpc_set_socket_nonblocking(fd, 1) || !grpc_set_socket_cloexec(fd, 1) ||
-      (!grpc_is_unix_socket(addr->sa_family) &&
-       !grpc_set_socket_low_latency(fd, 1)) ||
+      (!grpc_is_unix_socket(addr) && !grpc_set_socket_low_latency(fd, 1)) ||
       !grpc_set_socket_no_sigpipe_if_possible(fd)) {
     gpr_log(GPR_ERROR, "Unable to configure socket %d: %s", fd,
             strerror(errno));

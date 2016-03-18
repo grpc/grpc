@@ -34,26 +34,31 @@
 
 #include "src/core/iomgr/unix_sockets_posix.h"
 
+#ifdef GPR_POSIX_SOCKET
+
 void grpc_create_socketpair_if_unix(int sv[2]) {}
 
-void grpc_resolve_unix_domain_address(const char* name) {
+grpc_resolved_addresses *grpc_resolve_unix_domain_address(const char* name) {
   return NULL;
 }
 
-int grpc_is_unix_socket(sa_family_t addr_family) {
+int grpc_is_unix_socket(const struct sockaddr *addr) {
   return false;
 }
 
-static void unlink_if_unix_domain_socket(const struct sockaddr *addr) {}
+void unlink_if_unix_domain_socket(const struct sockaddr *addr) {}
 
-static int parse_unix(grpc_uri *uri, struct sockaddr_storage *addr,
-                      size_t *len) {}
+int parse_unix(grpc_uri *uri, struct sockaddr_storage *addr, size_t *len) {
+  return 0;
+}
 
-static char *unix_get_default_authority(grpc_resolver_factory *factory,
-                                        grpc_uri *uri) {}
+char *unix_get_default_authority(grpc_resolver_factory *factory,
+                                 grpc_uri *uri) {
+  return NULL;
+}
 
-char *grpc_sockaddr_to_uri_unix_if_possible(struct sockaddr *addr) {
-    return NULL;
+char *grpc_sockaddr_to_uri_unix_if_possible(const struct sockaddr *addr) {
+  return NULL;
 }
 
 #endif

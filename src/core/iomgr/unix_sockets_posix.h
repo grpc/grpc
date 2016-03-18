@@ -43,25 +43,22 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/client_config/resolver_factory.h"
-#include "src/core/client_config/uri_parser.h";
+#include "src/core/client_config/uri_parser.h"
 #include "src/core/iomgr/resolve_address.h"
 
 void grpc_create_socketpair_if_unix(int sv[2]);
 
 grpc_resolved_addresses *grpc_resolve_unix_domain_address(const char* name);
 
-int grpc_is_unix_socket(sa_family_t addr_family);
+int grpc_is_unix_socket(const struct sockaddr *addr);
 
-static void unlink_if_unix_domain_socket(const struct sockaddr *addr);
+void unlink_if_unix_domain_socket(const struct sockaddr *addr);
 
-static int parse_unix(grpc_uri *uri, struct sockaddr_storage *addr,
-                      size_t *len);
+int parse_unix(grpc_uri *uri, struct sockaddr_storage *addr, size_t *len);
 
-static char *unix_get_default_authority(grpc_resolver_factory *factory,
-                                        grpc_uri *uri);
+char *unix_get_default_authority(grpc_resolver_factory *factory, grpc_uri *uri);
 
-char *grpc_sockaddr_to_uri_unix_if_possible(char **strp,
-                                            const char *format, ...);
+char *grpc_sockaddr_to_uri_unix_if_possible(const struct sockaddr *addr);
 
 #endif
 #endif /* GRPC_INTERNAL_CORE_IOMGR_UNIX_SOCKETS_POSIX_H */
