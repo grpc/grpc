@@ -61,7 +61,7 @@ below.
 #Documentation
 
 You can find out how to build and run our simplest gRPC C++ example in our
-[C++ quick start](https://github.com/grpc/grpc/tree/{{ site.data.config.grpc_release_branch }}/examples/cpp).
+[C++ quick start](../../examples/cpp).
 
 For more detailed documentation on using gRPC in C++ , see our main
 documentation site at [grpc.io](http://grpc.io), specifically:
@@ -79,4 +79,4 @@ documentation site at [grpc.io](http://grpc.io), specifically:
 # Examples
 
 Code examples for gRPC C++ live in this repository's
-[examples/cpp](https://github.com/grpc/grpc/tree/{{ site.data.config.grpc_release_branch }}/examples/cpp) directory.
+[examples/cpp](../../examples/cpp) directory.
