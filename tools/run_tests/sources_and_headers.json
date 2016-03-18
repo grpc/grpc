@@ -891,6 +891,22 @@
     ], 
     "headers": [], 
     "language": "c", 
+    "name": "hpack_parser_fuzzer_test", 
+    "src": [
+      "test/core/transport/chttp2/hpack_parser_fuzzer_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
     "name": "hpack_parser_test", 
     "src": [
       "test/core/transport/chttp2/hpack_parser_test.c"
@@ -926,6 +942,22 @@
     "name": "httpcli_format_request_test", 
     "src": [
       "test/core/httpcli/format_request_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "httpcli_fuzzer_test", 
+    "src": [
+      "test/core/httpcli/fuzzer.c"
     ], 
     "third_party": false, 
     "type": "target"
@@ -1547,6 +1579,22 @@
     "name": "udp_server_test", 
     "src": [
       "test/core/iomgr/udp_server_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "uri_fuzzer_test", 
+    "src": [
+      "test/core/client_config/uri_fuzzer_test.c"
     ], 
     "third_party": false, 
     "type": "target"

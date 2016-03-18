@@ -925,9 +925,11 @@ grpc_jwt_verifier_test: $(BINDIR)/$(CONFIG)/grpc_jwt_verifier_test
 grpc_print_google_default_creds_token: $(BINDIR)/$(CONFIG)/grpc_print_google_default_creds_token
 grpc_security_connector_test: $(BINDIR)/$(CONFIG)/grpc_security_connector_test
 grpc_verify_jwt: $(BINDIR)/$(CONFIG)/grpc_verify_jwt
+hpack_parser_fuzzer_test: $(BINDIR)/$(CONFIG)/hpack_parser_fuzzer_test
 hpack_parser_test: $(BINDIR)/$(CONFIG)/hpack_parser_test
 hpack_table_test: $(BINDIR)/$(CONFIG)/hpack_table_test
 httpcli_format_request_test: $(BINDIR)/$(CONFIG)/httpcli_format_request_test
+httpcli_fuzzer_test: $(BINDIR)/$(CONFIG)/httpcli_fuzzer_test
 httpcli_parser_test: $(BINDIR)/$(CONFIG)/httpcli_parser_test
 httpcli_test: $(BINDIR)/$(CONFIG)/httpcli_test
 httpscli_test: $(BINDIR)/$(CONFIG)/httpscli_test
@@ -967,6 +969,7 @@ transport_connectivity_state_test: $(BINDIR)/$(CONFIG)/transport_connectivity_st
 transport_metadata_test: $(BINDIR)/$(CONFIG)/transport_metadata_test
 transport_security_test: $(BINDIR)/$(CONFIG)/transport_security_test
 udp_server_test: $(BINDIR)/$(CONFIG)/udp_server_test
+uri_fuzzer_test: $(BINDIR)/$(CONFIG)/uri_fuzzer_test
 uri_parser_test: $(BINDIR)/$(CONFIG)/uri_parser_test
 workqueue_test: $(BINDIR)/$(CONFIG)/workqueue_test
 alarm_cpp_test: $(BINDIR)/$(CONFIG)/alarm_cpp_test
@@ -7649,6 +7652,38 @@ endif
 endif
 
 
+HPACK_PARSER_FUZZER_TEST_SRC = \
+    test/core/transport/chttp2/hpack_parser_fuzzer_test.c \
+
+HPACK_PARSER_FUZZER_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(HPACK_PARSER_FUZZER_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/hpack_parser_fuzzer_test: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/hpack_parser_fuzzer_test: $(HPACK_PARSER_FUZZER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(HPACK_PARSER_FUZZER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -lFuzzer -o $(BINDIR)/$(CONFIG)/hpack_parser_fuzzer_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/transport/chttp2/hpack_parser_fuzzer_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_hpack_parser_fuzzer_test: $(HPACK_PARSER_FUZZER_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(HPACK_PARSER_FUZZER_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
 HPACK_PARSER_TEST_SRC = \
     test/core/transport/chttp2/hpack_parser_test.c \
 
@@ -7741,6 +7776,38 @@ deps_httpcli_format_request_test: $(HTTPCLI_FORMAT_REQUEST_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(HTTPCLI_FORMAT_REQUEST_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+HTTPCLI_FUZZER_TEST_SRC = \
+    test/core/httpcli/fuzzer.c \
+
+HTTPCLI_FUZZER_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(HTTPCLI_FUZZER_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/httpcli_fuzzer_test: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/httpcli_fuzzer_test: $(HTTPCLI_FUZZER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(HTTPCLI_FUZZER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -lFuzzer -o $(BINDIR)/$(CONFIG)/httpcli_fuzzer_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/httpcli/fuzzer.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_httpcli_fuzzer_test: $(HTTPCLI_FUZZER_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(HTTPCLI_FUZZER_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -8989,6 +9056,38 @@ deps_udp_server_test: $(UDP_SERVER_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(UDP_SERVER_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+URI_FUZZER_TEST_SRC = \
+    test/core/client_config/uri_fuzzer_test.c \
+
+URI_FUZZER_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(URI_FUZZER_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/uri_fuzzer_test: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/uri_fuzzer_test: $(URI_FUZZER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(URI_FUZZER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -lFuzzer -o $(BINDIR)/$(CONFIG)/uri_fuzzer_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/client_config/uri_fuzzer_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_uri_fuzzer_test: $(URI_FUZZER_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(URI_FUZZER_TEST_OBJS:.o=.dep)
 endif
 endif
 
