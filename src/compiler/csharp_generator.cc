@@ -82,7 +82,7 @@ std::string GetServerInterfaceName(const ServiceDescriptor* service) {
 }
 
 std::string GetServerClassName(const ServiceDescriptor* service) {
-  return service->name() + "Base";
+  return service->name();
 }
 
 std::string GetCSharpMethodType(MethodType method_type) {
@@ -295,7 +295,9 @@ void GenerateClientInterface(Printer* out, const ServiceDescriptor *service) {
 void GenerateServerInterface(Printer* out, const ServiceDescriptor *service) {
   out->Print("// server-side interface\n");
   out->Print("[System.Obsolete(\"Service implementations should inherit"
-      " from the generated abstract base class instead.\")]\n");
+      " from the generated abstract base class $classname$ instead.\")]\n",
+      "classname",
+      GetServerClassName(service));
   out->Print("public interface $name$\n", "name",
              GetServerInterfaceName(service));
   out->Print("{\n");
