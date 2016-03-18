@@ -105,7 +105,7 @@ RE_LICENSE = dict(
      for k, v in LICENSE_PREFIX.iteritems())
 
 if args.precommit:
-  FILE_LIST_COMMAND = 'git diff --name-only HEAD | grep -v ^third_party/'
+  FILE_LIST_COMMAND = 'git status -z | grep -Poz \'(?<=^[MARC][MARCD ] )[^\s]+\''
 else:
   FILE_LIST_COMMAND = 'git ls-tree -r --name-only -r HEAD | grep -v ^third_party/'
 
