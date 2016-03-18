@@ -2927,7 +2927,7 @@ node_modules:
   - src/node/ext/server_credentials.cc
   - src/node/ext/timeval.cc
 openssl_fallback:
-  base_uri: http://openssl.org/source/
+  base_uri: https://openssl.org/source/old/1.0.2/
   extraction_dir: openssl-1.0.2f
   tarball: openssl-1.0.2f.tar.gz
 php_config_m4:
