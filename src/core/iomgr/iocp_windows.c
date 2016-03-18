@@ -71,8 +71,7 @@ static DWORD deadline_to_millis_timeout(gpr_timespec deadline,
       timeout, gpr_time_from_nanos(GPR_NS_PER_MS - 1, GPR_TIMESPAN)));
 }
 
-grpc_iocp_work_status grpc_iocp_work(grpc_exec_ctx *exec_ctx,
-                                     gpr_timespec deadline) {
+void grpc_iocp_work(grpc_exec_ctx *exec_ctx, gpr_timespec deadline) {
   BOOL success;
   DWORD bytes = 0;
   DWORD flags = 0;
@@ -85,14 +84,14 @@ grpc_iocp_work_status grpc_iocp_work(grpc_exec_ctx *exec_ctx,
       g_iocp, &bytes, &completion_key, &overlapped,
       deadline_to_millis_timeout(deadline, gpr_now(deadline.clock_type)));
   if (success == 0 && overlapped == NULL) {
-    return GRPC_IOCP_WORK_TIMEOUT;
+    return;
   }
   GPR_ASSERT(completion_key && overlapped);
   if (overlapped == &g_iocp_custom_overlap) {
     gpr_atm_full_fetch_add(&g_custom_events, -1);
     if (completion_key == (ULONG_PTR)&g_iocp_kick_token) {
       /* We were awoken from a kick. */
-      return GRPC_IOCP_WORK_KICK;
+      return;
     }
     gpr_log(GPR_ERROR, "Unknown custom completion key.");
     abort();
@@ -122,7 +121,6 @@ grpc_iocp_work_status grpc_iocp_work(grpc_exec_ctx *exec_ctx,
   }
   gpr_mu_unlock(&socket->state_mu);
   grpc_exec_ctx_enqueue(exec_ctx, closure, true, NULL);
-  return GRPC_IOCP_WORK_WORK;
 }
 
 void grpc_iocp_init(void) {
@@ -142,12 +140,10 @@ void grpc_iocp_kick(void) {
 
 void grpc_iocp_flush(void) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_iocp_work_status work_status;
 
   do {
-    work_status = grpc_iocp_work(&exec_ctx, gpr_inf_past(GPR_CLOCK_MONOTONIC));
-  } while (work_status == GRPC_IOCP_WORK_KICK ||
-           grpc_exec_ctx_flush(&exec_ctx));
+    grpc_iocp_work(&exec_ctx, gpr_inf_past(GPR_CLOCK_MONOTONIC));
+  } while (grpc_exec_ctx_flush(&exec_ctx));
 }
 
 void grpc_iocp_shutdown(void) {
