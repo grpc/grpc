@@ -37,9 +37,9 @@ export CONFIG=$config
 export ASAN_SYMBOLIZER_PATH=/usr/bin/llvm-symbolizer-3.5
 
 
-echo "int main(){}" > a.cc; clang -fsanitize=thread a.cc && ./a.out
+echo "int main(){}" > a.c; clang -fsanitize=thread a.c && ./a.out
 
-clang -Ithird_party/protobuf/src -Ithird_party/googletest/include -Ithird_party/boringssl/include -g -Wall -Wextra -Werror -Wno-long-long -Wno-unused-parameter -O0 -fsanitize=thread -fno-omit-frame-pointer -Wno-unused-command-line-argument -fPIE -pie -DGPR_NO_DIRECT_SYSCALLS -fPIC -I. -Iinclude -I/usr/local/google/home/ctiller/grpc/gens -DGRPC_TEST_SLOWDOWN_BUILD_FACTOR=5 -DINSTALL_PREFIX=\"/usr/local\"  -Ithird_party/zlib -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX -std=c99 -Wsign-conversion -Wconversion -Wshadow  -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare a.cc -o b.out && ./b.out
+clang -Ithird_party/protobuf/src -Ithird_party/googletest/include -Ithird_party/boringssl/include -g -Wall -Wextra -Werror -Wno-long-long -Wno-unused-parameter -O0 -fsanitize=thread -fno-omit-frame-pointer -Wno-unused-command-line-argument -fPIE -pie -DGPR_NO_DIRECT_SYSCALLS -fPIC -I. -Iinclude -I/usr/local/google/home/ctiller/grpc/gens -DGRPC_TEST_SLOWDOWN_BUILD_FACTOR=5 -DINSTALL_PREFIX=\"/usr/local\"  -Ithird_party/zlib -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX -std=c99 -Wsign-conversion -Wconversion -Wshadow  -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare a.c -o b.out && ./b.out
 
 # Ensure that programs depending on current-user-ownership of cache directories
 # are satisfied (it's being mounted from outside the image).
