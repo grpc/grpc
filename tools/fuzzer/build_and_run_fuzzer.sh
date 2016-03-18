@@ -32,4 +32,4 @@
 set -ex
 
 make CONFIG=$config $1
-bins/$config/$1
+bins/$config/$1 -timeout 60
