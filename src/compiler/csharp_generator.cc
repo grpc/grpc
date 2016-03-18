@@ -66,7 +66,7 @@ namespace grpc_csharp_generator {
 namespace {
 
 std::string GetServiceClassName(const ServiceDescriptor* service) {
-  return service->name();
+  return service->name() + "Grpc";
 }
 
 std::string GetClientInterfaceName(const ServiceDescriptor* service) {
