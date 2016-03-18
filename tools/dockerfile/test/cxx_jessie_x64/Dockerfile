@@ -68,7 +68,7 @@ RUN apt-get update && apt-get install -y time && apt-get clean
 RUN apt-get update && apt-get -y install libgflags-dev libgtest-dev libc++-dev clang && apt-get clean
 
 #=================
-# Update clang to a version with improved tsan
+# Update clang to a version with improved tsan and fuzzing capabilities
 
 RUN apt-get update && apt-get -y install python cmake && apt-get clean
 

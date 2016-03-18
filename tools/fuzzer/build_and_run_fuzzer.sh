@@ -31,8 +31,5 @@
 
 set -ex
 
-git submodule update --init
-find . | sort
-make CONFIG=$config run_dep_checks
 make CONFIG=$config $1
 bins/$config/$1

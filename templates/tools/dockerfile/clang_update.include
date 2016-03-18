@@ -1,5 +1,5 @@
 #=================
-# Update clang to a version with improved tsan
+# Update clang to a version with improved tsan and fuzzing capabilities
 
 RUN apt-get update && apt-get -y install python cmake && apt-get clean
 
