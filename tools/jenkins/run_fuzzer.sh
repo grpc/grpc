@@ -34,7 +34,7 @@ set -ex
 
 export RUN_COMMAND="tools/fuzzer/build_and_run_fuzzer.sh $1"
 export DOCKER_RUN_SCRIPT=tools/jenkins/docker_run.sh
-export DOCKERFILE_DIR=tools/dockerfile/test/fuzzers/$1
+export DOCKERFILE_DIR=tools/dockerfile/test/fuzzer
 export OUTPUT_DIR=
 
 tools/jenkins/build_and_run_docker.sh \
