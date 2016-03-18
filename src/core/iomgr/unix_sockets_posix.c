@@ -36,6 +36,7 @@
 #ifdef GPR_HAVE_UNIX_SOCKET
 
 #include <sys/types.h>
+#include <sys/stat.h>
 #include <sys/un.h>
 
 #include <grpc/support/alloc.h>
@@ -47,7 +48,7 @@ void grpc_create_socketpair_if_unix(int sv[2]) {
 grpc_resolved_addresses *grpc_resolve_unix_domain_address(const char* name) {
   struct sockaddr_un *un;
 
-  addrs = gpr_malloc(sizeof(grpc_resolved_addresses));
+  grpc_resolved_addresses *addrs = gpr_malloc(sizeof(grpc_resolved_addresses));
   addrs->naddrs = 1;
   addrs->addrs = gpr_malloc(sizeof(grpc_resolved_address));
   un = (struct sockaddr_un *)addrs->addrs->addr;
@@ -57,11 +58,11 @@ grpc_resolved_addresses *grpc_resolve_unix_domain_address(const char* name) {
   return addrs;
 }
 
-int grpc_is_unix_socket(sa_family_t addr_family) {
-  return addr_family == AF_UNIX;
+int grpc_is_unix_socket(const struct sockaddr *addr) {
+  return addr->sa_family == AF_UNIX;
 }
 
-static void unlink_if_unix_domain_socket(const struct sockaddr *addr) {
+void unlink_if_unix_domain_socket(const struct sockaddr *addr) {
   if (addr->sa_family != AF_UNIX) {
     return;
   }
@@ -73,8 +74,7 @@ static void unlink_if_unix_domain_socket(const struct sockaddr *addr) {
   }
 }
 
-static int parse_unix(grpc_uri *uri, struct sockaddr_storage *addr,
-                      size_t *len) {
+int parse_unix(grpc_uri *uri, struct sockaddr_storage *addr, size_t *len) {
   struct sockaddr_un *un = (struct sockaddr_un *)addr;
 
   un->sun_family = AF_UNIX;
@@ -84,12 +84,12 @@ static int parse_unix(grpc_uri *uri, struct sockaddr_storage *addr,
   return 1;
 }
 
-static char *unix_get_default_authority(grpc_resolver_factory *factory,
-                                        grpc_uri *uri) {
+char *unix_get_default_authority(grpc_resolver_factory *factory,
+                                 grpc_uri *uri) {
   return gpr_strdup("localhost");
 }
 
-char *grpc_sockaddr_to_uri_unix_if_possible(struct sockaddr *addr) {
+char *grpc_sockaddr_to_uri_unix_if_possible(const struct sockaddr *addr) {
   if (addr->sa_family != AF_UNIX) {
     return NULL;
   }
