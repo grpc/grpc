@@ -142,10 +142,10 @@ class GuardValidator(object):
             save(fpath, fcontents)
       else:
         # something else is wrong, bail out
-        self.fail(fpath, endif_re, match.string, '', '', False)
+        self.fail(fpath, endif_re, flines[-1], '', '', False)
     elif match.group(1) != running_guard:
       # Is the #endif guard the same as the #ifndef and #define guards?
-      fcontents = self.fail(fpath, endif_re, fcontents, matches[-1],
+      fcontents = self.fail(fpath, endif_re, fcontents, match.group(1),
                             valid_guard, fix)
       if fix: save(fpath, fcontents)
 
