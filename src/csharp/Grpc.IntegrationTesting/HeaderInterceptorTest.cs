@@ -48,20 +48,20 @@ namespace Grpc.IntegrationTesting
         const string Host = "localhost";
         Server server;
         Channel channel;
-        TestService.TestServiceClient client;
+        TestServiceGrpc.TestServiceClient client;
 
         [TestFixtureSetUp]
         public void Init()
         {
             server = new Server
             {
-                Services = { TestService.BindService(new TestServiceImpl()) },
+                Services = { TestServiceGrpc.BindService(new TestServiceImpl()) },
                 Ports = { { Host, ServerPort.PickUnused, ServerCredentials.Insecure } }
             };
             server.Start();
 
             channel = new Channel(Host, server.Ports.Single().BoundPort, ChannelCredentials.Insecure);
-            client = TestService.NewClient(channel);
+            client = TestServiceGrpc.NewClient(channel);
         }
 
         [TestFixtureTearDown]

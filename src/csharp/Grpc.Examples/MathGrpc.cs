@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 using Grpc.Core;
 
 namespace Math {
-  public static class Math
+  public static class MathGrpc
   {
     static readonly string __ServiceName = "math.Math";
 
@@ -67,7 +67,7 @@ namespace Math {
     }
 
     // server-side interface
-    [System.Obsolete("Service implementations should inherit from the generated abstract base class instead.")]
+    [System.Obsolete("Service implementations should inherit from the generated abstract base class Math instead.")]
     public interface IMath
     {
       Task<global::Math.DivReply> Div(global::Math.DivArgs request, ServerCallContext context);
@@ -77,7 +77,7 @@ namespace Math {
     }
 
     // server-side abstract class
-    public abstract class MathBase
+    public abstract class Math
     {
       public virtual Task<global::Math.DivReply> Div(global::Math.DivArgs request, ServerCallContext context)
       {
@@ -170,7 +170,7 @@ namespace Math {
     }
 
     // creates service definition that can be registered with a server
-    public static ServerServiceDefinition BindService(MathBase serviceImpl)
+    public static ServerServiceDefinition BindService(Math serviceImpl)
     {
       return ServerServiceDefinition.CreateBuilder(__ServiceName)
           .AddMethod(__Method_Div, serviceImpl.Div)

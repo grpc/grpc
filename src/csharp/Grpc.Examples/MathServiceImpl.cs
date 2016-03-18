@@ -43,7 +43,7 @@ namespace Math
     /// <summary>
     /// Implementation of MathService server
     /// </summary>
-    public class MathServiceImpl : Math.MathBase
+    public class MathServiceImpl : MathGrpc.Math
     {
         public override Task<DivReply> Div(DivArgs request, ServerCallContext context)
         {

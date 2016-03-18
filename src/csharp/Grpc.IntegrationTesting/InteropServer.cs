@@ -95,7 +95,7 @@ namespace Grpc.IntegrationTesting
         {
             var server = new Server
             {
-                Services = { TestService.BindService(new TestServiceImpl()) }
+                Services = { TestServiceGrpc.BindService(new TestServiceImpl()) }
             };
 
             string host = "0.0.0.0";

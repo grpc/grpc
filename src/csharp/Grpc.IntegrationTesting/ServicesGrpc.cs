@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 using Grpc.Core;
 
 namespace Grpc.Testing {
-  public static class BenchmarkService
+  public static class BenchmarkServiceGrpc
   {
     static readonly string __ServiceName = "grpc.testing.BenchmarkService";
 
@@ -47,7 +47,7 @@ namespace Grpc.Testing {
     }
 
     // server-side interface
-    [System.Obsolete("Service implementations should inherit from the generated abstract base class instead.")]
+    [System.Obsolete("Service implementations should inherit from the generated abstract base class BenchmarkService instead.")]
     public interface IBenchmarkService
     {
       Task<global::Grpc.Testing.SimpleResponse> UnaryCall(global::Grpc.Testing.SimpleRequest request, ServerCallContext context);
@@ -55,7 +55,7 @@ namespace Grpc.Testing {
     }
 
     // server-side abstract class
-    public abstract class BenchmarkServiceBase
+    public abstract class BenchmarkService
     {
       public virtual Task<global::Grpc.Testing.SimpleResponse> UnaryCall(global::Grpc.Testing.SimpleRequest request, ServerCallContext context)
       {
@@ -116,7 +116,7 @@ namespace Grpc.Testing {
     }
 
     // creates service definition that can be registered with a server
-    public static ServerServiceDefinition BindService(BenchmarkServiceBase serviceImpl)
+    public static ServerServiceDefinition BindService(BenchmarkService serviceImpl)
     {
       return ServerServiceDefinition.CreateBuilder(__ServiceName)
           .AddMethod(__Method_UnaryCall, serviceImpl.UnaryCall)
@@ -130,7 +130,7 @@ namespace Grpc.Testing {
     }
 
   }
-  public static class WorkerService
+  public static class WorkerServiceGrpc
   {
     static readonly string __ServiceName = "grpc.testing.WorkerService";
 
@@ -194,7 +194,7 @@ namespace Grpc.Testing {
     }
 
     // server-side interface
-    [System.Obsolete("Service implementations should inherit from the generated abstract base class instead.")]
+    [System.Obsolete("Service implementations should inherit from the generated abstract base class WorkerService instead.")]
     public interface IWorkerService
     {
       Task RunServer(IAsyncStreamReader<global::Grpc.Testing.ServerArgs> requestStream, IServerStreamWriter<global::Grpc.Testing.ServerStatus> responseStream, ServerCallContext context);
@@ -204,7 +204,7 @@ namespace Grpc.Testing {
     }
 
     // server-side abstract class
-    public abstract class WorkerServiceBase
+    public abstract class WorkerService
     {
       public virtual Task RunServer(IAsyncStreamReader<global::Grpc.Testing.ServerArgs> requestStream, IServerStreamWriter<global::Grpc.Testing.ServerStatus> responseStream, ServerCallContext context)
       {
@@ -307,7 +307,7 @@ namespace Grpc.Testing {
     }
 
     // creates service definition that can be registered with a server
-    public static ServerServiceDefinition BindService(WorkerServiceBase serviceImpl)
+    public static ServerServiceDefinition BindService(WorkerService serviceImpl)
     {
       return ServerServiceDefinition.CreateBuilder(__ServiceName)
           .AddMethod(__Method_RunServer, serviceImpl.RunServer)

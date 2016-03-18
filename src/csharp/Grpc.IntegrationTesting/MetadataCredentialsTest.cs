@@ -50,21 +50,21 @@ namespace Grpc.IntegrationTesting
         const string Host = "localhost";
         Server server;
         Channel channel;
-        TestService.ITestServiceClient client;
+        TestServiceGrpc.ITestServiceClient client;
         List<ChannelOption> options;
-        Mock<TestService.ITestService> serviceMock;
+        Mock<TestServiceGrpc.ITestService> serviceMock;
         AsyncAuthInterceptor asyncAuthInterceptor;
 
         [SetUp]
         public void Init()
         {
-            serviceMock = new Mock<TestService.ITestService>();
+            serviceMock = new Mock<TestServiceGrpc.ITestService>();
             serviceMock.Setup(m => m.UnaryCall(It.IsAny<SimpleRequest>(), It.IsAny<ServerCallContext>()))
                 .Returns(new Func<SimpleRequest, ServerCallContext, Task<SimpleResponse>>(UnaryCallHandler));
 
             server = new Server
             {
-                Services = { TestService.BindService(serviceMock.Object) },
+                Services = { TestServiceGrpc.BindService(serviceMock.Object) },
                 Ports = { { Host, ServerPort.PickUnused, TestCredentials.CreateSslServerCredentials() } }
             };
             server.Start();
@@ -94,7 +94,7 @@ namespace Grpc.IntegrationTesting
             var channelCredentials = ChannelCredentials.Create(TestCredentials.CreateSslCredentials(),
                 CallCredentials.FromInterceptor(asyncAuthInterceptor));
             channel = new Channel(Host, server.Ports.Single().BoundPort, channelCredentials, options);
-            client = TestService.NewClient(channel);
+            client = TestServiceGrpc.NewClient(channel);
 
             client.UnaryCall(new SimpleRequest {});
         }
@@ -103,7 +103,7 @@ namespace Grpc.IntegrationTesting
         public void MetadataCredentials_PerCall()
         {
             channel = new Channel(Host, server.Ports.Single().BoundPort, TestCredentials.CreateSslCredentials(), options);
-            client = TestService.NewClient(channel);
+            client = TestServiceGrpc.NewClient(channel);
 
             var callCredentials = CallCredentials.FromInterceptor(asyncAuthInterceptor);
             client.UnaryCall(new SimpleRequest { }, new CallOptions(credentials: callCredentials));

@@ -45,7 +45,7 @@ namespace Grpc.Testing
     /// <summary>
     /// Implementation of WorkerService server
     /// </summary>
-    public class WorkerServiceImpl : WorkerService.WorkerServiceBase
+    public class WorkerServiceImpl : WorkerServiceGrpc.WorkerService
     {
         readonly Action stopRequestHandler;
 

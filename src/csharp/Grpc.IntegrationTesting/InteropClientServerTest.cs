@@ -51,14 +51,14 @@ namespace Grpc.IntegrationTesting
         const string Host = "localhost";
         Server server;
         Channel channel;
-        TestService.ITestServiceClient client;
+        TestServiceGrpc.ITestServiceClient client;
 
         [TestFixtureSetUp]
         public void Init()
         {
             server = new Server
             {
-                Services = { TestService.BindService(new TestServiceImpl()) },
+                Services = { TestServiceGrpc.BindService(new TestServiceImpl()) },
                 Ports = { { Host, ServerPort.PickUnused, TestCredentials.CreateSslServerCredentials() } }
             };
             server.Start();
@@ -69,7 +69,7 @@ namespace Grpc.IntegrationTesting
             };
             int port = server.Ports.Single().BoundPort;
             channel = new Channel(Host, port, TestCredentials.CreateSslCredentials(), options);
-            client = TestService.NewClient(channel);
+            client = TestServiceGrpc.NewClient(channel);
         }
 
         [TestFixtureTearDown]
@@ -148,7 +148,7 @@ namespace Grpc.IntegrationTesting
         [Test]
         public void UnimplementedMethod()
         {
-            InteropClient.RunUnimplementedMethod(UnimplementedService.NewClient(channel));
+            InteropClient.RunUnimplementedMethod(UnimplementedServiceGrpc.NewClient(channel));
         }
     }
 }

@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 using Grpc.Core;
 
 namespace Grpc.Testing {
-  public static class TestService
+  public static class TestServiceGrpc
   {
     static readonly string __ServiceName = "grpc.testing.TestService";
 
@@ -90,7 +90,7 @@ namespace Grpc.Testing {
     }
 
     // server-side interface
-    [System.Obsolete("Service implementations should inherit from the generated abstract base class instead.")]
+    [System.Obsolete("Service implementations should inherit from the generated abstract base class TestService instead.")]
     public interface ITestService
     {
       Task<global::Grpc.Testing.Empty> EmptyCall(global::Grpc.Testing.Empty request, ServerCallContext context);
@@ -102,7 +102,7 @@ namespace Grpc.Testing {
     }
 
     // server-side abstract class
-    public abstract class TestServiceBase
+    public abstract class TestService
     {
       public virtual Task<global::Grpc.Testing.Empty> EmptyCall(global::Grpc.Testing.Empty request, ServerCallContext context)
       {
@@ -237,7 +237,7 @@ namespace Grpc.Testing {
     }
 
     // creates service definition that can be registered with a server
-    public static ServerServiceDefinition BindService(TestServiceBase serviceImpl)
+    public static ServerServiceDefinition BindService(TestService serviceImpl)
     {
       return ServerServiceDefinition.CreateBuilder(__ServiceName)
           .AddMethod(__Method_EmptyCall, serviceImpl.EmptyCall)
@@ -255,7 +255,7 @@ namespace Grpc.Testing {
     }
 
   }
-  public static class UnimplementedService
+  public static class UnimplementedServiceGrpc
   {
     static readonly string __ServiceName = "grpc.testing.UnimplementedService";
 
@@ -284,14 +284,14 @@ namespace Grpc.Testing {
     }
 
     // server-side interface
-    [System.Obsolete("Service implementations should inherit from the generated abstract base class instead.")]
+    [System.Obsolete("Service implementations should inherit from the generated abstract base class UnimplementedService instead.")]
     public interface IUnimplementedService
     {
       Task<global::Grpc.Testing.Empty> UnimplementedCall(global::Grpc.Testing.Empty request, ServerCallContext context);
     }
 
     // server-side abstract class
-    public abstract class UnimplementedServiceBase
+    public abstract class UnimplementedService
     {
       public virtual Task<global::Grpc.Testing.Empty> UnimplementedCall(global::Grpc.Testing.Empty request, ServerCallContext context)
       {
@@ -336,7 +336,7 @@ namespace Grpc.Testing {
     }
 
     // creates service definition that can be registered with a server
-    public static ServerServiceDefinition BindService(UnimplementedServiceBase serviceImpl)
+    public static ServerServiceDefinition BindService(UnimplementedService serviceImpl)
     {
       return ServerServiceDefinition.CreateBuilder(__ServiceName)
           .AddMethod(__Method_UnimplementedCall, serviceImpl.UnimplementedCall).Build();
@@ -349,7 +349,7 @@ namespace Grpc.Testing {
     }
 
   }
-  public static class ReconnectService
+  public static class ReconnectServiceGrpc
   {
     static readonly string __ServiceName = "grpc.testing.ReconnectService";
 
@@ -390,7 +390,7 @@ namespace Grpc.Testing {
     }
 
     // server-side interface
-    [System.Obsolete("Service implementations should inherit from the generated abstract base class instead.")]
+    [System.Obsolete("Service implementations should inherit from the generated abstract base class ReconnectService instead.")]
     public interface IReconnectService
     {
       Task<global::Grpc.Testing.Empty> Start(global::Grpc.Testing.Empty request, ServerCallContext context);
@@ -398,7 +398,7 @@ namespace Grpc.Testing {
     }
 
     // server-side abstract class
-    public abstract class ReconnectServiceBase
+    public abstract class ReconnectService
     {
       public virtual Task<global::Grpc.Testing.Empty> Start(global::Grpc.Testing.Empty request, ServerCallContext context)
       {
@@ -469,7 +469,7 @@ namespace Grpc.Testing {
     }
 
     // creates service definition that can be registered with a server
-    public static ServerServiceDefinition BindService(ReconnectServiceBase serviceImpl)
+    public static ServerServiceDefinition BindService(ReconnectService serviceImpl)
     {
       return ServerServiceDefinition.CreateBuilder(__ServiceName)
           .AddMethod(__Method_Start, serviceImpl.Start)

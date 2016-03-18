@@ -45,7 +45,7 @@ namespace Math
         {
             Server server = new Server
             {
-                Services = { Math.BindService(new MathServiceImpl()) },
+                Services = { MathGrpc.BindService(new MathServiceImpl()) },
                 Ports = { { Host, Port, ServerCredentials.Insecure } }
             };
             server.Start();

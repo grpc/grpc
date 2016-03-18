@@ -64,7 +64,7 @@ namespace Grpc.IntegrationTesting
             int responseSize = config.PayloadConfig != null ? config.PayloadConfig.SimpleParams.RespSize : 0;
             var server = new Server
             {
-                Services = { BenchmarkService.BindService(new BenchmarkServiceImpl(responseSize)) },
+                Services = { BenchmarkServiceGrpc.BindService(new BenchmarkServiceImpl(responseSize)) },
                 Ports = { new ServerPort("[::]", config.Port, credentials) }
             };
 

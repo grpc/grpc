@@ -44,7 +44,7 @@ namespace Grpc.Testing
     /// <summary>
     /// Implementation of BenchmarkService server
     /// </summary>
-    public class BenchmarkServiceImpl : BenchmarkService.BenchmarkServiceBase
+    public class BenchmarkServiceImpl : BenchmarkServiceGrpc.BenchmarkService
     {
         private readonly int responseSize;
 

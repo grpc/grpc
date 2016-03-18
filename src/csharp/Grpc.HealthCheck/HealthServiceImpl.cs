@@ -51,7 +51,7 @@ namespace Grpc.HealthCheck
     /// server.AddServiceDefinition(Grpc.Health.V1.Health.BindService(serviceImpl));
     /// </code>
     /// </summary>
-    public class HealthServiceImpl : Grpc.Health.V1.Health.HealthBase
+    public class HealthServiceImpl : Grpc.Health.V1.HealthGrpc.Health
     {
         private readonly object myLock = new object();
         private readonly Dictionary<string, HealthCheckResponse.Types.ServingStatus> statusMap = 

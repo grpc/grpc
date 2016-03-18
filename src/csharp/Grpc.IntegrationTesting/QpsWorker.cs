@@ -98,7 +98,7 @@ namespace Grpc.IntegrationTesting
                 
             var server = new Server
             {
-                Services = { WorkerService.BindService(workerServiceImpl) },
+                Services = { WorkerServiceGrpc.BindService(workerServiceImpl) },
                 Ports = { new ServerPort(host, options.DriverPort, ServerCredentials.Insecure )}
             };
             int boundPort = server.Ports.Single().BoundPort;

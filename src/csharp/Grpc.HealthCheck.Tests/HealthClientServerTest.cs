@@ -49,7 +49,7 @@ namespace Grpc.HealthCheck.Tests
         const string Host = "localhost";
         Server server;
         Channel channel;
-        Grpc.Health.V1.Health.IHealthClient client;
+        Grpc.Health.V1.HealthGrpc.IHealthClient client;
         Grpc.HealthCheck.HealthServiceImpl serviceImpl;
 
         [TestFixtureSetUp]
@@ -59,13 +59,13 @@ namespace Grpc.HealthCheck.Tests
 
             server = new Server
             {
-                Services = { Grpc.Health.V1.Health.BindService(serviceImpl) },
+                Services = { Grpc.Health.V1.HealthGrpc.BindService(serviceImpl) },
                 Ports = { { Host, ServerPort.PickUnused, ServerCredentials.Insecure } }
             };
             server.Start();
             channel = new Channel(Host, server.Ports.Single().BoundPort, ChannelCredentials.Insecure);
 
-            client = Grpc.Health.V1.Health.NewClient(channel);
+            client = Grpc.Health.V1.HealthGrpc.NewClient(channel);
         }
 
         [TestFixtureTearDown]
