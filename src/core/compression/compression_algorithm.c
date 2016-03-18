@@ -152,7 +152,8 @@ grpc_compression_algorithm grpc_compression_algorithm_for_level(
                                                       GRPC_COMPRESS_DEFLATE};
 
   /* intersect algos_ranking with the supported ones keeping the ranked order */
-  grpc_compression_algorithm sorted_supported_algos[num_supported];
+  grpc_compression_algorithm
+      sorted_supported_algos[GRPC_COMPRESS_ALGORITHMS_COUNT];
   size_t algos_supported_idx = 0;
   for (size_t i = 0; i < GPR_ARRAY_SIZE(algos_ranking); i++) {
     const grpc_compression_algorithm alg = algos_ranking[i];
