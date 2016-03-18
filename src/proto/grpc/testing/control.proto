@@ -53,8 +53,8 @@ enum RpcType {
   // Then there are RPCs where a side sends to the other without regard to the
   // sends coming from the other side
   SERVER_STREAMING = 2; // 1-directional server->client streaming
-  CLIENT_STREAMING = 2; // 1-directional client->server streaming
-  BIDI_STREAMING = 2; // 2-directional client<->server streaming
+  CLIENT_STREAMING = 3; // 1-directional client->server streaming
+  BIDI_STREAMING = 4; // 2-directional client<->server streaming
 }
 
 // Parameters of poisson process distribution, which is a good representation
