@@ -32,4 +32,4 @@
 set -ex
 
 make CONFIG=$config $1 -j3
-bins/$config/$1 -timeout=60
+bins/$config/$1 -max_total_time=60
