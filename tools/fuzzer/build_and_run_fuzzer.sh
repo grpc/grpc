@@ -31,5 +31,5 @@
 
 set -ex
 
-make CONFIG=$config $1
-bins/$config/$1 -timeout 60
+make CONFIG=$config $1 -j3
+bins/$config/$1 -timeout=60
