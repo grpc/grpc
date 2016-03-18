@@ -50,7 +50,7 @@ Troubleshooting
 Help, I ...
 
 * **... see a** :code:`pkg_resources.VersionConflict` **when I try to install
-  grpc:**
+  grpc**
 
   This is likely because :code:`pip` doesn't own the offending dependency,
   which in turn is likely because your operating system's package manager owns
@@ -75,7 +75,7 @@ Help, I ...
 
     sudo pip install --ignore-installed six
 
-* **see the following error on some platforms**
+* **... see the following error on some platforms**
 
   ::
 
