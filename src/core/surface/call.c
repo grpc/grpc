@@ -1484,6 +1484,8 @@ uint8_t grpc_call_is_client(grpc_call *call) { return call->is_client; }
 
 grpc_compression_algorithm grpc_call_compression_for_level(
     grpc_call *call, grpc_compression_level level) {
-  return grpc_compression_algorithm_for_level(level,
-                                              call->encodings_accepted_by_peer);
+  gpr_mu_lock(&call->mu);
+  const uint32_t accepted_encodings = call->encodings_accepted_by_peer;
+  gpr_mu_unlock(&call->mu);
+  return grpc_compression_algorithm_for_level(level, accepted_encodings);
 }
