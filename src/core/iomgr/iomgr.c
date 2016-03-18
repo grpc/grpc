@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -41,9 +41,11 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/thd.h>
+#include <grpc/support/useful.h>
 
 #include "src/core/iomgr/iomgr_internal.h"
-#include "src/core/iomgr/timer_internal.h"
+#include "src/core/iomgr/timer.h"
+#include "src/core/support/env.h"
 #include "src/core/support/string.h"
 
 static gpr_mu g_mu;
@@ -116,6 +118,9 @@ void grpc_iomgr_shutdown(void) {
                     "memory leaks are likely",
                     count_objects());
             dump_objects("LEAKED");
+            if (grpc_iomgr_abort_on_leaks()) {
+              abort();
+            }
           }
           break;
         }
@@ -153,4 +158,15 @@ void grpc_iomgr_unregister_object(grpc_iomgr_object *obj) {
   gpr_cv_signal(&g_rcv);
   gpr_mu_unlock(&g_mu);
   gpr_free(obj->name);
+}
+
+bool grpc_iomgr_abort_on_leaks(void) {
+  char *env = gpr_getenv("GRPC_ABORT_ON_LEAKS");
+  if (env == NULL) return false;
+  static const char *truthy[] = {"yes",  "Yes",  "YES", "true",
+                                 "True", "TRUE", "1"};
+  for (size_t i = 0; i < GPR_ARRAY_SIZE(truthy); i++) {
+    if (0 == strcmp(env, truthy[i])) return true;
+  }
+  return false;
 }

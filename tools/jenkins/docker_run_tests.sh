@@ -45,6 +45,8 @@ git clone --recursive /var/local/jenkins/grpc /var/local/git/grpc
 
 mkdir -p reports
 
+$POST_GIT_STEP
+
 exit_code=0
 
 $RUN_TESTS_COMMAND || exit_code=$?
@@ -60,5 +62,6 @@ echo '</body></html>' >> index.html
 cd ..
 
 zip -r reports.zip reports
+find . -name report.xml | xargs zip reports.zip
 
 exit $exit_code

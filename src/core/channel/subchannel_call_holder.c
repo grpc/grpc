@@ -168,14 +168,14 @@ retry:
 
 static void subchannel_ready(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
   grpc_subchannel_call_holder *holder = arg;
-  grpc_subchannel_call *call;
   gpr_mu_lock(&holder->mu);
   GPR_ASSERT(holder->creation_phase ==
              GRPC_SUBCHANNEL_CALL_HOLDER_PICKING_SUBCHANNEL);
-  call = GET_CALL(holder);
-  GPR_ASSERT(call == NULL || call == CANCELLED_CALL);
   holder->creation_phase = GRPC_SUBCHANNEL_CALL_HOLDER_NOT_CREATING;
   if (holder->connected_subchannel == NULL) {
+    fail_locked(exec_ctx, holder);
+  } else if (1 == gpr_atm_acq_load(&holder->subchannel_call)) {
+    /* already cancelled before subchannel became ready */
     fail_locked(exec_ctx, holder);
   } else {
     gpr_atm_rel_store(

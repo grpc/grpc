@@ -91,6 +91,13 @@ RUN /bin/bash -l -c "echo 'export PATH=/usr/local/rvm/bin:$PATH' >> ~/.bashrc"
 RUN /bin/bash -l -c "echo 'rvm --default use ruby-2.1' >> ~/.bashrc"
 RUN /bin/bash -l -c "gem install bundler --no-ri --no-rdoc"
 
+
+##################
+# PHP dependencies
+
+RUN apt-get update && apt-get install -y \
+    php5 php5-dev php-pear phpunit
+
 RUN mkdir /var/local/jenkins
 
 # Define the default command.

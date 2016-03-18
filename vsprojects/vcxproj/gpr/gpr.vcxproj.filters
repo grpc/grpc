@@ -37,19 +37,13 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\support\env_win32.c">
       <Filter>src\core\support</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\support\file.c">
-      <Filter>src\core\support</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\support\file_posix.c">
-      <Filter>src\core\support</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\support\file_win32.c">
-      <Filter>src\core\support</Filter>
-    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\support\histogram.c">
       <Filter>src\core\support</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\support\host_port.c">
+      <Filter>src\core\support</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\support\load_file.c">
       <Filter>src\core\support</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\support\log.c">
@@ -125,6 +119,12 @@
       <Filter>src\core\support</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\support\tls_pthread.c">
+      <Filter>src\core\support</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\support\tmpfile_posix.c">
+      <Filter>src\core\support</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\support\tmpfile_win32.c">
       <Filter>src\core\support</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\support\wrap_memcpy.c">
@@ -269,7 +269,7 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\support\env.h">
       <Filter>src\core\support</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\support\file.h">
+    <ClInclude Include="$(SolutionDir)\..\src\core\support\load_file.h">
       <Filter>src\core\support</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\support\murmur_hash.h">
@@ -288,6 +288,9 @@
       <Filter>src\core\support</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\support\time_precise.h">
+      <Filter>src\core\support</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\support\tmpfile.h">
       <Filter>src\core\support</Filter>
     </ClInclude>
   </ItemGroup>

@@ -272,27 +272,25 @@ class Server::SyncRequest GRPC_FINAL : public CompletionQueueTag {
   grpc_completion_queue* cq_;
 };
 
-static grpc_server* CreateServer(const ChannelArguments& args) {
-  grpc_channel_args channel_args;
-  args.SetChannelArgs(&channel_args);
-  return grpc_server_create(&channel_args, nullptr);
-}
-
 static internal::GrpcLibraryInitializer g_gli_initializer;
 Server::Server(ThreadPoolInterface* thread_pool, bool thread_pool_owned,
-               int max_message_size, const ChannelArguments& args)
+               int max_message_size, ChannelArguments* args)
     : max_message_size_(max_message_size),
       started_(false),
       shutdown_(false),
       num_running_cb_(0),
       sync_methods_(new std::list<SyncRequest>),
       has_generic_service_(false),
-      server_(CreateServer(args)),
+      server_(nullptr),
       thread_pool_(thread_pool),
       thread_pool_owned_(thread_pool_owned) {
   g_gli_initializer.summon();
   gpr_once_init(&g_once_init_callbacks, InitGlobalCallbacks);
   global_callbacks_ = g_callbacks;
+  global_callbacks_->UpdateArguments(args);
+  grpc_channel_args channel_args;
+  args->SetChannelArgs(&channel_args);
+  server_ = grpc_server_create(&channel_args, nullptr);
   grpc_server_register_completion_queue(server_, cq_.cq(), nullptr);
 }
 

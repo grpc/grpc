@@ -171,11 +171,9 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\cancel_with_status.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\channel_connectivity.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\channel_ping.c">
-    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\compressed_payload.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\connectivity.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\default_host.c">
     </ClCompile>
@@ -197,13 +195,13 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\max_message_length.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\metadata.c">
-    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\negative_deadline.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\no_op.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\payload.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\ping.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\ping_pong_streaming.c">
     </ClCompile>
@@ -220,6 +218,8 @@
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\shutdown_finishes_tags.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\simple_delayed_request.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\simple_metadata.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\simple_request.c">
     </ClCompile>

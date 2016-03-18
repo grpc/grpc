@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -35,7 +35,10 @@
 #define GRPC_INTERNAL_CORE_IOMGR_POLLSET_H
 
 #include <grpc/support/port_platform.h>
+#include <grpc/support/sync.h>
 #include <grpc/support/time.h>
+
+#include "src/core/iomgr/exec_ctx.h"
 
 #define GRPC_POLLSET_KICK_BROADCAST ((grpc_pollset_worker *)1)
 
@@ -46,15 +49,11 @@
     - a completion queue might keep a pollset with an entry for each transport
       that is servicing a call that it's tracking */
 
-#ifdef GPR_POSIX_SOCKET
-#include "src/core/iomgr/pollset_posix.h"
-#endif
+typedef struct grpc_pollset grpc_pollset;
+typedef struct grpc_pollset_worker grpc_pollset_worker;
 
-#ifdef GPR_WIN32
-#include "src/core/iomgr/pollset_windows.h"
-#endif
-
-void grpc_pollset_init(grpc_pollset *pollset);
+size_t grpc_pollset_size(void);
+void grpc_pollset_init(grpc_pollset *pollset, gpr_mu **mu);
 /* Begin shutting down the pollset, and call closure when done.
  * GRPC_POLLSET_MU(pollset) must be held */
 void grpc_pollset_shutdown(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
@@ -83,7 +82,7 @@ void grpc_pollset_destroy(grpc_pollset *pollset);
    pollset
    lock */
 void grpc_pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
-                       grpc_pollset_worker *worker, gpr_timespec now,
+                       grpc_pollset_worker **worker, gpr_timespec now,
                        gpr_timespec deadline);
 
 /* Break one polling thread out of polling work for this pollset.

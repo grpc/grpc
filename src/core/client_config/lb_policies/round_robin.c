@@ -260,7 +260,7 @@ static void rr_cancel_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
   while (pp != NULL) {
     pending_pick *next = pp->next;
     if (pp->target == target) {
-      grpc_pollset_set_del_pollset(exec_ctx, &p->base.interested_parties,
+      grpc_pollset_set_del_pollset(exec_ctx, p->base.interested_parties,
                                    pp->pollset);
       *target = NULL;
       grpc_exec_ctx_enqueue(exec_ctx, pp->on_complete, false, NULL);
@@ -285,7 +285,7 @@ static void start_picking(grpc_exec_ctx *exec_ctx, round_robin_lb_policy *p) {
     subchannel_data *sd = p->subchannels[i];
     sd->connectivity_state = GRPC_CHANNEL_IDLE;
     grpc_subchannel_notify_on_state_change(
-        exec_ctx, sd->subchannel, &p->base.interested_parties,
+        exec_ctx, sd->subchannel, p->base.interested_parties,
         &sd->connectivity_state, &sd->connectivity_changed_closure);
     GRPC_LB_POLICY_WEAK_REF(&p->base, "round_robin_connectivity");
   }
@@ -322,8 +322,7 @@ int rr_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol, grpc_pollset *pollset,
     if (!p->started_picking) {
       start_picking(exec_ctx, p);
     }
-    grpc_pollset_set_add_pollset(exec_ctx, &p->base.interested_parties,
-                                 pollset);
+    grpc_pollset_set_add_pollset(exec_ctx, p->base.interested_parties, pollset);
     pp = gpr_malloc(sizeof(*pp));
     pp->next = p->pending_picks;
     pp->pollset = pollset;
@@ -374,13 +373,13 @@ static void rr_connectivity_changed(grpc_exec_ctx *exec_ctx, void *arg,
                     "[RR CONN CHANGED] TARGET <-- SUBCHANNEL %p (NODE %p)",
                     selected->subchannel, selected);
           }
-          grpc_pollset_set_del_pollset(exec_ctx, &p->base.interested_parties,
+          grpc_pollset_set_del_pollset(exec_ctx, p->base.interested_parties,
                                        pp->pollset);
           grpc_exec_ctx_enqueue(exec_ctx, pp->on_complete, true, NULL);
           gpr_free(pp);
         }
         grpc_subchannel_notify_on_state_change(
-            exec_ctx, sd->subchannel, &p->base.interested_parties,
+            exec_ctx, sd->subchannel, p->base.interested_parties,
             &sd->connectivity_state, &sd->connectivity_changed_closure);
         break;
       case GRPC_CHANNEL_CONNECTING:
@@ -389,13 +388,13 @@ static void rr_connectivity_changed(grpc_exec_ctx *exec_ctx, void *arg,
                                     sd->connectivity_state,
                                     "connecting_changed");
         grpc_subchannel_notify_on_state_change(
-            exec_ctx, sd->subchannel, &p->base.interested_parties,
+            exec_ctx, sd->subchannel, p->base.interested_parties,
             &sd->connectivity_state, &sd->connectivity_changed_closure);
         break;
       case GRPC_CHANNEL_TRANSIENT_FAILURE:
         /* renew state notification */
         grpc_subchannel_notify_on_state_change(
-            exec_ctx, sd->subchannel, &p->base.interested_parties,
+            exec_ctx, sd->subchannel, p->base.interested_parties,
             &sd->connectivity_state, &sd->connectivity_changed_closure);
 
         /* remove from ready list if still present */

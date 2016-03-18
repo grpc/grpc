@@ -36,8 +36,8 @@
 #include <sys/types.h>
 
 #include <grpc/support/alloc.h>
-#include <grpc/support/slice.h>
 #include <grpc/support/log.h>
+#include <grpc/support/slice.h>
 #include <grpc/support/time.h>
 #include <grpc/support/useful.h>
 #include "test/core/util/test_config.h"
@@ -58,6 +58,7 @@
 
 */
 
+static gpr_mu *g_mu;
 static grpc_pollset *g_pollset;
 
 size_t count_slices(gpr_slice *slices, size_t nslices, int *current_data) {
@@ -134,10 +135,10 @@ static void read_and_write_test_read_handler(grpc_exec_ctx *exec_ctx,
       state->incoming.slices, state->incoming.count, &state->current_read_data);
   if (state->bytes_read == state->target_bytes || !success) {
     gpr_log(GPR_INFO, "Read handler done");
-    gpr_mu_lock(GRPC_POLLSET_MU(g_pollset));
+    gpr_mu_lock(g_mu);
     state->read_done = 1 + success;
     grpc_pollset_kick(g_pollset, NULL);
-    gpr_mu_unlock(GRPC_POLLSET_MU(g_pollset));
+    gpr_mu_unlock(g_mu);
   } else if (success) {
     grpc_endpoint_read(exec_ctx, state->read_ep, &state->incoming,
                        &state->done_read);
@@ -169,10 +170,10 @@ static void read_and_write_test_write_handler(grpc_exec_ctx *exec_ctx,
   }
 
   gpr_log(GPR_INFO, "Write handler done");
-  gpr_mu_lock(GRPC_POLLSET_MU(g_pollset));
+  gpr_mu_lock(g_mu);
   state->write_done = 1 + success;
   grpc_pollset_kick(g_pollset, NULL);
-  gpr_mu_unlock(GRPC_POLLSET_MU(g_pollset));
+  gpr_mu_unlock(g_mu);
 }
 
 /* Do both reading and writing using the grpc_endpoint API.
@@ -232,14 +233,14 @@ static void read_and_write_test(grpc_endpoint_test_config config,
   }
   grpc_exec_ctx_finish(&exec_ctx);
 
-  gpr_mu_lock(GRPC_POLLSET_MU(g_pollset));
+  gpr_mu_lock(g_mu);
   while (!state.read_done || !state.write_done) {
-    grpc_pollset_worker worker;
+    grpc_pollset_worker *worker = NULL;
     GPR_ASSERT(gpr_time_cmp(gpr_now(GPR_CLOCK_MONOTONIC), deadline) < 0);
     grpc_pollset_work(&exec_ctx, g_pollset, &worker,
                       gpr_now(GPR_CLOCK_MONOTONIC), deadline);
   }
-  gpr_mu_unlock(GRPC_POLLSET_MU(g_pollset));
+  gpr_mu_unlock(g_mu);
   grpc_exec_ctx_finish(&exec_ctx);
 
   end_test(config);
@@ -251,9 +252,10 @@ static void read_and_write_test(grpc_endpoint_test_config config,
 }
 
 void grpc_endpoint_tests(grpc_endpoint_test_config config,
-                         grpc_pollset *pollset) {
+                         grpc_pollset *pollset, gpr_mu *mu) {
   size_t i;
   g_pollset = pollset;
+  g_mu = mu;
   read_and_write_test(config, 10000000, 100000, 8192, 0);
   read_and_write_test(config, 1000000, 100000, 1, 0);
   read_and_write_test(config, 100000000, 100000, 1, 1);
