@@ -41,6 +41,12 @@ message ServerStats {
   // change in server time (in seconds) used by the server process and all
   // threads since last reset
   double time_system = 3;
+
+  // Number of requests received
+  uint64 reqs_received = 4;
+
+  // Number of responses sent
+  uint64 responses_sent = 5;
 }
 
 // Histogram params based on grpc/support/histogram.c
@@ -67,4 +73,10 @@ message ClientStats {
   double time_elapsed = 2;
   double time_user = 3;
   double time_system = 4;
+
+  // Number of requests sent
+  uint64 reqs_sent = 5;
+
+  // Number of responses received
+  uint64 responses_received = 6;
 }

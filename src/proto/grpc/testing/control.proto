@@ -46,8 +46,15 @@ enum ServerType {
 }
 
 enum RpcType {
-  UNARY = 0;
-  STREAMING = 1;
+  // First there are ping-pong RPCs in which the client sends a request and the
+  // server sends a response
+  UNARY = 0; // unary ping-pong RPCs
+  STREAMING = 1; // streaming ping-pong RPCs
+  // Then there are RPCs where a side sends to the other without regard to the
+  // sends coming from the other side
+  SERVER_STREAMING = 2; // 1-directional server->client streaming
+  CLIENT_STREAMING = 2; // 1-directional client->server streaming
+  BIDI_STREAMING = 2; // 2-directional client<->server streaming
 }
 
 // Parameters of poisson process distribution, which is a good representation

@@ -37,13 +37,22 @@ import "src/proto/grpc/testing/control.proto";
 package grpc.testing;
 
 service BenchmarkService {
-  // One request followed by one response.
-  // The server returns the client payload as-is.
+  // One request followed by one response (ping-pong).
+  // Each side has its own message size as set in the configuration
   rpc UnaryCall(SimpleRequest) returns (SimpleResponse);
 
-  // One request followed by one response.
-  // The server returns the client payload as-is.
+  // A stream of repeated ping-pongs.
   rpc StreamingCall(stream SimpleRequest) returns (stream SimpleResponse);
+
+  // One request followed by unbounded responses.
+  rpc ServerStreamingCall(SimpleRequest) returns (stream SimpleResponse);
+
+  // Client repeatedly sends requests and gets one response at end
+  rpc ClientStreamingCall(stream SimpleRequest) returns (SimpleResponse);
+
+  // Each side repeatedly sends messages without regard to what progress has
+  // been made by the other side
+  rpc BidiStreamingCall(SimpleRequest) returns (stream SimpleResponse);
 }
 
 service WorkerService {
