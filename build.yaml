@@ -2765,11 +2765,11 @@ configs:
   etsan:
     CC: clang
     CPPFLAGS: -O0 -fsanitize=thread -fno-omit-frame-pointer -Wno-unused-command-line-argument
-      -fPIE -pie -DGPR_NO_DIRECT_SYSCALLS
+      -DGPR_NO_DIRECT_SYSCALLS
     CXX: clang++
     DEFINES: _DEBUG DEBUG GRPC_EXECUTION_CONTEXT_SANITIZER
     LD: clang
-    LDFLAGS: -fsanitize=thread -fPIE -pie
+    LDFLAGS: -fsanitize=thread
     LDXX: clang++
     compile_the_world: true
     test_environ:
@@ -2821,10 +2821,10 @@ configs:
   tsan:
     CC: clang
     CPPFLAGS: -O0 -fsanitize=thread -fno-omit-frame-pointer -Wno-unused-command-line-argument
-      -fPIE -pie -DGPR_NO_DIRECT_SYSCALLS
+      -DGPR_NO_DIRECT_SYSCALLS
     CXX: clang++
     LD: clang
-    LDFLAGS: -fsanitize=thread -fPIE -pie
+    LDFLAGS: -fsanitize=thread
     LDXX: clang++
     compile_the_world: true
     test_environ:
