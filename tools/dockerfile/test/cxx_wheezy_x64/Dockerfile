@@ -27,7 +27,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-FROM debian:squeeze
+FROM debian:wheezy
 
 # Install Git and basic packages.
 RUN apt-get update && apt-get install -y \
@@ -40,6 +40,7 @@ RUN apt-get update && apt-get install -y \
   gcc \
   gcc-multilib \
   git \
+  golang \
   gyp \
   lcov \
   libc6 \
@@ -62,16 +63,18 @@ RUN apt-get update && apt-get install -y \
 # Build profiling
 RUN apt-get update && apt-get install -y time && apt-get clean
 
+#=================
+# C++ dependencies
+RUN apt-get update && apt-get -y install libgflags-dev libgtest-dev libc++-dev clang && apt-get clean
 
-# libgflags-dev is not available on squeezy
-RUN apt-get update && apt-get -y install libgtest-dev libc++-dev clang && apt-get clean
 
-RUN apt-get update && apt-get -y install python-pip && apt-get clean
-RUN pip install argparse
+RUN apt-get update && apt-get install -y \
+  gcc-4.4 \
+  gcc-4.4-multilib
 
-RUN wget http://openssl.org/source/openssl-1.0.2f.tar.gz
+RUN wget https://openssl.org/source/old/1.0.2/openssl-1.0.2f.tar.gz
 
-ENV POST_GIT_STEP tools/dockerfile/test/cxx_squeeze_x64/post-git-setup.sh
+ENV POST_GIT_STEP tools/dockerfile/test/cxx_wheezy_x64/post-git-setup.sh
 
 # Prepare ccache
 RUN ln -s /usr/bin/ccache /usr/local/bin/gcc
@@ -81,6 +84,10 @@ RUN ln -s /usr/bin/ccache /usr/local/bin/c++
 RUN ln -s /usr/bin/ccache /usr/local/bin/clang
 RUN ln -s /usr/bin/ccache /usr/local/bin/clang++
 
+#======================
+# Zookeeper dependencies
+# TODO(jtattermusch): is zookeeper still needed?
+RUN apt-get install -y libzookeeper-mt-dev
 
 RUN mkdir /var/local/jenkins
 
