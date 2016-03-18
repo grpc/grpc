@@ -65,7 +65,13 @@ RUN apt-get update && apt-get install -y time && apt-get clean
 
 #========================
 # Sanity test dependencies
-RUN apt-get update && apt-get install -y       python-pip       autoconf       automake       libtool       curl       python-virtualenv
+RUN apt-get update && apt-get install -y \
+      python-pip \
+      autoconf \
+      automake \
+      libtool \
+      curl \
+      python-virtualenv
 RUN pip install simplejson mako
 
 #===================
