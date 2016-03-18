@@ -231,6 +231,9 @@ class CLanguage(object):
   def _clang_make_options(self):
     return ['CC=clang', 'CXX=clang++', 'LD=clang', 'LDXX=clang++']
 
+  def _gcc44_make_options(self):
+    return ['CC=gcc-4.4', 'CXX=g++-4.4', 'LD=gcc-4.4', 'LDXX=g++-4.4']
+
   def _compiler_options(self, use_docker, compiler):
     """Returns docker distro and make options to use for given compiler."""
     if _is_use_docker_child():
@@ -241,7 +244,7 @@ class CLanguage(object):
     if compiler == 'gcc4.9' or compiler == 'default':
       return ('jessie', [])
     elif compiler == 'gcc4.4':
-      return ('squeeze', [])
+      return ('wheezy', self._gcc44_make_options())
     elif compiler == 'gcc5.3':
       return ('ubuntu1604', [])
     elif compiler == 'clang3.4':
