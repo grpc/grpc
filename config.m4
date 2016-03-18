@@ -40,6 +40,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/profiling/stap_timers.c \
     src/core/support/alloc.c \
     src/core/support/avl.c \
+    src/core/support/backoff.c \
     src/core/support/cmdline.c \
     src/core/support/cpu_iphone.c \
     src/core/support/cpu_linux.c \
