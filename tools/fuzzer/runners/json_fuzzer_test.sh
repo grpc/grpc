@@ -29,9 +29,4 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 
-set -ex
-
-cd $(dirname $0)/../..
-make CONFIG=$config $1 -j3
-mkdir -p fuzzer_output
-. tools/fuzzer/runners/$1.sh
+bins/$config/json_fuzzer_test -max_total_time=60 fuzzer_output test/core/json/corpus
