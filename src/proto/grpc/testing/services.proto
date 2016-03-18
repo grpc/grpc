@@ -52,7 +52,7 @@ service BenchmarkService {
 
   // Each side repeatedly sends messages without regard to what progress has
   // been made by the other side
-  rpc BidiStreamingCall(SimpleRequest) returns (stream SimpleResponse);
+  rpc BidiStreamingCall(stream SimpleRequest) returns (stream SimpleResponse);
 }
 
 service WorkerService {
