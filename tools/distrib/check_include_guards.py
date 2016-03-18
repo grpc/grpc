@@ -95,56 +95,59 @@ class GuardValidator(object):
     fcontents = load(fpath)
 
     match = self.ifndef_re.search(fcontents)
-    if match.lastindex != 1:
+    if match.lastindex is None:
       # No ifndef. Request manual addition with hints
       self.fail(fpath, match.re, match.string, '', '', False)
+      return False  # failed
 
     # Does the guard end with a '_H'?
     running_guard = match.group(1)
     if not running_guard.endswith('_H'):
       fcontents = self.fail(fpath, match.re, match.string, match.group(1),
                             valid_guard, fix)
-      save(fpath, fcontents)
+      if fix: save(fpath, fcontents)
 
     # Is it the expected one based on the file path?
     if running_guard != valid_guard:
       fcontents = self.fail(fpath, match.re, match.string, match.group(1),
                             valid_guard, fix)
-      save(fpath, fcontents)
+      if fix: save(fpath, fcontents)
 
     # Is there a #define? Is it the same as the #ifndef one?
     match = self.define_re.search(fcontents)
-    if match.lastindex != 1:
+    if match.lastindex is None:
       # No define. Request manual addition with hints
       self.fail(fpath, match.re, match.string, '', '', False)
+      return False  # failed
 
     # Is the #define guard the same as the #ifndef guard?
     if match.group(1) != running_guard:
       fcontents = self.fail(fpath, match.re, match.string, match.group(1),
                             valid_guard, fix)
-      save(fpath, fcontents)
+      if fix: save(fpath, fcontents)
 
     # Is there a properly commented #endif?
     endif_re = self.endif_cpp_re if cpp_header else self.endif_c_re
-    matches = endif_re.findall(fcontents)
-    if not matches:
+    flines = fcontents.rstrip().splitlines()
+    match = endif_re.search(flines[-1])
+    if not match:
       # No endif. Check if we have the last line as just '#endif' and if so
       # replace it with a properly commented one.
-      flines = fcontents.splitlines()
       if flines[-1] == '#endif':
         flines[-1] = ('#endif' +
                       ('  // {}\n'.format(valid_guard) if cpp_header
                        else ' /* {} */\n'.format(valid_guard)))
-        fcontents = '\n'.join(flines)
-        save(fpath, fcontents)
+        if fix:
+            fcontents = '\n'.join(flines)
+            save(fpath, fcontents)
       else:
         # something else is wrong, bail out
         self.fail(fpath, endif_re, match.string, '', '', False)
-    elif matches[-1] != running_guard:
+    elif match.group(1) != running_guard:
       # Is the #endif guard the same as the #ifndef and #define guards?
       fcontents = self.fail(fpath, endif_re, fcontents, matches[-1],
                             valid_guard, fix)
-      save(fpath, fcontents)
+      if fix: save(fpath, fcontents)
 
     return not self.failed  # Did the check succeed? (ie, not failed)
 
