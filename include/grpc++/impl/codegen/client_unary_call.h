@@ -37,6 +37,7 @@
 #include <grpc++/impl/codegen/call.h>
 #include <grpc++/impl/codegen/channel_interface.h>
 #include <grpc++/impl/codegen/config.h>
+#include <grpc++/impl/codegen/core_codegen_interface.h>
 #include <grpc++/impl/codegen/status.h>
 
 namespace grpc {
@@ -66,7 +67,7 @@ Status BlockingUnaryCall(ChannelInterface* channel, const RpcMethod& method,
   ops.ClientSendClose();
   ops.ClientRecvStatus(context, &status);
   call.PerformOps(&ops);
-  GPR_ASSERT((cq.Pluck(&ops) && ops.got_message) || !status.ok());
+  GPR_CODEGEN_ASSERT((cq.Pluck(&ops) && ops.got_message) || !status.ok());
   return status;
 }
 
