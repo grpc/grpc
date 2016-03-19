@@ -2452,6 +2452,8 @@ targets:
   - gpr_test_util
   - gpr
   - grpc++_test_config
+  exclude_configs:
+  - tsan
   platforms:
   - mac
   - linux
@@ -2471,6 +2473,8 @@ targets:
   - gpr_test_util
   - gpr
   - grpc++_test_config
+  exclude_configs:
+  - tsan
   platforms:
   - mac
   - linux
