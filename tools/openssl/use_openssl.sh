@@ -38,8 +38,8 @@ CC=${CC:-cc}
 # allow openssl to be pre-downloaded
 if [ ! -e third_party/openssl-1.0.2f.tar.gz ]
 then
-  echo "Downloading http://openssl.org/source/openssl-1.0.2f.tar.gz to third_party/openssl-1.0.2f.tar.gz"
-  wget http://openssl.org/source/openssl-1.0.2f.tar.gz -O third_party/openssl-1.0.2f.tar.gz
+  echo "Downloading https://openssl.org/source/old/1.0.2/openssl-1.0.2f.tar.gz to third_party/openssl-1.0.2f.tar.gz"
+  wget https://openssl.org/source/old/1.0.2/openssl-1.0.2f.tar.gz -O third_party/openssl-1.0.2f.tar.gz
 fi
 
 # clean openssl directory
