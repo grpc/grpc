@@ -189,7 +189,7 @@ class CLanguage(object):
           out.append(self.config.job_spec(cmdline, [binary],
                                           shortname=' '.join(cmdline),
                                           cpu_cost=target['cpu_cost'],
-                                          flaky=target.get('flaky', True),
+                                          flaky=target.get('flaky', False),
                                           environ={'GRPC_DEFAULT_SSL_ROOTS_FILE_PATH':
                                                    _ROOT + '/src/core/tsi/test_creds/ca.pem'}))
       elif self.args.regex == '.*' or self.platform == 'windows':
