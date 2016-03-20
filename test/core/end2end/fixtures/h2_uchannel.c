@@ -285,7 +285,7 @@ static void chttp2_init_client_micro_fullstack(grpc_end2end_test_fixture *f,
                                                grpc_channel_args *client_args) {
   micro_fullstack_fixture_data *ffd = f->fixture_data;
   grpc_connectivity_state conn_state;
-  grpc_connected_subchannel *connected;
+  grpc_connected_subchannel *connected_subchannel;
   char *ipv4_localaddr;
 
   gpr_asprintf(&ipv4_localaddr, "ipv4:%s", ffd->localaddr);
@@ -302,9 +302,10 @@ static void chttp2_init_client_micro_fullstack(grpc_end2end_test_fixture *f,
   GPR_ASSERT(conn_state == GRPC_CHANNEL_IDLE);
   GPR_ASSERT(ffd->sniffed_subchannel != NULL);
 
-  connected = connect_subchannel(ffd->sniffed_subchannel);
+  connected_subchannel = connect_subchannel(ffd->sniffed_subchannel);
   f->client = grpc_client_uchannel_create(ffd->sniffed_subchannel, client_args);
-  grpc_client_uchannel_set_connected_subchannel(f->client, connected);
+  grpc_client_uchannel_set_connected_subchannel(f->client,
+                                                connected_subchannel);
   gpr_log(GPR_INFO, "CHANNEL WRAPPING SUBCHANNEL: %p(%p)", f->client,
           ffd->sniffed_subchannel);
 

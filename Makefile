@@ -1540,8 +1540,6 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/json_test || ( echo test json_test failed ; exit 1 )
 	$(E) "[RUN]     Testing lame_client_test"
 	$(Q) $(BINDIR)/$(CONFIG)/lame_client_test || ( echo test lame_client_test failed ; exit 1 )
-	$(E) "[RUN]     Testing lb_policies_test"
-	$(Q) $(BINDIR)/$(CONFIG)/lb_policies_test || ( echo test lb_policies_test failed ; exit 1 )
 	$(E) "[RUN]     Testing message_compress_test"
 	$(Q) $(BINDIR)/$(CONFIG)/message_compress_test || ( echo test message_compress_test failed ; exit 1 )
 	$(E) "[RUN]     Testing mlog_test"
@@ -1623,6 +1621,8 @@ test_c: buildtests_c
 
 
 flaky_test_c: buildtests_c
+	$(E) "[RUN]     Testing lb_policies_test"
+	$(Q) $(BINDIR)/$(CONFIG)/lb_policies_test || ( echo test lb_policies_test failed ; exit 1 )
 
 
 test_cxx: test_zookeeper buildtests_cxx
