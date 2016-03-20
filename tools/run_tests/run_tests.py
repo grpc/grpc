@@ -80,7 +80,7 @@ class Config(object):
     self.timeout_multiplier = timeout_multiplier
 
   def job_spec(self, cmdline, hash_targets, timeout_seconds=5*60,
-               shortname=None, environ={}, cpu_cost=1.0):
+               shortname=None, environ={}, cpu_cost=1.0, flaky=False):
     """Construct a jobset.JobSpec for a test under this config
 
        Args:
@@ -102,7 +102,7 @@ class Config(object):
                           timeout_seconds=(self.timeout_multiplier * timeout_seconds if timeout_seconds else None),
                           hash_targets=hash_targets
                               if self.allow_hashing else None,
-                          flake_retries=5 if args.allow_flakes else 0,
+                          flake_retries=5 if flaky or args.allow_flakes else 0,
                           timeout_retries=3 if args.allow_flakes else 0)
 
 
@@ -189,6 +189,7 @@ class CLanguage(object):
           out.append(self.config.job_spec(cmdline, [binary],
                                           shortname=' '.join(cmdline),
                                           cpu_cost=target['cpu_cost'],
+                                          flaky=target.get('flaky', False),
                                           environ={'GRPC_DEFAULT_SSL_ROOTS_FILE_PATH':
                                                    _ROOT + '/src/core/tsi/test_creds/ca.pem'}))
       elif self.args.regex == '.*' or self.platform == 'windows':
@@ -882,7 +883,7 @@ if args.use_docker:
       sys.exit(1)
   else:
     dockerfile_dir = next(iter(dockerfile_dirs))
-    
+
   child_argv = [ arg for arg in sys.argv if not arg == '--use_docker' ]
   run_tests_cmd = 'python tools/run_tests/run_tests.py %s' % ' '.join(child_argv[1:])
 
