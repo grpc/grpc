@@ -1673,6 +1673,7 @@ targets:
   - gpr
 - name: lb_policies_test
   cpu_cost: 0.1
+  flaky: true
   build: test
   language: c
   src:
@@ -2462,6 +2463,8 @@ targets:
   - gpr_test_util
   - gpr
   - grpc++_test_config
+  exclude_configs:
+  - tsan
   platforms:
   - mac
   - linux
@@ -2481,6 +2484,8 @@ targets:
   - gpr_test_util
   - gpr
   - grpc++_test_config
+  exclude_configs:
+  - tsan
   platforms:
   - mac
   - linux
@@ -2937,7 +2942,7 @@ node_modules:
   - src/node/ext/server_credentials.cc
   - src/node/ext/timeval.cc
 openssl_fallback:
-  base_uri: http://openssl.org/source/
+  base_uri: https://openssl.org/source/old/1.0.2/
   extraction_dir: openssl-1.0.2f
   tarball: openssl-1.0.2f.tar.gz
 php_config_m4:
