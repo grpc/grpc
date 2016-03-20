@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_IOMGR_TIMER_HEAP_H
-#define GRPC_INTERNAL_CORE_IOMGR_TIMER_HEAP_H
+#ifndef GRPC_CORE_IOMGR_TIMER_HEAP_H
+#define GRPC_CORE_IOMGR_TIMER_HEAP_H
 
 #include "src/core/iomgr/timer.h"
 
@@ -54,4 +54,4 @@ void grpc_timer_heap_pop(grpc_timer_heap *heap);
 
 int grpc_timer_heap_is_empty(grpc_timer_heap *heap);
 
-#endif /* GRPC_INTERNAL_CORE_IOMGR_TIMER_HEAP_H */
+#endif /* GRPC_CORE_IOMGR_TIMER_HEAP_H */

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_COMPRESSION_MESSAGE_COMPRESS_H
-#define GRPC_INTERNAL_CORE_COMPRESSION_MESSAGE_COMPRESS_H
+#ifndef GRPC_CORE_COMPRESSION_MESSAGE_COMPRESS_H
+#define GRPC_CORE_COMPRESSION_MESSAGE_COMPRESS_H
 
 #include <grpc/compression.h>
 #include <grpc/support/slice_buffer.h>
@@ -49,4 +49,4 @@ int grpc_msg_compress(grpc_compression_algorithm algorithm,
 int grpc_msg_decompress(grpc_compression_algorithm algorithm,
                         gpr_slice_buffer* input, gpr_slice_buffer* output);
 
-#endif /* GRPC_INTERNAL_CORE_COMPRESSION_MESSAGE_COMPRESS_H */
+#endif /* GRPC_CORE_COMPRESSION_MESSAGE_COMPRESS_H */
