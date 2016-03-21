@@ -31,9 +31,9 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CPP_PROTO_PROTO_UTILS_H
-#define GRPC_INTERNAL_CPP_PROTO_PROTO_UTILS_H
+#ifndef GRPCXX_IMPL_PROTO_UTILS_H
+#define GRPCXX_IMPL_PROTO_UTILS_H
 
 #include <grpc++/impl/codegen/proto_utils.h>
 
-#endif  // GRPC_INTERNAL_CPP_PROTO_PROTO_UTILS_H
+#endif  // GRPCXX_IMPL_PROTO_UTILS_H

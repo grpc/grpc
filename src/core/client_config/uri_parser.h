@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_CLIENT_CONFIG_URI_PARSER_H
-#define GRPC_INTERNAL_CORE_CLIENT_CONFIG_URI_PARSER_H
+#ifndef GRPC_CORE_CLIENT_CONFIG_URI_PARSER_H
+#define GRPC_CORE_CLIENT_CONFIG_URI_PARSER_H
 
 typedef struct {
   char *scheme;
@@ -48,4 +48,4 @@ grpc_uri *grpc_uri_parse(const char *uri_text, int suppress_errors);
 /** destroy a uri */
 void grpc_uri_destroy(grpc_uri *uri);
 
-#endif
+#endif /* GRPC_CORE_CLIENT_CONFIG_URI_PARSER_H */

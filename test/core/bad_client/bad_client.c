@@ -67,11 +67,8 @@ static void done_write(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
 
 static void server_setup_transport(void *ts, grpc_transport *transport) {
   thd_args *a = ts;
-  static grpc_channel_filter const *extra_filters[] = {
-      &grpc_http_server_filter};
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_server_setup_transport(&exec_ctx, a->server, transport, extra_filters,
-                              GPR_ARRAY_SIZE(extra_filters),
+  grpc_server_setup_transport(&exec_ctx, a->server, transport,
                               grpc_server_get_channel_args(a->server));
   grpc_exec_ctx_finish(&exec_ctx);
 }
@@ -105,7 +102,7 @@ void grpc_run_bad_client_test(grpc_bad_client_server_side_validator validator,
   sfd = grpc_iomgr_create_endpoint_pair("fixture", 65536);
 
   /* Create server, completion events */
-  a.server = grpc_server_create_from_filters(NULL, 0, NULL);
+  a.server = grpc_server_create(NULL, NULL);
   a.cq = grpc_completion_queue_create(NULL);
   gpr_event_init(&a.done_thd);
   gpr_event_init(&a.done_write);

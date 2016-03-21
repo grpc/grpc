@@ -35,8 +35,8 @@
  * they can (ultimately) be used in many different RPC systems (with differing
  * implementations). */
 
-#ifndef CENSUS_CENSUS_H
-#define CENSUS_CENSUS_H
+#ifndef GRPC_CENSUS_H
+#define GRPC_CENSUS_H
 
 #include <grpc/grpc.h>
 
@@ -537,4 +537,4 @@ CENSUSAPI void census_view_reset(census_view *view);
 }
 #endif
 
-#endif /* CENSUS_CENSUS_H */
+#endif /* GRPC_CENSUS_H */

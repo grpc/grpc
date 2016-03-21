@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_HPACK_ENCODER_H
-#define GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_HPACK_ENCODER_H
+#ifndef GRPC_CORE_TRANSPORT_CHTTP2_HPACK_ENCODER_H
+#define GRPC_CORE_TRANSPORT_CHTTP2_HPACK_ENCODER_H
 
 #include "src/core/transport/chttp2/frame.h"
 #include "src/core/transport/metadata.h"
@@ -92,4 +92,4 @@ void grpc_chttp2_encode_header(grpc_chttp2_hpack_compressor *c, uint32_t id,
                                grpc_metadata_batch *metadata, int is_eof,
                                gpr_slice_buffer *outbuf);
 
-#endif /* GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_HPACK_ENCODER_H */
+#endif /* GRPC_CORE_TRANSPORT_CHTTP2_HPACK_ENCODER_H */

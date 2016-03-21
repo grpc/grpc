@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_SURFACE_SURFACE_TRACE_H
-#define GRPC_INTERNAL_CORE_SURFACE_SURFACE_TRACE_H
+#ifndef GRPC_CORE_SURFACE_SURFACE_TRACE_H
+#define GRPC_CORE_SURFACE_SURFACE_TRACE_H
 
 #include "src/core/debug/trace.h"
 #include "src/core/surface/api_trace.h"
@@ -45,4 +45,4 @@
     gpr_free(_ev);                                      \
   }
 
-#endif /* GRPC_INTERNAL_CORE_SURFACE_SURFACE_TRACE_H */
+#endif /* GRPC_CORE_SURFACE_SURFACE_TRACE_H */

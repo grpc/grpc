@@ -108,6 +108,7 @@ static int subchannel_key_compare(grpc_subchannel_key *a,
   if (c != 0) return c;
   c = memcmp(a->args.filters, b->args.filters,
              a->args.filter_count * sizeof(*a->args.filters));
+  if (c != 0) return c;
   return grpc_channel_args_compare(a->args.args, b->args.args);
 }
 

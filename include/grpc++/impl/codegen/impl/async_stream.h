@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPCXX_IMPL_CODEGEN_ASYNC_STREAM_H
-#define GRPCXX_IMPL_CODEGEN_ASYNC_STREAM_H
+#ifndef GRPCXX_IMPL_CODEGEN_IMPL_ASYNC_STREAM_H
+#define GRPCXX_IMPL_CODEGEN_IMPL_ASYNC_STREAM_H
 
 #include <grpc++/impl/codegen/call.h>
 #include <grpc++/impl/codegen/channel_interface.h>
@@ -460,4 +460,4 @@ class ServerAsyncReaderWriter GRPC_FINAL : public ServerAsyncStreamingInterface,
 
 }  // namespace grpc
 
-#endif  // GRPCXX_IMPL_CODEGEN_ASYNC_STREAM_H
+#endif  // GRPCXX_IMPL_CODEGEN_IMPL_ASYNC_STREAM_H
