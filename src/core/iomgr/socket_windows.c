@@ -35,8 +35,10 @@
 
 #ifdef GPR_WINSOCK_SOCKET
 
-#include <mswsock.h>
 #include <winsock2.h>
+
+// must be included after winsock2.h
+#include <mswsock.h>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
