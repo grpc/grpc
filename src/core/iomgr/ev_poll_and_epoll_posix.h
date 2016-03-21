@@ -31,11 +31,11 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_IOMGR_EV_POLL_AND_EPOLL_POSIX_H
-#define GRPC_INTERNAL_CORE_IOMGR_EV_POLL_AND_EPOLL_POSIX_H
+#ifndef GRPC_CORE_IOMGR_EV_POLL_AND_EPOLL_POSIX_H
+#define GRPC_CORE_IOMGR_EV_POLL_AND_EPOLL_POSIX_H
 
 #include "src/core/iomgr/ev_posix.h"
 
 const grpc_event_engine_vtable *grpc_init_poll_and_epoll_posix(void);
 
-#endif  // GRPC_INTERNAL_CORE_IOMGR_EV_POLL_AND_EPOLL_POSIX_H
+#endif /* GRPC_CORE_IOMGR_EV_POLL_AND_EPOLL_POSIX_H */

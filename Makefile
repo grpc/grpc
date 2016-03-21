@@ -893,6 +893,7 @@ fling_test: $(BINDIR)/$(CONFIG)/fling_test
 gen_hpack_tables: $(BINDIR)/$(CONFIG)/gen_hpack_tables
 gen_legal_metadata_characters: $(BINDIR)/$(CONFIG)/gen_legal_metadata_characters
 gpr_avl_test: $(BINDIR)/$(CONFIG)/gpr_avl_test
+gpr_backoff_test: $(BINDIR)/$(CONFIG)/gpr_backoff_test
 gpr_cmdline_test: $(BINDIR)/$(CONFIG)/gpr_cmdline_test
 gpr_cpu_test: $(BINDIR)/$(CONFIG)/gpr_cpu_test
 gpr_env_test: $(BINDIR)/$(CONFIG)/gpr_env_test
@@ -1071,6 +1072,7 @@ h2_compress_test: $(BINDIR)/$(CONFIG)/h2_compress_test
 h2_fakesec_test: $(BINDIR)/$(CONFIG)/h2_fakesec_test
 h2_full_test: $(BINDIR)/$(CONFIG)/h2_full_test
 h2_full+pipe_test: $(BINDIR)/$(CONFIG)/h2_full+pipe_test
+h2_full+trace_test: $(BINDIR)/$(CONFIG)/h2_full+trace_test
 h2_oauth2_test: $(BINDIR)/$(CONFIG)/h2_oauth2_test
 h2_proxy_test: $(BINDIR)/$(CONFIG)/h2_proxy_test
 h2_sockpair_test: $(BINDIR)/$(CONFIG)/h2_sockpair_test
@@ -1084,6 +1086,7 @@ h2_census_nosec_test: $(BINDIR)/$(CONFIG)/h2_census_nosec_test
 h2_compress_nosec_test: $(BINDIR)/$(CONFIG)/h2_compress_nosec_test
 h2_full_nosec_test: $(BINDIR)/$(CONFIG)/h2_full_nosec_test
 h2_full+pipe_nosec_test: $(BINDIR)/$(CONFIG)/h2_full+pipe_nosec_test
+h2_full+trace_nosec_test: $(BINDIR)/$(CONFIG)/h2_full+trace_nosec_test
 h2_proxy_nosec_test: $(BINDIR)/$(CONFIG)/h2_proxy_nosec_test
 h2_sockpair_nosec_test: $(BINDIR)/$(CONFIG)/h2_sockpair_nosec_test
 h2_sockpair+trace_nosec_test: $(BINDIR)/$(CONFIG)/h2_sockpair+trace_nosec_test
@@ -1197,6 +1200,7 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/fling_stream_test \
   $(BINDIR)/$(CONFIG)/fling_test \
   $(BINDIR)/$(CONFIG)/gpr_avl_test \
+  $(BINDIR)/$(CONFIG)/gpr_backoff_test \
   $(BINDIR)/$(CONFIG)/gpr_cmdline_test \
   $(BINDIR)/$(CONFIG)/gpr_cpu_test \
   $(BINDIR)/$(CONFIG)/gpr_env_test \
@@ -1284,6 +1288,7 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/h2_fakesec_test \
   $(BINDIR)/$(CONFIG)/h2_full_test \
   $(BINDIR)/$(CONFIG)/h2_full+pipe_test \
+  $(BINDIR)/$(CONFIG)/h2_full+trace_test \
   $(BINDIR)/$(CONFIG)/h2_oauth2_test \
   $(BINDIR)/$(CONFIG)/h2_proxy_test \
   $(BINDIR)/$(CONFIG)/h2_sockpair_test \
@@ -1297,6 +1302,7 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/h2_compress_nosec_test \
   $(BINDIR)/$(CONFIG)/h2_full_nosec_test \
   $(BINDIR)/$(CONFIG)/h2_full+pipe_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_full+trace_nosec_test \
   $(BINDIR)/$(CONFIG)/h2_proxy_nosec_test \
   $(BINDIR)/$(CONFIG)/h2_sockpair_nosec_test \
   $(BINDIR)/$(CONFIG)/h2_sockpair+trace_nosec_test \
@@ -1444,6 +1450,8 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/fling_test || ( echo test fling_test failed ; exit 1 )
 	$(E) "[RUN]     Testing gpr_avl_test"
 	$(Q) $(BINDIR)/$(CONFIG)/gpr_avl_test || ( echo test gpr_avl_test failed ; exit 1 )
+	$(E) "[RUN]     Testing gpr_backoff_test"
+	$(Q) $(BINDIR)/$(CONFIG)/gpr_backoff_test || ( echo test gpr_backoff_test failed ; exit 1 )
 	$(E) "[RUN]     Testing gpr_cmdline_test"
 	$(Q) $(BINDIR)/$(CONFIG)/gpr_cmdline_test || ( echo test gpr_cmdline_test failed ; exit 1 )
 	$(E) "[RUN]     Testing gpr_cpu_test"
@@ -1522,8 +1530,6 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/json_test || ( echo test json_test failed ; exit 1 )
 	$(E) "[RUN]     Testing lame_client_test"
 	$(Q) $(BINDIR)/$(CONFIG)/lame_client_test || ( echo test lame_client_test failed ; exit 1 )
-	$(E) "[RUN]     Testing lb_policies_test"
-	$(Q) $(BINDIR)/$(CONFIG)/lb_policies_test || ( echo test lb_policies_test failed ; exit 1 )
 	$(E) "[RUN]     Testing message_compress_test"
 	$(Q) $(BINDIR)/$(CONFIG)/message_compress_test || ( echo test message_compress_test failed ; exit 1 )
 	$(E) "[RUN]     Testing mlog_test"
@@ -1605,6 +1611,8 @@ test_c: buildtests_c
 
 
 flaky_test_c: buildtests_c
+	$(E) "[RUN]     Testing lb_policies_test"
+	$(Q) $(BINDIR)/$(CONFIG)/lb_policies_test || ( echo test lb_policies_test failed ; exit 1 )
 
 
 test_cxx: test_zookeeper buildtests_cxx
@@ -2236,6 +2244,7 @@ LIBGPR_SRC = \
     src/core/profiling/stap_timers.c \
     src/core/support/alloc.c \
     src/core/support/avl.c \
+    src/core/support/backoff.c \
     src/core/support/cmdline.c \
     src/core/support/cpu_iphone.c \
     src/core/support/cpu_linux.c \
@@ -2384,8 +2393,10 @@ endif
 LIBGRPC_SRC = \
     src/core/census/grpc_context.c \
     src/core/census/grpc_filter.c \
+    src/core/census/grpc_plugin.c \
     src/core/channel/channel_args.c \
     src/core/channel/channel_stack.c \
+    src/core/channel/channel_stack_builder.c \
     src/core/channel/client_channel.c \
     src/core/channel/client_uchannel.c \
     src/core/channel/compress_filter.c \
@@ -2470,7 +2481,9 @@ LIBGRPC_SRC = \
     src/core/surface/channel.c \
     src/core/surface/channel_connectivity.c \
     src/core/surface/channel_create.c \
+    src/core/surface/channel_init.c \
     src/core/surface/channel_ping.c \
+    src/core/surface/channel_stack_type.c \
     src/core/surface/completion_queue.c \
     src/core/surface/event_string.c \
     src/core/surface/init.c \
@@ -2478,7 +2491,6 @@ LIBGRPC_SRC = \
     src/core/surface/metadata_array.c \
     src/core/surface/server.c \
     src/core/surface/server_chttp2.c \
-    src/core/surface/server_create.c \
     src/core/surface/validate_metadata.c \
     src/core/surface/version.c \
     src/core/transport/byte_stream.c \
@@ -2662,6 +2674,7 @@ LIBGRPC_TEST_UTIL_SRC = \
     test/core/util/grpc_profiler.c \
     test/core/util/parse_hexstring.c \
     test/core/util/port_posix.c \
+    test/core/util/port_server_client.c \
     test/core/util/port_windows.c \
     test/core/util/slice_splitter.c \
 
@@ -2708,6 +2721,7 @@ LIBGRPC_TEST_UTIL_UNSECURE_SRC = \
     test/core/util/grpc_profiler.c \
     test/core/util/parse_hexstring.c \
     test/core/util/port_posix.c \
+    test/core/util/port_server_client.c \
     test/core/util/port_windows.c \
     test/core/util/slice_splitter.c \
 
@@ -2737,8 +2751,10 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/surface/init_unsecure.c \
     src/core/census/grpc_context.c \
     src/core/census/grpc_filter.c \
+    src/core/census/grpc_plugin.c \
     src/core/channel/channel_args.c \
     src/core/channel/channel_stack.c \
+    src/core/channel/channel_stack_builder.c \
     src/core/channel/client_channel.c \
     src/core/channel/client_uchannel.c \
     src/core/channel/compress_filter.c \
@@ -2823,7 +2839,9 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/surface/channel.c \
     src/core/surface/channel_connectivity.c \
     src/core/surface/channel_create.c \
+    src/core/surface/channel_init.c \
     src/core/surface/channel_ping.c \
+    src/core/surface/channel_stack_type.c \
     src/core/surface/completion_queue.c \
     src/core/surface/event_string.c \
     src/core/surface/init.c \
@@ -2831,7 +2849,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/surface/metadata_array.c \
     src/core/surface/server.c \
     src/core/surface/server_chttp2.c \
-    src/core/surface/server_create.c \
     src/core/surface/validate_metadata.c \
     src/core/surface/version.c \
     src/core/transport/byte_stream.c \
@@ -6595,6 +6612,38 @@ deps_gpr_avl_test: $(GPR_AVL_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(GPR_AVL_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+GPR_BACKOFF_TEST_SRC = \
+    test/core/support/backoff_test.c \
+
+GPR_BACKOFF_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GPR_BACKOFF_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/gpr_backoff_test: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/gpr_backoff_test: $(GPR_BACKOFF_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(GPR_BACKOFF_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/gpr_backoff_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/support/backoff_test.o:  $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_gpr_backoff_test: $(GPR_BACKOFF_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(GPR_BACKOFF_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -12565,6 +12614,38 @@ endif
 endif
 
 
+H2_FULL+TRACE_TEST_SRC = \
+    test/core/end2end/fixtures/h2_full+trace.c \
+
+H2_FULL+TRACE_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(H2_FULL+TRACE_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_full+trace_test: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/h2_full+trace_test: $(H2_FULL+TRACE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_tests.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(H2_FULL+TRACE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_tests.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_full+trace_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/end2end/fixtures/h2_full+trace.o:  $(LIBDIR)/$(CONFIG)/libend2end_tests.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_h2_full+trace_test: $(H2_FULL+TRACE_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(H2_FULL+TRACE_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
 H2_OAUTH2_TEST_SRC = \
     test/core/end2end/fixtures/h2_oauth2.c \
 
@@ -12930,6 +13011,26 @@ deps_h2_full+pipe_nosec_test: $(H2_FULL+PIPE_NOSEC_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_DEPS),true)
 -include $(H2_FULL+PIPE_NOSEC_TEST_OBJS:.o=.dep)
+endif
+
+
+H2_FULL+TRACE_NOSEC_TEST_SRC = \
+    test/core/end2end/fixtures/h2_full+trace.c \
+
+H2_FULL+TRACE_NOSEC_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(H2_FULL+TRACE_NOSEC_TEST_SRC))))
+
+
+$(BINDIR)/$(CONFIG)/h2_full+trace_nosec_test: $(H2_FULL+TRACE_NOSEC_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_nosec_tests.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(H2_FULL+TRACE_NOSEC_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_nosec_tests.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_full+trace_nosec_test
+
+$(OBJDIR)/$(CONFIG)/test/core/end2end/fixtures/h2_full+trace.o:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_tests.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_h2_full+trace_nosec_test: $(H2_FULL+TRACE_NOSEC_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(H2_FULL+TRACE_NOSEC_TEST_OBJS:.o=.dep)
 endif
 
 

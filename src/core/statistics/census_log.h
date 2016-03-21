@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_STATISTICS_CENSUS_LOG_H
-#define GRPC_INTERNAL_CORE_STATISTICS_CENSUS_LOG_H
+#ifndef GRPC_CORE_STATISTICS_CENSUS_LOG_H
+#define GRPC_CORE_STATISTICS_CENSUS_LOG_H
 
 #include <stddef.h>
 
@@ -88,4 +88,4 @@ size_t census_log_remaining_space(void);
    out-of-space. */
 int census_log_out_of_space_count(void);
 
-#endif /* GRPC_INTERNAL_CORE_STATISTICS_CENSUS_LOG_H */
+#endif /* GRPC_CORE_STATISTICS_CENSUS_LOG_H */
