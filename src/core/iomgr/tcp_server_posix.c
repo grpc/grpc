@@ -163,6 +163,8 @@ static void finish_shutdown(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s) {
     grpc_exec_ctx_enqueue(exec_ctx, s->shutdown_complete, true, NULL);
   }
 
+  gpr_mu_lock(&s->mu);
+  gpr_mu_unlock(&s->mu);
   gpr_mu_destroy(&s->mu);
 
   while (s->head) {
