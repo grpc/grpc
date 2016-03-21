@@ -1549,6 +1549,9 @@
    $(OPENSSL_MERGE_OBJS) \
   % endif
   % endif
+  % for dep in lib.get('merge_deps', []):
+   $(LIB${dep.upper()}_OBJS) \
+  % endfor
 
   	$(E) "[AR]      Creating $@"
   	$(Q) mkdir -p `dirname $@`
