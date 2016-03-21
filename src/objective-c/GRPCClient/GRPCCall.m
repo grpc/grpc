@@ -308,37 +308,30 @@ NSString * const kGRPCTrailersKey = @"io.grpc.TrailersKey";
 }
 
 - (void)invokeCall {
-  __weak GRPCCall *weakSelf = self;
   [self invokeCallWithHeadersHandler:^(NSDictionary *headers) {
     // Response headers received.
-    GRPCCall *strongSelf = weakSelf;
-    if (strongSelf) {
-      strongSelf.responseHeaders = headers;
-      [strongSelf startNextRead];
-    }
+    self.responseHeaders = headers;
+    [self startNextRead];
   } completionHandler:^(NSError *error, NSDictionary *trailers) {
-    GRPCCall *strongSelf = weakSelf;
-    if (strongSelf) {
-      strongSelf.responseTrailers = trailers;
+    self.responseTrailers = trailers;
 
-      if (error) {
-        NSMutableDictionary *userInfo = [NSMutableDictionary dictionary];
-        if (error.userInfo) {
-          [userInfo addEntriesFromDictionary:error.userInfo];
-        }
-        userInfo[kGRPCTrailersKey] = strongSelf.responseTrailers;
-        // TODO(jcanizales): The C gRPC library doesn't guarantee that the headers block will be
-        // called before this one, so an error might end up with trailers but no headers. We
-        // shouldn't call finishWithError until ater both blocks are called. It is also when this is
-        // done that we can provide a merged view of response headers and trailers in a thread-safe
-        // way.
-        if (strongSelf.responseHeaders) {
-          userInfo[kGRPCHeadersKey] = strongSelf.responseHeaders;
-        }
-        error = [NSError errorWithDomain:error.domain code:error.code userInfo:userInfo];
+    if (error) {
+      NSMutableDictionary *userInfo = [NSMutableDictionary dictionary];
+      if (error.userInfo) {
+        [userInfo addEntriesFromDictionary:error.userInfo];
       }
-      [strongSelf finishWithError:error];
+      userInfo[kGRPCTrailersKey] = self.responseTrailers;
+      // TODO(jcanizales): The C gRPC library doesn't guarantee that the headers block will be
+      // called before this one, so an error might end up with trailers but no headers. We
+      // shouldn't call finishWithError until ater both blocks are called. It is also when this is
+      // done that we can provide a merged view of response headers and trailers in a thread-safe
+      // way.
+      if (self.responseHeaders) {
+        userInfo[kGRPCHeadersKey] = self.responseHeaders;
+      }
+      error = [NSError errorWithDomain:error.domain code:error.code userInfo:userInfo];
     }
+    [self finishWithError:error];
   }];
   // Now that the RPC has been initiated, request writes can start.
   @synchronized(_requestWriter) {
@@ -377,7 +370,6 @@ NSString * const kGRPCTrailersKey = @"io.grpc.TrailersKey";
       [strongSelf finishWithError:[NSError errorWithDomain:kGRPCErrorDomain
                                                       code:GRPCErrorCodeUnavailable
                                                   userInfo:@{NSLocalizedDescriptionKey: @"Connectivity lost."}]];
-      [[GRPCHost hostWithAddress:strongSelf->_host] disconnect];
     }
   }];
 }
