@@ -31,10 +31,10 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_CENSUS_GRPC_PLUGIN_H
-#define GRPC_INTERNAL_CORE_CENSUS_GRPC_PLUGIN_H
+#ifndef GRPC_CORE_CENSUS_GRPC_PLUGIN_H
+#define GRPC_CORE_CENSUS_GRPC_PLUGIN_H
 
 void census_grpc_plugin_init(void);
 void census_grpc_plugin_destroy(void);
 
-#endif /* GRPC_INTERNAL_CORE_CENSUS_GRPC_PLUGIN_H */
+#endif /* GRPC_CORE_CENSUS_GRPC_PLUGIN_H */
