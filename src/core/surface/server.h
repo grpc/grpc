@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,17 +31,14 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_SURFACE_SERVER_H
-#define GRPC_INTERNAL_CORE_SURFACE_SERVER_H
+#ifndef GRPC_CORE_SURFACE_SERVER_H
+#define GRPC_CORE_SURFACE_SERVER_H
 
-#include "src/core/channel/channel_stack.h"
 #include <grpc/grpc.h>
+#include "src/core/channel/channel_stack.h"
 #include "src/core/transport/transport.h"
 
-/* Create a server */
-grpc_server *grpc_server_create_from_filters(
-    const grpc_channel_filter **filters, size_t filter_count,
-    const grpc_channel_args *args);
+extern const grpc_channel_filter grpc_server_top_filter;
 
 /* Add a listener to the server: when the server starts, it will call start,
    and when it shuts down, it will call destroy */
@@ -56,12 +53,10 @@ void grpc_server_add_listener(
    server */
 void grpc_server_setup_transport(grpc_exec_ctx *exec_ctx, grpc_server *server,
                                  grpc_transport *transport,
-                                 grpc_channel_filter const **extra_filters,
-                                 size_t num_extra_filters,
                                  const grpc_channel_args *args);
 
 const grpc_channel_args *grpc_server_get_channel_args(grpc_server *server);
 
 int grpc_server_has_open_connections(grpc_server *server);
 
-#endif /* GRPC_INTERNAL_CORE_SURFACE_SERVER_H */
+#endif /* GRPC_CORE_SURFACE_SERVER_H */
