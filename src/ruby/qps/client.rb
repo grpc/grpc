@@ -37,81 +37,21 @@ $LOAD_PATH.unshift(lib_dir) unless $LOAD_PATH.include?(lib_dir)
 $LOAD_PATH.unshift(this_dir) unless $LOAD_PATH.include?(this_dir)
 
 require 'grpc'
-require 'optparse'
 require 'histogram'
-require 'etc'
-require 'facter'
-require 'client'
-require 'qps-common'
-require 'server'
 require 'src/proto/grpc/testing/services_services'
 
-class WorkerServiceImpl < Grpc::Testing::WorkerService::Service
-  def cpu_cores
-    Facter.value('processors')['count']
+class Poisson
+  def interarrival
+    @lambda_recip * (-Math.log(1.0-rand))
   end
-  def run_server(reqs)
-    q = EnumeratorQueue.new(self)
-    Thread.new {
-      reqs.each do |req|        
-        case req.argtype
-        when "setup"
-          server = BenchmarkServer.new(req.setup)
-          q.push(Grpc::Testing::ServerStatus.new(stats: server.mark(false), port: server.get_port))
-        when "mark"
-          q.push(Grpc::Testing::ServerStatus.new(stats: server.mark(req.mark.reset), cores: cpu_cores))
-        end
-      end
-      q.push(self)
-    }
-    q.each_item
+  def advance
+    t = @next_time
+    @next_time += interarrival
+    t
   end
-  def run_client(reqs)
-    q = EnumeratorQueue.new(self)
-    Thread.new {
-      reqs.each do |req|
-        case req.argtype
-        when "setup"
-          server = BenchmarkClient.new(req.setup)
-          q.push(Grpc::Testing::ClientStatus.new(stats: client.mark(false)))
-        when "mark"
-          q.push(Grpc::Testing::ClientStatus.new(stats: client.mark(req.mark.reset)))
-        end
-      end
-      q.push(self)
-    }
-    q.each_item
-  end
-  def core_count(_args, _call)
-    Grpc::Testing::CoreResponse.new(cores: cpu_cores)
-  end
-  def quit_worker(_args, _call)
-    Thread.new {
-      sleep 3
-      @server.stop
-    }
-    Grpc::Testing::Void.new
-  end
-  def initialize(s)
-    @server = s
+  def initialize(lambda)
+    @lambda_recip = 1.0/lambda
+    @next_time = Time.now + interarrival
   end
 end
 
-def main
-  options = {
-    'driver_port' => 0
-  }
-  OptionParser.new do |opts|
-    opts.banner = 'Usage: [--driver_port <port>]'
-    opts.on('--driver_port PORT', '<port>') do |v|
-      options['driver_port'] = v
-    end
-  end.parse!
-  s = GRPC::RpcServer.new
-  s.add_http2_port("0.0.0.0:" + options['driver_port'].to_s,
-                   :this_port_is_insecure)
-  s.handle(WorkerServiceImpl.new(s))
-  s.run
-end
-
-main
