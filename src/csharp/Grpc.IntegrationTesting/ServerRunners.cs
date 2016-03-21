@@ -41,6 +41,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Google.Protobuf;
 using Grpc.Core;
+using Grpc.Core.Logging;
 using Grpc.Core.Utils;
 using NUnit.Framework;
 using Grpc.Testing;
@@ -50,15 +51,31 @@ namespace Grpc.IntegrationTesting
     /// <summary>
     /// Helper methods to start server runners for performance testing.
     /// </summary>
-    public static class ServerRunners
+    public class ServerRunners
     {
+        static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<ServerRunners>();
+
         /// <summary>
         /// Creates a started server runner.
         /// </summary>
         public static IServerRunner CreateStarted(ServerConfig config)
         {
-            GrpcPreconditions.CheckArgument(config.ServerType == ServerType.ASYNC_SERVER);
+            Logger.Debug("ServerConfig: {0}", config);
+            GrpcPreconditions.CheckArgument(config.ServerType == ServerType.ASYNC_SERVER, "Only ASYNC_SERVER supported for C# QpsWorker");
             var credentials = config.SecurityParams != null ? TestCredentials.CreateSslServerCredentials() : ServerCredentials.Insecure;
+
+            if (config.AsyncServerThreads != 0)
+            {
+                Logger.Warning("ServerConfig.AsyncServerThreads is not supported for C#. Ignoring the value");
+            }
+            if (config.CoreLimit != 0)
+            {
+                Logger.Warning("ServerConfig.CoreLimit is not supported for C#. Ignoring the value");
+            }
+            if (config.CoreList.Count > 0)
+            {
+                Logger.Warning("ServerConfig.CoreList is not supported for C#. Ignoring the value");
+            }
 
             // TODO: qps_driver needs to setup payload properly...
             int responseSize = config.PayloadConfig != null ? config.PayloadConfig.SimpleParams.RespSize : 0;
