@@ -815,13 +815,15 @@ libs:
   src:
   - src/cpp/common/insecure_create_auth_context.cc
   deps:
-  - gpr
-  - grpc_unsecure
+  - grpc
+  - grpc++_codegen_lib
   baselib: true
   dll: true
   filegroups:
   - grpc++_base
-  - grpc++_codegen
+  - grpc++_codegen_headers
+  merge_deps:
+  - grpc++_codegen_lib
   secure: false
   vs_project_guid: '{6EE56155-DF7C-4F6E-BFC4-F6F776BEB211}'
 - name: grpc_plugin_support
