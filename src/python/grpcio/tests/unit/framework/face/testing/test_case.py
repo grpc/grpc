@@ -36,13 +36,12 @@ from grpc.framework.face import interfaces as face_interfaces  # pylint: disable
 from tests.unit.framework.face.testing import interfaces  # pylint: disable=unused-import
 
 
-class FaceTestCase(object):
+class FaceTestCase(object, metaclass=abc.ABCMeta):
   """Describes a test of the Face Layer of RPC Framework.
 
   Concrete subclasses must also inherit from unittest.TestCase and from at least
   one class that defines test methods.
   """
-  __metaclass__ = abc.ABCMeta
 
   @abc.abstractmethod
   def set_up_implementation(

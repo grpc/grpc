@@ -36,7 +36,7 @@ import functools
 import logging
 
 
-class Outcome(object):
+class Outcome(object, metaclass=abc.ABCMeta):
   """A sum type describing the outcome of some call.
 
   Attributes:
@@ -47,7 +47,6 @@ class Outcome(object):
     exception: The exception raised by the call. Must be present if kind is
       Kind.RAISED.
   """
-  __metaclass__ = abc.ABCMeta
 
   @enum.unique
   class Kind(enum.Enum):

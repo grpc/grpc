@@ -35,9 +35,8 @@ from grpc.framework.common import cardinality  # pylint: disable=unused-import
 from grpc.framework.interfaces.face import face  # pylint: disable=unused-import
 
 
-class Method(object):
+class Method(object, metaclass=abc.ABCMeta):
   """Specifies a method to be used in tests."""
-  __metaclass__ = abc.ABCMeta
 
   @abc.abstractmethod
   def group(self):
@@ -126,9 +125,8 @@ class Method(object):
     raise NotImplementedError()
 
 
-class Implementation(object):
+class Implementation(object, metaclass=abc.ABCMeta):
   """Specifies an implementation of the Face layer."""
-  __metaclass__ = abc.ABCMeta
 
   @abc.abstractmethod
   def instantiate(

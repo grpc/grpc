@@ -72,9 +72,8 @@ class _EmptyConsumer(stream.Consumer):
     """See stream.Consumer.consume_and_terminate for specification."""
 
 
-class _ConsumerCreator(object):
+class _ConsumerCreator(object, metaclass=abc.ABCMeta):
   """Common specification of different consumer-creating behavior."""
-  __metaclass__ = abc.ABCMeta
 
   @abc.abstractmethod
   def create_consumer(self, requirement):

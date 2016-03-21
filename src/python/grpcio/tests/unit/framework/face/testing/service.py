@@ -36,10 +36,8 @@ from grpc.framework.face import interfaces as face_interfaces  # pylint: disable
 from tests.unit.framework.face.testing import interfaces
 
 
-class UnaryUnaryTestMethodImplementation(interfaces.Method):
+class UnaryUnaryTestMethodImplementation(interfaces.Method, metaclass=abc.ABCMeta):
   """A controllable implementation of a unary-unary RPC method."""
-
-  __metaclass__ = abc.ABCMeta
 
   @abc.abstractmethod
   def service(self, request, response_callback, context, control):
@@ -59,10 +57,8 @@ class UnaryUnaryTestMethodImplementation(interfaces.Method):
     raise NotImplementedError()
 
 
-class UnaryUnaryTestMessages(object):
+class UnaryUnaryTestMessages(object, metaclass=abc.ABCMeta):
   """A type for unary-request-unary-response message pairings."""
-
-  __metaclass__ = abc.ABCMeta
 
   @abc.abstractmethod
   def request(self):
@@ -93,10 +89,8 @@ class UnaryUnaryTestMessages(object):
     raise NotImplementedError()
 
 
-class UnaryStreamTestMethodImplementation(interfaces.Method):
+class UnaryStreamTestMethodImplementation(interfaces.Method, metaclass=abc.ABCMeta):
   """A controllable implementation of a unary-stream RPC method."""
-
-  __metaclass__ = abc.ABCMeta
 
   @abc.abstractmethod
   def service(self, request, response_consumer, context, control):
@@ -116,10 +110,8 @@ class UnaryStreamTestMethodImplementation(interfaces.Method):
     raise NotImplementedError()
 
 
-class UnaryStreamTestMessages(object):
+class UnaryStreamTestMessages(object, metaclass=abc.ABCMeta):
   """A type for unary-request-stream-response message pairings."""
-
-  __metaclass__ = abc.ABCMeta
 
   @abc.abstractmethod
   def request(self):
@@ -150,10 +142,8 @@ class UnaryStreamTestMessages(object):
     raise NotImplementedError()
 
 
-class StreamUnaryTestMethodImplementation(interfaces.Method):
+class StreamUnaryTestMethodImplementation(interfaces.Method, metaclass=abc.ABCMeta):
   """A controllable implementation of a stream-unary RPC method."""
-
-  __metaclass__ = abc.ABCMeta
 
   @abc.abstractmethod
   def service(self, response_callback, context, control):
@@ -180,10 +170,8 @@ class StreamUnaryTestMethodImplementation(interfaces.Method):
     raise NotImplementedError()
 
 
-class StreamUnaryTestMessages(object):
+class StreamUnaryTestMessages(object, metaclass=abc.ABCMeta):
   """A type for stream-request-unary-response message pairings."""
-
-  __metaclass__ = abc.ABCMeta
 
   @abc.abstractmethod
   def requests(self):
@@ -214,10 +202,8 @@ class StreamUnaryTestMessages(object):
     raise NotImplementedError()
 
 
-class StreamStreamTestMethodImplementation(interfaces.Method):
+class StreamStreamTestMethodImplementation(interfaces.Method, metaclass=abc.ABCMeta):
   """A controllable implementation of a stream-stream RPC method."""
-
-  __metaclass__ = abc.ABCMeta
 
   @abc.abstractmethod
   def service(self, response_consumer, context, control):
@@ -244,10 +230,8 @@ class StreamStreamTestMethodImplementation(interfaces.Method):
     raise NotImplementedError()
 
 
-class StreamStreamTestMessages(object):
+class StreamStreamTestMessages(object, metaclass=abc.ABCMeta):
   """A type for stream-request-stream-response message pairings."""
-
-  __metaclass__ = abc.ABCMeta
 
   @abc.abstractmethod
   def requests(self):
@@ -278,10 +262,8 @@ class StreamStreamTestMessages(object):
     raise NotImplementedError()
 
 
-class TestService(object):
+class TestService(object, metaclass=abc.ABCMeta):
   """A specification of implemented RPC methods to use in tests."""
-
-  __metaclass__ = abc.ABCMeta
 
   @abc.abstractmethod
   def name(self):

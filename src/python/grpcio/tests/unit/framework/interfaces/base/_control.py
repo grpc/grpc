@@ -247,9 +247,7 @@ class Instruction(
     CONCLUDE = 'CONCLUDE'
 
 
-class Controller(object):
-  __metaclass__ = abc.ABCMeta
-
+class Controller(object, metaclass=abc.ABCMeta):
   @abc.abstractmethod
   def failed(self, message):
     """"""
@@ -308,9 +306,7 @@ class Controller(object):
     raise NotImplementedError()
 
 
-class ControllerCreator(object):
-  __metaclass__ = abc.ABCMeta
-
+class ControllerCreator(object, metaclass=abc.ABCMeta):
   @abc.abstractmethod
   def name(self):
     """"""

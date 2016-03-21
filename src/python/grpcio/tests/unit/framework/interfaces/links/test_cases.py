@@ -58,13 +58,12 @@ _TRANSMISSION_GROUP = 'test.Group'
 _TRANSMISSION_METHOD = 'TestMethod'
 
 
-class TransmissionTest(object):
+class TransmissionTest(object, metaclass=abc.ABCMeta):
   """Tests ticket transmission between two connected links.
 
   This class must be mixed into a unittest.TestCase that implements the abstract
   methods it provides.
   """
-  __metaclass__ = abc.ABCMeta
 
   # This is a unittest.TestCase mix-in.
   # pylint: disable=invalid-name

@@ -50,13 +50,12 @@ class Outcome(enum.Enum):
   SERVICED_FAILURE = 'serviced failure'
 
 
-class OperationContext(object):
+class OperationContext(object, metaclass=abc.ABCMeta):
   """Provides operation-related information and action.
 
   Attributes:
     trace_id: A uuid.UUID identifying a particular set of related operations.
   """
-  __metaclass__ = abc.ABCMeta
 
   @abc.abstractmethod
   def is_active(self):
@@ -93,9 +92,8 @@ class OperationContext(object):
     raise NotImplementedError()
 
 
-class Servicer(object):
+class Servicer(object, metaclass=abc.ABCMeta):
   """Interface for service implementations."""
-  __metaclass__ = abc.ABCMeta
 
   @abc.abstractmethod
   def service(self, name, context, output_consumer):
@@ -120,7 +118,7 @@ class Servicer(object):
     raise NotImplementedError()
 
 
-class Operation(object):
+class Operation(object, metaclass=abc.ABCMeta):
   """Representation of an in-progress operation.
 
   Attributes:
@@ -129,7 +127,6 @@ class Operation(object):
     context: An OperationContext affording information and action about the
       operation.
   """
-  __metaclass__ = abc.ABCMeta
 
   @abc.abstractmethod
   def cancel(self):
@@ -137,9 +134,8 @@ class Operation(object):
     raise NotImplementedError()
 
 
-class ServicedIngestor(object):
+class ServicedIngestor(object, metaclass=abc.ABCMeta):
   """Responsible for accepting the result of an operation."""
-  __metaclass__ = abc.ABCMeta
 
   @abc.abstractmethod
   def consumer(self, operation_context):
@@ -159,7 +155,7 @@ class ServicedIngestor(object):
     raise NotImplementedError()
 
 
-class ServicedSubscription(object):
+class ServicedSubscription(object, metaclass=abc.ABCMeta):
   """A sum type representing a serviced's interest in an operation.
 
   Attributes:
@@ -167,7 +163,6 @@ class ServicedSubscription(object):
     ingestor: A ServicedIngestor. Must be present if kind is Kind.FULL. Must
       be None if kind is Kind.TERMINATION_ONLY or Kind.NONE.
   """
-  __metaclass__ = abc.ABCMeta
 
   @enum.unique
   class Kind(enum.Enum):
@@ -178,9 +173,8 @@ class ServicedSubscription(object):
     NONE = 'none'
 
 
-class End(object):
+class End(object, metaclass=abc.ABCMeta):
   """Common type for entry-point objects on both sides of an operation."""
-  __metaclass__ = abc.ABCMeta
 
   @abc.abstractmethod
   def operation_stats(self):
@@ -202,9 +196,8 @@ class End(object):
     raise NotImplementedError()
 
 
-class Front(End):
+class Front(End, metaclass=abc.ABCMeta):
   """Clientish objects that afford the invocation of operations."""
-  __metaclass__ = abc.ABCMeta
 
   @abc.abstractmethod
   def operate(
@@ -228,9 +221,8 @@ class Front(End):
     raise NotImplementedError()
 
 
-class Back(End):
+class Back(End, metaclass=abc.ABCMeta):
   """Serverish objects that perform the work of operations."""
-  __metaclass__ = abc.ABCMeta
 
 
 class FrontToBackTicket(
@@ -315,9 +307,8 @@ class BackToFrontTicket(
     TRANSMISSION_FAILURE = 'transmission failure'
 
 
-class ForeLink(object):
+class ForeLink(object, metaclass=abc.ABCMeta):
   """Accepts back-to-front tickets and emits front-to-back tickets."""
-  __metaclass__ = abc.ABCMeta
 
   @abc.abstractmethod
   def accept_back_to_front_ticket(self, ticket):
@@ -334,9 +325,8 @@ class ForeLink(object):
     raise NotImplementedError()
 
 
-class RearLink(object):
+class RearLink(object, metaclass=abc.ABCMeta):
   """Accepts front-to-back tickets and emits back-to-front tickets."""
-  __metaclass__ = abc.ABCMeta
 
   @abc.abstractmethod
   def accept_front_to_back_ticket(self, ticket):
@@ -353,11 +343,9 @@ class RearLink(object):
     raise NotImplementedError()
 
 
-class FrontLink(Front, ForeLink):
+class FrontLink(Front, ForeLink, metaclass=abc.ABCMeta):
   """Clientish objects that operate by sending and receiving tickets."""
-  __metaclass__ = abc.ABCMeta
 
 
-class BackLink(Back, RearLink):
+class BackLink(Back, RearLink, metaclass=abc.ABCMeta):
   """Serverish objects that operate by sending and receiving tickets."""
-  __metaclass__ = abc.ABCMeta

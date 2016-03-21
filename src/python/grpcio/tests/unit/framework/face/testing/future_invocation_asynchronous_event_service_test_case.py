@@ -74,12 +74,11 @@ class _PauseableIterator(object):
 
 
 class FutureInvocationAsynchronousEventServiceTestCase(
-    test_case.FaceTestCase, coverage.FullCoverage):
+    test_case.FaceTestCase, coverage.FullCoverage, metaclass=abc.ABCMeta):
   """A test of the Face layer of RPC Framework.
 
   Concrete subclasses must also extend unittest.TestCase.
   """
-  __metaclass__ = abc.ABCMeta
 
   def setUp(self):
     """See unittest.TestCase.setUp for full specification.

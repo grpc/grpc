@@ -123,9 +123,8 @@ class Ticket(
     REMOTE_FAILURE = 'remote failure'
 
 
-class Link(object):
+class Link(object, metaclass=abc.ABCMeta):
   """Accepts and emits tickets."""
-  __metaclass__ = abc.ABCMeta
 
   @abc.abstractmethod
   def accept_ticket(self, ticket):

@@ -35,9 +35,8 @@ Only GRPC should instantiate and raise these exceptions.
 import abc
 
 
-class RpcError(Exception):
+class RpcError(Exception, metaclass=abc.ABCMeta):
   """Common super type for all exceptions raised by GRPC."""
-  __metaclass__ = abc.ABCMeta
 
 
 class CancellationError(RpcError):
