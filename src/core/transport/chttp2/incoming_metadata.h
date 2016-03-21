@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_CHTTP2_INCOMING_METADATA_H
-#define GRPC_INTERNAL_CORE_CHTTP2_INCOMING_METADATA_H
+#ifndef GRPC_CORE_TRANSPORT_CHTTP2_INCOMING_METADATA_H
+#define GRPC_CORE_TRANSPORT_CHTTP2_INCOMING_METADATA_H
 
 #include "src/core/transport/transport.h"
 
@@ -57,4 +57,4 @@ void grpc_chttp2_incoming_metadata_buffer_add(
 void grpc_chttp2_incoming_metadata_buffer_set_deadline(
     grpc_chttp2_incoming_metadata_buffer *buffer, gpr_timespec deadline);
 
-#endif /* GRPC_INTERNAL_CORE_CHTTP2_INCOMING_METADATA_H */
+#endif /* GRPC_CORE_TRANSPORT_CHTTP2_INCOMING_METADATA_H */

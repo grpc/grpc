@@ -492,6 +492,9 @@ grpc_auth_context *tsi_ssl_peer_to_auth_context(const tsi_peer *peer) {
       peer_identity_property_name = GRPC_X509_SAN_PROPERTY_NAME;
       grpc_auth_context_add_property(ctx, GRPC_X509_SAN_PROPERTY_NAME,
                                      prop->value.data, prop->value.length);
+    } else if (strcmp(prop->name, TSI_X509_PEM_CERT_PROPERTY) == 0) {
+      grpc_auth_context_add_property(ctx, GRPC_X509_PEM_CERT_PROPERTY_NAME,
+                                     prop->value.data, prop->value.length);
     }
   }
   if (peer_identity_property_name != NULL) {
@@ -554,9 +557,9 @@ static void ssl_server_check_peer(grpc_exec_ctx *exec_ctx,
   grpc_auth_context_unref(auth_context);
 }
 
-static void add_shalow_auth_property_to_peer(tsi_peer *peer,
-                                             const grpc_auth_property *prop,
-                                             const char *tsi_prop_name) {
+static void add_shallow_auth_property_to_peer(tsi_peer *peer,
+                                              const grpc_auth_property *prop,
+                                              const char *tsi_prop_name) {
   tsi_peer_property *tsi_prop = &peer->properties[peer->property_count++];
   tsi_prop->name = (char *)tsi_prop_name;
   tsi_prop->value.data = prop->value;
@@ -579,11 +582,14 @@ tsi_peer tsi_shallow_peer_from_ssl_auth_context(
     it = grpc_auth_context_property_iterator(auth_context);
     while ((prop = grpc_auth_property_iterator_next(&it)) != NULL) {
       if (strcmp(prop->name, GRPC_X509_SAN_PROPERTY_NAME) == 0) {
-        add_shalow_auth_property_to_peer(
+        add_shallow_auth_property_to_peer(
             &peer, prop, TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY);
       } else if (strcmp(prop->name, GRPC_X509_CN_PROPERTY_NAME) == 0) {
-        add_shalow_auth_property_to_peer(
+        add_shallow_auth_property_to_peer(
             &peer, prop, TSI_X509_SUBJECT_COMMON_NAME_PEER_PROPERTY);
+      } else if (strcmp(prop->name, GRPC_X509_PEM_CERT_PROPERTY_NAME) == 0) {
+        add_shallow_auth_property_to_peer(&peer, prop,
+                                          TSI_X509_PEM_CERT_PROPERTY);
       }
     }
   }

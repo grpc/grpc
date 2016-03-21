@@ -192,6 +192,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(SolutionDir)\..\src\core\profiling\timers.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\support\backoff.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\support\block_annotate.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\support\env.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\support\load_file.h" />
@@ -211,6 +212,8 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\support\alloc.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\support\avl.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\support\backoff.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\support\cmdline.c">
     </ClCompile>

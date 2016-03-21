@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_VARINT_H
-#define GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_VARINT_H
+#ifndef GRPC_CORE_TRANSPORT_CHTTP2_VARINT_H
+#define GRPC_CORE_TRANSPORT_CHTTP2_VARINT_H
 
 #include <grpc/support/port_platform.h>
 
@@ -72,4 +72,4 @@ void grpc_chttp2_hpack_write_varint_tail(uint32_t tail_value, uint8_t* target,
     }                                                                         \
   } while (0)
 
-#endif /* GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_VARINT_H */
+#endif /* GRPC_CORE_TRANSPORT_CHTTP2_VARINT_H */

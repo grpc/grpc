@@ -31,18 +31,20 @@
  *
  */
 
-#include "src/core/iomgr/iomgr.h"
-#include "src/core/iomgr/pollset_posix.h"
 #include "src/core/iomgr/udp_server.h"
+
+#include <netinet/in.h>
+#include <string.h>
+#include <sys/socket.h>
+#include <unistd.h>
+
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
-#include "test/core/util/test_config.h"
 
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <string.h>
-#include <unistd.h>
+#include "src/core/iomgr/ev_posix.h"
+#include "src/core/iomgr/iomgr.h"
+#include "test/core/util/test_config.h"
 
 #ifdef GRPC_NEED_UDP
 
