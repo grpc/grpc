@@ -34,18 +34,9 @@
 #ifndef GRPC_CORE_CHANNEL_CONNECTED_CHANNEL_H
 #define GRPC_CORE_CHANNEL_CONNECTED_CHANNEL_H
 
-#include "src/core/channel/channel_stack.h"
+#include "src/core/channel/channel_stack_builder.h"
 
-/* A channel filter representing a channel that is on a connected transport.
-   This filter performs actual sending and receiving of messages. */
-
-extern const grpc_channel_filter grpc_connected_channel_filter;
-
-/* Post construction fixup: set the transport in the connected channel.
-   Must be called before any call stack using this filter is used. */
-void grpc_connected_channel_bind_transport(grpc_channel_stack* channel_stack,
-                                           grpc_transport* transport);
-
-grpc_stream* grpc_connected_channel_get_stream(grpc_call_element* elem);
+bool grpc_add_connected_filter(grpc_channel_stack_builder *builder,
+                               void *arg_must_be_null);
 
 #endif /* GRPC_CORE_CHANNEL_CONNECTED_CHANNEL_H */

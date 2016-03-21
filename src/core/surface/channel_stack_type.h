@@ -31,8 +31,31 @@
  *
  */
 
-#include "src/core/surface/init.h"
+#ifndef GRPC_CORE_SURFACE_CHANNEL_STACK_TYPE_H
+#define GRPC_CORE_SURFACE_CHANNEL_STACK_TYPE_H
 
-void grpc_security_pre_init(void) {}
+#include <stdbool.h>
 
-void grpc_register_security_filters(void) {}
+typedef enum {
+  // normal top-half client channel with load-balancing, connection management
+  GRPC_CLIENT_CHANNEL,
+  // abbreviated top-half client channel bound to one subchannel - for internal
+  // load balancing implementation
+  GRPC_CLIENT_UCHANNEL,
+  // bottom-half of a client channel: everything that happens post-load
+  // balancing (bound to a specific transport)
+  GRPC_CLIENT_SUBCHANNEL,
+  // a permanently broken client channel
+  GRPC_CLIENT_LAME_CHANNEL,
+  // a directly connected client channel (without load-balancing, directly talks
+  // to a transport)
+  GRPC_CLIENT_DIRECT_CHANNEL,
+  // server side channel
+  GRPC_SERVER_CHANNEL,
+  // must be last
+  GRPC_NUM_CHANNEL_STACK_TYPES
+} grpc_channel_stack_type;
+
+bool grpc_channel_stack_type_is_client(grpc_channel_stack_type type);
+
+#endif /* GRPC_CORE_SURFACE_CHANNEL_STACK_TYPE_H */
