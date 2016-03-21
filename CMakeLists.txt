@@ -69,6 +69,7 @@ add_library(gpr
   src/core/profiling/stap_timers.c
   src/core/support/alloc.c
   src/core/support/avl.c
+  src/core/support/backoff.c
   src/core/support/cmdline.c
   src/core/support/cpu_iphone.c
   src/core/support/cpu_linux.c
@@ -114,8 +115,10 @@ target_link_libraries(gpr
 add_library(grpc
   src/core/census/grpc_context.c
   src/core/census/grpc_filter.c
+  src/core/census/grpc_plugin.c
   src/core/channel/channel_args.c
   src/core/channel/channel_stack.c
+  src/core/channel/channel_stack_builder.c
   src/core/channel/client_channel.c
   src/core/channel/client_uchannel.c
   src/core/channel/compress_filter.c
@@ -203,7 +206,9 @@ add_library(grpc
   src/core/surface/channel.c
   src/core/surface/channel_connectivity.c
   src/core/surface/channel_create.c
+  src/core/surface/channel_init.c
   src/core/surface/channel_ping.c
+  src/core/surface/channel_stack_type.c
   src/core/surface/completion_queue.c
   src/core/surface/event_string.c
   src/core/surface/init.c
@@ -211,7 +216,6 @@ add_library(grpc
   src/core/surface/metadata_array.c
   src/core/surface/server.c
   src/core/surface/server_chttp2.c
-  src/core/surface/server_create.c
   src/core/surface/validate_metadata.c
   src/core/surface/version.c
   src/core/transport/byte_stream.c
@@ -287,8 +291,10 @@ add_library(grpc_unsecure
   src/core/surface/init_unsecure.c
   src/core/census/grpc_context.c
   src/core/census/grpc_filter.c
+  src/core/census/grpc_plugin.c
   src/core/channel/channel_args.c
   src/core/channel/channel_stack.c
+  src/core/channel/channel_stack_builder.c
   src/core/channel/client_channel.c
   src/core/channel/client_uchannel.c
   src/core/channel/compress_filter.c
@@ -376,7 +382,9 @@ add_library(grpc_unsecure
   src/core/surface/channel.c
   src/core/surface/channel_connectivity.c
   src/core/surface/channel_create.c
+  src/core/surface/channel_init.c
   src/core/surface/channel_ping.c
+  src/core/surface/channel_stack_type.c
   src/core/surface/completion_queue.c
   src/core/surface/event_string.c
   src/core/surface/init.c
@@ -384,7 +392,6 @@ add_library(grpc_unsecure
   src/core/surface/metadata_array.c
   src/core/surface/server.c
   src/core/surface/server_chttp2.c
-  src/core/surface/server_create.c
   src/core/surface/validate_metadata.c
   src/core/surface/version.c
   src/core/transport/byte_stream.c
