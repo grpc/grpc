@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,8 +31,26 @@
  *
  */
 
-#include "src/core/surface/init.h"
+#include <grpc/support/port_platform.h>
+#include "src/core/surface/channel_stack_type.h"
+#include <grpc/support/log.h>
 
-void grpc_security_pre_init(void) {}
-
-void grpc_register_security_filters(void) {}
+bool grpc_channel_stack_type_is_client(grpc_channel_stack_type type) {
+  switch (type) {
+    case GRPC_CLIENT_CHANNEL:
+      return true;
+    case GRPC_CLIENT_UCHANNEL:
+      return true;
+    case GRPC_CLIENT_SUBCHANNEL:
+      return true;
+    case GRPC_CLIENT_LAME_CHANNEL:
+      return true;
+    case GRPC_CLIENT_DIRECT_CHANNEL:
+      return true;
+    case GRPC_SERVER_CHANNEL:
+      return false;
+    case GRPC_NUM_CHANNEL_STACK_TYPES:
+      break;
+  }
+  GPR_UNREACHABLE_CODE(return true;);
+}

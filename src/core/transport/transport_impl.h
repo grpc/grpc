@@ -41,6 +41,9 @@ typedef struct grpc_transport_vtable {
      layers and initialized by the transport */
   size_t sizeof_stream; /* = sizeof(transport stream) */
 
+  /* name of this transport implementation */
+  const char *name;
+
   /* implementation of grpc_transport_init_stream */
   int (*init_stream)(grpc_exec_ctx *exec_ctx, grpc_transport *self,
                      grpc_stream *stream, grpc_stream_refcount *refcount,

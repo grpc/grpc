@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,8 +31,11 @@
  *
  */
 
-#include "src/core/surface/init.h"
+#ifndef GRPC_CORE_SURFACE_LAME_CLIENT_H
+#define GRPC_CORE_SURFACE_LAME_CLIENT_H
 
-void grpc_security_pre_init(void) {}
+#include "src/core/channel/channel_stack.h"
 
-void grpc_register_security_filters(void) {}
+extern const grpc_channel_filter grpc_lame_filter;
+
+#endif /* GRPC_CORE_SURFACE_LAME_CLIENT_H */

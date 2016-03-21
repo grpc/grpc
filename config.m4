@@ -82,8 +82,10 @@ if test "$PHP_GRPC" != "no"; then
     src/core/support/wrap_memcpy.c \
     src/core/census/grpc_context.c \
     src/core/census/grpc_filter.c \
+    src/core/census/grpc_plugin.c \
     src/core/channel/channel_args.c \
     src/core/channel/channel_stack.c \
+    src/core/channel/channel_stack_builder.c \
     src/core/channel/client_channel.c \
     src/core/channel/client_uchannel.c \
     src/core/channel/compress_filter.c \
@@ -171,7 +173,9 @@ if test "$PHP_GRPC" != "no"; then
     src/core/surface/channel.c \
     src/core/surface/channel_connectivity.c \
     src/core/surface/channel_create.c \
+    src/core/surface/channel_init.c \
     src/core/surface/channel_ping.c \
+    src/core/surface/channel_stack_type.c \
     src/core/surface/completion_queue.c \
     src/core/surface/event_string.c \
     src/core/surface/init.c \
@@ -179,7 +183,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/surface/metadata_array.c \
     src/core/surface/server.c \
     src/core/surface/server_chttp2.c \
-    src/core/surface/server_create.c \
     src/core/surface/validate_metadata.c \
     src/core/surface/version.c \
     src/core/transport/byte_stream.c \

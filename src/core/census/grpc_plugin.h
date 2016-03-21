@@ -31,8 +31,10 @@
  *
  */
 
-#include "src/core/surface/init.h"
+#ifndef GRPC_CORE_CENSUS_GRPC_PLUGIN_H
+#define GRPC_CORE_CENSUS_GRPC_PLUGIN_H
 
-void grpc_security_pre_init(void) {}
+void census_grpc_plugin_init(void);
+void census_grpc_plugin_destroy(void);
 
-void grpc_register_security_filters(void) {}
+#endif /* GRPC_CORE_CENSUS_GRPC_PLUGIN_H */

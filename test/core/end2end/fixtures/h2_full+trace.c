@@ -37,112 +37,78 @@
 
 #include "src/core/channel/client_channel.h"
 #include "src/core/channel/connected_channel.h"
-#include "src/core/channel/http_client_filter.h"
 #include "src/core/channel/http_server_filter.h"
-#include "src/core/channel/compress_filter.h"
-#include "src/core/iomgr/endpoint_pair.h"
-#include "src/core/iomgr/iomgr.h"
-#include "src/core/support/env.h"
 #include "src/core/surface/channel.h"
 #include "src/core/surface/server.h"
 #include "src/core/transport/chttp2_transport.h"
 #include <grpc/support/alloc.h>
+#include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/thd.h>
 #include <grpc/support/useful.h>
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
+#include "src/core/support/env.h"
 
-/* chttp2 transport that is immediately available (used for testing
-   connected_channel without a client_channel */
+typedef struct fullstack_fixture_data {
+  char *localaddr;
+} fullstack_fixture_data;
 
-static void server_setup_transport(void *ts, grpc_transport *transport) {
-  grpc_end2end_test_fixture *f = ts;
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_server_setup_transport(&exec_ctx, f->server, transport,
-                              grpc_server_get_channel_args(f->server));
-  grpc_exec_ctx_finish(&exec_ctx);
-}
-
-typedef struct {
-  grpc_end2end_test_fixture *f;
-  grpc_channel_args *client_args;
-} sp_client_setup;
-
-static void client_setup_transport(grpc_exec_ctx *exec_ctx, void *ts,
-                                   grpc_transport *transport) {
-  sp_client_setup *cs = ts;
-
-  cs->f->client =
-      grpc_channel_create(exec_ctx, "socketpair-target", cs->client_args,
-                          GRPC_CLIENT_DIRECT_CHANNEL, transport);
-}
-
-static grpc_end2end_test_fixture chttp2_create_fixture_socketpair(
+static grpc_end2end_test_fixture chttp2_create_fixture_fullstack(
     grpc_channel_args *client_args, grpc_channel_args *server_args) {
-  grpc_endpoint_pair *sfd = gpr_malloc(sizeof(grpc_endpoint_pair));
-
   grpc_end2end_test_fixture f;
+  int port = grpc_pick_unused_port_or_die();
+  fullstack_fixture_data *ffd = gpr_malloc(sizeof(fullstack_fixture_data));
   memset(&f, 0, sizeof(f));
-  f.fixture_data = sfd;
-  f.cq = grpc_completion_queue_create(NULL);
 
-  *sfd = grpc_iomgr_create_endpoint_pair("fixture", 65536);
+  gpr_join_host_port(&ffd->localaddr, "localhost", port);
+
+  f.fixture_data = ffd;
+  f.cq = grpc_completion_queue_create(NULL);
 
   return f;
 }
 
-static void chttp2_init_client_socketpair(grpc_end2end_test_fixture *f,
-                                          grpc_channel_args *client_args) {
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_endpoint_pair *sfd = f->fixture_data;
-  grpc_transport *transport;
-  sp_client_setup cs;
-  cs.client_args = client_args;
-  cs.f = f;
-  transport =
-      grpc_create_chttp2_transport(&exec_ctx, client_args, sfd->client, 1);
-  client_setup_transport(&exec_ctx, &cs, transport);
+void chttp2_init_client_fullstack(grpc_end2end_test_fixture *f,
+                                  grpc_channel_args *client_args) {
+  fullstack_fixture_data *ffd = f->fixture_data;
+  f->client = grpc_insecure_channel_create(ffd->localaddr, client_args, NULL);
   GPR_ASSERT(f->client);
-  grpc_chttp2_transport_start_reading(&exec_ctx, transport, NULL, 0);
-  grpc_exec_ctx_finish(&exec_ctx);
 }
 
-static void chttp2_init_server_socketpair(grpc_end2end_test_fixture *f,
-                                          grpc_channel_args *server_args) {
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_endpoint_pair *sfd = f->fixture_data;
-  grpc_transport *transport;
-  GPR_ASSERT(!f->server);
+void chttp2_init_server_fullstack(grpc_end2end_test_fixture *f,
+                                  grpc_channel_args *server_args) {
+  fullstack_fixture_data *ffd = f->fixture_data;
+  if (f->server) {
+    grpc_server_destroy(f->server);
+  }
   f->server = grpc_server_create(server_args, NULL);
   grpc_server_register_completion_queue(f->server, f->cq, NULL);
+  GPR_ASSERT(grpc_server_add_insecure_http2_port(f->server, ffd->localaddr));
   grpc_server_start(f->server);
-  transport =
-      grpc_create_chttp2_transport(&exec_ctx, server_args, sfd->server, 0);
-  server_setup_transport(f, transport);
-  grpc_chttp2_transport_start_reading(&exec_ctx, transport, NULL, 0);
-  grpc_exec_ctx_finish(&exec_ctx);
 }
 
-static void chttp2_tear_down_socketpair(grpc_end2end_test_fixture *f) {
-  gpr_free(f->fixture_data);
+void chttp2_tear_down_fullstack(grpc_end2end_test_fixture *f) {
+  fullstack_fixture_data *ffd = f->fixture_data;
+  gpr_free(ffd->localaddr);
+  gpr_free(ffd);
 }
 
 /* All test configurations */
 static grpc_end2end_test_config configs[] = {
-    {"chttp2/socketpair", 0, chttp2_create_fixture_socketpair,
-     chttp2_init_client_socketpair, chttp2_init_server_socketpair,
-     chttp2_tear_down_socketpair},
+    {"chttp2/fullstack", FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION,
+     chttp2_create_fixture_fullstack, chttp2_init_client_fullstack,
+     chttp2_init_server_fullstack, chttp2_tear_down_fullstack},
 };
 
 int main(int argc, char **argv) {
   size_t i;
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
   /* force tracing on, with a value to force many
      code paths in trace.c to be taken */
   gpr_setenv("GRPC_TRACE", "doesnt-exist,http,all");
+
 #ifdef GPR_POSIX_SOCKET
   g_fixture_slowdown_factor = isatty(STDOUT_FILENO) ? 10.0 : 1.0;
 #else
@@ -151,15 +117,14 @@ int main(int argc, char **argv) {
 
   grpc_test_init(argc, argv);
   grpc_init();
-  grpc_exec_ctx_finish(&exec_ctx);
-
-  GPR_ASSERT(0 == grpc_tracer_set_enabled("also-doesnt-exist", 0));
-  GPR_ASSERT(1 == grpc_tracer_set_enabled("http", 1));
-  GPR_ASSERT(1 == grpc_tracer_set_enabled("all", 1));
 
   for (i = 0; i < sizeof(configs) / sizeof(*configs); i++) {
     grpc_end2end_tests(argc, argv, configs[i]);
   }
+
+  GPR_ASSERT(0 == grpc_tracer_set_enabled("also-doesnt-exist", 0));
+  GPR_ASSERT(1 == grpc_tracer_set_enabled("http", 1));
+  GPR_ASSERT(1 == grpc_tracer_set_enabled("all", 1));
 
   grpc_shutdown();
 
