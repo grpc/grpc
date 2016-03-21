@@ -1293,7 +1293,7 @@
     ], 
     "cpu_cost": 0.1, 
     "exclude_configs": [], 
-    "flaky": false, 
+    "flaky": true, 
     "gtest": false, 
     "language": "c", 
     "name": "lb_policies_test", 
@@ -2317,7 +2317,9 @@
       "posix"
     ], 
     "cpu_cost": 0.5, 
-    "exclude_configs": [], 
+    "exclude_configs": [
+      "tsan"
+    ], 
     "flaky": false, 
     "gtest": false, 
     "language": "c++", 
@@ -2336,7 +2338,9 @@
       "posix"
     ], 
     "cpu_cost": 10, 
-    "exclude_configs": [], 
+    "exclude_configs": [
+      "tsan"
+    ], 
     "flaky": false, 
     "gtest": false, 
     "language": "c++", 

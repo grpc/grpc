@@ -40,29 +40,27 @@
 #include "test/core/util/test_config.h"
 
 #define NUM_THREADS 100
-static grpc_channel* channels[NUM_THREADS];
-static grpc_completion_queue* queues[NUM_THREADS];
+#define NUM_OUTER_LOOPS 10
+#define NUM_INNER_LOOPS 10
+#define DELAY_MILLIS 10
+#define POLL_MILLIS 3000
 
-void create_loop_destroy(void* actually_an_int) {
-  int thread_index = (int)(intptr_t)(actually_an_int);
-  for (int i = 0; i < 10; ++i) {
+void create_loop_destroy(void* unused) {
+  for (int i = 0; i < NUM_OUTER_LOOPS; ++i) {
     grpc_completion_queue* cq = grpc_completion_queue_create(NULL);
     grpc_channel* chan = grpc_insecure_channel_create("localhost", NULL, NULL);
 
-    channels[thread_index] = chan;
-    queues[thread_index] = cq;
-
-    for (int j = 0; j < 10; ++j) {
-      gpr_timespec later_time = GRPC_TIMEOUT_MILLIS_TO_DEADLINE(10);
+    for (int j = 0; j < NUM_INNER_LOOPS; ++j) {
+      gpr_timespec later_time = GRPC_TIMEOUT_MILLIS_TO_DEADLINE(DELAY_MILLIS);
       grpc_connectivity_state state =
           grpc_channel_check_connectivity_state(chan, 1);
       grpc_channel_watch_connectivity_state(chan, state, later_time, cq, NULL);
-      GPR_ASSERT(grpc_completion_queue_next(cq,
-                                            GRPC_TIMEOUT_SECONDS_TO_DEADLINE(3),
-                                            NULL).type == GRPC_OP_COMPLETE);
+      gpr_timespec poll_time = GRPC_TIMEOUT_MILLIS_TO_DEADLINE(POLL_MILLIS);
+      GPR_ASSERT(grpc_completion_queue_next(cq, poll_time, NULL).type ==
+                 GRPC_OP_COMPLETE);
     }
-    grpc_channel_destroy(channels[thread_index]);
-    grpc_completion_queue_destroy(queues[thread_index]);
+    grpc_channel_destroy(chan);
+    grpc_completion_queue_destroy(cq);
   }
 }
 
@@ -70,12 +68,12 @@ int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
   grpc_init();
   gpr_thd_id threads[NUM_THREADS];
-  for (intptr_t i = 0; i < NUM_THREADS; ++i) {
+  for (size_t i = 0; i < NUM_THREADS; ++i) {
     gpr_thd_options options = gpr_thd_options_default();
     gpr_thd_options_set_joinable(&options);
-    gpr_thd_new(&threads[i], create_loop_destroy, (void*)i, &options);
+    gpr_thd_new(&threads[i], create_loop_destroy, NULL, &options);
   }
-  for (int i = 0; i < NUM_THREADS; ++i) {
+  for (size_t i = 0; i < NUM_THREADS; ++i) {
     gpr_thd_join(threads[i]);
   }
   grpc_shutdown();

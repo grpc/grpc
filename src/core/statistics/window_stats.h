@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_STATISTICS_WINDOW_STATS_H
-#define GRPC_INTERNAL_CORE_STATISTICS_WINDOW_STATS_H
+#ifndef GRPC_CORE_STATISTICS_WINDOW_STATS_H
+#define GRPC_CORE_STATISTICS_WINDOW_STATS_H
 
 #include <grpc/support/time.h>
 
@@ -170,4 +170,4 @@ void census_window_stats_get_sums(const struct census_window_stats *wstats,
    assertion failure). This function is thread-compatible. */
 void census_window_stats_destroy(struct census_window_stats *wstats);
 
-#endif /* GRPC_INTERNAL_CORE_STATISTICS_WINDOW_STATS_H */
+#endif /* GRPC_CORE_STATISTICS_WINDOW_STATS_H */

@@ -1544,8 +1544,6 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/json_test || ( echo test json_test failed ; exit 1 )
 	$(E) "[RUN]     Testing lame_client_test"
 	$(Q) $(BINDIR)/$(CONFIG)/lame_client_test || ( echo test lame_client_test failed ; exit 1 )
-	$(E) "[RUN]     Testing lb_policies_test"
-	$(Q) $(BINDIR)/$(CONFIG)/lb_policies_test || ( echo test lb_policies_test failed ; exit 1 )
 	$(E) "[RUN]     Testing message_compress_test"
 	$(Q) $(BINDIR)/$(CONFIG)/message_compress_test || ( echo test message_compress_test failed ; exit 1 )
 	$(E) "[RUN]     Testing mlog_test"
@@ -1627,6 +1625,8 @@ test_c: buildtests_c
 
 
 flaky_test_c: buildtests_c
+	$(E) "[RUN]     Testing lb_policies_test"
+	$(Q) $(BINDIR)/$(CONFIG)/lb_policies_test || ( echo test lb_policies_test failed ; exit 1 )
 
 
 test_cxx: test_zookeeper buildtests_cxx
@@ -2691,6 +2691,7 @@ LIBGRPC_TEST_UTIL_SRC = \
     test/core/util/grpc_profiler.c \
     test/core/util/parse_hexstring.c \
     test/core/util/port_posix.c \
+    test/core/util/port_server_client.c \
     test/core/util/port_windows.c \
     test/core/util/slice_splitter.c \
 
@@ -2737,6 +2738,7 @@ LIBGRPC_TEST_UTIL_UNSECURE_SRC = \
     test/core/util/grpc_profiler.c \
     test/core/util/parse_hexstring.c \
     test/core/util/port_posix.c \
+    test/core/util/port_server_client.c \
     test/core/util/port_windows.c \
     test/core/util/slice_splitter.c \
 

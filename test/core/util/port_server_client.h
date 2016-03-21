@@ -31,12 +31,12 @@
  *
  */
 
-#ifndef GRPC_CORE_CLIENT_CONFIG_RESOLVERS_ZOOKEEPER_RESOLVER_H
-#define GRPC_CORE_CLIENT_CONFIG_RESOLVERS_ZOOKEEPER_RESOLVER_H
+#ifndef GRPC_TEST_CORE_UTIL_PORT_SERVER_CLIENT_H
+#define GRPC_TEST_CORE_UTIL_PORT_SERVER_CLIENT_H
 
-#include "src/core/client_config/resolver_factory.h"
+// C interface to port_server.py
 
-/** Create a zookeeper resolver factory */
-grpc_resolver_factory *grpc_zookeeper_resolver_factory_create(void);
+int grpc_pick_port_using_server(char *server);
+void grpc_free_port_using_server(char *server, int port);
 
-#endif /* GRPC_CORE_CLIENT_CONFIG_RESOLVERS_ZOOKEEPER_RESOLVER_H */
+#endif  // GRPC_TEST_CORE_UTIL_PORT_SERVER_CLIENT_H
