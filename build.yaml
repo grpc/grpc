@@ -614,6 +614,8 @@ libs:
   - grpc_codegen
   - census
   - nanopb
+  merge_deps:
+  - gpr
   secure: true
   vs_packages:
   - grpc.dependencies.openssl
@@ -694,6 +696,8 @@ libs:
   - grpc_codegen
   - census
   - nanopb
+  merge_deps:
+  - gpr
   secure: false
   vs_project_guid: '{46CEDFFF-9692-456A-AA24-38B5D6BCF4C5}'
 - name: grpc_zookeeper
@@ -756,7 +760,6 @@ libs:
   deps:
   - grpc
   - grpc++_codegen_lib
-  baselib: true
   dll: true
   filegroups:
   - grpc++_base
@@ -817,7 +820,6 @@ libs:
   deps:
   - grpc
   - grpc++_codegen_lib
-  baselib: true
   dll: true
   filegroups:
   - grpc++_base

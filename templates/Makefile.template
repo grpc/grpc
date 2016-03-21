@@ -1478,7 +1478,10 @@
   % endfor
   % endif
 
-  LIB${lib.name.upper()}_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIB${lib.name.upper()}_SRC))))
+  LIB${lib.name.upper()}_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIB${lib.name.upper()}_SRC)))) \
+  % for dep in lib.get('merge_deps', []):
+   $(LIB${dep.upper()}_OBJS) \
+  % endfor
 
   % if lib.get('defaults', None):
   %  for name, value in defaults.get(lib.defaults).iteritems():
@@ -1541,14 +1544,10 @@
   % endif
    $(LIB${lib.name.upper()}_OBJS) \
   % if lib.get('baselib', False):
-   $(LIBGPR_OBJS) \
    $(ZLIB_MERGE_OBJS) \
   % if lib.get('secure', 'check') == True:
    $(OPENSSL_MERGE_OBJS) \
   % endif
-  % for dep in lib.get('merge_deps', []):
-   $(LIB${dep.upper()}_OBJS) \
-  % endfor
   % endif
 
   	$(E) "[AR]      Creating $@"
@@ -1556,7 +1555,6 @@
   	$(Q) rm -f $(LIBDIR)/$(CONFIG)/lib${lib.name}.a
   	$(Q) $(AR) $(LIBDIR)/$(CONFIG)/lib${lib.name}.a $(LIB${lib.name.upper()}_OBJS) \
   % if lib.get('baselib', False):
-   $(LIBGPR_OBJS) \
    $(ZLIB_MERGE_OBJS) \
   % if lib.get('secure', 'check') == True:
    $(OPENSSL_MERGE_OBJS) \
