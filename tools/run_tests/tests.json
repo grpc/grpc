@@ -2797,6 +2797,30 @@
     ], 
     "flaky": false, 
     "language": "c++", 
+    "name": "boringssl_asn1_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ]
+  }, 
+  {
+    "args": [], 
+    "boringssl": true, 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ], 
+    "cpu_cost": 1.0, 
+    "defaults": "boringssl", 
+    "exclude_configs": [
+      "asan"
+    ], 
+    "flaky": false, 
+    "language": "c++", 
     "name": "boringssl_base64_test", 
     "platforms": [
       "linux", 

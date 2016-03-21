@@ -2533,6 +2533,19 @@
   {
     "deps": [
       "boringssl", 
+      "boringssl_asn1_test_lib", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "boringssl_asn1_test", 
+    "src": [], 
+    "third_party": true, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
       "boringssl_base64_test_lib", 
       "boringssl_test_util"
     ], 
@@ -6007,6 +6020,18 @@
     "headers": [], 
     "language": "c++", 
     "name": "boringssl_aes_test_lib", 
+    "src": [], 
+    "third_party": true, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "boringssl_asn1_test_lib", 
     "src": [], 
     "third_party": true, 
     "type": "lib"
