@@ -83,8 +83,6 @@ static void state_unref(grpc_server_secure_state *state) {
 static void setup_transport(grpc_exec_ctx *exec_ctx, void *statep,
                             grpc_transport *transport,
                             grpc_auth_context *auth_context) {
-  static grpc_channel_filter const *extra_filters[] = {
-      &grpc_server_auth_filter, &grpc_http_server_filter};
   grpc_server_secure_state *state = statep;
   grpc_channel_args *args_copy;
   grpc_arg args_to_add[2];
@@ -93,8 +91,7 @@ static void setup_transport(grpc_exec_ctx *exec_ctx, void *statep,
   args_copy = grpc_channel_args_copy_and_add(
       grpc_server_get_channel_args(state->server), args_to_add,
       GPR_ARRAY_SIZE(args_to_add));
-  grpc_server_setup_transport(exec_ctx, state->server, transport, extra_filters,
-                              GPR_ARRAY_SIZE(extra_filters), args_copy);
+  grpc_server_setup_transport(exec_ctx, state->server, transport, args_copy);
   grpc_channel_args_destroy(args_copy);
 }
 

@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_TSI_SSL_TRANSPORT_SECURITY_H
-#define GRPC_INTERNAL_CORE_TSI_SSL_TRANSPORT_SECURITY_H
+#ifndef GRPC_CORE_TSI_SSL_TRANSPORT_SECURITY_H
+#define GRPC_CORE_TSI_SSL_TRANSPORT_SECURITY_H
 
 #include "src/core/tsi/transport_security_interface.h"
 
@@ -47,6 +47,8 @@ extern "C" {
 #define TSI_X509_SUBJECT_COMMON_NAME_PEER_PROPERTY "x509_subject_common_name"
 #define TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY \
   "x509_subject_alternative_name"
+
+#define TSI_X509_PEM_CERT_PROPERTY "x509_pem_cert"
 
 #define TSI_SSL_ALPN_SELECTED_PROTOCOL "ssl_alpn_selected_protocol"
 
@@ -169,4 +171,4 @@ int tsi_ssl_peer_matches_name(const tsi_peer *peer, const char *name);
 }
 #endif
 
-#endif /* GRPC_INTERNAL_CORE_TSI_SSL_TRANSPORT_SECURITY_H */
+#endif /* GRPC_CORE_TSI_SSL_TRANSPORT_SECURITY_H */

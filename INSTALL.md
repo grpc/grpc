@@ -52,6 +52,6 @@ gRPC C Core library.
  $ git clone https://github.com/grpc/grpc.git
  $ cd grpc
  $ git submodule update --init
- $ make 
+ $ make
  $ [sudo] make install
 ```

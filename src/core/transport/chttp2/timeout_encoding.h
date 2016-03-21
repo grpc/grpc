@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_TIMEOUT_ENCODING_H
-#define GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_TIMEOUT_ENCODING_H
+#ifndef GRPC_CORE_TRANSPORT_CHTTP2_TIMEOUT_ENCODING_H
+#define GRPC_CORE_TRANSPORT_CHTTP2_TIMEOUT_ENCODING_H
 
 #include "src/core/support/string.h"
 #include <grpc/support/time.h>
@@ -44,4 +44,4 @@
 void grpc_chttp2_encode_timeout(gpr_timespec timeout, char *buffer);
 int grpc_chttp2_decode_timeout(const char *buffer, gpr_timespec *timeout);
 
-#endif /* GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_TIMEOUT_ENCODING_H */
+#endif /* GRPC_CORE_TRANSPORT_CHTTP2_TIMEOUT_ENCODING_H */

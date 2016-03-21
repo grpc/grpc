@@ -49,7 +49,7 @@ namespace grpc {
 class Channel GRPC_FINAL : public ChannelInterface,
                            public CallHook,
                            public std::enable_shared_from_this<Channel>,
-                           private GrpcLibrary {
+                           private GrpcLibraryCodegen {
  public:
   ~Channel();
 

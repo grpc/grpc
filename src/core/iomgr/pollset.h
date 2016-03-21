@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_IOMGR_POLLSET_H
-#define GRPC_INTERNAL_CORE_IOMGR_POLLSET_H
+#ifndef GRPC_CORE_IOMGR_POLLSET_H
+#define GRPC_CORE_IOMGR_POLLSET_H
 
 #include <grpc/support/port_platform.h>
 #include <grpc/support/sync.h>
@@ -55,7 +55,7 @@ typedef struct grpc_pollset_worker grpc_pollset_worker;
 size_t grpc_pollset_size(void);
 void grpc_pollset_init(grpc_pollset *pollset, gpr_mu **mu);
 /* Begin shutting down the pollset, and call closure when done.
- * GRPC_POLLSET_MU(pollset) must be held */
+ * pollset's mutex must be held */
 void grpc_pollset_shutdown(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
                            grpc_closure *closure);
 /** Reset the pollset to its initial state (perhaps with some cached objects);
@@ -66,16 +66,16 @@ void grpc_pollset_destroy(grpc_pollset *pollset);
 /* Do some work on a pollset.
    May involve invoking asynchronous callbacks, or actually polling file
    descriptors.
-   Requires GRPC_POLLSET_MU(pollset) locked.
-   May unlock GRPC_POLLSET_MU(pollset) during its execution.
+   Requires pollset's mutex locked.
+   May unlock its mutex during its execution.
 
    worker is a (platform-specific) handle that can be used to wake up
    from grpc_pollset_work before any events are received and before the timeout
    has expired. It is both initialized and destroyed by grpc_pollset_work.
    Initialization of worker is guaranteed to occur BEFORE the
-   GRPC_POLLSET_MU(pollset) is released for the first time by
-   grpc_pollset_work, and it is guaranteed that GRPC_POLLSET_MU(pollset) will
-   not be released by grpc_pollset_work AFTER worker has been destroyed.
+   pollset's mutex is released for the first time by grpc_pollset_work
+   and it is guaranteed that it will not be released by grpc_pollset_work
+   AFTER worker has been destroyed.
 
    Tries not to block past deadline.
    May call grpc_closure_list_run on grpc_closure_list, without holding the
@@ -91,4 +91,4 @@ void grpc_pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
 void grpc_pollset_kick(grpc_pollset *pollset,
                        grpc_pollset_worker *specific_worker);
 
-#endif /* GRPC_INTERNAL_CORE_IOMGR_POLLSET_H */
+#endif /* GRPC_CORE_IOMGR_POLLSET_H */

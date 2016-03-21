@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_SUPPORT_STACK_LOCKFREE_H
-#define GRPC_INTERNAL_CORE_SUPPORT_STACK_LOCKFREE_H
+#ifndef GRPC_CORE_SUPPORT_STACK_LOCKFREE_H
+#define GRPC_CORE_SUPPORT_STACK_LOCKFREE_H
 
 #include <stddef.h>
 
@@ -50,4 +50,4 @@ int gpr_stack_lockfree_push(gpr_stack_lockfree *, int entry);
 /* Returns -1 on empty or the actual entry number */
 int gpr_stack_lockfree_pop(gpr_stack_lockfree *stack);
 
-#endif /* GRPC_INTERNAL_CORE_SUPPORT_STACK_LOCKFREE_H */
+#endif /* GRPC_CORE_SUPPORT_STACK_LOCKFREE_H */

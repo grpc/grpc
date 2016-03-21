@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_COMPRESSION_ALGORITHM_METADATA_H
-#define GRPC_INTERNAL_CORE_COMPRESSION_ALGORITHM_METADATA_H
+#ifndef GRPC_CORE_COMPRESSION_ALGORITHM_METADATA_H
+#define GRPC_CORE_COMPRESSION_ALGORITHM_METADATA_H
 
 #include <grpc/compression.h>
 #include "src/core/transport/metadata.h"
@@ -50,4 +50,4 @@ grpc_mdelem *grpc_compression_encoding_mdelem(
 grpc_compression_algorithm grpc_compression_algorithm_from_mdstr(
     grpc_mdstr *str);
 
-#endif /* GRPC_INTERNAL_CORE_COMPRESSION_ALGORITHM_METADATA_H */
+#endif /* GRPC_CORE_COMPRESSION_ALGORITHM_METADATA_H */

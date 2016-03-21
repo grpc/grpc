@@ -91,9 +91,6 @@ static void connected(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
     grpc_chttp2_transport_start_reading(exec_ctx, c->result->transport, NULL,
                                         0);
     GPR_ASSERT(c->result->transport);
-    c->result->filters = gpr_malloc(sizeof(grpc_channel_filter *));
-    c->result->filters[0] = &grpc_http_client_filter;
-    c->result->num_filters = 1;
   } else {
     memset(c->result, 0, sizeof(*c->result));
   }
@@ -179,18 +176,12 @@ static const grpc_subchannel_factory_vtable test_subchannel_factory_vtable = {
 grpc_channel *channel_create(const char *target, const grpc_channel_args *args,
                              grpc_subchannel **sniffed_subchannel) {
   grpc_channel *channel = NULL;
-#define MAX_FILTERS 1
-  const grpc_channel_filter *filters[MAX_FILTERS];
   grpc_resolver *resolver;
   subchannel_factory *f;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  size_t n = 0;
-
-  filters[n++] = &grpc_client_channel_filter;
-  GPR_ASSERT(n <= MAX_FILTERS);
 
   channel =
-      grpc_channel_create_from_filters(&exec_ctx, target, filters, n, args, 1);
+      grpc_channel_create(&exec_ctx, target, args, GRPC_CLIENT_CHANNEL, NULL);
 
   f = gpr_malloc(sizeof(*f));
   f->sniffed_subchannel = sniffed_subchannel;
@@ -285,7 +276,7 @@ static void chttp2_init_client_micro_fullstack(grpc_end2end_test_fixture *f,
                                                grpc_channel_args *client_args) {
   micro_fullstack_fixture_data *ffd = f->fixture_data;
   grpc_connectivity_state conn_state;
-  grpc_connected_subchannel *connected;
+  grpc_connected_subchannel *connected_subchannel;
   char *ipv4_localaddr;
 
   gpr_asprintf(&ipv4_localaddr, "ipv4:%s", ffd->localaddr);
@@ -302,9 +293,10 @@ static void chttp2_init_client_micro_fullstack(grpc_end2end_test_fixture *f,
   GPR_ASSERT(conn_state == GRPC_CHANNEL_IDLE);
   GPR_ASSERT(ffd->sniffed_subchannel != NULL);
 
-  connected = connect_subchannel(ffd->sniffed_subchannel);
+  connected_subchannel = connect_subchannel(ffd->sniffed_subchannel);
   f->client = grpc_client_uchannel_create(ffd->sniffed_subchannel, client_args);
-  grpc_client_uchannel_set_connected_subchannel(f->client, connected);
+  grpc_client_uchannel_set_connected_subchannel(f->client,
+                                                connected_subchannel);
   gpr_log(GPR_INFO, "CHANNEL WRAPPING SUBCHANNEL: %p(%p)", f->client,
           ffd->sniffed_subchannel);
 
