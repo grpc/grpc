@@ -94,7 +94,7 @@ namespace Grpc.IntegrationTesting
             }
             var channel = new Channel(target, credentials, channelOptions);
 
-            return new SimpleClientRunner(channel,
+            return new ClientRunnerImpl(channel,
                 config.ClientType,
                 config.RpcType,
                 config.PayloadConfig,
@@ -102,22 +102,9 @@ namespace Grpc.IntegrationTesting
         }
     }
 
-    /// <summary>
-    /// Simple protobuf client.
-    /// </summary>
-    public class SimpleClientRunner : IClientRunner
+    public class ClientRunnerImpl : IClientRunner
     {
         const double SecondsToNanos = 1e9;
-
-        readonly static Marshaller<byte[]> ByteArrayMarshaller = new Marshaller<byte[]>((b) => b, (b) => b);
-
-        readonly static Method<byte[], byte[]> StreamingCallMethod = new Method<byte[], byte[]>(
-            MethodType.DuplexStreaming,
-            "grpc.testing.BenchmarkService",
-            "StreamingCall",
-            ByteArrayMarshaller,
-            ByteArrayMarshaller
-        );
 
         readonly Channel channel;
         readonly ClientType clientType;
@@ -130,7 +117,7 @@ namespace Grpc.IntegrationTesting
         readonly CancellationTokenSource stoppedCts;
         readonly WallClockStopwatch wallClockStopwatch = new WallClockStopwatch();
         
-        public SimpleClientRunner(Channel channel, ClientType clientType, RpcType rpcType, PayloadConfig payloadConfig, HistogramParams histogramParams)
+        public ClientRunnerImpl(Channel channel, ClientType clientType, RpcType rpcType, PayloadConfig payloadConfig, HistogramParams histogramParams)
         {
             this.channel = GrpcPreconditions.CheckNotNull(channel);
             this.clientType = clientType;
@@ -228,7 +215,7 @@ namespace Grpc.IntegrationTesting
             var request = CreateByteBufferRequest();
             var stopwatch = new Stopwatch();
 
-            var callDetails = new CallInvocationDetails<byte[], byte[]>(channel, StreamingCallMethod, new CallOptions());
+            var callDetails = new CallInvocationDetails<byte[], byte[]>(channel, GenericService.StreamingCallMethod, new CallOptions());
 
             using (var call = Calls.AsyncDuplexStreamingCall(callDetails))
             {
