@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,12 +31,12 @@
  *
  */
 
-#ifndef GRPC_CORE_SUPPORT_TIME_PRECISE_H_
-#define GRPC_CORE_SUPPORT_TIME_PRECISE_H_
+#ifndef GRPC_CORE_SUPPORT_TIME_PRECISE_H
+#define GRPC_CORE_SUPPORT_TIME_PRECISE_H
 
 #include <grpc/support/time.h>
 
 void gpr_precise_clock_init(void);
 void gpr_precise_clock_now(gpr_timespec *clk);
 
-#endif /* GRPC_CORE_SUPPORT_TIME_PRECISE_ */
+#endif /* GRPC_CORE_SUPPORT_TIME_PRECISE_H */

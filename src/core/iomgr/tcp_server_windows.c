@@ -240,8 +240,7 @@ static void decrement_active_ports_and_notify(grpc_exec_ctx *exec_ctx,
   sp->shutting_down = 0;
   gpr_mu_lock(&sp->server->mu);
   GPR_ASSERT(sp->server->active_ports > 0);
-  if (0 == --sp->server->active_ports &&
-      sp->server->shutdown_complete != NULL) {
+  if (0 == --sp->server->active_ports) {
     notify = 1;
   }
   gpr_mu_unlock(&sp->server->mu);

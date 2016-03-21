@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -57,4 +57,4 @@ intptr_t gpr_tls_set(struct gpr_pthread_thread_local *tls, intptr_t value);
 }
 #endif
 
-#endif
+#endif /* GRPC_SUPPORT_TLS_PTHREAD_H */

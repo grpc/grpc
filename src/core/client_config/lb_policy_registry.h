@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_CLIENT_CONFIG_LB_POLICY_REGISTRY_H
-#define GRPC_INTERNAL_CORE_CLIENT_CONFIG_LB_POLICY_REGISTRY_H
+#ifndef GRPC_CORE_CLIENT_CONFIG_LB_POLICY_REGISTRY_H
+#define GRPC_CORE_CLIENT_CONFIG_LB_POLICY_REGISTRY_H
 
 #include "src/core/client_config/lb_policy_factory.h"
 
@@ -51,4 +51,4 @@ void grpc_register_lb_policy(grpc_lb_policy_factory *factory);
 grpc_lb_policy *grpc_lb_policy_create(const char *name,
                                       grpc_lb_policy_args *args);
 
-#endif /* GRPC_INTERNAL_CORE_CLIENT_CONFIG_LB_POLICY_REGISTRY_H */
+#endif /* GRPC_CORE_CLIENT_CONFIG_LB_POLICY_REGISTRY_H */

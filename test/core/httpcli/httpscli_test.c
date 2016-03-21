@@ -146,32 +146,36 @@ int main(int argc, char **argv) {
   char *lslash = strrchr(me, '/');
   char *args[5];
   int port = grpc_pick_unused_port_or_die();
+  int arg_shift = 0;
+  /* figure out where we are */
+  char *root;
+  if (lslash) {
+    root = gpr_malloc((size_t)(lslash - me + 1));
+    memcpy(root, me, (size_t)(lslash - me));
+    root[lslash - me] = 0;
+  } else {
+    root = gpr_strdup(".");
+  }
 
   GPR_ASSERT(argc <= 2);
   if (argc == 2) {
     args[0] = gpr_strdup(argv[1]);
   } else {
-    /* figure out where we are */
-    char *root;
-    if (lslash) {
-      root = gpr_malloc((size_t)(lslash - me + 1));
-      memcpy(root, me, (size_t)(lslash - me));
-      root[lslash - me] = 0;
-    } else {
-      root = gpr_strdup(".");
-    }
-    gpr_asprintf(&args[0], "%s/../../test/core/httpcli/test_server.py", root);
-    gpr_free(root);
+    arg_shift = 1;
+    gpr_asprintf(&args[0], "%s/../../tools/distrib/python_wrapper.sh", root);
+    gpr_asprintf(&args[1], "%s/../../test/core/httpcli/test_server.py", root);
   }
 
   /* start the server */
-  args[1] = "--port";
-  gpr_asprintf(&args[2], "%d", port);
-  args[3] = "--ssl";
-  server = gpr_subprocess_create(4, (const char **)args);
+  args[1 + arg_shift] = "--port";
+  gpr_asprintf(&args[2 + arg_shift], "%d", port);
+  args[3 + arg_shift] = "--ssl";
+  server = gpr_subprocess_create(4 + arg_shift, (const char **)args);
   GPR_ASSERT(server);
   gpr_free(args[0]);
-  gpr_free(args[2]);
+  if (arg_shift) gpr_free(args[1]);
+  gpr_free(args[2 + arg_shift]);
+  gpr_free(root);
 
   gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
                                gpr_time_from_seconds(5, GPR_TIMESPAN)));

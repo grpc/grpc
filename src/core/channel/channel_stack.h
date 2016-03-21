@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_CHANNEL_CHANNEL_STACK_H
-#define GRPC_INTERNAL_CORE_CHANNEL_CHANNEL_STACK_H
+#ifndef GRPC_CORE_CHANNEL_CHANNEL_STACK_H
+#define GRPC_CORE_CHANNEL_CHANNEL_STACK_H
 
 /* A channel filter defines how operations on a channel are implemented.
    Channel filters are chained together to create full channels, and if those
@@ -257,4 +257,4 @@ extern int grpc_trace_channel;
 #define GRPC_CALL_LOG_OP(sev, elem, op) \
   if (grpc_trace_channel) grpc_call_log_op(sev, elem, op)
 
-#endif /* GRPC_INTERNAL_CORE_CHANNEL_CHANNEL_STACK_H */
+#endif /* GRPC_CORE_CHANNEL_CHANNEL_STACK_H */

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,14 +31,21 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_IOMGR_IOCP_WINDOWS_H
-#define GRPC_INTERNAL_CORE_IOMGR_IOCP_WINDOWS_H
+#ifndef GRPC_CORE_IOMGR_IOCP_WINDOWS_H
+#define GRPC_CORE_IOMGR_IOCP_WINDOWS_H
 
 #include <grpc/support/sync.h>
 
 #include "src/core/iomgr/socket_windows.h"
 
-void grpc_iocp_work(grpc_exec_ctx *exec_ctx, gpr_timespec deadline);
+typedef enum {
+  GRPC_IOCP_WORK_WORK,
+  GRPC_IOCP_WORK_TIMEOUT,
+  GRPC_IOCP_WORK_KICK
+} grpc_iocp_work_status;
+
+grpc_iocp_work_status grpc_iocp_work(grpc_exec_ctx *exec_ctx,
+                                     gpr_timespec deadline);
 void grpc_iocp_init(void);
 void grpc_iocp_kick(void);
 void grpc_iocp_flush(void);
@@ -53,4 +60,4 @@ void grpc_socket_notify_on_read(grpc_exec_ctx *exec_ctx,
                                 grpc_winsocket *winsocket,
                                 grpc_closure *closure);
 
-#endif /* GRPC_INTERNAL_CORE_IOMGR_IOCP_WINDOWS_H */
+#endif /* GRPC_CORE_IOMGR_IOCP_WINDOWS_H */

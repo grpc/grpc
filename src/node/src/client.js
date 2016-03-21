@@ -149,6 +149,9 @@ function _readsDone(status) {
   if (!status) {
     status = {code: grpc.status.OK, details: 'OK'};
   }
+  if (status.code !== grpc.status.OK) {
+    this.call.cancelWithStatus(status.code, status.details);
+  }
   this.finished = true;
   this.read_status = status;
   this._emitStatusIfDone();
