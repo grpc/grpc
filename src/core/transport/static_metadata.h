@@ -1,5 +1,4 @@
 /*
- *
  * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
@@ -28,18 +27,17 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
  */
 
 /*
  * WARNING: Auto-generated code.
  *
  * To make changes to this file, change
- * tools/codegen/core/gen_static_metadata.py,
+ *tools/codegen/core/gen_static_metadata.py,
  * and then re-run it.
  *
  * See metadata.h for an explanation of the interface here, and metadata.c for
- * an
+ *an
  * explanation of what's going on.
  */
 
@@ -232,7 +230,7 @@ extern grpc_mdstr grpc_static_mdstr_table[GRPC_STATIC_MDSTR_COUNT];
 
 #define GRPC_STATIC_MDELEM_COUNT 78
 extern grpc_mdelem grpc_static_mdelem_table[GRPC_STATIC_MDELEM_COUNT];
-extern uintptr_t grpc_static_mdelem_user_data[GRPC_STATIC_MDELEM_COUNT];
+extern gpr_uintptr grpc_static_mdelem_user_data[GRPC_STATIC_MDELEM_COUNT];
 /* "accept-charset": "" */
 #define GRPC_MDELEM_ACCEPT_CHARSET_EMPTY (&grpc_static_mdelem_table[0])
 /* "accept": "" */
@@ -399,10 +397,10 @@ extern uintptr_t grpc_static_mdelem_user_data[GRPC_STATIC_MDELEM_COUNT];
 /* "www-authenticate": "" */
 #define GRPC_MDELEM_WWW_AUTHENTICATE_EMPTY (&grpc_static_mdelem_table[77])
 
-extern const uint8_t
+extern const gpr_uint8
     grpc_static_metadata_elem_indices[GRPC_STATIC_MDELEM_COUNT * 2];
 extern const char *const grpc_static_metadata_strings[GRPC_STATIC_MDSTR_COUNT];
-extern const uint8_t grpc_static_accept_encoding_metadata[8];
+extern const gpr_uint8 grpc_static_accept_encoding_metadata[8];
 #define GRPC_MDELEM_ACCEPT_ENCODING_FOR_ALGORITHMS(algs) \
   (&grpc_static_mdelem_table[grpc_static_accept_encoding_metadata[(algs)]])
 #endif /* GRPC_CORE_TRANSPORT_STATIC_METADATA_H */
