@@ -61,7 +61,6 @@ namespace Grpc.IntegrationTesting
         public static IServerRunner CreateStarted(ServerConfig config)
         {
             Logger.Debug("ServerConfig: {0}", config);
-            GrpcPreconditions.CheckArgument(config.ServerType == ServerType.ASYNC_SERVER, "Only ASYNC_SERVER supported for C# QpsWorker");
             var credentials = config.SecurityParams != null ? TestCredentials.CreateSslServerCredentials() : ServerCredentials.Insecure;
 
             if (config.AsyncServerThreads != 0)
@@ -77,16 +76,52 @@ namespace Grpc.IntegrationTesting
                 Logger.Warning("ServerConfig.CoreList is not supported for C#. Ignoring the value");
             }
 
-            GrpcPreconditions.CheckArgument(config.PayloadConfig == null,
-                "ServerConfig.PayloadConfig shouldn't be set for BenchmarkService based server.");
+            ServerServiceDefinition service = null;
+            if (config.ServerType == ServerType.ASYNC_SERVER)
+            {
+                GrpcPreconditions.CheckArgument(config.PayloadConfig == null,
+                    "ServerConfig.PayloadConfig shouldn't be set for BenchmarkService based server.");    
+                service = BenchmarkService.BindService(new BenchmarkServiceImpl());
+            }
+            else if (config.ServerType == ServerType.ASYNC_GENERIC_SERVER)
+            {
+                var genericService = new GenericServiceImpl(config.PayloadConfig.BytebufParams.RespSize);
+                service = GenericService.BindHandler(genericService.StreamingCall);
+            }
+            else
+            {
+                throw new ArgumentException("Unsupported ServerType");
+            }
+
             var server = new Server
             {
-                Services = { BenchmarkService.BindService(new BenchmarkServiceImpl()) },
+                Services = { service },
                 Ports = { new ServerPort("[::]", config.Port, credentials) }
             };
 
             server.Start();
             return new ServerRunnerImpl(server);
+        }
+
+        private class GenericServiceImpl
+        {
+            readonly byte[] response;
+
+            public GenericServiceImpl(int responseSize)
+            {
+                this.response = new byte[responseSize];
+            }
+
+            /// <summary>
+            /// Generic streaming call handler.
+            /// </summary>
+            public async Task StreamingCall(IAsyncStreamReader<byte[]> requestStream, IServerStreamWriter<byte[]> responseStream, ServerCallContext context)
+            {
+                await requestStream.ForEachAsync(async request =>
+                {
+                    await responseStream.WriteAsync(response);
+                });
+            }
         }
     }
 
@@ -136,6 +171,5 @@ namespace Grpc.IntegrationTesting
         {
             return server.ShutdownAsync();
         }
-    }
-        
+    }        
 }
