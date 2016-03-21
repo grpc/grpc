@@ -48,6 +48,7 @@ extern "C" {
 
 #define GRPC_X509_CN_PROPERTY_NAME "x509_common_name"
 #define GRPC_X509_SAN_PROPERTY_NAME "x509_subject_alternative_name"
+#define GRPC_X509_PEM_CERT_PROPERTY_NAME "x509_pem_cert"
 
 typedef struct grpc_auth_context grpc_auth_context;
 

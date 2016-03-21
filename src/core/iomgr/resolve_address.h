@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_IOMGR_RESOLVE_ADDRESS_H
-#define GRPC_INTERNAL_CORE_IOMGR_RESOLVE_ADDRESS_H
+#ifndef GRPC_CORE_IOMGR_RESOLVE_ADDRESS_H
+#define GRPC_CORE_IOMGR_RESOLVE_ADDRESS_H
 
 #include <stddef.h>
 #include "src/core/iomgr/exec_ctx.h"
@@ -66,7 +66,7 @@ void grpc_resolved_addresses_destroy(grpc_resolved_addresses *addresses);
 
 /* Resolve addr in a blocking fashion. Returns NULL on failure. On success,
    result must be freed with grpc_resolved_addresses_destroy. */
-grpc_resolved_addresses *grpc_blocking_resolve_address(
-    const char *addr, const char *default_port);
+extern grpc_resolved_addresses *(*grpc_blocking_resolve_address)(
+    const char *name, const char *default_port);
 
-#endif /* GRPC_INTERNAL_CORE_IOMGR_RESOLVE_ADDRESS_H */
+#endif /* GRPC_CORE_IOMGR_RESOLVE_ADDRESS_H */
