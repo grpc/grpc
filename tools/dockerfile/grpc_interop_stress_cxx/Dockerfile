@@ -27,12 +27,9 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# A work-in-progress Dockerfile that allows running gRPC test suites
-# inside a docker container.
-
 FROM debian:jessie
 
-# Install Git.
+# Install Git and basic packages.
 RUN apt-get update && apt-get install -y \
   autoconf \
   autotools-dev \
@@ -43,13 +40,16 @@ RUN apt-get update && apt-get install -y \
   gcc \
   gcc-multilib \
   git \
+  golang \
   gyp \
+  lcov \
   libc6 \
   libc6-dbg \
   libc6-dev \
   libgtest-dev \
   libtool \
   make \
+  perl \
   strace \
   python-dev \
   python-setuptools \
@@ -59,7 +59,9 @@ RUN apt-get update && apt-get install -y \
   wget \
   zip && apt-get clean
 
-RUN easy_install -U pip
+#================
+# Build profiling
+RUN apt-get update && apt-get install -y time && apt-get clean
 
 # Prepare ccache
 RUN ln -s /usr/bin/ccache /usr/local/bin/gcc
@@ -69,12 +71,47 @@ RUN ln -s /usr/bin/ccache /usr/local/bin/c++
 RUN ln -s /usr/bin/ccache /usr/local/bin/clang
 RUN ln -s /usr/bin/ccache /usr/local/bin/clang++
 
-##################
+#=================
 # C++ dependencies
-RUN apt-get update && apt-get -y install libgflags-dev libgtest-dev libc++-dev clang
+RUN apt-get update && apt-get -y install libgflags-dev libgtest-dev libc++-dev clang && apt-get clean
 
-# Google Cloud platform API libraries (for BigQuery)
+# Google Cloud platform API libraries
+RUN apt-get update && apt-get install -y python-pip && apt-get clean
 RUN pip install --upgrade google-api-python-client
+
+
+#=================
+# Update clang to a version with improved tsan
+
+RUN apt-get update && apt-get -y install python cmake && apt-get clean
+
+RUN git clone -n -b release_38 http://llvm.org/git/llvm.git && \
+  cd llvm && git checkout ad57503 && cd ..
+RUN git clone -n -b release_38 http://llvm.org/git/clang.git && \
+  cd clang && git checkout ad2c56e && cd ..
+RUN git clone -n -b release_38 http://llvm.org/git/compiler-rt.git && \
+  cd compiler-rt && git checkout 3176922 && cd ..
+RUN git clone -n -b release_38 \
+  http://llvm.org/git/clang-tools-extra.git && cd clang-tools-extra && \
+  git checkout c288525 && cd ..
+RUN git clone -n -b release_38 http://llvm.org/git/libcxx.git && \
+  cd libcxx && git checkout fda3549  && cd ..
+RUN git clone -n -b release_38 http://llvm.org/git/libcxxabi.git && \
+  cd libcxxabi && git checkout 8d4e51d && cd ..
+
+RUN mv clang llvm/tools
+RUN mv compiler-rt llvm/projects
+RUN mv clang-tools-extra llvm/tools/clang/tools
+RUN mv libcxx llvm/projects
+RUN mv libcxxabi llvm/projects
+
+RUN mkdir llvm-build
+RUN cd llvm-build && cmake \
+  -DCMAKE_BUILD_TYPE:STRING=Release \
+  -DCMAKE_INSTALL_PREFIX:STRING=/usr \
+  -DLLVM_TARGETS_TO_BUILD:STRING=X86 \
+  ../llvm
+RUN make -C llvm-build && make -C llvm-build install && rm -rf llvm-build
 
 # Define the default command.
 CMD ["bash"]
