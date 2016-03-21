@@ -853,7 +853,6 @@ cc_library(
   name = "grpc++",
   srcs = [
     "src/cpp/client/secure_credentials.h",
-    "src/cpp/common/core_codegen.h",
     "src/cpp/common/secure_auth_context.h",
     "src/cpp/server/secure_server_credentials.h",
     "src/cpp/client/create_channel_internal.h",
