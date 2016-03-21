@@ -406,12 +406,13 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\util\time.cc">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\cpp\codegen\codegen_init.cc">
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="$(SolutionDir)\..\vsprojects\vcxproj\.\grpc\grpc.vcxproj">
       <Project>{29D16885-7228-4C31-81ED-5F9187C7F2A9}</Project>
+    </ProjectReference>
+    <ProjectReference Include="$(SolutionDir)\..\vsprojects\vcxproj\.\grpc++_codegen_lib\grpc++_codegen_lib.vcxproj">
+      <Project>{AAC6AF12-94C8-4A3C-A1BF-DAA4738F4500}</Project>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

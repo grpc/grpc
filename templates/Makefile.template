@@ -1546,6 +1546,9 @@
   % if lib.get('secure', 'check') == True:
    $(OPENSSL_MERGE_OBJS) \
   % endif
+  % for dep in lib.get('merge_deps', []):
+   $(LIB${dep.upper()}_OBJS) \
+  % endfor
   % endif
 
   	$(E) "[AR]      Creating $@"
@@ -1590,7 +1593,7 @@
         lib_deps = lib_deps + ' ' + lib_archive
         mingw_lib_deps = mingw_lib_deps + ' ' + lib_archive
     else:
-      for dep in lib.get('deps', []):
+      for dep in list(set(lib.get('deps', [])) - set(lib.get('merge_deps', []))):
         libs = libs + ' -l' + dep
         lib_deps = lib_deps + ' $(LIBDIR)/$(CONFIG)/lib' + dep + '.$(SHARED_EXT)'
         mingw_libs = mingw_libs + ' -l' + dep + '-imp'

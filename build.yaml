@@ -205,6 +205,9 @@ filegroups:
   - src/cpp/util/string_ref.cc
   - src/cpp/util/time.cc
 - name: grpc++_codegen
+  src:
+  - src/cpp/codegen/codegen_init.cc
+- name: grpc++_codegen_headers
   public_headers:
   - include/grpc++/impl/codegen/async_stream.h
   - include/grpc++/impl/codegen/async_unary_call.h
@@ -237,8 +240,6 @@ filegroups:
   - include/grpc++/impl/codegen/sync_no_cxx11.h
   - include/grpc++/impl/codegen/sync_stream.h
   - include/grpc++/impl/codegen/time.h
-  src:
-  - src/cpp/codegen/codegen_init.cc
 - name: grpc_base
   public_headers:
   - include/grpc/byte_buffer.h
@@ -754,11 +755,14 @@ libs:
   - src/cpp/server/secure_server_credentials.cc
   deps:
   - grpc
+  - grpc++_codegen_lib
   baselib: true
   dll: true
   filegroups:
   - grpc++_base
-  - grpc++_codegen
+  - grpc++_codegen_headers
+  merge_deps:
+  - grpc++_codegen_lib
   secure: check
   vs_project_guid: '{C187A093-A0FE-489D-A40A-6E33DE0F9FEB}'
 - name: grpc++_codegen_lib
@@ -770,6 +774,7 @@ libs:
   - gpr_codegen
   - grpc_codegen
   - grpc++_codegen
+  - grpc++_codegen_headers
   secure: false
   vs_project_guid: '{AAC6AF12-94C8-4A3C-A1BF-DAA4738F4500}'
 - name: grpc++_test_config
