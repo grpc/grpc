@@ -1,4 +1,4 @@
-# Copyright 2015-2016, Google Inc.
+# Copyright 2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -27,7 +27,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-FROM debian:jessie
+FROM debian:wheezy
 
 # Install Git and basic packages.
 RUN apt-get update && apt-get install -y \
@@ -63,24 +63,31 @@ RUN apt-get update && apt-get install -y \
 # Build profiling
 RUN apt-get update && apt-get install -y time && apt-get clean
 
-#========================
-# Sanity test dependencies
-RUN apt-get update && apt-get install -y \
-      python-pip \
-      autoconf \
-      automake \
-      libtool \
-      curl \
-      python-virtualenv
-RUN pip install simplejson mako
+#=================
+# C++ dependencies
+RUN apt-get update && apt-get -y install libgflags-dev libgtest-dev libc++-dev clang && apt-get clean
 
-#===================
-# Docker "inception"
-# Note this is quite the ugly hack.
-# This makes sure that the docker binary we inject has its dependencies.
-RUN apt-get install libsystemd-journal0
-RUN curl https://get.docker.com/ | sh
-RUN apt-get remove --purge -y docker-engine
+
+RUN apt-get update && apt-get install -y \
+  gcc-4.4 \
+  gcc-4.4-multilib
+
+RUN wget https://openssl.org/source/old/1.0.2/openssl-1.0.2f.tar.gz
+
+ENV POST_GIT_STEP tools/dockerfile/test/cxx_wheezy_x64/post-git-setup.sh
+
+# Prepare ccache
+RUN ln -s /usr/bin/ccache /usr/local/bin/gcc
+RUN ln -s /usr/bin/ccache /usr/local/bin/g++
+RUN ln -s /usr/bin/ccache /usr/local/bin/cc
+RUN ln -s /usr/bin/ccache /usr/local/bin/c++
+RUN ln -s /usr/bin/ccache /usr/local/bin/clang
+RUN ln -s /usr/bin/ccache /usr/local/bin/clang++
+
+#======================
+# Zookeeper dependencies
+# TODO(jtattermusch): is zookeeper still needed?
+RUN apt-get install -y libzookeeper-mt-dev
 
 RUN mkdir /var/local/jenkins
 

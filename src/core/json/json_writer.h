@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -43,8 +43,8 @@
  * a valid UTF-8 string overall.
  */
 
-#ifndef GRPC_INTERNAL_CORE_JSON_JSON_WRITER_H
-#define GRPC_INTERNAL_CORE_JSON_JSON_WRITER_H
+#ifndef GRPC_CORE_JSON_JSON_WRITER_H
+#define GRPC_CORE_JSON_JSON_WRITER_H
 
 #include <stdlib.h>
 
@@ -94,4 +94,4 @@ void grpc_json_writer_value_raw_with_len(grpc_json_writer *writer,
 void grpc_json_writer_value_string(grpc_json_writer *writer,
                                    const char *string);
 
-#endif /* GRPC_INTERNAL_CORE_JSON_JSON_WRITER_H */
+#endif /* GRPC_CORE_JSON_JSON_WRITER_H */

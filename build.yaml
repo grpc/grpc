@@ -555,6 +555,7 @@ filegroups:
   - test/core/util/grpc_profiler.h
   - test/core/util/parse_hexstring.h
   - test/core/util/port.h
+  - test/core/util/port_server_client.h
   - test/core/util/slice_splitter.h
   src:
   - test/core/end2end/cq_verifier.c
@@ -563,6 +564,7 @@ filegroups:
   - test/core/util/grpc_profiler.c
   - test/core/util/parse_hexstring.c
   - test/core/util/port_posix.c
+  - test/core/util/port_server_client.c
   - test/core/util/port_windows.c
   - test/core/util/slice_splitter.c
 - name: nanopb
@@ -1679,6 +1681,7 @@ targets:
   - gpr
 - name: lb_policies_test
   cpu_cost: 0.1
+  flaky: true
   build: test
   language: c
   src:
@@ -2468,6 +2471,8 @@ targets:
   - gpr_test_util
   - gpr
   - grpc++_test_config
+  exclude_configs:
+  - tsan
   platforms:
   - mac
   - linux
@@ -2487,6 +2492,8 @@ targets:
   - gpr_test_util
   - gpr
   - grpc++_test_config
+  exclude_configs:
+  - tsan
   platforms:
   - mac
   - linux
@@ -2943,7 +2950,7 @@ node_modules:
   - src/node/ext/server_credentials.cc
   - src/node/ext/timeval.cc
 openssl_fallback:
-  base_uri: http://openssl.org/source/
+  base_uri: https://openssl.org/source/old/1.0.2/
   extraction_dir: openssl-1.0.2f
   tarball: openssl-1.0.2f.tar.gz
 php_config_m4:

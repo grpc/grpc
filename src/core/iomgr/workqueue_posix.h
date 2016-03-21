@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_IOMGR_WORKQUEUE_POSIX_H
-#define GRPC_INTERNAL_CORE_IOMGR_WORKQUEUE_POSIX_H
+#ifndef GRPC_CORE_IOMGR_WORKQUEUE_POSIX_H
+#define GRPC_CORE_IOMGR_WORKQUEUE_POSIX_H
 
 #include "src/core/iomgr/wakeup_fd_posix.h"
 
@@ -50,4 +50,4 @@ struct grpc_workqueue {
   grpc_closure read_closure;
 };
 
-#endif /* GRPC_INTERNAL_CORE_IOMGR_WORKQUEUE_POSIX_H */
+#endif /* GRPC_CORE_IOMGR_WORKQUEUE_POSIX_H */
