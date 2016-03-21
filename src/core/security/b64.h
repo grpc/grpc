@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_SECURITY_BASE64_H
-#define GRPC_INTERNAL_CORE_SECURITY_BASE64_H
+#ifndef GRPC_CORE_SECURITY_B64_H
+#define GRPC_CORE_SECURITY_B64_H
 
 #include <grpc/support/slice.h>
 
@@ -49,4 +49,4 @@ gpr_slice grpc_base64_decode(const char *b64, int url_safe);
 gpr_slice grpc_base64_decode_with_len(const char *b64, size_t b64_len,
                                       int url_safe);
 
-#endif /* GRPC_INTERNAL_CORE_SECURITY_BASE64_H */
+#endif /* GRPC_CORE_SECURITY_B64_H */
