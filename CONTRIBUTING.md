@@ -45,9 +45,13 @@ In order to run most of the available tests, one would need to run:
 
 `./tools/run_tests/run_tests.py`
 
-If you want to run all the possible tests for any of the languages {c, c++, node, php, python}, do this:
+If you want to run tests for any of the languages {c, c++, csharp, node, objc, php, python, ruby}, do this:
 
-`./tools/run_tests/run_tests.py -l <lang> -c all`
+`./tools/run_tests/run_tests.py -l <lang>`
+
+To know about the list of available commands, do this:
+
+`./tools/run_tests/run_tests.py -h`
 
 ## Adding or removing source code
 
@@ -55,7 +59,7 @@ Each language uses its own build system to work. Currently, the root's Makefile
 and the Visual Studio project files are building only the C and C++ source code.
 In order to ease the maintenance of these files, we have a
 template system. Please do not contribute manual changes to any of the generated
-files. Instead, modify the template files, or the build.json file, and
+files. Instead, modify the template files, or the build.yaml file, and
 re-generate the project files using the following command:
 
 `./tools/buildgen/generate_projects.sh`
