@@ -31,9 +31,9 @@
  *
  */
 
-#ifndef GRPC_IMPL_CODEGEN_ATM_GCC_ATOMIC_H
-#define GRPC_IMPL_CODEGEN_ATM_GCC_ATOMIC_H
+#ifndef GRPC_SUPPORT_ATM_GCC_ATOMIC_H
+#define GRPC_SUPPORT_ATM_GCC_ATOMIC_H
 
 #include <grpc/impl/codegen/atm_gcc_atomic.h>
 
-#endif /* GRPC_IMPL_CODEGEN_ATM_GCC_ATOMIC_H */
+#endif /* GRPC_SUPPORT_ATM_GCC_ATOMIC_H */
