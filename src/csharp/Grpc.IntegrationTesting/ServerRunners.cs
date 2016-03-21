@@ -77,11 +77,11 @@ namespace Grpc.IntegrationTesting
                 Logger.Warning("ServerConfig.CoreList is not supported for C#. Ignoring the value");
             }
 
-            // TODO: qps_driver needs to setup payload properly...
-            int responseSize = config.PayloadConfig != null ? config.PayloadConfig.SimpleParams.RespSize : 0;
+            GrpcPreconditions.CheckArgument(config.PayloadConfig == null,
+                "ServerConfig.PayloadConfig shouldn't be set for BenchmarkService based server.");
             var server = new Server
             {
-                Services = { BenchmarkService.BindService(new BenchmarkServiceImpl(responseSize)) },
+                Services = { BenchmarkService.BindService(new BenchmarkServiceImpl()) },
                 Ports = { new ServerPort("[::]", config.Port, credentials) }
             };
 

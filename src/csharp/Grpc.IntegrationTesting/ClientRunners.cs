@@ -64,6 +64,8 @@ namespace Grpc.IntegrationTesting
             string target = config.ServerTargets.Single();
             GrpcPreconditions.CheckArgument(config.LoadParams.LoadCase == LoadParams.LoadOneofCase.ClosedLoop,
                 "Only closed loop scenario supported for C#");
+            GrpcPreconditions.CheckArgument(config.ClientType == ClientType.SYNC_CLIENT,
+                "Only sync client support for C#");
             GrpcPreconditions.CheckArgument(config.ClientChannels == 1, "ClientConfig.ClientChannels needs to be 1");
 
             if (config.OutstandingRpcsPerChannel != 0)
@@ -98,7 +100,7 @@ namespace Grpc.IntegrationTesting
             {
                 case RpcType.UNARY:
                     return new SyncUnaryClientRunner(channel,
-                        config.PayloadConfig.SimpleParams.ReqSize,
+                        config.PayloadConfig.SimpleParams,
                         config.HistogramParams);
 
                 case RpcType.STREAMING:
@@ -116,7 +118,7 @@ namespace Grpc.IntegrationTesting
         const double SecondsToNanos = 1e9;
 
         readonly Channel channel;
-        readonly int payloadSize;
+        readonly SimpleProtoParams payloadParams;
         readonly Histogram histogram;
 
         readonly BenchmarkService.IBenchmarkServiceClient client;
@@ -124,10 +126,9 @@ namespace Grpc.IntegrationTesting
         readonly CancellationTokenSource stoppedCts;
         readonly WallClockStopwatch wallClockStopwatch = new WallClockStopwatch();
         
-        public SyncUnaryClientRunner(Channel channel, int payloadSize, HistogramParams histogramParams)
+        public SyncUnaryClientRunner(Channel channel, SimpleProtoParams payloadParams, HistogramParams histogramParams)
         {
             this.channel = GrpcPreconditions.CheckNotNull(channel);
-            this.payloadSize = payloadSize;
             this.histogram = new Histogram(histogramParams.Resolution, histogramParams.MaxPossible);
 
             this.stoppedCts = new CancellationTokenSource();
@@ -161,7 +162,8 @@ namespace Grpc.IntegrationTesting
         {
             var request = new SimpleRequest
             {
-                Payload = CreateZerosPayload(payloadSize)
+                Payload = CreateZerosPayload(payloadParams.ReqSize),
+                ResponseSize = payloadParams.RespSize
             };
             var stopwatch = new Stopwatch();
 
