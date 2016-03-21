@@ -841,7 +841,6 @@ cc_library(
     "src/cpp/common/secure_auth_context.h",
     "src/cpp/server/secure_server_credentials.h",
     "src/cpp/client/create_channel_internal.h",
-    "src/cpp/common/core_codegen.h",
     "src/cpp/common/create_auth_context.h",
     "src/cpp/server/dynamic_thread_pool.h",
     "src/cpp/server/thread_pool_interface.h",
