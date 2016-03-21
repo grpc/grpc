@@ -41,6 +41,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Google.Protobuf;
 using Grpc.Core;
+using Grpc.Core.Logging;
 using Grpc.Core.Utils;
 using NUnit.Framework;
 using Grpc.Testing;
@@ -50,18 +51,48 @@ namespace Grpc.IntegrationTesting
     /// <summary>
     /// Helper methods to start client runners for performance testing.
     /// </summary>
-    public static class ClientRunners
+    public class ClientRunners
     {
+        static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<ClientRunners>();
+
         /// <summary>
         /// Creates a started client runner.
         /// </summary>
         public static IClientRunner CreateStarted(ClientConfig config)
         {
+            Logger.Debug("ClientConfig: {0}", config);
             string target = config.ServerTargets.Single();
-            GrpcPreconditions.CheckArgument(config.LoadParams.LoadCase == LoadParams.LoadOneofCase.ClosedLoop);
+            GrpcPreconditions.CheckArgument(config.LoadParams.LoadCase == LoadParams.LoadOneofCase.ClosedLoop,
+                "Only closed loop scenario supported for C#");
+            GrpcPreconditions.CheckArgument(config.ClientChannels == 1, "ClientConfig.ClientChannels needs to be 1");
+
+            if (config.OutstandingRpcsPerChannel != 0)
+            {
+                Logger.Warning("ClientConfig.OutstandingRpcsPerChannel is not supported for C#. Ignoring the value");
+            }
+            if (config.AsyncClientThreads != 0)
+            {
+                Logger.Warning("ClientConfig.AsyncClientThreads is not supported for C#. Ignoring the value");
+            }
+            if (config.CoreLimit != 0)
+            {
+                Logger.Warning("ClientConfig.CoreLimit is not supported for C#. Ignoring the value");
+            }
+            if (config.CoreList.Count > 0)
+            {
+                Logger.Warning("ClientConfig.CoreList is not supported for C#. Ignoring the value");
+            }
 
             var credentials = config.SecurityParams != null ? TestCredentials.CreateSslCredentials() : ChannelCredentials.Insecure;
-            var channel = new Channel(target, credentials);
+            List<ChannelOption> channelOptions = null;
+            if (config.SecurityParams != null && config.SecurityParams.ServerHostOverride != "")
+            {
+                channelOptions = new List<ChannelOption>
+                {
+                    new ChannelOption(ChannelOptions.SslTargetNameOverride, config.SecurityParams.ServerHostOverride)
+                };
+            }
+            var channel = new Channel(target, credentials, channelOptions);
 
             switch (config.RpcType)
             {
