@@ -72,13 +72,16 @@ int LimitCores(const int* cores, int cores_size) {
   CPU_FREE(cpup);
   return cores_set;
 }
-#else
 
+}  // namespace testing
+}  // namespace grpc
+#else
 namespace grpc {
 namespace testing {
 
 // LimitCores is not currently supported for non-Linux platforms
 int LimitCores(const int*, int) { return gpr_cpu_num_cores(); }
-#endif
+
 }  // namespace testing
 }  // namespace grpc
+#endif
