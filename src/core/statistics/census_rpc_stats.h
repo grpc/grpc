@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_STATISTICS_CENSUS_RPC_STATS_H
-#define GRPC_INTERNAL_CORE_STATISTICS_CENSUS_RPC_STATS_H
+#ifndef GRPC_CORE_STATISTICS_CENSUS_RPC_STATS_H
+#define GRPC_CORE_STATISTICS_CENSUS_RPC_STATS_H
 
 #include "src/core/statistics/census_interface.h"
 #include <grpc/support/port_platform.h>
@@ -98,4 +98,4 @@ void census_stats_store_shutdown(void);
 }
 #endif
 
-#endif /* GRPC_INTERNAL_CORE_STATISTICS_CENSUS_RPC_STATS_H */
+#endif /* GRPC_CORE_STATISTICS_CENSUS_RPC_STATS_H */

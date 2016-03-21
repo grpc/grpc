@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,14 +31,16 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_SURFACE_CALL_H
-#define GRPC_INTERNAL_CORE_SURFACE_CALL_H
+#ifndef GRPC_CORE_SURFACE_CALL_H
+#define GRPC_CORE_SURFACE_CALL_H
 
 #include "src/core/channel/channel_stack.h"
 #include "src/core/channel/context.h"
 #include "src/core/surface/api_trace.h"
 #include "src/core/surface/surface_trace.h"
+
 #include <grpc/grpc.h>
+#include <grpc/impl/codegen/compression_types.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -102,8 +104,13 @@ void *grpc_call_context_get(grpc_call *call, grpc_context_index elem);
 
 uint8_t grpc_call_is_client(grpc_call *call);
 
+/* Return an appropriate compression algorithm for the requested compression \a
+ * level in the context of \a call. */
+grpc_compression_algorithm grpc_call_compression_for_level(
+    grpc_call *call, grpc_compression_level level);
+
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* GRPC_INTERNAL_CORE_SURFACE_CALL_H */
+#endif /* GRPC_CORE_SURFACE_CALL_H */

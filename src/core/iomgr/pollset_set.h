@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_IOMGR_POLLSET_SET_H
-#define GRPC_INTERNAL_CORE_IOMGR_POLLSET_SET_H
+#ifndef GRPC_CORE_IOMGR_POLLSET_SET_H
+#define GRPC_CORE_IOMGR_POLLSET_SET_H
 
 #include "src/core/iomgr/pollset.h"
 
@@ -58,4 +58,4 @@ void grpc_pollset_set_del_pollset_set(grpc_exec_ctx *exec_ctx,
                                       grpc_pollset_set *bag,
                                       grpc_pollset_set *item);
 
-#endif /* GRPC_INTERNAL_CORE_IOMGR_POLLSET_H */
+#endif /* GRPC_CORE_IOMGR_POLLSET_SET_H */
