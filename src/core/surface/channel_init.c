@@ -100,7 +100,7 @@ void grpc_channel_init_finalize(void) {
 void grpc_channel_init_shutdown(void) {
   for (int i = 0; i < GRPC_NUM_CHANNEL_STACK_TYPES; i++) {
     gpr_free(g_slots[i].slots);
-    g_slots[i].slots = (void *)0xdeadbeef;
+    g_slots[i].slots = (void *)(uintptr_t)0xdeadbeef;
   }
 }
 
