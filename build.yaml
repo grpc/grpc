@@ -2830,7 +2830,7 @@ configs:
     CXX: clang++
     DEFINES: _DEBUG DEBUG GRPC_EXECUTION_CONTEXT_SANITIZER
     LD: clang
-    LDFLAGS: -fsanitize=thread -fPIE -pie $(if $(JENKINS_BUILD),-Wl$(comma)-Ttext-segment=0x7e0000000000,)
+    LDFLAGS: -fsanitize=thread -fPIE -pie
     LDXX: clang++
     compile_the_world: true
     test_environ:
@@ -2885,7 +2885,7 @@ configs:
       -fPIE -pie -DGPR_NO_DIRECT_SYSCALLS
     CXX: clang++
     LD: clang
-    LDFLAGS: -fsanitize=thread -fPIE -pie $(if $(JENKINS_BUILD),-Wl$(comma)-Ttext-segment=0x7e0000000000,)
+    LDFLAGS: -fsanitize=thread -fPIE -pie
     LDXX: clang++
     compile_the_world: true
     test_environ:

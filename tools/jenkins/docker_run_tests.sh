@@ -31,10 +31,22 @@
 # This script is invoked by build_docker_and_run_tests.sh inside a docker
 # container. You should never need to call this script on your own.
 
-set -e
+set -ex
 
 export CONFIG=$config
 export ASAN_SYMBOLIZER_PATH=/usr/bin/llvm-symbolizer-3.5
+
+
+echo "int main(){}" > a.c; clang -fsanitize=thread a.c && ./a.out
+
+clang -fsanitize=thread -fvisibility=hidden  -std=c99 a.c -o b.out && ./b.out
+clang -fsanitize=thread -fPIC  -fvisibility=hidden  -std=c99 a.c -o b.out && ./b.out
+clang -fsanitize=thread -pie -fPIC  -fvisibility=hidden  -std=c99 a.c -o b.out && ./b.out
+clang -fsanitize=thread -fPIE -pie -fPIC  -fvisibility=hidden  -std=c99 a.c -o b.out && ./b.out
+clang -fsanitize=thread -fno-omit-frame-pointer -fPIE -pie -fPIC  -fvisibility=hidden  -std=c99 a.c -o b.out && ./b.out
+clang  -O0 -fsanitize=thread -fno-omit-frame-pointer -fPIE -pie -fPIC  -fvisibility=hidden  -std=c99 a.c -o b.out && ./b.out
+clang  -g -O0 -fsanitize=thread -fno-omit-frame-pointer -fPIE -pie -fPIC  -fvisibility=hidden  -std=c99 a.c -o b.out && ./b.out
+clang -Ithird_party/protobuf/src  -g -O0 -fsanitize=thread -fno-omit-frame-pointer -fPIE -pie -fPIC  -fvisibility=hidden  -std=c99 a.c -o b.out && ./b.out
 
 # Ensure that programs depending on current-user-ownership of cache directories
 # are satisfied (it's being mounted from outside the image).
