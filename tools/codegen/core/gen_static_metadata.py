@@ -196,7 +196,7 @@ for mask in range(1, 1<<len(COMPRESSION_ALGORITHMS)):
   all_strs.add(val)
   all_elems.add(elem)
   compression_elems.append(elem)
-  static_userdata[elem] = 1 + mask
+  static_userdata[elem] = 1 + (mask | 1)
 all_strs = sorted(list(all_strs), key=mangle)
 all_elems = sorted(list(all_elems), key=mangle)
 
