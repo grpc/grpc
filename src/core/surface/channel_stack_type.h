@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_SURFACE_CHANNEL_STACK_TYPE_H
-#define GRPC_INTERNAL_CORE_SURFACE_CHANNEL_STACK_TYPE_H
+#ifndef GRPC_CORE_SURFACE_CHANNEL_STACK_TYPE_H
+#define GRPC_CORE_SURFACE_CHANNEL_STACK_TYPE_H
 
 #include <stdbool.h>
 
@@ -58,4 +58,4 @@ typedef enum {
 
 bool grpc_channel_stack_type_is_client(grpc_channel_stack_type type);
 
-#endif /* GRPC_INTERNAL_CORE_SURFACE_CHANNEL_STACK_TYPE_H */
+#endif /* GRPC_CORE_SURFACE_CHANNEL_STACK_TYPE_H */
