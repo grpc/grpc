@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_STATISTICS_HASH_TABLE_H
-#define GRPC_INTERNAL_CORE_STATISTICS_HASH_TABLE_H
+#ifndef GRPC_CORE_STATISTICS_HASH_TABLE_H
+#define GRPC_CORE_STATISTICS_HASH_TABLE_H
 
 #include <stddef.h>
 
@@ -128,4 +128,4 @@ typedef void (*census_ht_itr_cb)(census_ht_key key, const void *val_ptr,
    should not invalidate data entries. */
 uint64_t census_ht_for_all(const census_ht *ht, census_ht_itr_cb);
 
-#endif /* GRPC_INTERNAL_CORE_STATISTICS_HASH_TABLE_H */
+#endif /* GRPC_CORE_STATISTICS_HASH_TABLE_H */

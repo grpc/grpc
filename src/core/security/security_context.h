@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_SECURITY_SECURITY_CONTEXT_H
-#define GRPC_INTERNAL_CORE_SECURITY_SECURITY_CONTEXT_H
+#ifndef GRPC_CORE_SECURITY_SECURITY_CONTEXT_H
+#define GRPC_CORE_SECURITY_SECURITY_CONTEXT_H
 
 #include "src/core/iomgr/pollset.h"
 #include "src/core/security/credentials.h"
@@ -111,4 +111,4 @@ grpc_auth_context *grpc_auth_context_from_arg(const grpc_arg *arg);
 grpc_auth_context *grpc_find_auth_context_in_args(
     const grpc_channel_args *args);
 
-#endif /* GRPC_INTERNAL_CORE_SECURITY_SECURITY_CONTEXT_H */
+#endif /* GRPC_CORE_SECURITY_SECURITY_CONTEXT_H */
