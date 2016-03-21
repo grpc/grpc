@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_SURFACE_CHANNEL_H
-#define GRPC_INTERNAL_CORE_SURFACE_CHANNEL_H
+#ifndef GRPC_CORE_SURFACE_CHANNEL_H
+#define GRPC_CORE_SURFACE_CHANNEL_H
 
 #include "src/core/channel/channel_stack.h"
 #include "src/core/client_config/subchannel_factory.h"
@@ -71,4 +71,4 @@ void grpc_channel_internal_unref(grpc_exec_ctx *exec_ctx,
   grpc_channel_internal_unref(exec_ctx, channel)
 #endif
 
-#endif /* GRPC_INTERNAL_CORE_SURFACE_CHANNEL_H */
+#endif /* GRPC_CORE_SURFACE_CHANNEL_H */

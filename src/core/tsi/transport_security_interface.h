@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_TSI_TRANSPORT_SECURITY_INTERFACE_H
-#define GRPC_INTERNAL_CORE_TSI_TRANSPORT_SECURITY_INTERFACE_H
+#ifndef GRPC_CORE_TSI_TRANSPORT_SECURITY_INTERFACE_H
+#define GRPC_CORE_TSI_TRANSPORT_SECURITY_INTERFACE_H
 
 #include <stdint.h>
 #include <stdlib.h>
@@ -341,4 +341,4 @@ void tsi_handshaker_destroy(tsi_handshaker *self);
 }
 #endif
 
-#endif /* GRPC_INTERNAL_CORE_TSI_TRANSPORT_SECURITY_INTERFACE_H */
+#endif /* GRPC_CORE_TSI_TRANSPORT_SECURITY_INTERFACE_H */

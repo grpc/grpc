@@ -55,6 +55,7 @@ filegroups:
   - include/grpc/support/useful.h
   headers:
   - src/core/profiling/timers.h
+  - src/core/support/backoff.h
   - src/core/support/block_annotate.h
   - src/core/support/env.h
   - src/core/support/load_file.h
@@ -70,6 +71,7 @@ filegroups:
   - src/core/profiling/stap_timers.c
   - src/core/support/alloc.c
   - src/core/support/avl.c
+  - src/core/support/backoff.c
   - src/core/support/cmdline.c
   - src/core/support/cpu_iphone.c
   - src/core/support/cpu_linux.c
@@ -1239,6 +1241,14 @@ targets:
   deps:
   - gpr_test_util
   - gpr
+- name: gpr_backoff_test
+  build: test
+  language: c
+  src:
+  - test/core/support/backoff_test.c
+  deps:
+  - gpr_test_util
+  - gpr
 - name: gpr_cmdline_test
   build: test
   language: c
@@ -1663,6 +1673,7 @@ targets:
   - gpr
 - name: lb_policies_test
   cpu_cost: 0.1
+  flaky: true
   build: test
   language: c
   src:
@@ -2438,7 +2449,7 @@ targets:
   - linux
   - posix
 - name: qps_openloop_test
-  cpu_cost: 10
+  cpu_cost: 0.5
   build: test
   language: c++
   src:

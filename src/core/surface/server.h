@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_SURFACE_SERVER_H
-#define GRPC_INTERNAL_CORE_SURFACE_SERVER_H
+#ifndef GRPC_CORE_SURFACE_SERVER_H
+#define GRPC_CORE_SURFACE_SERVER_H
 
 #include "src/core/channel/channel_stack.h"
 #include <grpc/grpc.h>
@@ -64,4 +64,4 @@ const grpc_channel_args *grpc_server_get_channel_args(grpc_server *server);
 
 int grpc_server_has_open_connections(grpc_server *server);
 
-#endif /* GRPC_INTERNAL_CORE_SURFACE_SERVER_H */
+#endif /* GRPC_CORE_SURFACE_SERVER_H */

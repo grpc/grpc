@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_SURFACE_CALL_H
-#define GRPC_INTERNAL_CORE_SURFACE_CALL_H
+#ifndef GRPC_CORE_SURFACE_CALL_H
+#define GRPC_CORE_SURFACE_CALL_H
 
 #include "src/core/channel/channel_stack.h"
 #include "src/core/channel/context.h"
@@ -113,4 +113,4 @@ grpc_compression_algorithm grpc_call_compression_for_level(
 }
 #endif
 
-#endif /* GRPC_INTERNAL_CORE_SURFACE_CALL_H */
+#endif /* GRPC_CORE_SURFACE_CALL_H */
