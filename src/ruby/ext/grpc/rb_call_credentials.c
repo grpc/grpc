@@ -41,6 +41,7 @@
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 
 #include "rb_call.h"
 #include "rb_event_thread.h"
@@ -81,14 +82,23 @@ static VALUE grpc_rb_call_credentials_callback(VALUE callback_args) {
 static VALUE grpc_rb_call_credentials_callback_rescue(VALUE args,
                                                       VALUE exception_object) {
   VALUE result = rb_hash_new();
+  VALUE backtrace = rb_funcall(
+      rb_funcall(exception_object, rb_intern("backtrace"), 0),
+      rb_intern("join"),
+      1, rb_str_new2("\n\tfrom "));
+  VALUE exception_info = rb_funcall(exception_object, rb_intern("to_s"), 0);
+  const char *exception_classname = rb_obj_classname(exception_object);
   (void)args;
+  gpr_log(GPR_INFO, "Call credentials callback failed: %s: %s\n%s",
+          exception_classname, StringValueCStr(exception_info),
+          StringValueCStr(backtrace));
   rb_hash_aset(result, rb_str_new2("metadata"), Qnil);
   /* Currently only gives the exception class name. It should be possible get
      more details */
   rb_hash_aset(result, rb_str_new2("status"),
                INT2NUM(GRPC_STATUS_PERMISSION_DENIED));
   rb_hash_aset(result, rb_str_new2("details"),
-               rb_str_new2(rb_obj_classname(exception_object)));
+               rb_str_new2(exception_classname));
   return result;
 }
 
