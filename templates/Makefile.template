@@ -1445,6 +1445,11 @@
 
   % for lib in libs:
   % if 'Makefile' in lib.get('build_system', ['Makefile']):
+  ${makelibsrcs(lib)}
+  % endif
+  % endfor
+  % for lib in libs:
+  % if 'Makefile' in lib.get('build_system', ['Makefile']):
   ${makelib(lib)}
   % endif
   % endfor
@@ -1456,7 +1461,7 @@
   ${maketarget(tgt)}
   % endfor
 
-  <%def name="makelib(lib)">
+  <%def name="makelibsrcs(lib)">
   LIB${lib.name.upper()}_SRC = \\
 
   % for src in lib.src:
@@ -1488,7 +1493,9 @@
   $(LIB${lib.name.upper()}_OBJS): ${name} += ${value}
   %  endfor
   % endif
+  </%def>
 
+  <%def name="makelib(lib)">
   ## If the library requires OpenSSL, let's add some restrictions.
   % if lib.get('secure', 'check') == True or lib.get('secure', 'check') == 'check':
   ifeq ($(NO_SECURE),true)
