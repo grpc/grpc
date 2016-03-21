@@ -216,7 +216,6 @@ void *grpc_channel_stack_builder_finish(grpc_exec_ctx *exec_ctx,
   // count the number of filters
   size_t num_filters = 0;
   for (filter_node *p = builder->begin.next; p != &builder->end; p = p->next) {
-    gpr_log(GPR_DEBUG, "%d: %s", num_filters, p->filter->name);
     num_filters++;
   }
 
