@@ -263,6 +263,9 @@ class CompletionQueue(six.with_metaclass(abc.ABCMeta)):
     """
     return self
 
+  def __next__(self):
+    return self.next()
+
   @abc.abstractmethod
   def next(self, deadline=float('+inf')):
     """Get the next event on this completion queue.

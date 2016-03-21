@@ -62,6 +62,9 @@ class CancellableIterator(six.with_metaclass(abc.ABCMeta)):
     """Returns the self object in accordance with the Iterator protocol."""
     raise NotImplementedError()
 
+  def __next__(self):
+    return self.next()
+
   @abc.abstractmethod
   def next(self):
     """Returns a value or raises StopIteration per the Iterator protocol."""
