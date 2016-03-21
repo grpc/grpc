@@ -31,18 +31,42 @@
  *
  */
 
-#include <grpc/grpc.h>
-#include "src/core/census/grpc_filter.h"
-#include "src/core/channel/channel_args.h"
-#include "src/core/channel/compress_filter.h"
-#include "src/core/surface/api_trace.h"
-#include "src/core/surface/completion_queue.h"
-#include "src/core/surface/server.h"
+#include "src/core/census/grpc_plugin.h"
 
-grpc_server *grpc_server_create(const grpc_channel_args *args, void *reserved) {
-  const grpc_channel_filter *filters[3];
-  size_t num_filters = 0;
-  filters[num_filters++] = &grpc_compress_filter;
-  GRPC_API_TRACE("grpc_server_create(%p, %p)", 2, (args, reserved));
-  return grpc_server_create_from_filters(filters, num_filters, args);
+#include <limits.h>
+
+#include <grpc/census.h>
+
+#include "src/core/census/grpc_filter.h"
+#include "src/core/surface/channel_init.h"
+#include "src/core/channel/channel_stack_builder.h"
+
+static bool maybe_add_census_filter(grpc_channel_stack_builder *builder,
+                                    void *arg_must_be_null) {
+  const grpc_channel_args *args =
+      grpc_channel_stack_builder_get_channel_arguments(builder);
+  if (grpc_channel_args_is_census_enabled(args)) {
+    return grpc_channel_stack_builder_prepend_filter(
+        builder, &grpc_client_census_filter, NULL, NULL);
+  }
+  return true;
 }
+
+void census_grpc_plugin_init(void) {
+  /* Only initialize census if no one else has and some features are
+   * available. */
+  if (census_enabled() == CENSUS_FEATURE_NONE &&
+      census_supported() != CENSUS_FEATURE_NONE) {
+    if (census_initialize(census_supported())) { /* enable all features. */
+      gpr_log(GPR_ERROR, "Could not initialize census.");
+    }
+  }
+  grpc_channel_init_register_stage(GRPC_CLIENT_CHANNEL, INT_MAX,
+                                   maybe_add_census_filter, NULL);
+  grpc_channel_init_register_stage(GRPC_CLIENT_UCHANNEL, INT_MAX,
+                                   maybe_add_census_filter, NULL);
+  grpc_channel_init_register_stage(GRPC_SERVER_CHANNEL, INT_MAX,
+                                   maybe_add_census_filter, NULL);
+}
+
+void census_grpc_plugin_destroy(void) { census_shutdown(); }

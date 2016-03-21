@@ -50,10 +50,43 @@ Troubleshooting
 Help, I ...
 
 * **... see a** :code:`pkg_resources.VersionConflict` **when I try to install
-  grpc!**
+  grpc**
 
   This is likely because :code:`pip` doesn't own the offending dependency,
   which in turn is likely because your operating system's package manager owns
   it. You'll need to force the installation of the dependency:
 
   :code:`pip install --ignore-installed $OFFENDING_DEPENDENCY`
+
+  For example, if you get an error like the following:
+
+  ::
+
+    Traceback (most recent call last):
+    File "<string>", line 17, in <module>
+     ...
+    File "/usr/lib/python2.7/dist-packages/pkg_resources.py", line 509, in find
+      raise VersionConflict(dist, req)
+    pkg_resources.VersionConflict: (six 1.8.0 (/usr/lib/python2.7/dist-packages), Requirement.parse('six>=1.10'))
+
+  You can fix it by doing:
+
+  ::
+
+    sudo pip install --ignore-installed six
+
+* **... see the following error on some platforms**
+
+  ::
+
+    /tmp/pip-build-U8pSsr/cython/Cython/Plex/Scanners.c:4:20: fatal error: Python.h: No such file or directory
+    #include "Python.h"
+                    ^
+    compilation terminated.
+
+  You can fix it by installing `python-dev` package. i.e
+
+  ::
+
+    sudo apt-get install python-dev
+

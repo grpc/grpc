@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_TSI_TRANSPORT_SECURITY_H
-#define GRPC_INTERNAL_CORE_TSI_TRANSPORT_SECURITY_H
+#ifndef GRPC_CORE_TSI_TRANSPORT_SECURITY_H
+#define GRPC_CORE_TSI_TRANSPORT_SECURITY_H
 
 #include "src/core/tsi/transport_security_interface.h"
 
@@ -108,4 +108,4 @@ char *tsi_strdup(const char *src); /* Sadly, no strdup in C89. */
 }
 #endif
 
-#endif /* GRPC_INTERNAL_CORE_TSI_TRANSPORT_SECURITY_H */
+#endif /* GRPC_CORE_TSI_TRANSPORT_SECURITY_H */
