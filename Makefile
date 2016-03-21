@@ -1084,7 +1084,6 @@ h2_sockpair_1byte_test: $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_test
 h2_ssl_test: $(BINDIR)/$(CONFIG)/h2_ssl_test
 h2_ssl+poll_test: $(BINDIR)/$(CONFIG)/h2_ssl+poll_test
 h2_ssl_proxy_test: $(BINDIR)/$(CONFIG)/h2_ssl_proxy_test
-h2_uchannel_test: $(BINDIR)/$(CONFIG)/h2_uchannel_test
 h2_uds_test: $(BINDIR)/$(CONFIG)/h2_uds_test
 h2_uds+poll_test: $(BINDIR)/$(CONFIG)/h2_uds+poll_test
 h2_census_nosec_test: $(BINDIR)/$(CONFIG)/h2_census_nosec_test
@@ -1098,7 +1097,6 @@ h2_proxy_nosec_test: $(BINDIR)/$(CONFIG)/h2_proxy_nosec_test
 h2_sockpair_nosec_test: $(BINDIR)/$(CONFIG)/h2_sockpair_nosec_test
 h2_sockpair+trace_nosec_test: $(BINDIR)/$(CONFIG)/h2_sockpair+trace_nosec_test
 h2_sockpair_1byte_nosec_test: $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_nosec_test
-h2_uchannel_nosec_test: $(BINDIR)/$(CONFIG)/h2_uchannel_nosec_test
 h2_uds_nosec_test: $(BINDIR)/$(CONFIG)/h2_uds_nosec_test
 h2_uds+poll_nosec_test: $(BINDIR)/$(CONFIG)/h2_uds+poll_nosec_test
 
@@ -1307,7 +1305,6 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/h2_ssl_test \
   $(BINDIR)/$(CONFIG)/h2_ssl+poll_test \
   $(BINDIR)/$(CONFIG)/h2_ssl_proxy_test \
-  $(BINDIR)/$(CONFIG)/h2_uchannel_test \
   $(BINDIR)/$(CONFIG)/h2_uds_test \
   $(BINDIR)/$(CONFIG)/h2_uds+poll_test \
   $(BINDIR)/$(CONFIG)/h2_census_nosec_test \
@@ -1321,7 +1318,6 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/h2_sockpair_nosec_test \
   $(BINDIR)/$(CONFIG)/h2_sockpair+trace_nosec_test \
   $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_nosec_test \
-  $(BINDIR)/$(CONFIG)/h2_uchannel_nosec_test \
   $(BINDIR)/$(CONFIG)/h2_uds_nosec_test \
   $(BINDIR)/$(CONFIG)/h2_uds+poll_nosec_test \
 
@@ -2414,7 +2410,6 @@ LIBGRPC_SRC = \
     src/core/channel/channel_stack.c \
     src/core/channel/channel_stack_builder.c \
     src/core/channel/client_channel.c \
-    src/core/channel/client_uchannel.c \
     src/core/channel/compress_filter.c \
     src/core/channel/connected_channel.c \
     src/core/channel/http_client_filter.c \
@@ -2775,7 +2770,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/channel/channel_stack.c \
     src/core/channel/channel_stack_builder.c \
     src/core/channel/client_channel.c \
-    src/core/channel/client_uchannel.c \
     src/core/channel/compress_filter.c \
     src/core/channel/connected_channel.c \
     src/core/channel/http_client_filter.c \
@@ -13052,38 +13046,6 @@ endif
 endif
 
 
-H2_UCHANNEL_TEST_SRC = \
-    test/core/end2end/fixtures/h2_uchannel.c \
-
-H2_UCHANNEL_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(H2_UCHANNEL_TEST_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/h2_uchannel_test: openssl_dep_error
-
-else
-
-
-
-$(BINDIR)/$(CONFIG)/h2_uchannel_test: $(H2_UCHANNEL_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_tests.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(H2_UCHANNEL_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_tests.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_uchannel_test
-
-endif
-
-$(OBJDIR)/$(CONFIG)/test/core/end2end/fixtures/h2_uchannel.o:  $(LIBDIR)/$(CONFIG)/libend2end_tests.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-
-deps_h2_uchannel_test: $(H2_UCHANNEL_TEST_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(H2_UCHANNEL_TEST_OBJS:.o=.dep)
-endif
-endif
-
-
 H2_UDS_TEST_SRC = \
     test/core/end2end/fixtures/h2_uds.c \
 
@@ -13365,26 +13327,6 @@ deps_h2_sockpair_1byte_nosec_test: $(H2_SOCKPAIR_1BYTE_NOSEC_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_DEPS),true)
 -include $(H2_SOCKPAIR_1BYTE_NOSEC_TEST_OBJS:.o=.dep)
-endif
-
-
-H2_UCHANNEL_NOSEC_TEST_SRC = \
-    test/core/end2end/fixtures/h2_uchannel.c \
-
-H2_UCHANNEL_NOSEC_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(H2_UCHANNEL_NOSEC_TEST_SRC))))
-
-
-$(BINDIR)/$(CONFIG)/h2_uchannel_nosec_test: $(H2_UCHANNEL_NOSEC_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_nosec_tests.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(H2_UCHANNEL_NOSEC_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_nosec_tests.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_uchannel_nosec_test
-
-$(OBJDIR)/$(CONFIG)/test/core/end2end/fixtures/h2_uchannel.o:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_tests.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-
-deps_h2_uchannel_nosec_test: $(H2_UCHANNEL_NOSEC_TEST_OBJS:.o=.dep)
-
-ifneq ($(NO_DEPS),true)
--include $(H2_UCHANNEL_NOSEC_TEST_OBJS:.o=.dep)
 endif
 
 
