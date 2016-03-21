@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_IOMGR_EXECUTOR_H
-#define GRPC_INTERNAL_CORE_IOMGR_EXECUTOR_H
+#ifndef GRPC_CORE_IOMGR_EXECUTOR_H
+#define GRPC_CORE_IOMGR_EXECUTOR_H
 
 #include "src/core/iomgr/closure.h"
 
@@ -50,4 +50,4 @@ void grpc_executor_enqueue(grpc_closure *closure, bool success);
 /** Shutdown the executor, running all pending work as part of the call */
 void grpc_executor_shutdown();
 
-#endif /* GRPC_INTERNAL_CORE_IOMGR_EXECUTOR_H */
+#endif /* GRPC_CORE_IOMGR_EXECUTOR_H */

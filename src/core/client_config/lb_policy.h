@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_CLIENT_CONFIG_LB_POLICY_H
-#define GRPC_INTERNAL_CORE_CLIENT_CONFIG_LB_POLICY_H
+#ifndef GRPC_CORE_CLIENT_CONFIG_LB_POLICY_H
+#define GRPC_CORE_CLIENT_CONFIG_LB_POLICY_H
 
 #include "src/core/client_config/subchannel.h"
 #include "src/core/transport/connectivity_state.h"
@@ -154,4 +154,4 @@ void grpc_lb_policy_notify_on_state_change(grpc_exec_ctx *exec_ctx,
 grpc_connectivity_state grpc_lb_policy_check_connectivity(
     grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy);
 
-#endif /* GRPC_INTERNAL_CORE_CONFIG_LB_POLICY_H */
+#endif /* GRPC_CORE_CLIENT_CONFIG_LB_POLICY_H */

@@ -1,4 +1,4 @@
-# Copyright 2015, Google Inc.
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -34,6 +34,8 @@ import contextlib
 import threading
 import unittest
 
+import six
+
 from grpc.framework.face import exceptions
 from grpc.framework.foundation import future
 from grpc.framework.foundation import logging_pool
@@ -66,6 +68,9 @@ class _PauseableIterator(object):
   def __iter__(self):
     return self
 
+  def __next__(self):
+    return self.next()
+
   def next(self):
     with self._condition:
       while self._paused:
@@ -74,12 +79,12 @@ class _PauseableIterator(object):
 
 
 class FutureInvocationAsynchronousEventServiceTestCase(
-    test_case.FaceTestCase, coverage.FullCoverage):
+    six.with_metaclass(abc.ABCMeta,
+    test_case.FaceTestCase, coverage.FullCoverage)):
   """A test of the Face layer of RPC Framework.
 
   Concrete subclasses must also extend unittest.TestCase.
   """
-  __metaclass__ = abc.ABCMeta
 
   def setUp(self):
     """See unittest.TestCase.setUp for full specification.
