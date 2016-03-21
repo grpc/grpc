@@ -1,4 +1,4 @@
-# Copyright 2015, Google Inc.
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -31,13 +31,12 @@
 
 Only GRPC should instantiate and raise these exceptions.
 """
-
 import abc
 
+import six
 
-class RpcError(Exception):
+class RpcError(six.with_metaclass(abc.ABCMeta, Exception)):
   """Common super type for all exceptions raised by GRPC."""
-  __metaclass__ = abc.ABCMeta
 
 
 class CancellationError(RpcError):
