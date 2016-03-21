@@ -50,7 +50,7 @@ namespace grpc {
 class CompletionQueue;
 
 /// A thin wrapper around \a grpc_alarm (see / \a / src/core/surface/alarm.h).
-class Alarm : private GrpcLibrary {
+class Alarm : private GrpcLibraryCodegen {
  public:
   /// Create a completion queue alarm instance associated to \a cq.
   ///

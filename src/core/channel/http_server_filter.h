@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,12 +31,12 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_CHANNEL_HTTP_SERVER_FILTER_H
-#define GRPC_INTERNAL_CORE_CHANNEL_HTTP_SERVER_FILTER_H
+#ifndef GRPC_CORE_CHANNEL_HTTP_SERVER_FILTER_H
+#define GRPC_CORE_CHANNEL_HTTP_SERVER_FILTER_H
 
 #include "src/core/channel/channel_stack.h"
 
 /* Processes metadata on the client side for HTTP2 transports */
 extern const grpc_channel_filter grpc_http_server_filter;
 
-#endif /* GRPC_INTERNAL_CORE_CHANNEL_HTTP_SERVER_FILTER_H */
+#endif /* GRPC_CORE_CHANNEL_HTTP_SERVER_FILTER_H */

@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_CHTTP2_INTERNAL_H
-#define GRPC_INTERNAL_CORE_CHTTP2_INTERNAL_H
+#ifndef GRPC_CORE_TRANSPORT_CHTTP2_INTERNAL_H
+#define GRPC_CORE_TRANSPORT_CHTTP2_INTERNAL_H
 
 #include <assert.h>
 #include <stdbool.h>
@@ -358,6 +358,9 @@ struct grpc_chttp2_transport {
     /** connectivity tracking */
     grpc_connectivity_state_tracker state_tracker;
   } channel_callback;
+
+  /** Transport op to be applied post-parsing */
+  grpc_transport_op *post_parsing_op;
 };
 
 typedef struct {
@@ -774,4 +777,4 @@ void grpc_chttp2_ack_ping(grpc_exec_ctx *exec_ctx,
 void grpc_chttp2_become_writable(grpc_chttp2_transport_global *transport_global,
                                  grpc_chttp2_stream_global *stream_global);
 
-#endif
+#endif /* GRPC_CORE_TRANSPORT_CHTTP2_INTERNAL_H */

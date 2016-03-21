@@ -107,7 +107,7 @@ static void cuc_start_transport_op(grpc_exec_ctx *exec_ctx,
 
   grpc_exec_ctx_enqueue(exec_ctx, op->on_consumed, true, NULL);
 
-  GPR_ASSERT(op->set_accept_stream == NULL);
+  GPR_ASSERT(op->set_accept_stream == false);
   GPR_ASSERT(op->bind_pollset == NULL);
 
   if (op->on_connectivity_state_change != NULL) {
@@ -212,20 +212,10 @@ void grpc_client_uchannel_watch_connectivity_state(
 grpc_channel *grpc_client_uchannel_create(grpc_subchannel *subchannel,
                                           grpc_channel_args *args) {
   grpc_channel *channel = NULL;
-#define MAX_FILTERS 3
-  const grpc_channel_filter *filters[MAX_FILTERS];
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  size_t n = 0;
-
-  if (grpc_channel_args_is_census_enabled(args)) {
-    filters[n++] = &grpc_client_census_filter;
-  }
-  filters[n++] = &grpc_compress_filter;
-  filters[n++] = &grpc_client_uchannel_filter;
-  GPR_ASSERT(n <= MAX_FILTERS);
 
   channel =
-      grpc_channel_create_from_filters(&exec_ctx, NULL, filters, n, args, 1);
+      grpc_channel_create(&exec_ctx, NULL, args, GRPC_CLIENT_UCHANNEL, NULL);
 
   return channel;
 }

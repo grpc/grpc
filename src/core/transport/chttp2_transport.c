@@ -432,6 +432,14 @@ static void close_transport_locked(grpc_exec_ctx *exec_ctx,
     if (t->ep) {
       allow_endpoint_shutdown_locked(exec_ctx, t);
     }
+
+    /* flush writable stream list to avoid dangling references */
+    grpc_chttp2_stream_global *stream_global;
+    grpc_chttp2_stream_writing *stream_writing;
+    while (grpc_chttp2_list_pop_writable_stream(
+        &t->global, &t->writing, &stream_global, &stream_writing)) {
+      GRPC_CHTTP2_STREAM_UNREF(exec_ctx, stream_global, "chttp2_writing");
+    }
   }
 }
 
@@ -843,9 +851,11 @@ static void perform_stream_op_locked(
     if (stream_global->write_closed) {
       grpc_chttp2_complete_closure_step(
           exec_ctx, &stream_global->send_message_finished, 0);
-    } else if (stream_global->id != 0) {
+    } else {
       stream_global->send_message = op->send_message;
-      grpc_chttp2_become_writable(transport_global, stream_global);
+      if (stream_global->id != 0) {
+        grpc_chttp2_become_writable(transport_global, stream_global);
+      }
     }
   }
 
@@ -951,12 +961,10 @@ void grpc_chttp2_ack_ping(grpc_exec_ctx *exec_ctx,
   unlock(exec_ctx, t);
 }
 
-static void perform_transport_op(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
-                                 grpc_transport_op *op) {
-  grpc_chttp2_transport *t = (grpc_chttp2_transport *)gt;
-  int close_transport = 0;
-
-  lock(t);
+static void perform_transport_op_locked(grpc_exec_ctx *exec_ctx,
+                                        grpc_chttp2_transport *t,
+                                        grpc_transport_op *op) {
+  bool close_transport = false;
 
   grpc_exec_ctx_enqueue(exec_ctx, op->on_consumed, true, NULL);
 
@@ -975,8 +983,8 @@ static void perform_transport_op(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
     close_transport = !grpc_chttp2_has_streams(t);
   }
 
-  if (op->set_accept_stream != NULL) {
-    t->channel_callback.accept_stream = op->set_accept_stream;
+  if (op->set_accept_stream) {
+    t->channel_callback.accept_stream = op->set_accept_stream_fn;
     t->channel_callback.accept_stream_user_data =
         op->set_accept_stream_user_data;
   }
@@ -997,13 +1005,28 @@ static void perform_transport_op(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
     close_transport_locked(exec_ctx, t);
   }
 
-  unlock(exec_ctx, t);
-
   if (close_transport) {
-    lock(t);
     close_transport_locked(exec_ctx, t);
-    unlock(exec_ctx, t);
   }
+}
+
+static void perform_transport_op(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
+                                 grpc_transport_op *op) {
+  grpc_chttp2_transport *t = (grpc_chttp2_transport *)gt;
+
+  lock(t);
+
+  /* If there's a set_accept_stream ensure that we're not parsing
+     to avoid changing things out from underneath */
+  if (t->parsing_active && op->set_accept_stream) {
+    GPR_ASSERT(t->post_parsing_op == NULL);
+    t->post_parsing_op = gpr_malloc(sizeof(*op));
+    memcpy(t->post_parsing_op, op, sizeof(*op));
+  } else {
+    perform_transport_op_locked(exec_ctx, t, op);
+  }
+
+  unlock(exec_ctx, t);
 }
 
 /*******************************************************************************
@@ -1401,6 +1424,13 @@ static void recv_data(grpc_exec_ctx *exec_ctx, void *tp, bool success) {
     /* handle higher level things */
     grpc_chttp2_publish_reads(exec_ctx, transport_global, transport_parsing);
     t->parsing_active = 0;
+    /* handle delayed transport ops (if there is one) */
+    if (t->post_parsing_op) {
+      grpc_transport_op *op = t->post_parsing_op;
+      t->post_parsing_op = NULL;
+      perform_transport_op_locked(exec_ctx, t, op);
+      gpr_free(op);
+    }
     /* if a stream is in the stream map, and gets cancelled, we need to ensure
      * we are not parsing before continuing the cancellation to keep things in
      * a sane state */
@@ -1727,8 +1757,9 @@ static char *chttp2_get_peer(grpc_exec_ctx *exec_ctx, grpc_transport *t) {
 }
 
 static const grpc_transport_vtable vtable = {
-    sizeof(grpc_chttp2_stream), init_stream, set_pollset, perform_stream_op,
-    perform_transport_op, destroy_stream, destroy_transport, chttp2_get_peer};
+    sizeof(grpc_chttp2_stream), "chttp2", init_stream, set_pollset,
+    perform_stream_op, perform_transport_op, destroy_stream, destroy_transport,
+    chttp2_get_peer};
 
 grpc_transport *grpc_create_chttp2_transport(
     grpc_exec_ctx *exec_ctx, const grpc_channel_args *channel_args,

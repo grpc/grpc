@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_TRANSPORT_TRANSPORT_H
-#define GRPC_INTERNAL_CORE_TRANSPORT_TRANSPORT_H
+#ifndef GRPC_CORE_TRANSPORT_TRANSPORT_H
+#define GRPC_CORE_TRANSPORT_TRANSPORT_H
 
 #include <stddef.h>
 
@@ -123,7 +123,7 @@ typedef struct grpc_transport_stream_op {
 
 /** Transport op: a set of operations to perform on a transport as a whole */
 typedef struct grpc_transport_op {
-  /** called when processing of this op is done */
+  /** Called when processing of this op is done. */
   grpc_closure *on_consumed;
   /** connectivity monitoring - set connectivity_state to NULL to unsubscribe */
   grpc_closure *on_connectivity_state_change;
@@ -138,9 +138,13 @@ typedef struct grpc_transport_op {
   grpc_status_code goaway_status;
   gpr_slice *goaway_message;
   /** set the callback for accepting new streams;
-      this is a permanent callback, unlike the other one-shot closures */
-  void (*set_accept_stream)(grpc_exec_ctx *exec_ctx, void *user_data,
-                            grpc_transport *transport, const void *server_data);
+      this is a permanent callback, unlike the other one-shot closures.
+      If true, the callback is set to set_accept_stream_fn, with its
+      user_data argument set to set_accept_stream_user_data */
+  bool set_accept_stream;
+  void (*set_accept_stream_fn)(grpc_exec_ctx *exec_ctx, void *user_data,
+                               grpc_transport *transport,
+                               const void *server_data);
   void *set_accept_stream_user_data;
   /** add this transport to a pollset */
   grpc_pollset *bind_pollset;
@@ -235,4 +239,4 @@ void grpc_transport_destroy(grpc_exec_ctx *exec_ctx, grpc_transport *transport);
 char *grpc_transport_get_peer(grpc_exec_ctx *exec_ctx,
                               grpc_transport *transport);
 
-#endif /* GRPC_INTERNAL_CORE_TRANSPORT_TRANSPORT_H */
+#endif /* GRPC_CORE_TRANSPORT_TRANSPORT_H */
