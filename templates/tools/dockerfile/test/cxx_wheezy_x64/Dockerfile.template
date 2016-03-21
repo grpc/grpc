@@ -29,20 +29,19 @@
   # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
   # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-  FROM debian:squeeze
+  FROM debian:wheezy
 
-  <%include file="../../apt_get_basic.include" args="skip_golang=True"/>
+  <%include file="../../apt_get_basic.include"/>
+  <%include file="../../cxx_deps.include"/>
 
-  # libgflags-dev is not available on squeezy
-  RUN apt-get update && apt-get -y install libgtest-dev libc++-dev clang && apt-get clean
-
-  RUN apt-get update && apt-get -y install python-pip && apt-get clean
-  RUN pip install argparse
+  RUN apt-get update && apt-get install -y ${'\\'}
+    gcc-4.4 ${'\\'}
+    gcc-4.4-multilib
 
   RUN wget ${openssl_fallback.base_uri + openssl_fallback.tarball}
 
-  ENV POST_GIT_STEP tools/dockerfile/test/cxx_squeeze_x64/post-git-setup.sh
+  ENV POST_GIT_STEP tools/dockerfile/test/cxx_wheezy_x64/post-git-setup.sh
 
-  <%include file="../../run_tests_addons.include" args="skip_zookeeper=True"/>
+  <%include file="../../run_tests_addons.include"/>
   # Define the default command.
   CMD ["bash"]

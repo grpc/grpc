@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_CLIENT_CONFIG_RESOLVER_FACTORY_H
-#define GRPC_INTERNAL_CORE_CLIENT_CONFIG_RESOLVER_FACTORY_H
+#ifndef GRPC_CORE_CLIENT_CONFIG_RESOLVER_FACTORY_H
+#define GRPC_CORE_CLIENT_CONFIG_RESOLVER_FACTORY_H
 
 #include "src/core/client_config/resolver.h"
 #include "src/core/client_config/subchannel_factory.h"
@@ -79,4 +79,4 @@ grpc_resolver *grpc_resolver_factory_create_resolver(
 char *grpc_resolver_factory_get_default_authority(
     grpc_resolver_factory *factory, grpc_uri *uri);
 
-#endif /* GRPC_INTERNAL_CORE_CONFIG_RESOLVER_FACTORY_H */
+#endif /* GRPC_CORE_CLIENT_CONFIG_RESOLVER_FACTORY_H */

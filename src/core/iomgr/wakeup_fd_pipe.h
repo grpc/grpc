@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,11 +31,11 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_IOMGR_WAKEUP_FD_PIPE_H
-#define GRPC_INTERNAL_CORE_IOMGR_WAKEUP_FD_PIPE_H
+#ifndef GRPC_CORE_IOMGR_WAKEUP_FD_PIPE_H
+#define GRPC_CORE_IOMGR_WAKEUP_FD_PIPE_H
 
 #include "src/core/iomgr/wakeup_fd_posix.h"
 
 extern grpc_wakeup_fd_vtable grpc_pipe_wakeup_fd_vtable;
 
-#endif /* GRPC_INTERNAL_CORE_IOMGR_WAKEUP_FD_PIPE_H */
+#endif /* GRPC_CORE_IOMGR_WAKEUP_FD_PIPE_H */
