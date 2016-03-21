@@ -59,7 +59,7 @@ Each language uses its own build system to work. Currently, the root's Makefile
 and the Visual Studio project files are building only the C and C++ source code.
 In order to ease the maintenance of these files, we have a
 template system. Please do not contribute manual changes to any of the generated
-files. Instead, modify the template files, or the build.json file, and
+files. Instead, modify the template files, or the build.yaml file, and
 re-generate the project files using the following command:
 
 `./tools/buildgen/generate_projects.sh`

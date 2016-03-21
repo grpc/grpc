@@ -815,6 +815,7 @@ include/grpc++/impl/codegen/completion_queue.h \
 include/grpc++/impl/codegen/completion_queue_tag.h \
 include/grpc++/impl/codegen/config.h \
 include/grpc++/impl/codegen/config_protobuf.h \
+include/grpc++/impl/codegen/core_codegen_interface.h \
 include/grpc++/impl/codegen/grpc_library.h \
 include/grpc++/impl/codegen/method_handler_impl.h \
 include/grpc++/impl/codegen/proto_utils.h \
