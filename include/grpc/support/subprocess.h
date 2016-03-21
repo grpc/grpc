@@ -56,4 +56,4 @@ GPRAPI void gpr_subprocess_interrupt(gpr_subprocess *p);
 }  // extern "C"
 #endif
 
-#endif
+#endif /* GRPC_SUPPORT_SUBPROCESS_H */

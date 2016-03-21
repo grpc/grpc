@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_CLIENT_CONFIG_RESOLVERS_UNIX_RESOLVER_H
-#define GRPC_INTERNAL_CORE_CLIENT_CONFIG_RESOLVERS_UNIX_RESOLVER_H
+#ifndef GRPC_CORE_CLIENT_CONFIG_RESOLVERS_SOCKADDR_RESOLVER_H
+#define GRPC_CORE_CLIENT_CONFIG_RESOLVERS_SOCKADDR_RESOLVER_H
 
 #include <grpc/support/port_platform.h>
 
@@ -47,4 +47,4 @@ grpc_resolver_factory *grpc_ipv6_resolver_factory_create(void);
 grpc_resolver_factory *grpc_unix_resolver_factory_create(void);
 #endif
 
-#endif /* GRPC_INTERNAL_CORE_CLIENT_CONFIG_RESOLVERS_UNIX_RESOLVER_H */
+#endif /* GRPC_CORE_CLIENT_CONFIG_RESOLVERS_SOCKADDR_RESOLVER_H */

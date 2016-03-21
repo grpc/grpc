@@ -1,4 +1,4 @@
-# Copyright 2015, Google Inc.
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -34,14 +34,12 @@ import unittest  # pylint: disable=unused-import
 
 # test_interfaces is referenced from specification in this module.
 from tests.unit.framework.interfaces.face import _blocking_invocation_inline_service
-from tests.unit.framework.interfaces.face import _event_invocation_synchronous_event_service
 from tests.unit.framework.interfaces.face import _future_invocation_asynchronous_event_service
 from tests.unit.framework.interfaces.face import _invocation
 from tests.unit.framework.interfaces.face import test_interfaces  # pylint: disable=unused-import
 
 _TEST_CASE_SUPERCLASSES = (
     _blocking_invocation_inline_service.TestCase,
-    _event_invocation_synchronous_event_service.TestCase,
     _future_invocation_asynchronous_event_service.TestCase,
 )
 

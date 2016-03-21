@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPCXX_CREDENTIALS_H
-#define GRPCXX_CREDENTIALS_H
+#ifndef GRPCXX_SECURITY_CREDENTIALS_H
+#define GRPCXX_SECURITY_CREDENTIALS_H
 
 #include <map>
 #include <memory>
@@ -57,7 +57,7 @@ class SecureCallCredentials;
 /// for all the calls on that channel.
 ///
 /// \see http://www.grpc.io/docs/guides/auth.html
-class ChannelCredentials : private GrpcLibrary {
+class ChannelCredentials : private GrpcLibraryCodegen {
  public:
   ChannelCredentials();
   ~ChannelCredentials();
@@ -83,7 +83,7 @@ class ChannelCredentials : private GrpcLibrary {
 /// authenticate with a server for a given call on a channel.
 ///
 /// \see http://www.grpc.io/docs/guides/auth.html
-class CallCredentials : private GrpcLibrary {
+class CallCredentials : private GrpcLibraryCodegen {
  public:
   CallCredentials();
   ~CallCredentials();
@@ -229,4 +229,4 @@ std::shared_ptr<CallCredentials> MetadataCredentialsFromPlugin(
 
 }  // namespace grpc
 
-#endif  // GRPCXX_CREDENTIALS_H
+#endif  // GRPCXX_SECURITY_CREDENTIALS_H

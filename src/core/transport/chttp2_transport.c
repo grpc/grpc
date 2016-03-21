@@ -851,9 +851,11 @@ static void perform_stream_op_locked(
     if (stream_global->write_closed) {
       grpc_chttp2_complete_closure_step(
           exec_ctx, &stream_global->send_message_finished, 0);
-    } else if (stream_global->id != 0) {
+    } else {
       stream_global->send_message = op->send_message;
-      grpc_chttp2_become_writable(transport_global, stream_global);
+      if (stream_global->id != 0) {
+        grpc_chttp2_become_writable(transport_global, stream_global);
+      }
     }
   }
 
@@ -1755,8 +1757,9 @@ static char *chttp2_get_peer(grpc_exec_ctx *exec_ctx, grpc_transport *t) {
 }
 
 static const grpc_transport_vtable vtable = {
-    sizeof(grpc_chttp2_stream), init_stream, set_pollset, perform_stream_op,
-    perform_transport_op, destroy_stream, destroy_transport, chttp2_get_peer};
+    sizeof(grpc_chttp2_stream), "chttp2", init_stream, set_pollset,
+    perform_stream_op, perform_transport_op, destroy_stream, destroy_transport,
+    chttp2_get_peer};
 
 grpc_transport *grpc_create_chttp2_transport(
     grpc_exec_ctx *exec_ctx, const grpc_channel_args *channel_args,

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_ALPN_H
-#define GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_ALPN_H
+#ifndef GRPC_CORE_TRANSPORT_CHTTP2_ALPN_H
+#define GRPC_CORE_TRANSPORT_CHTTP2_ALPN_H
 
 #include <string.h>
 
@@ -46,4 +46,4 @@ size_t grpc_chttp2_num_alpn_versions(void);
  * grpc_chttp2_num_alpn_versions()) */
 const char *grpc_chttp2_get_alpn_version_index(size_t i);
 
-#endif /* GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_ALPN_H */
+#endif /* GRPC_CORE_TRANSPORT_CHTTP2_ALPN_H */

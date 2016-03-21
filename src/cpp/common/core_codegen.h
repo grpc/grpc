@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,18 +31,41 @@
  *
  */
 
-#include <grpc/grpc.h>
-#include "src/core/census/grpc_filter.h"
-#include "src/core/channel/channel_args.h"
-#include "src/core/channel/compress_filter.h"
-#include "src/core/surface/api_trace.h"
-#include "src/core/surface/completion_queue.h"
-#include "src/core/surface/server.h"
+// This file should be compiled as part of grpc++.
 
-grpc_server *grpc_server_create(const grpc_channel_args *args, void *reserved) {
-  const grpc_channel_filter *filters[3];
-  size_t num_filters = 0;
-  filters[num_filters++] = &grpc_compress_filter;
-  GRPC_API_TRACE("grpc_server_create(%p, %p)", 2, (args, reserved));
-  return grpc_server_create_from_filters(filters, num_filters, args);
-}
+#include <grpc++/impl/codegen/core_codegen_interface.h>
+#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/byte_buffer.h>
+
+namespace grpc {
+
+/// Implementation of the core codegen interface.
+class CoreCodegen : public CoreCodegenInterface {
+ private:
+  Status SerializeProto(const grpc::protobuf::Message& msg,
+                        grpc_byte_buffer** bp) override;
+
+  Status DeserializeProto(grpc_byte_buffer* buffer,
+                          grpc::protobuf::Message* msg,
+                          int max_message_size) override;
+
+  grpc_completion_queue* grpc_completion_queue_create(void* reserved) override;
+  void grpc_completion_queue_destroy(grpc_completion_queue* cq) override;
+  grpc_event grpc_completion_queue_pluck(grpc_completion_queue* cq, void* tag,
+                                         gpr_timespec deadline,
+                                         void* reserved) override;
+
+  void* gpr_malloc(size_t size) override;
+  void gpr_free(void* p) override;
+
+  void grpc_byte_buffer_destroy(grpc_byte_buffer* bb) override;
+
+  void grpc_metadata_array_init(grpc_metadata_array* array) override;
+  void grpc_metadata_array_destroy(grpc_metadata_array* array) override;
+
+  gpr_timespec gpr_inf_future(gpr_clock_type type) override;
+
+  void assert_fail(const char* failed_assertion) override;
+};
+
+}  // namespace grpc

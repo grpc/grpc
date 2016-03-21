@@ -3,7 +3,7 @@
 For language-specific installation instructions for gRPC runtime, please
 refer to these documents
 
- * [C++](examples/cpp)
+ * [C++](examples/cpp): Currently to install gRPC for C++, you need to build from source as described below.
  * [C#](src/csharp): NuGet package `Grpc`
  * [Go](https://github.com/grpc/grpc-go): `go get google.golang.org/grpc`
  * [Java](https://github.com/grpc/grpc-java)
@@ -32,6 +32,17 @@ terminal:
  $ [sudo] xcode-select --install
 ```
 
+##Protoc
+
+By default gRPC uses [protocol buffers](https://github.com/google/protobuf),
+you will need the `protoc` compiler to generate stub server and client code.
+
+If you compile gRPC from source, as described below, the Makefile will
+automatically try and compile the `protoc` in third_party if you cloned the
+repository recursively and it detects that you don't already have it
+installed.
+
+
 #Build from Source
 
 For developers who are interested to contribute, here is how to compile the
@@ -41,6 +52,6 @@ gRPC C Core library.
  $ git clone https://github.com/grpc/grpc.git
  $ cd grpc
  $ git submodule update --init
- $ make 
+ $ make
  $ [sudo] make install
 ```
