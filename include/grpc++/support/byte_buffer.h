@@ -99,8 +99,8 @@ class SerializationTraits<ByteBuffer, void> {
   }
   static Status Serialize(const ByteBuffer& source, grpc_byte_buffer** buffer,
                           bool* own_buffer) {
-    *buffer = source.buffer();
-    *own_buffer = false;
+    *buffer = grpc_byte_buffer_copy(source.buffer());
+    *own_buffer = true;
     return Status::OK;
   }
 };
