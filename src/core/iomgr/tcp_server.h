@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_IOMGR_TCP_SERVER_H
-#define GRPC_INTERNAL_CORE_IOMGR_TCP_SERVER_H
+#ifndef GRPC_CORE_IOMGR_TCP_SERVER_H
+#define GRPC_CORE_IOMGR_TCP_SERVER_H
 
 #include "src/core/iomgr/closure.h"
 #include "src/core/iomgr/endpoint.h"
@@ -100,4 +100,4 @@ void grpc_tcp_server_shutdown_starting_add(grpc_tcp_server *s,
    a call (exec_ctx!=NULL) to shutdown_complete. */
 void grpc_tcp_server_unref(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s);
 
-#endif /* GRPC_INTERNAL_CORE_IOMGR_TCP_SERVER_H */
+#endif /* GRPC_CORE_IOMGR_TCP_SERVER_H */

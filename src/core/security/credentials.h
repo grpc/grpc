@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_SECURITY_CREDENTIALS_H
-#define GRPC_INTERNAL_CORE_SECURITY_CREDENTIALS_H
+#ifndef GRPC_CORE_SECURITY_CREDENTIALS_H
+#define GRPC_CORE_SECURITY_CREDENTIALS_H
 
 #include "src/core/transport/metadata_batch.h"
 #include <grpc/grpc.h>
@@ -373,4 +373,4 @@ typedef struct {
   grpc_credentials_md_store *plugin_md;
 } grpc_plugin_credentials;
 
-#endif /* GRPC_INTERNAL_CORE_SECURITY_CREDENTIALS_H */
+#endif /* GRPC_CORE_SECURITY_CREDENTIALS_H */
