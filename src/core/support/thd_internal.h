@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,9 +31,9 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_SUPPORT_THD_INTERNAL_H
-#define GRPC_INTERNAL_CORE_SUPPORT_THD_INTERNAL_H
+#ifndef GRPC_CORE_SUPPORT_THD_INTERNAL_H
+#define GRPC_CORE_SUPPORT_THD_INTERNAL_H
 
 /* Internal interfaces between modules within the gpr support library.  */
 
-#endif /* GRPC_INTERNAL_CORE_SUPPORT_THD_INTERNAL_H */
+#endif /* GRPC_CORE_SUPPORT_THD_INTERNAL_H */

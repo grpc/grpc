@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_IOMGR_IOCP_WINDOWS_H
-#define GRPC_INTERNAL_CORE_IOMGR_IOCP_WINDOWS_H
+#ifndef GRPC_CORE_IOMGR_IOCP_WINDOWS_H
+#define GRPC_CORE_IOMGR_IOCP_WINDOWS_H
 
 #include <grpc/support/sync.h>
 
@@ -60,4 +60,4 @@ void grpc_socket_notify_on_read(grpc_exec_ctx *exec_ctx,
                                 grpc_winsocket *winsocket,
                                 grpc_closure *closure);
 
-#endif /* GRPC_INTERNAL_CORE_IOMGR_IOCP_WINDOWS_H */
+#endif /* GRPC_CORE_IOMGR_IOCP_WINDOWS_H */

@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_CHANNEL_CHANNEL_ARGS_H
-#define GRPC_INTERNAL_CORE_CHANNEL_CHANNEL_ARGS_H
+#ifndef GRPC_CORE_CHANNEL_CHANNEL_ARGS_H
+#define GRPC_CORE_CHANNEL_CHANNEL_ARGS_H
 
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
@@ -91,4 +91,4 @@ int grpc_channel_args_compression_algorithm_get_states(
 int grpc_channel_args_compare(const grpc_channel_args *a,
                               const grpc_channel_args *b);
 
-#endif /* GRPC_INTERNAL_CORE_CHANNEL_CHANNEL_ARGS_H */
+#endif /* GRPC_CORE_CHANNEL_CHANNEL_ARGS_H */
