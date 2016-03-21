@@ -136,11 +136,12 @@ grpc_compression_algorithm grpc_compression_algorithm_for_level(
     abort();
   }
 
-  const size_t num_supported =
-      GPR_BITCOUNT(accepted_encodings) - 1; /* discard NONE */
-  if (level == GRPC_COMPRESS_LEVEL_NONE || num_supported == 0) {
+  if (level == GRPC_COMPRESS_LEVEL_NONE ||
+      accepted_encodings == GRPC_COMPRESS_NONE) {
     return GRPC_COMPRESS_NONE;
   }
+  const size_t num_supported =
+      GPR_BITCOUNT(accepted_encodings) - 1; /* discard NONE */
 
   GPR_ASSERT(level > 0);
 
