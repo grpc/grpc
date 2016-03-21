@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_TRANSPORT_CONNECTIVITY_STATE_H
-#define GRPC_INTERNAL_CORE_TRANSPORT_CONNECTIVITY_STATE_H
+#ifndef GRPC_CORE_TRANSPORT_CONNECTIVITY_STATE_H
+#define GRPC_CORE_TRANSPORT_CONNECTIVITY_STATE_H
 
 #include <grpc/grpc.h>
 #include "src/core/iomgr/exec_ctx.h"
@@ -82,4 +82,4 @@ int grpc_connectivity_state_notify_on_state_change(
     grpc_exec_ctx *exec_ctx, grpc_connectivity_state_tracker *tracker,
     grpc_connectivity_state *current, grpc_closure *notify);
 
-#endif /* GRPC_INTERNAL_CORE_TRANSPORT_CONNECTIVITY_STATE_H */
+#endif /* GRPC_CORE_TRANSPORT_CONNECTIVITY_STATE_H */

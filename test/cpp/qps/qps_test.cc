@@ -43,7 +43,7 @@ namespace grpc {
 namespace testing {
 
 static const int WARMUP = 20;
-static const int BENCHMARK = 40;
+static const int BENCHMARK = 20;
 
 static void RunQPS() {
   gpr_log(GPR_INFO, "Running QPS test");
