@@ -87,7 +87,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/channel/channel_stack.c \
     src/core/channel/channel_stack_builder.c \
     src/core/channel/client_channel.c \
-    src/core/channel/client_uchannel.c \
     src/core/channel/compress_filter.c \
     src/core/channel/connected_channel.c \
     src/core/channel/http_client_filter.c \
