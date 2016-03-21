@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -51,6 +51,8 @@
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
+
+#define RETRY_TIMEOUT 300
 
 typedef struct servers_fixture {
   size_t num_servers;
@@ -303,8 +305,8 @@ static int *perform_request(servers_fixture *f, grpc_channel *client,
 
     s_idx = -1;
     while ((ev = grpc_completion_queue_next(
-                f->cq, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(1), NULL)).type !=
-           GRPC_QUEUE_TIMEOUT) {
+                f->cq, GRPC_TIMEOUT_MILLIS_TO_DEADLINE(10 * RETRY_TIMEOUT),
+                NULL)).type != GRPC_QUEUE_TIMEOUT) {
       GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
       read_tag = ((int)(intptr_t)ev.tag);
       gpr_log(GPR_DEBUG, "EVENT: success:%d, type:%d, tag:%d iter:%d",
@@ -376,9 +378,9 @@ static int *perform_request(servers_fixture *f, grpc_channel *client,
       }
     }
 
-    GPR_ASSERT(grpc_completion_queue_next(f->cq,
-                                          GRPC_TIMEOUT_MILLIS_TO_DEADLINE(200),
-                                          NULL).type == GRPC_QUEUE_TIMEOUT);
+    GPR_ASSERT(grpc_completion_queue_next(
+                   f->cq, GRPC_TIMEOUT_MILLIS_TO_DEADLINE(2 * RETRY_TIMEOUT),
+                   NULL).type == GRPC_QUEUE_TIMEOUT);
 
     grpc_metadata_array_destroy(&rdata->initial_metadata_recv);
     grpc_metadata_array_destroy(&rdata->trailing_metadata_recv);
@@ -506,7 +508,7 @@ void run_spec(const test_spec *spec) {
 
   arg.type = GRPC_ARG_INTEGER;
   arg.key = "grpc.testing.fixed_reconnect_backoff";
-  arg.value.integer = 100;
+  arg.value.integer = RETRY_TIMEOUT;
   args.num_args = 1;
   args.args = &arg;
 
@@ -542,7 +544,7 @@ static grpc_channel *create_client(const servers_fixture *f) {
 
   arg.type = GRPC_ARG_INTEGER;
   arg.key = "grpc.testing.fixed_reconnect_backoff";
-  arg.value.integer = 100;
+  arg.value.integer = RETRY_TIMEOUT;
   args.num_args = 1;
   args.args = &arg;
 

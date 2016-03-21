@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_IMPL_CODEGEN_H
-#define GRPC_IMPL_CODEGEN_H
+#ifndef GRPC_IMPL_CODEGEN_PROPAGATION_BITS_H
+#define GRPC_IMPL_CODEGEN_PROPAGATION_BITS_H
 
 #include <grpc/impl/codegen/port_platform.h>
 
@@ -64,4 +64,4 @@ extern "C" {
 }
 #endif
 
-#endif /* GRPC_IMPL_CODEGEN_H */
+#endif /* GRPC_IMPL_CODEGEN_PROPAGATION_BITS_H */

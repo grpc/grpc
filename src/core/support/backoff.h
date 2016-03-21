@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_SUPPORT_BACKOFF_H
-#define GRPC_INTERNAL_CORE_SUPPORT_BACKOFF_H
+#ifndef GRPC_CORE_SUPPORT_BACKOFF_H
+#define GRPC_CORE_SUPPORT_BACKOFF_H
 
 #include <grpc/support/time.h>
 
@@ -65,4 +65,4 @@ gpr_timespec gpr_backoff_step(gpr_backoff *backoff, gpr_timespec now);
 /// instead
 void gpr_backoff_reset(gpr_backoff *backoff);
 
-#endif  // GRPC_INTERNAL_CORE_SUPPORT_BACKOFF_H
+#endif /* GRPC_CORE_SUPPORT_BACKOFF_H */
