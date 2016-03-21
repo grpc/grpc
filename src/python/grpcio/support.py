@@ -78,7 +78,7 @@ def _expect_compile(compiler, source_string, error_message):
 
 def diagnose_compile_error(build_ext, error):
   """Attempt to diagnose an error during compilation."""
-  for c_check, message in C_CHECKS.items():
+  for c_check, message in list(C_CHECKS.items()):
     _expect_compile(build_ext.compiler, c_check, message)
   python_sources = [
       source for source in build_ext.get_source_files()

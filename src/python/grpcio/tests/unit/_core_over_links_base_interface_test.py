@@ -68,7 +68,7 @@ def _serialization_behaviors_from_serializations(serializations):
   request_deserializers = {}
   response_serializers = {}
   response_deserializers = {}
-  for (group, method), serialization in serializations.iteritems():
+  for (group, method), serialization in serializations.items():
     request_serializers[group, method] = serialization.serialize_request
     request_deserializers[group, method] = serialization.deserialize_request
     response_serializers[group, method] = serialization.serialize_response

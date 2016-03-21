@@ -437,7 +437,7 @@ def jenkins_junit_xml(result):
   suite = ElementTree.SubElement(root, 'testsuite', {
       'name': 'Python gRPC tests',
   })
-  for case in result.cases.values():
+  for case in list(result.cases.values()):
     if case.kind is CaseResult.Kind.SUCCESS:
       ElementTree.SubElement(suite, 'testcase', {
           'name': case.name,

@@ -66,7 +66,7 @@ class _Implementation(test_interfaces.Implementation):
     # _digest.TestServiceDigest.
     cardinalities = {
         method: method_object.cardinality()
-        for (group, method), method_object in methods.iteritems()}
+        for (group, method), method_object in methods.items()}
     dynamic_stub = crust_implementations.dynamic_stub(
         invocation_end_link, group, cardinalities, pool)
 

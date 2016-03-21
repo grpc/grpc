@@ -368,7 +368,7 @@ def _assemble(
   events = {}
   adaptations = {}
   messages = {}
-  for name, scenario in scenarios.iteritems():
+  for name, scenario in scenarios.items():
     if name in names:
       raise ValueError('Repeated name "%s"!' % name)
 

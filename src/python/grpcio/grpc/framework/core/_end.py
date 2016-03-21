@@ -81,7 +81,7 @@ def _cancel_futures(futures):
 def _future_shutdown(lock, cycle, event):
   def in_future():
     with lock:
-      _abort(cycle.operations.values())
+      _abort(list(cycle.operations.values()))
       _cancel_futures(cycle.futures)
   return in_future
 
@@ -160,7 +160,7 @@ class _End(End):
               grace, _future_shutdown(self._lock, self._cycle, event))
           self._cycle.futures.append(future)
         else:
-          _abort(self._cycle.operations.values())
+          _abort(list(self._cycle.operations.values()))
         return event
 
   def operate(
