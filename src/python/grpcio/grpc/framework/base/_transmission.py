@@ -1,4 +1,4 @@
-# Copyright 2015, Google Inc.
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -30,6 +30,8 @@
 """State and behavior for ticket transmission during an operation."""
 
 import abc
+
+import six
 
 from grpc.framework.base import _constants
 from grpc.framework.base import _interfaces
@@ -77,9 +79,8 @@ _ABORTION_OUTCOME_TO_BACK_TO_FRONT_TICKET_KIND = {
 }
 
 
-class _Ticketizer(object):
+class _Ticketizer(six.with_metaclass(abc.ABCMeta)):
   """Common specification of different ticket-creating behavior."""
-  __metaclass__ = abc.ABCMeta
 
   @abc.abstractmethod
   def ticketize(self, operation_id, sequence_number, payload, complete):
@@ -187,9 +188,8 @@ class _BackTicketizer(_Ticketizer):
           operation_id, sequence_number, kind, None)
 
 
-class TransmissionManager(_interfaces.TransmissionManager):
+class TransmissionManager(six.with_metaclass(abc.ABCMeta, _interfaces.TransmissionManager)):
   """A _interfaces.TransmissionManager on which other managers may be set."""
-  __metaclass__ = abc.ABCMeta
 
   @abc.abstractmethod
   def set_ingestion_and_expiration_managers(
