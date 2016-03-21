@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_IOMGR_RESOLVE_ADDRESS_H
-#define GRPC_INTERNAL_CORE_IOMGR_RESOLVE_ADDRESS_H
+#ifndef GRPC_CORE_IOMGR_RESOLVE_ADDRESS_H
+#define GRPC_CORE_IOMGR_RESOLVE_ADDRESS_H
 
 #include <stddef.h>
 #include "src/core/iomgr/exec_ctx.h"
@@ -69,4 +69,4 @@ void grpc_resolved_addresses_destroy(grpc_resolved_addresses *addresses);
 extern grpc_resolved_addresses *(*grpc_blocking_resolve_address)(
     const char *name, const char *default_port);
 
-#endif /* GRPC_INTERNAL_CORE_IOMGR_RESOLVE_ADDRESS_H */
+#endif /* GRPC_CORE_IOMGR_RESOLVE_ADDRESS_H */

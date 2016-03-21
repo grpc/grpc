@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_HPACK_TABLE_H
-#define GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_HPACK_TABLE_H
+#ifndef GRPC_CORE_TRANSPORT_CHTTP2_HPACK_TABLE_H
+#define GRPC_CORE_TRANSPORT_CHTTP2_HPACK_TABLE_H
 
 #include "src/core/transport/metadata.h"
 #include <grpc/support/port_platform.h>
@@ -105,4 +105,4 @@ typedef struct {
 grpc_chttp2_hptbl_find_result grpc_chttp2_hptbl_find(
     const grpc_chttp2_hptbl *tbl, grpc_mdelem *md);
 
-#endif /* GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_HPACK_TABLE_H */
+#endif /* GRPC_CORE_TRANSPORT_CHTTP2_HPACK_TABLE_H */

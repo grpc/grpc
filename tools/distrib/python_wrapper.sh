@@ -1,3 +1,5 @@
+#!/bin/sh
+
 # Copyright 2016, Google Inc.
 # All rights reserved.
 #
@@ -27,62 +29,19 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-FROM debian:squeeze
+for p in python2.7 python2.6 python2 python not_found ; do 
 
-# Install Git and basic packages.
-RUN apt-get update && apt-get install -y \
-  autoconf \
-  autotools-dev \
-  build-essential \
-  bzip2 \
-  ccache \
-  curl \
-  gcc \
-  gcc-multilib \
-  git \
-  gyp \
-  lcov \
-  libc6 \
-  libc6-dbg \
-  libc6-dev \
-  libgtest-dev \
-  libtool \
-  make \
-  perl \
-  strace \
-  python-dev \
-  python-setuptools \
-  python-yaml \
-  telnet \
-  unzip \
-  wget \
-  zip && apt-get clean
+  python=`which $p || echo not_found`
 
-#================
-# Build profiling
-RUN apt-get update && apt-get install -y time && apt-get clean
+  if [ -x "$python" ] ; then
+    break
+  fi
 
+done
 
-# libgflags-dev is not available on squeezy
-RUN apt-get update && apt-get -y install libgtest-dev libc++-dev clang && apt-get clean
-
-RUN apt-get update && apt-get -y install python-pip && apt-get clean
-RUN pip install argparse
-
-RUN wget http://openssl.org/source/openssl-1.0.2f.tar.gz
-
-ENV POST_GIT_STEP tools/dockerfile/test/cxx_squeeze_x64/post-git-setup.sh
-
-# Prepare ccache
-RUN ln -s /usr/bin/ccache /usr/local/bin/gcc
-RUN ln -s /usr/bin/ccache /usr/local/bin/g++
-RUN ln -s /usr/bin/ccache /usr/local/bin/cc
-RUN ln -s /usr/bin/ccache /usr/local/bin/c++
-RUN ln -s /usr/bin/ccache /usr/local/bin/clang
-RUN ln -s /usr/bin/ccache /usr/local/bin/clang++
-
-
-RUN mkdir /var/local/jenkins
-
-# Define the default command.
-CMD ["bash"]
+if [ -x "$python" ] ; then
+  exec $python $@
+else
+  echo "No acceptable version of python found on the system"
+  exit 1
+fi

@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_IOMGR_UDP_SERVER_H
-#define GRPC_INTERNAL_CORE_IOMGR_UDP_SERVER_H
+#ifndef GRPC_CORE_IOMGR_UDP_SERVER_H
+#define GRPC_CORE_IOMGR_UDP_SERVER_H
 
 #include "src/core/iomgr/endpoint.h"
 #include "src/core/iomgr/fd_posix.h"
@@ -73,4 +73,4 @@ int grpc_udp_server_add_port(grpc_udp_server *s, const void *addr,
 void grpc_udp_server_destroy(grpc_exec_ctx *exec_ctx, grpc_udp_server *server,
                              grpc_closure *on_done);
 
-#endif /* GRPC_INTERNAL_CORE_IOMGR_UDP_SERVER_H */
+#endif /* GRPC_CORE_IOMGR_UDP_SERVER_H */

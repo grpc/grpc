@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_TRANSPORT_BYTE_STREAM_H
-#define GRPC_INTERNAL_CORE_TRANSPORT_BYTE_STREAM_H
+#ifndef GRPC_CORE_TRANSPORT_BYTE_STREAM_H
+#define GRPC_CORE_TRANSPORT_BYTE_STREAM_H
 
 #include "src/core/iomgr/exec_ctx.h"
 #include <grpc/support/slice_buffer.h>
@@ -86,4 +86,4 @@ void grpc_slice_buffer_stream_init(grpc_slice_buffer_stream *stream,
                                    gpr_slice_buffer *slice_buffer,
                                    uint32_t flags);
 
-#endif /* GRPC_INTERNAL_CORE_TRANSPORT_BYTE_STREAM_H */
+#endif /* GRPC_CORE_TRANSPORT_BYTE_STREAM_H */

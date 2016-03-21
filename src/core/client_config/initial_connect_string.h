@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_CLIENT_CONFIG_INITIAL_CONNECT_STRING_H
-#define GRPC_INTERNAL_CORE_CLIENT_CONFIG_INITIAL_CONNECT_STRING_H
+#ifndef GRPC_CORE_CLIENT_CONFIG_INITIAL_CONNECT_STRING_H
+#define GRPC_CORE_CLIENT_CONFIG_INITIAL_CONNECT_STRING_H
 
 #include <grpc/support/slice.h>
 #include "src/core/iomgr/sockaddr.h"
@@ -47,4 +47,4 @@ void grpc_test_set_initial_connect_string_function(
 void grpc_set_initial_connect_string(struct sockaddr **addr, size_t *addr_len,
                                      gpr_slice *connect_string);
 
-#endif /* GRPC_INTERNAL_CORE_CLIENT_CONFIG_INITIAL_CONNECT_STRING_H */
+#endif /* GRPC_CORE_CLIENT_CONFIG_INITIAL_CONNECT_STRING_H */
