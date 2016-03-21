@@ -2471,8 +2471,6 @@ targets:
   - gpr_test_util
   - gpr
   - grpc++_test_config
-  exclude_configs:
-  - tsan
   platforms:
   - mac
   - linux
@@ -2492,8 +2490,6 @@ targets:
   - gpr_test_util
   - gpr
   - grpc++_test_config
-  exclude_configs:
-  - tsan
   platforms:
   - mac
   - linux
@@ -2826,11 +2822,11 @@ configs:
   etsan:
     CC: clang
     CPPFLAGS: -O0 -fsanitize=thread -fno-omit-frame-pointer -Wno-unused-command-line-argument
-      -fPIE -pie -DGPR_NO_DIRECT_SYSCALLS
+      -DGPR_NO_DIRECT_SYSCALLS
     CXX: clang++
     DEFINES: _DEBUG DEBUG GRPC_EXECUTION_CONTEXT_SANITIZER
     LD: clang
-    LDFLAGS: -fsanitize=thread -fPIE -pie $(if $(JENKINS_BUILD),-Wl$(comma)-Ttext-segment=0x7e0000000000,)
+    LDFLAGS: -fsanitize=thread
     LDXX: clang++
     compile_the_world: true
     test_environ:
@@ -2882,10 +2878,10 @@ configs:
   tsan:
     CC: clang
     CPPFLAGS: -O0 -fsanitize=thread -fno-omit-frame-pointer -Wno-unused-command-line-argument
-      -fPIE -pie -DGPR_NO_DIRECT_SYSCALLS
+      -DGPR_NO_DIRECT_SYSCALLS
     CXX: clang++
     LD: clang
-    LDFLAGS: -fsanitize=thread -fPIE -pie $(if $(JENKINS_BUILD),-Wl$(comma)-Ttext-segment=0x7e0000000000,)
+    LDFLAGS: -fsanitize=thread
     LDXX: clang++
     compile_the_world: true
     test_environ:
