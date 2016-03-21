@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_BIN_ENCODER_H
-#define GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_BIN_ENCODER_H
+#ifndef GRPC_CORE_TRANSPORT_CHTTP2_BIN_ENCODER_H
+#define GRPC_CORE_TRANSPORT_CHTTP2_BIN_ENCODER_H
 
 #include <grpc/support/slice.h>
 
@@ -51,4 +51,4 @@ gpr_slice grpc_chttp2_huffman_compress(gpr_slice input);
    return y; */
 gpr_slice grpc_chttp2_base64_encode_and_huffman_compress(gpr_slice input);
 
-#endif /* GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_BIN_ENCODER_H */
+#endif /* GRPC_CORE_TRANSPORT_CHTTP2_BIN_ENCODER_H */

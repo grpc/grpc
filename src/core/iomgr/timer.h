@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_IOMGR_TIMER_H
-#define GRPC_INTERNAL_CORE_IOMGR_TIMER_H
+#ifndef GRPC_CORE_IOMGR_TIMER_H
+#define GRPC_CORE_IOMGR_TIMER_H
 
 #include "src/core/iomgr/iomgr.h"
 #include "src/core/iomgr/exec_ctx.h"
@@ -105,4 +105,4 @@ void grpc_timer_list_shutdown(grpc_exec_ctx *exec_ctx);
 
 void grpc_kick_poller(void);
 
-#endif /* GRPC_INTERNAL_CORE_IOMGR_TIMER_H */
+#endif /* GRPC_CORE_IOMGR_TIMER_H */

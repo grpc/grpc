@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_CHANNEL_CLIENT_CHANNEL_H
-#define GRPC_INTERNAL_CORE_CHANNEL_CLIENT_CHANNEL_H
+#ifndef GRPC_CORE_CHANNEL_CLIENT_CHANNEL_H
+#define GRPC_CORE_CHANNEL_CLIENT_CHANNEL_H
 
 #include "src/core/channel/channel_stack.h"
 #include "src/core/client_config/resolver.h"
@@ -60,4 +60,4 @@ void grpc_client_channel_watch_connectivity_state(
     grpc_exec_ctx *exec_ctx, grpc_channel_element *elem, grpc_pollset *pollset,
     grpc_connectivity_state *state, grpc_closure *on_complete);
 
-#endif /* GRPC_INTERNAL_CORE_CHANNEL_CLIENT_CHANNEL_H */
+#endif /* GRPC_CORE_CHANNEL_CLIENT_CHANNEL_H */
