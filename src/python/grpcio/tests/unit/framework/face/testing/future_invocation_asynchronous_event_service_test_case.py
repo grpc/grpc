@@ -68,6 +68,9 @@ class _PauseableIterator(object):
   def __iter__(self):
     return self
 
+  def __next__(self):
+    return self.next()
+
   def next(self):
     with self._condition:
       while self._paused:
