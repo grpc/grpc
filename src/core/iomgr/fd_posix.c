@@ -72,9 +72,6 @@ static grpc_fd *fd_freelist = NULL;
 static gpr_mu fd_freelist_mu;
 
 static void freelist_fd(grpc_fd *fd) {
-  // Note that this function must be called after a release store (or
-  // full-barrier operation) on refst so that prior actions on the fd are
-  // ordered before the fd becomes visible to the freelist
   gpr_mu_lock(&fd_freelist_mu);
   fd->freelist_next = fd_freelist;
   fd_freelist = fd;
@@ -95,6 +92,7 @@ static grpc_fd *alloc_fd(int fd) {
     gpr_mu_init(&r->mu);
   }
 
+  gpr_mu_lock(&r->mu);
   r->shutdown = 0;
   r->read_closure = CLOSURE_NOT_READY;
   r->write_closure = CLOSURE_NOT_READY;
@@ -106,11 +104,9 @@ static grpc_fd *alloc_fd(int fd) {
   r->on_done_closure = NULL;
   r->closed = 0;
   r->released = 0;
-  // The last operation on r before returning it should be a release-store
-  // so that all the above fields are globally visible before the value of
-  // r could escape to another thread. Our refcount itself needs a release-store
-  // so use this
   gpr_atm_rel_store(&r->refst, 1);
+  gpr_mu_unlock(&r->mu);
+
   return r;
 }
 
