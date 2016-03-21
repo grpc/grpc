@@ -107,7 +107,7 @@ void grpc_workqueue_flush(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue) {
   if (grpc_closure_list_empty(workqueue->closure_list)) {
     grpc_wakeup_fd_wakeup(&workqueue->wakeup_fd);
   }
-  grpc_closure_list_move(&exec_ctx->closure_list, &workqueue->closure_list);
+  grpc_exec_ctx_enqueue_list(exec_ctx, &workqueue->closure_list, NULL);
   gpr_mu_unlock(&workqueue->mu);
 }
 
@@ -123,7 +123,7 @@ static void on_readable(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
     gpr_free(workqueue);
   } else {
     gpr_mu_lock(&workqueue->mu);
-    grpc_closure_list_move(&workqueue->closure_list, &exec_ctx->closure_list);
+    grpc_exec_ctx_enqueue_list(exec_ctx, &workqueue->closure_list, NULL);
     grpc_wakeup_fd_consume_wakeup(&workqueue->wakeup_fd);
     gpr_mu_unlock(&workqueue->mu);
     grpc_fd_notify_on_read(exec_ctx, workqueue->wakeup_read_fd,

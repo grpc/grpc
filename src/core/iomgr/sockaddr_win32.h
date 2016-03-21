@@ -31,11 +31,11 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_IOMGR_SOCKADDR_WIN32_H
-#define GRPC_INTERNAL_CORE_IOMGR_SOCKADDR_WIN32_H
+#ifndef GRPC_CORE_IOMGR_SOCKADDR_WIN32_H
+#define GRPC_CORE_IOMGR_SOCKADDR_WIN32_H
 
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #include <mswsock.h>
 
-#endif /* GRPC_INTERNAL_CORE_IOMGR_SOCKADDR_WIN32_H */
+#endif /* GRPC_CORE_IOMGR_SOCKADDR_WIN32_H */
