@@ -34,7 +34,7 @@
 
 #include "src/core/iomgr/unix_sockets_posix.h"
 
-#ifdef GPR_POSIX_SOCKET
+#ifndef GPR_HAVE_UNIX_SOCKET
 
 void grpc_create_socketpair_if_unix(int sv[2]) {}
 
