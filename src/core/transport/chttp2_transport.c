@@ -718,7 +718,7 @@ static void terminate_writing_with_lock(grpc_exec_ctx *exec_ctx,
                                         grpc_chttp2_transport *t,
                                         grpc_chttp2_stream *s_ignored,
                                         void *a) {
-  int success = *(int *)a;
+  bool success = (bool)(uintptr_t)a;
 
   allow_endpoint_shutdown_locked(exec_ctx, t);
 
@@ -750,8 +750,8 @@ void grpc_chttp2_terminate_writing(grpc_exec_ctx *exec_ctx,
                                    void *transport_writing, bool success) {
   grpc_chttp2_transport *t = TRANSPORT_FROM_WRITING(transport_writing);
   grpc_chttp2_run_with_global_lock(exec_ctx, t, NULL,
-                                   terminate_writing_with_lock, &success,
-                                   sizeof(success));
+                                   terminate_writing_with_lock,
+                                   (void *)(uintptr_t)success, 0);
 }
 
 static void writing_action(grpc_exec_ctx *exec_ctx, void *gt,
