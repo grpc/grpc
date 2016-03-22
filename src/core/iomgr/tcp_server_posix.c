@@ -270,9 +270,8 @@ static int prepare_socket(int fd, const struct sockaddr *addr,
   }
 
   if (!grpc_set_socket_nonblocking(fd, 1) || !grpc_set_socket_cloexec(fd, 1) ||
-      (!grpc_is_unix_socket(addr) &&
-       (!grpc_set_socket_low_latency(fd, 1) ||
-        !grpc_set_socket_reuse_addr(fd, 1))) ||
+      (!grpc_is_unix_socket(addr) && (!grpc_set_socket_low_latency(fd, 1) ||
+                                      !grpc_set_socket_reuse_addr(fd, 1))) ||
       !grpc_set_socket_no_sigpipe_if_possible(fd)) {
     gpr_log(GPR_ERROR, "Unable to configure socket %d: %s", fd,
             strerror(errno));

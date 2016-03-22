@@ -48,7 +48,7 @@
 
 void grpc_create_socketpair_if_unix(int sv[2]);
 
-grpc_resolved_addresses *grpc_resolve_unix_domain_address(const char* name);
+grpc_resolved_addresses *grpc_resolve_unix_domain_address(const char *name);
 
 int grpc_is_unix_socket(const struct sockaddr *addr);
 

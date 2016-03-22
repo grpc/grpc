@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -46,7 +46,7 @@ void grpc_create_socketpair_if_unix(int sv[2]) {
   GPR_ASSERT(socketpair(AF_UNIX, SOCK_STREAM, 0, sv) == 0);
 }
 
-grpc_resolved_addresses *grpc_resolve_unix_domain_address(const char* name) {
+grpc_resolved_addresses *grpc_resolve_unix_domain_address(const char *name) {
   struct sockaddr_un *un;
 
   grpc_resolved_addresses *addrs = gpr_malloc(sizeof(grpc_resolved_addresses));
@@ -95,7 +95,7 @@ char *grpc_sockaddr_to_uri_unix_if_possible(const struct sockaddr *addr) {
     return NULL;
   }
 
-  char* result;
+  char *result;
   gpr_asprintf(&result, "unix:%s", ((struct sockaddr_un *)addr)->sun_path);
   return result;
 }
