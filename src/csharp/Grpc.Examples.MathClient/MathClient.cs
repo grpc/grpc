@@ -40,7 +40,7 @@ namespace Math
         public static void Main(string[] args)
         {
             var channel = new Channel("127.0.0.1", 23456, ChannelCredentials.Insecure);
-            Math.MathClientBase client = new Math.MathClient(channel);
+            Math.MathClient client = new Math.MathClient(channel);
             MathExamples.DivExample(client);
 
             MathExamples.DivAsyncExample(client).Wait();
