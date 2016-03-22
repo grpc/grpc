@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_SUPPORT_ENV_H
-#define GRPC_INTERNAL_CORE_SUPPORT_ENV_H
+#ifndef GRPC_CORE_SUPPORT_ENV_H
+#define GRPC_CORE_SUPPORT_ENV_H
 
 #include <stdio.h>
 
@@ -57,4 +57,4 @@ void gpr_setenv(const char *name, const char *value);
 }
 #endif
 
-#endif  /* GRPC_INTERNAL_CORE_SUPPORT_ENV_H */
+#endif /* GRPC_CORE_SUPPORT_ENV_H */

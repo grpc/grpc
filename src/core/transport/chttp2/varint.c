@@ -33,7 +33,7 @@
 
 #include "src/core/transport/chttp2/varint.h"
 
-int grpc_chttp2_hpack_varint_length(gpr_uint32 tail_value) {
+uint32_t grpc_chttp2_hpack_varint_length(uint32_t tail_value) {
   if (tail_value < (1 << 7)) {
     return 2;
   } else if (tail_value < (1 << 14)) {
@@ -47,19 +47,19 @@ int grpc_chttp2_hpack_varint_length(gpr_uint32 tail_value) {
   }
 }
 
-void grpc_chttp2_hpack_write_varint_tail(gpr_uint32 tail_value,
-                                         gpr_uint8* target, int tail_length) {
+void grpc_chttp2_hpack_write_varint_tail(uint32_t tail_value, uint8_t* target,
+                                         uint32_t tail_length) {
   switch (tail_length) {
     case 5:
-      target[4] = (gpr_uint8)((tail_value >> 28) | 0x80);
+      target[4] = (uint8_t)((tail_value >> 28) | 0x80);
     case 4:
-      target[3] = (gpr_uint8)((tail_value >> 21) | 0x80);
+      target[3] = (uint8_t)((tail_value >> 21) | 0x80);
     case 3:
-      target[2] = (gpr_uint8)((tail_value >> 14) | 0x80);
+      target[2] = (uint8_t)((tail_value >> 14) | 0x80);
     case 2:
-      target[1] = (gpr_uint8)((tail_value >> 7) | 0x80);
+      target[1] = (uint8_t)((tail_value >> 7) | 0x80);
     case 1:
-      target[0] = (gpr_uint8)((tail_value) | 0x80);
+      target[0] = (uint8_t)((tail_value) | 0x80);
   }
   target[tail_length - 1] &= 0x7f;
 }

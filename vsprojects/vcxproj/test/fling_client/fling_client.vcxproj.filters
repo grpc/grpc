@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\test\core\fling\client.c">
+      <Filter>test\core\fling</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="test">
+      <UniqueIdentifier>{c6a5647d-0d60-3a48-8aee-7a120823ab99}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core">
+      <UniqueIdentifier>{badf4fe9-6c6c-4187-9604-2c7038e5bc93}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core\fling">
+      <UniqueIdentifier>{5fe6e1c1-c8aa-9b4d-dacf-68e968a17d4a}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

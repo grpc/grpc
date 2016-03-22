@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,15 +31,21 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_SECURITY_JSON_TOKEN_H
-#define GRPC_INTERNAL_CORE_SECURITY_JSON_TOKEN_H
+#ifndef GRPC_CORE_SECURITY_JSON_TOKEN_H
+#define GRPC_CORE_SECURITY_JSON_TOKEN_H
 
 #include <grpc/support/slice.h>
 #include <openssl/rsa.h>
 
+#include "src/core/json/json.h"
+
 /* --- Constants. --- */
 
 #define GRPC_JWT_OAUTH2_AUDIENCE "https://www.googleapis.com/oauth2/v3/token"
+
+#define GRPC_AUTH_JSON_TYPE_INVALID "invalid"
+#define GRPC_AUTH_JSON_TYPE_SERVICE_ACCOUNT "service_account"
+#define GRPC_AUTH_JSON_TYPE_AUTHORIZED_USER "authorized_user"
 
 /* --- auth_json_key parsing. --- */
 
@@ -58,6 +64,10 @@ int grpc_auth_json_key_is_valid(const grpc_auth_json_key *json_key);
    error has been encountered. */
 grpc_auth_json_key grpc_auth_json_key_create_from_string(
     const char *json_string);
+
+/* Creates a json_key object from parsed json. Returns an invalid object if a
+   parsing error has been encountered. */
+grpc_auth_json_key grpc_auth_json_key_create_from_json(const grpc_json *json);
 
 /* Destructs the object. */
 void grpc_auth_json_key_destruct(grpc_auth_json_key *json_key);
@@ -97,7 +107,12 @@ int grpc_auth_refresh_token_is_valid(
 grpc_auth_refresh_token grpc_auth_refresh_token_create_from_string(
     const char *json_string);
 
+/* Creates a refresh token object from parsed json. Returns an invalid object if
+   a parsing error has been encountered. */
+grpc_auth_refresh_token grpc_auth_refresh_token_create_from_json(
+    const grpc_json *json);
+
 /* Destructs the object. */
 void grpc_auth_refresh_token_destruct(grpc_auth_refresh_token *refresh_token);
 
-#endif  /* GRPC_INTERNAL_CORE_SECURITY_JSON_TOKEN_H */
+#endif /* GRPC_CORE_SECURITY_JSON_TOKEN_H */

@@ -31,6 +31,14 @@ require 'grpc'
 
 include GRPC::Core::StatusCodes
 
+describe GRPC::Core::WriteFlags do
+  it 'should define the known write flag values' do
+    m = GRPC::Core::WriteFlags
+    expect(m.const_get(:BUFFER_HINT)).to_not be_nil
+    expect(m.const_get(:NO_COMPRESS)).to_not be_nil
+  end
+end
+
 describe GRPC::Core::RpcErrors do
   before(:each) do
     @known_types = {
@@ -93,7 +101,7 @@ describe GRPC::Core::Call do
   let(:fake_host) { 'localhost:10101' }
 
   before(:each) do
-    @ch = GRPC::Core::Channel.new(fake_host, nil)
+    @ch = GRPC::Core::Channel.new(fake_host, nil, :this_channel_is_insecure)
   end
 
   describe '#status' do
@@ -136,8 +144,17 @@ describe GRPC::Core::Call do
     end
   end
 
+  describe '#set_credentials!' do
+    it 'can set a valid CallCredentials object' do
+      call = make_test_call
+      auth_proc = proc { { 'plugin_key' => 'plugin_value' } }
+      creds = GRPC::Core::CallCredentials.new auth_proc
+      expect { call.set_credentials! creds }.not_to raise_error
+    end
+  end
+
   def make_test_call
-    @ch.create_call(client_queue, 'dummy_method', 'dummy_host', deadline)
+    @ch.create_call(client_queue, nil, nil, 'dummy_method', nil, deadline)
   end
 
   def deadline

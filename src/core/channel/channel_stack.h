@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_CHANNEL_CHANNEL_STACK_H
-#define GRPC_INTERNAL_CORE_CHANNEL_CHANNEL_STACK_H
+#ifndef GRPC_CORE_CHANNEL_CHANNEL_STACK_H
+#define GRPC_CORE_CHANNEL_CHANNEL_STACK_H
 
 /* A channel filter defines how operations on a channel are implemented.
    Channel filters are chained together to create full channels, and if those
@@ -51,44 +51,21 @@
 typedef struct grpc_channel_element grpc_channel_element;
 typedef struct grpc_call_element grpc_call_element;
 
-/* The direction of the call.
-   The values of the enums (1, -1) matter here - they are used to increment
-   or decrement a pointer to find the next element to call */
-typedef enum { GRPC_CALL_DOWN = 1, GRPC_CALL_UP = -1 } grpc_call_dir;
+typedef struct grpc_channel_stack grpc_channel_stack;
+typedef struct grpc_call_stack grpc_call_stack;
 
-typedef enum {
-  /* send a goaway message to remote channels indicating that we are going
-     to disconnect in the future */
-  GRPC_CHANNEL_GOAWAY,
-  /* disconnect any underlying transports */
-  GRPC_CHANNEL_DISCONNECT,
-  /* transport received a new call */
-  GRPC_ACCEPT_CALL,
-  /* an underlying transport was closed */
-  GRPC_TRANSPORT_CLOSED,
-  /* an underlying transport is about to be closed */
-  GRPC_TRANSPORT_GOAWAY
-} grpc_channel_op_type;
-
-/* A single filterable operation to be performed on a channel */
 typedef struct {
-  /* The type of operation we're performing */
-  grpc_channel_op_type type;
-  /* The directionality of this call - is it bubbling up the stack, or down? */
-  grpc_call_dir dir;
+  grpc_channel_stack *channel_stack;
+  const grpc_channel_args *channel_args;
+  int is_first;
+  int is_last;
+} grpc_channel_element_args;
 
-  /* Argument data, matching up with grpc_channel_op_type names */
-  union {
-    struct {
-      grpc_transport *transport;
-      const void *transport_server_data;
-    } accept_call;
-    struct {
-      grpc_status_code status;
-      gpr_slice message;
-    } goaway;
-  } data;
-} grpc_channel_op;
+typedef struct {
+  grpc_call_stack *call_stack;
+  const void *server_transport_data;
+  grpc_call_context_element *context;
+} grpc_call_element_args;
 
 /* Channel filters specify:
    1. the amount of memory needed in the channel & call (via the sizeof_XXX
@@ -103,12 +80,14 @@ typedef struct {
 typedef struct {
   /* Called to eg. send/receive data on a call.
      See grpc_call_next_op on how to call the next element in the stack */
-  void (*start_transport_op)(grpc_call_element *elem, grpc_transport_op *op);
+  void (*start_transport_stream_op)(grpc_exec_ctx *exec_ctx,
+                                    grpc_call_element *elem,
+                                    grpc_transport_stream_op *op);
   /* Called to handle channel level operations - e.g. new calls, or transport
      closure.
      See grpc_channel_next_op on how to call the next element in the stack */
-  void (*channel_op)(grpc_channel_element *elem,
-                     grpc_channel_element *from_elem, grpc_channel_op *op);
+  void (*start_transport_op)(grpc_exec_ctx *exec_ctx,
+                             grpc_channel_element *elem, grpc_transport_op *op);
 
   /* sizeof(per call data) */
   size_t sizeof_call_data;
@@ -119,13 +98,14 @@ typedef struct {
      server_transport_data is an opaque pointer. If it is NULL, this call is
      on a client; if it is non-NULL, then it points to memory owned by the
      transport and is on the server. Most filters want to ignore this
-     argument.*/
-  void (*init_call_elem)(grpc_call_element *elem,
-                         const void *server_transport_data,
-                         grpc_transport_op *initial_op);
+     argument. */
+  void (*init_call_elem)(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
+                         grpc_call_element_args *args);
+  void (*set_pollset)(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
+                      grpc_pollset *pollset);
   /* Destroy per call data.
      The filter does not need to do any chaining */
-  void (*destroy_call_elem)(grpc_call_element *elem);
+  void (*destroy_call_elem)(grpc_exec_ctx *exec_ctx, grpc_call_element *elem);
 
   /* sizeof(per channel data) */
   size_t sizeof_channel_data;
@@ -135,13 +115,15 @@ typedef struct {
      is_first, is_last designate this elements position in the stack, and are
      useful for asserting correct configuration by upper layer code.
      The filter does not need to do any chaining */
-  void (*init_channel_elem)(grpc_channel_element *elem,
-                            const grpc_channel_args *args,
-                            grpc_mdctx *metadata_context, int is_first,
-                            int is_last);
+  void (*init_channel_elem)(grpc_exec_ctx *exec_ctx, grpc_channel_element *elem,
+                            grpc_channel_element_args *args);
   /* Destroy per channel data.
      The filter does not need to do any chaining */
-  void (*destroy_channel_elem)(grpc_channel_element *elem);
+  void (*destroy_channel_elem)(grpc_exec_ctx *exec_ctx,
+                               grpc_channel_element *elem);
+
+  /* Implement grpc_call_get_peer() */
+  char *(*get_peer)(grpc_exec_ctx *exec_ctx, grpc_call_element *elem);
 
   /* The name of this filter */
   const char *name;
@@ -165,16 +147,24 @@ struct grpc_call_element {
 
 /* A channel stack tracks a set of related filters for one channel, and
    guarantees they live within a single malloc() allocation */
-typedef struct {
+struct grpc_channel_stack {
+  grpc_stream_refcount refcount;
   size_t count;
   /* Memory required for a call stack (computed at channel stack
      initialization) */
   size_t call_stack_size;
-} grpc_channel_stack;
+};
 
 /* A call stack tracks a set of related filters for one call, and guarantees
    they live within a single malloc() allocation */
-typedef struct { size_t count; } grpc_call_stack;
+struct grpc_call_stack {
+  /* shared refcount for this channel stack.
+     MUST be the first element: the underlying code calls destroy
+     with the address of the refcount, but higher layers prefer to think
+     about the address of the call stack itself. */
+  grpc_stream_refcount refcount;
+  size_t count;
+};
 
 /* Get a channel element given a channel stack and its index */
 grpc_channel_element *grpc_channel_stack_element(grpc_channel_stack *stack,
@@ -189,28 +179,66 @@ grpc_call_element *grpc_call_stack_element(grpc_call_stack *stack, size_t i);
 size_t grpc_channel_stack_size(const grpc_channel_filter **filters,
                                size_t filter_count);
 /* Initialize a channel stack given some filters */
-void grpc_channel_stack_init(const grpc_channel_filter **filters,
+void grpc_channel_stack_init(grpc_exec_ctx *exec_ctx, int initial_refs,
+                             grpc_iomgr_cb_func destroy, void *destroy_arg,
+                             const grpc_channel_filter **filters,
                              size_t filter_count, const grpc_channel_args *args,
-                             grpc_mdctx *metadata_context,
-                             grpc_channel_stack *stack);
+                             const char *name, grpc_channel_stack *stack);
 /* Destroy a channel stack */
-void grpc_channel_stack_destroy(grpc_channel_stack *stack);
+void grpc_channel_stack_destroy(grpc_exec_ctx *exec_ctx,
+                                grpc_channel_stack *stack);
 
 /* Initialize a call stack given a channel stack. transport_server_data is
    expected to be NULL on a client, or an opaque transport owned pointer on the
    server. */
-void grpc_call_stack_init(grpc_channel_stack *channel_stack,
+void grpc_call_stack_init(grpc_exec_ctx *exec_ctx,
+                          grpc_channel_stack *channel_stack, int initial_refs,
+                          grpc_iomgr_cb_func destroy, void *destroy_arg,
+                          grpc_call_context_element *context,
                           const void *transport_server_data,
-                          grpc_transport_op *initial_op,
                           grpc_call_stack *call_stack);
-/* Destroy a call stack */
-void grpc_call_stack_destroy(grpc_call_stack *stack);
+/* Set a pollset for a call stack: must occur before the first op is started */
+void grpc_call_stack_set_pollset(grpc_exec_ctx *exec_ctx,
+                                 grpc_call_stack *call_stack,
+                                 grpc_pollset *pollset);
 
+#ifdef GRPC_STREAM_REFCOUNT_DEBUG
+#define GRPC_CALL_STACK_REF(call_stack, reason) \
+  grpc_stream_ref(&(call_stack)->refcount, reason)
+#define GRPC_CALL_STACK_UNREF(exec_ctx, call_stack, reason) \
+  grpc_stream_unref(exec_ctx, &(call_stack)->refcount, reason)
+#define GRPC_CHANNEL_STACK_REF(channel_stack, reason) \
+  grpc_stream_ref(&(channel_stack)->refcount, reason)
+#define GRPC_CHANNEL_STACK_UNREF(exec_ctx, channel_stack, reason) \
+  grpc_stream_unref(exec_ctx, &(channel_stack)->refcount, reason)
+#else
+#define GRPC_CALL_STACK_REF(call_stack, reason) \
+  grpc_stream_ref(&(call_stack)->refcount)
+#define GRPC_CALL_STACK_UNREF(exec_ctx, call_stack, reason) \
+  grpc_stream_unref(exec_ctx, &(call_stack)->refcount)
+#define GRPC_CHANNEL_STACK_REF(channel_stack, reason) \
+  grpc_stream_ref(&(channel_stack)->refcount)
+#define GRPC_CHANNEL_STACK_UNREF(exec_ctx, channel_stack, reason) \
+  grpc_stream_unref(exec_ctx, &(channel_stack)->refcount)
+#endif
+
+/* Destroy a call stack */
+void grpc_call_stack_destroy(grpc_exec_ctx *exec_ctx, grpc_call_stack *stack);
+
+/* Ignore set pollset - used by filters to implement the set_pollset method
+   if they don't care about pollsets at all. Does nothing. */
+void grpc_call_stack_ignore_set_pollset(grpc_exec_ctx *exec_ctx,
+                                        grpc_call_element *elem,
+                                        grpc_pollset *pollset);
 /* Call the next operation in a call stack */
-void grpc_call_next_op(grpc_call_element *elem, grpc_transport_op *op);
+void grpc_call_next_op(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
+                       grpc_transport_stream_op *op);
 /* Call the next operation (depending on call directionality) in a channel
    stack */
-void grpc_channel_next_op(grpc_channel_element *elem, grpc_channel_op *op);
+void grpc_channel_next_op(grpc_exec_ctx *exec_ctx, grpc_channel_element *elem,
+                          grpc_transport_op *op);
+/* Pass through a request to get_peer to the next child element */
+char *grpc_call_next_get_peer(grpc_exec_ctx *exec_ctx, grpc_call_element *elem);
 
 /* Given the top element of a channel stack, get the channel stack itself */
 grpc_channel_stack *grpc_channel_stack_from_top_element(
@@ -219,13 +247,14 @@ grpc_channel_stack *grpc_channel_stack_from_top_element(
 grpc_call_stack *grpc_call_stack_from_top_element(grpc_call_element *elem);
 
 void grpc_call_log_op(char *file, int line, gpr_log_severity severity,
-                      grpc_call_element *elem, grpc_transport_op *op);
+                      grpc_call_element *elem, grpc_transport_stream_op *op);
 
-void grpc_call_element_send_cancel(grpc_call_element *cur_elem);
+void grpc_call_element_send_cancel(grpc_exec_ctx *exec_ctx,
+                                   grpc_call_element *cur_elem);
 
 extern int grpc_trace_channel;
 
 #define GRPC_CALL_LOG_OP(sev, elem, op) \
   if (grpc_trace_channel) grpc_call_log_op(sev, elem, op)
 
-#endif /* GRPC_INTERNAL_CORE_CHANNEL_CHANNEL_STACK_H */
+#endif /* GRPC_CORE_CHANNEL_CHANNEL_STACK_H */

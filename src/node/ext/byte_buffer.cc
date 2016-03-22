@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -44,15 +44,16 @@
 namespace grpc {
 namespace node {
 
+
 using v8::Context;
 using v8::Function;
-using v8::Handle;
+using v8::Local;
 using v8::Object;
 using v8::Number;
 using v8::Value;
 
-grpc_byte_buffer *BufferToByteBuffer(Handle<Value> buffer) {
-  NanScope();
+grpc_byte_buffer *BufferToByteBuffer(Local<Value> buffer) {
+  Nan::HandleScope scope;
   int length = ::node::Buffer::Length(buffer);
   char *data = ::node::Buffer::Data(buffer);
   gpr_slice slice = gpr_slice_malloc(length);
@@ -62,13 +63,17 @@ grpc_byte_buffer *BufferToByteBuffer(Handle<Value> buffer) {
   return byte_buffer;
 }
 
-Handle<Value> ByteBufferToBuffer(grpc_byte_buffer *buffer) {
-  NanEscapableScope();
+namespace {
+void delete_buffer(char *data, void *hint) { delete[] data; }
+}
+
+Local<Value> ByteBufferToBuffer(grpc_byte_buffer *buffer) {
+  Nan::EscapableHandleScope scope;
   if (buffer == NULL) {
-    return NanEscapeScope(NanNull());
+    return scope.Escape(Nan::Null());
   }
   size_t length = grpc_byte_buffer_length(buffer);
-  char *result = reinterpret_cast<char *>(calloc(length, sizeof(char)));
+  char *result = new char[length];
   size_t offset = 0;
   grpc_byte_buffer_reader reader;
   grpc_byte_buffer_reader_init(&reader, buffer);
@@ -76,22 +81,24 @@ Handle<Value> ByteBufferToBuffer(grpc_byte_buffer *buffer) {
   while (grpc_byte_buffer_reader_next(&reader, &next) != 0) {
     memcpy(result + offset, GPR_SLICE_START_PTR(next), GPR_SLICE_LENGTH(next));
     offset += GPR_SLICE_LENGTH(next);
+    gpr_slice_unref(next);
   }
-  return NanEscapeScope(MakeFastBuffer(NanNewBufferHandle(result, length)));
+  return scope.Escape(MakeFastBuffer(
+      Nan::NewBuffer(result, length, delete_buffer, NULL).ToLocalChecked()));
 }
 
-Handle<Value> MakeFastBuffer(Handle<Value> slowBuffer) {
-  NanEscapableScope();
-  Handle<Object> globalObj = NanGetCurrentContext()->Global();
-  Handle<Function> bufferConstructor = Handle<Function>::Cast(
-      globalObj->Get(NanNew("Buffer")));
-  Handle<Value> consArgs[3] = {
+Local<Value> MakeFastBuffer(Local<Value> slowBuffer) {
+  Nan::EscapableHandleScope scope;
+  Local<Object> globalObj = Nan::GetCurrentContext()->Global();
+  Local<Function> bufferConstructor = Local<Function>::Cast(
+      globalObj->Get(Nan::New("Buffer").ToLocalChecked()));
+  Local<Value> consArgs[3] = {
     slowBuffer,
-    NanNew<Number>(::node::Buffer::Length(slowBuffer)),
-    NanNew<Number>(0)
+    Nan::New<Number>(::node::Buffer::Length(slowBuffer)),
+    Nan::New<Number>(0)
   };
-  Handle<Object> fastBuffer = bufferConstructor->NewInstance(3, consArgs);
-  return NanEscapeScope(fastBuffer);
+  Local<Object> fastBuffer = bufferConstructor->NewInstance(3, consArgs);
+  return scope.Escape(fastBuffer);
 }
 }  // namespace node
 }  // namespace grpc

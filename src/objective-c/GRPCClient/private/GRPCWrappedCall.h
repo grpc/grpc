@@ -34,11 +34,11 @@
 #import <Foundation/Foundation.h>
 #include <grpc/grpc.h>
 
-#import "GRPCChannel.h"
+#import "GRPCRequestHeaders.h"
 
 @interface GRPCOperation : NSObject
 @property(nonatomic, readonly) grpc_op op;
-// Guaranteed to be called when the operation has finished.
+/** Guaranteed to be called when the operation has finished. */
 - (void)finish;
 @end
 
@@ -81,15 +81,17 @@
 
 @end
 
+#pragma mark GRPCWrappedCall
+
 @interface GRPCWrappedCall : NSObject
 
-- (instancetype)initWithChannel:(GRPCChannel *)channel
-                         method:(NSString *)method
-                           host:(NSString *)host NS_DESIGNATED_INITIALIZER;
+- (instancetype)initWithHost:(NSString *)host
+                        path:(NSString *)path NS_DESIGNATED_INITIALIZER;
 
 - (void)startBatchWithOperations:(NSArray *)ops errorHandler:(void(^)())errorHandler;
 
 - (void)startBatchWithOperations:(NSArray *)ops;
 
 - (void)cancel;
+
 @end

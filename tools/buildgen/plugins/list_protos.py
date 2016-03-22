@@ -29,7 +29,7 @@
 
 """Buildgen .proto files list plugin.
 
-This parses the list of targets from the json build file, and creates
+This parses the list of targets from the yaml build file, and creates
 a list called "protos" that contains all of the proto file names.
 
 """

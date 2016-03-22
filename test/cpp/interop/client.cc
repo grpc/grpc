@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -38,16 +38,15 @@
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include <gflags/gflags.h>
-#include <grpc++/channel_interface.h>
+#include <grpc++/channel.h>
 #include <grpc++/client_context.h>
-#include <grpc++/status.h>
-#include <grpc++/stream.h>
+
 #include "test/cpp/interop/client_helper.h"
 #include "test/cpp/interop/interop_client.h"
 #include "test/cpp/util/test_config.h"
 
-DEFINE_bool(enable_ssl, false, "Whether to use ssl/tls.");
-DEFINE_bool(use_prod_roots, false, "True to use SSL roots for google");
+DEFINE_bool(use_tls, false, "Whether to use tls.");
+DEFINE_bool(use_test_ca, false, "False to use SSL roots for google");
 DEFINE_int32(server_port, 0, "Server port.");
 DEFINE_string(server_host, "127.0.0.1", "Server host to connect to");
 DEFINE_string(server_host_override, "foo.test.google.fr",
@@ -56,17 +55,26 @@ DEFINE_string(test_case, "large_unary",
               "Configure different test cases. Valid options are: "
               "empty_unary : empty (zero bytes) request and response; "
               "large_unary : single request and (large) response; "
+              "large_compressed_unary : single request and compressed (large) "
+              "response; "
               "client_streaming : request streaming with single response; "
               "server_streaming : single request with response streaming; "
+              "server_compressed_streaming : single request with compressed "
+              "response streaming; "
               "slow_consumer : single request with response; "
               " streaming with slow client consumer; "
               "half_duplex : half-duplex streaming; "
               "ping_pong : full-duplex streaming; "
               "cancel_after_begin : cancel stream after starting it; "
               "cancel_after_first_response: cancel on first response; "
-              "service_account_creds : large_unary with service_account auth; "
+              "timeout_on_sleeping_server: deadline exceeds on stream; "
+              "empty_stream : bi-di stream with no request/response; "
               "compute_engine_creds: large_unary with compute engine auth; "
               "jwt_token_creds: large_unary with JWT token auth; "
+              "oauth2_auth_token: raw oauth2 access token auth; "
+              "per_rpc_creds: raw oauth2 access token on a single rpc; "
+              "status_code_and_message: verify status code & message; "
+              "custom_metadata: server will echo custom metadata;"
               "all : all of above.");
 DEFINE_string(default_service_account, "",
               "Email of GCE default service account");
@@ -79,7 +87,7 @@ using grpc::testing::GetServiceAccountJsonKey;
 
 int main(int argc, char** argv) {
   grpc::testing::InitTest(&argc, &argv, true);
-
+  gpr_log(GPR_INFO, "Testing these cases: %s", FLAGS_test_case.c_str());
   int ret = 0;
   grpc::testing::InteropClient client(
       CreateChannelForTestCase(FLAGS_test_case));
@@ -87,10 +95,14 @@ int main(int argc, char** argv) {
     client.DoEmpty();
   } else if (FLAGS_test_case == "large_unary") {
     client.DoLargeUnary();
+  } else if (FLAGS_test_case == "large_compressed_unary") {
+    client.DoLargeCompressedUnary();
   } else if (FLAGS_test_case == "client_streaming") {
     client.DoRequestStreaming();
   } else if (FLAGS_test_case == "server_streaming") {
     client.DoResponseStreaming();
+  } else if (FLAGS_test_case == "server_compressed_streaming") {
+    client.DoResponseCompressedStreaming();
   } else if (FLAGS_test_case == "slow_consumer") {
     client.DoResponseStreamingWithSlowConsumer();
   } else if (FLAGS_test_case == "half_duplex") {
@@ -101,39 +113,57 @@ int main(int argc, char** argv) {
     client.DoCancelAfterBegin();
   } else if (FLAGS_test_case == "cancel_after_first_response") {
     client.DoCancelAfterFirstResponse();
-  } else if (FLAGS_test_case == "service_account_creds") {
-    grpc::string json_key = GetServiceAccountJsonKey();
-    client.DoServiceAccountCreds(json_key, FLAGS_oauth_scope);
+  } else if (FLAGS_test_case == "timeout_on_sleeping_server") {
+    client.DoTimeoutOnSleepingServer();
+  } else if (FLAGS_test_case == "empty_stream") {
+    client.DoEmptyStream();
   } else if (FLAGS_test_case == "compute_engine_creds") {
     client.DoComputeEngineCreds(FLAGS_default_service_account,
                                 FLAGS_oauth_scope);
   } else if (FLAGS_test_case == "jwt_token_creds") {
     grpc::string json_key = GetServiceAccountJsonKey();
     client.DoJwtTokenCreds(json_key);
+  } else if (FLAGS_test_case == "oauth2_auth_token") {
+    client.DoOauth2AuthToken(FLAGS_default_service_account, FLAGS_oauth_scope);
+  } else if (FLAGS_test_case == "per_rpc_creds") {
+    grpc::string json_key = GetServiceAccountJsonKey();
+    client.DoPerRpcCreds(json_key);
+  } else if (FLAGS_test_case == "status_code_and_message") {
+    client.DoStatusWithMessage();
+  } else if (FLAGS_test_case == "custom_metadata") {
+    client.DoCustomMetadata();
   } else if (FLAGS_test_case == "all") {
     client.DoEmpty();
     client.DoLargeUnary();
     client.DoRequestStreaming();
     client.DoResponseStreaming();
+    client.DoResponseCompressedStreaming();
     client.DoHalfDuplex();
     client.DoPingPong();
     client.DoCancelAfterBegin();
     client.DoCancelAfterFirstResponse();
+    client.DoTimeoutOnSleepingServer();
+    client.DoEmptyStream();
+    client.DoStatusWithMessage();
+    client.DoCustomMetadata();
     // service_account_creds and jwt_token_creds can only run with ssl.
-    if (FLAGS_enable_ssl) {
+    if (FLAGS_use_tls) {
       grpc::string json_key = GetServiceAccountJsonKey();
-      client.DoServiceAccountCreds(json_key, FLAGS_oauth_scope);
       client.DoJwtTokenCreds(json_key);
+      client.DoOauth2AuthToken(FLAGS_default_service_account,
+                               FLAGS_oauth_scope);
+      client.DoPerRpcCreds(json_key);
     }
     // compute_engine_creds only runs in GCE.
   } else {
     gpr_log(
         GPR_ERROR,
         "Unsupported test case %s. Valid options are all|empty_unary|"
-        "large_unary|client_streaming|server_streaming|half_duplex|ping_pong|"
-        "cancel_after_begin|cancel_after_first_response|"
-        "service_account_creds|compute_engine_creds|jwt_token_creds",
-        FLAGS_test_case.c_str());
+        "large_unary|large_compressed_unary|client_streaming|server_streaming|"
+        "server_compressed_streaming|half_duplex|ping_pong|cancel_after_begin|"
+        "cancel_after_first_response|timeout_on_sleeping_server|empty_stream|"
+        "compute_engine_creds|jwt_token_creds|oauth2_auth_token|per_rpc_creds",
+        "status_code_and_message|custom_metadata", FLAGS_test_case.c_str());
     ret = 1;
   }
 

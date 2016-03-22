@@ -1,6 +1,6 @@
 #region Copyright notice and license
 
-// Copyright 2015, Google Inc.
+// Copyright 2015-2016, Google Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -43,32 +43,48 @@ namespace Grpc.Core.Tests
         [Test]
         public void InitializeAndShutdownGrpcEnvironment()
         {
-            GrpcEnvironment.Initialize();
-            Assert.IsNotNull(GrpcEnvironment.ThreadPool.CompletionQueue);
-            GrpcEnvironment.Shutdown();
+            var env = GrpcEnvironment.AddRef();
+            Assert.IsNotNull(env.CompletionQueue);
+            GrpcEnvironment.Release();
         }
 
         [Test]
         public void SubsequentInvocations()
         {
-            GrpcEnvironment.Initialize();
-            GrpcEnvironment.Initialize();
-            GrpcEnvironment.Shutdown();
-            GrpcEnvironment.Shutdown();
+            var env1 = GrpcEnvironment.AddRef();
+            var env2 = GrpcEnvironment.AddRef();
+            Assert.AreSame(env1, env2);
+            GrpcEnvironment.Release();
+            GrpcEnvironment.Release();
         }
 
         [Test]
         public void InitializeAfterShutdown()
         {
-            GrpcEnvironment.Initialize();
-            var tp1 = GrpcEnvironment.ThreadPool;
-            GrpcEnvironment.Shutdown();
+            Assert.AreEqual(0, GrpcEnvironment.GetRefCount());
 
-            GrpcEnvironment.Initialize();
-            var tp2 = GrpcEnvironment.ThreadPool;
-            GrpcEnvironment.Shutdown();
+            var env1 = GrpcEnvironment.AddRef();
+            GrpcEnvironment.Release();
 
-            Assert.IsFalse(object.ReferenceEquals(tp1, tp2));
+            var env2 = GrpcEnvironment.AddRef();
+            GrpcEnvironment.Release();
+
+            Assert.AreNotSame(env1, env2);
+        }
+
+        [Test]
+        public void ReleaseWithoutAddRef()
+        {
+            Assert.AreEqual(0, GrpcEnvironment.GetRefCount());
+            Assert.Throws(typeof(InvalidOperationException), () => GrpcEnvironment.Release());
+        }
+
+        [Test]
+        public void GetCoreVersionString()
+        {
+            var coreVersion = GrpcEnvironment.GetCoreVersionString();
+            var parts = coreVersion.Split('.');
+            Assert.AreEqual(3, parts.Length);
         }
     }
 }

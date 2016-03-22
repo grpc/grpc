@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,42 +33,35 @@
 
 #include <memory>
 
-#include "test/core/util/port.h"
-#include "test/core/util/test_config.h"
-#include "test/cpp/util/echo.grpc.pb.h"
-#include <grpc++/impl/proto_utils.h>
-#include <grpc++/async_generic_service.h>
-#include <grpc++/async_unary_call.h>
-#include <grpc++/byte_buffer.h>
-#include <grpc++/channel_arguments.h>
-#include <grpc++/channel_interface.h>
+#include <grpc++/channel.h>
 #include <grpc++/client_context.h>
 #include <grpc++/create_channel.h>
-#include <grpc++/credentials.h>
-#include <grpc++/generic_stub.h>
+#include <grpc++/generic/async_generic_service.h>
+#include <grpc++/generic/generic_stub.h>
+#include <grpc++/impl/proto_utils.h>
 #include <grpc++/server.h>
 #include <grpc++/server_builder.h>
 #include <grpc++/server_context.h>
-#include <grpc++/server_credentials.h>
-#include <grpc++/slice.h>
-#include <grpc++/status.h>
-#include <grpc++/stream.h>
-#include <grpc++/time.h>
-#include <gtest/gtest.h>
-
+#include <grpc++/support/slice.h>
 #include <grpc/grpc.h>
 #include <grpc/support/thd.h>
 #include <grpc/support/time.h>
+#include <gtest/gtest.h>
 
-using grpc::cpp::test::util::EchoRequest;
-using grpc::cpp::test::util::EchoResponse;
+#include "src/proto/grpc/testing/echo.grpc.pb.h"
+#include "test/core/util/port.h"
+#include "test/core/util/test_config.h"
+#include "test/cpp/util/byte_buffer_proto_helper.h"
+
+using grpc::testing::EchoRequest;
+using grpc::testing::EchoResponse;
 using std::chrono::system_clock;
 
 namespace grpc {
 namespace testing {
 namespace {
 
-void* tag(int i) { return (void*)(gpr_intptr) i; }
+void* tag(int i) { return (void*)(intptr_t)i; }
 
 void verify_ok(CompletionQueue* cq, int i, bool expect_ok) {
   bool ok;
@@ -78,36 +71,21 @@ void verify_ok(CompletionQueue* cq, int i, bool expect_ok) {
   EXPECT_EQ(tag(i), got_tag);
 }
 
-bool ParseFromByteBuffer(ByteBuffer* buffer, grpc::protobuf::Message* message) {
-  std::vector<Slice> slices;
-  buffer->Dump(&slices);
-  grpc::string buf;
-  buf.reserve(buffer->Length());
-  for (auto s = slices.begin(); s != slices.end(); s++) {
-    buf.append(reinterpret_cast<const char*>(s->begin()), s->size());
-  }
-  return message->ParseFromString(buf);
-}
-
-std::unique_ptr<ByteBuffer> SerializeToByteBuffer(
-    grpc::protobuf::Message* message) {
-  grpc::string buf;
-  message->SerializeToString(&buf);
-  gpr_slice s = gpr_slice_from_copied_string(buf.c_str());
-  Slice slice(s, Slice::STEAL_REF);
-  return std::unique_ptr<ByteBuffer>(new ByteBuffer(&slice, 1));
-}
-
 class GenericEnd2endTest : public ::testing::Test {
  protected:
-  GenericEnd2endTest() : generic_service_("*") {}
+  GenericEnd2endTest() : server_host_("localhost") {}
 
   void SetUp() GRPC_OVERRIDE {
     int port = grpc_pick_unused_port_or_die();
-    server_address_ << "localhost:" << port;
+    server_address_ << server_host_ << ":" << port;
     // Setup server
     ServerBuilder builder;
-    builder.AddListeningPort(server_address_.str(), InsecureServerCredentials());
+    builder.AddListeningPort(server_address_.str(),
+                             InsecureServerCredentials());
+    builder.RegisterAsyncGenericService(&generic_service_);
+    // Include a second call to RegisterAsyncGenericService to make sure that
+    // we get an error in the log, since it is not allowed to have 2 async
+    // generic services
     builder.RegisterAsyncGenericService(&generic_service_);
     srv_cq_ = builder.AddCompletionQueue();
     server_ = builder.BuildAndStart();
@@ -126,8 +104,8 @@ class GenericEnd2endTest : public ::testing::Test {
   }
 
   void ResetStub() {
-    std::shared_ptr<ChannelInterface> channel = CreateChannel(
-        server_address_.str(), InsecureCredentials(), ChannelArguments());
+    std::shared_ptr<Channel> channel =
+        CreateChannel(server_address_.str(), InsecureChannelCredentials());
     generic_stub_.reset(new GenericStub(channel));
   }
 
@@ -137,7 +115,7 @@ class GenericEnd2endTest : public ::testing::Test {
   void client_fail(int i) { verify_ok(&cli_cq_, i, false); }
 
   void SendRpc(int num_rpcs) {
-    const grpc::string kMethodName("/grpc.cpp.test.util.TestService/Echo");
+    const grpc::string kMethodName("/grpc.cpp.test.util.EchoTestService/Echo");
     for (int i = 0; i < num_rpcs; i++) {
       EchoRequest send_request;
       EchoRequest recv_request;
@@ -165,7 +143,7 @@ class GenericEnd2endTest : public ::testing::Test {
                                    srv_cq_.get(), tag(4));
 
       verify_ok(srv_cq_.get(), 4, true);
-      EXPECT_EQ(server_address_.str(), srv_ctx.host());
+      EXPECT_EQ(server_host_, srv_ctx.host().substr(0, server_host_.length()));
       EXPECT_EQ(kMethodName, srv_ctx.method());
       ByteBuffer recv_buffer;
       stream.Read(&recv_buffer, tag(5));
@@ -196,10 +174,11 @@ class GenericEnd2endTest : public ::testing::Test {
 
   CompletionQueue cli_cq_;
   std::unique_ptr<ServerCompletionQueue> srv_cq_;
-  std::unique_ptr<grpc::cpp::test::util::TestService::Stub> stub_;
+  std::unique_ptr<grpc::testing::EchoTestService::Stub> stub_;
   std::unique_ptr<grpc::GenericStub> generic_stub_;
   std::unique_ptr<Server> server_;
   AsyncGenericService generic_service_;
+  const grpc::string server_host_;
   std::ostringstream server_address_;
 };
 
@@ -217,7 +196,8 @@ TEST_F(GenericEnd2endTest, SequentialRpcs) {
 TEST_F(GenericEnd2endTest, SimpleBidiStreaming) {
   ResetStub();
 
-  const grpc::string kMethodName("/grpc.cpp.test.util.TestService/BidiStream");
+  const grpc::string kMethodName(
+      "/grpc.cpp.test.util.EchoTestService/BidiStream");
   EchoRequest send_request;
   EchoRequest recv_request;
   EchoResponse send_response;
@@ -227,6 +207,7 @@ TEST_F(GenericEnd2endTest, SimpleBidiStreaming) {
   GenericServerContext srv_ctx;
   GenericServerAsyncReaderWriter srv_stream(&srv_ctx);
 
+  cli_ctx.set_compression_algorithm(GRPC_COMPRESS_GZIP);
   send_request.set_message("Hello");
   std::unique_ptr<GenericClientAsyncReaderWriter> cli_stream =
       generic_stub_->Call(&cli_ctx, kMethodName, &cli_cq_, tag(1));
@@ -236,7 +217,7 @@ TEST_F(GenericEnd2endTest, SimpleBidiStreaming) {
                                srv_cq_.get(), tag(2));
 
   verify_ok(srv_cq_.get(), 2, true);
-  EXPECT_EQ(server_address_.str(), srv_ctx.host());
+  EXPECT_EQ(server_host_, srv_ctx.host().substr(0, server_host_.length()));
   EXPECT_EQ(kMethodName, srv_ctx.method());
 
   std::unique_ptr<ByteBuffer> send_buffer =

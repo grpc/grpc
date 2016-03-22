@@ -1,5 +1,5 @@
-#!/usr/bin/env python
-# Copyright 2015, Google Inc.
+#!/usr/bin/env python2.7
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -38,14 +38,16 @@ Just a wrapper around the mako rendering library.
 import getopt
 import imp
 import os
+import cPickle as pickle
+import shutil
 import sys
 
 
 from mako.lookup import TemplateLookup
 from mako.runtime import Context
 from mako.template import Template
-import simplejson
 import bunch
+import yaml
 
 
 # Imports a plugin
@@ -65,20 +67,23 @@ def out(msg):
 
 
 def showhelp():
-  out('mako-renderer.py [-o out] [-m cache] [-d dict] [-d dict...] template')
+  out('mako-renderer.py [-o out] [-m cache] [-P preprocessed_input] [-d dict] [-d dict...]'
+      ' [-t template] [-w preprocessed_output]')
 
 
 def main(argv):
   got_input = False
   module_directory = None
+  preprocessed_output = None
   dictionary = {}
   json_dict = {}
   got_output = False
-  output_file = sys.stdout
   plugins = []
+  output_name = None
+  got_preprocessed_input = False
 
   try:
-    opts, args = getopt.getopt(argv, 'hm:d:o:p:')
+    opts, args = getopt.getopt(argv, 'hm:d:o:p:t:P:w:')
   except getopt.GetoptError:
     out('Unknown option')
     showhelp()
@@ -95,40 +100,93 @@ def main(argv):
         showhelp()
         sys.exit(3)
       got_output = True
-      output_file = open(arg, 'w')
+      output_name = arg
     elif opt == '-m':
       if module_directory is not None:
         out('Got more than one cache directory')
         showhelp()
         sys.exit(4)
       module_directory = arg
+    elif opt == '-P':
+      assert not got_preprocessed_input
+      assert json_dict == {}
+      sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), 'plugins')))
+      with open(arg, 'r') as dict_file:
+        dictionary = pickle.load(dict_file)
+      got_preprocessed_input = True
     elif opt == '-d':
-      dict_file = open(arg, 'r')
-      bunch.merge_json(json_dict, simplejson.loads(dict_file.read()))
-      dict_file.close()
+      assert not got_preprocessed_input
+      with open(arg, 'r') as dict_file:
+        bunch.merge_json(json_dict, yaml.load(dict_file.read()))
     elif opt == '-p':
       plugins.append(import_plugin(arg))
+    elif opt == '-w':
+      preprocessed_output = arg
 
-  for plugin in plugins:
-    plugin.mako_plugin(json_dict)
+  if not got_preprocessed_input:
+    for plugin in plugins:
+      plugin.mako_plugin(json_dict)
+    for k, v in json_dict.items():
+      dictionary[k] = bunch.to_bunch(v)
 
-  for k, v in json_dict.items():
-    dictionary[k] = bunch.to_bunch(v)
+  if preprocessed_output:
+    with open(preprocessed_output, 'w') as dict_file:
+      pickle.dump(dictionary, dict_file)
 
-  ctx = Context(output_file, **dictionary)
-
+  cleared_dir = False
   for arg in args:
     got_input = True
-    template = Template(filename=arg,
-                        module_directory=module_directory,
-                        lookup=TemplateLookup(directories=['.']))
-    template.render_context(ctx)
+    with open(arg) as f:
+      srcs = list(yaml.load_all(f.read()))
+    for src in srcs:
+      if isinstance(src, basestring):
+        assert len(srcs) == 1
+        template = Template(src,
+                            filename=arg,
+                            module_directory=module_directory,
+                            lookup=TemplateLookup(directories=['.']))
+        with open(output_name, 'w') as output_file:
+          template.render_context(Context(output_file, **dictionary))
+      else:
+        # we have optional control data: this template represents
+        # a directory
+        if not cleared_dir:
+          if not os.path.exists(output_name):
+            pass
+          elif os.path.isfile(output_name):
+            os.unlink(output_name)
+          else:
+            shutil.rmtree(output_name, ignore_errors=True)
+          cleared_dir = True
+        items = []
+        if 'foreach' in src:
+          for el in dictionary[src['foreach']]:
+            if 'cond' in src:
+              args = dict(dictionary)
+              args['selected'] = el
+              if not eval(src['cond'], {}, args):
+                continue
+            items.append(el)
+          assert items
+        else:
+          items = [None]
+        for item in items:
+          args = dict(dictionary)
+          args['selected'] = item
+          item_output_name = os.path.join(
+              output_name, Template(src['output_name']).render(**args))
+          if not os.path.exists(os.path.dirname(item_output_name)):
+            os.makedirs(os.path.dirname(item_output_name))
+          template = Template(src['template'],
+                              filename=arg,
+                              module_directory=module_directory,
+                              lookup=TemplateLookup(directories=['.']))
+          with open(item_output_name, 'w') as output_file:
+            template.render_context(Context(output_file, **args))
 
-  if not got_input:
+  if not got_input and not preprocessed_output:
     out('Got nothing to do')
     showhelp()
-
-  output_file.close()
 
 if __name__ == '__main__':
   main(sys.argv[1:])

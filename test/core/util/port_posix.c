@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -37,15 +37,20 @@
 
 #include "test/core/util/port.h"
 
-#include <netinet/in.h>
-#include <sys/socket.h>
-#include <stdio.h>
 #include <errno.h>
+#include <netinet/in.h>
+#include <stdio.h>
 #include <string.h>
+#include <sys/socket.h>
 #include <unistd.h>
 
+#include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
+
+#include "src/core/support/env.h"
+#include "test/core/util/port_server_client.h"
 
 #define NUM_RANDOM_PORTS_TO_PICK 100
 
@@ -62,7 +67,16 @@ static int has_port_been_chosen(int port) {
   return 0;
 }
 
-static void free_chosen_ports() {
+static void free_chosen_ports(void) {
+  char *env = gpr_getenv("GRPC_TEST_PORT_SERVER");
+  if (env != NULL) {
+    size_t i;
+    for (i = 0; i < num_chosen_ports; i++) {
+      grpc_free_port_using_server(env, chosen_ports[i]);
+    }
+    gpr_free(env);
+  }
+
   gpr_free(chosen_ports);
 }
 
@@ -100,7 +114,7 @@ static int is_port_available(int *port, int is_tcp) {
   /* Try binding to port */
   addr.sin_family = AF_INET;
   addr.sin_addr.s_addr = INADDR_ANY;
-  addr.sin_port = htons(*port);
+  addr.sin_port = htons((uint16_t)*port);
   if (bind(fd, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
     gpr_log(GPR_DEBUG, "bind(port=%d) failed: %s", *port, strerror(errno));
     close(fd);
@@ -135,20 +149,30 @@ int grpc_pick_unused_port(void) {
      races with other processes on kernels that want to reuse the same
      port numbers over and over. */
 
-  /* In alternating iterations we try UDP ports before TCP ports UDP
+  /* In alternating iterations we trial UDP ports before TCP ports UDP
      ports -- it could be the case that this machine has been using up
      UDP ports and they are scarcer. */
 
   /* Type of port to first pick in next iteration */
   int is_tcp = 1;
-  int try = 0;
+  int trial = 0;
+
+  char *env = gpr_getenv("GRPC_TEST_PORT_SERVER");
+  if (env) {
+    int port = grpc_pick_port_using_server(env);
+    gpr_free(env);
+    if (port != 0) {
+      chose_port(port);
+    }
+    return port;
+  }
 
   for (;;) {
     int port;
-    try++;
-    if (try == 1) {
+    trial++;
+    if (trial == 1) {
       port = getpid() % (65536 - 30000) + 30000;
-    } else if (try <= NUM_RANDOM_PORTS_TO_PICK) {
+    } else if (trial <= NUM_RANDOM_PORTS_TO_PICK) {
       port = rand() % (65536 - 30000) + 30000;
     } else {
       port = 0;
@@ -165,7 +189,7 @@ int grpc_pick_unused_port(void) {
     GPR_ASSERT(port > 0);
     /* Check that the port # is free for the other type of socket also */
     if (!is_port_available(&port, !is_tcp)) {
-      /* In the next iteration try to bind to the other type first
+      /* In the next iteration trial to bind to the other type first
          because perhaps it is more rare. */
       is_tcp = !is_tcp;
       continue;

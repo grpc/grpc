@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -36,24 +36,26 @@
 #include <string.h>
 
 #include <grpc/grpc.h>
-#include "src/core/iomgr/iomgr.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/subprocess.h>
 #include <grpc/support/sync.h>
+#include "src/core/iomgr/iomgr.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
 static int g_done = 0;
 static grpc_httpcli_context g_context;
-static grpc_pollset g_pollset;
+static gpr_mu *g_mu;
+static grpc_pollset *g_pollset;
 
 static gpr_timespec n_seconds_time(int seconds) {
   return GRPC_TIMEOUT_SECONDS_TO_DEADLINE(seconds);
 }
 
-static void on_finish(void *arg, const grpc_httpcli_response *response) {
+static void on_finish(grpc_exec_ctx *exec_ctx, void *arg,
+                      const grpc_httpcli_response *response) {
   const char *expect =
       "<html><head><title>Hello world!</title></head>"
       "<body><p>This is a test</p></body></html>";
@@ -62,18 +64,19 @@ static void on_finish(void *arg, const grpc_httpcli_response *response) {
   GPR_ASSERT(response->status == 200);
   GPR_ASSERT(response->body_length == strlen(expect));
   GPR_ASSERT(0 == memcmp(expect, response->body, response->body_length));
-  gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
+  gpr_mu_lock(g_mu);
   g_done = 1;
-  grpc_pollset_kick(&g_pollset);
-  gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));
+  grpc_pollset_kick(g_pollset, NULL);
+  gpr_mu_unlock(g_mu);
 }
 
-static void test_get(int use_ssl, int port) {
+static void test_get(int port) {
   grpc_httpcli_request req;
   char *host;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
   g_done = 0;
-  gpr_log(GPR_INFO, "running %s with use_ssl=%d.", "test_get", use_ssl);
+  gpr_log(GPR_INFO, "test_get");
 
   gpr_asprintf(&host, "localhost:%d", port);
   gpr_log(GPR_INFO, "requesting from %s", host);
@@ -81,24 +84,30 @@ static void test_get(int use_ssl, int port) {
   memset(&req, 0, sizeof(req));
   req.host = host;
   req.path = "/get";
-  req.use_ssl = use_ssl;
+  req.handshaker = &grpc_httpcli_plaintext;
 
-  grpc_httpcli_get(&g_context, &g_pollset, &req, n_seconds_time(15), on_finish,
-                   (void *)42);
-  gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
+  grpc_httpcli_get(&exec_ctx, &g_context, g_pollset, &req, n_seconds_time(15),
+                   on_finish, (void *)42);
+  gpr_mu_lock(g_mu);
   while (!g_done) {
-    grpc_pollset_work(&g_pollset, n_seconds_time(20));
+    grpc_pollset_worker *worker = NULL;
+    grpc_pollset_work(&exec_ctx, g_pollset, &worker,
+                      gpr_now(GPR_CLOCK_MONOTONIC), n_seconds_time(20));
+    gpr_mu_unlock(g_mu);
+    grpc_exec_ctx_finish(&exec_ctx);
+    gpr_mu_lock(g_mu);
   }
-  gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));
+  gpr_mu_unlock(g_mu);
   gpr_free(host);
 }
 
-static void test_post(int use_ssl, int port) {
+static void test_post(int port) {
   grpc_httpcli_request req;
   char *host;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
   g_done = 0;
-  gpr_log(GPR_INFO, "running %s with use_ssl=%d.", "test_post", (int)use_ssl);
+  gpr_log(GPR_INFO, "test_post");
 
   gpr_asprintf(&host, "localhost:%d", port);
   gpr_log(GPR_INFO, "posting to %s", host);
@@ -106,58 +115,84 @@ static void test_post(int use_ssl, int port) {
   memset(&req, 0, sizeof(req));
   req.host = host;
   req.path = "/post";
-  req.use_ssl = use_ssl;
+  req.handshaker = &grpc_httpcli_plaintext;
 
-  grpc_httpcli_post(&g_context, &g_pollset, &req, "hello", 5,
+  grpc_httpcli_post(&exec_ctx, &g_context, g_pollset, &req, "hello", 5,
                     n_seconds_time(15), on_finish, (void *)42);
-  gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
+  gpr_mu_lock(g_mu);
   while (!g_done) {
-    grpc_pollset_work(&g_pollset, n_seconds_time(20));
+    grpc_pollset_worker *worker = NULL;
+    grpc_pollset_work(&exec_ctx, g_pollset, &worker,
+                      gpr_now(GPR_CLOCK_MONOTONIC), n_seconds_time(20));
+    gpr_mu_unlock(g_mu);
+    grpc_exec_ctx_finish(&exec_ctx);
+    gpr_mu_lock(g_mu);
   }
-  gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));
+  gpr_mu_unlock(g_mu);
   gpr_free(host);
 }
 
-static void destroy_pollset(void *ignored) { grpc_pollset_destroy(&g_pollset); }
+static void destroy_pollset(grpc_exec_ctx *exec_ctx, void *p, bool success) {
+  grpc_pollset_destroy(p);
+}
 
 int main(int argc, char **argv) {
+  grpc_closure destroyed;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   gpr_subprocess *server;
   char *me = argv[0];
   char *lslash = strrchr(me, '/');
   char *args[4];
-  char root[1024];
   int port = grpc_pick_unused_port_or_die();
-
+  int arg_shift = 0;
   /* figure out where we are */
+  char *root;
   if (lslash) {
-    memcpy(root, me, lslash - me);
+    root = gpr_malloc((size_t)(lslash - me + 1));
+    memcpy(root, me, (size_t)(lslash - me));
     root[lslash - me] = 0;
   } else {
-    strcpy(root, ".");
+    root = gpr_strdup(".");
+  }
+
+  GPR_ASSERT(argc <= 2);
+  if (argc == 2) {
+    args[0] = gpr_strdup(argv[1]);
+  } else {
+    arg_shift = 1;
+    gpr_asprintf(&args[0], "%s/../../tools/distrib/python_wrapper.sh", root);
+    gpr_asprintf(&args[1], "%s/../../test/core/httpcli/test_server.py", root);
   }
 
   /* start the server */
-  gpr_asprintf(&args[0], "%s/../../test/core/httpcli/test_server.py", root);
-  args[1] = "--port";
-  gpr_asprintf(&args[2], "%d", port);
-  server = gpr_subprocess_create(3, (const char **)args);
+  args[1 + arg_shift] = "--port";
+  gpr_asprintf(&args[2 + arg_shift], "%d", port);
+  server = gpr_subprocess_create(3 + arg_shift, (const char **)args);
   GPR_ASSERT(server);
   gpr_free(args[0]);
-  gpr_free(args[2]);
+  if (arg_shift) gpr_free(args[1]);
+  gpr_free(args[2 + arg_shift]);
+  gpr_free(root);
 
-  gpr_sleep_until(gpr_time_add(gpr_now(), gpr_time_from_seconds(5)));
+  gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                               gpr_time_from_seconds(5, GPR_TIMESPAN)));
 
   grpc_test_init(argc, argv);
   grpc_init();
   grpc_httpcli_context_init(&g_context);
-  grpc_pollset_init(&g_pollset);
+  g_pollset = gpr_malloc(grpc_pollset_size());
+  grpc_pollset_init(g_pollset, &g_mu);
 
-  test_get(0, port);
-  test_post(0, port);
+  test_get(port);
+  test_post(port);
 
   grpc_httpcli_context_destroy(&g_context);
-  grpc_pollset_shutdown(&g_pollset, destroy_pollset, NULL);
+  grpc_closure_init(&destroyed, destroy_pollset, g_pollset);
+  grpc_pollset_shutdown(&exec_ctx, g_pollset, &destroyed);
+  grpc_exec_ctx_finish(&exec_ctx);
   grpc_shutdown();
+
+  gpr_free(g_pollset);
 
   gpr_subprocess_destroy(server);
 

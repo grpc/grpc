@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,71 +33,7 @@
 
 #ifndef GRPC_SUPPORT_TIME_H
 #define GRPC_SUPPORT_TIME_H
-/* Time support.
-   We use gpr_timespec, which is analogous to struct timespec.  On some
-   machines, absolute times may be in local time.  */
 
-#include <grpc/support/port_platform.h>
-#include <stddef.h>
-#include <time.h>
+#include <grpc/impl/codegen/time.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-typedef struct gpr_timespec {
-    time_t tv_sec;
-    int tv_nsec;
-} gpr_timespec;
-
-/* Time constants. */
-extern const gpr_timespec gpr_time_0;     /* The zero time interval. */
-extern const gpr_timespec gpr_inf_future; /* The far future */
-extern const gpr_timespec gpr_inf_past;   /* The far past. */
-
-#define GPR_MS_PER_SEC 1000
-#define GPR_US_PER_SEC 1000000
-#define GPR_NS_PER_SEC 1000000000
-#define GPR_NS_PER_MS 1000000
-#define GPR_NS_PER_US 1000
-#define GPR_US_PER_MS 1000
-
-/* Return the current time measured from the system's default epoch. */
-gpr_timespec gpr_now(void);
-
-/* Return -ve, 0, or +ve according to whether a < b, a == b, or a > b
-   respectively.  */
-int gpr_time_cmp(gpr_timespec a, gpr_timespec b);
-
-gpr_timespec gpr_time_max(gpr_timespec a, gpr_timespec b);
-gpr_timespec gpr_time_min(gpr_timespec a, gpr_timespec b);
-
-/* Add and subtract times.  Calculations saturate at infinities. */
-gpr_timespec gpr_time_add(gpr_timespec a, gpr_timespec b);
-gpr_timespec gpr_time_sub(gpr_timespec a, gpr_timespec b);
-
-/* Return a timespec representing a given number of time units. LONG_MIN is
-   interpreted as gpr_inf_past, and LONG_MAX as gpr_inf_future.  */
-gpr_timespec gpr_time_from_micros(long x);
-gpr_timespec gpr_time_from_nanos(long x);
-gpr_timespec gpr_time_from_millis(long x);
-gpr_timespec gpr_time_from_seconds(long x);
-gpr_timespec gpr_time_from_minutes(long x);
-gpr_timespec gpr_time_from_hours(long x);
-
-gpr_int32 gpr_time_to_millis(gpr_timespec timespec);
-
-/* Return 1 if two times are equal or within threshold of each other,
-   0 otherwise */
-int gpr_time_similar(gpr_timespec a, gpr_timespec b, gpr_timespec threshold);
-
-/* Sleep until at least 'until' - an absolute timeout */
-void gpr_sleep_until(gpr_timespec until);
-
-double gpr_timespec_to_micros(gpr_timespec t);
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif  /* GRPC_SUPPORT_TIME_H */
+#endif /* GRPC_SUPPORT_TIME_H */

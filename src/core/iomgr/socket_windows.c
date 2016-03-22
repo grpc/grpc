@@ -35,8 +35,13 @@
 
 #ifdef GPR_WINSOCK_SOCKET
 
+#include <winsock2.h>
+#include <mswsock.h>
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/log_win32.h>
+#include <grpc/support/string_util.h>
 
 #include "src/core/iomgr/iocp_windows.h"
 #include "src/core/iomgr/iomgr_internal.h"
@@ -45,11 +50,14 @@
 #include "src/core/iomgr/socket_windows.h"
 
 grpc_winsocket *grpc_winsocket_create(SOCKET socket, const char *name) {
+  char *final_name;
   grpc_winsocket *r = gpr_malloc(sizeof(grpc_winsocket));
   memset(r, 0, sizeof(grpc_winsocket));
   r->socket = socket;
   gpr_mu_init(&r->state_mu);
-  grpc_iomgr_register_object(&r->iomgr_object, name);
+  gpr_asprintf(&final_name, "%s:socket=0x%p", name, r);
+  grpc_iomgr_register_object(&r->iomgr_object, final_name);
+  gpr_free(final_name);
   grpc_iocp_add_socket(r);
   return r;
 }
@@ -58,45 +66,33 @@ grpc_winsocket *grpc_winsocket_create(SOCKET socket, const char *name) {
    operations to abort them. We need to do that this way because of the
    various callsites of that function, which happens to be in various
    mutex hold states, and that'd be unsafe to call them directly. */
-int grpc_winsocket_shutdown(grpc_winsocket *socket) {
-  int callbacks_set = 0;
-  gpr_mu_lock(&socket->state_mu);
-  if (socket->read_info.cb) {
-    callbacks_set++;
-    grpc_iomgr_closure_init(&socket->shutdown_closure, socket->read_info.cb,
-                            socket->read_info.opaque);
-    grpc_iomgr_add_delayed_callback(&socket->shutdown_closure, 0);
-  }
-  if (socket->write_info.cb) {
-    callbacks_set++;
-    grpc_iomgr_closure_init(&socket->shutdown_closure, socket->write_info.cb,
-                            socket->write_info.opaque);
-    grpc_iomgr_add_delayed_callback(&socket->shutdown_closure, 0);
-  }
-  gpr_mu_unlock(&socket->state_mu);
-  return callbacks_set;
-}
+void grpc_winsocket_shutdown(grpc_winsocket *winsocket) {
+  /* Grab the function pointer for DisconnectEx for that specific socket.
+     It may change depending on the interface. */
+  int status;
+  GUID guid = WSAID_DISCONNECTEX;
+  LPFN_DISCONNECTEX DisconnectEx;
+  DWORD ioctl_num_bytes;
 
-/* Abandons a socket. Either we're going to queue it up for garbage collecting
-   from the IO Completion Port thread, or destroy it immediately. Note that this
-   mechanisms assumes that we're either always waiting for an operation, or we
-   explicitly know that we don't. If there is a future case where we can have
-   an "idle" socket which is neither trying to read or write, we'd start leaking
-   both memory and sockets. */
-void grpc_winsocket_orphan(grpc_winsocket *winsocket) {
-  SOCKET socket = winsocket->socket;
-  grpc_iomgr_unregister_object(&winsocket->iomgr_object);
-  if (winsocket->read_info.outstanding || winsocket->write_info.outstanding) {
-    grpc_iocp_socket_orphan(winsocket);
+  status = WSAIoctl(winsocket->socket, SIO_GET_EXTENSION_FUNCTION_POINTER,
+                    &guid, sizeof(guid), &DisconnectEx, sizeof(DisconnectEx),
+                    &ioctl_num_bytes, NULL, NULL);
+
+  if (status == 0) {
+    DisconnectEx(winsocket->socket, NULL, 0, 0);
   } else {
-    grpc_winsocket_destroy(winsocket);
+    char *utf8_message = gpr_format_message(WSAGetLastError());
+    gpr_log(GPR_ERROR, "Unable to retrieve DisconnectEx pointer : %s",
+            utf8_message);
+    gpr_free(utf8_message);
   }
-  closesocket(socket);
+  closesocket(winsocket->socket);
 }
 
 void grpc_winsocket_destroy(grpc_winsocket *winsocket) {
+  grpc_iomgr_unregister_object(&winsocket->iomgr_object);
   gpr_mu_destroy(&winsocket->state_mu);
   gpr_free(winsocket);
 }
 
-#endif  /* GPR_WINSOCK_SOCKET */
+#endif /* GPR_WINSOCK_SOCKET */

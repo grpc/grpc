@@ -38,24 +38,29 @@ using System.Threading.Tasks;
 using Grpc.Core;
 using Grpc.Core.Utils;
 
-namespace math
+namespace Math
 {
     /// <summary>
     /// Implementation of MathService server
     /// </summary>
     public class MathServiceImpl : Math.IMath
     {
-        public Task<DivReply> Div(ServerCallContext context, DivArgs request)
+        public Task<DivReply> Div(DivArgs request, ServerCallContext context)
         {
             return Task.FromResult(DivInternal(request));
         }
 
-        public async Task Fib(ServerCallContext context, FibArgs request, IServerStreamWriter<Num> responseStream)
+        public async Task Fib(FibArgs request, IServerStreamWriter<Num> responseStream, ServerCallContext context)
         {
             if (request.Limit <= 0)
             {
-                // TODO(jtattermusch): support cancellation
-                throw new NotImplementedException("Not implemented yet");
+                // keep streaming the sequence until cancelled.
+                IEnumerator<Num> fibEnumerator = FibInternal(long.MaxValue).GetEnumerator();
+                while (!context.CancellationToken.IsCancellationRequested && fibEnumerator.MoveNext())
+                {
+                    await responseStream.WriteAsync(fibEnumerator.Current);
+                    await Task.Delay(100);
+                }
             }
 
             if (request.Limit > 0)
@@ -67,35 +72,32 @@ namespace math
             }
         }
 
-        public async Task<Num> Sum(ServerCallContext context, IAsyncStreamReader<Num> requestStream)
+        public async Task<Num> Sum(IAsyncStreamReader<Num> requestStream, ServerCallContext context)
         {
             long sum = 0;
-            await requestStream.ForEach(async num =>
+            await requestStream.ForEachAsync(async num =>
             {
                 sum += num.Num_;
             });
-            return Num.CreateBuilder().SetNum_(sum).Build();
+            return new Num { Num_ = sum };
         }
 
-        public async Task DivMany(ServerCallContext context, IAsyncStreamReader<DivArgs> requestStream, IServerStreamWriter<DivReply> responseStream)
+        public async Task DivMany(IAsyncStreamReader<DivArgs> requestStream, IServerStreamWriter<DivReply> responseStream, ServerCallContext context)
         {
-            await requestStream.ForEach(async divArgs =>
-            {
-                await responseStream.WriteAsync(DivInternal(divArgs));
-            });
+            await requestStream.ForEachAsync(async divArgs => await responseStream.WriteAsync(DivInternal(divArgs)));
         }
 
         static DivReply DivInternal(DivArgs args)
         {
             long quotient = args.Dividend / args.Divisor;
             long remainder = args.Dividend % args.Divisor;
-            return new DivReply.Builder { Quotient = quotient, Remainder = remainder }.Build();
+            return new DivReply { Quotient = quotient, Remainder = remainder };
         }
 
         static IEnumerable<Num> FibInternal(long n)
         {
             long a = 1;
-            yield return new Num.Builder { Num_ = a }.Build();
+            yield return new Num { Num_ = a };
 
             long b = 1;
             for (long i = 0; i < n - 1; i++)
@@ -103,7 +105,7 @@ namespace math
                 long temp = a;
                 a = b;
                 b = temp + b;
-                yield return new Num.Builder { Num_ = a }.Build();
+                yield return new Num { Num_ = a };
             }
         }        
     }

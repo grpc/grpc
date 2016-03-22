@@ -1,5 +1,5 @@
 #region Copyright notice and license
-// Copyright 2015, Google Inc.
+// Copyright 2015-2016, Google Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -28,73 +28,175 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #endregion
+
 using System;
 using System.Collections.Generic;
-using System.Runtime.InteropServices;
-using System.Threading;
+using System.Linq;
 using System.Threading.Tasks;
+
 using Grpc.Core.Internal;
+using Grpc.Core.Logging;
+using Grpc.Core.Utils;
 
 namespace Grpc.Core
 {
     /// <summary>
-    /// gRPC Channel
+    /// Represents a gRPC channel. Channels are an abstraction of long-lived connections to remote servers.
+    /// More client objects can reuse the same channel. Creating a channel is an expensive operation compared to invoking
+    /// a remote call so in general you should reuse a single channel for as many calls as possible.
     /// </summary>
-    public class Channel : IDisposable
+    public class Channel
     {
-        readonly ChannelSafeHandle handle;
+        static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<Channel>();
+
+        readonly object myLock = new object();
+        readonly AtomicCounter activeCallCounter = new AtomicCounter();
+
         readonly string target;
+        readonly GrpcEnvironment environment;
+        readonly ChannelSafeHandle handle;
+        readonly Dictionary<string, ChannelOption> options;
+
+        bool shutdownRequested;
 
         /// <summary>
         /// Creates a channel that connects to a specific host.
-        /// Port will default to 80 for an unsecure channel and to 443 a secure channel.
+        /// Port will default to 80 for an unsecure channel and to 443 for a secure channel.
         /// </summary>
-        /// <param name="host">The DNS name of IP address of the host.</param>
-        /// <param name="credentials">Optional credentials to create a secure channel.</param>
+        /// <param name="target">Target of the channel.</param>
+        /// <param name="credentials">Credentials to secure the channel.</param>
         /// <param name="options">Channel options.</param>
-        public Channel(string host, Credentials credentials = null, IEnumerable<ChannelOption> options = null)
+        public Channel(string target, ChannelCredentials credentials, IEnumerable<ChannelOption> options = null)
         {
-            using (ChannelArgsSafeHandle nativeChannelArgs = ChannelOptions.CreateChannelArgs(options))
+            this.target = GrpcPreconditions.CheckNotNull(target, "target");
+            this.options = CreateOptionsDictionary(options);
+            EnsureUserAgentChannelOption(this.options);
+            this.environment = GrpcEnvironment.AddRef();
+
+            using (var nativeCredentials = credentials.ToNativeCredentials())
+            using (var nativeChannelArgs = ChannelOptions.CreateChannelArgs(this.options.Values))
             {
-                if (credentials != null)
+                if (nativeCredentials != null)
                 {
-                    using (CredentialsSafeHandle nativeCredentials = credentials.ToNativeCredentials())
-                    {
-                        this.handle = ChannelSafeHandle.CreateSecure(nativeCredentials, host, nativeChannelArgs);
-                    }
+                    this.handle = ChannelSafeHandle.CreateSecure(nativeCredentials, target, nativeChannelArgs);
                 }
                 else
                 {
-                    this.handle = ChannelSafeHandle.Create(host, nativeChannelArgs);
+                    this.handle = ChannelSafeHandle.CreateInsecure(target, nativeChannelArgs);
                 }
             }
-            this.target = GetOverridenTarget(host, options);
         }
 
         /// <summary>
         /// Creates a channel that connects to a specific host and port.
         /// </summary>
-        /// <param name="host">DNS name or IP address</param>
-        /// <param name="port">the port</param>
-        /// <param name="credentials">Optional credentials to create a secure channel.</param>
+        /// <param name="host">The name or IP address of the host.</param>
+        /// <param name="port">The port.</param>
+        /// <param name="credentials">Credentials to secure the channel.</param>
         /// <param name="options">Channel options.</param>
-        public Channel(string host, int port, Credentials credentials = null, IEnumerable<ChannelOption> options = null) :
+        public Channel(string host, int port, ChannelCredentials credentials, IEnumerable<ChannelOption> options = null) :
             this(string.Format("{0}:{1}", host, port), credentials, options)
         {
         }
 
-        public void Dispose()
-        {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
-
-        internal string Target
+        /// <summary>
+        /// Gets current connectivity state of this channel.
+        /// </summary>
+        public ChannelState State
         {
             get
             {
-                return target;
+                return handle.CheckConnectivityState(false);        
             }
+        }
+
+        /// <summary>
+        /// Returned tasks completes once channel state has become different from 
+        /// given lastObservedState. 
+        /// If deadline is reached or and error occurs, returned task is cancelled.
+        /// </summary>
+        public Task WaitForStateChangedAsync(ChannelState lastObservedState, DateTime? deadline = null)
+        {
+            GrpcPreconditions.CheckArgument(lastObservedState != ChannelState.FatalFailure,
+                "FatalFailure is a terminal state. No further state changes can occur.");
+            var tcs = new TaskCompletionSource<object>();
+            var deadlineTimespec = deadline.HasValue ? Timespec.FromDateTime(deadline.Value) : Timespec.InfFuture;
+            var handler = new BatchCompletionDelegate((success, ctx) =>
+            {
+                if (success)
+                {
+                    tcs.SetResult(null);
+                }
+                else
+                {
+                    tcs.SetCanceled();
+                }
+            });
+            handle.WatchConnectivityState(lastObservedState, deadlineTimespec, environment.CompletionQueue, environment.CompletionRegistry, handler);
+            return tcs.Task;
+        }
+
+        /// <summary>Resolved address of the remote endpoint in URI format.</summary>
+        public string ResolvedTarget
+        {
+            get
+            {
+                return handle.GetTarget();
+            }
+        }
+
+        /// <summary>The original target used to create the channel.</summary>
+        public string Target
+        {
+            get
+            {
+                return this.target;
+            }
+        }
+
+        /// <summary>
+        /// Allows explicitly requesting channel to connect without starting an RPC.
+        /// Returned task completes once state Ready was seen. If the deadline is reached,
+        /// or channel enters the FatalFailure state, the task is cancelled.
+        /// There is no need to call this explicitly unless your use case requires that.
+        /// Starting an RPC on a new channel will request connection implicitly.
+        /// </summary>
+        /// <param name="deadline">The deadline. <c>null</c> indicates no deadline.</param>
+        public async Task ConnectAsync(DateTime? deadline = null)
+        {
+            var currentState = handle.CheckConnectivityState(true);
+            while (currentState != ChannelState.Ready)
+            {
+                if (currentState == ChannelState.FatalFailure)
+                {
+                    throw new OperationCanceledException("Channel has reached FatalFailure state.");
+                }
+                await WaitForStateChangedAsync(currentState, deadline).ConfigureAwait(false);
+                currentState = handle.CheckConnectivityState(false);
+            }
+        }
+
+        /// <summary>
+        /// Waits until there are no more active calls for this channel and then cleans up
+        /// resources used by this channel.
+        /// </summary>
+        public async Task ShutdownAsync()
+        {
+            lock (myLock)
+            {
+                GrpcPreconditions.CheckState(!shutdownRequested);
+                shutdownRequested = true;
+            }
+
+            var activeCallCount = activeCallCounter.Count;
+            if (activeCallCount > 0)
+            {
+                Logger.Warning("Channel shutdown was called but there are still {0} active calls for that channel.", activeCallCount);
+            }
+
+            handle.Dispose();
+
+            await Task.Run(() => GrpcEnvironment.Release()).ConfigureAwait(false);
         }
 
         internal ChannelSafeHandle Handle
@@ -105,33 +207,60 @@ namespace Grpc.Core
             }
         }
 
-        protected virtual void Dispose(bool disposing)
+        internal GrpcEnvironment Environment
         {
-            if (handle != null && !handle.IsInvalid)
+            get
             {
-                handle.Dispose();
+                return this.environment;
             }
         }
 
-        /// <summary>
-        /// Look for SslTargetNameOverride option and return its value instead of originalTarget
-        /// if found.
-        /// </summary>
-        private static string GetOverridenTarget(string originalTarget, IEnumerable<ChannelOption> options)
+        internal void AddCallReference(object call)
         {
+            activeCallCounter.Increment();
+
+            bool success = false;
+            handle.DangerousAddRef(ref success);
+            GrpcPreconditions.CheckState(success);
+        }
+
+        internal void RemoveCallReference(object call)
+        {
+            handle.DangerousRelease();
+
+            activeCallCounter.Decrement();
+        }
+
+        private static void EnsureUserAgentChannelOption(Dictionary<string, ChannelOption> options)
+        {
+            var key = ChannelOptions.PrimaryUserAgentString;
+            var userAgentString = "";
+
+            ChannelOption option;
+            if (options.TryGetValue(key, out option))
+            {
+                // user-provided userAgentString needs to be at the beginning
+                userAgentString = option.StringValue + " ";
+            };
+
+            // TODO(jtattermusch): it would be useful to also provide .NET/mono version.
+            userAgentString += string.Format("grpc-csharp/{0}", VersionInfo.CurrentVersion);
+
+            options[ChannelOptions.PrimaryUserAgentString] = new ChannelOption(key, userAgentString);
+        }
+
+        private static Dictionary<string, ChannelOption> CreateOptionsDictionary(IEnumerable<ChannelOption> options)
+        {
+            var dict = new Dictionary<string, ChannelOption>();
             if (options == null)
             {
-                return originalTarget;
+                return dict;
             }
             foreach (var option in options)
             {
-                if (option.Type == ChannelOption.OptionType.String
-                    && option.Name == ChannelOptions.SslTargetNameOverride)
-                {
-                    return option.StringValue;
-                }
+                dict.Add(option.Name, option);
             }
-            return originalTarget;
+            return dict;
         }
     }
 }

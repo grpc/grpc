@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -36,27 +36,57 @@
 
 #include <grpc/grpc_security.h>
 
-#include <grpc++/config.h>
-#include <grpc++/credentials.h>
+#include <grpc++/support/config.h>
+#include <grpc++/security/credentials.h>
+
+#include "src/cpp/server/thread_pool_interface.h"
 
 namespace grpc {
 
-class SecureCredentials GRPC_FINAL : public Credentials {
+class SecureChannelCredentials GRPC_FINAL : public ChannelCredentials {
  public:
-  explicit SecureCredentials(grpc_credentials* c_creds) : c_creds_(c_creds) {}
-  ~SecureCredentials() GRPC_OVERRIDE { grpc_credentials_release(c_creds_); }
-  grpc_credentials* GetRawCreds() { return c_creds_; }
-  bool ApplyToCall(grpc_call* call) GRPC_OVERRIDE;
+  explicit SecureChannelCredentials(grpc_channel_credentials* c_creds);
+  ~SecureChannelCredentials() { grpc_channel_credentials_release(c_creds_); }
+  grpc_channel_credentials* GetRawCreds() { return c_creds_; }
 
-  std::shared_ptr<grpc::ChannelInterface> CreateChannel(
+  std::shared_ptr<grpc::Channel> CreateChannel(
       const string& target, const grpc::ChannelArguments& args) GRPC_OVERRIDE;
-  SecureCredentials* AsSecureCredentials() GRPC_OVERRIDE { return this; }
+  SecureChannelCredentials* AsSecureCredentials() GRPC_OVERRIDE { return this; }
 
  private:
-  grpc_credentials* const c_creds_;
+  grpc_channel_credentials* const c_creds_;
+};
+
+class SecureCallCredentials GRPC_FINAL : public CallCredentials {
+ public:
+  explicit SecureCallCredentials(grpc_call_credentials* c_creds);
+  ~SecureCallCredentials() { grpc_call_credentials_release(c_creds_); }
+  grpc_call_credentials* GetRawCreds() { return c_creds_; }
+
+  bool ApplyToCall(grpc_call* call) GRPC_OVERRIDE;
+  SecureCallCredentials* AsSecureCredentials() GRPC_OVERRIDE { return this; }
+
+ private:
+  grpc_call_credentials* const c_creds_;
+};
+
+class MetadataCredentialsPluginWrapper GRPC_FINAL {
+ public:
+  static void Destroy(void* wrapper);
+  static void GetMetadata(void* wrapper, grpc_auth_metadata_context context,
+                          grpc_credentials_plugin_metadata_cb cb,
+                          void* user_data);
+
+  explicit MetadataCredentialsPluginWrapper(
+      std::unique_ptr<MetadataCredentialsPlugin> plugin);
+
+ private:
+  void InvokePlugin(grpc_auth_metadata_context context,
+                    grpc_credentials_plugin_metadata_cb cb, void* user_data);
+  std::unique_ptr<ThreadPoolInterface> thread_pool_;
+  std::unique_ptr<MetadataCredentialsPlugin> plugin_;
 };
 
 }  // namespace grpc
 
 #endif  // GRPC_INTERNAL_CPP_CLIENT_SECURE_CREDENTIALS_H
-

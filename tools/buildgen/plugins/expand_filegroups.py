@@ -29,7 +29,7 @@
 
 """Buildgen expand filegroups plugin.
 
-This takes the list of libs from our json dictionary,
+This takes the list of libs from our yaml dictionary,
 and expands any and all filegroup.
 
 """
@@ -45,7 +45,7 @@ def excluded(filename, exclude_res):
 def mako_plugin(dictionary):
   """The exported plugin code for expand_filegroups.
 
-  The list of libs in the build.json file can contain "filegroups" tags.
+  The list of libs in the build.yaml file can contain "filegroups" tags.
   These refer to the filegroups in the root object. We will expand and
   merge filegroups on the src, headers and public_headers properties.
 

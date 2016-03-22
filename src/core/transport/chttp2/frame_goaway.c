@@ -48,7 +48,7 @@ void grpc_chttp2_goaway_parser_destroy(grpc_chttp2_goaway_parser *p) {
 }
 
 grpc_chttp2_parse_error grpc_chttp2_goaway_parser_begin_frame(
-    grpc_chttp2_goaway_parser *p, gpr_uint32 length, gpr_uint8 flags) {
+    grpc_chttp2_goaway_parser *p, uint32_t length, uint8_t flags) {
   if (length < 8) {
     gpr_log(GPR_ERROR, "goaway frame too short (%d bytes)", length);
     return GRPC_CHTTP2_CONNECTION_ERROR;
@@ -63,11 +63,12 @@ grpc_chttp2_parse_error grpc_chttp2_goaway_parser_begin_frame(
 }
 
 grpc_chttp2_parse_error grpc_chttp2_goaway_parser_parse(
-    void *parser, grpc_chttp2_transport_parsing *transport_parsing,
+    grpc_exec_ctx *exec_ctx, void *parser,
+    grpc_chttp2_transport_parsing *transport_parsing,
     grpc_chttp2_stream_parsing *stream_parsing, gpr_slice slice, int is_last) {
-  gpr_uint8 *const beg = GPR_SLICE_START_PTR(slice);
-  gpr_uint8 *const end = GPR_SLICE_END_PTR(slice);
-  gpr_uint8 *cur = beg;
+  uint8_t *const beg = GPR_SLICE_START_PTR(slice);
+  uint8_t *const end = GPR_SLICE_END_PTR(slice);
+  uint8_t *cur = beg;
   grpc_chttp2_goaway_parser *p = parser;
 
   switch (p->state) {
@@ -76,7 +77,7 @@ grpc_chttp2_parse_error grpc_chttp2_goaway_parser_parse(
         p->state = GRPC_CHTTP2_GOAWAY_LSI0;
         return GRPC_CHTTP2_PARSE_OK;
       }
-      p->last_stream_id = ((gpr_uint32)*cur) << 24;
+      p->last_stream_id = ((uint32_t)*cur) << 24;
       ++cur;
     /* fallthrough */
     case GRPC_CHTTP2_GOAWAY_LSI1:
@@ -84,7 +85,7 @@ grpc_chttp2_parse_error grpc_chttp2_goaway_parser_parse(
         p->state = GRPC_CHTTP2_GOAWAY_LSI1;
         return GRPC_CHTTP2_PARSE_OK;
       }
-      p->last_stream_id |= ((gpr_uint32)*cur) << 16;
+      p->last_stream_id |= ((uint32_t)*cur) << 16;
       ++cur;
     /* fallthrough */
     case GRPC_CHTTP2_GOAWAY_LSI2:
@@ -92,7 +93,7 @@ grpc_chttp2_parse_error grpc_chttp2_goaway_parser_parse(
         p->state = GRPC_CHTTP2_GOAWAY_LSI2;
         return GRPC_CHTTP2_PARSE_OK;
       }
-      p->last_stream_id |= ((gpr_uint32)*cur) << 8;
+      p->last_stream_id |= ((uint32_t)*cur) << 8;
       ++cur;
     /* fallthrough */
     case GRPC_CHTTP2_GOAWAY_LSI3:
@@ -100,7 +101,7 @@ grpc_chttp2_parse_error grpc_chttp2_goaway_parser_parse(
         p->state = GRPC_CHTTP2_GOAWAY_LSI3;
         return GRPC_CHTTP2_PARSE_OK;
       }
-      p->last_stream_id |= ((gpr_uint32)*cur);
+      p->last_stream_id |= ((uint32_t)*cur);
       ++cur;
     /* fallthrough */
     case GRPC_CHTTP2_GOAWAY_ERR0:
@@ -108,7 +109,7 @@ grpc_chttp2_parse_error grpc_chttp2_goaway_parser_parse(
         p->state = GRPC_CHTTP2_GOAWAY_ERR0;
         return GRPC_CHTTP2_PARSE_OK;
       }
-      p->error_code = ((gpr_uint32)*cur) << 24;
+      p->error_code = ((uint32_t)*cur) << 24;
       ++cur;
     /* fallthrough */
     case GRPC_CHTTP2_GOAWAY_ERR1:
@@ -116,7 +117,7 @@ grpc_chttp2_parse_error grpc_chttp2_goaway_parser_parse(
         p->state = GRPC_CHTTP2_GOAWAY_ERR1;
         return GRPC_CHTTP2_PARSE_OK;
       }
-      p->error_code |= ((gpr_uint32)*cur) << 16;
+      p->error_code |= ((uint32_t)*cur) << 16;
       ++cur;
     /* fallthrough */
     case GRPC_CHTTP2_GOAWAY_ERR2:
@@ -124,7 +125,7 @@ grpc_chttp2_parse_error grpc_chttp2_goaway_parser_parse(
         p->state = GRPC_CHTTP2_GOAWAY_ERR2;
         return GRPC_CHTTP2_PARSE_OK;
       }
-      p->error_code |= ((gpr_uint32)*cur) << 8;
+      p->error_code |= ((uint32_t)*cur) << 8;
       ++cur;
     /* fallthrough */
     case GRPC_CHTTP2_GOAWAY_ERR3:
@@ -132,40 +133,41 @@ grpc_chttp2_parse_error grpc_chttp2_goaway_parser_parse(
         p->state = GRPC_CHTTP2_GOAWAY_ERR3;
         return GRPC_CHTTP2_PARSE_OK;
       }
-      p->error_code |= ((gpr_uint32)*cur);
+      p->error_code |= ((uint32_t)*cur);
       ++cur;
     /* fallthrough */
     case GRPC_CHTTP2_GOAWAY_DEBUG:
-      memcpy(p->debug_data + p->debug_pos, cur, end - cur);
-      p->debug_pos += end - cur;
+      memcpy(p->debug_data + p->debug_pos, cur, (size_t)(end - cur));
+      GPR_ASSERT((size_t)(end - cur) < UINT32_MAX - p->debug_pos);
+      p->debug_pos += (uint32_t)(end - cur);
       p->state = GRPC_CHTTP2_GOAWAY_DEBUG;
       if (is_last) {
         transport_parsing->goaway_received = 1;
         transport_parsing->goaway_last_stream_index = p->last_stream_id;
         gpr_slice_unref(transport_parsing->goaway_text);
-        transport_parsing->goaway_error = p->error_code;
+        transport_parsing->goaway_error = (grpc_status_code)p->error_code;
         transport_parsing->goaway_text =
             gpr_slice_new(p->debug_data, p->debug_length, gpr_free);
         p->debug_data = NULL;
       }
       return GRPC_CHTTP2_PARSE_OK;
   }
-  gpr_log(GPR_ERROR, "Should never end up here");
-  abort();
-  return GRPC_CHTTP2_CONNECTION_ERROR;
+  GPR_UNREACHABLE_CODE(return GRPC_CHTTP2_CONNECTION_ERROR);
 }
 
-void grpc_chttp2_goaway_append(gpr_uint32 last_stream_id, gpr_uint32 error_code,
+void grpc_chttp2_goaway_append(uint32_t last_stream_id, uint32_t error_code,
                                gpr_slice debug_data,
                                gpr_slice_buffer *slice_buffer) {
   gpr_slice header = gpr_slice_malloc(9 + 4 + 4);
-  gpr_uint8 *p = GPR_SLICE_START_PTR(header);
-  gpr_uint32 frame_length = 4 + 4 + GPR_SLICE_LENGTH(debug_data);
+  uint8_t *p = GPR_SLICE_START_PTR(header);
+  uint32_t frame_length;
+  GPR_ASSERT(GPR_SLICE_LENGTH(debug_data) < UINT32_MAX - 4 - 4);
+  frame_length = 4 + 4 + (uint32_t)GPR_SLICE_LENGTH(debug_data);
 
   /* frame header: length */
-  *p++ = frame_length >> 16;
-  *p++ = frame_length >> 8;
-  *p++ = frame_length;
+  *p++ = (uint8_t)(frame_length >> 16);
+  *p++ = (uint8_t)(frame_length >> 8);
+  *p++ = (uint8_t)(frame_length);
   /* frame header: type */
   *p++ = GRPC_CHTTP2_FRAME_GOAWAY;
   /* frame header: flags */
@@ -176,15 +178,15 @@ void grpc_chttp2_goaway_append(gpr_uint32 last_stream_id, gpr_uint32 error_code,
   *p++ = 0;
   *p++ = 0;
   /* payload: last stream id */
-  *p++ = last_stream_id >> 24;
-  *p++ = last_stream_id >> 16;
-  *p++ = last_stream_id >> 8;
-  *p++ = last_stream_id;
+  *p++ = (uint8_t)(last_stream_id >> 24);
+  *p++ = (uint8_t)(last_stream_id >> 16);
+  *p++ = (uint8_t)(last_stream_id >> 8);
+  *p++ = (uint8_t)(last_stream_id);
   /* payload: error code */
-  *p++ = error_code >> 24;
-  *p++ = error_code >> 16;
-  *p++ = error_code >> 8;
-  *p++ = error_code;
+  *p++ = (uint8_t)(error_code >> 24);
+  *p++ = (uint8_t)(error_code >> 16);
+  *p++ = (uint8_t)(error_code >> 8);
+  *p++ = (uint8_t)(error_code);
   GPR_ASSERT(p == GPR_SLICE_END_PTR(header));
   gpr_slice_buffer_add(slice_buffer, header);
   gpr_slice_buffer_add(slice_buffer, debug_data);

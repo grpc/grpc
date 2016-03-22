@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -36,76 +36,99 @@
 #include <cassert>
 #include <memory>
 #include <mutex>
+#include <sstream>
 #include <string>
 #include <thread>
 #include <vector>
-#include <sstream>
 
-#include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/histogram.h>
-#include <grpc/support/log.h>
-#include <grpc/support/host_port.h>
 #include <grpc++/client_context.h>
-#include <grpc++/status.h>
+#include <grpc++/security/server_credentials.h>
 #include <grpc++/server.h>
 #include <grpc++/server_builder.h>
-#include <grpc++/server_credentials.h>
-#include <grpc++/stream.h>
+#include <grpc/grpc.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/cpu.h>
+#include <grpc/support/histogram.h>
+#include <grpc/support/host_port.h>
+#include <grpc/support/log.h>
+
+#include "src/proto/grpc/testing/services.pb.h"
 #include "test/core/util/grpc_profiler.h"
-#include "test/cpp/util/create_test_channel.h"
-#include "test/cpp/qps/qpstest.pb.h"
 #include "test/cpp/qps/client.h"
 #include "test/cpp/qps/server.h"
+#include "test/cpp/util/create_test_channel.h"
 
 namespace grpc {
 namespace testing {
 
-std::unique_ptr<Client> CreateClient(const ClientConfig& config) {
+static std::unique_ptr<Client> CreateClient(const ClientConfig& config) {
+  gpr_log(GPR_INFO, "Starting client of type %s %s %d",
+          ClientType_Name(config.client_type()).c_str(),
+          RpcType_Name(config.rpc_type()).c_str(),
+          config.payload_config().has_bytebuf_params());
+
   switch (config.client_type()) {
-    case ClientType::SYNCHRONOUS_CLIENT:
+    case ClientType::SYNC_CLIENT:
       return (config.rpc_type() == RpcType::UNARY)
                  ? CreateSynchronousUnaryClient(config)
                  : CreateSynchronousStreamingClient(config);
     case ClientType::ASYNC_CLIENT:
       return (config.rpc_type() == RpcType::UNARY)
                  ? CreateAsyncUnaryClient(config)
-                 : CreateAsyncStreamingClient(config);
+                 : (config.payload_config().has_bytebuf_params()
+                        ? CreateGenericAsyncStreamingClient(config)
+                        : CreateAsyncStreamingClient(config));
     default:
       abort();
   }
   abort();
 }
 
-std::unique_ptr<Server> CreateServer(const ServerConfig& config,
-                                     int server_port) {
+static std::unique_ptr<Server> CreateServer(const ServerConfig& config) {
+  gpr_log(GPR_INFO, "Starting server of type %s",
+          ServerType_Name(config.server_type()).c_str());
+
   switch (config.server_type()) {
-    case ServerType::SYNCHRONOUS_SERVER:
-      return CreateSynchronousServer(config, server_port);
+    case ServerType::SYNC_SERVER:
+      return CreateSynchronousServer(config);
     case ServerType::ASYNC_SERVER:
-      return CreateAsyncServer(config, server_port);
+      return CreateAsyncServer(config);
+    case ServerType::ASYNC_GENERIC_SERVER:
+      return CreateAsyncGenericServer(config);
     default:
       abort();
   }
   abort();
 }
 
-class WorkerImpl GRPC_FINAL : public Worker::Service {
+class ScopedProfile GRPC_FINAL {
  public:
-  explicit WorkerImpl(int server_port)
-      : server_port_(server_port), acquired_(false) {}
+  ScopedProfile(const char* filename, bool enable) : enable_(enable) {
+    if (enable_) grpc_profiler_start(filename);
+  }
+  ~ScopedProfile() {
+    if (enable_) grpc_profiler_stop();
+  }
 
-  Status RunTest(ServerContext* ctx,
-                 ServerReaderWriter<ClientStatus, ClientArgs>* stream)
+ private:
+  const bool enable_;
+};
+
+class WorkerServiceImpl GRPC_FINAL : public WorkerService::Service {
+ public:
+  WorkerServiceImpl(int server_port, QpsWorker* worker)
+      : acquired_(false), server_port_(server_port), worker_(worker) {}
+
+  Status RunClient(ServerContext* ctx,
+                   ServerReaderWriter<ClientStatus, ClientArgs>* stream)
       GRPC_OVERRIDE {
     InstanceGuard g(this);
     if (!g.Acquired()) {
       return Status(StatusCode::RESOURCE_EXHAUSTED, "");
     }
 
-    grpc_profiler_start("qps_client.prof");
-    Status ret = RunTestBody(ctx, stream);
-    grpc_profiler_stop();
+    ScopedProfile profile("qps_client.prof", false);
+    Status ret = RunClientBody(ctx, stream);
     return ret;
   }
 
@@ -117,17 +140,32 @@ class WorkerImpl GRPC_FINAL : public Worker::Service {
       return Status(StatusCode::RESOURCE_EXHAUSTED, "");
     }
 
-    grpc_profiler_start("qps_server.prof");
+    ScopedProfile profile("qps_server.prof", false);
     Status ret = RunServerBody(ctx, stream);
-    grpc_profiler_stop();
     return ret;
+  }
+
+  Status CoreCount(ServerContext* ctx, const CoreRequest*,
+                   CoreResponse* resp) GRPC_OVERRIDE {
+    resp->set_cores(gpr_cpu_num_cores());
+    return Status::OK;
+  }
+
+  Status QuitWorker(ServerContext* ctx, const Void*, Void*) GRPC_OVERRIDE {
+    InstanceGuard g(this);
+    if (!g.Acquired()) {
+      return Status(StatusCode::RESOURCE_EXHAUSTED, "");
+    }
+
+    worker_->MarkDone();
+    return Status::OK;
   }
 
  private:
   // Protect against multiple clients using this worker at once.
   class InstanceGuard {
    public:
-    InstanceGuard(WorkerImpl* impl)
+    InstanceGuard(WorkerServiceImpl* impl)
         : impl_(impl), acquired_(impl->TryAcquireInstance()) {}
     ~InstanceGuard() {
       if (acquired_) {
@@ -138,7 +176,7 @@ class WorkerImpl GRPC_FINAL : public Worker::Service {
     bool Acquired() const { return acquired_; }
 
    private:
-    WorkerImpl* const impl_;
+    WorkerServiceImpl* const impl_;
     const bool acquired_;
   };
 
@@ -155,8 +193,8 @@ class WorkerImpl GRPC_FINAL : public Worker::Service {
     acquired_ = false;
   }
 
-  Status RunTestBody(ServerContext* ctx,
-                     ServerReaderWriter<ClientStatus, ClientArgs>* stream) {
+  Status RunClientBody(ServerContext* ctx,
+                       ServerReaderWriter<ClientStatus, ClientArgs>* stream) {
     ClientArgs args;
     if (!stream->Read(&args)) {
       return Status(StatusCode::INVALID_ARGUMENT, "");
@@ -164,22 +202,29 @@ class WorkerImpl GRPC_FINAL : public Worker::Service {
     if (!args.has_setup()) {
       return Status(StatusCode::INVALID_ARGUMENT, "");
     }
+    gpr_log(GPR_INFO, "RunClientBody: about to create client");
     auto client = CreateClient(args.setup());
     if (!client) {
       return Status(StatusCode::INVALID_ARGUMENT, "");
     }
+    gpr_log(GPR_INFO, "RunClientBody: client created");
     ClientStatus status;
     if (!stream->Write(status)) {
       return Status(StatusCode::UNKNOWN, "");
     }
+    gpr_log(GPR_INFO, "RunClientBody: creation status reported");
     while (stream->Read(&args)) {
+      gpr_log(GPR_INFO, "RunClientBody: Message read");
       if (!args.has_mark()) {
+        gpr_log(GPR_INFO, "RunClientBody: Message is not a mark!");
         return Status(StatusCode::INVALID_ARGUMENT, "");
       }
-      *status.mutable_stats() = client->Mark();
+      *status.mutable_stats() = client->Mark(args.mark().reset());
       stream->Write(status);
+      gpr_log(GPR_INFO, "RunClientBody: Mark response given");
     }
 
+    gpr_log(GPR_INFO, "RunClientBody: Returning");
     return Status::OK;
   }
 
@@ -192,34 +237,46 @@ class WorkerImpl GRPC_FINAL : public Worker::Service {
     if (!args.has_setup()) {
       return Status(StatusCode::INVALID_ARGUMENT, "");
     }
-    auto server = CreateServer(args.setup(), server_port_);
+    if (server_port_ != 0) {
+      args.mutable_setup()->set_port(server_port_);
+    }
+    gpr_log(GPR_INFO, "RunServerBody: about to create server");
+    auto server = CreateServer(args.setup());
     if (!server) {
       return Status(StatusCode::INVALID_ARGUMENT, "");
     }
+    gpr_log(GPR_INFO, "RunServerBody: server created");
     ServerStatus status;
-    status.set_port(server_port_);
+    status.set_port(server->port());
+    status.set_cores(server->cores());
     if (!stream->Write(status)) {
       return Status(StatusCode::UNKNOWN, "");
     }
+    gpr_log(GPR_INFO, "RunServerBody: creation status reported");
     while (stream->Read(&args)) {
+      gpr_log(GPR_INFO, "RunServerBody: Message read");
       if (!args.has_mark()) {
+        gpr_log(GPR_INFO, "RunServerBody: Message not a mark!");
         return Status(StatusCode::INVALID_ARGUMENT, "");
       }
-      *status.mutable_stats() = server->Mark();
+      *status.mutable_stats() = server->Mark(args.mark().reset());
       stream->Write(status);
+      gpr_log(GPR_INFO, "RunServerBody: Mark response given");
     }
 
+    gpr_log(GPR_INFO, "RunServerBody: Returning");
     return Status::OK;
   }
 
-  const int server_port_;
-
   std::mutex mu_;
   bool acquired_;
+  int server_port_;
+  QpsWorker* worker_;
 };
 
 QpsWorker::QpsWorker(int driver_port, int server_port) {
-  impl_.reset(new WorkerImpl(server_port));
+  impl_.reset(new WorkerServiceImpl(server_port, this));
+  gpr_atm_rel_store(&done_, static_cast<gpr_atm>(0));
 
   char* server_address = NULL;
   gpr_join_host_port(&server_address, "::", driver_port);
@@ -230,10 +287,16 @@ QpsWorker::QpsWorker(int driver_port, int server_port) {
 
   gpr_free(server_address);
 
-  server_ = std::move(builder.BuildAndStart());
+  server_ = builder.BuildAndStart();
 }
 
 QpsWorker::~QpsWorker() {}
 
+bool QpsWorker::Done() const {
+  return (gpr_atm_acq_load(&done_) != static_cast<gpr_atm>(0));
+}
+void QpsWorker::MarkDone() {
+  gpr_atm_rel_store(&done_, static_cast<gpr_atm>(1));
+}
 }  // namespace testing
 }  // namespace grpc

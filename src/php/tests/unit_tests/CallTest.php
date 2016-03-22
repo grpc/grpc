@@ -1,7 +1,7 @@
 <?php
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,52 +31,92 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
-class CallTest extends PHPUnit_Framework_TestCase{
-  static $server;
-  static $port;
+class CallTest extends PHPUnit_Framework_TestCase
+{
+    public static $server;
+    public static $port;
 
-  public static function setUpBeforeClass() {
-    self::$server = new Grpc\Server([]);
-    self::$port = self::$server->addHttp2Port('0.0.0.0:0');
-  }
+    public static function setUpBeforeClass()
+    {
+        self::$server = new Grpc\Server([]);
+        self::$port = self::$server->addHttp2Port('0.0.0.0:0');
+    }
 
-  public function setUp() {
-    $this->channel = new Grpc\Channel('localhost:' . self::$port, []);
-    $this->call = new Grpc\Call($this->channel,
-                                '/foo',
-                                Grpc\Timeval::infFuture());
-  }
+    public function setUp()
+    {
+        $this->channel = new Grpc\Channel('localhost:'.self::$port, []);
+        $this->call = new Grpc\Call($this->channel,
+                                    '/foo',
+                                    Grpc\Timeval::infFuture());
+    }
 
-  public function testAddEmptyMetadata() {
-    $batch = [
-        Grpc\OP_SEND_INITIAL_METADATA => []
-              ];
-    $result = $this->call->startBatch($batch);
-    $this->assertTrue($result->send_metadata);
-  }
+    public function testAddEmptyMetadata()
+    {
+        $batch = [
+            Grpc\OP_SEND_INITIAL_METADATA => [],
+        ];
+        $result = $this->call->startBatch($batch);
+        $this->assertTrue($result->send_metadata);
+    }
 
-  public function testAddSingleMetadata() {
-    $batch = [
-        Grpc\OP_SEND_INITIAL_METADATA => ['key' => ['value']]
-              ];
-    $result = $this->call->startBatch($batch);
-    $this->assertTrue($result->send_metadata);
-  }
+    public function testAddSingleMetadata()
+    {
+        $batch = [
+            Grpc\OP_SEND_INITIAL_METADATA => ['key' => ['value']],
+        ];
+        $result = $this->call->startBatch($batch);
+        $this->assertTrue($result->send_metadata);
+    }
 
-  public function testAddMultiValueMetadata() {
-    $batch = [
-        Grpc\OP_SEND_INITIAL_METADATA => ['key' => ['value1', 'value2']]
-              ];
-    $result = $this->call->startBatch($batch);
-    $this->assertTrue($result->send_metadata);
-  }
+    public function testAddMultiValueMetadata()
+    {
+        $batch = [
+            Grpc\OP_SEND_INITIAL_METADATA => ['key' => ['value1', 'value2']],
+        ];
+        $result = $this->call->startBatch($batch);
+        $this->assertTrue($result->send_metadata);
+    }
 
-  public function testAddSingleAndMultiValueMetadata() {
-    $batch = [
-        Grpc\OP_SEND_INITIAL_METADATA => ['key1' => ['value1'],
-                                          'key2' => ['value2', 'value3']]
-              ];
-    $result = $this->call->startBatch($batch);
-    $this->assertTrue($result->send_metadata);
-  }
+    public function testAddSingleAndMultiValueMetadata()
+    {
+        $batch = [
+            Grpc\OP_SEND_INITIAL_METADATA => ['key1' => ['value1'],
+                                              'key2' => ['value2', 'value3'], ],
+        ];
+        $result = $this->call->startBatch($batch);
+        $this->assertTrue($result->send_metadata);
+    }
+
+    public function testGetPeer()
+    {
+        $this->assertTrue(is_string($this->call->getPeer()));
+    }
+
+    public function testCancel()
+    {
+      $this->assertNull($this->call->cancel());
+    }
+
+    /**
+     * @expectedException InvalidArgumentException
+     */
+    public function testInvalidMetadataKey()
+    {
+        $batch = [
+            'invalid' => ['key1' => 'value1'],
+        ];
+        $result = $this->call->startBatch($batch);
+    }
+
+    /**
+     * @expectedException InvalidArgumentException
+     */
+    public function testInvalidMetadataInnerValue()
+    {
+        $batch = [
+            Grpc\OP_SEND_INITIAL_METADATA => ['key1' => 'value1'],
+        ];
+        $result = $this->call->startBatch($batch);
+    }
+
 }

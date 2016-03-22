@@ -1,6 +1,6 @@
 #region Copyright notice and license
 
-// Copyright 2015, Google Inc.
+// Copyright 2015-2016, Google Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -35,6 +35,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using Grpc.Core.Logging;
 using Grpc.Core.Utils;
 
 namespace Grpc.Core.Internal
@@ -45,12 +46,20 @@ namespace Grpc.Core.Internal
 
     internal class CompletionRegistry
     {
-        readonly ConcurrentDictionary<IntPtr, OpCompletionDelegate> dict = new ConcurrentDictionary<IntPtr, OpCompletionDelegate>();  
+        static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<CompletionRegistry>();
+
+        readonly GrpcEnvironment environment;
+        readonly ConcurrentDictionary<IntPtr, OpCompletionDelegate> dict = new ConcurrentDictionary<IntPtr, OpCompletionDelegate>();
+
+        public CompletionRegistry(GrpcEnvironment environment)
+        {
+            this.environment = environment;
+        }
 
         public void Register(IntPtr key, OpCompletionDelegate callback)
         {
-            DebugStats.PendingBatchCompletions.Increment();
-            Preconditions.CheckState(dict.TryAdd(key, callback));
+            environment.DebugStats.PendingBatchCompletions.Increment();
+            GrpcPreconditions.CheckState(dict.TryAdd(key, callback));
         }
 
         public void RegisterBatchCompletion(BatchContextSafeHandle ctx, BatchCompletionDelegate callback)
@@ -62,8 +71,8 @@ namespace Grpc.Core.Internal
         public OpCompletionDelegate Extract(IntPtr key)
         {
             OpCompletionDelegate value;
-            Preconditions.CheckState(dict.TryRemove(key, out value));
-            DebugStats.PendingBatchCompletions.Decrement();
+            GrpcPreconditions.CheckState(dict.TryRemove(key, out value));
+            environment.DebugStats.PendingBatchCompletions.Decrement();
             return value;
         }
 
@@ -75,7 +84,7 @@ namespace Grpc.Core.Internal
             }
             catch (Exception e)
             {
-                Console.WriteLine("Exception occured while invoking completion delegate: " + e);
+                Logger.Error(e, "Exception occured while invoking completion delegate.");
             }
             finally
             {

@@ -42,20 +42,23 @@
 
 void grpc_chttp2_incoming_metadata_buffer_init(
     grpc_chttp2_incoming_metadata_buffer *buffer) {
-  buffer->deadline = gpr_inf_future;
+  buffer->deadline = gpr_inf_future(GPR_CLOCK_REALTIME);
 }
 
 void grpc_chttp2_incoming_metadata_buffer_destroy(
     grpc_chttp2_incoming_metadata_buffer *buffer) {
   size_t i;
-  for (i = 0; i < buffer->count; i++) {
-    grpc_mdelem_unref(buffer->elems[i].md);
+  if (!buffer->published) {
+    for (i = 0; i < buffer->count; i++) {
+      GRPC_MDELEM_UNREF(buffer->elems[i].md);
+    }
   }
   gpr_free(buffer->elems);
 }
 
 void grpc_chttp2_incoming_metadata_buffer_add(
     grpc_chttp2_incoming_metadata_buffer *buffer, grpc_mdelem *elem) {
+  GPR_ASSERT(!buffer->published);
   if (buffer->capacity == buffer->count) {
     buffer->capacity = GPR_MAX(8, 2 * buffer->capacity);
     buffer->elems =
@@ -66,116 +69,28 @@ void grpc_chttp2_incoming_metadata_buffer_add(
 
 void grpc_chttp2_incoming_metadata_buffer_set_deadline(
     grpc_chttp2_incoming_metadata_buffer *buffer, gpr_timespec deadline) {
+  GPR_ASSERT(!buffer->published);
   buffer->deadline = deadline;
 }
 
-void grpc_chttp2_incoming_metadata_live_op_buffer_end(
-    grpc_chttp2_incoming_metadata_live_op_buffer *buffer) {
-  gpr_free(buffer->elems);
-  buffer->elems = NULL;
-}
-
-void grpc_chttp2_incoming_metadata_buffer_place_metadata_batch_into(
-    grpc_chttp2_incoming_metadata_buffer *buffer, grpc_stream_op_buffer *sopb) {
-  grpc_metadata_batch b;
-
-  b.list.head = NULL;
-  /* Store away the last element of the list, so that in patch_metadata_ops
-     we can reconstitute the list.
-     We can't do list building here as later incoming metadata may reallocate
-     the underlying array. */
-  b.list.tail = (void *)(gpr_intptr)buffer->count;
-  b.garbage.head = b.garbage.tail = NULL;
-  b.deadline = buffer->deadline;
-  buffer->deadline = gpr_inf_future;
-
-  grpc_sopb_add_metadata(sopb, b);
-}
-
-void grpc_chttp2_incoming_metadata_buffer_swap(
-    grpc_chttp2_incoming_metadata_buffer *a,
-    grpc_chttp2_incoming_metadata_buffer *b) {
-  GPR_SWAP(grpc_chttp2_incoming_metadata_buffer, *a, *b);
-}
-
-void grpc_incoming_metadata_buffer_move_to_referencing_sopb(
-    grpc_chttp2_incoming_metadata_buffer *src,
-    grpc_chttp2_incoming_metadata_buffer *dst, grpc_stream_op_buffer *sopb) {
-  size_t delta;
-  size_t i;
-  dst->deadline = gpr_time_min(src->deadline, dst->deadline);
-
-  if (src->count == 0) {
-    return;
-  }
-  if (dst->count == 0) {
-    grpc_chttp2_incoming_metadata_buffer_swap(src, dst);
-    return;
-  }
-  delta = dst->count;
-  if (dst->capacity < src->count + dst->count) {
-    dst->capacity = GPR_MAX(dst->capacity * 2, src->count + dst->count);
-    dst->elems = gpr_realloc(dst->elems, dst->capacity * sizeof(*dst->elems));
-  }
-  memcpy(dst->elems + dst->count, src->elems, src->count * sizeof(*src->elems));
-  dst->count += src->count;
-  for (i = 0; i < sopb->nops; i++) {
-    if (sopb->ops[i].type != GRPC_OP_METADATA) continue;
-    sopb->ops[i].data.metadata.list.tail =
-        (void *)(delta + (gpr_intptr)sopb->ops[i].data.metadata.list.tail);
-  }
-}
-
-void grpc_chttp2_incoming_metadata_buffer_postprocess_sopb_and_begin_live_op(
-    grpc_chttp2_incoming_metadata_buffer *buffer, grpc_stream_op_buffer *sopb,
-    grpc_chttp2_incoming_metadata_live_op_buffer *live_op_buffer) {
-  grpc_stream_op *ops = sopb->ops;
-  size_t nops = sopb->nops;
-  size_t i;
-  size_t j;
-  size_t mdidx = 0;
-  size_t last_mdidx;
-  int found_metadata = 0;
-
-  /* rework the array of metadata into a linked list, making use
-     of the breadcrumbs we left in metadata batches during
-     add_metadata_batch */
-  for (i = 0; i < nops; i++) {
-    grpc_stream_op *op = &ops[i];
-    if (op->type != GRPC_OP_METADATA) continue;
-    found_metadata = 1;
-    /* we left a breadcrumb indicating where the end of this list is,
-       and since we add sequentially, we know from the end of the last
-       segment where this segment begins */
-    last_mdidx = (size_t)(gpr_intptr)(op->data.metadata.list.tail);
-    GPR_ASSERT(last_mdidx > mdidx);
-    GPR_ASSERT(last_mdidx <= buffer->count);
-    /* turn the array into a doubly linked list */
-    op->data.metadata.list.head = &buffer->elems[mdidx];
-    op->data.metadata.list.tail = &buffer->elems[last_mdidx - 1];
-    for (j = mdidx + 1; j < last_mdidx; j++) {
-      buffer->elems[j].prev = &buffer->elems[j - 1];
-      buffer->elems[j - 1].next = &buffer->elems[j];
+void grpc_chttp2_incoming_metadata_buffer_publish(
+    grpc_chttp2_incoming_metadata_buffer *buffer, grpc_metadata_batch *batch) {
+  GPR_ASSERT(!buffer->published);
+  buffer->published = 1;
+  if (buffer->count > 0) {
+    size_t i;
+    for (i = 1; i < buffer->count; i++) {
+      buffer->elems[i].prev = &buffer->elems[i - 1];
     }
-    buffer->elems[mdidx].prev = NULL;
-    buffer->elems[last_mdidx - 1].next = NULL;
-    /* track where we're up to */
-    mdidx = last_mdidx;
-  }
-  if (found_metadata) {
-    live_op_buffer->elems = buffer->elems;
-    if (mdidx != buffer->count) {
-      /* we have a partially read metadata batch still in incoming_metadata */
-      size_t new_count = buffer->count - mdidx;
-      size_t copy_bytes = sizeof(*buffer->elems) * new_count;
-      GPR_ASSERT(mdidx < buffer->count);
-      buffer->elems = gpr_malloc(copy_bytes);
-      memcpy(live_op_buffer->elems + mdidx, buffer->elems, copy_bytes);
-      buffer->count = buffer->capacity = new_count;
-    } else {
-      buffer->elems = NULL;
-      buffer->count = 0;
-      buffer->capacity = 0;
+    for (i = 0; i < buffer->count - 1; i++) {
+      buffer->elems[i].next = &buffer->elems[i + 1];
     }
+    buffer->elems[0].prev = NULL;
+    buffer->elems[buffer->count - 1].next = NULL;
+    batch->list.head = &buffer->elems[0];
+    batch->list.tail = &buffer->elems[buffer->count - 1];
+  } else {
+    batch->list.head = batch->list.tail = NULL;
   }
+  batch->deadline = buffer->deadline;
 }

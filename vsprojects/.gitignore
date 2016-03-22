@@ -1,5 +1,7 @@
 Debug
+Debug-DLL
 Release
+Release-DLL
 *.suo
 *.user
 test_bin
@@ -7,3 +9,4 @@ test_bin
 *.sdf
 third_party/*.user
 /packages
+/IntDir

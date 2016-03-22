@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -81,11 +81,21 @@ void gpr_log(const char *file, int line, gpr_log_severity severity,
 
 /* Simple starter implementation */
 void gpr_default_log(gpr_log_func_args *args) {
+  char *final_slash;
+  const char *display_file;
   char time_buffer[64];
-  gpr_timespec now = gpr_now();
+  time_t timer;
+  gpr_timespec now = gpr_now(GPR_CLOCK_REALTIME);
   struct tm tm;
 
-  if (localtime_s(&tm, &now.tv_sec)) {
+  timer = (time_t)now.tv_sec;
+  final_slash = strrchr(args->file, '\\');
+  if (final_slash == NULL)
+    display_file = args->file;
+  else
+    display_file = final_slash + 1;
+
+  if (localtime_s(&tm, &timer)) {
     strcpy(time_buffer, "error:localtime");
   } else if (0 ==
              strftime(time_buffer, sizeof(time_buffer), "%m%d %H:%M:%S", &tm)) {
@@ -94,17 +104,18 @@ void gpr_default_log(gpr_log_func_args *args) {
 
   fprintf(stderr, "%s%s.%09u %5lu %s:%d] %s\n",
           gpr_log_severity_string(args->severity), time_buffer,
-          (int)(now.tv_nsec), GetCurrentThreadId(), args->file, args->line,
+          (int)(now.tv_nsec), GetCurrentThreadId(), display_file, args->line,
           args->message);
+  fflush(stderr);
 }
 
-char *gpr_format_message(DWORD messageid) {
+char *gpr_format_message(int messageid) {
   LPTSTR tmessage;
   char *message;
   DWORD status = FormatMessage(
       FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM |
           FORMAT_MESSAGE_IGNORE_INSERTS,
-      NULL, messageid, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+      NULL, (DWORD)messageid, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
       (LPTSTR)(&tmessage), 0, NULL);
   if (status == 0) return gpr_strdup("Unable to retrieve error string");
   message = gpr_tchar_to_char(tmessage);

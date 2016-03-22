@@ -31,11 +31,11 @@
  *
  */
 
+#import "InteropTests.h"
+
 #include <grpc/status.h>
 
-#import <UIKit/UIKit.h>
-#import <XCTest/XCTest.h>
-
+#import <GRPCClient/GRPCCall+Tests.h>
 #import <ProtoRPC/ProtoRPC.h>
 #import <RemoteTest/Empty.pbobjc.h>
 #import <RemoteTest/Messages.pbobjc.h>
@@ -76,20 +76,22 @@
 }
 @end
 
-@interface InteropTests : XCTestCase
-@end
+#pragma mark Tests
 
 @implementation InteropTests {
   RMTTestService *_service;
 }
 
-- (void)setUp {
-  _service = [[RMTTestService alloc] initWithHost:@"grpc-test.sandbox.google.com"];
++ (NSString *)host {
+  return nil;
 }
 
-// Tests as described here: https://github.com/grpc/grpc/blob/master/doc/interop-test-descriptions.md
+- (void)setUp {
+  _service = self.class.host ? [RMTTestService serviceWithHost:self.class.host] : nil;
+}
 
 - (void)testEmptyUnaryRPC {
+  XCTAssertNotNil(self.class.host);
   __weak XCTestExpectation *expectation = [self expectationWithDescription:@"EmptyUnary"];
 
   RMTEmpty *request = [RMTEmpty message];
@@ -103,10 +105,11 @@
     [expectation fulfill];
   }];
 
-  [self waitForExpectationsWithTimeout:2 handler:nil];
+  [self waitForExpectationsWithTimeout:4 handler:nil];
 }
 
 - (void)testLargeUnaryRPC {
+  XCTAssertNotNil(self.class.host);
   __weak XCTestExpectation *expectation = [self expectationWithDescription:@"LargeUnary"];
 
   RMTSimpleRequest *request = [RMTSimpleRequest message];
@@ -125,10 +128,11 @@
     [expectation fulfill];
   }];
 
-  [self waitForExpectationsWithTimeout:4 handler:nil];
+  [self waitForExpectationsWithTimeout:16 handler:nil];
 }
 
 - (void)testClientStreamingRPC {
+  XCTAssertNotNil(self.class.host);
   __weak XCTestExpectation *expectation = [self expectationWithDescription:@"ClientStreaming"];
 
   RMTStreamingInputCallRequest *request1 = [RMTStreamingInputCallRequest message];
@@ -143,7 +147,7 @@
   RMTStreamingInputCallRequest *request4 = [RMTStreamingInputCallRequest message];
   request4.payload.body = [NSMutableData dataWithLength:45904];
 
-  id<GRXWriter> writer = [GRXWriter writerWithContainer:@[request1, request2, request3, request4]];
+  GRXWriter *writer = [GRXWriter writerWithContainer:@[request1, request2, request3, request4]];
 
   [_service streamingInputCallWithRequestsWriter:writer
                                          handler:^(RMTStreamingInputCallResponse *response,
@@ -157,10 +161,11 @@
     [expectation fulfill];
   }];
 
-  [self waitForExpectationsWithTimeout:4 handler:nil];
+  [self waitForExpectationsWithTimeout:8 handler:nil];
 }
 
 - (void)testServerStreamingRPC {
+  XCTAssertNotNil(self.class.host);
   __weak XCTestExpectation *expectation = [self expectationWithDescription:@"ServerStreaming"];
 
   NSArray *expectedSizes = @[@31415, @9, @2653, @58979];
@@ -193,10 +198,11 @@
     }
   }];
 
-  [self waitForExpectationsWithTimeout:4 handler:nil];
+  [self waitForExpectationsWithTimeout:8 handler:nil];
 }
 
 - (void)testPingPongRPC {
+  XCTAssertNotNil(self.class.host);
   __weak XCTestExpectation *expectation = [self expectationWithDescription:@"PingPong"];
 
   NSArray *requests = @[@27182, @8, @1828, @45904];
@@ -236,10 +242,11 @@
       [expectation fulfill];
     }
   }];
-  [self waitForExpectationsWithTimeout:2 handler:nil];
+  [self waitForExpectationsWithTimeout:4 handler:nil];
 }
 
 - (void)testEmptyStreamRPC {
+  XCTAssertNotNil(self.class.host);
   __weak XCTestExpectation *expectation = [self expectationWithDescription:@"EmptyStream"];
   [_service fullDuplexCallWithRequestsWriter:[GRXWriter emptyWriter]
                                 eventHandler:^(BOOL done,
@@ -253,6 +260,7 @@
 }
 
 - (void)testCancelAfterBeginRPC {
+  XCTAssertNotNil(self.class.host);
   __weak XCTestExpectation *expectation = [self expectationWithDescription:@"CancelAfterBegin"];
 
   // A buffered pipe to which we never write any value acts as a writer that just hangs.
@@ -270,22 +278,24 @@
 }
 
 - (void)testCancelAfterFirstResponseRPC {
+  XCTAssertNotNil(self.class.host);
   __weak XCTestExpectation *expectation = [self expectationWithDescription:@"CancelAfterFirstResponse"];
-  
+
   // A buffered pipe to which we write a single value but never close
   GRXBufferedPipe *requestsBuffer = [[GRXBufferedPipe alloc] init];
-  
+
   __block BOOL receivedResponse = NO;
-  
+
   id request = [RMTStreamingOutputCallRequest messageWithPayloadSize:@21782
                                                requestedResponseSize:@31415];
-  
+
   [requestsBuffer writeValue:request];
-  
-  __block ProtoRPC *call = [_service RPCToFullDuplexCallWithRequestsWriter:requestsBuffer
-                                                              eventHandler:^(BOOL done,
-                                                                             RMTStreamingOutputCallResponse *response,
-                                                                             NSError *error) {
+
+  __block ProtoRPC *call =
+      [_service RPCToFullDuplexCallWithRequestsWriter:requestsBuffer
+                                         eventHandler:^(BOOL done,
+                                                        RMTStreamingOutputCallResponse *response,
+                                                        NSError *error) {
     if (receivedResponse) {
       XCTAssert(done, @"Unexpected extra response %@", response);
       XCTAssertEqual(error.code, GRPC_STATUS_CANCELLED);
@@ -299,7 +309,7 @@
     }
   }];
   [call start];
-  [self waitForExpectationsWithTimeout:4 handler:nil];
+  [self waitForExpectationsWithTimeout:8 handler:nil];
 }
 
 @end

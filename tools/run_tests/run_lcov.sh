@@ -30,12 +30,13 @@
 
 set -ex
 
-out=`realpath ${1:-coverage}`
+out=$(readlink -f ${1:-coverage})
 
-root=`realpath $(dirname $0)/../..`
-tmp=`mktemp`
+root=$(readlink -f $(dirname $0)/../..)
+shift || true
+tmp=$(mktemp)
 cd $root
-tools/run_tests/run_tests.py -c gcov -l c c++ || true
+tools/run_tests/run_tests.py -c gcov -l c c++ $@ || true
 lcov --capture --directory . --output-file $tmp
 genhtml $tmp --output-directory $out
 rm $tmp

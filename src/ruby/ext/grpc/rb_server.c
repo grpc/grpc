@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,6 +31,8 @@
  *
  */
 
+#include <ruby/ruby.h>
+#include "rb_grpc_imports.generated.h"
 #include "rb_server.h"
 
 #include <ruby/ruby.h>
@@ -48,6 +50,9 @@ static VALUE grpc_rb_cServer = Qnil;
 
 /* id_at is the constructor method of the ruby standard Time class. */
 static ID id_at;
+
+/* id_insecure_server is used to indicate that a server is insecure */
+static VALUE id_insecure_server;
 
 /* grpc_rb_server wraps a grpc_server.  It provides a peer ruby object,
   'mark' to minimize copying when a server is created from ruby. */
@@ -68,8 +73,12 @@ static void grpc_rb_server_free(void *p) {
 
   /* Deletes the wrapped object if the mark object is Qnil, which indicates
      that no other object is the actual owner. */
+  /* grpc_server_shutdown does not exist. Change this to something that does
+     or delete it */
   if (svr->wrapped != NULL && svr->mark == Qnil) {
-    grpc_server_shutdown(svr->wrapped);
+    // grpc_server_shutdown(svr->wrapped);
+    // Aborting to indicate a bug
+    abort();
     grpc_server_destroy(svr->wrapped);
   }
 
@@ -90,14 +99,18 @@ static void grpc_rb_server_mark(void *p) {
 
 static const rb_data_type_t grpc_rb_server_data_type = {
     "grpc_server",
-    {grpc_rb_server_mark, grpc_rb_server_free, GRPC_RB_MEMSIZE_UNAVAILABLE},
+    {grpc_rb_server_mark, grpc_rb_server_free, GRPC_RB_MEMSIZE_UNAVAILABLE,
+     {NULL, NULL}},
     NULL,
     NULL,
+#ifdef RUBY_TYPED_FREE_IMMEDIATELY
     /* It is unsafe to specify RUBY_TYPED_FREE_IMMEDIATELY because the free function would block
      * and we might want to unlock GVL
      * TODO(yugui) Unlock GVL?
      */
-    0};
+    0,
+#endif
+};
 
 /* Allocates grpc_rb_server instances. */
 static VALUE grpc_rb_server_alloc(VALUE cls) {
@@ -123,7 +136,7 @@ static VALUE grpc_rb_server_init(VALUE self, VALUE cqueue, VALUE channel_args) {
   TypedData_Get_Struct(self, grpc_rb_server, &grpc_rb_server_data_type,
                        wrapper);
   grpc_rb_hash_convert_to_channel_args(channel_args, &args);
-  srv = grpc_server_create(&args);
+  srv = grpc_server_create(&args, NULL);
 
   if (args.args != NULL) {
     xfree(args.args); /* Allocated by grpc_rb_hash_convert_to_channel_args */
@@ -131,7 +144,7 @@ static VALUE grpc_rb_server_init(VALUE self, VALUE cqueue, VALUE channel_args) {
   if (srv == NULL) {
     rb_raise(rb_eRuntimeError, "could not create a gRPC server, not sure why");
   }
-  grpc_server_register_completion_queue(srv, cq);
+  grpc_server_register_completion_queue(srv, cq, NULL);
   wrapper->wrapped = srv;
 
   /* Add the cq as the server's mark object. This ensures the ruby cq can't be
@@ -208,6 +221,7 @@ static VALUE grpc_rb_server_request_call(VALUE self, VALUE cqueue,
   grpc_call_error err;
   request_call_stack st;
   VALUE result;
+  gpr_timespec deadline;
   TypedData_Get_Struct(self, grpc_rb_server, &grpc_rb_server_data_type, s);
   if (s->wrapped == NULL) {
     rb_raise(rb_eRuntimeError, "destroyed!");
@@ -228,6 +242,7 @@ static VALUE grpc_rb_server_request_call(VALUE self, VALUE cqueue,
                grpc_call_error_detail_of(err), err);
       return Qnil;
     }
+
     ev = grpc_rb_completion_queue_pluck_event(cqueue, tag_new, timeout);
     if (ev.type == GRPC_QUEUE_TIMEOUT) {
       grpc_request_call_stack_cleanup(&st);
@@ -240,15 +255,13 @@ static VALUE grpc_rb_server_request_call(VALUE self, VALUE cqueue,
     }
 
     /* build the NewServerRpc struct result */
+    deadline = gpr_convert_clock_type(st.details.deadline, GPR_CLOCK_REALTIME);
     result = rb_struct_new(
-        grpc_rb_sNewServerRpc,
-        rb_str_new2(st.details.method),
+        grpc_rb_sNewServerRpc, rb_str_new2(st.details.method),
         rb_str_new2(st.details.host),
-        rb_funcall(rb_cTime, id_at, 2, INT2NUM(st.details.deadline.tv_sec),
-                   INT2NUM(st.details.deadline.tv_nsec)),
-        grpc_rb_md_ary_to_h(&st.md_ary),
-        grpc_rb_wrap_call(call),
-        NULL);
+        rb_funcall(rb_cTime, id_at, 2, INT2NUM(deadline.tv_sec),
+                   INT2NUM(deadline.tv_nsec)),
+        grpc_rb_md_ary_to_h(&st.md_ary), grpc_rb_wrap_call(call), NULL);
     grpc_request_call_stack_cleanup(&st);
     return result;
   }
@@ -294,43 +307,22 @@ static VALUE grpc_rb_server_destroy(int argc, VALUE *argv, VALUE self) {
   if (s->wrapped != NULL) {
     grpc_server_shutdown_and_notify(s->wrapped, cq, NULL);
     ev = grpc_rb_completion_queue_pluck_event(cqueue, Qnil, timeout);
-
     if (!ev.success) {
-      rb_warn("server shutdown failed, there will be a LEAKED object warning");
-      return Qnil;
-      /*
-         TODO: renable the rb_raise below.
-
-         At the moment if the timeout is INFINITE_FUTURE as recommended, the
-         pluck blocks forever, even though
-
-         the outstanding server_request_calls correctly fail on the other
-         thread that they are running on.
-
-         it's almost as if calls that fail on the other thread do not get
-         cleaned up by shutdown request, even though it caused htem to
-         terminate.
-
-         rb_raise(rb_eRuntimeError, "grpc server shutdown did not succeed");
-         return Qnil;
-
-         The workaround is just to use a timeout and return without really
-         shutting down the server, and rely on the grpc core garbage collection
-         it down as a 'LEAKED OBJECT'.
-
-      */
+      rb_warn("server shutdown failed, cancelling the calls, objects may leak");
+      grpc_server_cancel_all_calls(s->wrapped);
+      return Qfalse;
     }
     grpc_server_destroy(s->wrapped);
     s->wrapped = NULL;
   }
-  return Qnil;
+  return Qtrue;
 }
 
 /*
   call-seq:
     // insecure port
     insecure_server = Server.new(cq, {'arg1': 'value1'})
-    insecure_server.add_http2_port('mydomain:50051')
+    insecure_server.add_http2_port('mydomain:50051', :this_port_is_insecure)
 
     // secure port
     server_creds = ...
@@ -338,22 +330,24 @@ static VALUE grpc_rb_server_destroy(int argc, VALUE *argv, VALUE self) {
     secure_server.add_http_port('mydomain:50051', server_creds)
 
     Adds a http2 port to server */
-static VALUE grpc_rb_server_add_http2_port(int argc, VALUE *argv, VALUE self) {
-  VALUE port = Qnil;
-  VALUE rb_creds = Qnil;
+static VALUE grpc_rb_server_add_http2_port(VALUE self, VALUE port,
+                                           VALUE rb_creds) {
   grpc_rb_server *s = NULL;
   grpc_server_credentials *creds = NULL;
   int recvd_port = 0;
-
-  /* "11" == 1 mandatory args, 1 (rb_creds) is optional */
-  rb_scan_args(argc, argv, "11", &port, &rb_creds);
 
   TypedData_Get_Struct(self, grpc_rb_server, &grpc_rb_server_data_type, s);
   if (s->wrapped == NULL) {
     rb_raise(rb_eRuntimeError, "destroyed!");
     return Qnil;
-  } else if (rb_creds == Qnil) {
-    recvd_port = grpc_server_add_http2_port(s->wrapped, StringValueCStr(port));
+  } else if (TYPE(rb_creds) == T_SYMBOL) {
+    if (id_insecure_server != SYM2ID(rb_creds)) {
+      rb_raise(rb_eTypeError,
+               "bad creds symbol, want :this_port_is_insecure");
+      return Qnil;
+    }
+    recvd_port =
+        grpc_server_add_insecure_http2_port(s->wrapped, StringValueCStr(port));
     if (recvd_port == 0) {
       rb_raise(rb_eRuntimeError,
                "could not add port %s to server, not sure why",
@@ -393,8 +387,9 @@ void Init_grpc_server() {
   rb_define_alias(grpc_rb_cServer, "close", "destroy");
   rb_define_method(grpc_rb_cServer, "add_http2_port",
                    grpc_rb_server_add_http2_port,
-                   -1);
+                   2);
   id_at = rb_intern("at");
+  id_insecure_server = rb_intern("this_port_is_insecure");
 }
 
 /* Gets the wrapped server from the ruby wrapper */

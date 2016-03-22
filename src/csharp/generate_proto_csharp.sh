@@ -1,5 +1,5 @@
 #!/bin/sh
-# Copyright 2015, Google Inc.
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -30,14 +30,19 @@
 
 # Regenerates gRPC service stubs from proto files.
 set +e
-cd $(dirname $0)
+cd $(dirname $0)/../..
 
-PLUGIN=protoc-gen-grpc=../../bins/opt/grpc_csharp_plugin
-EXAMPLES_DIR=Grpc.Examples
-INTEROP_DIR=Grpc.IntegrationTesting
+PROTOC=bins/opt/protobuf/protoc
+PLUGIN=protoc-gen-grpc=bins/opt/grpc_csharp_plugin
+EXAMPLES_DIR=src/csharp/Grpc.Examples
+HEALTHCHECK_DIR=src/csharp/Grpc.HealthCheck
+TESTING_DIR=src/csharp/Grpc.IntegrationTesting
 
-protoc --plugin=$PLUGIN --grpc_out=$EXAMPLES_DIR \
-    -I $EXAMPLES_DIR/proto $EXAMPLES_DIR/proto/math.proto
+$PROTOC --plugin=$PLUGIN --csharp_out=$EXAMPLES_DIR --grpc_out=$EXAMPLES_DIR \
+    -I src/proto/math src/proto/math/math.proto
 
-protoc --plugin=$PLUGIN --grpc_out=$INTEROP_DIR \
-    -I $INTEROP_DIR/proto $INTEROP_DIR/proto/test.proto
+$PROTOC --plugin=$PLUGIN --csharp_out=$HEALTHCHECK_DIR --grpc_out=$HEALTHCHECK_DIR \
+    -I src/proto/grpc/health/v1 src/proto/grpc/health/v1/health.proto
+
+$PROTOC --plugin=$PLUGIN --csharp_out=$TESTING_DIR --grpc_out=$TESTING_DIR \
+    -I . src/proto/grpc/testing/{control,empty,messages,payloads,services,stats,test}.proto 

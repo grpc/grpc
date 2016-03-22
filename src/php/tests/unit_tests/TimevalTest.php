@@ -1,7 +1,7 @@
 <?php
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,56 +31,129 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
-class TimevalTest extends PHPUnit_Framework_TestCase{
-  public function testCompareSame() {
-    $zero = Grpc\Timeval::zero();
-    $this->assertSame(0, Grpc\Timeval::compare($zero, $zero));
-  }
+class TimevalTest extends PHPUnit_Framework_TestCase
+{
+    public function testCompareSame()
+    {
+        $zero = Grpc\Timeval::zero();
+        $this->assertSame(0, Grpc\Timeval::compare($zero, $zero));
+    }
 
-  public function testPastIsLessThanZero() {
-    $zero = Grpc\Timeval::zero();
-    $past = Grpc\Timeval::infPast();
-    $this->assertLessThan(0, Grpc\Timeval::compare($past, $zero));
-    $this->assertGreaterThan(0, Grpc\Timeval::compare($zero, $past));
-  }
+    public function testPastIsLessThanZero()
+    {
+        $zero = Grpc\Timeval::zero();
+        $past = Grpc\Timeval::infPast();
+        $this->assertLessThan(0, Grpc\Timeval::compare($past, $zero));
+        $this->assertGreaterThan(0, Grpc\Timeval::compare($zero, $past));
+    }
 
-  public function testFutureIsGreaterThanZero() {
-    $zero = Grpc\Timeval::zero();
-    $future = Grpc\Timeval::infFuture();
-    $this->assertLessThan(0, Grpc\Timeval::compare($zero, $future));
-    $this->assertGreaterThan(0, Grpc\Timeval::compare($future, $zero));
-  }
+    public function testFutureIsGreaterThanZero()
+    {
+        $zero = Grpc\Timeval::zero();
+        $future = Grpc\Timeval::infFuture();
+        $this->assertLessThan(0, Grpc\Timeval::compare($zero, $future));
+        $this->assertGreaterThan(0, Grpc\Timeval::compare($future, $zero));
+    }
 
-  /**
-   * @depends testFutureIsGreaterThanZero
-   */
-  public function testNowIsBetweenZeroAndFuture() {
-    $zero = Grpc\Timeval::zero();
-    $future = Grpc\Timeval::infFuture();
-    $now = Grpc\Timeval::now();
-    $this->assertLessThan(0, Grpc\Timeval::compare($zero, $now));
-    $this->assertLessThan(0, Grpc\Timeval::compare($now, $future));
-  }
+    /**
+     * @depends testFutureIsGreaterThanZero
+     */
+    public function testNowIsBetweenZeroAndFuture()
+    {
+        $zero = Grpc\Timeval::zero();
+        $future = Grpc\Timeval::infFuture();
+        $now = Grpc\Timeval::now();
+        $this->assertLessThan(0, Grpc\Timeval::compare($zero, $now));
+        $this->assertLessThan(0, Grpc\Timeval::compare($now, $future));
+    }
 
-  public function testNowAndAdd() {
-    $now = Grpc\Timeval::now();
-    $delta = new Grpc\Timeval(1000);
-    $deadline = $now->add($delta);
-    $this->assertGreaterThan(0, Grpc\Timeval::compare($deadline, $now));
-  }
+    public function testNowAndAdd()
+    {
+        $now = Grpc\Timeval::now();
+        $delta = new Grpc\Timeval(1000);
+        $deadline = $now->add($delta);
+        $this->assertGreaterThan(0, Grpc\Timeval::compare($deadline, $now));
+    }
 
-  public function testNowAndSubtract() {
-    $now = Grpc\Timeval::now();
-    $delta = new Grpc\Timeval(1000);
-    $deadline = $now->subtract($delta);
-    $this->assertLessThan(0, Grpc\Timeval::compare($deadline, $now));
-  }
+    public function testNowAndSubtract()
+    {
+        $now = Grpc\Timeval::now();
+        $delta = new Grpc\Timeval(1000);
+        $deadline = $now->subtract($delta);
+        $this->assertLessThan(0, Grpc\Timeval::compare($deadline, $now));
+    }
 
-  public function testAddAndSubtract() {
-    $now = Grpc\Timeval::now();
-    $delta = new Grpc\Timeval(1000);
-    $deadline = $now->add($delta);
-    $back_to_now = $deadline->subtract($delta);
-    $this->assertSame(0, Grpc\Timeval::compare($back_to_now, $now));
-  }
+    public function testAddAndSubtract()
+    {
+        $now = Grpc\Timeval::now();
+        $delta = new Grpc\Timeval(1000);
+        $deadline = $now->add($delta);
+        $back_to_now = $deadline->subtract($delta);
+        $this->assertSame(0, Grpc\Timeval::compare($back_to_now, $now));
+    }
+
+    public function testSimilar()
+    {
+      $a = Grpc\Timeval::now();
+      $delta = new Grpc\Timeval(1000);
+      $b = $a->add($delta);
+      $thresh = new Grpc\Timeval(1100);
+      $this->assertTrue(Grpc\Timeval::similar($a, $b, $thresh));
+      $thresh = new Grpc\Timeval(900);
+      $this->assertFalse(Grpc\Timeval::similar($a, $b, $thresh));
+    }
+
+    public function testSleepUntil()
+    {
+        $curr_microtime = microtime(true);
+        $now = Grpc\Timeval::now();
+        $delta = new Grpc\Timeval(1000);
+        $deadline = $now->add($delta);
+        $deadline->sleepUntil();
+        $done_microtime = microtime(true);
+        $this->assertTrue(($done_microtime - $curr_microtime) > 0.0009);
+    }
+
+    /**
+     * @expectedException InvalidArgumentException
+     */
+    public function testConstructorInvalidParam()
+    {
+        $delta = new Grpc\Timeval('abc');
+    }
+
+    /**
+     * @expectedException InvalidArgumentException
+     */
+    public function testAddInvalidParam()
+    {
+        $a = Grpc\Timeval::now();
+        $a->add(1000);
+    }
+
+    /**
+     * @expectedException InvalidArgumentException
+     */
+    public function testSubtractInvalidParam()
+    {
+        $a = Grpc\Timeval::now();
+        $a->subtract(1000);
+    }
+
+    /**
+     * @expectedException InvalidArgumentException
+     */
+    public function testCompareInvalidParam()
+    {
+        $a = Grpc\Timeval::compare(1000, 1100);
+    }
+
+    /**
+     * @expectedException InvalidArgumentException
+     */
+    public function testSimilarInvalidParam()
+    {
+        $a = Grpc\Timeval::similar(1000, 1100, 1200);
+    }
+
 }

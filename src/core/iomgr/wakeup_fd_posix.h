@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -59,8 +59,8 @@
  * 2. If the polling thread was awakened by a wakeup_fd event, call
  *    grpc_wakeup_fd_consume_wakeup() on it.
  */
-#ifndef GRPC_INTERNAL_CORE_IOMGR_WAKEUP_FD_POSIX_H
-#define GRPC_INTERNAL_CORE_IOMGR_WAKEUP_FD_POSIX_H
+#ifndef GRPC_CORE_IOMGR_WAKEUP_FD_POSIX_H
+#define GRPC_CORE_IOMGR_WAKEUP_FD_POSIX_H
 
 void grpc_wakeup_fd_global_init(void);
 void grpc_wakeup_fd_global_destroy(void);
@@ -69,31 +69,33 @@ void grpc_wakeup_fd_global_destroy(void);
  * purposes only.*/
 void grpc_wakeup_fd_global_init_force_fallback(void);
 
-typedef struct grpc_wakeup_fd_info grpc_wakeup_fd_info;
+typedef struct grpc_wakeup_fd grpc_wakeup_fd;
 
 typedef struct grpc_wakeup_fd_vtable {
-  void (*create)(grpc_wakeup_fd_info *fd_info);
-  void (*consume)(grpc_wakeup_fd_info *fd_info);
-  void (*wakeup)(grpc_wakeup_fd_info *fd_info);
-  void (*destroy)(grpc_wakeup_fd_info *fd_info);
+  void (*init)(grpc_wakeup_fd* fd_info);
+  void (*consume)(grpc_wakeup_fd* fd_info);
+  void (*wakeup)(grpc_wakeup_fd* fd_info);
+  void (*destroy)(grpc_wakeup_fd* fd_info);
   /* Must be called before calling any other functions */
   int (*check_availability)(void);
 } grpc_wakeup_fd_vtable;
 
-struct grpc_wakeup_fd_info {
+struct grpc_wakeup_fd {
   int read_fd;
   int write_fd;
 };
 
+extern int grpc_allow_specialized_wakeup_fd;
+
 #define GRPC_WAKEUP_FD_GET_READ_FD(fd_info) ((fd_info)->read_fd)
 
-void grpc_wakeup_fd_create(grpc_wakeup_fd_info *fd_info);
-void grpc_wakeup_fd_consume_wakeup(grpc_wakeup_fd_info *fd_info);
-void grpc_wakeup_fd_wakeup(grpc_wakeup_fd_info *fd_info);
-void grpc_wakeup_fd_destroy(grpc_wakeup_fd_info *fd_info);
+void grpc_wakeup_fd_init(grpc_wakeup_fd* fd_info);
+void grpc_wakeup_fd_consume_wakeup(grpc_wakeup_fd* fd_info);
+void grpc_wakeup_fd_wakeup(grpc_wakeup_fd* fd_info);
+void grpc_wakeup_fd_destroy(grpc_wakeup_fd* fd_info);
 
 /* Defined in some specialized implementation's .c file, or by
  * wakeup_fd_nospecial.c if no such implementation exists. */
 extern const grpc_wakeup_fd_vtable grpc_specialized_wakeup_fd_vtable;
 
-#endif  /* GRPC_INTERNAL_CORE_IOMGR_WAKEUP_FD_POSIX_H */
+#endif /* GRPC_CORE_IOMGR_WAKEUP_FD_POSIX_H */

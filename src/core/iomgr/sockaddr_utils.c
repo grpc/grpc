@@ -36,14 +36,20 @@
 #include <errno.h>
 #include <string.h>
 
-#include "src/core/support/string.h"
+#ifdef GPR_POSIX_SOCKET
+#include <sys/un.h>
+#endif
+
+#include <grpc/support/alloc.h>
 #include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 
-static const gpr_uint8 kV4MappedPrefix[] = {0, 0, 0, 0, 0,    0,
-                                            0, 0, 0, 0, 0xff, 0xff};
+#include "src/core/support/string.h"
+
+static const uint8_t kV4MappedPrefix[] = {0, 0, 0, 0, 0,    0,
+                                          0, 0, 0, 0, 0xff, 0xff};
 
 int grpc_sockaddr_is_v4mapped(const struct sockaddr *addr,
                               struct sockaddr_in *addr4_out) {
@@ -117,15 +123,17 @@ void grpc_sockaddr_make_wildcards(int port, struct sockaddr_in *wild4_out,
 }
 
 void grpc_sockaddr_make_wildcard4(int port, struct sockaddr_in *wild_out) {
+  GPR_ASSERT(port >= 0 && port < 65536);
   memset(wild_out, 0, sizeof(*wild_out));
   wild_out->sin_family = AF_INET;
-  wild_out->sin_port = htons(port);
+  wild_out->sin_port = htons((uint16_t)port);
 }
 
 void grpc_sockaddr_make_wildcard6(int port, struct sockaddr_in6 *wild_out) {
+  GPR_ASSERT(port >= 0 && port < 65536);
   memset(wild_out, 0, sizeof(*wild_out));
   wild_out->sin6_family = AF_INET6;
-  wild_out->sin6_port = htons(port);
+  wild_out->sin6_port = htons((uint16_t)port);
 }
 
 int grpc_sockaddr_to_string(char **out, const struct sockaddr *addr,
@@ -150,8 +158,10 @@ int grpc_sockaddr_to_string(char **out, const struct sockaddr *addr,
     ip = &addr6->sin6_addr;
     port = ntohs(addr6->sin6_port);
   }
+  /* Windows inet_ntop wants a mutable ip pointer */
   if (ip != NULL &&
-      inet_ntop(addr->sa_family, ip, ntop_buf, sizeof(ntop_buf)) != NULL) {
+      inet_ntop(addr->sa_family, (void *)ip, ntop_buf, sizeof(ntop_buf)) !=
+          NULL) {
     ret = gpr_join_host_port(out, ntop_buf, port);
   } else {
     ret = gpr_asprintf(out, "(sockaddr family=%d)", addr->sa_family);
@@ -159,6 +169,36 @@ int grpc_sockaddr_to_string(char **out, const struct sockaddr *addr,
   /* This is probably redundant, but we wouldn't want to log the wrong error. */
   errno = save_errno;
   return ret;
+}
+
+char *grpc_sockaddr_to_uri(const struct sockaddr *addr) {
+  char *temp;
+  char *result;
+  struct sockaddr_in addr_normalized;
+
+  if (grpc_sockaddr_is_v4mapped(addr, &addr_normalized)) {
+    addr = (const struct sockaddr *)&addr_normalized;
+  }
+
+  switch (addr->sa_family) {
+    case AF_INET:
+      grpc_sockaddr_to_string(&temp, addr, 0);
+      gpr_asprintf(&result, "ipv4:%s", temp);
+      gpr_free(temp);
+      return result;
+    case AF_INET6:
+      grpc_sockaddr_to_string(&temp, addr, 0);
+      gpr_asprintf(&result, "ipv6:%s", temp);
+      gpr_free(temp);
+      return result;
+#ifdef GPR_POSIX_SOCKET
+    case AF_UNIX:
+      gpr_asprintf(&result, "unix:%s", ((struct sockaddr_un *)addr)->sun_path);
+      return result;
+#endif
+  }
+
+  return NULL;
 }
 
 int grpc_sockaddr_get_port(const struct sockaddr *addr) {
@@ -170,7 +210,8 @@ int grpc_sockaddr_get_port(const struct sockaddr *addr) {
     case AF_UNIX:
       return 1;
     default:
-      gpr_log(GPR_ERROR, "Unknown socket family %d in grpc_sockaddr_get_port", addr->sa_family);
+      gpr_log(GPR_ERROR, "Unknown socket family %d in grpc_sockaddr_get_port",
+              addr->sa_family);
       return 0;
   }
 }
@@ -178,13 +219,16 @@ int grpc_sockaddr_get_port(const struct sockaddr *addr) {
 int grpc_sockaddr_set_port(const struct sockaddr *addr, int port) {
   switch (addr->sa_family) {
     case AF_INET:
-      ((struct sockaddr_in *)addr)->sin_port = htons(port);
+      GPR_ASSERT(port >= 0 && port < 65536);
+      ((struct sockaddr_in *)addr)->sin_port = htons((uint16_t)port);
       return 1;
     case AF_INET6:
-      ((struct sockaddr_in6 *)addr)->sin6_port = htons(port);
+      GPR_ASSERT(port >= 0 && port < 65536);
+      ((struct sockaddr_in6 *)addr)->sin6_port = htons((uint16_t)port);
       return 1;
     default:
-      gpr_log(GPR_ERROR, "Unknown socket family %d in grpc_sockaddr_set_port", addr->sa_family);
+      gpr_log(GPR_ERROR, "Unknown socket family %d in grpc_sockaddr_set_port",
+              addr->sa_family);
       return 0;
   }
 }

@@ -44,7 +44,7 @@
 #include "src/core/support/env.h"
 #include "src/core/support/string.h"
 
-char *grpc_get_well_known_google_credentials_file_path(void) {
+char *grpc_get_well_known_google_credentials_file_path_impl(void) {
   char *result = NULL;
   char *appdata_path = gpr_getenv("APPDATA");
   if (appdata_path == NULL) {

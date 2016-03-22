@@ -1,5 +1,5 @@
 /*
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -34,24 +34,26 @@
 
 #include <memory>
 
+#include <grpc++/impl/grpc_library.h>
+#include <grpc++/support/time.h>
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
-#include <grpc++/time.h>
 
 namespace grpc {
 
-CompletionQueue::CompletionQueue() { cq_ = grpc_completion_queue_create(); }
+static internal::GrpcLibraryInitializer g_gli_initializer;
 
 CompletionQueue::CompletionQueue(grpc_completion_queue* take) : cq_(take) {}
 
-CompletionQueue::~CompletionQueue() { grpc_completion_queue_destroy(cq_); }
-
-void CompletionQueue::Shutdown() { grpc_completion_queue_shutdown(cq_); }
+void CompletionQueue::Shutdown() {
+  g_gli_initializer.summon();
+  grpc_completion_queue_shutdown(cq_);
+}
 
 CompletionQueue::NextStatus CompletionQueue::AsyncNextInternal(
     void** tag, bool* ok, gpr_timespec deadline) {
   for (;;) {
-    auto ev = grpc_completion_queue_next(cq_, deadline);
+    auto ev = grpc_completion_queue_next(cq_, deadline, nullptr);
     switch (ev.type) {
       case GRPC_QUEUE_TIMEOUT:
         return TIMEOUT;
@@ -67,25 +69,6 @@ CompletionQueue::NextStatus CompletionQueue::AsyncNextInternal(
         break;
     }
   }
-}
-
-bool CompletionQueue::Pluck(CompletionQueueTag* tag) {
-  auto ev = grpc_completion_queue_pluck(cq_, tag, gpr_inf_future);
-  bool ok = ev.success != 0;
-  void* ignored = tag;
-  GPR_ASSERT(tag->FinalizeResult(&ignored, &ok));
-  GPR_ASSERT(ignored == tag);
-  // Ignore mutations by FinalizeResult: Pluck returns the C API status
-  return ev.success != 0;
-}
-
-void CompletionQueue::TryPluck(CompletionQueueTag* tag) {
-  auto ev = grpc_completion_queue_pluck(cq_, tag, gpr_time_0);
-  if (ev.type == GRPC_QUEUE_TIMEOUT) return;
-  bool ok = ev.success != 0;
-  void* ignored = tag;
-  // the tag must be swallowed if using TryPluck
-  GPR_ASSERT(!tag->FinalizeResult(&ignored, &ok));
 }
 
 }  // namespace grpc

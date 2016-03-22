@@ -35,10 +35,10 @@
 #include <grpc/support/log.h>
 
 gpr_slice parse_hexstring(const char *hexstring) {
-  int nibbles = 0;
+  size_t nibbles = 0;
   const char *p = 0;
-  gpr_uint8 *out;
-  gpr_uint8 temp;
+  uint8_t *out;
+  uint8_t temp;
   gpr_slice slice;
 
   for (p = hexstring; *p; p++) {
@@ -54,10 +54,10 @@ gpr_slice parse_hexstring(const char *hexstring) {
   temp = 0;
   for (p = hexstring; *p; p++) {
     if (*p >= '0' && *p <= '9') {
-      temp = (temp << 4) | (*p - '0');
+      temp = (uint8_t)(temp << 4) | (uint8_t)(*p - '0');
       nibbles++;
     } else if (*p >= 'a' && *p <= 'f') {
-      temp = (temp << 4) | (*p - 'a' + 10);
+      temp = (uint8_t)(temp << 4) | (uint8_t)(*p - 'a' + 10);
       nibbles++;
     }
     if (nibbles == 2) {

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,25 +31,25 @@
  *
  */
 
-#include "test/cpp/qps/interarrival.h"
 #include <chrono>
 #include <iostream>
 
 // Use the C histogram rather than C++ to avoid depending on proto
 #include <grpc/support/histogram.h>
-#include <grpc++/config.h>
 
-using grpc::testing::RandomDist;
+#include "test/cpp/qps/interarrival.h"
+
+using grpc::testing::RandomDistInterface;
 using grpc::testing::InterarrivalTimer;
 
-void RunTest(RandomDist&& r, int threads, std::string title) {
+static void RunTest(RandomDistInterface &&r, int threads, std::string title) {
   InterarrivalTimer timer;
   timer.init(r, threads);
   gpr_histogram *h(gpr_histogram_create(0.01, 60e9));
 
   for (int i = 0; i < 10000000; i++) {
     for (int j = 0; j < threads; j++) {
-      gpr_histogram_add(h, timer(j).count());
+      gpr_histogram_add(h, timer.next(j));
     }
   }
 
@@ -70,7 +70,7 @@ using grpc::testing::ParetoDist;
 int main(int argc, char **argv) {
   RunTest(ExpDist(10.0), 5, std::string("Exponential(10)"));
   RunTest(DetDist(5.0), 5, std::string("Det(5)"));
-  RunTest(UniformDist(0.0, 10.0), 5, std::string("Uniform(1,10)"));
+  RunTest(UniformDist(0.0, 10.0), 5, std::string("Uniform(0,10)"));
   RunTest(ParetoDist(1.0, 1.0), 5, std::string("Pareto(1,1)"));
   return 0;
 }

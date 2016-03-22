@@ -32,11 +32,14 @@
 #endregion
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Grpc.Core;
 using Grpc.Core.Internal;
+using Grpc.Core.Profiling;
 using Grpc.Core.Utils;
 using NUnit.Framework;
 
@@ -44,205 +47,268 @@ namespace Grpc.Core.Tests
 {
     public class ClientServerTest
     {
-        const string Host = "localhost";
-        const string ServiceName = "/tests.Test";
+        const string Host = "127.0.0.1";
 
-        static readonly Method<string, string> EchoMethod = new Method<string, string>(
-            MethodType.Unary,
-            "/tests.Test/Echo",
-            Marshallers.StringMarshaller,
-            Marshallers.StringMarshaller);
-
-        static readonly Method<string, string> ConcatAndEchoMethod = new Method<string, string>(
-            MethodType.ClientStreaming,
-            "/tests.Test/ConcatAndEcho",
-            Marshallers.StringMarshaller,
-            Marshallers.StringMarshaller);
-
-        static readonly Method<string, string> NonexistentMethod = new Method<string, string>(
-            MethodType.Unary,
-            "/tests.Test/NonexistentMethod",
-            Marshallers.StringMarshaller,
-            Marshallers.StringMarshaller);
-
-        static readonly ServerServiceDefinition ServiceDefinition = ServerServiceDefinition.CreateBuilder(ServiceName)
-            .AddMethod(EchoMethod, EchoHandler)
-            .AddMethod(ConcatAndEchoMethod, ConcatAndEchoHandler)
-            .Build();
-
+        MockServiceHelper helper;
         Server server;
         Channel channel;
-
-        [TestFixtureSetUp]
-        public void InitClass()
-        {
-            GrpcEnvironment.Initialize();
-        }
 
         [SetUp]
         public void Init()
         {
-            server = new Server();
-            server.AddServiceDefinition(ServiceDefinition);
-            int port = server.AddListeningPort(Host, Server.PickUnusedPort);
+            helper = new MockServiceHelper(Host);
+            server = helper.GetServer();
             server.Start();
-            channel = new Channel(Host, port);
+            channel = helper.GetChannel();
         }
 
         [TearDown]
         public void Cleanup()
         {
-            channel.Dispose();
+            channel.ShutdownAsync().Wait();
             server.ShutdownAsync().Wait();
         }
 
-        [TestFixtureTearDown]
-        public void CleanupClass()
-        {
-            GrpcEnvironment.Shutdown();
-        }
-
         [Test]
-        public void UnaryCall()
+        public async Task UnaryCall()
         {
-            var call = new Call<string, string>(ServiceName, EchoMethod, channel, Metadata.Empty);
-            Assert.AreEqual("ABC", Calls.BlockingUnaryCall(call, "ABC", CancellationToken.None));
+            helper.UnaryHandler = new UnaryServerMethod<string, string>(async (request, context) =>
+            {
+                return request;
+            });
+
+            Assert.AreEqual("ABC", Calls.BlockingUnaryCall(helper.CreateUnaryCall(), "ABC"));
+
+            Assert.AreEqual("ABC", await Calls.AsyncUnaryCall(helper.CreateUnaryCall(), "ABC"));
         }
 
         [Test]
         public void UnaryCall_ServerHandlerThrows()
         {
-            var call = new Call<string, string>(ServiceName, EchoMethod, channel, Metadata.Empty);
-            try
+            helper.UnaryHandler = new UnaryServerMethod<string, string>((request, context) =>
             {
-                Calls.BlockingUnaryCall(call, "THROW", CancellationToken.None);
-                Assert.Fail();
-            }
-            catch (RpcException e)
-            {
-                Assert.AreEqual(StatusCode.Unknown, e.Status.StatusCode); 
-            }
+                throw new Exception("This was thrown on purpose by a test");
+            });
+                
+            var ex = Assert.Throws<RpcException>(() => Calls.BlockingUnaryCall(helper.CreateUnaryCall(), "abc"));
+            Assert.AreEqual(StatusCode.Unknown, ex.Status.StatusCode); 
+
+            var ex2 = Assert.Throws<RpcException>(async () => await Calls.AsyncUnaryCall(helper.CreateUnaryCall(), "abc"));
+            Assert.AreEqual(StatusCode.Unknown, ex2.Status.StatusCode);
         }
 
         [Test]
-        public void AsyncUnaryCall()
+        public void UnaryCall_ServerHandlerThrowsRpcException()
         {
-            var call = new Call<string, string>(ServiceName, EchoMethod, channel, Metadata.Empty);
-            var result = Calls.AsyncUnaryCall(call, "ABC", CancellationToken.None).Result;
-            Assert.AreEqual("ABC", result);
+            helper.UnaryHandler = new UnaryServerMethod<string, string>((request, context) =>
+            {
+                throw new RpcException(new Status(StatusCode.Unauthenticated, ""));
+            });
+
+            var ex = Assert.Throws<RpcException>(() => Calls.BlockingUnaryCall(helper.CreateUnaryCall(), "abc"));
+            Assert.AreEqual(StatusCode.Unauthenticated, ex.Status.StatusCode);
+
+            var ex2 = Assert.Throws<RpcException>(async () => await Calls.AsyncUnaryCall(helper.CreateUnaryCall(), "abc"));
+            Assert.AreEqual(StatusCode.Unauthenticated, ex2.Status.StatusCode);
         }
 
         [Test]
-        public void AsyncUnaryCall_ServerHandlerThrows()
+        public void UnaryCall_ServerHandlerSetsStatus()
         {
-            Task.Run(async () =>
+            helper.UnaryHandler = new UnaryServerMethod<string, string>(async (request, context) =>
             {
-                var call = new Call<string, string>(ServiceName, EchoMethod, channel, Metadata.Empty);
-                try
+                context.Status = new Status(StatusCode.Unauthenticated, "");
+                return "";
+            });
+
+            var ex = Assert.Throws<RpcException>(() => Calls.BlockingUnaryCall(helper.CreateUnaryCall(), "abc"));
+            Assert.AreEqual(StatusCode.Unauthenticated, ex.Status.StatusCode);
+
+            var ex2 = Assert.Throws<RpcException>(async () => await Calls.AsyncUnaryCall(helper.CreateUnaryCall(), "abc"));
+            Assert.AreEqual(StatusCode.Unauthenticated, ex2.Status.StatusCode);
+        }
+
+        [Test]
+        public async Task ClientStreamingCall()
+        {
+            helper.ClientStreamingHandler = new ClientStreamingServerMethod<string, string>(async (requestStream, context) =>
+            {
+                string result = "";
+                await requestStream.ForEachAsync(async (request) =>
                 {
-                    await Calls.AsyncUnaryCall(call, "THROW", CancellationToken.None);
-                    Assert.Fail();
-                }
-                catch (RpcException e)
-                {
-                    Assert.AreEqual(StatusCode.Unknown, e.Status.StatusCode);
-                }
-            }).Wait();
+                    result += request;
+                });
+                await Task.Delay(100);
+                return result;
+            });
+
+            var call = Calls.AsyncClientStreamingCall(helper.CreateClientStreamingCall());
+            await call.RequestStream.WriteAllAsync(new string[] { "A", "B", "C" });
+            Assert.AreEqual("ABC", await call.ResponseAsync);
+
+            Assert.AreEqual(StatusCode.OK, call.GetStatus().StatusCode);
+            Assert.IsNotNull(call.GetTrailers());
         }
 
         [Test]
-        public void ClientStreamingCall()
+        public async Task ServerStreamingCall()
         {
-            Task.Run(async () => 
+            helper.ServerStreamingHandler = new ServerStreamingServerMethod<string, string>(async (request, responseStream, context) =>
             {
-                var call = new Call<string, string>(ServiceName, ConcatAndEchoMethod, channel, Metadata.Empty);
-                var callResult = Calls.AsyncClientStreamingCall(call, CancellationToken.None);
+                await responseStream.WriteAllAsync(request.Split(new []{' '}));
+                context.ResponseTrailers.Add("xyz", "");
+            });
 
-                await callResult.RequestStream.WriteAll(new string[] { "A", "B", "C" });
-                Assert.AreEqual("ABC", await callResult.Result);
-            }).Wait();
+            var call = Calls.AsyncServerStreamingCall(helper.CreateServerStreamingCall(), "A B C");
+            CollectionAssert.AreEqual(new string[] { "A", "B", "C" }, await call.ResponseStream.ToListAsync());
+
+            Assert.AreEqual(StatusCode.OK, call.GetStatus().StatusCode);
+            Assert.IsNotNull("xyz", call.GetTrailers()[0].Key);
         }
 
         [Test]
-        public void ClientStreamingCall_CancelAfterBegin()
+        public async Task DuplexStreamingCall()
         {
-            Task.Run(async () => 
+            helper.DuplexStreamingHandler = new DuplexStreamingServerMethod<string, string>(async (requestStream, responseStream, context) =>
             {
-                var call = new Call<string, string>(ServiceName, ConcatAndEchoMethod, channel, Metadata.Empty);
-
-                var cts = new CancellationTokenSource();
-                var callResult = Calls.AsyncClientStreamingCall(call, cts.Token);
-
-                // TODO(jtattermusch): we need this to ensure call has been initiated once we cancel it.
-                await Task.Delay(1000);
-                cts.Cancel();
-
-                try
+                while (await requestStream.MoveNext())
                 {
-                    await callResult.Result;
+                    await responseStream.WriteAsync(requestStream.Current);
                 }
-                catch (RpcException e)
-                {
-                    Assert.AreEqual(StatusCode.Cancelled, e.Status.StatusCode); 
-                }
-            }).Wait();
+                context.ResponseTrailers.Add("xyz", "xyz-value");
+            });
+
+            var call = Calls.AsyncDuplexStreamingCall(helper.CreateDuplexStreamingCall());
+            await call.RequestStream.WriteAllAsync(new string[] { "A", "B", "C" });
+            CollectionAssert.AreEqual(new string[] { "A", "B", "C" }, await call.ResponseStream.ToListAsync());
+
+            Assert.AreEqual(StatusCode.OK, call.GetStatus().StatusCode);
+            Assert.IsNotNull("xyz-value", call.GetTrailers()[0].Value);
         }
 
         [Test]
-        public void UnaryCall_DisposedChannel()
+        public async Task ClientStreamingCall_CancelAfterBegin()
         {
-            channel.Dispose();
+            var barrier = new TaskCompletionSource<object>();
 
-            var call = new Call<string, string>(ServiceName, EchoMethod, channel, Metadata.Empty);
-            Assert.Throws(typeof(ObjectDisposedException), () => Calls.BlockingUnaryCall(call, "ABC", CancellationToken.None));
+            helper.ClientStreamingHandler = new ClientStreamingServerMethod<string, string>(async (requestStream, context) =>
+            {
+                barrier.SetResult(null);
+                await requestStream.ToListAsync();
+                return "";
+            });
+
+            var cts = new CancellationTokenSource();
+            var call = Calls.AsyncClientStreamingCall(helper.CreateClientStreamingCall(new CallOptions(cancellationToken: cts.Token)));
+
+            await barrier.Task;  // make sure the handler has started.
+            cts.Cancel();
+
+            var ex = Assert.Throws<RpcException>(async () => await call.ResponseAsync);
+            Assert.AreEqual(StatusCode.Cancelled, ex.Status.StatusCode);
         }
 
         [Test]
-        public void UnaryCallPerformance()
+        public async Task AsyncUnaryCall_EchoMetadata()
         {
-            var call = new Call<string, string>(ServiceName, EchoMethod, channel, Metadata.Empty);
-            BenchmarkUtil.RunBenchmark(100, 100,
-                                       () => { Calls.BlockingUnaryCall(call, "ABC", default(CancellationToken)); });
+            helper.UnaryHandler = new UnaryServerMethod<string, string>(async (request, context) =>
+            {
+                foreach (Metadata.Entry metadataEntry in context.RequestHeaders)
+                {
+                    if (metadataEntry.Key != "user-agent")
+                    {
+                        context.ResponseTrailers.Add(metadataEntry);
+                    }
+                }
+                return "";
+            });
+
+            var headers = new Metadata
+            {
+                { "ascii-header", "abcdefg" },
+                { "binary-header-bin", new byte[] { 1, 2, 3, 0, 0xff } }
+            };
+            var call = Calls.AsyncUnaryCall(helper.CreateUnaryCall(new CallOptions(headers: headers)), "ABC");
+            await call;
+
+            Assert.AreEqual(StatusCode.OK, call.GetStatus().StatusCode);
+
+            var trailers = call.GetTrailers();
+            Assert.AreEqual(2, trailers.Count);
+            Assert.AreEqual(headers[0].Key, trailers[0].Key);
+            Assert.AreEqual(headers[0].Value, trailers[0].Value);
+
+            Assert.AreEqual(headers[1].Key, trailers[1].Key);
+            CollectionAssert.AreEqual(headers[1].ValueBytes, trailers[1].ValueBytes);
         }
-            
+
         [Test]
         public void UnknownMethodHandler()
         {
-            var call = new Call<string, string>(ServiceName, NonexistentMethod, channel, Metadata.Empty);
-            try
-            {
-                Calls.BlockingUnaryCall(call, "ABC", default(CancellationToken));
-                Assert.Fail();
-            }
-            catch (RpcException e)
-            {
-                Assert.AreEqual(StatusCode.Unimplemented, e.Status.StatusCode);
-            }
+            var nonexistentMethod = new Method<string, string>(
+                MethodType.Unary,
+                MockServiceHelper.ServiceName,
+                "NonExistentMethod",
+                Marshallers.StringMarshaller,
+                Marshallers.StringMarshaller);
+
+            var callDetails = new CallInvocationDetails<string, string>(channel, nonexistentMethod, new CallOptions());
+
+            var ex = Assert.Throws<RpcException>(() => Calls.BlockingUnaryCall(callDetails, "abc"));
+            Assert.AreEqual(StatusCode.Unimplemented, ex.Status.StatusCode);
         }
 
-        private static async Task<string> EchoHandler(ServerCallContext context, string request)
+        [Test]
+        public void ServerCallContext_PeerInfoPresent()
         {
-            if (request == "THROW")
+            helper.UnaryHandler = new UnaryServerMethod<string, string>(async (request, context) =>
             {
-                throw new Exception("This was thrown on purpose by a test");
-            }
-            return request;
-        }
-
-        private static async Task<string> ConcatAndEchoHandler(ServerCallContext context, IAsyncStreamReader<string> requestStream)
-        {
-            string result = "";
-            await requestStream.ForEach(async (request) =>
-            {
-                if (request == "THROW")
-                {
-                    throw new Exception("This was thrown on purpose by a test");
-                }
-                result += request;
+                return context.Peer;
             });
-            // simulate processing takes some time.
-            await Task.Delay(250);
-            return result;
+
+            string peer = Calls.BlockingUnaryCall(helper.CreateUnaryCall(), "abc");
+            Assert.IsTrue(peer.Contains(Host));
+        }
+
+        [Test]
+        public void ServerCallContext_HostAndMethodPresent()
+        {
+            helper.UnaryHandler = new UnaryServerMethod<string, string>(async (request, context) =>
+            {
+                Assert.IsTrue(context.Host.Contains(Host));
+                Assert.AreEqual("/tests.Test/Unary", context.Method);
+                return "PASS";
+            });
+            Assert.AreEqual("PASS", Calls.BlockingUnaryCall(helper.CreateUnaryCall(), "abc"));
+        }
+
+        [Test]
+        public async Task Channel_WaitForStateChangedAsync()
+        {
+            helper.UnaryHandler = new UnaryServerMethod<string, string>(async (request, context) =>
+            {
+                return request;
+            });
+
+            Assert.Throws(typeof(TaskCanceledException), 
+                async () => await channel.WaitForStateChangedAsync(channel.State, DateTime.UtcNow.AddMilliseconds(10)));
+
+            var stateChangedTask = channel.WaitForStateChangedAsync(channel.State);
+
+            await Calls.AsyncUnaryCall(helper.CreateUnaryCall(), "abc");
+
+            await stateChangedTask;
+            Assert.AreEqual(ChannelState.Ready, channel.State);
+        }
+
+        [Test]
+        public async Task Channel_ConnectAsync()
+        {
+            await channel.ConnectAsync();
+            Assert.AreEqual(ChannelState.Ready, channel.State);
+
+            await channel.ConnectAsync(DateTime.UtcNow.AddMilliseconds(1000));
+            Assert.AreEqual(ChannelState.Ready, channel.State);
         }
     }
 }

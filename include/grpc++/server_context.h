@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -34,116 +34,6 @@
 #ifndef GRPCXX_SERVER_CONTEXT_H
 #define GRPCXX_SERVER_CONTEXT_H
 
-#include <map>
-
-#include <grpc/support/time.h>
-#include <grpc++/config.h>
-#include <grpc++/time.h>
-
-struct gpr_timespec;
-struct grpc_metadata;
-struct grpc_call;
-
-namespace grpc {
-
-template <class W, class R>
-class ServerAsyncReader;
-template <class W>
-class ServerAsyncWriter;
-template <class W>
-class ServerAsyncResponseWriter;
-template <class R, class W>
-class ServerAsyncReaderWriter;
-template <class R>
-class ServerReader;
-template <class W>
-class ServerWriter;
-template <class R, class W>
-class ServerReaderWriter;
-template <class ServiceType, class RequestType, class ResponseType>
-class RpcMethodHandler;
-template <class ServiceType, class RequestType, class ResponseType>
-class ClientStreamingHandler;
-template <class ServiceType, class RequestType, class ResponseType>
-class ServerStreamingHandler;
-template <class ServiceType, class RequestType, class ResponseType>
-class BidiStreamingHandler;
-
-class Call;
-class CallOpBuffer;
-class CompletionQueue;
-class Server;
-
-// Interface of server side rpc context.
-class ServerContext {
- public:
-  ServerContext();  // for async calls
-  ~ServerContext();
-
-#ifndef GRPC_CXX0X_NO_CHRONO
-  std::chrono::system_clock::time_point deadline() {
-    return Timespec2Timepoint(deadline_);
-  }
-#endif  // !GRPC_CXX0X_NO_CHRONO
-
-  gpr_timespec raw_deadline() { return deadline_; }
-
-  void AddInitialMetadata(const grpc::string& key, const grpc::string& value);
-  void AddTrailingMetadata(const grpc::string& key, const grpc::string& value);
-
-  bool IsCancelled();
-
-  const std::multimap<grpc::string, grpc::string>& client_metadata() {
-    return client_metadata_;
-  }
-
- private:
-  friend class ::grpc::Server;
-  template <class W, class R>
-  friend class ::grpc::ServerAsyncReader;
-  template <class W>
-  friend class ::grpc::ServerAsyncWriter;
-  template <class W>
-  friend class ::grpc::ServerAsyncResponseWriter;
-  template <class R, class W>
-  friend class ::grpc::ServerAsyncReaderWriter;
-  template <class R>
-  friend class ::grpc::ServerReader;
-  template <class W>
-  friend class ::grpc::ServerWriter;
-  template <class R, class W>
-  friend class ::grpc::ServerReaderWriter;
-  template <class ServiceType, class RequestType, class ResponseType>
-  friend class RpcMethodHandler;
-  template <class ServiceType, class RequestType, class ResponseType>
-  friend class ClientStreamingHandler;
-  template <class ServiceType, class RequestType, class ResponseType>
-  friend class ServerStreamingHandler;
-  template <class ServiceType, class RequestType, class ResponseType>
-  friend class BidiStreamingHandler;
-
-  // Prevent copying.
-  ServerContext(const ServerContext&);
-  ServerContext& operator=(const ServerContext&);
-
-  class CompletionOp;
-
-  void BeginCompletionOp(Call* call);
-
-  ServerContext(gpr_timespec deadline, grpc_metadata* metadata,
-                size_t metadata_count);
-
-  CompletionOp* completion_op_;
-
-  gpr_timespec deadline_;
-  grpc_call* call_;
-  CompletionQueue* cq_;
-  bool sent_initial_metadata_;
-  std::multimap<grpc::string, grpc::string> client_metadata_;
-  std::multimap<grpc::string, grpc::string> initial_metadata_;
-  std::multimap<grpc::string, grpc::string> trailing_metadata_;
-};
-
-}  // namespace grpc
+#include <grpc++/impl/codegen/server_context.h>
 
 #endif  // GRPCXX_SERVER_CONTEXT_H

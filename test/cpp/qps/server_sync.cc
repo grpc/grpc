@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,33 +31,26 @@
  *
  */
 
-#include <sys/signal.h>
 #include <thread>
 
-#include <unistd.h>
-
 #include <gflags/gflags.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/host_port.h>
-#include <grpc++/config.h>
+#include <grpc++/security/server_credentials.h>
 #include <grpc++/server.h>
 #include <grpc++/server_builder.h>
 #include <grpc++/server_context.h>
-#include <grpc++/server_credentials.h>
-#include <grpc++/status.h>
-#include <grpc++/stream.h>
-#include "src/cpp/server/thread_pool.h"
-#include "test/cpp/qps/qpstest.grpc.pb.h"
-#include "test/cpp/qps/server.h"
-#include "test/cpp/qps/timer.h"
-
 #include <grpc/grpc.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
+
+#include "src/proto/grpc/testing/services.grpc.pb.h"
+#include "test/cpp/qps/server.h"
+#include "test/cpp/qps/usage_timer.h"
 
 namespace grpc {
 namespace testing {
 
-class TestServiceImpl GRPC_FINAL : public TestService::Service {
+class BenchmarkServiceImpl GRPC_FINAL : public BenchmarkService::Service {
  public:
   Status UnaryCall(ServerContext* context, const SimpleRequest* request,
                    SimpleResponse* response) GRPC_OVERRIDE {
@@ -91,33 +84,29 @@ class TestServiceImpl GRPC_FINAL : public TestService::Service {
 
 class SynchronousServer GRPC_FINAL : public grpc::testing::Server {
  public:
-  SynchronousServer(const ServerConfig& config, int port)
-      : thread_pool_(config.threads()), impl_(MakeImpl(port)) {}
-
- private:
-  std::unique_ptr<grpc::Server> MakeImpl(int port) {
+  explicit SynchronousServer(const ServerConfig& config) : Server(config) {
     ServerBuilder builder;
 
     char* server_address = NULL;
-    gpr_join_host_port(&server_address, "::", port);
-    builder.AddListeningPort(server_address, InsecureServerCredentials());
+
+    gpr_join_host_port(&server_address, "::", port());
+    builder.AddListeningPort(server_address,
+                             Server::CreateServerCredentials(config));
     gpr_free(server_address);
 
     builder.RegisterService(&service_);
 
-    builder.SetThreadPool(&thread_pool_);
-
-    return builder.BuildAndStart();
+    impl_ = builder.BuildAndStart();
   }
 
-  TestServiceImpl service_;
-  ThreadPool thread_pool_;
+ private:
+  BenchmarkServiceImpl service_;
   std::unique_ptr<grpc::Server> impl_;
 };
 
 std::unique_ptr<grpc::testing::Server> CreateSynchronousServer(
-    const ServerConfig& config, int port) {
-  return std::unique_ptr<Server>(new SynchronousServer(config, port));
+    const ServerConfig& config) {
+  return std::unique_ptr<Server>(new SynchronousServer(config));
 }
 
 }  // namespace testing

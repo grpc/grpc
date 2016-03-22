@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_IOMGR_SOCKET_UTILS_POSIX_H
-#define GRPC_INTERNAL_CORE_IOMGR_SOCKET_UTILS_POSIX_H
+#ifndef GRPC_CORE_IOMGR_SOCKET_UTILS_POSIX_H
+#define GRPC_CORE_IOMGR_SOCKET_UTILS_POSIX_H
 
 #include <unistd.h>
 #include <sys/socket.h>
@@ -110,4 +110,4 @@ extern int grpc_forbid_dualstack_sockets_for_testing;
 int grpc_create_dualstack_socket(const struct sockaddr *addr, int type,
                                  int protocol, grpc_dualstack_mode *dsmode);
 
-#endif  /* GRPC_INTERNAL_CORE_IOMGR_SOCKET_UTILS_POSIX_H */
+#endif /* GRPC_CORE_IOMGR_SOCKET_UTILS_POSIX_H */

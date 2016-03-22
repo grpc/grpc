@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_IOMGR_TCP_CLIENT_H
-#define GRPC_INTERNAL_CORE_IOMGR_TCP_CLIENT_H
+#ifndef GRPC_CORE_IOMGR_TCP_CLIENT_H
+#define GRPC_CORE_IOMGR_TCP_CLIENT_H
 
 #include "src/core/iomgr/endpoint.h"
 #include "src/core/iomgr/pollset_set.h"
@@ -41,12 +41,13 @@
 
 /* Asynchronously connect to an address (specified as (addr, len)), and call
    cb with arg and the completed connection when done (or call cb with arg and
-   NULL on failure). 
+   NULL on failure).
    interested_parties points to a set of pollsets that would be interested
    in this connection being established (in order to continue their work) */
-void grpc_tcp_client_connect(void (*cb)(void *arg, grpc_endpoint *tcp),
-                             void *arg, grpc_pollset_set *interested_parties,
-                             const struct sockaddr *addr, int addr_len,
+void grpc_tcp_client_connect(grpc_exec_ctx *exec_ctx, grpc_closure *on_connect,
+                             grpc_endpoint **endpoint,
+                             grpc_pollset_set *interested_parties,
+                             const struct sockaddr *addr, size_t addr_len,
                              gpr_timespec deadline);
 
-#endif /* GRPC_INTERNAL_CORE_IOMGR_TCP_CLIENT_H */
+#endif /* GRPC_CORE_IOMGR_TCP_CLIENT_H */

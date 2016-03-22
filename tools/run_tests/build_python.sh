@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2015, Google Inc.
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -33,10 +33,22 @@ set -ex
 # change to grpc repo root
 cd $(dirname $0)/../..
 
-root=`pwd`
-rm -rf python2.7_virtual_environment
-virtualenv -p /usr/bin/python2.7 python2.7_virtual_environment
-source python2.7_virtual_environment/bin/activate
-pip install -r src/python/requirements.txt
-CFLAGS="-I$root/include -std=c89 -Werror" LDFLAGS=-L$root/libs/$CONFIG pip install src/python/src
-pip install src/python/interop
+ROOT=`pwd`
+export LD_LIBRARY_PATH=$ROOT/libs/$CONFIG
+export DYLD_LIBRARY_PATH=$ROOT/libs/$CONFIG
+export PATH=$ROOT/bins/$CONFIG:$ROOT/bins/$CONFIG/protobuf:$PATH
+export CFLAGS="-I$ROOT/include -std=gnu99"
+export LDFLAGS="-L$ROOT/libs/$CONFIG"
+export GRPC_PYTHON_BUILD_WITH_CYTHON=1
+
+if [ "$CONFIG" = "gcov" ]
+then
+  export GRPC_PYTHON_ENABLE_CYTHON_TRACING=1
+fi
+
+tox --notest
+
+$ROOT/.tox/py27/bin/python $ROOT/setup.py build
+$ROOT/.tox/py27/bin/python $ROOT/setup.py build_py
+$ROOT/.tox/py27/bin/python $ROOT/setup.py build_ext --inplace
+$ROOT/.tox/py27/bin/python $ROOT/setup.py gather --test

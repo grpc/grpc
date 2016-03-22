@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_HUFFSYMS_H
-#define GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_HUFFSYMS_H
+#ifndef GRPC_CORE_TRANSPORT_CHTTP2_HUFFSYMS_H
+#define GRPC_CORE_TRANSPORT_CHTTP2_HUFFSYMS_H
 
 /* HPACK static huffman table */
 
@@ -45,4 +45,4 @@ typedef struct {
 
 extern const grpc_chttp2_huffsym grpc_chttp2_huffsyms[GRPC_CHTTP2_NUM_HUFFSYMS];
 
-#endif /* GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_HUFFSYMS_H */
+#endif /* GRPC_CORE_TRANSPORT_CHTTP2_HUFFSYMS_H */

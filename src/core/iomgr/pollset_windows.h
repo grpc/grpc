@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,24 +31,45 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_IOMGR_POLLSET_WINDOWS_H
-#define GRPC_INTERNAL_CORE_IOMGR_POLLSET_WINDOWS_H
+#ifndef GRPC_CORE_IOMGR_POLLSET_WINDOWS_H
+#define GRPC_CORE_IOMGR_POLLSET_WINDOWS_H
 
-#include <windows.h>
 #include <grpc/support/sync.h>
 
 #include "src/core/iomgr/socket_windows.h"
 
 /* There isn't really any such thing as a pollset under Windows, due to the
    nature of the IO completion ports. A Windows "pollset" is merely a mutex
-   and a condition variable, used to synchronize with the IOCP. */
+   used to synchronize with the IOCP, and workers are condition variables
+   used to block threads until work is ready. */
 
-typedef struct grpc_pollset {
-  gpr_mu mu;
+typedef enum {
+  GRPC_POLLSET_WORKER_LINK_POLLSET = 0,
+  GRPC_POLLSET_WORKER_LINK_GLOBAL,
+  GRPC_POLLSET_WORKER_LINK_TYPES
+} grpc_pollset_worker_link_type;
+
+typedef struct grpc_pollset_worker_link {
+  struct grpc_pollset_worker *next;
+  struct grpc_pollset_worker *prev;
+} grpc_pollset_worker_link;
+
+struct grpc_pollset;
+typedef struct grpc_pollset grpc_pollset;
+
+typedef struct grpc_pollset_worker {
   gpr_cv cv;
+  int kicked;
+  struct grpc_pollset *pollset;
+  grpc_pollset_worker_link links[GRPC_POLLSET_WORKER_LINK_TYPES];
+} grpc_pollset_worker;
+
+struct grpc_pollset {
   int shutting_down;
-} grpc_pollset;
+  int kicked_without_pollers;
+  int is_iocp_worker;
+  grpc_pollset_worker root_worker;
+  grpc_closure *on_shutdown;
+};
 
-#define GRPC_POLLSET_MU(pollset) (&(pollset)->mu)
-
-#endif /* GRPC_INTERNAL_CORE_IOMGR_POLLSET_WINDOWS_H */
+#endif /* GRPC_CORE_IOMGR_POLLSET_WINDOWS_H */

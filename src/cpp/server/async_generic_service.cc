@@ -31,7 +31,7 @@
  *
  */
 
-#include <grpc++/async_generic_service.h>
+#include <grpc++/generic/async_generic_service.h>
 
 #include <grpc++/server.h>
 

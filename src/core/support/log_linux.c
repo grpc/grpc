@@ -43,7 +43,9 @@
 
 #ifdef GPR_LINUX
 
+#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 #include <stdio.h>
 #include <stdarg.h>
@@ -71,28 +73,33 @@ void gpr_log(const char *file, int line, gpr_log_severity severity,
 
 void gpr_default_log(gpr_log_func_args *args) {
   char *final_slash;
+  char *prefix;
   const char *display_file;
   char time_buffer[64];
-  gpr_timespec now = gpr_now();
+  time_t timer;
+  gpr_timespec now = gpr_now(GPR_CLOCK_REALTIME);
   struct tm tm;
 
+  timer = (time_t)now.tv_sec;
   final_slash = strrchr(args->file, '/');
   if (final_slash == NULL)
     display_file = args->file;
   else
     display_file = final_slash + 1;
 
-  if (!localtime_r(&now.tv_sec, &tm)) {
+  if (!localtime_r(&timer, &tm)) {
     strcpy(time_buffer, "error:localtime");
   } else if (0 ==
              strftime(time_buffer, sizeof(time_buffer), "%m%d %H:%M:%S", &tm)) {
     strcpy(time_buffer, "error:strftime");
   }
 
-  fprintf(stderr, "%s%s.%09d %7ld %s:%d] %s\n",
-          gpr_log_severity_string(args->severity), time_buffer,
-          (int)(now.tv_nsec), gettid(), display_file, args->line,
-          args->message);
+  gpr_asprintf(&prefix, "%s%s.%09d %7tu %s:%d]",
+               gpr_log_severity_string(args->severity), time_buffer,
+               (int)(now.tv_nsec), gettid(), display_file, args->line);
+
+  fprintf(stderr, "%-60s %s\n", prefix, args->message);
+  gpr_free(prefix);
 }
 
 #endif

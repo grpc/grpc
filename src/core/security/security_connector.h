@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,20 +31,17 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_SECURITY_SECURITY_CONNECTOR_H
-#define GRPC_INTERNAL_CORE_SECURITY_SECURITY_CONNECTOR_H
+#ifndef GRPC_CORE_SECURITY_SECURITY_CONNECTOR_H
+#define GRPC_CORE_SECURITY_SECURITY_CONNECTOR_H
 
 #include <grpc/grpc_security.h>
 #include "src/core/iomgr/endpoint.h"
+#include "src/core/iomgr/tcp_server.h"
 #include "src/core/tsi/transport_security_interface.h"
 
 /* --- status enum. --- */
 
-typedef enum {
-  GRPC_SECURITY_OK = 0,
-  GRPC_SECURITY_PENDING,
-  GRPC_SECURITY_ERROR
-} grpc_security_status;
+typedef enum { GRPC_SECURITY_OK = 0, GRPC_SECURITY_ERROR } grpc_security_status;
 
 /* --- URL schemes. --- */
 
@@ -60,47 +57,61 @@ typedef struct grpc_security_connector grpc_security_connector;
 
 #define GRPC_SECURITY_CONNECTOR_ARG "grpc.security_connector"
 
-typedef void (*grpc_security_check_cb)(void *user_data,
-                                       grpc_security_status status);
+typedef void (*grpc_security_peer_check_cb)(grpc_exec_ctx *exec_ctx,
+                                            void *user_data,
+                                            grpc_security_status status,
+                                            grpc_auth_context *auth_context);
+
+/* Ownership of the secure_endpoint is transfered. */
+typedef void (*grpc_security_handshake_done_cb)(
+    grpc_exec_ctx *exec_ctx, void *user_data, grpc_security_status status,
+    grpc_endpoint *secure_endpoint, grpc_auth_context *auth_context);
 
 typedef struct {
   void (*destroy)(grpc_security_connector *sc);
-  grpc_security_status (*create_handshaker)(grpc_security_connector *sc,
-                                            tsi_handshaker **handshaker);
-  grpc_security_status (*check_peer)(grpc_security_connector *sc, tsi_peer peer,
-                                     grpc_security_check_cb cb,
-                                     void *user_data);
+  void (*check_peer)(grpc_exec_ctx *exec_ctx, grpc_security_connector *sc,
+                     tsi_peer peer, grpc_security_peer_check_cb cb,
+                     void *user_data);
 } grpc_security_connector_vtable;
+
+typedef struct grpc_security_connector_handshake_list {
+  void *handshake;
+  struct grpc_security_connector_handshake_list *next;
+} grpc_security_connector_handshake_list;
 
 struct grpc_security_connector {
   const grpc_security_connector_vtable *vtable;
   gpr_refcount refcount;
-  int is_client_side;
   const char *url_scheme;
-  grpc_auth_context *auth_context; /* Populated after the peer is checked. */
 };
 
-/* Increments the refcount. */
+/* Refcounting. */
+#ifdef GRPC_SECURITY_CONNECTOR_REFCOUNT_DEBUG
+#define GRPC_SECURITY_CONNECTOR_REF(p, r) \
+  grpc_security_connector_ref((p), __FILE__, __LINE__, (r))
+#define GRPC_SECURITY_CONNECTOR_UNREF(p, r) \
+  grpc_security_connector_unref((p), __FILE__, __LINE__, (r))
 grpc_security_connector *grpc_security_connector_ref(
-    grpc_security_connector *sc);
+    grpc_security_connector *policy, const char *file, int line,
+    const char *reason);
+void grpc_security_connector_unref(grpc_security_connector *policy,
+                                   const char *file, int line,
+                                   const char *reason);
+#else
+#define GRPC_SECURITY_CONNECTOR_REF(p, r) grpc_security_connector_ref((p))
+#define GRPC_SECURITY_CONNECTOR_UNREF(p, r) grpc_security_connector_unref((p))
+grpc_security_connector *grpc_security_connector_ref(
+    grpc_security_connector *policy);
+void grpc_security_connector_unref(grpc_security_connector *policy);
+#endif
 
-/* Decrements the refcount and destroys the object if it reaches 0. */
-void grpc_security_connector_unref(grpc_security_connector *sc);
-
-/* Handshake creation. */
-grpc_security_status grpc_security_connector_create_handshaker(
-    grpc_security_connector *sc, tsi_handshaker **handshaker);
-
-/* Check the peer.
-   Implementations can choose to check the peer either synchronously or
-   asynchronously. In the first case, a successful call will return
-   GRPC_SECURITY_OK. In the asynchronous case, the call will return
-   GRPC_SECURITY_PENDING unless an error is detected early on.
-   Ownership of the peer is transfered.
-*/
-grpc_security_status grpc_security_connector_check_peer(
-    grpc_security_connector *sc, tsi_peer peer, grpc_security_check_cb cb,
-    void *user_data);
+/* Check the peer. Callee takes ownership of the peer object.
+   The callback will include the resulting auth_context. */
+void grpc_security_connector_check_peer(grpc_exec_ctx *exec_ctx,
+                                        grpc_security_connector *sc,
+                                        tsi_peer peer,
+                                        grpc_security_peer_check_cb cb,
+                                        void *user_data);
 
 /* Util to encapsulate the connector in a channel arg. */
 grpc_arg grpc_security_connector_to_arg(grpc_security_connector *sc);
@@ -119,34 +130,73 @@ grpc_security_connector *grpc_find_security_connector_in_args(
 
 typedef struct grpc_channel_security_connector grpc_channel_security_connector;
 
+typedef void (*grpc_security_call_host_check_cb)(grpc_exec_ctx *exec_ctx,
+                                                 void *user_data,
+                                                 grpc_security_status status);
+
 struct grpc_channel_security_connector {
-  grpc_security_connector base; /* requires is_client_side to be non 0. */
-  grpc_credentials *request_metadata_creds;
-  grpc_security_status (*check_call_host)(grpc_channel_security_connector *sc,
-                                          const char *host,
-                                          grpc_security_check_cb cb,
-                                          void *user_data);
+  grpc_security_connector base;
+  grpc_call_credentials *request_metadata_creds;
+  void (*check_call_host)(grpc_exec_ctx *exec_ctx,
+                          grpc_channel_security_connector *sc, const char *host,
+                          grpc_auth_context *auth_context,
+                          grpc_security_call_host_check_cb cb, void *user_data);
+  void (*do_handshake)(grpc_exec_ctx *exec_ctx,
+                       grpc_channel_security_connector *sc,
+                       grpc_endpoint *nonsecure_endpoint,
+                       grpc_security_handshake_done_cb cb, void *user_data);
 };
 
-/* Checks that the host that will be set for a call is acceptable.
-   Implementations can choose do the check either synchronously or
-   asynchronously. In the first case, a successful call will return
-   GRPC_SECURITY_OK. In the asynchronous case, the call will return
-   GRPC_SECURITY_PENDING unless an error is detected early on. */
-grpc_security_status grpc_channel_security_connector_check_call_host(
-    grpc_channel_security_connector *sc, const char *host,
-    grpc_security_check_cb cb, void *user_data);
+/* Checks that the host that will be set for a call is acceptable. */
+void grpc_channel_security_connector_check_call_host(
+    grpc_exec_ctx *exec_ctx, grpc_channel_security_connector *sc,
+    const char *host, grpc_auth_context *auth_context,
+    grpc_security_call_host_check_cb cb, void *user_data);
+
+/* Handshake. */
+void grpc_channel_security_connector_do_handshake(
+    grpc_exec_ctx *exec_ctx, grpc_channel_security_connector *connector,
+    grpc_endpoint *nonsecure_endpoint, grpc_security_handshake_done_cb cb,
+    void *user_data);
+
+/* --- server_security_connector object. ---
+
+    A server security connector object represents away to configure the
+    underlying transport security mechanism on the server side.  */
+
+typedef struct grpc_server_security_connector grpc_server_security_connector;
+
+struct grpc_server_security_connector {
+  grpc_security_connector base;
+  gpr_mu mu;
+  grpc_security_connector_handshake_list *handshaking_handshakes;
+  const grpc_channel_args *channel_args;
+  void (*do_handshake)(grpc_exec_ctx *exec_ctx,
+                       grpc_server_security_connector *sc,
+                       grpc_tcp_server_acceptor *acceptor,
+                       grpc_endpoint *nonsecure_endpoint,
+                       grpc_security_handshake_done_cb cb, void *user_data);
+};
+
+void grpc_server_security_connector_do_handshake(
+    grpc_exec_ctx *exec_ctx, grpc_server_security_connector *sc,
+    grpc_tcp_server_acceptor *acceptor, grpc_endpoint *nonsecure_endpoint,
+    grpc_security_handshake_done_cb cb, void *user_data);
+
+void grpc_server_security_connector_shutdown(
+    grpc_exec_ctx *exec_ctx, grpc_server_security_connector *connector);
 
 /* --- Creation security connectors. --- */
 
 /* For TESTING ONLY!
    Creates a fake connector that emulates real channel security.  */
 grpc_channel_security_connector *grpc_fake_channel_security_connector_create(
-    grpc_credentials *request_metadata_creds, int call_host_check_is_async);
+    grpc_call_credentials *request_metadata_creds);
 
 /* For TESTING ONLY!
    Creates a fake connector that emulates real server security.  */
-grpc_security_connector *grpc_fake_server_security_connector_create(void);
+grpc_server_security_connector *grpc_fake_server_security_connector_create(
+    void);
 
 /* Config for ssl clients. */
 typedef struct {
@@ -172,12 +222,15 @@ typedef struct {
   specific error code otherwise.
 */
 grpc_security_status grpc_ssl_channel_security_connector_create(
-    grpc_credentials *request_metadata_creds,
+    grpc_call_credentials *request_metadata_creds,
     const grpc_ssl_config *config, const char *target_name,
     const char *overridden_target_name, grpc_channel_security_connector **sc);
 
 /* Gets the default ssl roots. */
 size_t grpc_get_default_ssl_roots(const unsigned char **pem_root_certs);
+
+/* Exposed for TESTING ONLY!. */
+gpr_slice grpc_get_default_ssl_roots_for_testing(void);
 
 /* Config for ssl servers. */
 typedef struct {
@@ -188,6 +241,7 @@ typedef struct {
   size_t num_key_cert_pairs;
   unsigned char *pem_root_certs;
   size_t pem_root_certs_size;
+  int force_client_auth;
 } grpc_ssl_server_config;
 
 /* Creates an SSL server_security_connector.
@@ -197,13 +251,16 @@ typedef struct {
   specific error code otherwise.
 */
 grpc_security_status grpc_ssl_server_security_connector_create(
-    const grpc_ssl_server_config *config, grpc_security_connector **sc);
+    const grpc_ssl_server_config *config, grpc_server_security_connector **sc);
 
 /* Util. */
-const tsi_peer_property *tsi_peer_get_property_by_name(
-    const tsi_peer *peer, const char *name);
+const tsi_peer_property *tsi_peer_get_property_by_name(const tsi_peer *peer,
+                                                       const char *name);
 
 /* Exposed for testing only. */
 grpc_auth_context *tsi_ssl_peer_to_auth_context(const tsi_peer *peer);
+tsi_peer tsi_shallow_peer_from_ssl_auth_context(
+    const grpc_auth_context *auth_context);
+void tsi_shallow_peer_destruct(tsi_peer *peer);
 
-#endif /* GRPC_INTERNAL_CORE_SECURITY_SECURITY_CONNECTOR_H */
+#endif /* GRPC_CORE_SECURITY_SECURITY_CONNECTOR_H */

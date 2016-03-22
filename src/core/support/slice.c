@@ -57,6 +57,21 @@ void gpr_slice_unref(gpr_slice slice) {
   }
 }
 
+/* gpr_slice_from_static_string support structure - a refcount that does
+   nothing */
+static void noop_ref_or_unref(void *unused) {}
+
+static gpr_slice_refcount noop_refcount = {noop_ref_or_unref,
+                                           noop_ref_or_unref};
+
+gpr_slice gpr_slice_from_static_string(const char *s) {
+  gpr_slice slice;
+  slice.refcount = &noop_refcount;
+  slice.data.refcounted.bytes = (uint8_t *)s;
+  slice.data.refcounted.length = strlen(s);
+  return slice;
+}
+
 /* gpr_slice_new support structures - we create a refcount object extended
    with the user provided data pointer & destroy function */
 typedef struct new_slice_refcount {
@@ -188,13 +203,13 @@ gpr_slice gpr_slice_malloc(size_t length) {
     /* The slices refcount points back to the allocated block. */
     slice.refcount = &rc->base;
     /* The data bytes are placed immediately after the refcount struct */
-    slice.data.refcounted.bytes = (gpr_uint8 *)(rc + 1);
+    slice.data.refcounted.bytes = (uint8_t *)(rc + 1);
     /* And the length of the block is set to the requested length */
     slice.data.refcounted.length = length;
   } else {
     /* small slice: just inline the data */
     slice.refcount = NULL;
-    slice.data.inlined.length = (gpr_uint8)length;
+    slice.data.inlined.length = (uint8_t)length;
   }
   return slice;
 }
@@ -217,7 +232,7 @@ gpr_slice gpr_slice_sub_no_ref(gpr_slice source, size_t begin, size_t end) {
     /* Enforce preconditions */
     GPR_ASSERT(source.data.inlined.length >= end);
     subset.refcount = NULL;
-    subset.data.inlined.length = (gpr_uint8)(end - begin);
+    subset.data.inlined.length = (uint8_t)(end - begin);
     memcpy(subset.data.inlined.bytes, source.data.inlined.bytes + begin,
            end - begin);
   }
@@ -229,7 +244,7 @@ gpr_slice gpr_slice_sub(gpr_slice source, size_t begin, size_t end) {
 
   if (end - begin <= sizeof(subset.data.inlined.bytes)) {
     subset.refcount = NULL;
-    subset.data.inlined.length = (gpr_uint8)(end - begin);
+    subset.data.inlined.length = (uint8_t)(end - begin);
     memcpy(subset.data.inlined.bytes, GPR_SLICE_START_PTR(source) + begin,
            end - begin);
   } else {
@@ -247,17 +262,17 @@ gpr_slice gpr_slice_split_tail(gpr_slice *source, size_t split) {
     /* inlined data, copy it out */
     GPR_ASSERT(source->data.inlined.length >= split);
     tail.refcount = NULL;
-    tail.data.inlined.length = (gpr_uint8)(source->data.inlined.length - split);
+    tail.data.inlined.length = (uint8_t)(source->data.inlined.length - split);
     memcpy(tail.data.inlined.bytes, source->data.inlined.bytes + split,
            tail.data.inlined.length);
-    source->data.inlined.length = (gpr_uint8)split;
+    source->data.inlined.length = (uint8_t)split;
   } else {
     size_t tail_length = source->data.refcounted.length - split;
     GPR_ASSERT(source->data.refcounted.length >= split);
     if (tail_length < sizeof(tail.data.inlined.bytes)) {
       /* Copy out the bytes - it'll be cheaper than refcounting */
       tail.refcount = NULL;
-      tail.data.inlined.length = (gpr_uint8)tail_length;
+      tail.data.inlined.length = (uint8_t)tail_length;
       memcpy(tail.data.inlined.bytes, source->data.refcounted.bytes + split,
              tail_length);
     } else {
@@ -282,16 +297,17 @@ gpr_slice gpr_slice_split_head(gpr_slice *source, size_t split) {
     GPR_ASSERT(source->data.inlined.length >= split);
 
     head.refcount = NULL;
-    head.data.inlined.length = (gpr_uint8)split;
+    head.data.inlined.length = (uint8_t)split;
     memcpy(head.data.inlined.bytes, source->data.inlined.bytes, split);
-    source->data.inlined.length = (gpr_uint8)(source->data.inlined.length - split);
+    source->data.inlined.length =
+        (uint8_t)(source->data.inlined.length - split);
     memmove(source->data.inlined.bytes, source->data.inlined.bytes + split,
             source->data.inlined.length);
   } else if (split < sizeof(head.data.inlined.bytes)) {
     GPR_ASSERT(source->data.refcounted.length >= split);
 
     head.refcount = NULL;
-    head.data.inlined.length = (gpr_uint8)split;
+    head.data.inlined.length = (uint8_t)split;
     memcpy(head.data.inlined.bytes, source->data.refcounted.bytes, split);
     source->data.refcounted.bytes += split;
     source->data.refcounted.length -= split;

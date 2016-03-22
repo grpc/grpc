@@ -1,4 +1,4 @@
-# Copyright 2015, Google Inc.
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -56,19 +56,19 @@ module GRPC
     #          the call
     # @param marshal [Function] f(obj)->string that marshal requests
     # @param unmarshal [Function] f(string)->obj that unmarshals responses
-    # @param deadline [Fixnum] the deadline for the call to complete
-    def initialize(call, q, marshal, unmarshal, deadline)
+    # @param metadata_tag [Object] tag object used to collect metadata
+    def initialize(call, q, marshal, unmarshal, metadata_tag: nil)
       fail(ArgumentError, 'not a call') unless call.is_a? Core::Call
       unless q.is_a? Core::CompletionQueue
         fail(ArgumentError, 'not a CompletionQueue')
       end
       @call = call
       @cq = q
-      @deadline = deadline
       @marshal = marshal
       @op_notifier = nil  # signals completion on clients
       @readq = Queue.new
       @unmarshal = unmarshal
+      @metadata_tag = metadata_tag
     end
 
     # Begins orchestration of the Bidi stream for a client sending requests.
@@ -99,7 +99,7 @@ module GRPC
     # @param gen_each_reply [Proc] generates the BiDi stream replies.
     def run_on_server(gen_each_reply)
       replys = gen_each_reply.call(each_queued_msg)
-      @loop_th = start_read_loop
+      @loop_th = start_read_loop(is_client: false)
       write_loop(replys, is_client: false)
     end
 
@@ -115,6 +115,18 @@ module GRPC
       @op_notifier.notify(self)
     end
 
+    # performs a read using @call.run_batch, ensures metadata is set up
+    def read_using_run_batch
+      ops = { RECV_MESSAGE => nil }
+      ops[RECV_INITIAL_METADATA] = nil unless @metadata_tag.nil?
+      batch_result = @call.run_batch(@cq, self, INFINITE_FUTURE, ops)
+      unless @metadata_tag.nil?
+        @call.metadata = batch_result.metadata
+        @metadata_tag = nil
+      end
+      batch_result
+    end
+
     # each_queued_msg yields each message on this instances readq
     #
     # - messages are added to the readq by #read_loop
@@ -127,7 +139,7 @@ module GRPC
         count += 1
         req = @readq.pop
         GRPC.logger.debug("each_queued_msg: req = #{req}")
-        throw req if req.is_a? StandardError
+        fail req if req.is_a? StandardError
         break if req.equal?(END_OF_READS)
         yield req
       end
@@ -147,12 +159,9 @@ module GRPC
       GRPC.logger.debug("bidi-write-loop: #{count} writes done")
       if is_client
         GRPC.logger.debug("bidi-write-loop: client sent #{count}, waiting")
-        batch_result = @call.run_batch(@cq, write_tag, INFINITE_FUTURE,
-                                       SEND_CLOSE_FROM_CLIENT => nil,
-                                       RECV_STATUS_ON_CLIENT => nil)
-        @call.status = batch_result.status
-        batch_result.check_status
-        GRPC.logger.debug("bidi-write-loop: done status #{@call.status}")
+        @call.run_batch(@cq, write_tag, INFINITE_FUTURE,
+                        SEND_CLOSE_FROM_CLIENT => nil)
+        GRPC.logger.debug('bidi-write-loop: done')
         notify_done
       end
       GRPC.logger.debug('bidi-write-loop: finished')
@@ -164,7 +173,7 @@ module GRPC
     end
 
     # starts the read loop
-    def start_read_loop
+    def start_read_loop(is_client: true)
       Thread.new do
         GRPC.logger.debug('bidi-read-loop: starting')
         begin
@@ -174,12 +183,20 @@ module GRPC
           loop do
             GRPC.logger.debug("bidi-read-loop: #{count}")
             count += 1
-            # TODO: ensure metadata is read if available, currently it's not
-            batch_result = @call.run_batch(@cq, read_tag, INFINITE_FUTURE,
-                                           RECV_MESSAGE => nil)
+            batch_result = read_using_run_batch
+
             # handle the next message
             if batch_result.message.nil?
               GRPC.logger.debug("bidi-read-loop: null batch #{batch_result}")
+
+              if is_client
+                batch_result = @call.run_batch(@cq, read_tag, INFINITE_FUTURE,
+                                               RECV_STATUS_ON_CLIENT => nil)
+                @call.status = batch_result.status
+                batch_result.check_status
+                GRPC.logger.debug("bidi-read-loop: done status #{@call.status}")
+              end
+
               @readq.push(END_OF_READS)
               GRPC.logger.debug('bidi-read-loop: done reading!')
               break

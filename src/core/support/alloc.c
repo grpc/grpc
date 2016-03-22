@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -34,23 +34,47 @@
 #include <grpc/support/alloc.h>
 
 #include <stdlib.h>
+#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
+#include "src/core/profiling/timers.h"
+
+static gpr_allocation_functions g_alloc_functions = {malloc, realloc, free};
+
+gpr_allocation_functions gpr_get_allocation_functions() {
+  return g_alloc_functions;
+}
+
+void gpr_set_allocation_functions(gpr_allocation_functions functions) {
+  GPR_ASSERT(functions.malloc_fn != NULL);
+  GPR_ASSERT(functions.realloc_fn != NULL);
+  GPR_ASSERT(functions.free_fn != NULL);
+  g_alloc_functions = functions;
+}
 
 void *gpr_malloc(size_t size) {
-  void *p = malloc(size);
+  void *p;
+  GPR_TIMER_BEGIN("gpr_malloc", 0);
+  p = g_alloc_functions.malloc_fn(size);
   if (!p) {
     abort();
   }
+  GPR_TIMER_END("gpr_malloc", 0);
   return p;
 }
 
-void gpr_free(void *p) { free(p); }
+void gpr_free(void *p) {
+  GPR_TIMER_BEGIN("gpr_free", 0);
+  g_alloc_functions.free_fn(p);
+  GPR_TIMER_END("gpr_free", 0);
+}
 
 void *gpr_realloc(void *p, size_t size) {
-  p = realloc(p, size);
+  GPR_TIMER_BEGIN("gpr_realloc", 0);
+  p = g_alloc_functions.realloc_fn(p, size);
   if (!p) {
     abort();
   }
+  GPR_TIMER_END("gpr_realloc", 0);
   return p;
 }
 
@@ -58,9 +82,9 @@ void *gpr_malloc_aligned(size_t size, size_t alignment_log) {
   size_t alignment = ((size_t)1) << alignment_log;
   size_t extra = alignment - 1 + sizeof(void *);
   void *p = gpr_malloc(size + extra);
-  void **ret = (void **)(((gpr_uintptr)p + extra) & ~(alignment - 1));
+  void **ret = (void **)(((uintptr_t)p + extra) & ~(alignment - 1));
   ret[-1] = p;
   return (void *)ret;
 }
 
-void gpr_free_aligned(void *ptr) { free(((void **)ptr)[-1]); }
+void gpr_free_aligned(void *ptr) { gpr_free(((void **)ptr)[-1]); }

@@ -42,7 +42,7 @@ namespace node {
 
 /* A worker that asynchronously calls completion_queue_next, and queues onto the
    node event loop a call to the function stored in the event's tag. */
-class CompletionQueueAsyncWorker : public NanAsyncWorker {
+class CompletionQueueAsyncWorker : public Nan::AsyncWorker {
  public:
   CompletionQueueAsyncWorker();
 
@@ -59,7 +59,7 @@ class CompletionQueueAsyncWorker : public NanAsyncWorker {
   static void Next();
 
   /* Initialize the CompletionQueueAsyncWorker class */
-  static void Init(v8::Handle<v8::Object> exports);
+  static void Init(v8::Local<v8::Object> exports);
 
  protected:
   /* Called when Execute has succeeded (completed without setting an error

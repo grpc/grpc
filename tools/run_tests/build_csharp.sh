@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2015, Google Inc.
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -30,21 +30,7 @@
 
 set -ex
 
-if [ "$CONFIG" = "dbg" ]
-then
-  MSBUILD_CONFIG="Debug"
-else
-  MSBUILD_CONFIG="Release"
-fi
+cd $(dirname $0)/../../src/csharp
 
-# change to gRPC repo root
-cd $(dirname $0)/../..
-
-root=`pwd`
-
-if [ -n "$NUGET" ]
-then
-  $NUGET restore src/csharp/Grpc.sln
-fi
-
-xbuild /p:Configuration=$MSBUILD_CONFIG src/csharp/Grpc.sln
+# overriding NativeDependenciesConfigurationUnix is needed to make gcov code coverage work.
+xbuild /p:Configuration=$MSBUILD_CONFIG /p:NativeDependenciesConfigurationUnix=$CONFIG Grpc.sln

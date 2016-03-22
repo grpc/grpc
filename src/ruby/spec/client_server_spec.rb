@@ -1,4 +1,4 @@
-# Copyright 2015, Google Inc.
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -28,15 +28,8 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 require 'grpc'
-require 'spec_helper'
 
 include GRPC::Core
-
-def load_test_certs
-  test_root = File.join(File.dirname(__FILE__), 'testdata')
-  files = ['ca.pem', 'server1.key', 'server1.pem']
-  files.map { |f| File.open(File.join(test_root, f)).read }
-end
 
 shared_context 'setup: tags' do
   let(:sent_message) { 'sent message' }
@@ -47,7 +40,7 @@ shared_context 'setup: tags' do
   end
 
   def deadline
-    Time.now + 2
+    Time.now + 5
   end
 
   def server_allows_client_to_proceed
@@ -61,13 +54,30 @@ shared_context 'setup: tags' do
   end
 
   def new_client_call
-    @ch.create_call(@client_queue, '/method', 'foo.test.google.fr', deadline)
+    @ch.create_call(@client_queue, nil, nil, '/method', nil, deadline)
   end
 end
 
 shared_examples 'basic GRPC message delivery is OK' do
   include GRPC::Core
   include_context 'setup: tags'
+
+  context 'the test channel' do
+    it 'should have a target' do
+      expect(@ch.target).to be_a(String)
+    end
+  end
+
+  context 'a client call' do
+    it 'should have a peer' do
+      expect(new_client_call.peer).to be_a(String)
+    end
+  end
+
+  it 'calls have peer info' do
+    call = new_client_call
+    expect(call.peer).to be_a(String)
+  end
 
   it 'servers receive requests from clients and can respond' do
     call = new_client_call
@@ -188,6 +198,7 @@ shared_examples 'basic GRPC message delivery is OK' do
     # confirm the client can receive the server response and status.
     client_ops = {
       CallOps::SEND_CLOSE_FROM_CLIENT => nil,
+      CallOps::RECV_INITIAL_METADATA => nil,
       CallOps::RECV_MESSAGE => nil,
       CallOps::RECV_STATUS_ON_CLIENT => nil
     }
@@ -385,9 +396,9 @@ describe 'the http client/server' do
     @client_queue = GRPC::Core::CompletionQueue.new
     @server_queue = GRPC::Core::CompletionQueue.new
     @server = GRPC::Core::Server.new(@server_queue, nil)
-    server_port = @server.add_http2_port(server_host)
+    server_port = @server.add_http2_port(server_host, :this_port_is_insecure)
     @server.start
-    @ch = Channel.new("0.0.0.0:#{server_port}", nil)
+    @ch = Channel.new("0.0.0.0:#{server_port}", nil, :this_channel_is_insecure)
   end
 
   after(:example) do
@@ -403,18 +414,27 @@ describe 'the http client/server' do
 end
 
 describe 'the secure http client/server' do
+  include_context 'setup: tags'
+
+  def load_test_certs
+    test_root = File.join(File.dirname(__FILE__), 'testdata')
+    files = ['ca.pem', 'server1.key', 'server1.pem']
+    files.map { |f| File.open(File.join(test_root, f)).read }
+  end
+
   before(:example) do
     certs = load_test_certs
     server_host = '0.0.0.0:0'
     @client_queue = GRPC::Core::CompletionQueue.new
     @server_queue = GRPC::Core::CompletionQueue.new
-    server_creds = GRPC::Core::ServerCredentials.new(nil, certs[1], certs[2])
+    server_creds = GRPC::Core::ServerCredentials.new(
+      nil, [{ private_key: certs[1], cert_chain: certs[2] }], false)
     @server = GRPC::Core::Server.new(@server_queue, nil)
     server_port = @server.add_http2_port(server_host, server_creds)
     @server.start
     args = { Channel::SSL_TARGET => 'foo.test.google.fr' }
     @ch = Channel.new("0.0.0.0:#{server_port}", args,
-                      GRPC::Core::Credentials.new(certs[0], nil, nil))
+                      GRPC::Core::ChannelCredentials.new(certs[0], nil, nil))
   end
 
   after(:example) do
@@ -425,5 +445,32 @@ describe 'the secure http client/server' do
   end
 
   it_behaves_like 'GRPC metadata delivery works OK' do
+  end
+
+  it 'modifies metadata with CallCredentials' do
+    auth_proc = proc { { 'k1' => 'updated-v1' } }
+    call_creds = GRPC::Core::CallCredentials.new(auth_proc)
+    md = { 'k2' => 'v2' }
+    expected_md = { 'k1' => 'updated-v1', 'k2' => 'v2' }
+    recvd_rpc = nil
+    rcv_thread = Thread.new do
+      recvd_rpc = @server.request_call(@server_queue, @server_tag, deadline)
+    end
+
+    call = new_client_call
+    call.set_credentials! call_creds
+    client_ops = {
+      CallOps::SEND_INITIAL_METADATA => md
+    }
+    batch_result = call.run_batch(@client_queue, @client_tag, deadline,
+                                  client_ops)
+    expect(batch_result.send_metadata).to be true
+
+    # confirm the server can receive the client metadata
+    rcv_thread.join
+    expect(recvd_rpc).to_not eq nil
+    recvd_md = recvd_rpc.metadata
+    replace_symbols = Hash[expected_md.each_pair.collect { |x, y| [x.to_s, y] }]
+    expect(recvd_md).to eq(recvd_md.merge(replace_symbols))
   end
 end

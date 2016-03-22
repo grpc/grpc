@@ -40,8 +40,15 @@ namespace grpc {
 
 class thread {
  public:
-  template<class T> thread(void (T::*fptr)(), T *obj) {
+  template <class T>
+  thread(void (T::*fptr)(), T *obj) {
     func_ = new thread_function<T>(fptr, obj);
+    joined_ = false;
+    start();
+  }
+  template <class T, class U>
+  thread(void (T::*fptr)(U arg), T *obj, U arg) {
+    func_ = new thread_function_arg<T, U>(fptr, obj, arg);
     joined_ = false;
     start();
   }
@@ -49,43 +56,60 @@ class thread {
     if (!joined_) std::terminate();
     delete func_;
   }
+  thread(thread &&other)
+      : func_(other.func_), thd_(other.thd_), joined_(other.joined_) {
+    other.joined_ = true;
+    other.func_ = NULL;
+  }
   void join() {
     gpr_thd_join(thd_);
     joined_ = true;
   }
+
  private:
   void start() {
     gpr_thd_options options = gpr_thd_options_default();
     gpr_thd_options_set_joinable(&options);
-    gpr_thd_new(&thd_, thread_func, (void *) func_, &options);
+    gpr_thd_new(&thd_, thread_func, (void *)func_, &options);
   }
   static void thread_func(void *arg) {
-    thread_function_base *func = (thread_function_base *) arg;
+    thread_function_base *func = (thread_function_base *)arg;
     func->call();
   }
   class thread_function_base {
    public:
-    virtual ~thread_function_base() { }
+    virtual ~thread_function_base() {}
     virtual void call() = 0;
   };
-  template<class T>
+  template <class T>
   class thread_function : public thread_function_base {
    public:
-    thread_function(void (T::*fptr)(), T *obj)
-      : fptr_(fptr)
-      , obj_(obj) { }
+    thread_function(void (T::*fptr)(), T *obj) : fptr_(fptr), obj_(obj) {}
     virtual void call() { (obj_->*fptr_)(); }
+
    private:
     void (T::*fptr_)();
     T *obj_;
+  };
+  template <class T, class U>
+  class thread_function_arg : public thread_function_base {
+   public:
+    thread_function_arg(void (T::*fptr)(U arg), T *obj, U arg)
+        : fptr_(fptr), obj_(obj), arg_(arg) {}
+    virtual void call() { (obj_->*fptr_)(arg_); }
+
+   private:
+    void (T::*fptr_)(U arg);
+    T *obj_;
+    U arg_;
   };
   thread_function_base *func_;
   gpr_thd_id thd_;
   bool joined_;
 
   // Disallow copy and assign.
-  thread(const thread&);
-  void operator=(const thread&);
+  thread(const thread &);
+  void operator=(const thread &);
 };
 
 }  // namespace grpc

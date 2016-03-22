@@ -38,29 +38,29 @@
 
 #include "src/core/transport/chttp2/frame.h"
 
-gpr_slice grpc_chttp2_rst_stream_create(gpr_uint32 id, gpr_uint32 code) {
+gpr_slice grpc_chttp2_rst_stream_create(uint32_t id, uint32_t code) {
   gpr_slice slice = gpr_slice_malloc(13);
-  gpr_uint8 *p = GPR_SLICE_START_PTR(slice);
+  uint8_t *p = GPR_SLICE_START_PTR(slice);
 
   *p++ = 0;
   *p++ = 0;
   *p++ = 4;
   *p++ = GRPC_CHTTP2_FRAME_RST_STREAM;
   *p++ = 0;
-  *p++ = id >> 24;
-  *p++ = id >> 16;
-  *p++ = id >> 8;
-  *p++ = id;
-  *p++ = code >> 24;
-  *p++ = code >> 16;
-  *p++ = code >> 8;
-  *p++ = code;
+  *p++ = (uint8_t)(id >> 24);
+  *p++ = (uint8_t)(id >> 16);
+  *p++ = (uint8_t)(id >> 8);
+  *p++ = (uint8_t)(id);
+  *p++ = (uint8_t)(code >> 24);
+  *p++ = (uint8_t)(code >> 16);
+  *p++ = (uint8_t)(code >> 8);
+  *p++ = (uint8_t)(code);
 
   return slice;
 }
 
 grpc_chttp2_parse_error grpc_chttp2_rst_stream_parser_begin_frame(
-    grpc_chttp2_rst_stream_parser *parser, gpr_uint32 length, gpr_uint8 flags) {
+    grpc_chttp2_rst_stream_parser *parser, uint32_t length, uint8_t flags) {
   if (length != 4) {
     gpr_log(GPR_ERROR, "invalid rst_stream: length=%d, flags=%02x", length,
             flags);
@@ -71,11 +71,12 @@ grpc_chttp2_parse_error grpc_chttp2_rst_stream_parser_begin_frame(
 }
 
 grpc_chttp2_parse_error grpc_chttp2_rst_stream_parser_parse(
-    void *parser, grpc_chttp2_transport_parsing *transport_parsing,
+    grpc_exec_ctx *exec_ctx, void *parser,
+    grpc_chttp2_transport_parsing *transport_parsing,
     grpc_chttp2_stream_parsing *stream_parsing, gpr_slice slice, int is_last) {
-  gpr_uint8 *const beg = GPR_SLICE_START_PTR(slice);
-  gpr_uint8 *const end = GPR_SLICE_END_PTR(slice);
-  gpr_uint8 *cur = beg;
+  uint8_t *const beg = GPR_SLICE_START_PTR(slice);
+  uint8_t *const end = GPR_SLICE_END_PTR(slice);
+  uint8_t *cur = beg;
   grpc_chttp2_rst_stream_parser *p = parser;
 
   while (p->byte != 4 && cur != end) {
@@ -88,11 +89,10 @@ grpc_chttp2_parse_error grpc_chttp2_rst_stream_parser_parse(
     GPR_ASSERT(is_last);
     stream_parsing->received_close = 1;
     stream_parsing->saw_rst_stream = 1;
-    stream_parsing->rst_stream_reason =
-        (((gpr_uint32)p->reason_bytes[0]) << 24) |
-        (((gpr_uint32)p->reason_bytes[1]) << 16) |
-        (((gpr_uint32)p->reason_bytes[2]) << 8) |
-        (((gpr_uint32)p->reason_bytes[3]));
+    stream_parsing->rst_stream_reason = (((uint32_t)p->reason_bytes[0]) << 24) |
+                                        (((uint32_t)p->reason_bytes[1]) << 16) |
+                                        (((uint32_t)p->reason_bytes[2]) << 8) |
+                                        (((uint32_t)p->reason_bytes[3]));
   }
 
   return GRPC_CHTTP2_PARSE_OK;

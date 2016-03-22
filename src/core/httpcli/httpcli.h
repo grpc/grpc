@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,13 +31,15 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_HTTPCLI_HTTPCLI_H
-#define GRPC_INTERNAL_CORE_HTTPCLI_HTTPCLI_H
+#ifndef GRPC_CORE_HTTPCLI_HTTPCLI_H
+#define GRPC_CORE_HTTPCLI_HTTPCLI_H
 
 #include <stddef.h>
 
 #include <grpc/support/time.h>
 
+#include "src/core/iomgr/endpoint.h"
+#include "src/core/iomgr/iomgr_internal.h"
 #include "src/core/iomgr/pollset_set.h"
 
 /* User agent this library reports */
@@ -55,22 +57,35 @@ typedef struct grpc_httpcli_header {
    TODO(ctiller): allow caching and capturing multiple requests for the
                   same content and combining them */
 typedef struct grpc_httpcli_context {
-  grpc_pollset_set pollset_set;
+  grpc_pollset_set *pollset_set;
 } grpc_httpcli_context;
+
+typedef struct {
+  const char *default_port;
+  void (*handshake)(grpc_exec_ctx *exec_ctx, void *arg, grpc_endpoint *endpoint,
+                    const char *host,
+                    void (*on_done)(grpc_exec_ctx *exec_ctx, void *arg,
+                                    grpc_endpoint *endpoint));
+} grpc_httpcli_handshaker;
+
+extern const grpc_httpcli_handshaker grpc_httpcli_plaintext;
+extern const grpc_httpcli_handshaker grpc_httpcli_ssl;
 
 /* A request */
 typedef struct grpc_httpcli_request {
   /* The host name to connect to */
   char *host;
+  /* The host to verify in the SSL handshake (or NULL) */
+  char *ssl_host_override;
   /* The path of the resource to fetch */
   char *path;
   /* Additional headers: count and key/values; the following are supplied
      automatically and MUST NOT be set here:
-       Host, Connection, User-Agent */
+     Host, Connection, User-Agent */
   size_t hdr_count;
   grpc_httpcli_header *hdrs;
-  /* whether to use ssl for the request */
-  int use_ssl;
+  /* handshaker to use ssl for the request */
+  const grpc_httpcli_handshaker *handshaker;
 } grpc_httpcli_request;
 
 /* A response */
@@ -85,8 +100,9 @@ typedef struct grpc_httpcli_response {
   char *body;
 } grpc_httpcli_response;
 
-/* Callback for grpc_httpcli_get */
-typedef void (*grpc_httpcli_response_cb)(void *user_data,
+/* Callback for grpc_httpcli_get and grpc_httpcli_post. */
+typedef void (*grpc_httpcli_response_cb)(grpc_exec_ctx *exec_ctx,
+                                         void *user_data,
                                          const grpc_httpcli_response *response);
 
 void grpc_httpcli_context_init(grpc_httpcli_context *context);
@@ -100,11 +116,10 @@ void grpc_httpcli_context_destroy(grpc_httpcli_context *context);
    'request' contains request parameters - these are caller owned and can be
      destroyed once the call returns
    'deadline' contains a deadline for the request (or gpr_inf_future)
-   'em' points to a caller owned event manager that must be alive for the
-     lifetime of the request
    'on_response' is a callback to report results to (and 'user_data' is a user
      supplied pointer to pass to said call) */
-void grpc_httpcli_get(grpc_httpcli_context *context, grpc_pollset *pollset,
+void grpc_httpcli_get(grpc_exec_ctx *exec_ctx, grpc_httpcli_context *context,
+                      grpc_pollset *pollset,
                       const grpc_httpcli_request *request,
                       gpr_timespec deadline,
                       grpc_httpcli_response_cb on_response, void *user_data);
@@ -124,25 +139,25 @@ void grpc_httpcli_get(grpc_httpcli_context *context, grpc_pollset *pollset,
    'on_response' is a callback to report results to (and 'user_data' is a user
      supplied pointer to pass to said call)
    Does not support ?var1=val1&var2=val2 in the path. */
-void grpc_httpcli_post(grpc_httpcli_context *context, grpc_pollset *pollset,
+void grpc_httpcli_post(grpc_exec_ctx *exec_ctx, grpc_httpcli_context *context,
+                       grpc_pollset *pollset,
                        const grpc_httpcli_request *request,
                        const char *body_bytes, size_t body_size,
                        gpr_timespec deadline,
                        grpc_httpcli_response_cb on_response, void *user_data);
 
 /* override functions return 1 if they handled the request, 0 otherwise */
-typedef int (*grpc_httpcli_get_override)(const grpc_httpcli_request *request,
+typedef int (*grpc_httpcli_get_override)(grpc_exec_ctx *exec_ctx,
+                                         const grpc_httpcli_request *request,
                                          gpr_timespec deadline,
                                          grpc_httpcli_response_cb on_response,
                                          void *user_data);
-typedef int (*grpc_httpcli_post_override)(const grpc_httpcli_request *request,
-                                          const char *body_bytes,
-                                          size_t body_size,
-                                          gpr_timespec deadline,
-                                          grpc_httpcli_response_cb on_response,
-                                          void *user_data);
+typedef int (*grpc_httpcli_post_override)(
+    grpc_exec_ctx *exec_ctx, const grpc_httpcli_request *request,
+    const char *body_bytes, size_t body_size, gpr_timespec deadline,
+    grpc_httpcli_response_cb on_response, void *user_data);
 
 void grpc_httpcli_set_override(grpc_httpcli_get_override get,
                                grpc_httpcli_post_override post);
 
-#endif /* GRPC_INTERNAL_CORE_HTTPCLI_HTTPCLI_H */
+#endif /* GRPC_CORE_HTTPCLI_HTTPCLI_H */

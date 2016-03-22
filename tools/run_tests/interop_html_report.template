@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><title>Interop Test Result</title></head>
+<body>
+
+<%def name="fill_one_test_result(shortname, resultset)">
+  % if shortname in resultset:
+    ## Because interop tests does not have runs_per_test flag, each test is 
+    ## run once. So there should only be one element for each result.
+    <% result = resultset[shortname][0] %>
+    % if result.state == 'PASSED':      
+        <td bgcolor="green">PASS</td>
+    % else:
+      <% 
+        tooltip = ''
+        if result.returncode > 0 or result.message:
+          if result.returncode > 0:
+            tooltip = 'returncode: %d ' % result.returncode
+          if result.message:
+            tooltip = '%smessage: %s' % (tooltip, result.message)  
+      %>     
+      % if result.state == 'FAILED':
+        <td bgcolor="red">
+        % if tooltip:  
+          <a href="#" data-toggle="tooltip" data-placement="auto" title="${tooltip | h}">FAIL</a></td>
+        % else:
+          FAIL</td>
+        % endif
+      % elif result.state == 'TIMEOUT':
+        <td bgcolor="yellow">
+        % if tooltip:
+          <a href="#" data-toggle="tooltip" data-placement="auto" title="${tooltip | h}">TIMEOUT</a></td> 
+        % else:
+          TIMEOUT</td>
+        % endif
+      % endif
+    % endif
+  % else:
+     <td bgcolor="magenta">Not implemented</td>
+  % endif
+</%def>
+
+<%def name="fill_one_http2_test_result(shortname, resultset)">
+    ## keep this mostly in sync with the template above
+  % if shortname in resultset:
+    ## Because interop tests does not have runs_per_test flag, each test is 
+    ## run once. So there should only be one element for each result.
+    <% result = resultset[shortname][0] %>
+    % if result.http2results:
+      <td bgcolor="white">
+        <div style="width:95%; border: 1px solid black; position: relative; padding: 3px;">
+          <span style="position: absolute; left: 45%;">${int(result.http2results['percent'] * 100)}&#37;</span>
+          <div style="height: 20px; 
+            background-color: hsl(${result.http2results['percent'] * 120}, 100%, 50%); 
+            width: ${result.http2results['percent'] * 100}%;"
+            title="${result.http2results['failed_cases'] | h}"></div>
+        </div>
+      </td>
+    % else: 
+      <td bgcolor="red">No result is found!</td>
+    % endif
+  % else:
+     <td bgcolor="magenta">Not implemented</td>
+  % endif
+</%def>
+
+<%def name="display_cloud_to_prod_result(prod_server)">
+  ## Each column header is the client language.
+  <table style="width:100%" border="1">
+  <tr bgcolor="#00BFFF">
+  <th>Client languages &#9658;<br/>Test Cases &#9660;</th>
+  % for client_lang in client_langs:
+    <th>${client_lang}</th>
+  % endfor
+  </tr>
+  % for test_case in test_cases + auth_test_cases:
+    <tr><td><b>${test_case}</b></td>
+    % for client_lang in client_langs:
+      <% 
+        if test_case in auth_test_cases:
+          shortname = 'cloud_to_prod_auth:%s:%s:%s' % (
+              prod_server, client_lang, test_case)
+        else:
+          shortname = 'cloud_to_prod:%s:%s:%s' % (
+              prod_server, client_lang, test_case)
+      %>
+      ${fill_one_test_result(shortname, resultset)}
+    % endfor
+    </tr> 
+  % endfor
+  </table>
+</%def>
+
+% if num_failures > 1:
+  <p><h2><font color="red">${num_failures} tests failed!</font></h2></p>
+% elif num_failures:
+  <p><h2><font color="red">${num_failures} test failed!</font></h2></p>
+% else:
+  <p><h2><font color="green">All tests passed!</font></h2></p>
+% endif
+
+% if cloud_to_prod:
+  % for prod_server in prod_servers:
+    <h2>Cloud to ${prod_server}</h2>
+    ${display_cloud_to_prod_result(prod_server)}
+  % endfor
+% endif
+
+% if http2_interop:
+  ## Each column header is the server language.
+  <h2>HTTP/2 Interop</h2> 
+  <table style="width:100%" border="1">
+  <tr bgcolor="#00BFFF">
+  <th>Servers &#9658;<br/>Test Cases &#9660;</th>
+  % for server_lang in server_langs:
+    <th>${server_lang}</th>
+  % endfor
+  % if cloud_to_prod:
+    % for prod_server in prod_servers:
+      <th>${prod_server}</th>
+    % endfor
+  % endif
+  </tr>
+  % for test_case in http2_cases:
+    <tr><td><b>${test_case}</b></td>
+    ## Fill up the cells with test result.
+    % for server_lang in server_langs:
+      <% 
+        shortname = 'cloud_to_cloud:http2:%s_server:%s' % (
+            server_lang, test_case)
+      %>
+      ${fill_one_http2_test_result(shortname, resultset)}
+    % endfor
+    % if cloud_to_prod:
+      % for prod_server in prod_servers:
+        <% shortname = 'cloud_to_prod:%s:http2:%s' % (prod_server, test_case) %>
+        ${fill_one_http2_test_result(shortname, resultset)}
+      % endfor
+    % endif
+    </tr>
+  % endfor
+  </table>
+% endif
+
+% if server_langs:
+  % for test_case in test_cases:
+    ## Each column header is the client language.
+    <h2>${test_case}</h2> 
+    <table style="width:100%" border="1">
+    <tr bgcolor="#00BFFF">
+    <th>Client languages &#9658;<br/>Server languages &#9660;</th>
+    % for client_lang in client_langs:
+      <th>${client_lang}</th>
+    % endfor
+    </tr>
+    ## Each row head is the server language.
+    % for server_lang in server_langs:
+      <tr>
+      <td><b>${server_lang}</b></td>
+      % for client_lang in client_langs:
+        <% 
+          shortname = 'cloud_to_cloud:%s:%s_server:%s' % (
+              client_lang, server_lang, test_case)
+        %>
+        ${fill_one_test_result(shortname, resultset)}
+      % endfor
+      </tr>
+    % endfor
+    </table>
+  % endfor
+% endif
+
+<script>
+  $(document).ready(function(){$('[data-toggle="tooltip"]').tooltip();});
+</script>
+</body>
+</html>

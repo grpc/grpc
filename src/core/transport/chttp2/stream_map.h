@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,21 +31,21 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_STREAM_MAP_H
-#define GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_STREAM_MAP_H
+#ifndef GRPC_CORE_TRANSPORT_CHTTP2_STREAM_MAP_H
+#define GRPC_CORE_TRANSPORT_CHTTP2_STREAM_MAP_H
 
 #include <grpc/support/port_platform.h>
 
 #include <stddef.h>
 
-/* Data structure to map a gpr_uint32 to a data object (represented by a void*)
+/* Data structure to map a uint32_t to a data object (represented by a void*)
 
    Represented as a sorted array of keys, and a corresponding array of values.
    Lookups are performed with binary search.
    Adds are restricted to strictly higher keys than previously seen (this is
    guaranteed by http2). */
 typedef struct {
-  gpr_uint32 *keys;
+  uint32_t *keys;
   void **values;
   size_t count;
   size_t free;
@@ -58,28 +58,27 @@ void grpc_chttp2_stream_map_destroy(grpc_chttp2_stream_map *map);
 
 /* Add a new key: given http2 semantics, new keys must always be greater than
    existing keys - this is asserted */
-void grpc_chttp2_stream_map_add(grpc_chttp2_stream_map *map, gpr_uint32 key,
+void grpc_chttp2_stream_map_add(grpc_chttp2_stream_map *map, uint32_t key,
                                 void *value);
 
 /* Delete an existing key - returns the previous value of the key if it existed,
    or NULL otherwise */
-void *grpc_chttp2_stream_map_delete(grpc_chttp2_stream_map *map,
-                                    gpr_uint32 key);
+void *grpc_chttp2_stream_map_delete(grpc_chttp2_stream_map *map, uint32_t key);
 
 /* Move all elements of src into dst */
 void grpc_chttp2_stream_map_move_into(grpc_chttp2_stream_map *src,
                                       grpc_chttp2_stream_map *dst);
 
 /* Return an existing key, or NULL if it does not exist */
-void *grpc_chttp2_stream_map_find(grpc_chttp2_stream_map *map, gpr_uint32 key);
+void *grpc_chttp2_stream_map_find(grpc_chttp2_stream_map *map, uint32_t key);
 
 /* How many (populated) entries are in the stream map? */
 size_t grpc_chttp2_stream_map_size(grpc_chttp2_stream_map *map);
 
 /* Callback on each stream */
 void grpc_chttp2_stream_map_for_each(grpc_chttp2_stream_map *map,
-                                     void (*f)(void *user_data, gpr_uint32 key,
+                                     void (*f)(void *user_data, uint32_t key,
                                                void *value),
                                      void *user_data);
 
-#endif /* GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_STREAM_MAP_H */
+#endif /* GRPC_CORE_TRANSPORT_CHTTP2_STREAM_MAP_H */

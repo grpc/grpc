@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,8 +31,10 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_IOMGR_IOMGR_INTERNAL_H
-#define GRPC_INTERNAL_CORE_IOMGR_IOMGR_INTERNAL_H
+#ifndef GRPC_CORE_IOMGR_IOMGR_INTERNAL_H
+#define GRPC_CORE_IOMGR_IOMGR_INTERNAL_H
+
+#include <stdbool.h>
 
 #include "src/core/iomgr/iomgr.h"
 #include <grpc/support/sync.h>
@@ -43,13 +45,18 @@ typedef struct grpc_iomgr_object {
   struct grpc_iomgr_object *prev;
 } grpc_iomgr_object;
 
-int grpc_maybe_call_delayed_callbacks(gpr_mu *drop_mu, int success);
-void grpc_iomgr_add_delayed_callback(grpc_iomgr_closure *iocb, int success);
+void grpc_pollset_global_init(void);
+void grpc_pollset_global_shutdown(void);
 
 void grpc_iomgr_register_object(grpc_iomgr_object *obj, const char *name);
 void grpc_iomgr_unregister_object(grpc_iomgr_object *obj);
 
 void grpc_iomgr_platform_init(void);
+/** flush any globally queued work from iomgr */
+void grpc_iomgr_platform_flush(void);
+/** tear down all platform specific global iomgr structures */
 void grpc_iomgr_platform_shutdown(void);
 
-#endif  /* GRPC_INTERNAL_CORE_IOMGR_IOMGR_INTERNAL_H */
+bool grpc_iomgr_abort_on_leaks(void);
+
+#endif /* GRPC_CORE_IOMGR_IOMGR_INTERNAL_H */

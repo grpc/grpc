@@ -33,23 +33,169 @@
 
 using System;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using System.Threading.Tasks;
+
+using Grpc.Core.Internal;
 
 namespace Grpc.Core
 {
     /// <summary>
     /// Context for a server-side call.
     /// </summary>
-    public sealed class ServerCallContext
+    public class ServerCallContext
     {
-        // TODO(jtattermusch): add cancellationToken
+        private readonly CallSafeHandle callHandle;
+        private readonly string method;
+        private readonly string host;
+        private readonly string peer;
+        private readonly DateTime deadline;
+        private readonly Metadata requestHeaders;
+        private readonly CancellationToken cancellationToken;
+        private readonly Metadata responseTrailers = new Metadata();
 
-        // TODO(jtattermusch): add deadline info
+        private Status status = Status.DefaultSuccess;
+        private Func<Metadata, Task> writeHeadersFunc;
+        private IHasWriteOptions writeOptionsHolder;
 
-        // TODO(jtattermusch): expose initial metadata sent by client for reading
+        internal ServerCallContext(CallSafeHandle callHandle, string method, string host, string peer, DateTime deadline, Metadata requestHeaders, CancellationToken cancellationToken,
+            Func<Metadata, Task> writeHeadersFunc, IHasWriteOptions writeOptionsHolder)
+        {
+            this.callHandle = callHandle;
+            this.method = method;
+            this.host = host;
+            this.peer = peer;
+            this.deadline = deadline;
+            this.requestHeaders = requestHeaders;
+            this.cancellationToken = cancellationToken;
+            this.writeHeadersFunc = writeHeadersFunc;
+            this.writeOptionsHolder = writeOptionsHolder;
+        }
 
-        // TODO(jtattermusch): expose method to send initial metadata back to client
+        /// <summary>
+        /// Asynchronously sends response headers for the current call to the client. This method may only be invoked once for each call and needs to be invoked
+        /// before any response messages are written. Writing the first response message implicitly sends empty response headers if <c>WriteResponseHeadersAsync</c> haven't
+        /// been called yet.
+        /// </summary>
+        /// <param name="responseHeaders">The response headers to send.</param>
+        /// <returns>The task that finished once response headers have been written.</returns>
+        public Task WriteResponseHeadersAsync(Metadata responseHeaders)
+        {
+            return writeHeadersFunc(responseHeaders);
+        }
 
-        // TODO(jtattermusch): allow setting status and trailing metadata to send after handler completes.
+        /// <summary>
+        /// Creates a propagation token to be used to propagate call context to a child call.
+        /// </summary>
+        public ContextPropagationToken CreatePropagationToken(ContextPropagationOptions options = null)
+        {
+            return new ContextPropagationToken(callHandle, deadline, cancellationToken, options);
+        }
+            
+        /// <summary>Name of method called in this RPC.</summary>
+        public string Method
+        {
+            get
+            {
+                return this.method;
+            }
+        }
+
+        /// <summary>Name of host called in this RPC.</summary>
+        public string Host
+        {
+            get
+            {
+                return this.host;
+            }
+        }
+
+        /// <summary>Address of the remote endpoint in URI format.</summary>
+        public string Peer
+        {
+            get
+            {
+                return this.peer;
+            }
+        }
+
+        /// <summary>Deadline for this RPC.</summary>
+        public DateTime Deadline
+        {
+            get
+            {
+                return this.deadline;
+            }
+        }
+
+        /// <summary>Initial metadata sent by client.</summary>
+        public Metadata RequestHeaders
+        {
+            get
+            {
+                return this.requestHeaders;
+            }
+        }
+
+        /// <summary>Cancellation token signals when call is cancelled.</summary>
+        public CancellationToken CancellationToken
+        {
+            get
+            {
+                return this.cancellationToken;
+            }
+        }
+
+        /// <summary>Trailers to send back to client after RPC finishes.</summary>
+        public Metadata ResponseTrailers
+        {
+            get
+            {
+                return this.responseTrailers;
+            }
+        }
+
+        /// <summary> Status to send back to client after RPC finishes.</summary>
+        public Status Status
+        {
+            get
+            {
+                return this.status;
+            }
+
+            set
+            {
+                status = value;
+            }
+        }
+
+        /// <summary>
+        /// Allows setting write options for the following write.
+        /// For streaming response calls, this property is also exposed as on IServerStreamWriter for convenience.
+        /// Both properties are backed by the same underlying value.
+        /// </summary>
+        public WriteOptions WriteOptions
+        {
+            get
+            {
+                return writeOptionsHolder.WriteOptions;
+            }
+
+            set
+            {
+                writeOptionsHolder.WriteOptions = value;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Allows sharing write options between ServerCallContext and other objects.
+    /// </summary>
+    public interface IHasWriteOptions
+    {
+        /// <summary>
+        /// Gets or sets the write options.
+        /// </summary>
+        WriteOptions WriteOptions { get; set; }
     }
 }

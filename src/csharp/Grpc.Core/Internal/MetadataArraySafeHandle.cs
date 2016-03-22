@@ -1,5 +1,5 @@
 #region Copyright notice and license
-// Copyright 2015, Google Inc.
+// Copyright 2015-2016, Google Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -31,41 +31,71 @@
 using System;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
+using Grpc.Core.Profiling;
 
 namespace Grpc.Core.Internal
 {
     /// <summary>
-    /// grpc_metadata_array from <grpc/grpc.h>
+    /// grpc_metadata_array from <c>grpc/grpc.h</c>
     /// </summary>
     internal class MetadataArraySafeHandle : SafeHandleZeroIsInvalid
     {
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern MetadataArraySafeHandle grpcsharp_metadata_array_create(UIntPtr capacity);
-
-        [DllImport("grpc_csharp_ext.dll", CharSet = CharSet.Ansi)]
-        static extern void grpcsharp_metadata_array_add(MetadataArraySafeHandle array, string key, byte[] value, UIntPtr valueLength);
-
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern void grpcsharp_metadata_array_destroy_full(IntPtr array);
+        static readonly NativeMethods Native = NativeMethods.Get();
 
         private MetadataArraySafeHandle()
         {
         }
-
+            
         public static MetadataArraySafeHandle Create(Metadata metadata)
         {
-            var entries = metadata.Entries;
-            var metadataArray = grpcsharp_metadata_array_create(new UIntPtr((ulong)entries.Count));
-            for (int i = 0; i < entries.Count; i++)
+            using (Profilers.ForCurrentThread().NewScope("MetadataArraySafeHandle.Create"))
             {
-                grpcsharp_metadata_array_add(metadataArray, entries[i].Key, entries[i].ValueBytes, new UIntPtr((ulong)entries[i].ValueBytes.Length));
+                // TODO(jtattermusch): we might wanna check that the metadata is readonly 
+                var metadataArray = Native.grpcsharp_metadata_array_create(new UIntPtr((ulong)metadata.Count));
+                for (int i = 0; i < metadata.Count; i++)
+                {
+                    var valueBytes = metadata[i].GetSerializedValueUnsafe();
+                    Native.grpcsharp_metadata_array_add(metadataArray, metadata[i].Key, valueBytes, new UIntPtr((ulong)valueBytes.Length));
+                }
+                return metadataArray;
             }
-            return metadataArray;
+        }
+
+        /// <summary>
+        /// Reads metadata from pointer to grpc_metadata_array
+        /// </summary>
+        public static Metadata ReadMetadataFromPtrUnsafe(IntPtr metadataArray)
+        {
+            if (metadataArray == IntPtr.Zero)
+            {
+                return null;
+            }
+
+            ulong count = Native.grpcsharp_metadata_array_count(metadataArray).ToUInt64();
+
+            var metadata = new Metadata();
+            for (ulong i = 0; i < count; i++)
+            {
+                var index = new UIntPtr(i);
+                string key = Marshal.PtrToStringAnsi(Native.grpcsharp_metadata_array_get_key(metadataArray, index));
+                var bytes = new byte[Native.grpcsharp_metadata_array_get_value_length(metadataArray, index).ToUInt64()];
+                Marshal.Copy(Native.grpcsharp_metadata_array_get_value(metadataArray, index), bytes, 0, bytes.Length);
+                metadata.Add(Metadata.Entry.CreateUnsafe(key, bytes));
+            }
+            return metadata;
+        }
+
+        internal IntPtr Handle
+        {
+            get
+            {
+                return handle;
+            }
         }
 
         protected override bool ReleaseHandle()
         {
-            grpcsharp_metadata_array_destroy_full(handle);
+            Native.grpcsharp_metadata_array_destroy_full(handle);
             return true;
         }
     }

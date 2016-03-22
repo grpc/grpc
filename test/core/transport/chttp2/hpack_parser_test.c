@@ -35,6 +35,7 @@
 
 #include <stdarg.h>
 
+#include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/slice.h>
@@ -53,7 +54,7 @@ static void onhdr(void *ud, grpc_mdelem *md) {
   GPR_ASSERT(evalue);
   GPR_ASSERT(gpr_slice_str_cmp(md->key->slice, ekey) == 0);
   GPR_ASSERT(gpr_slice_str_cmp(md->value->slice, evalue) == 0);
-  grpc_mdelem_unref(md);
+  GRPC_MDELEM_UNREF(md);
 }
 
 static void test_vector(grpc_chttp2_hpack_parser *parser,
@@ -90,9 +91,8 @@ static void test_vector(grpc_chttp2_hpack_parser *parser,
 
 static void test_vectors(grpc_slice_split_mode mode) {
   grpc_chttp2_hpack_parser parser;
-  grpc_mdctx *mdctx = grpc_mdctx_create();
 
-  grpc_chttp2_hpack_parser_init(&parser, mdctx);
+  grpc_chttp2_hpack_parser_init(&parser);
   /* D.2.1 */
   test_vector(&parser, mode,
               "400a 6375 7374 6f6d 2d6b 6579 0d63 7573"
@@ -110,7 +110,7 @@ static void test_vectors(grpc_slice_split_mode mode) {
   test_vector(&parser, mode, "82", ":method", "GET", NULL);
   grpc_chttp2_hpack_parser_destroy(&parser);
 
-  grpc_chttp2_hpack_parser_init(&parser, mdctx);
+  grpc_chttp2_hpack_parser_init(&parser);
   /* D.3.1 */
   test_vector(&parser, mode,
               "8286 8441 0f77 7777 2e65 7861 6d70 6c65"
@@ -130,7 +130,7 @@ static void test_vectors(grpc_slice_split_mode mode) {
               NULL);
   grpc_chttp2_hpack_parser_destroy(&parser);
 
-  grpc_chttp2_hpack_parser_init(&parser, mdctx);
+  grpc_chttp2_hpack_parser_init(&parser);
   /* D.4.1 */
   test_vector(&parser, mode,
               "8286 8441 8cf1 e3c2 e5f2 3a6b a0ab 90f4"
@@ -150,8 +150,9 @@ static void test_vectors(grpc_slice_split_mode mode) {
               NULL);
   grpc_chttp2_hpack_parser_destroy(&parser);
 
-  grpc_chttp2_hpack_parser_init(&parser, mdctx);
-  parser.table.max_bytes = 256;
+  grpc_chttp2_hpack_parser_init(&parser);
+  grpc_chttp2_hptbl_set_max_bytes(&parser.table, 256);
+  grpc_chttp2_hptbl_set_current_table_size(&parser.table, 256);
   /* D.5.1 */
   test_vector(&parser, mode,
               "4803 3330 3258 0770 7269 7661 7465 611d"
@@ -183,8 +184,9 @@ static void test_vectors(grpc_slice_split_mode mode) {
               "foo=ASDJKHQKBZXOQWEOPIUAXQWEOIU; max-age=3600; version=1", NULL);
   grpc_chttp2_hpack_parser_destroy(&parser);
 
-  grpc_chttp2_hpack_parser_init(&parser, mdctx);
-  parser.table.max_bytes = 256;
+  grpc_chttp2_hpack_parser_init(&parser);
+  grpc_chttp2_hptbl_set_max_bytes(&parser.table, 256);
+  grpc_chttp2_hptbl_set_current_table_size(&parser.table, 256);
   /* D.6.1 */
   test_vector(&parser, mode,
               "4882 6402 5885 aec3 771a 4b61 96d0 7abe"
@@ -212,12 +214,13 @@ static void test_vectors(grpc_slice_split_mode mode) {
               "set-cookie",
               "foo=ASDJKHQKBZXOQWEOPIUAXQWEOIU; max-age=3600; version=1", NULL);
   grpc_chttp2_hpack_parser_destroy(&parser);
-  grpc_mdctx_unref(mdctx);
 }
 
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
+  grpc_init();
   test_vectors(GRPC_SLICE_SPLIT_MERGE_ALL);
   test_vectors(GRPC_SLICE_SPLIT_ONE_BYTE);
+  grpc_shutdown();
   return 0;
 }

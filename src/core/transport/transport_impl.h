@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_TRANSPORT_TRANSPORT_IMPL_H
-#define GRPC_INTERNAL_CORE_TRANSPORT_TRANSPORT_IMPL_H
+#ifndef GRPC_CORE_TRANSPORT_TRANSPORT_IMPL_H
+#define GRPC_CORE_TRANSPORT_TRANSPORT_IMPL_H
 
 #include "src/core/transport/transport.h"
 
@@ -41,32 +41,35 @@ typedef struct grpc_transport_vtable {
      layers and initialized by the transport */
   size_t sizeof_stream; /* = sizeof(transport stream) */
 
-  /* implementation of grpc_transport_init_stream */
-  int (*init_stream)(grpc_transport *self, grpc_stream *stream,
-                     const void *server_data, grpc_transport_op *initial_op);
+  /* name of this transport implementation */
+  const char *name;
 
-  /* implementation of grpc_transport_send_batch */
-  void (*perform_op)(grpc_transport *self, grpc_stream *stream,
+  /* implementation of grpc_transport_init_stream */
+  int (*init_stream)(grpc_exec_ctx *exec_ctx, grpc_transport *self,
+                     grpc_stream *stream, grpc_stream_refcount *refcount,
+                     const void *server_data);
+
+  /* implementation of grpc_transport_set_pollset */
+  void (*set_pollset)(grpc_exec_ctx *exec_ctx, grpc_transport *self,
+                      grpc_stream *stream, grpc_pollset *pollset);
+
+  /* implementation of grpc_transport_perform_stream_op */
+  void (*perform_stream_op)(grpc_exec_ctx *exec_ctx, grpc_transport *self,
+                            grpc_stream *stream, grpc_transport_stream_op *op);
+
+  /* implementation of grpc_transport_perform_op */
+  void (*perform_op)(grpc_exec_ctx *exec_ctx, grpc_transport *self,
                      grpc_transport_op *op);
 
-  /* implementation of grpc_transport_add_to_pollset */
-  void (*add_to_pollset)(grpc_transport *self, grpc_pollset *pollset);
-
   /* implementation of grpc_transport_destroy_stream */
-  void (*destroy_stream)(grpc_transport *self, grpc_stream *stream);
-
-  /* implementation of grpc_transport_goaway */
-  void (*goaway)(grpc_transport *self, grpc_status_code status,
-                 gpr_slice debug_data);
-
-  /* implementation of grpc_transport_close */
-  void (*close)(grpc_transport *self);
-
-  /* implementation of grpc_transport_ping */
-  void (*ping)(grpc_transport *self, grpc_iomgr_closure *cb);
+  void (*destroy_stream)(grpc_exec_ctx *exec_ctx, grpc_transport *self,
+                         grpc_stream *stream);
 
   /* implementation of grpc_transport_destroy */
-  void (*destroy)(grpc_transport *self);
+  void (*destroy)(grpc_exec_ctx *exec_ctx, grpc_transport *self);
+
+  /* implementation of grpc_transport_get_peer */
+  char *(*get_peer)(grpc_exec_ctx *exec_ctx, grpc_transport *self);
 } grpc_transport_vtable;
 
 /* an instance of a grpc transport */
@@ -75,4 +78,4 @@ struct grpc_transport {
   const grpc_transport_vtable *vtable;
 };
 
-#endif /* GRPC_INTERNAL_CORE_TRANSPORT_TRANSPORT_IMPL_H */
+#endif /* GRPC_CORE_TRANSPORT_TRANSPORT_IMPL_H */

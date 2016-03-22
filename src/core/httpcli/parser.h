@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_HTTPCLI_PARSER_H
-#define GRPC_INTERNAL_CORE_HTTPCLI_PARSER_H
+#ifndef GRPC_CORE_HTTPCLI_PARSER_H
+#define GRPC_CORE_HTTPCLI_PARSER_H
 
 #include "src/core/httpcli/httpcli.h"
 #include <grpc/support/port_platform.h>
@@ -51,14 +51,14 @@ typedef struct {
   size_t body_capacity;
   size_t hdr_capacity;
 
-  gpr_uint8 cur_line[GRPC_HTTPCLI_MAX_HEADER_LENGTH];
+  uint8_t cur_line[GRPC_HTTPCLI_MAX_HEADER_LENGTH];
   size_t cur_line_length;
 } grpc_httpcli_parser;
 
-void grpc_httpcli_parser_init(grpc_httpcli_parser *parser);
-void grpc_httpcli_parser_destroy(grpc_httpcli_parser *parser);
+void grpc_httpcli_parser_init(grpc_httpcli_parser* parser);
+void grpc_httpcli_parser_destroy(grpc_httpcli_parser* parser);
 
-int grpc_httpcli_parser_parse(grpc_httpcli_parser *parser, gpr_slice slice);
-int grpc_httpcli_parser_eof(grpc_httpcli_parser *parser);
+int grpc_httpcli_parser_parse(grpc_httpcli_parser* parser, gpr_slice slice);
+int grpc_httpcli_parser_eof(grpc_httpcli_parser* parser);
 
-#endif  /* GRPC_INTERNAL_CORE_HTTPCLI_PARSER_H */
+#endif /* GRPC_CORE_HTTPCLI_PARSER_H */

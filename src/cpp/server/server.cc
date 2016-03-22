@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,23 +32,89 @@
  */
 
 #include <grpc++/server.h>
+
 #include <utility>
 
+#include <grpc++/completion_queue.h>
+#include <grpc++/generic/async_generic_service.h>
+#include <grpc++/impl/codegen/completion_queue_tag.h>
+#include <grpc++/impl/grpc_library.h>
+#include <grpc++/impl/method_handler_impl.h>
+#include <grpc++/impl/rpc_service_method.h>
+#include <grpc++/impl/service_type.h>
+#include <grpc++/security/server_credentials.h>
+#include <grpc++/server_context.h>
+#include <grpc++/support/time.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc++/completion_queue.h>
-#include <grpc++/async_generic_service.h>
-#include <grpc++/impl/rpc_service_method.h>
-#include <grpc++/impl/service_type.h>
-#include <grpc++/server_context.h>
-#include <grpc++/server_credentials.h>
-#include <grpc++/thread_pool_interface.h>
-#include <grpc++/time.h>
 
 #include "src/core/profiling/timers.h"
+#include "src/cpp/server/thread_pool_interface.h"
 
 namespace grpc {
+
+class DefaultGlobalCallbacks GRPC_FINAL : public Server::GlobalCallbacks {
+ public:
+  ~DefaultGlobalCallbacks() GRPC_OVERRIDE {}
+  void PreSynchronousRequest(ServerContext* context) GRPC_OVERRIDE {}
+  void PostSynchronousRequest(ServerContext* context) GRPC_OVERRIDE {}
+};
+
+static std::shared_ptr<Server::GlobalCallbacks> g_callbacks = nullptr;
+static gpr_once g_once_init_callbacks = GPR_ONCE_INIT;
+
+static void InitGlobalCallbacks() {
+  if (g_callbacks == nullptr) {
+    g_callbacks.reset(new DefaultGlobalCallbacks());
+  }
+}
+
+class Server::UnimplementedAsyncRequestContext {
+ protected:
+  UnimplementedAsyncRequestContext() : generic_stream_(&server_context_) {}
+
+  GenericServerContext server_context_;
+  GenericServerAsyncReaderWriter generic_stream_;
+};
+
+class Server::UnimplementedAsyncRequest GRPC_FINAL
+    : public UnimplementedAsyncRequestContext,
+      public GenericAsyncRequest {
+ public:
+  UnimplementedAsyncRequest(Server* server, ServerCompletionQueue* cq)
+      : GenericAsyncRequest(server, &server_context_, &generic_stream_, cq, cq,
+                            NULL, false),
+        server_(server),
+        cq_(cq) {}
+
+  bool FinalizeResult(void** tag, bool* status) GRPC_OVERRIDE;
+
+  ServerContext* context() { return &server_context_; }
+  GenericServerAsyncReaderWriter* stream() { return &generic_stream_; }
+
+ private:
+  Server* const server_;
+  ServerCompletionQueue* const cq_;
+};
+
+typedef SneakyCallOpSet<CallOpSendInitialMetadata, CallOpServerSendStatus>
+    UnimplementedAsyncResponseOp;
+class Server::UnimplementedAsyncResponse GRPC_FINAL
+    : public UnimplementedAsyncResponseOp {
+ public:
+  UnimplementedAsyncResponse(UnimplementedAsyncRequest* request);
+  ~UnimplementedAsyncResponse() { delete request_; }
+
+  bool FinalizeResult(void** tag, bool* status) GRPC_OVERRIDE {
+    bool r = UnimplementedAsyncResponseOp::FinalizeResult(tag, status);
+    delete this;
+    return r;
+  }
+
+ private:
+  UnimplementedAsyncRequest* const request_;
+};
 
 class Server::ShutdownRequest GRPC_FINAL : public CompletionQueueTag {
  public:
@@ -67,11 +133,17 @@ class Server::SyncRequest GRPC_FINAL : public CompletionQueueTag {
         has_request_payload_(method->method_type() == RpcMethod::NORMAL_RPC ||
                              method->method_type() ==
                                  RpcMethod::SERVER_STREAMING),
+        call_details_(nullptr),
         cq_(nullptr) {
     grpc_metadata_array_init(&request_metadata_);
   }
 
-  ~SyncRequest() { grpc_metadata_array_destroy(&request_metadata_); }
+  ~SyncRequest() {
+    if (call_details_) {
+      delete call_details_;
+    }
+    grpc_metadata_array_destroy(&request_metadata_);
+  }
 
   static SyncRequest* Wait(CompletionQueue* cq, bool* ok) {
     void* tag = nullptr;
@@ -84,7 +156,26 @@ class Server::SyncRequest GRPC_FINAL : public CompletionQueueTag {
     return mrd;
   }
 
-  void SetupRequest() { cq_ = grpc_completion_queue_create(); }
+  static bool AsyncWait(CompletionQueue* cq, SyncRequest** req, bool* ok,
+                        gpr_timespec deadline) {
+    void* tag = nullptr;
+    *ok = false;
+    switch (cq->AsyncNext(&tag, ok, deadline)) {
+      case CompletionQueue::TIMEOUT:
+        *req = nullptr;
+        return true;
+      case CompletionQueue::SHUTDOWN:
+        *req = nullptr;
+        return false;
+      case CompletionQueue::GOT_EVENT:
+        *req = static_cast<SyncRequest*>(tag);
+        GPR_ASSERT((*req)->in_flight_);
+        return true;
+    }
+    GPR_UNREACHABLE_CODE(return false);
+  }
+
+  void SetupRequest() { cq_ = grpc_completion_queue_create(nullptr); }
 
   void TeardownRequest() {
     grpc_completion_queue_destroy(cq_);
@@ -94,16 +185,31 @@ class Server::SyncRequest GRPC_FINAL : public CompletionQueueTag {
   void Request(grpc_server* server, grpc_completion_queue* notify_cq) {
     GPR_ASSERT(cq_ && !in_flight_);
     in_flight_ = true;
-    GPR_ASSERT(GRPC_CALL_OK ==
-               grpc_server_request_registered_call(
-                   server, tag_, &call_, &deadline_, &request_metadata_,
-                   has_request_payload_ ? &request_payload_ : nullptr, cq_,
-                   notify_cq, this));
+    if (tag_) {
+      GPR_ASSERT(GRPC_CALL_OK ==
+                 grpc_server_request_registered_call(
+                     server, tag_, &call_, &deadline_, &request_metadata_,
+                     has_request_payload_ ? &request_payload_ : nullptr, cq_,
+                     notify_cq, this));
+    } else {
+      if (!call_details_) {
+        call_details_ = new grpc_call_details;
+        grpc_call_details_init(call_details_);
+      }
+      GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(
+                                     server, &call_, call_details_,
+                                     &request_metadata_, cq_, notify_cq, this));
+    }
   }
 
   bool FinalizeResult(void** tag, bool* status) GRPC_OVERRIDE {
     if (!*status) {
       grpc_completion_queue_destroy(cq_);
+    }
+    if (call_details_) {
+      deadline_ = call_details_->deadline;
+      grpc_call_details_destroy(call_details_);
+      grpc_call_details_init(call_details_);
     }
     return true;
   }
@@ -118,7 +224,7 @@ class Server::SyncRequest GRPC_FINAL : public CompletionQueueTag {
           has_request_payload_(mrd->has_request_payload_),
           request_payload_(mrd->request_payload_),
           method_(mrd->method_) {
-      ctx_.call_ = mrd->call_;
+      ctx_.set_call(mrd->call_);
       ctx_.cq_ = &cq_;
       GPR_ASSERT(mrd->in_flight_);
       mrd->in_flight_ = false;
@@ -131,10 +237,12 @@ class Server::SyncRequest GRPC_FINAL : public CompletionQueueTag {
       }
     }
 
-    void Run() {
+    void Run(std::shared_ptr<GlobalCallbacks> global_callbacks) {
       ctx_.BeginCompletionOp(&call_);
+      global_callbacks->PreSynchronousRequest(&ctx_);
       method_->handler()->RunHandler(MethodHandler::HandlerParameter(
           &call_, &ctx_, request_payload_, call_.max_message_size()));
+      global_callbacks->PostSynchronousRequest(&ctx_);
       request_payload_ = nullptr;
       void* ignored_tag;
       bool ignored_ok;
@@ -157,36 +265,33 @@ class Server::SyncRequest GRPC_FINAL : public CompletionQueueTag {
   bool in_flight_;
   const bool has_request_payload_;
   grpc_call* call_;
+  grpc_call_details* call_details_;
   gpr_timespec deadline_;
   grpc_metadata_array request_metadata_;
   grpc_byte_buffer* request_payload_;
   grpc_completion_queue* cq_;
 };
 
-static grpc_server* CreateServer(int max_message_size) {
-  if (max_message_size > 0) {
-    grpc_arg arg;
-    arg.type = GRPC_ARG_INTEGER;
-    arg.key = const_cast<char*>(GRPC_ARG_MAX_MESSAGE_LENGTH);
-    arg.value.integer = max_message_size;
-    grpc_channel_args args = {1, &arg};
-    return grpc_server_create(&args);
-  } else {
-    return grpc_server_create(nullptr);
-  }
-}
-
+static internal::GrpcLibraryInitializer g_gli_initializer;
 Server::Server(ThreadPoolInterface* thread_pool, bool thread_pool_owned,
-               int max_message_size)
+               int max_message_size, ChannelArguments* args)
     : max_message_size_(max_message_size),
       started_(false),
       shutdown_(false),
       num_running_cb_(0),
       sync_methods_(new std::list<SyncRequest>),
-      server_(CreateServer(max_message_size)),
+      has_generic_service_(false),
+      server_(nullptr),
       thread_pool_(thread_pool),
       thread_pool_owned_(thread_pool_owned) {
-  grpc_server_register_completion_queue(server_, cq_.cq());
+  g_gli_initializer.summon();
+  gpr_once_init(&g_once_init_callbacks, InitGlobalCallbacks);
+  global_callbacks_ = g_callbacks;
+  global_callbacks_->UpdateArguments(args);
+  grpc_channel_args channel_args;
+  args->SetChannelArgs(&channel_args);
+  server_ = grpc_server_create(&channel_args, nullptr);
+  grpc_server_register_completion_queue(server_, cq_.cq(), nullptr);
 }
 
 Server::~Server() {
@@ -195,6 +300,8 @@ Server::~Server() {
     if (started_ && !shutdown_) {
       lock.unlock();
       Shutdown();
+    } else if (!started_) {
+      cq_.Shutdown();
     }
   }
   void* got_tag;
@@ -207,35 +314,37 @@ Server::~Server() {
   delete sync_methods_;
 }
 
-bool Server::RegisterService(RpcService* service) {
-  for (int i = 0; i < service->GetMethodCount(); ++i) {
-    RpcServiceMethod* method = service->GetMethod(i);
-    void* tag = grpc_server_register_method(server_, method->name(), nullptr);
-    if (!tag) {
+void Server::SetGlobalCallbacks(GlobalCallbacks* callbacks) {
+  GPR_ASSERT(g_callbacks == nullptr);
+  GPR_ASSERT(callbacks != nullptr);
+  g_callbacks.reset(callbacks);
+}
+
+bool Server::RegisterService(const grpc::string* host, Service* service) {
+  bool has_async_methods = service->has_async_methods();
+  if (has_async_methods) {
+    GPR_ASSERT(service->server_ == nullptr &&
+               "Can only register an asynchronous service against one server.");
+    service->server_ = this;
+  }
+  for (auto it = service->methods_.begin(); it != service->methods_.end();
+       ++it) {
+    if (it->get() == nullptr) {  // Handled by generic service if any.
+      continue;
+    }
+    RpcServiceMethod* method = it->get();
+    void* tag = grpc_server_register_method(server_, method->name(),
+                                            host ? host->c_str() : nullptr);
+    if (tag == nullptr) {
       gpr_log(GPR_DEBUG, "Attempt to register %s multiple times",
               method->name());
       return false;
     }
-    SyncRequest request(method, tag);
-    sync_methods_->emplace_back(request);
-  }
-  return true;
-}
-
-bool Server::RegisterAsyncService(AsynchronousService* service) {
-  GPR_ASSERT(service->server_ == nullptr &&
-             "Can only register an asynchronous service against one server.");
-  service->server_ = this;
-  service->request_args_ = new void*[service->method_count_];
-  for (size_t i = 0; i < service->method_count_; ++i) {
-    void* tag = grpc_server_register_method(server_, service->method_names_[i],
-                                            nullptr);
-    if (!tag) {
-      gpr_log(GPR_DEBUG, "Attempt to register %s multiple times",
-              service->method_names_[i]);
-      return false;
+    if (method->handler() == nullptr) {
+      method->set_server_tag(tag);
+    } else {
+      sync_methods_->emplace_back(method, tag);
     }
-    service->request_args_[i] = tag;
   }
   return true;
 }
@@ -244,6 +353,7 @@ void Server::RegisterAsyncGenericService(AsyncGenericService* service) {
   GPR_ASSERT(service->server_ == nullptr &&
              "Can only register an async generic service against one server.");
   service->server_ = this;
+  has_generic_service_ = true;
 }
 
 int Server::AddListeningPort(const grpc::string& addr,
@@ -252,11 +362,24 @@ int Server::AddListeningPort(const grpc::string& addr,
   return creds->AddPortToServer(addr, server_);
 }
 
-bool Server::Start() {
+bool Server::Start(ServerCompletionQueue** cqs, size_t num_cqs) {
   GPR_ASSERT(!started_);
   started_ = true;
   grpc_server_start(server_);
 
+  if (!has_generic_service_) {
+    if (!sync_methods_->empty()) {
+      unknown_method_.reset(new RpcServiceMethod(
+          "unknown", RpcMethod::BIDI_STREAMING, new UnknownMethodHandler));
+      // Use of emplace_back with just constructor arguments is not accepted
+      // here by gcc-4.4 because it can't match the anonymous nullptr with a
+      // proper constructor implicitly. Construct the object and use push_back.
+      sync_methods_->push_back(SyncRequest(unknown_method_.get(), nullptr));
+    }
+    for (size_t i = 0; i < num_cqs; i++) {
+      new UnimplementedAsyncRequest(this, cqs[i]);
+    }
+  }
   // Start processing rpcs.
   if (!sync_methods_->empty()) {
     for (auto m = sync_methods_->begin(); m != sync_methods_->end(); m++) {
@@ -270,12 +393,29 @@ bool Server::Start() {
   return true;
 }
 
-void Server::Shutdown() {
+void Server::ShutdownInternal(gpr_timespec deadline) {
   grpc::unique_lock<grpc::mutex> lock(mu_);
   if (started_ && !shutdown_) {
     shutdown_ = true;
     grpc_server_shutdown_and_notify(server_, cq_.cq(), new ShutdownRequest());
     cq_.Shutdown();
+    lock.unlock();
+    // Spin, eating requests until the completion queue is completely shutdown.
+    // If the deadline expires then cancel anything that's pending and keep
+    // spinning forever until the work is actually drained.
+    // Since nothing else needs to touch state guarded by mu_, holding it
+    // through this loop is fine.
+    SyncRequest* request;
+    bool ok;
+    while (SyncRequest::AsyncWait(&cq_, &request, &ok, deadline)) {
+      if (request == NULL) {  // deadline expired
+        grpc_server_cancel_all_calls(server_);
+        deadline = gpr_inf_future(GPR_CLOCK_MONOTONIC);
+      } else if (ok) {
+        SyncRequest::CallData call_data(this, request);
+      }
+    }
+    lock.lock();
 
     // Wait for running callbacks to finish.
     while (num_running_cb_ != 0) {
@@ -296,76 +436,82 @@ void Server::PerformOpsOnCall(CallOpSetInterface* ops, Call* call) {
   size_t nops = 0;
   grpc_op cops[MAX_OPS];
   ops->FillOps(cops, &nops);
-  GPR_ASSERT(GRPC_CALL_OK ==
-             grpc_call_start_batch(call->call(), cops, nops, ops));
+  auto result = grpc_call_start_batch(call->call(), cops, nops, ops, nullptr);
+  GPR_ASSERT(GRPC_CALL_OK == result);
 }
 
-Server::BaseAsyncRequest::BaseAsyncRequest(
-    Server* server, ServerContext* context,
-    ServerAsyncStreamingInterface* stream, CompletionQueue* call_cq, void* tag)
+ServerInterface::BaseAsyncRequest::BaseAsyncRequest(
+    ServerInterface* server, ServerContext* context,
+    ServerAsyncStreamingInterface* stream, CompletionQueue* call_cq, void* tag,
+    bool delete_on_finalize)
     : server_(server),
       context_(context),
       stream_(stream),
       call_cq_(call_cq),
       tag_(tag),
+      delete_on_finalize_(delete_on_finalize),
       call_(nullptr) {
   memset(&initial_metadata_array_, 0, sizeof(initial_metadata_array_));
 }
 
-Server::BaseAsyncRequest::~BaseAsyncRequest() {}
-
-bool Server::BaseAsyncRequest::FinalizeResult(void** tag, bool* status) {
+bool ServerInterface::BaseAsyncRequest::FinalizeResult(void** tag,
+                                                       bool* status) {
   if (*status) {
     for (size_t i = 0; i < initial_metadata_array_.count; i++) {
-      context_->client_metadata_.insert(std::make_pair(
-          grpc::string(initial_metadata_array_.metadata[i].key),
-          grpc::string(initial_metadata_array_.metadata[i].value,
-                       initial_metadata_array_.metadata[i].value +
-                           initial_metadata_array_.metadata[i].value_length)));
+      context_->client_metadata_.insert(
+          std::pair<grpc::string_ref, grpc::string_ref>(
+              initial_metadata_array_.metadata[i].key,
+              grpc::string_ref(
+                  initial_metadata_array_.metadata[i].value,
+                  initial_metadata_array_.metadata[i].value_length)));
     }
   }
   grpc_metadata_array_destroy(&initial_metadata_array_);
-  context_->call_ = call_;
+  context_->set_call(call_);
   context_->cq_ = call_cq_;
-  Call call(call_, server_, call_cq_, server_->max_message_size_);
+  Call call(call_, server_, call_cq_, server_->max_message_size());
   if (*status && call_) {
     context_->BeginCompletionOp(&call);
   }
   // just the pointers inside call are copied here
   stream_->BindCall(&call);
   *tag = tag_;
-  delete this;
+  if (delete_on_finalize_) {
+    delete this;
+  }
   return true;
 }
 
-Server::RegisteredAsyncRequest::RegisteredAsyncRequest(
-    Server* server, ServerContext* context,
+ServerInterface::RegisteredAsyncRequest::RegisteredAsyncRequest(
+    ServerInterface* server, ServerContext* context,
     ServerAsyncStreamingInterface* stream, CompletionQueue* call_cq, void* tag)
-    : BaseAsyncRequest(server, context, stream, call_cq, tag) {}
+    : BaseAsyncRequest(server, context, stream, call_cq, tag, true) {}
 
-void Server::RegisteredAsyncRequest::IssueRequest(
+void ServerInterface::RegisteredAsyncRequest::IssueRequest(
     void* registered_method, grpc_byte_buffer** payload,
     ServerCompletionQueue* notification_cq) {
   grpc_server_request_registered_call(
-      server_->server_, registered_method, &call_, &context_->deadline_,
+      server_->server(), registered_method, &call_, &context_->deadline_,
       &initial_metadata_array_, payload, call_cq_->cq(), notification_cq->cq(),
       this);
 }
 
-Server::GenericAsyncRequest::GenericAsyncRequest(
-    Server* server, GenericServerContext* context,
+ServerInterface::GenericAsyncRequest::GenericAsyncRequest(
+    ServerInterface* server, GenericServerContext* context,
     ServerAsyncStreamingInterface* stream, CompletionQueue* call_cq,
-    ServerCompletionQueue* notification_cq, void* tag)
-    : BaseAsyncRequest(server, context, stream, call_cq, tag) {
+    ServerCompletionQueue* notification_cq, void* tag, bool delete_on_finalize)
+    : BaseAsyncRequest(server, context, stream, call_cq, tag,
+                       delete_on_finalize) {
   grpc_call_details_init(&call_details_);
   GPR_ASSERT(notification_cq);
   GPR_ASSERT(call_cq);
-  grpc_server_request_call(server->server_, &call_, &call_details_,
+  grpc_server_request_call(server->server(), &call_, &call_details_,
                            &initial_metadata_array_, call_cq->cq(),
                            notification_cq->cq(), this);
 }
 
-bool Server::GenericAsyncRequest::FinalizeResult(void** tag, bool* status) {
+bool ServerInterface::GenericAsyncRequest::FinalizeResult(void** tag,
+                                                          bool* status) {
   // TODO(yangg) remove the copy here.
   if (*status) {
     static_cast<GenericServerContext*>(context_)->method_ =
@@ -377,17 +523,37 @@ bool Server::GenericAsyncRequest::FinalizeResult(void** tag, bool* status) {
   return BaseAsyncRequest::FinalizeResult(tag, status);
 }
 
+bool Server::UnimplementedAsyncRequest::FinalizeResult(void** tag,
+                                                       bool* status) {
+  if (GenericAsyncRequest::FinalizeResult(tag, status) && *status) {
+    new UnimplementedAsyncRequest(server_, cq_);
+    new UnimplementedAsyncResponse(this);
+  } else {
+    delete this;
+  }
+  return false;
+}
+
+Server::UnimplementedAsyncResponse::UnimplementedAsyncResponse(
+    UnimplementedAsyncRequest* request)
+    : request_(request) {
+  Status status(StatusCode::UNIMPLEMENTED, "");
+  UnknownMethodHandler::FillOps(request_->context(), this);
+  request_->stream()->call_.PerformOps(this);
+}
+
 void Server::ScheduleCallback() {
   {
     grpc::unique_lock<grpc::mutex> lock(mu_);
     num_running_cb_++;
   }
-  thread_pool_->ScheduleCallback(std::bind(&Server::RunRpc, this));
+  thread_pool_->Add(std::bind(&Server::RunRpc, this));
 }
 
 void Server::RunRpc() {
   // Wait for one more incoming rpc.
   bool ok;
+  GPR_TIMER_SCOPE("Server::RunRpc", 0);
   auto* mrd = SyncRequest::Wait(&cq_, &ok);
   if (mrd) {
     ScheduleCallback();
@@ -403,7 +569,8 @@ void Server::RunRpc() {
           mrd->TeardownRequest();
         }
       }
-      cd.Run();
+      GPR_TIMER_SCOPE("cd.Run()", 0);
+      cd.Run(global_callbacks_);
     }
   }
 

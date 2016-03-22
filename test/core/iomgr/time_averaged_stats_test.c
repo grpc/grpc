@@ -189,7 +189,7 @@ static void some_regress_some_persist_test(void) {
   grpc_time_averaged_stats_add_sample(&tas, 4944.32);
   grpc_time_averaged_stats_update_average(&tas);
   /* (1 * 4944.32 + 0.6 * 2.384 * 2200 + 0.4 * 1000) /
-         (1 + 0.6 * 2.384 + 0.4) */
+     (1 + 0.6 * 2.384 + 0.4) */
   EXPECT_DOUBLE_EQ(3000, tas.aggregate_weighted_avg);
   EXPECT_DOUBLE_EQ(2.8304, tas.aggregate_total_weight);
 }
