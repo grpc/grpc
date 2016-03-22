@@ -354,7 +354,7 @@ static void sockaddr_factory_unref(grpc_resolver_factory *factory) {}
 #define DECL_FACTORY(name, prefix)                                          \
   static grpc_resolver *name##_factory_create_resolver(                     \
       grpc_resolver_factory *factory, grpc_resolver_args *args) {           \
-    return sockaddr_create(args, "pick_first", prefix##parse_##name);        \
+    return sockaddr_create(args, "pick_first", prefix##parse_##name);       \
   }                                                                         \
   static const grpc_resolver_factory_vtable name##_factory_vtable = {       \
       sockaddr_factory_ref, sockaddr_factory_unref,                         \
