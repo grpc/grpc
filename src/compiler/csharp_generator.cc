@@ -73,6 +73,10 @@ std::string GetClientInterfaceName(const ServiceDescriptor* service) {
   return "I" + service->name() + "Client";
 }
 
+std::string GetClientBaseClassName(const ServiceDescriptor* service) {
+  return service->name() + "ClientBase";
+}
+
 std::string GetClientClassName(const ServiceDescriptor* service) {
   return service->name() + "Client";
 }
@@ -112,9 +116,13 @@ std::string GetMethodFieldName(const MethodDescriptor *method) {
   return "__Method_" + method->name();
 }
 
-std::string GetMethodRequestParamMaybe(const MethodDescriptor *method) {
+std::string GetMethodRequestParamMaybe(const MethodDescriptor *method,
+                                       bool invocation_param=false) {
   if (method->client_streaming()) {
     return "";
+  }
+  if (invocation_param) {
+    return "request, ";
   }
   return GetClassName(method->input_type()) + " request, ";
 }
@@ -292,6 +300,86 @@ void GenerateClientInterface(Printer* out, const ServiceDescriptor *service) {
   out->Print("\n");
 }
 
+void GenerateClientBaseClass(Printer* out, const ServiceDescriptor *service) {
+  out->Print("// abstract client class\n");
+  out->Print("public abstract class $name$ : ClientBase\n", "name",
+             GetClientBaseClassName(service));
+  out->Print("{\n");
+  out->Indent();
+
+  // constructors
+  out->Print(
+      "public $name$(Channel channel) : base(channel)\n",
+      "name", GetClientBaseClassName(service));
+  out->Print("{\n");
+  out->Print("}\n");
+
+  for (int i = 0; i < service->method_count(); i++) {
+    const MethodDescriptor *method = service->method(i);
+    MethodType method_type = GetMethodType(method);
+
+    if (method_type == METHODTYPE_NO_STREAMING) {
+      // unary calls have an extra synchronous stub method
+      out->Print(
+          "public virtual $response$ $methodname$($request$ request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))\n",
+          "methodname", method->name(), "request",
+          GetClassName(method->input_type()), "response",
+          GetClassName(method->output_type()));
+      out->Print("{\n");
+      out->Indent();
+      out->Print("return $methodname$(request, new CallOptions(headers, deadline, cancellationToken));\n",
+                 "methodname", method->name());
+      out->Outdent();
+      out->Print("}\n");
+
+      // overload taking CallOptions as a param
+      out->Print(
+          "public virtual $response$ $methodname$($request$ request, CallOptions options)\n",
+          "methodname", method->name(), "request",
+          GetClassName(method->input_type()), "response",
+          GetClassName(method->output_type()));
+      out->Print("{\n");
+      out->Indent();
+      out->Print("throw new NotImplementedException();\n");
+      out->Outdent();
+      out->Print("}\n");
+    }
+
+    std::string method_name = method->name();
+    if (method_type == METHODTYPE_NO_STREAMING) {
+      method_name += "Async";  // prevent name clash with synchronous method.
+    }
+    out->Print(
+        "public virtual $returntype$ $methodname$($request_maybe$Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))\n",
+        "methodname", method_name, "request_maybe",
+        GetMethodRequestParamMaybe(method), "returntype",
+        GetMethodReturnTypeClient(method));
+    out->Print("{\n");
+    out->Indent();
+
+    out->Print("return $methodname$($request_maybe$new CallOptions(headers, deadline, cancellationToken));\n",
+               "methodname", method_name,
+               "request_maybe", GetMethodRequestParamMaybe(method, true));
+    out->Outdent();
+    out->Print("}\n");
+
+    // overload taking CallOptions as a param
+    out->Print(
+        "public virtual $returntype$ $methodname$($request_maybe$CallOptions options)\n",
+        "methodname", method_name, "request_maybe",
+        GetMethodRequestParamMaybe(method), "returntype",
+        GetMethodReturnTypeClient(method));
+    out->Print("{\n");
+    out->Indent();
+    out->Print("throw new NotImplementedException();\n");
+    out->Outdent();
+    out->Print("}\n");
+  }
+  out->Outdent();
+  out->Print("}\n");
+  out->Print("\n");
+}
+
 void GenerateServerInterface(Printer* out, const ServiceDescriptor *service) {
   out->Print("// server-side interface\n");
   out->Print("[System.Obsolete(\"Service implementations should inherit"
@@ -345,9 +433,9 @@ void GenerateServerClass(Printer* out, const ServiceDescriptor *service) {
 void GenerateClientStub(Printer* out, const ServiceDescriptor *service) {
   out->Print("// client stub\n");
   out->Print(
-      "public class $name$ : ClientBase, $interface$\n",
-      "name", GetClientClassName(service), "interface",
-      GetClientInterfaceName(service));
+      "public class $name$ : $baseclass$\n",
+      "name", GetClientClassName(service),
+      "baseclass", GetClientBaseClassName(service));
   out->Print("{\n");
   out->Indent();
 
@@ -365,21 +453,7 @@ void GenerateClientStub(Printer* out, const ServiceDescriptor *service) {
     if (method_type == METHODTYPE_NO_STREAMING) {
       // unary calls have an extra synchronous stub method
       out->Print(
-          "public $response$ $methodname$($request$ request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))\n",
-          "methodname", method->name(), "request",
-          GetClassName(method->input_type()), "response",
-          GetClassName(method->output_type()));
-      out->Print("{\n");
-      out->Indent();
-      out->Print("var call = CreateCall($methodfield$, new CallOptions(headers, deadline, cancellationToken));\n",
-                 "methodfield", GetMethodFieldName(method));
-      out->Print("return Calls.BlockingUnaryCall(call, request);\n");
-      out->Outdent();
-      out->Print("}\n");
-
-      // overload taking CallOptions as a param
-      out->Print(
-                "public $response$ $methodname$($request$ request, CallOptions options)\n",
+                "public override $response$ $methodname$($request$ request, CallOptions options)\n",
                 "methodname", method->name(), "request",
                 GetClassName(method->input_type()), "response",
                 GetClassName(method->output_type()));
@@ -397,37 +471,7 @@ void GenerateClientStub(Printer* out, const ServiceDescriptor *service) {
       method_name += "Async";  // prevent name clash with synchronous method.
     }
     out->Print(
-        "public $returntype$ $methodname$($request_maybe$Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))\n",
-        "methodname", method_name, "request_maybe",
-        GetMethodRequestParamMaybe(method), "returntype",
-        GetMethodReturnTypeClient(method));
-    out->Print("{\n");
-    out->Indent();
-    out->Print("var call = CreateCall($methodfield$, new CallOptions(headers, deadline, cancellationToken));\n",
-               "methodfield", GetMethodFieldName(method));
-    switch (GetMethodType(method)) {
-      case METHODTYPE_NO_STREAMING:
-        out->Print("return Calls.AsyncUnaryCall(call, request);\n");
-        break;
-      case METHODTYPE_CLIENT_STREAMING:
-        out->Print("return Calls.AsyncClientStreamingCall(call);\n");
-        break;
-      case METHODTYPE_SERVER_STREAMING:
-        out->Print(
-            "return Calls.AsyncServerStreamingCall(call, request);\n");
-        break;
-      case METHODTYPE_BIDI_STREAMING:
-        out->Print("return Calls.AsyncDuplexStreamingCall(call);\n");
-        break;
-      default:
-        GOOGLE_LOG(FATAL)<< "Can't get here.";
-    }
-    out->Outdent();
-    out->Print("}\n");
-
-    // overload taking CallOptions as a param
-    out->Print(
-        "public $returntype$ $methodname$($request_maybe$CallOptions options)\n",
+        "public override $returntype$ $methodname$($request_maybe$CallOptions options)\n",
         "methodname", method_name, "request_maybe",
         GetMethodRequestParamMaybe(method), "returntype",
         GetMethodReturnTypeClient(method));
@@ -523,6 +567,7 @@ void GenerateService(Printer* out, const ServiceDescriptor *service) {
   }
   GenerateServiceDescriptorProperty(out, service);
   GenerateClientInterface(out, service);
+  GenerateClientBaseClass(out, service);
   GenerateServerInterface(out, service);
   GenerateServerClass(out, service);
   GenerateClientStub(out, service);
