@@ -31,7 +31,6 @@
  *
  */
 
-
 #include "src/core/iomgr/unix_sockets_posix.h"
 
 #ifndef GPR_HAVE_UNIX_SOCKET
