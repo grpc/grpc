@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -59,6 +59,7 @@ class CppGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
     }
 
     grpc_cpp_generator::Parameters generator_parameters;
+    generator_parameters.use_system_headers = true;
 
     if (!parameter.empty()) {
       std::vector<grpc::string> parameters_list =
@@ -70,6 +71,17 @@ class CppGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
           grpc_generator::tokenize(*parameter_string, "=");
         if (param[0] == "services_namespace") {
           generator_parameters.services_namespace = param[1];
+        } else if (param[0] == "use_system_headers") {
+          if (param[1] == "true") {
+            generator_parameters.use_system_headers = true;
+          } else if (param[1] == "false") {
+            generator_parameters.use_system_headers = false;
+          } else {
+            *error = grpc::string("Invalid parameter: ") + *parameter_string;
+            return false;
+          }
+        } else if (param[0] == "grpc_search_path") {
+          generator_parameters.grpc_search_path = param[1];
         } else {
           *error = grpc::string("Unknown parameter: ") + *parameter_string;
           return false;
