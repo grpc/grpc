@@ -39,9 +39,6 @@
 typedef enum {
   // normal top-half client channel with load-balancing, connection management
   GRPC_CLIENT_CHANNEL,
-  // abbreviated top-half client channel bound to one subchannel - for internal
-  // load balancing implementation
-  GRPC_CLIENT_UCHANNEL,
   // bottom-half of a client channel: everything that happens post-load
   // balancing (bound to a specific transport)
   GRPC_CLIENT_SUBCHANNEL,

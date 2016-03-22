@@ -45,7 +45,6 @@
 #include "src/core/channel/compress_filter.h"
 #include "src/core/channel/connected_channel.h"
 #include "src/core/channel/client_channel.h"
-#include "src/core/channel/client_uchannel.h"
 #include "src/core/channel/http_client_filter.h"
 #include "src/core/channel/http_server_filter.h"
 #include "src/core/client_config/lb_policy_registry.h"
@@ -112,9 +111,6 @@ static void register_builtin_channel_init() {
   grpc_channel_init_register_stage(GRPC_CLIENT_DIRECT_CHANNEL, INT_MAX,
                                    prepend_filter,
                                    (void *)&grpc_compress_filter);
-  grpc_channel_init_register_stage(GRPC_CLIENT_UCHANNEL, INT_MAX,
-                                   prepend_filter,
-                                   (void *)&grpc_compress_filter);
   grpc_channel_init_register_stage(GRPC_SERVER_CHANNEL, INT_MAX, prepend_filter,
                                    (void *)&grpc_compress_filter);
   grpc_channel_init_register_stage(GRPC_CLIENT_SUBCHANNEL, INT_MAX,
@@ -134,8 +130,6 @@ static void register_builtin_channel_init() {
                                    grpc_add_connected_filter, NULL);
   grpc_channel_init_register_stage(GRPC_CLIENT_CHANNEL, INT_MAX, append_filter,
                                    (void *)&grpc_client_channel_filter);
-  grpc_channel_init_register_stage(GRPC_CLIENT_UCHANNEL, INT_MAX, append_filter,
-                                   (void *)&grpc_client_uchannel_filter);
   grpc_channel_init_register_stage(GRPC_CLIENT_LAME_CHANNEL, INT_MAX,
                                    append_filter, (void *)&grpc_lame_filter);
   grpc_channel_init_register_stage(GRPC_SERVER_CHANNEL, INT_MAX, prepend_filter,
