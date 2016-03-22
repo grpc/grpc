@@ -650,6 +650,40 @@ var requester_makers = {
   bidi: makeBidiStreamRequestFunction
 };
 
+function getDefaultValues(metadata, options) {
+  var res = {};
+  res.metadata = metadata || new Metadata();
+  res.options = options || {};
+  return res;
+}
+
+/**
+ * Map with wrappers for each type of requester function to make it use the old
+ * argument order with optional arguments after the callback.
+ */
+var deprecated_request_wrap = {
+  unary: function(makeUnaryRequest) {
+    return function makeWrappedUnaryRequest(argument, callback,
+                                            metadata, options) {
+      /* jshint validthis: true */
+      var opt_args = getDefaultValues(metadata, metadata);
+      return makeUnaryRequest.call(this, argument, opt_args.metadata,
+                                   opt_args.options, callback);
+    };
+  },
+  client_stream: function(makeServerStreamRequest) {
+    return function makeWrappedClientStreamRequest(callback, metadata,
+                                                   options) {
+      /* jshint validthis: true */
+      var opt_args = getDefaultValues(metadata, options);
+      return makeServerStreamRequest.call(this, opt_args.metadata,
+                                          opt_args.options, callback);
+    };
+  },
+  server_stream: _.identity,
+  bidi: _.identity
+};
+
 /**
  * Creates a constructor for a client with the given methods. The methods object
  * maps method name to an object with the following keys:
@@ -661,9 +695,15 @@ var requester_makers = {
  * responseDeserialize: function to deserialize response objects
  * @param {Object} methods An object mapping method names to method attributes
  * @param {string} serviceName The fully qualified name of the service
+ * @param {boolean=} deprecatedArgumentOrder Indicates that the old argument
+ *     order should be used for methods, with optional arguments at the end
+ *     instead of the callback at the end. Defaults to false. This option is
+ *     only a temporary stopgap measure to smooth an API breakage.
+ *     It is deprecated, and new code should not use it.
  * @return {function(string, Object)} New client constructor
  */
-exports.makeClientConstructor = function(methods, serviceName) {
+exports.makeClientConstructor = function(methods, serviceName,
+                                         deprecatedArgumentOrder) {
   /**
    * Create a client with the given methods
    * @constructor
@@ -710,8 +750,13 @@ exports.makeClientConstructor = function(methods, serviceName) {
     }
     var serialize = attrs.requestSerialize;
     var deserialize = attrs.responseDeserialize;
-    Client.prototype[name] = requester_makers[method_type](
+    var method_func = requester_makers[method_type](
         attrs.path, serialize, deserialize);
+    if (deprecatedArgumentOrder) {
+      Client.prototype[name] = deprecated_request_wrap(method_func);
+    } else {
+      Client.prototype[name] = method_func;
+    }
     // Associate all provided attributes with the method
     _.assign(Client.prototype[name], attrs);
   });
@@ -768,8 +813,13 @@ exports.waitForClientReady = function(client, deadline, callback) {
 exports.makeProtobufClientConstructor =  function(service, options) {
   var method_attrs = common.getProtobufServiceAttrs(service, service.name,
                                                     options);
+  var deprecatedArgumentOrder = false;
+  if (options) {
+    deprecatedArgumentOrder = options.deprecatedArgumentOrder;
+  }
   var Client = exports.makeClientConstructor(
-      method_attrs, common.fullyQualifiedName(service));
+      method_attrs, common.fullyQualifiedName(service),
+      deprecatedArgumentOrder);
   Client.service = service;
   Client.service.grpc_options = options;
   return Client;
