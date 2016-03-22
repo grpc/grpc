@@ -1,3 +1,4 @@
+[![Gem](https://img.shields.io/gem/v/grpc.svg)](https://rubygems.org/gems/grpc/)
 gRPC Ruby
 =========
 
@@ -6,32 +7,25 @@ A Ruby implementation of gRPC.
 Status
 ------
 
-Alpha : Ready for early adopters
+Beta
 
 PREREQUISITES
 -------------
 
 - Ruby 2.x. The gRPC API uses keyword args.
-- [homebrew][] on Mac OS X, [linuxbrew][] on Linux.  These simplify the installation of the gRPC C core.
 
 INSTALLATION
 ---------------
-On Mac OS X, install [homebrew][]. On Linux, install [linuxbrew][].
-Run the following command to install gRPC Ruby.
+
+**Linux and Mac OS X:**
+
 ```sh
-$ curl -fsSL https://goo.gl/getgrpc | bash -s ruby
+gem install grpc
 ```
-This will download and run the [gRPC install script][], then install the latest version of gRPC Ruby gem.  It also installs Protocol Buffers compiler (_protoc_) and the gRPC _protoc_ plugin for ruby.
 
 BUILD FROM SOURCE
 ---------------------
 - Clone this repository
-- Build the gRPC C core
-E.g, from the root of the gRPC [Git repository](https://github.com/google/grpc)
-```sh
-$ cd ../..
-$ make && sudo make install
-```
 
 - Install Ruby 2.x. Consider doing this with [RVM](http://rvm.io), it's a nice way of controlling
   the exact ruby version that's used.
@@ -76,9 +70,8 @@ Directory structure is the layout for [ruby extensions][]
   resp = stub.div(req)
   GRPC.logger.info("Answer: #{resp.inspect}")
   ```
-[homebrew]:http://brew.sh
-[linuxbrew]:https://github.com/Homebrew/linuxbrew#installation
-[gRPC install script]:https://raw.githubusercontent.com/grpc/homebrew-grpc/master/scripts/install
+
 [ruby extensions]:http://guides.rubygems.org/gems-with-extensions/
 [rubydoc]: http://www.rubydoc.info/gems/grpc
 [grpc.io]: http://www.grpc.io/docs/installation/ruby.html
+[Debian jessie-backports]:http://backports.debian.org/Instructions/

@@ -41,8 +41,24 @@ $LOAD_PATH.unshift(this_dir) unless $LOAD_PATH.include?(this_dir)
 
 require 'forwardable'
 require 'grpc'
+require 'logger'
 require 'math_services'
 require 'optparse'
+
+# RubyLogger defines a logger for gRPC based on the standard ruby logger.
+module RubyLogger
+  def logger
+    LOGGER
+  end
+
+  LOGGER = Logger.new(STDOUT)
+end
+
+# GRPC is the general RPC module
+module GRPC
+  # Inject the noop #logger if no module-level logger method has been injected.
+  extend RubyLogger
+end
 
 # Holds state for a fibonacci series
 class Fibber
@@ -155,7 +171,8 @@ end
 
 def test_server_creds
   certs = load_test_certs
-  GRPC::Core::ServerCredentials.new(nil, certs[1], certs[2])
+  GRPC::Core::ServerCredentials.new(
+    nil, [{ private_key: certs[1], cert_chain: certs[2] }], false)
 end
 
 def main
@@ -178,7 +195,7 @@ def main
     s.add_http2_port(options['host'], test_server_creds)
     GRPC.logger.info("... running securely on #{options['host']}")
   else
-    s.add_http2_port(options['host'])
+    s.add_http2_port(options['host'], :this_port_is_insecure)
     GRPC.logger.info("... running insecurely on #{options['host']}")
   end
 

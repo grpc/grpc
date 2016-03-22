@@ -1,6 +1,6 @@
-#!/usr/bin/python2.7
+#!/usr/bin/env python2.7
 
-# Copyright 2015, Google Inc.
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -30,7 +30,9 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import argparse
+import datetime
 import os
+import re
 import sys
 import subprocess
 
@@ -53,9 +55,11 @@ argp.add_argument('-a', '--ancient',
                   action='store_const',
                   const=1)
 argp.add_argument('-f', '--fix',
-                  default=0,
-                  action='store_const',
-                  const=1)
+                  default=False,
+                  action='store_true');
+argp.add_argument('--precommit',
+                  default=False,
+                  action='store_true')
 args = argp.parse_args()
 
 # open the license text
@@ -66,30 +70,56 @@ with open('LICENSE') as f:
 # key is the file extension, value is a format string
 # that given a line of license text, returns what should
 # be in the file
-LICENSE_FMT = {
-  '.c': ' * %s',
-  '.cc': ' * %s',
-  '.h': ' * %s',
-  '.m': ' * %s',
-  '.php': ' * %s',
-  '.py': '# %s',
-  '.rb': '# %s',
-  '.sh': '# %s',
-  '.proto': '// %s',
-  '.js': ' * %s',
-  '.cs': '// %s',
-  '.mak': '# %s',
-  'Makefile': '# %s',
-  'Dockerfile': '# %s',
+LICENSE_PREFIX = {
+  '.c':         r'\s*(?://|\*)\s*',
+  '.cc':        r'\s*(?://|\*)\s*',
+  '.h':         r'\s*(?://|\*)\s*',
+  '.m':         r'\s*\*\s*',
+  '.php':       r'\s*\*\s*',
+  '.js':        r'\s*\*\s*',
+  '.py':        r'#\s*',
+  '.pyx':       r'#\s*',
+  '.pxd':       r'#\s*',
+  '.pxi':       r'#\s*',
+  '.rb':        r'#\s*',
+  '.sh':        r'#\s*',
+  '.proto':     r'//\s*',
+  '.cs':        r'//\s*',
+  '.mak':       r'#\s*',
+  'Makefile':   r'#\s*',
+  'Dockerfile': r'#\s*',
+  'LICENSE':    '',
 }
 
-# pregenerate the actual text that we should have
-LICENSE_TEXT = dict(
-    (k, '\n'.join((v % line).rstrip() for line in LICENSE))
-    for k, v in LICENSE_FMT.iteritems())
+KNOWN_BAD = set([
+  'src/php/tests/bootstrap.php',
+])
 
-OLD_LICENSE_TEXT = dict(
-    (k, v.replace('2015', '2014')) for k, v in LICENSE_TEXT.iteritems())
+
+RE_YEAR = r'Copyright (?P<first_year>[0-9]+\-)?(?P<last_year>[0-9]+), Google Inc\.'
+RE_LICENSE = dict(
+    (k, r'\n'.join(
+        LICENSE_PREFIX[k] +
+        (RE_YEAR if re.search(RE_YEAR, line) else re.escape(line))
+        for line in LICENSE))
+     for k, v in LICENSE_PREFIX.iteritems())
+
+if args.precommit:
+  FILE_LIST_COMMAND = 'git status -z | grep -Poz \'(?<=^[MARC][MARCD ] )[^\s]+\''
+else:
+  FILE_LIST_COMMAND = 'git ls-tree -r --name-only -r HEAD | grep -v ^third_party/'
+
+def load(name):
+  with open(name) as f:
+    return f.read()
+
+def save(name, text):
+  with open(name, 'w') as f:
+    f.write(text)
+
+assert(re.search(RE_LICENSE['LICENSE'], load('LICENSE')))
+assert(re.search(RE_LICENSE['Makefile'], load('Makefile')))
+
 
 def log(cond, why, filename):
   if not cond: return
@@ -98,29 +128,52 @@ def log(cond, why, filename):
   else:
     print filename
 
+
 # scan files, validate the text
-for filename in subprocess.check_output('git ls-tree -r --name-only -r HEAD',
-                                        shell=True).splitlines():
+ok = True
+filename_list = []
+try:
+  filename_list = subprocess.check_output(FILE_LIST_COMMAND,
+                                          shell=True).splitlines()
+except subprocess.CalledProcessError:
+  sys.exit(0)
+
+for filename in filename_list:
+  if filename in KNOWN_BAD: continue
   ext = os.path.splitext(filename)[1]
   base = os.path.basename(filename)
-  if ext in LICENSE_TEXT: 
-    license = LICENSE_TEXT[ext]
-    old_license = OLD_LICENSE_TEXT[ext]
-  elif base in LICENSE_TEXT:
-    license = LICENSE_TEXT[base]
-    old_license = OLD_LICENSE_TEXT[base]
+  if ext in RE_LICENSE:
+    re_license = RE_LICENSE[ext]
+  elif base in RE_LICENSE:
+    re_license = RE_LICENSE[base]
   else:
     log(args.skips, 'skip', filename)
     continue
-  with open(filename) as f:
-    text = '\n'.join(line.rstrip() for line in f.read().splitlines())
-  if license in text:
-    pass
-  elif old_license in text:
-    log(args.ancient, 'old', filename)
-    if args.fix:
-      with open(filename, 'w') as f:
-        f.write(text.replace('Copyright 2014, Google Inc.', 'Copyright 2015, Google Inc.') + '\n')
-  elif 'DO NOT EDIT' not in text and 'AssemblyInfo.cs' not in filename:
-    log(1, 'missing', filename)
+  try:
+    text = load(filename)
+  except:
+    continue
+  m = re.search(re_license, text)
+  if m:
+    gdict = m.groupdict()
+    last_modified = int(subprocess.check_output('git log -1 --format="%ad" --date=short -- ' + filename, shell=True)[0:4])
+    latest_claimed = int(gdict['last_year'])
+    if last_modified > latest_claimed:
+      print '%s modified %d but copyright only extends to %d' % (filename, last_modified, latest_claimed)
+      ok = False
+      if args.fix:
+        span_start, span_end = m.span(2)
+        if not gdict['first_year']:
+          # prepend the old year to the current one.
+          text = '{}-{}{}'.format(text[:span_end], last_modified, text[span_end:])
+        else:  # already a year range
+          # simply update the last year
+          text = '{}{}{}'.format(text[:span_start], last_modified, text[span_end:])
+        save(filename, text)
+        print 'Fixed!'
+        ok = True
+  elif 'DO NOT EDIT' not in text and 'AssemblyInfo.cs' not in filename and filename != 'src/boringssl/err_data.c':
+    log(1, 'copyright missing', filename)
+    ok = False
 
+sys.exit(0 if ok else 1)

@@ -1,5 +1,5 @@
-#!/usr/bin/env python
-# Copyright 2015, Google Inc.
+#!/usr/bin/env python2.7
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -55,19 +55,38 @@ parser.add_argument(
     help='Password to authenticate with the repository. Not needed if you have '
          'configured your .pypirc to include your password.'
 )
+parser.add_argument(
+    '--bdist', '-b', action='store_true',
+    help='Generate a binary distribution (wheel) for the current OS.'
+)
+parser.add_argument(
+    '--dist-args', type=str,
+    help='Additional arguments to pass to the *dist setup.py command.'
+)
 args = parser.parse_args()
 
 # Move to the root directory of Python GRPC.
 pkgdir = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                      '../../../src/python/src')
+                      '../../../')
 # Remove previous distributions; they somehow confuse twine.
 try:
   shutil.rmtree(os.path.join(pkgdir, 'dist/'))
 except:
   pass
 
+# Build the Cython C files
+build_env = os.environ.copy()
+build_env['GRPC_PYTHON_BUILD_WITH_CYTHON'] = "1"
+cmd = ['python', 'setup.py', 'build_ext', '--inplace']
+subprocess.call(cmd, cwd=pkgdir, env=build_env)
+
 # Make the push.
-cmd = ['python', 'setup.py', 'sdist']
+if args.bdist:
+  cmd = ['python', 'setup.py', 'bdist_wheel']
+else:
+  cmd = ['python', 'setup.py', 'sdist']
+if args.dist_args:
+  cmd += args.dist_args.split()
 subprocess.call(cmd, cwd=pkgdir)
 
 cmd = ['twine', 'upload', '-r', args.repository]

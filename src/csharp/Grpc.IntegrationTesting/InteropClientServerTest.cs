@@ -1,6 +1,6 @@
 #region Copyright notice and license
 
-// Copyright 2015, Google Inc.
+// Copyright 2015-2016, Google Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -33,11 +33,12 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using grpc.testing;
 using Grpc.Core;
 using Grpc.Core.Utils;
+using Grpc.Testing;
 using NUnit.Framework;
 
 namespace Grpc.IntegrationTesting
@@ -47,7 +48,7 @@ namespace Grpc.IntegrationTesting
     /// </summary>
     public class InteropClientServerTest
     {
-        string host = "localhost";
+        const string Host = "localhost";
         Server server;
         Channel channel;
         TestService.ITestServiceClient client;
@@ -55,28 +56,27 @@ namespace Grpc.IntegrationTesting
         [TestFixtureSetUp]
         public void Init()
         {
-            GrpcEnvironment.Initialize();
-
-            server = new Server();
-            server.AddServiceDefinition(TestService.BindService(new TestServiceImpl()));
-            int port = server.AddListeningPort(host, Server.PickUnusedPort, TestCredentials.CreateTestServerCredentials());
+            server = new Server
+            {
+                Services = { TestService.BindService(new TestServiceImpl()) },
+                Ports = { { Host, ServerPort.PickUnused, TestCredentials.CreateSslServerCredentials() } }
+            };
             server.Start();
 
             var options = new List<ChannelOption>
             {
                 new ChannelOption(ChannelOptions.SslTargetNameOverride, TestCredentials.DefaultHostOverride)
             };
-            channel = new Channel(host, port, TestCredentials.CreateTestClientCredentials(true), options);
-            client = TestService.NewStub(channel);
+            int port = server.Ports.Single().BoundPort;
+            channel = new Channel(Host, port, TestCredentials.CreateSslCredentials(), options);
+            client = TestService.NewClient(channel);
         }
 
         [TestFixtureTearDown]
         public void Cleanup()
         {
-            channel.Dispose();
-
+            channel.ShutdownAsync().Wait();
             server.ShutdownAsync().Wait();
-            GrpcEnvironment.Shutdown();
         }
 
         [Test]
@@ -92,39 +92,63 @@ namespace Grpc.IntegrationTesting
         }
 
         [Test]
-        public void ClientStreaming()
+        public async Task ClientStreaming()
         {
-            InteropClient.RunClientStreaming(client);
+            await InteropClient.RunClientStreamingAsync(client);
         }
 
         [Test]
-        public void ServerStreaming()
+        public async Task ServerStreaming()
         {
-            InteropClient.RunServerStreaming(client);
+            await InteropClient.RunServerStreamingAsync(client);
         }
 
         [Test]
-        public void PingPong()
+        public async Task PingPong()
         {
-            InteropClient.RunPingPong(client);
+            await InteropClient.RunPingPongAsync(client);
         }
 
         [Test]
-        public void EmptyStream()
+        public async Task EmptyStream()
         {
-            InteropClient.RunEmptyStream(client);
+            await InteropClient.RunEmptyStreamAsync(client);
         }
 
         [Test]
-        public void CancelAfterBegin()
+        public async Task CancelAfterBegin()
         {
-            InteropClient.RunCancelAfterBegin(client);
+            await InteropClient.RunCancelAfterBeginAsync(client);
         }
 
         [Test]
-        public void CancelAfterFirstResponse()
+        public async Task CancelAfterFirstResponse()
         {
-            InteropClient.RunCancelAfterFirstResponse(client);
+            await InteropClient.RunCancelAfterFirstResponseAsync(client);
+        }
+
+        [Test]
+        public async Task TimeoutOnSleepingServer()
+        {
+            await InteropClient.RunTimeoutOnSleepingServerAsync(client);
+        }
+
+        [Test]
+        public async Task CustomMetadata()
+        {
+            await InteropClient.RunCustomMetadataAsync(client);
+        }
+
+        [Test]
+        public async Task StatusCodeAndMessage()
+        {
+            await InteropClient.RunStatusCodeAndMessageAsync(client);
+        }
+
+        [Test]
+        public void UnimplementedMethod()
+        {
+            InteropClient.RunUnimplementedMethod(UnimplementedService.NewClient(channel));
         }
     }
 }

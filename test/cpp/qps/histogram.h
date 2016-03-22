@@ -35,20 +35,23 @@
 #define TEST_QPS_HISTOGRAM_H
 
 #include <grpc/support/histogram.h>
-#include "test/cpp/qps/qpstest.grpc.pb.h"
+#include "src/proto/grpc/testing/stats.grpc.pb.h"
 
 namespace grpc {
 namespace testing {
 
 class Histogram {
  public:
-  Histogram() : impl_(gpr_histogram_create(0.01, 60e9)) {}
+  // TODO: look into making histogram params not hardcoded for C++
+  Histogram()
+      : impl_(gpr_histogram_create(default_resolution(),
+                                   default_max_possible())) {}
   ~Histogram() {
     if (impl_) gpr_histogram_destroy(impl_);
   }
   Histogram(Histogram&& other) : impl_(other.impl_) { other.impl_ = nullptr; }
 
-  void Merge(Histogram* h) { gpr_histogram_merge(impl_, h->impl_); }
+  void Merge(const Histogram& h) { gpr_histogram_merge(impl_, h.impl_); }
   void Add(double value) { gpr_histogram_add(impl_, value); }
   double Percentile(double pctile) const {
     return gpr_histogram_percentile(impl_, pctile);
@@ -72,6 +75,9 @@ class Histogram {
                                  p.min_seen(), p.max_seen(), p.sum(),
                                  p.sum_of_squares(), p.count());
   }
+
+  static double default_resolution() { return 0.01; }
+  static double default_max_possible() { return 60e9; }
 
  private:
   Histogram(const Histogram&);

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -34,511 +34,485 @@
 #include "src/core/channel/client_channel.h"
 
 #include <stdio.h>
+#include <string.h>
 
-#include "src/core/channel/channel_args.h"
-#include "src/core/channel/child_channel.h"
-#include "src/core/channel/connected_channel.h"
-#include "src/core/iomgr/iomgr.h"
-#include "src/core/iomgr/pollset_set.h"
-#include "src/core/support/string.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/useful.h>
 
+#include "src/core/channel/channel_args.h"
+#include "src/core/channel/connected_channel.h"
+#include "src/core/channel/subchannel_call_holder.h"
+#include "src/core/iomgr/iomgr.h"
+#include "src/core/profiling/timers.h"
+#include "src/core/support/string.h"
+#include "src/core/surface/channel.h"
+#include "src/core/transport/connectivity_state.h"
+
 /* Client channel implementation */
 
-typedef struct call_data call_data;
+typedef grpc_subchannel_call_holder call_data;
 
-typedef struct {
-  /* protects children, child_count, child_capacity, active_child,
-     transport_setup_initiated
-     does not protect channel stacks held by children
-     transport_setup is assumed to be set once during construction */
-  gpr_mu mu;
+typedef struct client_channel_channel_data {
+  /** resolver for this channel */
+  grpc_resolver *resolver;
+  /** have we started resolving this channel */
+  int started_resolving;
 
-  /* the sending child (may be null) */
-  grpc_child_channel *active_child;
-  grpc_mdctx *mdctx;
-
-  /* calls waiting for a channel to be ready */
-  call_data **waiting_children;
-  size_t waiting_child_count;
-  size_t waiting_child_capacity;
-
-  /* transport setup for this channel */
-  grpc_transport_setup *transport_setup;
-  int transport_setup_initiated;
-
-  grpc_channel_args *args;
+  /** mutex protecting client configuration, including all
+      variables below in this data structure */
+  gpr_mu mu_config;
+  /** currently active load balancer - guarded by mu_config */
+  grpc_lb_policy *lb_policy;
+  /** incoming configuration - set by resolver.next
+      guarded by mu_config */
+  grpc_client_config *incoming_configuration;
+  /** a list of closures that are all waiting for config to come in */
+  grpc_closure_list waiting_for_config_closures;
+  /** resolver callback */
+  grpc_closure on_config_changed;
+  /** connectivity state being tracked */
+  grpc_connectivity_state_tracker state_tracker;
+  /** when an lb_policy arrives, should we try to exit idle */
+  int exit_idle_when_lb_policy_arrives;
+  /** owning stack */
+  grpc_channel_stack *owning_stack;
+  /** interested parties (owned) */
+  grpc_pollset_set *interested_parties;
 } channel_data;
 
-typedef enum {
-  CALL_CREATED,
-  CALL_WAITING,
-  CALL_ACTIVE,
-  CALL_CANCELLED
-} call_state;
+/** We create one watcher for each new lb_policy that is returned from a
+   resolver,
+    to watch for state changes from the lb_policy. When a state change is seen,
+   we
+    update the channel, and create a new watcher */
+typedef struct {
+  channel_data *chand;
+  grpc_closure on_changed;
+  grpc_connectivity_state state;
+  grpc_lb_policy *lb_policy;
+} lb_policy_connectivity_watcher;
 
-struct call_data {
-  /* owning element */
+typedef struct {
+  grpc_closure closure;
   grpc_call_element *elem;
+} waiting_call;
 
-  call_state state;
-  gpr_timespec deadline;
-  union {
-    struct {
-      /* our child call stack */
-      grpc_child_call *child_call;
-    } active;
-    grpc_transport_op waiting_op;
-    struct {
-      grpc_linked_mdelem status;
-      grpc_linked_mdelem details;
-    } cancelled;
-  } s;
-};
-
-static int prepare_activate(grpc_call_element *elem,
-                            grpc_child_channel *on_child) {
-  call_data *calld = elem->call_data;
-  channel_data *chand = elem->channel_data;
-  if (calld->state == CALL_CANCELLED) return 0;
-
-  /* no more access to calld->s.waiting allowed */
-  GPR_ASSERT(calld->state == CALL_WAITING);
-
-  if (calld->s.waiting_op.bind_pollset) {
-    grpc_transport_setup_del_interested_party(chand->transport_setup,
-                                              calld->s.waiting_op.bind_pollset);
-  }
-
-  calld->state = CALL_ACTIVE;
-
-  /* create a child call */
-  /* TODO(ctiller): pass the waiting op down here */
-  calld->s.active.child_call =
-      grpc_child_channel_create_call(on_child, elem, NULL);
-
-  return 1;
+static char *cc_get_peer(grpc_exec_ctx *exec_ctx, grpc_call_element *elem) {
+  return grpc_subchannel_call_holder_get_peer(exec_ctx, elem->call_data);
 }
 
-static void complete_activate(grpc_call_element *elem, grpc_transport_op *op) {
-  call_data *calld = elem->call_data;
-  grpc_call_element *child_elem =
-      grpc_child_call_get_top_element(calld->s.active.child_call);
-
-  GPR_ASSERT(calld->state == CALL_ACTIVE);
-
-  /* continue the start call down the stack, this nees to happen after metadata
-     are flushed*/
-  child_elem->filter->start_transport_op(child_elem, op);
-}
-
-static void remove_waiting_child(channel_data *chand, call_data *calld) {
-  size_t new_count;
-  size_t i;
-  for (i = 0, new_count = 0; i < chand->waiting_child_count; i++) {
-    if (chand->waiting_children[i] == calld) {
-      grpc_transport_setup_del_interested_party(
-          chand->transport_setup, calld->s.waiting_op.bind_pollset);
-      continue;
-    }
-    chand->waiting_children[new_count++] = chand->waiting_children[i];
-  }
-  GPR_ASSERT(new_count == chand->waiting_child_count - 1 ||
-             new_count == chand->waiting_child_count);
-  chand->waiting_child_count = new_count;
-}
-
-static void handle_op_after_cancellation(grpc_call_element *elem,
-                                         grpc_transport_op *op) {
-  call_data *calld = elem->call_data;
-  channel_data *chand = elem->channel_data;
-  if (op->send_ops) {
-    grpc_stream_ops_unref_owned_objects(op->send_ops->ops, op->send_ops->nops);
-    op->on_done_send->cb(op->on_done_send->cb_arg, 0);
-  }
-  if (op->recv_ops) {
-    char status[GPR_LTOA_MIN_BUFSIZE];
-    grpc_metadata_batch mdb;
-    gpr_ltoa(GRPC_STATUS_CANCELLED, status);
-    calld->s.cancelled.status.md =
-        grpc_mdelem_from_strings(chand->mdctx, "grpc-status", status);
-    calld->s.cancelled.details.md =
-        grpc_mdelem_from_strings(chand->mdctx, "grpc-message", "Cancelled");
-    calld->s.cancelled.status.prev = calld->s.cancelled.details.next = NULL;
-    calld->s.cancelled.status.next = &calld->s.cancelled.details;
-    calld->s.cancelled.details.prev = &calld->s.cancelled.status;
-    mdb.list.head = &calld->s.cancelled.status;
-    mdb.list.tail = &calld->s.cancelled.details;
-    mdb.garbage.head = mdb.garbage.tail = NULL;
-    mdb.deadline = gpr_inf_future;
-    grpc_sopb_add_metadata(op->recv_ops, mdb);
-    *op->recv_state = GRPC_STREAM_CLOSED;
-    op->on_done_recv->cb(op->on_done_recv->cb_arg, 1);
-  }
-  if (op->on_consumed) {
-    op->on_consumed->cb(op->on_consumed->cb_arg, 0);
-  }
-}
-
-static void cc_start_transport_op(grpc_call_element *elem,
-                                  grpc_transport_op *op) {
-  call_data *calld = elem->call_data;
-  channel_data *chand = elem->channel_data;
-  grpc_call_element *child_elem;
-  grpc_transport_op waiting_op;
-  GPR_ASSERT(elem->filter == &grpc_client_channel_filter);
+static void cc_start_transport_stream_op(grpc_exec_ctx *exec_ctx,
+                                         grpc_call_element *elem,
+                                         grpc_transport_stream_op *op) {
   GRPC_CALL_LOG_OP(GPR_INFO, elem, op);
+  grpc_subchannel_call_holder_perform_op(exec_ctx, elem->call_data, op);
+}
 
-  gpr_mu_lock(&chand->mu);
-  switch (calld->state) {
-    case CALL_ACTIVE:
-      child_elem = grpc_child_call_get_top_element(calld->s.active.child_call);
-      gpr_mu_unlock(&chand->mu);
-      child_elem->filter->start_transport_op(child_elem, op);
-      break;
-    case CALL_CREATED:
-      if (op->cancel_with_status != GRPC_STATUS_OK) {
-        calld->state = CALL_CANCELLED;
-        gpr_mu_unlock(&chand->mu);
-        handle_op_after_cancellation(elem, op);
-      } else {
-        calld->state = CALL_WAITING;
-        calld->s.waiting_op.bind_pollset = NULL;
-        if (chand->active_child) {
-          /* channel is connected - use the connected stack */
-          if (prepare_activate(elem, chand->active_child)) {
-            gpr_mu_unlock(&chand->mu);
-            /* activate the request (pass it down) outside the lock */
-            complete_activate(elem, op);
-          } else {
-            gpr_mu_unlock(&chand->mu);
-          }
-        } else {
-          /* check to see if we should initiate a connection (if we're not
-             already),
-             but don't do so until outside the lock to avoid re-entrancy
-             problems if
-             the callback is immediate */
-          int initiate_transport_setup = 0;
-          if (!chand->transport_setup_initiated) {
-            chand->transport_setup_initiated = 1;
-            initiate_transport_setup = 1;
-          }
-          /* add this call to the waiting set to be resumed once we have a child
-             channel stack, growing the waiting set if needed */
-          if (chand->waiting_child_count == chand->waiting_child_capacity) {
-            chand->waiting_child_capacity =
-                GPR_MAX(chand->waiting_child_capacity * 2, 8);
-            chand->waiting_children = gpr_realloc(
-                chand->waiting_children,
-                chand->waiting_child_capacity * sizeof(call_data *));
-          }
-          calld->s.waiting_op = *op;
-          chand->waiting_children[chand->waiting_child_count++] = calld;
-          grpc_transport_setup_add_interested_party(chand->transport_setup,
-                                                    op->bind_pollset);
-          gpr_mu_unlock(&chand->mu);
+static void watch_lb_policy(grpc_exec_ctx *exec_ctx, channel_data *chand,
+                            grpc_lb_policy *lb_policy,
+                            grpc_connectivity_state current_state);
 
-          /* finally initiate transport setup if needed */
-          if (initiate_transport_setup) {
-            grpc_transport_setup_initiate(chand->transport_setup);
-          }
-        }
-      }
-      break;
-    case CALL_WAITING:
-      if (op->cancel_with_status != GRPC_STATUS_OK) {
-        waiting_op = calld->s.waiting_op;
-        remove_waiting_child(chand, calld);
-        calld->state = CALL_CANCELLED;
-        gpr_mu_unlock(&chand->mu);
-        handle_op_after_cancellation(elem, &waiting_op);
-        handle_op_after_cancellation(elem, op);
-      } else {
-        GPR_ASSERT((calld->s.waiting_op.send_ops == NULL) !=
-                   (op->send_ops == NULL));
-        GPR_ASSERT((calld->s.waiting_op.recv_ops == NULL) !=
-                   (op->recv_ops == NULL));
-        if (op->send_ops) {
-          calld->s.waiting_op.send_ops = op->send_ops;
-          calld->s.waiting_op.is_last_send = op->is_last_send;
-          calld->s.waiting_op.on_done_send = op->on_done_send;
-        }
-        if (op->recv_ops) {
-          calld->s.waiting_op.recv_ops = op->recv_ops;
-          calld->s.waiting_op.recv_state = op->recv_state;
-          calld->s.waiting_op.on_done_recv = op->on_done_recv;
-        }
-        gpr_mu_unlock(&chand->mu);
-        if (op->on_consumed) {
-          op->on_consumed->cb(op->on_consumed->cb_arg, 0);
-        }
-      }
-      break;
-    case CALL_CANCELLED:
-      gpr_mu_unlock(&chand->mu);
-      handle_op_after_cancellation(elem, op);
-      break;
+static void on_lb_policy_state_changed_locked(
+    grpc_exec_ctx *exec_ctx, lb_policy_connectivity_watcher *w) {
+  grpc_connectivity_state publish_state = w->state;
+  /* check if the notification is for a stale policy */
+  if (w->lb_policy != w->chand->lb_policy) return;
+
+  if (publish_state == GRPC_CHANNEL_FATAL_FAILURE &&
+      w->chand->resolver != NULL) {
+    publish_state = GRPC_CHANNEL_TRANSIENT_FAILURE;
+    grpc_resolver_channel_saw_error(exec_ctx, w->chand->resolver);
+    GRPC_LB_POLICY_UNREF(exec_ctx, w->chand->lb_policy, "channel");
+    w->chand->lb_policy = NULL;
+  }
+  grpc_connectivity_state_set(exec_ctx, &w->chand->state_tracker, publish_state,
+                              "lb_changed");
+  if (w->state != GRPC_CHANNEL_FATAL_FAILURE) {
+    watch_lb_policy(exec_ctx, w->chand, w->lb_policy, w->state);
   }
 }
 
-static void channel_op(grpc_channel_element *elem,
-                       grpc_channel_element *from_elem, grpc_channel_op *op) {
-  channel_data *chand = elem->channel_data;
-  grpc_child_channel *child_channel;
-  grpc_channel_op rop;
-  GPR_ASSERT(elem->filter == &grpc_client_channel_filter);
+static void on_lb_policy_state_changed(grpc_exec_ctx *exec_ctx, void *arg,
+                                       bool iomgr_success) {
+  lb_policy_connectivity_watcher *w = arg;
 
-  switch (op->type) {
-    case GRPC_CHANNEL_GOAWAY:
-      /* sending goaway: clear out the active child on the way through */
-      gpr_mu_lock(&chand->mu);
-      child_channel = chand->active_child;
-      chand->active_child = NULL;
-      gpr_mu_unlock(&chand->mu);
-      if (child_channel) {
-        grpc_child_channel_handle_op(child_channel, op);
-        grpc_child_channel_destroy(child_channel, 1);
-      } else {
-        gpr_slice_unref(op->data.goaway.message);
-      }
-      break;
-    case GRPC_CHANNEL_DISCONNECT:
-      /* sending disconnect: clear out the active child on the way through */
-      gpr_mu_lock(&chand->mu);
-      child_channel = chand->active_child;
-      chand->active_child = NULL;
-      gpr_mu_unlock(&chand->mu);
-      if (child_channel) {
-        grpc_child_channel_destroy(child_channel, 1);
-      }
-      /* fake a transport closed to satisfy the refcounting in client */
-      rop.type = GRPC_TRANSPORT_CLOSED;
-      rop.dir = GRPC_CALL_UP;
-      grpc_channel_next_op(elem, &rop);
-      break;
-    case GRPC_TRANSPORT_GOAWAY:
-      /* receiving goaway: if it's from our active child, drop the active child;
-         in all cases consume the event here */
-      gpr_mu_lock(&chand->mu);
-      child_channel = grpc_channel_stack_from_top_element(from_elem);
-      if (child_channel == chand->active_child) {
-        chand->active_child = NULL;
-      } else {
-        child_channel = NULL;
-      }
-      gpr_mu_unlock(&chand->mu);
-      if (child_channel) {
-        grpc_child_channel_destroy(child_channel, 0);
-      }
-      gpr_slice_unref(op->data.goaway.message);
-      break;
-    case GRPC_TRANSPORT_CLOSED:
-      /* receiving disconnect: if it's from our active child, drop the active
-         child; in all cases consume the event here */
-      gpr_mu_lock(&chand->mu);
-      child_channel = grpc_channel_stack_from_top_element(from_elem);
-      if (child_channel == chand->active_child) {
-        chand->active_child = NULL;
-      } else {
-        child_channel = NULL;
-      }
-      gpr_mu_unlock(&chand->mu);
-      if (child_channel) {
-        grpc_child_channel_destroy(child_channel, 0);
-      }
-      break;
-    default:
-      switch (op->dir) {
-        case GRPC_CALL_UP:
-          grpc_channel_next_op(elem, op);
-          break;
-        case GRPC_CALL_DOWN:
-          gpr_log(GPR_ERROR, "unhandled channel op: %d", op->type);
-          abort();
-          break;
-      }
-      break;
+  gpr_mu_lock(&w->chand->mu_config);
+  on_lb_policy_state_changed_locked(exec_ctx, w);
+  gpr_mu_unlock(&w->chand->mu_config);
+
+  GRPC_CHANNEL_STACK_UNREF(exec_ctx, w->chand->owning_stack, "watch_lb_policy");
+  gpr_free(w);
+}
+
+static void watch_lb_policy(grpc_exec_ctx *exec_ctx, channel_data *chand,
+                            grpc_lb_policy *lb_policy,
+                            grpc_connectivity_state current_state) {
+  lb_policy_connectivity_watcher *w = gpr_malloc(sizeof(*w));
+  GRPC_CHANNEL_STACK_REF(chand->owning_stack, "watch_lb_policy");
+
+  w->chand = chand;
+  grpc_closure_init(&w->on_changed, on_lb_policy_state_changed, w);
+  w->state = current_state;
+  w->lb_policy = lb_policy;
+  grpc_lb_policy_notify_on_state_change(exec_ctx, lb_policy, &w->state,
+                                        &w->on_changed);
+}
+
+static void cc_on_config_changed(grpc_exec_ctx *exec_ctx, void *arg,
+                                 bool iomgr_success) {
+  channel_data *chand = arg;
+  grpc_lb_policy *lb_policy = NULL;
+  grpc_lb_policy *old_lb_policy;
+  grpc_connectivity_state state = GRPC_CHANNEL_TRANSIENT_FAILURE;
+  int exit_idle = 0;
+
+  if (chand->incoming_configuration != NULL) {
+    lb_policy = grpc_client_config_get_lb_policy(chand->incoming_configuration);
+    if (lb_policy != NULL) {
+      GRPC_LB_POLICY_REF(lb_policy, "channel");
+      GRPC_LB_POLICY_REF(lb_policy, "config_change");
+      state = grpc_lb_policy_check_connectivity(exec_ctx, lb_policy);
+    }
+
+    grpc_client_config_unref(exec_ctx, chand->incoming_configuration);
   }
+
+  chand->incoming_configuration = NULL;
+
+  if (lb_policy != NULL) {
+    grpc_pollset_set_add_pollset_set(exec_ctx, lb_policy->interested_parties,
+                                     chand->interested_parties);
+  }
+
+  gpr_mu_lock(&chand->mu_config);
+  old_lb_policy = chand->lb_policy;
+  chand->lb_policy = lb_policy;
+  if (lb_policy != NULL || chand->resolver == NULL /* disconnected */) {
+    grpc_exec_ctx_enqueue_list(exec_ctx, &chand->waiting_for_config_closures,
+                               NULL);
+  }
+  if (lb_policy != NULL && chand->exit_idle_when_lb_policy_arrives) {
+    GRPC_LB_POLICY_REF(lb_policy, "exit_idle");
+    exit_idle = 1;
+    chand->exit_idle_when_lb_policy_arrives = 0;
+  }
+
+  if (iomgr_success && chand->resolver) {
+    grpc_connectivity_state_set(exec_ctx, &chand->state_tracker, state,
+                                "new_lb+resolver");
+    if (lb_policy != NULL) {
+      watch_lb_policy(exec_ctx, chand, lb_policy, state);
+    }
+    GRPC_CHANNEL_STACK_REF(chand->owning_stack, "resolver");
+    grpc_resolver_next(exec_ctx, chand->resolver,
+                       &chand->incoming_configuration,
+                       &chand->on_config_changed);
+    gpr_mu_unlock(&chand->mu_config);
+  } else {
+    if (chand->resolver != NULL) {
+      grpc_resolver_shutdown(exec_ctx, chand->resolver);
+      GRPC_RESOLVER_UNREF(exec_ctx, chand->resolver, "channel");
+      chand->resolver = NULL;
+    }
+    grpc_connectivity_state_set(exec_ctx, &chand->state_tracker,
+                                GRPC_CHANNEL_FATAL_FAILURE, "resolver_gone");
+    gpr_mu_unlock(&chand->mu_config);
+  }
+
+  if (exit_idle) {
+    grpc_lb_policy_exit_idle(exec_ctx, lb_policy);
+    GRPC_LB_POLICY_UNREF(exec_ctx, lb_policy, "exit_idle");
+  }
+
+  if (old_lb_policy != NULL) {
+    grpc_pollset_set_del_pollset_set(
+        exec_ctx, old_lb_policy->interested_parties, chand->interested_parties);
+    GRPC_LB_POLICY_UNREF(exec_ctx, old_lb_policy, "channel");
+  }
+
+  if (lb_policy != NULL) {
+    GRPC_LB_POLICY_UNREF(exec_ctx, lb_policy, "config_change");
+  }
+
+  GRPC_CHANNEL_STACK_UNREF(exec_ctx, chand->owning_stack, "resolver");
+}
+
+static void cc_start_transport_op(grpc_exec_ctx *exec_ctx,
+                                  grpc_channel_element *elem,
+                                  grpc_transport_op *op) {
+  channel_data *chand = elem->channel_data;
+
+  grpc_exec_ctx_enqueue(exec_ctx, op->on_consumed, true, NULL);
+
+  GPR_ASSERT(op->set_accept_stream == false);
+  if (op->bind_pollset != NULL) {
+    grpc_pollset_set_add_pollset(exec_ctx, chand->interested_parties,
+                                 op->bind_pollset);
+  }
+
+  gpr_mu_lock(&chand->mu_config);
+  if (op->on_connectivity_state_change != NULL) {
+    grpc_connectivity_state_notify_on_state_change(
+        exec_ctx, &chand->state_tracker, op->connectivity_state,
+        op->on_connectivity_state_change);
+    op->on_connectivity_state_change = NULL;
+    op->connectivity_state = NULL;
+  }
+
+  if (op->send_ping != NULL) {
+    if (chand->lb_policy == NULL) {
+      grpc_exec_ctx_enqueue(exec_ctx, op->send_ping, false, NULL);
+    } else {
+      grpc_lb_policy_ping_one(exec_ctx, chand->lb_policy, op->send_ping);
+      op->bind_pollset = NULL;
+    }
+    op->send_ping = NULL;
+  }
+
+  if (op->disconnect && chand->resolver != NULL) {
+    grpc_connectivity_state_set(exec_ctx, &chand->state_tracker,
+                                GRPC_CHANNEL_FATAL_FAILURE, "disconnect");
+    grpc_resolver_shutdown(exec_ctx, chand->resolver);
+    GRPC_RESOLVER_UNREF(exec_ctx, chand->resolver, "channel");
+    chand->resolver = NULL;
+    if (chand->lb_policy != NULL) {
+      grpc_pollset_set_del_pollset_set(exec_ctx,
+                                       chand->lb_policy->interested_parties,
+                                       chand->interested_parties);
+      GRPC_LB_POLICY_UNREF(exec_ctx, chand->lb_policy, "channel");
+      chand->lb_policy = NULL;
+    }
+  }
+  gpr_mu_unlock(&chand->mu_config);
+}
+
+typedef struct {
+  grpc_metadata_batch *initial_metadata;
+  grpc_connected_subchannel **connected_subchannel;
+  grpc_closure *on_ready;
+  grpc_call_element *elem;
+  grpc_closure closure;
+} continue_picking_args;
+
+static int cc_pick_subchannel(grpc_exec_ctx *exec_ctx, void *arg,
+                              grpc_metadata_batch *initial_metadata,
+                              grpc_connected_subchannel **connected_subchannel,
+                              grpc_closure *on_ready);
+
+static void continue_picking(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
+  continue_picking_args *cpa = arg;
+  if (!success) {
+    grpc_exec_ctx_enqueue(exec_ctx, cpa->on_ready, false, NULL);
+  } else if (cpa->connected_subchannel == NULL) {
+    /* cancelled, do nothing */
+  } else if (cc_pick_subchannel(exec_ctx, cpa->elem, cpa->initial_metadata,
+                                cpa->connected_subchannel, cpa->on_ready)) {
+    grpc_exec_ctx_enqueue(exec_ctx, cpa->on_ready, true, NULL);
+  }
+  gpr_free(cpa);
+}
+
+static int cc_pick_subchannel(grpc_exec_ctx *exec_ctx, void *elemp,
+                              grpc_metadata_batch *initial_metadata,
+                              grpc_connected_subchannel **connected_subchannel,
+                              grpc_closure *on_ready) {
+  grpc_call_element *elem = elemp;
+  channel_data *chand = elem->channel_data;
+  call_data *calld = elem->call_data;
+  continue_picking_args *cpa;
+  grpc_closure *closure;
+
+  GPR_ASSERT(connected_subchannel);
+
+  gpr_mu_lock(&chand->mu_config);
+  if (initial_metadata == NULL) {
+    if (chand->lb_policy != NULL) {
+      grpc_lb_policy_cancel_pick(exec_ctx, chand->lb_policy,
+                                 connected_subchannel);
+    }
+    for (closure = chand->waiting_for_config_closures.head; closure != NULL;
+         closure = grpc_closure_next(closure)) {
+      cpa = closure->cb_arg;
+      if (cpa->connected_subchannel == connected_subchannel) {
+        cpa->connected_subchannel = NULL;
+        grpc_exec_ctx_enqueue(exec_ctx, cpa->on_ready, false, NULL);
+      }
+    }
+    gpr_mu_unlock(&chand->mu_config);
+    return 1;
+  }
+  if (chand->lb_policy != NULL) {
+    grpc_lb_policy *lb_policy = chand->lb_policy;
+    int r;
+    GRPC_LB_POLICY_REF(lb_policy, "cc_pick_subchannel");
+    gpr_mu_unlock(&chand->mu_config);
+    r = grpc_lb_policy_pick(exec_ctx, lb_policy, calld->pollset,
+                            initial_metadata, connected_subchannel, on_ready);
+    GRPC_LB_POLICY_UNREF(exec_ctx, lb_policy, "cc_pick_subchannel");
+    return r;
+  }
+  if (chand->resolver != NULL && !chand->started_resolving) {
+    chand->started_resolving = 1;
+    GRPC_CHANNEL_STACK_REF(chand->owning_stack, "resolver");
+    grpc_resolver_next(exec_ctx, chand->resolver,
+                       &chand->incoming_configuration,
+                       &chand->on_config_changed);
+  }
+  cpa = gpr_malloc(sizeof(*cpa));
+  cpa->initial_metadata = initial_metadata;
+  cpa->connected_subchannel = connected_subchannel;
+  cpa->on_ready = on_ready;
+  cpa->elem = elem;
+  grpc_closure_init(&cpa->closure, continue_picking, cpa);
+  grpc_closure_list_add(&chand->waiting_for_config_closures, &cpa->closure, 1);
+  gpr_mu_unlock(&chand->mu_config);
+  return 0;
 }
 
 /* Constructor for call_data */
-static void init_call_elem(grpc_call_element *elem,
-                           const void *server_transport_data,
-                           grpc_transport_op *initial_op) {
-  call_data *calld = elem->call_data;
-
-  /* TODO(ctiller): is there something useful we can do here? */
-  GPR_ASSERT(initial_op == NULL);
-
-  GPR_ASSERT(elem->filter == &grpc_client_channel_filter);
-  GPR_ASSERT(server_transport_data == NULL);
-  calld->elem = elem;
-  calld->state = CALL_CREATED;
-  calld->deadline = gpr_inf_future;
+static void init_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
+                           grpc_call_element_args *args) {
+  grpc_subchannel_call_holder_init(elem->call_data, cc_pick_subchannel, elem,
+                                   args->call_stack);
 }
 
 /* Destructor for call_data */
-static void destroy_call_elem(grpc_call_element *elem) {
-  call_data *calld = elem->call_data;
-  channel_data *chand = elem->channel_data;
-
-  /* if the call got activated, we need to destroy the child stack also, and
-     remove it from the in-flight requests tracked by the child_entry we
-     picked */
-  gpr_mu_lock(&chand->mu);
-  switch (calld->state) {
-    case CALL_ACTIVE:
-      gpr_mu_unlock(&chand->mu);
-      grpc_child_call_destroy(calld->s.active.child_call);
-      break;
-    case CALL_WAITING:
-      remove_waiting_child(chand, calld);
-      gpr_mu_unlock(&chand->mu);
-      break;
-    default:
-      gpr_mu_unlock(&chand->mu);
-      break;
-  }
-  GPR_ASSERT(calld->state != CALL_WAITING);
+static void destroy_call_elem(grpc_exec_ctx *exec_ctx,
+                              grpc_call_element *elem) {
+  grpc_subchannel_call_holder_destroy(exec_ctx, elem->call_data);
 }
 
 /* Constructor for channel_data */
-static void init_channel_elem(grpc_channel_element *elem,
-                              const grpc_channel_args *args,
-                              grpc_mdctx *metadata_context, int is_first,
-                              int is_last) {
+static void init_channel_elem(grpc_exec_ctx *exec_ctx,
+                              grpc_channel_element *elem,
+                              grpc_channel_element_args *args) {
   channel_data *chand = elem->channel_data;
 
-  GPR_ASSERT(!is_first);
-  GPR_ASSERT(is_last);
+  memset(chand, 0, sizeof(*chand));
+
+  GPR_ASSERT(args->is_last);
   GPR_ASSERT(elem->filter == &grpc_client_channel_filter);
 
-  gpr_mu_init(&chand->mu);
-  chand->active_child = NULL;
-  chand->waiting_children = NULL;
-  chand->waiting_child_count = 0;
-  chand->waiting_child_capacity = 0;
-  chand->transport_setup = NULL;
-  chand->transport_setup_initiated = 0;
-  chand->args = grpc_channel_args_copy(args);
-  chand->mdctx = metadata_context;
+  gpr_mu_init(&chand->mu_config);
+  grpc_closure_init(&chand->on_config_changed, cc_on_config_changed, chand);
+  chand->owning_stack = args->channel_stack;
+
+  grpc_connectivity_state_init(&chand->state_tracker, GRPC_CHANNEL_IDLE,
+                               "client_channel");
+  chand->interested_parties = grpc_pollset_set_create();
 }
 
 /* Destructor for channel_data */
-static void destroy_channel_elem(grpc_channel_element *elem) {
+static void destroy_channel_elem(grpc_exec_ctx *exec_ctx,
+                                 grpc_channel_element *elem) {
   channel_data *chand = elem->channel_data;
 
-  grpc_transport_setup_cancel(chand->transport_setup);
-
-  if (chand->active_child) {
-    grpc_child_channel_destroy(chand->active_child, 1);
-    chand->active_child = NULL;
+  if (chand->resolver != NULL) {
+    grpc_resolver_shutdown(exec_ctx, chand->resolver);
+    GRPC_RESOLVER_UNREF(exec_ctx, chand->resolver, "channel");
   }
+  if (chand->lb_policy != NULL) {
+    grpc_pollset_set_del_pollset_set(exec_ctx,
+                                     chand->lb_policy->interested_parties,
+                                     chand->interested_parties);
+    GRPC_LB_POLICY_UNREF(exec_ctx, chand->lb_policy, "channel");
+  }
+  grpc_connectivity_state_destroy(exec_ctx, &chand->state_tracker);
+  grpc_pollset_set_destroy(chand->interested_parties);
+  gpr_mu_destroy(&chand->mu_config);
+}
 
-  grpc_channel_args_destroy(chand->args);
-
-  gpr_mu_destroy(&chand->mu);
-  GPR_ASSERT(chand->waiting_child_count == 0);
-  gpr_free(chand->waiting_children);
+static void cc_set_pollset(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
+                           grpc_pollset *pollset) {
+  call_data *calld = elem->call_data;
+  calld->pollset = pollset;
 }
 
 const grpc_channel_filter grpc_client_channel_filter = {
-    cc_start_transport_op, channel_op,           sizeof(call_data),
-    init_call_elem,        destroy_call_elem,    sizeof(channel_data),
-    init_channel_elem,     destroy_channel_elem, "client-channel",
+    cc_start_transport_stream_op, cc_start_transport_op, sizeof(call_data),
+    init_call_elem, cc_set_pollset, destroy_call_elem, sizeof(channel_data),
+    init_channel_elem, destroy_channel_elem, cc_get_peer, "client-channel",
 };
 
-grpc_transport_setup_result grpc_client_channel_transport_setup_complete(
-    grpc_channel_stack *channel_stack, grpc_transport *transport,
-    grpc_channel_filter const **channel_filters, size_t num_channel_filters,
-    grpc_mdctx *mdctx) {
-  /* we just got a new transport: lets create a child channel stack for it */
-  grpc_channel_element *elem = grpc_channel_stack_last_element(channel_stack);
-  channel_data *chand = elem->channel_data;
-  size_t num_child_filters = 2 + num_channel_filters;
-  grpc_channel_filter const **child_filters;
-  grpc_transport_setup_result result;
-  grpc_child_channel *old_active = NULL;
-  call_data **waiting_children;
-  size_t waiting_child_count;
-  size_t i;
-  grpc_transport_op *call_ops;
-
-  /* build the child filter stack */
-  child_filters = gpr_malloc(sizeof(grpc_channel_filter *) * num_child_filters);
-  /* we always need a link back filter to get back to the connected channel */
-  child_filters[0] = &grpc_child_channel_top_filter;
-  for (i = 0; i < num_channel_filters; i++) {
-    child_filters[i + 1] = channel_filters[i];
-  }
-  /* and we always need a connected channel to talk to the transport */
-  child_filters[num_child_filters - 1] = &grpc_connected_channel_filter;
-
-  GPR_ASSERT(elem->filter == &grpc_client_channel_filter);
-
-  /* BEGIN LOCKING CHANNEL */
-  gpr_mu_lock(&chand->mu);
-  chand->transport_setup_initiated = 0;
-
-  if (chand->active_child) {
-    old_active = chand->active_child;
-  }
-  chand->active_child = grpc_child_channel_create(
-      elem, child_filters, num_child_filters, chand->args, mdctx);
-  result =
-      grpc_connected_channel_bind_transport(chand->active_child, transport);
-
-  /* capture the waiting children - we'll activate them outside the lock
-     to avoid re-entrancy problems */
-  waiting_children = chand->waiting_children;
-  waiting_child_count = chand->waiting_child_count;
-  /* bumping up inflight_requests here avoids taking a lock per rpc below */
-
-  chand->waiting_children = NULL;
-  chand->waiting_child_count = 0;
-  chand->waiting_child_capacity = 0;
-
-  call_ops = gpr_malloc(sizeof(*call_ops) * waiting_child_count);
-
-  for (i = 0; i < waiting_child_count; i++) {
-    call_ops[i] = waiting_children[i]->s.waiting_op;
-    if (!prepare_activate(waiting_children[i]->elem, chand->active_child)) {
-      waiting_children[i] = NULL;
-      grpc_transport_op_finish_with_failure(&call_ops[i]);
-    }
-  }
-
-  /* END LOCKING CHANNEL */
-  gpr_mu_unlock(&chand->mu);
-
-  /* activate any pending operations - this is safe to do as we guarantee one
-     and only one write operation per request at the surface api - if we lose
-     that guarantee we need to do some curly locking here */
-  for (i = 0; i < waiting_child_count; i++) {
-    if (waiting_children[i]) {
-      complete_activate(waiting_children[i]->elem, &call_ops[i]);
-    }
-  }
-  gpr_free(waiting_children);
-  gpr_free(call_ops);
-  gpr_free(child_filters);
-
-  if (old_active) {
-    grpc_child_channel_destroy(old_active, 1);
-  }
-
-  return result;
-}
-
-void grpc_client_channel_set_transport_setup(grpc_channel_stack *channel_stack,
-                                             grpc_transport_setup *setup) {
+void grpc_client_channel_set_resolver(grpc_exec_ctx *exec_ctx,
+                                      grpc_channel_stack *channel_stack,
+                                      grpc_resolver *resolver) {
   /* post construction initialization: set the transport setup pointer */
   grpc_channel_element *elem = grpc_channel_stack_last_element(channel_stack);
   channel_data *chand = elem->channel_data;
-  GPR_ASSERT(!chand->transport_setup);
-  chand->transport_setup = setup;
+  gpr_mu_lock(&chand->mu_config);
+  GPR_ASSERT(!chand->resolver);
+  chand->resolver = resolver;
+  GRPC_RESOLVER_REF(resolver, "channel");
+  if (!grpc_closure_list_empty(chand->waiting_for_config_closures) ||
+      chand->exit_idle_when_lb_policy_arrives) {
+    chand->started_resolving = 1;
+    GRPC_CHANNEL_STACK_REF(chand->owning_stack, "resolver");
+    grpc_resolver_next(exec_ctx, resolver, &chand->incoming_configuration,
+                       &chand->on_config_changed);
+  }
+  gpr_mu_unlock(&chand->mu_config);
+}
+
+grpc_connectivity_state grpc_client_channel_check_connectivity_state(
+    grpc_exec_ctx *exec_ctx, grpc_channel_element *elem, int try_to_connect) {
+  channel_data *chand = elem->channel_data;
+  grpc_connectivity_state out;
+  gpr_mu_lock(&chand->mu_config);
+  out = grpc_connectivity_state_check(&chand->state_tracker);
+  if (out == GRPC_CHANNEL_IDLE && try_to_connect) {
+    if (chand->lb_policy != NULL) {
+      grpc_lb_policy_exit_idle(exec_ctx, chand->lb_policy);
+    } else {
+      chand->exit_idle_when_lb_policy_arrives = 1;
+      if (!chand->started_resolving && chand->resolver != NULL) {
+        GRPC_CHANNEL_STACK_REF(chand->owning_stack, "resolver");
+        chand->started_resolving = 1;
+        grpc_resolver_next(exec_ctx, chand->resolver,
+                           &chand->incoming_configuration,
+                           &chand->on_config_changed);
+      }
+    }
+  }
+  gpr_mu_unlock(&chand->mu_config);
+  return out;
+}
+
+typedef struct {
+  channel_data *chand;
+  grpc_pollset *pollset;
+  grpc_closure *on_complete;
+  grpc_closure my_closure;
+} external_connectivity_watcher;
+
+static void on_external_watch_complete(grpc_exec_ctx *exec_ctx, void *arg,
+                                       bool iomgr_success) {
+  external_connectivity_watcher *w = arg;
+  grpc_closure *follow_up = w->on_complete;
+  grpc_pollset_set_del_pollset(exec_ctx, w->chand->interested_parties,
+                               w->pollset);
+  GRPC_CHANNEL_STACK_UNREF(exec_ctx, w->chand->owning_stack,
+                           "external_connectivity_watcher");
+  gpr_free(w);
+  follow_up->cb(exec_ctx, follow_up->cb_arg, iomgr_success);
+}
+
+void grpc_client_channel_watch_connectivity_state(
+    grpc_exec_ctx *exec_ctx, grpc_channel_element *elem, grpc_pollset *pollset,
+    grpc_connectivity_state *state, grpc_closure *on_complete) {
+  channel_data *chand = elem->channel_data;
+  external_connectivity_watcher *w = gpr_malloc(sizeof(*w));
+  w->chand = chand;
+  w->pollset = pollset;
+  w->on_complete = on_complete;
+  grpc_pollset_set_add_pollset(exec_ctx, chand->interested_parties, pollset);
+  grpc_closure_init(&w->my_closure, on_external_watch_complete, w);
+  GRPC_CHANNEL_STACK_REF(w->chand->owning_stack,
+                         "external_connectivity_watcher");
+  gpr_mu_lock(&chand->mu_config);
+  grpc_connectivity_state_notify_on_state_change(
+      exec_ctx, &chand->state_tracker, state, &w->my_closure);
+  gpr_mu_unlock(&chand->mu_config);
 }

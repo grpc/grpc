@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -35,8 +35,11 @@
 #include "src/core/channel/channel_args.h"
 #include "src/core/support/string.h"
 
+#include <grpc/census.h>
 #include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
+#include <grpc/support/useful.h>
 
 #include <string.h>
 
@@ -53,16 +56,16 @@ static grpc_arg copy_arg(const grpc_arg *src) {
       break;
     case GRPC_ARG_POINTER:
       dst.value.pointer = src->value.pointer;
-      dst.value.pointer.p = src->value.pointer.copy
-                                ? src->value.pointer.copy(src->value.pointer.p)
-                                : src->value.pointer.p;
+      dst.value.pointer.p =
+          src->value.pointer.vtable->copy(src->value.pointer.p);
       break;
   }
   return dst;
 }
 
 grpc_channel_args *grpc_channel_args_copy_and_add(const grpc_channel_args *src,
-                                                  const grpc_arg *to_add) {
+                                                  const grpc_arg *to_add,
+                                                  size_t num_to_add) {
   grpc_channel_args *dst = gpr_malloc(sizeof(grpc_channel_args));
   size_t i;
   size_t src_num_args = (src == NULL) ? 0 : src->num_args;
@@ -71,17 +74,76 @@ grpc_channel_args *grpc_channel_args_copy_and_add(const grpc_channel_args *src,
     dst->args = NULL;
     return dst;
   }
-  dst->num_args = src_num_args + ((to_add == NULL) ? 0 : 1);
+  dst->num_args = src_num_args + num_to_add;
   dst->args = gpr_malloc(sizeof(grpc_arg) * dst->num_args);
   for (i = 0; i < src_num_args; i++) {
     dst->args[i] = copy_arg(&src->args[i]);
   }
-  if (to_add != NULL) dst->args[src_num_args] = copy_arg(to_add);
+  for (i = 0; i < num_to_add; i++) {
+    dst->args[i + src_num_args] = copy_arg(&to_add[i]);
+  }
   return dst;
 }
 
 grpc_channel_args *grpc_channel_args_copy(const grpc_channel_args *src) {
-  return grpc_channel_args_copy_and_add(src, NULL);
+  return grpc_channel_args_copy_and_add(src, NULL, 0);
+}
+
+grpc_channel_args *grpc_channel_args_merge(const grpc_channel_args *a,
+                                           const grpc_channel_args *b) {
+  return grpc_channel_args_copy_and_add(a, b->args, b->num_args);
+}
+
+static int cmp_arg(const grpc_arg *a, const grpc_arg *b) {
+  int c = GPR_ICMP(a->type, b->type);
+  if (c != 0) return c;
+  c = strcmp(a->key, b->key);
+  if (c != 0) return c;
+  switch (a->type) {
+    case GRPC_ARG_STRING:
+      return strcmp(a->value.string, b->value.string);
+    case GRPC_ARG_INTEGER:
+      return GPR_ICMP(a->value.integer, b->value.integer);
+    case GRPC_ARG_POINTER:
+      c = GPR_ICMP(a->value.pointer.p, b->value.pointer.p);
+      if (c != 0) {
+        c = GPR_ICMP(a->value.pointer.vtable, b->value.pointer.vtable);
+        if (c == 0) {
+          c = a->value.pointer.vtable->cmp(a->value.pointer.p,
+                                           b->value.pointer.p);
+        }
+      }
+      return c;
+  }
+  GPR_UNREACHABLE_CODE(return 0);
+}
+
+/* stabilizing comparison function: since channel_args ordering matters for
+ * keys with the same name, we need to preserve that ordering */
+static int cmp_key_stable(const void *ap, const void *bp) {
+  const grpc_arg *const *a = ap;
+  const grpc_arg *const *b = bp;
+  int c = strcmp((*a)->key, (*b)->key);
+  if (c == 0) c = GPR_ICMP(*a, *b);
+  return c;
+}
+
+grpc_channel_args *grpc_channel_args_normalize(const grpc_channel_args *a) {
+  grpc_arg **args = gpr_malloc(sizeof(grpc_arg *) * a->num_args);
+  for (size_t i = 0; i < a->num_args; i++) {
+    args[i] = &a->args[i];
+  }
+  qsort(args, a->num_args, sizeof(grpc_arg *), cmp_key_stable);
+
+  grpc_channel_args *b = gpr_malloc(sizeof(grpc_channel_args));
+  b->num_args = a->num_args;
+  b->args = gpr_malloc(sizeof(grpc_arg) * b->num_args);
+  for (size_t i = 0; i < a->num_args; i++) {
+    b->args[i] = copy_arg(args[i]);
+  }
+
+  gpr_free(args);
+  return b;
 }
 
 void grpc_channel_args_destroy(grpc_channel_args *a) {
@@ -94,9 +156,7 @@ void grpc_channel_args_destroy(grpc_channel_args *a) {
       case GRPC_ARG_INTEGER:
         break;
       case GRPC_ARG_POINTER:
-        if (a->args[i].value.pointer.destroy) {
-          a->args[i].value.pointer.destroy(a->args[i].value.pointer.p);
-        }
+        a->args[i].value.pointer.vtable->destroy(a->args[i].value.pointer.p);
         break;
     }
     gpr_free(a->args[i].key);
@@ -106,36 +166,106 @@ void grpc_channel_args_destroy(grpc_channel_args *a) {
 }
 
 int grpc_channel_args_is_census_enabled(const grpc_channel_args *a) {
-  unsigned i;
+  size_t i;
   if (a == NULL) return 0;
   for (i = 0; i < a->num_args; i++) {
     if (0 == strcmp(a->args[i].key, GRPC_ARG_ENABLE_CENSUS)) {
-      return a->args[i].value.integer != 0;
+      return a->args[i].value.integer != 0 && census_enabled();
     }
   }
-  return 0;
+  return census_enabled();
 }
 
-grpc_compression_level grpc_channel_args_get_compression_level(
+grpc_compression_algorithm grpc_channel_args_get_compression_algorithm(
     const grpc_channel_args *a) {
   size_t i;
-  if (a) {
-    for (i = 0; a && i < a->num_args; ++i) {
+  if (a == NULL) return 0;
+  for (i = 0; i < a->num_args; ++i) {
+    if (a->args[i].type == GRPC_ARG_INTEGER &&
+        !strcmp(GRPC_COMPRESSION_ALGORITHM_ARG, a->args[i].key)) {
+      return (grpc_compression_algorithm)a->args[i].value.integer;
+      break;
+    }
+  }
+  return GRPC_COMPRESS_NONE;
+}
+
+grpc_channel_args *grpc_channel_args_set_compression_algorithm(
+    grpc_channel_args *a, grpc_compression_algorithm algorithm) {
+  grpc_arg tmp;
+  tmp.type = GRPC_ARG_INTEGER;
+  tmp.key = GRPC_COMPRESSION_ALGORITHM_ARG;
+  tmp.value.integer = algorithm;
+  return grpc_channel_args_copy_and_add(a, &tmp, 1);
+}
+
+/** Returns 1 if the argument for compression algorithm's enabled states bitset
+ * was found in \a a, returning the arg's value in \a states. Otherwise, returns
+ * 0. */
+static int find_compression_algorithm_states_bitset(const grpc_channel_args *a,
+                                                    int **states_arg) {
+  if (a != NULL) {
+    size_t i;
+    for (i = 0; i < a->num_args; ++i) {
       if (a->args[i].type == GRPC_ARG_INTEGER &&
-          !strcmp(GRPC_COMPRESSION_LEVEL_ARG, a->args[i].key)) {
-        return a->args[i].value.integer;
-        break;
+          !strcmp(GRPC_COMPRESSION_ALGORITHM_STATE_ARG, a->args[i].key)) {
+        *states_arg = &a->args[i].value.integer;
+        return 1; /* GPR_TRUE */
       }
     }
   }
-  return GRPC_COMPRESS_LEVEL_NONE;
+  return 0; /* GPR_FALSE */
 }
 
-void grpc_channel_args_set_compression_level(
-    grpc_channel_args **a, grpc_compression_level level) {
-  grpc_arg tmp;
-  tmp.type = GRPC_ARG_INTEGER;
-  tmp.key = GRPC_COMPRESSION_LEVEL_ARG;
-  tmp.value.integer = level;
-  *a = grpc_channel_args_copy_and_add(*a, &tmp);
+grpc_channel_args *grpc_channel_args_compression_algorithm_set_state(
+    grpc_channel_args **a, grpc_compression_algorithm algorithm, int state) {
+  int *states_arg;
+  grpc_channel_args *result = *a;
+  const int states_arg_found =
+      find_compression_algorithm_states_bitset(*a, &states_arg);
+
+  if (states_arg_found) {
+    if (state != 0) {
+      GPR_BITSET((unsigned *)states_arg, algorithm);
+    } else {
+      GPR_BITCLEAR((unsigned *)states_arg, algorithm);
+    }
+  } else {
+    /* create a new arg */
+    grpc_arg tmp;
+    tmp.type = GRPC_ARG_INTEGER;
+    tmp.key = GRPC_COMPRESSION_ALGORITHM_STATE_ARG;
+    /* all enabled by default */
+    tmp.value.integer = (1u << GRPC_COMPRESS_ALGORITHMS_COUNT) - 1;
+    if (state != 0) {
+      GPR_BITSET((unsigned *)&tmp.value.integer, algorithm);
+    } else {
+      GPR_BITCLEAR((unsigned *)&tmp.value.integer, algorithm);
+    }
+    result = grpc_channel_args_copy_and_add(*a, &tmp, 1);
+    grpc_channel_args_destroy(*a);
+    *a = result;
+  }
+  return result;
+}
+
+int grpc_channel_args_compression_algorithm_get_states(
+    const grpc_channel_args *a) {
+  int *states_arg;
+  if (find_compression_algorithm_states_bitset(a, &states_arg)) {
+    return *states_arg;
+  } else {
+    return (1u << GRPC_COMPRESS_ALGORITHMS_COUNT) - 1; /* All algs. enabled */
+  }
+}
+
+int grpc_channel_args_compare(const grpc_channel_args *a,
+                              const grpc_channel_args *b) {
+  int c = GPR_ICMP(a->num_args, b->num_args);
+  if (c != 0) return c;
+  for (size_t i = 0; i < a->num_args; i++) {
+    c = cmp_arg(&a->args[i], &b->args[i]);
+    if (c != 0) return c;
+  }
+  return 0;
 }

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\test\core\transport\chttp2\stream_map_test.c">
+      <Filter>test\core\transport\chttp2</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="test">
+      <UniqueIdentifier>{e3f0964a-a92d-d499-40d9-1300f99d516d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core">
+      <UniqueIdentifier>{ea0f77c0-2f72-1acc-2750-5299dc60b905}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core\transport">
+      <UniqueIdentifier>{6b3238da-d6f4-7dd7-5eaf-44d078e88664}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core\transport\chttp2">
+      <UniqueIdentifier>{fc2a2afd-d5a1-c50e-baa7-b30cf50b8c87}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

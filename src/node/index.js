@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,6 +33,14 @@
 
 'use strict';
 
+var path = require('path');
+
+var SSL_ROOTS_PATH = path.resolve(__dirname, '..', '..', 'etc', 'roots.pem');
+
+if (!process.env.GRPC_DEFAULT_SSL_ROOTS_FILE_PATH) {
+  process.env.GRPC_DEFAULT_SSL_ROOTS_FILE_PATH = SSL_ROOTS_PATH;
+}
+
 var _ = require('lodash');
 
 var ProtoBuf = require('protobufjs');
@@ -41,123 +49,127 @@ var client = require('./src/client.js');
 
 var server = require('./src/server.js');
 
-var grpc = require('bindings')('grpc');
+var Metadata = require('./src/metadata.js');
+
+var grpc = require('./src/grpc_extension');
 
 /**
  * Load a gRPC object from an existing ProtoBuf.Reflect object.
  * @param {ProtoBuf.Reflect.Namespace} value The ProtoBuf object to load.
+ * @param {Object=} options Options to apply to the loaded object
  * @return {Object<string, *>} The resulting gRPC object
  */
-function loadObject(value) {
+exports.loadObject = function loadObject(value, options) {
   var result = {};
   if (value.className === 'Namespace') {
     _.each(value.children, function(child) {
-      result[child.name] = loadObject(child);
+      result[child.name] = loadObject(child, options);
     });
     return result;
   } else if (value.className === 'Service') {
-    return client.makeProtobufClientConstructor(value);
+    return client.makeProtobufClientConstructor(value, options);
   } else if (value.className === 'Message' || value.className === 'Enum') {
     return value.build();
   } else {
     return value;
   }
-}
+};
+
+var loadObject = exports.loadObject;
 
 /**
- * Load a gRPC object from a .proto file.
- * @param {string} filename The file to load
+ * Load a gRPC object from a .proto file. The options object can provide the
+ * following options:
+ * - convertFieldsToCamelCase: Loads this file with that option on protobuf.js
+ *   set as specified. See
+ *   https://github.com/dcodeIO/protobuf.js/wiki/Advanced-options for details
+ * - binaryAsBase64: deserialize bytes values as base64 strings instead of
+ *   Buffers. Defaults to false
+ * - longsAsStrings: deserialize long values as strings instead of objects.
+ *   Defaults to true
+ * @param {string|{root: string, file: string}} filename The file to load
  * @param {string=} format The file format to expect. Must be either 'proto' or
  *     'json'. Defaults to 'proto'
+ * @param {Object=} options Options to apply to the loaded file
  * @return {Object<string, *>} The resulting gRPC object
  */
-function load(filename, format) {
+exports.load = function load(filename, format, options) {
   if (!format) {
     format = 'proto';
   }
-  var builder;
-  switch(format) {
-    case 'proto':
-    builder = ProtoBuf.loadProtoFile(filename);
-    break;
-    case 'json':
-    builder = ProtoBuf.loadJsonFile(filename);
-    break;
-    default:
-    throw new Error('Unrecognized format "' + format + '"');
+  var convertFieldsToCamelCaseOriginal = ProtoBuf.convertFieldsToCamelCase;
+  if(options && options.hasOwnProperty('convertFieldsToCamelCase')) {
+    ProtoBuf.convertFieldsToCamelCase = options.convertFieldsToCamelCase;
   }
-
-  return loadObject(builder.ns);
-}
-
-/**
- * Get a function that a client can use to update metadata with authentication
- * information from a Google Auth credential object, which comes from the
- * google-auth-library.
- * @param {Object} credential The credential object to use
- * @return {function(Object, callback)} Metadata updater function
- */
-function getGoogleAuthDelegate(credential) {
-  /**
-   * Update a metadata object with authentication information.
-   * @param {string} authURI The uri to authenticate to
-   * @param {Object} metadata Metadata object
-   * @param {function(Error, Object)} callback
-   */
-  return function updateMetadata(authURI, metadata, callback) {
-    metadata = _.clone(metadata);
-    if (metadata.Authorization) {
-      metadata.Authorization = _.clone(metadata.Authorization);
-    } else {
-      metadata.Authorization = [];
+  var builder;
+  try {
+    switch(format) {
+      case 'proto':
+      builder = ProtoBuf.loadProtoFile(filename);
+      break;
+      case 'json':
+      builder = ProtoBuf.loadJsonFile(filename);
+      break;
+      default:
+      throw new Error('Unrecognized format "' + format + '"');
     }
-    credential.getRequestMetadata(authURI, function(err, header) {
-      if (err) {
-        callback(err);
-        return;
-      }
-      metadata.Authorization.push(header.Authorization);
-      callback(null, metadata);
-    });
-  };
-}
+  } finally {
+    ProtoBuf.convertFieldsToCamelCase = convertFieldsToCamelCaseOriginal;
+  }
+  return loadObject(builder.ns, options);
+};
 
 /**
- * See docs for loadObject
+ * @see module:src/server.Server
  */
-exports.loadObject = loadObject;
+exports.Server = server.Server;
 
 /**
- * See docs for load
+ * @see module:src/metadata
  */
-exports.load = load;
-
-/**
- * See docs for server.makeServerConstructor
- */
-exports.buildServer = server.makeProtobufServerConstructor;
+exports.Metadata = Metadata;
 
 /**
  * Status name to code number mapping
  */
 exports.status = grpc.status;
+
+/**
+ * Propagate flag name to number mapping
+ */
+exports.propagate = grpc.propagate;
+
 /**
  * Call error name to code number mapping
  */
 exports.callError = grpc.callError;
 
 /**
+ * Write flag name to code number mapping
+ */
+exports.writeFlags = grpc.writeFlags;
+
+/**
  * Credentials factories
  */
-exports.Credentials = grpc.Credentials;
+exports.credentials = require('./src/credentials.js');
 
 /**
  * ServerCredentials factories
  */
 exports.ServerCredentials = grpc.ServerCredentials;
 
-exports.getGoogleAuthDelegate = getGoogleAuthDelegate;
-
+/**
+ * @see module:src/client.makeClientConstructor
+ */
 exports.makeGenericClientConstructor = client.makeClientConstructor;
 
-exports.makeGenericServerConstructor = server.makeServerConstructor;
+/**
+ * @see module:src/client.getClientChannel
+ */
+exports.getClientChannel = client.getClientChannel;
+
+/**
+ * @see module:src/client.waitForClientReady
+ */
+exports.waitForClientReady = client.waitForClientReady;

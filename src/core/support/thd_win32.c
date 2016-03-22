@@ -37,7 +37,6 @@
 
 #ifdef GPR_WIN32
 
-#include <windows.h>
 #include <string.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -106,9 +105,7 @@ int gpr_thd_new(gpr_thd_id *t, void (*thd_body)(void *arg), void *arg,
   return handle != NULL;
 }
 
-gpr_thd_id gpr_thd_currentid(void) {
-  return (gpr_thd_id)g_thd_info;
-}
+gpr_thd_id gpr_thd_currentid(void) { return (gpr_thd_id)g_thd_info; }
 
 void gpr_thd_join(gpr_thd_id t) {
   struct thd_info *info = (struct thd_info *)t;

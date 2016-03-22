@@ -4,5 +4,10 @@ StyleCop.Cache
 test-results
 packages
 Grpc.v12.suo
+Grpc.sdf
+
 TestResult.xml
+coverage_results.xml
+/TestResults
+.vs/
 *.nupkg

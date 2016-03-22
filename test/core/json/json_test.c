@@ -43,16 +43,16 @@
 #include "test/core/util/test_config.h"
 
 typedef struct testing_pair {
-  const char* input;
-  const char* output;
+  const char *input;
+  const char *output;
 } testing_pair;
 
 static testing_pair testing_pairs[] = {
     /* Testing valid parsing. */
-
     /* Testing trivial parses, with de-indentation. */
     {" 0 ", "0"},
     {" 1 ", "1"},
+    {" \"    \" ", "\"    \""},
     {" \"a\" ", "\"a\""},
     {" true ", "true"},
     /* Testing the parser's ability to decode trivial UTF-16. */
@@ -69,8 +69,8 @@ static testing_pair testing_pairs[] = {
      " [ [ ] , { } , [ ] ] ", "[[],{},[]]",
     },
     /* Testing escapes and control chars in key strings. */
-    {" { \"\x7f\\n\\\\a , b\": 1, \"\": 0 } ",
-     "{\"\\u007f\\n\\\\a , b\":1,\"\":0}"},
+    {" { \"\\u007f\x7f\\n\\r\\\"\\f\\b\\\\a , b\": 1, \"\": 0 } ",
+     "{\"\\u007f\\u007f\\n\\r\\\"\\f\\b\\\\a , b\":1,\"\":0}"},
     /* Testing the writer's ability to cut off invalid UTF-8 sequences. */
     {"\"abc\xf0\x9d\x24\"", "\"abc\""},
     {"\"\xff\"", "\"\""},
@@ -96,6 +96,9 @@ static testing_pair testing_pairs[] = {
     {"\"\\udd1ef", NULL},
     {"\"\\ud834\\ud834\"", NULL},
     {"\"\\ud834\\u1234\"", NULL},
+    {"\"\\ud834]\"", NULL},
+    {"\"\\ud834 \"", NULL},
+    {"\"\\ud834\\\\\"", NULL},
     /* Testing embedded invalid whitechars. */
     {"\"\n\"", NULL},
     {"\"\t\"", NULL},
@@ -110,9 +113,15 @@ static testing_pair testing_pairs[] = {
     {"[[]", NULL},
     {"[}", NULL},
     {"{]", NULL},
-    /*Testing trailing comma. */
+    /* Testing bad containers. */
+    {"{x}", NULL},
+    {"{x=0,y}", NULL},
+    /* Testing trailing comma. */
     {"{,}", NULL},
     {"[1,2,3,4,]", NULL},
+    {"{\"a\": 1, }", NULL},
+    /* Testing after-ending characters. */
+    {"{}x", NULL},
     /* Testing having a key syntax in an array. */
     {"[\"x\":0]", NULL},
     /* Testing invalid numbers. */
@@ -131,16 +140,16 @@ static void test_pairs() {
   unsigned i;
 
   for (i = 0; i < GPR_ARRAY_SIZE(testing_pairs); i++) {
-    testing_pair* pair = testing_pairs + i;
-    char* scratchpad = gpr_strdup(pair->input);
-    grpc_json* json;
+    testing_pair *pair = testing_pairs + i;
+    char *scratchpad = gpr_strdup(pair->input);
+    grpc_json *json;
 
     gpr_log(GPR_INFO, "parsing string %i - should %s", i,
             pair->output ? "succeed" : "fail");
     json = grpc_json_parse_string(scratchpad);
 
     if (pair->output) {
-      char* output;
+      char *output;
 
       GPR_ASSERT(json);
       output = grpc_json_dump_to_string(json, 0);
@@ -160,20 +169,21 @@ static void test_pairs() {
 }
 
 static void test_atypical() {
-  char* scratchpad = gpr_strdup("[[],[]]");
-  grpc_json* json = grpc_json_parse_string(scratchpad);
-  grpc_json* brother;
+  char *scratchpad = gpr_strdup("[[],[],[]]");
+  grpc_json *json = grpc_json_parse_string(scratchpad);
+  grpc_json *brother;
 
   GPR_ASSERT(json);
   GPR_ASSERT(json->child);
   brother = json->child->next;
   grpc_json_destroy(json->child);
-  json->child = brother;
+  GPR_ASSERT(json->child == brother);
+  grpc_json_destroy(json->child->next);
   grpc_json_destroy(json);
   gpr_free(scratchpad);
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
   test_pairs();
   test_atypical();

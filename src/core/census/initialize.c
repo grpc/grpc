@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,18 +33,22 @@
 
 #include <grpc/census.h>
 
-static int census_fns_enabled = CENSUS_NONE;
+static int features_enabled = CENSUS_FEATURE_NONE;
 
-int census_initialize(int functions) {
-  if (census_fns_enabled != CENSUS_NONE) {
+int census_initialize(int features) {
+  if (features_enabled != CENSUS_FEATURE_NONE) {
+    // Must have been a previous call to census_initialize; return error
     return 1;
   }
-  if (functions != CENSUS_NONE) {
-    return 1;
-  } else {
-    census_fns_enabled = functions;
-    return 0;
-  }
+  features_enabled = features;
+  return 0;
 }
 
-void census_shutdown() { census_fns_enabled = CENSUS_NONE; }
+void census_shutdown(void) { features_enabled = CENSUS_FEATURE_NONE; }
+
+int census_supported(void) {
+  /* TODO(aveitch): improve this as we implement features... */
+  return CENSUS_FEATURE_NONE;
+}
+
+int census_enabled(void) { return features_enabled; }

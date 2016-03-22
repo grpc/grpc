@@ -1,3 +1,4 @@
+[![Cocoapods](https://img.shields.io/cocoapods/v/gRPC.svg)](https://cocoapods.org/pods/gRPC)
 # gRPC for Objective-C
 
 - [Install protoc with the gRPC plugin](#install)
@@ -17,7 +18,7 @@ services.
 <a name="install"></a>
 ## Install protoc with the gRPC plugin
 
-On Mac OS X, install [homebrew][]. On Linux, install [linuxbrew][].
+On Mac OS X, install [homebrew][].
 
 Run the following command to install _protoc_ and the gRPC _protoc_ plugin:
 ```sh
@@ -30,7 +31,7 @@ proceed.
 ## Write your API declaration in proto format
 
 For this you can consult the [Protocol Buffers][]' official documentation, or learn from a quick
-example [here](https://github.com/grpc/grpc-common#defining-a-service).
+example [here](https://github.com/grpc/grpc/tree/master/examples#defining-a-service).
 
 <a name="cocoapods"></a>
 ## Integrate a proto library in your project
@@ -47,8 +48,8 @@ Pod::Spec.new do |s|
   s.version  = '0.0.1'
   s.license  = '...'
 
-  s.ios.deployment_target = '6.0'
-  s.osx.deployment_target = '10.8'
+  s.ios.deployment_target = '7.1'
+  s.osx.deployment_target = '10.9'
 
   # Run protoc with the Objective-C and gRPC plugins to generate protocol messages and gRPC clients.
   # You can run this command manually if you later change your protos and need to regenerate.
@@ -59,7 +60,7 @@ Pod::Spec.new do |s|
     ms.source_files = "*.pbobjc.{h,m}"
     ms.header_mappings_dir = "."
     ms.requires_arc = false
-    ms.dependency "Protobuf", "~> 3.0.0-alpha-3"
+    ms.dependency "Protobuf", "~> 3.0.0-alpha-4"
   end
 
   # The --objcgrpc_out plugin generates a pair of .pbrpc.h/.pbrpc.m files for each .proto file with
@@ -68,7 +69,7 @@ Pod::Spec.new do |s|
     ss.source_files = "*.pbrpc.{h,m}"
     ss.header_mappings_dir = "."
     ss.requires_arc = true
-    ss.dependency "gRPC", "~> 0.5"
+    ss.dependency "gRPC", "~> 0.12"
     ss.dependency "#{s.name}/Messages"
   end
 end
@@ -153,9 +154,9 @@ _protoc_, in which case no system modification nor renaming is necessary.
 <a name="no-cocoapods"></a>
 ### Integrate the generated gRPC library without using Cocoapods
 
-You need to compile the generated `.pbpbjc.*` files (the enums and messages) without ARC support,
+You need to compile the generated `.pbobjc.*` files (the enums and messages) without ARC support,
 and the generated `.pbrpc.*` files (the services) with ARC support. The generated code depends on
-v0.5+ of the Objective-C gRPC runtime library and v3.0.0-alpha-3+ of the Objective-C Protobuf
+v0.12+ of the Objective-C gRPC runtime library and v3.0.0-alpha-4+ of the Objective-C Protobuf
 runtime library.
 
 These libraries need to be integrated into your project as described in their respective Podspec
@@ -168,7 +169,6 @@ Objective-C Protobuf runtime library.
 
 [Protocol Buffers]:https://developers.google.com/protocol-buffers/
 [homebrew]:http://brew.sh
-[linuxbrew]:https://github.com/Homebrew/linuxbrew
 [gRPC install script]:https://raw.githubusercontent.com/grpc/homebrew-grpc/master/scripts/install
 [example Podfile]:https://github.com/grpc/grpc/blob/master/src/objective-c/examples/Sample/Podfile
 [sample app]: https://github.com/grpc/grpc/tree/master/src/objective-c/examples/Sample

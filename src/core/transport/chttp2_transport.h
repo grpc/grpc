@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_TRANSPORT_H
-#define GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_TRANSPORT_H
+#ifndef GRPC_CORE_TRANSPORT_CHTTP2_TRANSPORT_H
+#define GRPC_CORE_TRANSPORT_CHTTP2_TRANSPORT_H
 
 #include "src/core/iomgr/endpoint.h"
 #include "src/core/transport/transport.h"
@@ -40,11 +40,12 @@
 extern int grpc_http_trace;
 extern int grpc_flowctl_trace;
 
-void grpc_create_chttp2_transport(grpc_transport_setup_callback setup,
-                                  void *arg,
-                                  const grpc_channel_args *channel_args,
-                                  grpc_endpoint *ep, gpr_slice *slices,
-                                  size_t nslices, grpc_mdctx *metadata_context,
-                                  int is_client);
+grpc_transport *grpc_create_chttp2_transport(
+    grpc_exec_ctx *exec_ctx, const grpc_channel_args *channel_args,
+    grpc_endpoint *ep, int is_client);
 
-#endif /* GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_TRANSPORT_H */
+void grpc_chttp2_transport_start_reading(grpc_exec_ctx *exec_ctx,
+                                         grpc_transport *transport,
+                                         gpr_slice *slices, size_t nslices);
+
+#endif /* GRPC_CORE_TRANSPORT_CHTTP2_TRANSPORT_H */

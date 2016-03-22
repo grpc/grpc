@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -37,7 +37,6 @@
 
 #ifdef GPR_WIN32
 
-#include <windows.h>
 #include <stdio.h>
 #include <stdarg.h>
 #include <string.h>
@@ -82,31 +81,29 @@ int gpr_asprintf(char **strp, const char *format, ...) {
 }
 
 #if defined UNICODE || defined _UNICODE
-LPTSTR gpr_char_to_tchar(LPCSTR input) {
+LPTSTR
+gpr_char_to_tchar(LPCSTR input) {
   LPTSTR ret;
   int needed = MultiByteToWideChar(CP_UTF8, 0, input, -1, NULL, 0);
-  if (needed == 0) return NULL;
-  ret = gpr_malloc(needed * sizeof(TCHAR));
+  if (needed <= 0) return NULL;
+  ret = gpr_malloc((unsigned)needed * sizeof(TCHAR));
   MultiByteToWideChar(CP_UTF8, 0, input, -1, ret, needed);
   return ret;
 }
 
-LPSTR gpr_tchar_to_char(LPCTSTR input) {
+LPSTR
+gpr_tchar_to_char(LPCTSTR input) {
   LPSTR ret;
   int needed = WideCharToMultiByte(CP_UTF8, 0, input, -1, NULL, 0, NULL, NULL);
-  if (needed == 0) return NULL;
-  ret = gpr_malloc(needed);
+  if (needed <= 0) return NULL;
+  ret = gpr_malloc((unsigned)needed);
   WideCharToMultiByte(CP_UTF8, 0, input, -1, ret, needed, NULL, NULL);
   return ret;
 }
 #else
-char *gpr_tchar_to_char(LPTSTR input) {
-  return gpr_strdup(input);
-}
+char *gpr_tchar_to_char(LPTSTR input) { return gpr_strdup(input); }
 
-char *gpr_char_to_tchar(LPTSTR input) {
-  return gpr_strdup(input);
-}
+char *gpr_char_to_tchar(LPTSTR input) { return gpr_strdup(input); }
 #endif
 
 #endif /* GPR_WIN32 */

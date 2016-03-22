@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -51,8 +51,10 @@
 #include <grpc/support/log.h>
 #include <grpc/grpc_security.h>
 
+#include "completion_queue.h"
+#include "channel_credentials.h"
 #include "server.h"
-#include "credentials.h"
+#include "timeval.h"
 
 zend_class_entry *grpc_ce_channel;
 
@@ -62,7 +64,6 @@ void free_wrapped_grpc_channel(void *object TSRMLS_DC) {
   if (channel->wrapped != NULL) {
     grpc_channel_destroy(channel->wrapped);
   }
-  efree(channel->target);
   efree(channel);
 }
 
@@ -109,9 +110,11 @@ void php_grpc_read_args_array(zval *args_array, grpc_channel_args *args) {
     switch (Z_TYPE_P(*data)) {
       case IS_LONG:
         args->args[args_index].value.integer = (int)Z_LVAL_P(*data);
+        args->args[args_index].type = GRPC_ARG_INTEGER;
         break;
       case IS_STRING:
         args->args[args_index].value.string = Z_STRVAL_P(*data);
+        args->args[args_index].type = GRPC_ARG_STRING;
         break;
       default:
         zend_throw_exception(spl_ce_InvalidArgumentException,
@@ -124,74 +127,119 @@ void php_grpc_read_args_array(zval *args_array, grpc_channel_args *args) {
 
 /**
  * Construct an instance of the Channel class. If the $args array contains a
- * "credentials" key mapping to a Credentials object, a secure channel will be
- * created with those credentials.
+ * "credentials" key mapping to a ChannelCredentials object, a secure channel
+ * will be created with those credentials.
  * @param string $target The hostname to associate with this channel
  * @param array $args The arguments to pass to the Channel (optional)
  */
 PHP_METHOD(Channel, __construct) {
   wrapped_grpc_channel *channel =
-      (wrapped_grpc_channel *)zend_object_store_get_object(getThis() TSRMLS_CC);
+      (wrapped_grpc_channel *)zend_object_store_get_object(
+          getThis() TSRMLS_CC);
   char *target;
   int target_length;
   zval *args_array = NULL;
   grpc_channel_args args;
   HashTable *array_hash;
   zval **creds_obj = NULL;
-  wrapped_grpc_credentials *creds = NULL;
-  zval **override_obj;
-  char *override;
-  int override_len;
-  /* "s|a" == 1 string, 1 optional array */
-  if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|a", &target,
+  wrapped_grpc_channel_credentials *creds = NULL;
+  /* "sa" == 1 string, 1 array */
+  if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "sa", &target,
                             &target_length, &args_array) == FAILURE) {
     zend_throw_exception(spl_ce_InvalidArgumentException,
                          "Channel expects a string and an array", 1 TSRMLS_CC);
     return;
   }
-  override = target;
-  override_len = target_length;
-  if (args_array == NULL) {
-    channel->wrapped = grpc_channel_create(target, NULL);
-  } else {
-    array_hash = Z_ARRVAL_P(args_array);
-    if (zend_hash_find(array_hash, "credentials", sizeof("credentials"),
-                       (void **)&creds_obj) == SUCCESS) {
-      if (zend_get_class_entry(*creds_obj TSRMLS_CC) != grpc_ce_credentials) {
-        zend_throw_exception(spl_ce_InvalidArgumentException,
-                             "credentials must be a Credentials object",
-                             1 TSRMLS_CC);
-        return;
-      }
-      creds = (wrapped_grpc_credentials *)zend_object_store_get_object(
+  array_hash = Z_ARRVAL_P(args_array);
+  if (zend_hash_find(array_hash, "credentials", sizeof("credentials"),
+                     (void **)&creds_obj) == SUCCESS) {
+    if (Z_TYPE_P(*creds_obj) == IS_NULL) {
+      creds = NULL;
+      zend_hash_del(array_hash, "credentials", 12);
+    } else if (zend_get_class_entry(*creds_obj TSRMLS_CC) !=
+        grpc_ce_channel_credentials) {
+      zend_throw_exception(spl_ce_InvalidArgumentException,
+                           "credentials must be a ChannelCredentials object",
+                           1 TSRMLS_CC);
+      return;
+    } else {
+      creds = (wrapped_grpc_channel_credentials *)zend_object_store_get_object(
           *creds_obj TSRMLS_CC);
       zend_hash_del(array_hash, "credentials", 12);
     }
-    if (zend_hash_find(array_hash, GRPC_SSL_TARGET_NAME_OVERRIDE_ARG,
-                       sizeof(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG),
-                       (void **)&override_obj) == SUCCESS) {
-      if (Z_TYPE_PP(override_obj) != IS_STRING) {
-        zend_throw_exception(spl_ce_InvalidArgumentException,
-                             GRPC_SSL_TARGET_NAME_OVERRIDE_ARG
-                             " must be a string",
-                             1 TSRMLS_CC);
-        return;
-      }
-      override = Z_STRVAL_PP(override_obj);
-      override_len = Z_STRLEN_PP(override_obj);
-    }
-    php_grpc_read_args_array(args_array, &args);
-    if (creds == NULL) {
-      channel->wrapped = grpc_channel_create(target, &args);
-    } else {
-      gpr_log(GPR_DEBUG, "Initialized secure channel");
-      channel->wrapped =
-          grpc_secure_channel_create(creds->wrapped, target, &args);
-    }
-    efree(args.args);
   }
-  channel->target = ecalloc(override_len + 1, sizeof(char));
-  memcpy(channel->target, override, override_len);
+  php_grpc_read_args_array(args_array, &args);
+  if (creds == NULL) {
+    channel->wrapped = grpc_insecure_channel_create(target, &args, NULL);
+  } else {
+    gpr_log(GPR_DEBUG, "Initialized secure channel");
+    channel->wrapped =
+        grpc_secure_channel_create(creds->wrapped, target, &args, NULL);
+  }
+  efree(args.args);
+}
+
+/**
+ * Get the endpoint this call/stream is connected to
+ * @return string The URI of the endpoint
+ */
+PHP_METHOD(Channel, getTarget) {
+  wrapped_grpc_channel *channel =
+      (wrapped_grpc_channel *)zend_object_store_get_object(getThis() TSRMLS_CC);
+  RETURN_STRING(grpc_channel_get_target(channel->wrapped), 1);
+}
+
+/**
+ * Get the connectivity state of the channel
+ * @param bool (optional) try to connect on the channel
+ * @return long The grpc connectivity state
+ */
+PHP_METHOD(Channel, getConnectivityState) {
+  wrapped_grpc_channel *channel =
+      (wrapped_grpc_channel *)zend_object_store_get_object(getThis() TSRMLS_CC);
+  bool try_to_connect;
+  /* "|b" == 1 optional bool */
+  if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|b", &try_to_connect) ==
+      FAILURE) {
+    zend_throw_exception(spl_ce_InvalidArgumentException,
+                         "getConnectivityState expects a bool", 1 TSRMLS_CC);
+    return;
+  }
+  RETURN_LONG(grpc_channel_check_connectivity_state(channel->wrapped,
+                                                    (int)try_to_connect));
+}
+
+/**
+ * Watch the connectivity state of the channel until it changed
+ * @param long The previous connectivity state of the channel
+ * @param Timeval The deadline this function should wait until
+ * @return bool If the connectivity state changes from last_state
+ *              before deadline
+ */
+PHP_METHOD(Channel, watchConnectivityState) {
+  wrapped_grpc_channel *channel =
+      (wrapped_grpc_channel *)zend_object_store_get_object(getThis() TSRMLS_CC);
+  long last_state;
+  zval *deadline_obj;
+  /* "lO" == 1 long 1 object */
+  if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "lO",
+          &last_state, &deadline_obj, grpc_ce_timeval) == FAILURE) {
+    zend_throw_exception(spl_ce_InvalidArgumentException,
+        "watchConnectivityState expects 1 long 1 timeval",
+        1 TSRMLS_CC);
+    return;
+  }
+
+  wrapped_grpc_timeval *deadline =
+      (wrapped_grpc_timeval *)zend_object_store_get_object(
+          deadline_obj TSRMLS_CC);
+  grpc_channel_watch_connectivity_state(
+      channel->wrapped, (grpc_connectivity_state)last_state,
+      deadline->wrapped, completion_queue, NULL);
+  grpc_event event = grpc_completion_queue_pluck(
+      completion_queue, NULL,
+      gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
+  RETURN_BOOL(event.success);
 }
 
 /**
@@ -208,7 +256,11 @@ PHP_METHOD(Channel, close) {
 
 static zend_function_entry channel_methods[] = {
     PHP_ME(Channel, __construct, NULL, ZEND_ACC_PUBLIC | ZEND_ACC_CTOR)
-    PHP_ME(Channel, close, NULL, ZEND_ACC_PUBLIC) PHP_FE_END};
+    PHP_ME(Channel, getTarget, NULL, ZEND_ACC_PUBLIC)
+    PHP_ME(Channel, getConnectivityState, NULL, ZEND_ACC_PUBLIC)
+    PHP_ME(Channel, watchConnectivityState, NULL, ZEND_ACC_PUBLIC)
+    PHP_ME(Channel, close, NULL, ZEND_ACC_PUBLIC)
+    PHP_FE_END};
 
 void grpc_init_channel(TSRMLS_D) {
   zend_class_entry ce;

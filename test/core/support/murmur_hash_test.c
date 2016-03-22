@@ -38,17 +38,17 @@
 
 #include <string.h>
 
-typedef gpr_uint32 (*hash_func)(const void *key, size_t len, gpr_uint32 seed);
+typedef uint32_t (*hash_func)(const void *key, size_t len, uint32_t seed);
 
 /* From smhasher:
    This should hopefully be a thorough and uambiguous test of whether a hash
    is correctly implemented on a given platform */
 
-static void verification_test(hash_func hash, gpr_uint32 expected) {
-  gpr_uint8 key[256];
-  gpr_uint32 hashes[256];
-  gpr_uint32 final = 0;
-  int i;
+static void verification_test(hash_func hash, uint32_t expected) {
+  uint8_t key[256];
+  uint32_t hashes[256];
+  uint32_t final = 0;
+  size_t i;
 
   memset(key, 0, sizeof(key));
   memset(hashes, 0, sizeof(hashes));
@@ -58,7 +58,7 @@ static void verification_test(hash_func hash, gpr_uint32 expected) {
 
   for (i = 0; i < 256; i++) {
     key[i] = (uint8_t)i;
-    hashes[i] = hash(key, i, 256 - i);
+    hashes[i] = hash(key, i, (uint32_t)(256u - i));
   }
 
   /* Then hash the result array */

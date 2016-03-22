@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -36,9 +36,17 @@
 var fs = require('fs');
 var path = require('path');
 var _ = require('lodash');
+var AsyncDelayQueue = require('./async_delay_queue');
 var grpc = require('..');
-var testProto = grpc.load(__dirname + '/test.proto').grpc.testing;
-var Server = grpc.buildServer([testProto.TestService.service]);
+var testProto = grpc.load({
+  root: __dirname + '/../../..',
+  file: 'src/proto/grpc/testing/test.proto'}).grpc.testing;
+
+var ECHO_INITIAL_KEY = 'x-grpc-test-echo-initial';
+var ECHO_TRAILING_KEY = 'x-grpc-test-echo-trailing-bin';
+
+var incompressible_data = fs.readFileSync(
+    __dirname + '/../../../test/cpp/interop/rnd.dat');
 
 /**
  * Create a buffer filled with size zeroes
@@ -52,6 +60,47 @@ function zeroBuffer(size) {
 }
 
 /**
+ * Echos a header metadata item as specified in the interop spec.
+ * @param {Call} call The call to echo metadata on
+ */
+function echoHeader(call) {
+  var echo_initial = call.metadata.get(ECHO_INITIAL_KEY);
+  if (echo_initial.length > 0) {
+    var response_metadata = new grpc.Metadata();
+    response_metadata.set(ECHO_INITIAL_KEY, echo_initial[0]);
+    call.sendMetadata(response_metadata);
+  }
+}
+
+/**
+ * Gets the trailer metadata that should be echoed when the call is done,
+ * as specified in the interop spec.
+ * @param {Call} call The call to get metadata from
+ * @return {grpc.Metadata} The metadata to send as a trailer
+ */
+function getEchoTrailer(call) {
+  var echo_trailer = call.metadata.get(ECHO_TRAILING_KEY);
+  var response_trailer = new grpc.Metadata();
+  if (echo_trailer.length > 0) {
+    response_trailer.set(ECHO_TRAILING_KEY, echo_trailer[0]);
+  }
+  return response_trailer;
+}
+
+function getPayload(payload_type, size) {
+  if (payload_type === 'RANDOM') {
+    payload_type = ['COMPRESSABLE',
+                    'UNCOMPRESSABLE'][Math.random() < 0.5 ? 0 : 1];
+  }
+  var body;
+  switch (payload_type) {
+    case 'COMPRESSABLE': body = zeroBuffer(size); break;
+    case 'UNCOMPRESSABLE': incompressible_data.slice(size); break;
+  }
+  return {type: payload_type, body: body};
+}
+
+/**
  * Respond to an empty parameter with an empty response.
  * NOTE: this currently does not work due to issue #137
  * @param {Call} call Call to handle
@@ -59,7 +108,8 @@ function zeroBuffer(size) {
  *     or error
  */
 function handleEmpty(call, callback) {
-  callback(null, {});
+  echoHeader(call);
+  callback(null, {}, getEchoTrailer(call));
 }
 
 /**
@@ -69,14 +119,17 @@ function handleEmpty(call, callback) {
  *     error
  */
 function handleUnary(call, callback) {
+  echoHeader(call);
   var req = call.request;
-  var zeros = zeroBuffer(req.response_size);
-  var payload_type = req.response_type;
-  if (payload_type === 'RANDOM') {
-    payload_type = ['COMPRESSABLE',
-                    'UNCOMPRESSABLE'][Math.random() < 0.5 ? 0 : 1];
+  if (req.response_status) {
+    var status = req.response_status;
+    status.metadata = getEchoTrailer(call);
+    callback(status);
+    return;
   }
-  callback(null, {payload: {type: payload_type, body: zeros}});
+  var payload = getPayload(req.response_type, req.response_size);
+  callback(null, {payload: payload},
+           getEchoTrailer(call));
 }
 
 /**
@@ -86,12 +139,14 @@ function handleUnary(call, callback) {
  *     error
  */
 function handleStreamingInput(call, callback) {
+  echoHeader(call);
   var aggregate_size = 0;
   call.on('data', function(value) {
     aggregate_size += value.payload.body.length;
   });
   call.on('end', function() {
-    callback(null, {aggregated_payload_size: aggregate_size});
+    callback(null, {aggregated_payload_size: aggregate_size},
+             getEchoTrailer(call));
   });
 }
 
@@ -100,21 +155,25 @@ function handleStreamingInput(call, callback) {
  * @param {Call} call Call to handle
  */
 function handleStreamingOutput(call) {
+  echoHeader(call);
+  var delay_queue = new AsyncDelayQueue();
   var req = call.request;
-  var payload_type = req.response_type;
-  if (payload_type === 'RANDOM') {
-    payload_type = ['COMPRESSABLE',
-                    'UNCOMPRESSABLE'][Math.random() < 0.5 ? 0 : 1];
+  if (req.response_status) {
+    var status = req.response_status;
+    status.metadata = getEchoTrailer(call);
+    call.emit('error', status);
+    return;
   }
   _.each(req.response_parameters, function(resp_param) {
-    call.write({
-      payload: {
-        body: zeroBuffer(resp_param.size),
-        type: payload_type
-      }
-    });
+    delay_queue.add(function(next) {
+      call.write({payload: getPayload(req.response_type, resp_param.size)});
+      next();
+    }, resp_param.interval_us);
   });
-  call.end();
+  delay_queue.add(function(next) {
+    call.end(getEchoTrailer(call));
+    next();
+  });
 }
 
 /**
@@ -123,23 +182,27 @@ function handleStreamingOutput(call) {
  * @param {Call} call Call to handle
  */
 function handleFullDuplex(call) {
+  echoHeader(call);
+  var delay_queue = new AsyncDelayQueue();
   call.on('data', function(value) {
-    var payload_type = value.response_type;
-    if (payload_type === 'RANDOM') {
-      payload_type = ['COMPRESSABLE',
-                      'UNCOMPRESSABLE'][Math.random() < 0.5 ? 0 : 1];
+    if (value.response_status) {
+      var status = value.response_status;
+      status.metadata = getEchoTrailer(call);
+      call.emit('error', status);
+      return;
     }
     _.each(value.response_parameters, function(resp_param) {
-      call.write({
-        payload: {
-          body: zeroBuffer(resp_param.size),
-          type: payload_type
-        }
-      });
+      delay_queue.add(function(next) {
+        call.write({payload: getPayload(value.response_type, resp_param.size)});
+        next();
+      }, resp_param.interval_us);
     });
   });
   call.on('end', function() {
-    call.end();
+    delay_queue.add(function(next) {
+      call.end(getEchoTrailer(call));
+      next();
+    });
   });
 }
 
@@ -149,7 +212,7 @@ function handleFullDuplex(call) {
  * @param {Call} call Call to handle
  */
 function handleHalfDuplex(call) {
-  throw new Error('HalfDuplexCall not yet implemented');
+  call.emit('error', Error('HalfDuplexCall not yet implemented'));
 }
 
 /**
@@ -162,7 +225,7 @@ function handleHalfDuplex(call) {
 function getServer(port, tls) {
   // TODO(mlumish): enable TLS functionality
   var options = {};
-  var server_creds = null;
+  var server_creds;
   if (tls) {
     var key_path = path.join(__dirname, '../test/data/server1.key');
     var pem_path = path.join(__dirname, '../test/data/server1.pem');
@@ -170,19 +233,20 @@ function getServer(port, tls) {
     var key_data = fs.readFileSync(key_path);
     var pem_data = fs.readFileSync(pem_path);
     server_creds = grpc.ServerCredentials.createSsl(null,
-                                                    key_data,
-                                                    pem_data);
+                                                    [{private_key: key_data,
+                                                      cert_chain: pem_data}]);
+  } else {
+    server_creds = grpc.ServerCredentials.createInsecure();
   }
-  var server = new Server({
-    'grpc.testing.TestService' : {
-      emptyCall: handleEmpty,
-      unaryCall: handleUnary,
-      streamingOutputCall: handleStreamingOutput,
-      streamingInputCall: handleStreamingInput,
-      fullDuplexCall: handleFullDuplex,
-      halfDuplexCall: handleHalfDuplex
-    }
-  }, null, options);
+  var server = new grpc.Server(options);
+  server.addProtoService(testProto.TestService.service, {
+    emptyCall: handleEmpty,
+    unaryCall: handleUnary,
+    streamingOutputCall: handleStreamingOutput,
+    streamingInputCall: handleStreamingInput,
+    fullDuplexCall: handleFullDuplex,
+    halfDuplexCall: handleHalfDuplex
+  });
   var port_num = server.bind('0.0.0.0:' + port, server_creds);
   return {server: server, port: port_num};
 }
@@ -194,7 +258,7 @@ if (require.main === module) {
   });
   var server_obj = getServer(argv.port, argv.use_tls === 'true');
   console.log('Server attaching to port ' + argv.port);
-  server_obj.server.listen();
+  server_obj.server.start();
 }
 
 /**

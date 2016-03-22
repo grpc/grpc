@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,46 +31,9 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CPP_PROTO_PROTO_UTILS_H
-#define GRPC_INTERNAL_CPP_PROTO_PROTO_UTILS_H
+#ifndef GRPCXX_IMPL_PROTO_UTILS_H
+#define GRPCXX_IMPL_PROTO_UTILS_H
 
-#include <type_traits>
+#include <grpc++/impl/codegen/proto_utils.h>
 
-#include <grpc/grpc.h>
-#include <grpc++/impl/serialization_traits.h>
-#include <grpc++/config_protobuf.h>
-#include <grpc++/status.h>
-
-namespace grpc {
-
-// Serialize the msg into a buffer created inside the function. The caller
-// should destroy the returned buffer when done with it. If serialization fails,
-// false is returned and buffer is left unchanged.
-Status SerializeProto(const grpc::protobuf::Message& msg,
-                      grpc_byte_buffer** buffer);
-
-// The caller keeps ownership of buffer and msg.
-Status DeserializeProto(grpc_byte_buffer* buffer, grpc::protobuf::Message* msg,
-                        int max_message_size);
-
-template <class T>
-class SerializationTraits<T, typename std::enable_if<std::is_base_of<
-                                 grpc::protobuf::Message, T>::value>::type> {
- public:
-  static Status Serialize(const grpc::protobuf::Message& msg,
-                          grpc_byte_buffer** buffer, bool* own_buffer) {
-    *own_buffer = true;
-    return SerializeProto(msg, buffer);
-  }
-  static Status Deserialize(grpc_byte_buffer* buffer,
-                            grpc::protobuf::Message* msg,
-                            int max_message_size) {
-    auto status = DeserializeProto(buffer, msg, max_message_size);
-    grpc_byte_buffer_destroy(buffer);
-    return status;
-  }
-};
-
-}  // namespace grpc
-
-#endif  // GRPC_INTERNAL_CPP_PROTO_PROTO_UTILS_H
+#endif  // GRPCXX_IMPL_PROTO_UTILS_H

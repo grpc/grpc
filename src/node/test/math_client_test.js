@@ -36,7 +36,7 @@
 var assert = require('assert');
 
 var grpc = require('..');
-var math = grpc.load(__dirname + '/../examples/math.proto').math;
+var math = grpc.load(__dirname + '/../../proto/math/math.proto').math;
 
 /**
  * Client to use to make requests to a running server.
@@ -46,18 +46,21 @@ var math_client;
 /**
  * Server to test against
  */
-var server = require('../examples/math_server.js');
+var getServer = require('./math/math_server.js');
 
+var server = getServer();
 
 describe('Math client', function() {
   before(function(done) {
-    var port_num = server.bind('0.0.0.0:0');
-    server.listen();
-    math_client = new math.Math('localhost:' + port_num);
+    var port_num = server.bind('0.0.0.0:0',
+                               grpc.ServerCredentials.createInsecure());
+    server.start();
+    math_client = new math.Math('localhost:' + port_num,
+                                grpc.credentials.createInsecure());
     done();
   });
   after(function() {
-    server.shutdown();
+    server.forceShutdown();
   });
   it('should handle a single request', function(done) {
     var arg = {dividend: 7, divisor: 4};

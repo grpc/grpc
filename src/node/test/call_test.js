@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -34,7 +34,7 @@
 'use strict';
 
 var assert = require('assert');
-var grpc = require('bindings')('grpc.node');
+var grpc = require('../src/grpc_extension');
 
 /**
  * Helper function to return an absolute deadline given a relative timeout in
@@ -48,17 +48,20 @@ function getDeadline(timeout_secs) {
   return deadline;
 }
 
+var insecureCreds = grpc.ChannelCredentials.createInsecure();
+
 describe('call', function() {
   var channel;
   var server;
   before(function() {
     server = new grpc.Server();
-    var port = server.addHttp2Port('localhost:0');
+    var port = server.addHttp2Port('localhost:0',
+                                   grpc.ServerCredentials.createInsecure());
     server.start();
-    channel = new grpc.Channel('localhost:' + port);
+    channel = new grpc.Channel('localhost:' + port, insecureCreds);
   });
   after(function() {
-    server.shutdown();
+    server.forceShutdown();
   });
   describe('constructor', function() {
     it('should reject anything less than 3 arguments', function() {
@@ -81,8 +84,13 @@ describe('call', function() {
            new grpc.Call(channel, 'method', 0);
          });
        });
+    it('should accept an optional fourth string parameter', function() {
+      assert.doesNotThrow(function() {
+        new grpc.Call(channel, 'method', new Date(), 'host_override');
+      });
+    });
     it('should fail with a closed channel', function() {
-      var local_channel = new grpc.Channel('hostname');
+      var local_channel = new grpc.Channel('hostname', insecureCreds);
       local_channel.close();
       assert.throws(function() {
         new grpc.Call(channel, 'method');
@@ -98,6 +106,23 @@ describe('call', function() {
       assert.throws(function() {
         new grpc.Call(channel, 'method', 'now');
       }, TypeError);
+    });
+    it('should succeed without the new keyword', function() {
+      assert.doesNotThrow(function() {
+        var call = grpc.Call(channel, 'method', new Date());
+        assert(call instanceof grpc.Call);
+      });
+    });
+  });
+  describe('deadline', function() {
+    it('should time out immediately with negative deadline', function(done) {
+      var call = new grpc.Call(channel, 'method', -Infinity);
+      var batch = {};
+      batch[grpc.opType.RECV_STATUS_ON_CLIENT] = true;
+      call.startBatch(batch, function(err, response) {
+        assert.strictEqual(response.status.code, grpc.status.DEADLINE_EXCEEDED);
+        done();
+      });
     });
   });
   describe('startBatch', function() {
@@ -132,7 +157,7 @@ describe('call', function() {
                                                     'key2': ['value2']};
         call.startBatch(batch, function(err, resp) {
           assert.ifError(err);
-          assert.deepEqual(resp, {'send metadata': true});
+          assert.deepEqual(resp, {'send_metadata': true});
           done();
         });
       });
@@ -147,7 +172,7 @@ describe('call', function() {
         };
         call.startBatch(batch, function(err, resp) {
           assert.ifError(err);
-          assert.deepEqual(resp, {'send metadata': true});
+          assert.deepEqual(resp, {'send_metadata': true});
           done();
         });
       });
@@ -182,6 +207,49 @@ describe('call', function() {
       assert.doesNotThrow(function() {
         call.cancel();
       });
+    });
+  });
+  describe('cancelWithStatus', function() {
+    it('should reject anything other than an integer and a string', function() {
+      assert.doesNotThrow(function() {
+        var call = new grpc.Call(channel, 'method', getDeadline(1));
+        call.cancelWithStatus(1, 'details');
+      });
+      assert.throws(function() {
+        var call = new grpc.Call(channel, 'method', getDeadline(1));
+        call.cancelWithStatus();
+      });
+      assert.throws(function() {
+        var call = new grpc.Call(channel, 'method', getDeadline(1));
+        call.cancelWithStatus('');
+      });
+      assert.throws(function() {
+        var call = new grpc.Call(channel, 'method', getDeadline(1));
+        call.cancelWithStatus(5, {});
+      });
+    });
+    it('should reject the OK status code', function() {
+      assert.throws(function() {
+        var call = new grpc.Call(channel, 'method', getDeadline(1));
+        call.cancelWithStatus(0, 'details');
+      });
+    });
+    it('should result in the call ending with a status', function(done) {
+      var call = new grpc.Call(channel, 'method', getDeadline(1));
+      var batch = {};
+      batch[grpc.opType.RECV_STATUS_ON_CLIENT] = true;
+      call.startBatch(batch, function(err, response) {
+        assert.strictEqual(response.status.code, 5);
+        assert.strictEqual(response.status.details, 'details');
+        done();
+      });
+      call.cancelWithStatus(5, 'details');
+    });
+  });
+  describe('getPeer', function() {
+    it('should return a string', function() {
+      var call = new grpc.Call(channel, 'method', getDeadline(1));
+      assert.strictEqual(typeof call.getPeer(), 'string');
     });
   });
 });

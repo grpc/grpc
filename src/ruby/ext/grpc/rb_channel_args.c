@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,6 +31,8 @@
  *
  */
 
+#include <ruby/ruby.h>
+#include "rb_grpc_imports.generated.h"
 #include "rb_channel_args.h"
 
 #include <ruby/ruby.h>
@@ -41,9 +43,12 @@
 
 static rb_data_type_t grpc_rb_channel_args_data_type = {
     "grpc_channel_args",
-    {GRPC_RB_GC_NOT_MARKED, GRPC_RB_GC_DONT_FREE, GRPC_RB_MEMSIZE_UNAVAILABLE},
+    {GRPC_RB_GC_NOT_MARKED, GRPC_RB_GC_DONT_FREE, GRPC_RB_MEMSIZE_UNAVAILABLE,
+     {NULL, NULL}},
     NULL, NULL,
+#ifdef RUBY_TYPED_FREE_IMMEDIATELY
     RUBY_TYPED_FREE_IMMEDIATELY
+#endif
 };
 
 /* A callback the processes the hash key values in channel_args hash */

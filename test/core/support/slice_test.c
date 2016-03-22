@@ -35,6 +35,7 @@
 
 #include <string.h>
 
+#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include "test/core/util/test_config.h"
 
@@ -65,7 +66,7 @@ static void test_slice_malloc_returns_something_sensible(void) {
     }
     /* We must be able to write to every byte of the data */
     for (i = 0; i < length; i++) {
-      GPR_SLICE_START_PTR(slice)[i] = (char)i;
+      GPR_SLICE_START_PTR(slice)[i] = (uint8_t)i;
     }
     /* And finally we must succeed in destroying the slice */
     gpr_slice_unref(slice);
@@ -75,7 +76,7 @@ static void test_slice_malloc_returns_something_sensible(void) {
 static void do_nothing(void *ignored) {}
 
 static void test_slice_new_returns_something_sensible(void) {
-  gpr_uint8 x;
+  uint8_t x;
 
   gpr_slice slice = gpr_slice_new(&x, 1, do_nothing);
   GPR_ASSERT(slice.refcount);
@@ -92,13 +93,28 @@ static void do_nothing_with_len_1(void *ignored, size_t len) {
 }
 
 static void test_slice_new_with_len_returns_something_sensible(void) {
-  gpr_uint8 x;
+  uint8_t x;
+  int num_refs = 5; /* To test adding/removing an arbitrary number of refs */
+  int i;
 
   gpr_slice slice = gpr_slice_new_with_len(&x, 1, do_nothing_with_len_1);
-  GPR_ASSERT(slice.refcount);
+  GPR_ASSERT(slice.refcount); /* ref count is initialized to 1 at this point */
   GPR_ASSERT(slice.data.refcounted.bytes == &x);
   GPR_ASSERT(slice.data.refcounted.length == 1);
   GPR_ASSERT(do_nothing_with_len_1_calls == 0);
+
+  /* Add an arbitrary number of refs to the slice and remoe the refs. This is to
+     make sure that that the destroy callback (i.e do_nothing_with_len_1()) is
+     not called until the last unref operation */
+  for (i = 0; i < num_refs; i++) {
+    gpr_slice_ref(slice);
+  }
+  for (i = 0; i < num_refs; i++) {
+    gpr_slice_unref(slice);
+  }
+  GPR_ASSERT(do_nothing_with_len_1_calls == 0); /* Shouldn't be called yet */
+
+  /* last unref */
   gpr_slice_unref(slice);
   GPR_ASSERT(do_nothing_with_len_1_calls == 1);
 }
@@ -115,7 +131,7 @@ static void test_slice_sub_works(unsigned length) {
      beginning of the slice. */
   slice = gpr_slice_malloc(length);
   for (i = 0; i < length; i++) {
-    GPR_SLICE_START_PTR(slice)[i] = i;
+    GPR_SLICE_START_PTR(slice)[i] = (uint8_t)i;
   }
 
   /* Ensure that for all subsets length is correct and that we start on the
@@ -125,7 +141,7 @@ static void test_slice_sub_works(unsigned length) {
       sub = gpr_slice_sub(slice, i, j);
       GPR_ASSERT(GPR_SLICE_LENGTH(sub) == j - i);
       for (k = 0; k < j - i; k++) {
-        GPR_ASSERT(GPR_SLICE_START_PTR(sub)[k] == (gpr_uint8)(i + k));
+        GPR_ASSERT(GPR_SLICE_START_PTR(sub)[k] == (uint8_t)(i + k));
       }
       gpr_slice_unref(sub);
     }
@@ -142,10 +158,10 @@ static void check_head_tail(gpr_slice slice, gpr_slice head, gpr_slice tail) {
                          GPR_SLICE_START_PTR(tail), GPR_SLICE_LENGTH(tail)));
 }
 
-static void test_slice_split_head_works(int length) {
+static void test_slice_split_head_works(size_t length) {
   gpr_slice slice;
   gpr_slice head, tail;
-  int i;
+  size_t i;
 
   LOG_TEST_NAME("test_slice_split_head_works");
   gpr_log(GPR_INFO, "length=%d", length);
@@ -154,7 +170,7 @@ static void test_slice_split_head_works(int length) {
      beginning of the slice. */
   slice = gpr_slice_malloc(length);
   for (i = 0; i < length; i++) {
-    GPR_SLICE_START_PTR(slice)[i] = i;
+    GPR_SLICE_START_PTR(slice)[i] = (uint8_t)i;
   }
 
   /* Ensure that for all subsets length is correct and that we start on the
@@ -170,10 +186,10 @@ static void test_slice_split_head_works(int length) {
   gpr_slice_unref(slice);
 }
 
-static void test_slice_split_tail_works(int length) {
+static void test_slice_split_tail_works(size_t length) {
   gpr_slice slice;
   gpr_slice head, tail;
-  int i;
+  size_t i;
 
   LOG_TEST_NAME("test_slice_split_tail_works");
   gpr_log(GPR_INFO, "length=%d", length);
@@ -182,7 +198,7 @@ static void test_slice_split_tail_works(int length) {
      beginning of the slice. */
   slice = gpr_slice_malloc(length);
   for (i = 0; i < length; i++) {
-    GPR_SLICE_START_PTR(slice)[i] = i;
+    GPR_SLICE_START_PTR(slice)[i] = (uint8_t)i;
   }
 
   /* Ensure that for all subsets length is correct and that we start on the

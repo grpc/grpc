@@ -40,6 +40,7 @@
 #include "src/core/surface/event_string.h"
 #include "src/core/support/string.h"
 #include <grpc/byte_buffer.h>
+#include <grpc/byte_buffer_reader.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
@@ -109,7 +110,7 @@ int contains_metadata(grpc_metadata_array *array, const char *key,
 static gpr_slice merge_slices(gpr_slice *slices, size_t nslices) {
   size_t i;
   size_t len = 0;
-  gpr_uint8 *cursor;
+  uint8_t *cursor;
   gpr_slice out;
 
   for (i = 0; i < nslices; i++) {
@@ -144,7 +145,17 @@ static int byte_buffer_eq_slice(grpc_byte_buffer *bb, gpr_slice b) {
 }
 
 int byte_buffer_eq_string(grpc_byte_buffer *bb, const char *str) {
-  return byte_buffer_eq_slice(bb, gpr_slice_from_copied_string(str));
+  grpc_byte_buffer_reader reader;
+  grpc_byte_buffer *rbb;
+  int res;
+
+  grpc_byte_buffer_reader_init(&reader, bb);
+  rbb = grpc_raw_byte_buffer_from_reader(&reader);
+  res = byte_buffer_eq_slice(rbb, gpr_slice_from_copied_string(str));
+  grpc_byte_buffer_reader_destroy(&reader);
+  grpc_byte_buffer_destroy(rbb);
+
+  return res;
 }
 
 static void verify_matches(expectation *e, grpc_event *ev) {
@@ -215,7 +226,7 @@ void cq_verify(cq_verifier *v) {
   gpr_strvec_init(&have_tags);
 
   while (v->expect.next != &v->expect) {
-    ev = grpc_completion_queue_next(v->cq, deadline);
+    ev = grpc_completion_queue_next(v->cq, deadline, NULL);
     if (ev.type == GRPC_QUEUE_TIMEOUT) {
       fail_no_event_received(v);
       break;
@@ -248,12 +259,13 @@ void cq_verify(cq_verifier *v) {
 }
 
 void cq_verify_empty(cq_verifier *v) {
-  gpr_timespec deadline = gpr_time_add(gpr_now(), gpr_time_from_seconds(1));
+  gpr_timespec deadline = gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                                       gpr_time_from_seconds(1, GPR_TIMESPAN));
   grpc_event ev;
 
   GPR_ASSERT(v->expect.next == &v->expect && "expectation queue must be empty");
 
-  ev = grpc_completion_queue_next(v->cq, deadline);
+  ev = grpc_completion_queue_next(v->cq, deadline, NULL);
   if (ev.type != GRPC_QUEUE_TIMEOUT) {
     char *s = grpc_event_string(&ev);
     gpr_log(GPR_ERROR, "unexpected event (expected nothing): %s", s);

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -34,167 +34,154 @@
 #include <mutex>
 #include <thread>
 
-#include "src/core/security/credentials.h"
-#include "src/cpp/server/thread_pool.h"
-#include "test/core/util/port.h"
-#include "test/core/util/test_config.h"
-#include "test/cpp/util/echo_duplicate.grpc.pb.h"
-#include "test/cpp/util/echo.grpc.pb.h"
-#include "test/cpp/util/fake_credentials.h"
-#include <grpc++/channel_arguments.h>
-#include <grpc++/channel_interface.h>
+#include <grpc++/channel.h>
 #include <grpc++/client_context.h>
 #include <grpc++/create_channel.h>
-#include <grpc++/credentials.h>
+#include <grpc++/security/auth_metadata_processor.h>
+#include <grpc++/security/credentials.h>
+#include <grpc++/security/server_credentials.h>
 #include <grpc++/server.h>
 #include <grpc++/server_builder.h>
 #include <grpc++/server_context.h>
-#include <grpc++/server_credentials.h>
-#include <grpc++/status.h>
-#include <grpc++/stream.h>
-#include <grpc++/time.h>
-#include <gtest/gtest.h>
-
 #include <grpc/grpc.h>
 #include <grpc/support/thd.h>
 #include <grpc/support/time.h>
+#include <gtest/gtest.h>
 
-using grpc::cpp::test::util::EchoRequest;
-using grpc::cpp::test::util::EchoResponse;
+#include "src/core/security/credentials.h"
+#include "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h"
+#include "src/proto/grpc/testing/echo.grpc.pb.h"
+#include "test/core/util/port.h"
+#include "test/core/util/test_config.h"
+#include "test/cpp/end2end/test_service_impl.h"
+#include "test/cpp/util/string_ref_helper.h"
+#include "test/cpp/util/test_credentials_provider.h"
+
+using grpc::testing::EchoRequest;
+using grpc::testing::EchoResponse;
+using grpc::testing::kTlsCredentialsType;
 using std::chrono::system_clock;
 
 namespace grpc {
 namespace testing {
-
 namespace {
 
-const char* kServerCancelAfterReads = "cancel_after_reads";
-
-// When echo_deadline is requested, deadline seen in the ServerContext is set in
-// the response in seconds.
-void MaybeEchoDeadline(ServerContext* context, const EchoRequest* request,
-                       EchoResponse* response) {
-  if (request->has_param() && request->param().echo_deadline()) {
-    gpr_timespec deadline = gpr_inf_future;
-    if (context->deadline() != system_clock::time_point::max()) {
-      Timepoint2Timespec(context->deadline(), &deadline);
-    }
-    response->mutable_param()->set_request_deadline(deadline.tv_sec);
-  }
+bool CheckIsLocalhost(const grpc::string& addr) {
+  const grpc::string kIpv6("ipv6:[::1]:");
+  const grpc::string kIpv4MappedIpv6("ipv6:[::ffff:127.0.0.1]:");
+  const grpc::string kIpv4("ipv4:127.0.0.1:");
+  return addr.substr(0, kIpv4.size()) == kIpv4 ||
+         addr.substr(0, kIpv4MappedIpv6.size()) == kIpv4MappedIpv6 ||
+         addr.substr(0, kIpv6.size()) == kIpv6;
 }
 
-}  // namespace
-
-class TestServiceImpl : public ::grpc::cpp::test::util::TestService::Service {
+class TestMetadataCredentialsPlugin : public MetadataCredentialsPlugin {
  public:
-  TestServiceImpl() : signal_client_(false) {}
+  static const char kMetadataKey[];
 
-  Status Echo(ServerContext* context, const EchoRequest* request,
-              EchoResponse* response) GRPC_OVERRIDE {
-    response->set_message(request->message());
-    MaybeEchoDeadline(context, request, response);
-    if (request->has_param() && request->param().client_cancel_after_us()) {
-      {
-        std::unique_lock<std::mutex> lock(mu_);
-        signal_client_ = true;
-      }
-      while (!context->IsCancelled()) {
-        gpr_sleep_until(gpr_time_add(
-            gpr_now(),
-            gpr_time_from_micros(request->param().client_cancel_after_us())));
-      }
-      return Status::CANCELLED;
-    } else if (request->has_param() &&
-               request->param().server_cancel_after_us()) {
-      gpr_sleep_until(gpr_time_add(
-            gpr_now(),
-            gpr_time_from_micros(request->param().server_cancel_after_us())));
-      return Status::CANCELLED;
-    } else {
-      EXPECT_FALSE(context->IsCancelled());
-    }
+  TestMetadataCredentialsPlugin(grpc::string_ref metadata_value,
+                                bool is_blocking, bool is_successful)
+      : metadata_value_(metadata_value.data(), metadata_value.length()),
+        is_blocking_(is_blocking),
+        is_successful_(is_successful) {}
 
-    if (request->has_param() && request->param().echo_metadata()) {
-      const std::multimap<grpc::string, grpc::string>& client_metadata =
-          context->client_metadata();
-      for (std::multimap<grpc::string, grpc::string>::const_iterator iter =
-               client_metadata.begin();
-           iter != client_metadata.end(); ++iter) {
-        context->AddTrailingMetadata((*iter).first, (*iter).second);
-      }
-    }
-    return Status::OK;
-  }
+  bool IsBlocking() const GRPC_OVERRIDE { return is_blocking_; }
 
-  // Unimplemented is left unimplemented to test the returned error.
-
-  Status RequestStream(ServerContext* context,
-                       ServerReader<EchoRequest>* reader,
-                       EchoResponse* response) GRPC_OVERRIDE {
-    EchoRequest request;
-    response->set_message("");
-    int cancel_after_reads = 0;
-    const std::multimap<grpc::string, grpc::string> client_initial_metadata =
-        context->client_metadata();
-    if (client_initial_metadata.find(kServerCancelAfterReads) !=
-        client_initial_metadata.end()) {
-      std::istringstream iss(
-          client_initial_metadata.find(kServerCancelAfterReads)->second);
-      iss >> cancel_after_reads;
-      gpr_log(GPR_INFO, "cancel_after_reads %d", cancel_after_reads);
-    }
-    while (reader->Read(&request)) {
-      if (cancel_after_reads == 1) {
-        gpr_log(GPR_INFO, "return cancel status");
-        return Status::CANCELLED;
-      } else if (cancel_after_reads > 0) {
-        cancel_after_reads--;
-      }
-      response->mutable_message()->append(request.message());
-    }
-    return Status::OK;
-  }
-
-  // Return 3 messages.
-  // TODO(yangg) make it generic by adding a parameter into EchoRequest
-  Status ResponseStream(ServerContext* context, const EchoRequest* request,
-                        ServerWriter<EchoResponse>* writer) GRPC_OVERRIDE {
-    EchoResponse response;
-    response.set_message(request->message() + "0");
-    writer->Write(response);
-    response.set_message(request->message() + "1");
-    writer->Write(response);
-    response.set_message(request->message() + "2");
-    writer->Write(response);
-
-    return Status::OK;
-  }
-
-  Status BidiStream(ServerContext* context,
-                    ServerReaderWriter<EchoResponse, EchoRequest>* stream)
+  Status GetMetadata(grpc::string_ref service_url, grpc::string_ref method_name,
+                     const grpc::AuthContext& channel_auth_context,
+                     std::multimap<grpc::string, grpc::string>* metadata)
       GRPC_OVERRIDE {
-    EchoRequest request;
-    EchoResponse response;
-    while (stream->Read(&request)) {
-      gpr_log(GPR_INFO, "recv msg %s", request.message().c_str());
-      response.set_message(request.message());
-      stream->Write(response);
+    EXPECT_GT(service_url.length(), 0UL);
+    EXPECT_GT(method_name.length(), 0UL);
+    EXPECT_TRUE(channel_auth_context.IsPeerAuthenticated());
+    EXPECT_TRUE(metadata != nullptr);
+    if (is_successful_) {
+      metadata->insert(std::make_pair(kMetadataKey, metadata_value_));
+      return Status::OK;
+    } else {
+      return Status(StatusCode::NOT_FOUND, "Could not find plugin metadata.");
     }
-    return Status::OK;
-  }
-
-  bool signal_client() {
-    std::unique_lock<std::mutex> lock(mu_);
-    return signal_client_;
   }
 
  private:
-  bool signal_client_;
-  std::mutex mu_;
+  grpc::string metadata_value_;
+  bool is_blocking_;
+  bool is_successful_;
+};
+
+const char TestMetadataCredentialsPlugin::kMetadataKey[] = "TestPluginMetadata";
+
+class TestAuthMetadataProcessor : public AuthMetadataProcessor {
+ public:
+  static const char kGoodGuy[];
+
+  TestAuthMetadataProcessor(bool is_blocking) : is_blocking_(is_blocking) {}
+
+  std::shared_ptr<CallCredentials> GetCompatibleClientCreds() {
+    return MetadataCredentialsFromPlugin(
+        std::unique_ptr<MetadataCredentialsPlugin>(
+            new TestMetadataCredentialsPlugin(kGoodGuy, is_blocking_, true)));
+  }
+
+  std::shared_ptr<CallCredentials> GetIncompatibleClientCreds() {
+    return MetadataCredentialsFromPlugin(
+        std::unique_ptr<MetadataCredentialsPlugin>(
+            new TestMetadataCredentialsPlugin("Mr Hyde", is_blocking_, true)));
+  }
+
+  // Interface implementation
+  bool IsBlocking() const GRPC_OVERRIDE { return is_blocking_; }
+
+  Status Process(const InputMetadata& auth_metadata, AuthContext* context,
+                 OutputMetadata* consumed_auth_metadata,
+                 OutputMetadata* response_metadata) GRPC_OVERRIDE {
+    EXPECT_TRUE(consumed_auth_metadata != nullptr);
+    EXPECT_TRUE(context != nullptr);
+    EXPECT_TRUE(response_metadata != nullptr);
+    auto auth_md =
+        auth_metadata.find(TestMetadataCredentialsPlugin::kMetadataKey);
+    EXPECT_NE(auth_md, auth_metadata.end());
+    string_ref auth_md_value = auth_md->second;
+    if (auth_md_value == kGoodGuy) {
+      context->AddProperty(kIdentityPropName, kGoodGuy);
+      context->SetPeerIdentityPropertyName(kIdentityPropName);
+      consumed_auth_metadata->insert(std::make_pair(
+          string(auth_md->first.data(), auth_md->first.length()),
+          string(auth_md->second.data(), auth_md->second.length())));
+      return Status::OK;
+    } else {
+      return Status(StatusCode::UNAUTHENTICATED,
+                    string("Invalid principal: ") +
+                        string(auth_md_value.data(), auth_md_value.length()));
+    }
+  }
+
+ private:
+  static const char kIdentityPropName[];
+  bool is_blocking_;
+};
+
+const char TestAuthMetadataProcessor::kGoodGuy[] = "Dr Jekyll";
+const char TestAuthMetadataProcessor::kIdentityPropName[] = "novel identity";
+
+class Proxy : public ::grpc::testing::EchoTestService::Service {
+ public:
+  Proxy(std::shared_ptr<Channel> channel)
+      : stub_(grpc::testing::EchoTestService::NewStub(channel)) {}
+
+  Status Echo(ServerContext* server_context, const EchoRequest* request,
+              EchoResponse* response) GRPC_OVERRIDE {
+    std::unique_ptr<ClientContext> client_context =
+        ClientContext::FromServerContext(*server_context);
+    return stub_->Echo(client_context.get(), *request, response);
+  }
+
+ private:
+  std::unique_ptr< ::grpc::testing::EchoTestService::Stub> stub_;
 };
 
 class TestServiceImplDupPkg
-    : public ::grpc::cpp::test::util::duplicate::TestService::Service {
+    : public ::grpc::testing::duplicate::EchoTestService::Service {
  public:
   Status Echo(ServerContext* context, const EchoRequest* request,
               EchoResponse* response) GRPC_OVERRIDE {
@@ -203,67 +190,443 @@ class TestServiceImplDupPkg
   }
 };
 
-class End2endTest : public ::testing::Test {
- protected:
-  End2endTest() : kMaxMessageSize_(8192), thread_pool_(2) {}
+class TestScenario {
+ public:
+  TestScenario(bool proxy, const grpc::string& creds_type)
+      : use_proxy(proxy), credentials_type(creds_type) {}
+  void Log() const {
+    gpr_log(GPR_INFO, "Scenario: proxy %d, credentials %s", use_proxy,
+            credentials_type.c_str());
+  }
+  bool use_proxy;
+  const grpc::string credentials_type;
+};
 
-  void SetUp() GRPC_OVERRIDE {
+class End2endTest : public ::testing::TestWithParam<TestScenario> {
+ protected:
+  End2endTest()
+      : is_server_started_(false),
+        kMaxMessageSize_(8192),
+        special_service_("special") {
+    GetParam().Log();
+  }
+
+  void TearDown() GRPC_OVERRIDE {
+    if (is_server_started_) {
+      server_->Shutdown();
+      if (proxy_server_) proxy_server_->Shutdown();
+    }
+  }
+
+  void StartServer(const std::shared_ptr<AuthMetadataProcessor>& processor) {
     int port = grpc_pick_unused_port_or_die();
-    server_address_ << "localhost:" << port;
+    server_address_ << "127.0.0.1:" << port;
     // Setup server
     ServerBuilder builder;
-    builder.AddListeningPort(server_address_.str(),
-                             FakeTransportSecurityServerCredentials());
+    auto server_creds = GetServerCredentials(GetParam().credentials_type);
+    if (GetParam().credentials_type != kInsecureCredentialsType) {
+      server_creds->SetAuthMetadataProcessor(processor);
+    }
+    builder.AddListeningPort(server_address_.str(), server_creds);
     builder.RegisterService(&service_);
+    builder.RegisterService("foo.test.youtube.com", &special_service_);
     builder.SetMaxMessageSize(
         kMaxMessageSize_);  // For testing max message size.
     builder.RegisterService(&dup_pkg_service_);
-    builder.SetThreadPool(&thread_pool_);
     server_ = builder.BuildAndStart();
+    is_server_started_ = true;
   }
 
-  void TearDown() GRPC_OVERRIDE { server_->Shutdown(); }
+  void ResetChannel() {
+    if (!is_server_started_) {
+      StartServer(std::shared_ptr<AuthMetadataProcessor>());
+    }
+    EXPECT_TRUE(is_server_started_);
+    ChannelArguments args;
+    auto channel_creds =
+        GetChannelCredentials(GetParam().credentials_type, &args);
+    if (!user_agent_prefix_.empty()) {
+      args.SetUserAgentPrefix(user_agent_prefix_);
+    }
+    args.SetString(GRPC_ARG_SECONDARY_USER_AGENT_STRING, "end2end_test");
+    channel_ = CreateCustomChannel(server_address_.str(), channel_creds, args);
+  }
 
   void ResetStub() {
-    std::shared_ptr<ChannelInterface> channel =
-        CreateChannel(server_address_.str(), FakeTransportSecurityCredentials(),
-                      ChannelArguments());
-    stub_ = std::move(grpc::cpp::test::util::TestService::NewStub(channel));
+    ResetChannel();
+    if (GetParam().use_proxy) {
+      proxy_service_.reset(new Proxy(channel_));
+      int port = grpc_pick_unused_port_or_die();
+      std::ostringstream proxyaddr;
+      proxyaddr << "localhost:" << port;
+      ServerBuilder builder;
+      builder.AddListeningPort(proxyaddr.str(), InsecureServerCredentials());
+      builder.RegisterService(proxy_service_.get());
+      proxy_server_ = builder.BuildAndStart();
+
+      channel_ = CreateChannel(proxyaddr.str(), InsecureChannelCredentials());
+    }
+
+    stub_ = grpc::testing::EchoTestService::NewStub(channel_);
   }
 
-  std::unique_ptr<grpc::cpp::test::util::TestService::Stub> stub_;
+  bool is_server_started_;
+  std::shared_ptr<Channel> channel_;
+  std::unique_ptr<grpc::testing::EchoTestService::Stub> stub_;
   std::unique_ptr<Server> server_;
+  std::unique_ptr<Server> proxy_server_;
+  std::unique_ptr<Proxy> proxy_service_;
   std::ostringstream server_address_;
   const int kMaxMessageSize_;
   TestServiceImpl service_;
+  TestServiceImpl special_service_;
   TestServiceImplDupPkg dup_pkg_service_;
-  ThreadPool thread_pool_;
+  grpc::string user_agent_prefix_;
 };
 
-static void SendRpc(grpc::cpp::test::util::TestService::Stub* stub,
-                    int num_rpcs) {
+static void SendRpc(grpc::testing::EchoTestService::Stub* stub, int num_rpcs,
+                    bool with_binary_metadata) {
   EchoRequest request;
   EchoResponse response;
-  request.set_message("Hello");
+  request.set_message("Hello hello hello hello");
 
   for (int i = 0; i < num_rpcs; ++i) {
     ClientContext context;
+    if (with_binary_metadata) {
+      char bytes[8] = {'\0', '\1', '\2', '\3', '\4', '\5', '\6', (char)i};
+      context.AddMetadata("custom-bin", grpc::string(bytes, 8));
+    }
+    context.set_compression_algorithm(GRPC_COMPRESS_GZIP);
     Status s = stub->Echo(&context, request, &response);
     EXPECT_EQ(response.message(), request.message());
     EXPECT_TRUE(s.ok());
   }
 }
 
-TEST_F(End2endTest, SimpleRpc) {
+// This class is for testing scenarios where RPCs are cancelled on the server
+// by calling ServerContext::TryCancel()
+class End2endServerTryCancelTest : public End2endTest {
+ protected:
+  // Helper for testing client-streaming RPCs which are cancelled on the server.
+  // Depending on the value of server_try_cancel parameter, this will test one
+  // of the following three scenarios:
+  //   CANCEL_BEFORE_PROCESSING: Rpc is cancelled by the server before reading
+  //   any messages from the client
+  //
+  //   CANCEL_DURING_PROCESSING: Rpc is cancelled by the server while reading
+  //   messages from the client
+  //
+  //   CANCEL_AFTER PROCESSING: Rpc is cancelled by server after reading all
+  //   the messages from the client
+  //
+  // NOTE: Do not call this function with server_try_cancel == DO_NOT_CANCEL.
+  void TestRequestStreamServerCancel(
+      ServerTryCancelRequestPhase server_try_cancel, int num_msgs_to_send) {
+    ResetStub();
+    EchoRequest request;
+    EchoResponse response;
+    ClientContext context;
+
+    // Send server_try_cancel value in the client metadata
+    context.AddMetadata(kServerTryCancelRequest,
+                        std::to_string(server_try_cancel));
+
+    auto stream = stub_->RequestStream(&context, &response);
+
+    int num_msgs_sent = 0;
+    while (num_msgs_sent < num_msgs_to_send) {
+      request.set_message("hello");
+      if (!stream->Write(request)) {
+        break;
+      }
+      num_msgs_sent++;
+    }
+    gpr_log(GPR_INFO, "Sent %d messages", num_msgs_sent);
+
+    stream->WritesDone();
+    Status s = stream->Finish();
+
+    // At this point, we know for sure that RPC was cancelled by the server
+    // since we passed server_try_cancel value in the metadata. Depending on the
+    // value of server_try_cancel, the RPC might have been cancelled by the
+    // server at different stages. The following validates our expectations of
+    // number of messages sent in various cancellation scenarios:
+
+    switch (server_try_cancel) {
+      case CANCEL_BEFORE_PROCESSING:
+      case CANCEL_DURING_PROCESSING:
+        // If the RPC is cancelled by server before / during messages from the
+        // client, it means that the client most likely did not get a chance to
+        // send all the messages it wanted to send. i.e num_msgs_sent <=
+        // num_msgs_to_send
+        EXPECT_LE(num_msgs_sent, num_msgs_to_send);
+        break;
+
+      case CANCEL_AFTER_PROCESSING:
+        // If the RPC was cancelled after all messages were read by the server,
+        // the client did get a chance to send all its messages
+        EXPECT_EQ(num_msgs_sent, num_msgs_to_send);
+        break;
+
+      default:
+        gpr_log(GPR_ERROR, "Invalid server_try_cancel value: %d",
+                server_try_cancel);
+        EXPECT_TRUE(server_try_cancel > DO_NOT_CANCEL &&
+                    server_try_cancel <= CANCEL_AFTER_PROCESSING);
+        break;
+    }
+
+    EXPECT_FALSE(s.ok());
+    EXPECT_EQ(grpc::StatusCode::CANCELLED, s.error_code());
+  }
+
+  // Helper for testing server-streaming RPCs which are cancelled on the server.
+  // Depending on the value of server_try_cancel parameter, this will test one
+  // of the following three scenarios:
+  //   CANCEL_BEFORE_PROCESSING: Rpc is cancelled by the server before writing
+  //   any messages to the client
+  //
+  //   CANCEL_DURING_PROCESSING: Rpc is cancelled by the server while writing
+  //   messages to the client
+  //
+  //   CANCEL_AFTER PROCESSING: Rpc is cancelled by server after writing all
+  //   the messages to the client
+  //
+  // NOTE: Do not call this function with server_try_cancel == DO_NOT_CANCEL.
+  void TestResponseStreamServerCancel(
+      ServerTryCancelRequestPhase server_try_cancel) {
+    ResetStub();
+    EchoRequest request;
+    EchoResponse response;
+    ClientContext context;
+
+    // Send server_try_cancel in the client metadata
+    context.AddMetadata(kServerTryCancelRequest,
+                        std::to_string(server_try_cancel));
+
+    request.set_message("hello");
+    auto stream = stub_->ResponseStream(&context, request);
+
+    int num_msgs_read = 0;
+    while (num_msgs_read < kNumResponseStreamsMsgs) {
+      if (!stream->Read(&response)) {
+        break;
+      }
+      EXPECT_EQ(response.message(),
+                request.message() + std::to_string(num_msgs_read));
+      num_msgs_read++;
+    }
+    gpr_log(GPR_INFO, "Read %d messages", num_msgs_read);
+
+    Status s = stream->Finish();
+
+    // Depending on the value of server_try_cancel, the RPC might have been
+    // cancelled by the server at different stages. The following validates our
+    // expectations of number of messages read in various cancellation
+    // scenarios:
+    switch (server_try_cancel) {
+      case CANCEL_BEFORE_PROCESSING:
+        // Server cancelled before sending any messages. Which means the client
+        // wouldn't have read any
+        EXPECT_EQ(num_msgs_read, 0);
+        break;
+
+      case CANCEL_DURING_PROCESSING:
+        // Server cancelled while writing messages. Client must have read less
+        // than or equal to the expected number of messages
+        EXPECT_LE(num_msgs_read, kNumResponseStreamsMsgs);
+        break;
+
+      case CANCEL_AFTER_PROCESSING:
+        // Even though the Server cancelled after writing all messages, the RPC
+        // may be cancelled before the Client got a chance to read all the
+        // messages.
+        EXPECT_LE(num_msgs_read, kNumResponseStreamsMsgs);
+        break;
+
+      default: {
+        gpr_log(GPR_ERROR, "Invalid server_try_cancel value: %d",
+                server_try_cancel);
+        EXPECT_TRUE(server_try_cancel > DO_NOT_CANCEL &&
+                    server_try_cancel <= CANCEL_AFTER_PROCESSING);
+        break;
+      }
+    }
+
+    EXPECT_FALSE(s.ok());
+    EXPECT_EQ(grpc::StatusCode::CANCELLED, s.error_code());
+  }
+
+  // Helper for testing bidirectional-streaming RPCs which are cancelled on the
+  // server. Depending on the value of server_try_cancel parameter, this will
+  // test one of the following three scenarios:
+  //   CANCEL_BEFORE_PROCESSING: Rpc is cancelled by the server before reading/
+  //   writing any messages from/to the client
+  //
+  //   CANCEL_DURING_PROCESSING: Rpc is cancelled by the server while reading/
+  //   writing messages from/to the client
+  //
+  //   CANCEL_AFTER PROCESSING: Rpc is cancelled by server after reading/writing
+  //   all the messages from/to the client
+  //
+  // NOTE: Do not call this function with server_try_cancel == DO_NOT_CANCEL.
+  void TestBidiStreamServerCancel(ServerTryCancelRequestPhase server_try_cancel,
+                                  int num_messages) {
+    ResetStub();
+    EchoRequest request;
+    EchoResponse response;
+    ClientContext context;
+
+    // Send server_try_cancel in the client metadata
+    context.AddMetadata(kServerTryCancelRequest,
+                        std::to_string(server_try_cancel));
+
+    auto stream = stub_->BidiStream(&context);
+
+    int num_msgs_read = 0;
+    int num_msgs_sent = 0;
+    while (num_msgs_sent < num_messages) {
+      request.set_message("hello " + std::to_string(num_msgs_sent));
+      if (!stream->Write(request)) {
+        break;
+      }
+      num_msgs_sent++;
+
+      if (!stream->Read(&response)) {
+        break;
+      }
+      num_msgs_read++;
+
+      EXPECT_EQ(response.message(), request.message());
+    }
+    gpr_log(GPR_INFO, "Sent %d messages", num_msgs_sent);
+    gpr_log(GPR_INFO, "Read %d messages", num_msgs_read);
+
+    stream->WritesDone();
+    Status s = stream->Finish();
+
+    // Depending on the value of server_try_cancel, the RPC might have been
+    // cancelled by the server at different stages. The following validates our
+    // expectations of number of messages read in various cancellation
+    // scenarios:
+    switch (server_try_cancel) {
+      case CANCEL_BEFORE_PROCESSING:
+        EXPECT_EQ(num_msgs_read, 0);
+        break;
+
+      case CANCEL_DURING_PROCESSING:
+        EXPECT_LE(num_msgs_sent, num_messages);
+        EXPECT_LE(num_msgs_read, num_msgs_sent);
+        break;
+
+      case CANCEL_AFTER_PROCESSING:
+        EXPECT_EQ(num_msgs_sent, num_messages);
+
+        // The Server cancelled after reading the last message and after writing
+        // the message to the client. However, the RPC cancellation might have
+        // taken effect before the client actually read the response.
+        EXPECT_LE(num_msgs_read, num_msgs_sent);
+        break;
+
+      default:
+        gpr_log(GPR_ERROR, "Invalid server_try_cancel value: %d",
+                server_try_cancel);
+        EXPECT_TRUE(server_try_cancel > DO_NOT_CANCEL &&
+                    server_try_cancel <= CANCEL_AFTER_PROCESSING);
+        break;
+    }
+
+    EXPECT_FALSE(s.ok());
+    EXPECT_EQ(grpc::StatusCode::CANCELLED, s.error_code());
+  }
+};
+
+TEST_P(End2endServerTryCancelTest, RequestEchoServerCancel) {
   ResetStub();
-  SendRpc(stub_.get(), 1);
+  EchoRequest request;
+  EchoResponse response;
+  ClientContext context;
+
+  context.AddMetadata(kServerTryCancelRequest,
+                      std::to_string(CANCEL_BEFORE_PROCESSING));
+  Status s = stub_->Echo(&context, request, &response);
+  EXPECT_FALSE(s.ok());
+  EXPECT_EQ(grpc::StatusCode::CANCELLED, s.error_code());
 }
 
-TEST_F(End2endTest, MultipleRpcs) {
+// Server to cancel before doing reading the request
+TEST_P(End2endServerTryCancelTest, RequestStreamServerCancelBeforeReads) {
+  TestRequestStreamServerCancel(CANCEL_BEFORE_PROCESSING, 1);
+}
+
+// Server to cancel while reading a request from the stream in parallel
+TEST_P(End2endServerTryCancelTest, RequestStreamServerCancelDuringRead) {
+  TestRequestStreamServerCancel(CANCEL_DURING_PROCESSING, 10);
+}
+
+// Server to cancel after reading all the requests but before returning to the
+// client
+TEST_P(End2endServerTryCancelTest, RequestStreamServerCancelAfterReads) {
+  TestRequestStreamServerCancel(CANCEL_AFTER_PROCESSING, 4);
+}
+
+// Server to cancel before sending any response messages
+TEST_P(End2endServerTryCancelTest, ResponseStreamServerCancelBefore) {
+  TestResponseStreamServerCancel(CANCEL_BEFORE_PROCESSING);
+}
+
+// Server to cancel while writing a response to the stream in parallel
+TEST_P(End2endServerTryCancelTest, ResponseStreamServerCancelDuring) {
+  TestResponseStreamServerCancel(CANCEL_DURING_PROCESSING);
+}
+
+// Server to cancel after writing all the respones to the stream but before
+// returning to the client
+TEST_P(End2endServerTryCancelTest, ResponseStreamServerCancelAfter) {
+  TestResponseStreamServerCancel(CANCEL_AFTER_PROCESSING);
+}
+
+// Server to cancel before reading/writing any requests/responses on the stream
+TEST_P(End2endServerTryCancelTest, BidiStreamServerCancelBefore) {
+  TestBidiStreamServerCancel(CANCEL_BEFORE_PROCESSING, 2);
+}
+
+// Server to cancel while reading/writing requests/responses on the stream in
+// parallel
+TEST_P(End2endServerTryCancelTest, BidiStreamServerCancelDuring) {
+  TestBidiStreamServerCancel(CANCEL_DURING_PROCESSING, 10);
+}
+
+// Server to cancel after reading/writing all requests/responses on the stream
+// but before returning to the client
+TEST_P(End2endServerTryCancelTest, BidiStreamServerCancelAfter) {
+  TestBidiStreamServerCancel(CANCEL_AFTER_PROCESSING, 5);
+}
+
+TEST_P(End2endTest, SimpleRpcWithCustomeUserAgentPrefix) {
+  user_agent_prefix_ = "custom_prefix";
+  ResetStub();
+  EchoRequest request;
+  EchoResponse response;
+  request.set_message("Hello hello hello hello");
+  request.mutable_param()->set_echo_metadata(true);
+
+  ClientContext context;
+  Status s = stub_->Echo(&context, request, &response);
+  EXPECT_EQ(response.message(), request.message());
+  EXPECT_TRUE(s.ok());
+  const auto& trailing_metadata = context.GetServerTrailingMetadata();
+  auto iter = trailing_metadata.find("user-agent");
+  EXPECT_TRUE(iter != trailing_metadata.end());
+  grpc::string expected_prefix = user_agent_prefix_ + " grpc-c++/";
+  EXPECT_TRUE(iter->second.starts_with(expected_prefix));
+}
+
+TEST_P(End2endTest, MultipleRpcsWithVariedBinaryMetadataValue) {
   ResetStub();
   std::vector<std::thread*> threads;
   for (int i = 0; i < 10; ++i) {
-    threads.push_back(new std::thread(SendRpc, stub_.get(), 10));
+    threads.push_back(new std::thread(SendRpc, stub_.get(), 10, true));
   }
   for (int i = 0; i < 10; ++i) {
     threads[i]->join();
@@ -271,89 +634,19 @@ TEST_F(End2endTest, MultipleRpcs) {
   }
 }
 
-// Set a 10us deadline and make sure proper error is returned.
-TEST_F(End2endTest, RpcDeadlineExpires) {
+TEST_P(End2endTest, MultipleRpcs) {
   ResetStub();
-  EchoRequest request;
-  EchoResponse response;
-  request.set_message("Hello");
-
-  ClientContext context;
-  std::chrono::system_clock::time_point deadline =
-      std::chrono::system_clock::now() + std::chrono::microseconds(10);
-  context.set_deadline(deadline);
-  Status s = stub_->Echo(&context, request, &response);
-  EXPECT_EQ(StatusCode::DEADLINE_EXCEEDED, s.error_code());
+  std::vector<std::thread*> threads;
+  for (int i = 0; i < 10; ++i) {
+    threads.push_back(new std::thread(SendRpc, stub_.get(), 10, false));
+  }
+  for (int i = 0; i < 10; ++i) {
+    threads[i]->join();
+    delete threads[i];
+  }
 }
 
-// Set a long but finite deadline.
-TEST_F(End2endTest, RpcLongDeadline) {
-  ResetStub();
-  EchoRequest request;
-  EchoResponse response;
-  request.set_message("Hello");
-
-  ClientContext context;
-  std::chrono::system_clock::time_point deadline =
-      std::chrono::system_clock::now() + std::chrono::hours(1);
-  context.set_deadline(deadline);
-  Status s = stub_->Echo(&context, request, &response);
-  EXPECT_EQ(response.message(), request.message());
-  EXPECT_TRUE(s.ok());
-}
-
-// Ask server to echo back the deadline it sees.
-TEST_F(End2endTest, EchoDeadline) {
-  ResetStub();
-  EchoRequest request;
-  EchoResponse response;
-  request.set_message("Hello");
-  request.mutable_param()->set_echo_deadline(true);
-
-  ClientContext context;
-  std::chrono::system_clock::time_point deadline =
-      std::chrono::system_clock::now() + std::chrono::seconds(100);
-  context.set_deadline(deadline);
-  Status s = stub_->Echo(&context, request, &response);
-  EXPECT_EQ(response.message(), request.message());
-  EXPECT_TRUE(s.ok());
-  gpr_timespec sent_deadline;
-  Timepoint2Timespec(deadline, &sent_deadline);
-  // Allow 1 second error.
-  EXPECT_LE(response.param().request_deadline() - sent_deadline.tv_sec, 1);
-  EXPECT_GE(response.param().request_deadline() - sent_deadline.tv_sec, -1);
-}
-
-// Ask server to echo back the deadline it sees. The rpc has no deadline.
-TEST_F(End2endTest, EchoDeadlineForNoDeadlineRpc) {
-  ResetStub();
-  EchoRequest request;
-  EchoResponse response;
-  request.set_message("Hello");
-  request.mutable_param()->set_echo_deadline(true);
-
-  ClientContext context;
-  Status s = stub_->Echo(&context, request, &response);
-  EXPECT_EQ(response.message(), request.message());
-  EXPECT_TRUE(s.ok());
-  EXPECT_EQ(response.param().request_deadline(), gpr_inf_future.tv_sec);
-}
-
-TEST_F(End2endTest, UnimplementedRpc) {
-  ResetStub();
-  EchoRequest request;
-  EchoResponse response;
-  request.set_message("Hello");
-
-  ClientContext context;
-  Status s = stub_->Unimplemented(&context, request, &response);
-  EXPECT_FALSE(s.ok());
-  EXPECT_EQ(s.error_code(), grpc::StatusCode::UNIMPLEMENTED);
-  EXPECT_EQ(s.error_message(), "");
-  EXPECT_EQ(response.message(), "");
-}
-
-TEST_F(End2endTest, RequestStreamOneRequest) {
+TEST_P(End2endTest, RequestStreamOneRequest) {
   ResetStub();
   EchoRequest request;
   EchoResponse response;
@@ -368,7 +661,7 @@ TEST_F(End2endTest, RequestStreamOneRequest) {
   EXPECT_TRUE(s.ok());
 }
 
-TEST_F(End2endTest, RequestStreamTwoRequests) {
+TEST_P(End2endTest, RequestStreamTwoRequests) {
   ResetStub();
   EchoRequest request;
   EchoResponse response;
@@ -384,7 +677,7 @@ TEST_F(End2endTest, RequestStreamTwoRequests) {
   EXPECT_TRUE(s.ok());
 }
 
-TEST_F(End2endTest, ResponseStream) {
+TEST_P(End2endTest, ResponseStream) {
   ResetStub();
   EchoRequest request;
   EchoResponse response;
@@ -404,7 +697,7 @@ TEST_F(End2endTest, ResponseStream) {
   EXPECT_TRUE(s.ok());
 }
 
-TEST_F(End2endTest, BidiStream) {
+TEST_P(End2endTest, BidiStream) {
   ResetStub();
   EchoRequest request;
   EchoResponse response;
@@ -430,6 +723,7 @@ TEST_F(End2endTest, BidiStream) {
 
   stream->WritesDone();
   EXPECT_FALSE(stream->Read(&response));
+  EXPECT_FALSE(stream->Read(&response));
 
   Status s = stream->Finish();
   EXPECT_TRUE(s.ok());
@@ -437,98 +731,47 @@ TEST_F(End2endTest, BidiStream) {
 
 // Talk to the two services with the same name but different package names.
 // The two stubs are created on the same channel.
-TEST_F(End2endTest, DiffPackageServices) {
-  std::shared_ptr<ChannelInterface> channel =
-      CreateChannel(server_address_.str(), FakeTransportSecurityCredentials(),
-                    ChannelArguments());
-
+TEST_P(End2endTest, DiffPackageServices) {
+  ResetStub();
   EchoRequest request;
   EchoResponse response;
   request.set_message("Hello");
 
-  std::unique_ptr<grpc::cpp::test::util::TestService::Stub> stub(
-      grpc::cpp::test::util::TestService::NewStub(channel));
   ClientContext context;
-  Status s = stub->Echo(&context, request, &response);
+  Status s = stub_->Echo(&context, request, &response);
   EXPECT_EQ(response.message(), request.message());
   EXPECT_TRUE(s.ok());
 
-  std::unique_ptr<grpc::cpp::test::util::duplicate::TestService::Stub>
-      dup_pkg_stub(
-          grpc::cpp::test::util::duplicate::TestService::NewStub(channel));
+  std::unique_ptr<grpc::testing::duplicate::EchoTestService::Stub> dup_pkg_stub(
+      grpc::testing::duplicate::EchoTestService::NewStub(channel_));
   ClientContext context2;
   s = dup_pkg_stub->Echo(&context2, request, &response);
   EXPECT_EQ("no package", response.message());
   EXPECT_TRUE(s.ok());
 }
 
-// rpc and stream should fail on bad credentials.
-TEST_F(End2endTest, BadCredentials) {
-  std::shared_ptr<Credentials> bad_creds = ServiceAccountCredentials("", "", 1);
-  EXPECT_EQ(nullptr, bad_creds.get());
-  std::shared_ptr<ChannelInterface> channel =
-      CreateChannel(server_address_.str(), bad_creds, ChannelArguments());
-  std::unique_ptr<grpc::cpp::test::util::TestService::Stub> stub(
-      grpc::cpp::test::util::TestService::NewStub(channel));
-  EchoRequest request;
-  EchoResponse response;
-  ClientContext context;
-  request.set_message("Hello");
-
-  Status s = stub->Echo(&context, request, &response);
-  EXPECT_EQ("", response.message());
-  EXPECT_FALSE(s.ok());
-  EXPECT_EQ(StatusCode::UNKNOWN, s.error_code());
-  EXPECT_EQ("Rpc sent on a lame channel.", s.error_message());
-
-  ClientContext context2;
-  auto stream = stub->BidiStream(&context2);
-  s = stream->Finish();
-  EXPECT_FALSE(s.ok());
-  EXPECT_EQ(StatusCode::UNKNOWN, s.error_code());
-  EXPECT_EQ("Rpc sent on a lame channel.", s.error_message());
-}
-
 void CancelRpc(ClientContext* context, int delay_us, TestServiceImpl* service) {
-  gpr_sleep_until(gpr_time_add(gpr_now(), gpr_time_from_micros(delay_us)));
+  gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                               gpr_time_from_micros(delay_us, GPR_TIMESPAN)));
   while (!service->signal_client()) {
   }
   context->TryCancel();
 }
 
-// Client cancels rpc after 10ms
-TEST_F(End2endTest, ClientCancelsRpc) {
+TEST_P(End2endTest, CancelRpcBeforeStart) {
   ResetStub();
   EchoRequest request;
   EchoResponse response;
-  request.set_message("Hello");
-  const int kCancelDelayUs = 10 * 1000;
-  request.mutable_param()->set_client_cancel_after_us(kCancelDelayUs);
-
   ClientContext context;
-  std::thread cancel_thread(CancelRpc, &context, kCancelDelayUs, &service_);
+  request.set_message("hello");
+  context.TryCancel();
   Status s = stub_->Echo(&context, request, &response);
-  cancel_thread.join();
-  EXPECT_EQ(StatusCode::CANCELLED, s.error_code());
-  EXPECT_EQ(s.error_message(), "Cancelled");
-}
-
-// Server cancels rpc after 1ms
-TEST_F(End2endTest, ServerCancelsRpc) {
-  ResetStub();
-  EchoRequest request;
-  EchoResponse response;
-  request.set_message("Hello");
-  request.mutable_param()->set_server_cancel_after_us(1000);
-
-  ClientContext context;
-  Status s = stub_->Echo(&context, request, &response);
-  EXPECT_EQ(StatusCode::CANCELLED, s.error_code());
-  EXPECT_TRUE(s.error_message().empty());
+  EXPECT_EQ("", response.message());
+  EXPECT_EQ(grpc::StatusCode::CANCELLED, s.error_code());
 }
 
 // Client cancels request stream after sending two messages
-TEST_F(End2endTest, ClientCancelsRequestStream) {
+TEST_P(End2endTest, ClientCancelsRequestStream) {
   ResetStub();
   EchoRequest request;
   EchoResponse response;
@@ -548,7 +791,7 @@ TEST_F(End2endTest, ClientCancelsRequestStream) {
 }
 
 // Client cancels server stream after sending some messages
-TEST_F(End2endTest, ClientCancelsResponseStream) {
+TEST_P(End2endTest, ClientCancelsResponseStream) {
   ResetStub();
   EchoRequest request;
   EchoResponse response;
@@ -580,7 +823,7 @@ TEST_F(End2endTest, ClientCancelsResponseStream) {
 }
 
 // Client cancels bidi stream after sending some messages
-TEST_F(End2endTest, ClientCancelsBidi) {
+TEST_P(End2endTest, ClientCancelsBidi) {
   ResetStub();
   EchoRequest request;
   EchoResponse response;
@@ -612,7 +855,7 @@ TEST_F(End2endTest, ClientCancelsBidi) {
   EXPECT_EQ(grpc::StatusCode::CANCELLED, s.error_code());
 }
 
-TEST_F(End2endTest, RpcMaxMessageSize) {
+TEST_P(End2endTest, RpcMaxMessageSize) {
   ResetStub();
   EchoRequest request;
   EchoResponse response;
@@ -623,27 +866,369 @@ TEST_F(End2endTest, RpcMaxMessageSize) {
   EXPECT_FALSE(s.ok());
 }
 
-bool MetadataContains(const std::multimap<grpc::string, grpc::string>& metadata,
-                      const grpc::string& key, const grpc::string& value) {
+// Client sends 20 requests and the server returns CANCELLED status after
+// reading 10 requests.
+TEST_P(End2endTest, RequestStreamServerEarlyCancelTest) {
+  ResetStub();
+  EchoRequest request;
+  EchoResponse response;
+  ClientContext context;
+
+  context.AddMetadata(kServerCancelAfterReads, "10");
+  auto stream = stub_->RequestStream(&context, &response);
+  request.set_message("hello");
+  int send_messages = 20;
+  while (send_messages > 10) {
+    EXPECT_TRUE(stream->Write(request));
+    send_messages--;
+  }
+  while (send_messages > 0) {
+    stream->Write(request);
+    send_messages--;
+  }
+  stream->WritesDone();
+  Status s = stream->Finish();
+  EXPECT_EQ(s.error_code(), StatusCode::CANCELLED);
+}
+
+void ReaderThreadFunc(ClientReaderWriter<EchoRequest, EchoResponse>* stream,
+                      gpr_event* ev) {
+  EchoResponse resp;
+  gpr_event_set(ev, (void*)1);
+  while (stream->Read(&resp)) {
+    gpr_log(GPR_INFO, "Read message");
+  }
+}
+
+// Run a Read and a WritesDone simultaneously.
+TEST_P(End2endTest, SimultaneousReadWritesDone) {
+  ResetStub();
+  ClientContext context;
+  gpr_event ev;
+  gpr_event_init(&ev);
+  auto stream = stub_->BidiStream(&context);
+  std::thread reader_thread(ReaderThreadFunc, stream.get(), &ev);
+  gpr_event_wait(&ev, gpr_inf_future(GPR_CLOCK_REALTIME));
+  stream->WritesDone();
+  reader_thread.join();
+  Status s = stream->Finish();
+  EXPECT_TRUE(s.ok());
+}
+
+TEST_P(End2endTest, ChannelState) {
+  ResetStub();
+  // Start IDLE
+  EXPECT_EQ(GRPC_CHANNEL_IDLE, channel_->GetState(false));
+
+  // Did not ask to connect, no state change.
+  CompletionQueue cq;
+  std::chrono::system_clock::time_point deadline =
+      std::chrono::system_clock::now() + std::chrono::milliseconds(10);
+  channel_->NotifyOnStateChange(GRPC_CHANNEL_IDLE, deadline, &cq, NULL);
+  void* tag;
+  bool ok = true;
+  cq.Next(&tag, &ok);
+  EXPECT_FALSE(ok);
+
+  EXPECT_EQ(GRPC_CHANNEL_IDLE, channel_->GetState(true));
+  EXPECT_TRUE(channel_->WaitForStateChange(GRPC_CHANNEL_IDLE,
+                                           gpr_inf_future(GPR_CLOCK_REALTIME)));
+  auto state = channel_->GetState(false);
+  EXPECT_TRUE(state == GRPC_CHANNEL_CONNECTING || state == GRPC_CHANNEL_READY);
+}
+
+// Takes 10s.
+TEST_P(End2endTest, ChannelStateTimeout) {
+  if (GetParam().credentials_type != kInsecureCredentialsType) {
+    return;
+  }
+  int port = grpc_pick_unused_port_or_die();
+  std::ostringstream server_address;
+  server_address << "127.0.0.1:" << port;
+  // Channel to non-existing server
+  auto channel =
+      CreateChannel(server_address.str(), InsecureChannelCredentials());
+  // Start IDLE
+  EXPECT_EQ(GRPC_CHANNEL_IDLE, channel->GetState(true));
+
+  auto state = GRPC_CHANNEL_IDLE;
+  for (int i = 0; i < 10; i++) {
+    channel->WaitForStateChange(
+        state, std::chrono::system_clock::now() + std::chrono::seconds(1));
+    state = channel->GetState(false);
+  }
+}
+
+// Talking to a non-existing service.
+TEST_P(End2endTest, NonExistingService) {
+  ResetChannel();
+  std::unique_ptr<grpc::testing::UnimplementedService::Stub> stub;
+  stub = grpc::testing::UnimplementedService::NewStub(channel_);
+
+  EchoRequest request;
+  EchoResponse response;
+  request.set_message("Hello");
+
+  ClientContext context;
+  Status s = stub->Unimplemented(&context, request, &response);
+  EXPECT_EQ(StatusCode::UNIMPLEMENTED, s.error_code());
+  EXPECT_EQ("", s.error_message());
+}
+
+//////////////////////////////////////////////////////////////////////////
+// Test with and without a proxy.
+class ProxyEnd2endTest : public End2endTest {
+ protected:
+};
+
+TEST_P(ProxyEnd2endTest, SimpleRpc) {
+  ResetStub();
+  SendRpc(stub_.get(), 1, false);
+}
+
+TEST_P(ProxyEnd2endTest, MultipleRpcs) {
+  ResetStub();
+  std::vector<std::thread*> threads;
+  for (int i = 0; i < 10; ++i) {
+    threads.push_back(new std::thread(SendRpc, stub_.get(), 10, false));
+  }
+  for (int i = 0; i < 10; ++i) {
+    threads[i]->join();
+    delete threads[i];
+  }
+}
+
+// Set a 10us deadline and make sure proper error is returned.
+TEST_P(ProxyEnd2endTest, RpcDeadlineExpires) {
+  ResetStub();
+  EchoRequest request;
+  EchoResponse response;
+  request.set_message("Hello");
+  request.mutable_param()->set_skip_cancelled_check(true);
+
+  ClientContext context;
+  std::chrono::system_clock::time_point deadline =
+      std::chrono::system_clock::now() + std::chrono::microseconds(10);
+  context.set_deadline(deadline);
+  Status s = stub_->Echo(&context, request, &response);
+  EXPECT_EQ(StatusCode::DEADLINE_EXCEEDED, s.error_code());
+}
+
+// Set a long but finite deadline.
+TEST_P(ProxyEnd2endTest, RpcLongDeadline) {
+  ResetStub();
+  EchoRequest request;
+  EchoResponse response;
+  request.set_message("Hello");
+
+  ClientContext context;
+  std::chrono::system_clock::time_point deadline =
+      std::chrono::system_clock::now() + std::chrono::hours(1);
+  context.set_deadline(deadline);
+  Status s = stub_->Echo(&context, request, &response);
+  EXPECT_EQ(response.message(), request.message());
+  EXPECT_TRUE(s.ok());
+}
+
+// Ask server to echo back the deadline it sees.
+TEST_P(ProxyEnd2endTest, EchoDeadline) {
+  ResetStub();
+  EchoRequest request;
+  EchoResponse response;
+  request.set_message("Hello");
+  request.mutable_param()->set_echo_deadline(true);
+
+  ClientContext context;
+  std::chrono::system_clock::time_point deadline =
+      std::chrono::system_clock::now() + std::chrono::seconds(100);
+  context.set_deadline(deadline);
+  Status s = stub_->Echo(&context, request, &response);
+  EXPECT_EQ(response.message(), request.message());
+  EXPECT_TRUE(s.ok());
+  gpr_timespec sent_deadline;
+  Timepoint2Timespec(deadline, &sent_deadline);
+  // Allow 1 second error.
+  EXPECT_LE(response.param().request_deadline() - sent_deadline.tv_sec, 1);
+  EXPECT_GE(response.param().request_deadline() - sent_deadline.tv_sec, -1);
+}
+
+// Ask server to echo back the deadline it sees. The rpc has no deadline.
+TEST_P(ProxyEnd2endTest, EchoDeadlineForNoDeadlineRpc) {
+  ResetStub();
+  EchoRequest request;
+  EchoResponse response;
+  request.set_message("Hello");
+  request.mutable_param()->set_echo_deadline(true);
+
+  ClientContext context;
+  Status s = stub_->Echo(&context, request, &response);
+  EXPECT_EQ(response.message(), request.message());
+  EXPECT_TRUE(s.ok());
+  EXPECT_EQ(response.param().request_deadline(),
+            gpr_inf_future(GPR_CLOCK_REALTIME).tv_sec);
+}
+
+TEST_P(ProxyEnd2endTest, UnimplementedRpc) {
+  ResetStub();
+  EchoRequest request;
+  EchoResponse response;
+  request.set_message("Hello");
+
+  ClientContext context;
+  Status s = stub_->Unimplemented(&context, request, &response);
+  EXPECT_FALSE(s.ok());
+  EXPECT_EQ(s.error_code(), grpc::StatusCode::UNIMPLEMENTED);
+  EXPECT_EQ(s.error_message(), "");
+  EXPECT_EQ(response.message(), "");
+}
+
+// Client cancels rpc after 10ms
+TEST_P(ProxyEnd2endTest, ClientCancelsRpc) {
+  ResetStub();
+  EchoRequest request;
+  EchoResponse response;
+  request.set_message("Hello");
+  const int kCancelDelayUs = 10 * 1000;
+  request.mutable_param()->set_client_cancel_after_us(kCancelDelayUs);
+
+  ClientContext context;
+  std::thread cancel_thread(CancelRpc, &context, kCancelDelayUs, &service_);
+  Status s = stub_->Echo(&context, request, &response);
+  cancel_thread.join();
+  EXPECT_EQ(StatusCode::CANCELLED, s.error_code());
+  EXPECT_EQ(s.error_message(), "Cancelled");
+}
+
+// Server cancels rpc after 1ms
+TEST_P(ProxyEnd2endTest, ServerCancelsRpc) {
+  ResetStub();
+  EchoRequest request;
+  EchoResponse response;
+  request.set_message("Hello");
+  request.mutable_param()->set_server_cancel_after_us(1000);
+
+  ClientContext context;
+  Status s = stub_->Echo(&context, request, &response);
+  EXPECT_EQ(StatusCode::CANCELLED, s.error_code());
+  EXPECT_TRUE(s.error_message().empty());
+}
+
+// Make the response larger than the flow control window.
+TEST_P(ProxyEnd2endTest, HugeResponse) {
+  ResetStub();
+  EchoRequest request;
+  EchoResponse response;
+  request.set_message("huge response");
+  const size_t kResponseSize = 1024 * (1024 + 10);
+  request.mutable_param()->set_response_message_length(kResponseSize);
+
+  ClientContext context;
+  Status s = stub_->Echo(&context, request, &response);
+  EXPECT_EQ(kResponseSize, response.message().size());
+  EXPECT_TRUE(s.ok());
+}
+
+TEST_P(ProxyEnd2endTest, Peer) {
+  ResetStub();
+  EchoRequest request;
+  EchoResponse response;
+  request.set_message("hello");
+  request.mutable_param()->set_echo_peer(true);
+
+  ClientContext context;
+  Status s = stub_->Echo(&context, request, &response);
+  EXPECT_EQ(response.message(), request.message());
+  EXPECT_TRUE(s.ok());
+  EXPECT_TRUE(CheckIsLocalhost(response.param().peer()));
+  EXPECT_TRUE(CheckIsLocalhost(context.peer()));
+}
+
+//////////////////////////////////////////////////////////////////////////
+class SecureEnd2endTest : public End2endTest {
+ protected:
+  SecureEnd2endTest() {
+    GPR_ASSERT(!GetParam().use_proxy);
+    GPR_ASSERT(GetParam().credentials_type != kInsecureCredentialsType);
+  }
+};
+
+TEST_P(SecureEnd2endTest, SimpleRpcWithHost) {
+  ResetStub();
+
+  EchoRequest request;
+  EchoResponse response;
+  request.set_message("Hello");
+
+  ClientContext context;
+  context.set_authority("foo.test.youtube.com");
+  Status s = stub_->Echo(&context, request, &response);
+  EXPECT_EQ(response.message(), request.message());
+  EXPECT_TRUE(response.has_param());
+  EXPECT_EQ("special", response.param().host());
+  EXPECT_TRUE(s.ok());
+}
+
+bool MetadataContains(
+    const std::multimap<grpc::string_ref, grpc::string_ref>& metadata,
+    const grpc::string& key, const grpc::string& value) {
   int count = 0;
 
-  for (std::multimap<grpc::string, grpc::string>::const_iterator iter =
+  for (std::multimap<grpc::string_ref, grpc::string_ref>::const_iterator iter =
            metadata.begin();
        iter != metadata.end(); ++iter) {
-    if ((*iter).first == key && (*iter).second == value) {
+    if (ToString(iter->first) == key && ToString(iter->second) == value) {
       count++;
     }
   }
   return count == 1;
 }
 
-TEST_F(End2endTest, SetPerCallCredentials) {
+TEST_P(SecureEnd2endTest, BlockingAuthMetadataPluginAndProcessorSuccess) {
+  auto* processor = new TestAuthMetadataProcessor(true);
+  StartServer(std::shared_ptr<AuthMetadataProcessor>(processor));
   ResetStub();
   EchoRequest request;
   EchoResponse response;
   ClientContext context;
-  std::shared_ptr<Credentials> creds =
-      IAMCredentials("fake_token", "fake_selector");
+  context.set_credentials(processor->GetCompatibleClientCreds());
+  request.set_message("Hello");
+  request.mutable_param()->set_echo_metadata(true);
+  request.mutable_param()->set_expected_client_identity(
+      TestAuthMetadataProcessor::kGoodGuy);
+  request.mutable_param()->set_expected_transport_security_type(
+      GetParam().credentials_type);
+
+  Status s = stub_->Echo(&context, request, &response);
+  EXPECT_EQ(request.message(), response.message());
+  EXPECT_TRUE(s.ok());
+
+  // Metadata should have been consumed by the processor.
+  EXPECT_FALSE(MetadataContains(
+      context.GetServerTrailingMetadata(), GRPC_AUTHORIZATION_METADATA_KEY,
+      grpc::string("Bearer ") + TestAuthMetadataProcessor::kGoodGuy));
+}
+
+TEST_P(SecureEnd2endTest, BlockingAuthMetadataPluginAndProcessorFailure) {
+  auto* processor = new TestAuthMetadataProcessor(true);
+  StartServer(std::shared_ptr<AuthMetadataProcessor>(processor));
+  ResetStub();
+  EchoRequest request;
+  EchoResponse response;
+  ClientContext context;
+  context.set_credentials(processor->GetIncompatibleClientCreds());
+  request.set_message("Hello");
+
+  Status s = stub_->Echo(&context, request, &response);
+  EXPECT_FALSE(s.ok());
+  EXPECT_EQ(s.error_code(), StatusCode::UNAUTHENTICATED);
+}
+TEST_P(SecureEnd2endTest, SetPerCallCredentials) {
+  ResetStub();
+  EchoRequest request;
+  EchoResponse response;
+  ClientContext context;
+  std::shared_ptr<CallCredentials> creds =
+      GoogleIAMCredentials("fake_token", "fake_selector");
   context.set_credentials(creds);
   request.set_message("Hello");
   request.mutable_param()->set_echo_metadata(true);
@@ -659,31 +1244,16 @@ TEST_F(End2endTest, SetPerCallCredentials) {
                                "fake_selector"));
 }
 
-TEST_F(End2endTest, InsecurePerCallCredentials) {
+TEST_P(SecureEnd2endTest, OverridePerCallCredentials) {
   ResetStub();
   EchoRequest request;
   EchoResponse response;
   ClientContext context;
-  std::shared_ptr<Credentials> creds = InsecureCredentials();
-  context.set_credentials(creds);
-  request.set_message("Hello");
-  request.mutable_param()->set_echo_metadata(true);
-
-  Status s = stub_->Echo(&context, request, &response);
-  EXPECT_EQ(StatusCode::CANCELLED, s.error_code());
-  EXPECT_EQ("Failed to set credentials to rpc.", s.error_message());
-}
-
-TEST_F(End2endTest, OverridePerCallCredentials) {
-  ResetStub();
-  EchoRequest request;
-  EchoResponse response;
-  ClientContext context;
-  std::shared_ptr<Credentials> creds1 =
-      IAMCredentials("fake_token1", "fake_selector1");
+  std::shared_ptr<CallCredentials> creds1 =
+      GoogleIAMCredentials("fake_token1", "fake_selector1");
   context.set_credentials(creds1);
-  std::shared_ptr<Credentials> creds2 =
-      IAMCredentials("fake_token2", "fake_selector2");
+  std::shared_ptr<CallCredentials> creds2 =
+      GoogleIAMCredentials("fake_token2", "fake_selector2");
   context.set_credentials(creds2);
   request.set_message("Hello");
   request.mutable_param()->set_echo_metadata(true);
@@ -705,27 +1275,149 @@ TEST_F(End2endTest, OverridePerCallCredentials) {
   EXPECT_TRUE(s.ok());
 }
 
-// Client sends 20 requests and the server returns CANCELLED status after
-// reading 10 requests.
-TEST_F(End2endTest, RequestStreamServerEarlyCancelTest) {
+TEST_P(SecureEnd2endTest, NonBlockingAuthMetadataPluginFailure) {
   ResetStub();
   EchoRequest request;
   EchoResponse response;
   ClientContext context;
+  context.set_credentials(
+      MetadataCredentialsFromPlugin(std::unique_ptr<MetadataCredentialsPlugin>(
+          new TestMetadataCredentialsPlugin(
+              "Does not matter, will fail anyway (see 3rd param)", false,
+              false))));
+  request.set_message("Hello");
 
-  context.AddMetadata(kServerCancelAfterReads, "10");
-  auto stream = stub_->RequestStream(&context, &response);
-  request.set_message("hello");
-  int send_messages = 20;
-  while (send_messages > 0) {
-    EXPECT_TRUE(stream->Write(request));
-    send_messages--;
-  }
-  stream->WritesDone();
-  Status s = stream->Finish();
-  EXPECT_EQ(s.error_code(), StatusCode::CANCELLED);
+  Status s = stub_->Echo(&context, request, &response);
+  EXPECT_FALSE(s.ok());
+  EXPECT_EQ(s.error_code(), StatusCode::UNAUTHENTICATED);
 }
 
+TEST_P(SecureEnd2endTest, NonBlockingAuthMetadataPluginAndProcessorSuccess) {
+  auto* processor = new TestAuthMetadataProcessor(false);
+  StartServer(std::shared_ptr<AuthMetadataProcessor>(processor));
+  ResetStub();
+  EchoRequest request;
+  EchoResponse response;
+  ClientContext context;
+  context.set_credentials(processor->GetCompatibleClientCreds());
+  request.set_message("Hello");
+  request.mutable_param()->set_echo_metadata(true);
+  request.mutable_param()->set_expected_client_identity(
+      TestAuthMetadataProcessor::kGoodGuy);
+  request.mutable_param()->set_expected_transport_security_type(
+      GetParam().credentials_type);
+
+  Status s = stub_->Echo(&context, request, &response);
+  EXPECT_EQ(request.message(), response.message());
+  EXPECT_TRUE(s.ok());
+
+  // Metadata should have been consumed by the processor.
+  EXPECT_FALSE(MetadataContains(
+      context.GetServerTrailingMetadata(), GRPC_AUTHORIZATION_METADATA_KEY,
+      grpc::string("Bearer ") + TestAuthMetadataProcessor::kGoodGuy));
+}
+
+TEST_P(SecureEnd2endTest, NonBlockingAuthMetadataPluginAndProcessorFailure) {
+  auto* processor = new TestAuthMetadataProcessor(false);
+  StartServer(std::shared_ptr<AuthMetadataProcessor>(processor));
+  ResetStub();
+  EchoRequest request;
+  EchoResponse response;
+  ClientContext context;
+  context.set_credentials(processor->GetIncompatibleClientCreds());
+  request.set_message("Hello");
+
+  Status s = stub_->Echo(&context, request, &response);
+  EXPECT_FALSE(s.ok());
+  EXPECT_EQ(s.error_code(), StatusCode::UNAUTHENTICATED);
+}
+
+TEST_P(SecureEnd2endTest, BlockingAuthMetadataPluginFailure) {
+  ResetStub();
+  EchoRequest request;
+  EchoResponse response;
+  ClientContext context;
+  context.set_credentials(
+      MetadataCredentialsFromPlugin(std::unique_ptr<MetadataCredentialsPlugin>(
+          new TestMetadataCredentialsPlugin(
+              "Does not matter, will fail anyway (see 3rd param)", true,
+              false))));
+  request.set_message("Hello");
+
+  Status s = stub_->Echo(&context, request, &response);
+  EXPECT_FALSE(s.ok());
+  EXPECT_EQ(s.error_code(), StatusCode::UNAUTHENTICATED);
+}
+
+TEST_P(SecureEnd2endTest, ClientAuthContext) {
+  ResetStub();
+  EchoRequest request;
+  EchoResponse response;
+  request.set_message("Hello");
+  request.mutable_param()->set_check_auth_context(GetParam().credentials_type ==
+                                                  kTlsCredentialsType);
+  request.mutable_param()->set_expected_transport_security_type(
+      GetParam().credentials_type);
+  ClientContext context;
+  Status s = stub_->Echo(&context, request, &response);
+  EXPECT_EQ(response.message(), request.message());
+  EXPECT_TRUE(s.ok());
+
+  std::shared_ptr<const AuthContext> auth_ctx = context.auth_context();
+  std::vector<grpc::string_ref> tst =
+      auth_ctx->FindPropertyValues("transport_security_type");
+  EXPECT_EQ(1u, tst.size());
+  EXPECT_EQ(GetParam().credentials_type, ToString(tst[0]));
+  if (GetParam().credentials_type == kTlsCredentialsType) {
+    EXPECT_EQ("x509_subject_alternative_name",
+              auth_ctx->GetPeerIdentityPropertyName());
+    EXPECT_EQ(4u, auth_ctx->GetPeerIdentity().size());
+    EXPECT_EQ("*.test.google.fr", ToString(auth_ctx->GetPeerIdentity()[0]));
+    EXPECT_EQ("waterzooi.test.google.be",
+              ToString(auth_ctx->GetPeerIdentity()[1]));
+    EXPECT_EQ("*.test.youtube.com", ToString(auth_ctx->GetPeerIdentity()[2]));
+    EXPECT_EQ("192.168.1.3", ToString(auth_ctx->GetPeerIdentity()[3]));
+  }
+}
+
+std::vector<TestScenario> CreateTestScenarios(bool use_proxy,
+                                              bool test_insecure,
+                                              bool test_secure) {
+  std::vector<TestScenario> scenarios;
+  std::vector<grpc::string> credentials_types;
+  if (test_secure) {
+    credentials_types = GetSecureCredentialsTypeList();
+  }
+  if (test_insecure) {
+    credentials_types.push_back(kInsecureCredentialsType);
+  }
+  for (auto it = credentials_types.begin(); it != credentials_types.end();
+       ++it) {
+    scenarios.push_back(TestScenario(false, *it));
+    if (use_proxy) {
+      scenarios.push_back(TestScenario(true, *it));
+    }
+  }
+  return scenarios;
+}
+
+INSTANTIATE_TEST_CASE_P(End2end, End2endTest,
+                        ::testing::ValuesIn(CreateTestScenarios(false, true,
+                                                                true)));
+
+INSTANTIATE_TEST_CASE_P(End2endServerTryCancel, End2endServerTryCancelTest,
+                        ::testing::ValuesIn(CreateTestScenarios(false, true,
+                                                                false)));
+
+INSTANTIATE_TEST_CASE_P(ProxyEnd2end, ProxyEnd2endTest,
+                        ::testing::ValuesIn(CreateTestScenarios(true, true,
+                                                                true)));
+
+INSTANTIATE_TEST_CASE_P(SecureEnd2end, SecureEnd2endTest,
+                        ::testing::ValuesIn(CreateTestScenarios(false, false,
+                                                                true)));
+
+}  // namespace
 }  // namespace testing
 }  // namespace grpc
 

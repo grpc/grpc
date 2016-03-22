@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\invalid_call_argument_test.c">
+      <Filter>test\core\end2end</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="test">
+      <UniqueIdentifier>{d5718e1e-f9c3-5b35-6b92-0309cc63bcf3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core">
+      <UniqueIdentifier>{f192acd9-1a23-2b42-3be6-6dd97ffc4778}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core\end2end">
+      <UniqueIdentifier>{b3e4e7e4-425a-9fc6-6771-7ac8cc4d78eb}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

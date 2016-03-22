@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\test\file_test.cc">
+      <Filter>third_party\boringssl\crypto\test</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\test\malloc.cc">
+      <Filter>third_party\boringssl\crypto\test</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\test\test_util.cc">
+      <Filter>third_party\boringssl\crypto\test</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="third_party">
+      <UniqueIdentifier>{051e6327-cdb8-1137-1175-c402b0f01c2c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party\boringssl">
+      <UniqueIdentifier>{5eb132f5-83f9-1528-e503-f07750f7d9af}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party\boringssl\crypto">
+      <UniqueIdentifier>{ae2f5257-9ea9-8f0f-7e70-0ca4f1e9d83a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party\boringssl\crypto\test">
+      <UniqueIdentifier>{a7911910-503b-8f04-67d8-656dfb02381e}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

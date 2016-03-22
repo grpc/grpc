@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -37,9 +37,6 @@
 
 #ifdef GPR_WIN32
 
-#undef _WIN32_WINNT
-#define _WIN32_WINNT 0x0600
-#include <windows.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
@@ -86,17 +83,23 @@ int gpr_cv_wait(gpr_cv *cv, gpr_mu *mu, gpr_timespec abs_deadline) {
   int timeout = 0;
   DWORD timeout_max_ms;
   mu->locked = 0;
-  if (gpr_time_cmp(abs_deadline, gpr_inf_future) == 0) {
+  if (gpr_time_cmp(abs_deadline, gpr_inf_future(abs_deadline.clock_type)) ==
+      0) {
     SleepConditionVariableCS(cv, &mu->cs, INFINITE);
   } else {
-    gpr_timespec now = gpr_now();
-    gpr_int64 now_ms = now.tv_sec * 1000 + now.tv_nsec / 1000000;
-    gpr_int64 deadline_ms =
-        abs_deadline.tv_sec * 1000 + abs_deadline.tv_nsec / 1000000;
+    abs_deadline = gpr_convert_clock_type(abs_deadline, GPR_CLOCK_REALTIME);
+    gpr_timespec now = gpr_now(abs_deadline.clock_type);
+    int64_t now_ms = (int64_t)now.tv_sec * 1000 + now.tv_nsec / 1000000;
+    int64_t deadline_ms =
+        (int64_t)abs_deadline.tv_sec * 1000 + abs_deadline.tv_nsec / 1000000;
     if (now_ms >= deadline_ms) {
       timeout = 1;
     } else {
-      timeout_max_ms = (DWORD)min(deadline_ms - now_ms, INFINITE - 1);
+      if ((deadline_ms - now_ms) >= INFINITE) {
+        timeout_max_ms = INFINITE - 1;
+      } else {
+        timeout_max_ms = (DWORD)(deadline_ms - now_ms);
+      }
       timeout = (SleepConditionVariableCS(cv, &mu->cs, timeout_max_ms) == 0 &&
                  GetLastError() == ERROR_TIMEOUT);
     }

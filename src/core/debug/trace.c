@@ -59,10 +59,14 @@ void grpc_register_tracer(const char *name, int *flag) {
 static void add(const char *beg, const char *end, char ***ss, size_t *ns) {
   size_t n = *ns;
   size_t np = n + 1;
-  char *s = gpr_malloc(end - beg + 1);
-  memcpy(s, beg, end - beg);
-  s[end-beg] = 0;
-  *ss = gpr_realloc(*ss, sizeof(char**) * np);
+  char *s;
+  size_t len;
+  GPR_ASSERT(end >= beg);
+  len = (size_t)(end - beg);
+  s = gpr_malloc(len + 1);
+  memcpy(s, beg, len);
+  s[len] = 0;
+  *ss = gpr_realloc(*ss, sizeof(char **) * np);
   (*ss)[n] = s;
   *ns = np;
 }
@@ -73,7 +77,7 @@ static void split(const char *s, char ***ss, size_t *ns) {
     add(s, s + strlen(s), ss, ns);
   } else {
     add(s, c, ss, ns);
-    split(c+1, ss, ns);
+    split(c + 1, ss, ns);
   }
 }
 
@@ -125,7 +129,7 @@ int grpc_tracer_set_enabled(const char *name, int enabled) {
     }
     if (!found) {
       gpr_log(GPR_ERROR, "Unknown trace var: '%s'", name);
-      return 0;  /* early return */
+      return 0; /* early return */
     }
   }
   return 1;

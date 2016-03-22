@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,19 +31,17 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_SUPPORT_STRING_WIN32_H
-#define GRPC_INTERNAL_CORE_SUPPORT_STRING_WIN32_H
+#ifndef GRPC_CORE_SUPPORT_STRING_WIN32_H
+#define GRPC_CORE_SUPPORT_STRING_WIN32_H
 
 #include <grpc/support/port_platform.h>
 
 #ifdef GPR_WIN32
 
-#include <windows.h>
-
 /* These allocate new strings using gpr_malloc to convert from and to utf-8. */
 LPTSTR gpr_char_to_tchar(LPCSTR input);
 LPSTR gpr_tchar_to_char(LPCTSTR input);
 
-#endif  /* GPR_WIN32 */
+#endif /* GPR_WIN32 */
 
-#endif  /* GRPC_INTERNAL_CORE_SUPPORT_STRING_WIN32_H */
+#endif /* GRPC_CORE_SUPPORT_STRING_WIN32_H */

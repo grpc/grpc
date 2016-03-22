@@ -31,8 +31,9 @@ require 'grpc'
 
 def load_test_certs
   test_root = File.join(File.dirname(__FILE__), 'testdata')
-  files = ['ca.pem', 'server1.pem', 'server1.key']
-  files.map { |f| File.open(File.join(test_root, f)).read }
+  files = ['ca.pem', 'server1.key', 'server1.pem']
+  contents = files.map { |f| File.open(File.join(test_root, f)).read }
+  [contents[0], [{ private_key: contents[1], cert_chain: contents[2] }], false]
 end
 
 describe GRPC::Core::ServerCredentials do
@@ -40,7 +41,8 @@ describe GRPC::Core::ServerCredentials do
 
   describe '#new' do
     it 'can be constructed from a fake CA PEM, server PEM and a server key' do
-      expect { Creds.new('a', 'b', 'c') }.not_to raise_error
+      creds = Creds.new('a', [{ private_key: 'a', cert_chain: 'b' }], false)
+      expect(creds).to_not be_nil
     end
 
     it 'can be constructed using the test certificates' do
@@ -48,21 +50,44 @@ describe GRPC::Core::ServerCredentials do
       expect { Creds.new(*certs) }.not_to raise_error
     end
 
+    it 'cannot be constructed without a nil key_cert pair array' do
+      root_cert, _, _ = load_test_certs
+      blk = proc do
+        Creds.new(root_cert, nil, false)
+      end
+      expect(&blk).to raise_error
+    end
+
+    it 'cannot be constructed without any key_cert pairs' do
+      root_cert, _, _ = load_test_certs
+      blk = proc do
+        Creds.new(root_cert, [], false)
+      end
+      expect(&blk).to raise_error
+    end
+
     it 'cannot be constructed without a server cert chain' do
       root_cert, server_key, _ = load_test_certs
-      blk = proc { Creds.new(root_cert, server_key, nil) }
+      blk = proc do
+        Creds.new(root_cert,
+                  [{ server_key: server_key, cert_chain: nil }],
+                  false)
+      end
       expect(&blk).to raise_error
     end
 
     it 'cannot be constructed without a server key' do
       root_cert, _, _ = load_test_certs
-      blk = proc { Creds.new(root_cert, nil, cert_chain) }
+      blk = proc do
+        Creds.new(root_cert,
+                  [{ server_key: nil, cert_chain: cert_chain }])
+      end
       expect(&blk).to raise_error
     end
 
     it 'can be constructed without a root_cret' do
-      _, server_key, cert_chain = load_test_certs
-      blk = proc { Creds.new(nil, server_key, cert_chain) }
+      _, cert_pairs, _ = load_test_certs
+      blk = proc { Creds.new(nil, cert_pairs, false) }
       expect(&blk).to_not raise_error
     end
   end

@@ -36,12 +36,28 @@
 
 #include <memory>
 
-#include <grpc++/server_credentials.h>
+#include <grpc/compression.h>
+#include <grpc++/server_context.h>
+#include <grpc++/security/server_credentials.h>
 
 namespace grpc {
 namespace testing {
 
 std::shared_ptr<ServerCredentials> CreateInteropServerCredentials();
+
+class InteropServerContextInspector {
+ public:
+  InteropServerContextInspector(const ::grpc::ServerContext& context);
+
+  // Inspector methods, able to peek inside ServerContext, follow.
+  std::shared_ptr<const AuthContext> GetAuthContext() const;
+  bool IsCancelled() const;
+  grpc_compression_algorithm GetCallCompressionAlgorithm() const;
+  uint32_t GetEncodingsAcceptedByClient() const;
+
+ private:
+  const ::grpc::ServerContext& context_;
+};
 
 }  // namespace testing
 }  // namespace grpc

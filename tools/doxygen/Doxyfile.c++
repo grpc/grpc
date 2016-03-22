@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC C++"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 0.10.0.0
+PROJECT_NUMBER         = 0.14.0-dev
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -760,26 +760,23 @@ WARN_LOGFILE           =
 # spaces.
 # Note: If this tag is empty the current directory is searched.
 
-INPUT                  = include/grpc++/async_generic_service.h \
-include/grpc++/async_unary_call.h \
-include/grpc++/byte_buffer.h \
-include/grpc++/channel_arguments.h \
-include/grpc++/channel_interface.h \
+INPUT                  = include/grpc++/alarm.h \
+include/grpc++/channel.h \
 include/grpc++/client_context.h \
 include/grpc++/completion_queue.h \
-include/grpc++/config.h \
-include/grpc++/config_protobuf.h \
 include/grpc++/create_channel.h \
-include/grpc++/credentials.h \
-include/grpc++/generic_stub.h \
+include/grpc++/generic/async_generic_service.h \
+include/grpc++/generic/generic_stub.h \
+include/grpc++/grpc++.h \
 include/grpc++/impl/call.h \
 include/grpc++/impl/client_unary_call.h \
 include/grpc++/impl/grpc_library.h \
-include/grpc++/impl/internal_stub.h \
+include/grpc++/impl/method_handler_impl.h \
 include/grpc++/impl/proto_utils.h \
 include/grpc++/impl/rpc_method.h \
 include/grpc++/impl/rpc_service_method.h \
 include/grpc++/impl/serialization_traits.h \
+include/grpc++/impl/server_builder_option.h \
 include/grpc++/impl/service_type.h \
 include/grpc++/impl/sync.h \
 include/grpc++/impl/sync_cxx11.h \
@@ -787,16 +784,57 @@ include/grpc++/impl/sync_no_cxx11.h \
 include/grpc++/impl/thd.h \
 include/grpc++/impl/thd_cxx11.h \
 include/grpc++/impl/thd_no_cxx11.h \
+include/grpc++/security/auth_context.h \
+include/grpc++/security/auth_metadata_processor.h \
+include/grpc++/security/credentials.h \
+include/grpc++/security/server_credentials.h \
 include/grpc++/server.h \
 include/grpc++/server_builder.h \
 include/grpc++/server_context.h \
-include/grpc++/server_credentials.h \
-include/grpc++/slice.h \
-include/grpc++/status.h \
-include/grpc++/status_code_enum.h \
-include/grpc++/stream.h \
-include/grpc++/thread_pool_interface.h \
-include/grpc++/time.h
+include/grpc++/support/async_stream.h \
+include/grpc++/support/async_unary_call.h \
+include/grpc++/support/byte_buffer.h \
+include/grpc++/support/channel_arguments.h \
+include/grpc++/support/config.h \
+include/grpc++/support/config_protobuf.h \
+include/grpc++/support/slice.h \
+include/grpc++/support/status.h \
+include/grpc++/support/status_code_enum.h \
+include/grpc++/support/string_ref.h \
+include/grpc++/support/stub_options.h \
+include/grpc++/support/sync_stream.h \
+include/grpc++/support/time.h \
+include/grpc++/impl/codegen/async_stream.h \
+include/grpc++/impl/codegen/async_unary_call.h \
+include/grpc++/impl/codegen/call.h \
+include/grpc++/impl/codegen/call_hook.h \
+include/grpc++/impl/codegen/channel_interface.h \
+include/grpc++/impl/codegen/client_context.h \
+include/grpc++/impl/codegen/client_unary_call.h \
+include/grpc++/impl/codegen/completion_queue.h \
+include/grpc++/impl/codegen/completion_queue_tag.h \
+include/grpc++/impl/codegen/config.h \
+include/grpc++/impl/codegen/config_protobuf.h \
+include/grpc++/impl/codegen/core_codegen_interface.h \
+include/grpc++/impl/codegen/grpc_library.h \
+include/grpc++/impl/codegen/method_handler_impl.h \
+include/grpc++/impl/codegen/proto_utils.h \
+include/grpc++/impl/codegen/rpc_method.h \
+include/grpc++/impl/codegen/rpc_service_method.h \
+include/grpc++/impl/codegen/security/auth_context.h \
+include/grpc++/impl/codegen/serialization_traits.h \
+include/grpc++/impl/codegen/server_context.h \
+include/grpc++/impl/codegen/server_interface.h \
+include/grpc++/impl/codegen/service_type.h \
+include/grpc++/impl/codegen/status.h \
+include/grpc++/impl/codegen/status_code_enum.h \
+include/grpc++/impl/codegen/string_ref.h \
+include/grpc++/impl/codegen/stub_options.h \
+include/grpc++/impl/codegen/sync.h \
+include/grpc++/impl/codegen/sync_cxx11.h \
+include/grpc++/impl/codegen/sync_no_cxx11.h \
+include/grpc++/impl/codegen/sync_stream.h \
+include/grpc++/impl/codegen/time.h
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding. Doxygen uses
@@ -2175,7 +2213,7 @@ DOT_FONTPATH           =
 # The default value is: YES.
 # This tag requires that the tag HAVE_DOT is set to YES.
 
-CLASS_GRAPH            = YES
+CLASS_GRAPH            = NO
 
 # If the COLLABORATION_GRAPH tag is set to YES then doxygen will generate a
 # graph for each documented class showing the direct and indirect implementation
@@ -2184,14 +2222,14 @@ CLASS_GRAPH            = YES
 # The default value is: YES.
 # This tag requires that the tag HAVE_DOT is set to YES.
 
-COLLABORATION_GRAPH    = YES
+COLLABORATION_GRAPH    = NO
 
 # If the GROUP_GRAPHS tag is set to YES then doxygen will generate a graph for
 # groups, showing the direct groups dependencies.
 # The default value is: YES.
 # This tag requires that the tag HAVE_DOT is set to YES.
 
-GROUP_GRAPHS           = YES
+GROUP_GRAPHS           = NO
 
 # If the UML_LOOK tag is set to YES, doxygen will generate inheritance and
 # collaboration diagrams in a style similar to the OMG's Unified Modeling
@@ -2229,7 +2267,7 @@ TEMPLATE_RELATIONS     = NO
 # The default value is: YES.
 # This tag requires that the tag HAVE_DOT is set to YES.
 
-INCLUDE_GRAPH          = YES
+INCLUDE_GRAPH          = NO
 
 # If the INCLUDED_BY_GRAPH, ENABLE_PREPROCESSING and SEARCH_INCLUDES tags are
 # set to YES then doxygen will generate a graph for each documented file showing
@@ -2238,7 +2276,7 @@ INCLUDE_GRAPH          = YES
 # The default value is: YES.
 # This tag requires that the tag HAVE_DOT is set to YES.
 
-INCLUDED_BY_GRAPH      = YES
+INCLUDED_BY_GRAPH      = NO
 
 # If the CALL_GRAPH tag is set to YES then doxygen will generate a call
 # dependency graph for every global function or class method.
@@ -2267,7 +2305,7 @@ CALLER_GRAPH           = NO
 # The default value is: YES.
 # This tag requires that the tag HAVE_DOT is set to YES.
 
-GRAPHICAL_HIERARCHY    = YES
+GRAPHICAL_HIERARCHY    = NO
 
 # If the DIRECTORY_GRAPH tag is set to YES then doxygen will show the
 # dependencies a directory has on other directories in a graphical way. The
@@ -2276,7 +2314,7 @@ GRAPHICAL_HIERARCHY    = YES
 # The default value is: YES.
 # This tag requires that the tag HAVE_DOT is set to YES.
 
-DIRECTORY_GRAPH        = YES
+DIRECTORY_GRAPH        = NO
 
 # The DOT_IMAGE_FORMAT tag can be used to set the image format of the images
 # generated by dot.

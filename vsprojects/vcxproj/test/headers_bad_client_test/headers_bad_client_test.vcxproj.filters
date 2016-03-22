@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\test\core\bad_client\tests\headers.c">
+      <Filter>test\core\bad_client\tests</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="test">
+      <UniqueIdentifier>{bdc6ff03-9ac0-5d30-d9ed-40818f6564e6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core">
+      <UniqueIdentifier>{d3e7fdf7-05cb-3f0a-21fb-693d2778fc8c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core\bad_client">
+      <UniqueIdentifier>{127cb39a-52f9-f426-43ce-05c25664b685}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core\bad_client\tests">
+      <UniqueIdentifier>{57a2c0dc-4757-15ea-5ae5-500deffa46fd}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

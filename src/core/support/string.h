@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,12 +31,14 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_SUPPORT_STRING_H
-#define GRPC_INTERNAL_CORE_SUPPORT_STRING_H
+#ifndef GRPC_CORE_SUPPORT_STRING_H
+#define GRPC_CORE_SUPPORT_STRING_H
 
 #include <stddef.h>
 
 #include <grpc/support/port_platform.h>
+#include <grpc/support/slice_buffer.h>
+#include <grpc/support/slice.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -44,17 +46,21 @@ extern "C" {
 
 /* String utility functions */
 
-/* flag to include plaintext after a hexdump */
-#define GPR_HEXDUMP_PLAINTEXT 0x00000001
+/* Flags for gpr_dump function. */
+#define GPR_DUMP_HEX 0x00000001
+#define GPR_DUMP_ASCII 0x00000002
 
-/* Converts array buf, of length len, into a hexadecimal dump. Result should
-   be freed with gpr_free() */
-char *gpr_hexdump(const char *buf, size_t len, gpr_uint32 flags);
+/* Converts array buf, of length len, into a C string  according to the flags.
+   Result should be freed with gpr_free() */
+char *gpr_dump(const char *buf, size_t len, uint32_t flags);
+
+/* Calls gpr_dump on a slice. */
+char *gpr_dump_slice(gpr_slice slice, uint32_t flags);
 
 /* Parses an array of bytes into an integer (base 10). Returns 1 on success,
    0 on failure. */
 int gpr_parse_bytes_to_uint32(const char *data, size_t length,
-                              gpr_uint32 *result);
+                              uint32_t *result);
 
 /* Minimum buffer size for calling ltoa */
 #define GPR_LTOA_MIN_BUFSIZE (3 * sizeof(long))
@@ -64,6 +70,16 @@ int gpr_parse_bytes_to_uint32(const char *data, size_t length,
    output must be at least GPR_LTOA_MIN_BUFSIZE bytes long. */
 int gpr_ltoa(long value, char *output);
 
+/* Minimum buffer size for calling int64toa */
+#define GPR_INT64TOA_MIN_BUFSIZE (3 * sizeof(int64_t))
+
+/* Convert an int64 to a string in base 10; returns the length of the
+output string (or 0 on failure).
+output must be at least GPR_INT64TOA_MIN_BUFSIZE bytes long.
+NOTE: This function ensures sufficient bit width even on Win x64,
+where long is 32bit is size.*/
+int int64_ttoa(int64_t value, char *output);
+
 /* Reverse a run of bytes */
 void gpr_reverse_bytes(char *str, int len);
 
@@ -71,6 +87,16 @@ void gpr_reverse_bytes(char *str, int len);
    Total combined length (excluding null terminator) is returned in total_length
    if it is non-null. */
 char *gpr_strjoin(const char **strs, size_t nstrs, size_t *total_length);
+
+/* Join a set of strings using a separator, returning the resulting string.
+   Total combined length (excluding null terminator) is returned in total_length
+   if it is non-null. */
+char *gpr_strjoin_sep(const char **strs, size_t nstrs, const char *sep,
+                      size_t *total_length);
+
+/** Split \a str by the separator \a sep. Results are stored in \a dst, which
+ * should be a properly initialized instance. */
+void gpr_slice_split(gpr_slice str, const char *sep, gpr_slice_buffer *dst);
 
 /* A vector of strings... for building up a final string one piece at a time */
 typedef struct {
@@ -92,4 +118,4 @@ char *gpr_strvec_flatten(gpr_strvec *strs, size_t *total_length);
 }
 #endif
 
-#endif  /* GRPC_INTERNAL_CORE_SUPPORT_STRING_H */
+#endif /* GRPC_CORE_SUPPORT_STRING_H */

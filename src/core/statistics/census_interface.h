@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_STATISTICS_CENSUS_INTERFACE_H
-#define GRPC_INTERNAL_CORE_STATISTICS_CENSUS_INTERFACE_H
+#ifndef GRPC_CORE_STATISTICS_CENSUS_INTERFACE_H
+#define GRPC_CORE_STATISTICS_CENSUS_INTERFACE_H
 
 #include <grpc/support/port_platform.h>
 
@@ -42,8 +42,8 @@
 /* Structure of a census op id. Define as structure because 64bit integer is not
    available on every platform for C89. */
 typedef struct census_op_id {
-  gpr_uint32 upper;
-  gpr_uint32 lower;
+  uint32_t upper;
+  uint32_t lower;
 } census_op_id;
 
 typedef struct census_rpc_stats census_rpc_stats;
@@ -61,11 +61,11 @@ void census_shutdown(void);
 
    TODO(hongyu): Figure out valid characters set for service name and command
    name and document requirements here.*/
-int census_add_method_tag(census_op_id op_id, const char* method_name);
+int census_add_method_tag(census_op_id op_id, const char *method_name);
 
 /* Annotates tracing information to a specific op_id.
    Up to CENSUS_MAX_ANNOTATION_LENGTH bytes are recorded. */
-void census_tracing_print(census_op_id op_id, const char* annotation);
+void census_tracing_print(census_op_id op_id, const char *annotation);
 
 /* Starts tracing for an RPC. Returns a locally unique census_op_id */
 census_op_id census_tracing_start_op(void);
@@ -73,4 +73,4 @@ census_op_id census_tracing_start_op(void);
 /* Ends tracing. Calling this function will invalidate the input op_id. */
 void census_tracing_end_op(census_op_id op_id);
 
-#endif  /* GRPC_INTERNAL_CORE_STATISTICS_CENSUS_INTERFACE_H */
+#endif /* GRPC_CORE_STATISTICS_CENSUS_INTERFACE_H */

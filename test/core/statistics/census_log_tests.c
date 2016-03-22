@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -46,23 +46,23 @@
 
 /* Fills in 'record' of size 'size'. Each byte in record is filled in with the
    same value. The value is extracted from 'record' pointer. */
-static void write_record(char* record, size_t size) {
-  char data = (gpr_uintptr)record % 255;
+static void write_record(char *record, size_t size) {
+  char data = (uintptr_t)record % 255;
   memset(record, data, size);
 }
 
 /* Reads fixed size records. Returns the number of records read in
    'num_records'. */
-static void read_records(size_t record_size, const char* buffer,
-                         size_t buffer_size, gpr_int32* num_records) {
-  gpr_int32 ix;
+static void read_records(size_t record_size, const char *buffer,
+                         size_t buffer_size, int32_t *num_records) {
+  int32_t ix;
   GPR_ASSERT(buffer_size >= record_size);
   GPR_ASSERT(buffer_size % record_size == 0);
   *num_records = buffer_size / record_size;
   for (ix = 0; ix < *num_records; ++ix) {
     size_t jx;
-    const char* record = buffer + (record_size * ix);
-    char data = (gpr_uintptr)record % 255;
+    const char *record = buffer + (record_size * ix);
+    char data = (uintptr_t)record % 255;
     for (jx = 0; jx < record_size; ++jx) {
       GPR_ASSERT(data == record[jx]);
     }
@@ -72,21 +72,21 @@ static void read_records(size_t record_size, const char* buffer,
 /* Tries to write the specified number of records. Stops when the log gets
    full. Returns the number of records written. Spins for random
    number of times, up to 'max_spin_count', between writes. */
-static size_t write_records_to_log(int writer_id, gpr_int32 record_size,
-                                   gpr_int32 num_records,
-                                   gpr_int32 max_spin_count) {
-  gpr_int32 ix;
+static size_t write_records_to_log(int writer_id, int32_t record_size,
+                                   int32_t num_records,
+                                   int32_t max_spin_count) {
+  int32_t ix;
   int counter = 0;
   for (ix = 0; ix < num_records; ++ix) {
-    gpr_int32 jx;
-    gpr_int32 spin_count = max_spin_count ? rand() % max_spin_count : 0;
-    char* record;
+    int32_t jx;
+    int32_t spin_count = max_spin_count ? rand() % max_spin_count : 0;
+    char *record;
     if (counter++ == num_records / 10) {
       printf("   Writer %d: %d out of %d written\n", writer_id, ix,
              num_records);
       counter = 0;
     }
-    record = (char*)(census_log_start_write(record_size));
+    record = (char *)(census_log_start_write(record_size));
     if (record == NULL) {
       return ix;
     }
@@ -101,13 +101,13 @@ static size_t write_records_to_log(int writer_id, gpr_int32 record_size,
 
 /* Performs a single read iteration. Returns the number of records read. */
 static size_t perform_read_iteration(size_t record_size) {
-  const void* read_buffer = NULL;
+  const void *read_buffer = NULL;
   size_t bytes_available;
   size_t records_read = 0;
   census_log_init_reader();
   while ((read_buffer = census_log_read_next(&bytes_available))) {
-    gpr_int32 num_records = 0;
-    read_records(record_size, (const char*)read_buffer, bytes_available,
+    int32_t num_records = 0;
+    read_records(record_size, (const char *)read_buffer, bytes_available,
                  &num_records);
     records_read += num_records;
   }
@@ -122,14 +122,14 @@ static void assert_log_empty(void) {
 }
 
 /* Given log size and record size, computes the minimum usable space. */
-static gpr_int32 min_usable_space(size_t log_size, size_t record_size) {
-  gpr_int32 usable_space;
-  gpr_int32 num_blocks =
+static int32_t min_usable_space(size_t log_size, size_t record_size) {
+  int32_t usable_space;
+  int32_t num_blocks =
       GPR_MAX(log_size / CENSUS_LOG_MAX_RECORD_SIZE, gpr_cpu_num_cores());
-  gpr_int32 waste_per_block = CENSUS_LOG_MAX_RECORD_SIZE % record_size;
+  int32_t waste_per_block = CENSUS_LOG_MAX_RECORD_SIZE % record_size;
   /* In the worst case, all except one core-local block is full. */
-  gpr_int32 num_full_blocks = num_blocks - 1;
-  usable_space = (gpr_int32)log_size -
+  int32_t num_full_blocks = num_blocks - 1;
+  usable_space = (int32_t)log_size -
                  (num_full_blocks * CENSUS_LOG_MAX_RECORD_SIZE) -
                  ((num_blocks - num_full_blocks) * waste_per_block);
   GPR_ASSERT(usable_space > 0);
@@ -142,9 +142,9 @@ static gpr_int32 min_usable_space(size_t log_size, size_t record_size) {
    match the number of records read. */
 static void fill_log(size_t log_size, int no_fragmentation, int circular_log) {
   int size;
-  gpr_int32 records_written;
-  gpr_int32 usable_space;
-  gpr_int32 records_read;
+  int32_t records_written;
+  int32_t usable_space;
+  int32_t records_read;
   if (no_fragmentation) {
     int log2size = rand() % (CENSUS_LOG_2_MAX_RECORD_SIZE + 1);
     size = (1 << log2size);
@@ -175,19 +175,19 @@ typedef struct writer_thread_args {
   /* Record size. */
   size_t record_size;
   /* Number of records to write. */
-  gpr_int32 num_records;
+  int32_t num_records;
   /* Used to signal when writer is complete */
-  gpr_cv* done;
-  gpr_mu* mu;
-  int* count;
+  gpr_cv *done;
+  gpr_mu *mu;
+  int *count;
 } writer_thread_args;
 
 /* Writes the given number of records of random size (up to kMaxRecordSize) and
    random data to the specified log. */
-static void writer_thread(void* arg) {
-  writer_thread_args* args = (writer_thread_args*)arg;
+static void writer_thread(void *arg) {
+  writer_thread_args *args = (writer_thread_args *)arg;
   /* Maximum number of times to spin between writes. */
-  static const gpr_int32 MAX_SPIN_COUNT = 50;
+  static const int32_t MAX_SPIN_COUNT = 50;
   int records_written = 0;
   printf("   Writer: %d\n", args->index);
   while (records_written < args->num_records) {
@@ -215,29 +215,30 @@ typedef struct reader_thread_args {
   /* Record size. */
   size_t record_size;
   /* Interval between read iterations. */
-  gpr_int32 read_iteration_interval_in_msec;
+  int32_t read_iteration_interval_in_msec;
   /* Total number of records. */
-  gpr_int32 total_records;
+  int32_t total_records;
   /* Signalled when reader should stop. */
   gpr_cv stop;
   int stop_flag;
   /* Used to signal when reader has finished */
-  gpr_cv* done;
-  gpr_mu* mu;
+  gpr_cv *done;
+  gpr_mu *mu;
   int running;
 } reader_thread_args;
 
 /* Reads and verifies the specified number of records. Reader can also be
    stopped via gpr_cv_signal(&args->stop). Sleeps for 'read_interval_in_msec'
    between read iterations. */
-static void reader_thread(void* arg) {
-  gpr_int32 records_read = 0;
-  reader_thread_args* args = (reader_thread_args*)arg;
-  gpr_int32 num_iterations = 0;
+static void reader_thread(void *arg) {
+  int32_t records_read = 0;
+  reader_thread_args *args = (reader_thread_args *)arg;
+  int32_t num_iterations = 0;
   gpr_timespec interval;
   int counter = 0;
   printf("   Reader starting\n");
-  interval = gpr_time_from_micros(args->read_iteration_interval_in_msec * 1000);
+  interval = gpr_time_from_micros(
+      (int64_t)args->read_iteration_interval_in_msec * 1000, GPR_TIMESPAN);
   gpr_mu_lock(args->mu);
   while (!args->stop_flag && records_read < args->total_records) {
     gpr_cv_wait(&args->stop, args->mu, interval);
@@ -267,9 +268,9 @@ static void reader_thread(void* arg) {
 #define NUM_WRITERS 5
 static void multiple_writers_single_reader(int circular_log) {
   /* Sleep interval between read iterations. */
-  static const gpr_int32 READ_ITERATION_INTERVAL_IN_MSEC = 10;
+  static const int32_t READ_ITERATION_INTERVAL_IN_MSEC = 10;
   /* Number of records written by each writer. */
-  static const gpr_int32 NUM_RECORDS_PER_WRITER = 10 * 1024 * 1024;
+  static const int32_t NUM_RECORDS_PER_WRITER = 10 * 1024 * 1024;
   /* Maximum record size. */
   static const size_t MAX_RECORD_SIZE = 10;
   int ix;
@@ -281,7 +282,7 @@ static void multiple_writers_single_reader(int circular_log) {
   gpr_cv reader_done;
   gpr_mu reader_mu; /* protects reader_done and reader.running */
   reader_thread_args reader;
-  gpr_int32 record_size = 1 + rand() % MAX_RECORD_SIZE;
+  int32_t record_size = 1 + rand() % MAX_RECORD_SIZE;
   printf("   Record size: %d\n", record_size);
   /* Create and start writers. */
   gpr_cv_init(&writers_done);
@@ -310,7 +311,7 @@ static void multiple_writers_single_reader(int circular_log) {
   /* Wait for writers to finish. */
   gpr_mu_lock(&writers_mu);
   while (writers_count != 0) {
-    gpr_cv_wait(&writers_done, &writers_mu, gpr_inf_future);
+    gpr_cv_wait(&writers_done, &writers_mu, gpr_inf_future(GPR_CLOCK_REALTIME));
   }
   gpr_mu_unlock(&writers_mu);
   gpr_mu_destroy(&writers_mu);
@@ -323,7 +324,7 @@ static void multiple_writers_single_reader(int circular_log) {
   }
   /* wait for reader to finish */
   while (reader.running) {
-    gpr_cv_wait(&reader_done, &reader_mu, gpr_inf_future);
+    gpr_cv_wait(&reader_done, &reader_mu, gpr_inf_future(GPR_CLOCK_REALTIME));
   }
   if (circular_log) {
     /* Assert that there were no out-of-space errors. */
@@ -349,7 +350,7 @@ static void setup_test(int circular_log) {
 void test_invalid_record_size(void) {
   static const size_t INVALID_SIZE = CENSUS_LOG_MAX_RECORD_SIZE + 1;
   static const size_t VALID_SIZE = 1;
-  void* record;
+  void *record;
   printf("Starting test: invalid record size\n");
   setup_test(0);
   record = census_log_start_write(INVALID_SIZE);
@@ -372,8 +373,8 @@ void test_invalid_record_size(void) {
 void test_end_write_with_different_size(void) {
   static const size_t START_WRITE_SIZE = 10;
   static const size_t END_WRITE_SIZE = 7;
-  void* record_written;
-  const void* record_read;
+  void *record_written;
+  const void *record_read;
   size_t bytes_available;
   printf("Starting test: end write with different size\n");
   setup_test(0);
@@ -392,8 +393,8 @@ void test_end_write_with_different_size(void) {
 void test_read_pending_record(void) {
   static const size_t PR_RECORD_SIZE = 1024;
   size_t bytes_available;
-  const void* record_read;
-  void* record_written;
+  const void *record_read;
+  void *record_written;
   printf("Starting test: read pending record\n");
   setup_test(0);
   /* Start a write. */
@@ -416,12 +417,12 @@ void test_read_pending_record(void) {
 /* Tries reading beyond pending write. */
 void test_read_beyond_pending_record(void) {
   /* Start a write. */
-  gpr_uint32 incomplete_record_size = 10;
-  gpr_uint32 complete_record_size = 20;
+  uint32_t incomplete_record_size = 10;
+  uint32_t complete_record_size = 20;
   size_t bytes_available;
-  void* complete_record;
-  const void* record_read;
-  void* incomplete_record;
+  void *complete_record;
+  const void *record_read;
+  void *incomplete_record;
   printf("Starting test: read beyond pending record\n");
   setup_test(0);
   incomplete_record = census_log_start_write(incomplete_record_size);
@@ -456,9 +457,9 @@ void test_read_beyond_pending_record(void) {
 void test_detached_while_reading(void) {
   static const size_t DWR_RECORD_SIZE = 10;
   size_t bytes_available;
-  const void* record_read;
-  void* record_written;
-  gpr_uint32 block_read = 0;
+  const void *record_read;
+  void *record_written;
+  uint32_t block_read = 0;
   printf("Starting test: detached while reading\n");
   setup_test(0);
   /* Start a write. */
@@ -568,16 +569,16 @@ void test_performance(void) {
     double write_time_micro = 0.0;
     int nrecords = 0;
     setup_test(0);
-    start_time = gpr_now();
+    start_time = gpr_now(GPR_CLOCK_REALTIME);
     while (1) {
-      void* record = census_log_start_write(write_size);
+      void *record = census_log_start_write(write_size);
       if (record == NULL) {
         break;
       }
       census_log_end_write(record, write_size);
       nrecords++;
     }
-    write_time = gpr_time_sub(gpr_now(), start_time);
+    write_time = gpr_time_sub(gpr_now(GPR_CLOCK_REALTIME), start_time);
     write_time_micro = write_time.tv_sec * 1000000 + write_time.tv_nsec / 1000;
     census_log_shutdown();
     printf(

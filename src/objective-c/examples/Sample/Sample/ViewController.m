@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -34,7 +34,7 @@
 #import "ViewController.h"
 
 #import <GRPCClient/GRPCCall.h>
-#import <GRPCClient/GRPCMethodName.h>
+#import <ProtoRPC/ProtoMethod.h>
 #import <RemoteTest/Messages.pbobjc.h>
 #import <RemoteTest/Test.pbrpc.h>
 #import <RxLibrary/GRXWriter+Immediate.h>
@@ -45,7 +45,7 @@
 - (void)viewDidLoad {
   [super viewDidLoad];
 
-  NSString * const kRemoteHost = @"grpc-test.sandbox.google.com";
+  NSString * const kRemoteHost = @"grpc-test.sandbox.googleapis.com";
 
   RMTSimpleRequest *request = [[RMTSimpleRequest alloc] init];
   request.responseSize = 10;
@@ -66,14 +66,14 @@
 
   // Same example call using the generic gRPC client library:
 
-  GRPCMethodName *method = [[GRPCMethodName alloc] initWithPackage:@"grpc.testing"
-                                                         interface:@"TestService"
-                                                            method:@"UnaryCall"];
+  ProtoMethod *method = [[ProtoMethod alloc] initWithPackage:@"grpc.testing"
+                                                     service:@"TestService"
+                                                      method:@"UnaryCall"];
 
-  id<GRXWriter> requestsWriter = [GRXWriter writerWithValue:[request data]];
+  GRXWriter *requestsWriter = [GRXWriter writerWithValue:[request data]];
 
   GRPCCall *call = [[GRPCCall alloc] initWithHost:kRemoteHost
-                                           method:method
+                                             path:method.HTTPPath
                                    requestsWriter:requestsWriter];
 
   id<GRXWriteable> responsesWriteable = [[GRXWriteable alloc] initWithValueHandler:^(NSData *value) {

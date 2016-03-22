@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_TSI_SSL_TRANSPORT_SECURITY_H
-#define GRPC_INTERNAL_CORE_TSI_SSL_TRANSPORT_SECURITY_H
+#ifndef GRPC_CORE_TSI_SSL_TRANSPORT_SECURITY_H
+#define GRPC_CORE_TSI_SSL_TRANSPORT_SECURITY_H
 
 #include "src/core/tsi/transport_security_interface.h"
 
@@ -47,6 +47,8 @@ extern "C" {
 #define TSI_X509_SUBJECT_COMMON_NAME_PEER_PROPERTY "x509_subject_common_name"
 #define TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY \
   "x509_subject_alternative_name"
+
+#define TSI_X509_PEM_CERT_PROPERTY "x509_pem_cert"
 
 #define TSI_SSL_ALPN_SELECTED_PROTOCOL "ssl_alpn_selected_protocol"
 
@@ -85,12 +87,12 @@ typedef struct tsi_ssl_handshaker_factory tsi_ssl_handshaker_factory;
    - This method returns TSI_OK on success or TSI_INVALID_PARAMETER in the case
      where a parameter is invalid.  */
 tsi_result tsi_create_ssl_client_handshaker_factory(
-    const unsigned char* pem_private_key, size_t pem_private_key_size,
-    const unsigned char* pem_cert_chain, size_t pem_cert_chain_size,
-    const unsigned char* pem_root_certs, size_t pem_root_certs_size,
-    const char* cipher_suites, const unsigned char** alpn_protocols,
-    const unsigned char* alpn_protocols_lengths, uint16_t num_alpn_protocols,
-    tsi_ssl_handshaker_factory** factory);
+    const unsigned char *pem_private_key, size_t pem_private_key_size,
+    const unsigned char *pem_cert_chain, size_t pem_cert_chain_size,
+    const unsigned char *pem_root_certs, size_t pem_root_certs_size,
+    const char *cipher_suites, const unsigned char **alpn_protocols,
+    const unsigned char *alpn_protocols_lengths, uint16_t num_alpn_protocols,
+    tsi_ssl_handshaker_factory **factory);
 
 /* Creates a server handshaker factory.
    - version indicates which version of the specification to use.
@@ -107,10 +109,14 @@ tsi_result tsi_create_ssl_client_handshaker_factory(
    - key_cert_pair_count indicates the number of items in the private_key_files
      and cert_chain_files parameters.
    - pem_client_roots is the buffer containing the PEM encoding of the client
-     root certificates. This parameter may be NULL in which case the server
-     will not ask the client to authenticate itself with a certificate (server-
-     only authentication mode).
-   - pem_client_roots_size is the size of the associated buffer.
+     root certificates. This parameter may be NULL in which case the server will
+     not authenticate the client. If not NULL, the force_client_auth parameter
+     specifies if the server will accept only authenticated clients or both
+     authenticated and non-authenticated clients.
+   - pem_client_root_certs_size is the size of the associated buffer.
+   - force_client_auth, if set to non-zero will force the client to authenticate
+     with an SSL cert. Note that this option is ignored if pem_client_root_certs
+     is NULL or pem_client_roots_certs_size is 0
    - cipher_suites contains an optional list of the ciphers that the server
      supports. The format of this string is described in:
      https://www.openssl.org/docs/apps/ciphers.html.
@@ -127,14 +133,14 @@ tsi_result tsi_create_ssl_client_handshaker_factory(
    - This method returns TSI_OK on success or TSI_INVALID_PARAMETER in the case
      where a parameter is invalid.  */
 tsi_result tsi_create_ssl_server_handshaker_factory(
-    const unsigned char** pem_private_keys,
-    const size_t* pem_private_keys_sizes, const unsigned char** pem_cert_chains,
-    const size_t* pem_cert_chains_sizes, size_t key_cert_pair_count,
-    const unsigned char* pem_client_root_certs,
-    size_t pem_client_root_certs_size, const char* cipher_suites,
-    const unsigned char** alpn_protocols,
-    const unsigned char* alpn_protocols_lengths, uint16_t num_alpn_protocols,
-    tsi_ssl_handshaker_factory** factory);
+    const unsigned char **pem_private_keys,
+    const size_t *pem_private_keys_sizes, const unsigned char **pem_cert_chains,
+    const size_t *pem_cert_chains_sizes, size_t key_cert_pair_count,
+    const unsigned char *pem_client_root_certs,
+    size_t pem_client_root_certs_size, int force_client_auth,
+    const char *cipher_suites, const unsigned char **alpn_protocols,
+    const unsigned char *alpn_protocols_lengths, uint16_t num_alpn_protocols,
+    tsi_ssl_handshaker_factory **factory);
 
 /* Creates a handshaker.
   - self is the factory from which the handshaker will be created.
@@ -147,23 +153,22 @@ tsi_result tsi_create_ssl_server_handshaker_factory(
   - This method returns TSI_OK on success or TSI_INVALID_PARAMETER in the case
     where a parameter is invalid.  */
 tsi_result tsi_ssl_handshaker_factory_create_handshaker(
-    tsi_ssl_handshaker_factory* self, const char* server_name_indication,
-    tsi_handshaker** handshaker);
+    tsi_ssl_handshaker_factory *self, const char *server_name_indication,
+    tsi_handshaker **handshaker);
 
 /* Destroys the handshaker factory. WARNING: it is unsafe to destroy a factory
    while handshakers created with this factory are still in use.  */
-void tsi_ssl_handshaker_factory_destroy(tsi_ssl_handshaker_factory* self);
+void tsi_ssl_handshaker_factory_destroy(tsi_ssl_handshaker_factory *self);
 
 /* Util that checks that an ssl peer matches a specific name.
    Still TODO(jboeuf):
    - handle mixed case.
    - handle %encoded chars.
-   - handle public suffix wildchar more strictly (e.g. *.co.uk)
-   - handle IP addresses in SAN. */
-int tsi_ssl_peer_matches_name(const tsi_peer* peer, const char* name);
+   - handle public suffix wildchar more strictly (e.g. *.co.uk) */
+int tsi_ssl_peer_matches_name(const tsi_peer *peer, const char *name);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif  /* GRPC_INTERNAL_CORE_TSI_SSL_TRANSPORT_SECURITY_H */
+#endif /* GRPC_CORE_TSI_SSL_TRANSPORT_SECURITY_H */

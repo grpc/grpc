@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,20 +31,20 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_SURFACE_CHANNEL_H
-#define GRPC_INTERNAL_CORE_SURFACE_CHANNEL_H
+#ifndef GRPC_CORE_SURFACE_CHANNEL_H
+#define GRPC_CORE_SURFACE_CHANNEL_H
 
 #include "src/core/channel/channel_stack.h"
+#include "src/core/surface/channel_stack_type.h"
+#include "src/core/client_config/subchannel_factory.h"
 
-grpc_channel *grpc_channel_create_from_filters(
-    const grpc_channel_filter **filters, size_t count,
-    const grpc_channel_args *args, grpc_mdctx *mdctx, int is_client);
+grpc_channel *grpc_channel_create(grpc_exec_ctx *exec_ctx, const char *target,
+                                  const grpc_channel_args *args,
+                                  grpc_channel_stack_type channel_stack_type,
+                                  grpc_transport *optional_transport);
 
 /** Get a (borrowed) pointer to this channels underlying channel stack */
 grpc_channel_stack *grpc_channel_get_channel_stack(grpc_channel *channel);
-
-/** Get a (borrowed) pointer to the channel wide metadata context */
-grpc_mdctx *grpc_channel_get_metadata_context(grpc_channel *channel);
 
 /** Get a grpc_mdelem of grpc-status: X where X is the numeric value of
     status_code.
@@ -52,27 +52,24 @@ grpc_mdctx *grpc_channel_get_metadata_context(grpc_channel *channel);
     The returned elem is owned by the caller. */
 grpc_mdelem *grpc_channel_get_reffed_status_elem(grpc_channel *channel,
                                                  int status_code);
-grpc_mdstr *grpc_channel_get_status_string(grpc_channel *channel);
-grpc_mdstr *grpc_channel_get_compresssion_level_string(grpc_channel *channel);
-grpc_mdstr *grpc_channel_get_message_string(grpc_channel *channel);
-gpr_uint32 grpc_channel_get_max_message_length(grpc_channel *channel);
+uint32_t grpc_channel_get_max_message_length(grpc_channel *channel);
 
-void grpc_client_channel_closed(grpc_channel_element *elem);
-
-#ifdef GRPC_CHANNEL_REF_COUNT_DEBUG
+#ifdef GRPC_STREAM_REFCOUNT_DEBUG
 void grpc_channel_internal_ref(grpc_channel *channel, const char *reason);
-void grpc_channel_internal_unref(grpc_channel *channel, const char *reason);
+void grpc_channel_internal_unref(grpc_exec_ctx *exec_ctx, grpc_channel *channel,
+                                 const char *reason);
 #define GRPC_CHANNEL_INTERNAL_REF(channel, reason) \
   grpc_channel_internal_ref(channel, reason)
-#define GRPC_CHANNEL_INTERNAL_UNREF(channel, reason) \
-  grpc_channel_internal_unref(channel, reason)
+#define GRPC_CHANNEL_INTERNAL_UNREF(exec_ctx, channel, reason) \
+  grpc_channel_internal_unref(exec_ctx, channel, reason)
 #else
 void grpc_channel_internal_ref(grpc_channel *channel);
-void grpc_channel_internal_unref(grpc_channel *channel);
+void grpc_channel_internal_unref(grpc_exec_ctx *exec_ctx,
+                                 grpc_channel *channel);
 #define GRPC_CHANNEL_INTERNAL_REF(channel, reason) \
   grpc_channel_internal_ref(channel)
-#define GRPC_CHANNEL_INTERNAL_UNREF(channel, reason) \
-  grpc_channel_internal_unref(channel)
+#define GRPC_CHANNEL_INTERNAL_UNREF(exec_ctx, channel, reason) \
+  grpc_channel_internal_unref(exec_ctx, channel)
 #endif
 
-#endif /* GRPC_INTERNAL_CORE_SURFACE_CHANNEL_H */
+#endif /* GRPC_CORE_SURFACE_CHANNEL_H */

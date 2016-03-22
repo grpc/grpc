@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,16 +33,17 @@
 
 #include "src/core/security/json_token.h"
 
+#include <openssl/evp.h>
 #include <string.h>
 
-#include "src/core/security/base64.h"
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/slice.h>
-#include "test/core/util/test_config.h"
+
 #include "src/core/json/json.h"
-#include <openssl/evp.h>
+#include "src/core/security/b64.h"
+#include "test/core/util/test_config.h"
 
 /* This JSON key was generated with the GCE console and revoked immediately.
    The identifiers have been changed as well.
@@ -263,14 +264,14 @@ static void check_jwt_header(grpc_json *header) {
 
   GPR_ASSERT(kid != NULL);
   GPR_ASSERT(kid->type == GRPC_JSON_STRING);
-  GPR_ASSERT(strcmp(kid->value,
-                    "e6b5137873db8d2ef81e06a47289e6434ec8a165") == 0);
+  GPR_ASSERT(strcmp(kid->value, "e6b5137873db8d2ef81e06a47289e6434ec8a165") ==
+             0);
 }
 
 static void check_jwt_claim(grpc_json *claim, const char *expected_audience,
                             const char *expected_scope) {
-  gpr_timespec expiration = {0, 0};
-  gpr_timespec issue_time = {0, 0};
+  gpr_timespec expiration = gpr_time_0(GPR_CLOCK_REALTIME);
+  gpr_timespec issue_time = gpr_time_0(GPR_CLOCK_REALTIME);
   gpr_timespec parsed_lifetime;
   grpc_json *iss = NULL;
   grpc_json *scope = NULL;
@@ -298,9 +299,11 @@ static void check_jwt_claim(grpc_json *claim, const char *expected_audience,
 
   GPR_ASSERT(iss != NULL);
   GPR_ASSERT(iss->type == GRPC_JSON_STRING);
-  GPR_ASSERT(strcmp(iss->value,
-          "777-abaslkan11hlb6nmim3bpspl31ud@developer.gserviceaccount.com")
-             ==0);
+  GPR_ASSERT(
+      strcmp(
+          iss->value,
+          "777-abaslkan11hlb6nmim3bpspl31ud@developer.gserviceaccount.com") ==
+      0);
 
   if (expected_scope != NULL) {
     GPR_ASSERT(scope != NULL);
@@ -328,7 +331,7 @@ static void check_jwt_claim(grpc_json *claim, const char *expected_audience,
   issue_time.tv_sec = strtol(iat->value, NULL, 10);
 
   parsed_lifetime = gpr_time_sub(expiration, issue_time);
-  GPR_ASSERT(parsed_lifetime.tv_sec == grpc_max_auth_token_lifetime.tv_sec);
+  GPR_ASSERT(parsed_lifetime.tv_sec == grpc_max_auth_token_lifetime().tv_sec);
 }
 
 static void check_jwt_signature(const char *b64_signature, RSA *rsa_key,
@@ -359,12 +362,12 @@ static void check_jwt_signature(const char *b64_signature, RSA *rsa_key,
 static char *service_account_creds_jwt_encode_and_sign(
     const grpc_auth_json_key *key) {
   return grpc_jwt_encode_and_sign(key, GRPC_JWT_OAUTH2_AUDIENCE,
-                                  grpc_max_auth_token_lifetime, test_scope);
+                                  grpc_max_auth_token_lifetime(), test_scope);
 }
 
 static char *jwt_creds_jwt_encode_and_sign(const grpc_auth_json_key *key) {
   return grpc_jwt_encode_and_sign(key, test_service_url,
-                                  grpc_max_auth_token_lifetime, NULL);
+                                  grpc_max_auth_token_lifetime(), NULL);
 }
 
 static void service_account_creds_check_jwt_claim(grpc_json *claim) {
@@ -389,20 +392,21 @@ static void test_jwt_encode_and_sign(
   char *jwt = jwt_encode_and_sign_func(&json_key);
   const char *dot = strchr(jwt, '.');
   GPR_ASSERT(dot != NULL);
-  parsed_header = parse_json_part_from_jwt(jwt, dot - jwt, &scratchpad);
+  parsed_header =
+      parse_json_part_from_jwt(jwt, (size_t)(dot - jwt), &scratchpad);
   GPR_ASSERT(parsed_header != NULL);
   check_jwt_header(parsed_header);
-  offset = dot - jwt + 1;
+  offset = (size_t)(dot - jwt) + 1;
   grpc_json_destroy(parsed_header);
   gpr_free(scratchpad);
 
   dot = strchr(jwt + offset, '.');
   GPR_ASSERT(dot != NULL);
-  parsed_claim =
-      parse_json_part_from_jwt(jwt + offset, dot - (jwt + offset), &scratchpad);
+  parsed_claim = parse_json_part_from_jwt(
+      jwt + offset, (size_t)(dot - (jwt + offset)), &scratchpad);
   GPR_ASSERT(parsed_claim != NULL);
   check_jwt_claim_func(parsed_claim);
-  offset = dot - jwt + 1;
+  offset = (size_t)(dot - jwt) + 1;
   grpc_json_destroy(parsed_claim);
   gpr_free(scratchpad);
 

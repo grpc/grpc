@@ -47,11 +47,23 @@ require 'rspec'
 require 'logging'
 require 'rspec/logging_helper'
 
+# GRPC is the general RPC module
+#
+# Configure its logging for fine-grained log control during test runs
+module GRPC
+  extend Logging.globally
+end
+Logging.logger.root.appenders = Logging.appenders.stdout
+Logging.logger.root.level = :info
+Logging.logger['GRPC'].level = :info
+Logging.logger['GRPC::ActiveCall'].level = :info
+Logging.logger['GRPC::BidiCall'].level = :info
+
 # Configure RSpec to capture log messages for each test. The output from the
 # logs will be stored in the @log_output variable. It is a StringIO instance.
 RSpec.configure do |config|
   include RSpec::LoggingHelper
-  config.capture_log_messages
+  config.capture_log_messages  # comment this out to see logs during test runs
 end
 
 RSpec::Expectations.configuration.warn_about_potential_false_positives = false

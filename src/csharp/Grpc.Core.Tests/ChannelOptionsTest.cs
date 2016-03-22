@@ -38,7 +38,7 @@ using Grpc.Core.Internal;
 using Grpc.Core.Utils;
 using NUnit.Framework;
 
-namespace Grpc.Core.Internal.Tests
+namespace Grpc.Core.Tests
 {
     public class ChannelOptionsTest
     {
@@ -67,9 +67,9 @@ namespace Grpc.Core.Internal.Tests
         [Test]
         public void ConstructorPreconditions()
         {
-            Assert.Throws(typeof(NullReferenceException), () => { new ChannelOption(null, "abc"); });
-            Assert.Throws(typeof(NullReferenceException), () => { new ChannelOption(null, 1); });
-            Assert.Throws(typeof(NullReferenceException), () => { new ChannelOption("abc", null); });
+            Assert.Throws(typeof(ArgumentNullException), () => { new ChannelOption(null, "abc"); });
+            Assert.Throws(typeof(ArgumentNullException), () => { new ChannelOption(null, 1); });
+            Assert.Throws(typeof(ArgumentNullException), () => { new ChannelOption("abc", null); });
         }
 
         [Test]

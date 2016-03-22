@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -34,8 +34,6 @@
 #ifndef GRPC_SUPPORT_LOG_WIN32_H
 #define GRPC_SUPPORT_LOG_WIN32_H
 
-#include <windows.h>
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -44,10 +42,10 @@ extern "C" {
  * formatted error message, corresponding to the error messageid.
  * Use in conjunction with GetLastError() et al.
  */
-char *gpr_format_message(DWORD messageid);
+GPRAPI char *gpr_format_message(int messageid);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif  /* GRPC_SUPPORT_LOG_WIN32_H */
+#endif /* GRPC_SUPPORT_LOG_WIN32_H */

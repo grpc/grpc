@@ -71,13 +71,17 @@ static unsigned char prefix_mask(unsigned char prefix_len) {
   unsigned char i;
   unsigned char out = 0;
   for (i = 0; i < prefix_len; i++) {
-    out |= 1 << (7 - i);
+    /* NB: the following integer arithmetic operation needs to be in its
+     * expanded form due to the "integral promotion" performed (see section
+     * 3.2.1.1 of the C89 draft standard). A cast to the smaller container type
+     * is then required to avoid the compiler warning */
+    out = (unsigned char)(out | (unsigned char)(1 << (7 - i)));
   }
   return out;
 }
 
 static unsigned char suffix_mask(unsigned char prefix_len) {
-  return ~prefix_mask(prefix_len);
+  return (unsigned char)~prefix_mask(prefix_len);
 }
 
 static void generate_first_byte_lut(void) {
@@ -92,7 +96,12 @@ static void generate_first_byte_lut(void) {
     chrspec = NULL;
     for (j = 0; j < num_fields; j++) {
       if ((prefix_mask(fields[j].prefix_length) & i) == fields[j].prefix) {
-        suffix = suffix_mask(fields[j].prefix_length) & i;
+        /* NB: the following integer arithmetic operation needs to be in its
+         * expanded form due to the "integral promotion" performed (see section
+         * 3.2.1.1 of the C89 draft standard). A cast to the smaller container
+         * type is then required to avoid the compiler warning */
+        suffix = (unsigned char)(suffix_mask(fields[j].prefix_length) &
+                                 (unsigned char)i);
         if (suffix == suffix_mask(fields[j].prefix_length)) {
           if (fields[j].index != 2) continue;
         } else if (suffix == 0) {
@@ -127,7 +136,9 @@ static void generate_first_byte_lut(void) {
 /* represents a set of symbols as an array of booleans indicating inclusion */
 typedef struct { char included[GRPC_CHTTP2_NUM_HUFFSYMS]; } symset;
 /* represents a lookup table indexed by a nibble */
-typedef struct { int values[16]; } nibblelut;
+typedef struct { unsigned values[16]; } nibblelut;
+
+#define NOT_SET (~(unsigned)0)
 
 /* returns a symset that includes all possible symbols */
 static symset symset_all(void) {
@@ -148,7 +159,7 @@ static nibblelut nibblelut_empty(void) {
   nibblelut x;
   int i;
   for (i = 0; i < 16; i++) {
-    x.values[i] = -1;
+    x.values[i] = NOT_SET;
   }
   return x;
 }
@@ -168,7 +179,7 @@ static int nsyms(symset s) {
 /* global table of discovered huffman decoding states */
 static struct {
   /* the bit offset that this state starts at */
-  int bitofs;
+  unsigned bitofs;
   /* the set of symbols that this state started with */
   symset syms;
 
@@ -177,13 +188,13 @@ static struct {
   /* lookup table for what to emit */
   nibblelut emit;
 } huffstates[MAXHUFFSTATES];
-static int nhuffstates = 0;
+static unsigned nhuffstates = 0;
 
 /* given a number of decoded bits and a set of symbols that are live,
    return the index into the decoder table for this state.
    set isnew to 1 if this state was previously undiscovered */
-static int state_index(int bitofs, symset syms, int *isnew) {
-  int i;
+static unsigned state_index(unsigned bitofs, symset syms, unsigned *isnew) {
+  unsigned i;
   for (i = 0; i < nhuffstates; i++) {
     if (huffstates[i].bitofs != bitofs) continue;
     if (0 != memcmp(huffstates[i].syms.included, syms.included,
@@ -211,24 +222,24 @@ static int state_index(int bitofs, symset syms, int *isnew) {
    emit    - the symbol to emit on this nibble (or -1 if no symbol has been
              found)
    syms    - the set of symbols that could be matched */
-static void build_dec_tbl(int state, int nibble, int nibbits, unsigned bitofs,
-                          int emit, symset syms) {
-  int i;
+static void build_dec_tbl(unsigned state, unsigned nibble, int nibbits,
+                          unsigned bitofs, unsigned emit, symset syms) {
+  unsigned i;
   unsigned bit;
 
   /* If we have four bits in the nibble we're looking at, then we can fill in
      a slot in the lookup tables. */
   if (nibbits == 4) {
-    int isnew;
+    unsigned isnew;
     /* Find the state that we are in: this may be a new state, in which case
        we recurse to fill it in, or we may have already seen this state, in
        which case the recursion terminates */
-    int st = state_index(bitofs, syms, &isnew);
-    GPR_ASSERT(huffstates[state].next.values[nibble] == -1);
+    unsigned st = state_index(bitofs, syms, &isnew);
+    GPR_ASSERT(huffstates[state].next.values[nibble] == NOT_SET);
     huffstates[state].next.values[nibble] = st;
     huffstates[state].emit.values[nibble] = emit;
     if (isnew) {
-      build_dec_tbl(st, 0, 0, bitofs, -1, syms);
+      build_dec_tbl(st, 0, 0, bitofs, NOT_SET, syms);
     }
     return;
   }
@@ -290,8 +301,9 @@ static void dump_ctbl(const char *name) {
 }
 
 static void generate_huff_tables(void) {
-  int i;
-  build_dec_tbl(state_index(0, symset_all(), &i), 0, 0, 0, -1, symset_all());
+  unsigned i;
+  build_dec_tbl(state_index(0, symset_all(), &i), 0, 0, 0, NOT_SET,
+                symset_all());
 
   nctbl = 0;
   printf("static const gpr_uint8 next_tbl[%d] = {", nhuffstates);
@@ -333,7 +345,7 @@ static void generate_base64_inverse_table(void) {
 
   memset(inverse, 255, sizeof(inverse));
   for (i = 0; i < strlen(alphabet); i++) {
-    inverse[(unsigned char)alphabet[i]] = i;
+    inverse[(unsigned char)alphabet[i]] = (unsigned char)i;
   }
 
   printf("static const gpr_uint8 inverse_base64[256] = {");

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\test\core\bad_client\tests\unknown_frame.c">
+      <Filter>test\core\bad_client\tests</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="test">
+      <UniqueIdentifier>{77ca54f4-deb2-3a34-5548-0a2bc7cbacc1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core">
+      <UniqueIdentifier>{2e30ac00-932d-ab0d-fabf-e0ea035aae46}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core\bad_client">
+      <UniqueIdentifier>{527abde4-b314-c50f-b007-dd3fdb2445ba}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core\bad_client\tests">
+      <UniqueIdentifier>{691de782-c331-3836-ac26-43873334f0c0}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

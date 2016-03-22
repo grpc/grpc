@@ -63,9 +63,11 @@ void grpc_iomgr_platform_init(void) {
   grpc_iocp_init();
 }
 
+void grpc_iomgr_platform_flush(void) { grpc_iocp_flush(); }
+
 void grpc_iomgr_platform_shutdown(void) {
   grpc_iocp_shutdown();
   winsock_shutdown();
 }
 
-#endif  /* GRPC_WINSOCK_SOCKET */
+#endif /* GRPC_WINSOCK_SOCKET */

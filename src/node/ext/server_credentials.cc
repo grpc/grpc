@@ -41,20 +41,28 @@
 namespace grpc {
 namespace node {
 
+using Nan::Callback;
+using Nan::EscapableHandleScope;
+using Nan::HandleScope;
+using Nan::Maybe;
+using Nan::MaybeLocal;
+using Nan::ObjectWrap;
+using Nan::Persistent;
+using Nan::Utf8String;
+
+using v8::Array;
 using v8::Exception;
 using v8::External;
 using v8::Function;
 using v8::FunctionTemplate;
-using v8::Handle;
-using v8::HandleScope;
 using v8::Integer;
 using v8::Local;
 using v8::Object;
 using v8::ObjectTemplate;
-using v8::Persistent;
+using v8::String;
 using v8::Value;
 
-NanCallback *ServerCredentials::constructor;
+Nan::Callback *ServerCredentials::constructor;
 Persistent<FunctionTemplate> ServerCredentials::fun_tpl;
 
 ServerCredentials::ServerCredentials(grpc_server_credentials *credentials)
@@ -64,36 +72,41 @@ ServerCredentials::~ServerCredentials() {
   grpc_server_credentials_release(wrapped_credentials);
 }
 
-void ServerCredentials::Init(Handle<Object> exports) {
-  NanScope();
-  Local<FunctionTemplate> tpl = NanNew<FunctionTemplate>(New);
-  tpl->SetClassName(NanNew("ServerCredentials"));
+void ServerCredentials::Init(Local<Object> exports) {
+  Nan::HandleScope scope;
+  Local<FunctionTemplate> tpl = Nan::New<FunctionTemplate>(New);
+  tpl->SetClassName(Nan::New("ServerCredentials").ToLocalChecked());
   tpl->InstanceTemplate()->SetInternalFieldCount(1);
-  NanAssignPersistent(fun_tpl, tpl);
-  Handle<Function> ctr = tpl->GetFunction();
-  ctr->Set(NanNew("createSsl"),
-           NanNew<FunctionTemplate>(CreateSsl)->GetFunction());
-  ctr->Set(NanNew("createFake"),
-           NanNew<FunctionTemplate>(CreateFake)->GetFunction());
-  constructor = new NanCallback(ctr);
-  exports->Set(NanNew("ServerCredentials"), ctr);
+  Local<Function> ctr = tpl->GetFunction();
+  Nan::Set(ctr, Nan::New("createSsl").ToLocalChecked(),
+           Nan::GetFunction(
+               Nan::New<FunctionTemplate>(CreateSsl)).ToLocalChecked());
+  Nan::Set(ctr, Nan::New("createInsecure").ToLocalChecked(),
+           Nan::GetFunction(
+               Nan::New<FunctionTemplate>(CreateInsecure)).ToLocalChecked());
+  fun_tpl.Reset(tpl);
+  constructor = new Nan::Callback(ctr);
+  Nan::Set(exports, Nan::New("ServerCredentials").ToLocalChecked(), ctr);
 }
 
-bool ServerCredentials::HasInstance(Handle<Value> val) {
-  NanScope();
-  return NanHasInstance(fun_tpl, val);
+bool ServerCredentials::HasInstance(Local<Value> val) {
+  Nan::HandleScope scope;
+  return Nan::New(fun_tpl)->HasInstance(val);
 }
 
-Handle<Value> ServerCredentials::WrapStruct(
+Local<Value> ServerCredentials::WrapStruct(
     grpc_server_credentials *credentials) {
-  NanEscapableScope();
-  if (credentials == NULL) {
-    return NanEscapeScope(NanNull());
-  }
+  Nan::EscapableHandleScope scope;
   const int argc = 1;
-  Handle<Value> argv[argc] = {
-    NanNew<External>(reinterpret_cast<void *>(credentials))};
-  return NanEscapeScope(constructor->GetFunction()->NewInstance(argc, argv));
+  Local<Value> argv[argc] = {
+    Nan::New<External>(reinterpret_cast<void *>(credentials))};
+  MaybeLocal<Object> maybe_instance = Nan::NewInstance(
+      constructor->GetFunction(), argc, argv);
+  if (maybe_instance.IsEmpty()) {
+    return scope.Escape(Nan::Null());
+  } else {
+    return scope.Escape(maybe_instance.ToLocalChecked());
+  }
 }
 
 grpc_server_credentials *ServerCredentials::GetWrappedServerCredentials() {
@@ -101,53 +114,84 @@ grpc_server_credentials *ServerCredentials::GetWrappedServerCredentials() {
 }
 
 NAN_METHOD(ServerCredentials::New) {
-  NanScope();
-
-  if (args.IsConstructCall()) {
-    if (!args[0]->IsExternal()) {
-      return NanThrowTypeError(
-          "ServerCredentials can only be created with the provide functions");
+  if (info.IsConstructCall()) {
+    if (!info[0]->IsExternal()) {
+      return Nan::ThrowTypeError(
+          "ServerCredentials can only be created with the provided functions");
     }
-    Handle<External> ext = args[0].As<External>();
+    Local<External> ext = info[0].As<External>();
     grpc_server_credentials *creds_value =
         reinterpret_cast<grpc_server_credentials *>(ext->Value());
     ServerCredentials *credentials = new ServerCredentials(creds_value);
-    credentials->Wrap(args.This());
-    NanReturnValue(args.This());
+    credentials->Wrap(info.This());
+    info.GetReturnValue().Set(info.This());
   } else {
-    const int argc = 1;
-    Local<Value> argv[argc] = {args[0]};
-    NanReturnValue(constructor->GetFunction()->NewInstance(argc, argv));
+    // This should never be called directly
+    return Nan::ThrowTypeError(
+        "ServerCredentials can only be created with the provided functions");
   }
 }
 
 NAN_METHOD(ServerCredentials::CreateSsl) {
-  // TODO: have the node API support multiple key/cert pairs.
-  NanScope();
+  Nan::HandleScope scope;
   char *root_certs = NULL;
-  grpc_ssl_pem_key_cert_pair key_cert_pair;
-  if (::node::Buffer::HasInstance(args[0])) {
-    root_certs = ::node::Buffer::Data(args[0]);
-  } else if (!(args[0]->IsNull() || args[0]->IsUndefined())) {
-    return NanThrowTypeError(
+  if (::node::Buffer::HasInstance(info[0])) {
+    root_certs = ::node::Buffer::Data(info[0]);
+  } else if (!(info[0]->IsNull() || info[0]->IsUndefined())) {
+    return Nan::ThrowTypeError(
         "createSSl's first argument must be a Buffer if provided");
   }
-  if (!::node::Buffer::HasInstance(args[1])) {
-    return NanThrowTypeError("createSsl's second argument must be a Buffer");
+  if (!info[1]->IsArray()) {
+    return Nan::ThrowTypeError(
+        "createSsl's second argument must be a list of objects");
   }
-  key_cert_pair.private_key = ::node::Buffer::Data(args[1]);
-  if (!::node::Buffer::HasInstance(args[2])) {
-    return NanThrowTypeError("createSsl's third argument must be a Buffer");
+  int force_client_auth = 0;
+  if (info[2]->IsBoolean()) {
+    force_client_auth = (int)Nan::To<bool>(info[2]).FromJust();
+  } else if (!(info[2]->IsUndefined() || info[2]->IsNull())) {
+    return Nan::ThrowTypeError(
+        "createSsl's third argument must be a boolean if provided");
   }
-  key_cert_pair.cert_chain = ::node::Buffer::Data(args[2]);
-  NanReturnValue(WrapStruct(
-      grpc_ssl_server_credentials_create(root_certs, &key_cert_pair, 1)));
+  Local<Array> pair_list = Local<Array>::Cast(info[1]);
+  uint32_t key_cert_pair_count = pair_list->Length();
+  grpc_ssl_pem_key_cert_pair *key_cert_pairs = new grpc_ssl_pem_key_cert_pair[
+      key_cert_pair_count];
+
+  Local<String> key_key = Nan::New("private_key").ToLocalChecked();
+  Local<String> cert_key = Nan::New("cert_chain").ToLocalChecked();
+
+  for(uint32_t i = 0; i < key_cert_pair_count; i++) {
+    Local<Value> pair_val = Nan::Get(pair_list, i).ToLocalChecked();
+    if (!pair_val->IsObject()) {
+      delete key_cert_pairs;
+      return Nan::ThrowTypeError("Key/cert pairs must be objects");
+    }
+    Local<Object> pair_obj = Nan::To<Object>(pair_val).ToLocalChecked();
+    Local<Value> maybe_key = Nan::Get(pair_obj, key_key).ToLocalChecked();
+    Local<Value> maybe_cert = Nan::Get(pair_obj, cert_key).ToLocalChecked();
+    if (!::node::Buffer::HasInstance(maybe_key)) {
+      delete key_cert_pairs;
+      return Nan::ThrowTypeError("private_key must be a Buffer");
+    }
+    if (!::node::Buffer::HasInstance(maybe_cert)) {
+      delete key_cert_pairs;
+      return Nan::ThrowTypeError("cert_chain must be a Buffer");
+    }
+    key_cert_pairs[i].private_key = ::node::Buffer::Data(maybe_key);
+    key_cert_pairs[i].cert_chain = ::node::Buffer::Data(maybe_cert);
+  }
+  grpc_server_credentials *creds = grpc_ssl_server_credentials_create(
+      root_certs, key_cert_pairs, key_cert_pair_count, force_client_auth, NULL);
+  delete key_cert_pairs;
+  if (creds == NULL) {
+    info.GetReturnValue().SetNull();
+  } else {
+    info.GetReturnValue().Set(WrapStruct(creds));
+  }
 }
 
-NAN_METHOD(ServerCredentials::CreateFake) {
-  NanScope();
-  NanReturnValue(
-      WrapStruct(grpc_fake_transport_security_server_credentials_create()));
+NAN_METHOD(ServerCredentials::CreateInsecure) {
+  info.GetReturnValue().Set(WrapStruct(NULL));
 }
 
 }  // namespace node

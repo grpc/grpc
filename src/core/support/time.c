@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -41,6 +41,7 @@
 
 int gpr_time_cmp(gpr_timespec a, gpr_timespec b) {
   int cmp = (a.tv_sec > b.tv_sec) - (a.tv_sec < b.tv_sec);
+  GPR_ASSERT(a.clock_type == b.clock_type);
   if (cmp == 0) {
     cmp = (a.tv_nsec > b.tv_nsec) - (a.tv_nsec < b.tv_nsec);
   }
@@ -55,86 +56,94 @@ gpr_timespec gpr_time_max(gpr_timespec a, gpr_timespec b) {
   return gpr_time_cmp(a, b) > 0 ? a : b;
 }
 
-/* There's no standard TIME_T_MIN and TIME_T_MAX, so we construct them.  The
-   following assumes that signed types are two's-complement and that bytes are
-   8 bits.  */
+gpr_timespec gpr_time_0(gpr_clock_type type) {
+  gpr_timespec out;
+  out.tv_sec = 0;
+  out.tv_nsec = 0;
+  out.clock_type = type;
+  return out;
+}
 
-/* The top bit of integral type t. */
-#define TOP_BIT_OF_TYPE(t) (((gpr_uintmax)1) << ((8 * sizeof(t)) - 1))
+gpr_timespec gpr_inf_future(gpr_clock_type type) {
+  gpr_timespec out;
+  out.tv_sec = INT64_MAX;
+  out.tv_nsec = 0;
+  out.clock_type = type;
+  return out;
+}
 
-/* Return whether integral type t is signed. */
-#define TYPE_IS_SIGNED(t) (((t)1) > (t) ~(t)0)
-
-/* The minimum and maximum value of integral type t. */
-#define TYPE_MIN(t) ((t)(TYPE_IS_SIGNED(t) ? TOP_BIT_OF_TYPE(t) : 0))
-#define TYPE_MAX(t)                                 \
-  ((t)(TYPE_IS_SIGNED(t) ? (TOP_BIT_OF_TYPE(t) - 1) \
-                         : ((TOP_BIT_OF_TYPE(t) - 1) << 1) + 1))
-
-const gpr_timespec gpr_time_0 = {0, 0};
-const gpr_timespec gpr_inf_future = {TYPE_MAX(time_t), 0};
-const gpr_timespec gpr_inf_past = {TYPE_MIN(time_t), 0};
+gpr_timespec gpr_inf_past(gpr_clock_type type) {
+  gpr_timespec out;
+  out.tv_sec = INT64_MIN;
+  out.tv_nsec = 0;
+  out.clock_type = type;
+  return out;
+}
 
 /* TODO(ctiller): consider merging _nanos, _micros, _millis into a single
    function for maintainability. Similarly for _seconds, _minutes, and _hours */
 
-gpr_timespec gpr_time_from_nanos(long ns) {
+gpr_timespec gpr_time_from_nanos(int64_t ns, gpr_clock_type type) {
   gpr_timespec result;
-  if (ns == LONG_MAX) {
-    result = gpr_inf_future;
-  } else if (ns == LONG_MIN) {
-    result = gpr_inf_past;
+  result.clock_type = type;
+  if (ns == INT64_MAX) {
+    result = gpr_inf_future(type);
+  } else if (ns == INT64_MIN) {
+    result = gpr_inf_past(type);
   } else if (ns >= 0) {
     result.tv_sec = ns / GPR_NS_PER_SEC;
-    result.tv_nsec = (int)(ns - result.tv_sec * GPR_NS_PER_SEC);
+    result.tv_nsec = (int32_t)(ns - result.tv_sec * GPR_NS_PER_SEC);
   } else {
     /* Calculation carefully formulated to avoid any possible under/overflow. */
     result.tv_sec = (-(999999999 - (ns + GPR_NS_PER_SEC)) / GPR_NS_PER_SEC) - 1;
-    result.tv_nsec = (int)(ns - result.tv_sec * GPR_NS_PER_SEC);
+    result.tv_nsec = (int32_t)(ns - result.tv_sec * GPR_NS_PER_SEC);
   }
   return result;
 }
 
-gpr_timespec gpr_time_from_micros(long us) {
+gpr_timespec gpr_time_from_micros(int64_t us, gpr_clock_type type) {
   gpr_timespec result;
-  if (us == LONG_MAX) {
-    result = gpr_inf_future;
-  } else if (us == LONG_MIN) {
-    result = gpr_inf_past;
+  result.clock_type = type;
+  if (us == INT64_MAX) {
+    result = gpr_inf_future(type);
+  } else if (us == INT64_MIN) {
+    result = gpr_inf_past(type);
   } else if (us >= 0) {
     result.tv_sec = us / 1000000;
-    result.tv_nsec = (int)((us - result.tv_sec * 1000000) * 1000);
+    result.tv_nsec = (int32_t)((us - result.tv_sec * 1000000) * 1000);
   } else {
     /* Calculation carefully formulated to avoid any possible under/overflow. */
     result.tv_sec = (-(999999 - (us + 1000000)) / 1000000) - 1;
-    result.tv_nsec = (int)((us - result.tv_sec * 1000000) * 1000);
+    result.tv_nsec = (int32_t)((us - result.tv_sec * 1000000) * 1000);
   }
   return result;
 }
 
-gpr_timespec gpr_time_from_millis(long ms) {
+gpr_timespec gpr_time_from_millis(int64_t ms, gpr_clock_type type) {
   gpr_timespec result;
-  if (ms == LONG_MAX) {
-    result = gpr_inf_future;
-  } else if (ms == LONG_MIN) {
-    result = gpr_inf_past;
+  result.clock_type = type;
+  if (ms == INT64_MAX) {
+    result = gpr_inf_future(type);
+  } else if (ms == INT64_MIN) {
+    result = gpr_inf_past(type);
   } else if (ms >= 0) {
     result.tv_sec = ms / 1000;
-    result.tv_nsec = (int)((ms - result.tv_sec * 1000) * 1000000);
+    result.tv_nsec = (int32_t)((ms - result.tv_sec * 1000) * 1000000);
   } else {
     /* Calculation carefully formulated to avoid any possible under/overflow. */
     result.tv_sec = (-(999 - (ms + 1000)) / 1000) - 1;
-    result.tv_nsec = (int)((ms - result.tv_sec * 1000) * 1000000);
+    result.tv_nsec = (int32_t)((ms - result.tv_sec * 1000) * 1000000);
   }
   return result;
 }
 
-gpr_timespec gpr_time_from_seconds(long s) {
+gpr_timespec gpr_time_from_seconds(int64_t s, gpr_clock_type type) {
   gpr_timespec result;
-  if (s == LONG_MAX) {
-    result = gpr_inf_future;
-  } else if (s == LONG_MIN) {
-    result = gpr_inf_past;
+  result.clock_type = type;
+  if (s == INT64_MAX) {
+    result = gpr_inf_future(type);
+  } else if (s == INT64_MIN) {
+    result = gpr_inf_past(type);
   } else {
     result.tv_sec = s;
     result.tv_nsec = 0;
@@ -142,12 +151,13 @@ gpr_timespec gpr_time_from_seconds(long s) {
   return result;
 }
 
-gpr_timespec gpr_time_from_minutes(long m) {
+gpr_timespec gpr_time_from_minutes(int64_t m, gpr_clock_type type) {
   gpr_timespec result;
-  if (m >= LONG_MAX / 60) {
-    result = gpr_inf_future;
-  } else if (m <= LONG_MIN / 60) {
-    result = gpr_inf_past;
+  result.clock_type = type;
+  if (m >= INT64_MAX / 60) {
+    result = gpr_inf_future(type);
+  } else if (m <= INT64_MIN / 60) {
+    result = gpr_inf_past(type);
   } else {
     result.tv_sec = m * 60;
     result.tv_nsec = 0;
@@ -155,12 +165,13 @@ gpr_timespec gpr_time_from_minutes(long m) {
   return result;
 }
 
-gpr_timespec gpr_time_from_hours(long h) {
+gpr_timespec gpr_time_from_hours(int64_t h, gpr_clock_type type) {
   gpr_timespec result;
-  if (h >= LONG_MAX / 3600) {
-    result = gpr_inf_future;
-  } else if (h <= LONG_MIN / 3600) {
-    result = gpr_inf_past;
+  result.clock_type = type;
+  if (h >= INT64_MAX / 3600) {
+    result = gpr_inf_future(type);
+  } else if (h <= INT64_MIN / 3600) {
+    result = gpr_inf_past(type);
   } else {
     result.tv_sec = h * 3600;
     result.tv_nsec = 0;
@@ -170,24 +181,26 @@ gpr_timespec gpr_time_from_hours(long h) {
 
 gpr_timespec gpr_time_add(gpr_timespec a, gpr_timespec b) {
   gpr_timespec sum;
-  int inc = 0;
+  int64_t inc = 0;
+  GPR_ASSERT(b.clock_type == GPR_TIMESPAN);
+  sum.clock_type = a.clock_type;
   sum.tv_nsec = a.tv_nsec + b.tv_nsec;
   if (sum.tv_nsec >= GPR_NS_PER_SEC) {
     sum.tv_nsec -= GPR_NS_PER_SEC;
     inc++;
   }
-  if (a.tv_sec == TYPE_MAX(time_t) || a.tv_sec == TYPE_MIN(time_t)) {
+  if (a.tv_sec == INT64_MAX || a.tv_sec == INT64_MIN) {
     sum = a;
-  } else if (b.tv_sec == TYPE_MAX(time_t) ||
-             (b.tv_sec >= 0 && a.tv_sec >= TYPE_MAX(time_t) - b.tv_sec)) {
-    sum = gpr_inf_future;
-  } else if (b.tv_sec == TYPE_MIN(time_t) ||
-             (b.tv_sec <= 0 && a.tv_sec <= TYPE_MIN(time_t) - b.tv_sec)) {
-    sum = gpr_inf_past;
+  } else if (b.tv_sec == INT64_MAX ||
+             (b.tv_sec >= 0 && a.tv_sec >= INT64_MAX - b.tv_sec)) {
+    sum = gpr_inf_future(sum.clock_type);
+  } else if (b.tv_sec == INT64_MIN ||
+             (b.tv_sec <= 0 && a.tv_sec <= INT64_MIN - b.tv_sec)) {
+    sum = gpr_inf_past(sum.clock_type);
   } else {
     sum.tv_sec = a.tv_sec + b.tv_sec;
-    if (inc != 0 && sum.tv_sec == TYPE_MAX(time_t) - 1) {
-      sum = gpr_inf_future;
+    if (inc != 0 && sum.tv_sec == INT64_MAX - 1) {
+      sum = gpr_inf_future(sum.clock_type);
     } else {
       sum.tv_sec += inc;
     }
@@ -197,24 +210,30 @@ gpr_timespec gpr_time_add(gpr_timespec a, gpr_timespec b) {
 
 gpr_timespec gpr_time_sub(gpr_timespec a, gpr_timespec b) {
   gpr_timespec diff;
-  int dec = 0;
+  int64_t dec = 0;
+  if (b.clock_type == GPR_TIMESPAN) {
+    diff.clock_type = a.clock_type;
+  } else {
+    GPR_ASSERT(a.clock_type == b.clock_type);
+    diff.clock_type = GPR_TIMESPAN;
+  }
   diff.tv_nsec = a.tv_nsec - b.tv_nsec;
   if (diff.tv_nsec < 0) {
     diff.tv_nsec += GPR_NS_PER_SEC;
     dec++;
   }
-  if (a.tv_sec == TYPE_MAX(time_t) || a.tv_sec == TYPE_MIN(time_t)) {
+  if (a.tv_sec == INT64_MAX || a.tv_sec == INT64_MIN) {
     diff = a;
-  } else if (b.tv_sec == TYPE_MIN(time_t) ||
-             (b.tv_sec <= 0 && a.tv_sec >= TYPE_MAX(time_t) + b.tv_sec)) {
-    diff = gpr_inf_future;
-  } else if (b.tv_sec == TYPE_MAX(time_t) ||
-             (b.tv_sec >= 0 && a.tv_sec <= TYPE_MIN(time_t) + b.tv_sec)) {
-    diff = gpr_inf_past;
+  } else if (b.tv_sec == INT64_MIN ||
+             (b.tv_sec <= 0 && a.tv_sec >= INT64_MAX + b.tv_sec)) {
+    diff = gpr_inf_future(GPR_CLOCK_REALTIME);
+  } else if (b.tv_sec == INT64_MAX ||
+             (b.tv_sec >= 0 && a.tv_sec <= INT64_MIN + b.tv_sec)) {
+    diff = gpr_inf_past(GPR_CLOCK_REALTIME);
   } else {
     diff.tv_sec = a.tv_sec - b.tv_sec;
-    if (dec != 0 && diff.tv_sec == TYPE_MIN(time_t) + 1) {
-      diff = gpr_inf_past;
+    if (dec != 0 && diff.tv_sec == INT64_MIN + 1) {
+      diff = gpr_inf_past(GPR_CLOCK_REALTIME);
     } else {
       diff.tv_sec -= dec;
     }
@@ -225,6 +244,9 @@ gpr_timespec gpr_time_sub(gpr_timespec a, gpr_timespec b) {
 int gpr_time_similar(gpr_timespec a, gpr_timespec b, gpr_timespec threshold) {
   int cmp_ab;
 
+  GPR_ASSERT(a.clock_type == b.clock_type);
+  GPR_ASSERT(threshold.clock_type == GPR_TIMESPAN);
+
   cmp_ab = gpr_time_cmp(a, b);
   if (cmp_ab == 0) return 1;
   if (cmp_ab < 0) {
@@ -234,7 +256,7 @@ int gpr_time_similar(gpr_timespec a, gpr_timespec b, gpr_timespec threshold) {
   }
 }
 
-gpr_int32 gpr_time_to_millis(gpr_timespec t) {
+int32_t gpr_time_to_millis(gpr_timespec t) {
   if (t.tv_sec >= 2147483) {
     if (t.tv_sec == 2147483 && t.tv_nsec < 648 * GPR_NS_PER_MS) {
       return 2147483 * GPR_MS_PER_SEC + t.tv_nsec / GPR_NS_PER_MS;
@@ -245,10 +267,38 @@ gpr_int32 gpr_time_to_millis(gpr_timespec t) {
        care?) */
     return -2147483647;
   } else {
-    return (gpr_int32)(t.tv_sec * GPR_MS_PER_SEC + t.tv_nsec / GPR_NS_PER_MS);
+    return (int32_t)(t.tv_sec * GPR_MS_PER_SEC + t.tv_nsec / GPR_NS_PER_MS);
   }
 }
 
 double gpr_timespec_to_micros(gpr_timespec t) {
   return (double)t.tv_sec * GPR_US_PER_SEC + t.tv_nsec * 1e-3;
+}
+
+gpr_timespec gpr_convert_clock_type(gpr_timespec t, gpr_clock_type clock_type) {
+  if (t.clock_type == clock_type) {
+    return t;
+  }
+
+  if (t.tv_nsec == 0) {
+    if (t.tv_sec == INT64_MAX) {
+      t.clock_type = clock_type;
+      return t;
+    }
+    if (t.tv_sec == INT64_MIN) {
+      t.clock_type = clock_type;
+      return t;
+    }
+  }
+
+  if (clock_type == GPR_TIMESPAN) {
+    return gpr_time_sub(t, gpr_now(t.clock_type));
+  }
+
+  if (t.clock_type == GPR_TIMESPAN) {
+    return gpr_time_add(gpr_now(clock_type), t);
+  }
+
+  return gpr_time_add(gpr_now(clock_type),
+                      gpr_time_sub(t, gpr_now(t.clock_type)));
 }

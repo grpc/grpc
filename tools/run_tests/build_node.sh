@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright 2015, Google Inc.
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -29,16 +29,15 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+NODE_VERSION=$1
+source ~/.nvm/nvm.sh
 set -ex
+
+nvm use $NODE_VERSION
 
 CONFIG=${CONFIG:-opt}
 
 # change to grpc repo root
 cd $(dirname $0)/../..
 
-export CXXFLAGS=-I`pwd`/include
-export LDFLAGS=-L`pwd`/libs/$CONFIG
-
-cd src/node
-
-npm install --unsafe-perm
+npm install --unsafe-perm --build-from-source

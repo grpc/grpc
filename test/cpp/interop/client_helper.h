@@ -36,16 +36,37 @@
 
 #include <memory>
 
-#include <grpc++/config.h>
-#include <grpc++/channel_interface.h>
+#include <grpc++/channel.h>
+
+#include "src/core/surface/call_test_only.h"
 
 namespace grpc {
 namespace testing {
 
 grpc::string GetServiceAccountJsonKey();
 
-std::shared_ptr<ChannelInterface> CreateChannelForTestCase(
+grpc::string GetOauth2AccessToken();
+
+std::shared_ptr<Channel> CreateChannelForTestCase(
     const grpc::string& test_case);
+
+class InteropClientContextInspector {
+ public:
+  InteropClientContextInspector(const ::grpc::ClientContext& context)
+      : context_(context) {}
+
+  // Inspector methods, able to peek inside ClientContext, follow.
+  grpc_compression_algorithm GetCallCompressionAlgorithm() const {
+    return grpc_call_test_only_get_compression_algorithm(context_.call_);
+  }
+
+  uint32_t GetMessageFlags() const {
+    return grpc_call_test_only_get_message_flags(context_.call_);
+  }
+
+ private:
+  const ::grpc::ClientContext& context_;
+};
 
 }  // namespace testing
 }  // namespace grpc

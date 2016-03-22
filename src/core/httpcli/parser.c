@@ -40,9 +40,9 @@
 #include <grpc/support/useful.h>
 
 static int handle_response_line(grpc_httpcli_parser *parser) {
-  gpr_uint8 *beg = parser->cur_line;
-  gpr_uint8 *cur = beg;
-  gpr_uint8 *end = beg + parser->cur_line_length;
+  uint8_t *beg = parser->cur_line;
+  uint8_t *cur = beg;
+  uint8_t *end = beg + parser->cur_line_length;
 
   if (cur == end || *cur++ != 'H') goto error;
   if (cur == end || *cur++ != 'T') goto error;
@@ -77,9 +77,9 @@ static char *buf2str(void *buffer, size_t length) {
 }
 
 static int add_header(grpc_httpcli_parser *parser) {
-  gpr_uint8 *beg = parser->cur_line;
-  gpr_uint8 *cur = beg;
-  gpr_uint8 *end = beg + parser->cur_line_length;
+  uint8_t *beg = parser->cur_line;
+  uint8_t *cur = beg;
+  uint8_t *end = beg + parser->cur_line_length;
   grpc_httpcli_header hdr = {NULL, NULL};
 
   GPR_ASSERT(cur != end);
@@ -96,13 +96,15 @@ static int add_header(grpc_httpcli_parser *parser) {
     gpr_log(GPR_ERROR, "Didn't find ':' in header string");
     goto error;
   }
-  hdr.key = buf2str(beg, cur - beg);
+  GPR_ASSERT(cur >= beg);
+  hdr.key = buf2str(beg, (size_t)(cur - beg));
   cur++; /* skip : */
 
   while (cur != end && (*cur == ' ' || *cur == '\t')) {
     cur++;
   }
-  hdr.value = buf2str(cur, end - cur - 2);
+  GPR_ASSERT(end - cur >= 2);
+  hdr.value = buf2str(cur, (size_t)(end - cur) - 2);
 
   if (parser->r.hdr_count == parser->hdr_capacity) {
     parser->hdr_capacity =
@@ -137,15 +139,14 @@ static int finish_line(grpc_httpcli_parser *parser) {
       }
       break;
     case GRPC_HTTPCLI_BODY:
-      gpr_log(GPR_ERROR, "should never reach here");
-      abort();
+      GPR_UNREACHABLE_CODE(return 0);
   }
 
   parser->cur_line_length = 0;
   return 1;
 }
 
-static int addbyte(grpc_httpcli_parser *parser, gpr_uint8 byte) {
+static int addbyte(grpc_httpcli_parser *parser, uint8_t byte) {
   switch (parser->state) {
     case GRPC_HTTPCLI_INITIAL_RESPONSE:
     case GRPC_HTTPCLI_HEADERS:
@@ -163,22 +164,18 @@ static int addbyte(grpc_httpcli_parser *parser, gpr_uint8 byte) {
       } else {
         return 1;
       }
-      gpr_log(GPR_ERROR, "should never reach here");
-      abort();
+      GPR_UNREACHABLE_CODE(return 0);
     case GRPC_HTTPCLI_BODY:
       if (parser->r.body_length == parser->body_capacity) {
         parser->body_capacity = GPR_MAX(8, parser->body_capacity * 3 / 2);
         parser->r.body =
             gpr_realloc((void *)parser->r.body, parser->body_capacity);
       }
-      ((char *)parser->r.body)[parser->r.body_length] = byte;
+      parser->r.body[parser->r.body_length] = (char)byte;
       parser->r.body_length++;
       return 1;
   }
-  gpr_log(GPR_ERROR, "should never reach here");
-  abort();
-
-  return 0;
+  GPR_UNREACHABLE_CODE(return 0);
 }
 
 void grpc_httpcli_parser_init(grpc_httpcli_parser *parser) {

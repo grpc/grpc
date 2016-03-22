@@ -40,27 +40,46 @@ namespace Grpc.Core
     /// <summary>
     /// Return type for client streaming calls.
     /// </summary>
+    /// <typeparam name="TRequest">Request message type for this call.</typeparam>
+    /// <typeparam name="TResponse">Response message type for this call.</typeparam>
     public sealed class AsyncClientStreamingCall<TRequest, TResponse> : IDisposable
     {
         readonly IClientStreamWriter<TRequest> requestStream;
-        readonly Task<TResponse> result;
+        readonly Task<TResponse> responseAsync;
+        readonly Task<Metadata> responseHeadersAsync;
+        readonly Func<Status> getStatusFunc;
+        readonly Func<Metadata> getTrailersFunc;
         readonly Action disposeAction;
 
-        public AsyncClientStreamingCall(IClientStreamWriter<TRequest> requestStream, Task<TResponse> result, Action disposeAction)
+        internal AsyncClientStreamingCall(IClientStreamWriter<TRequest> requestStream, Task<TResponse> responseAsync, Task<Metadata> responseHeadersAsync, Func<Status> getStatusFunc, Func<Metadata> getTrailersFunc, Action disposeAction)
         {
             this.requestStream = requestStream;
-            this.result = result;
+            this.responseAsync = responseAsync;
+            this.responseHeadersAsync = responseHeadersAsync;
+            this.getStatusFunc = getStatusFunc;
+            this.getTrailersFunc = getTrailersFunc;
             this.disposeAction = disposeAction;
         }
 
         /// <summary>
         /// Asynchronous call result.
         /// </summary>
-        public Task<TResponse> Result
+        public Task<TResponse> ResponseAsync
         {
             get
             {
-                return this.result;
+                return this.responseAsync;
+            }
+        }
+
+        /// <summary>
+        /// Asynchronous access to response headers.
+        /// </summary>
+        public Task<Metadata> ResponseHeadersAsync
+        {
+            get
+            {
+                return this.responseHeadersAsync;
             }
         }
 
@@ -81,11 +100,29 @@ namespace Grpc.Core
         /// <returns></returns>
         public TaskAwaiter<TResponse> GetAwaiter()
         {
-            return result.GetAwaiter();
+            return responseAsync.GetAwaiter();
         }
 
         /// <summary>
-        /// Provides means to provide after the call.
+        /// Gets the call status if the call has already finished.
+        /// Throws InvalidOperationException otherwise.
+        /// </summary>
+        public Status GetStatus()
+        {
+            return getStatusFunc();
+        }
+
+        /// <summary>
+        /// Gets the call trailing metadata if the call has already finished.
+        /// Throws InvalidOperationException otherwise.
+        /// </summary>
+        public Metadata GetTrailers()
+        {
+            return getTrailersFunc();
+        }
+
+        /// <summary>
+        /// Provides means to cleanup after the call.
         /// If the call has already finished normally (request stream has been completed and call result has been received), doesn't do anything.
         /// Otherwise, requests cancellation of the call which should terminate all pending async operations associated with the call.
         /// As a result, all resources being used by the call should be released eventually.

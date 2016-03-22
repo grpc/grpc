@@ -38,6 +38,7 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
 #include <grpc/support/useful.h>
 #include "test/core/util/slice_splitter.h"
 #include "test/core/util/test_config.h"
@@ -123,6 +124,7 @@ int main(int argc, char **argv) {
   size_t i;
   const grpc_slice_split_mode split_modes[] = {GRPC_SLICE_SPLIT_IDENTITY,
                                                GRPC_SLICE_SPLIT_ONE_BYTE};
+  char *tmp1, *tmp2;
 
   grpc_test_init(argc, argv);
 
@@ -149,6 +151,20 @@ int main(int argc, char **argv) {
     test_fails(split_modes[i], "HTTP/1.0 200 OK\n");
     test_fails(split_modes[i], "HTTP/1.0 200 OK\r\n");
     test_fails(split_modes[i], "HTTP/1.0 200 OK\r\nFoo x\r\n");
+    test_fails(split_modes[i],
+               "HTTP/1.0 200 OK\r\n"
+               "xyz: abc\r\n"
+               "  def\r\n"
+               "\r\n"
+               "hello world!");
+
+    tmp1 = gpr_malloc(2 * GRPC_HTTPCLI_MAX_HEADER_LENGTH);
+    memset(tmp1, 'a', 2 * GRPC_HTTPCLI_MAX_HEADER_LENGTH - 1);
+    tmp1[2 * GRPC_HTTPCLI_MAX_HEADER_LENGTH - 1] = 0;
+    gpr_asprintf(&tmp2, "HTTP/1.0 200 OK\r\nxyz: %s\r\n\r\n", tmp1);
+    test_fails(split_modes[i], tmp2);
+    gpr_free(tmp1);
+    gpr_free(tmp2);
   }
 
   return 0;

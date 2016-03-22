@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,9 +31,10 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_SECURITY_SECURITY_CONTEXT_H
-#define GRPC_INTERNAL_CORE_SECURITY_SECURITY_CONTEXT_H
+#ifndef GRPC_CORE_SECURITY_SECURITY_CONTEXT_H
+#define GRPC_CORE_SECURITY_SECURITY_CONTEXT_H
 
+#include "src/core/iomgr/pollset.h"
 #include "src/core/security/credentials.h"
 
 /* --- grpc_auth_context ---
@@ -42,17 +43,22 @@
 
 /* Property names are always NULL terminated. */
 
+typedef struct {
+  grpc_auth_property *array;
+  size_t count;
+  size_t capacity;
+} grpc_auth_property_array;
+
 struct grpc_auth_context {
   struct grpc_auth_context *chained;
-  grpc_auth_property *properties;
-  size_t property_count;
+  grpc_auth_property_array properties;
   gpr_refcount refcount;
   const char *peer_identity_property_name;
+  grpc_pollset *pollset;
 };
 
-/* Constructor. */
-grpc_auth_context *grpc_auth_context_create(grpc_auth_context *chained,
-                                            size_t property_count);
+/* Creation. */
+grpc_auth_context *grpc_auth_context_create(grpc_auth_context *chained);
 
 /* Refcounting. */
 #ifdef GRPC_AUTH_CONTEXT_REFCOUNT_DEBUG
@@ -72,12 +78,6 @@ grpc_auth_context *grpc_auth_context_ref(grpc_auth_context *policy);
 void grpc_auth_context_unref(grpc_auth_context *policy);
 #endif
 
-grpc_auth_property grpc_auth_property_init_from_cstring(const char *name,
-                                                        const char *value);
-
-grpc_auth_property grpc_auth_property_init(const char *name, const char *value,
-                                           size_t value_length);
-
 void grpc_auth_property_reset(grpc_auth_property *property);
 
 /* --- grpc_client_security_context ---
@@ -85,7 +85,7 @@ void grpc_auth_property_reset(grpc_auth_property *property);
    Internal client-side security context. */
 
 typedef struct {
-  grpc_credentials *creds;
+  grpc_call_credentials *creds;
   grpc_auth_context *auth_context;
 } grpc_client_security_context;
 
@@ -103,5 +103,12 @@ typedef struct {
 grpc_server_security_context *grpc_server_security_context_create(void);
 void grpc_server_security_context_destroy(void *ctx);
 
-#endif  /* GRPC_INTERNAL_CORE_SECURITY_SECURITY_CONTEXT_H */
+/* --- Channel args for auth context --- */
+#define GRPC_AUTH_CONTEXT_ARG "grpc.auth_context"
 
+grpc_arg grpc_auth_context_to_arg(grpc_auth_context *c);
+grpc_auth_context *grpc_auth_context_from_arg(const grpc_arg *arg);
+grpc_auth_context *grpc_find_auth_context_in_args(
+    const grpc_channel_args *args);
+
+#endif /* GRPC_CORE_SECURITY_SECURITY_CONTEXT_H */

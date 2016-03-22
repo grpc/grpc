@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -37,14 +37,24 @@
 #include <memory>
 
 #include "test/cpp/qps/histogram.h"
-#include "test/cpp/qps/qpstest.grpc.pb.h"
+#include "src/proto/grpc/testing/control.grpc.pb.h"
 
 namespace grpc {
 namespace testing {
-struct ResourceUsage {
-  double wall_time;
-  double user_time;
-  double system_time;
+class ResourceUsage {
+ public:
+  ResourceUsage(double w, double u, double s, int c)
+      : wall_time_(w), user_time_(u), system_time_(s), cores_(c) {}
+  double wall_time() const { return wall_time_; }
+  double user_time() const { return user_time_; }
+  double system_time() const { return system_time_; }
+  int cores() const { return cores_; }
+
+ private:
+  double wall_time_;
+  double user_time_;
+  double system_time_;
+  int cores_;
 };
 
 struct ScenarioResult {
@@ -60,6 +70,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
     const grpc::testing::ServerConfig& server_config, size_t num_servers,
     int warmup_seconds, int benchmark_seconds, int spawn_local_worker_count);
 
+void RunQuit();
 }  // namespace testing
 }  // namespace grpc
 

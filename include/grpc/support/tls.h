@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -41,13 +41,13 @@
    A minimal wrapper that should be implementable across many compilers,
    and implementable efficiently across most modern compilers.
 
-   Thread locals have type gpr_intptr.
+   Thread locals have type intptr_t.
 
    Declaring a thread local variable 'foo':
      GPR_TLS_DECL(foo);
    Thread locals always have static scope.
 
-   Initializing a thread local (must be done at library initialization 
+   Initializing a thread local (must be done at library initialization
    time):
      gpr_tls_init(&foo);
 
@@ -58,7 +58,7 @@
      gpr_tls_set(&foo, new_value);
 
    Accessing a thread local:
-     current_value = gpr_tls_get(&foo, value); 
+     current_value = gpr_tls_get(&foo, value);
 
    ALL functions here may be implemented as macros. */
 
@@ -74,4 +74,4 @@
 #include <grpc/support/tls_pthread.h>
 #endif
 
-#endif
+#endif /* GRPC_SUPPORT_TLS_H */

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,6 +31,8 @@
  *
  */
 
+#include <ruby/ruby.h>
+#include "rb_grpc_imports.generated.h"
 #include "rb_grpc.h"
 
 #include <math.h>
@@ -41,20 +43,26 @@
 #include <grpc/grpc.h>
 #include <grpc/support/time.h>
 #include "rb_call.h"
+#include "rb_call_credentials.h"
 #include "rb_channel.h"
+#include "rb_channel_credentials.h"
 #include "rb_completion_queue.h"
+#include "rb_loader.h"
 #include "rb_server.h"
-#include "rb_credentials.h"
 #include "rb_server_credentials.h"
 
 static VALUE grpc_rb_cTimeVal = Qnil;
 
 static rb_data_type_t grpc_rb_timespec_data_type = {
     "gpr_timespec",
-    {GRPC_RB_GC_NOT_MARKED, GRPC_RB_GC_DONT_FREE, GRPC_RB_MEMSIZE_UNAVAILABLE},
+    {GRPC_RB_GC_NOT_MARKED, GRPC_RB_GC_DONT_FREE, GRPC_RB_MEMSIZE_UNAVAILABLE,
+     {NULL, NULL}},
     NULL,
     NULL,
-    RUBY_TYPED_FREE_IMMEDIATELY};
+#ifdef RUBY_TYPED_FREE_IMMEDIATELY
+    RUBY_TYPED_FREE_IMMEDIATELY
+#endif
+};
 
 /* Alloc func that blocks allocation of a given object by raising an
  * exception. */
@@ -75,6 +83,7 @@ VALUE grpc_rb_cannot_init(VALUE self) {
 
 /* Init/Clone func that fails by raising an exception. */
 VALUE grpc_rb_cannot_init_copy(VALUE copy, VALUE self) {
+  (void)self;
   rb_raise(rb_eTypeError,
            "initialization of %s only allowed from the gRPC native layer",
            rb_obj_classname(copy));
@@ -86,7 +95,7 @@ static ID id_tv_sec;
 static ID id_tv_nsec;
 
 /**
- * grpc_rb_time_timeval creates a time_eval from a ruby time object.
+ * grpc_rb_time_timeval creates a timeval from a ruby time object.
  *
  * This func is copied from ruby source, MRI/source/time.c, which is published
  * under the same license as the ruby.h, on which the entire extensions is
@@ -98,6 +107,7 @@ gpr_timespec grpc_rb_time_timeval(VALUE time, int interval) {
   const char *tstr = interval ? "time interval" : "time";
   const char *want = " want <secs from epoch>|<Time>|<GRPC::TimeConst.*>";
 
+  t.clock_type = GPR_CLOCK_REALTIME;
   switch (TYPE(time)) {
     case T_DATA:
       if (CLASS_OF(time) == grpc_rb_cTimeVal) {
@@ -131,12 +141,12 @@ gpr_timespec grpc_rb_time_timeval(VALUE time, int interval) {
           d += 1;
           f -= 1;
         }
-        t.tv_sec = (time_t)f;
+        t.tv_sec = (int64_t)f;
         if (f != t.tv_sec) {
           rb_raise(rb_eRangeError, "%f out of Time range",
                    RFLOAT_VALUE(time));
         }
-        t.tv_nsec = (time_t)(d * 1e9 + 0.5);
+        t.tv_nsec = (int)(d * 1e9 + 0.5);
       }
       break;
 
@@ -206,10 +216,12 @@ static ID id_to_s;
 /* Converts a wrapped time constant to a standard time. */
 static VALUE grpc_rb_time_val_to_time(VALUE self) {
   gpr_timespec *time_const = NULL;
+  gpr_timespec real_time;
   TypedData_Get_Struct(self, gpr_timespec, &grpc_rb_timespec_data_type,
                        time_const);
-  return rb_funcall(rb_cTime, id_at, 2, INT2NUM(time_const->tv_sec),
-                    INT2NUM(time_const->tv_nsec));
+  real_time = gpr_convert_clock_type(*time_const, GPR_CLOCK_REALTIME);
+  return rb_funcall(rb_cTime, id_at, 2, INT2NUM(real_time.tv_sec),
+                    INT2NUM(real_time.tv_nsec));
 }
 
 /* Invokes inspect on the ctime version of the time val. */
@@ -222,24 +234,31 @@ static VALUE grpc_rb_time_val_to_s(VALUE self) {
   return rb_funcall(grpc_rb_time_val_to_time(self), id_to_s, 0);
 }
 
+static gpr_timespec zero_realtime;
+static gpr_timespec inf_future_realtime;
+static gpr_timespec inf_past_realtime;
+
 /* Adds a module with constants that map to gpr's static timeval structs. */
 static void Init_grpc_time_consts() {
   VALUE grpc_rb_mTimeConsts =
       rb_define_module_under(grpc_rb_mGrpcCore, "TimeConsts");
   grpc_rb_cTimeVal =
       rb_define_class_under(grpc_rb_mGrpcCore, "TimeSpec", rb_cObject);
+  zero_realtime = gpr_time_0(GPR_CLOCK_REALTIME);
+  inf_future_realtime = gpr_inf_future(GPR_CLOCK_REALTIME);
+  inf_past_realtime = gpr_inf_past(GPR_CLOCK_REALTIME);
   rb_define_const(
       grpc_rb_mTimeConsts, "ZERO",
       TypedData_Wrap_Struct(grpc_rb_cTimeVal, &grpc_rb_timespec_data_type,
-                            (void *)&gpr_time_0));
+                            (void *)&zero_realtime));
   rb_define_const(
       grpc_rb_mTimeConsts, "INFINITE_FUTURE",
       TypedData_Wrap_Struct(grpc_rb_cTimeVal, &grpc_rb_timespec_data_type,
-                            (void *)&gpr_inf_future));
+                            (void *)&inf_future_realtime));
   rb_define_const(
       grpc_rb_mTimeConsts, "INFINITE_PAST",
       TypedData_Wrap_Struct(grpc_rb_cTimeVal, &grpc_rb_timespec_data_type,
-                            (void *)&gpr_inf_past));
+                            (void *)&inf_past_realtime));
   rb_define_method(grpc_rb_cTimeVal, "to_time", grpc_rb_time_val_to_time, 0);
   rb_define_method(grpc_rb_cTimeVal, "inspect", grpc_rb_time_val_inspect, 0);
   rb_define_method(grpc_rb_cTimeVal, "to_s", grpc_rb_time_val_to_s, 0);
@@ -250,7 +269,9 @@ static void Init_grpc_time_consts() {
   id_tv_nsec = rb_intern("tv_nsec");
 }
 
-static void grpc_rb_shutdown(ruby_vm_t *vm) { grpc_shutdown(); }
+static void grpc_rb_shutdown(void) {
+  grpc_shutdown();
+}
 
 /* Initialize the GRPC module structs */
 
@@ -268,9 +289,31 @@ VALUE sym_code = Qundef;
 VALUE sym_details = Qundef;
 VALUE sym_metadata = Qundef;
 
-void Init_grpc() {
+static gpr_once g_once_init = GPR_ONCE_INIT;
+
+static void grpc_ruby_once_init() {
   grpc_init();
-  ruby_vm_at_exit(grpc_rb_shutdown);
+  atexit(grpc_rb_shutdown);
+}
+
+void Init_grpc_c() {
+  if (!grpc_rb_load_core()) {
+    rb_raise(rb_eLoadError, "Couldn't find or load gRPC's dynamic C core");
+    return;
+  }
+
+  /* ruby_vm_at_exit doesn't seem to be working. It would crash once every
+   * blue moon, and some users are getting it repeatedly. See the discussions
+   *  - https://github.com/grpc/grpc/pull/5337
+   *  - https://bugs.ruby-lang.org/issues/12095
+   *
+   * In order to still be able to handle the (unlikely) situation where the
+   * extension is loaded by a first Ruby VM that is subsequently destroyed,
+   * then loaded again by another VM within the same process, we need to
+   * schedule our initialization and destruction only once.
+   */
+  gpr_once_init(&g_once_init, grpc_ruby_once_init);
+
   grpc_rb_mGRPC = rb_define_module("GRPC");
   grpc_rb_mGrpcCore = rb_define_module_under(grpc_rb_mGRPC, "Core");
   grpc_rb_sNewServerRpc =
@@ -285,7 +328,8 @@ void Init_grpc() {
   Init_grpc_channel();
   Init_grpc_completion_queue();
   Init_grpc_call();
-  Init_grpc_credentials();
+  Init_grpc_call_credentials();
+  Init_grpc_channel_credentials();
   Init_grpc_server();
   Init_grpc_server_credentials();
   Init_grpc_status_codes();

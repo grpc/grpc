@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2015, Google Inc.
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -31,21 +31,22 @@
 set -ex
 
 CONFIG=${CONFIG:-opt}
-
-if [ "$CONFIG" = "dbg" ]
-then
-  MSBUILD_CONFIG="Debug"
-else
-  MSBUILD_CONFIG="Release"
-fi
+NUNIT_CONSOLE="mono packages/NUnit.Runners.2.6.4/tools/nunit-console.exe"
 
 # change to gRPC repo root
 cd $(dirname $0)/../..
 
-root=`pwd`
-cd src/csharp
+(cd src/csharp; $NUNIT_CONSOLE $@)
 
-export LD_LIBRARY_PATH=$root/libs/$CONFIG
-nunit-console -labels "$1/bin/$MSBUILD_CONFIG/$1.dll"
+if [ "$CONFIG" = "gcov" ]
+then
+  # Generate the csharp extension coverage report
+  gcov objs/gcov/src/csharp/ext/*.o
+  lcov --base-directory . --directory . -c -o coverage.info
+  lcov -e coverage.info '**/src/csharp/ext/*' -o coverage.info
+  genhtml -o reports/csharp_ext_coverage --num-spaces 2 \
+    -t 'gRPC C# native extension test coverage' coverage.info \
+    --rc genhtml_hi_limit=95 --rc genhtml_med_limit=80 --no-prefix
+fi
 
 

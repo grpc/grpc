@@ -46,12 +46,12 @@ describe('Interop tests', function() {
   before(function(done) {
     var server_obj = interop_server.getServer(0, true);
     server = server_obj.server;
-    server.listen();
+    server.start();
     port = 'localhost:' + server_obj.port;
     done();
   });
   after(function() {
-    server.shutdown();
+    server.forceShutdown();
   });
   // This depends on not using a binary stream
   it('should pass empty_unary', function(done) {
@@ -88,6 +88,18 @@ describe('Interop tests', function() {
   });
   it('should pass timeout_on_sleeping_server', function(done) {
     interop_client.runTest(port, name_override, 'timeout_on_sleeping_server',
+                           true, true, done);
+  });
+  it('should pass custom_metadata', function(done) {
+    interop_client.runTest(port, name_override, 'custom_metadata',
+                           true, true, done);
+  });
+  it('should pass status_code_and_message', function(done) {
+    interop_client.runTest(port, name_override, 'status_code_and_message',
+                           true, true, done);
+  });
+  it('should pass unimplemented_method', function(done) {
+    interop_client.runTest(port, name_override, 'unimplemented_method',
                            true, true, done);
   });
 });

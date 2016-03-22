@@ -33,30 +33,36 @@
 
 #import <Foundation/Foundation.h>
 
-// A GRXWriteable is an object to which a sequence of values can be sent. The
-// sequence finishes with an optional error.
+/**
+ * A GRXWriteable is an object to which a sequence of values can be sent. The
+ * sequence finishes with an optional error.
+ */
 @protocol GRXWriteable <NSObject>
 
-// Push the next value of the sequence to the receiving object.
+/** Push the next value of the sequence to the receiving object. */
 - (void)writeValue:(id)value;
 
-// Signal that the sequence is completed, or that an error ocurred. After this
-// message is sent to the instance, neither it nor writeValue: may be
-// called again.
+/**
+ * Signal that the sequence is completed, or that an error ocurred. After this
+ * message is sent to the instance, neither it nor writeValue: may be
+ * called again.
+ */
 - (void)writesFinishedWithError:(NSError *)errorOrNil;
 @end
 
 typedef void (^GRXValueHandler)(id value);
 typedef void (^GRXCompletionHandler)(NSError *errorOrNil);
-typedef void (^GRXSingleValueHandler)(id value, NSError *errorOrNil);
-typedef void (^GRXStreamHandler)(BOOL done, id value, NSError *error);
+typedef void (^GRXSingleHandler)(id value, NSError *errorOrNil);
+typedef void (^GRXEventHandler)(BOOL done, id value, NSError *error);
 
-// Utility to create objects that conform to the GRXWriteable protocol, from
-// blocks that handle each of the two methods of the protocol.
+/**
+ * Utility to create objects that conform to the GRXWriteable protocol, from
+ * blocks that handle each of the two methods of the protocol.
+ */
 @interface GRXWriteable : NSObject<GRXWriteable>
 
-+ (instancetype)writeableWithSingleValueHandler:(GRXSingleValueHandler)handler;
-+ (instancetype)writeableWithStreamHandler:(GRXStreamHandler)handler;
++ (instancetype)writeableWithSingleHandler:(GRXSingleHandler)handler;
++ (instancetype)writeableWithEventHandler:(GRXEventHandler)handler;
 
 - (instancetype)initWithValueHandler:(GRXValueHandler)valueHandler
                    completionHandler:(GRXCompletionHandler)completionHandler
