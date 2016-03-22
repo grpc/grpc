@@ -29,6 +29,7 @@ namespace Grpc.Health.V1 {
     }
 
     // client interface
+    [System.Obsolete("Client side interfaced will be removed in the next release. Use client class directly.")]
     public interface IHealthClient
     {
       global::Grpc.Health.V1.HealthCheckResponse Check(global::Grpc.Health.V1.HealthCheckRequest request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));
@@ -55,30 +56,42 @@ namespace Grpc.Health.V1 {
     }
 
     // client stub
-    public class HealthClient : ClientBase, IHealthClient
+    public class HealthClient : ClientBase<HealthClient>, IHealthClient
     {
       public HealthClient(Channel channel) : base(channel)
       {
       }
-      public global::Grpc.Health.V1.HealthCheckResponse Check(global::Grpc.Health.V1.HealthCheckRequest request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
+      public HealthClient(CallInvoker callInvoker) : base(callInvoker)
       {
-        var call = CreateCall(__Method_Check, new CallOptions(headers, deadline, cancellationToken));
-        return Calls.BlockingUnaryCall(call, request);
       }
-      public global::Grpc.Health.V1.HealthCheckResponse Check(global::Grpc.Health.V1.HealthCheckRequest request, CallOptions options)
+      ///<summary>Protected parameterless constructor to allow creation of test doubles.</summary>
+      protected HealthClient() : base()
       {
-        var call = CreateCall(__Method_Check, options);
-        return Calls.BlockingUnaryCall(call, request);
       }
-      public AsyncUnaryCall<global::Grpc.Health.V1.HealthCheckResponse> CheckAsync(global::Grpc.Health.V1.HealthCheckRequest request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
+      ///<summary>Protected constructor to allow creation of configured clients.</summary>
+      protected HealthClient(ClientBaseConfiguration configuration) : base(configuration)
       {
-        var call = CreateCall(__Method_Check, new CallOptions(headers, deadline, cancellationToken));
-        return Calls.AsyncUnaryCall(call, request);
       }
-      public AsyncUnaryCall<global::Grpc.Health.V1.HealthCheckResponse> CheckAsync(global::Grpc.Health.V1.HealthCheckRequest request, CallOptions options)
+
+      public virtual global::Grpc.Health.V1.HealthCheckResponse Check(global::Grpc.Health.V1.HealthCheckRequest request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
       {
-        var call = CreateCall(__Method_Check, options);
-        return Calls.AsyncUnaryCall(call, request);
+        return Check(request, new CallOptions(headers, deadline, cancellationToken));
+      }
+      public virtual global::Grpc.Health.V1.HealthCheckResponse Check(global::Grpc.Health.V1.HealthCheckRequest request, CallOptions options)
+      {
+        return CallInvoker.BlockingUnaryCall(__Method_Check, null, options, request);
+      }
+      public virtual AsyncUnaryCall<global::Grpc.Health.V1.HealthCheckResponse> CheckAsync(global::Grpc.Health.V1.HealthCheckRequest request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
+      {
+        return CheckAsync(request, new CallOptions(headers, deadline, cancellationToken));
+      }
+      public virtual AsyncUnaryCall<global::Grpc.Health.V1.HealthCheckResponse> CheckAsync(global::Grpc.Health.V1.HealthCheckRequest request, CallOptions options)
+      {
+        return CallInvoker.AsyncUnaryCall(__Method_Check, null, options, request);
+      }
+      protected override HealthClient NewInstance(ClientBaseConfiguration configuration)
+      {
+        return new HealthClient(configuration);
       }
     }
 
