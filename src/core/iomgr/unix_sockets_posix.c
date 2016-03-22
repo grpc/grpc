@@ -35,6 +35,7 @@
 
 #ifdef GPR_HAVE_UNIX_SOCKET
 
+#include <string.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/un.h>
