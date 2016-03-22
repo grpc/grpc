@@ -360,11 +360,6 @@ struct grpc_chttp2_transport {
   /** closure to actually do parsing */
   grpc_closure parsing_action;
 
-  struct {
-    size_t nslices;
-    gpr_slice *slices;
-  } executor_parsing;
-
   /** incoming read bytes */
   gpr_slice_buffer read_buffer;
 
