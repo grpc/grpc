@@ -380,13 +380,6 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   }
 }
 
-/** block grpc_endpoint_shutdown being called until a paired
-    allow_endpoint_shutdown is made */
-static void prevent_endpoint_shutdown(grpc_chttp2_transport *t) {
-  GPR_ASSERT(t->ep);
-  gpr_ref(&t->shutdown_ep_refs);
-}
-
 static void destroy_transport_locked(grpc_exec_ctx *exec_ctx,
                                      grpc_chttp2_transport *t,
                                      grpc_chttp2_stream *s_ignored,
@@ -400,6 +393,13 @@ static void destroy_transport(grpc_exec_ctx *exec_ctx, grpc_transport *gt) {
   grpc_chttp2_run_with_global_lock(exec_ctx, t, NULL, destroy_transport_locked,
                                    NULL, 0);
   UNREF_TRANSPORT(exec_ctx, t, "destroy");
+}
+
+/** block grpc_endpoint_shutdown being called until a paired
+    allow_endpoint_shutdown is made */
+static void prevent_endpoint_shutdown(grpc_chttp2_transport *t) {
+  GPR_ASSERT(t->ep);
+  gpr_ref(&t->shutdown_ep_refs);
 }
 
 static void allow_endpoint_shutdown_locked(grpc_exec_ctx *exec_ctx,
