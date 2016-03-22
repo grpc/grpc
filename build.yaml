@@ -1716,6 +1716,7 @@ targets:
   - gpr_test_util
   - gpr
 - name: mlog_test
+  flaky: true
   build: test
   language: c
   src:
