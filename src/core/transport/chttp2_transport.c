@@ -1000,14 +1000,14 @@ static void send_ping_locked(grpc_chttp2_transport *t, grpc_closure *on_recv) {
   p->next = &t->global.pings;
   p->prev = p->next->prev;
   p->prev->next = p->next->prev = p;
-  p->id[0] = (t->global.ping_counter >> 56) & 0xff;
-  p->id[1] = (t->global.ping_counter >> 48) & 0xff;
-  p->id[2] = (t->global.ping_counter >> 40) & 0xff;
-  p->id[3] = (t->global.ping_counter >> 32) & 0xff;
-  p->id[4] = (t->global.ping_counter >> 24) & 0xff;
-  p->id[5] = (t->global.ping_counter >> 16) & 0xff;
-  p->id[6] = (t->global.ping_counter >> 8) & 0xff;
-  p->id[7] = t->global.ping_counter & 0xff;
+  p->id[0] = (uint8_t)((t->global.ping_counter >> 56) & 0xff);
+  p->id[1] = (uint8_t)((t->global.ping_counter >> 48) & 0xff);
+  p->id[2] = (uint8_t)((t->global.ping_counter >> 40) & 0xff);
+  p->id[3] = (uint8_t)((t->global.ping_counter >> 32) & 0xff);
+  p->id[4] = (uint8_t)((t->global.ping_counter >> 24) & 0xff);
+  p->id[5] = (uint8_t)((t->global.ping_counter >> 16) & 0xff);
+  p->id[6] = (uint8_t)((t->global.ping_counter >> 8) & 0xff);
+  p->id[7] = (uint8_t)(t->global.ping_counter & 0xff);
   p->on_recv = on_recv;
   gpr_slice_buffer_add(&t->global.qbuf, grpc_chttp2_ping_create(0, p->id));
 }
