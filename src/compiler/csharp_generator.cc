@@ -388,7 +388,7 @@ void GenerateClientStub(Printer* out, const ServiceDescriptor *service) {
           GetClassName(method->output_type()));
       out->Print("{\n");
       out->Indent();
-      out->Print("return CallInvoker.BlockingUnaryCall($methodfield$, options, request);\n",
+      out->Print("return CallInvoker.BlockingUnaryCall($methodfield$, null, options, request);\n",
                  "methodfield", GetMethodFieldName(method));
       out->Outdent();
       out->Print("}\n");
@@ -422,20 +422,20 @@ void GenerateClientStub(Printer* out, const ServiceDescriptor *service) {
     out->Indent();
     switch (GetMethodType(method)) {
       case METHODTYPE_NO_STREAMING:
-        out->Print("return CallInvoker.AsyncUnaryCall($methodfield$, options, request);\n",
+        out->Print("return CallInvoker.AsyncUnaryCall($methodfield$, null, options, request);\n",
                    "methodfield", GetMethodFieldName(method));
         break;
       case METHODTYPE_CLIENT_STREAMING:
-        out->Print("return CallInvoker.AsyncClientStreamingCall($methodfield$, options);\n",
+        out->Print("return CallInvoker.AsyncClientStreamingCall($methodfield$, null, options);\n",
                    "methodfield", GetMethodFieldName(method));
         break;
       case METHODTYPE_SERVER_STREAMING:
         out->Print(
-            "return CallInvoker.AsyncServerStreamingCall($methodfield$, options, request);\n",
+            "return CallInvoker.AsyncServerStreamingCall($methodfield$, null, options, request);\n",
             "methodfield", GetMethodFieldName(method));
         break;
       case METHODTYPE_BIDI_STREAMING:
-        out->Print("return CallInvoker.AsyncDuplexStreamingCall($methodfield$, options);\n",
+        out->Print("return CallInvoker.AsyncDuplexStreamingCall($methodfield$, null, options);\n",
                    "methodfield", GetMethodFieldName(method));
         break;
       default:

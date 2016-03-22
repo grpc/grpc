@@ -124,11 +124,11 @@ namespace Grpc.Core
         /// By default, this will be set to <c>null</c> with the meaning
         /// "use default host".
         /// </summary>
-        public string Host
-        {
-            get;
-            set;
-        }
+        //public string Host
+        //{
+        //    get;
+        //    set;
+        //}
 
         /// <summary>
         /// Creates a new call to given method.
