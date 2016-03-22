@@ -151,11 +151,13 @@ class CLanguage(object):
     for target in binaries:
       if self.config.build_config in target['exclude_configs']:
         continue
+      platform_flaky = False
       if self.platform == 'windows':
         binary = 'vsprojects/%s%s/%s.exe' % (
             'x64/' if self.args.arch == 'x64' else '',
             _MSBUILD_CONFIG[self.config.build_config],
             target['name'])
+        platform_flaky = True
       else:
         binary = 'bins/%s/%s' % (self.config.build_config, target['name'])
       if os.path.isfile(binary):
@@ -182,6 +184,7 @@ class CLanguage(object):
               out.append(self.config.job_spec(cmdline, [binary],
                                               shortname='%s:%s' % (binary, test),
                                               cpu_cost=target['cpu_cost'],
+                                              flaky=target.get('flaky', False) or platform_flaky,
                                               environ={'GRPC_DEFAULT_SSL_ROOTS_FILE_PATH':
                                                        _ROOT + '/src/core/tsi/test_creds/ca.pem'}))
         else:
@@ -189,7 +192,7 @@ class CLanguage(object):
           out.append(self.config.job_spec(cmdline, [binary],
                                           shortname=' '.join(cmdline),
                                           cpu_cost=target['cpu_cost'],
-                                          flaky=target.get('flaky', False),
+                                          flaky=target.get('flaky', False) or platform_flaky,
                                           environ={'GRPC_DEFAULT_SSL_ROOTS_FILE_PATH':
                                                    _ROOT + '/src/core/tsi/test_creds/ca.pem'}))
       elif self.args.regex == '.*' or self.platform == 'windows':
