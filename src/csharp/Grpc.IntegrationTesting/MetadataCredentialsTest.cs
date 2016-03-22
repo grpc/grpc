@@ -50,15 +50,15 @@ namespace Grpc.IntegrationTesting
         const string Host = "localhost";
         Server server;
         Channel channel;
-        TestService.ITestServiceClient client;
+        TestService.TestServiceClient client;
         List<ChannelOption> options;
-        Mock<TestService.ITestService> serviceMock;
+        Mock<TestService.TestServiceBase> serviceMock;
         AsyncAuthInterceptor asyncAuthInterceptor;
 
         [SetUp]
         public void Init()
         {
-            serviceMock = new Mock<TestService.ITestService>();
+            serviceMock = new Mock<TestService.TestServiceBase>();
             serviceMock.Setup(m => m.UnaryCall(It.IsAny<SimpleRequest>(), It.IsAny<ServerCallContext>()))
                 .Returns(new Func<SimpleRequest, ServerCallContext, Task<SimpleResponse>>(UnaryCallHandler));
 

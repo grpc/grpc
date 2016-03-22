@@ -38,19 +38,19 @@ namespace Math
 {
     public static class MathExamples
     {
-        public static void DivExample(Math.IMathClient client)
+        public static void DivExample(Math.MathClientBase client)
         {
             DivReply result = client.Div(new DivArgs { Dividend = 10, Divisor = 3 });
             Console.WriteLine("Div Result: " + result);
         }
 
-        public static async Task DivAsyncExample(Math.IMathClient client)
+        public static async Task DivAsyncExample(Math.MathClientBase client)
         {
             DivReply result = await client.DivAsync(new DivArgs { Dividend = 4, Divisor = 5 });
             Console.WriteLine("DivAsync Result: " + result);
         }
 
-        public static async Task FibExample(Math.IMathClient client)
+        public static async Task FibExample(Math.MathClientBase client)
         {
             using (var call = client.Fib(new FibArgs { Limit = 5 }))
             {
@@ -59,7 +59,7 @@ namespace Math
             }
         }
 
-        public static async Task SumExample(Math.IMathClient client)
+        public static async Task SumExample(Math.MathClientBase client)
         {
             var numbers = new List<Num>
             {
@@ -75,7 +75,7 @@ namespace Math
             }
         }
 
-        public static async Task DivManyExample(Math.IMathClient client)
+        public static async Task DivManyExample(Math.MathClientBase client)
         {
             var divArgsList = new List<DivArgs>
             {
@@ -90,7 +90,7 @@ namespace Math
             }
         }
 
-        public static async Task DependendRequestsExample(Math.IMathClient client)
+        public static async Task DependendRequestsExample(Math.MathClientBase client)
         {
             var numbers = new List<Num>
             {
