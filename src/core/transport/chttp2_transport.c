@@ -829,23 +829,35 @@ static void maybe_start_some_streams(
   }
 }
 
+#define CLOSURE_BARRIER_STATS_BIT (1 << 0)
+#define CLOSURE_BARRIER_FAILURE_BIT (1 << 1)
+#define CLOSURE_BARRIER_FIRST_REF_BIT (1 << 16)
+
 static grpc_closure *add_closure_barrier(grpc_closure *closure) {
-  closure->final_data += 2;
+  closure->final_data += CLOSURE_BARRIER_FIRST_REF_BIT;
   return closure;
 }
 
 void grpc_chttp2_complete_closure_step(grpc_exec_ctx *exec_ctx,
+                                       grpc_chttp2_stream_global *stream_global,
                                        grpc_closure **pclosure, int success) {
   grpc_closure *closure = *pclosure;
   if (closure == NULL) {
     return;
   }
-  closure->final_data -= 2;
+  closure->final_data -= CLOSURE_BARRIER_FIRST_REF_BIT;
   if (!success) {
-    closure->final_data |= 1;
+    closure->final_data |= CLOSURE_BARRIER_FAILURE_BIT;
   }
-  if (closure->final_data < 2) {
-    grpc_exec_ctx_enqueue(exec_ctx, closure, closure->final_data == 0, NULL);
+  if (closure->final_data < CLOSURE_BARRIER_FIRST_REF_BIT) {
+    if (closure->final_data & CLOSURE_BARRIER_STATS_BIT) {
+      grpc_transport_move_stats(&stream_global->stats,
+                                stream_global->collecting_stats);
+      stream_global->collecting_stats = NULL;
+    }
+    grpc_exec_ctx_enqueue(
+        exec_ctx, closure,
+        (closure->final_data & CLOSURE_BARRIER_FAILURE_BIT) == 0, NULL);
   }
   *pclosure = NULL;
 }
@@ -880,7 +892,13 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx,
   }
   /* use final_data as a barrier until enqueue time; the inital counter is
      dropped at the end of this function */
-  on_complete->final_data = 2;
+  on_complete->final_data = CLOSURE_BARRIER_FIRST_REF_BIT;
+
+  if (op->collect_stats != NULL) {
+    GPR_ASSERT(stream_global->collecting_stats == NULL);
+    stream_global->collecting_stats = op->collect_stats;
+    on_complete->final_data |= CLOSURE_BARRIER_STATS_BIT;
+  }
 
   if (op->cancel_with_status != GRPC_STATUS_OK) {
     cancel_from_api(exec_ctx, transport_global, stream_global,
@@ -913,7 +931,8 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx,
       }
     } else {
       grpc_chttp2_complete_closure_step(
-          exec_ctx, &stream_global->send_initial_metadata_finished, 0);
+          exec_ctx, stream_global,
+          &stream_global->send_initial_metadata_finished, 0);
     }
   }
 
@@ -923,8 +942,8 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx,
     stream_global->send_message_finished = add_closure_barrier(on_complete);
     if (stream_global->write_closed) {
       grpc_chttp2_complete_closure_step(
-          exec_ctx, &stream_global->send_message_finished, 0);
-    } else {
+          exec_ctx, stream_global, &stream_global->send_message_finished, 0);
+    } else if (stream_global->id != 0) {
       stream_global->send_message = op->send_message;
       if (stream_global->id != 0) {
         grpc_chttp2_become_writable(transport_global, stream_global);
@@ -943,7 +962,8 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx,
     }
     if (stream_global->write_closed) {
       grpc_chttp2_complete_closure_step(
-          exec_ctx, &stream_global->send_trailing_metadata_finished,
+          exec_ctx, stream_global,
+          &stream_global->send_trailing_metadata_finished,
           grpc_metadata_batch_is_empty(op->send_trailing_metadata));
     } else if (stream_global->id != 0) {
       /* TODO(ctiller): check if there's flow control for any outstanding
@@ -982,7 +1002,7 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx,
     grpc_chttp2_list_add_check_read_ops(transport_global, stream_global);
   }
 
-  grpc_chttp2_complete_closure_step(exec_ctx, &on_complete, 1);
+  grpc_chttp2_complete_closure_step(exec_ctx, stream_global, &on_complete, 1);
 
   GPR_TIMER_END("perform_stream_op_locked", 0);
 }
@@ -1149,7 +1169,8 @@ static void check_read_ops(grpc_exec_ctx *exec_ctx,
             &stream_global->received_trailing_metadata,
             stream_global->recv_trailing_metadata);
         grpc_chttp2_complete_closure_step(
-            exec_ctx, &stream_global->recv_trailing_metadata_finished, 1);
+            exec_ctx, stream_global,
+            &stream_global->recv_trailing_metadata_finished, 1);
       }
     }
   }
@@ -1200,7 +1221,8 @@ static void cancel_from_api(grpc_exec_ctx *exec_ctx,
         &transport_global->qbuf,
         grpc_chttp2_rst_stream_create(
             stream_global->id,
-            (uint32_t)grpc_chttp2_grpc_status_to_http2_error(status)));
+            (uint32_t)grpc_chttp2_grpc_status_to_http2_error(status),
+            &stream_global->stats.outgoing));
   }
   grpc_chttp2_fake_status(exec_ctx, transport_global, stream_global, status,
                           NULL);
@@ -1248,10 +1270,12 @@ void grpc_chttp2_fake_status(grpc_exec_ctx *exec_ctx,
 static void fail_pending_writes(grpc_exec_ctx *exec_ctx,
                                 grpc_chttp2_stream_global *stream_global) {
   grpc_chttp2_complete_closure_step(
-      exec_ctx, &stream_global->send_initial_metadata_finished, 0);
+      exec_ctx, stream_global, &stream_global->send_initial_metadata_finished,
+      0);
   grpc_chttp2_complete_closure_step(
-      exec_ctx, &stream_global->send_trailing_metadata_finished, 0);
-  grpc_chttp2_complete_closure_step(exec_ctx,
+      exec_ctx, stream_global, &stream_global->send_trailing_metadata_finished,
+      0);
+  grpc_chttp2_complete_closure_step(exec_ctx, stream_global,
                                     &stream_global->send_message_finished, 0);
 }
 
@@ -1388,7 +1412,8 @@ static void close_from_api(grpc_exec_ctx *exec_ctx,
 
   gpr_slice_buffer_add(
       &transport_global->qbuf,
-      grpc_chttp2_rst_stream_create(stream_global->id, GRPC_CHTTP2_NO_ERROR));
+      grpc_chttp2_rst_stream_create(stream_global->id, GRPC_CHTTP2_NO_ERROR,
+                                    &stream_global->stats.outgoing));
 
   if (optional_message) {
     gpr_slice_ref(*optional_message);
