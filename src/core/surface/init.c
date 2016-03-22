@@ -90,18 +90,21 @@ static void do_basic_init(void) {
 }
 
 static bool append_filter(grpc_channel_stack_builder *builder, void *arg) {
-  return grpc_channel_stack_builder_append_filter(builder, arg, NULL, NULL);
+  return grpc_channel_stack_builder_append_filter(
+      builder, (const grpc_channel_filter *)arg, NULL, NULL);
 }
 
 static bool prepend_filter(grpc_channel_stack_builder *builder, void *arg) {
-  return grpc_channel_stack_builder_prepend_filter(builder, arg, NULL, NULL);
+  return grpc_channel_stack_builder_prepend_filter(
+      builder, (const grpc_channel_filter *)arg, NULL, NULL);
 }
 
 static bool maybe_add_http_filter(grpc_channel_stack_builder *builder,
                                   void *arg) {
   grpc_transport *t = grpc_channel_stack_builder_get_transport(builder);
   if (t && strstr(t->vtable->name, "http")) {
-    return grpc_channel_stack_builder_prepend_filter(builder, arg, NULL, NULL);
+    return grpc_channel_stack_builder_prepend_filter(
+        builder, (const grpc_channel_filter *)arg, NULL, NULL);
   }
   return true;
 }
