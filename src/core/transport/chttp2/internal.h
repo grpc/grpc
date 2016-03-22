@@ -291,9 +291,13 @@ struct grpc_chttp2_transport_parsing {
   int64_t outgoing_window;
 };
 
+typedef void (*grpc_chttp2_locked_action)(grpc_exec_ctx *ctx,
+                                          grpc_chttp2_transport *t,
+                                          grpc_chttp2_stream *s, void *arg);
+
 typedef struct grpc_chttp2_executor_action_header {
   grpc_chttp2_stream *stream;
-  void (*action)(grpc_chttp2_transport *t, grpc_chttp2_stream *s, void *arg);
+  grpc_chttp2_locked_action action;
   struct grpc_chttp2_executor_action_header *next;
   void *arg;
 } grpc_chttp2_executor_action_header;
@@ -311,13 +315,11 @@ struct grpc_chttp2_transport {
     gpr_mu mu;
 
     /** is a thread currently in the global lock */
-    uint8_t global_active;
+    bool global_active;
     /** is a thread currently writing */
-    uint8_t writing_active;
+    bool writing_active;
     /** is a thread currently parsing */
-    uint8_t parsing_active;
-    /** is a thread currently executing channel callbacks */
-    uint8_t channel_callback_active;
+    bool parsing_active;
 
     grpc_chttp2_executor_action_header *pending_actions;
   } executor;
@@ -352,11 +354,11 @@ struct grpc_chttp2_transport {
   grpc_chttp2_stream_map new_stream_map;
 
   /** closure to execute writing */
-  grpc_iomgr_closure writing_action;
+  grpc_closure writing_action;
   /** closure to start reading from the endpoint */
-  grpc_iomgr_closure reading_action;
+  grpc_closure reading_action;
   /** closure to actually do parsing */
-  grpc_iomgr_closure parsing_action;
+  grpc_closure parsing_action;
 
   struct {
     size_t nslices;
@@ -659,10 +661,11 @@ void grpc_chttp2_parsing_become_skip_parser(
 void grpc_chttp2_complete_closure_step(grpc_exec_ctx *exec_ctx,
                                        grpc_closure **pclosure, int success);
 
-void grpc_chttp2_run_with_global_lock(
-    grpc_chttp2_transport *transport, grpc_chttp2_stream *optional_stream,
-    void (*action)(grpc_chttp2_transport *t, grpc_chttp2_stream *s, void *arg),
-    void *arg, size_t sizeof_arg);
+void grpc_chttp2_run_with_global_lock(grpc_exec_ctx *exec_ctx,
+                                      grpc_chttp2_transport *transport,
+                                      grpc_chttp2_stream *optional_stream,
+                                      grpc_chttp2_locked_action action,
+                                      void *arg, size_t sizeof_arg);
 
 #define GRPC_CHTTP2_CLIENT_CONNECT_STRING "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"
 #define GRPC_CHTTP2_CLIENT_CONNECT_STRLEN \
