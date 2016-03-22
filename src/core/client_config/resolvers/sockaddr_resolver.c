@@ -351,21 +351,22 @@ static void sockaddr_factory_ref(grpc_resolver_factory *factory) {}
 
 static void sockaddr_factory_unref(grpc_resolver_factory *factory) {}
 
-#define DECL_FACTORY(name)                                                  \
+#define DECL_FACTORY(name, prefix)                                          \
   static grpc_resolver *name##_factory_create_resolver(                     \
       grpc_resolver_factory *factory, grpc_resolver_args *args) {           \
-    return sockaddr_create(args, "pick_first", parse_##name);               \
+    return sockaddr_create(args, "pick_first", prefix##parse_##name);        \
   }                                                                         \
   static const grpc_resolver_factory_vtable name##_factory_vtable = {       \
       sockaddr_factory_ref, sockaddr_factory_unref,                         \
-      name##_factory_create_resolver, name##_get_default_authority, #name}; \
+      name##_factory_create_resolver, prefix##name##_get_default_authority, \
+      #name};                                                               \
   static grpc_resolver_factory name##_resolver_factory = {                  \
       &name##_factory_vtable};                                              \
   grpc_resolver_factory *grpc_##name##_resolver_factory_create() {          \
     return &name##_resolver_factory;                                        \
   }
 
-#ifdef GPR_POSIX_SOCKET
-DECL_FACTORY(unix)
+#ifdef GPR_HAVE_UNIX_SOCKET
+DECL_FACTORY(unix, grpc_)
 #endif
-DECL_FACTORY(ipv4) DECL_FACTORY(ipv6)
+DECL_FACTORY(ipv4, ) DECL_FACTORY(ipv6, )

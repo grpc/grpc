@@ -46,14 +46,14 @@ int grpc_is_unix_socket(const struct sockaddr *addr) {
   return false;
 }
 
-void unlink_if_unix_domain_socket(const struct sockaddr *addr) {}
+void grpc_unlink_if_unix_domain_socket(const struct sockaddr *addr) {}
 
-int parse_unix(grpc_uri *uri, struct sockaddr_storage *addr, size_t *len) {
+int grpc_parse_unix(grpc_uri *uri, struct sockaddr_storage *addr, size_t *len) {
   return 0;
 }
 
-char *unix_get_default_authority(grpc_resolver_factory *factory,
-                                 grpc_uri *uri) {
+char *grpc_unix_get_default_authority(grpc_resolver_factory *factory,
+                                      grpc_uri *uri) {
   return NULL;
 }
 

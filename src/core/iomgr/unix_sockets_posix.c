@@ -62,7 +62,7 @@ int grpc_is_unix_socket(const struct sockaddr *addr) {
   return addr->sa_family == AF_UNIX;
 }
 
-void unlink_if_unix_domain_socket(const struct sockaddr *addr) {
+void grpc_unlink_if_unix_domain_socket(const struct sockaddr *addr) {
   if (addr->sa_family != AF_UNIX) {
     return;
   }
@@ -74,7 +74,7 @@ void unlink_if_unix_domain_socket(const struct sockaddr *addr) {
   }
 }
 
-int parse_unix(grpc_uri *uri, struct sockaddr_storage *addr, size_t *len) {
+int grpc_parse_unix(grpc_uri *uri, struct sockaddr_storage *addr, size_t *len) {
   struct sockaddr_un *un = (struct sockaddr_un *)addr;
 
   un->sun_family = AF_UNIX;
@@ -84,8 +84,8 @@ int parse_unix(grpc_uri *uri, struct sockaddr_storage *addr, size_t *len) {
   return 1;
 }
 
-char *unix_get_default_authority(grpc_resolver_factory *factory,
-                                 grpc_uri *uri) {
+char *grpc_unix_get_default_authority(grpc_resolver_factory *factory,
+                                      grpc_uri *uri) {
   return gpr_strdup("localhost");
 }
 
