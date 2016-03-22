@@ -44,15 +44,13 @@ namespace Grpc.Core
     {
         readonly Channel channel;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Grpc.Core.DefaultCallInvoker"/> class.
+        /// </summary>
+        /// <param name="channel">Channel to use.</param>
         public DefaultCallInvoker(Channel channel)
         {
             this.channel = GrpcPreconditions.CheckNotNull(channel);
-        }
-
-        public string Host
-        {
-            get;
-            set;
         }
 
         /// <summary>
@@ -104,11 +102,16 @@ namespace Grpc.Core
             return Calls.AsyncDuplexStreamingCall(call);
         }
 
-        private CallInvocationDetails<TRequest, TResponse> CreateCall<TRequest, TResponse>(Method<TRequest, TResponse> method, CallOptions options)
+        protected virtual string Host
+        {
+            get { return null; }
+        }
+
+        protected virtual CallInvocationDetails<TRequest, TResponse> CreateCall<TRequest, TResponse>(Method<TRequest, TResponse> method, CallOptions options)
                 where TRequest : class
                 where TResponse : class
         {
-             return new CallInvocationDetails<TRequest, TResponse>(channel, method, Host, options);
+            return new CallInvocationDetails<TRequest, TResponse>(channel, method, Host, options);
         }
     }
 }

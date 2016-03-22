@@ -34,31 +34,76 @@
 using System;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Grpc.Core.Utils;
 
 namespace Grpc.Core
 {
     /// <summary>
     /// Interceptor for call headers.
     /// </summary>
-    /// <remarks>Header interceptor is no longer to recommented way to perform authentication.
+    /// <remarks>Header interceptor is no longer the recommended way to perform authentication.
     /// For header (initial metadata) based auth such as OAuth2 or JWT access token, use <see cref="MetadataCredentials"/>.
     /// </remarks>
     public delegate void HeaderInterceptor(IMethod method, Metadata metadata);
+
+    /// <summary>
+    /// Generic base class for client-side stubs.
+    /// </summary>
+    public abstract class ClientBase<T> : ClientBase
+        where T : ClientBase
+    {
+        /// <summary>
+        /// Initializes a new instance of <c>ClientBase</c> class.
+        /// </summary>
+        /// <param name="channel">The channel to use for remote call invocation.</param>
+        public ClientBase(Channel channel) : base(channel)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of <c>ClientBase</c> class.
+        /// </summary>
+        /// <param name="callInvoker">The <c>CallInvoker</c> for remote call invocation.</param>
+        public ClientBase(CallInvoker callInvoker) : base(callInvoker)
+        {
+        }
+
+        /// <summary>
+        /// Creates a new instance of client from given <c>CallInvoker</c>.
+        /// </summary>
+        protected abstract T NewInstance(CallInvoker callInvoker);
+    }
 
     /// <summary>
     /// Base class for client-side stubs.
     /// </summary>
     public abstract class ClientBase
     {
-        readonly Channel channel;
+        readonly CallInvoker callInvoker;
 
         /// <summary>
         /// Initializes a new instance of <c>ClientBase</c> class.
         /// </summary>
         /// <param name="channel">The channel to use for remote call invocation.</param>
-        public ClientBase(Channel channel)
+        public ClientBase(Channel channel) : this(new DefaultCallInvoker(channel))
         {
-            this.channel = channel;
+        }
+
+        /// <summary>
+        /// Initializes a new instance of <c>ClientBase</c> class.
+        /// </summary>
+        /// <param name="callInvoker">The <c>CallInvoker</c> for remote call invocation.</param>
+        public ClientBase(CallInvoker callInvoker)
+        {
+            this.callInvoker = GrpcPreconditions.CheckNotNull(callInvoker);
+        }
+
+        /// <summary>
+        /// Gets the call invoker.
+        /// </summary>
+        protected CallInvoker CallInvoker
+        {
+            get { return this.callInvoker; }
         }
 
         /// <summary>
@@ -86,17 +131,6 @@ namespace Grpc.Core
         }
 
         /// <summary>
-        /// Channel associated with this client.
-        /// </summary>
-        public Channel Channel
-        {
-            get
-            {
-                return this.channel;
-            }
-        }
-
-        /// <summary>
         /// Creates a new call to given method.
         /// </summary>
         /// <param name="method">The method to invoke.</param>
@@ -104,20 +138,20 @@ namespace Grpc.Core
         /// <typeparam name="TRequest">Request message type.</typeparam>
         /// <typeparam name="TResponse">Response message type.</typeparam>
         /// <returns>The call invocation details.</returns>
-        protected CallInvocationDetails<TRequest, TResponse> CreateCall<TRequest, TResponse>(Method<TRequest, TResponse> method, CallOptions options)
-            where TRequest : class
-            where TResponse : class
-        {
-            var interceptor = HeaderInterceptor;
-            if (interceptor != null)
-            {
-                if (options.Headers == null)
-                {
-                    options = options.WithHeaders(new Metadata());
-                }
-                interceptor(method, options.Headers);
-            }
-            return new CallInvocationDetails<TRequest, TResponse>(channel, method, Host, options);
-        }
+        //protected CallInvocationDetails<TRequest, TResponse> CreateCall<TRequest, TResponse>(Method<TRequest, TResponse> method, CallOptions options)
+        //    where TRequest : class
+        //    where TResponse : class
+        //{
+        //    var interceptor = HeaderInterceptor;
+        //    if (interceptor != null)
+        //    {
+        //        if (options.Headers == null)
+        //        {
+        //            options = options.WithHeaders(new Metadata());
+        //        }
+        //        interceptor(method, options.Headers);
+        //    }
+        //    return new CallInvocationDetails<TRequest, TResponse>(channel, method, Host, options);
+        //}
     }
 }
