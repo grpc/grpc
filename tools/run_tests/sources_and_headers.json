@@ -2533,6 +2533,19 @@
   {
     "deps": [
       "boringssl", 
+      "boringssl_asn1_test_lib", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "boringssl_asn1_test", 
+    "src": [], 
+    "third_party": true, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
       "boringssl_base64_test_lib", 
       "boringssl_test_util"
     ], 
@@ -3469,23 +3482,6 @@
     ], 
     "headers": [], 
     "language": "c", 
-    "name": "h2_uchannel_test", 
-    "src": [
-      "test/core/end2end/fixtures/h2_uchannel.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "end2end_tests", 
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
     "name": "h2_uds_test", 
     "src": [
       "test/core/end2end/fixtures/h2_uds.c"
@@ -3693,23 +3689,6 @@
     "name": "h2_sockpair_1byte_nosec_test", 
     "src": [
       "test/core/end2end/fixtures/h2_sockpair_1byte.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "end2end_nosec_tests", 
-      "gpr", 
-      "gpr_test_util", 
-      "grpc_test_util_unsecure", 
-      "grpc_unsecure"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "h2_uchannel_nosec_test", 
-    "src": [
-      "test/core/end2end/fixtures/h2_uchannel.c"
     ], 
     "third_party": false, 
     "type": "target"
@@ -3954,7 +3933,6 @@
       "src/core/channel/channel_stack.h", 
       "src/core/channel/channel_stack_builder.h", 
       "src/core/channel/client_channel.h", 
-      "src/core/channel/client_uchannel.h", 
       "src/core/channel/compress_filter.h", 
       "src/core/channel/connected_channel.h", 
       "src/core/channel/context.h", 
@@ -4125,8 +4103,6 @@
       "src/core/channel/channel_stack_builder.h", 
       "src/core/channel/client_channel.c", 
       "src/core/channel/client_channel.h", 
-      "src/core/channel/client_uchannel.c", 
-      "src/core/channel/client_uchannel.h", 
       "src/core/channel/compress_filter.c", 
       "src/core/channel/compress_filter.h", 
       "src/core/channel/connected_channel.c", 
@@ -4581,7 +4557,6 @@
       "src/core/channel/channel_stack.h", 
       "src/core/channel/channel_stack_builder.h", 
       "src/core/channel/client_channel.h", 
-      "src/core/channel/client_uchannel.h", 
       "src/core/channel/compress_filter.h", 
       "src/core/channel/connected_channel.h", 
       "src/core/channel/context.h", 
@@ -4737,8 +4712,6 @@
       "src/core/channel/channel_stack_builder.h", 
       "src/core/channel/client_channel.c", 
       "src/core/channel/client_channel.h", 
-      "src/core/channel/client_uchannel.c", 
-      "src/core/channel/client_uchannel.h", 
       "src/core/channel/compress_filter.c", 
       "src/core/channel/compress_filter.h", 
       "src/core/channel/connected_channel.c", 
@@ -6007,6 +5980,18 @@
     "headers": [], 
     "language": "c++", 
     "name": "boringssl_aes_test_lib", 
+    "src": [], 
+    "third_party": true, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "boringssl_asn1_test_lib", 
     "src": [], 
     "third_party": true, 
     "type": "lib"
