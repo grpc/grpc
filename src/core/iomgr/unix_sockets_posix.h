@@ -36,15 +36,12 @@
 
 #include <grpc/support/port_platform.h>
 
-#ifdef GPR_POSIX_SOCKET
-
-#include <sys/socket.h>
-
 #include <grpc/support/string_util.h>
 
 #include "src/core/client_config/resolver_factory.h"
 #include "src/core/client_config/uri_parser.h"
 #include "src/core/iomgr/resolve_address.h"
+#include "src/core/iomgr/sockaddr.h"
 
 void grpc_create_socketpair_if_unix(int sv[2]);
 
@@ -61,5 +58,4 @@ char *grpc_unix_get_default_authority(grpc_resolver_factory *factory,
 
 char *grpc_sockaddr_to_uri_unix_if_possible(const struct sockaddr *addr);
 
-#endif
 #endif /* GRPC_INTERNAL_CORE_IOMGR_UNIX_SOCKETS_POSIX_H */
