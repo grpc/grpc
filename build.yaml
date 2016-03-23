@@ -253,7 +253,6 @@ filegroups:
   - src/core/channel/channel_stack.h
   - src/core/channel/channel_stack_builder.h
   - src/core/channel/client_channel.h
-  - src/core/channel/client_uchannel.h
   - src/core/channel/compress_filter.h
   - src/core/channel/connected_channel.h
   - src/core/channel/context.h
@@ -315,6 +314,7 @@ filegroups:
   - src/core/iomgr/timer.h
   - src/core/iomgr/timer_heap.h
   - src/core/iomgr/udp_server.h
+  - src/core/iomgr/unix_sockets_posix.h
   - src/core/iomgr/wakeup_fd_pipe.h
   - src/core/iomgr/wakeup_fd_posix.h
   - src/core/iomgr/workqueue.h
@@ -375,7 +375,6 @@ filegroups:
   - src/core/channel/channel_stack.c
   - src/core/channel/channel_stack_builder.c
   - src/core/channel/client_channel.c
-  - src/core/channel/client_uchannel.c
   - src/core/channel/compress_filter.c
   - src/core/channel/connected_channel.c
   - src/core/channel/http_client_filter.c
@@ -440,6 +439,8 @@ filegroups:
   - src/core/iomgr/timer.c
   - src/core/iomgr/timer_heap.c
   - src/core/iomgr/udp_server.c
+  - src/core/iomgr/unix_sockets_posix.c
+  - src/core/iomgr/unix_sockets_posix_noop.c
   - src/core/iomgr/wakeup_fd_eventfd.c
   - src/core/iomgr/wakeup_fd_nospecial.c
   - src/core/iomgr/wakeup_fd_pipe.c
@@ -1716,6 +1717,7 @@ targets:
   - gpr_test_util
   - gpr
 - name: mlog_test
+  flaky: true
   build: test
   language: c
   src:
@@ -2471,8 +2473,6 @@ targets:
   - gpr_test_util
   - gpr
   - grpc++_test_config
-  exclude_configs:
-  - tsan
   platforms:
   - mac
   - linux
@@ -2492,8 +2492,6 @@ targets:
   - gpr_test_util
   - gpr
   - grpc++_test_config
-  exclude_configs:
-  - tsan
   platforms:
   - mac
   - linux
@@ -2826,11 +2824,11 @@ configs:
   etsan:
     CC: clang
     CPPFLAGS: -O0 -fsanitize=thread -fno-omit-frame-pointer -Wno-unused-command-line-argument
-      -fPIE -pie -DGPR_NO_DIRECT_SYSCALLS
+      -DGPR_NO_DIRECT_SYSCALLS
     CXX: clang++
     DEFINES: _DEBUG DEBUG GRPC_EXECUTION_CONTEXT_SANITIZER
     LD: clang
-    LDFLAGS: -fsanitize=thread -fPIE -pie $(if $(JENKINS_BUILD),-Wl$(comma)-Ttext-segment=0x7e0000000000,)
+    LDFLAGS: -fsanitize=thread
     LDXX: clang++
     compile_the_world: true
     test_environ:
@@ -2882,10 +2880,10 @@ configs:
   tsan:
     CC: clang
     CPPFLAGS: -O0 -fsanitize=thread -fno-omit-frame-pointer -Wno-unused-command-line-argument
-      -fPIE -pie -DGPR_NO_DIRECT_SYSCALLS
+      -DGPR_NO_DIRECT_SYSCALLS
     CXX: clang++
     LD: clang
-    LDFLAGS: -fsanitize=thread -fPIE -pie $(if $(JENKINS_BUILD),-Wl$(comma)-Ttext-segment=0x7e0000000000,)
+    LDFLAGS: -fsanitize=thread
     LDXX: clang++
     compile_the_world: true
     test_environ:
