@@ -111,7 +111,7 @@ if "linux" in sys.platform or "darwin" in sys.platform:
   DEFINE_MACROS += (('PyMODINIT_FUNC', pymodinit),)
 
 
-def cython_extensions(package_names, module_names, extra_sources, include_dirs,
+def cython_extensions(module_names, extra_sources, include_dirs,
                       libraries, define_macros, build_with_cython=False):
   # Set compiler directives linetrace argument only if we care about tracing;
   # this is due to Cython having different behavior between linetrace being
@@ -144,7 +144,7 @@ def cython_extensions(package_names, module_names, extra_sources, include_dirs,
     return extensions
 
 CYTHON_EXTENSION_MODULES = cython_extensions(
-    list(CYTHON_EXTENSION_PACKAGE_NAMES), list(CYTHON_EXTENSION_MODULE_NAMES),
+    list(CYTHON_EXTENSION_MODULE_NAMES),
     list(CYTHON_HELPER_C_FILES) + list(CORE_C_FILES),
     list(EXTENSION_INCLUDE_DIRECTORIES), list(EXTENSION_LIBRARIES),
     list(DEFINE_MACROS), bool(BUILD_WITH_CYTHON))
