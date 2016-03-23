@@ -21,7 +21,7 @@ npm install grpc
  1. Clone [the grpc Git Repository](https://github.com/grpc/grpc).
  2. Run `npm install` from the repository root.
 
- - **Note:** On Windows, this might fail due to a [nodejs issue](https:\github.com\nodejs\node\issues\4932) in which case, you will see something like the following in `npm install`'s output (towards the very beginning):
+ - **Note:** On Windows, this might fail due to nodejs/node#4932 in which case, you will see something like the following in `npm install`'s output (towards the very beginning):
 
     ```
      ..
