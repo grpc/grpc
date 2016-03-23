@@ -134,7 +134,7 @@ static void client_init_call_elem(grpc_exec_ctx *exec_ctx,
 }
 
 static void client_destroy_call_elem(grpc_exec_ctx *exec_ctx,
-                                     grpc_call_element *elem) {
+                                     grpc_call_element *elem, void *ignored) {
   call_data *d = elem->call_data;
   GPR_ASSERT(d != NULL);
   /* TODO(hongyu): record rpc client stats and census_rpc_end_op here */
@@ -152,7 +152,7 @@ static void server_init_call_elem(grpc_exec_ctx *exec_ctx,
 }
 
 static void server_destroy_call_elem(grpc_exec_ctx *exec_ctx,
-                                     grpc_call_element *elem) {
+                                     grpc_call_element *elem, void *ignored) {
   call_data *d = elem->call_data;
   GPR_ASSERT(d != NULL);
   /* TODO(hongyu): record rpc server stats and census_tracing_end_op here */
