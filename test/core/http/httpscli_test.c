@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/httpcli/httpcli.h"
+#include "src/core/http/httpcli.h"
 
 #include <string.h>
 
@@ -84,7 +84,7 @@ static void test_get(int port) {
   memset(&req, 0, sizeof(req));
   req.host = host;
   req.ssl_host_override = "foo.test.google.fr";
-  req.path = "/get";
+  req.http.path = "/get";
   req.handshaker = &grpc_httpcli_ssl;
 
   grpc_httpcli_get(&exec_ctx, &g_context, g_pollset, &req, n_seconds_time(15),
@@ -116,7 +116,7 @@ static void test_post(int port) {
   memset(&req, 0, sizeof(req));
   req.host = host;
   req.ssl_host_override = "foo.test.google.fr";
-  req.path = "/post";
+  req.http.path = "/post";
   req.handshaker = &grpc_httpcli_ssl;
 
   grpc_httpcli_post(&exec_ctx, &g_context, g_pollset, &req, "hello", 5,
@@ -163,7 +163,7 @@ int main(int argc, char **argv) {
   } else {
     arg_shift = 1;
     gpr_asprintf(&args[0], "%s/../../tools/distrib/python_wrapper.sh", root);
-    gpr_asprintf(&args[1], "%s/../../test/core/httpcli/test_server.py", root);
+    gpr_asprintf(&args[1], "%s/../../test/core/http/test_server.py", root);
   }
 
   /* start the server */
