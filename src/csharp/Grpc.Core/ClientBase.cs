@@ -34,6 +34,7 @@
 using System;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Grpc.Core.Internal;
 using Grpc.Core.Utils;
 
 namespace Grpc.Core
