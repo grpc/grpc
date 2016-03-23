@@ -38,7 +38,8 @@
 
 #include "src/core/channel/channel_args.h"
 #include "src/core/channel/http_client_filter.h"
-#include "src/core/httpcli/httpcli.h"
+#include "src/core/http/parser.h"
+#include "src/core/http/httpcli.h"
 #include "src/core/iomgr/executor.h"
 #include "src/core/json/json.h"
 #include "src/core/support/string.h"
@@ -539,7 +540,7 @@ static void oauth2_token_fetcher_destruct(grpc_call_credentials *creds) {
 
 grpc_credentials_status
 grpc_oauth2_token_fetcher_credentials_parse_server_response(
-    const grpc_httpcli_response *response, grpc_credentials_md_store **token_md,
+    const grpc_http_response *response, grpc_credentials_md_store **token_md,
     gpr_timespec *token_lifetime) {
   char *null_terminated_body = NULL;
   char *new_access_token = NULL;
@@ -629,7 +630,7 @@ end:
 
 static void on_oauth2_token_fetcher_http_response(
     grpc_exec_ctx *exec_ctx, void *user_data,
-    const grpc_httpcli_response *response) {
+    const grpc_http_response *response) {
   grpc_credentials_metadata_request *r =
       (grpc_credentials_metadata_request *)user_data;
   grpc_oauth2_token_fetcher_credentials *c =
@@ -706,13 +707,13 @@ static void compute_engine_fetch_oauth2(
     grpc_exec_ctx *exec_ctx, grpc_credentials_metadata_request *metadata_req,
     grpc_httpcli_context *httpcli_context, grpc_pollset *pollset,
     grpc_httpcli_response_cb response_cb, gpr_timespec deadline) {
-  grpc_httpcli_header header = {"Metadata-Flavor", "Google"};
+  grpc_http_header header = {"Metadata-Flavor", "Google"};
   grpc_httpcli_request request;
   memset(&request, 0, sizeof(grpc_httpcli_request));
   request.host = GRPC_COMPUTE_ENGINE_METADATA_HOST;
-  request.path = GRPC_COMPUTE_ENGINE_METADATA_TOKEN_PATH;
-  request.hdr_count = 1;
-  request.hdrs = &header;
+  request.http.path = GRPC_COMPUTE_ENGINE_METADATA_TOKEN_PATH;
+  request.http.hdr_count = 1;
+  request.http.hdrs = &header;
   grpc_httpcli_get(exec_ctx, httpcli_context, pollset, &request, deadline,
                    response_cb, metadata_req);
 }
@@ -747,8 +748,8 @@ static void refresh_token_fetch_oauth2(
     grpc_httpcli_response_cb response_cb, gpr_timespec deadline) {
   grpc_google_refresh_token_credentials *c =
       (grpc_google_refresh_token_credentials *)metadata_req->creds;
-  grpc_httpcli_header header = {"Content-Type",
-                                "application/x-www-form-urlencoded"};
+  grpc_http_header header = {"Content-Type",
+                             "application/x-www-form-urlencoded"};
   grpc_httpcli_request request;
   char *body = NULL;
   gpr_asprintf(&body, GRPC_REFRESH_TOKEN_POST_BODY_FORMAT_STRING,
@@ -756,9 +757,9 @@ static void refresh_token_fetch_oauth2(
                c->refresh_token.refresh_token);
   memset(&request, 0, sizeof(grpc_httpcli_request));
   request.host = GRPC_GOOGLE_OAUTH2_SERVICE_HOST;
-  request.path = GRPC_GOOGLE_OAUTH2_SERVICE_TOKEN_PATH;
-  request.hdr_count = 1;
-  request.hdrs = &header;
+  request.http.path = GRPC_GOOGLE_OAUTH2_SERVICE_TOKEN_PATH;
+  request.http.hdr_count = 1;
+  request.http.hdrs = &header;
   request.handshaker = &grpc_httpcli_ssl;
   grpc_httpcli_post(exec_ctx, httpcli_context, pollset, &request, body,
                     strlen(body), deadline, response_cb, metadata_req);

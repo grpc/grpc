@@ -194,9 +194,9 @@
     <file baseinstalldir="/" name="src/core/compression/algorithm_metadata.h" role="src" />
     <file baseinstalldir="/" name="src/core/compression/message_compress.h" role="src" />
     <file baseinstalldir="/" name="src/core/debug/trace.h" role="src" />
-    <file baseinstalldir="/" name="src/core/httpcli/format_request.h" role="src" />
-    <file baseinstalldir="/" name="src/core/httpcli/httpcli.h" role="src" />
-    <file baseinstalldir="/" name="src/core/httpcli/parser.h" role="src" />
+    <file baseinstalldir="/" name="src/core/http/format_request.h" role="src" />
+    <file baseinstalldir="/" name="src/core/http/httpcli.h" role="src" />
+    <file baseinstalldir="/" name="src/core/http/parser.h" role="src" />
     <file baseinstalldir="/" name="src/core/iomgr/closure.h" role="src" />
     <file baseinstalldir="/" name="src/core/iomgr/endpoint.h" role="src" />
     <file baseinstalldir="/" name="src/core/iomgr/endpoint_pair.h" role="src" />
@@ -336,9 +336,9 @@
     <file baseinstalldir="/" name="src/core/compression/compression_algorithm.c" role="src" />
     <file baseinstalldir="/" name="src/core/compression/message_compress.c" role="src" />
     <file baseinstalldir="/" name="src/core/debug/trace.c" role="src" />
-    <file baseinstalldir="/" name="src/core/httpcli/format_request.c" role="src" />
-    <file baseinstalldir="/" name="src/core/httpcli/httpcli.c" role="src" />
-    <file baseinstalldir="/" name="src/core/httpcli/parser.c" role="src" />
+    <file baseinstalldir="/" name="src/core/http/format_request.c" role="src" />
+    <file baseinstalldir="/" name="src/core/http/httpcli.c" role="src" />
+    <file baseinstalldir="/" name="src/core/http/parser.c" role="src" />
     <file baseinstalldir="/" name="src/core/iomgr/closure.c" role="src" />
     <file baseinstalldir="/" name="src/core/iomgr/endpoint.c" role="src" />
     <file baseinstalldir="/" name="src/core/iomgr/endpoint_pair_posix.c" role="src" />
@@ -436,7 +436,7 @@
     <file baseinstalldir="/" name="src/core/transport/static_metadata.c" role="src" />
     <file baseinstalldir="/" name="src/core/transport/transport.c" role="src" />
     <file baseinstalldir="/" name="src/core/transport/transport_op_string.c" role="src" />
-    <file baseinstalldir="/" name="src/core/httpcli/httpcli_security_connector.c" role="src" />
+    <file baseinstalldir="/" name="src/core/http/httpcli_security_connector.c" role="src" />
     <file baseinstalldir="/" name="src/core/security/b64.c" role="src" />
     <file baseinstalldir="/" name="src/core/security/client_auth_filter.c" role="src" />
     <file baseinstalldir="/" name="src/core/security/credentials.c" role="src" />

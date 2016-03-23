@@ -49,6 +49,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/http/httpcli.h"
 #include "src/core/support/env.h"
 #include "test/core/util/port_server_client.h"
 
