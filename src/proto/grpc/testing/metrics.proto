@@ -1,4 +1,3 @@
-
 // Copyright 2015, Google Inc.
 // All rights reserved.
 //
@@ -28,12 +27,17 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// An integration test service that covers all the method signature permutations
-// of unary/streaming requests/responses.
+// Contains the definitions for a metrics service and the type of metrics
+// exposed by the service.
+//
+// Currently, 'Gauge' (i.e a metric that represents the measured value of
+// something at an instant of time) is the only metric type supported by the
+// service.
 syntax = "proto3";
 
 package grpc.testing;
 
+// Reponse message containing the gauge name and value
 message GaugeResponse {
   string name = 1;
   oneof value {
@@ -43,11 +47,18 @@ message GaugeResponse {
   }
 }
 
-message GaugeRequest { string name = 1; }
+// Request message containing the gauge name
+message GaugeRequest {
+  string name = 1;
+}
 
 message EmptyMessage {}
 
 service MetricsService {
+  // Returns the values of all the gauges that are currently being maintained by
+  // the service
   rpc GetAllGauges(EmptyMessage) returns (stream GaugeResponse);
+
+  // Returns the value of one gauge
   rpc GetGauge(GaugeRequest) returns (GaugeResponse);
 }

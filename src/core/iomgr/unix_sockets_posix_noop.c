@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,30 +31,31 @@
  *
  */
 
-#ifndef GRPC_CORE_CHANNEL_CLIENT_UCHANNEL_H
-#define GRPC_CORE_CHANNEL_CLIENT_UCHANNEL_H
+#include "src/core/iomgr/unix_sockets_posix.h"
 
-#include "src/core/channel/channel_stack.h"
-#include "src/core/client_config/resolver.h"
+#ifndef GPR_HAVE_UNIX_SOCKET
 
-#define GRPC_MICROCHANNEL_SUBCHANNEL_ARG "grpc.microchannel_subchannel_key"
+void grpc_create_socketpair_if_unix(int sv[2]) {}
 
-/* A client microchannel (aka uchannel) is a channel wrapping a subchannel, for
- * the purposes of lightweight RPC communications from within the core.*/
+grpc_resolved_addresses *grpc_resolve_unix_domain_address(const char *name) {
+  return NULL;
+}
 
-extern const grpc_channel_filter grpc_client_uchannel_filter;
+int grpc_is_unix_socket(const struct sockaddr *addr) { return false; }
 
-grpc_connectivity_state grpc_client_uchannel_check_connectivity_state(
-    grpc_exec_ctx *exec_ctx, grpc_channel_element *elem, int try_to_connect);
+void grpc_unlink_if_unix_domain_socket(const struct sockaddr *addr) {}
 
-void grpc_client_uchannel_watch_connectivity_state(
-    grpc_exec_ctx *exec_ctx, grpc_channel_element *elem, grpc_pollset *pollset,
-    grpc_connectivity_state *state, grpc_closure *on_complete);
+int grpc_parse_unix(grpc_uri *uri, struct sockaddr_storage *addr, size_t *len) {
+  return 0;
+}
 
-grpc_channel *grpc_client_uchannel_create(grpc_subchannel *subchannel,
-                                          grpc_channel_args *args);
+char *grpc_unix_get_default_authority(grpc_resolver_factory *factory,
+                                      grpc_uri *uri) {
+  return NULL;
+}
 
-void grpc_client_uchannel_set_connected_subchannel(
-    grpc_channel *uchannel, grpc_connected_subchannel *connected_subchannel);
+char *grpc_sockaddr_to_uri_unix_if_possible(const struct sockaddr *addr) {
+  return NULL;
+}
 
-#endif /* GRPC_CORE_CHANNEL_CLIENT_UCHANNEL_H */
+#endif

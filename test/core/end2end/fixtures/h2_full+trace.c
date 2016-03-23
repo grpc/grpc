@@ -118,13 +118,13 @@ int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
   grpc_init();
 
-  for (i = 0; i < sizeof(configs) / sizeof(*configs); i++) {
-    grpc_end2end_tests(argc, argv, configs[i]);
-  }
-
   GPR_ASSERT(0 == grpc_tracer_set_enabled("also-doesnt-exist", 0));
   GPR_ASSERT(1 == grpc_tracer_set_enabled("http", 1));
   GPR_ASSERT(1 == grpc_tracer_set_enabled("all", 1));
+
+  for (i = 0; i < sizeof(configs) / sizeof(*configs); i++) {
+    grpc_end2end_tests(argc, argv, configs[i]);
+  }
 
   grpc_shutdown();
 

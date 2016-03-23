@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -41,13 +41,18 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "src/core/iomgr/socket_utils_posix.h"
 #include <grpc/support/log.h>
+
+#include "src/core/iomgr/socket_utils_posix.h"
 
 static void pipe_init(grpc_wakeup_fd* fd_info) {
   int pipefd[2];
   /* TODO(klempner): Make this nonfatal */
-  GPR_ASSERT(0 == pipe(pipefd));
+  int r = pipe(pipefd);
+  if (0 != r) {
+    gpr_log(GPR_ERROR, "pipe creation failed (%d): %s", errno, strerror(errno));
+    abort();
+  }
   GPR_ASSERT(grpc_set_socket_nonblocking(pipefd[0], 1));
   GPR_ASSERT(grpc_set_socket_nonblocking(pipefd[1], 1));
   fd_info->read_fd = pipefd[0];
