@@ -362,6 +362,12 @@ void GenerateClientStub(Printer* out, const ServiceDescriptor *service) {
   out->Print("public $name$(CallInvoker callInvoker) : base(callInvoker)\n",
              "name", GetClientClassName(service));
   out->Print("{\n");
+  out->Print("}\n");
+  out->Print("///<summary>Parameterless constructor to allow creation"
+             " of test doubles.</summary>\n");
+  out->Print("protected $name$() : base()\n",
+             "name", GetClientClassName(service));
+  out->Print("{\n");
   out->Print("}\n\n");
 
   for (int i = 0; i < service->method_count(); i++) {
