@@ -923,9 +923,9 @@
     ], 
     "headers": [], 
     "language": "c", 
-    "name": "httpcli_format_request_test", 
+    "name": "http_parser_test", 
     "src": [
-      "test/core/httpcli/format_request_test.c"
+      "test/core/http/parser_test.c"
     ], 
     "third_party": false, 
     "type": "target"
@@ -939,9 +939,9 @@
     ], 
     "headers": [], 
     "language": "c", 
-    "name": "httpcli_parser_test", 
+    "name": "httpcli_format_request_test", 
     "src": [
-      "test/core/httpcli/parser_test.c"
+      "test/core/http/format_request_test.c"
     ], 
     "third_party": false, 
     "type": "target"
@@ -957,7 +957,7 @@
     "language": "c", 
     "name": "httpcli_test", 
     "src": [
-      "test/core/httpcli/httpcli_test.c"
+      "test/core/http/httpcli_test.c"
     ], 
     "third_party": false, 
     "type": "target"
@@ -973,7 +973,7 @@
     "language": "c", 
     "name": "httpscli_test", 
     "src": [
-      "test/core/httpcli/httpscli_test.c"
+      "test/core/http/httpscli_test.c"
     ], 
     "third_party": false, 
     "type": "target"
@@ -2533,6 +2533,19 @@
   {
     "deps": [
       "boringssl", 
+      "boringssl_asn1_test_lib", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "boringssl_asn1_test", 
+    "src": [], 
+    "third_party": true, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
       "boringssl_base64_test_lib", 
       "boringssl_test_util"
     ], 
@@ -3316,6 +3329,23 @@
     ], 
     "headers": [], 
     "language": "c", 
+    "name": "h2_full+trace_test", 
+    "src": [
+      "test/core/end2end/fixtures/h2_full+trace.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "end2end_tests", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
     "name": "h2_oauth2_test", 
     "src": [
       "test/core/end2end/fixtures/h2_oauth2.c"
@@ -3438,23 +3468,6 @@
     "name": "h2_ssl_proxy_test", 
     "src": [
       "test/core/end2end/fixtures/h2_ssl_proxy.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "end2end_tests", 
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "h2_uchannel_test", 
-    "src": [
-      "test/core/end2end/fixtures/h2_uchannel.c"
     ], 
     "third_party": false, 
     "type": "target"
@@ -3605,6 +3618,23 @@
     ], 
     "headers": [], 
     "language": "c", 
+    "name": "h2_full+trace_nosec_test", 
+    "src": [
+      "test/core/end2end/fixtures/h2_full+trace.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "end2end_nosec_tests", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "language": "c", 
     "name": "h2_proxy_nosec_test", 
     "src": [
       "test/core/end2end/fixtures/h2_proxy.c"
@@ -3659,23 +3689,6 @@
     "name": "h2_sockpair_1byte_nosec_test", 
     "src": [
       "test/core/end2end/fixtures/h2_sockpair_1byte.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "end2end_nosec_tests", 
-      "gpr", 
-      "gpr_test_util", 
-      "grpc_test_util_unsecure", 
-      "grpc_unsecure"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "h2_uchannel_nosec_test", 
-    "src": [
-      "test/core/end2end/fixtures/h2_uchannel.c"
     ], 
     "third_party": false, 
     "type": "target"
@@ -3913,12 +3926,13 @@
       "include/grpc/status.h", 
       "src/core/census/aggregation.h", 
       "src/core/census/grpc_filter.h", 
+      "src/core/census/grpc_plugin.h", 
       "src/core/census/mlog.h", 
       "src/core/census/rpc_metric_id.h", 
       "src/core/channel/channel_args.h", 
       "src/core/channel/channel_stack.h", 
+      "src/core/channel/channel_stack_builder.h", 
       "src/core/channel/client_channel.h", 
-      "src/core/channel/client_uchannel.h", 
       "src/core/channel/compress_filter.h", 
       "src/core/channel/connected_channel.h", 
       "src/core/channel/context.h", 
@@ -3946,9 +3960,9 @@
       "src/core/compression/algorithm_metadata.h", 
       "src/core/compression/message_compress.h", 
       "src/core/debug/trace.h", 
-      "src/core/httpcli/format_request.h", 
-      "src/core/httpcli/httpcli.h", 
-      "src/core/httpcli/parser.h", 
+      "src/core/http/format_request.h", 
+      "src/core/http/httpcli.h", 
+      "src/core/http/parser.h", 
       "src/core/iomgr/closure.h", 
       "src/core/iomgr/endpoint.h", 
       "src/core/iomgr/endpoint_pair.h", 
@@ -3980,6 +3994,7 @@
       "src/core/iomgr/timer.h", 
       "src/core/iomgr/timer_heap.h", 
       "src/core/iomgr/udp_server.h", 
+      "src/core/iomgr/unix_sockets_posix.h", 
       "src/core/iomgr/wakeup_fd_pipe.h", 
       "src/core/iomgr/wakeup_fd_posix.h", 
       "src/core/iomgr/workqueue.h", 
@@ -4005,9 +4020,12 @@
       "src/core/surface/call.h", 
       "src/core/surface/call_test_only.h", 
       "src/core/surface/channel.h", 
+      "src/core/surface/channel_init.h", 
+      "src/core/surface/channel_stack_type.h", 
       "src/core/surface/completion_queue.h", 
       "src/core/surface/event_string.h", 
       "src/core/surface/init.h", 
+      "src/core/surface/lame_client.h", 
       "src/core/surface/server.h", 
       "src/core/surface/surface_trace.h", 
       "src/core/transport/byte_stream.h", 
@@ -4069,6 +4087,8 @@
       "src/core/census/grpc_context.c", 
       "src/core/census/grpc_filter.c", 
       "src/core/census/grpc_filter.h", 
+      "src/core/census/grpc_plugin.c", 
+      "src/core/census/grpc_plugin.h", 
       "src/core/census/initialize.c", 
       "src/core/census/mlog.c", 
       "src/core/census/mlog.h", 
@@ -4080,10 +4100,10 @@
       "src/core/channel/channel_args.h", 
       "src/core/channel/channel_stack.c", 
       "src/core/channel/channel_stack.h", 
+      "src/core/channel/channel_stack_builder.c", 
+      "src/core/channel/channel_stack_builder.h", 
       "src/core/channel/client_channel.c", 
       "src/core/channel/client_channel.h", 
-      "src/core/channel/client_uchannel.c", 
-      "src/core/channel/client_uchannel.h", 
       "src/core/channel/compress_filter.c", 
       "src/core/channel/compress_filter.h", 
       "src/core/channel/connected_channel.c", 
@@ -4138,13 +4158,13 @@
       "src/core/compression/message_compress.h", 
       "src/core/debug/trace.c", 
       "src/core/debug/trace.h", 
-      "src/core/httpcli/format_request.c", 
-      "src/core/httpcli/format_request.h", 
-      "src/core/httpcli/httpcli.c", 
-      "src/core/httpcli/httpcli.h", 
-      "src/core/httpcli/httpcli_security_connector.c", 
-      "src/core/httpcli/parser.c", 
-      "src/core/httpcli/parser.h", 
+      "src/core/http/format_request.c", 
+      "src/core/http/format_request.h", 
+      "src/core/http/httpcli.c", 
+      "src/core/http/httpcli.h", 
+      "src/core/http/httpcli_security_connector.c", 
+      "src/core/http/parser.c", 
+      "src/core/http/parser.h", 
       "src/core/iomgr/closure.c", 
       "src/core/iomgr/closure.h", 
       "src/core/iomgr/endpoint.c", 
@@ -4210,6 +4230,9 @@
       "src/core/iomgr/timer_heap.h", 
       "src/core/iomgr/udp_server.c", 
       "src/core/iomgr/udp_server.h", 
+      "src/core/iomgr/unix_sockets_posix.c", 
+      "src/core/iomgr/unix_sockets_posix.h", 
+      "src/core/iomgr/unix_sockets_posix_noop.c", 
       "src/core/iomgr/wakeup_fd_eventfd.c", 
       "src/core/iomgr/wakeup_fd_nospecial.c", 
       "src/core/iomgr/wakeup_fd_pipe.c", 
@@ -4271,7 +4294,11 @@
       "src/core/surface/channel.h", 
       "src/core/surface/channel_connectivity.c", 
       "src/core/surface/channel_create.c", 
+      "src/core/surface/channel_init.c", 
+      "src/core/surface/channel_init.h", 
       "src/core/surface/channel_ping.c", 
+      "src/core/surface/channel_stack_type.c", 
+      "src/core/surface/channel_stack_type.h", 
       "src/core/surface/completion_queue.c", 
       "src/core/surface/completion_queue.h", 
       "src/core/surface/event_string.c", 
@@ -4280,12 +4307,12 @@
       "src/core/surface/init.h", 
       "src/core/surface/init_secure.c", 
       "src/core/surface/lame_client.c", 
+      "src/core/surface/lame_client.h", 
       "src/core/surface/metadata_array.c", 
       "src/core/surface/secure_channel_create.c", 
       "src/core/surface/server.c", 
       "src/core/surface/server.h", 
       "src/core/surface/server_chttp2.c", 
-      "src/core/surface/server_create.c", 
       "src/core/surface/surface_trace.h", 
       "src/core/surface/validate_metadata.c", 
       "src/core/surface/version.c", 
@@ -4435,6 +4462,7 @@
       "test/core/util/grpc_profiler.h", 
       "test/core/util/parse_hexstring.h", 
       "test/core/util/port.h", 
+      "test/core/util/port_server_client.h", 
       "test/core/util/slice_splitter.h"
     ], 
     "language": "c", 
@@ -4458,6 +4486,8 @@
       "test/core/util/parse_hexstring.h", 
       "test/core/util/port.h", 
       "test/core/util/port_posix.c", 
+      "test/core/util/port_server_client.c", 
+      "test/core/util/port_server_client.h", 
       "test/core/util/port_windows.c", 
       "test/core/util/slice_splitter.c", 
       "test/core/util/slice_splitter.h"
@@ -4478,6 +4508,7 @@
       "test/core/util/grpc_profiler.h", 
       "test/core/util/parse_hexstring.h", 
       "test/core/util/port.h", 
+      "test/core/util/port_server_client.h", 
       "test/core/util/slice_splitter.h"
     ], 
     "language": "c", 
@@ -4495,6 +4526,8 @@
       "test/core/util/parse_hexstring.h", 
       "test/core/util/port.h", 
       "test/core/util/port_posix.c", 
+      "test/core/util/port_server_client.c", 
+      "test/core/util/port_server_client.h", 
       "test/core/util/port_windows.c", 
       "test/core/util/slice_splitter.c", 
       "test/core/util/slice_splitter.h"
@@ -4521,12 +4554,13 @@
       "include/grpc/status.h", 
       "src/core/census/aggregation.h", 
       "src/core/census/grpc_filter.h", 
+      "src/core/census/grpc_plugin.h", 
       "src/core/census/mlog.h", 
       "src/core/census/rpc_metric_id.h", 
       "src/core/channel/channel_args.h", 
       "src/core/channel/channel_stack.h", 
+      "src/core/channel/channel_stack_builder.h", 
       "src/core/channel/client_channel.h", 
-      "src/core/channel/client_uchannel.h", 
       "src/core/channel/compress_filter.h", 
       "src/core/channel/connected_channel.h", 
       "src/core/channel/context.h", 
@@ -4554,9 +4588,9 @@
       "src/core/compression/algorithm_metadata.h", 
       "src/core/compression/message_compress.h", 
       "src/core/debug/trace.h", 
-      "src/core/httpcli/format_request.h", 
-      "src/core/httpcli/httpcli.h", 
-      "src/core/httpcli/parser.h", 
+      "src/core/http/format_request.h", 
+      "src/core/http/httpcli.h", 
+      "src/core/http/parser.h", 
       "src/core/iomgr/closure.h", 
       "src/core/iomgr/endpoint.h", 
       "src/core/iomgr/endpoint_pair.h", 
@@ -4588,6 +4622,7 @@
       "src/core/iomgr/timer.h", 
       "src/core/iomgr/timer_heap.h", 
       "src/core/iomgr/udp_server.h", 
+      "src/core/iomgr/unix_sockets_posix.h", 
       "src/core/iomgr/wakeup_fd_pipe.h", 
       "src/core/iomgr/wakeup_fd_posix.h", 
       "src/core/iomgr/workqueue.h", 
@@ -4604,9 +4639,12 @@
       "src/core/surface/call.h", 
       "src/core/surface/call_test_only.h", 
       "src/core/surface/channel.h", 
+      "src/core/surface/channel_init.h", 
+      "src/core/surface/channel_stack_type.h", 
       "src/core/surface/completion_queue.h", 
       "src/core/surface/event_string.h", 
       "src/core/surface/init.h", 
+      "src/core/surface/lame_client.h", 
       "src/core/surface/server.h", 
       "src/core/surface/surface_trace.h", 
       "src/core/transport/byte_stream.h", 
@@ -4662,6 +4700,8 @@
       "src/core/census/grpc_context.c", 
       "src/core/census/grpc_filter.c", 
       "src/core/census/grpc_filter.h", 
+      "src/core/census/grpc_plugin.c", 
+      "src/core/census/grpc_plugin.h", 
       "src/core/census/initialize.c", 
       "src/core/census/mlog.c", 
       "src/core/census/mlog.h", 
@@ -4673,10 +4713,10 @@
       "src/core/channel/channel_args.h", 
       "src/core/channel/channel_stack.c", 
       "src/core/channel/channel_stack.h", 
+      "src/core/channel/channel_stack_builder.c", 
+      "src/core/channel/channel_stack_builder.h", 
       "src/core/channel/client_channel.c", 
       "src/core/channel/client_channel.h", 
-      "src/core/channel/client_uchannel.c", 
-      "src/core/channel/client_uchannel.h", 
       "src/core/channel/compress_filter.c", 
       "src/core/channel/compress_filter.h", 
       "src/core/channel/connected_channel.c", 
@@ -4731,12 +4771,12 @@
       "src/core/compression/message_compress.h", 
       "src/core/debug/trace.c", 
       "src/core/debug/trace.h", 
-      "src/core/httpcli/format_request.c", 
-      "src/core/httpcli/format_request.h", 
-      "src/core/httpcli/httpcli.c", 
-      "src/core/httpcli/httpcli.h", 
-      "src/core/httpcli/parser.c", 
-      "src/core/httpcli/parser.h", 
+      "src/core/http/format_request.c", 
+      "src/core/http/format_request.h", 
+      "src/core/http/httpcli.c", 
+      "src/core/http/httpcli.h", 
+      "src/core/http/parser.c", 
+      "src/core/http/parser.h", 
       "src/core/iomgr/closure.c", 
       "src/core/iomgr/closure.h", 
       "src/core/iomgr/endpoint.c", 
@@ -4802,6 +4842,9 @@
       "src/core/iomgr/timer_heap.h", 
       "src/core/iomgr/udp_server.c", 
       "src/core/iomgr/udp_server.h", 
+      "src/core/iomgr/unix_sockets_posix.c", 
+      "src/core/iomgr/unix_sockets_posix.h", 
+      "src/core/iomgr/unix_sockets_posix_noop.c", 
       "src/core/iomgr/wakeup_fd_eventfd.c", 
       "src/core/iomgr/wakeup_fd_nospecial.c", 
       "src/core/iomgr/wakeup_fd_pipe.c", 
@@ -4839,7 +4882,11 @@
       "src/core/surface/channel.h", 
       "src/core/surface/channel_connectivity.c", 
       "src/core/surface/channel_create.c", 
+      "src/core/surface/channel_init.c", 
+      "src/core/surface/channel_init.h", 
       "src/core/surface/channel_ping.c", 
+      "src/core/surface/channel_stack_type.c", 
+      "src/core/surface/channel_stack_type.h", 
       "src/core/surface/completion_queue.c", 
       "src/core/surface/completion_queue.h", 
       "src/core/surface/event_string.c", 
@@ -4848,11 +4895,11 @@
       "src/core/surface/init.h", 
       "src/core/surface/init_unsecure.c", 
       "src/core/surface/lame_client.c", 
+      "src/core/surface/lame_client.h", 
       "src/core/surface/metadata_array.c", 
       "src/core/surface/server.c", 
       "src/core/surface/server.h", 
       "src/core/surface/server_chttp2.c", 
-      "src/core/surface/server_create.c", 
       "src/core/surface/surface_trace.h", 
       "src/core/surface/validate_metadata.c", 
       "src/core/surface/version.c", 
@@ -5941,6 +5988,18 @@
     "headers": [], 
     "language": "c++", 
     "name": "boringssl_aes_test_lib", 
+    "src": [], 
+    "third_party": true, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "boringssl_asn1_test_lib", 
     "src": [], 
     "third_party": true, 
     "type": "lib"

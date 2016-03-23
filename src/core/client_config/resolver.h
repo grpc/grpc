@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_CLIENT_CONFIG_RESOLVER_H
-#define GRPC_INTERNAL_CORE_CLIENT_CONFIG_RESOLVER_H
+#ifndef GRPC_CORE_CLIENT_CONFIG_RESOLVER_H
+#define GRPC_CORE_CLIENT_CONFIG_RESOLVER_H
 
 #include "src/core/client_config/client_config.h"
 #include "src/core/client_config/subchannel.h"
@@ -91,4 +91,4 @@ void grpc_resolver_next(grpc_exec_ctx *exec_ctx, grpc_resolver *resolver,
                         grpc_client_config **target_config,
                         grpc_closure *on_complete);
 
-#endif /* GRPC_INTERNAL_CORE_CONFIG_RESOLVER_H */
+#endif /* GRPC_CORE_CLIENT_CONFIG_RESOLVER_H */

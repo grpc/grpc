@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_SUPPORT_BACKOFF_H
-#define GRPC_INTERNAL_CORE_SUPPORT_BACKOFF_H
+#ifndef GRPC_CORE_SUPPORT_BACKOFF_H
+#define GRPC_CORE_SUPPORT_BACKOFF_H
 
 #include <grpc/support/time.h>
 
@@ -61,5 +61,8 @@ void gpr_backoff_init(gpr_backoff *backoff, double multiplier, double jitter,
 gpr_timespec gpr_backoff_begin(gpr_backoff *backoff, gpr_timespec now);
 /// Step a retry loop: returns a timespec for the NEXT retry
 gpr_timespec gpr_backoff_step(gpr_backoff *backoff, gpr_timespec now);
+/// Reset the backoff, so the next gpr_backoff_step will be a gpr_backoff_begin
+/// instead
+void gpr_backoff_reset(gpr_backoff *backoff);
 
-#endif  // GRPC_INTERNAL_CORE_SUPPORT_BACKOFF_H
+#endif /* GRPC_CORE_SUPPORT_BACKOFF_H */

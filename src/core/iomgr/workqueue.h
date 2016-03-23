@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_IOMGR_WORKQUEUE_H
-#define GRPC_INTERNAL_CORE_IOMGR_WORKQUEUE_H
+#ifndef GRPC_CORE_IOMGR_WORKQUEUE_H
+#define GRPC_CORE_IOMGR_WORKQUEUE_H
 
 #include "src/core/iomgr/iomgr.h"
 #include "src/core/iomgr/pollset.h"
@@ -80,4 +80,4 @@ void grpc_workqueue_add_to_pollset(grpc_exec_ctx *exec_ctx,
 void grpc_workqueue_push(grpc_workqueue *workqueue, grpc_closure *closure,
                          int success);
 
-#endif
+#endif /* GRPC_CORE_IOMGR_WORKQUEUE_H */

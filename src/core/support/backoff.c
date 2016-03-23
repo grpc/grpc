@@ -69,3 +69,8 @@ gpr_timespec gpr_backoff_step(gpr_backoff *backoff, gpr_timespec now) {
   return gpr_time_add(
       now, gpr_time_from_millis(backoff->current_timeout_millis, GPR_TIMESPAN));
 }
+
+void gpr_backoff_reset(gpr_backoff *backoff) {
+  // forces step() to return a timeout of min_timeout_millis
+  backoff->current_timeout_millis = 0;
+}

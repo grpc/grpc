@@ -248,10 +248,11 @@ filegroups:
   - include/grpc/status.h
   headers:
   - src/core/census/grpc_filter.h
+  - src/core/census/grpc_plugin.h
   - src/core/channel/channel_args.h
   - src/core/channel/channel_stack.h
+  - src/core/channel/channel_stack_builder.h
   - src/core/channel/client_channel.h
-  - src/core/channel/client_uchannel.h
   - src/core/channel/compress_filter.h
   - src/core/channel/connected_channel.h
   - src/core/channel/context.h
@@ -279,9 +280,9 @@ filegroups:
   - src/core/compression/algorithm_metadata.h
   - src/core/compression/message_compress.h
   - src/core/debug/trace.h
-  - src/core/httpcli/format_request.h
-  - src/core/httpcli/httpcli.h
-  - src/core/httpcli/parser.h
+  - src/core/http/format_request.h
+  - src/core/http/httpcli.h
+  - src/core/http/parser.h
   - src/core/iomgr/closure.h
   - src/core/iomgr/endpoint.h
   - src/core/iomgr/endpoint_pair.h
@@ -313,6 +314,7 @@ filegroups:
   - src/core/iomgr/timer.h
   - src/core/iomgr/timer_heap.h
   - src/core/iomgr/udp_server.h
+  - src/core/iomgr/unix_sockets_posix.h
   - src/core/iomgr/wakeup_fd_pipe.h
   - src/core/iomgr/wakeup_fd_posix.h
   - src/core/iomgr/workqueue.h
@@ -329,9 +331,12 @@ filegroups:
   - src/core/surface/call.h
   - src/core/surface/call_test_only.h
   - src/core/surface/channel.h
+  - src/core/surface/channel_init.h
+  - src/core/surface/channel_stack_type.h
   - src/core/surface/completion_queue.h
   - src/core/surface/event_string.h
   - src/core/surface/init.h
+  - src/core/surface/lame_client.h
   - src/core/surface/server.h
   - src/core/surface/surface_trace.h
   - src/core/transport/byte_stream.h
@@ -365,10 +370,11 @@ filegroups:
   src:
   - src/core/census/grpc_context.c
   - src/core/census/grpc_filter.c
+  - src/core/census/grpc_plugin.c
   - src/core/channel/channel_args.c
   - src/core/channel/channel_stack.c
+  - src/core/channel/channel_stack_builder.c
   - src/core/channel/client_channel.c
-  - src/core/channel/client_uchannel.c
   - src/core/channel/compress_filter.c
   - src/core/channel/connected_channel.c
   - src/core/channel/http_client_filter.c
@@ -396,9 +402,9 @@ filegroups:
   - src/core/compression/compression_algorithm.c
   - src/core/compression/message_compress.c
   - src/core/debug/trace.c
-  - src/core/httpcli/format_request.c
-  - src/core/httpcli/httpcli.c
-  - src/core/httpcli/parser.c
+  - src/core/http/format_request.c
+  - src/core/http/httpcli.c
+  - src/core/http/parser.c
   - src/core/iomgr/closure.c
   - src/core/iomgr/endpoint.c
   - src/core/iomgr/endpoint_pair_posix.c
@@ -433,6 +439,8 @@ filegroups:
   - src/core/iomgr/timer.c
   - src/core/iomgr/timer_heap.c
   - src/core/iomgr/udp_server.c
+  - src/core/iomgr/unix_sockets_posix.c
+  - src/core/iomgr/unix_sockets_posix_noop.c
   - src/core/iomgr/wakeup_fd_eventfd.c
   - src/core/iomgr/wakeup_fd_nospecial.c
   - src/core/iomgr/wakeup_fd_pipe.c
@@ -454,7 +462,9 @@ filegroups:
   - src/core/surface/channel.c
   - src/core/surface/channel_connectivity.c
   - src/core/surface/channel_create.c
+  - src/core/surface/channel_init.c
   - src/core/surface/channel_ping.c
+  - src/core/surface/channel_stack_type.c
   - src/core/surface/completion_queue.c
   - src/core/surface/event_string.c
   - src/core/surface/init.c
@@ -462,7 +472,6 @@ filegroups:
   - src/core/surface/metadata_array.c
   - src/core/surface/server.c
   - src/core/surface/server_chttp2.c
-  - src/core/surface/server_create.c
   - src/core/surface/validate_metadata.c
   - src/core/surface/version.c
   - src/core/transport/byte_stream.c
@@ -518,7 +527,7 @@ filegroups:
   - src/core/tsi/transport_security.h
   - src/core/tsi/transport_security_interface.h
   src:
-  - src/core/httpcli/httpcli_security_connector.c
+  - src/core/http/httpcli_security_connector.c
   - src/core/security/b64.c
   - src/core/security/client_auth_filter.c
   - src/core/security/credentials.c
@@ -547,6 +556,7 @@ filegroups:
   - test/core/util/grpc_profiler.h
   - test/core/util/parse_hexstring.h
   - test/core/util/port.h
+  - test/core/util/port_server_client.h
   - test/core/util/slice_splitter.h
   src:
   - test/core/end2end/cq_verifier.c
@@ -555,6 +565,7 @@ filegroups:
   - test/core/util/grpc_profiler.c
   - test/core/util/parse_hexstring.c
   - test/core/util/port_posix.c
+  - test/core/util/port_server_client.c
   - test/core/util/port_windows.c
   - test/core/util/slice_splitter.c
 - name: nanopb
@@ -1552,21 +1563,21 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
-- name: httpcli_format_request_test
+- name: http_parser_test
   build: test
   language: c
   src:
-  - test/core/httpcli/format_request_test.c
+  - test/core/http/parser_test.c
   deps:
   - grpc_test_util
   - grpc
   - gpr_test_util
   - gpr
-- name: httpcli_parser_test
+- name: httpcli_format_request_test
   build: test
   language: c
   src:
-  - test/core/httpcli/parser_test.c
+  - test/core/http/format_request_test.c
   deps:
   - grpc_test_util
   - grpc
@@ -1577,7 +1588,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/httpcli/httpcli_test.c
+  - test/core/http/httpcli_test.c
   deps:
   - grpc_test_util
   - grpc
@@ -1592,7 +1603,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/httpcli/httpscli_test.c
+  - test/core/http/httpscli_test.c
   deps:
   - grpc_test_util
   - grpc
@@ -1671,6 +1682,7 @@ targets:
   - gpr
 - name: lb_policies_test
   cpu_cost: 0.1
+  flaky: true
   build: test
   language: c
   src:
@@ -1705,6 +1717,7 @@ targets:
   - gpr_test_util
   - gpr
 - name: mlog_test
+  flaky: true
   build: test
   language: c
   src:
@@ -2811,11 +2824,11 @@ configs:
   etsan:
     CC: clang
     CPPFLAGS: -O0 -fsanitize=thread -fno-omit-frame-pointer -Wno-unused-command-line-argument
-      -fPIE -pie -DGPR_NO_DIRECT_SYSCALLS
+      -DGPR_NO_DIRECT_SYSCALLS
     CXX: clang++
     DEFINES: _DEBUG DEBUG GRPC_EXECUTION_CONTEXT_SANITIZER
     LD: clang
-    LDFLAGS: -fsanitize=thread -fPIE -pie $(if $(JENKINS_BUILD),-Wl$(comma)-Ttext-segment=0x7e0000000000,)
+    LDFLAGS: -fsanitize=thread
     LDXX: clang++
     compile_the_world: true
     test_environ:
@@ -2867,10 +2880,10 @@ configs:
   tsan:
     CC: clang
     CPPFLAGS: -O0 -fsanitize=thread -fno-omit-frame-pointer -Wno-unused-command-line-argument
-      -fPIE -pie -DGPR_NO_DIRECT_SYSCALLS
+      -DGPR_NO_DIRECT_SYSCALLS
     CXX: clang++
     LD: clang
-    LDFLAGS: -fsanitize=thread -fPIE -pie $(if $(JENKINS_BUILD),-Wl$(comma)-Ttext-segment=0x7e0000000000,)
+    LDFLAGS: -fsanitize=thread
     LDXX: clang++
     compile_the_world: true
     test_environ:
@@ -2935,7 +2948,7 @@ node_modules:
   - src/node/ext/server_credentials.cc
   - src/node/ext/timeval.cc
 openssl_fallback:
-  base_uri: http://openssl.org/source/
+  base_uri: https://openssl.org/source/old/1.0.2/
   extraction_dir: openssl-1.0.2f
   tarball: openssl-1.0.2f.tar.gz
 php_config_m4:
