@@ -1589,7 +1589,7 @@ targets:
   build: fuzzer
   language: c
   src:
-  - test/core/httpcli/request_fuzzer.c
+  - test/core/http/request_fuzzer.c
   deps:
   - grpc_test_util
   - grpc
@@ -1601,7 +1601,7 @@ targets:
   build: fuzzer
   language: c
   src:
-  - test/core/httpcli/response_fuzzer.c
+  - test/core/http/response_fuzzer.c
   deps:
   - grpc_test_util
   - grpc
