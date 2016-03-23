@@ -34,6 +34,8 @@
 #ifndef GRPC_CORE_CLIENT_CONFIG_LB_POLICY_FACTORY_H
 #define GRPC_CORE_CLIENT_CONFIG_LB_POLICY_FACTORY_H
 
+#include <stdbool.h>
+
 #include "src/core/client_config/lb_policy.h"
 #include "src/core/client_config/subchannel.h"
 
@@ -49,6 +51,7 @@ struct grpc_lb_policy_factory {
 typedef struct grpc_lb_policy_args {
   grpc_subchannel **subchannels;
   size_t num_subchannels;
+  bool lb_enabled; /* true if all subchannels are LB servers */
 } grpc_lb_policy_args;
 
 struct grpc_lb_policy_factory_vtable {

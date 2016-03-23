@@ -503,7 +503,7 @@ void run_spec(const test_spec *spec) {
   /* Create client. */
   servers_hostports_str = gpr_strjoin_sep((const char **)f->servers_hostports,
                                           f->num_servers, ",", NULL);
-  gpr_asprintf(&client_hostport, "ipv4:%s?lb_policy=round_robin",
+  gpr_asprintf(&client_hostport, "ipv4:%s?lb_policy=round_robin&lb_enabled=0",
                servers_hostports_str);
 
   arg.type = GRPC_ARG_INTEGER;
@@ -539,7 +539,7 @@ static grpc_channel *create_client(const servers_fixture *f) {
 
   servers_hostports_str = gpr_strjoin_sep((const char **)f->servers_hostports,
                                           f->num_servers, ",", NULL);
-  gpr_asprintf(&client_hostport, "ipv4:%s?lb_policy=round_robin",
+  gpr_asprintf(&client_hostport, "ipv4:%s?lb_policy=round_robin&lb_enabled=0",
                servers_hostports_str);
 
   arg.type = GRPC_ARG_INTEGER;
