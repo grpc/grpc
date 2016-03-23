@@ -31,6 +31,7 @@
 
 #endregion
 
+using System;
 using System.Threading.Tasks;
 using Grpc.Core.Internal;
 using Grpc.Core.Utils;
@@ -38,28 +39,35 @@ using Grpc.Core.Utils;
 namespace Grpc.Core
 {
     /// <summary>
-    /// Invokes client RPCs using <see cref="Calls"/>.
+    /// Decorates an underlying <c>CallInvoker</c> to intercept call invocations.
     /// </summary>
-    public class DefaultCallInvoker : CallInvoker
+    internal class InterceptingCallInvoker : CallInvoker
     {
-        readonly Channel channel;
+        readonly CallInvoker callInvoker;
+        readonly Func<string, string> hostInterceptor;
+        readonly Func<CallOptions, CallOptions> callOptionsInterceptor;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="Grpc.Core.DefaultCallInvoker"/> class.
+        /// Initializes a new instance of the <see cref="Grpc.Core.InterceptingCallInvoker"/> class.
         /// </summary>
-        /// <param name="channel">Channel to use.</param>
-        public DefaultCallInvoker(Channel channel)
+        /// <param name="callInvoker">CallInvoker to decorate.</param>
+        public InterceptingCallInvoker(CallInvoker callInvoker,
+            Func<string, string> hostInterceptor = null,
+            Func<CallOptions, CallOptions> callOptionsInterceptor = null)
         {
-            this.channel = GrpcPreconditions.CheckNotNull(channel);
+            this.callInvoker = GrpcPreconditions.CheckNotNull(callInvoker);
+            this.hostInterceptor = hostInterceptor;
+            this.callOptionsInterceptor = callOptionsInterceptor;
         }
 
         /// <summary>
-        /// Invokes a simple remote call in a blocking fashion.
+        /// Intercepts a unary call.
         /// </summary>
         public override TResponse BlockingUnaryCall<TRequest, TResponse>(Method<TRequest, TResponse> method, string host, CallOptions options, TRequest request)
         {
-            var call = CreateCall(method, host, options);
-            return Calls.BlockingUnaryCall(call, request);
+            host = InterceptHost(host);
+            options = InterceptCallOptions(options);
+            return callInvoker.BlockingUnaryCall(method, host, options, request);
         }
 
         /// <summary>
@@ -67,8 +75,9 @@ namespace Grpc.Core
         /// </summary>
         public override AsyncUnaryCall<TResponse> AsyncUnaryCall<TRequest, TResponse>(Method<TRequest, TResponse> method, string host, CallOptions options, TRequest request)
         {
-            var call = CreateCall(method, host, options);
-            return Calls.AsyncUnaryCall(call, request);
+            host = InterceptHost(host);
+            options = InterceptCallOptions(options);
+            return callInvoker.AsyncUnaryCall(method, host, options, request);
         }
 
         /// <summary>
@@ -77,8 +86,9 @@ namespace Grpc.Core
         /// </summary>
         public override AsyncServerStreamingCall<TResponse> AsyncServerStreamingCall<TRequest, TResponse>(Method<TRequest, TResponse> method, string host, CallOptions options, TRequest request)
         {
-            var call = CreateCall(method, host, options);
-            return Calls.AsyncServerStreamingCall(call, request);
+            host = InterceptHost(host);
+            options = InterceptCallOptions(options);
+            return callInvoker.AsyncServerStreamingCall(method, host, options, request);
         }
 
         /// <summary>
@@ -87,8 +97,9 @@ namespace Grpc.Core
         /// </summary>
         public override AsyncClientStreamingCall<TRequest, TResponse> AsyncClientStreamingCall<TRequest, TResponse>(Method<TRequest, TResponse> method, string host, CallOptions options)
         {
-            var call = CreateCall(method, host, options);
-            return Calls.AsyncClientStreamingCall(call);
+            host = InterceptHost(host);
+            options = InterceptCallOptions(options);
+            return callInvoker.AsyncClientStreamingCall(method, host, options);
         }
 
         /// <summary>
@@ -98,15 +109,28 @@ namespace Grpc.Core
         /// </summary>
         public override AsyncDuplexStreamingCall<TRequest, TResponse> AsyncDuplexStreamingCall<TRequest, TResponse>(Method<TRequest, TResponse> method, string host, CallOptions options)
         {
-            var call = CreateCall(method, host, options);
-            return Calls.AsyncDuplexStreamingCall(call);
+            host = InterceptHost(host);
+            options = InterceptCallOptions(options);
+            return callInvoker.AsyncDuplexStreamingCall(method, host, options);
         }
 
-        protected virtual CallInvocationDetails<TRequest, TResponse> CreateCall<TRequest, TResponse>(Method<TRequest, TResponse> method, string host, CallOptions options)
-                where TRequest : class
-                where TResponse : class
+        private string InterceptHost(string host)
         {
-            return new CallInvocationDetails<TRequest, TResponse>(channel, method, host, options);
+            // only set host if not already set to support composing interceptors.
+            if (hostInterceptor == null || host != null)
+            {
+                return host;
+            }
+            return hostInterceptor(host);
+        }
+
+        private CallOptions InterceptCallOptions(CallOptions options)
+        {
+            if (callOptionsInterceptor == null)
+            {
+                return options;
+            }
+            return callOptionsInterceptor(options);
         }
     }
 }
