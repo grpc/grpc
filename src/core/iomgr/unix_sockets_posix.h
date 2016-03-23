@@ -31,53 +31,31 @@
  *
  */
 
+#ifndef GRPC_CORE_IOMGR_UNIX_SOCKETS_POSIX_H
+#define GRPC_CORE_IOMGR_UNIX_SOCKETS_POSIX_H
+
 #include <grpc/support/port_platform.h>
 
-#ifdef GPR_POSIX_SOCKET
-
-#include "src/core/iomgr/endpoint_pair.h"
-#include "src/core/iomgr/socket_utils_posix.h"
-#include "src/core/iomgr/unix_sockets_posix.h"
-
-#include <errno.h>
-#include <fcntl.h>
-#include <string.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-
-#include "src/core/iomgr/tcp_posix.h"
-#include "src/core/support/string.h"
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-static void create_sockets(int sv[2]) {
-  int flags;
-  grpc_create_socketpair_if_unix(sv);
-  flags = fcntl(sv[0], F_GETFL, 0);
-  GPR_ASSERT(fcntl(sv[0], F_SETFL, flags | O_NONBLOCK) == 0);
-  flags = fcntl(sv[1], F_GETFL, 0);
-  GPR_ASSERT(fcntl(sv[1], F_SETFL, flags | O_NONBLOCK) == 0);
-  GPR_ASSERT(grpc_set_socket_no_sigpipe_if_possible(sv[0]));
-  GPR_ASSERT(grpc_set_socket_no_sigpipe_if_possible(sv[1]));
-}
+#include "src/core/client_config/resolver_factory.h"
+#include "src/core/client_config/uri_parser.h"
+#include "src/core/iomgr/resolve_address.h"
+#include "src/core/iomgr/sockaddr.h"
 
-grpc_endpoint_pair grpc_iomgr_create_endpoint_pair(const char *name,
-                                                   size_t read_slice_size) {
-  int sv[2];
-  grpc_endpoint_pair p;
-  char *final_name;
-  create_sockets(sv);
+void grpc_create_socketpair_if_unix(int sv[2]);
 
-  gpr_asprintf(&final_name, "%s:client", name);
-  p.client = grpc_tcp_create(grpc_fd_create(sv[1], final_name), read_slice_size,
-                             "socketpair-server");
-  gpr_free(final_name);
-  gpr_asprintf(&final_name, "%s:server", name);
-  p.server = grpc_tcp_create(grpc_fd_create(sv[0], final_name), read_slice_size,
-                             "socketpair-client");
-  gpr_free(final_name);
-  return p;
-}
+grpc_resolved_addresses *grpc_resolve_unix_domain_address(const char *name);
 
-#endif
+int grpc_is_unix_socket(const struct sockaddr *addr);
+
+void grpc_unlink_if_unix_domain_socket(const struct sockaddr *addr);
+
+int grpc_parse_unix(grpc_uri *uri, struct sockaddr_storage *addr, size_t *len);
+
+char *grpc_unix_get_default_authority(grpc_resolver_factory *factory,
+                                      grpc_uri *uri);
+
+char *grpc_sockaddr_to_uri_unix_if_possible(const struct sockaddr *addr);
+
+#endif /* GRPC_CORE_IOMGR_UNIX_SOCKETS_POSIX_H */
