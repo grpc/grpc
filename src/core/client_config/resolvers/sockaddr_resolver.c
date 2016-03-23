@@ -287,17 +287,44 @@ static grpc_resolver *sockaddr_create(
   r->lb_policy_name = NULL;
   if (0 != strcmp(args->uri->query, "")) {
     gpr_slice query_slice;
-    gpr_slice_buffer query_parts;
+    gpr_slice_buffer query_parts; /* the &-separated elements of the query */
+    gpr_slice_buffer query_param_parts; /* the =-separated subelements */
 
     query_slice =
         gpr_slice_new(args->uri->query, strlen(args->uri->query), do_nothing);
     gpr_slice_buffer_init(&query_parts);
-    gpr_slice_split(query_slice, "=", &query_parts);
-    GPR_ASSERT(query_parts.count == 2);
-    if (0 == gpr_slice_str_cmp(query_parts.slices[0], "lb_policy")) {
-      r->lb_policy_name = gpr_dump_slice(query_parts.slices[1], GPR_DUMP_ASCII);
+    gpr_slice_buffer_init(&query_param_parts);
+    /* the query can contain "lb_policy=<policy>" and "lb_enabled=<1|0>" */
+
+    bool lb_enabled;
+    gpr_slice_split(query_slice, "&", &query_parts);
+    for (i = 0; i < query_parts.count; i++) {
+      gpr_slice_split(query_parts.slices[i], "=", &query_param_parts);
+      GPR_ASSERT(query_param_parts.count == 2);
+      if (0 == gpr_slice_str_cmp(query_param_parts.slices[0], "lb_policy")) {
+        r->lb_policy_name =
+            gpr_dump_slice(query_param_parts.slices[1], GPR_DUMP_ASCII);
+      } else if (0 ==
+                 gpr_slice_str_cmp(query_param_parts.slices[0], "lb_enabled")) {
+        if (0 != gpr_slice_str_cmp(query_param_parts.slices[1], "0")) {
+          /* anything other than 0 is taken to be true */
+          lb_enabled = true;
+        }
+      } else {
+        gpr_log(GPR_ERROR, "invalid query element value: '%s'",
+                query_parts.slices[0]);
+      }
+      gpr_slice_buffer_reset_and_unref(&query_param_parts);
+    }
+
+    if (strcmp("grpclb", r->lb_policy_name) == 0 && !lb_enabled) {
+      /* we want grpclb but the "resolved" addresses aren't LB enabled. Fall
+       * back to the default policy */
+      gpr_free(r->lb_policy_name);
+      r->lb_policy_name = gpr_strdup(default_lb_policy_name);
     }
     gpr_slice_buffer_destroy(&query_parts);
+    gpr_slice_buffer_destroy(&query_param_parts);
     gpr_slice_unref(query_slice);
   }
   if (r->lb_policy_name == NULL) {
