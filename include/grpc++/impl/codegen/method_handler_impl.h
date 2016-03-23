@@ -44,11 +44,30 @@ namespace grpc {
 template <class ServiceType, class RequestType, class ResponseType>
 class RpcMethodHandler : public MethodHandler {
  public:
-  RpcMethodHandler(
-      std::function<Status(ServiceType*, ServerContext*, const RequestType*,
-                           ResponseType*)> func,
-      ServiceType* service)
+  RpcMethodHandler(std::function<Status(ServiceType*, ServerContext*,
+                                        const RequestType*, ResponseType*)>
+                       func,
+                   ServiceType* service)
       : func_(func), service_(service) {}
+
+  void* SomeImpl::CreatePrototypeMessage(bool request,
+                                         const char* serialization_format) {
+    if (request) {
+      if (0 == strcmp(SerializationTraits<RequestType>::name(),
+                      serialization_format)) {
+        return new RequestType();
+      } else {
+        return NULL;
+      }
+    } else {
+      if (0 == strcmp(SerializationTraits<ResponseType>::name(),
+                      serialization_format)) {
+        return new ResponseType();
+      } else {
+        return NULL;
+      }
+    }
+  }
 
   void RunHandler(const HandlerParameter& param) GRPC_FINAL {
     RequestType req;
@@ -61,7 +80,8 @@ class RpcMethodHandler : public MethodHandler {
 
     GPR_CODEGEN_ASSERT(!param.server_context->sent_initial_metadata_);
     CallOpSet<CallOpSendInitialMetadata, CallOpSendMessage,
-              CallOpServerSendStatus> ops;
+              CallOpServerSendStatus>
+        ops;
     ops.SendInitialMetadata(param.server_context->initial_metadata_);
     if (status.ok()) {
       status = ops.SendMessage(rsp);
@@ -74,7 +94,8 @@ class RpcMethodHandler : public MethodHandler {
  private:
   // Application provided rpc handler function.
   std::function<Status(ServiceType*, ServerContext*, const RequestType*,
-                       ResponseType*)> func_;
+                       ResponseType*)>
+      func_;
   // The class the above handler function lives in.
   ServiceType* service_;
 };
@@ -85,7 +106,8 @@ class ClientStreamingHandler : public MethodHandler {
  public:
   ClientStreamingHandler(
       std::function<Status(ServiceType*, ServerContext*,
-                           ServerReader<RequestType>*, ResponseType*)> func,
+                           ServerReader<RequestType>*, ResponseType*)>
+          func,
       ServiceType* service)
       : func_(func), service_(service) {}
 
@@ -96,7 +118,8 @@ class ClientStreamingHandler : public MethodHandler {
 
     GPR_CODEGEN_ASSERT(!param.server_context->sent_initial_metadata_);
     CallOpSet<CallOpSendInitialMetadata, CallOpSendMessage,
-              CallOpServerSendStatus> ops;
+              CallOpServerSendStatus>
+        ops;
     ops.SendInitialMetadata(param.server_context->initial_metadata_);
     if (status.ok()) {
       status = ops.SendMessage(rsp);
@@ -108,7 +131,8 @@ class ClientStreamingHandler : public MethodHandler {
 
  private:
   std::function<Status(ServiceType*, ServerContext*, ServerReader<RequestType>*,
-                       ResponseType*)> func_;
+                       ResponseType*)>
+      func_;
   ServiceType* service_;
 };
 
@@ -118,7 +142,8 @@ class ServerStreamingHandler : public MethodHandler {
  public:
   ServerStreamingHandler(
       std::function<Status(ServiceType*, ServerContext*, const RequestType*,
-                           ServerWriter<ResponseType>*)> func,
+                           ServerWriter<ResponseType>*)>
+          func,
       ServiceType* service)
       : func_(func), service_(service) {}
 
@@ -143,7 +168,8 @@ class ServerStreamingHandler : public MethodHandler {
 
  private:
   std::function<Status(ServiceType*, ServerContext*, const RequestType*,
-                       ServerWriter<ResponseType>*)> func_;
+                       ServerWriter<ResponseType>*)>
+      func_;
   ServiceType* service_;
 };
 
@@ -174,7 +200,8 @@ class BidiStreamingHandler : public MethodHandler {
 
  private:
   std::function<Status(ServiceType*, ServerContext*,
-                       ServerReaderWriter<ResponseType, RequestType>*)> func_;
+                       ServerReaderWriter<ResponseType, RequestType>*)>
+      func_;
   ServiceType* service_;
 };
 
