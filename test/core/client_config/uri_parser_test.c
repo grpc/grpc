@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -75,6 +75,8 @@ int main(int argc, char **argv) {
   test_succeeds("http:?legit#twice", "http", "", "", "legit", "twice");
   test_succeeds("http://foo?bar#lol?", "http", "foo", "", "bar", "lol?");
   test_succeeds("http://foo?bar#lol?/", "http", "foo", "", "bar", "lol?/");
+  test_succeeds("http://foo?one&two=dos/", "http", "foo", "", "one&two=dos/",
+                "");
 
   test_fails("xyz");
   test_fails("http:?dangling-pct-%0");

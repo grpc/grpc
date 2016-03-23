@@ -35,6 +35,7 @@
 
 #include "src/core/client_config/resolvers/sockaddr_resolver.h"
 
+#include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 #ifdef GPR_POSIX_SOCKET
@@ -58,6 +59,8 @@ typedef struct {
   grpc_subchannel_factory *subchannel_factory;
   /** load balancing policy name */
   char *lb_policy_name;
+  /** are the returned addresses load balancers? */
+  bool lb_enabled;
 
   /** the addresses that we've 'resolved' */
   struct sockaddr_storage *addrs;
@@ -147,6 +150,7 @@ static void sockaddr_maybe_finish_next_locked(grpc_exec_ctx *exec_ctx,
     memset(&lb_policy_args, 0, sizeof(lb_policy_args));
     lb_policy_args.subchannels = subchannels;
     lb_policy_args.num_subchannels = r->num_addrs;
+    lb_policy_args.lb_enabled = r->lb_enabled;
     lb_policy = grpc_lb_policy_create(r->lb_policy_name, &lb_policy_args);
     gpr_free(subchannels);
     grpc_client_config_set_lb_policy(cfg, lb_policy);
@@ -307,17 +311,36 @@ static grpc_resolver *sockaddr_create(
   r->lb_policy_name = NULL;
   if (0 != strcmp(args->uri->query, "")) {
     gpr_slice query_slice;
-    gpr_slice_buffer query_parts;
+    gpr_slice_buffer query_parts; /* the &-separated elements of the query */
+    gpr_slice_buffer query_param_parts; /* the =-separated subelements */
 
     query_slice =
         gpr_slice_new(args->uri->query, strlen(args->uri->query), do_nothing);
     gpr_slice_buffer_init(&query_parts);
-    gpr_slice_split(query_slice, "=", &query_parts);
-    GPR_ASSERT(query_parts.count == 2);
-    if (0 == gpr_slice_str_cmp(query_parts.slices[0], "lb_policy")) {
-      r->lb_policy_name = gpr_dump_slice(query_parts.slices[1], GPR_DUMP_ASCII);
+    gpr_slice_buffer_init(&query_param_parts);
+    /* the query can contain "lb_policy=<policy>" and "lb_enabled=<1|0>" */
+
+    gpr_slice_split(query_slice, "&", &query_parts);
+    for (i = 0; i < query_parts.count; i++) {
+      gpr_slice_split(query_parts.slices[i], "=", &query_param_parts);
+      GPR_ASSERT(query_param_parts.count == 2);
+      if (0 == gpr_slice_str_cmp(query_param_parts.slices[0], "lb_policy")) {
+        r->lb_policy_name =
+            gpr_dump_slice(query_param_parts.slices[1], GPR_DUMP_ASCII);
+      } else if (0 ==
+                 gpr_slice_str_cmp(query_param_parts.slices[0], "lb_enabled")) {
+        if (0 != gpr_slice_str_cmp(query_param_parts.slices[1], "0")) {
+          /* anything other than 0 is taken to be true */
+          r->lb_enabled = true;
+        }
+      } else {
+        gpr_log(GPR_ERROR, "invalid query element value: '%s'",
+                query_parts.slices[0]);
+      }
+      gpr_slice_buffer_reset_and_unref(&query_param_parts);
     }
     gpr_slice_buffer_destroy(&query_parts);
+    gpr_slice_buffer_destroy(&query_param_parts);
     gpr_slice_unref(query_slice);
   }
   if (r->lb_policy_name == NULL) {
