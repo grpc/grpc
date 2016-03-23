@@ -33,10 +33,10 @@
 
 using System;
 using System.Threading.Tasks;
-using Grpc.Core.Internal;
+using Grpc.Core;
 using Grpc.Core.Utils;
 
-namespace Grpc.Core
+namespace Grpc.Core.Internal
 {
     /// <summary>
     /// Decorates an underlying <c>CallInvoker</c> to intercept call invocations.

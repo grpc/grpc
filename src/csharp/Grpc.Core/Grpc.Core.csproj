@@ -131,8 +131,8 @@
     <Compile Include="Utils\GrpcPreconditions.cs" />
     <Compile Include="CallInvoker.cs" />
     <Compile Include="DefaultCallInvoker.cs" />
-    <Compile Include="InterceptingCallInvoker.cs" />
-    <Compile Include="UnimplementedCallInvoker.cs" />
+    <Compile Include="Internal\UnimplementedCallInvoker.cs" />
+    <Compile Include="Internal\InterceptingCallInvoker.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Grpc.Core.nuspec" />

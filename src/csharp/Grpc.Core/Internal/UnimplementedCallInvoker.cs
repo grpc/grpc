@@ -33,10 +33,10 @@
 
 using System;
 using System.Threading.Tasks;
-using Grpc.Core.Internal;
+using Grpc.Core;
 using Grpc.Core.Utils;
 
-namespace Grpc.Core
+namespace Grpc.Core.Internal
 {
     /// <summary>
     /// Call invoker that throws <c>NotImplementedException</c> for all requests.
