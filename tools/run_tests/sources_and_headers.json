@@ -957,7 +957,7 @@
     "language": "c", 
     "name": "http_request_fuzzer_test", 
     "src": [
-      "test/core/httpcli/request_fuzzer.c"
+      "test/core/http/request_fuzzer.c"
     ], 
     "third_party": false, 
     "type": "target"
@@ -973,7 +973,7 @@
     "language": "c", 
     "name": "http_response_fuzzer_test", 
     "src": [
-      "test/core/httpcli/response_fuzzer.c"
+      "test/core/http/response_fuzzer.c"
     ], 
     "third_party": false, 
     "type": "target"
