@@ -923,9 +923,9 @@
     ], 
     "headers": [], 
     "language": "c", 
-    "name": "httpcli_format_request_test", 
+    "name": "http_parser_test", 
     "src": [
-      "test/core/httpcli/format_request_test.c"
+      "test/core/http/parser_test.c"
     ], 
     "third_party": false, 
     "type": "target"
@@ -939,9 +939,9 @@
     ], 
     "headers": [], 
     "language": "c", 
-    "name": "httpcli_parser_test", 
+    "name": "httpcli_format_request_test", 
     "src": [
-      "test/core/httpcli/parser_test.c"
+      "test/core/http/format_request_test.c"
     ], 
     "third_party": false, 
     "type": "target"
@@ -957,7 +957,7 @@
     "language": "c", 
     "name": "httpcli_test", 
     "src": [
-      "test/core/httpcli/httpcli_test.c"
+      "test/core/http/httpcli_test.c"
     ], 
     "third_party": false, 
     "type": "target"
@@ -973,7 +973,7 @@
     "language": "c", 
     "name": "httpscli_test", 
     "src": [
-      "test/core/httpcli/httpscli_test.c"
+      "test/core/http/httpscli_test.c"
     ], 
     "third_party": false, 
     "type": "target"
@@ -3960,9 +3960,9 @@
       "src/core/compression/algorithm_metadata.h", 
       "src/core/compression/message_compress.h", 
       "src/core/debug/trace.h", 
-      "src/core/httpcli/format_request.h", 
-      "src/core/httpcli/httpcli.h", 
-      "src/core/httpcli/parser.h", 
+      "src/core/http/format_request.h", 
+      "src/core/http/httpcli.h", 
+      "src/core/http/parser.h", 
       "src/core/iomgr/closure.h", 
       "src/core/iomgr/endpoint.h", 
       "src/core/iomgr/endpoint_pair.h", 
@@ -4158,13 +4158,13 @@
       "src/core/compression/message_compress.h", 
       "src/core/debug/trace.c", 
       "src/core/debug/trace.h", 
-      "src/core/httpcli/format_request.c", 
-      "src/core/httpcli/format_request.h", 
-      "src/core/httpcli/httpcli.c", 
-      "src/core/httpcli/httpcli.h", 
-      "src/core/httpcli/httpcli_security_connector.c", 
-      "src/core/httpcli/parser.c", 
-      "src/core/httpcli/parser.h", 
+      "src/core/http/format_request.c", 
+      "src/core/http/format_request.h", 
+      "src/core/http/httpcli.c", 
+      "src/core/http/httpcli.h", 
+      "src/core/http/httpcli_security_connector.c", 
+      "src/core/http/parser.c", 
+      "src/core/http/parser.h", 
       "src/core/iomgr/closure.c", 
       "src/core/iomgr/closure.h", 
       "src/core/iomgr/endpoint.c", 
@@ -4588,9 +4588,9 @@
       "src/core/compression/algorithm_metadata.h", 
       "src/core/compression/message_compress.h", 
       "src/core/debug/trace.h", 
-      "src/core/httpcli/format_request.h", 
-      "src/core/httpcli/httpcli.h", 
-      "src/core/httpcli/parser.h", 
+      "src/core/http/format_request.h", 
+      "src/core/http/httpcli.h", 
+      "src/core/http/parser.h", 
       "src/core/iomgr/closure.h", 
       "src/core/iomgr/endpoint.h", 
       "src/core/iomgr/endpoint_pair.h", 
@@ -4771,12 +4771,12 @@
       "src/core/compression/message_compress.h", 
       "src/core/debug/trace.c", 
       "src/core/debug/trace.h", 
-      "src/core/httpcli/format_request.c", 
-      "src/core/httpcli/format_request.h", 
-      "src/core/httpcli/httpcli.c", 
-      "src/core/httpcli/httpcli.h", 
-      "src/core/httpcli/parser.c", 
-      "src/core/httpcli/parser.h", 
+      "src/core/http/format_request.c", 
+      "src/core/http/format_request.h", 
+      "src/core/http/httpcli.c", 
+      "src/core/http/httpcli.h", 
+      "src/core/http/parser.c", 
+      "src/core/http/parser.h", 
       "src/core/iomgr/closure.c", 
       "src/core/iomgr/closure.h", 
       "src/core/iomgr/endpoint.c", 
