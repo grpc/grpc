@@ -1575,6 +1575,18 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: http_fuzzer_test
+  build: fuzzer
+  language: c
+  src:
+  - test/core/http/fuzzer.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  corpus_dirs:
+  - test/core/http/corpus
 - name: http_parser_test
   build: test
   language: c
@@ -1585,30 +1597,6 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
-- name: http_request_fuzzer_test
-  build: fuzzer
-  language: c
-  src:
-  - test/core/http/request_fuzzer.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-  corpus_dirs:
-  - test/core/http/request_corpus
-- name: http_response_fuzzer_test
-  build: fuzzer
-  language: c
-  src:
-  - test/core/http/response_fuzzer.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-  corpus_dirs:
-  - test/core/http/response_corpus
 - name: httpcli_format_request_test
   build: test
   language: c

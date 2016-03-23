@@ -36,15 +36,15 @@
 
 #include <grpc/support/alloc.h>
 
-#include "src/core/httpcli/parser.h"
+#include "src/core/http/parser.h"
 
 int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
-  grpc_httpcli_parser parser;
-  grpc_httpcli_parser_init(&parser);
+  grpc_http_parser parser;
+  grpc_http_parser_init(&parser);
   gpr_slice slice = gpr_slice_from_copied_buffer((const char *)data, size);
-  grpc_httpcli_parser_parse(&parser, slice);
-  grpc_httpcli_parser_eof(&parser);
+  grpc_http_parser_parse(&parser, slice);
+  grpc_http_parser_eof(&parser);
   gpr_slice_unref(slice);
-  grpc_httpcli_parser_destroy(&parser);
+  grpc_http_parser_destroy(&parser);
   return 0;
 }
