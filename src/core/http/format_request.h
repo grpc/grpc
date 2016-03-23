@@ -31,34 +31,15 @@
  *
  */
 
-#ifndef GRPC_CORE_HTTPCLI_PARSER_H
-#define GRPC_CORE_HTTPCLI_PARSER_H
+#ifndef GRPC_CORE_HTTP_FORMAT_REQUEST_H
+#define GRPC_CORE_HTTP_FORMAT_REQUEST_H
 
-#include "src/core/httpcli/httpcli.h"
-#include <grpc/support/port_platform.h>
+#include "src/core/http/httpcli.h"
 #include <grpc/support/slice.h>
 
-typedef enum {
-  GRPC_HTTPCLI_INITIAL_RESPONSE,
-  GRPC_HTTPCLI_HEADERS,
-  GRPC_HTTPCLI_BODY
-} grpc_httpcli_parser_state;
+gpr_slice grpc_httpcli_format_get_request(const grpc_httpcli_request *request);
+gpr_slice grpc_httpcli_format_post_request(const grpc_httpcli_request *request,
+                                           const char *body_bytes,
+                                           size_t body_size);
 
-typedef struct {
-  grpc_httpcli_parser_state state;
-
-  grpc_httpcli_response r;
-  size_t body_capacity;
-  size_t hdr_capacity;
-
-  uint8_t cur_line[GRPC_HTTPCLI_MAX_HEADER_LENGTH];
-  size_t cur_line_length;
-} grpc_httpcli_parser;
-
-void grpc_httpcli_parser_init(grpc_httpcli_parser* parser);
-void grpc_httpcli_parser_destroy(grpc_httpcli_parser* parser);
-
-int grpc_httpcli_parser_parse(grpc_httpcli_parser* parser, gpr_slice slice);
-int grpc_httpcli_parser_eof(grpc_httpcli_parser* parser);
-
-#endif /* GRPC_CORE_HTTPCLI_PARSER_H */
+#endif /* GRPC_CORE_HTTP_FORMAT_REQUEST_H */
