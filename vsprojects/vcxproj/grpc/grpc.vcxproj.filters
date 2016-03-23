@@ -22,9 +22,6 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\channel\client_channel.c">
       <Filter>src\core\channel</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\channel\client_uchannel.c">
-      <Filter>src\core\channel</Filter>
-    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\channel\compress_filter.c">
       <Filter>src\core\channel</Filter>
     </ClCompile>
@@ -215,6 +212,12 @@
       <Filter>src\core\iomgr</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\iomgr\udp_server.c">
+      <Filter>src\core\iomgr</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\iomgr\unix_sockets_posix.c">
+      <Filter>src\core\iomgr</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\iomgr\unix_sockets_posix_noop.c">
       <Filter>src\core\iomgr</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\iomgr\wakeup_fd_eventfd.c">
@@ -551,9 +554,6 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\channel\client_channel.h">
       <Filter>src\core\channel</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\channel\client_uchannel.h">
-      <Filter>src\core\channel</Filter>
-    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\channel\compress_filter.h">
       <Filter>src\core\channel</Filter>
     </ClInclude>
@@ -735,6 +735,9 @@
       <Filter>src\core\iomgr</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\iomgr\udp_server.h">
+      <Filter>src\core\iomgr</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\iomgr\unix_sockets_posix.h">
       <Filter>src\core\iomgr</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\iomgr\wakeup_fd_pipe.h">
