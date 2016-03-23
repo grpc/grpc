@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_CHANNEL_SUBCHANNEL_CALL_HOLDER_H
-#define GRPC_INTERNAL_CORE_CHANNEL_SUBCHANNEL_CALL_HOLDER_H
+#ifndef GRPC_CORE_CHANNEL_SUBCHANNEL_CALL_HOLDER_H
+#define GRPC_CORE_CHANNEL_SUBCHANNEL_CALL_HOLDER_H
 
 #include "src/core/client_config/subchannel.h"
 
@@ -55,15 +55,14 @@ typedef enum {
     for initial metadata before trying to create a call object,
     and handling cancellation gracefully.
 
-    Both the channel and uchannel filter use this as their call_data. */
+    The channel filter uses this as their call_data. */
 typedef struct grpc_subchannel_call_holder {
   /** either 0 for no call, 1 for cancelled, or a pointer to a
       grpc_subchannel_call */
   gpr_atm subchannel_call;
   /** Helper function to choose the subchannel on which to create
       the call object. Channel filter delegates to the load
-      balancing policy (once it's ready); uchannel returns
-      immediately */
+      balancing policy (once it's ready). */
   grpc_subchannel_call_holder_pick_subchannel pick_subchannel;
   void *pick_subchannel_arg;
 
@@ -95,4 +94,4 @@ void grpc_subchannel_call_holder_perform_op(grpc_exec_ctx *exec_ctx,
 char *grpc_subchannel_call_holder_get_peer(grpc_exec_ctx *exec_ctx,
                                            grpc_subchannel_call_holder *holder);
 
-#endif
+#endif /* GRPC_CORE_CHANNEL_SUBCHANNEL_CALL_HOLDER_H */

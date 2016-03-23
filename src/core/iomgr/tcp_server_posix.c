@@ -52,7 +52,6 @@
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <sys/un.h>
 #include <unistd.h>
 
 #include "src/core/iomgr/pollset_posix.h"
@@ -60,6 +59,7 @@
 #include "src/core/iomgr/sockaddr_utils.h"
 #include "src/core/iomgr/socket_utils_posix.h"
 #include "src/core/iomgr/tcp_posix.h"
+#include "src/core/iomgr/unix_sockets_posix.h"
 #include "src/core/support/string.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -81,7 +81,6 @@ struct grpc_tcp_listener {
   union {
     uint8_t untyped[GRPC_MAX_SOCKADDR_SIZE];
     struct sockaddr sockaddr;
-    struct sockaddr_un un;
   } addr;
   size_t addr_len;
   int port;
@@ -97,14 +96,6 @@ struct grpc_tcp_listener {
   struct grpc_tcp_listener *sibling;
   int is_sibling;
 };
-
-static void unlink_if_unix_domain_socket(const struct sockaddr_un *un) {
-  struct stat st;
-
-  if (stat(un->sun_path, &st) == 0 && (st.st_mode & S_IFMT) == S_IFSOCK) {
-    unlink(un->sun_path);
-  }
-}
 
 /* the overall server */
 struct grpc_tcp_server {
@@ -203,9 +194,7 @@ static void deactivated_all_ports(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s) {
   if (s->head) {
     grpc_tcp_listener *sp;
     for (sp = s->head; sp; sp = sp->next) {
-      if (sp->addr.sockaddr.sa_family == AF_UNIX) {
-        unlink_if_unix_domain_socket(&sp->addr.un);
-      }
+      grpc_unlink_if_unix_domain_socket(&sp->addr.sockaddr);
       sp->destroyed_closure.cb = destroyed_port;
       sp->destroyed_closure.cb_arg = s;
       grpc_fd_orphan(exec_ctx, sp->emfd, &sp->destroyed_closure, NULL,
@@ -281,7 +270,7 @@ static int prepare_socket(int fd, const struct sockaddr *addr,
   }
 
   if (!grpc_set_socket_nonblocking(fd, 1) || !grpc_set_socket_cloexec(fd, 1) ||
-      (addr->sa_family != AF_UNIX && (!grpc_set_socket_low_latency(fd, 1) ||
+      (!grpc_is_unix_socket(addr) && (!grpc_set_socket_low_latency(fd, 1) ||
                                       !grpc_set_socket_reuse_addr(fd, 1))) ||
       !grpc_set_socket_no_sigpipe_if_possible(fd)) {
     gpr_log(GPR_ERROR, "Unable to configure socket %d: %s", fd,
@@ -451,9 +440,7 @@ int grpc_tcp_server_add_port(grpc_tcp_server *s, const void *addr,
   if (s->tail != NULL) {
     port_index = s->tail->port_index + 1;
   }
-  if (((struct sockaddr *)addr)->sa_family == AF_UNIX) {
-    unlink_if_unix_domain_socket(addr);
-  }
+  grpc_unlink_if_unix_domain_socket((struct sockaddr *)addr);
 
   /* Check if this is a wildcard port, and if so, try to keep the port the same
      as some previously created listener. */

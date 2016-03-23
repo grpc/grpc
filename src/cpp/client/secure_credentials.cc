@@ -60,8 +60,7 @@ std::shared_ptr<grpc::Channel> SecureChannelCredentials::CreateChannel(
 
 SecureCallCredentials::SecureCallCredentials(grpc_call_credentials* c_creds)
     : c_creds_(c_creds) {
-  internal::GrpcLibraryInitializer gli_initializer;
-  gli_initializer.summon();
+  g_gli_initializer.summon();
 }
 
 bool SecureCallCredentials::ApplyToCall(grpc_call* call) {

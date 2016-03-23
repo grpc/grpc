@@ -158,7 +158,7 @@
   </ItemDefinitionGroup>
 
   <ItemGroup>
-    <ClCompile Include="$(SolutionDir)\..\test\core\httpcli\format_request_test.c">
+    <ClCompile Include="$(SolutionDir)\..\test\core\http\format_request_test.c">
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
