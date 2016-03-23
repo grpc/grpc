@@ -31,9 +31,6 @@
 
 #endregion
 
-using System;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using Grpc.Core.Internal;
 using Grpc.Core.Utils;
 
@@ -52,6 +49,14 @@ namespace Grpc.Core
         /// for client classes (e.g. mocking requires a parameterless constructor).
         /// </summary>
         protected ClientBase() : base()
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of <c>ClientBase</c> class.
+        /// </summary>
+        /// <param name="configuration">The configuration.</param>
+        protected ClientBase(ClientBaseConfiguration configuration) : base(configuration)
         {
         }
 
@@ -79,15 +84,14 @@ namespace Grpc.Core
         /// </summary>
         public T WithHost(string host)
         {
-            GrpcPreconditions.CheckNotNull(host, "host");
-            var decoratedInvoker = new InterceptingCallInvoker(CallInvoker, hostInterceptor: (h) => host);
-            return NewInstance(decoratedInvoker);
+            var newConfiguration = this.Configuration.WithHost(host);
+            return NewInstance(newConfiguration);
         }
 
         /// <summary>
-        /// Creates a new instance of client from given <c>CallInvoker</c>.
+        /// Creates a new instance of client from given <c>ClientBaseConfiguration</c>.
         /// </summary>
-        protected abstract T NewInstance(CallInvoker callInvoker);
+        protected abstract T NewInstance(ClientBaseConfiguration configuration);
     }
 
     /// <summary>
@@ -95,6 +99,7 @@ namespace Grpc.Core
     /// </summary>
     public abstract class ClientBase
     {
+        readonly ClientBaseConfiguration configuration;
         readonly CallInvoker callInvoker;
 
         /// <summary>
@@ -110,6 +115,16 @@ namespace Grpc.Core
         /// <summary>
         /// Initializes a new instance of <c>ClientBase</c> class.
         /// </summary>
+        /// <param name="configuration">The configuration.</param>
+        protected ClientBase(ClientBaseConfiguration configuration)
+        {
+            this.configuration = GrpcPreconditions.CheckNotNull(configuration, "configuration");
+            this.callInvoker = configuration.CreateDecoratedCallInvoker();
+        }
+
+        /// <summary>
+        /// Initializes a new instance of <c>ClientBase</c> class.
+        /// </summary>
         /// <param name="channel">The channel to use for remote call invocation.</param>
         public ClientBase(Channel channel) : this(new DefaultCallInvoker(channel))
         {
@@ -119,9 +134,8 @@ namespace Grpc.Core
         /// Initializes a new instance of <c>ClientBase</c> class.
         /// </summary>
         /// <param name="callInvoker">The <c>CallInvoker</c> for remote call invocation.</param>
-        public ClientBase(CallInvoker callInvoker)
+        public ClientBase(CallInvoker callInvoker) : this(new ClientBaseConfiguration(callInvoker, null))
         {
-            this.callInvoker = GrpcPreconditions.CheckNotNull(callInvoker);
         }
 
         /// <summary>
@@ -130,6 +144,43 @@ namespace Grpc.Core
         protected CallInvoker CallInvoker
         {
             get { return this.callInvoker; }
+        }
+
+        /// <summary>
+        /// Gets the configuration.
+        /// </summary>
+        internal ClientBaseConfiguration Configuration
+        {
+            get { return this.configuration; }
+        }
+
+        /// <summary>
+        /// Represents configuration of ClientBase. The class itself is visible to
+        /// subclasses, but contents are marked as internal to make the instances opaque.
+        /// The verbose name of this class was chosen to make name clash in generated code 
+        /// less likely.
+        /// </summary>
+        protected internal class ClientBaseConfiguration
+        {
+            readonly CallInvoker undecoratedCallInvoker;
+            readonly string host;
+
+            internal ClientBaseConfiguration(CallInvoker undecoratedCallInvoker, string host)
+            {
+                this.undecoratedCallInvoker = GrpcPreconditions.CheckNotNull(undecoratedCallInvoker);
+                this.host = host;
+            }
+
+            internal CallInvoker CreateDecoratedCallInvoker()
+            {
+                return new InterceptingCallInvoker(undecoratedCallInvoker, hostInterceptor: (h) => host);
+            }
+
+            internal ClientBaseConfiguration WithHost(string host)
+            {
+                GrpcPreconditions.CheckNotNull(host, "host");
+                return new ClientBaseConfiguration(this.undecoratedCallInvoker, host);
+            }
         }
     }
 }

@@ -363,9 +363,16 @@ void GenerateClientStub(Printer* out, const ServiceDescriptor *service) {
              "name", GetClientClassName(service));
   out->Print("{\n");
   out->Print("}\n");
-  out->Print("///<summary>Parameterless constructor to allow creation"
+  out->Print("///<summary>Protected parameterless constructor to allow creation"
              " of test doubles.</summary>\n");
   out->Print("protected $name$() : base()\n",
+             "name", GetClientClassName(service));
+  out->Print("{\n");
+  out->Print("}\n");
+  out->Print("///<summary>Protected constructor to allow creation of configured"
+             " clients.</summary>\n");
+  out->Print("protected $name$(ClientBaseConfiguration configuration)"
+             " : base(configuration)\n",
              "name", GetClientClassName(service));
   out->Print("{\n");
   out->Print("}\n\n");
@@ -452,11 +459,11 @@ void GenerateClientStub(Printer* out, const ServiceDescriptor *service) {
   }
 
   // override NewInstance method
-  out->Print("protected override $name$ NewInstance(CallInvoker callInvoker)\n",
+  out->Print("protected override $name$ NewInstance(ClientBaseConfiguration configuration)\n",
              "name", GetClientClassName(service));
   out->Print("{\n");
   out->Indent();
-  out->Print("return new $name$(callInvoker);\n",
+  out->Print("return new $name$(configuration);\n",
              "name", GetClientClassName(service));
   out->Outdent();
   out->Print("}\n");

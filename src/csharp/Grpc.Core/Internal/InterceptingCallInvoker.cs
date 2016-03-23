@@ -50,7 +50,6 @@ namespace Grpc.Core.Internal
         /// <summary>
         /// Initializes a new instance of the <see cref="Grpc.Core.InterceptingCallInvoker"/> class.
         /// </summary>
-        /// <param name="callInvoker">CallInvoker to decorate.</param>
         public InterceptingCallInvoker(CallInvoker callInvoker,
             Func<string, string> hostInterceptor = null,
             Func<CallOptions, CallOptions> callOptionsInterceptor = null)
@@ -116,8 +115,7 @@ namespace Grpc.Core.Internal
 
         private string InterceptHost(string host)
         {
-            // only set host if not already set to support composing interceptors.
-            if (hostInterceptor == null || host != null)
+            if (hostInterceptor == null)
             {
                 return host;
             }
