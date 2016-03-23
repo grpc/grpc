@@ -42,8 +42,18 @@ namespace Grpc.Core
     /// Generic base class for client-side stubs.
     /// </summary>
     public abstract class ClientBase<T> : ClientBase
-        where T : ClientBase
+        where T : ClientBase<T>
     {
+        /// <summary>
+        /// Initializes a new instance of <c>ClientBase</c> class that
+        /// throws <c>NotImplementedException</c> upon invocation of any RPC.
+        /// This constructor is only provided to allow creation of test doubles
+        /// for client classes (e.g. mocking requires a parameterless constructor).
+        /// </summary>
+        protected ClientBase() : base()
+        {
+        }
+
         /// <summary>
         /// Initializes a new instance of <c>ClientBase</c> class.
         /// </summary>
@@ -85,6 +95,16 @@ namespace Grpc.Core
     public abstract class ClientBase
     {
         readonly CallInvoker callInvoker;
+
+        /// <summary>
+        /// Initializes a new instance of <c>ClientBase</c> class that
+        /// throws <c>NotImplementedException</c> upon invocation of any RPC.
+        /// This constructor is only provided to allow creation of test doubles
+        /// for client classes (e.g. mocking requires a parameterless constructor).
+        /// </summary>
+        protected ClientBase() : this(new UnimplementedCallInvoker())
+        {
+        }
 
         /// <summary>
         /// Initializes a new instance of <c>ClientBase</c> class.
