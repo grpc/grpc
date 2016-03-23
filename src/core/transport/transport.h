@@ -98,6 +98,11 @@ void grpc_transport_move_stats(grpc_transport_stream_stats *from,
 /* Transport stream op: a set of operations to perform on a transport
    against a single stream */
 typedef struct grpc_transport_stream_op {
+  /** Should be enqueued when all requested operations (excluding recv_message
+      and recv_initial_metadata which have their own closures) in a given batch
+      have been completed. */
+  grpc_closure *on_complete;
+
   /** Send initial metadata to the peer, from the provided metadata batch. */
   grpc_metadata_batch *send_initial_metadata;
 
@@ -123,11 +128,6 @@ typedef struct grpc_transport_stream_op {
 
   /** Collect any stats into provided buffer, zero internal stat counters */
   grpc_transport_stream_stats *collect_stats;
-
-  /** Should be enqueued when all requested operations (excluding recv_message
-      and recv_initial_metadata which have their own closures) in a given batch
-      have been completed. */
-  grpc_closure *on_complete;
 
   /** If != GRPC_STATUS_OK, cancel this stream */
   grpc_status_code cancel_with_status;
