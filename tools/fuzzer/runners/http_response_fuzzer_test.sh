@@ -29,4 +29,4 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 
-bins/$config/httpcli_fuzzer_test -max_total_time=60 fuzzer_output test/core/httpcli/corpus
+bins/$config/http_response_fuzzer_test -max_total_time=60 fuzzer_output test/core/http/response_corpus
