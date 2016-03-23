@@ -72,6 +72,10 @@ static ID id_cq;
  * the flags used to create metadata from a Hash */
 static ID id_flags;
 
+/* id_credentials is the name of the hidden ivar that preserves the value
+ * of the credentials added to the call */
+static ID id_credentials;
+
 /* id_input_md is the name of the hidden ivar that preserves the hash used to
  * create metadata, so that references to the strings it contains last as long
  * as the call the metadata is added to. */
@@ -299,6 +303,7 @@ static VALUE grpc_rb_call_set_credentials(VALUE self, VALUE credentials) {
              "grpc_call_set_credentials failed with %s (code=%d)",
              grpc_call_error_detail_of(err), err);
   }
+  rb_ivar_set(self, id_credentials, credentials);
   return Qnil;
 }
 
@@ -859,6 +864,7 @@ void Init_grpc_call() {
   id_cq = rb_intern("__cq");
   id_flags = rb_intern("__flags");
   id_input_md = rb_intern("__input_md");
+  id_credentials = rb_intern("__credentials");
 
   /* Ids used in constructing the batch result. */
   sym_send_message = ID2SYM(rb_intern("send_message"));
