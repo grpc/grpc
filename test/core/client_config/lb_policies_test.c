@@ -500,6 +500,7 @@ void run_spec(const test_spec *spec) {
       gpr_malloc(sizeof(grpc_call_details) * spec->num_servers);
   f = setup_servers("127.0.0.1", &rdata, spec->num_servers);
 
+  grpc_lb_round_robin_trace = 1;
   /* Create client. */
   servers_hostports_str = gpr_strjoin_sep((const char **)f->servers_hostports,
                                           f->num_servers, ",", NULL);
@@ -530,7 +531,8 @@ void run_spec(const test_spec *spec) {
   teardown_servers(f);
 }
 
-static grpc_channel *create_client(const servers_fixture *f) {
+static grpc_channel *create_client(const servers_fixture *f,
+                                   const char *uri_query_str) {
   grpc_channel *client;
   char *client_hostport;
   char *servers_hostports_str;
@@ -539,8 +541,8 @@ static grpc_channel *create_client(const servers_fixture *f) {
 
   servers_hostports_str = gpr_strjoin_sep((const char **)f->servers_hostports,
                                           f->num_servers, ",", NULL);
-  gpr_asprintf(&client_hostport, "ipv4:%s?lb_policy=round_robin",
-               servers_hostports_str);
+  gpr_asprintf(&client_hostport, "ipv4:%s?%s", servers_hostports_str,
+               uri_query_str);
 
   arg.type = GRPC_ARG_INTEGER;
   arg.key = "grpc.testing.fixed_reconnect_backoff";
@@ -568,7 +570,7 @@ static void test_ping() {
   f = setup_servers("127.0.0.1", &rdata, num_servers);
   cqv = cq_verifier_create(f->cq);
 
-  client = create_client(f);
+  client = create_client(f, "");
 
   grpc_channel_ping(client, f->cq, tag(0), NULL);
   cq_expect_completion(cqv, tag(0), 0);
@@ -613,7 +615,7 @@ static void test_pending_calls(size_t concurrent_calls) {
       gpr_malloc(sizeof(grpc_call_details) * spec->num_servers);
   f = setup_servers("127.0.0.1", &rdata, spec->num_servers);
 
-  client = create_client(f);
+  client = create_client(f, "");
   calls = perform_multirequest(f, client, concurrent_calls);
   grpc_call_cancel(
       calls[0],
@@ -870,21 +872,21 @@ static void verify_rebirth_round_robin(const servers_fixture *f,
 }
 
 int main(int argc, char **argv) {
-  test_spec *spec;
-  size_t i;
-  const size_t NUM_ITERS = 10;
-  const size_t NUM_SERVERS = 4;
-
   grpc_test_init(argc, argv);
   grpc_init();
-  grpc_lb_round_robin_trace = 1;
 
   GPR_ASSERT(grpc_lb_policy_create("this-lb-policy-does-not-exist", NULL) ==
              NULL);
   GPR_ASSERT(grpc_lb_policy_create(NULL, NULL) == NULL);
 
+  test_spec *spec;
+  size_t i;
+  const size_t NUM_ITERS = 10;
+  const size_t NUM_SERVERS = 4;
+
   spec = test_spec_create(NUM_ITERS, NUM_SERVERS);
-  /* everything is fine, all servers stay up the whole time and life's peachy */
+  /* everything is fine, all servers stay up the whole time and life's peachy
+   */
   spec->verifier = verify_vanilla_round_robin;
   spec->description = "test_all_server_up";
   run_spec(spec);
