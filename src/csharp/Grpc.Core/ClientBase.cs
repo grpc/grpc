@@ -39,14 +39,6 @@ using Grpc.Core.Utils;
 namespace Grpc.Core
 {
     /// <summary>
-    /// Interceptor for call headers.
-    /// </summary>
-    /// <remarks>Header interceptor is no longer the recommended way to perform authentication.
-    /// For header (initial metadata) based auth such as OAuth2 or JWT access token, use <see cref="MetadataCredentials"/>.
-    /// </remarks>
-    public delegate void HeaderInterceptor(IMethod method, Metadata metadata);
-
-    /// <summary>
     /// Generic base class for client-side stubs.
     /// </summary>
     public abstract class ClientBase<T> : ClientBase
@@ -66,6 +58,19 @@ namespace Grpc.Core
         /// <param name="callInvoker">The <c>CallInvoker</c> for remote call invocation.</param>
         public ClientBase(CallInvoker callInvoker) : base(callInvoker)
         {
+        }
+
+        /// <summary>
+        /// Creates a new client that sets host field for calls explicitly.
+        /// gRPC supports multiple "hosts" being served by a single server.
+        /// By default (if a client was not created by calling this method),
+        /// host <c>null</c> with the meaning "use default host" is used.
+        /// </summary>
+        public T WithHost(string host)
+        {
+            GrpcPreconditions.CheckNotNull(host, "host");
+            var decoratedInvoker = new InterceptingCallInvoker(CallInvoker, hostInterceptor: (h) => host);
+            return NewInstance(decoratedInvoker);
         }
 
         /// <summary>
@@ -105,53 +110,5 @@ namespace Grpc.Core
         {
             get { return this.callInvoker; }
         }
-
-        /// <summary>
-        /// Can be used to register a custom header interceptor.
-        /// The interceptor is invoked each time a new call on this client is started.
-        /// It is not recommented to use header interceptor to add auth headers to RPC calls.
-        /// </summary>
-        /// <seealso cref="HeaderInterceptor"/>
-        public HeaderInterceptor HeaderInterceptor
-        {
-            get;
-            set;
-        }
-
-        /// <summary>
-        /// gRPC supports multiple "hosts" being served by a single server. 
-        /// This property can be used to set the target host explicitly.
-        /// By default, this will be set to <c>null</c> with the meaning
-        /// "use default host".
-        /// </summary>
-        //public string Host
-        //{
-        //    get;
-        //    set;
-        //}
-
-        /// <summary>
-        /// Creates a new call to given method.
-        /// </summary>
-        /// <param name="method">The method to invoke.</param>
-        /// <param name="options">The call options.</param>
-        /// <typeparam name="TRequest">Request message type.</typeparam>
-        /// <typeparam name="TResponse">Response message type.</typeparam>
-        /// <returns>The call invocation details.</returns>
-        //protected CallInvocationDetails<TRequest, TResponse> CreateCall<TRequest, TResponse>(Method<TRequest, TResponse> method, CallOptions options)
-        //    where TRequest : class
-        //    where TResponse : class
-        //{
-        //    var interceptor = HeaderInterceptor;
-        //    if (interceptor != null)
-        //    {
-        //        if (options.Headers == null)
-        //        {
-        //            options = options.WithHeaders(new Metadata());
-        //        }
-        //        interceptor(method, options.Headers);
-        //    }
-        //    return new CallInvocationDetails<TRequest, TResponse>(channel, method, Host, options);
-        //}
     }
 }
