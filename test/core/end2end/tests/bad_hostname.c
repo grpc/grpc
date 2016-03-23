@@ -36,13 +36,13 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "src/core/support/string.h"
 #include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 #include <grpc/support/useful.h>
+#include "src/core/support/string.h"
 #include "test/core/end2end/cq_verifier.h"
 
 enum { TIMEOUT = 200000 };
@@ -152,7 +152,7 @@ static void simple_request_body(grpc_end2end_test_fixture f) {
   cq_expect_completion(cqv, tag(1), 1);
   cq_verify(cqv);
 
-  GPR_ASSERT(status == GRPC_STATUS_INVALID_ARGUMENT);
+  GPR_ASSERT(status == GRPC_STATUS_INTERNAL);
 
   gpr_free(details);
   grpc_metadata_array_destroy(&initial_metadata_recv);
