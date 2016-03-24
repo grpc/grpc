@@ -39,4 +39,5 @@ export OUTPUT_DIR=fuzzer_output
 
 tools/jenkins/build_and_run_docker.sh \
   -e RUN_COMMAND="$RUN_COMMAND" \
+  -e OUTPUT_DIR="$OUTPUT_DIR" \
   -e config="$config"
