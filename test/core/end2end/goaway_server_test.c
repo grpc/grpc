@@ -34,28 +34,44 @@
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
 #include "test/core/end2end/cq_verifier.h"
+#include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
 static void *tag(intptr_t i) { return (void *)i; }
 
 int main(int argc, char **argv) {
-  grpc_channel *chan;
-  grpc_call *call;
-  gpr_timespec deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(2);
   grpc_completion_queue *cq;
   cq_verifier *cqv;
   grpc_op ops[6];
   grpc_op *op;
-  grpc_metadata_array trailing_metadata_recv;
-  grpc_status_code status;
-  char *details = NULL;
-  size_t details_capacity = 0;
 
   grpc_test_init(argc, argv);
   grpc_init();
 
-  grpc_metadata_array_init(&trailing_metadata_recv);
+  int was_cancelled1;
+  int was_cancelled2;
+
+  grpc_metadata_array trailing_metadata_recv1;
+  grpc_metadata_array request_metadata1;
+  grpc_call_details request_details1;
+  grpc_status_code status1;
+  char *details1 = NULL;
+  size_t details_capacity1 = 0;
+  grpc_metadata_array_init(&trailing_metadata_recv1);
+  grpc_metadata_array_init(&request_metadata1);
+  grpc_call_details_init(&request_details1);
+
+  grpc_metadata_array trailing_metadata_recv2;
+  grpc_metadata_array request_metadata2;
+  grpc_call_details request_details2;
+  grpc_status_code status2;
+  char *details2 = NULL;
+  size_t details_capacity2 = 0;
+  grpc_metadata_array_init(&trailing_metadata_recv2);
+  grpc_metadata_array_init(&request_metadata2);
+  grpc_call_details_init(&request_details2);
 
   cq = grpc_completion_queue_create(NULL);
   cqv = cq_verifier_create(cq);
@@ -69,6 +85,7 @@ int main(int argc, char **argv) {
   /* create a channel that picks first amongst the servers */
   gpr_asprintf(&addr, "ipv4:127.0.0.1:%d,127.0.0.1:%d", port1, port2);
   grpc_channel *chan = grpc_insecure_channel_create(addr, NULL, NULL);
+  gpr_free(addr);
   /* and an initial call to them */
   grpc_call *call1 = grpc_channel_create_call(
       chan, NULL, GRPC_PROPAGATE_DEFAULTS, cq, "/foo", "127.0.0.1",
@@ -84,6 +101,7 @@ int main(int argc, char **argv) {
                                                    (size_t)(op - ops),
                                                    tag(0x101), NULL));
   /* and receive status to probe termination */
+  op = ops;
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
   op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv1;
   op->data.recv_status_on_client.status = &status1;
@@ -100,18 +118,30 @@ int main(int argc, char **argv) {
   grpc_server *server1 = grpc_server_create(NULL, NULL);
   gpr_asprintf(&addr, "127.0.0.1:%d", port1);
   grpc_server_add_insecure_http2_port(server1, addr);
+  grpc_server_register_completion_queue(server1, cq, NULL);
   gpr_free(addr);
   grpc_server_start(server1);
 
   /* request a call to the server */
-  GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(server1, &server_call1,
-                                                      &request_metadata1, cq,
-                                                      cq, tag(0x301)));
+  grpc_call *server_call1;
+  GPR_ASSERT(GRPC_CALL_OK ==
+             grpc_server_request_call(server1, &server_call1, &request_details1,
+                                      &request_metadata1, cq, cq, tag(0x301)));
 
   /* first call should now start */
   cq_expect_completion(cqv, tag(0x101), 1);
   cq_expect_completion(cqv, tag(0x301), 1);
   cq_verify(cqv);
+
+  /* listen for close on the server call to probe for finishing */
+  op = ops;
+  op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
+  op->data.recv_close_on_server.cancelled = &was_cancelled1;
+  op->flags = 0;
+  op++;
+  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(server_call1, ops,
+                                                   (size_t)(op - ops),
+                                                   tag(0x302), NULL));
 
   /* shutdown first server: we should see nothing */
   grpc_server_shutdown_and_notify(server1, cq, tag(0xdead1));
@@ -132,6 +162,7 @@ int main(int argc, char **argv) {
                                                    (size_t)(op - ops),
                                                    tag(0x201), NULL));
   /* and receive status to probe termination */
+  op = ops;
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
   op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv2;
   op->data.recv_status_on_client.status = &status2;
@@ -140,7 +171,7 @@ int main(int argc, char **argv) {
   op->flags = 0;
   op->reserved = NULL;
   op++;
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(call1, ops,
+  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(call2, ops,
                                                    (size_t)(op - ops),
                                                    tag(0x202), NULL));
 
@@ -148,22 +179,37 @@ int main(int argc, char **argv) {
   grpc_server *server2 = grpc_server_create(NULL, NULL);
   gpr_asprintf(&addr, "127.0.0.1:%d", port2);
   grpc_server_add_insecure_http2_port(server2, addr);
+  grpc_server_register_completion_queue(server2, cq, NULL);
   gpr_free(addr);
   grpc_server_start(server2);
 
   /* request a call to the server */
-  GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(server1, &server_call1,
-                                                      &request_metadata1, cq,
-                                                      cq, tag(0x401)));
+  grpc_call *server_call2;
+  GPR_ASSERT(GRPC_CALL_OK ==
+             grpc_server_request_call(server2, &server_call2, &request_details2,
+                                      &request_metadata2, cq, cq, tag(0x401)));
 
   /* second call should now start */
   cq_expect_completion(cqv, tag(0x201), 1);
   cq_expect_completion(cqv, tag(0x401), 1);
   cq_verify(cqv);
 
+  /* listen for close on the server call to probe for finishing */
+  op = ops;
+  op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
+  op->data.recv_close_on_server.cancelled = &was_cancelled2;
+  op->flags = 0;
+  op++;
+  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(server_call2, ops,
+                                                   (size_t)(op - ops),
+                                                   tag(0x402), NULL));
+
   /* shutdown second server: we should see nothing */
-  grpc_server_shutdown_and_notify(server1, cq, tag(0xdead2));
+  grpc_server_shutdown_and_notify(server2, cq, tag(0xdead2));
   cq_verify_empty(cqv);
+
+  grpc_call_cancel(call1, NULL);
+  grpc_call_cancel(call2, NULL);
 
   /* now everything else should finish */
   cq_expect_completion(cqv, tag(0x102), 1);
@@ -174,8 +220,25 @@ int main(int argc, char **argv) {
   cq_expect_completion(cqv, tag(0xdead2), 1);
   cq_verify(cqv);
 
-  gpr_free(details);
-  grpc_metadata_array_destroy(&trailing_metadata_recv);
+  grpc_call_destroy(call1);
+  grpc_call_destroy(call2);
+  grpc_call_destroy(server_call1);
+  grpc_call_destroy(server_call2);
+  grpc_server_destroy(server1);
+  grpc_server_destroy(server2);
+  grpc_channel_destroy(chan);
+
+  grpc_metadata_array_destroy(&trailing_metadata_recv1);
+  grpc_metadata_array_destroy(&request_metadata1);
+  grpc_call_details_destroy(&request_details1);
+  gpr_free(details1);
+  grpc_metadata_array_destroy(&trailing_metadata_recv2);
+  grpc_metadata_array_destroy(&request_metadata2);
+  grpc_call_details_destroy(&request_details2);
+  gpr_free(details2);
+
+  cq_verifier_destroy(cqv);
+  grpc_completion_queue_destroy(cq);
 
   grpc_shutdown();
 
