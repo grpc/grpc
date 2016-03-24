@@ -29,7 +29,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 
-flags="-max_total_time=3600"
+flags="-max_total_time=3600 -jobs=20 -workers=20"
 if [ "$config" == "asan-trace-cmp" ]
 then
   flags="-use_traces=1 $flags"
