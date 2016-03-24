@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,34 +31,31 @@
  *
  */
 
-#ifndef GRPC_CORE_HTTPCLI_PARSER_H
-#define GRPC_CORE_HTTPCLI_PARSER_H
+#include "src/core/iomgr/unix_sockets_posix.h"
 
-#include "src/core/httpcli/httpcli.h"
-#include <grpc/support/port_platform.h>
-#include <grpc/support/slice.h>
+#ifndef GPR_HAVE_UNIX_SOCKET
 
-typedef enum {
-  GRPC_HTTPCLI_INITIAL_RESPONSE,
-  GRPC_HTTPCLI_HEADERS,
-  GRPC_HTTPCLI_BODY
-} grpc_httpcli_parser_state;
+void grpc_create_socketpair_if_unix(int sv[2]) {}
 
-typedef struct {
-  grpc_httpcli_parser_state state;
+grpc_resolved_addresses *grpc_resolve_unix_domain_address(const char *name) {
+  return NULL;
+}
 
-  grpc_httpcli_response r;
-  size_t body_capacity;
-  size_t hdr_capacity;
+int grpc_is_unix_socket(const struct sockaddr *addr) { return false; }
 
-  uint8_t cur_line[GRPC_HTTPCLI_MAX_HEADER_LENGTH];
-  size_t cur_line_length;
-} grpc_httpcli_parser;
+void grpc_unlink_if_unix_domain_socket(const struct sockaddr *addr) {}
 
-void grpc_httpcli_parser_init(grpc_httpcli_parser* parser);
-void grpc_httpcli_parser_destroy(grpc_httpcli_parser* parser);
+int grpc_parse_unix(grpc_uri *uri, struct sockaddr_storage *addr, size_t *len) {
+  return 0;
+}
 
-int grpc_httpcli_parser_parse(grpc_httpcli_parser* parser, gpr_slice slice);
-int grpc_httpcli_parser_eof(grpc_httpcli_parser* parser);
+char *grpc_unix_get_default_authority(grpc_resolver_factory *factory,
+                                      grpc_uri *uri) {
+  return NULL;
+}
 
-#endif /* GRPC_CORE_HTTPCLI_PARSER_H */
+char *grpc_sockaddr_to_uri_unix_if_possible(const struct sockaddr *addr) {
+  return NULL;
+}
+
+#endif

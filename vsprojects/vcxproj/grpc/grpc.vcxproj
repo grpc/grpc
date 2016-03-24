@@ -315,9 +315,9 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\compression\algorithm_metadata.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\compression\message_compress.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\debug\trace.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\httpcli\format_request.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\httpcli\httpcli.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\httpcli\parser.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\http\format_request.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\http\httpcli.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\http\parser.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\iomgr\closure.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\iomgr\endpoint.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\iomgr\endpoint_pair.h" />
@@ -349,6 +349,7 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\iomgr\timer.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\iomgr\timer_heap.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\iomgr\udp_server.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\iomgr\unix_sockets_posix.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\iomgr\wakeup_fd_pipe.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\iomgr\wakeup_fd_posix.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\iomgr\workqueue.h" />
@@ -492,11 +493,11 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\debug\trace.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\httpcli\format_request.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\http\format_request.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\httpcli\httpcli.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\http\httpcli.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\httpcli\parser.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\http\parser.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\iomgr\closure.c">
     </ClCompile>
@@ -565,6 +566,10 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\iomgr\timer_heap.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\iomgr\udp_server.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\iomgr\unix_sockets_posix.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\iomgr\unix_sockets_posix_noop.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\iomgr\wakeup_fd_eventfd.c">
     </ClCompile>
@@ -688,7 +693,7 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\transport\transport_op_string.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\httpcli\httpcli_security_connector.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\http\httpcli_security_connector.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\security\b64.c">
     </ClCompile>

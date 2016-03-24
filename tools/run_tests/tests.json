@@ -1094,7 +1094,7 @@
     "flaky": false, 
     "gtest": false, 
     "language": "c", 
-    "name": "httpcli_format_request_test", 
+    "name": "http_parser_test", 
     "platforms": [
       "linux", 
       "mac", 
@@ -1115,7 +1115,7 @@
     "flaky": false, 
     "gtest": false, 
     "language": "c", 
-    "name": "httpcli_parser_test", 
+    "name": "httpcli_format_request_test", 
     "platforms": [
       "linux", 
       "mac", 
