@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/httpcli/parser.h"
+#include "src/core/http/parser.h"
 
 #include <stdarg.h>
 #include <string.h>
@@ -43,10 +43,12 @@
 #include "test/core/util/slice_splitter.h"
 #include "test/core/util/test_config.h"
 
-static void test_succeeds(grpc_slice_split_mode split_mode, char *response,
-                          int expect_status, char *expect_body, ...) {
-  grpc_httpcli_parser parser;
-  gpr_slice input_slice = gpr_slice_from_copied_string(response);
+static void test_request_succeeds(grpc_slice_split_mode split_mode,
+                                  char *request, char *expect_method,
+                                  grpc_http_version expect_version,
+                                  char *expect_path, char *expect_body, ...) {
+  grpc_http_parser parser;
+  gpr_slice input_slice = gpr_slice_from_copied_string(request);
   size_t num_slices;
   size_t i;
   gpr_slice *slices;
@@ -55,20 +57,25 @@ static void test_succeeds(grpc_slice_split_mode split_mode, char *response,
   grpc_split_slices(split_mode, &input_slice, 1, &slices, &num_slices);
   gpr_slice_unref(input_slice);
 
-  grpc_httpcli_parser_init(&parser);
+  grpc_http_parser_init(&parser);
 
   for (i = 0; i < num_slices; i++) {
-    GPR_ASSERT(grpc_httpcli_parser_parse(&parser, slices[i]));
+    GPR_ASSERT(grpc_http_parser_parse(&parser, slices[i]));
     gpr_slice_unref(slices[i]);
   }
-  GPR_ASSERT(grpc_httpcli_parser_eof(&parser));
+  GPR_ASSERT(grpc_http_parser_eof(&parser));
 
-  GPR_ASSERT(expect_status == parser.r.status);
+  GPR_ASSERT(GRPC_HTTP_REQUEST == parser.type);
+  GPR_ASSERT(0 == strcmp(expect_method, parser.http.request.method));
+  GPR_ASSERT(0 == strcmp(expect_path, parser.http.request.path));
+  GPR_ASSERT(expect_version == parser.http.request.version);
+
   if (expect_body != NULL) {
-    GPR_ASSERT(strlen(expect_body) == parser.r.body_length);
-    GPR_ASSERT(0 == memcmp(expect_body, parser.r.body, parser.r.body_length));
+    GPR_ASSERT(strlen(expect_body) == parser.http.request.body_length);
+    GPR_ASSERT(0 == memcmp(expect_body, parser.http.request.body,
+                           parser.http.request.body_length));
   } else {
-    GPR_ASSERT(parser.r.body_length == 0);
+    GPR_ASSERT(parser.http.request.body_length == 0);
   }
 
   va_start(args, expect_body);
@@ -78,22 +85,73 @@ static void test_succeeds(grpc_slice_split_mode split_mode, char *response,
     char *expect_value;
     expect_key = va_arg(args, char *);
     if (!expect_key) break;
-    GPR_ASSERT(i < parser.r.hdr_count);
+    GPR_ASSERT(i < parser.http.request.hdr_count);
     expect_value = va_arg(args, char *);
     GPR_ASSERT(expect_value);
-    GPR_ASSERT(0 == strcmp(expect_key, parser.r.hdrs[i].key));
-    GPR_ASSERT(0 == strcmp(expect_value, parser.r.hdrs[i].value));
+    GPR_ASSERT(0 == strcmp(expect_key, parser.http.request.hdrs[i].key));
+    GPR_ASSERT(0 == strcmp(expect_value, parser.http.request.hdrs[i].value));
     i++;
   }
   va_end(args);
-  GPR_ASSERT(i == parser.r.hdr_count);
+  GPR_ASSERT(i == parser.http.request.hdr_count);
 
-  grpc_httpcli_parser_destroy(&parser);
+  grpc_http_parser_destroy(&parser);
+  gpr_free(slices);
+}
+
+static void test_succeeds(grpc_slice_split_mode split_mode, char *response,
+                          int expect_status, char *expect_body, ...) {
+  grpc_http_parser parser;
+  gpr_slice input_slice = gpr_slice_from_copied_string(response);
+  size_t num_slices;
+  size_t i;
+  gpr_slice *slices;
+  va_list args;
+
+  grpc_split_slices(split_mode, &input_slice, 1, &slices, &num_slices);
+  gpr_slice_unref(input_slice);
+
+  grpc_http_parser_init(&parser);
+
+  for (i = 0; i < num_slices; i++) {
+    GPR_ASSERT(grpc_http_parser_parse(&parser, slices[i]));
+    gpr_slice_unref(slices[i]);
+  }
+  GPR_ASSERT(grpc_http_parser_eof(&parser));
+
+  GPR_ASSERT(GRPC_HTTP_RESPONSE == parser.type);
+  GPR_ASSERT(expect_status == parser.http.response.status);
+  if (expect_body != NULL) {
+    GPR_ASSERT(strlen(expect_body) == parser.http.response.body_length);
+    GPR_ASSERT(0 == memcmp(expect_body, parser.http.response.body,
+                           parser.http.response.body_length));
+  } else {
+    GPR_ASSERT(parser.http.response.body_length == 0);
+  }
+
+  va_start(args, expect_body);
+  i = 0;
+  for (;;) {
+    char *expect_key;
+    char *expect_value;
+    expect_key = va_arg(args, char *);
+    if (!expect_key) break;
+    GPR_ASSERT(i < parser.http.response.hdr_count);
+    expect_value = va_arg(args, char *);
+    GPR_ASSERT(expect_value);
+    GPR_ASSERT(0 == strcmp(expect_key, parser.http.response.hdrs[i].key));
+    GPR_ASSERT(0 == strcmp(expect_value, parser.http.response.hdrs[i].value));
+    i++;
+  }
+  va_end(args);
+  GPR_ASSERT(i == parser.http.response.hdr_count);
+
+  grpc_http_parser_destroy(&parser);
   gpr_free(slices);
 }
 
 static void test_fails(grpc_slice_split_mode split_mode, char *response) {
-  grpc_httpcli_parser parser;
+  grpc_http_parser parser;
   gpr_slice input_slice = gpr_slice_from_copied_string(response);
   size_t num_slices;
   size_t i;
@@ -103,20 +161,20 @@ static void test_fails(grpc_slice_split_mode split_mode, char *response) {
   grpc_split_slices(split_mode, &input_slice, 1, &slices, &num_slices);
   gpr_slice_unref(input_slice);
 
-  grpc_httpcli_parser_init(&parser);
+  grpc_http_parser_init(&parser);
 
   for (i = 0; i < num_slices; i++) {
-    if (!done && !grpc_httpcli_parser_parse(&parser, slices[i])) {
+    if (!done && !grpc_http_parser_parse(&parser, slices[i])) {
       done = 1;
     }
     gpr_slice_unref(slices[i]);
   }
-  if (!done && !grpc_httpcli_parser_eof(&parser)) {
+  if (!done && !grpc_http_parser_eof(&parser)) {
     done = 1;
   }
   GPR_ASSERT(done);
 
-  grpc_httpcli_parser_destroy(&parser);
+  grpc_http_parser_destroy(&parser);
   gpr_free(slices);
 }
 
@@ -145,6 +203,32 @@ int main(int argc, char **argv) {
                   "\r\n"
                   "hello world!",
                   200, "hello world!", "xyz", "abc", NULL);
+    test_request_succeeds(split_modes[i],
+                          "GET / HTTP/1.0\r\n"
+                          "\r\n",
+                          "GET", GRPC_HTTP_HTTP10, "/", NULL, NULL);
+    test_request_succeeds(split_modes[i],
+                          "GET / HTTP/1.0\r\n"
+                          "\r\n"
+                          "xyz",
+                          "GET", GRPC_HTTP_HTTP10, "/", "xyz", NULL);
+    test_request_succeeds(split_modes[i],
+                          "GET / HTTP/1.1\r\n"
+                          "\r\n"
+                          "xyz",
+                          "GET", GRPC_HTTP_HTTP11, "/", "xyz", NULL);
+    test_request_succeeds(split_modes[i],
+                          "GET / HTTP/2.0\r\n"
+                          "\r\n"
+                          "xyz",
+                          "GET", GRPC_HTTP_HTTP20, "/", "xyz", NULL);
+    test_request_succeeds(split_modes[i],
+                          "GET / HTTP/1.0\r\n"
+                          "xyz: abc\r\n"
+                          "\r\n"
+                          "xyz",
+                          "GET", GRPC_HTTP_HTTP10, "/", "xyz", "xyz", "abc",
+                          NULL);
     test_fails(split_modes[i], "HTTP/1.0\r\n");
     test_fails(split_modes[i], "HTTP/1.2\r\n");
     test_fails(split_modes[i], "HTTP/1.0 000 XYX\r\n");
@@ -157,10 +241,15 @@ int main(int argc, char **argv) {
                "  def\r\n"
                "\r\n"
                "hello world!");
+    test_fails(split_modes[i], "GET\r\n");
+    test_fails(split_modes[i], "GET /\r\n");
+    test_fails(split_modes[i], "GET / HTTP/0.0\r\n");
+    test_fails(split_modes[i], "GET / ____/1.0\r\n");
+    test_fails(split_modes[i], "GET / HTTP/1.2\r\n");
 
-    tmp1 = gpr_malloc(2 * GRPC_HTTPCLI_MAX_HEADER_LENGTH);
-    memset(tmp1, 'a', 2 * GRPC_HTTPCLI_MAX_HEADER_LENGTH - 1);
-    tmp1[2 * GRPC_HTTPCLI_MAX_HEADER_LENGTH - 1] = 0;
+    tmp1 = gpr_malloc(2 * GRPC_HTTP_PARSER_MAX_HEADER_LENGTH);
+    memset(tmp1, 'a', 2 * GRPC_HTTP_PARSER_MAX_HEADER_LENGTH - 1);
+    tmp1[2 * GRPC_HTTP_PARSER_MAX_HEADER_LENGTH - 1] = 0;
     gpr_asprintf(&tmp2, "HTTP/1.0 200 OK\r\nxyz: %s\r\n\r\n", tmp1);
     test_fails(split_modes[i], tmp2);
     gpr_free(tmp1);

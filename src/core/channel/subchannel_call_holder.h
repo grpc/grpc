@@ -55,15 +55,14 @@ typedef enum {
     for initial metadata before trying to create a call object,
     and handling cancellation gracefully.
 
-    Both the channel and uchannel filter use this as their call_data. */
+    The channel filter uses this as their call_data. */
 typedef struct grpc_subchannel_call_holder {
   /** either 0 for no call, 1 for cancelled, or a pointer to a
       grpc_subchannel_call */
   gpr_atm subchannel_call;
   /** Helper function to choose the subchannel on which to create
       the call object. Channel filter delegates to the load
-      balancing policy (once it's ready); uchannel returns
-      immediately */
+      balancing policy (once it's ready). */
   grpc_subchannel_call_holder_pick_subchannel pick_subchannel;
   void *pick_subchannel_arg;
 

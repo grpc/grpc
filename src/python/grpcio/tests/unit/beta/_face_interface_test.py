@@ -1,4 +1,4 @@
-# Copyright 2015, Google Inc.
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -32,6 +32,8 @@
 import collections
 import unittest
 
+import six
+
 from grpc.beta import implementations
 from grpc.beta import interfaces
 from tests.unit import resources
@@ -57,7 +59,7 @@ def _serialization_behaviors_from_test_methods(test_methods):
   request_deserializers = {}
   response_serializers = {}
   response_deserializers = {}
-  for (group, method), test_method in test_methods.iteritems():
+  for (group, method), test_method in six.iteritems(test_methods):
     request_serializers[group, method] = test_method.serialize_request
     request_deserializers[group, method] = test_method.deserialize_request
     response_serializers[group, method] = test_method.serialize_response
@@ -79,7 +81,7 @@ class _Implementation(test_interfaces.Implementation):
     # _digest.TestServiceDigest.
     cardinalities = {
         method: method_object.cardinality()
-        for (group, method), method_object in methods.iteritems()}
+        for (group, method), method_object in six.iteritems(methods)}
 
     server_options = implementations.server_options(
         request_deserializers=serialization_behaviors.request_deserializers,

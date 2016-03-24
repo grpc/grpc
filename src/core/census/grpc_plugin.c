@@ -63,8 +63,6 @@ void census_grpc_plugin_init(void) {
   }
   grpc_channel_init_register_stage(GRPC_CLIENT_CHANNEL, INT_MAX,
                                    maybe_add_census_filter, NULL);
-  grpc_channel_init_register_stage(GRPC_CLIENT_UCHANNEL, INT_MAX,
-                                   maybe_add_census_filter, NULL);
   grpc_channel_init_register_stage(GRPC_SERVER_CHANNEL, INT_MAX,
                                    maybe_add_census_filter, NULL);
 }
