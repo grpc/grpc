@@ -35,7 +35,10 @@
 
 #ifndef GPR_HAVE_UNIX_SOCKET
 
-void grpc_create_socketpair_if_unix(int sv[2]) {}
+void grpc_create_socketpair_if_unix(int sv[2]) {
+  // TODO(ahedberg): Please fill in an implementation for non-Unix-sockets case
+  GPR_ASSERT(0);
+}
 
 grpc_resolved_addresses *grpc_resolve_unix_domain_address(const char *name) {
   return NULL;
