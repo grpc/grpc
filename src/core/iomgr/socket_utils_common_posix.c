@@ -89,6 +89,16 @@ int grpc_set_socket_no_sigpipe_if_possible(int fd) {
 #endif
 }
 
+int grpc_set_socket_ip_pktinfo_if_possible(int fd) {
+#ifdef GPR_HAVE_IP_PKTINFO
+  int get_local_ip = 1;
+  return setsockopt(fd, IPPROTO_IP, IP_PKTINFO, &get_local_ip,
+                    sizeof(get_local_ip));
+#else
+  return 1;
+#endif
+}
+
 /* set a socket to close on exec */
 int grpc_set_socket_cloexec(int fd, int close_on_exec) {
   int oldflags = fcntl(fd, F_GETFD, 0);
