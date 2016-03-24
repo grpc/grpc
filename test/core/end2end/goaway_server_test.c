@@ -35,11 +35,49 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
+#include <string.h>
+#include "src/core/iomgr/resolve_address.h"
+#include "src/core/iomgr/sockaddr.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
 static void *tag(intptr_t i) { return (void *)i; }
+
+static gpr_mu g_mu;
+static int g_resolve_port = -1;
+static grpc_resolved_addresses *(*iomgr_resolve_address)(
+    const char *name, const char *default_port);
+
+static void set_resolve_port(int port) {
+  gpr_mu_lock(&g_mu);
+  g_resolve_port = port;
+  gpr_mu_unlock(&g_mu);
+}
+
+static grpc_resolved_addresses *my_resolve_address(const char *name,
+                                                   const char *addr) {
+  if (0 != strcmp(name, "test")) {
+    return iomgr_resolve_address(name, addr);
+  }
+
+  gpr_mu_lock(&g_mu);
+  if (g_resolve_port < 0) {
+    gpr_mu_unlock(&g_mu);
+    return NULL;
+  } else {
+    grpc_resolved_addresses *addrs = gpr_malloc(sizeof(*addrs));
+    addrs->naddrs = 1;
+    addrs->addrs = gpr_malloc(sizeof(*addrs->addrs));
+    struct sockaddr_in *sa = (struct sockaddr_in *)addrs->addrs[0].addr;
+    sa->sin_family = AF_INET;
+    sa->sin_addr.s_addr = htonl(0x7f000001);
+    sa->sin_port = htons((uint16_t)g_resolve_port);
+    addrs->addrs[0].len = sizeof(*sa);
+    gpr_mu_unlock(&g_mu);
+    return addrs;
+  }
+}
 
 int main(int argc, char **argv) {
   grpc_completion_queue *cq;
@@ -48,6 +86,10 @@ int main(int argc, char **argv) {
   grpc_op *op;
 
   grpc_test_init(argc, argv);
+
+  gpr_mu_init(&g_mu);
+  iomgr_resolve_address = grpc_blocking_resolve_address;
+  grpc_blocking_resolve_address = my_resolve_address;
   grpc_init();
 
   int was_cancelled1;
@@ -83,9 +125,7 @@ int main(int argc, char **argv) {
   char *addr;
 
   /* create a channel that picks first amongst the servers */
-  gpr_asprintf(&addr, "ipv4:127.0.0.1:%d,127.0.0.1:%d", port1, port2);
-  grpc_channel *chan = grpc_insecure_channel_create(addr, NULL, NULL);
-  gpr_free(addr);
+  grpc_channel *chan = grpc_insecure_channel_create("test", NULL, NULL);
   /* and an initial call to them */
   grpc_call *call1 = grpc_channel_create_call(
       chan, NULL, GRPC_PROPAGATE_DEFAULTS, cq, "/foo", "127.0.0.1",
@@ -128,6 +168,8 @@ int main(int argc, char **argv) {
              grpc_server_request_call(server1, &server_call1, &request_details1,
                                       &request_metadata1, cq, cq, tag(0x301)));
 
+  set_resolve_port(port1);
+
   /* first call should now start */
   cq_expect_completion(cqv, tag(0x101), 1);
   cq_expect_completion(cqv, tag(0x301), 1);
@@ -144,6 +186,7 @@ int main(int argc, char **argv) {
                                                    tag(0x302), NULL));
 
   /* shutdown first server: we should see nothing */
+  set_resolve_port(-1);
   grpc_server_shutdown_and_notify(server1, cq, tag(0xdead1));
   cq_verify_empty(cqv);
 
@@ -176,6 +219,7 @@ int main(int argc, char **argv) {
                                                    tag(0x202), NULL));
 
   /* and bring up second server */
+  set_resolve_port(port2);
   grpc_server *server2 = grpc_server_create(NULL, NULL);
   gpr_asprintf(&addr, "127.0.0.1:%d", port2);
   grpc_server_add_insecure_http2_port(server2, addr);
@@ -241,6 +285,7 @@ int main(int argc, char **argv) {
   grpc_completion_queue_destroy(cq);
 
   grpc_shutdown();
+  gpr_mu_destroy(&g_mu);
 
   return 0;
 }
