@@ -150,7 +150,7 @@ int grpc_chttp2_decode_timeout(const char *buffer, gpr_timespec *timeout) {
     /* spec allows max. 8 digits, but we allow values up to 1,000,000,000 */
     if (x >= (100 * 1000 * 1000)) {
       if (x != (100 * 1000 * 1000) || digit != 0) {
-        *timeout = gpr_inf_future(GPR_CLOCK_REALTIME);
+        *timeout = gpr_inf_future(GPR_TIMESPAN);
         return 1;
       }
     }

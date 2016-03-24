@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -42,6 +42,10 @@ namespace grpc_cpp_generator {
 struct Parameters {
   // Puts the service into a namespace
   grpc::string services_namespace;
+  // Use system includes (<>) or local includes ("")
+  bool use_system_headers;
+  // Prefix to any grpc include
+  grpc::string grpc_search_path;
 };
 
 // Return the prologue of the generated header file.

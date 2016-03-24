@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_CLIENT_CONFIG_PICK_FIRST_H
-#define GRPC_INTERNAL_CORE_CLIENT_CONFIG_PICK_FIRST_H
+#ifndef GRPC_CORE_CLIENT_CONFIG_LB_POLICIES_PICK_FIRST_H
+#define GRPC_CORE_CLIENT_CONFIG_LB_POLICIES_PICK_FIRST_H
 
 #include "src/core/client_config/lb_policy_factory.h"
 
@@ -40,4 +40,4 @@
  * the first subchannel from \a subchannels to succesfully connect */
 grpc_lb_policy_factory *grpc_pick_first_lb_factory_create();
 
-#endif
+#endif /* GRPC_CORE_CLIENT_CONFIG_LB_POLICIES_PICK_FIRST_H */

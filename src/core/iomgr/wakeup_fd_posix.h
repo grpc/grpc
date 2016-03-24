@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -59,8 +59,8 @@
  * 2. If the polling thread was awakened by a wakeup_fd event, call
  *    grpc_wakeup_fd_consume_wakeup() on it.
  */
-#ifndef GRPC_INTERNAL_CORE_IOMGR_WAKEUP_FD_POSIX_H
-#define GRPC_INTERNAL_CORE_IOMGR_WAKEUP_FD_POSIX_H
+#ifndef GRPC_CORE_IOMGR_WAKEUP_FD_POSIX_H
+#define GRPC_CORE_IOMGR_WAKEUP_FD_POSIX_H
 
 void grpc_wakeup_fd_global_init(void);
 void grpc_wakeup_fd_global_destroy(void);
@@ -98,4 +98,4 @@ void grpc_wakeup_fd_destroy(grpc_wakeup_fd* fd_info);
  * wakeup_fd_nospecial.c if no such implementation exists. */
 extern const grpc_wakeup_fd_vtable grpc_specialized_wakeup_fd_vtable;
 
-#endif /* GRPC_INTERNAL_CORE_IOMGR_WAKEUP_FD_POSIX_H */
+#endif /* GRPC_CORE_IOMGR_WAKEUP_FD_POSIX_H */

@@ -166,7 +166,7 @@ extern grpc_compression_algorithm_parse_type grpc_compression_algorithm_parse_im
 typedef int(*grpc_compression_algorithm_name_type)(grpc_compression_algorithm algorithm, char **name);
 extern grpc_compression_algorithm_name_type grpc_compression_algorithm_name_import;
 #define grpc_compression_algorithm_name grpc_compression_algorithm_name_import
-typedef grpc_compression_algorithm(*grpc_compression_algorithm_for_level_type)(grpc_compression_level level);
+typedef grpc_compression_algorithm(*grpc_compression_algorithm_for_level_type)(grpc_compression_level level, uint32_t accepted_encodings);
 extern grpc_compression_algorithm_for_level_type grpc_compression_algorithm_for_level_import;
 #define grpc_compression_algorithm_for_level grpc_compression_algorithm_for_level_import
 typedef void(*grpc_compression_options_init_type)(grpc_compression_options *opts);
@@ -610,6 +610,9 @@ extern gpr_ref_init_type gpr_ref_init_import;
 typedef void(*gpr_ref_type)(gpr_refcount *r);
 extern gpr_ref_type gpr_ref_import;
 #define gpr_ref gpr_ref_import
+typedef void(*gpr_ref_non_zero_type)(gpr_refcount *r);
+extern gpr_ref_non_zero_type gpr_ref_non_zero_import;
+#define gpr_ref_non_zero gpr_ref_non_zero_import
 typedef void(*gpr_refn_type)(gpr_refcount *r, int n);
 extern gpr_refn_type gpr_refn_import;
 #define gpr_refn gpr_refn_import

@@ -34,18 +34,12 @@
 #include <grpc/support/port_platform.h>
 #ifdef GPR_POSIX_SOCKET
 
-#include "src/core/iomgr/sockaddr.h"
 #include "src/core/iomgr/resolve_address.h"
+#include "src/core/iomgr/sockaddr.h"
 
-#include <sys/types.h>
-#include <sys/un.h>
 #include <string.h>
+#include <sys/types.h>
 
-#include "src/core/iomgr/executor.h"
-#include "src/core/iomgr/iomgr_internal.h"
-#include "src/core/iomgr/sockaddr_utils.h"
-#include "src/core/support/block_annotate.h"
-#include "src/core/support/string.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
@@ -53,6 +47,12 @@
 #include <grpc/support/thd.h>
 #include <grpc/support/time.h>
 #include <grpc/support/useful.h>
+#include "src/core/iomgr/executor.h"
+#include "src/core/iomgr/iomgr_internal.h"
+#include "src/core/iomgr/sockaddr_utils.h"
+#include "src/core/iomgr/unix_sockets_posix.h"
+#include "src/core/support/block_annotate.h"
+#include "src/core/support/string.h"
 
 typedef struct {
   char *name;
@@ -62,7 +62,7 @@ typedef struct {
   void *arg;
 } request;
 
-grpc_resolved_addresses *grpc_blocking_resolve_address(
+static grpc_resolved_addresses *blocking_resolve_address_impl(
     const char *name, const char *default_port) {
   struct addrinfo hints;
   struct addrinfo *result = NULL, *resp;
@@ -71,18 +71,10 @@ grpc_resolved_addresses *grpc_blocking_resolve_address(
   int s;
   size_t i;
   grpc_resolved_addresses *addrs = NULL;
-  struct sockaddr_un *un;
 
   if (name[0] == 'u' && name[1] == 'n' && name[2] == 'i' && name[3] == 'x' &&
       name[4] == ':' && name[5] != 0) {
-    addrs = gpr_malloc(sizeof(grpc_resolved_addresses));
-    addrs->naddrs = 1;
-    addrs->addrs = gpr_malloc(sizeof(grpc_resolved_address));
-    un = (struct sockaddr_un *)addrs->addrs->addr;
-    un->sun_family = AF_UNIX;
-    strcpy(un->sun_path, name + 5);
-    addrs->addrs->len = strlen(un->sun_path) + sizeof(un->sun_family) + 1;
-    return addrs;
+    return grpc_resolve_unix_domain_address(name + 5);
   }
 
   /* parse name, splitting it into host and port parts */
@@ -149,6 +141,9 @@ done:
   }
   return addrs;
 }
+
+grpc_resolved_addresses *(*grpc_blocking_resolve_address)(
+    const char *name, const char *default_port) = blocking_resolve_address_impl;
 
 /* Callback to be passed to grpc_executor to asynch-ify
  * grpc_blocking_resolve_address */

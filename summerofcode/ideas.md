@@ -19,7 +19,9 @@ gRPC C Core:
 
 1. Port gRPC to  one of the major BSD platforms ([FreeBSD](https://freebsd.org), [NetBSD](https://netbsd.org), and [OpenBSD](https://openbsd.org)) and create packages for them. Add [kqueue](https://www.freebsd.org/cgi/man.cgi?query=kqueue) support in the process.
  * **Required skills:** C programming language, BSD operating system.
- * **Likely mentors:** [Craig Tiller](https://github.com/ctiller), [Nicolas Noble](https://github.com/nicolasnoble).
+ * **Likely mentors:** [Craig Tiller](https://github.com/ctiller),
+ [Nicolas Noble](https://github.com/nicolasnoble),
+ [Vijay Pai](https://github.com/vjpai).
 1. Fix gRPC C-core's URI parser. The current parser does not qualify as a standard parser according to [RFC3986]( https://tools.ietf.org/html/rfc3986). Write test suites to verify this and make changes necessary to make the URI parser compliant.
  * **Required skills:** C programming language, HTTP standard compliance.
  * **Likely mentors:** [Craig Tiller](https://github.com/ctiller).
@@ -34,7 +36,7 @@ gRPC Python:
  * **Required skills:** Python programming language, PyPy Python interpreter.
  * **Likely mentors:** [Nathaniel Manista](https://github.com/nathanielmanistaatgoogle), [Masood Malekghassemi](https://github.com/soltanmm).
 1. Develop and test Python 3.5 Support for gRPC. Make necessary changes to port gRPC and package it for supported platforms.
- * **Required skills:** Python programming language, PyPy Python interpreter.
+ * **Required skills:** Python programming language, Python 3.5 interpreter.
  * **Likely mentors:** [Nathaniel Manista](https://github.com/nathanielmanistaatgoogle), [Masood Malekghassemi](https://github.com/soltanmm).
  
 gRPC Ruby/Java:
