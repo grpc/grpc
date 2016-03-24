@@ -42,6 +42,7 @@
 static void onhdr(void *ud, grpc_mdelem *md) { GRPC_MDELEM_UNREF(md); }
 
 int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
+  grpc_test_only_set_metadata_hash_seed(0);
   grpc_init();
   grpc_chttp2_hpack_parser parser;
   grpc_chttp2_hpack_parser_init(&parser);
