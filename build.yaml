@@ -2846,6 +2846,19 @@ configs:
     test_environ:
       ASAN_OPTIONS: detect_leaks=0:color=always
     timeout_multiplier: 3
+  asan-trace-cmp:
+    CC: clang
+    CPPFLAGS: -O0 -fsanitize-coverage=trace-cmp -fsanitize=address -fno-omit-frame-pointer
+      -Wno-unused-command-line-argument -DGPR_NO_DIRECT_SYSCALLS
+    CXX: clang++
+    LD: clang
+    LDFLAGS: -fsanitize=address
+    LDXX: clang++
+    compile_the_world: true
+    test_environ:
+      ASAN_OPTIONS: detect_leaks=1:color=always
+      LSAN_OPTIONS: suppressions=tools/lsan_suppressions.txt:report_objects=1
+    timeout_multiplier: 3
   basicprof:
     CPPFLAGS: -O2 -DGRPC_BASIC_PROFILER -DGRPC_TIMERS_RDTSC
     DEFINES: NDEBUG
