@@ -2848,8 +2848,8 @@ configs:
     timeout_multiplier: 3
   asan-trace-cmp:
     CC: clang
-    CPPFLAGS: -O0 -fsanitize-coverage=trace-cmp -fsanitize=address -fno-omit-frame-pointer
-      -Wno-unused-command-line-argument -DGPR_NO_DIRECT_SYSCALLS
+    CPPFLAGS: -O0 -fsanitize-coverage=edge -fsanitize-coverage=trace-cmp -fsanitize=address
+      -fno-omit-frame-pointer -Wno-unused-command-line-argument -DGPR_NO_DIRECT_SYSCALLS
     CXX: clang++
     LD: clang
     LDFLAGS: -fsanitize=address
