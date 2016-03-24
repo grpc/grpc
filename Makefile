@@ -95,6 +95,16 @@ LDXX_opt = $(DEFAULT_CXX)
 CPPFLAGS_opt = -O2
 DEFINES_opt = NDEBUG
 
+VALID_CONFIG_asan-trace-cmp = 1
+REQUIRE_CUSTOM_LIBRARIES_asan-trace-cmp = 1
+CC_asan-trace-cmp = clang
+CXX_asan-trace-cmp = clang++
+LD_asan-trace-cmp = clang
+LDXX_asan-trace-cmp = clang++
+CPPFLAGS_asan-trace-cmp = -O0 -fsanitize-coverage=trace-cmp -fsanitize=address -fno-omit-frame-pointer -Wno-unused-command-line-argument -DGPR_NO_DIRECT_SYSCALLS
+LDFLAGS_asan-trace-cmp = -fsanitize=address
+DEFINES_asan-trace-cmp += GRPC_TEST_SLOWDOWN_BUILD_FACTOR=3
+
 VALID_CONFIG_dbg = 1
 CC_dbg = $(DEFAULT_CC)
 CXX_dbg = $(DEFAULT_CXX)

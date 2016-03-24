@@ -35,4 +35,10 @@ template: |
   # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   #
 
-  bins/$config/${selected.name} -max_total_time=3600 fuzzer_output ${' '.join(selected.corpus_dirs)}
+  flags="-max_total_time=3600"
+  if [ "$config" == "asan-trace-cmp" ]
+  then
+    flags="-use_traces=1 $flags"
+  fi
+
+  bins/$config/${selected.name} $flags fuzzer_output ${' '.join(selected.corpus_dirs)}

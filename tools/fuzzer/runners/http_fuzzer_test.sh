@@ -29,4 +29,10 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 
-bins/$config/http_fuzzer_test -max_total_time=3600 fuzzer_output test/core/http/corpus
+flags="-max_total_time=3600"
+if [ "$config" == "asan-trace-cmp" ]
+then
+  flags="-use_traces=1 $flags"
+fi
+
+bins/$config/http_fuzzer_test $flags fuzzer_output test/core/http/corpus
