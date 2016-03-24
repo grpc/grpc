@@ -36,7 +36,9 @@
 #ifndef GPR_HAVE_UNIX_SOCKET
 
 void grpc_create_socketpair_if_unix(int sv[2]) {
-  // TODO(ahedberg): Please fill in an implementation for non-Unix-sockets case
+  // TODO: Either implement this for the non-Unix socket case or make
+  // sure that it is never called in any such case. Until then, leave an
+  // assertion to notify if this gets called inadvertently
   GPR_ASSERT(0);
 }
 
