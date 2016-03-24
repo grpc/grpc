@@ -175,6 +175,12 @@ int main(int argc, char **argv) {
   cq_expect_completion(cqv, tag(0x301), 1);
   cq_verify(cqv);
 
+  GPR_ASSERT(GRPC_CHANNEL_READY ==
+             grpc_channel_check_connectivity_state(chan, 0));
+  grpc_channel_watch_connectivity_state(chan, GRPC_CHANNEL_READY,
+                                        gpr_inf_future(GPR_CLOCK_REALTIME), cq,
+                                        tag(0x9999));
+
   /* listen for close on the server call to probe for finishing */
   op = ops;
   op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
@@ -185,9 +191,12 @@ int main(int argc, char **argv) {
                                                    (size_t)(op - ops),
                                                    tag(0x302), NULL));
 
-  /* shutdown first server: we should see nothing */
+  /* shutdown first server:
+   * we should see a connectivity change and then nothing */
   set_resolve_port(-1);
   grpc_server_shutdown_and_notify(server1, cq, tag(0xdead1));
+  cq_expect_completion(cqv, tag(0x9999), 1);
+  cq_verify(cqv);
   cq_verify_empty(cqv);
 
   /* and a new call: should go through to server2 when we start it */
