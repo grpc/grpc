@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,15 +31,31 @@
  *
  */
 
-#ifndef GRPC_CORE_HTTPCLI_FORMAT_REQUEST_H
-#define GRPC_CORE_HTTPCLI_FORMAT_REQUEST_H
+#ifndef GRPC_CORE_IOMGR_UNIX_SOCKETS_POSIX_H
+#define GRPC_CORE_IOMGR_UNIX_SOCKETS_POSIX_H
 
-#include "src/core/httpcli/httpcli.h"
-#include <grpc/support/slice.h>
+#include <grpc/support/port_platform.h>
 
-gpr_slice grpc_httpcli_format_get_request(const grpc_httpcli_request *request);
-gpr_slice grpc_httpcli_format_post_request(const grpc_httpcli_request *request,
-                                           const char *body_bytes,
-                                           size_t body_size);
+#include <grpc/support/string_util.h>
 
-#endif /* GRPC_CORE_HTTPCLI_FORMAT_REQUEST_H */
+#include "src/core/client_config/resolver_factory.h"
+#include "src/core/client_config/uri_parser.h"
+#include "src/core/iomgr/resolve_address.h"
+#include "src/core/iomgr/sockaddr.h"
+
+void grpc_create_socketpair_if_unix(int sv[2]);
+
+grpc_resolved_addresses *grpc_resolve_unix_domain_address(const char *name);
+
+int grpc_is_unix_socket(const struct sockaddr *addr);
+
+void grpc_unlink_if_unix_domain_socket(const struct sockaddr *addr);
+
+int grpc_parse_unix(grpc_uri *uri, struct sockaddr_storage *addr, size_t *len);
+
+char *grpc_unix_get_default_authority(grpc_resolver_factory *factory,
+                                      grpc_uri *uri);
+
+char *grpc_sockaddr_to_uri_unix_if_possible(const struct sockaddr *addr);
+
+#endif /* GRPC_CORE_IOMGR_UNIX_SOCKETS_POSIX_H */

@@ -35,7 +35,7 @@
 
 #include <string.h>
 
-#include "src/core/httpcli/httpcli.h"
+#include "src/core/http/httpcli.h"
 #include "src/core/security/b64.h"
 #include "src/core/security/json_token.h"
 #include "test/core/util/test_config.h"
@@ -288,7 +288,7 @@ static int httpcli_get_google_keys_for_email(
   grpc_httpcli_response response = http_response(200, good_google_email_keys());
   GPR_ASSERT(request->handshaker == &grpc_httpcli_ssl);
   GPR_ASSERT(strcmp(request->host, "www.googleapis.com") == 0);
-  GPR_ASSERT(strcmp(request->path,
+  GPR_ASSERT(strcmp(request->http.path,
                     "/robot/v1/metadata/x509/"
                     "777-abaslkan11hlb6nmim3bpspl31ud@developer."
                     "gserviceaccount.com") == 0);
@@ -336,7 +336,7 @@ static int httpcli_get_custom_keys_for_email(
   grpc_httpcli_response response = http_response(200, gpr_strdup(good_jwk_set));
   GPR_ASSERT(request->handshaker == &grpc_httpcli_ssl);
   GPR_ASSERT(strcmp(request->host, "keys.bar.com") == 0);
-  GPR_ASSERT(strcmp(request->path, "/jwk/foo@bar.com") == 0);
+  GPR_ASSERT(strcmp(request->http.path, "/jwk/foo@bar.com") == 0);
   on_response(exec_ctx, user_data, &response);
   gpr_free(response.body);
   return 1;
@@ -372,7 +372,7 @@ static int httpcli_get_jwk_set(grpc_exec_ctx *exec_ctx,
   grpc_httpcli_response response = http_response(200, gpr_strdup(good_jwk_set));
   GPR_ASSERT(request->handshaker == &grpc_httpcli_ssl);
   GPR_ASSERT(strcmp(request->host, "www.googleapis.com") == 0);
-  GPR_ASSERT(strcmp(request->path, "/oauth2/v3/certs") == 0);
+  GPR_ASSERT(strcmp(request->http.path, "/oauth2/v3/certs") == 0);
   on_response(exec_ctx, user_data, &response);
   gpr_free(response.body);
   return 1;
@@ -387,7 +387,7 @@ static int httpcli_get_openid_config(grpc_exec_ctx *exec_ctx,
       http_response(200, gpr_strdup(good_openid_config));
   GPR_ASSERT(request->handshaker == &grpc_httpcli_ssl);
   GPR_ASSERT(strcmp(request->host, "accounts.google.com") == 0);
-  GPR_ASSERT(strcmp(request->path, GRPC_OPENID_CONFIG_URL_SUFFIX) == 0);
+  GPR_ASSERT(strcmp(request->http.path, GRPC_OPENID_CONFIG_URL_SUFFIX) == 0);
   grpc_httpcli_set_override(httpcli_get_jwk_set,
                             httpcli_post_should_not_be_called);
   on_response(exec_ctx, user_data, &response);

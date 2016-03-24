@@ -37,7 +37,6 @@
 #include <grpc/support/log.h>
 
 #include "src/core/channel/client_channel.h"
-#include "src/core/channel/client_uchannel.h"
 #include "src/core/iomgr/timer.h"
 #include "src/core/surface/api_trace.h"
 #include "src/core/surface/completion_queue.h"
@@ -54,12 +53,6 @@ grpc_connectivity_state grpc_channel_check_connectivity_state(
       (channel, try_to_connect));
   if (client_channel_elem->filter == &grpc_client_channel_filter) {
     state = grpc_client_channel_check_connectivity_state(
-        &exec_ctx, client_channel_elem, try_to_connect);
-    grpc_exec_ctx_finish(&exec_ctx);
-    return state;
-  }
-  if (client_channel_elem->filter == &grpc_client_uchannel_filter) {
-    state = grpc_client_uchannel_check_connectivity_state(
         &exec_ctx, client_channel_elem, try_to_connect);
     grpc_exec_ctx_finish(&exec_ctx);
     return state;
@@ -98,9 +91,6 @@ static void delete_state_watcher(grpc_exec_ctx *exec_ctx, state_watcher *w) {
   if (client_channel_elem->filter == &grpc_client_channel_filter) {
     GRPC_CHANNEL_INTERNAL_UNREF(exec_ctx, w->channel,
                                 "watch_channel_connectivity");
-  } else if (client_channel_elem->filter == &grpc_client_uchannel_filter) {
-    GRPC_CHANNEL_INTERNAL_UNREF(exec_ctx, w->channel,
-                                "watch_uchannel_connectivity");
   } else {
     abort();
   }
@@ -209,11 +199,8 @@ void grpc_channel_watch_connectivity_state(
     grpc_client_channel_watch_connectivity_state(&exec_ctx, client_channel_elem,
                                                  grpc_cq_pollset(cq), &w->state,
                                                  &w->on_complete);
-  } else if (client_channel_elem->filter == &grpc_client_uchannel_filter) {
-    GRPC_CHANNEL_INTERNAL_REF(channel, "watch_uchannel_connectivity");
-    grpc_client_uchannel_watch_connectivity_state(
-        &exec_ctx, client_channel_elem, grpc_cq_pollset(cq), &w->state,
-        &w->on_complete);
+  } else {
+    abort();
   }
 
   grpc_exec_ctx_finish(&exec_ctx);

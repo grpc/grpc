@@ -1,4 +1,4 @@
-# Copyright 2015, Google Inc.
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -27,7 +27,8 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import cStringIO as StringIO
+from __future__ import absolute_import
+
 import collections
 import itertools
 import traceback
@@ -35,6 +36,7 @@ import unittest
 from xml.etree import ElementTree
 
 import coverage
+from six import moves
 
 from tests import _loader
 
@@ -356,7 +358,7 @@ def _traceback_string(type, value, trace):
   Returns:
     str: Formatted exception descriptive string.
   """
-  buffer = StringIO.StringIO()
+  buffer = moves.cStringIO()
   traceback.print_exception(type, value, trace, file=buffer)
   return buffer.getvalue()
 
