@@ -29,4 +29,4 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 
-bins/$config/json_fuzzer_test -max_total_time=60 fuzzer_output test/core/json/corpus
+bins/$config/json_fuzzer_test -max_total_time=3600 fuzzer_output test/core/json/corpus

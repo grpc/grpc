@@ -29,4 +29,4 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 
-bins/$config/hpack_parser_fuzzer_test -max_total_time=60 fuzzer_output test/core/transport/chttp2/hpack_parser_corpus
+bins/$config/hpack_parser_fuzzer_test -max_total_time=3600 fuzzer_output test/core/transport/chttp2/hpack_parser_corpus
