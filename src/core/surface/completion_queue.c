@@ -41,6 +41,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
+#include "src/core/iomgr/iomgr_internal.h"
 #include "src/core/iomgr/pollset.h"
 #include "src/core/iomgr/timer.h"
 #include "src/core/profiling/timers.h"
@@ -59,6 +60,7 @@ typedef struct {
   gpr_mu mu;
   int refs;
   grpc_completion_queue *freelist;
+  grpc_iomgr_object iomgr_object;
 } cq_arena;
 
 /* Completion queue structure */
@@ -101,6 +103,8 @@ void grpc_cq_global_init(void) {
   g_current_arena = gpr_malloc(sizeof(*g_current_arena));
   g_current_arena->refs = 1;
   gpr_mu_init(&g_current_arena->mu);
+  grpc_iomgr_register_object(&g_current_arena->iomgr_object,
+                             "completion_queue_arena");
   g_current_arena->freelist = NULL;
 }
 
@@ -115,6 +119,7 @@ static void delete_arena(cq_arena *arena) {
     arena->freelist = next;
   }
   gpr_mu_destroy(&arena->mu);
+  grpc_iomgr_unregister_object(&arena->iomgr_object);
   gpr_free(arena);
 }
 
