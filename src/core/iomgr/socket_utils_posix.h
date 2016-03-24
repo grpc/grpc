@@ -68,6 +68,16 @@ int grpc_ipv6_loopback_available(void);
    If SO_NO_SIGPIPE is not available, returns 1. */
 int grpc_set_socket_no_sigpipe_if_possible(int fd);
 
+/* Tries to set IP_PKTINFO if available on this platform.
+   Returns 1 on success, 0 on failure.
+   If IP_PKTINFO is not available, returns 1. */
+int grpc_set_socket_ip_pktinfo_if_possible(int fd);
+
+/* Tries to set IPV6_RECVPKTINFO if available on this platform.
+   Returns 1 on success, 0 on failure.
+   If IPV6_RECVPKTINFO is not available, returns 1. */
+int grpc_set_socket_ipv6_recvpktinfo_if_possible(int fd);
+
 /* An enum to keep track of IPv4/IPv6 socket modes.
 
    Currently, this information is only used when a socket is first created, but
