@@ -138,9 +138,10 @@ namespace Grpc.Core.Internal
                 GrpcPreconditions.CheckNotNull(completionDelegate, "Completion delegate cannot be null");
                 CheckSendingAllowed();
 
+                sendCompletionDelegate = completionDelegate;
+
                 call.StartSendMessage(HandleSendFinished, payload, writeFlags, !initialMetadataSent);
 
-                sendCompletionDelegate = completionDelegate;
                 initialMetadataSent = true;
                 streamingWritesCounter++;
             }
@@ -157,8 +158,9 @@ namespace Grpc.Core.Internal
                 GrpcPreconditions.CheckNotNull(completionDelegate, "Completion delegate cannot be null");
                 CheckReadingAllowed();
 
-                call.StartReceiveMessage(HandleReadFinished);
                 readCompletionDelegate = completionDelegate;
+
+                call.StartReceiveMessage(HandleReadFinished);
             }
         }
 

@@ -260,10 +260,11 @@ namespace Grpc.Core.Internal
                 GrpcPreconditions.CheckNotNull(completionDelegate, "Completion delegate cannot be null");
                 CheckSendingAllowed();
 
+                sendCompletionDelegate = completionDelegate;
+
                 call.StartSendCloseFromClient(HandleHalfclosed);
 
                 halfcloseRequested = true;
-                sendCompletionDelegate = completionDelegate;
             }
         }
 

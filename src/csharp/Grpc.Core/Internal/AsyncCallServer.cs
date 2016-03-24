@@ -117,13 +117,14 @@ namespace Grpc.Core.Internal
 
                 GrpcPreconditions.CheckNotNull(completionDelegate, "Completion delegate cannot be null");
 
+                sendCompletionDelegate = completionDelegate;
+
                 using (var metadataArray = MetadataArraySafeHandle.Create(headers))
                 {
                     call.StartSendInitialMetadata(HandleSendFinished, metadataArray);
                 }
 
                 this.initialMetadataSent = true;
-                sendCompletionDelegate = completionDelegate;
             }
         }
 
@@ -139,13 +140,14 @@ namespace Grpc.Core.Internal
                 GrpcPreconditions.CheckNotNull(completionDelegate, "Completion delegate cannot be null");
                 CheckSendingAllowed();
 
+                sendCompletionDelegate = completionDelegate;
+
                 using (var metadataArray = MetadataArraySafeHandle.Create(trailers))
                 {
                     call.StartSendStatusFromServer(HandleHalfclosed, status, metadataArray, !initialMetadataSent);
                 }
                 halfcloseRequested = true;
                 readingDone = true;
-                sendCompletionDelegate = completionDelegate;
             }
         }
 
