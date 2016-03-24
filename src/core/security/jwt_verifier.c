@@ -36,7 +36,7 @@
 #include <limits.h>
 #include <string.h>
 
-#include "src/core/httpcli/httpcli.h"
+#include "src/core/http/httpcli.h"
 #include "src/core/security/b64.h"
 #include "src/core/tsi/ssl_types.h"
 
@@ -635,11 +635,11 @@ static void on_openid_config_retrieved(grpc_exec_ctx *exec_ctx, void *user_data,
   jwks_uri += 8;
   req.handshaker = &grpc_httpcli_ssl;
   req.host = gpr_strdup(jwks_uri);
-  req.path = strchr(jwks_uri, '/');
-  if (req.path == NULL) {
-    req.path = "";
+  req.http.path = strchr(jwks_uri, '/');
+  if (req.http.path == NULL) {
+    req.http.path = "";
   } else {
-    *(req.host + (req.path - jwks_uri)) = '\0';
+    *(req.host + (req.http.path - jwks_uri)) = '\0';
   }
   grpc_httpcli_get(
       exec_ctx, &ctx->verifier->http_ctx, ctx->pollset, &req,
@@ -725,20 +725,20 @@ static void retrieve_key_and_verify(grpc_exec_ctx *exec_ctx,
     req.host = gpr_strdup(mapping->key_url_prefix);
     path_prefix = strchr(req.host, '/');
     if (path_prefix == NULL) {
-      gpr_asprintf(&req.path, "/%s", iss);
+      gpr_asprintf(&req.http.path, "/%s", iss);
     } else {
       *(path_prefix++) = '\0';
-      gpr_asprintf(&req.path, "/%s/%s", path_prefix, iss);
+      gpr_asprintf(&req.http.path, "/%s/%s", path_prefix, iss);
     }
     http_cb = on_keys_retrieved;
   } else {
     req.host = gpr_strdup(strstr(iss, "https://") == iss ? iss + 8 : iss);
     path_prefix = strchr(req.host, '/');
     if (path_prefix == NULL) {
-      req.path = gpr_strdup(GRPC_OPENID_CONFIG_URL_SUFFIX);
+      req.http.path = gpr_strdup(GRPC_OPENID_CONFIG_URL_SUFFIX);
     } else {
       *(path_prefix++) = 0;
-      gpr_asprintf(&req.path, "/%s%s", path_prefix,
+      gpr_asprintf(&req.http.path, "/%s%s", path_prefix,
                    GRPC_OPENID_CONFIG_URL_SUFFIX);
     }
     http_cb = on_openid_config_retrieved;
@@ -749,7 +749,7 @@ static void retrieve_key_and_verify(grpc_exec_ctx *exec_ctx,
       gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), grpc_jwt_verifier_max_delay),
       http_cb, ctx);
   gpr_free(req.host);
-  gpr_free(req.path);
+  gpr_free(req.http.path);
   return;
 
 error:

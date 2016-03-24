@@ -31,10 +31,10 @@
  *
  */
 
-#ifndef GRPC_CORE_HTTPCLI_FORMAT_REQUEST_H
-#define GRPC_CORE_HTTPCLI_FORMAT_REQUEST_H
+#ifndef GRPC_CORE_HTTP_FORMAT_REQUEST_H
+#define GRPC_CORE_HTTP_FORMAT_REQUEST_H
 
-#include "src/core/httpcli/httpcli.h"
+#include "src/core/http/httpcli.h"
 #include <grpc/support/slice.h>
 
 gpr_slice grpc_httpcli_format_get_request(const grpc_httpcli_request *request);
@@ -42,4 +42,4 @@ gpr_slice grpc_httpcli_format_post_request(const grpc_httpcli_request *request,
                                            const char *body_bytes,
                                            size_t body_size);
 
-#endif /* GRPC_CORE_HTTPCLI_FORMAT_REQUEST_H */
+#endif /* GRPC_CORE_HTTP_FORMAT_REQUEST_H */

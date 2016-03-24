@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,24 +31,31 @@
  *
  */
 
-#import <Foundation/Foundation.h>
-#include <grpc/grpc.h>
+#ifndef GRPC_CORE_IOMGR_UNIX_SOCKETS_POSIX_H
+#define GRPC_CORE_IOMGR_UNIX_SOCKETS_POSIX_H
 
-typedef void(^GRPCQueueCompletionHandler)(bool success);
+#include <grpc/support/port_platform.h>
 
-/**
- * This class lets one more easily use |grpc_completion_queue|. To use it, pass the value of the
- * |unmanagedQueue| property of an instance of this class to |grpc_channel_create_call|. Then for
- * every |grpc_call_*| method that accepts a tag, you can pass a block of type
- * |GRPCQueueCompletionHandler| (remembering to cast it using |__bridge_retained|). The block is
- * guaranteed to eventually be called, by a concurrent queue, and then released. Each such block is
- * passed a |bool| that tells if the operation was successful.
- *
- * Release the GRPCCompletionQueue object only after you are not going to pass any more blocks to
- * the |grpc_call| that's using it.
- */
-@interface GRPCCompletionQueue : NSObject
-@property(nonatomic, readonly) grpc_completion_queue *unmanagedQueue;
+#include <grpc/support/string_util.h>
 
-+ (instancetype)completionQueue;
-@end
+#include "src/core/client_config/resolver_factory.h"
+#include "src/core/client_config/uri_parser.h"
+#include "src/core/iomgr/resolve_address.h"
+#include "src/core/iomgr/sockaddr.h"
+
+void grpc_create_socketpair_if_unix(int sv[2]);
+
+grpc_resolved_addresses *grpc_resolve_unix_domain_address(const char *name);
+
+int grpc_is_unix_socket(const struct sockaddr *addr);
+
+void grpc_unlink_if_unix_domain_socket(const struct sockaddr *addr);
+
+int grpc_parse_unix(grpc_uri *uri, struct sockaddr_storage *addr, size_t *len);
+
+char *grpc_unix_get_default_authority(grpc_resolver_factory *factory,
+                                      grpc_uri *uri);
+
+char *grpc_sockaddr_to_uri_unix_if_possible(const struct sockaddr *addr);
+
+#endif /* GRPC_CORE_IOMGR_UNIX_SOCKETS_POSIX_H */
