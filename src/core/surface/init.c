@@ -172,7 +172,7 @@ void grpc_init(void) {
     grpc_register_resolver_type(grpc_dns_resolver_factory_create());
     grpc_register_resolver_type(grpc_ipv4_resolver_factory_create());
     grpc_register_resolver_type(grpc_ipv6_resolver_factory_create());
-#ifdef GPR_POSIX_SOCKET
+#ifdef GPR_HAVE_UNIX_SOCKET
     grpc_register_resolver_type(grpc_unix_resolver_factory_create());
 #endif
     grpc_register_tracer("api", &grpc_api_trace);
