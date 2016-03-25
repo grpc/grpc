@@ -416,21 +416,26 @@ typedef struct {
   grpc_transport_stream_stats *collecting_stats;
   grpc_transport_stream_stats stats;
 
+  /** number of streams that are currently being read */
+  gpr_refcount active_streams;
+
   /** when the application requests writes be closed, the write_closed is
       'queued'; when the close is flow controlled into the send path, we are
       'sending' it; when the write has been performed it is 'sent' */
-  uint8_t write_closed;
+  bool write_closed;
   /** is this stream reading half-closed (boolean) */
-  uint8_t read_closed;
+  bool read_closed;
+  /** are all published incoming byte streams closed */
+  bool all_incoming_byte_streams_finished;
   /** is this stream in the stream map? (boolean) */
-  uint8_t in_stream_map;
+  bool in_stream_map;
   /** has this stream seen an error? if 1, then pending incoming frames
       can be thrown away */
-  uint8_t seen_error;
+  bool seen_error;
 
-  uint8_t published_initial_metadata;
-  uint8_t published_trailing_metadata;
-  uint8_t faked_trailing_metadata;
+  bool published_initial_metadata;
+  bool published_trailing_metadata;
+  bool faked_trailing_metadata;
 
   grpc_chttp2_incoming_metadata_buffer received_initial_metadata;
   grpc_chttp2_incoming_metadata_buffer received_trailing_metadata;

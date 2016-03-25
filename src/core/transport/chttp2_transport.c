@@ -478,6 +478,10 @@ static int init_stream(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
   memset(s, 0, sizeof(*s));
 
   s->refcount = refcount;
+  /* We reserve one 'active stream' that's dropped when the stream is
+     read-closed. The others are for incoming_byte_streams that are actively
+     reading */
+  gpr_ref_init(&s->global.active_streams, 1);
   GRPC_CHTTP2_STREAM_REF(&s->global, "chttp2");
 
   grpc_chttp2_incoming_metadata_buffer_init(&s->parsing.metadata_buffer[0]);
@@ -1169,7 +1173,7 @@ static void check_read_ops(grpc_exec_ctx *exec_ctx,
                   &stream_global->incoming_frames)) != NULL) {
         grpc_byte_stream_destroy(exec_ctx, bs);
       }
-      if (stream_global->incoming_frames.head == NULL) {
+      if (stream_global->all_incoming_byte_streams_finished) {
         grpc_chttp2_incoming_metadata_buffer_publish(
             &stream_global->received_trailing_metadata,
             stream_global->recv_trailing_metadata);
@@ -1178,6 +1182,15 @@ static void check_read_ops(grpc_exec_ctx *exec_ctx,
             &stream_global->recv_trailing_metadata_finished, 1);
       }
     }
+  }
+}
+
+static void decrement_active_streams_locked(
+    grpc_exec_ctx *exec_ctx, grpc_chttp2_transport_global *transport_global,
+    grpc_chttp2_stream_global *stream_global) {
+  if ((stream_global->all_incoming_byte_streams_finished =
+           gpr_unref(&stream_global->active_streams))) {
+    grpc_chttp2_list_add_check_read_ops(transport_global, stream_global);
   }
 }
 
@@ -1297,6 +1310,7 @@ void grpc_chttp2_mark_stream_closed(
     stream_global->read_closed = 1;
     stream_global->published_initial_metadata = 1;
     stream_global->published_trailing_metadata = 1;
+    decrement_active_streams_locked(exec_ctx, transport_global, stream_global);
   }
   if (close_writes && !stream_global->write_closed) {
     stream_global->write_closed = 1;
@@ -1730,8 +1744,14 @@ static int incoming_byte_stream_next(grpc_exec_ctx *exec_ctx,
   return 0;
 }
 
-static void incoming_byte_stream_unref(grpc_chttp2_incoming_byte_stream *bs) {
+static void incoming_byte_stream_unref_locked(grpc_exec_ctx *exec_ctx,
+                                              grpc_chttp2_transport *t,
+                                              grpc_chttp2_stream *s,
+                                              void *argp) {
+  grpc_chttp2_incoming_byte_stream *bs = argp;
   if (gpr_unref(&bs->refs)) {
+    decrement_active_streams_locked(exec_ctx, &bs->transport->global,
+                                    &bs->stream->global);
     gpr_slice_buffer_destroy(&bs->slices);
     gpr_free(bs);
   }
@@ -1739,7 +1759,10 @@ static void incoming_byte_stream_unref(grpc_chttp2_incoming_byte_stream *bs) {
 
 static void incoming_byte_stream_destroy(grpc_exec_ctx *exec_ctx,
                                          grpc_byte_stream *byte_stream) {
-  incoming_byte_stream_unref((grpc_chttp2_incoming_byte_stream *)byte_stream);
+  grpc_chttp2_incoming_byte_stream *bs =
+      (grpc_chttp2_incoming_byte_stream *)byte_stream;
+  grpc_chttp2_run_with_global_lock(exec_ctx, bs->transport, bs->stream,
+                                   incoming_byte_stream_unref_locked, bs, 0);
 }
 
 typedef struct {
@@ -1771,30 +1794,52 @@ void grpc_chttp2_incoming_byte_stream_push(grpc_exec_ctx *exec_ctx,
                                    sizeof(arg));
 }
 
-static void incoming_byte_stream_finished_locked(grpc_exec_ctx *exec_ctx,
-                                                 grpc_chttp2_transport *t,
-                                                 grpc_chttp2_stream *s,
-                                                 void *argp) {
+static void incoming_byte_stream_deactivate_locked(
+    grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t, grpc_chttp2_stream *s,
+    grpc_chttp2_incoming_byte_stream *bs) {
+  incoming_byte_stream_unref_locked(exec_ctx, t, s, bs);
+}
+
+static void incoming_byte_stream_finished_failed_locked(
+    grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t, grpc_chttp2_stream *s,
+    void *argp) {
   grpc_chttp2_incoming_byte_stream *bs = argp;
   grpc_exec_ctx_enqueue(exec_ctx, bs->on_next, false, NULL);
   bs->on_next = NULL;
   bs->failed = 1;
+  incoming_byte_stream_deactivate_locked(exec_ctx, t, s, bs);
+}
+
+static void incoming_byte_stream_finished_ok_locked(grpc_exec_ctx *exec_ctx,
+                                                    grpc_chttp2_transport *t,
+                                                    grpc_chttp2_stream *s,
+                                                    void *argp) {
+  grpc_chttp2_incoming_byte_stream *bs = argp;
+  incoming_byte_stream_deactivate_locked(exec_ctx, t, s, bs);
 }
 
 void grpc_chttp2_incoming_byte_stream_finished(
     grpc_exec_ctx *exec_ctx, grpc_chttp2_incoming_byte_stream *bs, int success,
     int from_parsing_thread) {
-  if (!success) {
-    if (from_parsing_thread) {
+  if (from_parsing_thread) {
+    if (success) {
       grpc_chttp2_run_with_global_lock(exec_ctx, bs->transport, bs->stream,
-                                       incoming_byte_stream_finished_locked, bs,
-                                       0);
+                                       incoming_byte_stream_finished_ok_locked,
+                                       bs, 0);
     } else {
-      incoming_byte_stream_finished_locked(exec_ctx, bs->transport, bs->stream,
-                                           bs);
+      incoming_byte_stream_finished_ok_locked(exec_ctx, bs->transport,
+                                              bs->stream, bs);
+    }
+  } else {
+    if (success) {
+      grpc_chttp2_run_with_global_lock(
+          exec_ctx, bs->transport, bs->stream,
+          incoming_byte_stream_finished_failed_locked, bs, 0);
+    } else {
+      incoming_byte_stream_finished_failed_locked(exec_ctx, bs->transport,
+                                                  bs->stream, bs);
     }
   }
-  incoming_byte_stream_unref(bs);
 }
 
 grpc_chttp2_incoming_byte_stream *grpc_chttp2_incoming_byte_stream_create(
@@ -1811,6 +1856,7 @@ grpc_chttp2_incoming_byte_stream *grpc_chttp2_incoming_byte_stream_create(
   incoming_byte_stream->next_message = NULL;
   incoming_byte_stream->transport = TRANSPORT_FROM_PARSING(transport_parsing);
   incoming_byte_stream->stream = STREAM_FROM_PARSING(stream_parsing);
+  gpr_ref(&incoming_byte_stream->stream->global.active_streams);
   gpr_slice_buffer_init(&incoming_byte_stream->slices);
   incoming_byte_stream->on_next = NULL;
   incoming_byte_stream->is_tail = 1;
