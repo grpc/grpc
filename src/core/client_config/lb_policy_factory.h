@@ -36,6 +36,10 @@
 
 #include "src/core/client_config/lb_policy.h"
 #include "src/core/client_config/subchannel.h"
+#include "src/core/client_config/subchannel_factory.h"
+
+#include "src/core/iomgr/exec_ctx.h"
+#include "src/core/iomgr/resolve_address.h"
 
 typedef struct grpc_lb_policy_factory grpc_lb_policy_factory;
 typedef struct grpc_lb_policy_factory_vtable grpc_lb_policy_factory_vtable;
@@ -47,8 +51,8 @@ struct grpc_lb_policy_factory {
 };
 
 typedef struct grpc_lb_policy_args {
-  grpc_subchannel **subchannels;
-  size_t num_subchannels;
+  grpc_resolved_addresses *addresses;
+  grpc_subchannel_factory *subchannel_factory;
 } grpc_lb_policy_args;
 
 struct grpc_lb_policy_factory_vtable {
@@ -56,7 +60,8 @@ struct grpc_lb_policy_factory_vtable {
   void (*unref)(grpc_lb_policy_factory *factory);
 
   /** Implementation of grpc_lb_policy_factory_create_lb_policy */
-  grpc_lb_policy *(*create_lb_policy)(grpc_lb_policy_factory *factory,
+  grpc_lb_policy *(*create_lb_policy)(grpc_exec_ctx *exec_ctx,
+                                      grpc_lb_policy_factory *factory,
                                       grpc_lb_policy_args *args);
 
   /** Name for the LB policy this factory implements */
@@ -68,6 +73,7 @@ void grpc_lb_policy_factory_unref(grpc_lb_policy_factory *factory);
 
 /** Create a lb_policy instance. */
 grpc_lb_policy *grpc_lb_policy_factory_create_lb_policy(
-    grpc_lb_policy_factory *factory, grpc_lb_policy_args *args);
+    grpc_exec_ctx *exec_ctx, grpc_lb_policy_factory *factory,
+    grpc_lb_policy_args *args);
 
 #endif /* GRPC_CORE_CLIENT_CONFIG_LB_POLICY_FACTORY_H */

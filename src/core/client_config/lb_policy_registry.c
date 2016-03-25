@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -79,10 +79,10 @@ static grpc_lb_policy_factory *lookup_factory(const char *name) {
   return NULL;
 }
 
-grpc_lb_policy *grpc_lb_policy_create(const char *name,
+grpc_lb_policy *grpc_lb_policy_create(grpc_exec_ctx *exec_ctx, const char *name,
                                       grpc_lb_policy_args *args) {
   grpc_lb_policy_factory *factory = lookup_factory(name);
   grpc_lb_policy *lb_policy =
-      grpc_lb_policy_factory_create_lb_policy(factory, args);
+      grpc_lb_policy_factory_create_lb_policy(exec_ctx, factory, args);
   return lb_policy;
 }
