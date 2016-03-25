@@ -67,12 +67,38 @@ namespace Math {
     }
 
     // server-side interface
+    [System.Obsolete("Service implementations should inherit from the generated abstract base class instead.")]
     public interface IMath
     {
       Task<global::Math.DivReply> Div(global::Math.DivArgs request, ServerCallContext context);
       Task DivMany(IAsyncStreamReader<global::Math.DivArgs> requestStream, IServerStreamWriter<global::Math.DivReply> responseStream, ServerCallContext context);
       Task Fib(global::Math.FibArgs request, IServerStreamWriter<global::Math.Num> responseStream, ServerCallContext context);
       Task<global::Math.Num> Sum(IAsyncStreamReader<global::Math.Num> requestStream, ServerCallContext context);
+    }
+
+    // server-side abstract class
+    public abstract class MathBase
+    {
+      public virtual Task<global::Math.DivReply> Div(global::Math.DivArgs request, ServerCallContext context)
+      {
+        throw new RpcException(new Status(StatusCode.Unimplemented, ""));
+      }
+
+      public virtual Task DivMany(IAsyncStreamReader<global::Math.DivArgs> requestStream, IServerStreamWriter<global::Math.DivReply> responseStream, ServerCallContext context)
+      {
+        throw new RpcException(new Status(StatusCode.Unimplemented, ""));
+      }
+
+      public virtual Task Fib(global::Math.FibArgs request, IServerStreamWriter<global::Math.Num> responseStream, ServerCallContext context)
+      {
+        throw new RpcException(new Status(StatusCode.Unimplemented, ""));
+      }
+
+      public virtual Task<global::Math.Num> Sum(IAsyncStreamReader<global::Math.Num> requestStream, ServerCallContext context)
+      {
+        throw new RpcException(new Status(StatusCode.Unimplemented, ""));
+      }
+
     }
 
     // client stub
@@ -135,6 +161,16 @@ namespace Math {
 
     // creates service definition that can be registered with a server
     public static ServerServiceDefinition BindService(IMath serviceImpl)
+    {
+      return ServerServiceDefinition.CreateBuilder(__ServiceName)
+          .AddMethod(__Method_Div, serviceImpl.Div)
+          .AddMethod(__Method_DivMany, serviceImpl.DivMany)
+          .AddMethod(__Method_Fib, serviceImpl.Fib)
+          .AddMethod(__Method_Sum, serviceImpl.Sum).Build();
+    }
+
+    // creates service definition that can be registered with a server
+    public static ServerServiceDefinition BindService(MathBase serviceImpl)
     {
       return ServerServiceDefinition.CreateBuilder(__ServiceName)
           .AddMethod(__Method_Div, serviceImpl.Div)

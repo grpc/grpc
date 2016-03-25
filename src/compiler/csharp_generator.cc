@@ -81,6 +81,10 @@ std::string GetServerInterfaceName(const ServiceDescriptor* service) {
   return "I" + service->name();
 }
 
+std::string GetServerClassName(const ServiceDescriptor* service) {
+  return service->name() + "Base";
+}
+
 std::string GetCSharpMethodType(MethodType method_type) {
   switch (method_type) {
     case METHODTYPE_NO_STREAMING:
@@ -290,6 +294,8 @@ void GenerateClientInterface(Printer* out, const ServiceDescriptor *service) {
 
 void GenerateServerInterface(Printer* out, const ServiceDescriptor *service) {
   out->Print("// server-side interface\n");
+  out->Print("[System.Obsolete(\"Service implementations should inherit"
+      " from the generated abstract base class instead.\")]\n");
   out->Print("public interface $name$\n", "name",
              GetServerInterfaceName(service));
   out->Print("{\n");
@@ -303,6 +309,33 @@ void GenerateServerInterface(Printer* out, const ServiceDescriptor *service) {
         GetMethodReturnTypeServer(method), "request",
         GetMethodRequestParamServer(method), "response_stream_maybe",
         GetMethodResponseStreamMaybe(method));
+  }
+  out->Outdent();
+  out->Print("}\n");
+  out->Print("\n");
+}
+
+void GenerateServerClass(Printer* out, const ServiceDescriptor *service) {
+  out->Print("// server-side abstract class\n");
+  out->Print("public abstract class $name$\n", "name",
+             GetServerClassName(service));
+  out->Print("{\n");
+  out->Indent();
+  for (int i = 0; i < service->method_count(); i++) {
+    const MethodDescriptor *method = service->method(i);
+    out->Print(
+        "public virtual $returntype$ $methodname$($request$$response_stream_maybe$, "
+        "ServerCallContext context)\n",
+        "methodname", method->name(), "returntype",
+        GetMethodReturnTypeServer(method), "request",
+        GetMethodRequestParamServer(method), "response_stream_maybe",
+        GetMethodResponseStreamMaybe(method));
+    out->Print("{\n");
+    out->Indent();
+    out->Print("throw new RpcException("
+               "new Status(StatusCode.Unimplemented, \"\"));\n");
+    out->Outdent();
+    out->Print("}\n\n");
   }
   out->Outdent();
   out->Print("}\n");
@@ -427,12 +460,14 @@ void GenerateClientStub(Printer* out, const ServiceDescriptor *service) {
   out->Print("\n");
 }
 
-void GenerateBindServiceMethod(Printer* out, const ServiceDescriptor *service) {
+void GenerateBindServiceMethod(Printer* out, const ServiceDescriptor *service,
+                               bool use_server_class) {
   out->Print(
       "// creates service definition that can be registered with a server\n");
   out->Print(
       "public static ServerServiceDefinition BindService($interface$ serviceImpl)\n",
-      "interface", GetServerInterfaceName(service));
+      "interface", use_server_class ? GetServerClassName(service) :
+          GetServerInterfaceName(service));
   out->Print("{\n");
   out->Indent();
 
@@ -489,8 +524,10 @@ void GenerateService(Printer* out, const ServiceDescriptor *service) {
   GenerateServiceDescriptorProperty(out, service);
   GenerateClientInterface(out, service);
   GenerateServerInterface(out, service);
+  GenerateServerClass(out, service);
   GenerateClientStub(out, service);
-  GenerateBindServiceMethod(out, service);
+  GenerateBindServiceMethod(out, service, false);
+  GenerateBindServiceMethod(out, service, true);
   GenerateNewStubMethods(out, service);
 
   out->Outdent();
