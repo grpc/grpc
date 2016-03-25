@@ -253,7 +253,6 @@ filegroups:
   - src/core/channel/channel_stack.h
   - src/core/channel/channel_stack_builder.h
   - src/core/channel/client_channel.h
-  - src/core/channel/client_uchannel.h
   - src/core/channel/compress_filter.h
   - src/core/channel/connected_channel.h
   - src/core/channel/context.h
@@ -281,9 +280,9 @@ filegroups:
   - src/core/compression/algorithm_metadata.h
   - src/core/compression/message_compress.h
   - src/core/debug/trace.h
-  - src/core/httpcli/format_request.h
-  - src/core/httpcli/httpcli.h
-  - src/core/httpcli/parser.h
+  - src/core/http/format_request.h
+  - src/core/http/httpcli.h
+  - src/core/http/parser.h
   - src/core/iomgr/closure.h
   - src/core/iomgr/endpoint.h
   - src/core/iomgr/endpoint_pair.h
@@ -315,6 +314,7 @@ filegroups:
   - src/core/iomgr/timer.h
   - src/core/iomgr/timer_heap.h
   - src/core/iomgr/udp_server.h
+  - src/core/iomgr/unix_sockets_posix.h
   - src/core/iomgr/wakeup_fd_pipe.h
   - src/core/iomgr/wakeup_fd_posix.h
   - src/core/iomgr/workqueue.h
@@ -375,7 +375,6 @@ filegroups:
   - src/core/channel/channel_stack.c
   - src/core/channel/channel_stack_builder.c
   - src/core/channel/client_channel.c
-  - src/core/channel/client_uchannel.c
   - src/core/channel/compress_filter.c
   - src/core/channel/connected_channel.c
   - src/core/channel/http_client_filter.c
@@ -403,9 +402,9 @@ filegroups:
   - src/core/compression/compression_algorithm.c
   - src/core/compression/message_compress.c
   - src/core/debug/trace.c
-  - src/core/httpcli/format_request.c
-  - src/core/httpcli/httpcli.c
-  - src/core/httpcli/parser.c
+  - src/core/http/format_request.c
+  - src/core/http/httpcli.c
+  - src/core/http/parser.c
   - src/core/iomgr/closure.c
   - src/core/iomgr/endpoint.c
   - src/core/iomgr/endpoint_pair_posix.c
@@ -440,6 +439,8 @@ filegroups:
   - src/core/iomgr/timer.c
   - src/core/iomgr/timer_heap.c
   - src/core/iomgr/udp_server.c
+  - src/core/iomgr/unix_sockets_posix.c
+  - src/core/iomgr/unix_sockets_posix_noop.c
   - src/core/iomgr/wakeup_fd_eventfd.c
   - src/core/iomgr/wakeup_fd_nospecial.c
   - src/core/iomgr/wakeup_fd_pipe.c
@@ -526,7 +527,7 @@ filegroups:
   - src/core/tsi/transport_security.h
   - src/core/tsi/transport_security_interface.h
   src:
-  - src/core/httpcli/httpcli_security_connector.c
+  - src/core/http/httpcli_security_connector.c
   - src/core/security/b64.c
   - src/core/security/client_auth_filter.c
   - src/core/security/credentials.c
@@ -762,7 +763,7 @@ libs:
   secure: check
   vs_project_guid: '{C187A093-A0FE-489D-A40A-6E33DE0F9FEB}'
 - name: grpc++_codegen_lib
-  build: protoc
+  build: all
   language: c++
   headers: []
   src: []
@@ -1562,21 +1563,21 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
-- name: httpcli_format_request_test
+- name: http_parser_test
   build: test
   language: c
   src:
-  - test/core/httpcli/format_request_test.c
+  - test/core/http/parser_test.c
   deps:
   - grpc_test_util
   - grpc
   - gpr_test_util
   - gpr
-- name: httpcli_parser_test
+- name: httpcli_format_request_test
   build: test
   language: c
   src:
-  - test/core/httpcli/parser_test.c
+  - test/core/http/format_request_test.c
   deps:
   - grpc_test_util
   - grpc
@@ -1587,7 +1588,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/httpcli/httpcli_test.c
+  - test/core/http/httpcli_test.c
   deps:
   - grpc_test_util
   - grpc
@@ -1602,7 +1603,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/httpcli/httpscli_test.c
+  - test/core/http/httpscli_test.c
   deps:
   - grpc_test_util
   - grpc
@@ -1716,6 +1717,7 @@ targets:
   - gpr_test_util
   - gpr
 - name: mlog_test
+  flaky: true
   build: test
   language: c
   src:
