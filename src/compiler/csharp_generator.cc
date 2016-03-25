@@ -250,6 +250,8 @@ void GenerateServiceDescriptorProperty(Printer* out, const ServiceDescriptor *se
 
 void GenerateClientInterface(Printer* out, const ServiceDescriptor *service) {
   out->Print("// client interface\n");
+  out->Print("[System.Obsolete(\"Client side interfaced will be removed "
+             "in the next release. Use client class directly.\")]\n");
   out->Print("public interface $name$\n", "name",
              GetClientInterfaceName(service));
   out->Print("{\n");
@@ -349,8 +351,9 @@ void GenerateServerClass(Printer* out, const ServiceDescriptor *service) {
 void GenerateClientStub(Printer* out, const ServiceDescriptor *service) {
   out->Print("// client stub\n");
   out->Print(
-      "public class $name$ : ClientBase<$name$>\n",
-      "name", GetClientClassName(service));
+      "public class $name$ : ClientBase<$name$>, $interface$\n",
+      "name", GetClientClassName(service),
+      "interface", GetClientInterfaceName(service));
   out->Print("{\n");
   out->Indent();
 
@@ -536,7 +539,6 @@ void GenerateService(Printer* out, const ServiceDescriptor *service) {
   }
   GenerateServiceDescriptorProperty(out, service);
   GenerateClientInterface(out, service);
-  //GenerateClientBaseClass(out, service);
   GenerateServerInterface(out, service);
   GenerateServerClass(out, service);
   GenerateClientStub(out, service);
