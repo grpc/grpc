@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/httpcli/httpcli.h"
+#include "src/core/http/httpcli.h"
 #include "src/core/iomgr/sockaddr.h"
 
 #include <string.h>
@@ -40,8 +40,8 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/httpcli/format_request.h"
-#include "src/core/httpcli/parser.h"
+#include "src/core/http/format_request.h"
+#include "src/core/http/parser.h"
 #include "src/core/iomgr/endpoint.h"
 #include "src/core/iomgr/iomgr_internal.h"
 #include "src/core/iomgr/resolve_address.h"
@@ -50,7 +50,7 @@
 
 typedef struct {
   gpr_slice request_text;
-  grpc_httpcli_parser parser;
+  grpc_http_parser parser;
   grpc_resolved_addresses *addresses;
   size_t next_address;
   grpc_endpoint *ep;
@@ -99,8 +99,9 @@ static void finish(grpc_exec_ctx *exec_ctx, internal_request *req,
                    int success) {
   grpc_pollset_set_del_pollset(exec_ctx, req->context->pollset_set,
                                req->pollset);
-  req->on_response(exec_ctx, req->user_data, success ? &req->parser.r : NULL);
-  grpc_httpcli_parser_destroy(&req->parser);
+  req->on_response(exec_ctx, req->user_data,
+                   success ? &req->parser.http.response : NULL);
+  grpc_http_parser_destroy(&req->parser);
   if (req->addresses != NULL) {
     grpc_resolved_addresses_destroy(req->addresses);
   }
@@ -129,7 +130,7 @@ static void on_read(grpc_exec_ctx *exec_ctx, void *user_data, bool success) {
   for (i = 0; i < req->incoming.count; i++) {
     if (GPR_SLICE_LENGTH(req->incoming.slices[i])) {
       req->have_read_byte = 1;
-      if (!grpc_httpcli_parser_parse(&req->parser, req->incoming.slices[i])) {
+      if (!grpc_http_parser_parse(&req->parser, req->incoming.slices[i])) {
         finish(exec_ctx, req, 0);
         return;
       }
@@ -141,7 +142,11 @@ static void on_read(grpc_exec_ctx *exec_ctx, void *user_data, bool success) {
   } else if (!req->have_read_byte) {
     next_address(exec_ctx, req);
   } else {
-    finish(exec_ctx, req, grpc_httpcli_parser_eof(&req->parser));
+    int parse_success = grpc_http_parser_eof(&req->parser);
+    if (parse_success && (req->parser.type != GRPC_HTTP_RESPONSE)) {
+      parse_success = 0;
+    }
+    finish(exec_ctx, req, parse_success);
   }
 }
 
@@ -223,7 +228,7 @@ static void internal_request_begin(
   internal_request *req = gpr_malloc(sizeof(internal_request));
   memset(req, 0, sizeof(*req));
   req->request_text = request_text;
-  grpc_httpcli_parser_init(&req->parser);
+  grpc_http_parser_init(&req->parser);
   req->on_response = on_response;
   req->user_data = user_data;
   req->deadline = deadline;
@@ -255,7 +260,7 @@ void grpc_httpcli_get(grpc_exec_ctx *exec_ctx, grpc_httpcli_context *context,
       g_get_override(exec_ctx, request, deadline, on_response, user_data)) {
     return;
   }
-  gpr_asprintf(&name, "HTTP:GET:%s:%s", request->host, request->path);
+  gpr_asprintf(&name, "HTTP:GET:%s:%s", request->host, request->http.path);
   internal_request_begin(exec_ctx, context, pollset, request, deadline,
                          on_response, user_data, name,
                          grpc_httpcli_format_get_request(request));
@@ -274,7 +279,7 @@ void grpc_httpcli_post(grpc_exec_ctx *exec_ctx, grpc_httpcli_context *context,
                       on_response, user_data)) {
     return;
   }
-  gpr_asprintf(&name, "HTTP:POST:%s:%s", request->host, request->path);
+  gpr_asprintf(&name, "HTTP:POST:%s:%s", request->host, request->http.path);
   internal_request_begin(
       exec_ctx, context, pollset, request, deadline, on_response, user_data,
       name, grpc_httpcli_format_post_request(request, body_bytes, body_size));

@@ -27,7 +27,8 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import cStringIO as StringIO
+from __future__ import absolute_import
+
 import collections
 import fcntl
 import multiprocessing
@@ -40,6 +41,9 @@ import threading
 import time
 import unittest
 import uuid
+
+import six
+from six import moves
 
 from tests import _loader
 from tests import _result
@@ -92,6 +96,8 @@ class CaptureFile(object):
     Arguments:
       value (str): What to write to the original file.
     """
+    if six.PY3 and not isinstance(value, six.binary_type):
+      value = bytes(value, 'ascii')
     if self._saved_fd is None:
       os.write(self._redirect_fd, value)
     else:
@@ -143,7 +149,7 @@ class Runner(object):
                        for case in filtered_cases]
     case_id_by_case = dict((augmented_case.case, augmented_case.id)
                            for augmented_case in augmented_cases)
-    result_out = StringIO.StringIO()
+    result_out = moves.cStringIO()
     result = _result.TerminalResult(
         result_out, id_map=lambda case: case_id_by_case[case])
     stdout_pipe = CaptureFile(sys.stdout.fileno())
@@ -168,9 +174,9 @@ class Runner(object):
         result.stopTestRun()
         stdout_pipe.write_bypass(result_out.getvalue())
         stdout_pipe.write_bypass(
-            '\ninterrupted stdout:\n{}\n'.format(stdout_pipe.output()))
+            '\ninterrupted stdout:\n{}\n'.format(stdout_pipe.output().decode()))
         stderr_pipe.write_bypass(
-            '\ninterrupted stderr:\n{}\n'.format(stderr_pipe.output()))
+            '\ninterrupted stderr:\n{}\n'.format(stderr_pipe.output().decode()))
         os._exit(1)
     signal.signal(signal.SIGINT, sigint_handler)
     signal.signal(signal.SIGSEGV, fault_handler)
@@ -213,7 +219,7 @@ class Runner(object):
     sys.stdout.write(result_out.getvalue())
     sys.stdout.flush()
     signal.signal(signal.SIGINT, signal.SIG_DFL)
-    with open('report.xml', 'w') as report_xml_file:
+    with open('report.xml', 'wb') as report_xml_file:
       _result.jenkins_junit_xml(result).write(report_xml_file)
     return result
 
