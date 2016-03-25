@@ -120,7 +120,12 @@ def get_c_tests(travis, test_lang) :
 
 def _check_compiler(compiler, supported_compilers):
   if compiler not in supported_compilers:
-    raise Exception('Compiler %s not supported.' % compiler)
+    raise Exception('Compiler %s not supported (on this platform).' % compiler)
+
+
+def _check_arch(arch, supported_archs):
+  if arch not in supported_archs:
+    raise Exception('Architecture %s not supported.' % arch)
 
 
 def _is_use_docker_child():
@@ -465,6 +470,8 @@ class CSharpLanguage(object):
     self.config = config
     self.args = args
     if self.platform == 'windows':
+      # Explicitly choosing between x86 and x64 arch doesn't work yet
+      _check_arch(self.args.arch, ['default'])
       self._make_options = [_windows_toolset_option(self.args.compiler),
                             _windows_arch_option(self.args.arch)]
     else:
