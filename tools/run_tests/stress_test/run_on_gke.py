@@ -93,7 +93,7 @@ class ServerTemplate:
 class DockerImage:
 
   def __init__(self, gcp_project_id, image_name, build_script_path,
-               dockerfile_dir):
+               dockerfile_dir, build_type):
     """Args:
 
       image_name: The docker image name
@@ -108,6 +108,7 @@ class DockerImage:
     self.gcp_project_id = gcp_project_id
     self.build_script_path = build_script_path
     self.dockerfile_dir = dockerfile_dir
+    self.build_type = build_type
     self.tag_name = self.make_tag_name(gcp_project_id, image_name)
 
   def make_tag_name(self, project_id, image_name):
@@ -118,6 +119,7 @@ class DockerImage:
     os.environ['INTEROP_IMAGE'] = self.image_name
     os.environ['INTEROP_IMAGE_REPOSITORY_TAG'] = self.tag_name
     os.environ['BASE_NAME'] = self.dockerfile_dir
+    os.environ['BUILD_TYPE'] = self.build_type
     if subprocess.call(args=[self.build_script_path]) != 0:
       print 'Error in building the Docker image'
       return False
@@ -334,12 +336,15 @@ class Config:
     """Parses the 'dockerImages' section of the config file and returns a
     Dictionary of 'DockerImage' objects keyed by docker image names"""
     docker_images_dict = {}
-    for image_name in config_dict['dockerImages'].keys():
-      build_script_path = config_dict['dockerImages'][image_name]['buildScript']
-      dockerfile_dir = config_dict['dockerImages'][image_name]['dockerFileDir']
+
+    docker_config_dict = config_dict['dockerImages']
+    for image_name in docker_config_dict.keys():
+      build_script_path = docker_config_dict[image_name]['buildScript']
+      dockerfile_dir = docker_config_dict[image_name]['dockerFileDir']
+      build_type = docker_config_dict[image_name]['buildType']
       docker_images_dict[image_name] = DockerImage(gcp_project_id, image_name,
                                                    build_script_path,
-                                                   dockerfile_dir)
+                                                   dockerfile_dir, build_type)
     return docker_images_dict
 
   def parse_client_templates(self, config_dict):

@@ -2,11 +2,13 @@
     "dockerImages": {
         "grpc_stress_cxx_opt" : {
             "buildScript": "tools/jenkins/build_interop_stress_image.sh",
-            "dockerFileDir": "grpc_interop_stress_cxx"
+            "dockerFileDir": "grpc_interop_stress_cxx",
+            "buildType": "opt"
         },
         "grpc_stress_cxx_tsan": {
             "buildScript": "tools/jenkins/build_interop_stress_image.sh",
-            "dockerFileDir": "grpc_interop_stress_cxx"
+            "dockerFileDir": "grpc_interop_stress_cxx",
+            "buildType": "tsan"
         }
     },
 
@@ -103,7 +105,7 @@
       "kubernetesProxyPort": 8001,
       "datasetIdNamePrefix": "stress_test_opt_tsan",
       "summaryTableId": "summary",
-      "qpsTableId": "qps"
+      "qpsTableId": "qps",
       "podWarmupSecs": 60
     }
 }
