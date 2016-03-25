@@ -668,6 +668,31 @@ gpr_slice grpc_get_default_ssl_roots_for_testing(void) {
   return compute_default_pem_root_certs_once();
 }
 
+static tsi_client_certificate_request_type
+get_tsi_client_certificate_request_type(
+    grpc_ssl_client_certificate_request_type grpc_request_type) {
+  switch (grpc_request_type) {
+    case GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE:
+      return TSI_DONT_REQUEST_CLIENT_CERTIFICATE;
+
+    case GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_BUT_DONT_VERIFY:
+      return TSI_REQUEST_CLIENT_CERTIFICATE_BUT_DONT_VERIFY;
+
+    case GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY:
+      return TSI_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY;
+
+    case GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_BUT_DONT_VERIFY:
+      return TSI_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_BUT_DONT_VERIFY;
+
+    case GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY:
+      return TSI_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY;
+
+    default:
+      // Is this a sane default
+      return TSI_DONT_REQUEST_CLIENT_CERTIFICATE;
+  }
+}
+
 size_t grpc_get_default_ssl_roots(const unsigned char **pem_root_certs) {
   /* TODO(jboeuf@google.com): Maybe revisit the approach which consists in
      loading all the roots once for the lifetime of the process. */
@@ -782,15 +807,16 @@ grpc_security_status grpc_ssl_server_security_connector_create(
   gpr_ref_init(&c->base.base.refcount, 1);
   c->base.base.url_scheme = GRPC_SSL_URL_SCHEME;
   c->base.base.vtable = &ssl_server_vtable;
-  result = tsi_create_ssl_server_handshaker_factory(
+  result = tsi_create_ssl_server_handshaker_factory_ex(
       (const unsigned char **)config->pem_private_keys,
       config->pem_private_keys_sizes,
       (const unsigned char **)config->pem_cert_chains,
       config->pem_cert_chains_sizes, config->num_key_cert_pairs,
       config->pem_root_certs, config->pem_root_certs_size,
-      config->force_client_auth, ssl_cipher_suites(), alpn_protocol_strings,
-      alpn_protocol_string_lengths, (uint16_t)num_alpn_protocols,
-      &c->handshaker_factory);
+      get_tsi_client_certificate_request_type(
+          config->client_certificate_request),
+      ssl_cipher_suites(), alpn_protocol_strings, alpn_protocol_string_lengths,
+      (uint16_t)num_alpn_protocols, &c->handshaker_factory);
   if (result != TSI_OK) {
     gpr_log(GPR_ERROR, "Handshaker factory creation failed with %s.",
             tsi_result_to_string(result));

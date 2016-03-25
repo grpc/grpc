@@ -525,6 +525,7 @@ filegroups:
 - name: grpc_secure
   public_headers:
   - include/grpc/grpc_security.h
+  - include/grpc/grpc_security_constants.h
   headers:
   - src/core/lib/security/auth_filters.h
   - src/core/lib/security/b64.h
@@ -755,6 +756,7 @@ libs:
   - test/core/end2end/data/ssl_test_data.h
   - test/core/security/oauth2_utils.h
   src:
+  - test/core/end2end/data/client_certs.c
   - test/core/end2end/data/server1_cert.c
   - test/core/end2end/data/server1_key.c
   - test/core/end2end/data/test_root_cert.c
