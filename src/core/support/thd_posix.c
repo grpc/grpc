@@ -37,13 +37,13 @@
 
 #ifdef GPR_POSIX_SYNC
 
-#include <pthread.h>
-#include <stdlib.h>
-#include <string.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/thd.h>
 #include <grpc/support/useful.h>
+#include <pthread.h>
+#include <stdlib.h>
+#include <string.h>
 
 struct thd_arg {
   void (*body)(void *arg); /* body of a thread */

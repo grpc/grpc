@@ -37,8 +37,8 @@
 
 #include "src/core/iomgr/socket_utils_posix.h"
 
-#include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/types.h>
 
 int grpc_accept4(int sockfd, struct sockaddr *addr, socklen_t *addrlen,
                  int nonblock, int cloexec) {

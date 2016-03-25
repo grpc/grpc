@@ -35,9 +35,9 @@
 
 #include <stdio.h>
 
-#include "src/core/support/string.h"
 #include <grpc/byte_buffer.h>
 #include <grpc/support/string_util.h>
+#include "src/core/support/string.h"
 
 static void addhdr(gpr_strvec *buf, grpc_event *ev) {
   char *tmp;

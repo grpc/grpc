@@ -35,12 +35,12 @@
 
 #include <stdio.h>
 
-#include "src/core/support/string.h"
-#include "src/core/transport/chttp2/hpack_parser.h"
-#include "src/core/transport/metadata.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
+#include "src/core/support/string.h"
+#include "src/core/transport/chttp2/hpack_parser.h"
+#include "src/core/transport/metadata.h"
 #include "test/core/util/parse_hexstring.h"
 #include "test/core/util/slice_splitter.h"
 #include "test/core/util/test_config.h"

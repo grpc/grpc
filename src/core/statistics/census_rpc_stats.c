@@ -33,16 +33,16 @@
 
 #include <string.h>
 
-#include "src/core/statistics/census_interface.h"
-#include "src/core/statistics/census_rpc_stats.h"
-#include "src/core/statistics/hash_table.h"
-#include "src/core/statistics/census_tracing.h"
-#include "src/core/statistics/window_stats.h"
-#include "src/core/support/murmur_hash.h"
-#include "src/core/support/string.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
+#include "src/core/statistics/census_interface.h"
+#include "src/core/statistics/census_rpc_stats.h"
+#include "src/core/statistics/census_tracing.h"
+#include "src/core/statistics/hash_table.h"
+#include "src/core/statistics/window_stats.h"
+#include "src/core/support/murmur_hash.h"
+#include "src/core/support/string.h"
 
 #define NUM_INTERVALS 3
 #define MINUTE_INTERVAL 0
@@ -85,8 +85,8 @@ static void delete_key(void *key) { gpr_free(key); }
 
 static const census_ht_option ht_opt = {
     CENSUS_HT_POINTER /* key type */, 1999 /* n_of_buckets */,
-    simple_hash /* hash function */, cmp_str_keys /* key comparator */,
-    delete_stats /* data deleter */, delete_key /* key deleter */
+    simple_hash /* hash function */,  cmp_str_keys /* key comparator */,
+    delete_stats /* data deleter */,  delete_key /* key deleter */
 };
 
 static void init_rpc_stats(void *stats) {

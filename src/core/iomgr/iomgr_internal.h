@@ -36,8 +36,8 @@
 
 #include <stdbool.h>
 
-#include "src/core/iomgr/iomgr.h"
 #include <grpc/support/sync.h>
+#include "src/core/iomgr/iomgr.h"
 
 typedef struct grpc_iomgr_object {
   char *name;

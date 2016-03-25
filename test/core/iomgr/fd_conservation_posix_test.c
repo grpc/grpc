@@ -35,9 +35,9 @@
 
 #include <grpc/support/log.h>
 
-#include "test/core/util/test_config.h"
 #include "src/core/iomgr/endpoint_pair.h"
 #include "src/core/iomgr/iomgr.h"
+#include "test/core/util/test_config.h"
 
 int main(int argc, char **argv) {
   int i;

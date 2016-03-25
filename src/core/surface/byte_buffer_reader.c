@@ -31,15 +31,15 @@
  *
  */
 
-#include <string.h>
 #include <grpc/byte_buffer_reader.h>
+#include <string.h>
 
+#include <grpc/byte_buffer.h>
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/slice_buffer.h>
-#include <grpc/byte_buffer.h>
 
 #include "src/core/compression/message_compress.h"
 

@@ -31,8 +31,8 @@
  *
  */
 
-#include <gflags/gflags.h>
 #include "test/cpp/util/benchmark_config.h"
+#include <gflags/gflags.h>
 
 DEFINE_bool(enable_log_reporter, true,
             "Enable reporting of benchmark results through GprLog");
