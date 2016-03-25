@@ -33,9 +33,9 @@
 
 #include <grpc/support/alloc.h>
 
-#include <stdlib.h>
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
+#include <stdlib.h>
 #include "src/core/profiling/timers.h"
 
 static gpr_allocation_functions g_alloc_functions = {malloc, realloc, free};

@@ -34,8 +34,8 @@
 #ifndef GRPC_CORE_TRANSPORT_CHTTP2_TIMEOUT_ENCODING_H
 #define GRPC_CORE_TRANSPORT_CHTTP2_TIMEOUT_ENCODING_H
 
-#include "src/core/support/string.h"
 #include <grpc/support/time.h>
+#include "src/core/support/string.h"
 
 #define GRPC_CHTTP2_TIMEOUT_ENCODE_MIN_BUFSIZE (GPR_LTOA_MIN_BUFSIZE + 1)
 

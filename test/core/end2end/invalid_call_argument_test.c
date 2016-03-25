@@ -131,15 +131,16 @@ static void cleanup_test() {
     grpc_server_shutdown_and_notify(g_state.server, g_state.cq, tag(1000));
     GPR_ASSERT(grpc_completion_queue_pluck(g_state.cq, tag(1000),
                                            GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5),
-                                           NULL).type == GRPC_OP_COMPLETE);
+                                           NULL)
+                   .type == GRPC_OP_COMPLETE);
     grpc_server_destroy(g_state.server);
     grpc_call_details_destroy(&g_state.call_details);
     grpc_metadata_array_destroy(&g_state.server_initial_metadata_recv);
   }
   grpc_completion_queue_shutdown(g_state.cq);
   while (grpc_completion_queue_next(g_state.cq,
-                                    gpr_inf_future(GPR_CLOCK_REALTIME),
-                                    NULL).type != GRPC_QUEUE_SHUTDOWN)
+                                    gpr_inf_future(GPR_CLOCK_REALTIME), NULL)
+             .type != GRPC_QUEUE_SHUTDOWN)
     ;
   grpc_completion_queue_destroy(g_state.cq);
 }
