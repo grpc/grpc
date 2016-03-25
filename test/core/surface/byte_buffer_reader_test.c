@@ -31,10 +31,10 @@
  *
  */
 
-#include <grpc/byte_buffer_reader.h>
 #include <grpc/byte_buffer.h>
-#include <grpc/support/slice.h>
+#include <grpc/byte_buffer_reader.h>
 #include <grpc/grpc.h>
+#include <grpc/support/slice.h>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>

@@ -73,8 +73,8 @@ GPRAPI void gpr_slice_buffer_add(gpr_slice_buffer *sb, gpr_slice slice);
    slice at the returned index in sb->slices)
    The implementation MAY decide to concatenate data at the end of a small
    slice added in this fashion. */
-GPRAPI size_t
-gpr_slice_buffer_add_indexed(gpr_slice_buffer *sb, gpr_slice slice);
+GPRAPI size_t gpr_slice_buffer_add_indexed(gpr_slice_buffer *sb,
+                                           gpr_slice slice);
 GPRAPI void gpr_slice_buffer_addn(gpr_slice_buffer *sb, gpr_slice *slices,
                                   size_t n);
 /* add a very small (less than 8 bytes) amount of data to the end of a slice

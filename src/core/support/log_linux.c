@@ -47,12 +47,12 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
-#include <stdio.h>
-#include <stdarg.h>
-#include <string.h>
-#include <time.h>
 #include <linux/unistd.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <string.h>
 #include <sys/syscall.h>
+#include <time.h>
 #include <unistd.h>
 
 static long gettid(void) { return syscall(__NR_gettid); }

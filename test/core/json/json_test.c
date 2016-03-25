@@ -34,9 +34,9 @@
 #include <string.h>
 
 #include <grpc/support/alloc.h>
-#include <grpc/support/useful.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
+#include <grpc/support/useful.h>
 #include "src/core/json/json.h"
 #include "src/core/support/string.h"
 
@@ -66,7 +66,7 @@ static testing_pair testing_pairs[] = {
     {"\"\\ud834\\udd1e\"", "\"\\ud834\\udd1e\""},
     /* Testing nested empty containers. */
     {
-     " [ [ ] , { } , [ ] ] ", "[[],{},[]]",
+        " [ [ ] , { } , [ ] ] ", "[[],{},[]]",
     },
     /* Testing escapes and control chars in key strings. */
     {" { \"\\u007f\x7f\\n\\r\\\"\\f\\b\\\\a , b\": 1, \"\": 0 } ",

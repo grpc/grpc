@@ -31,8 +31,8 @@
  *
  */
 
-#include <string.h>
 #include <stdio.h>
+#include <string.h>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/host_port.h>

@@ -36,9 +36,9 @@
 
 #include <memory>
 
-#include <grpc/compression.h>
-#include <grpc++/server_context.h>
 #include <grpc++/security/server_credentials.h>
+#include <grpc++/server_context.h>
+#include <grpc/compression.h>
 
 namespace grpc {
 namespace testing {

@@ -35,8 +35,8 @@
 #include <stdlib.h>
 
 #include <grpc/support/alloc.h>
-#include <grpc/support/useful.h>
 #include <grpc/support/log.h>
+#include <grpc/support/useful.h>
 #include "test/core/util/test_config.h"
 
 #include "src/core/json/json_reader.h"

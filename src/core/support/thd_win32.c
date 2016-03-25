@@ -37,10 +37,10 @@
 
 #ifdef GPR_WIN32
 
-#include <string.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/thd.h>
+#include <string.h>
 
 #if defined(_MSC_VER)
 #define thread_local __declspec(thread)

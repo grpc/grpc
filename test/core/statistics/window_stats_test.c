@@ -32,9 +32,9 @@
  */
 
 #include "src/core/statistics/window_stats.h"
-#include <stdlib.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
+#include <stdlib.h>
 #include "test/core/util/test_config.h"
 
 typedef struct test_stat {
