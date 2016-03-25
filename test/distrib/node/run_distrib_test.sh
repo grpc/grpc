@@ -30,11 +30,11 @@
 
 NODE_VERSION=$1
 source ~/.nvm/nvm.sh
-set -ex
 
 cd $(dirname $0)
 
 nvm install $NODE_VERSION
+set -ex
 
 npm install -g node-static
 
