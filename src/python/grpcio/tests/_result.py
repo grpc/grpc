@@ -204,7 +204,7 @@ class AugmentedResult(unittest.TestResult):
     """
     case_id = self.id_map(test)
     self.cases[case_id] = self.cases[case_id].updated(
-        stdout=stdout, stderr=stderr)
+        stdout=stdout.decode(), stderr=stderr.decode())
 
   def augmented_results(self, filter):
     """Convenience method to retrieve filtered case results.
