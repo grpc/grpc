@@ -146,8 +146,8 @@ static void on_read(grpc_exec_ctx *exec_ctx, void *tcpp, bool success) {
   grpc_winsocket_callback_info *info = &socket->read_info;
 
   if (success) {
-    if (socket->read_info.wsa_error != 0 && !tcp->shutting_down) {
-      if (socket->read_info.wsa_error != WSAECONNRESET) {
+    if (info->wsa_error != 0 && !tcp->shutting_down) {
+      if (info->wsa_error != WSAECONNRESET) {
         char *utf8_message = gpr_format_message(info->wsa_error);
         gpr_log(GPR_ERROR, "ReadFile overlapped error: %s", utf8_message);
         gpr_free(utf8_message);
@@ -306,7 +306,7 @@ static void win_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
       ok = true;
       GPR_ASSERT(bytes_sent == tcp->write_slices->length);
     } else {
-      if (socket->read_info.wsa_error != WSAECONNRESET) {
+      if (info->wsa_error != WSAECONNRESET) {
         char *utf8_message = gpr_format_message(info->wsa_error);
         gpr_log(GPR_ERROR, "WSASend error: %s", utf8_message);
         gpr_free(utf8_message);
