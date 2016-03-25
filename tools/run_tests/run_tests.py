@@ -464,7 +464,17 @@ class CSharpLanguage(object):
   def configure(self, config, args):
     self.config = config
     self.args = args
-    _check_compiler(self.args.compiler, ['default'])
+    if self.platform == 'windows':
+      self._make_options = [_windows_toolset_option(self.args.compiler),
+                            _windows_arch_option(self.args.arch)]
+    else:
+      _check_compiler(self.args.compiler, ['default'])
+      if self.platform == 'mac':
+        # On Mac, official distribution of mono is 32bit.
+        self._make_options = ['EMBED_OPENSSL=true', 'EMBED_ZLIB=true',
+                              'CFLAGS=-arch i386', 'LDFLAGS=-arch i386']
+      else:
+        self._make_options = ['EMBED_OPENSSL=true', 'EMBED_ZLIB=true']
 
   def test_specs(self):
     with open('src/csharp/tests.json') as f:
@@ -511,24 +521,16 @@ class CSharpLanguage(object):
       return [['tools/run_tests/pre_build_csharp.sh']]
 
   def make_targets(self):
-    # For Windows, this target doesn't really build anything,
-    # everything is built by buildall script later.
-    if self.platform == 'windows':
-      return []
-    else:
-      return ['grpc_csharp_ext']
+    return ['grpc_csharp_ext']
 
   def make_options(self):
-    if self.platform == 'mac':
-      # On Mac, official distribution of mono is 32bit.
-      return ['EMBED_OPENSSL=true', 'EMBED_ZLIB=true',
-              'CFLAGS=-arch i386', 'LDFLAGS=-arch i386']
-    else:
-      return ['EMBED_OPENSSL=true', 'EMBED_ZLIB=true']
+    return self._make_options;
 
   def build_steps(self):
     if self.platform == 'windows':
-      return [['src\\csharp\\buildall.bat']]
+      return [[_windows_build_bat(self.args.compiler),
+               'src/csharp/Grpc.sln',
+               '/p:Configuration=%s' % _MSBUILD_CONFIG[self.config.build_config]]]
     else:
       return [['tools/run_tests/build_csharp.sh']]
 
