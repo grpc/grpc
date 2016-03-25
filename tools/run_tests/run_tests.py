@@ -512,7 +512,7 @@ class CSharpLanguage(object):
 
   def make_targets(self):
     # For Windows, this target doesn't really build anything,
-    # everything is build by buildall script later.
+    # everything is built by buildall script later.
     if self.platform == 'windows':
       return []
     else:
@@ -521,9 +521,10 @@ class CSharpLanguage(object):
   def make_options(self):
     if self.platform == 'mac':
       # On Mac, official distribution of mono is 32bit.
-      return ['CFLAGS=-arch i386', 'LDFLAGS=-arch i386']
+      return ['EMBED_OPENSSL=true', 'EMBED_ZLIB=true',
+              'CFLAGS=-arch i386', 'LDFLAGS=-arch i386']
     else:
-      return []
+      return ['EMBED_OPENSSL=true', 'EMBED_ZLIB=true']
 
   def build_steps(self):
     if self.platform == 'windows':
