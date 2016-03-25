@@ -82,6 +82,7 @@ vs_project_guid: '{...}', # Visual Studio's unique guid for that project
 filegroups:               # list of filegroups to merge to that project
                           # note that this will be expanded automatically
 deps:                     # list of libraries this target depends on
+merge_deps:               # list of libraries dependencies to merge into
 deps_linkage: "..."       # "static"  or "dynamic". Used by the Makefile only to
                           # determine the way dependencies are linkned. Defaults
                           # to "dynamic".

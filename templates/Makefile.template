@@ -1445,6 +1445,11 @@
 
   % for lib in libs:
   % if 'Makefile' in lib.get('build_system', ['Makefile']):
+  ${makelibsrcs(lib)}
+  % endif
+  % endfor
+  % for lib in libs:
+  % if 'Makefile' in lib.get('build_system', ['Makefile']):
   ${makelib(lib)}
   % endif
   % endfor
@@ -1456,7 +1461,7 @@
   ${maketarget(tgt)}
   % endfor
 
-  <%def name="makelib(lib)">
+  <%def name="makelibsrcs(lib)">
   LIB${lib.name.upper()}_SRC = \\
 
   % for src in lib.src:
@@ -1478,14 +1483,19 @@
   % endfor
   % endif
 
-  LIB${lib.name.upper()}_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIB${lib.name.upper()}_SRC))))
+  LIB${lib.name.upper()}_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIB${lib.name.upper()}_SRC)))) \
+  % for dep in lib.get('merge_deps', []):
+   $(LIB${dep.upper()}_OBJS) \
+  % endfor
 
   % if lib.get('defaults', None):
   %  for name, value in defaults.get(lib.defaults).iteritems():
   $(LIB${lib.name.upper()}_OBJS): ${name} += ${value}
   %  endfor
   % endif
+  </%def>
 
+  <%def name="makelib(lib)">
   ## If the library requires OpenSSL, let's add some restrictions.
   % if lib.get('secure', 'check') == True or lib.get('secure', 'check') == 'check':
   ifeq ($(NO_SECURE),true)
@@ -1541,19 +1551,20 @@
   % endif
    $(LIB${lib.name.upper()}_OBJS) \
   % if lib.get('baselib', False):
-   $(LIBGPR_OBJS) \
    $(ZLIB_MERGE_OBJS) \
   % if lib.get('secure', 'check') == True:
    $(OPENSSL_MERGE_OBJS) \
   % endif
   % endif
+  % for dep in lib.get('merge_deps', []):
+   $(LIB${dep.upper()}_OBJS) \
+  % endfor
 
   	$(E) "[AR]      Creating $@"
   	$(Q) mkdir -p `dirname $@`
   	$(Q) rm -f $(LIBDIR)/$(CONFIG)/lib${lib.name}.a
   	$(Q) $(AR) $(LIBDIR)/$(CONFIG)/lib${lib.name}.a $(LIB${lib.name.upper()}_OBJS) \
   % if lib.get('baselib', False):
-   $(LIBGPR_OBJS) \
    $(ZLIB_MERGE_OBJS) \
   % if lib.get('secure', 'check') == True:
    $(OPENSSL_MERGE_OBJS) \
@@ -1590,7 +1601,7 @@
         lib_deps = lib_deps + ' ' + lib_archive
         mingw_lib_deps = mingw_lib_deps + ' ' + lib_archive
     else:
-      for dep in lib.get('deps', []):
+      for dep in list(set(lib.get('deps', [])) - set(lib.get('merge_deps', []))):
         libs = libs + ' -l' + dep
         lib_deps = lib_deps + ' $(LIBDIR)/$(CONFIG)/lib' + dep + '.$(SHARED_EXT)'
         mingw_libs = mingw_libs + ' -l' + dep + '-imp'

@@ -855,7 +855,6 @@ cc_library(
   name = "grpc++",
   srcs = [
     "src/cpp/client/secure_credentials.h",
-    "src/cpp/common/core_codegen.h",
     "src/cpp/common/secure_auth_context.h",
     "src/cpp/server/secure_server_credentials.h",
     "src/cpp/client/create_channel_internal.h",
@@ -893,7 +892,6 @@ cc_library(
     "src/cpp/util/status.cc",
     "src/cpp/util/string_ref.cc",
     "src/cpp/util/time.cc",
-    "src/cpp/codegen/codegen_init.cc",
   ],
   hdrs = [
     "include/grpc++/alarm.h",
@@ -980,6 +978,7 @@ cc_library(
     "//external:libssl",
     "//external:protobuf_clib",
     ":grpc",
+    ":grpc++_codegen_lib",
   ],
 )
 
@@ -1085,7 +1084,6 @@ cc_library(
     "src/cpp/util/status.cc",
     "src/cpp/util/string_ref.cc",
     "src/cpp/util/time.cc",
-    "src/cpp/codegen/codegen_init.cc",
   ],
   hdrs = [
     "include/grpc++/alarm.h",
@@ -1170,8 +1168,8 @@ cc_library(
   ],
   deps = [
     "//external:protobuf_clib",
-    ":gpr",
-    ":grpc_unsecure",
+    ":grpc",
+    ":grpc++_codegen_lib",
   ],
 )
 

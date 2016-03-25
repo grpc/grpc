@@ -76,9 +76,6 @@
     <ClCompile Include="$(SolutionDir)\..\src\cpp\util\time.cc">
       <Filter>src\cpp\util</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\cpp\codegen\codegen_init.cc">
-      <Filter>src\cpp\codegen</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\alarm.h">
@@ -358,9 +355,6 @@
     </Filter>
     <Filter Include="src\cpp\client">
       <UniqueIdentifier>{ff72923a-6499-8d2a-e0fb-6d574b85d77e}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="src\cpp\codegen">
-      <UniqueIdentifier>{18e9c249-37f0-7f2c-f026-502d48ed8c92}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\cpp\common">
       <UniqueIdentifier>{ed8e4daa-825f-fbe5-2a45-846ad9165d3d}</UniqueIdentifier>

@@ -205,6 +205,9 @@ filegroups:
   - src/cpp/util/string_ref.cc
   - src/cpp/util/time.cc
 - name: grpc++_codegen
+  src:
+  - src/cpp/codegen/codegen_init.cc
+- name: grpc++_codegen_headers
   public_headers:
   - include/grpc++/impl/codegen/async_stream.h
   - include/grpc++/impl/codegen/async_unary_call.h
@@ -237,8 +240,6 @@ filegroups:
   - include/grpc++/impl/codegen/sync_no_cxx11.h
   - include/grpc++/impl/codegen/sync_stream.h
   - include/grpc++/impl/codegen/time.h
-  src:
-  - src/cpp/codegen/codegen_init.cc
 - name: grpc_base
   public_headers:
   - include/grpc/byte_buffer.h
@@ -614,6 +615,8 @@ libs:
   - grpc_codegen
   - census
   - nanopb
+  merge_deps:
+  - gpr
   secure: true
   vs_packages:
   - grpc.dependencies.openssl
@@ -694,6 +697,8 @@ libs:
   - grpc_codegen
   - census
   - nanopb
+  merge_deps:
+  - gpr
   secure: false
   vs_project_guid: '{46CEDFFF-9692-456A-AA24-38B5D6BCF4C5}'
 - name: grpc_zookeeper
@@ -743,7 +748,6 @@ libs:
   language: c++
   headers:
   - src/cpp/client/secure_credentials.h
-  - src/cpp/common/core_codegen.h
   - src/cpp/common/secure_auth_context.h
   - src/cpp/server/secure_server_credentials.h
   src:
@@ -755,11 +759,13 @@ libs:
   - src/cpp/server/secure_server_credentials.cc
   deps:
   - grpc
-  baselib: true
+  - grpc++_codegen_lib
   dll: true
   filegroups:
   - grpc++_base
-  - grpc++_codegen
+  - grpc++_codegen_headers
+  merge_deps:
+  - grpc++_codegen_lib
   secure: check
   vs_project_guid: '{C187A093-A0FE-489D-A40A-6E33DE0F9FEB}'
 - name: grpc++_codegen_lib
@@ -771,6 +777,7 @@ libs:
   - gpr_codegen
   - grpc_codegen
   - grpc++_codegen
+  - grpc++_codegen_headers
   secure: false
   vs_project_guid: '{AAC6AF12-94C8-4A3C-A1BF-DAA4738F4500}'
 - name: grpc++_test_config
@@ -811,13 +818,14 @@ libs:
   src:
   - src/cpp/common/insecure_create_auth_context.cc
   deps:
-  - gpr
-  - grpc_unsecure
-  baselib: true
+  - grpc
+  - grpc++_codegen_lib
   dll: true
   filegroups:
   - grpc++_base
-  - grpc++_codegen
+  - grpc++_codegen_headers
+  merge_deps:
+  - grpc++_codegen_lib
   secure: false
   vs_project_guid: '{6EE56155-DF7C-4F6E-BFC4-F6F776BEB211}'
 - name: grpc_plugin_support
