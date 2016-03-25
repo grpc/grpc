@@ -87,7 +87,7 @@ class ServerTemplate:
     self.server_image_path = server_image_path
     self.wrapper_script_path = wrapper_script_path
     self.server_port = server_port
-    self.sever_args_dict = server_args_dict
+    self.server_args_dict = server_args_dict
 
 
 class DockerImage:
@@ -109,17 +109,19 @@ class DockerImage:
     self.build_script_path = build_script_path
     self.dockerfile_dir = dockerfile_dir
     self.build_type = build_type
-    self.tag_name = self.make_tag_name(gcp_project_id, image_name)
+    self.tag_name = self._make_tag_name(gcp_project_id, image_name)
 
-  def make_tag_name(self, project_id, image_name):
+  def _make_tag_name(self, project_id, image_name):
     return 'gcr.io/%s/%s' % (project_id, image_name)
 
   def build_image(self):
-    print 'Building docker image: %s' % self.image_name
+    print 'Building docker image: %s (tag: %s)' % (self.image_name,
+                                                   self.tag_name)
     os.environ['INTEROP_IMAGE'] = self.image_name
     os.environ['INTEROP_IMAGE_REPOSITORY_TAG'] = self.tag_name
     os.environ['BASE_NAME'] = self.dockerfile_dir
     os.environ['BUILD_TYPE'] = self.build_type
+    print 'DEBUG: path: ', self.build_script_path
     if subprocess.call(args=[self.build_script_path]) != 0:
       print 'Error in building the Docker image'
       return False
@@ -127,7 +129,7 @@ class DockerImage:
 
   def push_to_gke_registry(self):
     cmd = ['gcloud', 'docker', 'push', self.tag_name]
-    print 'Pushing the image %s to the GKE registry..' % self.tag_name
+    print 'Pushing %s to the GKE registry..' % self.tag_name
     if subprocess.call(args=cmd) != 0:
       print 'Error in pushing the image %s to the GKE registry' % self.tag_name
       return False
@@ -143,7 +145,7 @@ class ServerPodSpec:
     self.num_instances = num_instances
 
   def pod_names(self):
-    """ Return a list of names of server pods to create """
+    """ Return a list of names of server pods to create. """
     return ['%s-%d' % (self.name, i) for i in range(1, self.num_instances + 1)]
 
   def server_addresses(self):
@@ -168,9 +170,11 @@ class ClientPodSpec:
     """ Return a list of names of client pods to create """
     return ['%s-%d' % (self.name, i) for i in range(1, self.num_instances + 1)]
 
+  # The client args in the template do not have server addresses. This function
+  # adds the server addresses and returns the updated client args
   def get_client_args_dict(self):
     args_dict = self.template.client_args_dict.copy()
-    args_dict['server_addresses'] = server_addresses
+    args_dict['server_addresses'] = self.server_addresses
     return args_dict
 
 
@@ -183,7 +187,7 @@ class Gke:
       cmd = ['kubectl', 'proxy', '--port=%d' % port]
       self.p = subprocess.Popen(args=cmd)
       time.sleep(2)
-      print 'Started kubernetes proxy on port: %d' % port
+      print '\nStarted kubernetes proxy on port: %d' % port
 
     def __del__(self):
       if self.p is not None:
@@ -197,6 +201,9 @@ class Gke:
     self.dataset_id = dataset_id
     self.summary_table_id = summary_table_id
     self.qps_table_id = qps_table_id
+
+    # The environment variables we would like to pass to every pod (both client
+    # and server) launched in GKE
     self.gke_env = {
         'RUN_ID': self.run_id,
         'GCP_PROJECT_ID': self.project_id,
@@ -207,7 +214,7 @@ class Gke:
 
     self.kubernetes_port = kubernetes_port
     # Start kubernetes proxy
-    self.kubernetes_proxy = KubernetesProxy(kubernetes_port)
+    self.kubernetes_proxy = Gke.KubernetesProxy(kubernetes_port)
 
   def _args_dict_to_str(self, args_dict):
     return ' '.join('--%s=%s' % (k, args_dict[k]) for k in args_dict.keys())
@@ -222,8 +229,8 @@ class Gke:
     # The parameters to the wrapper script (defined in
     # server_pod_spec.template.wrapper_script_path) are are injected into the
     # container via environment variables
-    server_env = self.gke_env().copy()
-    serv_env.update({
+    server_env = self.gke_env.copy()
+    server_env.update({
         'STRESS_TEST_IMAGE_TYPE': 'SERVER',
         'STRESS_TEST_IMAGE': server_pod_spec.template.server_image_path,
         'STRESS_TEST_ARGS_STR': self._args_dict_to_str(
@@ -232,6 +239,7 @@ class Gke:
 
     for pod_name in server_pod_spec.pod_names():
       server_env['POD_NAME'] = pod_name
+      print 'Creating server: %s' % pod_name
       is_success = kubernetes_api.create_pod_and_service(
           'localhost',
           self.kubernetes_port,
@@ -242,11 +250,14 @@ class Gke:
           [container_cmd],
           [],  # Args list is empty since we are passing all args via env variables
           server_env,
-          True  # Headless = True for server to that GKE creates a DNS record for 'pod_name'
+          True  # Headless = True for server to that GKE creates a DNS record for pod_name
       )
       if not is_success:
         print 'Error in launching server: %s' % pod_name
         break
+
+    if is_success:
+      print 'Successfully created server(s)'
 
     return is_success
 
@@ -270,11 +281,12 @@ class Gke:
             client_pod_spec.template.metrics_client_image_path,
         'METRICS_CLIENT_ARGS_STR': self._args_dict_to_str(
             client_pod_spec.template.metrics_args_dict),
-        'POLL_INTERVAL_SECS': client_pod_spec.template.poll_interval_secs
+        'POLL_INTERVAL_SECS': str(client_pod_spec.template.poll_interval_secs)
     })
 
     for pod_name in client_pod_spec.pod_names():
       client_env['POD_NAME'] = pod_name
+      print 'Creating client: %s' % pod_name
       is_success = kubernetes_api.create_pod_and_service(
           'localhost',
           self.kubernetes_port,
@@ -292,35 +304,57 @@ class Gke:
         print 'Error in launching client %s' % pod_name
         break
 
-    return True
+    if is_success:
+      print 'Successfully created all client(s)'
 
-  def delete_pods(pod_name_list):
+    return is_success
+
+  def _delete_pods(self, pod_name_list):
+    is_success = True
     for pod_name in pod_name_list:
+      print 'Deleting %s' % pod_name
       is_success = kubernetes_api.delete_pod_and_service(
           'localhost',
           self.kubernetes_port,
           'default',  # default namespace
           pod_name)
+
       if not is_success:
-        return False
+        print 'Error in deleting pod %s' % pod_name
+        break
+
+    if is_success:
+      print 'Successfully deleted all pods'
+
+    return is_success
+
+  def delete_servers(self, server_pod_spec):
+    return self._delete_pods(server_pod_spec.pod_names())
+
+  def delete_clients(self, client_pod_spec):
+    return self._delete_pods(client_pod_spec.pod_names())
 
 
 class Config:
 
   def __init__(self, config_filename, gcp_project_id):
-    config_dict = self.load_config(config_filename)
-    self.global_settings = self.parse_global_settings(config_dict, gcp_project_id)
-    self.docker_images_dict = self.parse_docker_images(
+    print 'Loading configuration...'
+    config_dict = self._load_config(config_filename)
+
+    self.global_settings = self._parse_global_settings(config_dict,
+                                                      gcp_project_id)
+    self.docker_images_dict = self._parse_docker_images(
         config_dict, self.global_settings.gcp_project_id)
-    self.client_templates_dict = self.parse_client_templates(config_dict)
-    self.server_templates_dict = self.parse_server_templates(config_dict)
-    self.server_pod_specs_dict = self.parse_server_pod_specs(
+    self.client_templates_dict = self._parse_client_templates(config_dict)
+    self.server_templates_dict = self._parse_server_templates(config_dict)
+    self.server_pod_specs_dict = self._parse_server_pod_specs(
         config_dict, self.docker_images_dict, self.server_templates_dict)
-    self.client_pod_specs_dict = self.parse_client_pod_specs(
+    self.client_pod_specs_dict = self._parse_client_pod_specs(
         config_dict, self.docker_images_dict, self.client_templates_dict,
         self.server_pod_specs_dict)
+    print 'Loaded Configuaration.'
 
-  def parse_global_settings(self, config_dict, gcp_project_id):
+  def _parse_global_settings(self, config_dict, gcp_project_id):
     global_settings_dict = config_dict['globalSettings']
     return GlobalSettings(gcp_project_id,
                           global_settings_dict['buildDockerImages'],
@@ -332,7 +366,7 @@ class Config:
                           global_settings_dict['qpsTableId'],
                           global_settings_dict['podWarmupSecs'])
 
-  def parse_docker_images(self, config_dict, gcp_project_id):
+  def _parse_docker_images(self, config_dict, gcp_project_id):
     """Parses the 'dockerImages' section of the config file and returns a
     Dictionary of 'DockerImage' objects keyed by docker image names"""
     docker_images_dict = {}
@@ -347,7 +381,7 @@ class Config:
                                                    dockerfile_dir, build_type)
     return docker_images_dict
 
-  def parse_client_templates(self, config_dict):
+  def _parse_client_templates(self, config_dict):
     """Parses the 'clientTemplates' section of the config file and returns a
     Dictionary of 'ClientTemplate' objects keyed by client template names.
 
@@ -382,7 +416,7 @@ class Config:
 
     return client_templates_dict
 
-  def parse_server_templates(self, config_dict):
+  def _parse_server_templates(self, config_dict):
     """Parses the 'serverTemplates' section of the config file and returns a
     Dictionary of 'serverTemplate' objects keyed by server template names.
 
@@ -417,7 +451,7 @@ class Config:
 
     return server_templates_dict
 
-  def parse_server_pod_specs(self, config_dict, docker_images_dict,
+  def _parse_server_pod_specs(self, config_dict, docker_images_dict,
                              server_templates_dict):
     """Parses the 'serverPodSpecs' sub-section (under 'testMatrix' section) of
     the config file and returns a Dictionary of 'ServerPodSpec' objects keyed
@@ -439,7 +473,7 @@ class Config:
 
     return server_pod_specs_dict
 
-  def parse_client_pod_specs(self, config_dict, docker_images_dict,
+  def _parse_client_pod_specs(self, config_dict, docker_images_dict,
                              client_templates_dict, server_pod_specs_dict):
     """Parses the 'clientPodSpecs' sub-section (under 'testMatrix' section) of
     the config file and returns a Dictionary of 'ClientPodSpec' objects keyed
@@ -464,11 +498,11 @@ class Config:
 
     return client_pod_specs_dict
 
-  def load_config(self, config_filename):
+  def _load_config(self, config_filename):
     """Opens the config file and converts the Json text to Dictionary"""
     if not os.path.isabs(config_filename):
-      config_filename = os.path.join(
-          os.path.dirname(sys.argv[0]), config_filename)
+      raise Exception('Config objects expects an absolute file path. '
+                      'config file name passed: %s' % config_filename)
     with open(config_filename) as config_file:
       return json.load(config_file)
 
@@ -487,7 +521,8 @@ def run_tests(config):
   run_id = datetime.datetime.now().strftime('%Y_%m_%d_%H_%M_%S')
   dataset_id = '%s_%s' % (config.global_settings.dataset_id_prefix, run_id)
 
-  bq_helper = BigQueryHelper(run_id, '', '', args.project_id, dataset_id,
+  bq_helper = BigQueryHelper(run_id, '', '',
+                             config.global_settings.gcp_project_id, dataset_id,
                              config.global_settings.summary_table_id,
                              config.global_settings.qps_table_id)
   bq_helper.initialize()
@@ -500,7 +535,7 @@ def run_tests(config):
   is_success = True
 
   try:
-    # Launch all servers first
+    print 'Launching servers..'
     for name, server_pod_spec in config.server_pod_specs_dict.iteritems():
       if not gke.launch_servers(server_pod_spec):
         is_success = False  # is_success is checked in the 'finally' block
@@ -526,7 +561,7 @@ def run_tests(config):
 
     while True:
       if datetime.datetime.now() > end_time:
-        print 'Test was run for %d seconds' % tconfig.global_settings.test_duration_secs
+        print 'Test was run for %d seconds' % config.global_settings.test_duration_secs
         break
 
       # Check if either stress server or clients have failed (btw, the bq_helper
@@ -535,12 +570,9 @@ def run_tests(config):
       if bq_helper.check_if_any_tests_failed():
         is_success = False
         print 'Some tests failed.'
-        # Note: Doing a break instead of a return False here because we still
-        # want bq_helper to print qps and summary tables
-        break
+        break  # Don't 'return' here. We still want to call bq_helper to print qps/summary tables
 
-      # Things seem to be running fine. Wait until next poll time to check the
-      # status
+      # Tests running fine. Wait until next poll time to check the status
       print 'Sleeping for %d seconds..' % config.global_settings.test_poll_interval_secs
       time.sleep(config.global_settings.test_poll_interval_secs)
 
@@ -549,14 +581,13 @@ def run_tests(config):
     bq_helper.print_summary_records()
 
   finally:
-    # If is_success is False at this point, it means that the stress tests
-    # failed during pods creation or while running the tests.
-    # In this case we do should not delete the pods (especially if the failure
-    # happened while running the tests since the pods contain all the failure
-    # information like logs, crash dumps etc that is needed for debugging)
+    # If there was a test failure, we should not delete the pods since they
+    # would contain useful debug information (logs, core dumps etc)
     if is_success:
-      gke.delete_pods(config.server_pod_specs_dict.keys())
-      gke.delete_pods(config.client_templates_dict.keys())
+      for name, server_pod_spec in config.server_pod_specs_dict.iteritems():
+        gke.delete_servers(server_pod_spec)
+      for name, client_pod_spec in config.client_pod_specs_dict.iteritems():
+        gke.delete_clients(client_pod_spec)
 
   return is_success
 
@@ -574,5 +605,21 @@ argp.add_argument('--config_file',
 
 if __name__ == '__main__':
   args = argp.parse_args()
-  config = Config(args.config_file, args.gcp_project_id)
+
+  config_filename = args.config_file
+
+  # Convert config_filename to absolute path
+  if not os.path.isabs(config_filename):
+    config_filename = os.path.abspath(os.path.join(
+        os.path.dirname(sys.argv[0]), config_filename))
+
+  config = Config(config_filename, args.gcp_project_id)
+
+  # Change current working directory to grpc root
+  # (This is important because all relative file paths in the config file are
+  # supposed to interpreted as relative to the GRPC root)
+  grpc_root = os.path.abspath(os.path.join(
+      os.path.dirname(sys.argv[0]), '../../..'))
+  os.chdir(grpc_root)
+
   run_tests(config)

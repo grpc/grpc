@@ -98,9 +98,9 @@
     },
 
     "globalSettings": {
-      "buildDockerImages": true,
-      "pollIntervalSecs": 60,
-      "testDurationSecs": 120,
+      "buildDockerImages": false,
+      "pollIntervalSecs": 10,
+      "testDurationSecs": 70,
       "kubernetesProxyPort": 8001,
       "datasetIdNamePrefix": "stress_test_opt_tsan",
       "summaryTableId": "summary",
