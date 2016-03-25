@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 using Grpc.Core;
 
 namespace Grpc.Testing {
-  public static class BenchmarkService
+  public static class BenchmarkServiceGrpc
   {
     static readonly string __ServiceName = "grpc.testing.BenchmarkService";
 
@@ -47,10 +47,26 @@ namespace Grpc.Testing {
     }
 
     // server-side interface
+    [System.Obsolete("Service implementations should inherit from the generated abstract base class BenchmarkService instead.")]
     public interface IBenchmarkService
     {
       Task<global::Grpc.Testing.SimpleResponse> UnaryCall(global::Grpc.Testing.SimpleRequest request, ServerCallContext context);
       Task StreamingCall(IAsyncStreamReader<global::Grpc.Testing.SimpleRequest> requestStream, IServerStreamWriter<global::Grpc.Testing.SimpleResponse> responseStream, ServerCallContext context);
+    }
+
+    // server-side abstract class
+    public abstract class BenchmarkService
+    {
+      public virtual Task<global::Grpc.Testing.SimpleResponse> UnaryCall(global::Grpc.Testing.SimpleRequest request, ServerCallContext context)
+      {
+        throw new RpcException(new Status(StatusCode.Unimplemented, ""));
+      }
+
+      public virtual Task StreamingCall(IAsyncStreamReader<global::Grpc.Testing.SimpleRequest> requestStream, IServerStreamWriter<global::Grpc.Testing.SimpleResponse> responseStream, ServerCallContext context)
+      {
+        throw new RpcException(new Status(StatusCode.Unimplemented, ""));
+      }
+
     }
 
     // client stub
@@ -99,6 +115,14 @@ namespace Grpc.Testing {
           .AddMethod(__Method_StreamingCall, serviceImpl.StreamingCall).Build();
     }
 
+    // creates service definition that can be registered with a server
+    public static ServerServiceDefinition BindService(BenchmarkService serviceImpl)
+    {
+      return ServerServiceDefinition.CreateBuilder(__ServiceName)
+          .AddMethod(__Method_UnaryCall, serviceImpl.UnaryCall)
+          .AddMethod(__Method_StreamingCall, serviceImpl.StreamingCall).Build();
+    }
+
     // creates a new client
     public static BenchmarkServiceClient NewClient(Channel channel)
     {
@@ -106,7 +130,7 @@ namespace Grpc.Testing {
     }
 
   }
-  public static class WorkerService
+  public static class WorkerServiceGrpc
   {
     static readonly string __ServiceName = "grpc.testing.WorkerService";
 
@@ -170,12 +194,38 @@ namespace Grpc.Testing {
     }
 
     // server-side interface
+    [System.Obsolete("Service implementations should inherit from the generated abstract base class WorkerService instead.")]
     public interface IWorkerService
     {
       Task RunServer(IAsyncStreamReader<global::Grpc.Testing.ServerArgs> requestStream, IServerStreamWriter<global::Grpc.Testing.ServerStatus> responseStream, ServerCallContext context);
       Task RunClient(IAsyncStreamReader<global::Grpc.Testing.ClientArgs> requestStream, IServerStreamWriter<global::Grpc.Testing.ClientStatus> responseStream, ServerCallContext context);
       Task<global::Grpc.Testing.CoreResponse> CoreCount(global::Grpc.Testing.CoreRequest request, ServerCallContext context);
       Task<global::Grpc.Testing.Void> QuitWorker(global::Grpc.Testing.Void request, ServerCallContext context);
+    }
+
+    // server-side abstract class
+    public abstract class WorkerService
+    {
+      public virtual Task RunServer(IAsyncStreamReader<global::Grpc.Testing.ServerArgs> requestStream, IServerStreamWriter<global::Grpc.Testing.ServerStatus> responseStream, ServerCallContext context)
+      {
+        throw new RpcException(new Status(StatusCode.Unimplemented, ""));
+      }
+
+      public virtual Task RunClient(IAsyncStreamReader<global::Grpc.Testing.ClientArgs> requestStream, IServerStreamWriter<global::Grpc.Testing.ClientStatus> responseStream, ServerCallContext context)
+      {
+        throw new RpcException(new Status(StatusCode.Unimplemented, ""));
+      }
+
+      public virtual Task<global::Grpc.Testing.CoreResponse> CoreCount(global::Grpc.Testing.CoreRequest request, ServerCallContext context)
+      {
+        throw new RpcException(new Status(StatusCode.Unimplemented, ""));
+      }
+
+      public virtual Task<global::Grpc.Testing.Void> QuitWorker(global::Grpc.Testing.Void request, ServerCallContext context)
+      {
+        throw new RpcException(new Status(StatusCode.Unimplemented, ""));
+      }
+
     }
 
     // client stub
@@ -248,6 +298,16 @@ namespace Grpc.Testing {
 
     // creates service definition that can be registered with a server
     public static ServerServiceDefinition BindService(IWorkerService serviceImpl)
+    {
+      return ServerServiceDefinition.CreateBuilder(__ServiceName)
+          .AddMethod(__Method_RunServer, serviceImpl.RunServer)
+          .AddMethod(__Method_RunClient, serviceImpl.RunClient)
+          .AddMethod(__Method_CoreCount, serviceImpl.CoreCount)
+          .AddMethod(__Method_QuitWorker, serviceImpl.QuitWorker).Build();
+    }
+
+    // creates service definition that can be registered with a server
+    public static ServerServiceDefinition BindService(WorkerService serviceImpl)
     {
       return ServerServiceDefinition.CreateBuilder(__ServiceName)
           .AddMethod(__Method_RunServer, serviceImpl.RunServer)

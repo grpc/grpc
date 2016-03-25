@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 using Grpc.Core;
 
 namespace Grpc.Health.V1 {
-  public static class Health
+  public static class HealthGrpc
   {
     static readonly string __ServiceName = "grpc.health.v1.Health";
 
@@ -38,9 +38,20 @@ namespace Grpc.Health.V1 {
     }
 
     // server-side interface
+    [System.Obsolete("Service implementations should inherit from the generated abstract base class Health instead.")]
     public interface IHealth
     {
       Task<global::Grpc.Health.V1.HealthCheckResponse> Check(global::Grpc.Health.V1.HealthCheckRequest request, ServerCallContext context);
+    }
+
+    // server-side abstract class
+    public abstract class Health
+    {
+      public virtual Task<global::Grpc.Health.V1.HealthCheckResponse> Check(global::Grpc.Health.V1.HealthCheckRequest request, ServerCallContext context)
+      {
+        throw new RpcException(new Status(StatusCode.Unimplemented, ""));
+      }
+
     }
 
     // client stub
@@ -73,6 +84,13 @@ namespace Grpc.Health.V1 {
 
     // creates service definition that can be registered with a server
     public static ServerServiceDefinition BindService(IHealth serviceImpl)
+    {
+      return ServerServiceDefinition.CreateBuilder(__ServiceName)
+          .AddMethod(__Method_Check, serviceImpl.Check).Build();
+    }
+
+    // creates service definition that can be registered with a server
+    public static ServerServiceDefinition BindService(Health serviceImpl)
     {
       return ServerServiceDefinition.CreateBuilder(__ServiceName)
           .AddMethod(__Method_Check, serviceImpl.Check).Build();

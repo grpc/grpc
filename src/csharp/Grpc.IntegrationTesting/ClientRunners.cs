@@ -88,7 +88,7 @@ namespace Grpc.IntegrationTesting
         readonly int payloadSize;
         readonly Histogram histogram;
 
-        readonly BenchmarkService.IBenchmarkServiceClient client;
+        readonly BenchmarkServiceGrpc.IBenchmarkServiceClient client;
         readonly Task runnerTask;
         readonly CancellationTokenSource stoppedCts;
         readonly WallClockStopwatch wallClockStopwatch = new WallClockStopwatch();
@@ -100,7 +100,7 @@ namespace Grpc.IntegrationTesting
             this.histogram = new Histogram(histogramParams.Resolution, histogramParams.MaxPossible);
 
             this.stoppedCts = new CancellationTokenSource();
-            this.client = BenchmarkService.NewClient(channel);
+            this.client = BenchmarkServiceGrpc.NewClient(channel);
             this.runnerTask = Task.Factory.StartNew(Run, TaskCreationOptions.LongRunning);
         }
 

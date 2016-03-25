@@ -161,7 +161,7 @@ namespace Grpc.IntegrationTesting
 
         private async Task RunTestCaseAsync(Channel channel, ClientOptions options)
         {
-            var client = new TestService.TestServiceClient(channel);
+            var client = new TestServiceGrpc.TestServiceClient(channel);
             switch (options.TestCase)
             {
                 case "empty_unary":
@@ -210,14 +210,14 @@ namespace Grpc.IntegrationTesting
                     await RunStatusCodeAndMessageAsync(client);
                     break;
                 case "unimplemented_method":
-                    RunUnimplementedMethod(new UnimplementedService.UnimplementedServiceClient(channel));
+                    RunUnimplementedMethod(new UnimplementedServiceGrpc.UnimplementedServiceClient(channel));
                     break;
                 default:
                     throw new ArgumentException("Unknown test case " + options.TestCase);
             }
         }
 
-        public static void RunEmptyUnary(TestService.ITestServiceClient client)
+        public static void RunEmptyUnary(TestServiceGrpc.ITestServiceClient client)
         {
             Console.WriteLine("running empty_unary");
             var response = client.EmptyCall(new Empty());
@@ -225,7 +225,7 @@ namespace Grpc.IntegrationTesting
             Console.WriteLine("Passed!");
         }
 
-        public static void RunLargeUnary(TestService.ITestServiceClient client)
+        public static void RunLargeUnary(TestServiceGrpc.ITestServiceClient client)
         {
             Console.WriteLine("running large_unary");
             var request = new SimpleRequest
@@ -241,7 +241,7 @@ namespace Grpc.IntegrationTesting
             Console.WriteLine("Passed!");
         }
 
-        public static async Task RunClientStreamingAsync(TestService.ITestServiceClient client)
+        public static async Task RunClientStreamingAsync(TestServiceGrpc.ITestServiceClient client)
         {
             Console.WriteLine("running client_streaming");
 
@@ -257,7 +257,7 @@ namespace Grpc.IntegrationTesting
             Console.WriteLine("Passed!");
         }
 
-        public static async Task RunServerStreamingAsync(TestService.ITestServiceClient client)
+        public static async Task RunServerStreamingAsync(TestServiceGrpc.ITestServiceClient client)
         {
             Console.WriteLine("running server_streaming");
 
@@ -281,7 +281,7 @@ namespace Grpc.IntegrationTesting
             Console.WriteLine("Passed!");
         }
 
-        public static async Task RunPingPongAsync(TestService.ITestServiceClient client)
+        public static async Task RunPingPongAsync(TestServiceGrpc.ITestServiceClient client)
         {
             Console.WriteLine("running ping_pong");
 
@@ -338,7 +338,7 @@ namespace Grpc.IntegrationTesting
             Console.WriteLine("Passed!");
         }
 
-        public static async Task RunEmptyStreamAsync(TestService.ITestServiceClient client)
+        public static async Task RunEmptyStreamAsync(TestServiceGrpc.ITestServiceClient client)
         {
             Console.WriteLine("running empty_stream");
             using (var call = client.FullDuplexCall())
@@ -351,7 +351,7 @@ namespace Grpc.IntegrationTesting
             Console.WriteLine("Passed!");
         }
 
-        public static void RunComputeEngineCreds(TestService.TestServiceClient client, string defaultServiceAccount, string oauthScope)
+        public static void RunComputeEngineCreds(TestServiceGrpc.TestServiceClient client, string defaultServiceAccount, string oauthScope)
         {
             Console.WriteLine("running compute_engine_creds");
 
@@ -375,7 +375,7 @@ namespace Grpc.IntegrationTesting
             Console.WriteLine("Passed!");
         }
 
-        public static void RunJwtTokenCreds(TestService.TestServiceClient client)
+        public static void RunJwtTokenCreds(TestServiceGrpc.TestServiceClient client)
         {
             Console.WriteLine("running jwt_token_creds");
            
@@ -396,7 +396,7 @@ namespace Grpc.IntegrationTesting
             Console.WriteLine("Passed!");
         }
 
-        public static async Task RunOAuth2AuthTokenAsync(TestService.TestServiceClient client, string oauthScope)
+        public static async Task RunOAuth2AuthTokenAsync(TestServiceGrpc.TestServiceClient client, string oauthScope)
         {
             Console.WriteLine("running oauth2_auth_token");
             ITokenAccess credential = (await GoogleCredential.GetApplicationDefaultAsync()).CreateScoped(new[] { oauthScope });
@@ -417,7 +417,7 @@ namespace Grpc.IntegrationTesting
             Console.WriteLine("Passed!");
         }
 
-        public static async Task RunPerRpcCredsAsync(TestService.TestServiceClient client, string oauthScope)
+        public static async Task RunPerRpcCredsAsync(TestServiceGrpc.TestServiceClient client, string oauthScope)
         {
             Console.WriteLine("running per_rpc_creds");
             ITokenAccess googleCredential = await GoogleCredential.GetApplicationDefaultAsync();
@@ -434,7 +434,7 @@ namespace Grpc.IntegrationTesting
             Console.WriteLine("Passed!");
         }
 
-        public static async Task RunCancelAfterBeginAsync(TestService.ITestServiceClient client)
+        public static async Task RunCancelAfterBeginAsync(TestServiceGrpc.ITestServiceClient client)
         {
             Console.WriteLine("running cancel_after_begin");
 
@@ -451,7 +451,7 @@ namespace Grpc.IntegrationTesting
             Console.WriteLine("Passed!");
         }
 
-        public static async Task RunCancelAfterFirstResponseAsync(TestService.ITestServiceClient client)
+        public static async Task RunCancelAfterFirstResponseAsync(TestServiceGrpc.ITestServiceClient client)
         {
             Console.WriteLine("running cancel_after_first_response");
 
@@ -477,7 +477,7 @@ namespace Grpc.IntegrationTesting
             Console.WriteLine("Passed!");
         }
 
-        public static async Task RunTimeoutOnSleepingServerAsync(TestService.ITestServiceClient client)
+        public static async Task RunTimeoutOnSleepingServerAsync(TestServiceGrpc.ITestServiceClient client)
         {
             Console.WriteLine("running timeout_on_sleeping_server");
 
@@ -499,7 +499,7 @@ namespace Grpc.IntegrationTesting
             Console.WriteLine("Passed!");
         }
 
-        public static async Task RunCustomMetadataAsync(TestService.ITestServiceClient client)
+        public static async Task RunCustomMetadataAsync(TestServiceGrpc.ITestServiceClient client)
         {
             Console.WriteLine("running custom_metadata");
             {
@@ -546,7 +546,7 @@ namespace Grpc.IntegrationTesting
             Console.WriteLine("Passed!");
         }
 
-        public static async Task RunStatusCodeAndMessageAsync(TestService.ITestServiceClient client)
+        public static async Task RunStatusCodeAndMessageAsync(TestServiceGrpc.ITestServiceClient client)
         {
             Console.WriteLine("running status_code_and_message");
             var echoStatus = new EchoStatus
@@ -580,7 +580,7 @@ namespace Grpc.IntegrationTesting
             Console.WriteLine("Passed!");
         }
 
-        public static void RunUnimplementedMethod(UnimplementedService.IUnimplementedServiceClient client)
+        public static void RunUnimplementedMethod(UnimplementedServiceGrpc.IUnimplementedServiceClient client)
         {
             Console.WriteLine("running unimplemented_method");
             var e = Assert.Throws<RpcException>(() => client.UnimplementedCall(new Empty()));

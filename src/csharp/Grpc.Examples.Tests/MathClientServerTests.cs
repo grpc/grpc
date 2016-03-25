@@ -50,19 +50,19 @@ namespace Math.Tests
         const string Host = "localhost";
         Server server;
         Channel channel;
-        Math.MathClient client;
+        MathGrpc.MathClient client;
 
         [TestFixtureSetUp]
         public void Init()
         {
             server = new Server
             {
-                Services = { Math.BindService(new MathServiceImpl()) },
+                Services = { MathGrpc.BindService(new MathServiceImpl()) },
                 Ports = { { Host, ServerPort.PickUnused, ServerCredentials.Insecure } }
             };
             server.Start();
             channel = new Channel(Host, server.Ports.Single().BoundPort, ChannelCredentials.Insecure);
-            client = Math.NewClient(channel);
+            client = MathGrpc.NewClient(channel);
         }
 
         [TestFixtureTearDown]
