@@ -15,8 +15,8 @@
    <date>2016-03-01</date>
    <time>16:06:07</time>
    <version>
-    <release>0.14.0</release>
-    <api>0.14.0</api>
+    <release>${settings.php_version.php()}</release>
+    <api>${settings.php_version.php()}</api>
    </version>
    <stability>
     <release>beta</release>
@@ -157,8 +157,8 @@
     </release>
     <release>
      <version>
-      <release>0.14.0</release>
-      <api>0.14.0</api>
+      <release>${settings.php_version.php()}</release>
+      <api>${settings.php_version.php()}</api>
      </version>
      <stability>
       <release>beta</release>
