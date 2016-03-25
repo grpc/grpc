@@ -594,6 +594,9 @@ int grpc_chttp2_list_pop_waiting_for_concurrency(
 void grpc_chttp2_list_add_check_read_ops(
     grpc_chttp2_transport_global *transport_global,
     grpc_chttp2_stream_global *stream_global);
+bool grpc_chttp2_list_remove_check_read_ops(
+    grpc_chttp2_transport_global *transport_global,
+    grpc_chttp2_stream_global *stream_global);
 int grpc_chttp2_list_pop_check_read_ops(
     grpc_chttp2_transport_global *transport_global,
     grpc_chttp2_stream_global **stream_global);

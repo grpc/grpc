@@ -140,7 +140,10 @@ static void incoming_byte_stream_update_flow_control(
     grpc_chttp2_transport_global *transport_global,
     grpc_chttp2_stream_global *stream_global, size_t max_size_hint,
     size_t have_already);
-
+static void incoming_byte_stream_destroy_locked(grpc_exec_ctx *exec_ctx,
+                                                grpc_chttp2_transport *t,
+                                                grpc_chttp2_stream *s,
+                                                void *byte_stream);
 static void fail_pending_writes(grpc_exec_ctx *exec_ctx,
                                 grpc_chttp2_stream_global *stream_global);
 
@@ -534,12 +537,15 @@ static void destroy_stream_locked(grpc_exec_ctx *exec_ctx,
                                            s->global.id) == NULL);
   }
 
+  while (
+      (bs = grpc_chttp2_incoming_frame_queue_pop(&s->global.incoming_frames))) {
+    incoming_byte_stream_destroy_locked(exec_ctx, NULL, NULL, bs);
+  }
+
   grpc_chttp2_list_remove_unannounced_incoming_window_available(&t->global,
                                                                 &s->global);
   grpc_chttp2_list_remove_stalled_by_transport(&t->global, &s->global);
-
-  /* TODO(ctiller): the remainder of this function could be done without the
-                    global lock */
+  grpc_chttp2_list_remove_check_read_ops(&t->global, &s->global);
 
   for (int i = 0; i < STREAM_LIST_COUNT; i++) {
     if (s->included[i]) {
@@ -547,11 +553,6 @@ static void destroy_stream_locked(grpc_exec_ctx *exec_ctx,
               t->global.is_client ? "client" : "server", s->global.id, i);
       abort();
     }
-  }
-
-  while (
-      (bs = grpc_chttp2_incoming_frame_queue_pop(&s->global.incoming_frames))) {
-    grpc_byte_stream_destroy(exec_ctx, bs);
   }
 
   GPR_ASSERT(s->global.send_initial_metadata_finished == NULL);
@@ -1150,7 +1151,7 @@ static void check_read_ops(grpc_exec_ctx *exec_ctx,
       while (stream_global->seen_error &&
              (bs = grpc_chttp2_incoming_frame_queue_pop(
                   &stream_global->incoming_frames)) != NULL) {
-        grpc_byte_stream_destroy(exec_ctx, bs);
+        incoming_byte_stream_destroy_locked(exec_ctx, NULL, NULL, bs);
       }
       if (stream_global->incoming_frames.head != NULL) {
         *stream_global->recv_message = grpc_chttp2_incoming_frame_queue_pop(
@@ -1171,7 +1172,7 @@ static void check_read_ops(grpc_exec_ctx *exec_ctx,
       while (stream_global->seen_error &&
              (bs = grpc_chttp2_incoming_frame_queue_pop(
                   &stream_global->incoming_frames)) != NULL) {
-        grpc_byte_stream_destroy(exec_ctx, bs);
+        incoming_byte_stream_destroy_locked(exec_ctx, NULL, NULL, bs);
       }
       if (stream_global->all_incoming_byte_streams_finished) {
         grpc_chttp2_incoming_metadata_buffer_publish(
@@ -1528,8 +1529,8 @@ static void parsing_action(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
   GPR_TIMER_BEGIN("reading_action.parse", 0);
   size_t i = 0;
   for (; i < t->read_buffer.count &&
-             grpc_chttp2_perform_read(exec_ctx, &t->parsing,
-                                      t->read_buffer.slices[i]);
+         grpc_chttp2_perform_read(exec_ctx, &t->parsing,
+                                  t->read_buffer.slices[i]);
        i++)
     ;
   if (i != t->read_buffer.count) {
@@ -1621,9 +1622,10 @@ static void connectivity_state_set(
     grpc_connectivity_state state, const char *reason) {
   GRPC_CHTTP2_IF_TRACING(
       gpr_log(GPR_DEBUG, "set connectivity_state=%d", state));
-  grpc_connectivity_state_set(exec_ctx, &TRANSPORT_FROM_GLOBAL(transport_global)
-                                             ->channel_callback.state_tracker,
-                              state, reason);
+  grpc_connectivity_state_set(
+      exec_ctx,
+      &TRANSPORT_FROM_GLOBAL(transport_global)->channel_callback.state_tracker,
+      state, reason);
 }
 
 /*******************************************************************************
@@ -1744,17 +1746,26 @@ static int incoming_byte_stream_next(grpc_exec_ctx *exec_ctx,
   return 0;
 }
 
-static void incoming_byte_stream_unref_locked(grpc_exec_ctx *exec_ctx,
-                                              grpc_chttp2_transport *t,
-                                              grpc_chttp2_stream *s,
-                                              void *argp) {
-  grpc_chttp2_incoming_byte_stream *bs = argp;
+static void incoming_byte_stream_unref(grpc_exec_ctx *exec_ctx,
+                                       grpc_chttp2_incoming_byte_stream *bs) {
   if (gpr_unref(&bs->refs)) {
-    decrement_active_streams_locked(exec_ctx, &bs->transport->global,
-                                    &bs->stream->global);
     gpr_slice_buffer_destroy(&bs->slices);
     gpr_free(bs);
   }
+}
+
+static void incoming_byte_stream_destroy(grpc_exec_ctx *exec_ctx,
+                                         grpc_byte_stream *byte_stream);
+
+static void incoming_byte_stream_destroy_locked(grpc_exec_ctx *exec_ctx,
+                                                grpc_chttp2_transport *t,
+                                                grpc_chttp2_stream *s,
+                                                void *byte_stream) {
+  grpc_chttp2_incoming_byte_stream *bs = byte_stream;
+  GPR_ASSERT(bs->base.destroy == incoming_byte_stream_destroy);
+  decrement_active_streams_locked(exec_ctx, &bs->transport->global,
+                                  &bs->stream->global);
+  incoming_byte_stream_unref(exec_ctx, bs);
 }
 
 static void incoming_byte_stream_destroy(grpc_exec_ctx *exec_ctx,
@@ -1762,7 +1773,7 @@ static void incoming_byte_stream_destroy(grpc_exec_ctx *exec_ctx,
   grpc_chttp2_incoming_byte_stream *bs =
       (grpc_chttp2_incoming_byte_stream *)byte_stream;
   grpc_chttp2_run_with_global_lock(exec_ctx, bs->transport, bs->stream,
-                                   incoming_byte_stream_unref_locked, bs, 0);
+                                   incoming_byte_stream_destroy_locked, bs, 0);
 }
 
 typedef struct {
@@ -1794,12 +1805,6 @@ void grpc_chttp2_incoming_byte_stream_push(grpc_exec_ctx *exec_ctx,
                                    sizeof(arg));
 }
 
-static void incoming_byte_stream_deactivate_locked(
-    grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t, grpc_chttp2_stream *s,
-    grpc_chttp2_incoming_byte_stream *bs) {
-  incoming_byte_stream_unref_locked(exec_ctx, t, s, bs);
-}
-
 static void incoming_byte_stream_finished_failed_locked(
     grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t, grpc_chttp2_stream *s,
     void *argp) {
@@ -1807,7 +1812,7 @@ static void incoming_byte_stream_finished_failed_locked(
   grpc_exec_ctx_enqueue(exec_ctx, bs->on_next, false, NULL);
   bs->on_next = NULL;
   bs->failed = 1;
-  incoming_byte_stream_deactivate_locked(exec_ctx, t, s, bs);
+  incoming_byte_stream_unref(exec_ctx, bs);
 }
 
 static void incoming_byte_stream_finished_ok_locked(grpc_exec_ctx *exec_ctx,
@@ -1815,7 +1820,7 @@ static void incoming_byte_stream_finished_ok_locked(grpc_exec_ctx *exec_ctx,
                                                     grpc_chttp2_stream *s,
                                                     void *argp) {
   grpc_chttp2_incoming_byte_stream *bs = argp;
-  incoming_byte_stream_deactivate_locked(exec_ctx, t, s, bs);
+  incoming_byte_stream_unref(exec_ctx, bs);
 }
 
 void grpc_chttp2_incoming_byte_stream_finished(
@@ -1965,10 +1970,15 @@ static char *chttp2_get_peer(grpc_exec_ctx *exec_ctx, grpc_transport *t) {
   return gpr_strdup(((grpc_chttp2_transport *)t)->peer_string);
 }
 
-static const grpc_transport_vtable vtable = {
-    sizeof(grpc_chttp2_stream), "chttp2", init_stream, set_pollset,
-    perform_stream_op, perform_transport_op, destroy_stream, destroy_transport,
-    chttp2_get_peer};
+static const grpc_transport_vtable vtable = {sizeof(grpc_chttp2_stream),
+                                             "chttp2",
+                                             init_stream,
+                                             set_pollset,
+                                             perform_stream_op,
+                                             perform_transport_op,
+                                             destroy_stream,
+                                             destroy_transport,
+                                             chttp2_get_peer};
 
 grpc_transport *grpc_create_chttp2_transport(
     grpc_exec_ctx *exec_ctx, const grpc_channel_args *channel_args,
