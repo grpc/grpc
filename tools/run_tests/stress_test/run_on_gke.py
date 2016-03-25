@@ -307,9 +307,9 @@ class Gke:
 
 class Config:
 
-  def __init__(self, config_filename):
+  def __init__(self, config_filename, gcp_project_id):
     config_dict = self.load_config(config_filename)
-    self.global_settings = self.parse_global_settings(config_dict)
+    self.global_settings = self.parse_global_settings(config_dict, gcp_project_id)
     self.docker_images_dict = self.parse_docker_images(
         config_dict, self.global_settings.gcp_project_id)
     self.client_templates_dict = self.parse_client_templates(config_dict)
@@ -320,9 +320,9 @@ class Config:
         config_dict, self.docker_images_dict, self.client_templates_dict,
         self.server_pod_specs_dict)
 
-  def parse_global_settings(self, config_dict):
+  def parse_global_settings(self, config_dict, gcp_project_id):
     global_settings_dict = config_dict['globalSettings']
-    return GlobalSettings(global_settings_dict['projectId'],
+    return GlobalSettings(gcp_project_id,
                           global_settings_dict['buildDockerImages'],
                           global_settings_dict['pollIntervalSecs'],
                           global_settings_dict['testDurationSecs'],
@@ -564,7 +564,7 @@ def run_tests(config):
 argp = argparse.ArgumentParser(
     description='Launch stress tests in GKE',
     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-argp.add_argument('--project_id',
+argp.add_argument('--gcp_project_id',
                   required=True,
                   help='The Google Cloud Platform Project Id')
 argp.add_argument('--config_file',
@@ -574,5 +574,5 @@ argp.add_argument('--config_file',
 
 if __name__ == '__main__':
   args = argp.parse_args()
-  config = Config(args.config_file)
+  config = Config(args.config_file, args.gcp_project_id)
   run_tests(config)
