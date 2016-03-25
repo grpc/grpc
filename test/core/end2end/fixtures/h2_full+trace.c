@@ -35,21 +35,21 @@
 
 #include <string.h>
 
-#include "src/core/channel/client_channel.h"
-#include "src/core/channel/connected_channel.h"
-#include "src/core/channel/http_server_filter.h"
-#include "src/core/surface/channel.h"
-#include "src/core/surface/server.h"
-#include "src/core/transport/chttp2_transport.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/thd.h>
 #include <grpc/support/useful.h>
+#include "src/core/channel/client_channel.h"
+#include "src/core/channel/connected_channel.h"
+#include "src/core/channel/http_server_filter.h"
+#include "src/core/support/env.h"
+#include "src/core/surface/channel.h"
+#include "src/core/surface/server.h"
+#include "src/core/transport/chttp2_transport.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
-#include "src/core/support/env.h"
 
 typedef struct fullstack_fixture_data {
   char *localaddr;

@@ -318,7 +318,7 @@ class AsyncClientEnd2endTest : public ::testing::Test {
 
 TEST_F(AsyncClientEnd2endTest, ThreadStress) {
   common_.ResetStub();
-  std::vector<std::thread*> send_threads, completion_threads;
+  std::vector<std::thread *> send_threads, completion_threads;
   for (int i = 0; i < kNumAsyncReceiveThreads; ++i) {
     completion_threads.push_back(new std::thread(
         &AsyncClientEnd2endTest_ThreadStress_Test::AsyncCompleteRpc, this));

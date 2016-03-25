@@ -172,13 +172,27 @@ static void destroy_channel_elem(grpc_exec_ctx *exec_ctx,
 }
 
 const grpc_channel_filter grpc_client_census_filter = {
-    client_start_transport_op, grpc_channel_next_op, sizeof(call_data),
-    client_init_call_elem, grpc_call_stack_ignore_set_pollset,
-    client_destroy_call_elem, sizeof(channel_data), init_channel_elem,
-    destroy_channel_elem, grpc_call_next_get_peer, "census-client"};
+    client_start_transport_op,
+    grpc_channel_next_op,
+    sizeof(call_data),
+    client_init_call_elem,
+    grpc_call_stack_ignore_set_pollset,
+    client_destroy_call_elem,
+    sizeof(channel_data),
+    init_channel_elem,
+    destroy_channel_elem,
+    grpc_call_next_get_peer,
+    "census-client"};
 
 const grpc_channel_filter grpc_server_census_filter = {
-    server_start_transport_op, grpc_channel_next_op, sizeof(call_data),
-    server_init_call_elem, grpc_call_stack_ignore_set_pollset,
-    server_destroy_call_elem, sizeof(channel_data), init_channel_elem,
-    destroy_channel_elem, grpc_call_next_get_peer, "census-server"};
+    server_start_transport_op,
+    grpc_channel_next_op,
+    sizeof(call_data),
+    server_init_call_elem,
+    grpc_call_stack_ignore_set_pollset,
+    server_destroy_call_elem,
+    sizeof(channel_data),
+    init_channel_elem,
+    destroy_channel_elem,
+    grpc_call_next_get_peer,
+    "census-server"};
