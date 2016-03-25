@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -42,7 +42,8 @@ void grpc_lb_policy_factory_unref(grpc_lb_policy_factory* factory) {
 }
 
 grpc_lb_policy* grpc_lb_policy_factory_create_lb_policy(
-    grpc_lb_policy_factory* factory, grpc_lb_policy_args* args) {
+    grpc_exec_ctx* exec_ctx, grpc_lb_policy_factory* factory,
+    grpc_lb_policy_args* args) {
   if (factory == NULL) return NULL;
-  return factory->vtable->create_lb_policy(factory, args);
+  return factory->vtable->create_lb_policy(exec_ctx, factory, args);
 }

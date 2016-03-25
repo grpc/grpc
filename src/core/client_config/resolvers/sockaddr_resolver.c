@@ -58,11 +58,7 @@ typedef struct {
   char *lb_policy_name;
 
   /** the addresses that we've 'resolved' */
-  struct sockaddr_storage *addrs;
-  /** the corresponding length of the addresses */
-  size_t *addrs_len;
-  /** how many elements in \a addrs */
-  size_t num_addrs;
+  grpc_resolved_addresses *addresses;
 
   /** mutex guarding the rest of the state */
   gpr_mu mu;
@@ -125,28 +121,14 @@ static void sockaddr_next(grpc_exec_ctx *exec_ctx, grpc_resolver *resolver,
 
 static void sockaddr_maybe_finish_next_locked(grpc_exec_ctx *exec_ctx,
                                               sockaddr_resolver *r) {
-  grpc_client_config *cfg;
-  grpc_lb_policy *lb_policy;
-  grpc_lb_policy_args lb_policy_args;
-  grpc_subchannel **subchannels;
-  grpc_subchannel_args args;
-
   if (r->next_completion != NULL && !r->published) {
-    size_t i;
-    cfg = grpc_client_config_create();
-    subchannels = gpr_malloc(sizeof(grpc_subchannel *) * r->num_addrs);
-    for (i = 0; i < r->num_addrs; i++) {
-      memset(&args, 0, sizeof(args));
-      args.addr = (struct sockaddr *)&r->addrs[i];
-      args.addr_len = r->addrs_len[i];
-      subchannels[i] = grpc_subchannel_factory_create_subchannel(
-          exec_ctx, r->subchannel_factory, &args);
-    }
+    grpc_client_config *cfg = grpc_client_config_create();
+    grpc_lb_policy_args lb_policy_args;
     memset(&lb_policy_args, 0, sizeof(lb_policy_args));
-    lb_policy_args.subchannels = subchannels;
-    lb_policy_args.num_subchannels = r->num_addrs;
-    lb_policy = grpc_lb_policy_create(r->lb_policy_name, &lb_policy_args);
-    gpr_free(subchannels);
+    lb_policy_args.addresses = r->addresses;
+    lb_policy_args.subchannel_factory = r->subchannel_factory;
+    grpc_lb_policy *lb_policy =
+        grpc_lb_policy_create(exec_ctx, r->lb_policy_name, &lb_policy_args);
     grpc_client_config_set_lb_policy(cfg, lb_policy);
     GRPC_LB_POLICY_UNREF(exec_ctx, lb_policy, "sockaddr");
     r->published = 1;
@@ -160,8 +142,7 @@ static void sockaddr_destroy(grpc_exec_ctx *exec_ctx, grpc_resolver *gr) {
   sockaddr_resolver *r = (sockaddr_resolver *)gr;
   gpr_mu_destroy(&r->mu);
   grpc_subchannel_factory_unref(exec_ctx, r->subchannel_factory);
-  gpr_free(r->addrs);
-  gpr_free(r->addrs_len);
+  grpc_resolved_addresses_destroy(r->addresses);
   gpr_free(r->lb_policy_name);
   gpr_free(r);
 }
@@ -269,7 +250,6 @@ static void do_nothing(void *ignored) {}
 static grpc_resolver *sockaddr_create(
     grpc_resolver_args *args, const char *default_lb_policy_name,
     int parse(grpc_uri *uri, struct sockaddr_storage *dst, size_t *len)) {
-  size_t i;
   int errors_found = 0; /* GPR_FALSE */
   sockaddr_resolver *r;
   gpr_slice path_slice;
@@ -309,15 +289,18 @@ static grpc_resolver *sockaddr_create(
   gpr_slice_buffer_init(&path_parts);
 
   gpr_slice_split(path_slice, ",", &path_parts);
-  r->num_addrs = path_parts.count;
-  r->addrs = gpr_malloc(sizeof(struct sockaddr_storage) * r->num_addrs);
-  r->addrs_len = gpr_malloc(sizeof(*r->addrs_len) * r->num_addrs);
+  r->addresses = gpr_malloc(sizeof(grpc_resolved_addresses));
+  r->addresses->naddrs = path_parts.count;
+  r->addresses->addrs =
+      gpr_malloc(sizeof(grpc_resolved_address) * r->addresses->naddrs);
 
-  for (i = 0; i < r->num_addrs; i++) {
+  for (size_t i = 0; i < r->addresses->naddrs; i++) {
     grpc_uri ith_uri = *args->uri;
     char *part_str = gpr_dump_slice(path_parts.slices[i], GPR_DUMP_ASCII);
     ith_uri.path = part_str;
-    if (!parse(&ith_uri, &r->addrs[i], &r->addrs_len[i])) {
+    if (!parse(&ith_uri,
+               (struct sockaddr_storage *)(&r->addresses->addrs[i].addr),
+               &r->addresses->addrs[i].len)) {
       errors_found = 1; /* GPR_TRUE */
     }
     gpr_free(part_str);
@@ -328,8 +311,7 @@ static grpc_resolver *sockaddr_create(
   gpr_slice_unref(path_slice);
   if (errors_found) {
     gpr_free(r->lb_policy_name);
-    gpr_free(r->addrs);
-    gpr_free(r->addrs_len);
+    grpc_resolved_addresses_destroy(r->addresses);
     gpr_free(r);
     return NULL;
   }
