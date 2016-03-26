@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_CORE_IOMGR_UNIX_SOCKETS_POSIX_H
-#define GRPC_CORE_IOMGR_UNIX_SOCKETS_POSIX_H
+#ifndef GRPC_CORE_LIB_IOMGR_UNIX_SOCKETS_POSIX_H
+#define GRPC_CORE_LIB_IOMGR_UNIX_SOCKETS_POSIX_H
 
 #include <grpc/support/port_platform.h>
 
@@ -58,4 +58,4 @@ char *grpc_unix_get_default_authority(grpc_resolver_factory *factory,
 
 char *grpc_sockaddr_to_uri_unix_if_possible(const struct sockaddr *addr);
 
-#endif /* GRPC_CORE_IOMGR_UNIX_SOCKETS_POSIX_H */
+#endif /* GRPC_CORE_LIB_IOMGR_UNIX_SOCKETS_POSIX_H */

@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_CORE_TRANSPORT_METADATA_H
-#define GRPC_CORE_TRANSPORT_METADATA_H
+#ifndef GRPC_CORE_LIB_TRANSPORT_METADATA_H
+#define GRPC_CORE_LIB_TRANSPORT_METADATA_H
 
 #include <grpc/support/slice.h>
 #include <grpc/support/useful.h>
@@ -153,4 +153,4 @@ int grpc_mdstr_is_bin_suffixed(grpc_mdstr *s);
 void grpc_mdctx_global_init(void);
 void grpc_mdctx_global_shutdown(void);
 
-#endif /* GRPC_CORE_TRANSPORT_METADATA_H */
+#endif /* GRPC_CORE_LIB_TRANSPORT_METADATA_H */

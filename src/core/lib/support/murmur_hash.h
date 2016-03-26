@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_CORE_SUPPORT_MURMUR_HASH_H
-#define GRPC_CORE_SUPPORT_MURMUR_HASH_H
+#ifndef GRPC_CORE_LIB_SUPPORT_MURMUR_HASH_H
+#define GRPC_CORE_LIB_SUPPORT_MURMUR_HASH_H
 
 #include <grpc/support/port_platform.h>
 
@@ -41,4 +41,4 @@
 /* compute the hash of key (length len) */
 uint32_t gpr_murmur_hash3(const void *key, size_t len, uint32_t seed);
 
-#endif /* GRPC_CORE_SUPPORT_MURMUR_HASH_H */
+#endif /* GRPC_CORE_LIB_SUPPORT_MURMUR_HASH_H */

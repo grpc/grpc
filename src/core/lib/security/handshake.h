@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_CORE_SECURITY_HANDSHAKE_H
-#define GRPC_CORE_SECURITY_HANDSHAKE_H
+#ifndef GRPC_CORE_LIB_SECURITY_HANDSHAKE_H
+#define GRPC_CORE_LIB_SECURITY_HANDSHAKE_H
 
 #include "src/core/iomgr/endpoint.h"
 #include "src/core/security/security_connector.h"
@@ -48,4 +48,4 @@ void grpc_do_security_handshake(grpc_exec_ctx *exec_ctx,
 
 void grpc_security_handshake_shutdown(grpc_exec_ctx *exec_ctx, void *handshake);
 
-#endif /* GRPC_CORE_SECURITY_HANDSHAKE_H */
+#endif /* GRPC_CORE_LIB_SECURITY_HANDSHAKE_H */

@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_CORE_IOMGR_SOCKADDR_WIN32_H
-#define GRPC_CORE_IOMGR_SOCKADDR_WIN32_H
+#ifndef GRPC_CORE_LIB_IOMGR_SOCKADDR_WIN32_H
+#define GRPC_CORE_LIB_IOMGR_SOCKADDR_WIN32_H
 
 #include <winsock2.h>
 #include <ws2tcpip.h>
@@ -40,4 +40,4 @@
 // must be included after the above
 #include <mswsock.h>
 
-#endif /* GRPC_CORE_IOMGR_SOCKADDR_WIN32_H */
+#endif /* GRPC_CORE_LIB_IOMGR_SOCKADDR_WIN32_H */

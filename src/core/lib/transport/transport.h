@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_CORE_TRANSPORT_TRANSPORT_H
-#define GRPC_CORE_TRANSPORT_TRANSPORT_H
+#ifndef GRPC_CORE_LIB_TRANSPORT_TRANSPORT_H
+#define GRPC_CORE_LIB_TRANSPORT_TRANSPORT_H
 
 #include <stddef.h>
 
@@ -239,4 +239,4 @@ void grpc_transport_destroy(grpc_exec_ctx *exec_ctx, grpc_transport *transport);
 char *grpc_transport_get_peer(grpc_exec_ctx *exec_ctx,
                               grpc_transport *transport);
 
-#endif /* GRPC_CORE_TRANSPORT_TRANSPORT_H */
+#endif /* GRPC_CORE_LIB_TRANSPORT_TRANSPORT_H */

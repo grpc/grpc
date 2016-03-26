@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_CORE_CHANNEL_CONTEXT_H
-#define GRPC_CORE_CHANNEL_CONTEXT_H
+#ifndef GRPC_CORE_LIB_CHANNEL_CONTEXT_H
+#define GRPC_CORE_LIB_CHANNEL_CONTEXT_H
 
 /* Call object context pointers */
 typedef enum {
@@ -46,4 +46,4 @@ typedef struct {
   void (*destroy)(void *);
 } grpc_call_context_element;
 
-#endif /* GRPC_CORE_CHANNEL_CONTEXT_H */
+#endif /* GRPC_CORE_LIB_CHANNEL_CONTEXT_H */

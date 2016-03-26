@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_CORE_IOMGR_SOCKADDR_H
-#define GRPC_CORE_IOMGR_SOCKADDR_H
+#ifndef GRPC_CORE_LIB_IOMGR_SOCKADDR_H
+#define GRPC_CORE_LIB_IOMGR_SOCKADDR_H
 
 #include <grpc/support/port_platform.h>
 
@@ -44,4 +44,4 @@
 #include "src/core/iomgr/sockaddr_posix.h"
 #endif
 
-#endif /* GRPC_CORE_IOMGR_SOCKADDR_H */
+#endif /* GRPC_CORE_LIB_IOMGR_SOCKADDR_H */

@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_CORE_IOMGR_POLLSET_WINDOWS_H
-#define GRPC_CORE_IOMGR_POLLSET_WINDOWS_H
+#ifndef GRPC_CORE_LIB_IOMGR_POLLSET_WINDOWS_H
+#define GRPC_CORE_LIB_IOMGR_POLLSET_WINDOWS_H
 
 #include <grpc/support/sync.h>
 
@@ -72,4 +72,4 @@ struct grpc_pollset {
   grpc_closure *on_shutdown;
 };
 
-#endif /* GRPC_CORE_IOMGR_POLLSET_WINDOWS_H */
+#endif /* GRPC_CORE_LIB_IOMGR_POLLSET_WINDOWS_H */

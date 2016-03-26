@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_CORE_IOMGR_FD_POSIX_H
-#define GRPC_CORE_IOMGR_FD_POSIX_H
+#ifndef GRPC_CORE_LIB_IOMGR_FD_POSIX_H
+#define GRPC_CORE_LIB_IOMGR_FD_POSIX_H
 
 #include <grpc/support/atm.h>
 #include <grpc/support/sync.h>
@@ -189,4 +189,4 @@ void grpc_fd_unref(grpc_fd *fd);
 void grpc_fd_global_init(void);
 void grpc_fd_global_shutdown(void);
 
-#endif /* GRPC_CORE_IOMGR_FD_POSIX_H */
+#endif /* GRPC_CORE_LIB_IOMGR_FD_POSIX_H */

@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_CORE_JSON_JSON_COMMON_H
-#define GRPC_CORE_JSON_JSON_COMMON_H
+#ifndef GRPC_CORE_LIB_JSON_JSON_COMMON_H
+#define GRPC_CORE_LIB_JSON_JSON_COMMON_H
 
 /* The various json types. */
 typedef enum {
@@ -46,4 +46,4 @@ typedef enum {
   GRPC_JSON_TOP_LEVEL
 } grpc_json_type;
 
-#endif /* GRPC_CORE_JSON_JSON_COMMON_H */
+#endif /* GRPC_CORE_LIB_JSON_JSON_COMMON_H */

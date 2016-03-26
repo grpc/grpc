@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_CORE_HTTP_PARSER_H
-#define GRPC_CORE_HTTP_PARSER_H
+#ifndef GRPC_CORE_LIB_HTTP_PARSER_H
+#define GRPC_CORE_LIB_HTTP_PARSER_H
 
 #include <grpc/support/port_platform.h>
 #include <grpc/support/slice.h>
@@ -113,4 +113,4 @@ void grpc_http_parser_destroy(grpc_http_parser *parser);
 int grpc_http_parser_parse(grpc_http_parser *parser, gpr_slice slice);
 int grpc_http_parser_eof(grpc_http_parser *parser);
 
-#endif /* GRPC_CORE_HTTP_PARSER_H */
+#endif /* GRPC_CORE_LIB_HTTP_PARSER_H */

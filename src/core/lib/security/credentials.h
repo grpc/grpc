@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_CORE_SECURITY_CREDENTIALS_H
-#define GRPC_CORE_SECURITY_CREDENTIALS_H
+#ifndef GRPC_CORE_LIB_SECURITY_CREDENTIALS_H
+#define GRPC_CORE_LIB_SECURITY_CREDENTIALS_H
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
@@ -374,4 +374,4 @@ typedef struct {
   grpc_credentials_md_store *plugin_md;
 } grpc_plugin_credentials;
 
-#endif /* GRPC_CORE_SECURITY_CREDENTIALS_H */
+#endif /* GRPC_CORE_LIB_SECURITY_CREDENTIALS_H */

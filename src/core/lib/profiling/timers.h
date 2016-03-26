@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_CORE_PROFILING_TIMERS_H
-#define GRPC_CORE_PROFILING_TIMERS_H
+#ifndef GRPC_CORE_LIB_PROFILING_TIMERS_H
+#define GRPC_CORE_LIB_PROFILING_TIMERS_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -116,4 +116,4 @@ class ProfileScope {
 #endif
 #endif
 
-#endif /* GRPC_CORE_PROFILING_TIMERS_H */
+#endif /* GRPC_CORE_LIB_PROFILING_TIMERS_H */

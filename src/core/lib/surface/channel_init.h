@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_CORE_SURFACE_CHANNEL_INIT_H
-#define GRPC_CORE_SURFACE_CHANNEL_INIT_H
+#ifndef GRPC_CORE_LIB_SURFACE_CHANNEL_INIT_H
+#define GRPC_CORE_LIB_SURFACE_CHANNEL_INIT_H
 
 #include "src/core/channel/channel_stack_builder.h"
 #include "src/core/surface/channel_stack_type.h"
@@ -83,4 +83,4 @@ void *grpc_channel_init_create_stack(
     const grpc_channel_args *args, int initial_refs, grpc_iomgr_cb_func destroy,
     void *destroy_arg, grpc_transport *optional_transport);
 
-#endif /* GRPC_CORE_SURFACE_CHANNEL_INIT_H */
+#endif /* GRPC_CORE_LIB_SURFACE_CHANNEL_INIT_H */

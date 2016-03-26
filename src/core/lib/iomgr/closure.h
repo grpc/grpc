@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_CORE_IOMGR_CLOSURE_H
-#define GRPC_CORE_IOMGR_CLOSURE_H
+#ifndef GRPC_CORE_LIB_IOMGR_CLOSURE_H
+#define GRPC_CORE_LIB_IOMGR_CLOSURE_H
 
 #include <grpc/support/port_platform.h>
 #include <stdbool.h>
@@ -95,4 +95,4 @@ bool grpc_closure_list_empty(grpc_closure_list list);
 /** return the next pointer for a queued closure list */
 grpc_closure *grpc_closure_next(grpc_closure *closure);
 
-#endif /* GRPC_CORE_IOMGR_CLOSURE_H */
+#endif /* GRPC_CORE_LIB_IOMGR_CLOSURE_H */

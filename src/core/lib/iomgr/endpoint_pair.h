@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_CORE_IOMGR_ENDPOINT_PAIR_H
-#define GRPC_CORE_IOMGR_ENDPOINT_PAIR_H
+#ifndef GRPC_CORE_LIB_IOMGR_ENDPOINT_PAIR_H
+#define GRPC_CORE_LIB_IOMGR_ENDPOINT_PAIR_H
 
 #include "src/core/iomgr/endpoint.h"
 
@@ -44,4 +44,4 @@ typedef struct {
 grpc_endpoint_pair grpc_iomgr_create_endpoint_pair(const char *name,
                                                    size_t read_slice_size);
 
-#endif /* GRPC_CORE_IOMGR_ENDPOINT_PAIR_H */
+#endif /* GRPC_CORE_LIB_IOMGR_ENDPOINT_PAIR_H */

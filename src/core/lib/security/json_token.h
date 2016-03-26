@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_CORE_SECURITY_JSON_TOKEN_H
-#define GRPC_CORE_SECURITY_JSON_TOKEN_H
+#ifndef GRPC_CORE_LIB_SECURITY_JSON_TOKEN_H
+#define GRPC_CORE_LIB_SECURITY_JSON_TOKEN_H
 
 #include <grpc/support/slice.h>
 #include <openssl/rsa.h>
@@ -115,4 +115,4 @@ grpc_auth_refresh_token grpc_auth_refresh_token_create_from_json(
 /* Destructs the object. */
 void grpc_auth_refresh_token_destruct(grpc_auth_refresh_token *refresh_token);
 
-#endif /* GRPC_CORE_SECURITY_JSON_TOKEN_H */
+#endif /* GRPC_CORE_LIB_SECURITY_JSON_TOKEN_H */

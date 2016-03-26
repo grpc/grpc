@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_CORE_SUPPORT_LOAD_FILE_H
-#define GRPC_CORE_SUPPORT_LOAD_FILE_H
+#ifndef GRPC_CORE_LIB_SUPPORT_LOAD_FILE_H
+#define GRPC_CORE_LIB_SUPPORT_LOAD_FILE_H
 
 #include <stdio.h>
 
@@ -52,4 +52,4 @@ gpr_slice gpr_load_file(const char *filename, int add_null_terminator,
 }
 #endif
 
-#endif /* GRPC_CORE_SUPPORT_LOAD_FILE_H */
+#endif /* GRPC_CORE_LIB_SUPPORT_LOAD_FILE_H */

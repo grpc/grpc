@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_CORE_IOMGR_TCP_WINDOWS_H
-#define GRPC_CORE_IOMGR_TCP_WINDOWS_H
+#ifndef GRPC_CORE_LIB_IOMGR_TCP_WINDOWS_H
+#define GRPC_CORE_LIB_IOMGR_TCP_WINDOWS_H
 /*
    Low level TCP "bottom half" implementation, for use by transports built on
    top of a TCP connection.
@@ -54,4 +54,4 @@ grpc_endpoint *grpc_tcp_create(grpc_winsocket *socket, char *peer_string);
 
 int grpc_tcp_prepare_socket(SOCKET sock);
 
-#endif /* GRPC_CORE_IOMGR_TCP_WINDOWS_H */
+#endif /* GRPC_CORE_LIB_IOMGR_TCP_WINDOWS_H */

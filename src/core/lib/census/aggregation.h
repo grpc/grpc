@@ -33,8 +33,8 @@
 
 #include <stddef.h>
 
-#ifndef GRPC_CORE_CENSUS_AGGREGATION_H
-#define GRPC_CORE_CENSUS_AGGREGATION_H
+#ifndef GRPC_CORE_LIB_CENSUS_AGGREGATION_H
+#define GRPC_CORE_LIB_CENSUS_AGGREGATION_H
 
 /** Structure used to describe an aggregation type. */
 struct census_aggregation_ops {
@@ -63,4 +63,4 @@ struct census_aggregation_ops {
   size_t (*print)(const void *aggregation, char *buffer, size_t n);
 };
 
-#endif /* GRPC_CORE_CENSUS_AGGREGATION_H */
+#endif /* GRPC_CORE_LIB_CENSUS_AGGREGATION_H */

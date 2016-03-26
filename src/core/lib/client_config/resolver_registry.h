@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_CORE_CLIENT_CONFIG_RESOLVER_REGISTRY_H
-#define GRPC_CORE_CLIENT_CONFIG_RESOLVER_REGISTRY_H
+#ifndef GRPC_CORE_LIB_CLIENT_CONFIG_RESOLVER_REGISTRY_H
+#define GRPC_CORE_LIB_CLIENT_CONFIG_RESOLVER_REGISTRY_H
 
 #include "src/core/client_config/resolver_factory.h"
 
@@ -62,4 +62,4 @@ grpc_resolver *grpc_resolver_create(
     representing the default authority to pass from a client. */
 char *grpc_get_default_authority(const char *target);
 
-#endif /* GRPC_CORE_CLIENT_CONFIG_RESOLVER_REGISTRY_H */
+#endif /* GRPC_CORE_LIB_CLIENT_CONFIG_RESOLVER_REGISTRY_H */

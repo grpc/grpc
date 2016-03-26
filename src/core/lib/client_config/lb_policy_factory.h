@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_CORE_CLIENT_CONFIG_LB_POLICY_FACTORY_H
-#define GRPC_CORE_CLIENT_CONFIG_LB_POLICY_FACTORY_H
+#ifndef GRPC_CORE_LIB_CLIENT_CONFIG_LB_POLICY_FACTORY_H
+#define GRPC_CORE_LIB_CLIENT_CONFIG_LB_POLICY_FACTORY_H
 
 #include "src/core/client_config/lb_policy.h"
 #include "src/core/client_config/subchannel.h"
@@ -70,4 +70,4 @@ void grpc_lb_policy_factory_unref(grpc_lb_policy_factory *factory);
 grpc_lb_policy *grpc_lb_policy_factory_create_lb_policy(
     grpc_lb_policy_factory *factory, grpc_lb_policy_args *args);
 
-#endif /* GRPC_CORE_CLIENT_CONFIG_LB_POLICY_FACTORY_H */
+#endif /* GRPC_CORE_LIB_CLIENT_CONFIG_LB_POLICY_FACTORY_H */

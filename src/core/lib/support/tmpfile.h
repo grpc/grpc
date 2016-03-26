@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_CORE_SUPPORT_TMPFILE_H
-#define GRPC_CORE_SUPPORT_TMPFILE_H
+#ifndef GRPC_CORE_LIB_SUPPORT_TMPFILE_H
+#define GRPC_CORE_LIB_SUPPORT_TMPFILE_H
 
 #include <stdio.h>
 
@@ -52,4 +52,4 @@ FILE *gpr_tmpfile(const char *prefix, char **tmp_filename);
 }
 #endif
 
-#endif /* GRPC_CORE_SUPPORT_TMPFILE_H */
+#endif /* GRPC_CORE_LIB_SUPPORT_TMPFILE_H */

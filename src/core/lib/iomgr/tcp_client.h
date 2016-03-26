@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_CORE_IOMGR_TCP_CLIENT_H
-#define GRPC_CORE_IOMGR_TCP_CLIENT_H
+#ifndef GRPC_CORE_LIB_IOMGR_TCP_CLIENT_H
+#define GRPC_CORE_LIB_IOMGR_TCP_CLIENT_H
 
 #include <grpc/support/time.h>
 #include "src/core/iomgr/endpoint.h"
@@ -50,4 +50,4 @@ void grpc_tcp_client_connect(grpc_exec_ctx *exec_ctx, grpc_closure *on_connect,
                              const struct sockaddr *addr, size_t addr_len,
                              gpr_timespec deadline);
 
-#endif /* GRPC_CORE_IOMGR_TCP_CLIENT_H */
+#endif /* GRPC_CORE_LIB_IOMGR_TCP_CLIENT_H */

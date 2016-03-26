@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_CORE_SURFACE_API_TRACE_H
-#define GRPC_CORE_SURFACE_API_TRACE_H
+#ifndef GRPC_CORE_LIB_SURFACE_API_TRACE_H
+#define GRPC_CORE_LIB_SURFACE_API_TRACE_H
 
 #include <grpc/support/log.h>
 #include "src/core/debug/trace.h"
@@ -62,4 +62,4 @@ extern int grpc_api_trace;
     gpr_log(GPR_INFO, fmt GRPC_API_TRACE_UNWRAP##nargs args); \
   }
 
-#endif /* GRPC_CORE_SURFACE_API_TRACE_H */
+#endif /* GRPC_CORE_LIB_SURFACE_API_TRACE_H */

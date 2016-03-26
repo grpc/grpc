@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_CORE_CLIENT_CONFIG_SUBCHANNEL_INDEX_H
-#define GRPC_CORE_CLIENT_CONFIG_SUBCHANNEL_INDEX_H
+#ifndef GRPC_CORE_LIB_CLIENT_CONFIG_SUBCHANNEL_INDEX_H
+#define GRPC_CORE_LIB_CLIENT_CONFIG_SUBCHANNEL_INDEX_H
 
 #include "src/core/client_config/connector.h"
 #include "src/core/client_config/subchannel.h"
@@ -74,4 +74,4 @@ void grpc_subchannel_index_init(void);
 /** Shutdown the subchannel index (global) */
 void grpc_subchannel_index_shutdown(void);
 
-#endif /* GRPC_CORE_CLIENT_CONFIG_SUBCHANNEL_INDEX_H */
+#endif /* GRPC_CORE_LIB_CLIENT_CONFIG_SUBCHANNEL_INDEX_H */

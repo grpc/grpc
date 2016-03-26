@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_CORE_SUPPORT_ENV_H
-#define GRPC_CORE_SUPPORT_ENV_H
+#ifndef GRPC_CORE_LIB_SUPPORT_ENV_H
+#define GRPC_CORE_LIB_SUPPORT_ENV_H
 
 #include <stdio.h>
 
@@ -57,4 +57,4 @@ void gpr_setenv(const char *name, const char *value);
 }
 #endif
 
-#endif /* GRPC_CORE_SUPPORT_ENV_H */
+#endif /* GRPC_CORE_LIB_SUPPORT_ENV_H */

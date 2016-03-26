@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_CORE_SUPPORT_STRING_WIN32_H
-#define GRPC_CORE_SUPPORT_STRING_WIN32_H
+#ifndef GRPC_CORE_LIB_SUPPORT_STRING_WIN32_H
+#define GRPC_CORE_LIB_SUPPORT_STRING_WIN32_H
 
 #include <grpc/support/port_platform.h>
 
@@ -44,4 +44,4 @@ LPSTR gpr_tchar_to_char(LPCTSTR input);
 
 #endif /* GPR_WIN32 */
 
-#endif /* GRPC_CORE_SUPPORT_STRING_WIN32_H */
+#endif /* GRPC_CORE_LIB_SUPPORT_STRING_WIN32_H */

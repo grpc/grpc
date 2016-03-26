@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_CORE_CENSUS_RPC_METRIC_ID_H
-#define GRPC_CORE_CENSUS_RPC_METRIC_ID_H
+#ifndef GRPC_CORE_LIB_CENSUS_RPC_METRIC_ID_H
+#define GRPC_CORE_LIB_CENSUS_RPC_METRIC_ID_H
 
 /* Metric ID's used for RPC measurements. */
 /* Count of client requests sent. */
@@ -48,4 +48,4 @@
 /* Server side request latency. */
 #define CENSUS_METRIC_RPC_SERVER_LATENCY ((uint32_t)5)
 
-#endif /* GRPC_CORE_CENSUS_RPC_METRIC_ID_H */
+#endif /* GRPC_CORE_LIB_CENSUS_RPC_METRIC_ID_H */
