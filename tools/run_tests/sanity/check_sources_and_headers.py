@@ -55,7 +55,7 @@ def target_has_header(target, name):
   for dep in target['deps']:
     if target_has_header(get_target(dep), name):
       return True
-  if name == 'src/core/profiling/stap_probes.h':
+  if name == 'src/core/lib/profiling/stap_probes.h':
     return True
   return False
 
