@@ -917,9 +917,9 @@
     ], 
     "headers": [], 
     "language": "c", 
-    "name": "httpcli_format_request_test", 
+    "name": "http_parser_test", 
     "src": [
-      "test/core/httpcli/format_request_test.c"
+      "test/core/http/parser_test.c"
     ], 
     "third_party": false, 
     "type": "target"
@@ -933,9 +933,9 @@
     ], 
     "headers": [], 
     "language": "c", 
-    "name": "httpcli_parser_test", 
+    "name": "httpcli_format_request_test", 
     "src": [
-      "test/core/httpcli/parser_test.c"
+      "test/core/http/format_request_test.c"
     ], 
     "third_party": false, 
     "type": "target"
@@ -951,7 +951,7 @@
     "language": "c", 
     "name": "httpcli_test", 
     "src": [
-      "test/core/httpcli/httpcli_test.c"
+      "test/core/http/httpcli_test.c"
     ], 
     "third_party": false, 
     "type": "target"
@@ -967,7 +967,7 @@
     "language": "c", 
     "name": "httpscli_test", 
     "src": [
-      "test/core/httpcli/httpscli_test.c"
+      "test/core/http/httpscli_test.c"
     ], 
     "third_party": false, 
     "type": "target"
@@ -3476,23 +3476,6 @@
     ], 
     "headers": [], 
     "language": "c", 
-    "name": "h2_uchannel_test", 
-    "src": [
-      "test/core/end2end/fixtures/h2_uchannel.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "end2end_tests", 
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
     "name": "h2_uds_test", 
     "src": [
       "test/core/end2end/fixtures/h2_uds.c"
@@ -3700,23 +3683,6 @@
     "name": "h2_sockpair_1byte_nosec_test", 
     "src": [
       "test/core/end2end/fixtures/h2_sockpair_1byte.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "end2end_nosec_tests", 
-      "gpr", 
-      "gpr_test_util", 
-      "grpc_test_util_unsecure", 
-      "grpc_unsecure"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "h2_uchannel_nosec_test", 
-    "src": [
-      "test/core/end2end/fixtures/h2_uchannel.c"
     ], 
     "third_party": false, 
     "type": "target"
@@ -3961,7 +3927,6 @@
       "src/core/channel/channel_stack.h", 
       "src/core/channel/channel_stack_builder.h", 
       "src/core/channel/client_channel.h", 
-      "src/core/channel/client_uchannel.h", 
       "src/core/channel/compress_filter.h", 
       "src/core/channel/connected_channel.h", 
       "src/core/channel/context.h", 
@@ -3989,9 +3954,9 @@
       "src/core/compression/algorithm_metadata.h", 
       "src/core/compression/message_compress.h", 
       "src/core/debug/trace.h", 
-      "src/core/httpcli/format_request.h", 
-      "src/core/httpcli/httpcli.h", 
-      "src/core/httpcli/parser.h", 
+      "src/core/http/format_request.h", 
+      "src/core/http/httpcli.h", 
+      "src/core/http/parser.h", 
       "src/core/iomgr/closure.h", 
       "src/core/iomgr/endpoint.h", 
       "src/core/iomgr/endpoint_pair.h", 
@@ -4023,6 +3988,7 @@
       "src/core/iomgr/timer.h", 
       "src/core/iomgr/timer_heap.h", 
       "src/core/iomgr/udp_server.h", 
+      "src/core/iomgr/unix_sockets_posix.h", 
       "src/core/iomgr/wakeup_fd_pipe.h", 
       "src/core/iomgr/wakeup_fd_posix.h", 
       "src/core/iomgr/workqueue.h", 
@@ -4132,8 +4098,6 @@
       "src/core/channel/channel_stack_builder.h", 
       "src/core/channel/client_channel.c", 
       "src/core/channel/client_channel.h", 
-      "src/core/channel/client_uchannel.c", 
-      "src/core/channel/client_uchannel.h", 
       "src/core/channel/compress_filter.c", 
       "src/core/channel/compress_filter.h", 
       "src/core/channel/connected_channel.c", 
@@ -4188,13 +4152,13 @@
       "src/core/compression/message_compress.h", 
       "src/core/debug/trace.c", 
       "src/core/debug/trace.h", 
-      "src/core/httpcli/format_request.c", 
-      "src/core/httpcli/format_request.h", 
-      "src/core/httpcli/httpcli.c", 
-      "src/core/httpcli/httpcli.h", 
-      "src/core/httpcli/httpcli_security_connector.c", 
-      "src/core/httpcli/parser.c", 
-      "src/core/httpcli/parser.h", 
+      "src/core/http/format_request.c", 
+      "src/core/http/format_request.h", 
+      "src/core/http/httpcli.c", 
+      "src/core/http/httpcli.h", 
+      "src/core/http/httpcli_security_connector.c", 
+      "src/core/http/parser.c", 
+      "src/core/http/parser.h", 
       "src/core/iomgr/closure.c", 
       "src/core/iomgr/closure.h", 
       "src/core/iomgr/endpoint.c", 
@@ -4260,6 +4224,9 @@
       "src/core/iomgr/timer_heap.h", 
       "src/core/iomgr/udp_server.c", 
       "src/core/iomgr/udp_server.h", 
+      "src/core/iomgr/unix_sockets_posix.c", 
+      "src/core/iomgr/unix_sockets_posix.h", 
+      "src/core/iomgr/unix_sockets_posix_noop.c", 
       "src/core/iomgr/wakeup_fd_eventfd.c", 
       "src/core/iomgr/wakeup_fd_nospecial.c", 
       "src/core/iomgr/wakeup_fd_pipe.c", 
@@ -4588,7 +4555,6 @@
       "src/core/channel/channel_stack.h", 
       "src/core/channel/channel_stack_builder.h", 
       "src/core/channel/client_channel.h", 
-      "src/core/channel/client_uchannel.h", 
       "src/core/channel/compress_filter.h", 
       "src/core/channel/connected_channel.h", 
       "src/core/channel/context.h", 
@@ -4616,9 +4582,9 @@
       "src/core/compression/algorithm_metadata.h", 
       "src/core/compression/message_compress.h", 
       "src/core/debug/trace.h", 
-      "src/core/httpcli/format_request.h", 
-      "src/core/httpcli/httpcli.h", 
-      "src/core/httpcli/parser.h", 
+      "src/core/http/format_request.h", 
+      "src/core/http/httpcli.h", 
+      "src/core/http/parser.h", 
       "src/core/iomgr/closure.h", 
       "src/core/iomgr/endpoint.h", 
       "src/core/iomgr/endpoint_pair.h", 
@@ -4650,6 +4616,7 @@
       "src/core/iomgr/timer.h", 
       "src/core/iomgr/timer_heap.h", 
       "src/core/iomgr/udp_server.h", 
+      "src/core/iomgr/unix_sockets_posix.h", 
       "src/core/iomgr/wakeup_fd_pipe.h", 
       "src/core/iomgr/wakeup_fd_posix.h", 
       "src/core/iomgr/workqueue.h", 
@@ -4744,8 +4711,6 @@
       "src/core/channel/channel_stack_builder.h", 
       "src/core/channel/client_channel.c", 
       "src/core/channel/client_channel.h", 
-      "src/core/channel/client_uchannel.c", 
-      "src/core/channel/client_uchannel.h", 
       "src/core/channel/compress_filter.c", 
       "src/core/channel/compress_filter.h", 
       "src/core/channel/connected_channel.c", 
@@ -4800,12 +4765,12 @@
       "src/core/compression/message_compress.h", 
       "src/core/debug/trace.c", 
       "src/core/debug/trace.h", 
-      "src/core/httpcli/format_request.c", 
-      "src/core/httpcli/format_request.h", 
-      "src/core/httpcli/httpcli.c", 
-      "src/core/httpcli/httpcli.h", 
-      "src/core/httpcli/parser.c", 
-      "src/core/httpcli/parser.h", 
+      "src/core/http/format_request.c", 
+      "src/core/http/format_request.h", 
+      "src/core/http/httpcli.c", 
+      "src/core/http/httpcli.h", 
+      "src/core/http/parser.c", 
+      "src/core/http/parser.h", 
       "src/core/iomgr/closure.c", 
       "src/core/iomgr/closure.h", 
       "src/core/iomgr/endpoint.c", 
@@ -4871,6 +4836,9 @@
       "src/core/iomgr/timer_heap.h", 
       "src/core/iomgr/udp_server.c", 
       "src/core/iomgr/udp_server.h", 
+      "src/core/iomgr/unix_sockets_posix.c", 
+      "src/core/iomgr/unix_sockets_posix.h", 
+      "src/core/iomgr/unix_sockets_posix_noop.c", 
       "src/core/iomgr/wakeup_fd_eventfd.c", 
       "src/core/iomgr/wakeup_fd_nospecial.c", 
       "src/core/iomgr/wakeup_fd_pipe.c", 

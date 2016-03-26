@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,34 +31,16 @@
  *
  */
 
-#ifndef GRPC_CORE_HTTPCLI_PARSER_H
-#define GRPC_CORE_HTTPCLI_PARSER_H
+var _ = require('lodash');
 
-#include "src/core/httpcli/httpcli.h"
-#include <grpc/support/port_platform.h>
-#include <grpc/support/slice.h>
-
-typedef enum {
-  GRPC_HTTPCLI_INITIAL_RESPONSE,
-  GRPC_HTTPCLI_HEADERS,
-  GRPC_HTTPCLI_BODY
-} grpc_httpcli_parser_state;
-
-typedef struct {
-  grpc_httpcli_parser_state state;
-
-  grpc_httpcli_response r;
-  size_t body_capacity;
-  size_t hdr_capacity;
-
-  uint8_t cur_line[GRPC_HTTPCLI_MAX_HEADER_LENGTH];
-  size_t cur_line_length;
-} grpc_httpcli_parser;
-
-void grpc_httpcli_parser_init(grpc_httpcli_parser* parser);
-void grpc_httpcli_parser_destroy(grpc_httpcli_parser* parser);
-
-int grpc_httpcli_parser_parse(grpc_httpcli_parser* parser, gpr_slice slice);
-int grpc_httpcli_parser_eof(grpc_httpcli_parser* parser);
-
-#endif /* GRPC_CORE_HTTPCLI_PARSER_H */
+module.exports = {
+  'streamingCall' : {
+    path: '/grpc.testing/BenchmarkService',
+    requestStream: true,
+    responseStream: true,
+    requestSerialize: _.identity,
+    requestDeserialize: _.identity,
+    responseSerialize: _.identity,
+    responseDeserialize: _.identity
+  }
+};

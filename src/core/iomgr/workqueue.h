@@ -34,10 +34,10 @@
 #ifndef GRPC_CORE_IOMGR_WORKQUEUE_H
 #define GRPC_CORE_IOMGR_WORKQUEUE_H
 
-#include "src/core/iomgr/iomgr.h"
-#include "src/core/iomgr/pollset.h"
 #include "src/core/iomgr/closure.h"
 #include "src/core/iomgr/exec_ctx.h"
+#include "src/core/iomgr/iomgr.h"
+#include "src/core/iomgr/pollset.h"
 
 #ifdef GPR_POSIX_SOCKET
 #include "src/core/iomgr/workqueue_posix.h"

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,9 +33,9 @@
 
 #include "src/core/surface/call.h"
 
-#include "src/core/support/string.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
+#include "src/core/support/string.h"
 
 static void add_metadata(gpr_strvec *b, const grpc_metadata *md, size_t count) {
   size_t i;

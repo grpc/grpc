@@ -35,9 +35,9 @@
 
 #ifdef GPR_WINDOWS_SUBPROCESS
 
-#include <windows.h>
 #include <string.h>
 #include <tchar.h>
+#include <windows.h>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>

@@ -34,9 +34,9 @@
 #include "src/core/transport/chttp2/hpack_parser.h"
 #include "src/core/transport/chttp2/internal.h"
 
+#include <assert.h>
 #include <stddef.h>
 #include <string.h>
-#include <assert.h>
 
 /* This is here for grpc_is_binary_header
  * TODO(murgatroid99): Remove this

@@ -31,15 +31,13 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
 #include "src/core/surface/channel_stack_type.h"
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 bool grpc_channel_stack_type_is_client(grpc_channel_stack_type type) {
   switch (type) {
     case GRPC_CLIENT_CHANNEL:
-      return true;
-    case GRPC_CLIENT_UCHANNEL:
       return true;
     case GRPC_CLIENT_SUBCHANNEL:
       return true;

@@ -37,17 +37,18 @@
 
 #include "test/core/util/port.h"
 
+#include <errno.h>
 #include <process.h>
 #include <stdio.h>
-#include <errno.h>
 #include <string.h>
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-#include "src/core/support/env.h"
+#include "src/core/http/httpcli.h"
 #include "src/core/iomgr/sockaddr_utils.h"
+#include "src/core/support/env.h"
 #include "test/core/util/port_server_client.h"
 
 #define NUM_RANDOM_PORTS_TO_PICK 100

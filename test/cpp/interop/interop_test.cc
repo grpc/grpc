@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -35,14 +35,14 @@
 #define _POSIX_SOURCE
 #endif
 
-#include <unistd.h>
 #include <assert.h>
-#include <stdio.h>
-#include <string.h>
 #include <signal.h>
+#include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <unistd.h>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/host_port.h>

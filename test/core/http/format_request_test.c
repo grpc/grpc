@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/httpcli/format_request.h"
+#include "src/core/http/format_request.h"
 
 #include <string.h>
 
@@ -39,15 +39,15 @@
 #include "test/core/util/test_config.h"
 
 static void test_format_get_request(void) {
-  grpc_httpcli_header hdr = {"x-yz", "abc"};
+  grpc_http_header hdr = {"x-yz", "abc"};
   grpc_httpcli_request req;
   gpr_slice slice;
 
   memset(&req, 0, sizeof(req));
   req.host = "example.com";
-  req.path = "/index.html";
-  req.hdr_count = 1;
-  req.hdrs = &hdr;
+  req.http.path = "/index.html";
+  req.http.hdr_count = 1;
+  req.http.hdrs = &hdr;
 
   slice = grpc_httpcli_format_get_request(&req);
 
@@ -64,7 +64,7 @@ static void test_format_get_request(void) {
 }
 
 static void test_format_post_request(void) {
-  grpc_httpcli_header hdr = {"x-yz", "abc"};
+  grpc_http_header hdr = {"x-yz", "abc"};
   grpc_httpcli_request req;
   gpr_slice slice;
   char body_bytes[] = "fake body";
@@ -72,9 +72,9 @@ static void test_format_post_request(void) {
 
   memset(&req, 0, sizeof(req));
   req.host = "example.com";
-  req.path = "/index.html";
-  req.hdr_count = 1;
-  req.hdrs = &hdr;
+  req.http.path = "/index.html";
+  req.http.hdr_count = 1;
+  req.http.hdrs = &hdr;
 
   slice = grpc_httpcli_format_post_request(&req, body_bytes, body_len);
 
@@ -94,15 +94,15 @@ static void test_format_post_request(void) {
 }
 
 static void test_format_post_request_no_body(void) {
-  grpc_httpcli_header hdr = {"x-yz", "abc"};
+  grpc_http_header hdr = {"x-yz", "abc"};
   grpc_httpcli_request req;
   gpr_slice slice;
 
   memset(&req, 0, sizeof(req));
   req.host = "example.com";
-  req.path = "/index.html";
-  req.hdr_count = 1;
-  req.hdrs = &hdr;
+  req.http.path = "/index.html";
+  req.http.hdr_count = 1;
+  req.http.hdrs = &hdr;
 
   slice = grpc_httpcli_format_post_request(&req, NULL, 0);
 
@@ -119,7 +119,7 @@ static void test_format_post_request_no_body(void) {
 }
 
 static void test_format_post_request_content_type_override(void) {
-  grpc_httpcli_header hdrs[2];
+  grpc_http_header hdrs[2];
   grpc_httpcli_request req;
   gpr_slice slice;
   char body_bytes[] = "fake%20body";
@@ -131,9 +131,9 @@ static void test_format_post_request_content_type_override(void) {
   hdrs[1].value = "application/x-www-form-urlencoded";
   memset(&req, 0, sizeof(req));
   req.host = "example.com";
-  req.path = "/index.html";
-  req.hdr_count = 2;
-  req.hdrs = hdrs;
+  req.http.path = "/index.html";
+  req.http.hdr_count = 2;
+  req.http.hdrs = hdrs;
 
   slice = grpc_httpcli_format_post_request(&req, body_bytes, body_len);
 
@@ -142,8 +142,7 @@ static void test_format_post_request_content_type_override(void) {
                       "POST /index.html HTTP/1.0\r\n"
                       "Host: example.com\r\n"
                       "Connection: close\r\n"
-                      "User-Agent: " GRPC_HTTPCLI_USER_AGENT
-                      "\r\n"
+                      "User-Agent: " GRPC_HTTPCLI_USER_AGENT "\r\n"
                       "x-yz: abc\r\n"
                       "Content-Type: application/x-www-form-urlencoded\r\n"
                       "Content-Length: 11\r\n"
