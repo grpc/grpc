@@ -501,7 +501,8 @@ static const tsi_handshaker_vtable handshaker_vtable = {
 };
 
 tsi_handshaker *tsi_create_fake_handshaker(int is_client) {
-  tsi_fake_handshaker *impl = calloc(1, sizeof(tsi_fake_handshaker));
+  tsi_fake_handshaker *impl = gpr_malloc(sizeof(*impl));
+  memset(impl, 0, sizeof(*impl));
   impl->base.vtable = &handshaker_vtable;
   impl->is_client = is_client;
   impl->result = TSI_HANDSHAKE_IN_PROGRESS;
@@ -517,8 +518,8 @@ tsi_handshaker *tsi_create_fake_handshaker(int is_client) {
 
 tsi_frame_protector *tsi_create_fake_protector(
     size_t *max_protected_frame_size) {
-  tsi_fake_frame_protector *impl = calloc(1, sizeof(tsi_fake_frame_protector));
-  if (impl == NULL) return NULL;
+  tsi_fake_frame_protector *impl = gpr_malloc(sizeof(*impl));
+  memset(impl, 0, sizeof(*impl));
   impl->max_frame_size = (max_protected_frame_size == NULL)
                              ? TSI_FAKE_DEFAULT_FRAME_SIZE
                              : *max_protected_frame_size;
