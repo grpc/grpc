@@ -966,7 +966,8 @@ static tsi_result ssl_handshaker_extract_peer(tsi_handshaker *self,
     size_t i;
     tsi_peer_property *new_properties =
         gpr_malloc(sizeof(*new_properties) * (peer->property_count + 1));
-    memset(new_properties, 0, sizeof(*new_properties) * (peer->property_count + 1));
+    memset(new_properties, 0,
+           sizeof(*new_properties) * (peer->property_count + 1));
     for (i = 0; i < peer->property_count; i++) {
       new_properties[i] = peer->properties[i];
     }
@@ -990,8 +991,7 @@ static tsi_result ssl_handshaker_create_frame_protector(
   size_t actual_max_output_protected_frame_size =
       TSI_SSL_MAX_PROTECTED_FRAME_SIZE_UPPER_BOUND;
   tsi_ssl_handshaker *impl = (tsi_ssl_handshaker *)self;
-  tsi_ssl_frame_protector *protector_impl =
-      gpr_malloc(sizeof(*protector_impl));
+  tsi_ssl_frame_protector *protector_impl = gpr_malloc(sizeof(*protector_impl));
   memset(protector_impl, 0, sizeof(*protector_impl));
 
   if (max_output_protected_frame_size != NULL) {
@@ -1411,7 +1411,8 @@ tsi_result tsi_create_ssl_server_handshaker_factory(
   memset(impl->ssl_contexts, 0, key_cert_pair_count * sizeof(SSL_CTX *));
   impl->ssl_context_x509_subject_names =
       gpr_malloc(key_cert_pair_count * sizeof(tsi_peer));
-  memset(impl->ssl_context_x509_subject_names, 0, key_cert_pair_count * sizeof(tsi_peer));
+  memset(impl->ssl_context_x509_subject_names, 0,
+         key_cert_pair_count * sizeof(tsi_peer));
   if (impl->ssl_contexts == NULL ||
       impl->ssl_context_x509_subject_names == NULL) {
     tsi_ssl_handshaker_factory_destroy(&impl->base);
