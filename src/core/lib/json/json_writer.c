@@ -35,7 +35,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/json/json_writer.h"
+#include "src/core/lib/json/json_writer.h"
 
 static void json_writer_output_char(grpc_json_writer *writer, char c) {
   writer->vtable->output_char(writer->userdata, c);

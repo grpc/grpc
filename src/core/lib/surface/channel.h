@@ -34,9 +34,9 @@
 #ifndef GRPC_CORE_LIB_SURFACE_CHANNEL_H
 #define GRPC_CORE_LIB_SURFACE_CHANNEL_H
 
-#include "src/core/channel/channel_stack.h"
-#include "src/core/client_config/subchannel_factory.h"
-#include "src/core/surface/channel_stack_type.h"
+#include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/client_config/subchannel_factory.h"
+#include "src/core/lib/surface/channel_stack_type.h"
 
 grpc_channel *grpc_channel_create(grpc_exec_ctx *exec_ctx, const char *target,
                                   const grpc_channel_args *args,

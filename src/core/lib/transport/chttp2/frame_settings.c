@@ -31,18 +31,18 @@
  *
  */
 
-#include "src/core/transport/chttp2/frame_settings.h"
-#include "src/core/transport/chttp2/internal.h"
+#include "src/core/lib/transport/chttp2/frame_settings.h"
+#include "src/core/lib/transport/chttp2/internal.h"
 
 #include <string.h>
 
 #include <grpc/support/log.h>
 #include <grpc/support/useful.h>
 
-#include "src/core/debug/trace.h"
-#include "src/core/transport/chttp2/frame.h"
-#include "src/core/transport/chttp2/http2_errors.h"
-#include "src/core/transport/chttp2_transport.h"
+#include "src/core/lib/debug/trace.h"
+#include "src/core/lib/transport/chttp2/frame.h"
+#include "src/core/lib/transport/chttp2/http2_errors.h"
+#include "src/core/lib/transport/chttp2_transport.h"
 
 #define MAX_MAX_HEADER_LIST_SIZE (1024 * 1024 * 1024)
 

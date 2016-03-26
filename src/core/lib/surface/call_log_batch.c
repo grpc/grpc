@@ -31,11 +31,11 @@
  *
  */
 
-#include "src/core/surface/call.h"
+#include "src/core/lib/surface/call.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
-#include "src/core/support/string.h"
+#include "src/core/lib/support/string.h"
 
 static void add_metadata(gpr_strvec *b, const grpc_metadata *md, size_t count) {
   size_t i;

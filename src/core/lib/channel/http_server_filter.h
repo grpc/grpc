@@ -34,7 +34,7 @@
 #ifndef GRPC_CORE_LIB_CHANNEL_HTTP_SERVER_FILTER_H
 #define GRPC_CORE_LIB_CHANNEL_HTTP_SERVER_FILTER_H
 
-#include "src/core/channel/channel_stack.h"
+#include "src/core/lib/channel/channel_stack.h"
 
 /* Processes metadata on the client side for HTTP2 transports */
 extern const grpc_channel_filter grpc_http_server_filter;

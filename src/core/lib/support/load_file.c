@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/support/load_file.h"
+#include "src/core/lib/support/load_file.h"
 
 #include <errno.h>
 #include <string.h>
@@ -40,8 +40,8 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/support/block_annotate.h"
-#include "src/core/support/string.h"
+#include "src/core/lib/support/block_annotate.h"
+#include "src/core/lib/support/string.h"
 
 gpr_slice gpr_load_file(const char *filename, int add_null_terminator,
                         int *success) {

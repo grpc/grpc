@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/support/murmur_hash.h"
+#include "src/core/lib/support/murmur_hash.h"
 
 #define ROTL32(x, r) ((x) << (r)) | ((x) >> (32 - (r)))
 

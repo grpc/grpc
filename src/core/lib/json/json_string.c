@@ -37,9 +37,9 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-#include "src/core/json/json.h"
-#include "src/core/json/json_reader.h"
-#include "src/core/json/json_writer.h"
+#include "src/core/lib/json/json.h"
+#include "src/core/lib/json/json_reader.h"
+#include "src/core/lib/json/json_writer.h"
 
 /* The json reader will construct a bunch of grpc_json objects and
  * link them all up together in a tree-like structure that will represent

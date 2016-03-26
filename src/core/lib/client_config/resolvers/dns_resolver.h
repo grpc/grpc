@@ -34,7 +34,7 @@
 #ifndef GRPC_CORE_LIB_CLIENT_CONFIG_RESOLVERS_DNS_RESOLVER_H
 #define GRPC_CORE_LIB_CLIENT_CONFIG_RESOLVERS_DNS_RESOLVER_H
 
-#include "src/core/client_config/resolver_factory.h"
+#include "src/core/lib/client_config/resolver_factory.h"
 
 /** Create a dns resolver factory */
 grpc_resolver_factory *grpc_dns_resolver_factory_create(void);

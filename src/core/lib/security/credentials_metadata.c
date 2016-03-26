@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/security/credentials.h"
+#include "src/core/lib/security/credentials.h"
 
 #include <grpc/support/alloc.h>
 

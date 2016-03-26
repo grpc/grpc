@@ -34,7 +34,7 @@
 #ifndef GRPC_CORE_LIB_CLIENT_CONFIG_RESOLVERS_ZOOKEEPER_RESOLVER_H
 #define GRPC_CORE_LIB_CLIENT_CONFIG_RESOLVERS_ZOOKEEPER_RESOLVER_H
 
-#include "src/core/client_config/resolver_factory.h"
+#include "src/core/lib/client_config/resolver_factory.h"
 
 /** Create a zookeeper resolver factory */
 grpc_resolver_factory *grpc_zookeeper_resolver_factory_create(void);

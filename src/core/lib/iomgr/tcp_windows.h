@@ -44,8 +44,8 @@
    otherwise specified.
 */
 
-#include "src/core/iomgr/endpoint.h"
-#include "src/core/iomgr/socket_windows.h"
+#include "src/core/lib/iomgr/endpoint.h"
+#include "src/core/lib/iomgr/socket_windows.h"
 
 /* Create a tcp endpoint given a winsock handle.
  * Takes ownership of the handle.

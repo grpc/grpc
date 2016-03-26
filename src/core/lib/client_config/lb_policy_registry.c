@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/client_config/lb_policy_registry.h"
+#include "src/core/lib/client_config/lb_policy_registry.h"
 
 #include <string.h>
 

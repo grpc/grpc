@@ -35,8 +35,8 @@
 #define GRPC_CORE_LIB_SURFACE_SERVER_H
 
 #include <grpc/grpc.h>
-#include "src/core/channel/channel_stack.h"
-#include "src/core/transport/transport.h"
+#include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/transport/transport.h"
 
 extern const grpc_channel_filter grpc_server_top_filter;
 

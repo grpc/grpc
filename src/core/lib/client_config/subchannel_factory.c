@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/client_config/subchannel_factory.h"
+#include "src/core/lib/client_config/subchannel_factory.h"
 
 void grpc_subchannel_factory_ref(grpc_subchannel_factory* factory) {
   factory->vtable->ref(factory);

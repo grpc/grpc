@@ -35,7 +35,7 @@
 #define GRPC_CORE_LIB_TRANSPORT_CHTTP2_STATUS_CONVERSION_H
 
 #include <grpc/grpc.h>
-#include "src/core/transport/chttp2/http2_errors.h"
+#include "src/core/lib/transport/chttp2/http2_errors.h"
 
 /* Conversion of grpc status codes to http2 error codes (for RST_STREAM) */
 grpc_chttp2_error_code grpc_chttp2_grpc_status_to_http2_error(

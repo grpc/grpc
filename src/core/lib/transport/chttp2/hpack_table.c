@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/transport/chttp2/hpack_table.h"
+#include "src/core/lib/transport/chttp2/hpack_table.h"
 
 #include <assert.h>
 #include <string.h>
@@ -39,7 +39,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-#include "src/core/support/murmur_hash.h"
+#include "src/core/lib/support/murmur_hash.h"
 
 static struct {
   const char *key;

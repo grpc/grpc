@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/client_config/lb_policies/load_balancer_api.h"
+#include "src/core/lib/client_config/lb_policies/load_balancer_api.h"
 #include "third_party/nanopb/pb_decode.h"
 #include "third_party/nanopb/pb_encode.h"
 

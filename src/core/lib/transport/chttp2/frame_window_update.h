@@ -35,8 +35,8 @@
 #define GRPC_CORE_LIB_TRANSPORT_CHTTP2_FRAME_WINDOW_UPDATE_H
 
 #include <grpc/support/slice.h>
-#include "src/core/iomgr/exec_ctx.h"
-#include "src/core/transport/chttp2/frame.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/transport/chttp2/frame.h"
 
 typedef struct {
   uint8_t byte;

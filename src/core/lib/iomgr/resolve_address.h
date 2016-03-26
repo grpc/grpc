@@ -35,8 +35,8 @@
 #define GRPC_CORE_LIB_IOMGR_RESOLVE_ADDRESS_H
 
 #include <stddef.h>
-#include "src/core/iomgr/exec_ctx.h"
-#include "src/core/iomgr/iomgr.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/iomgr.h"
 
 #define GRPC_MAX_SOCKADDR_SIZE 128
 

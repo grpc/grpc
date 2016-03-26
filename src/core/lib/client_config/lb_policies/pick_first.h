@@ -34,7 +34,7 @@
 #ifndef GRPC_CORE_LIB_CLIENT_CONFIG_LB_POLICIES_PICK_FIRST_H
 #define GRPC_CORE_LIB_CLIENT_CONFIG_LB_POLICIES_PICK_FIRST_H
 
-#include "src/core/client_config/lb_policy_factory.h"
+#include "src/core/lib/client_config/lb_policy_factory.h"
 
 /** Returns a load balancing factory for the pick first policy, which picks up
  * the first subchannel from \a subchannels to succesfully connect */

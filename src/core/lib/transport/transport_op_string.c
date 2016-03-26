@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/channel/channel_stack.h"
+#include "src/core/lib/channel/channel_stack.h"
 
 #include <stdarg.h>
 #include <stdio.h>
@@ -40,7 +40,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/useful.h>
-#include "src/core/support/string.h"
+#include "src/core/lib/support/string.h"
 
 /* These routines are here to facilitate debugging - they produce string
    representations of various transport data structures */

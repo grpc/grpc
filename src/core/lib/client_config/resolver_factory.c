@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/client_config/resolver_factory.h"
+#include "src/core/lib/client_config/resolver_factory.h"
 
 void grpc_resolver_factory_ref(grpc_resolver_factory* factory) {
   factory->vtable->ref(factory);

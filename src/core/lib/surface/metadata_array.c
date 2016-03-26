@@ -36,7 +36,7 @@
 
 #include <string.h>
 
-#include "src/core/surface/api_trace.h"
+#include "src/core/lib/surface/api_trace.h"
 
 void grpc_metadata_array_init(grpc_metadata_array* array) {
   GRPC_API_TRACE("grpc_metadata_array_init(array=%p)", 1, (array));

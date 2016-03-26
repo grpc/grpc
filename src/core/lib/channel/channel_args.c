@@ -31,9 +31,9 @@
  *
  */
 
-#include "src/core/channel/channel_args.h"
+#include "src/core/lib/channel/channel_args.h"
 #include <grpc/grpc.h>
-#include "src/core/support/string.h"
+#include "src/core/lib/support/string.h"
 
 #include <grpc/census.h>
 #include <grpc/support/alloc.h>

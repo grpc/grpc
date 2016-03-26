@@ -36,7 +36,7 @@
 
 #include <grpc/support/sync.h>
 
-#include "src/core/iomgr/socket_windows.h"
+#include "src/core/lib/iomgr/socket_windows.h"
 
 typedef enum {
   GRPC_IOCP_WORK_WORK,

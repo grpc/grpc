@@ -37,10 +37,10 @@
 #include <stddef.h>
 
 #include <grpc/support/port_platform.h>
-#include "src/core/iomgr/exec_ctx.h"
-#include "src/core/transport/chttp2/frame.h"
-#include "src/core/transport/chttp2/hpack_table.h"
-#include "src/core/transport/metadata.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/transport/chttp2/frame.h"
+#include "src/core/lib/transport/chttp2/hpack_table.h"
+#include "src/core/lib/transport/metadata.h"
 
 typedef struct grpc_chttp2_hpack_parser grpc_chttp2_hpack_parser;
 

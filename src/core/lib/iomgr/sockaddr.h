@@ -37,11 +37,11 @@
 #include <grpc/support/port_platform.h>
 
 #ifdef GPR_WIN32
-#include "src/core/iomgr/sockaddr_win32.h"
+#include "src/core/lib/iomgr/sockaddr_win32.h"
 #endif
 
 #ifdef GPR_POSIX_SOCKETADDR
-#include "src/core/iomgr/sockaddr_posix.h"
+#include "src/core/lib/iomgr/sockaddr_posix.h"
 #endif
 
 #endif /* GRPC_CORE_LIB_IOMGR_SOCKADDR_H */

@@ -43,16 +43,16 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/useful.h>
 
-#include "src/core/channel/channel_stack.h"
-#include "src/core/compression/algorithm_metadata.h"
-#include "src/core/iomgr/timer.h"
-#include "src/core/profiling/timers.h"
-#include "src/core/support/string.h"
-#include "src/core/surface/api_trace.h"
-#include "src/core/surface/call.h"
-#include "src/core/surface/channel.h"
-#include "src/core/surface/completion_queue.h"
-#include "src/core/transport/static_metadata.h"
+#include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/compression/algorithm_metadata.h"
+#include "src/core/lib/iomgr/timer.h"
+#include "src/core/lib/profiling/timers.h"
+#include "src/core/lib/support/string.h"
+#include "src/core/lib/surface/api_trace.h"
+#include "src/core/lib/surface/call.h"
+#include "src/core/lib/surface/channel.h"
+#include "src/core/lib/surface/completion_queue.h"
+#include "src/core/lib/transport/static_metadata.h"
 
 /** The maximum number of concurrent batches possible.
     Based upon the maximum number of individually queueable ops in the batch

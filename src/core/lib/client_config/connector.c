@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/client_config/connector.h"
+#include "src/core/lib/client_config/connector.h"
 
 grpc_connector* grpc_connector_ref(grpc_connector* connector) {
   connector->vtable->ref(connector);

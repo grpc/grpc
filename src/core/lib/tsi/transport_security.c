@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/tsi/transport_security.h"
+#include "src/core/lib/tsi/transport_security.h"
 
 #include <stdlib.h>
 #include <string.h>

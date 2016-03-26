@@ -34,9 +34,9 @@
 #ifndef GRPC_CORE_LIB_SURFACE_CHANNEL_INIT_H
 #define GRPC_CORE_LIB_SURFACE_CHANNEL_INIT_H
 
-#include "src/core/channel/channel_stack_builder.h"
-#include "src/core/surface/channel_stack_type.h"
-#include "src/core/transport/transport.h"
+#include "src/core/lib/channel/channel_stack_builder.h"
+#include "src/core/lib/surface/channel_stack_type.h"
+#include "src/core/lib/transport/transport.h"
 
 /// This module provides a way for plugins (and the grpc core library itself)
 /// to register mutators for channel stacks.

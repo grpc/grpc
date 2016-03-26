@@ -31,16 +31,16 @@
  *
  */
 
-#include "src/core/http/httpcli.h"
+#include "src/core/lib/http/httpcli.h"
 
 #include <string.h>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
-#include "src/core/security/handshake.h"
-#include "src/core/support/string.h"
-#include "src/core/tsi/ssl_transport_security.h"
+#include "src/core/lib/security/handshake.h"
+#include "src/core/lib/support/string.h"
+#include "src/core/lib/tsi/ssl_transport_security.h"
 
 typedef struct {
   grpc_channel_security_connector base;

@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/surface/init.h"
+#include "src/core/lib/surface/init.h"
 
 void grpc_security_pre_init(void) {}
 

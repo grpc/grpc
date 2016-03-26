@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/iomgr/endpoint.h"
+#include "src/core/lib/iomgr/endpoint.h"
 
 void grpc_endpoint_read(grpc_exec_ctx* exec_ctx, grpc_endpoint* ep,
                         gpr_slice_buffer* slices, grpc_closure* cb) {

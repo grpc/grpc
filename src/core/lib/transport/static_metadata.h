@@ -46,7 +46,7 @@
 #ifndef GRPC_CORE_LIB_TRANSPORT_STATIC_METADATA_H
 #define GRPC_CORE_LIB_TRANSPORT_STATIC_METADATA_H
 
-#include "src/core/transport/metadata.h"
+#include "src/core/lib/transport/metadata.h"
 
 #define GRPC_STATIC_MDSTR_COUNT 89
 extern grpc_mdstr grpc_static_mdstr_table[GRPC_STATIC_MDSTR_COUNT];

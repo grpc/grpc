@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/transport/connectivity_state.h"
+#include "src/core/lib/transport/connectivity_state.h"
 
 #include <string.h>
 

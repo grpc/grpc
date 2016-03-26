@@ -34,7 +34,7 @@
 #ifndef GRPC_CORE_LIB_CHANNEL_CONNECTED_CHANNEL_H
 #define GRPC_CORE_LIB_CHANNEL_CONNECTED_CHANNEL_H
 
-#include "src/core/channel/channel_stack_builder.h"
+#include "src/core/lib/channel/channel_stack_builder.h"
 
 bool grpc_add_connected_filter(grpc_channel_stack_builder *builder,
                                void *arg_must_be_null);

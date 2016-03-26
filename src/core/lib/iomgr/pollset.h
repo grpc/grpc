@@ -38,7 +38,7 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
-#include "src/core/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 
 #define GRPC_POLLSET_KICK_BROADCAST ((grpc_pollset_worker *)1)
 

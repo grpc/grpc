@@ -43,7 +43,7 @@
 
 #include <grpc/support/alloc.h>
 
-#include "src/core/support/string.h"
+#include "src/core/lib/support/string.h"
 
 int gpr_asprintf(char **strp, const char *format, ...) {
   va_list args;

@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/surface/channel_stack_type.h"
+#include "src/core/lib/surface/channel_stack_type.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 

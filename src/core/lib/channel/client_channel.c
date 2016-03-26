@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/channel/client_channel.h"
+#include "src/core/lib/channel/client_channel.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -41,14 +41,14 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/useful.h>
 
-#include "src/core/channel/channel_args.h"
-#include "src/core/channel/connected_channel.h"
-#include "src/core/channel/subchannel_call_holder.h"
-#include "src/core/iomgr/iomgr.h"
-#include "src/core/profiling/timers.h"
-#include "src/core/support/string.h"
-#include "src/core/surface/channel.h"
-#include "src/core/transport/connectivity_state.h"
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/connected_channel.h"
+#include "src/core/lib/channel/subchannel_call_holder.h"
+#include "src/core/lib/iomgr/iomgr.h"
+#include "src/core/lib/profiling/timers.h"
+#include "src/core/lib/support/string.h"
+#include "src/core/lib/surface/channel.h"
+#include "src/core/lib/transport/connectivity_state.h"
 
 /* Client channel implementation */
 

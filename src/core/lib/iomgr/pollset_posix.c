@@ -35,7 +35,7 @@
 
 #ifdef GPR_POSIX_SOCKET
 
-#include "src/core/iomgr/pollset_posix.h"
+#include "src/core/lib/iomgr/pollset_posix.h"
 
 #include <errno.h>
 #include <stdlib.h>
@@ -47,11 +47,11 @@
 #include <grpc/support/thd.h>
 #include <grpc/support/tls.h>
 #include <grpc/support/useful.h>
-#include "src/core/iomgr/fd_posix.h"
-#include "src/core/iomgr/iomgr_internal.h"
-#include "src/core/iomgr/socket_utils_posix.h"
-#include "src/core/profiling/timers.h"
-#include "src/core/support/block_annotate.h"
+#include "src/core/lib/iomgr/fd_posix.h"
+#include "src/core/lib/iomgr/iomgr_internal.h"
+#include "src/core/lib/iomgr/socket_utils_posix.h"
+#include "src/core/lib/profiling/timers.h"
+#include "src/core/lib/support/block_annotate.h"
 
 GPR_TLS_DECL(g_current_thread_poller);
 GPR_TLS_DECL(g_current_thread_worker);

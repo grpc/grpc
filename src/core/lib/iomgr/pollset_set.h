@@ -34,7 +34,7 @@
 #ifndef GRPC_CORE_LIB_IOMGR_POLLSET_SET_H
 #define GRPC_CORE_LIB_IOMGR_POLLSET_SET_H
 
-#include "src/core/iomgr/pollset.h"
+#include "src/core/lib/iomgr/pollset.h"
 
 /* A grpc_pollset_set is a set of pollsets that are interested in an
    action. Adding a pollset to a pollset_set automatically adds any

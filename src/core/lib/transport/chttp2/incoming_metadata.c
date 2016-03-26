@@ -31,11 +31,11 @@
  *
  */
 
-#include "src/core/transport/chttp2/incoming_metadata.h"
+#include "src/core/lib/transport/chttp2/incoming_metadata.h"
 
 #include <string.h>
 
-#include "src/core/transport/chttp2/internal.h"
+#include "src/core/lib/transport/chttp2/internal.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>

@@ -34,7 +34,7 @@
 #ifndef GRPC_CORE_LIB_TRANSPORT_TRANSPORT_IMPL_H
 #define GRPC_CORE_LIB_TRANSPORT_TRANSPORT_IMPL_H
 
-#include "src/core/transport/transport.h"
+#include "src/core/lib/transport/transport.h"
 
 typedef struct grpc_transport_vtable {
   /* Memory required for a single stream element - this is allocated by upper

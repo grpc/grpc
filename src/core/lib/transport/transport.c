@@ -31,11 +31,11 @@
  *
  */
 
-#include "src/core/transport/transport.h"
+#include "src/core/lib/transport/transport.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
 #include <grpc/support/log.h>
-#include "src/core/transport/transport_impl.h"
+#include "src/core/lib/transport/transport_impl.h"
 
 #ifdef GRPC_STREAM_REFCOUNT_DEBUG
 void grpc_stream_ref(grpc_stream_refcount *refcount, const char *reason) {

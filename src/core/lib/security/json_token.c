@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/security/json_token.h"
+#include "src/core/lib/security/json_token.h"
 
 #include <string.h>
 
@@ -39,8 +39,8 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/security/b64.h"
-#include "src/core/support/string.h"
+#include "src/core/lib/security/b64.h"
+#include "src/core/lib/support/string.h"
 
 #include <openssl/bio.h>
 #include <openssl/evp.h>

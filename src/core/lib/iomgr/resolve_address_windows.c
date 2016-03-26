@@ -34,8 +34,8 @@
 #include <grpc/support/port_platform.h>
 #ifdef GPR_WINSOCK_SOCKET
 
-#include "src/core/iomgr/resolve_address.h"
-#include "src/core/iomgr/sockaddr.h"
+#include "src/core/lib/iomgr/resolve_address.h"
+#include "src/core/lib/iomgr/sockaddr.h"
 
 #include <string.h>
 #include <sys/types.h>
@@ -47,11 +47,11 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/thd.h>
 #include <grpc/support/time.h>
-#include "src/core/iomgr/executor.h"
-#include "src/core/iomgr/iomgr_internal.h"
-#include "src/core/iomgr/sockaddr_utils.h"
-#include "src/core/support/block_annotate.h"
-#include "src/core/support/string.h"
+#include "src/core/lib/iomgr/executor.h"
+#include "src/core/lib/iomgr/iomgr_internal.h"
+#include "src/core/lib/iomgr/sockaddr_utils.h"
+#include "src/core/lib/support/block_annotate.h"
+#include "src/core/lib/support/string.h"
 
 typedef struct {
   char *name;

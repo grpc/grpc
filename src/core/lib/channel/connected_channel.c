@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/channel/connected_channel.h"
+#include "src/core/lib/channel/connected_channel.h"
 
 #include <stdarg.h>
 #include <stdio.h>
@@ -41,9 +41,9 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/slice_buffer.h>
-#include "src/core/profiling/timers.h"
-#include "src/core/support/string.h"
-#include "src/core/transport/transport.h"
+#include "src/core/lib/profiling/timers.h"
+#include "src/core/lib/support/string.h"
+#include "src/core/lib/transport/transport.h"
 
 #define MAX_BUFFER_LENGTH 8192
 

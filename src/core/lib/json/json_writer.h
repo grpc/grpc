@@ -48,7 +48,7 @@
 
 #include <stdlib.h>
 
-#include "src/core/json/json_common.h"
+#include "src/core/lib/json/json_common.h"
 
 typedef struct grpc_json_writer_vtable {
   /* Adds a character to the output stream. */

@@ -35,7 +35,7 @@
 
 #ifdef GPR_POSIX_SOCKET
 
-#include "src/core/iomgr/socket_utils_posix.h"
+#include "src/core/lib/iomgr/socket_utils_posix.h"
 
 #include <arpa/inet.h>
 #include <errno.h>
@@ -53,8 +53,8 @@
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/sync.h>
-#include "src/core/iomgr/sockaddr_utils.h"
-#include "src/core/support/string.h"
+#include "src/core/lib/iomgr/sockaddr_utils.h"
+#include "src/core/lib/support/string.h"
 
 /* set a socket to non blocking mode */
 int grpc_set_socket_nonblocking(int fd, int non_blocking) {

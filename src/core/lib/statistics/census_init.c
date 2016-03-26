@@ -31,11 +31,11 @@
  *
  */
 
-#include "src/core/statistics/census_interface.h"
+#include "src/core/lib/statistics/census_interface.h"
 
 #include <grpc/support/log.h>
-#include "src/core/statistics/census_rpc_stats.h"
-#include "src/core/statistics/census_tracing.h"
+#include "src/core/lib/statistics/census_rpc_stats.h"
+#include "src/core/lib/statistics/census_tracing.h"
 
 void census_init(void) {
   census_tracing_init();

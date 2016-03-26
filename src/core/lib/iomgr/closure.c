@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/iomgr/closure.h"
+#include "src/core/lib/iomgr/closure.h"
 
 #include <grpc/support/alloc.h>
 

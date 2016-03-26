@@ -34,7 +34,7 @@
 #ifndef GRPC_CORE_LIB_IOMGR_EXEC_CTX_H
 #define GRPC_CORE_LIB_IOMGR_EXEC_CTX_H
 
-#include "src/core/iomgr/closure.h"
+#include "src/core/lib/iomgr/closure.h"
 
 /* #define GRPC_EXECUTION_CONTEXT_SANITIZER 1 */
 

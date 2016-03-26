@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/client_config/client_config.h"
+#include "src/core/lib/client_config/client_config.h"
 
 #include <string.h>
 

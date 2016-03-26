@@ -36,7 +36,7 @@
 
 #include <string.h>
 
-#include "src/core/surface/api_trace.h"
+#include "src/core/lib/surface/api_trace.h"
 
 void grpc_call_details_init(grpc_call_details* cd) {
   GRPC_API_TRACE("grpc_call_details_init(cd=%p)", 1, (cd));

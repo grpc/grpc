@@ -45,8 +45,8 @@
 
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
-#include "src/core/debug/trace.h"
-#include "src/core/transport/transport.h"
+#include "src/core/lib/debug/trace.h"
+#include "src/core/lib/transport/transport.h"
 
 typedef struct grpc_channel_element grpc_channel_element;
 typedef struct grpc_call_element grpc_call_element;

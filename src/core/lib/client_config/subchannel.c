@@ -31,24 +31,24 @@
  *
  */
 
-#include "src/core/client_config/subchannel.h"
+#include "src/core/lib/client_config/subchannel.h"
 
 #include <string.h>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/avl.h>
 
-#include "src/core/channel/channel_args.h"
-#include "src/core/channel/client_channel.h"
-#include "src/core/channel/connected_channel.h"
-#include "src/core/client_config/initial_connect_string.h"
-#include "src/core/client_config/subchannel_index.h"
-#include "src/core/iomgr/timer.h"
-#include "src/core/profiling/timers.h"
-#include "src/core/support/backoff.h"
-#include "src/core/surface/channel.h"
-#include "src/core/surface/channel_init.h"
-#include "src/core/transport/connectivity_state.h"
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/client_channel.h"
+#include "src/core/lib/channel/connected_channel.h"
+#include "src/core/lib/client_config/initial_connect_string.h"
+#include "src/core/lib/client_config/subchannel_index.h"
+#include "src/core/lib/iomgr/timer.h"
+#include "src/core/lib/profiling/timers.h"
+#include "src/core/lib/support/backoff.h"
+#include "src/core/lib/surface/channel.h"
+#include "src/core/lib/surface/channel_init.h"
+#include "src/core/lib/transport/connectivity_state.h"
 
 #define INTERNAL_REF_BITS 16
 #define STRONG_REF_MASK (~(gpr_atm)((1 << INTERNAL_REF_BITS) - 1))

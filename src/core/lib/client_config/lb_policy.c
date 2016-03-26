@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/client_config/lb_policy.h"
+#include "src/core/lib/client_config/lb_policy.h"
 
 #define WEAK_REF_BITS 16
 

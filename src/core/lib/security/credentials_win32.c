@@ -35,14 +35,14 @@
 
 #ifdef GPR_WIN32
 
-#include "src/core/security/credentials.h"
+#include "src/core/lib/security/credentials.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/support/env.h"
-#include "src/core/support/string.h"
+#include "src/core/lib/support/env.h"
+#include "src/core/lib/support/string.h"
 
 char *grpc_get_well_known_google_credentials_file_path_impl(void) {
   char *result = NULL;

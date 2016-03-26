@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/security/auth_filters.h"
+#include "src/core/lib/security/auth_filters.h"
 
 #include <string.h>
 
@@ -39,13 +39,13 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/channel/channel_stack.h"
-#include "src/core/security/credentials.h"
-#include "src/core/security/security_connector.h"
-#include "src/core/security/security_context.h"
-#include "src/core/support/string.h"
-#include "src/core/surface/call.h"
-#include "src/core/transport/static_metadata.h"
+#include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/security/credentials.h"
+#include "src/core/lib/security/security_connector.h"
+#include "src/core/lib/security/security_context.h"
+#include "src/core/lib/support/string.h"
+#include "src/core/lib/surface/call.h"
+#include "src/core/lib/transport/static_metadata.h"
 
 #define MAX_CREDENTIALS_METADATA_COUNT 4
 

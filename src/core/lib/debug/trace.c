@@ -31,14 +31,14 @@
  *
  */
 
-#include "src/core/debug/trace.h"
+#include "src/core/lib/debug/trace.h"
 
 #include <string.h>
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include "src/core/support/env.h"
+#include "src/core/lib/support/env.h"
 
 typedef struct tracer {
   const char *name;

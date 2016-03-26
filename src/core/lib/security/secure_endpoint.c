@@ -31,15 +31,15 @@
  *
  */
 
-#include "src/core/security/secure_endpoint.h"
+#include "src/core/lib/security/secure_endpoint.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/slice.h>
 #include <grpc/support/slice_buffer.h>
 #include <grpc/support/sync.h>
-#include "src/core/debug/trace.h"
-#include "src/core/support/string.h"
-#include "src/core/tsi/transport_security_interface.h"
+#include "src/core/lib/debug/trace.h"
+#include "src/core/lib/support/string.h"
+#include "src/core/lib/tsi/transport_security_interface.h"
 
 #define STAGING_BUFFER_SIZE 8192
 

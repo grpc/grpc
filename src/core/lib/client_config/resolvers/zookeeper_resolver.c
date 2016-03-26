@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/client_config/resolvers/zookeeper_resolver.h"
+#include "src/core/lib/client_config/resolvers/zookeeper_resolver.h"
 
 #include <string.h>
 
@@ -41,12 +41,12 @@
 #include <grpc/grpc_zookeeper.h>
 #include <zookeeper/zookeeper.h>
 
-#include "src/core/client_config/lb_policy_registry.h"
-#include "src/core/client_config/resolver_registry.h"
-#include "src/core/iomgr/resolve_address.h"
-#include "src/core/json/json.h"
-#include "src/core/support/string.h"
-#include "src/core/surface/api_trace.h"
+#include "src/core/lib/client_config/lb_policy_registry.h"
+#include "src/core/lib/client_config/resolver_registry.h"
+#include "src/core/lib/iomgr/resolve_address.h"
+#include "src/core/lib/json/json.h"
+#include "src/core/lib/support/string.h"
+#include "src/core/lib/surface/api_trace.h"
 
 /** Zookeeper session expiration time in milliseconds */
 #define GRPC_ZOOKEEPER_SESSION_TIMEOUT 15000

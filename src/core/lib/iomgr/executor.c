@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/iomgr/executor.h"
+#include "src/core/lib/iomgr/executor.h"
 
 #include <string.h>
 
@@ -39,7 +39,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/thd.h>
-#include "src/core/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 
 typedef struct grpc_executor_data {
   int busy;          /**< is the thread currently running? */

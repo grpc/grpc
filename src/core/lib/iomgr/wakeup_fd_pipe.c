@@ -35,7 +35,7 @@
 
 #ifdef GPR_POSIX_WAKEUP_FD
 
-#include "src/core/iomgr/wakeup_fd_posix.h"
+#include "src/core/lib/iomgr/wakeup_fd_posix.h"
 
 #include <errno.h>
 #include <string.h>
@@ -43,7 +43,7 @@
 
 #include <grpc/support/log.h>
 
-#include "src/core/iomgr/socket_utils_posix.h"
+#include "src/core/lib/iomgr/socket_utils_posix.h"
 
 static void pipe_init(grpc_wakeup_fd* fd_info) {
   int pipefd[2];

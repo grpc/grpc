@@ -31,12 +31,12 @@
  *
  */
 
-#include "src/core/transport/chttp2/bin_encoder.h"
+#include "src/core/lib/transport/chttp2/bin_encoder.h"
 
 #include <string.h>
 
 #include <grpc/support/log.h>
-#include "src/core/transport/chttp2/huffsyms.h"
+#include "src/core/lib/transport/chttp2/huffsyms.h"
 
 static const char alphabet[] =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";

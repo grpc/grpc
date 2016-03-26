@@ -36,11 +36,11 @@
 
 #include <stddef.h>
 
-#include "src/core/channel/context.h"
-#include "src/core/iomgr/pollset.h"
-#include "src/core/iomgr/pollset_set.h"
-#include "src/core/transport/byte_stream.h"
-#include "src/core/transport/metadata_batch.h"
+#include "src/core/lib/channel/context.h"
+#include "src/core/lib/iomgr/pollset.h"
+#include "src/core/lib/iomgr/pollset_set.h"
+#include "src/core/lib/transport/byte_stream.h"
+#include "src/core/lib/transport/metadata_batch.h"
 
 /* forward declarations */
 typedef struct grpc_transport grpc_transport;

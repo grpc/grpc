@@ -35,7 +35,7 @@
 
 #ifdef GPR_WINSOCK_SOCKET
 
-#include "src/core/iomgr/sockaddr_win32.h"
+#include "src/core/lib/iomgr/sockaddr_win32.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -44,12 +44,12 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/useful.h>
 
-#include "src/core/iomgr/iocp_windows.h"
-#include "src/core/iomgr/sockaddr.h"
-#include "src/core/iomgr/sockaddr_utils.h"
-#include "src/core/iomgr/socket_windows.h"
-#include "src/core/iomgr/tcp_client.h"
-#include "src/core/iomgr/timer.h"
+#include "src/core/lib/iomgr/iocp_windows.h"
+#include "src/core/lib/iomgr/sockaddr.h"
+#include "src/core/lib/iomgr/sockaddr_utils.h"
+#include "src/core/lib/iomgr/socket_windows.h"
+#include "src/core/lib/iomgr/tcp_client.h"
+#include "src/core/lib/iomgr/timer.h"
 
 static int set_non_block(SOCKET sock) {
   int status;

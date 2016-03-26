@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/transport/chttp2_transport.h"
+#include "src/core/lib/transport/chttp2_transport.h"
 
 #include <math.h>
 #include <stdio.h>
@@ -43,14 +43,14 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/useful.h>
 
-#include "src/core/profiling/timers.h"
-#include "src/core/support/string.h"
-#include "src/core/transport/chttp2/http2_errors.h"
-#include "src/core/transport/chttp2/internal.h"
-#include "src/core/transport/chttp2/status_conversion.h"
-#include "src/core/transport/chttp2/timeout_encoding.h"
-#include "src/core/transport/static_metadata.h"
-#include "src/core/transport/transport_impl.h"
+#include "src/core/lib/profiling/timers.h"
+#include "src/core/lib/support/string.h"
+#include "src/core/lib/transport/chttp2/http2_errors.h"
+#include "src/core/lib/transport/chttp2/internal.h"
+#include "src/core/lib/transport/chttp2/status_conversion.h"
+#include "src/core/lib/transport/chttp2/timeout_encoding.h"
+#include "src/core/lib/transport/static_metadata.h"
+#include "src/core/lib/transport/transport_impl.h"
 
 #define DEFAULT_WINDOW 65535
 #define DEFAULT_CONNECTION_WINDOW_TARGET (1024 * 1024)

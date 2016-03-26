@@ -34,17 +34,17 @@
 #ifndef GRPC_CORE_LIB_IOMGR_WORKQUEUE_H
 #define GRPC_CORE_LIB_IOMGR_WORKQUEUE_H
 
-#include "src/core/iomgr/closure.h"
-#include "src/core/iomgr/exec_ctx.h"
-#include "src/core/iomgr/iomgr.h"
-#include "src/core/iomgr/pollset.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/iomgr.h"
+#include "src/core/lib/iomgr/pollset.h"
 
 #ifdef GPR_POSIX_SOCKET
-#include "src/core/iomgr/workqueue_posix.h"
+#include "src/core/lib/iomgr/workqueue_posix.h"
 #endif
 
 #ifdef GPR_WIN32
-#include "src/core/iomgr/workqueue_windows.h"
+#include "src/core/lib/iomgr/workqueue_windows.h"
 #endif
 
 /* grpc_workqueue is forward declared in exec_ctx.h */

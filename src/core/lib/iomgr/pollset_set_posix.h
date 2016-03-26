@@ -34,8 +34,8 @@
 #ifndef GRPC_CORE_LIB_IOMGR_POLLSET_SET_POSIX_H
 #define GRPC_CORE_LIB_IOMGR_POLLSET_SET_POSIX_H
 
-#include "src/core/iomgr/fd_posix.h"
-#include "src/core/iomgr/pollset_set.h"
+#include "src/core/lib/iomgr/fd_posix.h"
+#include "src/core/lib/iomgr/pollset_set.h"
 
 void grpc_pollset_set_add_fd(grpc_exec_ctx *exec_ctx,
                              grpc_pollset_set *pollset_set, grpc_fd *fd);

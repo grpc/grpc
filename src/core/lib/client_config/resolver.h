@@ -34,9 +34,9 @@
 #ifndef GRPC_CORE_LIB_CLIENT_CONFIG_RESOLVER_H
 #define GRPC_CORE_LIB_CLIENT_CONFIG_RESOLVER_H
 
-#include "src/core/client_config/client_config.h"
-#include "src/core/client_config/subchannel.h"
-#include "src/core/iomgr/iomgr.h"
+#include "src/core/lib/client_config/client_config.h"
+#include "src/core/lib/client_config/subchannel.h"
+#include "src/core/lib/iomgr/iomgr.h"
 
 typedef struct grpc_resolver grpc_resolver;
 typedef struct grpc_resolver_vtable grpc_resolver_vtable;

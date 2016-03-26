@@ -34,9 +34,9 @@
 #ifndef GRPC_CORE_LIB_CLIENT_CONFIG_CONNECTOR_H
 #define GRPC_CORE_LIB_CLIENT_CONFIG_CONNECTOR_H
 
-#include "src/core/channel/channel_stack.h"
-#include "src/core/iomgr/sockaddr.h"
-#include "src/core/transport/transport.h"
+#include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/iomgr/sockaddr.h"
+#include "src/core/lib/transport/transport.h"
 
 typedef struct grpc_connector grpc_connector;
 typedef struct grpc_connector_vtable grpc_connector_vtable;

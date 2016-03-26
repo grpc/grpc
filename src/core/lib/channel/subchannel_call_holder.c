@@ -31,11 +31,11 @@
  *
  */
 
-#include "src/core/channel/subchannel_call_holder.h"
+#include "src/core/lib/channel/subchannel_call_holder.h"
 
 #include <grpc/support/alloc.h>
 
-#include "src/core/profiling/timers.h"
+#include "src/core/lib/profiling/timers.h"
 
 #define GET_CALL(holder) \
   ((grpc_subchannel_call *)(gpr_atm_acq_load(&(holder)->subchannel_call)))

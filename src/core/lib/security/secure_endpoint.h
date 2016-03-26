@@ -35,7 +35,7 @@
 #define GRPC_CORE_LIB_SECURITY_SECURE_ENDPOINT_H
 
 #include <grpc/support/slice.h>
-#include "src/core/iomgr/endpoint.h"
+#include "src/core/lib/iomgr/endpoint.h"
 
 struct tsi_frame_protector;
 

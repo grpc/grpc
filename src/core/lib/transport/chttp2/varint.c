@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/transport/chttp2/varint.h"
+#include "src/core/lib/transport/chttp2/varint.h"
 
 uint32_t grpc_chttp2_hpack_varint_length(uint32_t tail_value) {
   if (tail_value < (1 << 7)) {

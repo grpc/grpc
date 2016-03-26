@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/surface/channel_init.h"
+#include "src/core/lib/surface/channel_init.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/useful.h>

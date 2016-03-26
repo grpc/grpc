@@ -34,8 +34,8 @@
 #ifndef GRPC_CORE_LIB_TRANSPORT_CHTTP2_TRANSPORT_H
 #define GRPC_CORE_LIB_TRANSPORT_CHTTP2_TRANSPORT_H
 
-#include "src/core/iomgr/endpoint.h"
-#include "src/core/transport/transport.h"
+#include "src/core/lib/iomgr/endpoint.h"
+#include "src/core/lib/transport/transport.h"
 
 extern int grpc_http_trace;
 extern int grpc_flowctl_trace;

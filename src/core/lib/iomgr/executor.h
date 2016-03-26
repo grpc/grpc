@@ -34,7 +34,7 @@
 #ifndef GRPC_CORE_LIB_IOMGR_EXECUTOR_H
 #define GRPC_CORE_LIB_IOMGR_EXECUTOR_H
 
-#include "src/core/iomgr/closure.h"
+#include "src/core/lib/iomgr/closure.h"
 
 /** Initialize the global executor.
  *

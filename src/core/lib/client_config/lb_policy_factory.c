@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/client_config/lb_policy_factory.h"
+#include "src/core/lib/client_config/lb_policy_factory.h"
 
 void grpc_lb_policy_factory_ref(grpc_lb_policy_factory* factory) {
   factory->vtable->ref(factory);

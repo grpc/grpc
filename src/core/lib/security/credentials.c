@@ -31,19 +31,19 @@
  *
  */
 
-#include "src/core/security/credentials.h"
+#include "src/core/lib/security/credentials.h"
 
 #include <stdio.h>
 #include <string.h>
 
-#include "src/core/channel/channel_args.h"
-#include "src/core/channel/http_client_filter.h"
-#include "src/core/http/httpcli.h"
-#include "src/core/http/parser.h"
-#include "src/core/iomgr/executor.h"
-#include "src/core/json/json.h"
-#include "src/core/support/string.h"
-#include "src/core/surface/api_trace.h"
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/http_client_filter.h"
+#include "src/core/lib/http/httpcli.h"
+#include "src/core/lib/http/parser.h"
+#include "src/core/lib/iomgr/executor.h"
+#include "src/core/lib/json/json.h"
+#include "src/core/lib/support/string.h"
+#include "src/core/lib/surface/api_trace.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>

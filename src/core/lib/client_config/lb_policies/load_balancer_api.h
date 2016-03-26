@@ -36,8 +36,8 @@
 
 #include <grpc/support/slice_buffer.h>
 
-#include "src/core/client_config/lb_policy_factory.h"
-#include "src/core/proto/grpc/lb/v0/load_balancer.pb.h"
+#include "src/core/lib/client_config/lb_policy_factory.h"
+#include "src/core/lib/proto/grpc/lb/v0/load_balancer.pb.h"
 
 #ifdef __cplusplus
 extern "C" {

@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/iomgr/timer_heap.h"
+#include "src/core/lib/iomgr/timer_heap.h"
 
 #include <string.h>
 

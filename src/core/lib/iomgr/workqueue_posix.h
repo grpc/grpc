@@ -34,7 +34,7 @@
 #ifndef GRPC_CORE_LIB_IOMGR_WORKQUEUE_POSIX_H
 #define GRPC_CORE_LIB_IOMGR_WORKQUEUE_POSIX_H
 
-#include "src/core/iomgr/wakeup_fd_posix.h"
+#include "src/core/lib/iomgr/wakeup_fd_posix.h"
 
 struct grpc_fd;
 

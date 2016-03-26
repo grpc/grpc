@@ -34,8 +34,8 @@
 #ifndef GRPC_CORE_LIB_SECURITY_JWT_VERIFIER_H
 #define GRPC_CORE_LIB_SECURITY_JWT_VERIFIER_H
 
-#include "src/core/iomgr/pollset.h"
-#include "src/core/json/json.h"
+#include "src/core/lib/iomgr/pollset.h"
+#include "src/core/lib/json/json.h"
 
 #include <grpc/support/slice.h>
 #include <grpc/support/time.h>

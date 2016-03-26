@@ -41,7 +41,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/slice_buffer.h>
 
-#include "src/core/compression/message_compress.h"
+#include "src/core/lib/compression/message_compress.h"
 
 static int is_compressed(grpc_byte_buffer *buffer) {
   switch (buffer->type) {

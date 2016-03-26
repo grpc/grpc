@@ -34,8 +34,8 @@
 #ifndef GRPC_CORE_LIB_SECURITY_HANDSHAKE_H
 #define GRPC_CORE_LIB_SECURITY_HANDSHAKE_H
 
-#include "src/core/iomgr/endpoint.h"
-#include "src/core/security/security_connector.h"
+#include "src/core/lib/iomgr/endpoint.h"
+#include "src/core/lib/security/security_connector.h"
 
 /* Calls the callback upon completion. Takes owership of handshaker. */
 void grpc_do_security_handshake(grpc_exec_ctx *exec_ctx,

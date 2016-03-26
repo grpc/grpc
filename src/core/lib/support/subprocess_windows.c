@@ -42,8 +42,8 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/subprocess.h>
-#include "src/core/support/string.h"
-#include "src/core/support/string_win32.h"
+#include "src/core/lib/support/string.h"
+#include "src/core/lib/support/string_win32.h"
 
 struct gpr_subprocess {
   PROCESS_INFORMATION pi;

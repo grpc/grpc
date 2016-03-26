@@ -31,13 +31,13 @@
  *
  */
 
-#include "src/core/transport/chttp2/timeout_encoding.h"
+#include "src/core/lib/transport/chttp2/timeout_encoding.h"
 
 #include <stdio.h>
 #include <string.h>
 
 #include <grpc/support/port_platform.h>
-#include "src/core/support/string.h"
+#include "src/core/lib/support/string.h"
 
 static int64_t round_up(int64_t x, int64_t divisor) {
   return (x / divisor + (x % divisor != 0)) * divisor;
