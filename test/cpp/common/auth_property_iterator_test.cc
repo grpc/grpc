@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,8 +31,8 @@
  *
  */
 
-#include <grpc/grpc_security.h>
 #include <grpc++/security/auth_context.h>
+#include <grpc/grpc_security.h>
 #include <gtest/gtest.h>
 #include "src/cpp/common/secure_auth_context.h"
 #include "test/cpp/util/string_ref_helper.h"

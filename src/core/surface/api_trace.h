@@ -34,8 +34,8 @@
 #ifndef GRPC_CORE_SURFACE_API_TRACE_H
 #define GRPC_CORE_SURFACE_API_TRACE_H
 
-#include "src/core/debug/trace.h"
 #include <grpc/support/log.h>
+#include "src/core/debug/trace.h"
 
 extern int grpc_api_trace;
 

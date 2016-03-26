@@ -35,10 +35,10 @@
 #define GRPC_CORE_IOMGR_SOCKADDR_POSIX_H
 
 #include <arpa/inet.h>
+#include <netdb.h>
+#include <netinet/in.h>
 #include <sys/socket.h>
 #include <sys/types.h>
-#include <netinet/in.h>
-#include <netdb.h>
 #include <unistd.h>
 
 #endif /* GRPC_CORE_IOMGR_SOCKADDR_POSIX_H */
