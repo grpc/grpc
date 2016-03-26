@@ -41,10 +41,10 @@
 #include <grpc/support/time.h>
 #include <limits.h>
 #include <process.h>
-#include <src/core/support/time_precise.h>
 #include <sys/timeb.h>
 
 #include "src/core/lib/support/block_annotate.h"
+#include "src/core/support/time_precise.h"
 
 static LARGE_INTEGER g_start_time;
 static double g_time_scale;
