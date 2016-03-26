@@ -134,12 +134,12 @@ static void tsi_fake_frame_reset(tsi_fake_frame *frame, int needs_draining) {
 static int tsi_fake_frame_ensure_size(tsi_fake_frame *frame) {
   if (frame->data == NULL) {
     frame->allocated_size = frame->size;
-    frame->data = malloc(frame->allocated_size);
+    frame->data = gpr_malloc(frame->allocated_size);
     if (frame->data == NULL) return 0;
   } else if (frame->size > frame->allocated_size) {
     unsigned char *new_data = realloc(frame->data, frame->size);
     if (new_data == NULL) {
-      free(frame->data);
+      gpr_free(frame->data);
       frame->data = NULL;
       return 0;
     }
@@ -160,7 +160,7 @@ static tsi_result fill_frame_from_bytes(const unsigned char *incoming_bytes,
   if (frame->needs_draining) return TSI_INTERNAL_ERROR;
   if (frame->data == NULL) {
     frame->allocated_size = TSI_FAKE_FRAME_INITIAL_ALLOCATED_SIZE;
-    frame->data = malloc(frame->allocated_size);
+    frame->data = gpr_malloc(frame->allocated_size);
     if (frame->data == NULL) return TSI_OUT_OF_RESOURCES;
   }
 
@@ -226,7 +226,7 @@ static tsi_result bytes_to_frame(unsigned char *bytes, size_t bytes_size,
 }
 
 static void tsi_fake_frame_destruct(tsi_fake_frame *frame) {
-  if (frame->data != NULL) free(frame->data);
+  if (frame->data != NULL) gpr_free(frame->data);
 }
 
 /* --- tsi_frame_protector methods implementation. ---*/
@@ -366,7 +366,7 @@ static void fake_protector_destroy(tsi_frame_protector *self) {
   tsi_fake_frame_protector *impl = (tsi_fake_frame_protector *)self;
   tsi_fake_frame_destruct(&impl->protect_frame);
   tsi_fake_frame_destruct(&impl->unprotect_frame);
-  free(self);
+  gpr_free(self);
 }
 
 static const tsi_frame_protector_vtable frame_protector_vtable = {
@@ -488,7 +488,7 @@ static void fake_handshaker_destroy(tsi_handshaker *self) {
   tsi_fake_handshaker *impl = (tsi_fake_handshaker *)self;
   tsi_fake_frame_destruct(&impl->incoming);
   tsi_fake_frame_destruct(&impl->outgoing);
-  free(self);
+  gpr_free(self);
 }
 
 static const tsi_handshaker_vtable handshaker_vtable = {
