@@ -37,20 +37,20 @@
 #include <assert.h>
 #include <stdbool.h>
 
-#include "src/core/iomgr/endpoint.h"
-#include "src/core/transport/chttp2/frame.h"
-#include "src/core/transport/chttp2/frame_data.h"
-#include "src/core/transport/chttp2/frame_goaway.h"
-#include "src/core/transport/chttp2/frame_ping.h"
-#include "src/core/transport/chttp2/frame_rst_stream.h"
-#include "src/core/transport/chttp2/frame_settings.h"
-#include "src/core/transport/chttp2/frame_window_update.h"
-#include "src/core/transport/chttp2/hpack_encoder.h"
-#include "src/core/transport/chttp2/hpack_parser.h"
-#include "src/core/transport/chttp2/incoming_metadata.h"
-#include "src/core/transport/chttp2/stream_map.h"
-#include "src/core/transport/connectivity_state.h"
-#include "src/core/transport/transport_impl.h"
+#include "src/core/lib/iomgr/endpoint.h"
+#include "src/core/lib/transport/chttp2/frame.h"
+#include "src/core/lib/transport/chttp2/frame_data.h"
+#include "src/core/lib/transport/chttp2/frame_goaway.h"
+#include "src/core/lib/transport/chttp2/frame_ping.h"
+#include "src/core/lib/transport/chttp2/frame_rst_stream.h"
+#include "src/core/lib/transport/chttp2/frame_settings.h"
+#include "src/core/lib/transport/chttp2/frame_window_update.h"
+#include "src/core/lib/transport/chttp2/hpack_encoder.h"
+#include "src/core/lib/transport/chttp2/hpack_parser.h"
+#include "src/core/lib/transport/chttp2/incoming_metadata.h"
+#include "src/core/lib/transport/chttp2/stream_map.h"
+#include "src/core/lib/transport/connectivity_state.h"
+#include "src/core/lib/transport/transport_impl.h"
 
 typedef struct grpc_chttp2_transport grpc_chttp2_transport;
 typedef struct grpc_chttp2_stream grpc_chttp2_stream;

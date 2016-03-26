@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/surface/server.h"
+#include "src/core/lib/surface/server.h"
 
 #include <limits.h>
 #include <stdlib.h>
@@ -42,18 +42,18 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/useful.h>
 
-#include "src/core/channel/channel_args.h"
-#include "src/core/channel/connected_channel.h"
-#include "src/core/iomgr/iomgr.h"
-#include "src/core/support/stack_lockfree.h"
-#include "src/core/support/string.h"
-#include "src/core/surface/api_trace.h"
-#include "src/core/surface/call.h"
-#include "src/core/surface/channel.h"
-#include "src/core/surface/completion_queue.h"
-#include "src/core/surface/init.h"
-#include "src/core/transport/metadata.h"
-#include "src/core/transport/static_metadata.h"
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/connected_channel.h"
+#include "src/core/lib/iomgr/iomgr.h"
+#include "src/core/lib/support/stack_lockfree.h"
+#include "src/core/lib/support/string.h"
+#include "src/core/lib/surface/api_trace.h"
+#include "src/core/lib/surface/call.h"
+#include "src/core/lib/surface/channel.h"
+#include "src/core/lib/surface/completion_queue.h"
+#include "src/core/lib/surface/init.h"
+#include "src/core/lib/transport/metadata.h"
+#include "src/core/lib/transport/static_metadata.h"
 
 typedef struct listener {
   void *arg;

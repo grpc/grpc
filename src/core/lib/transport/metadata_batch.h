@@ -38,7 +38,7 @@
 #include <grpc/support/port_platform.h>
 #include <grpc/support/slice.h>
 #include <grpc/support/time.h>
-#include "src/core/transport/metadata.h"
+#include "src/core/lib/transport/metadata.h"
 
 typedef struct grpc_linked_mdelem {
   grpc_mdelem *md;

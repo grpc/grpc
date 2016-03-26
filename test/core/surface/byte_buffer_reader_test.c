@@ -42,7 +42,7 @@
 #include <grpc/support/time.h>
 #include "test/core/util/test_config.h"
 
-#include "src/core/compression/message_compress.h"
+#include "src/core/lib/compression/message_compress.h"
 
 #include <string.h>
 

@@ -35,7 +35,7 @@
 
 #ifdef GPR_WINSOCK_SOCKET
 
-#include "src/core/iomgr/pollset_set_windows.h"
+#include "src/core/lib/iomgr/pollset_set_windows.h"
 
 grpc_pollset_set* grpc_pollset_set_create(pollset_set) { return NULL; }
 

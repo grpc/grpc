@@ -36,7 +36,7 @@
 
 #include <stdlib.h>
 
-#include "src/core/json/json_common.h"
+#include "src/core/lib/json/json_common.h"
 
 /* A tree-like structure to hold json values. The key and value pointers
  * are not owned by it.

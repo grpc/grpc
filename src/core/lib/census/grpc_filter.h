@@ -34,7 +34,7 @@
 #ifndef GRPC_CORE_LIB_CENSUS_GRPC_FILTER_H
 #define GRPC_CORE_LIB_CENSUS_GRPC_FILTER_H
 
-#include "src/core/channel/channel_stack.h"
+#include "src/core/lib/channel/channel_stack.h"
 
 /* Census filters: provides tracing and stats collection functionalities. It
    needs to reside right below the surface filter in the channel stack. */

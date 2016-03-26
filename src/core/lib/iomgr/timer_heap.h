@@ -34,7 +34,7 @@
 #ifndef GRPC_CORE_LIB_IOMGR_TIMER_HEAP_H
 #define GRPC_CORE_LIB_IOMGR_TIMER_HEAP_H
 
-#include "src/core/iomgr/timer.h"
+#include "src/core/lib/iomgr/timer.h"
 
 typedef struct {
   grpc_timer **timers;

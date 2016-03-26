@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/client_config/resolver.h"
+#include "src/core/lib/client_config/resolver.h"
 
 void grpc_resolver_init(grpc_resolver *resolver,
                         const grpc_resolver_vtable *vtable) {

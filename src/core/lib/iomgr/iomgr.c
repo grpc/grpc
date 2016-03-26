@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/iomgr/iomgr.h"
+#include "src/core/lib/iomgr/iomgr.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -43,11 +43,11 @@
 #include <grpc/support/thd.h>
 #include <grpc/support/useful.h>
 
-#include "src/core/iomgr/exec_ctx.h"
-#include "src/core/iomgr/iomgr_internal.h"
-#include "src/core/iomgr/timer.h"
-#include "src/core/support/env.h"
-#include "src/core/support/string.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/iomgr_internal.h"
+#include "src/core/lib/iomgr/timer.h"
+#include "src/core/lib/support/env.h"
+#include "src/core/lib/support/string.h"
 
 static gpr_mu g_mu;
 static gpr_cv g_rcv;

@@ -31,12 +31,12 @@
  *
  */
 
-#include "src/core/client_config/lb_policies/round_robin.h"
+#include "src/core/lib/client_config/lb_policies/round_robin.h"
 
 #include <string.h>
 
 #include <grpc/support/alloc.h>
-#include "src/core/transport/connectivity_state.h"
+#include "src/core/lib/transport/connectivity_state.h"
 
 typedef struct round_robin_lb_policy round_robin_lb_policy;
 

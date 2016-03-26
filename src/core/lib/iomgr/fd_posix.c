@@ -35,7 +35,7 @@
 
 #ifdef GPR_POSIX_SOCKET
 
-#include "src/core/iomgr/fd_posix.h"
+#include "src/core/lib/iomgr/fd_posix.h"
 
 #include <assert.h>
 #include <sys/socket.h>
@@ -46,7 +46,7 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/useful.h>
 
-#include "src/core/iomgr/pollset_posix.h"
+#include "src/core/lib/iomgr/pollset_posix.h"
 
 #define CLOSURE_NOT_READY ((grpc_closure *)0)
 #define CLOSURE_READY ((grpc_closure *)1)

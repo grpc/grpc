@@ -35,7 +35,7 @@
 
 #ifdef GPR_POSIX_SOCKET
 
-#include "src/core/iomgr/pollset_posix.h"
+#include "src/core/lib/iomgr/pollset_posix.h"
 
 #include <errno.h>
 #include <poll.h>
@@ -46,10 +46,10 @@
 #include <grpc/support/log.h>
 #include <grpc/support/useful.h>
 
-#include "src/core/iomgr/fd_posix.h"
-#include "src/core/iomgr/iomgr_internal.h"
-#include "src/core/iomgr/pollset_posix.h"
-#include "src/core/support/block_annotate.h"
+#include "src/core/lib/iomgr/fd_posix.h"
+#include "src/core/lib/iomgr/iomgr_internal.h"
+#include "src/core/lib/iomgr/pollset_posix.h"
+#include "src/core/lib/support/block_annotate.h"
 
 typedef struct {
   /* all polled fds */

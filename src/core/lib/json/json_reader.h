@@ -35,7 +35,7 @@
 #define GRPC_CORE_LIB_JSON_JSON_READER_H
 
 #include <grpc/support/port_platform.h>
-#include "src/core/json/json_common.h"
+#include "src/core/lib/json/json_common.h"
 
 typedef enum {
   GRPC_JSON_STATE_OBJECT_KEY_BEGIN,

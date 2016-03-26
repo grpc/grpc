@@ -38,10 +38,10 @@
 
 #include <grpc/support/sync.h>
 
-#include "src/core/iomgr/exec_ctx.h"
-#include "src/core/iomgr/iomgr.h"
-#include "src/core/iomgr/pollset.h"
-#include "src/core/iomgr/wakeup_fd_posix.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/iomgr.h"
+#include "src/core/lib/iomgr/pollset.h"
+#include "src/core/lib/iomgr/wakeup_fd_posix.h"
 
 typedef struct grpc_pollset_vtable grpc_pollset_vtable;
 

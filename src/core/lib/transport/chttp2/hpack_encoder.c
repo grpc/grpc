@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/transport/chttp2/hpack_encoder.h"
+#include "src/core/lib/transport/chttp2/hpack_encoder.h"
 
 #include <assert.h>
 #include <string.h>
@@ -45,11 +45,11 @@
 #include <grpc/support/log.h>
 #include <grpc/support/useful.h>
 
-#include "src/core/transport/chttp2/bin_encoder.h"
-#include "src/core/transport/chttp2/hpack_table.h"
-#include "src/core/transport/chttp2/timeout_encoding.h"
-#include "src/core/transport/chttp2/varint.h"
-#include "src/core/transport/static_metadata.h"
+#include "src/core/lib/transport/chttp2/bin_encoder.h"
+#include "src/core/lib/transport/chttp2/hpack_table.h"
+#include "src/core/lib/transport/chttp2/timeout_encoding.h"
+#include "src/core/lib/transport/chttp2/varint.h"
+#include "src/core/lib/transport/static_metadata.h"
 
 #define HASH_FRAGMENT_1(x) ((x)&255)
 #define HASH_FRAGMENT_2(x) ((x >> 8) & 255)

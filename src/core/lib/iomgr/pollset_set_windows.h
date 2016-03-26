@@ -34,6 +34,6 @@
 #ifndef GRPC_CORE_LIB_IOMGR_POLLSET_SET_WINDOWS_H
 #define GRPC_CORE_LIB_IOMGR_POLLSET_SET_WINDOWS_H
 
-#include "src/core/iomgr/pollset_set.h"
+#include "src/core/lib/iomgr/pollset_set.h"
 
 #endif /* GRPC_CORE_LIB_IOMGR_POLLSET_SET_WINDOWS_H */

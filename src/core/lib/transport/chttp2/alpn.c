@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/transport/chttp2/alpn.h"
+#include "src/core/lib/transport/chttp2/alpn.h"
 #include <grpc/support/log.h>
 #include <grpc/support/useful.h>
 

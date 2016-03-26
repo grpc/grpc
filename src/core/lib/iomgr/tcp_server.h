@@ -34,8 +34,8 @@
 #ifndef GRPC_CORE_LIB_IOMGR_TCP_SERVER_H
 #define GRPC_CORE_LIB_IOMGR_TCP_SERVER_H
 
-#include "src/core/iomgr/closure.h"
-#include "src/core/iomgr/endpoint.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/endpoint.h"
 
 /* Forward decl of grpc_tcp_server */
 typedef struct grpc_tcp_server grpc_tcp_server;

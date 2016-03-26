@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/surface/completion_queue.h"
+#include "src/core/lib/surface/completion_queue.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -41,14 +41,14 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
-#include "src/core/iomgr/pollset.h"
-#include "src/core/iomgr/timer.h"
-#include "src/core/profiling/timers.h"
-#include "src/core/support/string.h"
-#include "src/core/surface/api_trace.h"
-#include "src/core/surface/call.h"
-#include "src/core/surface/event_string.h"
-#include "src/core/surface/surface_trace.h"
+#include "src/core/lib/iomgr/pollset.h"
+#include "src/core/lib/iomgr/timer.h"
+#include "src/core/lib/profiling/timers.h"
+#include "src/core/lib/support/string.h"
+#include "src/core/lib/surface/api_trace.h"
+#include "src/core/lib/surface/call.h"
+#include "src/core/lib/surface/event_string.h"
+#include "src/core/lib/surface/surface_trace.h"
 
 typedef struct {
   grpc_pollset_worker **worker;

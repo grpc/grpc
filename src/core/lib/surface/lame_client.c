@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/surface/lame_client.h"
+#include "src/core/lib/surface/lame_client.h"
 
 #include <grpc/grpc.h>
 
@@ -39,11 +39,11 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include "src/core/channel/channel_stack.h"
-#include "src/core/support/string.h"
-#include "src/core/surface/api_trace.h"
-#include "src/core/surface/call.h"
-#include "src/core/surface/channel.h"
+#include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/support/string.h"
+#include "src/core/lib/surface/api_trace.h"
+#include "src/core/lib/surface/call.h"
+#include "src/core/lib/surface/channel.h"
 
 typedef struct {
   grpc_linked_mdelem status;

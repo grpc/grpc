@@ -31,14 +31,14 @@
  *
  */
 
-#include "src/core/transport/chttp2/internal.h"
+#include "src/core/lib/transport/chttp2/internal.h"
 
 #include <limits.h>
 
 #include <grpc/support/log.h>
 
-#include "src/core/profiling/timers.h"
-#include "src/core/transport/chttp2/http2_errors.h"
+#include "src/core/lib/profiling/timers.h"
+#include "src/core/lib/transport/chttp2/http2_errors.h"
 
 static void finalize_outbuf(grpc_exec_ctx *exec_ctx,
                             grpc_chttp2_transport_writing *transport_writing);

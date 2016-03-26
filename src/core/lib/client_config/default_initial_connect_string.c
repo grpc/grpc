@@ -32,7 +32,7 @@
  */
 
 #include <grpc/support/slice.h>
-#include "src/core/iomgr/sockaddr.h"
+#include "src/core/lib/iomgr/sockaddr.h"
 
 void grpc_set_default_initial_connect_string(struct sockaddr **addr,
                                              size_t *addr_len,

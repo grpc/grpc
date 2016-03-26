@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/surface/channel.h"
+#include "src/core/lib/surface/channel.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -40,14 +40,14 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/client_config/resolver_registry.h"
-#include "src/core/iomgr/iomgr.h"
-#include "src/core/support/string.h"
-#include "src/core/surface/api_trace.h"
-#include "src/core/surface/call.h"
-#include "src/core/surface/channel_init.h"
-#include "src/core/surface/init.h"
-#include "src/core/transport/static_metadata.h"
+#include "src/core/lib/client_config/resolver_registry.h"
+#include "src/core/lib/iomgr/iomgr.h"
+#include "src/core/lib/support/string.h"
+#include "src/core/lib/surface/api_trace.h"
+#include "src/core/lib/surface/call.h"
+#include "src/core/lib/surface/channel_init.h"
+#include "src/core/lib/surface/init.h"
+#include "src/core/lib/transport/static_metadata.h"
 
 /** Cache grpc-status: X mdelems for X = 0..NUM_CACHED_STATUS_ELEMS.
  *  Avoids needing to take a metadata context lock for sending status

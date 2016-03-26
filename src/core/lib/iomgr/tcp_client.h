@@ -35,9 +35,9 @@
 #define GRPC_CORE_LIB_IOMGR_TCP_CLIENT_H
 
 #include <grpc/support/time.h>
-#include "src/core/iomgr/endpoint.h"
-#include "src/core/iomgr/pollset_set.h"
-#include "src/core/iomgr/sockaddr.h"
+#include "src/core/lib/iomgr/endpoint.h"
+#include "src/core/lib/iomgr/pollset_set.h"
+#include "src/core/lib/iomgr/sockaddr.h"
 
 /* Asynchronously connect to an address (specified as (addr, len)), and call
    cb with arg and the completed connection when done (or call cb with arg and

@@ -31,8 +31,8 @@
  *
  */
 
-#include "src/core/transport/chttp2/frame_window_update.h"
-#include "src/core/transport/chttp2/internal.h"
+#include "src/core/lib/transport/chttp2/frame_window_update.h"
+#include "src/core/lib/transport/chttp2/internal.h"
 
 #include <grpc/support/log.h>
 

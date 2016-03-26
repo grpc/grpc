@@ -40,7 +40,7 @@
 
 #ifdef GPR_LINUX_ENV
 
-#include "src/core/support/env.h"
+#include "src/core/lib/support/env.h"
 
 #include <dlfcn.h>
 #include <features.h>
@@ -51,7 +51,7 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/useful.h>
 
-#include "src/core/support/string.h"
+#include "src/core/lib/support/string.h"
 
 char *gpr_getenv(const char *name) {
 #if defined(GPR_BACKWARDS_COMPATIBILITY_MODE)

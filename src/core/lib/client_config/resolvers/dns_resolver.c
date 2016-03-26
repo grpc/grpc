@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/client_config/resolvers/dns_resolver.h"
+#include "src/core/lib/client_config/resolvers/dns_resolver.h"
 
 #include <string.h>
 
@@ -39,11 +39,11 @@
 #include <grpc/support/host_port.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/client_config/lb_policy_registry.h"
-#include "src/core/iomgr/resolve_address.h"
-#include "src/core/iomgr/timer.h"
-#include "src/core/support/backoff.h"
-#include "src/core/support/string.h"
+#include "src/core/lib/client_config/lb_policy_registry.h"
+#include "src/core/lib/iomgr/resolve_address.h"
+#include "src/core/lib/iomgr/timer.h"
+#include "src/core/lib/support/backoff.h"
+#include "src/core/lib/support/string.h"
 
 #define BACKOFF_MULTIPLIER 1.6
 #define BACKOFF_JITTER 0.2

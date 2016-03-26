@@ -34,7 +34,7 @@
 #ifndef GRPC_CORE_LIB_CHANNEL_COMPRESS_FILTER_H
 #define GRPC_CORE_LIB_CHANNEL_COMPRESS_FILTER_H
 
-#include "src/core/channel/channel_stack.h"
+#include "src/core/lib/channel/channel_stack.h"
 
 #define GRPC_COMPRESS_REQUEST_ALGORITHM_KEY "grpc-internal-encoding-request"
 

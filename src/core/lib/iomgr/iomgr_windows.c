@@ -35,13 +35,13 @@
 
 #ifdef GPR_WINSOCK_SOCKET
 
-#include "src/core/iomgr/sockaddr_win32.h"
+#include "src/core/lib/iomgr/sockaddr_win32.h"
 
 #include <grpc/support/log.h>
 
-#include "src/core/iomgr/iocp_windows.h"
-#include "src/core/iomgr/iomgr.h"
-#include "src/core/iomgr/socket_windows.h"
+#include "src/core/lib/iomgr/iocp_windows.h"
+#include "src/core/lib/iomgr/iomgr.h"
+#include "src/core/lib/iomgr/socket_windows.h"
 
 /* Windows' io manager is going to be fully designed using IO completion
    ports. All of what we're doing here is basically make sure that

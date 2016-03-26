@@ -36,13 +36,13 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
-#include "src/core/statistics/census_interface.h"
-#include "src/core/statistics/census_rpc_stats.h"
-#include "src/core/statistics/census_tracing.h"
-#include "src/core/statistics/hash_table.h"
-#include "src/core/statistics/window_stats.h"
-#include "src/core/support/murmur_hash.h"
-#include "src/core/support/string.h"
+#include "src/core/lib/statistics/census_interface.h"
+#include "src/core/lib/statistics/census_rpc_stats.h"
+#include "src/core/lib/statistics/census_tracing.h"
+#include "src/core/lib/statistics/hash_table.h"
+#include "src/core/lib/statistics/window_stats.h"
+#include "src/core/lib/support/murmur_hash.h"
+#include "src/core/lib/support/string.h"
 
 #define NUM_INTERVALS 3
 #define MINUTE_INTERVAL 0

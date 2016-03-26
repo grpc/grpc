@@ -43,7 +43,7 @@
  * explanation of what's going on.
  */
 
-#include "src/core/transport/static_metadata.h"
+#include "src/core/lib/transport/static_metadata.h"
 
 grpc_mdstr grpc_static_mdstr_table[GRPC_STATIC_MDSTR_COUNT];
 

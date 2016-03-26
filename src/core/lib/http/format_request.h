@@ -35,7 +35,7 @@
 #define GRPC_CORE_LIB_HTTP_FORMAT_REQUEST_H
 
 #include <grpc/support/slice.h>
-#include "src/core/http/httpcli.h"
+#include "src/core/lib/http/httpcli.h"
 
 gpr_slice grpc_httpcli_format_get_request(const grpc_httpcli_request *request);
 gpr_slice grpc_httpcli_format_post_request(const grpc_httpcli_request *request,

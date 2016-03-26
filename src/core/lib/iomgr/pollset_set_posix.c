@@ -41,8 +41,8 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/useful.h>
 
-#include "src/core/iomgr/pollset_posix.h"
-#include "src/core/iomgr/pollset_set_posix.h"
+#include "src/core/lib/iomgr/pollset_posix.h"
+#include "src/core/lib/iomgr/pollset_set_posix.h"
 
 struct grpc_pollset_set {
   gpr_mu mu;

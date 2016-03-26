@@ -31,8 +31,8 @@
  *
  */
 
-#include "src/core/transport/chttp2/hpack_parser.h"
-#include "src/core/transport/chttp2/internal.h"
+#include "src/core/lib/transport/chttp2/hpack_parser.h"
+#include "src/core/lib/transport/chttp2/internal.h"
 
 #include <assert.h>
 #include <stddef.h>
@@ -48,9 +48,9 @@
 #include <grpc/support/port_platform.h>
 #include <grpc/support/useful.h>
 
-#include "src/core/profiling/timers.h"
-#include "src/core/support/string.h"
-#include "src/core/transport/chttp2/bin_encoder.h"
+#include "src/core/lib/profiling/timers.h"
+#include "src/core/lib/support/string.h"
+#include "src/core/lib/transport/chttp2/bin_encoder.h"
 
 typedef enum {
   NOT_BINARY,

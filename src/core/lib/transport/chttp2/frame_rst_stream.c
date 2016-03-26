@@ -31,12 +31,12 @@
  *
  */
 
-#include "src/core/transport/chttp2/frame_rst_stream.h"
-#include "src/core/transport/chttp2/internal.h"
+#include "src/core/lib/transport/chttp2/frame_rst_stream.h"
+#include "src/core/lib/transport/chttp2/internal.h"
 
 #include <grpc/support/log.h>
 
-#include "src/core/transport/chttp2/frame.h"
+#include "src/core/lib/transport/chttp2/frame.h"
 
 gpr_slice grpc_chttp2_rst_stream_create(uint32_t id, uint32_t code) {
   gpr_slice slice = gpr_slice_malloc(13);

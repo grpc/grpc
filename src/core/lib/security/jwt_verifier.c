@@ -31,14 +31,14 @@
  *
  */
 
-#include "src/core/security/jwt_verifier.h"
+#include "src/core/lib/security/jwt_verifier.h"
 
 #include <limits.h>
 #include <string.h>
 
-#include "src/core/http/httpcli.h"
-#include "src/core/security/b64.h"
-#include "src/core/tsi/ssl_types.h"
+#include "src/core/lib/http/httpcli.h"
+#include "src/core/lib/security/b64.h"
+#include "src/core/lib/tsi/ssl_types.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>

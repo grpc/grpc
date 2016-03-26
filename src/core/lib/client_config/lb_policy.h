@@ -34,8 +34,8 @@
 #ifndef GRPC_CORE_LIB_CLIENT_CONFIG_LB_POLICY_H
 #define GRPC_CORE_LIB_CLIENT_CONFIG_LB_POLICY_H
 
-#include "src/core/client_config/subchannel.h"
-#include "src/core/transport/connectivity_state.h"
+#include "src/core/lib/client_config/subchannel.h"
+#include "src/core/lib/transport/connectivity_state.h"
 
 /** A load balancing policy: specified by a vtable and a struct (which
     is expected to be extended to contain some parameters) */

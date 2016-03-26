@@ -37,8 +37,8 @@
 #include <grpc/support/port_platform.h>
 #include <grpc/support/slice.h>
 #include <grpc/support/slice_buffer.h>
-#include "src/core/iomgr/exec_ctx.h"
-#include "src/core/transport/chttp2/frame.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/transport/chttp2/frame.h"
 
 typedef enum {
   GRPC_CHTTP2_GOAWAY_LSI0,

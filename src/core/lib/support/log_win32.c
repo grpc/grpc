@@ -44,8 +44,8 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 
-#include "src/core/support/string.h"
-#include "src/core/support/string_win32.h"
+#include "src/core/lib/support/string.h"
+#include "src/core/lib/support/string_win32.h"
 
 void gpr_log(const char *file, int line, gpr_log_severity severity,
              const char *format, ...) {

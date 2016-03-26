@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/transport/chttp2/huffsyms.h"
+#include "src/core/lib/transport/chttp2/huffsyms.h"
 
 /* Constants pulled from the HPACK spec, and converted to C using the vim
    command:

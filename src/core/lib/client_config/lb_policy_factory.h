@@ -34,8 +34,8 @@
 #ifndef GRPC_CORE_LIB_CLIENT_CONFIG_LB_POLICY_FACTORY_H
 #define GRPC_CORE_LIB_CLIENT_CONFIG_LB_POLICY_FACTORY_H
 
-#include "src/core/client_config/lb_policy.h"
-#include "src/core/client_config/subchannel.h"
+#include "src/core/lib/client_config/lb_policy.h"
+#include "src/core/lib/client_config/subchannel.h"
 
 typedef struct grpc_lb_policy_factory grpc_lb_policy_factory;
 typedef struct grpc_lb_policy_factory_vtable grpc_lb_policy_factory_vtable;

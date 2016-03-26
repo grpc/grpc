@@ -35,6 +35,6 @@
 
 #ifdef GPR_WIN32
 
-#include "src/core/iomgr/workqueue.h"
+#include "src/core/lib/iomgr/workqueue.h"
 
 #endif /* GPR_WIN32 */

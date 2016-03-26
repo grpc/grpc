@@ -38,10 +38,10 @@
 
 #include <grpc/support/string_util.h>
 
-#include "src/core/client_config/resolver_factory.h"
-#include "src/core/client_config/uri_parser.h"
-#include "src/core/iomgr/resolve_address.h"
-#include "src/core/iomgr/sockaddr.h"
+#include "src/core/lib/client_config/resolver_factory.h"
+#include "src/core/lib/client_config/uri_parser.h"
+#include "src/core/lib/iomgr/resolve_address.h"
+#include "src/core/lib/iomgr/sockaddr.h"
 
 void grpc_create_socketpair_if_unix(int sv[2]);
 

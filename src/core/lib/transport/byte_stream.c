@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/transport/byte_stream.h"
+#include "src/core/lib/transport/byte_stream.h"
 
 #include <stdlib.h>
 

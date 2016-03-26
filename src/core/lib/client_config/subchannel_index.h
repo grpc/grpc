@@ -34,8 +34,8 @@
 #ifndef GRPC_CORE_LIB_CLIENT_CONFIG_SUBCHANNEL_INDEX_H
 #define GRPC_CORE_LIB_CLIENT_CONFIG_SUBCHANNEL_INDEX_H
 
-#include "src/core/client_config/connector.h"
-#include "src/core/client_config/subchannel.h"
+#include "src/core/lib/client_config/connector.h"
+#include "src/core/lib/client_config/subchannel.h"
 
 /** \file Provides an index of active subchannels so that they can be
     shared amongst channels */

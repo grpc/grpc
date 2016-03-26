@@ -33,7 +33,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/client_config/resolvers/sockaddr_resolver.h"
+#include "src/core/lib/client_config/resolvers/sockaddr_resolver.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -42,10 +42,10 @@
 #include <grpc/support/host_port.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/client_config/lb_policy_registry.h"
-#include "src/core/iomgr/resolve_address.h"
-#include "src/core/iomgr/unix_sockets_posix.h"
-#include "src/core/support/string.h"
+#include "src/core/lib/client_config/lb_policy_registry.h"
+#include "src/core/lib/iomgr/resolve_address.h"
+#include "src/core/lib/iomgr/unix_sockets_posix.h"
+#include "src/core/lib/support/string.h"
 
 typedef struct {
   /** base class: must be first */

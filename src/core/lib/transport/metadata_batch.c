@@ -31,14 +31,14 @@
  *
  */
 
-#include "src/core/transport/metadata_batch.h"
+#include "src/core/lib/transport/metadata_batch.h"
 
 #include <string.h>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-#include "src/core/profiling/timers.h"
+#include "src/core/lib/profiling/timers.h"
 
 static void assert_valid_list(grpc_mdelem_list *list) {
 #ifndef NDEBUG

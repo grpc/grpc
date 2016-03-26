@@ -39,18 +39,18 @@
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/useful.h>
-#include "src/core/channel/channel_args.h"
-#include "src/core/channel/http_server_filter.h"
-#include "src/core/iomgr/endpoint.h"
-#include "src/core/iomgr/resolve_address.h"
-#include "src/core/iomgr/tcp_server.h"
-#include "src/core/security/auth_filters.h"
-#include "src/core/security/credentials.h"
-#include "src/core/security/security_connector.h"
-#include "src/core/security/security_context.h"
-#include "src/core/surface/api_trace.h"
-#include "src/core/surface/server.h"
-#include "src/core/transport/chttp2_transport.h"
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/http_server_filter.h"
+#include "src/core/lib/iomgr/endpoint.h"
+#include "src/core/lib/iomgr/resolve_address.h"
+#include "src/core/lib/iomgr/tcp_server.h"
+#include "src/core/lib/security/auth_filters.h"
+#include "src/core/lib/security/credentials.h"
+#include "src/core/lib/security/security_connector.h"
+#include "src/core/lib/security/security_context.h"
+#include "src/core/lib/surface/api_trace.h"
+#include "src/core/lib/surface/server.h"
+#include "src/core/lib/transport/chttp2_transport.h"
 
 typedef struct grpc_server_secure_state {
   grpc_server *server;

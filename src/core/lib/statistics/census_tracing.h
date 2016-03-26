@@ -35,7 +35,7 @@
 #define GRPC_CORE_LIB_STATISTICS_CENSUS_TRACING_H
 
 #include <grpc/support/time.h>
-#include "src/core/statistics/census_rpc_stats.h"
+#include "src/core/lib/statistics/census_rpc_stats.h"
 
 /* WARNING: The data structures and APIs provided by this file are for GRPC
    library's internal use ONLY. They might be changed in backward-incompatible

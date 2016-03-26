@@ -37,7 +37,7 @@
 
 #include <grpc/support/log.h>
 
-#include "src/core/json/json_reader.h"
+#include "src/core/lib/json/json_reader.h"
 
 static void json_reader_string_clear(grpc_json_reader *reader) {
   reader->vtable->string_clear(reader->userdata);

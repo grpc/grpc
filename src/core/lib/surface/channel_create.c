@@ -40,16 +40,16 @@
 #include <grpc/support/slice.h>
 #include <grpc/support/slice_buffer.h>
 
-#include "src/core/census/grpc_filter.h"
-#include "src/core/channel/channel_args.h"
-#include "src/core/channel/client_channel.h"
-#include "src/core/channel/compress_filter.h"
-#include "src/core/channel/http_client_filter.h"
-#include "src/core/client_config/resolver_registry.h"
-#include "src/core/iomgr/tcp_client.h"
-#include "src/core/surface/api_trace.h"
-#include "src/core/surface/channel.h"
-#include "src/core/transport/chttp2_transport.h"
+#include "src/core/lib/census/grpc_filter.h"
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/client_channel.h"
+#include "src/core/lib/channel/compress_filter.h"
+#include "src/core/lib/channel/http_client_filter.h"
+#include "src/core/lib/client_config/resolver_registry.h"
+#include "src/core/lib/iomgr/tcp_client.h"
+#include "src/core/lib/surface/api_trace.h"
+#include "src/core/lib/surface/channel.h"
+#include "src/core/lib/transport/chttp2_transport.h"
 
 typedef struct {
   grpc_connector base;

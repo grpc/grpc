@@ -33,9 +33,9 @@
 
 #include <string.h>
 
-#include "src/core/security/auth_filters.h"
-#include "src/core/security/credentials.h"
-#include "src/core/security/security_context.h"
+#include "src/core/lib/security/auth_filters.h"
+#include "src/core/lib/security/credentials.h"
+#include "src/core/lib/security/security_context.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>

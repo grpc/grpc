@@ -35,9 +35,9 @@
 
 #ifdef GPR_POSIX_SOCKET
 
-#include "src/core/iomgr/endpoint_pair.h"
-#include "src/core/iomgr/socket_utils_posix.h"
-#include "src/core/iomgr/unix_sockets_posix.h"
+#include "src/core/lib/iomgr/endpoint_pair.h"
+#include "src/core/lib/iomgr/socket_utils_posix.h"
+#include "src/core/lib/iomgr/unix_sockets_posix.h"
 
 #include <errno.h>
 #include <fcntl.h>
@@ -48,8 +48,8 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
-#include "src/core/iomgr/tcp_posix.h"
-#include "src/core/support/string.h"
+#include "src/core/lib/iomgr/tcp_posix.h"
+#include "src/core/lib/support/string.h"
 
 static void create_sockets(int sv[2]) {
   int flags;

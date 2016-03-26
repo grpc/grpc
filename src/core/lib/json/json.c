@@ -35,7 +35,7 @@
 
 #include <grpc/support/alloc.h>
 
-#include "src/core/json/json.h"
+#include "src/core/lib/json/json.h"
 
 grpc_json *grpc_json_create(grpc_json_type type) {
   grpc_json *json = gpr_malloc(sizeof(*json));

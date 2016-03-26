@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/iomgr/sockaddr_utils.h"
+#include "src/core/lib/iomgr/sockaddr_utils.h"
 
 #include <errno.h>
 #include <string.h>
@@ -42,8 +42,8 @@
 #include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/iomgr/unix_sockets_posix.h"
-#include "src/core/support/string.h"
+#include "src/core/lib/iomgr/unix_sockets_posix.h"
+#include "src/core/lib/support/string.h"
 
 static const uint8_t kV4MappedPrefix[] = {0, 0, 0, 0, 0,    0,
                                           0, 0, 0, 0, 0xff, 0xff};

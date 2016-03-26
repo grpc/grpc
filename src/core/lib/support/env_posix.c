@@ -35,14 +35,14 @@
 
 #ifdef GPR_POSIX_ENV
 
-#include "src/core/support/env.h"
+#include "src/core/lib/support/env.h"
 
 #include <stdlib.h>
 
 #include <grpc/support/log.h>
 
 #include <grpc/support/string_util.h>
-#include "src/core/support/string.h"
+#include "src/core/lib/support/string.h"
 
 char *gpr_getenv(const char *name) {
   char *result = getenv(name);

@@ -35,7 +35,7 @@
 #define GRPC_CORE_LIB_COMPRESSION_ALGORITHM_METADATA_H
 
 #include <grpc/compression.h>
-#include "src/core/transport/metadata.h"
+#include "src/core/lib/transport/metadata.h"
 
 /** Return compression algorithm based metadata value */
 grpc_mdstr *grpc_compression_algorithm_mdstr(

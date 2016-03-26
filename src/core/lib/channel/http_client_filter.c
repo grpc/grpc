@@ -30,14 +30,14 @@
  *
  */
 
-#include "src/core/channel/http_client_filter.h"
+#include "src/core/lib/channel/http_client_filter.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <string.h>
-#include "src/core/profiling/timers.h"
-#include "src/core/support/string.h"
-#include "src/core/transport/static_metadata.h"
+#include "src/core/lib/profiling/timers.h"
+#include "src/core/lib/support/string.h"
+#include "src/core/lib/transport/static_metadata.h"
 
 typedef struct call_data {
   grpc_linked_mdelem method;

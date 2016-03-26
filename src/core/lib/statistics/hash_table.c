@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/statistics/hash_table.h"
+#include "src/core/lib/statistics/hash_table.h"
 
 #include <stddef.h>
 #include <stdio.h>

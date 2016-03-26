@@ -38,7 +38,7 @@
 #include <grpc/support/useful.h>
 #include <stdbool.h>
 #include <string.h>
-#include "src/core/support/string.h"
+#include "src/core/lib/support/string.h"
 
 // Functions in this file support the public context API, including
 // encoding/decoding as part of context propagation across RPC's. The overall

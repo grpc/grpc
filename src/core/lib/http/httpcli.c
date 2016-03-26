@@ -31,8 +31,8 @@
  *
  */
 
-#include "src/core/http/httpcli.h"
-#include "src/core/iomgr/sockaddr.h"
+#include "src/core/lib/http/httpcli.h"
+#include "src/core/lib/iomgr/sockaddr.h"
 
 #include <string.h>
 
@@ -40,13 +40,13 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/http/format_request.h"
-#include "src/core/http/parser.h"
-#include "src/core/iomgr/endpoint.h"
-#include "src/core/iomgr/iomgr_internal.h"
-#include "src/core/iomgr/resolve_address.h"
-#include "src/core/iomgr/tcp_client.h"
-#include "src/core/support/string.h"
+#include "src/core/lib/http/format_request.h"
+#include "src/core/lib/http/parser.h"
+#include "src/core/lib/iomgr/endpoint.h"
+#include "src/core/lib/iomgr/iomgr_internal.h"
+#include "src/core/lib/iomgr/resolve_address.h"
+#include "src/core/lib/iomgr/tcp_client.h"
+#include "src/core/lib/support/string.h"
 
 typedef struct {
   gpr_slice request_text;

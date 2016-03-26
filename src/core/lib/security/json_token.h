@@ -37,7 +37,7 @@
 #include <grpc/support/slice.h>
 #include <openssl/rsa.h>
 
-#include "src/core/json/json.h"
+#include "src/core/lib/json/json.h"
 
 /* --- Constants. --- */
 

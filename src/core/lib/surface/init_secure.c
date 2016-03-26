@@ -31,18 +31,18 @@
  *
  */
 
-#include "src/core/surface/init.h"
+#include "src/core/lib/surface/init.h"
 
 #include <limits.h>
 #include <string.h>
 
-#include "src/core/debug/trace.h"
-#include "src/core/security/auth_filters.h"
-#include "src/core/security/credentials.h"
-#include "src/core/security/secure_endpoint.h"
-#include "src/core/security/security_connector.h"
-#include "src/core/surface/channel_init.h"
-#include "src/core/tsi/transport_security_interface.h"
+#include "src/core/lib/debug/trace.h"
+#include "src/core/lib/security/auth_filters.h"
+#include "src/core/lib/security/credentials.h"
+#include "src/core/lib/security/secure_endpoint.h"
+#include "src/core/lib/security/security_connector.h"
+#include "src/core/lib/surface/channel_init.h"
+#include "src/core/lib/tsi/transport_security_interface.h"
 
 void grpc_security_pre_init(void) {
   grpc_register_tracer("secure_endpoint", &grpc_trace_secure_endpoint);

@@ -38,7 +38,7 @@
 
 #include <grpc++/channel.h>
 
-#include "src/core/surface/call_test_only.h"
+#include "src/core/lib/surface/call_test_only.h"
 
 namespace grpc {
 namespace testing {

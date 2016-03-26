@@ -37,9 +37,9 @@
 #include <grpc/support/port_platform.h>
 #include <grpc/support/slice.h>
 #include <grpc/support/slice_buffer.h>
-#include "src/core/transport/chttp2/frame.h"
-#include "src/core/transport/metadata.h"
-#include "src/core/transport/metadata_batch.h"
+#include "src/core/lib/transport/chttp2/frame.h"
+#include "src/core/lib/transport/metadata.h"
+#include "src/core/lib/transport/metadata_batch.h"
 
 #define GRPC_CHTTP2_HPACKC_NUM_FILTERS 256
 #define GRPC_CHTTP2_HPACKC_NUM_VALUES 256

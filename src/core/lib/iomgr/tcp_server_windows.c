@@ -37,7 +37,7 @@
 
 #include <io.h>
 
-#include "src/core/iomgr/sockaddr_utils.h"
+#include "src/core/lib/iomgr/sockaddr_utils.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -46,11 +46,11 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
-#include "src/core/iomgr/iocp_windows.h"
-#include "src/core/iomgr/pollset_windows.h"
-#include "src/core/iomgr/socket_windows.h"
-#include "src/core/iomgr/tcp_server.h"
-#include "src/core/iomgr/tcp_windows.h"
+#include "src/core/lib/iomgr/iocp_windows.h"
+#include "src/core/lib/iomgr/pollset_windows.h"
+#include "src/core/lib/iomgr/socket_windows.h"
+#include "src/core/lib/iomgr/tcp_server.h"
+#include "src/core/lib/iomgr/tcp_windows.h"
 
 #define MIN_SAFE_ACCEPT_QUEUE_SIZE 100
 

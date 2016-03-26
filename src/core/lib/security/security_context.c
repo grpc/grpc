@@ -33,10 +33,10 @@
 
 #include <string.h>
 
-#include "src/core/security/security_context.h"
-#include "src/core/support/string.h"
-#include "src/core/surface/api_trace.h"
-#include "src/core/surface/call.h"
+#include "src/core/lib/security/security_context.h"
+#include "src/core/lib/support/string.h"
+#include "src/core/lib/surface/api_trace.h"
+#include "src/core/lib/surface/call.h"
 
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>

@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/security/handshake.h"
+#include "src/core/lib/security/handshake.h"
 
 #include <stdbool.h>
 #include <string.h>
@@ -39,8 +39,8 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/slice_buffer.h>
-#include "src/core/security/secure_endpoint.h"
-#include "src/core/security/security_context.h"
+#include "src/core/lib/security/secure_endpoint.h"
+#include "src/core/lib/security/security_context.h"
 
 #define GRPC_INITIAL_HANDSHAKE_BUFFER_SIZE 256
 

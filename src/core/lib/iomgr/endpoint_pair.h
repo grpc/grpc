@@ -34,7 +34,7 @@
 #ifndef GRPC_CORE_LIB_IOMGR_ENDPOINT_PAIR_H
 #define GRPC_CORE_LIB_IOMGR_ENDPOINT_PAIR_H
 
-#include "src/core/iomgr/endpoint.h"
+#include "src/core/lib/iomgr/endpoint.h"
 
 typedef struct {
   grpc_endpoint *client;

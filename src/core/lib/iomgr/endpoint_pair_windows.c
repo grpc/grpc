@@ -34,16 +34,16 @@
 #include <grpc/support/port_platform.h>
 
 #ifdef GPR_WINSOCK_SOCKET
-#include "src/core/iomgr/endpoint_pair.h"
-#include "src/core/iomgr/sockaddr_utils.h"
+#include "src/core/lib/iomgr/endpoint_pair.h"
+#include "src/core/lib/iomgr/sockaddr_utils.h"
 
 #include <errno.h>
 #include <fcntl.h>
 #include <string.h>
 
 #include <grpc/support/log.h>
-#include "src/core/iomgr/socket_windows.h"
-#include "src/core/iomgr/tcp_windows.h"
+#include "src/core/lib/iomgr/socket_windows.h"
+#include "src/core/lib/iomgr/tcp_windows.h"
 
 static void create_sockets(SOCKET sv[2]) {
   SOCKET svr_sock = INVALID_SOCKET;

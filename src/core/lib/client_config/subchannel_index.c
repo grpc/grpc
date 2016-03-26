@@ -31,7 +31,7 @@
 //
 //
 
-#include "src/core/client_config/subchannel_index.h"
+#include "src/core/lib/client_config/subchannel_index.h"
 
 #include <stdbool.h>
 #include <string.h>
@@ -40,7 +40,7 @@
 #include <grpc/support/avl.h>
 #include <grpc/support/tls.h>
 
-#include "src/core/channel/channel_args.h"
+#include "src/core/lib/channel/channel_args.h"
 
 // a map of subchannel_key --> subchannel, used for detecting connections
 // to the same destination in order to share them

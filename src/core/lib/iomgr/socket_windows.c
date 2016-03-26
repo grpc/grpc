@@ -45,11 +45,11 @@
 #include <grpc/support/log_win32.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/iomgr/iocp_windows.h"
-#include "src/core/iomgr/iomgr_internal.h"
-#include "src/core/iomgr/pollset.h"
-#include "src/core/iomgr/pollset_windows.h"
-#include "src/core/iomgr/socket_windows.h"
+#include "src/core/lib/iomgr/iocp_windows.h"
+#include "src/core/lib/iomgr/iomgr_internal.h"
+#include "src/core/lib/iomgr/pollset.h"
+#include "src/core/lib/iomgr/pollset_windows.h"
+#include "src/core/lib/iomgr/socket_windows.h"
 
 grpc_winsocket *grpc_winsocket_create(SOCKET socket, const char *name) {
   char *final_name;

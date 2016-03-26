@@ -34,7 +34,7 @@
 #ifndef GRPC_CORE_LIB_CLIENT_CONFIG_CLIENT_CONFIG_H
 #define GRPC_CORE_LIB_CLIENT_CONFIG_CLIENT_CONFIG_H
 
-#include "src/core/client_config/lb_policy.h"
+#include "src/core/lib/client_config/lb_policy.h"
 
 /** Total configuration for a client. Provided, and updated, by
     grpc_resolver */

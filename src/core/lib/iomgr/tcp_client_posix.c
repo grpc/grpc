@@ -35,7 +35,7 @@
 
 #ifdef GPR_POSIX_SOCKET
 
-#include "src/core/iomgr/tcp_client.h"
+#include "src/core/lib/iomgr/tcp_client.h"
 
 #include <errno.h>
 #include <netinet/in.h>
@@ -47,15 +47,15 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 
-#include "src/core/iomgr/iomgr_posix.h"
-#include "src/core/iomgr/pollset_posix.h"
-#include "src/core/iomgr/pollset_set_posix.h"
-#include "src/core/iomgr/sockaddr_utils.h"
-#include "src/core/iomgr/socket_utils_posix.h"
-#include "src/core/iomgr/tcp_posix.h"
-#include "src/core/iomgr/timer.h"
-#include "src/core/iomgr/unix_sockets_posix.h"
-#include "src/core/support/string.h"
+#include "src/core/lib/iomgr/iomgr_posix.h"
+#include "src/core/lib/iomgr/pollset_posix.h"
+#include "src/core/lib/iomgr/pollset_set_posix.h"
+#include "src/core/lib/iomgr/sockaddr_utils.h"
+#include "src/core/lib/iomgr/socket_utils_posix.h"
+#include "src/core/lib/iomgr/tcp_posix.h"
+#include "src/core/lib/iomgr/timer.h"
+#include "src/core/lib/iomgr/unix_sockets_posix.h"
+#include "src/core/lib/support/string.h"
 
 extern int grpc_tcp_trace;
 

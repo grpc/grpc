@@ -35,8 +35,8 @@
 
 #ifdef GPR_WIN32
 
-#include "src/core/support/env.h"
-#include "src/core/support/string.h"
+#include "src/core/lib/support/env.h"
+#include "src/core/lib/support/string.h"
 
 #ifdef __MINGW32__
 errno_t getenv_s(size_t *size_needed, char *buffer, size_t size,

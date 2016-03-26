@@ -31,13 +31,13 @@
  *
  */
 
-#include "src/core/channel/http_server_filter.h"
+#include "src/core/lib/channel/http_server_filter.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <string.h>
-#include "src/core/profiling/timers.h"
-#include "src/core/transport/static_metadata.h"
+#include "src/core/lib/profiling/timers.h"
+#include "src/core/lib/transport/static_metadata.h"
 
 typedef struct call_data {
   uint8_t seen_path;

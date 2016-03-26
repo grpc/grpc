@@ -31,13 +31,13 @@
  *
  */
 
-#include "src/core/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/thd.h>
 
-#include "src/core/profiling/timers.h"
+#include "src/core/lib/profiling/timers.h"
 
 #ifndef GRPC_EXECUTION_CONTEXT_SANITIZER
 bool grpc_exec_ctx_flush(grpc_exec_ctx *exec_ctx) {

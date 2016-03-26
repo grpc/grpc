@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/iomgr/time_averaged_stats.h"
+#include "src/core/lib/iomgr/time_averaged_stats.h"
 
 void grpc_time_averaged_stats_init(grpc_time_averaged_stats* stats,
                                    double init_avg, double regress_weight,

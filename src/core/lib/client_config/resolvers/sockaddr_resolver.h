@@ -36,7 +36,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/client_config/resolver_factory.h"
+#include "src/core/lib/client_config/resolver_factory.h"
 
 grpc_resolver_factory *grpc_ipv4_resolver_factory_create(void);
 

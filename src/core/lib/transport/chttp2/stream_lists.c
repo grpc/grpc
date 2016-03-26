@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/transport/chttp2/internal.h"
+#include "src/core/lib/transport/chttp2/internal.h"
 
 #include <grpc/support/log.h>
 

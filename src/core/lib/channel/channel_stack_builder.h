@@ -36,8 +36,8 @@
 
 #include <stdbool.h>
 
-#include "src/core/channel/channel_args.h"
-#include "src/core/channel/channel_stack.h"
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/channel_stack.h"
 
 /// grpc_channel_stack_builder offers a programmatic interface to selected
 /// and order channel filters

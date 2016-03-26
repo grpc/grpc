@@ -36,7 +36,7 @@
 
 #include <grpc/support/port_platform.h>
 #include <grpc/support/slice.h>
-#include "src/core/transport/metadata.h"
+#include "src/core/lib/transport/metadata.h"
 
 /* HPACK header table */
 

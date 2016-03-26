@@ -35,7 +35,7 @@
 
 #ifdef GPR_LINUX_SOCKETUTILS
 
-#include "src/core/iomgr/socket_utils_posix.h"
+#include "src/core/lib/iomgr/socket_utils_posix.h"
 
 #include <sys/socket.h>
 #include <sys/types.h>

@@ -34,7 +34,7 @@
 #ifndef GRPC_CORE_LIB_TRANSPORT_CHTTP2_INCOMING_METADATA_H
 #define GRPC_CORE_LIB_TRANSPORT_CHTTP2_INCOMING_METADATA_H
 
-#include "src/core/transport/transport.h"
+#include "src/core/lib/transport/transport.h"
 
 typedef struct {
   grpc_linked_mdelem *elems;

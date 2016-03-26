@@ -34,7 +34,7 @@
 #ifndef GRPC_CORE_LIB_CLIENT_CONFIG_LB_POLICY_REGISTRY_H
 #define GRPC_CORE_LIB_CLIENT_CONFIG_LB_POLICY_REGISTRY_H
 
-#include "src/core/client_config/lb_policy_factory.h"
+#include "src/core/lib/client_config/lb_policy_factory.h"
 
 /** Initialize the registry and set \a default_factory as the factory to be
  * returned when no name is provided in a lookup */

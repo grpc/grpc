@@ -35,7 +35,7 @@
 
 #ifdef GRPC_BASIC_PROFILER
 
-#include "src/core/profiling/timers.h"
+#include "src/core/lib/profiling/timers.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>

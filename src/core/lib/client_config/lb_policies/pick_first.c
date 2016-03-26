@@ -31,13 +31,13 @@
  *
  */
 
-#include "src/core/client_config/lb_policies/pick_first.h"
-#include "src/core/client_config/lb_policy_factory.h"
+#include "src/core/lib/client_config/lb_policies/pick_first.h"
+#include "src/core/lib/client_config/lb_policy_factory.h"
 
 #include <string.h>
 
 #include <grpc/support/alloc.h>
-#include "src/core/transport/connectivity_state.h"
+#include "src/core/lib/transport/connectivity_state.h"
 
 typedef struct pending_pick {
   struct pending_pick *next;

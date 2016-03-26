@@ -37,9 +37,9 @@
 #include <grpc/compression.h>
 #include <grpc/support/useful.h>
 
-#include "src/core/compression/algorithm_metadata.h"
-#include "src/core/surface/api_trace.h"
-#include "src/core/transport/static_metadata.h"
+#include "src/core/lib/compression/algorithm_metadata.h"
+#include "src/core/lib/surface/api_trace.h"
+#include "src/core/lib/transport/static_metadata.h"
 
 int grpc_compression_algorithm_parse(const char *name, size_t name_length,
                                      grpc_compression_algorithm *algorithm) {

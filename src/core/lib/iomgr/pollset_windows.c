@@ -38,10 +38,10 @@
 #include <grpc/support/log.h>
 #include <grpc/support/thd.h>
 
-#include "src/core/iomgr/iocp_windows.h"
-#include "src/core/iomgr/iomgr_internal.h"
-#include "src/core/iomgr/pollset.h"
-#include "src/core/iomgr/pollset_windows.h"
+#include "src/core/lib/iomgr/iocp_windows.h"
+#include "src/core/lib/iomgr/iomgr_internal.h"
+#include "src/core/lib/iomgr/pollset.h"
+#include "src/core/lib/iomgr/pollset_windows.h"
 
 gpr_mu grpc_polling_mu;
 static grpc_pollset_worker *g_active_poller;

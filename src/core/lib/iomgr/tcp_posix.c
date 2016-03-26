@@ -35,7 +35,7 @@
 
 #ifdef GPR_POSIX_SOCKET
 
-#include "src/core/iomgr/tcp_posix.h"
+#include "src/core/lib/iomgr/tcp_posix.h"
 
 #include <errno.h>
 #include <stdlib.h>
@@ -51,11 +51,11 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
-#include "src/core/debug/trace.h"
-#include "src/core/iomgr/pollset_posix.h"
-#include "src/core/iomgr/pollset_set_posix.h"
-#include "src/core/profiling/timers.h"
-#include "src/core/support/string.h"
+#include "src/core/lib/debug/trace.h"
+#include "src/core/lib/iomgr/pollset_posix.h"
+#include "src/core/lib/iomgr/pollset_set_posix.h"
+#include "src/core/lib/profiling/timers.h"
+#include "src/core/lib/support/string.h"
 
 #ifdef GPR_HAVE_MSG_NOSIGNAL
 #define SENDMSG_FLAGS MSG_NOSIGNAL

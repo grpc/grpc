@@ -35,9 +35,9 @@
 #define GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_H
 
 #include <grpc/grpc_security.h>
-#include "src/core/iomgr/endpoint.h"
-#include "src/core/iomgr/tcp_server.h"
-#include "src/core/tsi/transport_security_interface.h"
+#include "src/core/lib/iomgr/endpoint.h"
+#include "src/core/lib/iomgr/tcp_server.h"
+#include "src/core/lib/tsi/transport_security_interface.h"
 
 /* --- status enum. --- */
 

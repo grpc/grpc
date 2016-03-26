@@ -31,6 +31,6 @@
  *
  */
 
-#include "src/core/surface/api_trace.h"
+#include "src/core/lib/surface/api_trace.h"
 
 int grpc_api_trace = 0;

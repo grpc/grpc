@@ -34,7 +34,7 @@
 #ifndef GRPC_CORE_LIB_CLIENT_CONFIG_RESOLVER_REGISTRY_H
 #define GRPC_CORE_LIB_CLIENT_CONFIG_RESOLVER_REGISTRY_H
 
-#include "src/core/client_config/resolver_factory.h"
+#include "src/core/lib/client_config/resolver_factory.h"
 
 void grpc_resolver_registry_init(const char *default_prefix);
 void grpc_resolver_registry_shutdown(void);

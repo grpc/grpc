@@ -31,13 +31,13 @@
  *
  */
 
-#include "src/core/client_config/resolvers/dns_resolver.h"
+#include "src/core/lib/client_config/resolvers/dns_resolver.h"
 
 #include <string.h>
 
 #include <grpc/support/log.h>
 
-#include "src/core/client_config/resolver.h"
+#include "src/core/lib/client_config/resolver.h"
 #include "test/core/util/test_config.h"
 
 static void subchannel_factory_ref(grpc_subchannel_factory *scv) {}

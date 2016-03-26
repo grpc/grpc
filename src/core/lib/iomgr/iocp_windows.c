@@ -42,10 +42,10 @@
 #include <grpc/support/log_win32.h>
 #include <grpc/support/thd.h>
 
-#include "src/core/iomgr/iocp_windows.h"
-#include "src/core/iomgr/iomgr_internal.h"
-#include "src/core/iomgr/socket_windows.h"
-#include "src/core/iomgr/timer.h"
+#include "src/core/lib/iomgr/iocp_windows.h"
+#include "src/core/lib/iomgr/iomgr_internal.h"
+#include "src/core/lib/iomgr/socket_windows.h"
+#include "src/core/lib/iomgr/timer.h"
 
 static ULONG g_iocp_kick_token;
 static OVERLAPPED g_iocp_custom_overlap;

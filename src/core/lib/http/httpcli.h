@@ -38,10 +38,10 @@
 
 #include <grpc/support/time.h>
 
-#include "src/core/http/parser.h"
-#include "src/core/iomgr/endpoint.h"
-#include "src/core/iomgr/iomgr_internal.h"
-#include "src/core/iomgr/pollset_set.h"
+#include "src/core/lib/http/parser.h"
+#include "src/core/lib/iomgr/endpoint.h"
+#include "src/core/lib/iomgr/iomgr_internal.h"
+#include "src/core/lib/iomgr/pollset_set.h"
 
 /* User agent this library reports */
 #define GRPC_HTTPCLI_USER_AGENT "grpc-httpcli/0.0"

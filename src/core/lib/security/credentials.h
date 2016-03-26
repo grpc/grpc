@@ -37,12 +37,12 @@
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/sync.h>
-#include "src/core/transport/metadata_batch.h"
+#include "src/core/lib/transport/metadata_batch.h"
 
-#include "src/core/http/httpcli.h"
-#include "src/core/http/parser.h"
-#include "src/core/security/json_token.h"
-#include "src/core/security/security_connector.h"
+#include "src/core/lib/http/httpcli.h"
+#include "src/core/lib/http/parser.h"
+#include "src/core/lib/security/json_token.h"
+#include "src/core/lib/security/security_connector.h"
 
 struct grpc_http_response;
 

@@ -36,7 +36,7 @@
 
 #include <grpc/support/sync.h>
 
-#include "src/core/iomgr/socket_windows.h"
+#include "src/core/lib/iomgr/socket_windows.h"
 
 /* There isn't really any such thing as a pollset under Windows, due to the
    nature of the IO completion ports. A Windows "pollset" is merely a mutex

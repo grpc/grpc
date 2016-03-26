@@ -34,7 +34,7 @@
 #ifndef GRPC_CORE_LIB_IOMGR_WAKEUP_FD_PIPE_H
 #define GRPC_CORE_LIB_IOMGR_WAKEUP_FD_PIPE_H
 
-#include "src/core/iomgr/wakeup_fd_posix.h"
+#include "src/core/lib/iomgr/wakeup_fd_posix.h"
 
 extern grpc_wakeup_fd_vtable grpc_pipe_wakeup_fd_vtable;
 

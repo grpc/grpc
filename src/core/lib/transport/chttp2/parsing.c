@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/transport/chttp2/internal.h"
+#include "src/core/lib/transport/chttp2/internal.h"
 
 #include <string.h>
 
@@ -39,11 +39,11 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/profiling/timers.h"
-#include "src/core/transport/chttp2/http2_errors.h"
-#include "src/core/transport/chttp2/status_conversion.h"
-#include "src/core/transport/chttp2/timeout_encoding.h"
-#include "src/core/transport/static_metadata.h"
+#include "src/core/lib/profiling/timers.h"
+#include "src/core/lib/transport/chttp2/http2_errors.h"
+#include "src/core/lib/transport/chttp2/status_conversion.h"
+#include "src/core/lib/transport/chttp2/timeout_encoding.h"
+#include "src/core/lib/transport/static_metadata.h"
 
 static int init_frame_parser(grpc_exec_ctx *exec_ctx,
                              grpc_chttp2_transport_parsing *transport_parsing);

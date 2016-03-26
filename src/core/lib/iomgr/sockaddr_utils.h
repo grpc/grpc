@@ -34,7 +34,7 @@
 #ifndef GRPC_CORE_LIB_IOMGR_SOCKADDR_UTILS_H
 #define GRPC_CORE_LIB_IOMGR_SOCKADDR_UTILS_H
 
-#include "src/core/iomgr/sockaddr.h"
+#include "src/core/lib/iomgr/sockaddr.h"
 
 /* Returns true if addr is an IPv4-mapped IPv6 address within the
    ::ffff:0.0.0.0/96 range, or false otherwise.

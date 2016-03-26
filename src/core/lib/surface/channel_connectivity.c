@@ -31,15 +31,15 @@
  *
  */
 
-#include "src/core/surface/channel.h"
+#include "src/core/lib/surface/channel.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-#include "src/core/channel/client_channel.h"
-#include "src/core/iomgr/timer.h"
-#include "src/core/surface/api_trace.h"
-#include "src/core/surface/completion_queue.h"
+#include "src/core/lib/channel/client_channel.h"
+#include "src/core/lib/iomgr/timer.h"
+#include "src/core/lib/surface/api_trace.h"
+#include "src/core/lib/surface/completion_queue.h"
 
 grpc_connectivity_state grpc_channel_check_connectivity_state(
     grpc_channel *channel, int try_to_connect) {

@@ -40,17 +40,17 @@
 #include <grpc/support/slice.h>
 #include <grpc/support/slice_buffer.h>
 
-#include "src/core/channel/channel_args.h"
-#include "src/core/channel/client_channel.h"
-#include "src/core/client_config/resolver_registry.h"
-#include "src/core/iomgr/tcp_client.h"
-#include "src/core/security/auth_filters.h"
-#include "src/core/security/credentials.h"
-#include "src/core/security/security_context.h"
-#include "src/core/surface/api_trace.h"
-#include "src/core/surface/channel.h"
-#include "src/core/transport/chttp2_transport.h"
-#include "src/core/tsi/transport_security_interface.h"
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/client_channel.h"
+#include "src/core/lib/client_config/resolver_registry.h"
+#include "src/core/lib/iomgr/tcp_client.h"
+#include "src/core/lib/security/auth_filters.h"
+#include "src/core/lib/security/credentials.h"
+#include "src/core/lib/security/security_context.h"
+#include "src/core/lib/surface/api_trace.h"
+#include "src/core/lib/surface/channel.h"
+#include "src/core/lib/transport/chttp2_transport.h"
+#include "src/core/lib/tsi/transport_security_interface.h"
 
 typedef struct {
   grpc_connector base;

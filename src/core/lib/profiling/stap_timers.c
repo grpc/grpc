@@ -35,11 +35,11 @@
 
 #ifdef GRPC_STAP_PROFILER
 
-#include "src/core/profiling/timers.h"
+#include "src/core/lib/profiling/timers.h"
 
 #include <sys/sdt.h>
 /* Generated from src/core/profiling/stap_probes.d */
-#include "src/core/profiling/stap_probes.h"
+#include "src/core/lib/profiling/stap_probes.h"
 
 /* Latency profiler API implementation. */
 void gpr_timer_add_mark(int tag, const char *tagstr, void *id, const char *file,

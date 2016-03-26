@@ -34,7 +34,7 @@
 #ifndef GRPC_CORE_LIB_SECURITY_AUTH_FILTERS_H
 #define GRPC_CORE_LIB_SECURITY_AUTH_FILTERS_H
 
-#include "src/core/channel/channel_stack.h"
+#include "src/core/lib/channel/channel_stack.h"
 
 extern const grpc_channel_filter grpc_client_auth_filter;
 extern const grpc_channel_filter grpc_server_auth_filter;
