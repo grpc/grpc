@@ -173,7 +173,7 @@ static void flush_logs(gpr_timer_log_list *list) {
   gpr_timer_log *log;
   while ((log = timer_log_pop_front(list)) != NULL) {
     write_log(log);
-    free(log);
+    gpr_free(log);
   }
 }
 
@@ -208,7 +208,7 @@ static void init_output() {
 }
 
 static void rotate_log() {
-  gpr_timer_log *new = malloc(sizeof(*new));
+  gpr_timer_log *new = gpr_malloc(sizeof(*new));
   gpr_once_init(&g_once_init, init_output);
   new->num_entries = 0;
   pthread_mutex_lock(&g_mu);
