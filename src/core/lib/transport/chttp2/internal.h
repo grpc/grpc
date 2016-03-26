@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_CORE_TRANSPORT_CHTTP2_INTERNAL_H
-#define GRPC_CORE_TRANSPORT_CHTTP2_INTERNAL_H
+#ifndef GRPC_CORE_LIB_TRANSPORT_CHTTP2_INTERNAL_H
+#define GRPC_CORE_LIB_TRANSPORT_CHTTP2_INTERNAL_H
 
 #include <assert.h>
 #include <stdbool.h>
@@ -777,4 +777,4 @@ void grpc_chttp2_ack_ping(grpc_exec_ctx *exec_ctx,
 void grpc_chttp2_become_writable(grpc_chttp2_transport_global *transport_global,
                                  grpc_chttp2_stream_global *stream_global);
 
-#endif /* GRPC_CORE_TRANSPORT_CHTTP2_INTERNAL_H */
+#endif /* GRPC_CORE_LIB_TRANSPORT_CHTTP2_INTERNAL_H */

@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_CORE_IOMGR_POLLSET_POSIX_H
-#define GRPC_CORE_IOMGR_POLLSET_POSIX_H
+#ifndef GRPC_CORE_LIB_IOMGR_POLLSET_POSIX_H
+#define GRPC_CORE_LIB_IOMGR_POLLSET_POSIX_H
 
 #include <poll.h>
 
@@ -150,4 +150,4 @@ typedef int (*grpc_poll_function_type)(struct pollfd *, nfds_t, int);
 extern grpc_poll_function_type grpc_poll_function;
 extern grpc_wakeup_fd grpc_global_wakeup_fd;
 
-#endif /* GRPC_CORE_IOMGR_POLLSET_POSIX_H */
+#endif /* GRPC_CORE_LIB_IOMGR_POLLSET_POSIX_H */

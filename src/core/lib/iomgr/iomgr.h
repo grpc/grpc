@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_CORE_IOMGR_IOMGR_H
-#define GRPC_CORE_IOMGR_IOMGR_H
+#ifndef GRPC_CORE_LIB_IOMGR_IOMGR_H
+#define GRPC_CORE_LIB_IOMGR_IOMGR_H
 
 /** Initializes the iomgr. */
 void grpc_iomgr_init(void);
@@ -40,4 +40,4 @@ void grpc_iomgr_init(void);
 /** Signals the intention to shutdown the iomgr. */
 void grpc_iomgr_shutdown(void);
 
-#endif /* GRPC_CORE_IOMGR_IOMGR_H */
+#endif /* GRPC_CORE_LIB_IOMGR_IOMGR_H */

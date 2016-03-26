@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_CORE_CHANNEL_COMPRESS_FILTER_H
-#define GRPC_CORE_CHANNEL_COMPRESS_FILTER_H
+#ifndef GRPC_CORE_LIB_CHANNEL_COMPRESS_FILTER_H
+#define GRPC_CORE_LIB_CHANNEL_COMPRESS_FILTER_H
 
 #include "src/core/channel/channel_stack.h"
 
@@ -62,4 +62,4 @@
 
 extern const grpc_channel_filter grpc_compress_filter;
 
-#endif /* GRPC_CORE_CHANNEL_COMPRESS_FILTER_H */
+#endif /* GRPC_CORE_LIB_CHANNEL_COMPRESS_FILTER_H */

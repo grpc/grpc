@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_CORE_IOMGR_TCP_POSIX_H
-#define GRPC_CORE_IOMGR_TCP_POSIX_H
+#ifndef GRPC_CORE_LIB_IOMGR_TCP_POSIX_H
+#define GRPC_CORE_LIB_IOMGR_TCP_POSIX_H
 /*
    Low level TCP "bottom half" implementation, for use by transports built on
    top of a TCP connection.
@@ -68,4 +68,4 @@ int grpc_tcp_fd(grpc_endpoint *ep);
 void grpc_tcp_destroy_and_release_fd(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
                                      int *fd, grpc_closure *done);
 
-#endif /* GRPC_CORE_IOMGR_TCP_POSIX_H */
+#endif /* GRPC_CORE_LIB_IOMGR_TCP_POSIX_H */

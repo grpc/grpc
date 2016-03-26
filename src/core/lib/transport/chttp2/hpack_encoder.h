@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_CORE_TRANSPORT_CHTTP2_HPACK_ENCODER_H
-#define GRPC_CORE_TRANSPORT_CHTTP2_HPACK_ENCODER_H
+#ifndef GRPC_CORE_LIB_TRANSPORT_CHTTP2_HPACK_ENCODER_H
+#define GRPC_CORE_LIB_TRANSPORT_CHTTP2_HPACK_ENCODER_H
 
 #include <grpc/support/port_platform.h>
 #include <grpc/support/slice.h>
@@ -92,4 +92,4 @@ void grpc_chttp2_encode_header(grpc_chttp2_hpack_compressor *c, uint32_t id,
                                grpc_metadata_batch *metadata, int is_eof,
                                gpr_slice_buffer *outbuf);
 
-#endif /* GRPC_CORE_TRANSPORT_CHTTP2_HPACK_ENCODER_H */
+#endif /* GRPC_CORE_LIB_TRANSPORT_CHTTP2_HPACK_ENCODER_H */

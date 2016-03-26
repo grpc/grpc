@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_CORE_TRANSPORT_CHTTP2_FRAME_WINDOW_UPDATE_H
-#define GRPC_CORE_TRANSPORT_CHTTP2_FRAME_WINDOW_UPDATE_H
+#ifndef GRPC_CORE_LIB_TRANSPORT_CHTTP2_FRAME_WINDOW_UPDATE_H
+#define GRPC_CORE_LIB_TRANSPORT_CHTTP2_FRAME_WINDOW_UPDATE_H
 
 #include <grpc/support/slice.h>
 #include "src/core/iomgr/exec_ctx.h"
@@ -53,4 +53,4 @@ grpc_chttp2_parse_error grpc_chttp2_window_update_parser_parse(
     grpc_chttp2_transport_parsing *transport_parsing,
     grpc_chttp2_stream_parsing *stream_parsing, gpr_slice slice, int is_last);
 
-#endif /* GRPC_CORE_TRANSPORT_CHTTP2_FRAME_WINDOW_UPDATE_H */
+#endif /* GRPC_CORE_LIB_TRANSPORT_CHTTP2_FRAME_WINDOW_UPDATE_H */

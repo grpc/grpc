@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_CORE_CENSUS_GRPC_FILTER_H
-#define GRPC_CORE_CENSUS_GRPC_FILTER_H
+#ifndef GRPC_CORE_LIB_CENSUS_GRPC_FILTER_H
+#define GRPC_CORE_LIB_CENSUS_GRPC_FILTER_H
 
 #include "src/core/channel/channel_stack.h"
 
@@ -41,4 +41,4 @@
 extern const grpc_channel_filter grpc_client_census_filter;
 extern const grpc_channel_filter grpc_server_census_filter;
 
-#endif /* GRPC_CORE_CENSUS_GRPC_FILTER_H */
+#endif /* GRPC_CORE_LIB_CENSUS_GRPC_FILTER_H */

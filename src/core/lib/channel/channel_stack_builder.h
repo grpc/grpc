@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_CORE_CHANNEL_CHANNEL_STACK_BUILDER_H
-#define GRPC_CORE_CHANNEL_CHANNEL_STACK_BUILDER_H
+#ifndef GRPC_CORE_LIB_CHANNEL_CHANNEL_STACK_BUILDER_H
+#define GRPC_CORE_LIB_CHANNEL_CHANNEL_STACK_BUILDER_H
 
 #include <stdbool.h>
 
@@ -152,4 +152,4 @@ void grpc_channel_stack_builder_destroy(grpc_channel_stack_builder *builder);
 
 extern int grpc_trace_channel_stack_builder;
 
-#endif /* GRPC_CORE_CHANNEL_CHANNEL_STACK_BUILDER_H */
+#endif /* GRPC_CORE_LIB_CHANNEL_CHANNEL_STACK_BUILDER_H */

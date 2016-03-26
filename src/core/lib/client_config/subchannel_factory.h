@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_CORE_CLIENT_CONFIG_SUBCHANNEL_FACTORY_H
-#define GRPC_CORE_CLIENT_CONFIG_SUBCHANNEL_FACTORY_H
+#ifndef GRPC_CORE_LIB_CLIENT_CONFIG_SUBCHANNEL_FACTORY_H
+#define GRPC_CORE_LIB_CLIENT_CONFIG_SUBCHANNEL_FACTORY_H
 
 #include "src/core/channel/channel_stack.h"
 #include "src/core/client_config/subchannel.h"
@@ -63,4 +63,4 @@ grpc_subchannel *grpc_subchannel_factory_create_subchannel(
     grpc_exec_ctx *exec_ctx, grpc_subchannel_factory *factory,
     grpc_subchannel_args *args);
 
-#endif /* GRPC_CORE_CLIENT_CONFIG_SUBCHANNEL_FACTORY_H */
+#endif /* GRPC_CORE_LIB_CLIENT_CONFIG_SUBCHANNEL_FACTORY_H */

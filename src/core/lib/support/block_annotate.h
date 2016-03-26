@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_CORE_SUPPORT_BLOCK_ANNOTATE_H
-#define GRPC_CORE_SUPPORT_BLOCK_ANNOTATE_H
+#ifndef GRPC_CORE_LIB_SUPPORT_BLOCK_ANNOTATE_H
+#define GRPC_CORE_LIB_SUPPORT_BLOCK_ANNOTATE_H
 
 /* These annotations identify the beginning and end of regions where
    the code may block for reasons other than synchronization functions.
@@ -45,4 +45,4 @@
   do {                                      \
   } while (0)
 
-#endif /* GRPC_CORE_SUPPORT_BLOCK_ANNOTATE_H */
+#endif /* GRPC_CORE_LIB_SUPPORT_BLOCK_ANNOTATE_H */

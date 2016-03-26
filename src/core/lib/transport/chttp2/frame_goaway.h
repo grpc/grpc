@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_CORE_TRANSPORT_CHTTP2_FRAME_GOAWAY_H
-#define GRPC_CORE_TRANSPORT_CHTTP2_FRAME_GOAWAY_H
+#ifndef GRPC_CORE_LIB_TRANSPORT_CHTTP2_FRAME_GOAWAY_H
+#define GRPC_CORE_LIB_TRANSPORT_CHTTP2_FRAME_GOAWAY_H
 
 #include <grpc/support/port_platform.h>
 #include <grpc/support/slice.h>
@@ -74,4 +74,4 @@ void grpc_chttp2_goaway_append(uint32_t last_stream_id, uint32_t error_code,
                                gpr_slice debug_data,
                                gpr_slice_buffer *slice_buffer);
 
-#endif /* GRPC_CORE_TRANSPORT_CHTTP2_FRAME_GOAWAY_H */
+#endif /* GRPC_CORE_LIB_TRANSPORT_CHTTP2_FRAME_GOAWAY_H */

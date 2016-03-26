@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_CORE_TRANSPORT_METADATA_BATCH_H
-#define GRPC_CORE_TRANSPORT_METADATA_BATCH_H
+#ifndef GRPC_CORE_LIB_TRANSPORT_METADATA_BATCH_H
+#define GRPC_CORE_LIB_TRANSPORT_METADATA_BATCH_H
 
 #include <grpc/grpc.h>
 #include <grpc/support/port_platform.h>
@@ -122,4 +122,4 @@ void grpc_metadata_batch_assert_ok(grpc_metadata_batch *comd);
   } while (0)
 #endif
 
-#endif /* GRPC_CORE_TRANSPORT_METADATA_BATCH_H */
+#endif /* GRPC_CORE_LIB_TRANSPORT_METADATA_BATCH_H */

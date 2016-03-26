@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_CORE_IOMGR_SOCKADDR_POSIX_H
-#define GRPC_CORE_IOMGR_SOCKADDR_POSIX_H
+#ifndef GRPC_CORE_LIB_IOMGR_SOCKADDR_POSIX_H
+#define GRPC_CORE_LIB_IOMGR_SOCKADDR_POSIX_H
 
 #include <arpa/inet.h>
 #include <netdb.h>
@@ -41,4 +41,4 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#endif /* GRPC_CORE_IOMGR_SOCKADDR_POSIX_H */
+#endif /* GRPC_CORE_LIB_IOMGR_SOCKADDR_POSIX_H */

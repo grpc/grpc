@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_CORE_IOMGR_SOCKET_WINDOWS_H
-#define GRPC_CORE_IOMGR_SOCKET_WINDOWS_H
+#ifndef GRPC_CORE_LIB_IOMGR_SOCKET_WINDOWS_H
+#define GRPC_CORE_LIB_IOMGR_SOCKET_WINDOWS_H
 
 #include <grpc/support/port_platform.h>
 #include <winsock2.h>
@@ -108,4 +108,4 @@ void grpc_winsocket_shutdown(grpc_winsocket *socket);
 /* Destroy a socket. Should only be called if there's no pending operation. */
 void grpc_winsocket_destroy(grpc_winsocket *socket);
 
-#endif /* GRPC_CORE_IOMGR_SOCKET_WINDOWS_H */
+#endif /* GRPC_CORE_LIB_IOMGR_SOCKET_WINDOWS_H */

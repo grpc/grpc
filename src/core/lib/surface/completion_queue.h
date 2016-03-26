@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_CORE_SURFACE_COMPLETION_QUEUE_H
-#define GRPC_CORE_SURFACE_COMPLETION_QUEUE_H
+#ifndef GRPC_CORE_LIB_SURFACE_COMPLETION_QUEUE_H
+#define GRPC_CORE_LIB_SURFACE_COMPLETION_QUEUE_H
 
 /* Internal API for completion queues */
 
@@ -88,4 +88,4 @@ int grpc_cq_is_server_cq(grpc_completion_queue *cc);
 void grpc_cq_global_init(void);
 void grpc_cq_global_shutdown(void);
 
-#endif /* GRPC_CORE_SURFACE_COMPLETION_QUEUE_H */
+#endif /* GRPC_CORE_LIB_SURFACE_COMPLETION_QUEUE_H */

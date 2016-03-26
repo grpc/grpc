@@ -31,9 +31,9 @@
  *
  */
 
-#ifndef GRPC_CORE_IOMGR_IOMGR_POSIX_H
-#define GRPC_CORE_IOMGR_IOMGR_POSIX_H
+#ifndef GRPC_CORE_LIB_IOMGR_IOMGR_POSIX_H
+#define GRPC_CORE_LIB_IOMGR_IOMGR_POSIX_H
 
 #include "src/core/iomgr/iomgr_internal.h"
 
-#endif /* GRPC_CORE_IOMGR_IOMGR_POSIX_H */
+#endif /* GRPC_CORE_LIB_IOMGR_IOMGR_POSIX_H */

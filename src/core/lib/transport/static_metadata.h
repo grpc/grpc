@@ -43,8 +43,8 @@
  * explanation of what's going on.
  */
 
-#ifndef GRPC_CORE_TRANSPORT_STATIC_METADATA_H
-#define GRPC_CORE_TRANSPORT_STATIC_METADATA_H
+#ifndef GRPC_CORE_LIB_TRANSPORT_STATIC_METADATA_H
+#define GRPC_CORE_LIB_TRANSPORT_STATIC_METADATA_H
 
 #include "src/core/transport/metadata.h"
 
@@ -405,4 +405,4 @@ extern const char *const grpc_static_metadata_strings[GRPC_STATIC_MDSTR_COUNT];
 extern const uint8_t grpc_static_accept_encoding_metadata[8];
 #define GRPC_MDELEM_ACCEPT_ENCODING_FOR_ALGORITHMS(algs) \
   (&grpc_static_mdelem_table[grpc_static_accept_encoding_metadata[(algs)]])
-#endif /* GRPC_CORE_TRANSPORT_STATIC_METADATA_H */
+#endif /* GRPC_CORE_LIB_TRANSPORT_STATIC_METADATA_H */

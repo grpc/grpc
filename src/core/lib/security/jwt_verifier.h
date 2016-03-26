@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_CORE_SECURITY_JWT_VERIFIER_H
-#define GRPC_CORE_SECURITY_JWT_VERIFIER_H
+#ifndef GRPC_CORE_LIB_SECURITY_JWT_VERIFIER_H
+#define GRPC_CORE_LIB_SECURITY_JWT_VERIFIER_H
 
 #include "src/core/iomgr/pollset.h"
 #include "src/core/json/json.h"
@@ -133,4 +133,4 @@ grpc_jwt_claims *grpc_jwt_claims_from_json(grpc_json *json, gpr_slice buffer);
 grpc_jwt_verifier_status grpc_jwt_claims_check(const grpc_jwt_claims *claims,
                                                const char *audience);
 
-#endif /* GRPC_CORE_SECURITY_JWT_VERIFIER_H */
+#endif /* GRPC_CORE_LIB_SECURITY_JWT_VERIFIER_H */

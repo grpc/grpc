@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_CORE_IOMGR_ENDPOINT_H
-#define GRPC_CORE_IOMGR_ENDPOINT_H
+#ifndef GRPC_CORE_LIB_IOMGR_ENDPOINT_H
+#define GRPC_CORE_LIB_IOMGR_ENDPOINT_H
 
 #include <grpc/support/slice.h>
 #include <grpc/support/slice_buffer.h>
@@ -99,4 +99,4 @@ struct grpc_endpoint {
   const grpc_endpoint_vtable *vtable;
 };
 
-#endif /* GRPC_CORE_IOMGR_ENDPOINT_H */
+#endif /* GRPC_CORE_LIB_IOMGR_ENDPOINT_H */

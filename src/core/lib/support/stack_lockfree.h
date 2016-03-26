@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_CORE_SUPPORT_STACK_LOCKFREE_H
-#define GRPC_CORE_SUPPORT_STACK_LOCKFREE_H
+#ifndef GRPC_CORE_LIB_SUPPORT_STACK_LOCKFREE_H
+#define GRPC_CORE_LIB_SUPPORT_STACK_LOCKFREE_H
 
 #include <stddef.h>
 
@@ -50,4 +50,4 @@ int gpr_stack_lockfree_push(gpr_stack_lockfree *, int entry);
 /* Returns -1 on empty or the actual entry number */
 int gpr_stack_lockfree_pop(gpr_stack_lockfree *stack);
 
-#endif /* GRPC_CORE_SUPPORT_STACK_LOCKFREE_H */
+#endif /* GRPC_CORE_LIB_SUPPORT_STACK_LOCKFREE_H */

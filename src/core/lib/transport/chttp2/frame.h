@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_CORE_TRANSPORT_CHTTP2_FRAME_H
-#define GRPC_CORE_TRANSPORT_CHTTP2_FRAME_H
+#ifndef GRPC_CORE_LIB_TRANSPORT_CHTTP2_FRAME_H
+#define GRPC_CORE_LIB_TRANSPORT_CHTTP2_FRAME_H
 
 #include <grpc/support/port_platform.h>
 #include <grpc/support/slice.h>
@@ -66,4 +66,4 @@ typedef struct grpc_chttp2_transport_parsing grpc_chttp2_transport_parsing;
 #define GRPC_CHTTP2_DATA_FLAG_PADDED 8
 #define GRPC_CHTTP2_FLAG_HAS_PRIORITY 0x20
 
-#endif /* GRPC_CORE_TRANSPORT_CHTTP2_FRAME_H */
+#endif /* GRPC_CORE_LIB_TRANSPORT_CHTTP2_FRAME_H */
