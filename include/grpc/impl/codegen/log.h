@@ -34,8 +34,8 @@
 #ifndef GRPC_IMPL_CODEGEN_LOG_H
 #define GRPC_IMPL_CODEGEN_LOG_H
 
-#include <stdlib.h> /* for abort() */
 #include <stdarg.h>
+#include <stdlib.h> /* for abort() */
 
 #include <grpc/impl/codegen/port_platform.h>
 

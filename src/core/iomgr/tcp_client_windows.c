@@ -43,13 +43,13 @@
 #include <grpc/support/slice_buffer.h>
 #include <grpc/support/useful.h>
 
-#include "src/core/iomgr/timer.h"
 #include "src/core/iomgr/iocp_windows.h"
-#include "src/core/iomgr/tcp_client.h"
-#include "src/core/iomgr/tcp_windows.h"
 #include "src/core/iomgr/sockaddr.h"
 #include "src/core/iomgr/sockaddr_utils.h"
 #include "src/core/iomgr/socket_windows.h"
+#include "src/core/iomgr/tcp_client.h"
+#include "src/core/iomgr/tcp_windows.h"
+#include "src/core/iomgr/timer.h"
 
 typedef struct {
   grpc_closure *on_done;

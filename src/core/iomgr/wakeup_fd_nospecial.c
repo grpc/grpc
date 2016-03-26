@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -40,8 +40,8 @@
 
 #ifdef GPR_POSIX_NO_SPECIAL_WAKEUP_FD
 
-#include "src/core/iomgr/wakeup_fd_posix.h"
 #include <stddef.h>
+#include "src/core/iomgr/wakeup_fd_posix.h"
 
 static int check_availability_invalid(void) { return 0; }
 

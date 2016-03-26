@@ -34,8 +34,8 @@
 #ifndef GRPC_CORE_TRANSPORT_BYTE_STREAM_H
 #define GRPC_CORE_TRANSPORT_BYTE_STREAM_H
 
-#include "src/core/iomgr/exec_ctx.h"
 #include <grpc/support/slice_buffer.h>
+#include "src/core/iomgr/exec_ctx.h"
 
 /** Internal bit flag for grpc_begin_message's \a flags signaling the use of
  * compression for the message */

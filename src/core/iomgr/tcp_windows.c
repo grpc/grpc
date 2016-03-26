@@ -44,12 +44,12 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/useful.h>
 
-#include "src/core/iomgr/timer.h"
 #include "src/core/iomgr/iocp_windows.h"
 #include "src/core/iomgr/sockaddr.h"
 #include "src/core/iomgr/sockaddr_utils.h"
 #include "src/core/iomgr/socket_windows.h"
 #include "src/core/iomgr/tcp_client.h"
+#include "src/core/iomgr/timer.h"
 
 static int set_non_block(SOCKET sock) {
   int status;
@@ -146,8 +146,8 @@ static void on_read(grpc_exec_ctx *exec_ctx, void *tcpp, bool success) {
   grpc_winsocket_callback_info *info = &socket->read_info;
 
   if (success) {
-    if (socket->read_info.wsa_error != 0 && !tcp->shutting_down) {
-      if (socket->read_info.wsa_error != WSAECONNRESET) {
+    if (info->wsa_error != 0 && !tcp->shutting_down) {
+      if (info->wsa_error != WSAECONNRESET) {
         char *utf8_message = gpr_format_message(info->wsa_error);
         gpr_log(GPR_ERROR, "ReadFile overlapped error: %s", utf8_message);
         gpr_free(utf8_message);
@@ -306,7 +306,7 @@ static void win_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
       ok = true;
       GPR_ASSERT(bytes_sent == tcp->write_slices->length);
     } else {
-      if (socket->read_info.wsa_error != WSAECONNRESET) {
+      if (info->wsa_error != WSAECONNRESET) {
         char *utf8_message = gpr_format_message(info->wsa_error);
         gpr_log(GPR_ERROR, "WSASend error: %s", utf8_message);
         gpr_free(utf8_message);
@@ -382,9 +382,9 @@ static char *win_get_peer(grpc_endpoint *ep) {
   return gpr_strdup(tcp->peer_string);
 }
 
-static grpc_endpoint_vtable vtable = {win_read, win_write, win_add_to_pollset,
-                                      win_add_to_pollset_set, win_shutdown,
-                                      win_destroy, win_get_peer};
+static grpc_endpoint_vtable vtable = {
+    win_read,     win_write,   win_add_to_pollset, win_add_to_pollset_set,
+    win_shutdown, win_destroy, win_get_peer};
 
 grpc_endpoint *grpc_tcp_create(grpc_winsocket *socket, char *peer_string) {
   grpc_tcp *tcp = (grpc_tcp *)gpr_malloc(sizeof(grpc_tcp));

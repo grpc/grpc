@@ -37,11 +37,11 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "src/core/support/string.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/slice.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/useful.h>
+#include "src/core/support/string.h"
 
 static void fill_common_header(const grpc_httpcli_request *request,
                                gpr_strvec *buf) {

@@ -37,11 +37,11 @@
 #include <grpc/support/port_platform.h>
 #include <winsock2.h>
 
-#include <grpc/support/sync.h>
 #include <grpc/support/atm.h>
+#include <grpc/support/sync.h>
 
-#include "src/core/iomgr/iomgr_internal.h"
 #include "src/core/iomgr/exec_ctx.h"
+#include "src/core/iomgr/iomgr_internal.h"
 
 /* This holds the data for an outstanding read or write on a socket.
    The mutex to protect the concurrent access to that data is the one

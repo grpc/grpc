@@ -129,10 +129,9 @@ Status TestServiceImpl::Echo(ServerContext* context, const EchoRequest* request,
   if (request->has_param() && request->param().echo_metadata()) {
     const std::multimap<grpc::string_ref, grpc::string_ref>& client_metadata =
         context->client_metadata();
-    for (
-        std::multimap<grpc::string_ref, grpc::string_ref>::const_iterator iter =
-            client_metadata.begin();
-        iter != client_metadata.end(); ++iter) {
+    for (std::multimap<grpc::string_ref, grpc::string_ref>::const_iterator
+             iter = client_metadata.begin();
+         iter != client_metadata.end(); ++iter) {
       context->AddTrailingMetadata(ToString(iter->first),
                                    ToString(iter->second));
     }

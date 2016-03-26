@@ -36,8 +36,8 @@
 #ifdef GPR_CPU_POSIX
 
 #include <errno.h>
-#include <unistd.h>
 #include <string.h>
+#include <unistd.h>
 
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>

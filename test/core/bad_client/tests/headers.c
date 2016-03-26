@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,8 +31,8 @@
  *
  */
 
-#include "test/core/bad_client/bad_client.h"
 #include "src/core/surface/server.h"
+#include "test/core/bad_client/bad_client.h"
 
 #define PFX_STR                      \
   "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n" \
@@ -41,9 +41,9 @@
 static void verifier(grpc_server *server, grpc_completion_queue *cq,
                      void *registered_method) {
   while (grpc_server_has_open_connections(server)) {
-    GPR_ASSERT(grpc_completion_queue_next(cq,
-                                          GRPC_TIMEOUT_MILLIS_TO_DEADLINE(20),
-                                          NULL).type == GRPC_QUEUE_TIMEOUT);
+    GPR_ASSERT(grpc_completion_queue_next(
+                   cq, GRPC_TIMEOUT_MILLIS_TO_DEADLINE(20), NULL)
+                   .type == GRPC_QUEUE_TIMEOUT);
   }
 }
 
