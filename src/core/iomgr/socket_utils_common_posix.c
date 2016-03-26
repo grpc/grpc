@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -38,23 +38,23 @@
 #include "src/core/iomgr/socket_utils_posix.h"
 
 #include <arpa/inet.h>
-#include <limits.h>
+#include <errno.h>
 #include <fcntl.h>
+#include <limits.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 #include <stdio.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <unistd.h>
 #include <string.h>
-#include <errno.h>
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <unistd.h>
 
-#include "src/core/iomgr/sockaddr_utils.h"
-#include "src/core/support/string.h"
 #include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/sync.h>
+#include "src/core/iomgr/sockaddr_utils.h"
+#include "src/core/support/string.h"
 
 /* set a socket to non blocking mode */
 int grpc_set_socket_nonblocking(int fd, int non_blocking) {

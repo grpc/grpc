@@ -34,8 +34,8 @@
 #ifndef GRPC_CORE_STATISTICS_CENSUS_RPC_STATS_H
 #define GRPC_CORE_STATISTICS_CENSUS_RPC_STATS_H
 
-#include "src/core/statistics/census_interface.h"
 #include <grpc/support/port_platform.h>
+#include "src/core/statistics/census_interface.h"
 
 #ifdef __cplusplus
 extern "C" {

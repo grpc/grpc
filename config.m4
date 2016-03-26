@@ -114,9 +114,9 @@ if test "$PHP_GRPC" != "no"; then
     src/core/compression/compression_algorithm.c \
     src/core/compression/message_compress.c \
     src/core/debug/trace.c \
-    src/core/httpcli/format_request.c \
-    src/core/httpcli/httpcli.c \
-    src/core/httpcli/parser.c \
+    src/core/http/format_request.c \
+    src/core/http/httpcli.c \
+    src/core/http/parser.c \
     src/core/iomgr/closure.c \
     src/core/iomgr/endpoint.c \
     src/core/iomgr/endpoint_pair_posix.c \
@@ -151,6 +151,8 @@ if test "$PHP_GRPC" != "no"; then
     src/core/iomgr/timer.c \
     src/core/iomgr/timer_heap.c \
     src/core/iomgr/udp_server.c \
+    src/core/iomgr/unix_sockets_posix.c \
+    src/core/iomgr/unix_sockets_posix_noop.c \
     src/core/iomgr/wakeup_fd_eventfd.c \
     src/core/iomgr/wakeup_fd_nospecial.c \
     src/core/iomgr/wakeup_fd_pipe.c \
@@ -212,7 +214,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/transport/static_metadata.c \
     src/core/transport/transport.c \
     src/core/transport/transport_op_string.c \
-    src/core/httpcli/httpcli_security_connector.c \
+    src/core/http/httpcli_security_connector.c \
     src/core/security/b64.c \
     src/core/security/client_auth_filter.c \
     src/core/security/credentials.c \
@@ -551,7 +553,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/client_config/resolvers)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/compression)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/debug)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/httpcli)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/http)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/iomgr)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/json)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/profiling)

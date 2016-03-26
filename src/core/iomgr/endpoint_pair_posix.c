@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -37,22 +37,23 @@
 
 #include "src/core/iomgr/endpoint_pair.h"
 #include "src/core/iomgr/socket_utils_posix.h"
+#include "src/core/iomgr/unix_sockets_posix.h"
 
 #include <errno.h>
 #include <fcntl.h>
 #include <string.h>
-#include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/types.h>
 
-#include "src/core/iomgr/tcp_posix.h"
-#include "src/core/support/string.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
+#include "src/core/iomgr/tcp_posix.h"
+#include "src/core/support/string.h"
 
 static void create_sockets(int sv[2]) {
   int flags;
-  GPR_ASSERT(socketpair(AF_UNIX, SOCK_STREAM, 0, sv) == 0);
+  grpc_create_socketpair_if_unix(sv);
   flags = fcntl(sv[0], F_GETFL, 0);
   GPR_ASSERT(fcntl(sv[0], F_SETFL, flags | O_NONBLOCK) == 0);
   flags = fcntl(sv[1], F_GETFL, 0);

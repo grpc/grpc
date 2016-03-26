@@ -37,9 +37,6 @@
 
 #include <stdio.h>
 #include <string.h>
-#ifdef GPR_POSIX_SOCKET
-#include <sys/un.h>
-#endif
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/host_port.h>
@@ -47,6 +44,7 @@
 
 #include "src/core/client_config/lb_policy_registry.h"
 #include "src/core/iomgr/resolve_address.h"
+#include "src/core/iomgr/unix_sockets_posix.h"
 #include "src/core/support/string.h"
 
 typedef struct {
@@ -167,24 +165,6 @@ static void sockaddr_destroy(grpc_exec_ctx *exec_ctx, grpc_resolver *gr) {
   gpr_free(r->lb_policy_name);
   gpr_free(r);
 }
-
-#ifdef GPR_POSIX_SOCKET
-static int parse_unix(grpc_uri *uri, struct sockaddr_storage *addr,
-                      size_t *len) {
-  struct sockaddr_un *un = (struct sockaddr_un *)addr;
-
-  un->sun_family = AF_UNIX;
-  strcpy(un->sun_path, uri->path);
-  *len = strlen(un->sun_path) + sizeof(un->sun_family) + 1;
-
-  return 1;
-}
-
-static char *unix_get_default_authority(grpc_resolver_factory *factory,
-                                        grpc_uri *uri) {
-  return gpr_strdup("localhost");
-}
-#endif
 
 static char *ip_get_default_authority(grpc_uri *uri) {
   const char *path = uri->path;
@@ -371,21 +351,22 @@ static void sockaddr_factory_ref(grpc_resolver_factory *factory) {}
 
 static void sockaddr_factory_unref(grpc_resolver_factory *factory) {}
 
-#define DECL_FACTORY(name)                                                  \
+#define DECL_FACTORY(name, prefix)                                          \
   static grpc_resolver *name##_factory_create_resolver(                     \
       grpc_resolver_factory *factory, grpc_resolver_args *args) {           \
-    return sockaddr_create(args, "pick_first", parse_##name);               \
+    return sockaddr_create(args, "pick_first", prefix##parse_##name);       \
   }                                                                         \
   static const grpc_resolver_factory_vtable name##_factory_vtable = {       \
       sockaddr_factory_ref, sockaddr_factory_unref,                         \
-      name##_factory_create_resolver, name##_get_default_authority, #name}; \
+      name##_factory_create_resolver, prefix##name##_get_default_authority, \
+      #name};                                                               \
   static grpc_resolver_factory name##_resolver_factory = {                  \
       &name##_factory_vtable};                                              \
   grpc_resolver_factory *grpc_##name##_resolver_factory_create() {          \
     return &name##_resolver_factory;                                        \
   }
 
-#ifdef GPR_POSIX_SOCKET
-DECL_FACTORY(unix)
+#ifdef GPR_HAVE_UNIX_SOCKET
+DECL_FACTORY(unix, grpc_)
 #endif
-DECL_FACTORY(ipv4) DECL_FACTORY(ipv6)
+DECL_FACTORY(ipv4, ) DECL_FACTORY(ipv6, )

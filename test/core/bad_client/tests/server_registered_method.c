@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -35,8 +35,8 @@
 
 #include <string.h>
 
-#include "test/core/end2end/cq_verifier.h"
 #include "src/core/surface/server.h"
+#include "test/core/end2end/cq_verifier.h"
 
 #define PFX_STR                                               \
   "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"                          \

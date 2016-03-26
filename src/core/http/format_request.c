@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,22 +31,22 @@
  *
  */
 
-#include "src/core/httpcli/format_request.h"
+#include "src/core/http/format_request.h"
 
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
 
-#include "src/core/support/string.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/slice.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/useful.h>
+#include "src/core/support/string.h"
 
 static void fill_common_header(const grpc_httpcli_request *request,
                                gpr_strvec *buf) {
   size_t i;
-  gpr_strvec_add(buf, gpr_strdup(request->path));
+  gpr_strvec_add(buf, gpr_strdup(request->http.path));
   gpr_strvec_add(buf, gpr_strdup(" HTTP/1.0\r\n"));
   /* just in case some crazy server really expects HTTP/1.1 */
   gpr_strvec_add(buf, gpr_strdup("Host: "));
@@ -56,10 +56,10 @@ static void fill_common_header(const grpc_httpcli_request *request,
   gpr_strvec_add(buf,
                  gpr_strdup("User-Agent: " GRPC_HTTPCLI_USER_AGENT "\r\n"));
   /* user supplied headers */
-  for (i = 0; i < request->hdr_count; i++) {
-    gpr_strvec_add(buf, gpr_strdup(request->hdrs[i].key));
+  for (i = 0; i < request->http.hdr_count; i++) {
+    gpr_strvec_add(buf, gpr_strdup(request->http.hdrs[i].key));
     gpr_strvec_add(buf, gpr_strdup(": "));
-    gpr_strvec_add(buf, gpr_strdup(request->hdrs[i].value));
+    gpr_strvec_add(buf, gpr_strdup(request->http.hdrs[i].value));
     gpr_strvec_add(buf, gpr_strdup("\r\n"));
   }
 }
@@ -94,8 +94,8 @@ gpr_slice grpc_httpcli_format_post_request(const grpc_httpcli_request *request,
   fill_common_header(request, &out);
   if (body_bytes) {
     uint8_t has_content_type = 0;
-    for (i = 0; i < request->hdr_count; i++) {
-      if (strcmp(request->hdrs[i].key, "Content-Type") == 0) {
+    for (i = 0; i < request->http.hdr_count; i++) {
+      if (strcmp(request->http.hdrs[i].key, "Content-Type") == 0) {
         has_content_type = 1;
         break;
       }

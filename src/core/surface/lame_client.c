@@ -37,13 +37,13 @@
 
 #include <string.h>
 
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 #include "src/core/channel/channel_stack.h"
 #include "src/core/support/string.h"
 #include "src/core/surface/api_trace.h"
-#include "src/core/surface/channel.h"
 #include "src/core/surface/call.h"
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
+#include "src/core/surface/channel.h"
 
 typedef struct {
   grpc_linked_mdelem status;
@@ -118,10 +118,17 @@ static void destroy_channel_elem(grpc_exec_ctx *exec_ctx,
                                  grpc_channel_element *elem) {}
 
 const grpc_channel_filter grpc_lame_filter = {
-    lame_start_transport_stream_op, lame_start_transport_op, sizeof(call_data),
-    init_call_elem, grpc_call_stack_ignore_set_pollset, destroy_call_elem,
-    sizeof(channel_data), init_channel_elem, destroy_channel_elem,
-    lame_get_peer, "lame-client",
+    lame_start_transport_stream_op,
+    lame_start_transport_op,
+    sizeof(call_data),
+    init_call_elem,
+    grpc_call_stack_ignore_set_pollset,
+    destroy_call_elem,
+    sizeof(channel_data),
+    init_channel_elem,
+    destroy_channel_elem,
+    lame_get_peer,
+    "lame-client",
 };
 
 #define CHANNEL_STACK_FROM_CHANNEL(c) ((grpc_channel_stack *)((c) + 1))

@@ -927,8 +927,8 @@ grpc_security_connector_test: $(BINDIR)/$(CONFIG)/grpc_security_connector_test
 grpc_verify_jwt: $(BINDIR)/$(CONFIG)/grpc_verify_jwt
 hpack_parser_test: $(BINDIR)/$(CONFIG)/hpack_parser_test
 hpack_table_test: $(BINDIR)/$(CONFIG)/hpack_table_test
+http_parser_test: $(BINDIR)/$(CONFIG)/http_parser_test
 httpcli_format_request_test: $(BINDIR)/$(CONFIG)/httpcli_format_request_test
-httpcli_parser_test: $(BINDIR)/$(CONFIG)/httpcli_parser_test
 httpcli_test: $(BINDIR)/$(CONFIG)/httpcli_test
 httpscli_test: $(BINDIR)/$(CONFIG)/httpscli_test
 init_test: $(BINDIR)/$(CONFIG)/init_test
@@ -1129,13 +1129,13 @@ static: static_c static_cxx
 static_c: pc_c pc_c_unsecure cache.mk pc_c_zookeeper $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a static_zookeeper_libs
 
 
-static_cxx: pc_cxx pc_cxx_unsecure cache.mk  $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a
+static_cxx: pc_cxx pc_cxx_unsecure cache.mk  $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc++_codegen_lib.a $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a
 
 shared: shared_c shared_cxx
 
 shared_c: pc_c pc_c_unsecure cache.mk pc_c_zookeeper $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)gpr$(SHARED_VERSION).$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc$(SHARED_VERSION).$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION).$(SHARED_EXT) shared_zookeeper_libs
 
-shared_cxx: pc_cxx pc_cxx_unsecure cache.mk $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++$(SHARED_VERSION).$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++_unsecure$(SHARED_VERSION).$(SHARED_EXT)
+shared_cxx: pc_cxx pc_cxx_unsecure cache.mk $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++$(SHARED_VERSION).$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++_codegen_lib$(SHARED_VERSION).$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++_unsecure$(SHARED_VERSION).$(SHARED_EXT)
 
 shared_csharp: shared_c  $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc_csharp_ext$(SHARED_VERSION).$(SHARED_EXT)
 ifeq ($(HAS_ZOOKEEPER),true)
@@ -1236,8 +1236,8 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/grpc_security_connector_test \
   $(BINDIR)/$(CONFIG)/hpack_parser_test \
   $(BINDIR)/$(CONFIG)/hpack_table_test \
+  $(BINDIR)/$(CONFIG)/http_parser_test \
   $(BINDIR)/$(CONFIG)/httpcli_format_request_test \
-  $(BINDIR)/$(CONFIG)/httpcli_parser_test \
   $(BINDIR)/$(CONFIG)/httpcli_test \
   $(BINDIR)/$(CONFIG)/httpscli_test \
   $(BINDIR)/$(CONFIG)/init_test \
@@ -1522,10 +1522,10 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/hpack_parser_test || ( echo test hpack_parser_test failed ; exit 1 )
 	$(E) "[RUN]     Testing hpack_table_test"
 	$(Q) $(BINDIR)/$(CONFIG)/hpack_table_test || ( echo test hpack_table_test failed ; exit 1 )
+	$(E) "[RUN]     Testing http_parser_test"
+	$(Q) $(BINDIR)/$(CONFIG)/http_parser_test || ( echo test http_parser_test failed ; exit 1 )
 	$(E) "[RUN]     Testing httpcli_format_request_test"
 	$(Q) $(BINDIR)/$(CONFIG)/httpcli_format_request_test || ( echo test httpcli_format_request_test failed ; exit 1 )
-	$(E) "[RUN]     Testing httpcli_parser_test"
-	$(Q) $(BINDIR)/$(CONFIG)/httpcli_parser_test || ( echo test httpcli_parser_test failed ; exit 1 )
 	$(E) "[RUN]     Testing httpcli_test"
 	$(Q) $(BINDIR)/$(CONFIG)/httpcli_test || ( echo test httpcli_test failed ; exit 1 )
 	$(E) "[RUN]     Testing httpscli_test"
@@ -1754,6 +1754,8 @@ strip-static_cxx: static_cxx
 ifeq ($(CONFIG),opt)
 	$(E) "[STRIP]   Stripping libgrpc++.a"
 	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/libgrpc++.a
+	$(E) "[STRIP]   Stripping libgrpc++_codegen_lib.a"
+	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/libgrpc++_codegen_lib.a
 	$(E) "[STRIP]   Stripping libgrpc++_unsecure.a"
 	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a
 endif
@@ -1776,6 +1778,8 @@ strip-shared_cxx: shared_cxx
 ifeq ($(CONFIG),opt)
 	$(E) "[STRIP]   Stripping $(SHARED_PREFIX)grpc++$(SHARED_VERSION).$(SHARED_EXT)"
 	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++$(SHARED_VERSION).$(SHARED_EXT)
+	$(E) "[STRIP]   Stripping $(SHARED_PREFIX)grpc++_codegen_lib$(SHARED_VERSION).$(SHARED_EXT)"
+	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++_codegen_lib$(SHARED_VERSION).$(SHARED_EXT)
 	$(E) "[STRIP]   Stripping $(SHARED_PREFIX)grpc++_unsecure$(SHARED_VERSION).$(SHARED_EXT)"
 	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++_unsecure$(SHARED_VERSION).$(SHARED_EXT)
 endif
@@ -2087,6 +2091,9 @@ install-static_cxx: static_cxx strip-static_cxx install-pkg-config_cxx
 	$(E) "[INSTALL] Installing libgrpc++.a"
 	$(Q) $(INSTALL) -d $(prefix)/lib
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc++.a $(prefix)/lib/libgrpc++.a
+	$(E) "[INSTALL] Installing libgrpc++_codegen_lib.a"
+	$(Q) $(INSTALL) -d $(prefix)/lib
+	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc++_codegen_lib.a $(prefix)/lib/libgrpc++_codegen_lib.a
 	$(E) "[INSTALL] Installing libgrpc++_unsecure.a"
 	$(Q) $(INSTALL) -d $(prefix)/lib
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a $(prefix)/lib/libgrpc++_unsecure.a
@@ -2148,6 +2155,15 @@ ifeq ($(SYSTEM),MINGW32)
 else ifneq ($(SYSTEM),Darwin)
 	$(Q) ln -sf $(SHARED_PREFIX)grpc++$(SHARED_VERSION).$(SHARED_EXT) $(prefix)/lib/libgrpc++.so.0
 	$(Q) ln -sf $(SHARED_PREFIX)grpc++$(SHARED_VERSION).$(SHARED_EXT) $(prefix)/lib/libgrpc++.so
+endif
+	$(E) "[INSTALL] Installing $(SHARED_PREFIX)grpc++_codegen_lib$(SHARED_VERSION).$(SHARED_EXT)"
+	$(Q) $(INSTALL) -d $(prefix)/lib
+	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++_codegen_lib$(SHARED_VERSION).$(SHARED_EXT) $(prefix)/lib/$(SHARED_PREFIX)grpc++_codegen_lib$(SHARED_VERSION).$(SHARED_EXT)
+ifeq ($(SYSTEM),MINGW32)
+	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc++_codegen_lib-imp.a $(prefix)/lib/libgrpc++_codegen_lib-imp.a
+else ifneq ($(SYSTEM),Darwin)
+	$(Q) ln -sf $(SHARED_PREFIX)grpc++_codegen_lib$(SHARED_VERSION).$(SHARED_EXT) $(prefix)/lib/libgrpc++_codegen_lib.so.0
+	$(Q) ln -sf $(SHARED_PREFIX)grpc++_codegen_lib$(SHARED_VERSION).$(SHARED_EXT) $(prefix)/lib/libgrpc++_codegen_lib.so
 endif
 	$(E) "[INSTALL] Installing $(SHARED_PREFIX)grpc++_unsecure$(SHARED_VERSION).$(SHARED_EXT)"
 	$(Q) $(INSTALL) -d $(prefix)/lib
@@ -2437,9 +2453,9 @@ LIBGRPC_SRC = \
     src/core/compression/compression_algorithm.c \
     src/core/compression/message_compress.c \
     src/core/debug/trace.c \
-    src/core/httpcli/format_request.c \
-    src/core/httpcli/httpcli.c \
-    src/core/httpcli/parser.c \
+    src/core/http/format_request.c \
+    src/core/http/httpcli.c \
+    src/core/http/parser.c \
     src/core/iomgr/closure.c \
     src/core/iomgr/endpoint.c \
     src/core/iomgr/endpoint_pair_posix.c \
@@ -2474,6 +2490,8 @@ LIBGRPC_SRC = \
     src/core/iomgr/timer.c \
     src/core/iomgr/timer_heap.c \
     src/core/iomgr/udp_server.c \
+    src/core/iomgr/unix_sockets_posix.c \
+    src/core/iomgr/unix_sockets_posix_noop.c \
     src/core/iomgr/wakeup_fd_eventfd.c \
     src/core/iomgr/wakeup_fd_nospecial.c \
     src/core/iomgr/wakeup_fd_pipe.c \
@@ -2535,7 +2553,7 @@ LIBGRPC_SRC = \
     src/core/transport/static_metadata.c \
     src/core/transport/transport.c \
     src/core/transport/transport_op_string.c \
-    src/core/httpcli/httpcli_security_connector.c \
+    src/core/http/httpcli_security_connector.c \
     src/core/security/b64.c \
     src/core/security/client_auth_filter.c \
     src/core/security/credentials.c \
@@ -2797,9 +2815,9 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/compression/compression_algorithm.c \
     src/core/compression/message_compress.c \
     src/core/debug/trace.c \
-    src/core/httpcli/format_request.c \
-    src/core/httpcli/httpcli.c \
-    src/core/httpcli/parser.c \
+    src/core/http/format_request.c \
+    src/core/http/httpcli.c \
+    src/core/http/parser.c \
     src/core/iomgr/closure.c \
     src/core/iomgr/endpoint.c \
     src/core/iomgr/endpoint_pair_posix.c \
@@ -2834,6 +2852,8 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/iomgr/timer.c \
     src/core/iomgr/timer_heap.c \
     src/core/iomgr/udp_server.c \
+    src/core/iomgr/unix_sockets_posix.c \
+    src/core/iomgr/unix_sockets_posix_noop.c \
     src/core/iomgr/wakeup_fd_eventfd.c \
     src/core/iomgr/wakeup_fd_nospecial.c \
     src/core/iomgr/wakeup_fd_pipe.c \
@@ -3313,6 +3333,7 @@ ifeq ($(NO_PROTOBUF),true)
 
 $(LIBDIR)/$(CONFIG)/libgrpc++_codegen_lib.a: protobuf_dep_error
 
+$(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++_codegen_lib$(SHARED_VERSION).$(SHARED_EXT): protobuf_dep_error
 
 else
 
@@ -3327,6 +3348,23 @@ endif
 
 
 
+ifeq ($(SYSTEM),MINGW32)
+$(LIBDIR)/$(CONFIG)/grpc++_codegen_lib$(SHARED_VERSION).$(SHARED_EXT): $(LIBGRPC++_CODEGEN_LIB_OBJS)  $(ZLIB_DEP) $(PROTOBUF_DEP)
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared grpc++_codegen_lib.def -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc++_codegen_lib$(SHARED_VERSION).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc++_codegen_lib$(SHARED_VERSION)-dll.a -o $(LIBDIR)/$(CONFIG)/grpc++_codegen_lib$(SHARED_VERSION).$(SHARED_EXT) $(LIBGRPC++_CODEGEN_LIB_OBJS) $(LDLIBS) $(ZLIB_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF)
+else
+$(LIBDIR)/$(CONFIG)/libgrpc++_codegen_lib$(SHARED_VERSION).$(SHARED_EXT): $(LIBGRPC++_CODEGEN_LIB_OBJS)  $(ZLIB_DEP) $(PROTOBUF_DEP)
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+ifeq ($(SYSTEM),Darwin)
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc++_codegen_lib$(SHARED_VERSION).$(SHARED_EXT) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc++_codegen_lib$(SHARED_VERSION).$(SHARED_EXT) $(LIBGRPC++_CODEGEN_LIB_OBJS) $(LDLIBS) $(ZLIB_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF)
+else
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc++_codegen_lib.so.0 -o $(LIBDIR)/$(CONFIG)/libgrpc++_codegen_lib$(SHARED_VERSION).$(SHARED_EXT) $(LIBGRPC++_CODEGEN_LIB_OBJS) $(LDLIBS) $(ZLIB_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF)
+	$(Q) ln -sf $(SHARED_PREFIX)grpc++_codegen_lib$(SHARED_VERSION).$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc++_codegen_lib$(SHARED_VERSION).so.0
+	$(Q) ln -sf $(SHARED_PREFIX)grpc++_codegen_lib$(SHARED_VERSION).$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc++_codegen_lib$(SHARED_VERSION).so
+endif
+endif
 
 endif
 
@@ -7757,8 +7795,40 @@ endif
 endif
 
 
+HTTP_PARSER_TEST_SRC = \
+    test/core/http/parser_test.c \
+
+HTTP_PARSER_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(HTTP_PARSER_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/http_parser_test: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/http_parser_test: $(HTTP_PARSER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(HTTP_PARSER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/http_parser_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/http/parser_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_http_parser_test: $(HTTP_PARSER_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(HTTP_PARSER_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
 HTTPCLI_FORMAT_REQUEST_TEST_SRC = \
-    test/core/httpcli/format_request_test.c \
+    test/core/http/format_request_test.c \
 
 HTTPCLI_FORMAT_REQUEST_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(HTTPCLI_FORMAT_REQUEST_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -7778,7 +7848,7 @@ $(BINDIR)/$(CONFIG)/httpcli_format_request_test: $(HTTPCLI_FORMAT_REQUEST_TEST_O
 
 endif
 
-$(OBJDIR)/$(CONFIG)/test/core/httpcli/format_request_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(OBJDIR)/$(CONFIG)/test/core/http/format_request_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
 deps_httpcli_format_request_test: $(HTTPCLI_FORMAT_REQUEST_TEST_OBJS:.o=.dep)
 
@@ -7789,40 +7859,8 @@ endif
 endif
 
 
-HTTPCLI_PARSER_TEST_SRC = \
-    test/core/httpcli/parser_test.c \
-
-HTTPCLI_PARSER_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(HTTPCLI_PARSER_TEST_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/httpcli_parser_test: openssl_dep_error
-
-else
-
-
-
-$(BINDIR)/$(CONFIG)/httpcli_parser_test: $(HTTPCLI_PARSER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(HTTPCLI_PARSER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/httpcli_parser_test
-
-endif
-
-$(OBJDIR)/$(CONFIG)/test/core/httpcli/parser_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-
-deps_httpcli_parser_test: $(HTTPCLI_PARSER_TEST_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(HTTPCLI_PARSER_TEST_OBJS:.o=.dep)
-endif
-endif
-
-
 HTTPCLI_TEST_SRC = \
-    test/core/httpcli/httpcli_test.c \
+    test/core/http/httpcli_test.c \
 
 HTTPCLI_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(HTTPCLI_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -7842,7 +7880,7 @@ $(BINDIR)/$(CONFIG)/httpcli_test: $(HTTPCLI_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgr
 
 endif
 
-$(OBJDIR)/$(CONFIG)/test/core/httpcli/httpcli_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(OBJDIR)/$(CONFIG)/test/core/http/httpcli_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
 deps_httpcli_test: $(HTTPCLI_TEST_OBJS:.o=.dep)
 
@@ -7854,7 +7892,7 @@ endif
 
 
 HTTPSCLI_TEST_SRC = \
-    test/core/httpcli/httpscli_test.c \
+    test/core/http/httpscli_test.c \
 
 HTTPSCLI_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(HTTPSCLI_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -7874,7 +7912,7 @@ $(BINDIR)/$(CONFIG)/httpscli_test: $(HTTPSCLI_TEST_OBJS) $(LIBDIR)/$(CONFIG)/lib
 
 endif
 
-$(OBJDIR)/$(CONFIG)/test/core/httpcli/httpscli_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(OBJDIR)/$(CONFIG)/test/core/http/httpscli_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
 deps_httpscli_test: $(HTTPSCLI_TEST_OBJS:.o=.dep)
 
@@ -13378,7 +13416,7 @@ ifneq ($(OPENSSL_DEP),)
 # This is to ensure the embedded OpenSSL is built beforehand, properly
 # installing headers to their final destination on the drive. We need this
 # otherwise parallel compilation will fail if a source is compiled first.
-src/core/httpcli/httpcli_security_connector.c: $(OPENSSL_DEP)
+src/core/http/httpcli_security_connector.c: $(OPENSSL_DEP)
 src/core/security/b64.c: $(OPENSSL_DEP)
 src/core/security/client_auth_filter.c: $(OPENSSL_DEP)
 src/core/security/credentials.c: $(OPENSSL_DEP)

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -37,13 +37,13 @@
 
 #ifdef GPR_POSIX_SYNC
 
-#include <pthread.h>
-#include <stdlib.h>
-#include <string.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/thd.h>
 #include <grpc/support/useful.h>
+#include <pthread.h>
+#include <stdlib.h>
+#include <string.h>
 
 struct thd_arg {
   void (*body)(void *arg); /* body of a thread */

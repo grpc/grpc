@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -39,9 +39,9 @@
 
 #include <grpc/support/log.h>
 
-#include "src/core/iomgr/socket_windows.h"
 #include "src/core/iomgr/iocp_windows.h"
 #include "src/core/iomgr/iomgr.h"
+#include "src/core/iomgr/socket_windows.h"
 
 /* Windows' io manager is going to be fully designed using IO completion
    ports. All of what we're doing here is basically make sure that

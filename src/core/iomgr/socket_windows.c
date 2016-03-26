@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -36,6 +36,8 @@
 #ifdef GPR_WINSOCK_SOCKET
 
 #include <winsock2.h>
+
+// must be included after winsock2.h
 #include <mswsock.h>
 
 #include <grpc/support/alloc.h>
