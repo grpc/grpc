@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -35,11 +35,11 @@
 
 #include <string.h>
 
-#include "src/core/transport/chttp2/internal.h"
-#include "src/core/support/string.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/useful.h>
+#include "src/core/support/string.h"
+#include "src/core/transport/chttp2/internal.h"
 #include "src/core/transport/transport.h"
 
 grpc_chttp2_parse_error grpc_chttp2_data_parser_init(

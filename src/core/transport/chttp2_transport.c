@@ -1398,8 +1398,8 @@ static void recv_data(grpc_exec_ctx *exec_ctx, void *tp, bool success) {
     gpr_mu_unlock(&t->mu);
     GPR_TIMER_BEGIN("recv_data.parse", 0);
     for (; i < t->read_buffer.count &&
-               grpc_chttp2_perform_read(exec_ctx, transport_parsing,
-                                        t->read_buffer.slices[i]);
+           grpc_chttp2_perform_read(exec_ctx, transport_parsing,
+                                    t->read_buffer.slices[i]);
          i++)
       ;
     GPR_TIMER_END("recv_data.parse", 0);
@@ -1474,9 +1474,10 @@ static void connectivity_state_set(
     grpc_connectivity_state state, const char *reason) {
   GRPC_CHTTP2_IF_TRACING(
       gpr_log(GPR_DEBUG, "set connectivity_state=%d", state));
-  grpc_connectivity_state_set(exec_ctx, &TRANSPORT_FROM_GLOBAL(transport_global)
-                                             ->channel_callback.state_tracker,
-                              state, reason);
+  grpc_connectivity_state_set(
+      exec_ctx,
+      &TRANSPORT_FROM_GLOBAL(transport_global)->channel_callback.state_tracker,
+      state, reason);
 }
 
 /*******************************************************************************
@@ -1756,10 +1757,15 @@ static char *chttp2_get_peer(grpc_exec_ctx *exec_ctx, grpc_transport *t) {
   return gpr_strdup(((grpc_chttp2_transport *)t)->peer_string);
 }
 
-static const grpc_transport_vtable vtable = {
-    sizeof(grpc_chttp2_stream), "chttp2", init_stream, set_pollset,
-    perform_stream_op, perform_transport_op, destroy_stream, destroy_transport,
-    chttp2_get_peer};
+static const grpc_transport_vtable vtable = {sizeof(grpc_chttp2_stream),
+                                             "chttp2",
+                                             init_stream,
+                                             set_pollset,
+                                             perform_stream_op,
+                                             perform_transport_op,
+                                             destroy_stream,
+                                             destroy_transport,
+                                             chttp2_get_peer};
 
 grpc_transport *grpc_create_chttp2_transport(
     grpc_exec_ctx *exec_ctx, const grpc_channel_args *channel_args,

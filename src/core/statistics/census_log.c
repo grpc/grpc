@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -90,7 +90,6 @@
    argument. E.g. cl_block_initialize() will initialize a cl_block.
 */
 #include "src/core/statistics/census_log.h"
-#include <string.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
 #include <grpc/support/cpu.h>
@@ -98,6 +97,7 @@
 #include <grpc/support/port_platform.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/useful.h>
+#include <string.h>
 
 /* End of platform specific code */
 

@@ -10,6 +10,11 @@ INSTALL
 -------
 
    ```sh
+   $ # Get the gRPC repository
+   $ export REPO_ROOT=grpc # REPO root can be any directory of your choice
+   $ git clone https://github.com/grpc/grpc.git $REPO_ROOT
+   $ cd $REPO_ROOT
+
    $ cd examples/node
    $ npm install
    ```

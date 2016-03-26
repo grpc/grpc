@@ -44,9 +44,9 @@
 #include "src/core/client_config/lb_policy_registry.h"
 #include "src/core/client_config/resolver_registry.h"
 #include "src/core/iomgr/resolve_address.h"
+#include "src/core/json/json.h"
 #include "src/core/support/string.h"
 #include "src/core/surface/api_trace.h"
-#include "src/core/json/json.h"
 
 /** Zookeeper session expiration time in milliseconds */
 #define GRPC_ZOOKEEPER_SESSION_TIMEOUT 15000

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,15 +31,16 @@
  *
  */
 
-#ifndef GRPC_CORE_HTTPCLI_FORMAT_REQUEST_H
-#define GRPC_CORE_HTTPCLI_FORMAT_REQUEST_H
+var _ = require('lodash');
 
-#include "src/core/httpcli/httpcli.h"
-#include <grpc/support/slice.h>
-
-gpr_slice grpc_httpcli_format_get_request(const grpc_httpcli_request *request);
-gpr_slice grpc_httpcli_format_post_request(const grpc_httpcli_request *request,
-                                           const char *body_bytes,
-                                           size_t body_size);
-
-#endif /* GRPC_CORE_HTTPCLI_FORMAT_REQUEST_H */
+module.exports = {
+  'streamingCall' : {
+    path: '/grpc.testing/BenchmarkService',
+    requestStream: true,
+    responseStream: true,
+    requestSerialize: _.identity,
+    requestDeserialize: _.identity,
+    responseSerialize: _.identity,
+    responseDeserialize: _.identity
+  }
+};

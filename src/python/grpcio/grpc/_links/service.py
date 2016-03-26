@@ -1,4 +1,4 @@
-# Copyright 2015, Google Inc.
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -177,7 +177,7 @@ class _Kernel(object):
     call = service_acceptance.call
     call.accept(self._completion_queue, call)
     try:
-      group, method = service_acceptance.method.split('/')[1:3]
+      group, method = service_acceptance.method.split(b'/')[1:3]
     except ValueError:
       logging.info('Illegal path "%s"!', service_acceptance.method)
       return

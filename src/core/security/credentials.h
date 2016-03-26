@@ -34,16 +34,17 @@
 #ifndef GRPC_CORE_SECURITY_CREDENTIALS_H
 #define GRPC_CORE_SECURITY_CREDENTIALS_H
 
-#include "src/core/transport/metadata_batch.h"
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/sync.h>
+#include "src/core/transport/metadata_batch.h"
 
-#include "src/core/httpcli/httpcli.h"
+#include "src/core/http/httpcli.h"
+#include "src/core/http/parser.h"
 #include "src/core/security/json_token.h"
 #include "src/core/security/security_connector.h"
 
-struct grpc_httpcli_response;
+struct grpc_http_response;
 
 /* --- Constants. --- */
 
@@ -207,7 +208,7 @@ grpc_call_credentials *grpc_credentials_contains_type(
 /* Exposed for testing only. */
 grpc_credentials_status
 grpc_oauth2_token_fetcher_credentials_parse_server_response(
-    const struct grpc_httpcli_response *response,
+    const struct grpc_http_response *response,
     grpc_credentials_md_store **token_md, gpr_timespec *token_lifetime);
 
 void grpc_flush_cached_google_default_credentials(void);

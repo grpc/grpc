@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -493,8 +493,10 @@ static void fake_handshaker_destroy(tsi_handshaker *self) {
 
 static const tsi_handshaker_vtable handshaker_vtable = {
     fake_handshaker_get_bytes_to_send_to_peer,
-    fake_handshaker_process_bytes_from_peer, fake_handshaker_get_result,
-    fake_handshaker_extract_peer, fake_handshaker_create_frame_protector,
+    fake_handshaker_process_bytes_from_peer,
+    fake_handshaker_get_result,
+    fake_handshaker_extract_peer,
+    fake_handshaker_create_frame_protector,
     fake_handshaker_destroy,
 };
 
