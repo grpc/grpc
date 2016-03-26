@@ -39,9 +39,9 @@
  * TODO(murgatroid99): Remove this
  */
 #include <grpc/grpc.h>
-#include "src/core/support/string.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include "src/core/support/string.h"
 
 static int all_ok = 1;
 

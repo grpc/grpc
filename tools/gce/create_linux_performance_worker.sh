@@ -28,46 +28,34 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-set -e
+# Creates a performance worker on GCE.
 
-# directories to run against
-DIRS="src/core src/cpp test/core test/cpp include"
+set -ex
 
-# file matching patterns to check
-GLOB="*.h *.c *.cc"
+cd $(dirname $0)
 
-# clang format command
-CLANG_FORMAT=clang-format-3.8
+CLOUD_PROJECT=grpc-testing
+ZONE=us-central1-b  # this zone allows 32core machines
 
-files=
-for dir in $DIRS
-do
-  for glob in $GLOB
-  do
-    files="$files `find /local-code/$dir -name $glob -and -not -name *.generated.* -and -not -name *.pb.h -and -not -name *.pb.c`"
-  done
-done
+INSTANCE_NAME="${1:-grpc-performance-driver}"
+MACHINE_TYPE=n1-standard-32
 
-# The CHANGED_FILES variable is used to restrict the set of files to check.
-# Here we set files to the intersection of files and CHANGED_FILES
-if [ -n "$CHANGED_FILES" ]; then
-  files=$(comm -12 <(echo $files | tr ' ' '\n' | sort -u) <(echo $CHANGED_FILES | tr ' ' '\n' | sort -u))
-fi
+gcloud compute instances create $INSTANCE_NAME \
+    --project="$CLOUD_PROJECT" \
+    --zone "$ZONE" \
+    --machine-type $MACHINE_TYPE \
+    --image ubuntu-15-10 \
+    --boot-disk-size 300
 
-if [ "x$TEST" = "x" ]
-then
-  echo $files | xargs $CLANG_FORMAT -i
-else
-  ok=yes
-  for file in $files
-  do
-    tmp=`mktemp`
-    $CLANG_FORMAT $file > $tmp
-    diff -u $file $tmp || ok=no
-    rm $tmp
-  done
-  if [ $ok == no ]
-  then
-    false
-  fi
-fi
+echo 'Created GCE instance, waiting 60 seconds for it to come online.'
+sleep 60
+
+gcloud compute copy-files \
+    --project="$CLOUD_PROJECT" \
+    --zone "$ZONE" \
+    jenkins_master.pub linux_performance_worker_init.sh ${INSTANCE_NAME}:~
+
+gcloud compute ssh \
+    --project="$CLOUD_PROJECT" \
+    --zone "$ZONE" \
+    $INSTANCE_NAME --command "./linux_performance_worker_init.sh"

@@ -47,8 +47,8 @@
 #include "src/core/http/httpcli.h"
 #include "src/core/security/json_token.h"
 #include "src/core/support/env.h"
-#include "src/core/support/tmpfile.h"
 #include "src/core/support/string.h"
+#include "src/core/support/tmpfile.h"
 #include "test/core/util/test_config.h"
 
 /* -- Mock channel credentials. -- */

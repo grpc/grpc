@@ -1,6 +1,6 @@
 /*
 
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -65,11 +65,11 @@
 #include <sstream>
 
 #include <gflags/gflags.h>
-#include <grpc/grpc.h>
 #include <grpc++/channel.h>
 #include <grpc++/create_channel.h>
 #include <grpc++/security/credentials.h>
 #include <grpc++/support/string_ref.h>
+#include <grpc/grpc.h>
 
 #include "test/cpp/util/cli_call.h"
 #include "test/cpp/util/string_ref_helper.h"

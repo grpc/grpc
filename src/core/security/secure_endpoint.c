@@ -32,14 +32,14 @@
  */
 
 #include "src/core/security/secure_endpoint.h"
-#include "src/core/support/string.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/slice_buffer.h>
 #include <grpc/support/slice.h>
+#include <grpc/support/slice_buffer.h>
 #include <grpc/support/sync.h>
-#include "src/core/tsi/transport_security_interface.h"
 #include "src/core/debug/trace.h"
+#include "src/core/support/string.h"
+#include "src/core/tsi/transport_security_interface.h"
 
 #define STAGING_BUFFER_SIZE 8192
 
@@ -354,8 +354,9 @@ static char *endpoint_get_peer(grpc_endpoint *secure_ep) {
 }
 
 static const grpc_endpoint_vtable vtable = {
-    endpoint_read, endpoint_write, endpoint_add_to_pollset,
-    endpoint_add_to_pollset_set, endpoint_shutdown, endpoint_destroy,
+    endpoint_read,           endpoint_write,
+    endpoint_add_to_pollset, endpoint_add_to_pollset_set,
+    endpoint_shutdown,       endpoint_destroy,
     endpoint_get_peer};
 
 grpc_endpoint *grpc_secure_endpoint_create(
