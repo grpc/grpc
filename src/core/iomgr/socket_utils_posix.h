@@ -34,8 +34,8 @@
 #ifndef GRPC_CORE_IOMGR_SOCKET_UTILS_POSIX_H
 #define GRPC_CORE_IOMGR_SOCKET_UTILS_POSIX_H
 
-#include <unistd.h>
 #include <sys/socket.h>
+#include <unistd.h>
 
 /* a wrapper for accept or accept4 */
 int grpc_accept4(int sockfd, struct sockaddr *addr, socklen_t *addrlen,

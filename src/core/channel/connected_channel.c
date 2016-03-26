@@ -37,13 +37,13 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "src/core/support/string.h"
-#include "src/core/transport/transport.h"
-#include "src/core/profiling/timers.h"
 #include <grpc/byte_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/slice_buffer.h>
+#include "src/core/profiling/timers.h"
+#include "src/core/support/string.h"
+#include "src/core/transport/transport.h"
 
 #define MAX_BUFFER_LENGTH 8192
 
@@ -132,9 +132,17 @@ static char *con_get_peer(grpc_exec_ctx *exec_ctx, grpc_call_element *elem) {
 }
 
 static const grpc_channel_filter connected_channel_filter = {
-    con_start_transport_stream_op, con_start_transport_op, sizeof(call_data),
-    init_call_elem, set_pollset, destroy_call_elem, sizeof(channel_data),
-    init_channel_elem, destroy_channel_elem, con_get_peer, "connected",
+    con_start_transport_stream_op,
+    con_start_transport_op,
+    sizeof(call_data),
+    init_call_elem,
+    set_pollset,
+    destroy_call_elem,
+    sizeof(channel_data),
+    init_channel_elem,
+    destroy_channel_elem,
+    con_get_peer,
+    "connected",
 };
 
 static void bind_transport(grpc_channel_stack *channel_stack,
