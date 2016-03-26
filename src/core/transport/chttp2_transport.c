@@ -1079,6 +1079,7 @@ static void perform_transport_op_locked(grpc_exec_ctx *exec_ctx,
     GPR_ASSERT(t->post_parsing_op == NULL);
     t->post_parsing_op = gpr_malloc(sizeof(*op));
     memcpy(t->post_parsing_op, op, sizeof(*op));
+    return;
   }
 
   grpc_exec_ctx_enqueue(exec_ctx, op->on_consumed, true, NULL);
