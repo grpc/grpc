@@ -38,8 +38,8 @@
 #include <grpc/census.h>
 
 #include "src/core/census/grpc_filter.h"
-#include "src/core/surface/channel_init.h"
 #include "src/core/channel/channel_stack_builder.h"
+#include "src/core/surface/channel_init.h"
 
 static bool maybe_add_census_filter(grpc_channel_stack_builder *builder,
                                     void *arg_must_be_null) {

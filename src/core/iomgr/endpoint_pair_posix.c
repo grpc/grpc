@@ -42,14 +42,14 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <string.h>
-#include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/types.h>
 
-#include "src/core/iomgr/tcp_posix.h"
-#include "src/core/support/string.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
+#include "src/core/iomgr/tcp_posix.h"
+#include "src/core/support/string.h"
 
 static void create_sockets(int sv[2]) {
   int flags;

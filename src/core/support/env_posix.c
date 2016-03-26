@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -41,8 +41,8 @@
 
 #include <grpc/support/log.h>
 
-#include "src/core/support/string.h"
 #include <grpc/support/string_util.h>
+#include "src/core/support/string.h"
 
 char *gpr_getenv(const char *name) {
   char *result = getenv(name);

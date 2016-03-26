@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -35,9 +35,9 @@
 
 #ifdef GPR_POSIX_SOCKET
 
-#include "src/core/iomgr/iomgr_posix.h"
 #include "src/core/debug/trace.h"
 #include "src/core/iomgr/fd_posix.h"
+#include "src/core/iomgr/iomgr_posix.h"
 #include "src/core/iomgr/tcp_posix.h"
 
 void grpc_iomgr_platform_init(void) {

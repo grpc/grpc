@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,13 +32,13 @@
  */
 
 #include "src/core/statistics/window_stats.h"
-#include <math.h>
-#include <stddef.h>
-#include <string.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 #include <grpc/support/useful.h>
+#include <math.h>
+#include <stddef.h>
+#include <string.h>
 
 /* typedefs make typing long names easier. Use cws (for census_window_stats) */
 typedef census_window_stats_stat_info cws_stat_info;

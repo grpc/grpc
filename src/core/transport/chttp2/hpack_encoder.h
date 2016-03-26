@@ -34,12 +34,12 @@
 #ifndef GRPC_CORE_TRANSPORT_CHTTP2_HPACK_ENCODER_H
 #define GRPC_CORE_TRANSPORT_CHTTP2_HPACK_ENCODER_H
 
-#include "src/core/transport/chttp2/frame.h"
-#include "src/core/transport/metadata.h"
-#include "src/core/transport/metadata_batch.h"
 #include <grpc/support/port_platform.h>
 #include <grpc/support/slice.h>
 #include <grpc/support/slice_buffer.h>
+#include "src/core/transport/chttp2/frame.h"
+#include "src/core/transport/metadata.h"
+#include "src/core/transport/metadata_batch.h"
 
 #define GRPC_CHTTP2_HPACKC_NUM_FILTERS 256
 #define GRPC_CHTTP2_HPACKC_NUM_VALUES 256

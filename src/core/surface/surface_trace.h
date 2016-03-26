@@ -34,9 +34,9 @@
 #ifndef GRPC_CORE_SURFACE_SURFACE_TRACE_H
 #define GRPC_CORE_SURFACE_SURFACE_TRACE_H
 
+#include <grpc/support/log.h>
 #include "src/core/debug/trace.h"
 #include "src/core/surface/api_trace.h"
-#include <grpc/support/log.h>
 
 #define GRPC_SURFACE_TRACE_RETURNED_EVENT(cq, event)    \
   if (grpc_api_trace) {                                 \
