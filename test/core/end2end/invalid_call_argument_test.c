@@ -63,7 +63,7 @@ struct test_state {
 static struct test_state g_state;
 
 static void prepare_test(int is_client) {
-  int port;
+  int port = grpc_pick_unused_port_or_die();
   char *server_hostport;
   grpc_op *op;
   g_state.is_client = is_client;
@@ -85,7 +85,6 @@ static void prepare_test(int is_client) {
   } else {
     g_state.server = grpc_server_create(NULL, NULL);
     grpc_server_register_completion_queue(g_state.server, g_state.cq, NULL);
-    port = grpc_pick_unused_port_or_die();
     gpr_join_host_port(&server_hostport, "0.0.0.0", port);
     grpc_server_add_insecure_http2_port(g_state.server, server_hostport);
     grpc_server_start(g_state.server);
