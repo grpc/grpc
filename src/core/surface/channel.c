@@ -40,12 +40,12 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/surface/channel_init.h"
 #include "src/core/client_config/resolver_registry.h"
 #include "src/core/iomgr/iomgr.h"
 #include "src/core/support/string.h"
 #include "src/core/surface/api_trace.h"
 #include "src/core/surface/call.h"
+#include "src/core/surface/channel_init.h"
 #include "src/core/surface/init.h"
 #include "src/core/transport/static_metadata.h"
 

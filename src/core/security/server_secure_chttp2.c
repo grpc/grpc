@@ -35,6 +35,10 @@
 
 #include <string.h>
 
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+#include <grpc/support/sync.h>
+#include <grpc/support/useful.h>
 #include "src/core/channel/channel_args.h"
 #include "src/core/channel/http_server_filter.h"
 #include "src/core/iomgr/endpoint.h"
@@ -47,10 +51,6 @@
 #include "src/core/surface/api_trace.h"
 #include "src/core/surface/server.h"
 #include "src/core/transport/chttp2_transport.h"
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/sync.h>
-#include <grpc/support/useful.h>
 
 typedef struct grpc_server_secure_state {
   grpc_server *server;

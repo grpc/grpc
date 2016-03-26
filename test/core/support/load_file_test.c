@@ -39,8 +39,8 @@
 #include <grpc/support/slice.h>
 
 #include "src/core/support/load_file.h"
-#include "src/core/support/tmpfile.h"
 #include "src/core/support/string.h"
+#include "src/core/support/tmpfile.h"
 #include "test/core/util/test_config.h"
 
 #define LOG_TEST_NAME(x) gpr_log(GPR_INFO, "%s", x)

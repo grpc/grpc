@@ -35,14 +35,14 @@
 
 #ifdef GPR_WIN32
 
-#include <stdio.h>
 #include <stdarg.h>
+#include <stdio.h>
 
 #include <grpc/support/alloc.h>
-#include <grpc/support/log_win32.h>
 #include <grpc/support/log.h>
-#include <grpc/support/time.h>
+#include <grpc/support/log_win32.h>
 #include <grpc/support/string_util.h>
+#include <grpc/support/time.h>
 
 #include "src/core/support/string.h"
 #include "src/core/support/string_win32.h"

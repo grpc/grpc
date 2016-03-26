@@ -36,11 +36,11 @@
 #include <stdbool.h>
 #include <string.h>
 
-#include "src/core/security/security_context.h"
-#include "src/core/security/secure_endpoint.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/slice_buffer.h>
+#include "src/core/security/secure_endpoint.h"
+#include "src/core/security/security_context.h"
 
 #define GRPC_INITIAL_HANDSHAKE_BUFFER_SIZE 256
 
