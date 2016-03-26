@@ -62,6 +62,8 @@
 #ifndef GRPC_CORE_IOMGR_WAKEUP_FD_POSIX_H
 #define GRPC_CORE_IOMGR_WAKEUP_FD_POSIX_H
 
+#include "src/core/iomgr/iomgr_internal.h"
+
 void grpc_wakeup_fd_global_init(void);
 void grpc_wakeup_fd_global_destroy(void);
 
@@ -83,6 +85,7 @@ typedef struct grpc_wakeup_fd_vtable {
 struct grpc_wakeup_fd {
   int read_fd;
   int write_fd;
+  grpc_iomgr_object iomgr_object;
 };
 
 extern int grpc_allow_specialized_wakeup_fd;
