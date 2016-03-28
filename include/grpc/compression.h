@@ -36,8 +36,8 @@
 
 #include <stdlib.h>
 
-#include <grpc/impl/codegen/port_platform.h>
 #include <grpc/impl/codegen/compression_types.h>
+#include <grpc/impl/codegen/port_platform.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -59,9 +59,8 @@ GRPCAPI int grpc_compression_algorithm_name(
  * compression algorithms encoded in the \a accepted_encodings bitset.
  *
  * It abort()s for unknown levels . */
-GRPCAPI grpc_compression_algorithm
-grpc_compression_algorithm_for_level(grpc_compression_level level,
-                                     uint32_t accepted_encodings);
+GRPCAPI grpc_compression_algorithm grpc_compression_algorithm_for_level(
+    grpc_compression_level level, uint32_t accepted_encodings);
 
 GRPCAPI void grpc_compression_options_init(grpc_compression_options *opts);
 

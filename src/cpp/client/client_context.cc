@@ -33,15 +33,15 @@
 
 #include <grpc++/client_context.h>
 
+#include <grpc++/security/credentials.h>
+#include <grpc++/server_context.h>
+#include <grpc++/support/time.h>
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
-#include <grpc++/security/credentials.h>
-#include <grpc++/server_context.h>
-#include <grpc++/support/time.h>
 
-#include "src/core/channel/compress_filter.h"
+#include "src/core/lib/channel/compress_filter.h"
 #include "src/cpp/common/create_auth_context.h"
 
 namespace grpc {

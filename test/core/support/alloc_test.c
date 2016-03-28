@@ -31,8 +31,8 @@
  *
  */
 
-#include <grpc/support/log.h>
 #include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 #include "test/core/util/test_config.h"
 
 static void *fake_malloc(size_t size) { return (void *)size; }
