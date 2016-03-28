@@ -51,8 +51,8 @@
 #include "test/core/util/port.h"
 
 extern "C" {
-#include "src/core/iomgr/socket_utils_posix.h"
-#include "src/core/support/string.h"
+#include "src/core/lib/iomgr/socket_utils_posix.h"
+#include "src/core/lib/support/string.h"
 }
 
 int test_client(const char* root, const char* host, int port) {

@@ -33,13 +33,13 @@
 
 #include "test/core/bad_client/bad_client.h"
 
-#include "src/core/channel/channel_stack.h"
-#include "src/core/channel/http_server_filter.h"
-#include "src/core/iomgr/endpoint_pair.h"
-#include "src/core/support/string.h"
-#include "src/core/surface/completion_queue.h"
-#include "src/core/surface/server.h"
-#include "src/core/transport/chttp2_transport.h"
+#include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/channel/http_server_filter.h"
+#include "src/core/lib/iomgr/endpoint_pair.h"
+#include "src/core/lib/support/string.h"
+#include "src/core/lib/surface/completion_queue.h"
+#include "src/core/lib/surface/server.h"
+#include "src/core/lib/transport/chttp2_transport.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/sync.h>

@@ -40,13 +40,13 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/useful.h>
 
-#include "src/core/security/security_connector.h"
-#include "src/core/security/security_context.h"
-#include "src/core/support/env.h"
-#include "src/core/support/string.h"
-#include "src/core/support/tmpfile.h"
-#include "src/core/tsi/ssl_transport_security.h"
-#include "src/core/tsi/transport_security.h"
+#include "src/core/lib/security/security_connector.h"
+#include "src/core/lib/security/security_context.h"
+#include "src/core/lib/support/env.h"
+#include "src/core/lib/support/string.h"
+#include "src/core/lib/support/tmpfile.h"
+#include "src/core/lib/tsi/ssl_transport_security.h"
+#include "src/core/lib/tsi/transport_security.h"
 #include "test/core/util/test_config.h"
 
 static int check_transport_security_type(const grpc_auth_context *ctx) {
