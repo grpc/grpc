@@ -567,18 +567,32 @@ filegroups:
   - src/core/ext/transport/chttp2/transport/timeout_encoding.c
   - src/core/ext/transport/chttp2/transport/varint.c
   - src/core/ext/transport/chttp2/transport/writing.c
+  uses:
+  - grpc_base
 - name: grpc_transport_chttp2_client_insecure
   src:
   - src/core/ext/transport/chttp2/client/insecure/channel_create.c
+  uses:
+  - grpc_transport_chttp2
+  - grpc_base
 - name: grpc_transport_chttp2_client_secure
   src:
   - src/core/ext/transport/chttp2/client/secure/secure_channel_create.c
+  uses:
+  - grpc_transport_chttp2
+  - grpc_base
 - name: grpc_transport_chttp2_server_insecure
   src:
   - src/core/ext/transport/chttp2/server/insecure/server_chttp2.c
+  uses:
+  - grpc_transport_chttp2
+  - grpc_base
 - name: grpc_transport_chttp2_server_secure
   src:
   - src/core/ext/transport/chttp2/server/secure/server_secure_chttp2.c
+  uses:
+  - grpc_transport_chttp2
+  - grpc_base
 - name: nanopb
   headers:
   - third_party/nanopb/pb.h
@@ -621,7 +635,6 @@ libs:
   dll: true
   filegroups:
   - grpc_base
-  - grpc_transport_chttp2
   - grpc_transport_chttp2_server_secure
   - grpc_transport_chttp2_client_secure
   - grpc_transport_chttp2_server_insecure
@@ -707,7 +720,6 @@ libs:
   dll: true
   filegroups:
   - grpc_base
-  - grpc_transport_chttp2
   - grpc_transport_chttp2_server_insecure
   - grpc_transport_chttp2_client_insecure
   - grpc_codegen
