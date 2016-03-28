@@ -84,6 +84,11 @@ class Version:
     else:
       return '%d.%d.%d' % (self.major, self.minor, self.patch)
 
+  def php(self):
+    """Version string in PHP style"""
+    """PECL does not allow tag in version string"""
+    return '%d.%d.%d' % (self.major, self.minor, self.patch)
+
 def mako_plugin(dictionary):
   """Expand version numbers:
      - for each language, ensure there's a language_version tag in

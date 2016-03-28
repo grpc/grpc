@@ -34,13 +34,13 @@
 #ifndef GRPCXX_SUPPORT_BYTE_BUFFER_H
 #define GRPCXX_SUPPORT_BYTE_BUFFER_H
 
-#include <grpc/grpc.h>
-#include <grpc/byte_buffer.h>
-#include <grpc/support/log.h>
 #include <grpc++/impl/serialization_traits.h>
 #include <grpc++/support/config.h>
 #include <grpc++/support/slice.h>
 #include <grpc++/support/status.h>
+#include <grpc/byte_buffer.h>
+#include <grpc/grpc.h>
+#include <grpc/support/log.h>
 
 #include <vector>
 

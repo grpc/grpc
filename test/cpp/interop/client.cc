@@ -35,11 +35,11 @@
 
 #include <unistd.h>
 
-#include <grpc/grpc.h>
-#include <grpc/support/log.h>
 #include <gflags/gflags.h>
 #include <grpc++/channel.h>
 #include <grpc++/client_context.h>
+#include <grpc/grpc.h>
+#include <grpc/support/log.h>
 
 #include "test/cpp/interop/client_helper.h"
 #include "test/cpp/interop/interop_client.h"

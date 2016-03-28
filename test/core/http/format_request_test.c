@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/http/format_request.h"
+#include "src/core/lib/http/format_request.h"
 
 #include <string.h>
 
@@ -142,8 +142,7 @@ static void test_format_post_request_content_type_override(void) {
                       "POST /index.html HTTP/1.0\r\n"
                       "Host: example.com\r\n"
                       "Connection: close\r\n"
-                      "User-Agent: " GRPC_HTTPCLI_USER_AGENT
-                      "\r\n"
+                      "User-Agent: " GRPC_HTTPCLI_USER_AGENT "\r\n"
                       "x-yz: abc\r\n"
                       "Content-Type: application/x-www-form-urlencoded\r\n"
                       "Content-Length: 11\r\n"
