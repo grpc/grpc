@@ -41,8 +41,8 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/subprocess.h>
-#include "src/core/support/env.h"
-#include "src/core/support/string.h"
+#include "src/core/lib/support/env.h"
+#include "src/core/lib/support/string.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
