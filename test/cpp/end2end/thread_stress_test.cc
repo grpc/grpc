@@ -45,7 +45,7 @@
 #include <grpc/support/time.h>
 #include <gtest/gtest.h>
 
-#include "src/core/surface/api_trace.h"
+#include "src/core/lib/surface/api_trace.h"
 #include "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
@@ -318,7 +318,7 @@ class AsyncClientEnd2endTest : public ::testing::Test {
 
 TEST_F(AsyncClientEnd2endTest, ThreadStress) {
   common_.ResetStub();
-  std::vector<std::thread*> send_threads, completion_threads;
+  std::vector<std::thread *> send_threads, completion_threads;
   for (int i = 0; i < kNumAsyncReceiveThreads; ++i) {
     completion_threads.push_back(new std::thread(
         &AsyncClientEnd2endTest_ThreadStress_Test::AsyncCompleteRpc, this));
