@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/http/format_request.h"
+#include "src/core/lib/http/format_request.h"
 
 #include <string.h>
 
