@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -34,7 +34,7 @@
 #include <grpc++/support/channel_arguments.h>
 
 #include <grpc/grpc_security.h>
-#include "src/core/channel/channel_args.h"
+#include "src/core/lib/channel/channel_args.h"
 
 namespace grpc {
 

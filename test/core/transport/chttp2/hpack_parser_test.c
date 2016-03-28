@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/transport/chttp2/hpack_parser.h"
+#include "src/core/lib/transport/chttp2/hpack_parser.h"
 
 #include <stdarg.h>
 
