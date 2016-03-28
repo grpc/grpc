@@ -695,7 +695,8 @@ var deprecated_request_wrap = {
  * responseDeserialize: function to deserialize response objects
  * @param {Object} methods An object mapping method names to method attributes
  * @param {string} serviceName The fully qualified name of the service
- * @param {boolean=} deprecatedArgumentOrder Indicates that the old argument
+ * @param {Object} class_options An options object. Currently only uses the key
+ *     deprecatedArgumentOrder, a boolean that Indicates that the old argument
  *     order should be used for methods, with optional arguments at the end
  *     instead of the callback at the end. Defaults to false. This option is
  *     only a temporary stopgap measure to smooth an API breakage.
@@ -703,7 +704,10 @@ var deprecated_request_wrap = {
  * @return {function(string, Object)} New client constructor
  */
 exports.makeClientConstructor = function(methods, serviceName,
-                                         deprecatedArgumentOrder) {
+                                         class_options) {
+  if (!class_options) {
+    class_options = {};
+  }
   /**
    * Create a client with the given methods
    * @constructor
@@ -752,7 +756,7 @@ exports.makeClientConstructor = function(methods, serviceName,
     var deserialize = attrs.responseDeserialize;
     var method_func = requester_makers[method_type](
         attrs.path, serialize, deserialize);
-    if (deprecatedArgumentOrder) {
+    if (class_options.deprecatedArgumentOrder) {
       Client.prototype[name] = deprecated_request_wrap(method_func);
     } else {
       Client.prototype[name] = method_func;
