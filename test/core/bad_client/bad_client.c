@@ -39,7 +39,7 @@
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/lib/surface/server.h"
-#include "src/core/lib/transport/chttp2_transport.h"
+#include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/sync.h>

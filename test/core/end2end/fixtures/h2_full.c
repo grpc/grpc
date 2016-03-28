@@ -46,7 +46,7 @@
 #include "src/core/lib/channel/http_server_filter.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/server.h"
-#include "src/core/lib/transport/chttp2_transport.h"
+#include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 

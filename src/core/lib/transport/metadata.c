@@ -48,7 +48,7 @@
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/support/murmur_hash.h"
 #include "src/core/lib/support/string.h"
-#include "src/core/lib/transport/chttp2/bin_encoder.h"
+#include "src/core/ext/transport/chttp2/transport/bin_encoder.h"
 #include "src/core/lib/transport/static_metadata.h"
 
 /* There are two kinds of mdelem and mdstr instances.
