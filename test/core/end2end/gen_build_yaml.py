@@ -73,7 +73,6 @@ END2END_FIXTURES = {
     'h2_ssl+poll': default_secure_fixture_options._replace(platforms=['linux']),
     'h2_ssl_proxy': default_secure_fixture_options._replace(includes_proxy=True,
                                                             ci_mac=False),
-    'h2_uchannel': default_unsecure_fixture_options._replace(fullstack=False),
     'h2_uds+poll': uds_fixture_options._replace(platforms=['linux']),
     'h2_uds': uds_fixture_options,
 }
