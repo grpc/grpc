@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -49,7 +49,7 @@
 #include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
-#include "src/core/profiling/timers.h"
+#include "src/core/lib/profiling/timers.h"
 #include "test/core/end2end/data/ssl_test_data.h"
 #include "test/core/util/grpc_profiler.h"
 #include "test/core/util/port.h"

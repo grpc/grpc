@@ -33,7 +33,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/security/credentials.h"
+#include "src/core/lib/security/credentials.h"
 
 #include <openssl/rsa.h>
 #include <stdlib.h>
@@ -44,11 +44,11 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 
-#include "src/core/http/httpcli.h"
-#include "src/core/security/json_token.h"
-#include "src/core/support/env.h"
-#include "src/core/support/string.h"
-#include "src/core/support/tmpfile.h"
+#include "src/core/lib/http/httpcli.h"
+#include "src/core/lib/security/json_token.h"
+#include "src/core/lib/support/env.h"
+#include "src/core/lib/support/string.h"
+#include "src/core/lib/support/tmpfile.h"
 #include "test/core/util/test_config.h"
 
 /* -- Mock channel credentials. -- */
