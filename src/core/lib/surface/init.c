@@ -67,7 +67,7 @@
 #include "src/core/lib/surface/lame_client.h"
 #include "src/core/lib/surface/server.h"
 #include "src/core/lib/surface/surface_trace.h"
-#include "src/core/lib/transport/chttp2_transport.h"
+#include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/transport_impl.h"
 

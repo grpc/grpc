@@ -49,7 +49,7 @@
 #include "src/core/lib/support/env.h"
 #include "src/core/lib/support/load_file.h"
 #include "src/core/lib/support/string.h"
-#include "src/core/lib/transport/chttp2/alpn.h"
+#include "src/core/ext/transport/chttp2/transport/alpn.h"
 #include "src/core/lib/tsi/fake_transport_security.h"
 #include "src/core/lib/tsi/ssl_transport_security.h"
 
