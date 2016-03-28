@@ -30,6 +30,27 @@
 3. Install Google Cloud SDK. Instructions [here](https://cloud.google.com/sdk/). This installs the `gcloud` tool
 4. Install `kubectl`, Kubernetes command line tool using `gcloud`. i.e
     - `$ gcloud components update kubectl`
+    - NOTE: If you are running this from a GCE instance, the command may fail with the following error:
+    ```
+     You cannot perform this action because this Cloud SDK installation is 
+     managed by an external package manager. If you would like to get the
+     latest version, please see our main download page at:
+
+     https://developers.google.com/cloud/sdk/
+
+     ERROR: (gcloud.components.update) The component manager is disabled for this installation
+    ```
+    -- If so, you will have to manually install Cloud SDK by doing the following
+    ```shell
+      $ # The following installs latest Cloud SDK and updates the PATH
+      $ # (Accept the default values when prompted)
+      $ curl https://sdk.cloud.google.com | bash
+      $ exec -l $SHELL
+      $ # Set the defaults. Pick the default GCE credentials when prompted (The service account
+      $ # name will have a name similar to: "xxx-compute@developer.gserviceaccount.com")
+      $ gcloud init
+    ``` 
+
 5. Install Google python client apis:
     - `‘$ sudo pip install --upgrade google-api-python-client’`
     -  **Note**: Do `$ sudo apt-get install python-pip` (or `$ easy_install -U pip`) if you do not have pip

@@ -196,7 +196,7 @@ for mask in range(1, 1<<len(COMPRESSION_ALGORITHMS)):
   all_strs.add(val)
   all_elems.add(elem)
   compression_elems.append(elem)
-  static_userdata[elem] = 1 + mask
+  static_userdata[elem] = 1 + (mask | 1)
 all_strs = sorted(list(all_strs), key=mangle)
 all_elems = sorted(list(all_elems), key=mangle)
 
@@ -215,9 +215,9 @@ if args:
     C = open('/dev/null', 'w')
 else:
   H = open(os.path.join(
-      os.path.dirname(sys.argv[0]), '../../../src/core/transport/static_metadata.h'), 'w')
+      os.path.dirname(sys.argv[0]), '../../../src/core/lib/transport/static_metadata.h'), 'w')
   C = open(os.path.join(
-      os.path.dirname(sys.argv[0]), '../../../src/core/transport/static_metadata.c'), 'w')
+      os.path.dirname(sys.argv[0]), '../../../src/core/lib/transport/static_metadata.c'), 'w')
 
 # copy-paste copyright notice from this file
 with open(sys.argv[0]) as my_source:
@@ -247,10 +247,10 @@ explanation of what's going on.
 print >>H, '#ifndef GRPC_INTERNAL_CORE_TRANSPORT_STATIC_METADATA_H'
 print >>H, '#define GRPC_INTERNAL_CORE_TRANSPORT_STATIC_METADATA_H'
 print >>H
-print >>H, '#include "src/core/transport/metadata.h"'
+print >>H, '#include "src/core/lib/transport/metadata.h"'
 print >>H
 
-print >>C, '#include "src/core/transport/static_metadata.h"'
+print >>C, '#include "src/core/lib/transport/static_metadata.h"'
 print >>C
 
 print >>H, '#define GRPC_STATIC_MDSTR_COUNT %d' % len(all_strs)
@@ -309,4 +309,3 @@ print >>H, '#endif /* GRPC_INTERNAL_CORE_TRANSPORT_STATIC_METADATA_H */'
 
 H.close()
 C.close()
-
