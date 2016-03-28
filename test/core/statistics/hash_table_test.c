@@ -35,13 +35,13 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "src/core/statistics/hash_table.h"
+#include "src/core/lib/statistics/hash_table.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
-#include "src/core/support/murmur_hash.h"
-#include "src/core/support/string.h"
+#include "src/core/lib/support/murmur_hash.h"
+#include "src/core/lib/support/string.h"
 #include "test/core/util/test_config.h"
 
 static uint64_t hash64(const void *k) {

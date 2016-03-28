@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/surface/server.h"
+#include "src/core/lib/surface/server.h"
 #include "test/core/bad_client/bad_client.h"
 
 static void verifier(grpc_server *server, grpc_completion_queue *cq,
