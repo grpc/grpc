@@ -608,10 +608,12 @@ if __name__ == '__main__':
 
   config_filename = args.config_file
 
-  # Convert config_filename to absolute path
+  # Since we will be changing the current working directory to grpc root in the
+  # next step, we should check if the config filename path is a relative path
+  # (i.e a path relative to the current working directory) and if so, convert it
+  # to abosulte path
   if not os.path.isabs(config_filename):
-    config_filename = os.path.abspath(os.path.join(
-        os.path.dirname(sys.argv[0]), config_filename))
+    config_filename = os.path.abspath(config_filename)
 
   config = Config(config_filename, args.gcp_project_id)
 
