@@ -247,27 +247,6 @@ filegroups:
   - include/grpc/grpc.h
   - include/grpc/status.h
   headers:
-  - src/core/ext/transport/chttp2/transport/alpn.h
-  - src/core/ext/transport/chttp2/transport/bin_encoder.h
-  - src/core/ext/transport/chttp2/transport/chttp2_transport.h
-  - src/core/ext/transport/chttp2/transport/frame.h
-  - src/core/ext/transport/chttp2/transport/frame_data.h
-  - src/core/ext/transport/chttp2/transport/frame_goaway.h
-  - src/core/ext/transport/chttp2/transport/frame_ping.h
-  - src/core/ext/transport/chttp2/transport/frame_rst_stream.h
-  - src/core/ext/transport/chttp2/transport/frame_settings.h
-  - src/core/ext/transport/chttp2/transport/frame_window_update.h
-  - src/core/ext/transport/chttp2/transport/hpack_encoder.h
-  - src/core/ext/transport/chttp2/transport/hpack_parser.h
-  - src/core/ext/transport/chttp2/transport/hpack_table.h
-  - src/core/ext/transport/chttp2/transport/http2_errors.h
-  - src/core/ext/transport/chttp2/transport/huffsyms.h
-  - src/core/ext/transport/chttp2/transport/incoming_metadata.h
-  - src/core/ext/transport/chttp2/transport/internal.h
-  - src/core/ext/transport/chttp2/transport/status_conversion.h
-  - src/core/ext/transport/chttp2/transport/stream_map.h
-  - src/core/ext/transport/chttp2/transport/timeout_encoding.h
-  - src/core/ext/transport/chttp2/transport/varint.h
   - src/core/lib/census/grpc_filter.h
   - src/core/lib/census/grpc_plugin.h
   - src/core/lib/channel/channel_args.h
@@ -368,29 +347,6 @@ filegroups:
   - src/core/lib/transport/transport.h
   - src/core/lib/transport/transport_impl.h
   src:
-  - src/core/ext/transport/chttp2/client/insecure/channel_create.c
-  - src/core/ext/transport/chttp2/server/insecure/server_chttp2.c
-  - src/core/ext/transport/chttp2/transport/alpn.c
-  - src/core/ext/transport/chttp2/transport/bin_encoder.c
-  - src/core/ext/transport/chttp2/transport/chttp2_transport.c
-  - src/core/ext/transport/chttp2/transport/frame_data.c
-  - src/core/ext/transport/chttp2/transport/frame_goaway.c
-  - src/core/ext/transport/chttp2/transport/frame_ping.c
-  - src/core/ext/transport/chttp2/transport/frame_rst_stream.c
-  - src/core/ext/transport/chttp2/transport/frame_settings.c
-  - src/core/ext/transport/chttp2/transport/frame_window_update.c
-  - src/core/ext/transport/chttp2/transport/hpack_encoder.c
-  - src/core/ext/transport/chttp2/transport/hpack_parser.c
-  - src/core/ext/transport/chttp2/transport/hpack_table.c
-  - src/core/ext/transport/chttp2/transport/huffsyms.c
-  - src/core/ext/transport/chttp2/transport/incoming_metadata.c
-  - src/core/ext/transport/chttp2/transport/parsing.c
-  - src/core/ext/transport/chttp2/transport/status_conversion.c
-  - src/core/ext/transport/chttp2/transport/stream_lists.c
-  - src/core/ext/transport/chttp2/transport/stream_map.c
-  - src/core/ext/transport/chttp2/transport/timeout_encoding.c
-  - src/core/ext/transport/chttp2/transport/varint.c
-  - src/core/ext/transport/chttp2/transport/writing.c
   - src/core/lib/census/grpc_context.c
   - src/core/lib/census/grpc_filter.c
   - src/core/lib/census/grpc_plugin.c
@@ -527,8 +483,6 @@ filegroups:
   - src/core/lib/tsi/transport_security.h
   - src/core/lib/tsi/transport_security_interface.h
   src:
-  - src/core/ext/transport/chttp2/client/secure/secure_channel_create.c
-  - src/core/ext/transport/chttp2/server/secure/server_secure_chttp2.c
   - src/core/lib/http/httpcli_security_connector.c
   - src/core/lib/security/b64.c
   - src/core/lib/security/client_auth_filter.c
@@ -568,6 +522,63 @@ filegroups:
   - test/core/util/port_server_client.c
   - test/core/util/port_windows.c
   - test/core/util/slice_splitter.c
+- name: grpc_transport_chttp2
+  headers:
+  - src/core/ext/transport/chttp2/transport/alpn.h
+  - src/core/ext/transport/chttp2/transport/bin_encoder.h
+  - src/core/ext/transport/chttp2/transport/chttp2_transport.h
+  - src/core/ext/transport/chttp2/transport/frame.h
+  - src/core/ext/transport/chttp2/transport/frame_data.h
+  - src/core/ext/transport/chttp2/transport/frame_goaway.h
+  - src/core/ext/transport/chttp2/transport/frame_ping.h
+  - src/core/ext/transport/chttp2/transport/frame_rst_stream.h
+  - src/core/ext/transport/chttp2/transport/frame_settings.h
+  - src/core/ext/transport/chttp2/transport/frame_window_update.h
+  - src/core/ext/transport/chttp2/transport/hpack_encoder.h
+  - src/core/ext/transport/chttp2/transport/hpack_parser.h
+  - src/core/ext/transport/chttp2/transport/hpack_table.h
+  - src/core/ext/transport/chttp2/transport/http2_errors.h
+  - src/core/ext/transport/chttp2/transport/huffsyms.h
+  - src/core/ext/transport/chttp2/transport/incoming_metadata.h
+  - src/core/ext/transport/chttp2/transport/internal.h
+  - src/core/ext/transport/chttp2/transport/status_conversion.h
+  - src/core/ext/transport/chttp2/transport/stream_map.h
+  - src/core/ext/transport/chttp2/transport/timeout_encoding.h
+  - src/core/ext/transport/chttp2/transport/varint.h
+  src:
+  - src/core/ext/transport/chttp2/transport/alpn.c
+  - src/core/ext/transport/chttp2/transport/bin_encoder.c
+  - src/core/ext/transport/chttp2/transport/chttp2_transport.c
+  - src/core/ext/transport/chttp2/transport/frame_data.c
+  - src/core/ext/transport/chttp2/transport/frame_goaway.c
+  - src/core/ext/transport/chttp2/transport/frame_ping.c
+  - src/core/ext/transport/chttp2/transport/frame_rst_stream.c
+  - src/core/ext/transport/chttp2/transport/frame_settings.c
+  - src/core/ext/transport/chttp2/transport/frame_window_update.c
+  - src/core/ext/transport/chttp2/transport/hpack_encoder.c
+  - src/core/ext/transport/chttp2/transport/hpack_parser.c
+  - src/core/ext/transport/chttp2/transport/hpack_table.c
+  - src/core/ext/transport/chttp2/transport/huffsyms.c
+  - src/core/ext/transport/chttp2/transport/incoming_metadata.c
+  - src/core/ext/transport/chttp2/transport/parsing.c
+  - src/core/ext/transport/chttp2/transport/status_conversion.c
+  - src/core/ext/transport/chttp2/transport/stream_lists.c
+  - src/core/ext/transport/chttp2/transport/stream_map.c
+  - src/core/ext/transport/chttp2/transport/timeout_encoding.c
+  - src/core/ext/transport/chttp2/transport/varint.c
+  - src/core/ext/transport/chttp2/transport/writing.c
+- name: grpc_transport_chttp2_client_insecure
+  src:
+  - src/core/ext/transport/chttp2/client/insecure/channel_create.c
+- name: grpc_transport_chttp2_client_secure
+  src:
+  - src/core/ext/transport/chttp2/client/secure/secure_channel_create.c
+- name: grpc_transport_chttp2_server_insecure
+  src:
+  - src/core/ext/transport/chttp2/server/insecure/server_chttp2.c
+- name: grpc_transport_chttp2_server_secure
+  src:
+  - src/core/ext/transport/chttp2/server/secure/server_secure_chttp2.c
 - name: nanopb
   headers:
   - third_party/nanopb/pb.h
@@ -610,6 +621,11 @@ libs:
   dll: true
   filegroups:
   - grpc_base
+  - grpc_transport_chttp2
+  - grpc_transport_chttp2_server_secure
+  - grpc_transport_chttp2_client_secure
+  - grpc_transport_chttp2_server_insecure
+  - grpc_transport_chttp2_client_insecure
   - grpc_secure
   - grpc_codegen
   - census
@@ -691,6 +707,9 @@ libs:
   dll: true
   filegroups:
   - grpc_base
+  - grpc_transport_chttp2
+  - grpc_transport_chttp2_server_insecure
+  - grpc_transport_chttp2_client_insecure
   - grpc_codegen
   - census
   - nanopb
