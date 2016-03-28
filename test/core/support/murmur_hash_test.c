@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/support/murmur_hash.h"
+#include "src/core/lib/support/murmur_hash.h"
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include "test/core/util/test_config.h"

@@ -37,7 +37,7 @@ DIRS="src/core src/cpp test/core test/cpp include"
 GLOB="*.h *.c *.cc"
 
 # clang format command
-CLANG_FORMAT=clang-format-3.6
+CLANG_FORMAT=clang-format-3.8
 
 files=
 for dir in $DIRS

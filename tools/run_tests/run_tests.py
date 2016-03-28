@@ -183,7 +183,7 @@ class CLanguage(object):
                                               shortname='%s:%s' % (binary, test),
                                               cpu_cost=target['cpu_cost'],
                                               environ={'GRPC_DEFAULT_SSL_ROOTS_FILE_PATH':
-                                                       _ROOT + '/src/core/tsi/test_creds/ca.pem'}))
+                                                       _ROOT + '/src/core/lib/tsi/test_creds/ca.pem'}))
         else:
           cmdline = [binary] + target['args']
           out.append(self.config.job_spec(cmdline, [binary],
@@ -191,7 +191,7 @@ class CLanguage(object):
                                           cpu_cost=target['cpu_cost'],
                                           flaky=target.get('flaky', False),
                                           environ={'GRPC_DEFAULT_SSL_ROOTS_FILE_PATH':
-                                                   _ROOT + '/src/core/tsi/test_creds/ca.pem'}))
+                                                   _ROOT + '/src/core/lib/tsi/test_creds/ca.pem'}))
       elif self.args.regex == '.*' or self.platform == 'windows':
         print '\nWARNING: binary not found, skipping', binary
     return sorted(out)
