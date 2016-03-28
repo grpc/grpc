@@ -117,8 +117,9 @@ void grpc_chttp2_encode_data(uint32_t id, gpr_slice_buffer *inbuf,
                              gpr_slice_buffer *outbuf) {
   gpr_slice hdr;
   uint8_t *p;
+  static const size_t header_size = 9;
 
-  hdr = gpr_slice_malloc(9);
+  hdr = gpr_slice_malloc(header_size);
   p = GPR_SLICE_START_PTR(hdr);
   GPR_ASSERT(write_bytes < (1 << 24));
   *p++ = (uint8_t)(write_bytes >> 16);
@@ -134,7 +135,7 @@ void grpc_chttp2_encode_data(uint32_t id, gpr_slice_buffer *inbuf,
 
   gpr_slice_buffer_move_first(inbuf, write_bytes, outbuf);
 
-  stats->framing_bytes += 9;
+  stats->framing_bytes += header_size;
   stats->data_bytes += write_bytes;
 }
 
