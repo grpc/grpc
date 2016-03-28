@@ -122,8 +122,8 @@ GPRAPI gpr_slice gpr_slice_new(void *p, size_t len, void (*destroy)(void *));
 
 /* Equivalent to gpr_slice_new, but with a two argument destroy function that
    also takes the slice length. */
-GPRAPI gpr_slice
-gpr_slice_new_with_len(void *p, size_t len, void (*destroy)(void *, size_t));
+GPRAPI gpr_slice gpr_slice_new_with_len(void *p, size_t len,
+                                        void (*destroy)(void *, size_t));
 
 /* Equivalent to gpr_slice_new(malloc(len), len, free), but saves one malloc()
    call.
