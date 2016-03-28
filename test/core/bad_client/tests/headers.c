@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/surface/server.h"
+#include "src/core/lib/surface/server.h"
 #include "test/core/bad_client/bad_client.h"
 
 #define PFX_STR                      \
