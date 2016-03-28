@@ -47,7 +47,7 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
-#include "src/core/httpcli/httpcli.h"
+#include "src/core/lib/http/httpcli.h"
 
 typedef struct freereq {
   gpr_mu *mu;
@@ -91,7 +91,7 @@ void grpc_free_port_using_server(char *server, int port) {
 
   req.host = server;
   gpr_asprintf(&path, "/drop/%d", port);
-  req.path = path;
+  req.http.path = path;
 
   grpc_httpcli_context_init(&context);
   grpc_httpcli_get(&exec_ctx, &context, pr.pollset, &req,
@@ -150,7 +150,7 @@ static void got_port_from_server(grpc_exec_ctx *exec_ctx, void *arg,
             GPR_TIMESPAN)));
     pr->retries++;
     req.host = pr->server;
-    req.path = "/get";
+    req.http.path = "/get";
     grpc_httpcli_get(exec_ctx, pr->ctx, pr->pollset, &req,
                      GRPC_TIMEOUT_SECONDS_TO_DEADLINE(10), got_port_from_server,
                      pr);
@@ -189,7 +189,7 @@ int grpc_pick_port_using_server(char *server) {
   pr.ctx = &context;
 
   req.host = server;
-  req.path = "/get";
+  req.http.path = "/get";
 
   grpc_httpcli_context_init(&context);
   grpc_httpcli_get(&exec_ctx, &context, pr.pollset, &req,

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/compression/algorithm_metadata.h"
+#include "src/core/lib/compression/algorithm_metadata.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -40,7 +40,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/useful.h>
 
-#include "src/core/transport/static_metadata.h"
+#include "src/core/lib/transport/static_metadata.h"
 #include "test/core/util/test_config.h"
 
 static void test_algorithm_mesh(void) {
