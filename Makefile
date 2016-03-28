@@ -2419,29 +2419,6 @@ endif
 
 
 LIBGRPC_SRC = \
-    src/core/ext/transport/chttp2/client/insecure/channel_create.c \
-    src/core/ext/transport/chttp2/server/insecure/server_chttp2.c \
-    src/core/ext/transport/chttp2/transport/alpn.c \
-    src/core/ext/transport/chttp2/transport/bin_encoder.c \
-    src/core/ext/transport/chttp2/transport/chttp2_transport.c \
-    src/core/ext/transport/chttp2/transport/frame_data.c \
-    src/core/ext/transport/chttp2/transport/frame_goaway.c \
-    src/core/ext/transport/chttp2/transport/frame_ping.c \
-    src/core/ext/transport/chttp2/transport/frame_rst_stream.c \
-    src/core/ext/transport/chttp2/transport/frame_settings.c \
-    src/core/ext/transport/chttp2/transport/frame_window_update.c \
-    src/core/ext/transport/chttp2/transport/hpack_encoder.c \
-    src/core/ext/transport/chttp2/transport/hpack_parser.c \
-    src/core/ext/transport/chttp2/transport/hpack_table.c \
-    src/core/ext/transport/chttp2/transport/huffsyms.c \
-    src/core/ext/transport/chttp2/transport/incoming_metadata.c \
-    src/core/ext/transport/chttp2/transport/parsing.c \
-    src/core/ext/transport/chttp2/transport/status_conversion.c \
-    src/core/ext/transport/chttp2/transport/stream_lists.c \
-    src/core/ext/transport/chttp2/transport/stream_map.c \
-    src/core/ext/transport/chttp2/transport/timeout_encoding.c \
-    src/core/ext/transport/chttp2/transport/varint.c \
-    src/core/ext/transport/chttp2/transport/writing.c \
     src/core/lib/census/grpc_context.c \
     src/core/lib/census/grpc_filter.c \
     src/core/lib/census/grpc_plugin.c \
@@ -2553,8 +2530,31 @@ LIBGRPC_SRC = \
     src/core/lib/transport/static_metadata.c \
     src/core/lib/transport/transport.c \
     src/core/lib/transport/transport_op_string.c \
-    src/core/ext/transport/chttp2/client/secure/secure_channel_create.c \
+    src/core/ext/transport/chttp2/transport/alpn.c \
+    src/core/ext/transport/chttp2/transport/bin_encoder.c \
+    src/core/ext/transport/chttp2/transport/chttp2_transport.c \
+    src/core/ext/transport/chttp2/transport/frame_data.c \
+    src/core/ext/transport/chttp2/transport/frame_goaway.c \
+    src/core/ext/transport/chttp2/transport/frame_ping.c \
+    src/core/ext/transport/chttp2/transport/frame_rst_stream.c \
+    src/core/ext/transport/chttp2/transport/frame_settings.c \
+    src/core/ext/transport/chttp2/transport/frame_window_update.c \
+    src/core/ext/transport/chttp2/transport/hpack_encoder.c \
+    src/core/ext/transport/chttp2/transport/hpack_parser.c \
+    src/core/ext/transport/chttp2/transport/hpack_table.c \
+    src/core/ext/transport/chttp2/transport/huffsyms.c \
+    src/core/ext/transport/chttp2/transport/incoming_metadata.c \
+    src/core/ext/transport/chttp2/transport/parsing.c \
+    src/core/ext/transport/chttp2/transport/status_conversion.c \
+    src/core/ext/transport/chttp2/transport/stream_lists.c \
+    src/core/ext/transport/chttp2/transport/stream_map.c \
+    src/core/ext/transport/chttp2/transport/timeout_encoding.c \
+    src/core/ext/transport/chttp2/transport/varint.c \
+    src/core/ext/transport/chttp2/transport/writing.c \
     src/core/ext/transport/chttp2/server/secure/server_secure_chttp2.c \
+    src/core/ext/transport/chttp2/client/secure/secure_channel_create.c \
+    src/core/ext/transport/chttp2/server/insecure/server_chttp2.c \
+    src/core/ext/transport/chttp2/client/insecure/channel_create.c \
     src/core/lib/http/httpcli_security_connector.c \
     src/core/lib/security/b64.c \
     src/core/lib/security/client_auth_filter.c \
@@ -2781,29 +2781,6 @@ endif
 
 LIBGRPC_UNSECURE_SRC = \
     src/core/lib/surface/init_unsecure.c \
-    src/core/ext/transport/chttp2/client/insecure/channel_create.c \
-    src/core/ext/transport/chttp2/server/insecure/server_chttp2.c \
-    src/core/ext/transport/chttp2/transport/alpn.c \
-    src/core/ext/transport/chttp2/transport/bin_encoder.c \
-    src/core/ext/transport/chttp2/transport/chttp2_transport.c \
-    src/core/ext/transport/chttp2/transport/frame_data.c \
-    src/core/ext/transport/chttp2/transport/frame_goaway.c \
-    src/core/ext/transport/chttp2/transport/frame_ping.c \
-    src/core/ext/transport/chttp2/transport/frame_rst_stream.c \
-    src/core/ext/transport/chttp2/transport/frame_settings.c \
-    src/core/ext/transport/chttp2/transport/frame_window_update.c \
-    src/core/ext/transport/chttp2/transport/hpack_encoder.c \
-    src/core/ext/transport/chttp2/transport/hpack_parser.c \
-    src/core/ext/transport/chttp2/transport/hpack_table.c \
-    src/core/ext/transport/chttp2/transport/huffsyms.c \
-    src/core/ext/transport/chttp2/transport/incoming_metadata.c \
-    src/core/ext/transport/chttp2/transport/parsing.c \
-    src/core/ext/transport/chttp2/transport/status_conversion.c \
-    src/core/ext/transport/chttp2/transport/stream_lists.c \
-    src/core/ext/transport/chttp2/transport/stream_map.c \
-    src/core/ext/transport/chttp2/transport/timeout_encoding.c \
-    src/core/ext/transport/chttp2/transport/varint.c \
-    src/core/ext/transport/chttp2/transport/writing.c \
     src/core/lib/census/grpc_context.c \
     src/core/lib/census/grpc_filter.c \
     src/core/lib/census/grpc_plugin.c \
@@ -2915,6 +2892,29 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/transport/static_metadata.c \
     src/core/lib/transport/transport.c \
     src/core/lib/transport/transport_op_string.c \
+    src/core/ext/transport/chttp2/transport/alpn.c \
+    src/core/ext/transport/chttp2/transport/bin_encoder.c \
+    src/core/ext/transport/chttp2/transport/chttp2_transport.c \
+    src/core/ext/transport/chttp2/transport/frame_data.c \
+    src/core/ext/transport/chttp2/transport/frame_goaway.c \
+    src/core/ext/transport/chttp2/transport/frame_ping.c \
+    src/core/ext/transport/chttp2/transport/frame_rst_stream.c \
+    src/core/ext/transport/chttp2/transport/frame_settings.c \
+    src/core/ext/transport/chttp2/transport/frame_window_update.c \
+    src/core/ext/transport/chttp2/transport/hpack_encoder.c \
+    src/core/ext/transport/chttp2/transport/hpack_parser.c \
+    src/core/ext/transport/chttp2/transport/hpack_table.c \
+    src/core/ext/transport/chttp2/transport/huffsyms.c \
+    src/core/ext/transport/chttp2/transport/incoming_metadata.c \
+    src/core/ext/transport/chttp2/transport/parsing.c \
+    src/core/ext/transport/chttp2/transport/status_conversion.c \
+    src/core/ext/transport/chttp2/transport/stream_lists.c \
+    src/core/ext/transport/chttp2/transport/stream_map.c \
+    src/core/ext/transport/chttp2/transport/timeout_encoding.c \
+    src/core/ext/transport/chttp2/transport/varint.c \
+    src/core/ext/transport/chttp2/transport/writing.c \
+    src/core/ext/transport/chttp2/server/insecure/server_chttp2.c \
+    src/core/ext/transport/chttp2/client/insecure/channel_create.c \
     src/core/lib/census/context.c \
     src/core/lib/census/initialize.c \
     src/core/lib/census/mlog.c \
