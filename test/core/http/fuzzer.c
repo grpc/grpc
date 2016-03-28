@@ -36,7 +36,7 @@
 
 #include <grpc/support/alloc.h>
 
-#include "src/core/http/parser.h"
+#include "src/core/lib/http/parser.h"
 
 int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   grpc_http_parser parser;
