@@ -95,6 +95,7 @@ int grpc_set_socket_ip_pktinfo_if_possible(int fd) {
   return 0 == setsockopt(fd, IPPROTO_IP, IP_PKTINFO, &get_local_ip,
                          sizeof(get_local_ip));
 #else
+  (void)fd;
   return 1;
 #endif
 }
@@ -105,6 +106,7 @@ int grpc_set_socket_ipv6_recvpktinfo_if_possible(int fd) {
   return 0 == setsockopt(fd, IPPROTO_IPV6, IPV6_RECVPKTINFO, &get_local_ip,
                          sizeof(get_local_ip));
 #else
+  (void)fd;
   return 1;
 #endif
 }
