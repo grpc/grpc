@@ -43,9 +43,9 @@
 #include <grpc/support/time.h>
 #include <grpc/support/useful.h>
 
-#include "src/core/channel/channel_args.h"
-#include "src/core/channel/compress_filter.h"
-#include "src/core/surface/call_test_only.h"
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/compress_filter.h"
+#include "src/core/lib/surface/call_test_only.h"
 #include "test/core/end2end/cq_verifier.h"
 
 enum { TIMEOUT = 200000 };

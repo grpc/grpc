@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,7 +33,7 @@
 
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
-#include "src/core/client_config/resolver_registry.h"
+#include "src/core/lib/client_config/resolver_registry.h"
 #include "test/core/util/test_config.h"
 
 void test_unknown_scheme_target(void) {

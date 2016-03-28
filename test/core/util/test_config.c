@@ -39,7 +39,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "src/core/support/string.h"
+#include "src/core/lib/support/string.h"
 
 double g_fixture_slowdown_factor = 1.0;
 

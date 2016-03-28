@@ -40,9 +40,9 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 #include <string.h>
-#include "src/core/iomgr/endpoint.h"
-#include "src/core/iomgr/sockaddr.h"
-#include "src/core/iomgr/tcp_server.h"
+#include "src/core/lib/iomgr/endpoint.h"
+#include "src/core/lib/iomgr/sockaddr.h"
+#include "src/core/lib/iomgr/tcp_server.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_tcp_server.h"
 
