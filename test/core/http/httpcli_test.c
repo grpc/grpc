@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/http/httpcli.h"
+#include "src/core/lib/http/httpcli.h"
 
 #include <string.h>
 
@@ -41,7 +41,7 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/subprocess.h>
 #include <grpc/support/sync.h>
-#include "src/core/iomgr/iomgr.h"
+#include "src/core/lib/iomgr/iomgr.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 

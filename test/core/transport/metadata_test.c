@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/transport/metadata.h"
+#include "src/core/lib/transport/metadata.h"
 
 #include <stdio.h>
 
@@ -40,8 +40,8 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/support/string.h"
-#include "src/core/transport/chttp2/bin_encoder.h"
+#include "src/core/lib/support/string.h"
+#include "src/core/lib/transport/chttp2/bin_encoder.h"
 #include "test/core/util/test_config.h"
 
 #define LOG_TEST(x) gpr_log(GPR_INFO, "%s", x)
