@@ -122,9 +122,10 @@ class KubernetesProxy:
 
 class TestSettings:
 
-  def __init__(self, build_docker_image, test_poll_interval_secs,
+  def __init__(self, build_docker_image, build_type, test_poll_interval_secs,
                test_duration_secs, kubernetes_proxy_port):
     self.build_docker_image = build_docker_image
+    self.build_type = build_type
     self.test_poll_interval_secs = test_poll_interval_secs
     self.test_duration_secs = test_duration_secs
     self.kubernetes_proxy_port = kubernetes_proxy_port
@@ -149,17 +150,20 @@ class BigQuerySettings:
 
 class StressServerSettings:
 
-  def __init__(self, server_pod_name, server_port):
+  def __init__(self, build_type, server_pod_name, server_port):
+    self.build_type = build_type
     self.server_pod_name = server_pod_name
     self.server_port = server_port
 
 
 class StressClientSettings:
 
-  def __init__(self, num_clients, client_pod_name_prefix, server_pod_name,
-               server_port, metrics_port, metrics_collection_interval_secs,
+  def __init__(self, build_type, num_clients, client_pod_name_prefix,
+               server_pod_name, server_port, metrics_port,
+               metrics_collection_interval_secs,
                stress_client_poll_interval_secs, num_channels_per_server,
                num_stubs_per_channel, test_cases_str):
+    self.build_type = build_type
     self.num_clients = num_clients
     self.client_pod_name_prefix = client_pod_name_prefix
     self.server_pod_name = server_pod_name
@@ -181,7 +185,7 @@ class StressClientSettings:
                                   for i in range(1, num_clients + 1)]
 
 
-def _build_docker_image(image_name, tag_name):
+def _build_docker_image(image_name, tag_name, build_type):
   """ Build the docker image and add tag it to the GKE repository """
   print 'Building docker image: %s' % image_name
   os.environ['INTEROP_IMAGE'] = image_name
@@ -190,6 +194,7 @@ def _build_docker_image(image_name, tag_name):
   # build_interop_stress_image.sh invokes the following script:
   #   tools/dockerfile/$BASE_NAME/build_interop_stress.sh
   os.environ['BASE_NAME'] = 'grpc_interop_stress_cxx'
+  os.environ['BUILD_TYPE'] = build_type
   cmd = ['tools/jenkins/build_interop_stress_image.sh']
   retcode = subprocess.call(args=cmd)
   if retcode != 0:
@@ -226,9 +231,10 @@ def _launch_server(gke_settings, stress_server_settings, bq_settings,
 
   # The parameters to the script run_server.py are injected into the container
   # via environment variables
+  stress_test_image_path = '/var/local/git/grpc/bins/%s/interop_server' % stress_server_settings.build_type
   server_env = {
       'STRESS_TEST_IMAGE_TYPE': 'SERVER',
-      'STRESS_TEST_IMAGE': '/var/local/git/grpc/bins/opt/interop_server',
+      'STRESS_TEST_IMAGE': stress_test_image_path,
       'STRESS_TEST_ARGS_STR': '--port=%s' % stress_server_settings.server_port,
       'RUN_ID': bq_settings.run_id,
       'POD_NAME': stress_server_settings.server_pod_name,
@@ -285,11 +291,13 @@ def _launch_client(gke_settings, stress_server_settings, stress_client_settings,
 
   # The parameters to the script run_client.py are injected into the container
   # via environment variables
+  stress_test_image_path = '/var/local/git/grpc/bins/%s/stress_test' % stress_client_settings.build_type
+  metrics_client_image_path = '/var/local/git/grpc/bins/%s/metrics_client' % stress_client_settings.build_type
   client_env = {
       'STRESS_TEST_IMAGE_TYPE': 'CLIENT',
-      'STRESS_TEST_IMAGE': '/var/local/git/grpc/bins/opt/stress_test',
+      'STRESS_TEST_IMAGE': stress_test_image_path,
       'STRESS_TEST_ARGS_STR': ' '.join(stress_client_arg_list),
-      'METRICS_CLIENT_IMAGE': '/var/local/git/grpc/bins/opt/metrics_client',
+      'METRICS_CLIENT_IMAGE': metrics_client_image_path,
       'METRICS_CLIENT_ARGS_STR': ' '.join(metrics_client_arg_list),
       'RUN_ID': bq_settings.run_id,
       'POLL_INTERVAL_SECS':
@@ -384,7 +392,8 @@ def run_test_main(test_settings, gke_settings, stress_server_settings,
 
   if test_settings.build_docker_image:
     is_success = _build_docker_image(gke_settings.docker_image_name,
-                                     gke_settings.tag_name)
+                                     gke_settings.tag_name,
+                                     test_settings.build_type)
     if not is_success:
       return False
 
@@ -476,6 +485,11 @@ argp.add_argument('--do_not_build_docker_image',
                   'Registry')
 argp.set_defaults(build_docker_image=True)
 
+argp.add_argument('--build_type',
+                  choices=['opt', 'dbg', 'asan', 'tsan'],
+                  default='opt',
+                  help='The type of build i.e opt, dbg, asan or tsan.')
+
 argp.add_argument('--test_poll_interval_secs',
                   default=_DEFAULT_TEST_POLL_INTERVAL_SECS,
                   type=int,
@@ -537,16 +551,19 @@ if __name__ == '__main__':
   args = argp.parse_args()
 
   test_settings = TestSettings(
-      args.build_docker_image, args.test_poll_interval_secs,
+      args.build_docker_image, args.build_type, args.test_poll_interval_secs,
       args.test_duration_secs, args.kubernetes_proxy_port)
 
   gke_settings = GkeSettings(args.project_id, args.docker_image_name)
 
-  stress_server_settings = StressServerSettings(_SERVER_POD_NAME,
-                                                args.stress_server_port)
+  server_pod_name = "%s-%s" % (_SERVER_POD_NAME, args.build_type)
+  client_pod_name_prefix = "%s-%s" % (_CLIENT_POD_NAME_PREFIX, args.build_type)
+  stress_server_settings = StressServerSettings(
+      args.build_type, server_pod_name, args.stress_server_port)
   stress_client_settings = StressClientSettings(
-      args.num_clients, _CLIENT_POD_NAME_PREFIX, _SERVER_POD_NAME,
-      args.stress_server_port, args.stress_client_metrics_port,
+      args.build_type, args.num_clients, client_pod_name_prefix,
+      server_pod_name, args.stress_server_port,
+      args.stress_client_metrics_port,
       args.stress_client_metrics_collection_interval_secs,
       args.stress_client_poll_interval_secs,
       args.stress_client_num_channels_per_server,
