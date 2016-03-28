@@ -98,9 +98,9 @@ gpr_timespec gpr_now(gpr_clock_type clock_type) {
 #else
 /* For some reason Apple's OSes haven't implemented clock_gettime. */
 
-#include <sys/time.h>
 #include <mach/mach.h>
 #include <mach/mach_time.h>
+#include <sys/time.h>
 
 static double g_time_scale;
 static uint64_t g_time_start;

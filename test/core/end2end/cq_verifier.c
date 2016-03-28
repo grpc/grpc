@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -37,8 +37,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "src/core/surface/event_string.h"
-#include "src/core/support/string.h"
 #include <grpc/byte_buffer.h>
 #include <grpc/byte_buffer_reader.h>
 #include <grpc/support/alloc.h>
@@ -46,6 +44,8 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 #include <grpc/support/useful.h>
+#include "src/core/support/string.h"
+#include "src/core/surface/event_string.h"
 
 #define ROOT_EXPECTATION 1000
 

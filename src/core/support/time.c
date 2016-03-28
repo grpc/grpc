@@ -33,11 +33,11 @@
 
 /* Generic implementation of time calls. */
 
+#include <grpc/support/log.h>
 #include <grpc/support/time.h>
 #include <limits.h>
 #include <stdio.h>
 #include <string.h>
-#include <grpc/support/log.h>
 
 int gpr_time_cmp(gpr_timespec a, gpr_timespec b) {
   int cmp = (a.tv_sec > b.tv_sec) - (a.tv_sec < b.tv_sec);

@@ -34,9 +34,9 @@
 #ifndef GRPC_CORE_TRANSPORT_CHTTP2_HPACK_TABLE_H
 #define GRPC_CORE_TRANSPORT_CHTTP2_HPACK_TABLE_H
 
-#include "src/core/transport/metadata.h"
 #include <grpc/support/port_platform.h>
 #include <grpc/support/slice.h>
+#include "src/core/transport/metadata.h"
 
 /* HPACK header table */
 

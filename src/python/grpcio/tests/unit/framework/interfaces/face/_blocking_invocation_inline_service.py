@@ -29,6 +29,8 @@
 
 """Test code for the Face layer of RPC Framework."""
 
+from __future__ import division
+
 import abc
 import itertools
 import unittest
@@ -182,7 +184,7 @@ class TestCase(six.with_metaclass(abc.ABCMeta, test_coverage.Coverage, unittest.
 
         some_completed_response_futures_iterator = itertools.islice(
             futures.as_completed(response_futures_to_indices),
-            test_constants.PARALLELISM / 2)
+            test_constants.PARALLELISM // 2)
         for response_future in some_completed_response_futures_iterator:
           index = response_futures_to_indices[response_future]
           test_messages.verify(requests[index], response_future.result(), self)

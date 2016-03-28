@@ -763,7 +763,7 @@ libs:
   secure: check
   vs_project_guid: '{C187A093-A0FE-489D-A40A-6E33DE0F9FEB}'
 - name: grpc++_codegen_lib
-  build: protoc
+  build: all
   language: c++
   headers: []
   src: []

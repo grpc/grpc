@@ -54,6 +54,11 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
+#include <grpc/support/sync.h>
+#include <grpc/support/time.h>
 #include "src/core/iomgr/pollset_posix.h"
 #include "src/core/iomgr/resolve_address.h"
 #include "src/core/iomgr/sockaddr_utils.h"
@@ -61,11 +66,6 @@
 #include "src/core/iomgr/tcp_posix.h"
 #include "src/core/iomgr/unix_sockets_posix.h"
 #include "src/core/support/string.h"
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
-#include <grpc/support/sync.h>
-#include <grpc/support/time.h>
 
 #define MIN_SAFE_ACCEPT_QUEUE_SIZE 100
 
@@ -486,7 +486,6 @@ int grpc_tcp_server_add_port(grpc_tcp_server *s, const void *addr,
     /* If we didn't get a dualstack socket, also listen on 0.0.0.0. */
     if (port == 0 && sp != NULL) {
       grpc_sockaddr_set_port((struct sockaddr *)&wild4, sp->port);
-      sp2 = sp;
     }
     addr = (struct sockaddr *)&wild4;
     addr_len = sizeof(wild4);
@@ -495,16 +494,18 @@ int grpc_tcp_server_add_port(grpc_tcp_server *s, const void *addr,
   fd = grpc_create_dualstack_socket(addr, SOCK_STREAM, 0, &dsmode);
   if (fd < 0) {
     gpr_log(GPR_ERROR, "Unable to create socket: %s", strerror(errno));
-  }
-  if (dsmode == GRPC_DSMODE_IPV4 &&
-      grpc_sockaddr_is_v4mapped(addr, &addr4_copy)) {
-    addr = (struct sockaddr *)&addr4_copy;
-    addr_len = sizeof(addr4_copy);
-  }
-  sp = add_socket_to_server(s, fd, addr, addr_len, port_index, fd_index);
-  if (sp2 != NULL && sp != NULL) {
-    sp2->sibling = sp;
-    sp->is_sibling = 1;
+  } else {
+    if (dsmode == GRPC_DSMODE_IPV4 &&
+        grpc_sockaddr_is_v4mapped(addr, &addr4_copy)) {
+      addr = (struct sockaddr *)&addr4_copy;
+      addr_len = sizeof(addr4_copy);
+    }
+    sp2 = sp;
+    sp = add_socket_to_server(s, fd, addr, addr_len, port_index, fd_index);
+    if (sp2 != NULL && sp != NULL) {
+      sp2->sibling = sp;
+      sp->is_sibling = 1;
+    }
   }
 
 done:

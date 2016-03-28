@@ -42,14 +42,14 @@
 /* TODO(ctiller): find another way? - better not to include census here */
 #include "src/core/census/grpc_plugin.h"
 #include "src/core/channel/channel_stack.h"
+#include "src/core/channel/client_channel.h"
 #include "src/core/channel/compress_filter.h"
 #include "src/core/channel/connected_channel.h"
-#include "src/core/channel/client_channel.h"
 #include "src/core/channel/http_client_filter.h"
 #include "src/core/channel/http_server_filter.h"
-#include "src/core/client_config/lb_policy_registry.h"
 #include "src/core/client_config/lb_policies/pick_first.h"
 #include "src/core/client_config/lb_policies/round_robin.h"
+#include "src/core/client_config/lb_policy_registry.h"
 #include "src/core/client_config/resolver_registry.h"
 #include "src/core/client_config/resolvers/dns_resolver.h"
 #include "src/core/client_config/resolvers/sockaddr_resolver.h"
@@ -89,18 +89,21 @@ static void do_basic_init(void) {
 }
 
 static bool append_filter(grpc_channel_stack_builder *builder, void *arg) {
-  return grpc_channel_stack_builder_append_filter(builder, arg, NULL, NULL);
+  return grpc_channel_stack_builder_append_filter(
+      builder, (const grpc_channel_filter *)arg, NULL, NULL);
 }
 
 static bool prepend_filter(grpc_channel_stack_builder *builder, void *arg) {
-  return grpc_channel_stack_builder_prepend_filter(builder, arg, NULL, NULL);
+  return grpc_channel_stack_builder_prepend_filter(
+      builder, (const grpc_channel_filter *)arg, NULL, NULL);
 }
 
 static bool maybe_add_http_filter(grpc_channel_stack_builder *builder,
                                   void *arg) {
   grpc_transport *t = grpc_channel_stack_builder_get_transport(builder);
   if (t && strstr(t->vtable->name, "http")) {
-    return grpc_channel_stack_builder_prepend_filter(builder, arg, NULL, NULL);
+    return grpc_channel_stack_builder_prepend_filter(
+        builder, (const grpc_channel_filter *)arg, NULL, NULL);
   }
   return true;
 }
