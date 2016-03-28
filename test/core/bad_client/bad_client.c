@@ -33,13 +33,13 @@
 
 #include "test/core/bad_client/bad_client.h"
 
-#include "src/core/channel/channel_stack.h"
-#include "src/core/channel/http_server_filter.h"
-#include "src/core/iomgr/endpoint_pair.h"
-#include "src/core/surface/completion_queue.h"
-#include "src/core/surface/server.h"
-#include "src/core/support/string.h"
-#include "src/core/transport/chttp2_transport.h"
+#include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/channel/http_server_filter.h"
+#include "src/core/lib/iomgr/endpoint_pair.h"
+#include "src/core/lib/support/string.h"
+#include "src/core/lib/surface/completion_queue.h"
+#include "src/core/lib/surface/server.h"
+#include "src/core/lib/transport/chttp2_transport.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/sync.h>
@@ -155,9 +155,9 @@ void grpc_run_bad_client_test(grpc_bad_client_server_side_validator validator,
     grpc_exec_ctx_finish(&exec_ctx);
   }
   grpc_server_shutdown_and_notify(a.server, a.cq, NULL);
-  GPR_ASSERT(grpc_completion_queue_pluck(a.cq, NULL,
-                                         GRPC_TIMEOUT_SECONDS_TO_DEADLINE(1),
-                                         NULL).type == GRPC_OP_COMPLETE);
+  GPR_ASSERT(grpc_completion_queue_pluck(
+                 a.cq, NULL, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(1), NULL)
+                 .type == GRPC_OP_COMPLETE);
   grpc_server_destroy(a.server);
   grpc_completion_queue_destroy(a.cq);
   gpr_slice_buffer_destroy(&outgoing);

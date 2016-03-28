@@ -31,13 +31,13 @@
  *
  */
 
-#include "src/core/security/jwt_verifier.h"
+#include "src/core/lib/security/jwt_verifier.h"
 
 #include <string.h>
 
-#include "src/core/http/httpcli.h"
-#include "src/core/security/b64.h"
-#include "src/core/security/json_token.h"
+#include "src/core/lib/http/httpcli.h"
+#include "src/core/lib/security/b64.h"
+#include "src/core/lib/security/json_token.h"
 #include "test/core/util/test_config.h"
 
 #include <grpc/support/alloc.h>

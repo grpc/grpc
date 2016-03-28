@@ -29,6 +29,8 @@
 
 """Part of the tests of the base interface of RPC Framework."""
 
+from __future__ import division
+
 import abc
 import collections
 import enum
@@ -47,8 +49,8 @@ from tests.unit.framework.interfaces.base import test_interfaces  # pylint: disa
 _GROUP = 'base test cases test group'
 _METHOD = 'base test cases test method'
 
-_PAYLOAD_RANDOM_SECTION_MAXIMUM_SIZE = test_constants.PAYLOAD_SIZE / 20
-_MINIMUM_PAYLOAD_SIZE = test_constants.PAYLOAD_SIZE / 600
+_PAYLOAD_RANDOM_SECTION_MAXIMUM_SIZE = test_constants.PAYLOAD_SIZE // 20
+_MINIMUM_PAYLOAD_SIZE = test_constants.PAYLOAD_SIZE // 600
 
 
 def _create_payload(randomness):
@@ -59,7 +61,7 @@ def _create_payload(randomness):
   random_section = bytes(
       bytearray(
           randomness.getrandbits(8) for _ in range(random_section_length)))
-  sevens_section = '\x07' * (length - random_section_length)
+  sevens_section = b'\x07' * (length - random_section_length)
   return b''.join(randomness.sample((random_section, sevens_section), 2))
 
 
@@ -385,13 +387,13 @@ class _SequenceController(Controller):
     return request + request
 
   def deserialize_request(self, serialized_request):
-    return serialized_request[:len(serialized_request) / 2]
+    return serialized_request[:len(serialized_request) // 2]
 
   def serialize_response(self, response):
     return response * 3
 
   def deserialize_response(self, serialized_response):
-    return serialized_response[2 * len(serialized_response) / 3:]
+    return serialized_response[2 * len(serialized_response) // 3:]
 
   def invocation(self):
     with self._condition:
