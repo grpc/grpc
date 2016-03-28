@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_TRANSPORT_CHTTP2_FRAME_PING_H
-#define GRPC_CORE_LIB_TRANSPORT_CHTTP2_FRAME_PING_H
+#ifndef GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FRAME_PING_H
+#define GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FRAME_PING_H
 
 #include <grpc/support/slice.h>
 #include "src/core/ext/transport/chttp2/transport/frame.h"
@@ -53,4 +53,4 @@ grpc_chttp2_parse_error grpc_chttp2_ping_parser_parse(
     grpc_chttp2_transport_parsing *transport_parsing,
     grpc_chttp2_stream_parsing *stream_parsing, gpr_slice slice, int is_last);
 
-#endif /* GRPC_CORE_LIB_TRANSPORT_CHTTP2_FRAME_PING_H */
+#endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FRAME_PING_H */
