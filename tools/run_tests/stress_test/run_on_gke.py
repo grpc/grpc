@@ -93,9 +93,8 @@ class ServerTemplate:
 
 
 class DockerImage:
-  """ Represents a docker image properties and has methods to build the image and
-
-  push it to GKE registry
+  """ Represents properties of a Docker image. Provides methods to build the
+  image and push it to GKE registry
   """
 
   def __init__(self, gcp_project_id, image_name, build_script_path,
