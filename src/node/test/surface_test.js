@@ -709,14 +709,14 @@ describe('Other conditions', function() {
     it('should respond correctly to a unary call', function(done) {
       misbehavingClient.unary(badArg, function(err, data) {
         assert(err);
-        assert.strictEqual(err.code, grpc.status.INVALID_ARGUMENT);
+        assert.strictEqual(err.code, grpc.status.INTERNAL);
         done();
       });
     });
     it('should respond correctly to a client stream', function(done) {
       var call = misbehavingClient.clientStream(function(err, data) {
         assert(err);
-        assert.strictEqual(err.code, grpc.status.INVALID_ARGUMENT);
+        assert.strictEqual(err.code, grpc.status.INTERNAL);
         done();
       });
       call.write(badArg);
@@ -729,7 +729,7 @@ describe('Other conditions', function() {
         assert.fail(data, null, 'Unexpected data', '===');
       });
       call.on('error', function(err) {
-        assert.strictEqual(err.code, grpc.status.INVALID_ARGUMENT);
+        assert.strictEqual(err.code, grpc.status.INTERNAL);
         done();
       });
     });
@@ -739,7 +739,7 @@ describe('Other conditions', function() {
         assert.fail(data, null, 'Unexpected data', '===');
       });
       call.on('error', function(err) {
-        assert.strictEqual(err.code, grpc.status.INVALID_ARGUMENT);
+        assert.strictEqual(err.code, grpc.status.INTERNAL);
         done();
       });
       call.write(badArg);

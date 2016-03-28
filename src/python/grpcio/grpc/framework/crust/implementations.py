@@ -1,4 +1,4 @@
-# Copyright 2015, Google Inc.
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -28,6 +28,8 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 """Entry points into the Crust layer of RPC Framework."""
+
+import six
 
 from grpc.framework.common import cardinality
 from grpc.framework.common import style
@@ -271,7 +273,7 @@ class _DynamicStub(face.DynamicStub):
 
 def _adapt_method_implementations(method_implementations, pool):
   adapted_implementations = {}
-  for name, method_implementation in method_implementations.iteritems():
+  for name, method_implementation in six.iteritems(method_implementations):
     if method_implementation.style is style.Service.INLINE:
       if method_implementation.cardinality is cardinality.Cardinality.UNARY_UNARY:
         adapted_implementations[name] = _service.adapt_inline_unary_unary(

@@ -36,8 +36,8 @@
 
 #include <grpc/grpc_security.h>
 
-#include <grpc++/support/config.h>
 #include <grpc++/security/credentials.h>
+#include <grpc++/support/config.h>
 
 #include "src/cpp/server/thread_pool_interface.h"
 

@@ -1,4 +1,4 @@
-# Copyright 2015, Google Inc.
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -31,6 +31,8 @@
 
 import abc
 
+import six
+
 
 class NoSuchMethodError(Exception):
   """Raised by customer code to indicate an unrecognized RPC method name.
@@ -49,12 +51,11 @@ class NoSuchMethodError(Exception):
     self.name = name
 
 
-class RpcError(Exception):
+class RpcError(six.with_metaclass(abc.ABCMeta, Exception)):
   """Common super type for all exceptions raised by the Face layer.
 
   Only RPC Framework should instantiate and raise these exceptions.
   """
-  __metaclass__ = abc.ABCMeta
 
 
 class CancellationError(RpcError):

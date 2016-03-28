@@ -1,4 +1,4 @@
-# Copyright 2015, Google Inc.
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -31,14 +31,14 @@
 
 import abc
 
+import six
 
-class Activated(object):
+class Activated(six.with_metaclass(abc.ABCMeta)):
   """Interface for objects that may be started and stopped.
 
   Values implementing this type must also implement the context manager
   protocol.
   """
-  __metaclass__ = abc.ABCMeta
 
   @abc.abstractmethod
   def __enter__(self):

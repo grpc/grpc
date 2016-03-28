@@ -46,7 +46,7 @@
 #include <grpc/support/slice.h>
 #include <grpc/support/slice_buffer.h>
 
-#include "src/core/profiling/timers.h"
+#include "src/core/lib/profiling/timers.h"
 
 namespace {
 
