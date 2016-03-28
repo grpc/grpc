@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/statistics/window_stats.h"
+#include "src/core/lib/statistics/window_stats.h"
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 #include <stdlib.h>

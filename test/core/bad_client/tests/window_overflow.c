@@ -37,7 +37,7 @@
 
 #include <grpc/support/alloc.h>
 
-#include "src/core/surface/server.h"
+#include "src/core/lib/surface/server.h"
 
 #define PFX_STR                                                            \
   "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"                                       \
