@@ -42,13 +42,13 @@
 #include <grpc/support/thd.h>
 #include <grpc/support/useful.h>
 
-#include "src/core/channel/client_channel.h"
-#include "src/core/channel/connected_channel.h"
-#include "src/core/channel/http_server_filter.h"
-#include "src/core/iomgr/pollset_posix.h"
-#include "src/core/surface/channel.h"
-#include "src/core/surface/server.h"
-#include "src/core/transport/chttp2_transport.h"
+#include "src/core/lib/channel/client_channel.h"
+#include "src/core/lib/channel/connected_channel.h"
+#include "src/core/lib/channel/http_server_filter.h"
+#include "src/core/lib/iomgr/pollset_posix.h"
+#include "src/core/lib/surface/channel.h"
+#include "src/core/lib/surface/server.h"
+#include "src/core/lib/transport/chttp2_transport.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 

@@ -36,8 +36,8 @@
 #include <cstring>
 #include <vector>
 
-#include <grpc/support/slice.h>
 #include <grpc++/support/slice.h>
+#include <grpc/support/slice.h>
 #include <gtest/gtest.h>
 
 namespace grpc {
