@@ -36,7 +36,7 @@
 
 #include <grpc/support/alloc.h>
 
-#include "src/core/json/json.h"
+#include "src/core/lib/json/json.h"
 
 int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   char *s = gpr_malloc(size);
