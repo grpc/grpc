@@ -387,12 +387,14 @@ static Status ProcessGenericRPC(const PayloadConfig &payload_config,
 }
 
 std::unique_ptr<Server> CreateAsyncServer(const ServerConfig &config) {
-  return std::unique_ptr<Server>(new AsyncQpsServerTest<
-      SimpleRequest, SimpleResponse, BenchmarkService::AsyncService,
-      grpc::ServerContext>(
-      config, RegisterBenchmarkService,
-      &BenchmarkService::AsyncService::RequestUnaryCall,
-      &BenchmarkService::AsyncService::RequestStreamingCall, ProcessSimpleRPC));
+  return std::unique_ptr<Server>(
+      new AsyncQpsServerTest<SimpleRequest, SimpleResponse,
+                             BenchmarkService::AsyncService,
+                             grpc::ServerContext>(
+          config, RegisterBenchmarkService,
+          &BenchmarkService::AsyncService::RequestUnaryCall,
+          &BenchmarkService::AsyncService::RequestStreamingCall,
+          ProcessSimpleRPC));
 }
 std::unique_ptr<Server> CreateAsyncGenericServer(const ServerConfig &config) {
   return std::unique_ptr<Server>(
