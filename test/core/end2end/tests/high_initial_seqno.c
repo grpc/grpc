@@ -44,7 +44,7 @@
 #include <grpc/support/time.h>
 #include <grpc/support/useful.h>
 
-#include "src/core/support/string.h"
+#include "src/core/lib/support/string.h"
 #include "test/core/end2end/cq_verifier.h"
 
 enum { TIMEOUT = 200000 };

@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/channel/channel_stack.h"
+#include "src/core/lib/channel/channel_stack.h"
 
 #include <string.h>
 
