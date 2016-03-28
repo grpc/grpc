@@ -28,6 +28,15 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+function finish() {
+  rv=$?
+  kill $STATIC_PID || true
+  curl "localhost:32767/drop/$STATIC_PORT" || true
+  exit $rv
+}
+
+trap finish EXIT
+
 NODE_VERSION=$1
 source ~/.nvm/nvm.sh
 
@@ -39,7 +48,9 @@ set -ex
 npm install -g node-static
 
 STATIC_SERVER=127.0.0.1
-STATIC_PORT=$$
+# If port_server is running, get port from that. Otherwise, assume we're in
+# docker and use 8080
+STATIC_PORT=$(curl 'localhost:32767/get' || echo '8080')
 
 # Serves the input_artifacts directory statically at localhost:
 static "$EXTERNAL_GIT_ROOT/input_artifacts" -a $STATIC_SERVER -p $STATIC_PORT &
@@ -48,7 +59,5 @@ STATIC_PID=$!
 STATIC_URL="http://$STATIC_SERVER:$STATIC_PORT/"
 
 npm install --unsafe-perm $STATIC_URL/grpc.tgz --grpc_node_binary_host_mirror=$STATIC_URL
-
-kill -9 $STATIC_PID
 
 ./distrib_test.js
