@@ -37,8 +37,8 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/useful.h>
-#include "src/core/json/json.h"
-#include "src/core/support/string.h"
+#include "src/core/lib/json/json.h"
+#include "src/core/lib/support/string.h"
 
 #include "test/core/util/test_config.h"
 

@@ -42,8 +42,8 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-#include "src/core/channel/compress_filter.h"
-#include "src/core/surface/call.h"
+#include "src/core/lib/channel/compress_filter.h"
+#include "src/core/lib/surface/call.h"
 #include "src/cpp/common/create_auth_context.h"
 
 namespace grpc {

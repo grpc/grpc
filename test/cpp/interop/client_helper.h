@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -38,7 +38,7 @@
 
 #include <grpc++/channel.h>
 
-#include "src/core/surface/call_test_only.h"
+#include "src/core/lib/surface/call_test_only.h"
 
 namespace grpc {
 namespace testing {
