@@ -34,12 +34,12 @@
 #ifndef GRPCXX_SUPPORT_CHANNEL_ARGUMENTS_H
 #define GRPCXX_SUPPORT_CHANNEL_ARGUMENTS_H
 
-#include <vector>
 #include <list>
+#include <vector>
 
+#include <grpc++/support/config.h>
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
-#include <grpc++/support/config.h>
 
 namespace grpc {
 namespace testing {

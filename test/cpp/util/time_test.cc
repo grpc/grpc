@@ -31,8 +31,8 @@
  *
  */
 
-#include <grpc/support/time.h>
 #include <grpc++/support/time.h>
+#include <grpc/support/time.h>
 #include <gtest/gtest.h>
 
 using std::chrono::duration_cast;

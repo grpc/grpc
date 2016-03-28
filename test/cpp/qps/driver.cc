@@ -45,7 +45,7 @@
 #include <grpc/support/log.h>
 #include <gtest/gtest.h>
 
-#include "src/core/support/env.h"
+#include "src/core/lib/support/env.h"
 #include "src/proto/grpc/testing/services.grpc.pb.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
