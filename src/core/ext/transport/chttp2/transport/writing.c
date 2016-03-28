@@ -37,8 +37,8 @@
 
 #include <grpc/support/log.h>
 
-#include "src/core/lib/profiling/timers.h"
 #include "src/core/ext/transport/chttp2/transport/http2_errors.h"
+#include "src/core/lib/profiling/timers.h"
 
 static void finalize_outbuf(grpc_exec_ctx *exec_ctx,
                             grpc_chttp2_transport_writing *transport_writing);

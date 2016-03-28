@@ -39,6 +39,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/useful.h>
+#include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/http_server_filter.h"
 #include "src/core/lib/iomgr/endpoint.h"
@@ -50,7 +51,6 @@
 #include "src/core/lib/security/security_context.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/server.h"
-#include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 
 typedef struct grpc_server_secure_state {
   grpc_server *server;
