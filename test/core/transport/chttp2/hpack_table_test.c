@@ -33,8 +33,8 @@
 
 #include "src/core/transport/chttp2/hpack_table.h"
 
-#include <string.h>
 #include <stdio.h>
+#include <string.h>
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>

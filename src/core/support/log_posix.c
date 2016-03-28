@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -38,12 +38,12 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
-#include <stdio.h>
-#include <stdarg.h>
-#include <string.h>
-#include <stdio.h>
-#include <time.h>
 #include <pthread.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <stdio.h>
+#include <string.h>
+#include <time.h>
 
 static intptr_t gettid(void) { return (intptr_t)pthread_self(); }
 

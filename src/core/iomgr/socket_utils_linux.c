@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -37,8 +37,8 @@
 
 #include "src/core/iomgr/socket_utils_posix.h"
 
-#include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/types.h>
 
 int grpc_accept4(int sockfd, struct sockaddr *addr, socklen_t *addrlen,
                  int nonblock, int cloexec) {

@@ -31,10 +31,10 @@
  *
  */
 
-#include "src/core/iomgr/timer.h"
-#include "src/core/surface/completion_queue.h"
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
+#include "src/core/iomgr/timer.h"
+#include "src/core/surface/completion_queue.h"
 
 struct grpc_alarm {
   grpc_timer alarm;
