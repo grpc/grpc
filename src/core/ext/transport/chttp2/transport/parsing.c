@@ -39,10 +39,10 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/lib/profiling/timers.h"
 #include "src/core/ext/transport/chttp2/transport/http2_errors.h"
 #include "src/core/ext/transport/chttp2/transport/status_conversion.h"
 #include "src/core/ext/transport/chttp2/transport/timeout_encoding.h"
+#include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/transport/static_metadata.h"
 
 static int init_frame_parser(grpc_exec_ctx *exec_ctx,
