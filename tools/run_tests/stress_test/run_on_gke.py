@@ -65,6 +65,7 @@ class GlobalSettings:
 
 
 class ClientTemplate:
+  """ Contains all the common settings that are used by a stress client """
 
   def __init__(self, name, client_image_path, metrics_client_image_path,
                metrics_port, wrapper_script_path, poll_interval_secs,
@@ -80,6 +81,7 @@ class ClientTemplate:
 
 
 class ServerTemplate:
+  """ Contains all the common settings used by a stress server """
 
   def __init__(self, name, server_image_path, wrapper_script_path, server_port,
                server_args_dict):
@@ -91,6 +93,10 @@ class ServerTemplate:
 
 
 class DockerImage:
+  """ Represents a docker image properties and has methods to build the image and
+
+  push it to GKE registry
+  """
 
   def __init__(self, gcp_project_id, image_name, build_script_path,
                dockerfile_dir, build_type):
@@ -137,6 +143,7 @@ class DockerImage:
 
 
 class ServerPodSpec:
+  """ Contains the information required to launch server pods. """
 
   def __init__(self, name, server_template, docker_image, num_instances):
     self.name = name
@@ -157,6 +164,7 @@ class ServerPodSpec:
 
 
 class ClientPodSpec:
+  """ Contains the information required to launch client pods """
 
   def __init__(self, name, client_template, docker_image, num_instances,
                server_addresses):
@@ -179,6 +187,7 @@ class ClientPodSpec:
 
 
 class Gke:
+  """ Class that has helper methods to interact with GKE """
 
   class KubernetesProxy:
     """Class to start a proxy on localhost to talk to the Kubernetes API server"""
@@ -342,7 +351,7 @@ class Config:
     config_dict = self._load_config(config_filename)
 
     self.global_settings = self._parse_global_settings(config_dict,
-                                                      gcp_project_id)
+                                                       gcp_project_id)
     self.docker_images_dict = self._parse_docker_images(
         config_dict, self.global_settings.gcp_project_id)
     self.client_templates_dict = self._parse_client_templates(config_dict)
@@ -452,7 +461,7 @@ class Config:
     return server_templates_dict
 
   def _parse_server_pod_specs(self, config_dict, docker_images_dict,
-                             server_templates_dict):
+                              server_templates_dict):
     """Parses the 'serverPodSpecs' sub-section (under 'testMatrix' section) of
     the config file and returns a Dictionary of 'ServerPodSpec' objects keyed
     by server pod spec names"""
@@ -474,7 +483,7 @@ class Config:
     return server_pod_specs_dict
 
   def _parse_client_pod_specs(self, config_dict, docker_images_dict,
-                             client_templates_dict, server_pod_specs_dict):
+                              client_templates_dict, server_pod_specs_dict):
     """Parses the 'clientPodSpecs' sub-section (under 'testMatrix' section) of
     the config file and returns a Dictionary of 'ClientPodSpec' objects keyed
     by client pod spec names"""
@@ -508,6 +517,7 @@ class Config:
 
 
 def run_tests(config):
+  """ The main function that launches the stress tests """
   # Build docker images and push to GKE registry
   if config.global_settings.build_docker_images:
     for name, docker_image in config.docker_images_dict.iteritems():
