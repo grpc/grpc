@@ -14020,9 +14020,7 @@
       "bad_hostname"
     ], 
     "ci_platforms": [
-      "windows", 
-      "linux", 
-      "posix"
+      "linux"
     ], 
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
@@ -14030,10 +14028,7 @@
     "language": "c", 
     "name": "h2_ssl+1byte_test", 
     "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
+      "linux"
     ]
   }, 
   {
@@ -14041,9 +14036,7 @@
       "binary_metadata"
     ], 
     "ci_platforms": [
-      "windows", 
-      "linux", 
-      "posix"
+      "linux"
     ], 
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
@@ -14051,10 +14044,7 @@
     "language": "c", 
     "name": "h2_ssl+1byte_test", 
     "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
+      "linux"
     ]
   }, 
   {
@@ -14062,9 +14052,7 @@
       "call_creds"
     ], 
     "ci_platforms": [
-      "windows", 
-      "linux", 
-      "posix"
+      "linux"
     ], 
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
@@ -14072,10 +14060,7 @@
     "language": "c", 
     "name": "h2_ssl+1byte_test", 
     "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
+      "linux"
     ]
   }, 
   {
@@ -14083,9 +14068,7 @@
       "cancel_after_accept"
     ], 
     "ci_platforms": [
-      "windows", 
-      "linux", 
-      "posix"
+      "linux"
     ], 
     "cpu_cost": 0.1, 
     "exclude_configs": [], 
@@ -14093,10 +14076,7 @@
     "language": "c", 
     "name": "h2_ssl+1byte_test", 
     "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
+      "linux"
     ]
   }, 
   {
@@ -14104,9 +14084,7 @@
       "cancel_after_client_done"
     ], 
     "ci_platforms": [
-      "windows", 
-      "linux", 
-      "posix"
+      "linux"
     ], 
     "cpu_cost": 0.1, 
     "exclude_configs": [], 
@@ -14114,10 +14092,7 @@
     "language": "c", 
     "name": "h2_ssl+1byte_test", 
     "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
+      "linux"
     ]
   }, 
   {
@@ -14125,9 +14100,7 @@
       "cancel_after_invoke"
     ], 
     "ci_platforms": [
-      "windows", 
-      "linux", 
-      "posix"
+      "linux"
     ], 
     "cpu_cost": 0.1, 
     "exclude_configs": [], 
@@ -14135,10 +14108,7 @@
     "language": "c", 
     "name": "h2_ssl+1byte_test", 
     "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
+      "linux"
     ]
   }, 
   {
@@ -14146,9 +14116,7 @@
       "cancel_before_invoke"
     ], 
     "ci_platforms": [
-      "windows", 
-      "linux", 
-      "posix"
+      "linux"
     ], 
     "cpu_cost": 0.1, 
     "exclude_configs": [], 
@@ -14156,10 +14124,7 @@
     "language": "c", 
     "name": "h2_ssl+1byte_test", 
     "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
+      "linux"
     ]
   }, 
   {
@@ -14167,9 +14132,7 @@
       "cancel_in_a_vacuum"
     ], 
     "ci_platforms": [
-      "windows", 
-      "linux", 
-      "posix"
+      "linux"
     ], 
     "cpu_cost": 0.1, 
     "exclude_configs": [], 
@@ -14177,10 +14140,7 @@
     "language": "c", 
     "name": "h2_ssl+1byte_test", 
     "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
+      "linux"
     ]
   }, 
   {
@@ -14188,9 +14148,7 @@
       "cancel_with_status"
     ], 
     "ci_platforms": [
-      "windows", 
-      "linux", 
-      "posix"
+      "linux"
     ], 
     "cpu_cost": 0.1, 
     "exclude_configs": [], 
@@ -14198,10 +14156,7 @@
     "language": "c", 
     "name": "h2_ssl+1byte_test", 
     "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
+      "linux"
     ]
   }, 
   {
@@ -14209,9 +14164,7 @@
       "compressed_payload"
     ], 
     "ci_platforms": [
-      "windows", 
-      "linux", 
-      "posix"
+      "linux"
     ], 
     "cpu_cost": 0.1, 
     "exclude_configs": [], 
@@ -14219,10 +14172,7 @@
     "language": "c", 
     "name": "h2_ssl+1byte_test", 
     "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
+      "linux"
     ]
   }, 
   {
@@ -14230,9 +14180,7 @@
       "connectivity"
     ], 
     "ci_platforms": [
-      "windows", 
-      "linux", 
-      "posix"
+      "linux"
     ], 
     "cpu_cost": 0.1, 
     "exclude_configs": [], 
@@ -14240,10 +14188,7 @@
     "language": "c", 
     "name": "h2_ssl+1byte_test", 
     "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
+      "linux"
     ]
   }, 
   {
@@ -14251,9 +14196,7 @@
       "default_host"
     ], 
     "ci_platforms": [
-      "windows", 
-      "linux", 
-      "posix"
+      "linux"
     ], 
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
@@ -14261,10 +14204,7 @@
     "language": "c", 
     "name": "h2_ssl+1byte_test", 
     "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
+      "linux"
     ]
   }, 
   {
@@ -14272,9 +14212,7 @@
       "disappearing_server"
     ], 
     "ci_platforms": [
-      "windows", 
-      "linux", 
-      "posix"
+      "linux"
     ], 
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
@@ -14282,10 +14220,7 @@
     "language": "c", 
     "name": "h2_ssl+1byte_test", 
     "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
+      "linux"
     ]
   }, 
   {
@@ -14293,9 +14228,7 @@
       "empty_batch"
     ], 
     "ci_platforms": [
-      "windows", 
-      "linux", 
-      "posix"
+      "linux"
     ], 
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
@@ -14303,10 +14236,7 @@
     "language": "c", 
     "name": "h2_ssl+1byte_test", 
     "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
+      "linux"
     ]
   }, 
   {
@@ -14314,9 +14244,7 @@
       "graceful_server_shutdown"
     ], 
     "ci_platforms": [
-      "windows", 
-      "linux", 
-      "posix"
+      "linux"
     ], 
     "cpu_cost": 0.1, 
     "exclude_configs": [], 
@@ -14324,10 +14252,7 @@
     "language": "c", 
     "name": "h2_ssl+1byte_test", 
     "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
+      "linux"
     ]
   }, 
   {
@@ -14335,9 +14260,7 @@
       "high_initial_seqno"
     ], 
     "ci_platforms": [
-      "windows", 
-      "linux", 
-      "posix"
+      "linux"
     ], 
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
@@ -14345,10 +14268,7 @@
     "language": "c", 
     "name": "h2_ssl+1byte_test", 
     "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
+      "linux"
     ]
   }, 
   {
@@ -14356,9 +14276,7 @@
       "hpack_size"
     ], 
     "ci_platforms": [
-      "windows", 
-      "linux", 
-      "posix"
+      "linux"
     ], 
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
@@ -14366,10 +14284,7 @@
     "language": "c", 
     "name": "h2_ssl+1byte_test", 
     "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
+      "linux"
     ]
   }, 
   {
@@ -14377,9 +14292,7 @@
       "invoke_large_request"
     ], 
     "ci_platforms": [
-      "windows", 
-      "linux", 
-      "posix"
+      "linux"
     ], 
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
@@ -14387,10 +14300,7 @@
     "language": "c", 
     "name": "h2_ssl+1byte_test", 
     "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
+      "linux"
     ]
   }, 
   {
@@ -14398,9 +14308,7 @@
       "large_metadata"
     ], 
     "ci_platforms": [
-      "windows", 
-      "linux", 
-      "posix"
+      "linux"
     ], 
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
@@ -14408,10 +14316,7 @@
     "language": "c", 
     "name": "h2_ssl+1byte_test", 
     "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
+      "linux"
     ]
   }, 
   {
@@ -14419,9 +14324,7 @@
       "max_concurrent_streams"
     ], 
     "ci_platforms": [
-      "windows", 
-      "linux", 
-      "posix"
+      "linux"
     ], 
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
@@ -14429,10 +14332,7 @@
     "language": "c", 
     "name": "h2_ssl+1byte_test", 
     "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
+      "linux"
     ]
   }, 
   {
@@ -14440,9 +14340,7 @@
       "max_message_length"
     ], 
     "ci_platforms": [
-      "windows", 
-      "linux", 
-      "posix"
+      "linux"
     ], 
     "cpu_cost": 0.1, 
     "exclude_configs": [], 
@@ -14450,10 +14348,7 @@
     "language": "c", 
     "name": "h2_ssl+1byte_test", 
     "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
+      "linux"
     ]
   }, 
   {
@@ -14461,9 +14356,7 @@
       "negative_deadline"
     ], 
     "ci_platforms": [
-      "windows", 
-      "linux", 
-      "posix"
+      "linux"
     ], 
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
@@ -14471,10 +14364,7 @@
     "language": "c", 
     "name": "h2_ssl+1byte_test", 
     "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
+      "linux"
     ]
   }, 
   {
@@ -14482,9 +14372,7 @@
       "no_op"
     ], 
     "ci_platforms": [
-      "windows", 
-      "linux", 
-      "posix"
+      "linux"
     ], 
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
@@ -14492,10 +14380,7 @@
     "language": "c", 
     "name": "h2_ssl+1byte_test", 
     "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
+      "linux"
     ]
   }, 
   {
@@ -14503,9 +14388,7 @@
       "payload"
     ], 
     "ci_platforms": [
-      "windows", 
-      "linux", 
-      "posix"
+      "linux"
     ], 
     "cpu_cost": 0.1, 
     "exclude_configs": [], 
@@ -14513,10 +14396,7 @@
     "language": "c", 
     "name": "h2_ssl+1byte_test", 
     "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
+      "linux"
     ]
   }, 
   {
@@ -14524,9 +14404,7 @@
       "ping"
     ], 
     "ci_platforms": [
-      "windows", 
-      "linux", 
-      "posix"
+      "linux"
     ], 
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
@@ -14534,10 +14412,7 @@
     "language": "c", 
     "name": "h2_ssl+1byte_test", 
     "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
+      "linux"
     ]
   }, 
   {
@@ -14545,9 +14420,7 @@
       "ping_pong_streaming"
     ], 
     "ci_platforms": [
-      "windows", 
-      "linux", 
-      "posix"
+      "linux"
     ], 
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
@@ -14555,10 +14428,7 @@
     "language": "c", 
     "name": "h2_ssl+1byte_test", 
     "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
+      "linux"
     ]
   }, 
   {
@@ -14566,9 +14436,7 @@
       "registered_call"
     ], 
     "ci_platforms": [
-      "windows", 
-      "linux", 
-      "posix"
+      "linux"
     ], 
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
@@ -14576,10 +14444,7 @@
     "language": "c", 
     "name": "h2_ssl+1byte_test", 
     "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
+      "linux"
     ]
   }, 
   {
@@ -14587,9 +14452,7 @@
       "request_with_flags"
     ], 
     "ci_platforms": [
-      "windows", 
-      "linux", 
-      "posix"
+      "linux"
     ], 
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
@@ -14597,10 +14460,7 @@
     "language": "c", 
     "name": "h2_ssl+1byte_test", 
     "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
+      "linux"
     ]
   }, 
   {
@@ -14608,9 +14468,7 @@
       "request_with_payload"
     ], 
     "ci_platforms": [
-      "windows", 
-      "linux", 
-      "posix"
+      "linux"
     ], 
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
@@ -14618,10 +14476,7 @@
     "language": "c", 
     "name": "h2_ssl+1byte_test", 
     "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
+      "linux"
     ]
   }, 
   {
@@ -14629,9 +14484,7 @@
       "server_finishes_request"
     ], 
     "ci_platforms": [
-      "windows", 
-      "linux", 
-      "posix"
+      "linux"
     ], 
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
@@ -14639,10 +14492,7 @@
     "language": "c", 
     "name": "h2_ssl+1byte_test", 
     "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
+      "linux"
     ]
   }, 
   {
@@ -14650,9 +14500,7 @@
       "shutdown_finishes_calls"
     ], 
     "ci_platforms": [
-      "windows", 
-      "linux", 
-      "posix"
+      "linux"
     ], 
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
@@ -14660,10 +14508,7 @@
     "language": "c", 
     "name": "h2_ssl+1byte_test", 
     "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
+      "linux"
     ]
   }, 
   {
@@ -14671,9 +14516,7 @@
       "shutdown_finishes_tags"
     ], 
     "ci_platforms": [
-      "windows", 
-      "linux", 
-      "posix"
+      "linux"
     ], 
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
@@ -14681,10 +14524,7 @@
     "language": "c", 
     "name": "h2_ssl+1byte_test", 
     "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
+      "linux"
     ]
   }, 
   {
@@ -14692,9 +14532,7 @@
       "simple_delayed_request"
     ], 
     "ci_platforms": [
-      "windows", 
-      "linux", 
-      "posix"
+      "linux"
     ], 
     "cpu_cost": 0.1, 
     "exclude_configs": [], 
@@ -14702,10 +14540,7 @@
     "language": "c", 
     "name": "h2_ssl+1byte_test", 
     "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
+      "linux"
     ]
   }, 
   {
@@ -14713,9 +14548,7 @@
       "simple_metadata"
     ], 
     "ci_platforms": [
-      "windows", 
-      "linux", 
-      "posix"
+      "linux"
     ], 
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
@@ -14723,10 +14556,7 @@
     "language": "c", 
     "name": "h2_ssl+1byte_test", 
     "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
+      "linux"
     ]
   }, 
   {
@@ -14734,9 +14564,7 @@
       "simple_request"
     ], 
     "ci_platforms": [
-      "windows", 
-      "linux", 
-      "posix"
+      "linux"
     ], 
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
@@ -14744,10 +14572,7 @@
     "language": "c", 
     "name": "h2_ssl+1byte_test", 
     "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
+      "linux"
     ]
   }, 
   {
@@ -14755,9 +14580,7 @@
       "trailing_metadata"
     ], 
     "ci_platforms": [
-      "windows", 
-      "linux", 
-      "posix"
+      "linux"
     ], 
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
@@ -14765,10 +14588,7 @@
     "language": "c", 
     "name": "h2_ssl+1byte_test", 
     "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
+      "linux"
     ]
   }, 
   {
