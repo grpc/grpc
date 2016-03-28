@@ -113,17 +113,17 @@
           "numInstances": 3,
           "serverPodSpec": "stress-server-tsan"
         },
-        "stress-client-tsan": {
-          "clientTemplate": "cxx_client_tsan",
-          "dockerImage": "grpc_stress_cxx_tsan",
+        "stress-client-asan": {
+          "clientTemplate": "cxx_client_asan",
+          "dockerImage": "grpc_stress_cxx_asan",
           "numInstances": 3,
-          "serverPodSpec": "stress-server-tsan"
+          "serverPodSpec": "stress-server-asan"
         }
       }
     },
 
     "globalSettings": {
-      "buildDockerImages": true,
+      "buildDockerImages": false,
       "pollIntervalSecs": 10,
       "testDurationSecs": 70,
       "kubernetesProxyPort": 8001,
