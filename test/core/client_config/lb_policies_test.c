@@ -41,13 +41,13 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 
-#include "src/core/channel/channel_stack.h"
-#include "src/core/channel/client_channel.h"
-#include "src/core/client_config/lb_policies/round_robin.h"
-#include "src/core/client_config/lb_policy_registry.h"
-#include "src/core/support/string.h"
-#include "src/core/surface/channel.h"
-#include "src/core/surface/server.h"
+#include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/channel/client_channel.h"
+#include "src/core/lib/client_config/lb_policies/round_robin.h"
+#include "src/core/lib/client_config/lb_policy_registry.h"
+#include "src/core/lib/support/string.h"
+#include "src/core/lib/surface/channel.h"
+#include "src/core/lib/surface/server.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
