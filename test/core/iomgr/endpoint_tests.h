@@ -36,7 +36,7 @@
 
 #include <sys/types.h>
 
-#include "src/core/iomgr/endpoint.h"
+#include "src/core/lib/iomgr/endpoint.h"
 
 typedef struct grpc_endpoint_test_config grpc_endpoint_test_config;
 typedef struct grpc_endpoint_test_fixture grpc_endpoint_test_fixture;

@@ -47,7 +47,7 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
-#include "src/core/http/httpcli.h"
+#include "src/core/lib/http/httpcli.h"
 
 typedef struct freereq {
   gpr_mu *mu;
