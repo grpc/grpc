@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/transport/chttp2/bin_encoder.h"
+#include "src/core/lib/transport/chttp2/bin_encoder.h"
 
 #include <string.h>
 
@@ -41,7 +41,7 @@
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include "src/core/support/string.h"
+#include "src/core/lib/support/string.h"
 
 static int all_ok = 1;
 
