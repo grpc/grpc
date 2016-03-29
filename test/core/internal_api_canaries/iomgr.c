@@ -31,11 +31,11 @@
  *
  */
 
-#include "src/core/iomgr/iomgr.h"
-#include "src/core/iomgr/closure.h"
-#include "src/core/iomgr/endpoint.h"
-#include "src/core/iomgr/exec_ctx.h"
-#include "src/core/iomgr/executor.h"
+#include "src/core/lib/iomgr/iomgr.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/endpoint.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/executor.h"
 
 /*******************************************************************************
  * NOTE: If this test fails to compile, then the api changes are likely to cause
