@@ -75,7 +75,7 @@ CORE_SOURCE_FILES = [
   'src/core/lib/support/tmpfile_win32.c',
   'src/core/lib/support/wrap_memcpy.c',
   'src/core/ext/lb_policy/grpclb/load_balancer_api.c',
-  'src/core/ext/lb_policy/grpclb/proto/grpc/lb/v0/load_balancer.pb.h',
+  'src/core/ext/lb_policy/grpclb/proto/grpc/lb/v0/load_balancer.pb.c',
   'src/core/ext/lb_policy/pick_first/pick_first.c',
   'src/core/ext/lb_policy/round_robin/round_robin.c',
   'src/core/ext/transport/chttp2/client/insecure/channel_create.c',
