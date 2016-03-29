@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\asn1\asn1_test.cc">
+      <Filter>third_party\boringssl\crypto\asn1</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="third_party">
+      <UniqueIdentifier>{4115523a-a0e5-e13f-f46b-76308dedf6f3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party\boringssl">
+      <UniqueIdentifier>{c1481ada-4ab1-0cb6-8828-83f09d5421e4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party\boringssl\crypto">
+      <UniqueIdentifier>{199f1153-e7a0-fcef-73f5-eb766cb38fc3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party\boringssl\crypto\asn1">
+      <UniqueIdentifier>{c5964062-112a-0884-d3ae-d8aec947c2f3}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

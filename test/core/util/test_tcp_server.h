@@ -35,7 +35,7 @@
 #define GRPC_TEST_CORE_UTIL_TEST_TCP_SERVER_H
 
 #include <grpc/support/sync.h>
-#include "src/core/iomgr/tcp_server.h"
+#include "src/core/lib/iomgr/tcp_server.h"
 
 typedef struct test_tcp_server {
   grpc_tcp_server *tcp_server;

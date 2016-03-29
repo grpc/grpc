@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/support/string.h"
+#include "src/core/lib/support/string.h"
 
 #include <grpc/byte_buffer_reader.h>
 #include <grpc/support/port_platform.h>
