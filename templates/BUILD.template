@@ -49,7 +49,9 @@
       ]
     if target_dict.get('build', None) == 'protoc':
       deps.append("//external:protobuf_compiler")
-    if target_dict['name'] == 'grpc++_unsecure' or target_dict['name'] == 'grpc++':
+    if (target_dict['name'] == 'grpc++_unsecure' or
+        target_dict['name'] == 'grpc++' or
+        target_dict['name'] == 'grpc++_codegen_lib'):
       deps.append("//external:protobuf_clib")
     elif target_dict['name'] == 'grpc':
       deps.append("//external:zlib")
