@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_CLIENT_CONFIG_LB_POLICIES_PICK_FIRST_H
-#define GRPC_CORE_LIB_CLIENT_CONFIG_LB_POLICIES_PICK_FIRST_H
+#ifndef GRPC_CORE_EXT_LB_POLICY_PICK_FIRST_PICK_FIRST_H
+#define GRPC_CORE_EXT_LB_POLICY_PICK_FIRST_PICK_FIRST_H
 
 #include "src/core/lib/client_config/lb_policy_factory.h"
 
@@ -40,4 +40,4 @@
  * the first subchannel from \a subchannels to succesfully connect */
 grpc_lb_policy_factory *grpc_pick_first_lb_factory_create();
 
-#endif /* GRPC_CORE_LIB_CLIENT_CONFIG_LB_POLICIES_PICK_FIRST_H */
+#endif /* GRPC_CORE_EXT_LB_POLICY_PICK_FIRST_PICK_FIRST_H */
