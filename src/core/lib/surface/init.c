@@ -73,6 +73,9 @@
 #define GRPC_DEFAULT_NAME_PREFIX "dns:///"
 #endif
 
+/* (generated) built in registry of plugins */
+extern void grpc_register_built_in_plugins(void);
+
 #define MAX_PLUGINS 128
 
 static gpr_once g_basic_init = GPR_ONCE_INIT;
@@ -81,6 +84,7 @@ static int g_initializations;
 
 static void do_basic_init(void) {
   gpr_mu_init(&g_init_mu);
+  grpc_register_built_in_plugins();
   /* TODO(ctiller): ideally remove this strict linkage */
   grpc_register_plugin(census_grpc_plugin_init, census_grpc_plugin_destroy);
   g_initializations = 0;
@@ -163,6 +167,7 @@ void grpc_init(void) {
     gpr_time_init();
     grpc_mdctx_global_init();
     grpc_channel_init_init();
+    grpc_lb_policy_registry_init();
     grpc_resolver_registry_init(GRPC_DEFAULT_NAME_PREFIX);
     grpc_register_resolver_type(grpc_dns_resolver_factory_create());
     grpc_register_resolver_type(grpc_ipv4_resolver_factory_create());

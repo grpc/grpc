@@ -546,7 +546,7 @@ static grpc_lb_policy_factory *round_robin_lb_factory_create() {
 /* Plugin registration */
 
 void grpc_lb_policy_round_robin_init() {
-  grpc_lb_policy_registry_init(round_robin_lb_factory_create());
+  grpc_register_lb_policy(round_robin_lb_factory_create());
   grpc_register_tracer("round_robin", &grpc_lb_round_robin_trace);
 }
 
