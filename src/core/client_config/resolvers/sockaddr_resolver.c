@@ -318,10 +318,12 @@ static grpc_resolver *sockaddr_create(
     }
 
     if (strcmp("grpclb", r->lb_policy_name) == 0 && !lb_enabled) {
-      /* we want grpclb but the "resolved" addresses aren't LB enabled. Fall
-       * back to the default policy */
-      gpr_free(r->lb_policy_name);
-      r->lb_policy_name = gpr_strdup(default_lb_policy_name);
+      /* we want grpclb but the "resolved" addresses aren't LB enabled. Bail
+       * out, as this is meant mostly for tests. */
+      gpr_log(GPR_ERROR,
+              "Requested 'grpclb' LB policy but resolved addresses don't "
+              "support load balancing.");
+      abort();
     }
     gpr_slice_buffer_destroy(&query_parts);
     gpr_slice_buffer_destroy(&query_param_parts);
