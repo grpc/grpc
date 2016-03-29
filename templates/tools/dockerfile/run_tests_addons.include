@@ -1,10 +1,7 @@
-<%page args="skip_zookeeper=False"/>\
 <%include file="ccache_setup.include"/>
-% if not skip_zookeeper:
 #======================
 # Zookeeper dependencies
 # TODO(jtattermusch): is zookeeper still needed?
 RUN apt-get install -y libzookeeper-mt-dev
-% endif
 
 RUN mkdir /var/local/jenkins

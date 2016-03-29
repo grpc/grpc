@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,11 +33,11 @@
 
 #include <grpc++/security/credentials.h>
 
-#include <grpc/grpc.h>
-#include <grpc/support/log.h>
 #include <grpc++/channel.h>
 #include <grpc++/support/channel_arguments.h>
 #include <grpc++/support/config.h>
+#include <grpc/grpc.h>
+#include <grpc/support/log.h>
 #include "src/cpp/client/create_channel_internal.h"
 
 namespace grpc {

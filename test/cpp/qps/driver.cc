@@ -43,8 +43,9 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
+#include <gtest/gtest.h>
 
-#include "src/core/support/env.h"
+#include "src/core/lib/support/env.h"
 #include "src/proto/grpc/testing/services.grpc.pb.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
@@ -120,11 +121,9 @@ static deque<string> get_workers(const string& name) {
 namespace runsc {
 
 // ClientContext allocator
-template <class T>
-static ClientContext* AllocContext(list<ClientContext>* contexts, T deadline) {
+static ClientContext* AllocContext(list<ClientContext>* contexts) {
   contexts->emplace_back();
   auto context = &contexts->back();
-  context->set_deadline(deadline);
   return context;
 }
 
@@ -196,9 +195,6 @@ std::unique_ptr<ScenarioResult> RunScenario(
   // Trim to just what we need
   workers.resize(num_clients + num_servers);
 
-  gpr_timespec deadline =
-      GRPC_TIMEOUT_SECONDS_TO_DEADLINE(warmup_seconds + benchmark_seconds + 20);
-
   // Start servers
   using runsc::ServerData;
   // servers is array rather than std::vector to avoid gcc-4.4 issues
@@ -248,7 +244,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
     ServerArgs args;
     *args.mutable_setup() = server_config;
     servers[i].stream =
-        servers[i].stub->RunServer(runsc::AllocContext(&contexts, deadline));
+        servers[i].stub->RunServer(runsc::AllocContext(&contexts));
     GPR_ASSERT(servers[i].stream->Write(args));
     ServerStatus init_status;
     GPR_ASSERT(servers[i].stream->Read(&init_status));
@@ -304,7 +300,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
     ClientArgs args;
     *args.mutable_setup() = per_client_config;
     clients[i].stream =
-        clients[i].stub->RunClient(runsc::AllocContext(&contexts, deadline));
+        clients[i].stub->RunClient(runsc::AllocContext(&contexts));
     GPR_ASSERT(clients[i].stream->Write(args));
     ClientStatus init_status;
     GPR_ASSERT(clients[i].stream->Read(&init_status));
@@ -342,7 +338,8 @@ std::unique_ptr<ScenarioResult> RunScenario(
   // Use gpr_sleep_until rather than this_thread::sleep_until to support
   // compilers that don't work with this_thread
   gpr_sleep_until(gpr_time_add(
-      start, gpr_time_from_seconds(benchmark_seconds, GPR_TIMESPAN)));
+      start,
+      gpr_time_from_seconds(warmup_seconds + benchmark_seconds, GPR_TIMESPAN)));
 
   // Finish a run
   std::unique_ptr<ScenarioResult> result(new ScenarioResult);
