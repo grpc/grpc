@@ -124,19 +124,14 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\endpoint_pair_windows.c">
       <Filter>src\core\lib\iomgr</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_epoll_linux.c">
+      <Filter>src\core\lib\iomgr</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_poll_and_epoll_posix.c">
       <Filter>src\core\lib\iomgr</Filter>
     </ClCompile>
-<<<<<<< HEAD
-    <ClCompile Include="$(SolutionDir)\..\src\core\iomgr\ev_epoll_linux.c">
-      <Filter>src\core\iomgr</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\iomgr\ev_poll_and_epoll_posix.c">
-      <Filter>src\core\iomgr</Filter>
-=======
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_poll_posix.c">
       <Filter>src\core\lib\iomgr</Filter>
->>>>>>> d9a60bbd2628f9a19e7bf0ff97c5c156dded73cf
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_posix.c">
       <Filter>src\core\lib\iomgr</Filter>
@@ -655,22 +650,17 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\endpoint_pair.h">
       <Filter>src\core\lib\iomgr</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_epoll_linux.h">
+      <Filter>src\core\lib\iomgr</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_poll_and_epoll_posix.h">
       <Filter>src\core\lib\iomgr</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_poll_posix.h">
       <Filter>src\core\lib\iomgr</Filter>
     </ClInclude>
-<<<<<<< HEAD
-    <ClInclude Include="$(SolutionDir)\..\src\core\iomgr\ev_epoll_linux.h">
-      <Filter>src\core\iomgr</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\iomgr\ev_poll_and_epoll_posix.h">
-      <Filter>src\core\iomgr</Filter>
-=======
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_posix.h">
       <Filter>src\core\lib\iomgr</Filter>
->>>>>>> d9a60bbd2628f9a19e7bf0ff97c5c156dded73cf
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\exec_ctx.h">
       <Filter>src\core\lib\iomgr</Filter>
