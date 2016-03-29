@@ -41,7 +41,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 #include <grpc/support/useful.h>
-#include "src/core/profiling/timers.h"
+#include "src/core/lib/profiling/timers.h"
 #include "test/core/util/grpc_profiler.h"
 #include "test/core/util/test_config.h"
 
