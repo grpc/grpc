@@ -38,8 +38,9 @@
 
 gpr_slice grpc_chttp2_window_update_create(
     uint32_t id, uint32_t window_update, grpc_transport_one_way_stats *stats) {
-  gpr_slice slice = gpr_slice_malloc(13);
-  stats->header_bytes += 13;
+  static const size_t frame_size = 13;
+  gpr_slice slice = gpr_slice_malloc(frame_size);
+  stats->header_bytes += frame_size;
   uint8_t *p = GPR_SLICE_START_PTR(slice);
 
   GPR_ASSERT(window_update);
