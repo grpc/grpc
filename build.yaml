@@ -255,7 +255,6 @@ filegroups:
   - include/grpc/grpc.h
   - include/grpc/status.h
   headers:
-  - src/core/ext/lb_policy/grpclb/proto/grpc/lb/v0/load_balancer.pb.h
   - src/core/lib/channel/channel_args.h
   - src/core/lib/channel/channel_stack.h
   - src/core/lib/channel/channel_stack_builder.h
@@ -348,7 +347,6 @@ filegroups:
   - src/core/lib/transport/transport.h
   - src/core/lib/transport/transport_impl.h
   src:
-  - src/core/ext/lb_policy/grpclb/proto/grpc/lb/v0/load_balancer.pb.c
   - src/core/lib/channel/channel_args.c
   - src/core/lib/channel/channel_stack.c
   - src/core/lib/channel/channel_stack_builder.c
@@ -464,8 +462,10 @@ filegroups:
 - name: grpc_lb_policy_grpclb
   headers:
   - src/core/ext/lb_policy/grpclb/load_balancer_api.h
+  - src/core/ext/lb_policy/grpclb/proto/grpc/lb/v0/load_balancer.pb.c
   src:
   - src/core/ext/lb_policy/grpclb/load_balancer_api.c
+  - src/core/ext/lb_policy/grpclb/proto/grpc/lb/v0/load_balancer.pb.h
   uses:
   - grpc_base
 - name: grpc_lb_policy_pick_first
