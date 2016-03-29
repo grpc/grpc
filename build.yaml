@@ -472,6 +472,7 @@ filegroups:
   - src/core/ext/lb_policy/pick_first/pick_first.h
   src:
   - src/core/ext/lb_policy/pick_first/pick_first.c
+  plugin: grpc_lb_policy_pick_first
   uses:
   - grpc_base
 - name: grpc_lb_policy_round_robin
@@ -479,6 +480,7 @@ filegroups:
   - src/core/ext/lb_policy/round_robin/round_robin.h
   src:
   - src/core/ext/lb_policy/round_robin/round_robin.c
+  plugin: grpc_lb_policy_round_robin
   uses:
   - grpc_base
 - name: grpc_secure
@@ -661,6 +663,7 @@ libs:
   - grpc_codegen
   - census
   - nanopb
+  generate_plugin_registry: true
   secure: true
   vs_packages:
   - grpc.dependencies.openssl
@@ -746,6 +749,7 @@ libs:
   - grpc_codegen
   - census
   - nanopb
+  generate_plugin_registry: true
   secure: false
   vs_project_guid: '{46CEDFFF-9692-456A-AA24-38B5D6BCF4C5}'
 - name: grpc_zookeeper
