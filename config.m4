@@ -127,9 +127,9 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/client_config/connector.c \
     src/core/lib/client_config/default_initial_connect_string.c \
     src/core/lib/client_config/initial_connect_string.c \
-    src/core/lib/client_config/lb_policies/load_balancer_api.c \
-    src/core/lib/client_config/lb_policies/pick_first.c \
-    src/core/lib/client_config/lb_policies/round_robin.c \
+    src/core/ext/lb_policy/grpclb/load_balancer_api.c \
+    src/core/ext/lb_policy/pick_first/pick_first.c \
+    src/core/ext/lb_policy/round_robin/round_robin.c \
     src/core/lib/client_config/lb_policy.c \
     src/core/lib/client_config/lb_policy_factory.c \
     src/core/lib/client_config/lb_policy_registry.c \
@@ -195,7 +195,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/json/json_reader.c \
     src/core/lib/json/json_string.c \
     src/core/lib/json/json_writer.c \
-    src/core/lib/proto/grpc/lb/v0/load_balancer.pb.c \
+    src/core/ext/lb_policy/grpclb/proto/grpc/lb/v0/load_balancer.pb.c \
     src/core/lib/security/b64.c \
     src/core/lib/security/client_auth_filter.c \
     src/core/lib/security/credentials.c \
@@ -562,7 +562,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/iomgr)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/json)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/profiling)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/proto/grpc/lb/v0)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/lb_policy/grpclb/proto/grpc/lb/v0)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/support)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/surface)

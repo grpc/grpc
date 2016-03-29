@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/lib/client_config/lb_policies/round_robin.h"
+#include "src/core/ext/lb_policy/round_robin/round_robin.h"
 
 #include <string.h>
 

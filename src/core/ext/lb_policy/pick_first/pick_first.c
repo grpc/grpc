@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/lib/client_config/lb_policies/pick_first.h"
+#include "src/core/ext/lb_policy/pick_first/pick_first.h"
 #include "src/core/lib/client_config/lb_policy_factory.h"
 
 #include <string.h>

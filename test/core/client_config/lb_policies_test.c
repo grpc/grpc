@@ -43,7 +43,7 @@
 
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/client_channel.h"
-#include "src/core/lib/client_config/lb_policies/round_robin.h"
+#include "src/core/ext/lb_policy/round_robin/round_robin.h"
 #include "src/core/lib/client_config/lb_policy_registry.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/surface/channel.h"
