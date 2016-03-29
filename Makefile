@@ -2300,6 +2300,20 @@ LIBGPR_SRC = \
     src/core/lib/support/wrap_memcpy.c \
 
 PUBLIC_HEADERS_C += \
+    include/grpc/impl/codegen/alloc.h \
+    include/grpc/impl/codegen/atm.h \
+    include/grpc/impl/codegen/atm_gcc_atomic.h \
+    include/grpc/impl/codegen/atm_gcc_sync.h \
+    include/grpc/impl/codegen/atm_win32.h \
+    include/grpc/impl/codegen/log.h \
+    include/grpc/impl/codegen/port_platform.h \
+    include/grpc/impl/codegen/slice.h \
+    include/grpc/impl/codegen/slice_buffer.h \
+    include/grpc/impl/codegen/sync.h \
+    include/grpc/impl/codegen/sync_generic.h \
+    include/grpc/impl/codegen/sync_posix.h \
+    include/grpc/impl/codegen/sync_win32.h \
+    include/grpc/impl/codegen/time.h \
     include/grpc/support/alloc.h \
     include/grpc/support/atm.h \
     include/grpc/support/atm_gcc_atomic.h \
@@ -2328,20 +2342,6 @@ PUBLIC_HEADERS_C += \
     include/grpc/support/tls_msvc.h \
     include/grpc/support/tls_pthread.h \
     include/grpc/support/useful.h \
-    include/grpc/impl/codegen/alloc.h \
-    include/grpc/impl/codegen/atm.h \
-    include/grpc/impl/codegen/atm_gcc_atomic.h \
-    include/grpc/impl/codegen/atm_gcc_sync.h \
-    include/grpc/impl/codegen/atm_win32.h \
-    include/grpc/impl/codegen/log.h \
-    include/grpc/impl/codegen/port_platform.h \
-    include/grpc/impl/codegen/slice.h \
-    include/grpc/impl/codegen/slice_buffer.h \
-    include/grpc/impl/codegen/sync.h \
-    include/grpc/impl/codegen/sync_generic.h \
-    include/grpc/impl/codegen/sync_posix.h \
-    include/grpc/impl/codegen/sync_win32.h \
-    include/grpc/impl/codegen/time.h \
 
 LIBGPR_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGPR_SRC))))
 
@@ -2383,6 +2383,7 @@ endif
 LIBGPR_TEST_UTIL_SRC = \
     test/core/util/test_config.c \
 
+PUBLIC_HEADERS_C += \
 
 LIBGPR_TEST_UTIL_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGPR_TEST_UTIL_SRC))))
 
@@ -2405,9 +2406,40 @@ endif
 
 
 LIBGRPC_SRC = \
+    src/core/ext/transport/chttp2/client/insecure/channel_create.c \
+    src/core/ext/transport/chttp2/client/secure/secure_channel_create.c \
+    src/core/ext/transport/chttp2/server/insecure/server_chttp2.c \
+    src/core/ext/transport/chttp2/server/secure/server_secure_chttp2.c \
+    src/core/ext/transport/chttp2/transport/alpn.c \
+    src/core/ext/transport/chttp2/transport/bin_encoder.c \
+    src/core/ext/transport/chttp2/transport/chttp2_transport.c \
+    src/core/ext/transport/chttp2/transport/frame_data.c \
+    src/core/ext/transport/chttp2/transport/frame_goaway.c \
+    src/core/ext/transport/chttp2/transport/frame_ping.c \
+    src/core/ext/transport/chttp2/transport/frame_rst_stream.c \
+    src/core/ext/transport/chttp2/transport/frame_settings.c \
+    src/core/ext/transport/chttp2/transport/frame_window_update.c \
+    src/core/ext/transport/chttp2/transport/hpack_encoder.c \
+    src/core/ext/transport/chttp2/transport/hpack_parser.c \
+    src/core/ext/transport/chttp2/transport/hpack_table.c \
+    src/core/ext/transport/chttp2/transport/huffsyms.c \
+    src/core/ext/transport/chttp2/transport/incoming_metadata.c \
+    src/core/ext/transport/chttp2/transport/parsing.c \
+    src/core/ext/transport/chttp2/transport/status_conversion.c \
+    src/core/ext/transport/chttp2/transport/stream_lists.c \
+    src/core/ext/transport/chttp2/transport/stream_map.c \
+    src/core/ext/transport/chttp2/transport/timeout_encoding.c \
+    src/core/ext/transport/chttp2/transport/varint.c \
+    src/core/ext/transport/chttp2/transport/writing.c \
+    src/core/lib/census/context.c \
     src/core/lib/census/grpc_context.c \
     src/core/lib/census/grpc_filter.c \
     src/core/lib/census/grpc_plugin.c \
+    src/core/lib/census/initialize.c \
+    src/core/lib/census/mlog.c \
+    src/core/lib/census/operation.c \
+    src/core/lib/census/placeholders.c \
+    src/core/lib/census/tracing.c \
     src/core/lib/channel/channel_args.c \
     src/core/lib/channel/channel_stack.c \
     src/core/lib/channel/channel_stack_builder.c \
@@ -2441,6 +2473,7 @@ LIBGRPC_SRC = \
     src/core/lib/debug/trace.c \
     src/core/lib/http/format_request.c \
     src/core/lib/http/httpcli.c \
+    src/core/lib/http/httpcli_security_connector.c \
     src/core/lib/http/parser.c \
     src/core/lib/iomgr/closure.c \
     src/core/lib/iomgr/endpoint.c \
@@ -2488,57 +2521,6 @@ LIBGRPC_SRC = \
     src/core/lib/json/json_string.c \
     src/core/lib/json/json_writer.c \
     src/core/lib/proto/grpc/lb/v0/load_balancer.pb.c \
-    src/core/lib/surface/alarm.c \
-    src/core/lib/surface/api_trace.c \
-    src/core/lib/surface/byte_buffer.c \
-    src/core/lib/surface/byte_buffer_reader.c \
-    src/core/lib/surface/call.c \
-    src/core/lib/surface/call_details.c \
-    src/core/lib/surface/call_log_batch.c \
-    src/core/lib/surface/channel.c \
-    src/core/lib/surface/channel_connectivity.c \
-    src/core/lib/surface/channel_create.c \
-    src/core/lib/surface/channel_init.c \
-    src/core/lib/surface/channel_ping.c \
-    src/core/lib/surface/channel_stack_type.c \
-    src/core/lib/surface/completion_queue.c \
-    src/core/lib/surface/event_string.c \
-    src/core/lib/surface/init.c \
-    src/core/lib/surface/lame_client.c \
-    src/core/lib/surface/metadata_array.c \
-    src/core/lib/surface/server.c \
-    src/core/lib/surface/server_chttp2.c \
-    src/core/lib/surface/validate_metadata.c \
-    src/core/lib/surface/version.c \
-    src/core/lib/transport/byte_stream.c \
-    src/core/lib/transport/chttp2/alpn.c \
-    src/core/lib/transport/chttp2/bin_encoder.c \
-    src/core/lib/transport/chttp2/frame_data.c \
-    src/core/lib/transport/chttp2/frame_goaway.c \
-    src/core/lib/transport/chttp2/frame_ping.c \
-    src/core/lib/transport/chttp2/frame_rst_stream.c \
-    src/core/lib/transport/chttp2/frame_settings.c \
-    src/core/lib/transport/chttp2/frame_window_update.c \
-    src/core/lib/transport/chttp2/hpack_encoder.c \
-    src/core/lib/transport/chttp2/hpack_parser.c \
-    src/core/lib/transport/chttp2/hpack_table.c \
-    src/core/lib/transport/chttp2/huffsyms.c \
-    src/core/lib/transport/chttp2/incoming_metadata.c \
-    src/core/lib/transport/chttp2/parsing.c \
-    src/core/lib/transport/chttp2/status_conversion.c \
-    src/core/lib/transport/chttp2/stream_lists.c \
-    src/core/lib/transport/chttp2/stream_map.c \
-    src/core/lib/transport/chttp2/timeout_encoding.c \
-    src/core/lib/transport/chttp2/varint.c \
-    src/core/lib/transport/chttp2/writing.c \
-    src/core/lib/transport/chttp2_transport.c \
-    src/core/lib/transport/connectivity_state.c \
-    src/core/lib/transport/metadata.c \
-    src/core/lib/transport/metadata_batch.c \
-    src/core/lib/transport/static_metadata.c \
-    src/core/lib/transport/transport.c \
-    src/core/lib/transport/transport_op_string.c \
-    src/core/lib/http/httpcli_security_connector.c \
     src/core/lib/security/b64.c \
     src/core/lib/security/client_auth_filter.c \
     src/core/lib/security/credentials.c \
@@ -2553,36 +2535,55 @@ LIBGRPC_SRC = \
     src/core/lib/security/security_connector.c \
     src/core/lib/security/security_context.c \
     src/core/lib/security/server_auth_filter.c \
-    src/core/lib/security/server_secure_chttp2.c \
+    src/core/lib/surface/alarm.c \
+    src/core/lib/surface/api_trace.c \
+    src/core/lib/surface/byte_buffer.c \
+    src/core/lib/surface/byte_buffer_reader.c \
+    src/core/lib/surface/call.c \
+    src/core/lib/surface/call_details.c \
+    src/core/lib/surface/call_log_batch.c \
+    src/core/lib/surface/channel.c \
+    src/core/lib/surface/channel_connectivity.c \
+    src/core/lib/surface/channel_init.c \
+    src/core/lib/surface/channel_ping.c \
+    src/core/lib/surface/channel_stack_type.c \
+    src/core/lib/surface/completion_queue.c \
+    src/core/lib/surface/event_string.c \
+    src/core/lib/surface/init.c \
     src/core/lib/surface/init_secure.c \
-    src/core/lib/surface/secure_channel_create.c \
+    src/core/lib/surface/lame_client.c \
+    src/core/lib/surface/metadata_array.c \
+    src/core/lib/surface/server.c \
+    src/core/lib/surface/validate_metadata.c \
+    src/core/lib/surface/version.c \
+    src/core/lib/transport/byte_stream.c \
+    src/core/lib/transport/connectivity_state.c \
+    src/core/lib/transport/metadata.c \
+    src/core/lib/transport/metadata_batch.c \
+    src/core/lib/transport/static_metadata.c \
+    src/core/lib/transport/transport.c \
+    src/core/lib/transport/transport_op_string.c \
     src/core/lib/tsi/fake_transport_security.c \
     src/core/lib/tsi/ssl_transport_security.c \
     src/core/lib/tsi/transport_security.c \
-    src/core/lib/census/context.c \
-    src/core/lib/census/initialize.c \
-    src/core/lib/census/mlog.c \
-    src/core/lib/census/operation.c \
-    src/core/lib/census/placeholders.c \
-    src/core/lib/census/tracing.c \
     third_party/nanopb/pb_common.c \
     third_party/nanopb/pb_decode.c \
     third_party/nanopb/pb_encode.c \
 
 PUBLIC_HEADERS_C += \
-    include/grpc/grpc_security.h \
     include/grpc/byte_buffer.h \
     include/grpc/byte_buffer_reader.h \
+    include/grpc/census.h \
     include/grpc/compression.h \
     include/grpc/grpc.h \
-    include/grpc/status.h \
+    include/grpc/grpc_security.h \
     include/grpc/impl/codegen/byte_buffer.h \
     include/grpc/impl/codegen/compression_types.h \
     include/grpc/impl/codegen/connectivity_state.h \
     include/grpc/impl/codegen/grpc_types.h \
     include/grpc/impl/codegen/propagation_bits.h \
     include/grpc/impl/codegen/status.h \
-    include/grpc/census.h \
+    include/grpc/status.h \
 
 LIBGRPC_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC_SRC))))
 
@@ -2644,21 +2645,21 @@ PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/atm_gcc_atomic.h \
     include/grpc/impl/codegen/atm_gcc_sync.h \
     include/grpc/impl/codegen/atm_win32.h \
+    include/grpc/impl/codegen/byte_buffer.h \
+    include/grpc/impl/codegen/compression_types.h \
+    include/grpc/impl/codegen/connectivity_state.h \
+    include/grpc/impl/codegen/grpc_types.h \
     include/grpc/impl/codegen/log.h \
     include/grpc/impl/codegen/port_platform.h \
+    include/grpc/impl/codegen/propagation_bits.h \
     include/grpc/impl/codegen/slice.h \
     include/grpc/impl/codegen/slice_buffer.h \
+    include/grpc/impl/codegen/status.h \
     include/grpc/impl/codegen/sync.h \
     include/grpc/impl/codegen/sync_generic.h \
     include/grpc/impl/codegen/sync_posix.h \
     include/grpc/impl/codegen/sync_win32.h \
     include/grpc/impl/codegen/time.h \
-    include/grpc/impl/codegen/byte_buffer.h \
-    include/grpc/impl/codegen/compression_types.h \
-    include/grpc/impl/codegen/connectivity_state.h \
-    include/grpc/impl/codegen/grpc_types.h \
-    include/grpc/impl/codegen/propagation_bits.h \
-    include/grpc/impl/codegen/status.h \
 
 LIBGRPC_CODEGEN_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC_CODEGEN_LIB_SRC))))
 
@@ -2681,13 +2682,13 @@ endif
 
 
 LIBGRPC_TEST_UTIL_SRC = \
+    test/core/end2end/cq_verifier.c \
     test/core/end2end/data/server1_cert.c \
     test/core/end2end/data/server1_key.c \
     test/core/end2end/data/test_root_cert.c \
-    test/core/security/oauth2_utils.c \
-    test/core/end2end/cq_verifier.c \
     test/core/end2end/fixtures/proxy.c \
     test/core/iomgr/endpoint_tests.c \
+    test/core/security/oauth2_utils.c \
     test/core/util/grpc_profiler.c \
     test/core/util/parse_hexstring.c \
     test/core/util/port_posix.c \
@@ -2765,10 +2766,38 @@ endif
 
 
 LIBGRPC_UNSECURE_SRC = \
-    src/core/lib/surface/init_unsecure.c \
+    src/core/ext/transport/chttp2/client/insecure/channel_create.c \
+    src/core/ext/transport/chttp2/server/insecure/server_chttp2.c \
+    src/core/ext/transport/chttp2/transport/alpn.c \
+    src/core/ext/transport/chttp2/transport/bin_encoder.c \
+    src/core/ext/transport/chttp2/transport/chttp2_transport.c \
+    src/core/ext/transport/chttp2/transport/frame_data.c \
+    src/core/ext/transport/chttp2/transport/frame_goaway.c \
+    src/core/ext/transport/chttp2/transport/frame_ping.c \
+    src/core/ext/transport/chttp2/transport/frame_rst_stream.c \
+    src/core/ext/transport/chttp2/transport/frame_settings.c \
+    src/core/ext/transport/chttp2/transport/frame_window_update.c \
+    src/core/ext/transport/chttp2/transport/hpack_encoder.c \
+    src/core/ext/transport/chttp2/transport/hpack_parser.c \
+    src/core/ext/transport/chttp2/transport/hpack_table.c \
+    src/core/ext/transport/chttp2/transport/huffsyms.c \
+    src/core/ext/transport/chttp2/transport/incoming_metadata.c \
+    src/core/ext/transport/chttp2/transport/parsing.c \
+    src/core/ext/transport/chttp2/transport/status_conversion.c \
+    src/core/ext/transport/chttp2/transport/stream_lists.c \
+    src/core/ext/transport/chttp2/transport/stream_map.c \
+    src/core/ext/transport/chttp2/transport/timeout_encoding.c \
+    src/core/ext/transport/chttp2/transport/varint.c \
+    src/core/ext/transport/chttp2/transport/writing.c \
+    src/core/lib/census/context.c \
     src/core/lib/census/grpc_context.c \
     src/core/lib/census/grpc_filter.c \
     src/core/lib/census/grpc_plugin.c \
+    src/core/lib/census/initialize.c \
+    src/core/lib/census/mlog.c \
+    src/core/lib/census/operation.c \
+    src/core/lib/census/placeholders.c \
+    src/core/lib/census/tracing.c \
     src/core/lib/channel/channel_args.c \
     src/core/lib/channel/channel_stack.c \
     src/core/lib/channel/channel_stack_builder.c \
@@ -2858,53 +2887,25 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/surface/call_log_batch.c \
     src/core/lib/surface/channel.c \
     src/core/lib/surface/channel_connectivity.c \
-    src/core/lib/surface/channel_create.c \
     src/core/lib/surface/channel_init.c \
     src/core/lib/surface/channel_ping.c \
     src/core/lib/surface/channel_stack_type.c \
     src/core/lib/surface/completion_queue.c \
     src/core/lib/surface/event_string.c \
     src/core/lib/surface/init.c \
+    src/core/lib/surface/init_unsecure.c \
     src/core/lib/surface/lame_client.c \
     src/core/lib/surface/metadata_array.c \
     src/core/lib/surface/server.c \
-    src/core/lib/surface/server_chttp2.c \
     src/core/lib/surface/validate_metadata.c \
     src/core/lib/surface/version.c \
     src/core/lib/transport/byte_stream.c \
-    src/core/lib/transport/chttp2/alpn.c \
-    src/core/lib/transport/chttp2/bin_encoder.c \
-    src/core/lib/transport/chttp2/frame_data.c \
-    src/core/lib/transport/chttp2/frame_goaway.c \
-    src/core/lib/transport/chttp2/frame_ping.c \
-    src/core/lib/transport/chttp2/frame_rst_stream.c \
-    src/core/lib/transport/chttp2/frame_settings.c \
-    src/core/lib/transport/chttp2/frame_window_update.c \
-    src/core/lib/transport/chttp2/hpack_encoder.c \
-    src/core/lib/transport/chttp2/hpack_parser.c \
-    src/core/lib/transport/chttp2/hpack_table.c \
-    src/core/lib/transport/chttp2/huffsyms.c \
-    src/core/lib/transport/chttp2/incoming_metadata.c \
-    src/core/lib/transport/chttp2/parsing.c \
-    src/core/lib/transport/chttp2/status_conversion.c \
-    src/core/lib/transport/chttp2/stream_lists.c \
-    src/core/lib/transport/chttp2/stream_map.c \
-    src/core/lib/transport/chttp2/timeout_encoding.c \
-    src/core/lib/transport/chttp2/varint.c \
-    src/core/lib/transport/chttp2/writing.c \
-    src/core/lib/transport/chttp2_transport.c \
     src/core/lib/transport/connectivity_state.c \
     src/core/lib/transport/metadata.c \
     src/core/lib/transport/metadata_batch.c \
     src/core/lib/transport/static_metadata.c \
     src/core/lib/transport/transport.c \
     src/core/lib/transport/transport_op_string.c \
-    src/core/lib/census/context.c \
-    src/core/lib/census/initialize.c \
-    src/core/lib/census/mlog.c \
-    src/core/lib/census/operation.c \
-    src/core/lib/census/placeholders.c \
-    src/core/lib/census/tracing.c \
     third_party/nanopb/pb_common.c \
     third_party/nanopb/pb_decode.c \
     third_party/nanopb/pb_encode.c \
@@ -2912,16 +2913,16 @@ LIBGRPC_UNSECURE_SRC = \
 PUBLIC_HEADERS_C += \
     include/grpc/byte_buffer.h \
     include/grpc/byte_buffer_reader.h \
+    include/grpc/census.h \
     include/grpc/compression.h \
     include/grpc/grpc.h \
-    include/grpc/status.h \
     include/grpc/impl/codegen/byte_buffer.h \
     include/grpc/impl/codegen/compression_types.h \
     include/grpc/impl/codegen/connectivity_state.h \
     include/grpc/impl/codegen/grpc_types.h \
     include/grpc/impl/codegen/propagation_bits.h \
     include/grpc/impl/codegen/status.h \
-    include/grpc/census.h \
+    include/grpc/status.h \
 
 LIBGRPC_UNSECURE_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC_UNSECURE_SRC))))
 
@@ -3006,6 +3007,7 @@ endif
 LIBRECONNECT_SERVER_SRC = \
     test/core/util/reconnect_server.c \
 
+PUBLIC_HEADERS_C += \
 
 LIBRECONNECT_SERVER_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBRECONNECT_SERVER_SRC))))
 
@@ -3044,6 +3046,7 @@ endif
 LIBTEST_TCP_SERVER_SRC = \
     test/core/util/test_tcp_server.c \
 
+PUBLIC_HEADERS_C += \
 
 LIBTEST_TCP_SERVER_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBTEST_TCP_SERVER_SRC))))
 
@@ -3080,12 +3083,6 @@ endif
 
 
 LIBGRPC++_SRC = \
-    src/cpp/client/secure_credentials.cc \
-    src/cpp/common/auth_property_iterator.cc \
-    src/cpp/common/secure_auth_context.cc \
-    src/cpp/common/secure_channel_arguments.cc \
-    src/cpp/common/secure_create_auth_context.cc \
-    src/cpp/server/secure_server_credentials.cc \
     src/cpp/client/channel.cc \
     src/cpp/client/client_context.cc \
     src/cpp/client/create_channel.cc \
@@ -3093,14 +3090,21 @@ LIBGRPC++_SRC = \
     src/cpp/client/credentials.cc \
     src/cpp/client/generic_stub.cc \
     src/cpp/client/insecure_credentials.cc \
+    src/cpp/client/secure_credentials.cc \
+    src/cpp/codegen/codegen_init.cc \
+    src/cpp/common/auth_property_iterator.cc \
     src/cpp/common/channel_arguments.cc \
     src/cpp/common/completion_queue.cc \
     src/cpp/common/core_codegen.cc \
     src/cpp/common/rpc_method.cc \
+    src/cpp/common/secure_auth_context.cc \
+    src/cpp/common/secure_channel_arguments.cc \
+    src/cpp/common/secure_create_auth_context.cc \
     src/cpp/server/async_generic_service.cc \
     src/cpp/server/create_default_thread_pool.cc \
     src/cpp/server/dynamic_thread_pool.cc \
     src/cpp/server/insecure_server_credentials.cc \
+    src/cpp/server/secure_server_credentials.cc \
     src/cpp/server/server.cc \
     src/cpp/server/server_builder.cc \
     src/cpp/server/server_context.cc \
@@ -3110,7 +3114,6 @@ LIBGRPC++_SRC = \
     src/cpp/util/status.cc \
     src/cpp/util/string_ref.cc \
     src/cpp/util/time.cc \
-    src/cpp/codegen/codegen_init.cc \
 
 PUBLIC_HEADERS_CXX += \
     include/grpc++/alarm.h \
@@ -3123,6 +3126,37 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/grpc++.h \
     include/grpc++/impl/call.h \
     include/grpc++/impl/client_unary_call.h \
+    include/grpc++/impl/codegen/async_stream.h \
+    include/grpc++/impl/codegen/async_unary_call.h \
+    include/grpc++/impl/codegen/call.h \
+    include/grpc++/impl/codegen/call_hook.h \
+    include/grpc++/impl/codegen/channel_interface.h \
+    include/grpc++/impl/codegen/client_context.h \
+    include/grpc++/impl/codegen/client_unary_call.h \
+    include/grpc++/impl/codegen/completion_queue.h \
+    include/grpc++/impl/codegen/completion_queue_tag.h \
+    include/grpc++/impl/codegen/config.h \
+    include/grpc++/impl/codegen/config_protobuf.h \
+    include/grpc++/impl/codegen/core_codegen_interface.h \
+    include/grpc++/impl/codegen/grpc_library.h \
+    include/grpc++/impl/codegen/method_handler_impl.h \
+    include/grpc++/impl/codegen/proto_utils.h \
+    include/grpc++/impl/codegen/rpc_method.h \
+    include/grpc++/impl/codegen/rpc_service_method.h \
+    include/grpc++/impl/codegen/security/auth_context.h \
+    include/grpc++/impl/codegen/serialization_traits.h \
+    include/grpc++/impl/codegen/server_context.h \
+    include/grpc++/impl/codegen/server_interface.h \
+    include/grpc++/impl/codegen/service_type.h \
+    include/grpc++/impl/codegen/status.h \
+    include/grpc++/impl/codegen/status_code_enum.h \
+    include/grpc++/impl/codegen/string_ref.h \
+    include/grpc++/impl/codegen/stub_options.h \
+    include/grpc++/impl/codegen/sync.h \
+    include/grpc++/impl/codegen/sync_cxx11.h \
+    include/grpc++/impl/codegen/sync_no_cxx11.h \
+    include/grpc++/impl/codegen/sync_stream.h \
+    include/grpc++/impl/codegen/time.h \
     include/grpc++/impl/grpc_library.h \
     include/grpc++/impl/method_handler_impl.h \
     include/grpc++/impl/proto_utils.h \
@@ -3157,37 +3191,6 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/support/stub_options.h \
     include/grpc++/support/sync_stream.h \
     include/grpc++/support/time.h \
-    include/grpc++/impl/codegen/async_stream.h \
-    include/grpc++/impl/codegen/async_unary_call.h \
-    include/grpc++/impl/codegen/call.h \
-    include/grpc++/impl/codegen/call_hook.h \
-    include/grpc++/impl/codegen/channel_interface.h \
-    include/grpc++/impl/codegen/client_context.h \
-    include/grpc++/impl/codegen/client_unary_call.h \
-    include/grpc++/impl/codegen/completion_queue.h \
-    include/grpc++/impl/codegen/completion_queue_tag.h \
-    include/grpc++/impl/codegen/config.h \
-    include/grpc++/impl/codegen/config_protobuf.h \
-    include/grpc++/impl/codegen/core_codegen_interface.h \
-    include/grpc++/impl/codegen/grpc_library.h \
-    include/grpc++/impl/codegen/method_handler_impl.h \
-    include/grpc++/impl/codegen/proto_utils.h \
-    include/grpc++/impl/codegen/rpc_method.h \
-    include/grpc++/impl/codegen/rpc_service_method.h \
-    include/grpc++/impl/codegen/security/auth_context.h \
-    include/grpc++/impl/codegen/serialization_traits.h \
-    include/grpc++/impl/codegen/server_context.h \
-    include/grpc++/impl/codegen/server_interface.h \
-    include/grpc++/impl/codegen/service_type.h \
-    include/grpc++/impl/codegen/status.h \
-    include/grpc++/impl/codegen/status_code_enum.h \
-    include/grpc++/impl/codegen/string_ref.h \
-    include/grpc++/impl/codegen/stub_options.h \
-    include/grpc++/impl/codegen/sync.h \
-    include/grpc++/impl/codegen/sync_cxx11.h \
-    include/grpc++/impl/codegen/sync_no_cxx11.h \
-    include/grpc++/impl/codegen/sync_stream.h \
-    include/grpc++/impl/codegen/time.h \
 
 LIBGRPC++_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC++_SRC))))
 
@@ -3256,26 +3259,6 @@ LIBGRPC++_CODEGEN_LIB_SRC = \
     src/cpp/codegen/codegen_init.cc \
 
 PUBLIC_HEADERS_CXX += \
-    include/grpc/impl/codegen/alloc.h \
-    include/grpc/impl/codegen/atm.h \
-    include/grpc/impl/codegen/atm_gcc_atomic.h \
-    include/grpc/impl/codegen/atm_gcc_sync.h \
-    include/grpc/impl/codegen/atm_win32.h \
-    include/grpc/impl/codegen/log.h \
-    include/grpc/impl/codegen/port_platform.h \
-    include/grpc/impl/codegen/slice.h \
-    include/grpc/impl/codegen/slice_buffer.h \
-    include/grpc/impl/codegen/sync.h \
-    include/grpc/impl/codegen/sync_generic.h \
-    include/grpc/impl/codegen/sync_posix.h \
-    include/grpc/impl/codegen/sync_win32.h \
-    include/grpc/impl/codegen/time.h \
-    include/grpc/impl/codegen/byte_buffer.h \
-    include/grpc/impl/codegen/compression_types.h \
-    include/grpc/impl/codegen/connectivity_state.h \
-    include/grpc/impl/codegen/grpc_types.h \
-    include/grpc/impl/codegen/propagation_bits.h \
-    include/grpc/impl/codegen/status.h \
     include/grpc++/impl/codegen/async_stream.h \
     include/grpc++/impl/codegen/async_unary_call.h \
     include/grpc++/impl/codegen/call.h \
@@ -3307,6 +3290,26 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/impl/codegen/sync_no_cxx11.h \
     include/grpc++/impl/codegen/sync_stream.h \
     include/grpc++/impl/codegen/time.h \
+    include/grpc/impl/codegen/alloc.h \
+    include/grpc/impl/codegen/atm.h \
+    include/grpc/impl/codegen/atm_gcc_atomic.h \
+    include/grpc/impl/codegen/atm_gcc_sync.h \
+    include/grpc/impl/codegen/atm_win32.h \
+    include/grpc/impl/codegen/byte_buffer.h \
+    include/grpc/impl/codegen/compression_types.h \
+    include/grpc/impl/codegen/connectivity_state.h \
+    include/grpc/impl/codegen/grpc_types.h \
+    include/grpc/impl/codegen/log.h \
+    include/grpc/impl/codegen/port_platform.h \
+    include/grpc/impl/codegen/propagation_bits.h \
+    include/grpc/impl/codegen/slice.h \
+    include/grpc/impl/codegen/slice_buffer.h \
+    include/grpc/impl/codegen/status.h \
+    include/grpc/impl/codegen/sync.h \
+    include/grpc/impl/codegen/sync_generic.h \
+    include/grpc/impl/codegen/sync_posix.h \
+    include/grpc/impl/codegen/sync_win32.h \
+    include/grpc/impl/codegen/time.h \
 
 LIBGRPC++_CODEGEN_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC++_CODEGEN_LIB_SRC))))
 
@@ -3360,6 +3363,7 @@ endif
 LIBGRPC++_TEST_CONFIG_SRC = \
     test/cpp/util/test_config.cc \
 
+PUBLIC_HEADERS_CXX += \
 
 LIBGRPC++_TEST_CONFIG_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC++_TEST_CONFIG_SRC))))
 
@@ -3406,9 +3410,9 @@ endif
 
 
 LIBGRPC++_TEST_UTIL_SRC = \
-    $(GENDIR)/src/proto/grpc/testing/echo_messages.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.grpc.pb.cc \
-    $(GENDIR)/src/proto/grpc/testing/echo.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.grpc.pb.cc \
     $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc \
+    $(GENDIR)/src/proto/grpc/testing/echo.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.grpc.pb.cc \
+    $(GENDIR)/src/proto/grpc/testing/echo_messages.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.grpc.pb.cc \
     test/cpp/end2end/test_service_impl.cc \
     test/cpp/util/byte_buffer_proto_helper.cc \
     test/cpp/util/cli_call.cc \
@@ -3417,6 +3421,7 @@ LIBGRPC++_TEST_UTIL_SRC = \
     test/cpp/util/subprocess.cc \
     test/cpp/util/test_credentials_provider.cc \
 
+PUBLIC_HEADERS_CXX += \
 
 LIBGRPC++_TEST_UTIL_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC++_TEST_UTIL_SRC))))
 
@@ -3460,17 +3465,16 @@ ifneq ($(NO_DEPS),true)
 -include $(LIBGRPC++_TEST_UTIL_OBJS:.o=.dep)
 endif
 endif
-$(OBJDIR)/$(CONFIG)/test/cpp/end2end/test_service_impl.o: $(GENDIR)/src/proto/grpc/testing/echo_messages.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc
-$(OBJDIR)/$(CONFIG)/test/cpp/util/byte_buffer_proto_helper.o: $(GENDIR)/src/proto/grpc/testing/echo_messages.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc
-$(OBJDIR)/$(CONFIG)/test/cpp/util/cli_call.o: $(GENDIR)/src/proto/grpc/testing/echo_messages.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc
-$(OBJDIR)/$(CONFIG)/test/cpp/util/create_test_channel.o: $(GENDIR)/src/proto/grpc/testing/echo_messages.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc
-$(OBJDIR)/$(CONFIG)/test/cpp/util/string_ref_helper.o: $(GENDIR)/src/proto/grpc/testing/echo_messages.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc
-$(OBJDIR)/$(CONFIG)/test/cpp/util/subprocess.o: $(GENDIR)/src/proto/grpc/testing/echo_messages.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc
-$(OBJDIR)/$(CONFIG)/test/cpp/util/test_credentials_provider.o: $(GENDIR)/src/proto/grpc/testing/echo_messages.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc
+$(OBJDIR)/$(CONFIG)/test/cpp/end2end/test_service_impl.o: $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.grpc.pb.cc
+$(OBJDIR)/$(CONFIG)/test/cpp/util/byte_buffer_proto_helper.o: $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.grpc.pb.cc
+$(OBJDIR)/$(CONFIG)/test/cpp/util/cli_call.o: $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.grpc.pb.cc
+$(OBJDIR)/$(CONFIG)/test/cpp/util/create_test_channel.o: $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.grpc.pb.cc
+$(OBJDIR)/$(CONFIG)/test/cpp/util/string_ref_helper.o: $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.grpc.pb.cc
+$(OBJDIR)/$(CONFIG)/test/cpp/util/subprocess.o: $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.grpc.pb.cc
+$(OBJDIR)/$(CONFIG)/test/cpp/util/test_credentials_provider.o: $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.grpc.pb.cc
 
 
 LIBGRPC++_UNSECURE_SRC = \
-    src/cpp/common/insecure_create_auth_context.cc \
     src/cpp/client/channel.cc \
     src/cpp/client/client_context.cc \
     src/cpp/client/create_channel.cc \
@@ -3478,9 +3482,11 @@ LIBGRPC++_UNSECURE_SRC = \
     src/cpp/client/credentials.cc \
     src/cpp/client/generic_stub.cc \
     src/cpp/client/insecure_credentials.cc \
+    src/cpp/codegen/codegen_init.cc \
     src/cpp/common/channel_arguments.cc \
     src/cpp/common/completion_queue.cc \
     src/cpp/common/core_codegen.cc \
+    src/cpp/common/insecure_create_auth_context.cc \
     src/cpp/common/rpc_method.cc \
     src/cpp/server/async_generic_service.cc \
     src/cpp/server/create_default_thread_pool.cc \
@@ -3495,7 +3501,6 @@ LIBGRPC++_UNSECURE_SRC = \
     src/cpp/util/status.cc \
     src/cpp/util/string_ref.cc \
     src/cpp/util/time.cc \
-    src/cpp/codegen/codegen_init.cc \
 
 PUBLIC_HEADERS_CXX += \
     include/grpc++/alarm.h \
@@ -3508,6 +3513,37 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/grpc++.h \
     include/grpc++/impl/call.h \
     include/grpc++/impl/client_unary_call.h \
+    include/grpc++/impl/codegen/async_stream.h \
+    include/grpc++/impl/codegen/async_unary_call.h \
+    include/grpc++/impl/codegen/call.h \
+    include/grpc++/impl/codegen/call_hook.h \
+    include/grpc++/impl/codegen/channel_interface.h \
+    include/grpc++/impl/codegen/client_context.h \
+    include/grpc++/impl/codegen/client_unary_call.h \
+    include/grpc++/impl/codegen/completion_queue.h \
+    include/grpc++/impl/codegen/completion_queue_tag.h \
+    include/grpc++/impl/codegen/config.h \
+    include/grpc++/impl/codegen/config_protobuf.h \
+    include/grpc++/impl/codegen/core_codegen_interface.h \
+    include/grpc++/impl/codegen/grpc_library.h \
+    include/grpc++/impl/codegen/method_handler_impl.h \
+    include/grpc++/impl/codegen/proto_utils.h \
+    include/grpc++/impl/codegen/rpc_method.h \
+    include/grpc++/impl/codegen/rpc_service_method.h \
+    include/grpc++/impl/codegen/security/auth_context.h \
+    include/grpc++/impl/codegen/serialization_traits.h \
+    include/grpc++/impl/codegen/server_context.h \
+    include/grpc++/impl/codegen/server_interface.h \
+    include/grpc++/impl/codegen/service_type.h \
+    include/grpc++/impl/codegen/status.h \
+    include/grpc++/impl/codegen/status_code_enum.h \
+    include/grpc++/impl/codegen/string_ref.h \
+    include/grpc++/impl/codegen/stub_options.h \
+    include/grpc++/impl/codegen/sync.h \
+    include/grpc++/impl/codegen/sync_cxx11.h \
+    include/grpc++/impl/codegen/sync_no_cxx11.h \
+    include/grpc++/impl/codegen/sync_stream.h \
+    include/grpc++/impl/codegen/time.h \
     include/grpc++/impl/grpc_library.h \
     include/grpc++/impl/method_handler_impl.h \
     include/grpc++/impl/proto_utils.h \
@@ -3542,37 +3578,6 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/support/stub_options.h \
     include/grpc++/support/sync_stream.h \
     include/grpc++/support/time.h \
-    include/grpc++/impl/codegen/async_stream.h \
-    include/grpc++/impl/codegen/async_unary_call.h \
-    include/grpc++/impl/codegen/call.h \
-    include/grpc++/impl/codegen/call_hook.h \
-    include/grpc++/impl/codegen/channel_interface.h \
-    include/grpc++/impl/codegen/client_context.h \
-    include/grpc++/impl/codegen/client_unary_call.h \
-    include/grpc++/impl/codegen/completion_queue.h \
-    include/grpc++/impl/codegen/completion_queue_tag.h \
-    include/grpc++/impl/codegen/config.h \
-    include/grpc++/impl/codegen/config_protobuf.h \
-    include/grpc++/impl/codegen/core_codegen_interface.h \
-    include/grpc++/impl/codegen/grpc_library.h \
-    include/grpc++/impl/codegen/method_handler_impl.h \
-    include/grpc++/impl/codegen/proto_utils.h \
-    include/grpc++/impl/codegen/rpc_method.h \
-    include/grpc++/impl/codegen/rpc_service_method.h \
-    include/grpc++/impl/codegen/security/auth_context.h \
-    include/grpc++/impl/codegen/serialization_traits.h \
-    include/grpc++/impl/codegen/server_context.h \
-    include/grpc++/impl/codegen/server_interface.h \
-    include/grpc++/impl/codegen/service_type.h \
-    include/grpc++/impl/codegen/status.h \
-    include/grpc++/impl/codegen/status_code_enum.h \
-    include/grpc++/impl/codegen/string_ref.h \
-    include/grpc++/impl/codegen/stub_options.h \
-    include/grpc++/impl/codegen/sync.h \
-    include/grpc++/impl/codegen/sync_cxx11.h \
-    include/grpc++/impl/codegen/sync_no_cxx11.h \
-    include/grpc++/impl/codegen/sync_stream.h \
-    include/grpc++/impl/codegen/time.h \
 
 LIBGRPC++_UNSECURE_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC++_UNSECURE_SRC))))
 
@@ -3681,6 +3686,7 @@ LIBINTEROP_CLIENT_HELPER_SRC = \
     $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc \
     test/cpp/interop/client_helper.cc \
 
+PUBLIC_HEADERS_CXX += \
 
 LIBINTEROP_CLIENT_HELPER_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBINTEROP_CLIENT_HELPER_SRC))))
 
@@ -3734,6 +3740,7 @@ LIBINTEROP_CLIENT_MAIN_SRC = \
     test/cpp/interop/client.cc \
     test/cpp/interop/interop_client.cc \
 
+PUBLIC_HEADERS_CXX += \
 
 LIBINTEROP_CLIENT_MAIN_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBINTEROP_CLIENT_MAIN_SRC))))
 
@@ -3784,6 +3791,7 @@ $(OBJDIR)/$(CONFIG)/test/cpp/interop/interop_client.o: $(GENDIR)/src/proto/grpc/
 LIBINTEROP_SERVER_HELPER_SRC = \
     test/cpp/interop/server_helper.cc \
 
+PUBLIC_HEADERS_CXX += \
 
 LIBINTEROP_SERVER_HELPER_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBINTEROP_SERVER_HELPER_SRC))))
 
@@ -3835,6 +3843,7 @@ LIBINTEROP_SERVER_MAIN_SRC = \
     $(GENDIR)/src/proto/grpc/testing/test.pb.cc $(GENDIR)/src/proto/grpc/testing/test.grpc.pb.cc \
     test/cpp/interop/server_main.cc \
 
+PUBLIC_HEADERS_CXX += \
 
 LIBINTEROP_SERVER_MAIN_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBINTEROP_SERVER_MAIN_SRC))))
 
@@ -3882,12 +3891,12 @@ $(OBJDIR)/$(CONFIG)/test/cpp/interop/server_main.o: $(GENDIR)/src/proto/grpc/tes
 
 
 LIBQPS_SRC = \
+    $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc \
     $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc \
     $(GENDIR)/src/proto/grpc/testing/payloads.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.grpc.pb.cc \
-    $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc \
-    $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc \
-    $(GENDIR)/src/proto/grpc/testing/services.pb.cc $(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc \
     $(GENDIR)/src/proto/grpc/testing/perf_db.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.grpc.pb.cc \
+    $(GENDIR)/src/proto/grpc/testing/services.pb.cc $(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc \
+    $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc \
     test/cpp/qps/client_async.cc \
     test/cpp/qps/client_sync.cc \
     test/cpp/qps/driver.cc \
@@ -3900,6 +3909,7 @@ LIBQPS_SRC = \
     test/cpp/qps/usage_timer.cc \
     test/cpp/util/benchmark_config.cc \
 
+PUBLIC_HEADERS_CXX += \
 
 LIBQPS_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBQPS_SRC))))
 
@@ -3943,22 +3953,23 @@ ifneq ($(NO_DEPS),true)
 -include $(LIBQPS_OBJS:.o=.dep)
 endif
 endif
-$(OBJDIR)/$(CONFIG)/test/cpp/qps/client_async.o: $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/services.pb.cc $(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.grpc.pb.cc
-$(OBJDIR)/$(CONFIG)/test/cpp/qps/client_sync.o: $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/services.pb.cc $(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.grpc.pb.cc
-$(OBJDIR)/$(CONFIG)/test/cpp/qps/driver.o: $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/services.pb.cc $(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.grpc.pb.cc
-$(OBJDIR)/$(CONFIG)/test/cpp/qps/limit_cores.o: $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/services.pb.cc $(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.grpc.pb.cc
-$(OBJDIR)/$(CONFIG)/test/cpp/qps/perf_db_client.o: $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/services.pb.cc $(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.grpc.pb.cc
-$(OBJDIR)/$(CONFIG)/test/cpp/qps/qps_worker.o: $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/services.pb.cc $(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.grpc.pb.cc
-$(OBJDIR)/$(CONFIG)/test/cpp/qps/report.o: $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/services.pb.cc $(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.grpc.pb.cc
-$(OBJDIR)/$(CONFIG)/test/cpp/qps/server_async.o: $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/services.pb.cc $(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.grpc.pb.cc
-$(OBJDIR)/$(CONFIG)/test/cpp/qps/server_sync.o: $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/services.pb.cc $(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.grpc.pb.cc
-$(OBJDIR)/$(CONFIG)/test/cpp/qps/usage_timer.o: $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/services.pb.cc $(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.grpc.pb.cc
-$(OBJDIR)/$(CONFIG)/test/cpp/util/benchmark_config.o: $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/services.pb.cc $(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.grpc.pb.cc
+$(OBJDIR)/$(CONFIG)/test/cpp/qps/client_async.o: $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/services.pb.cc $(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc
+$(OBJDIR)/$(CONFIG)/test/cpp/qps/client_sync.o: $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/services.pb.cc $(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc
+$(OBJDIR)/$(CONFIG)/test/cpp/qps/driver.o: $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/services.pb.cc $(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc
+$(OBJDIR)/$(CONFIG)/test/cpp/qps/limit_cores.o: $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/services.pb.cc $(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc
+$(OBJDIR)/$(CONFIG)/test/cpp/qps/perf_db_client.o: $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/services.pb.cc $(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc
+$(OBJDIR)/$(CONFIG)/test/cpp/qps/qps_worker.o: $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/services.pb.cc $(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc
+$(OBJDIR)/$(CONFIG)/test/cpp/qps/report.o: $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/services.pb.cc $(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc
+$(OBJDIR)/$(CONFIG)/test/cpp/qps/server_async.o: $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/services.pb.cc $(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc
+$(OBJDIR)/$(CONFIG)/test/cpp/qps/server_sync.o: $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/services.pb.cc $(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc
+$(OBJDIR)/$(CONFIG)/test/cpp/qps/usage_timer.o: $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/services.pb.cc $(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc
+$(OBJDIR)/$(CONFIG)/test/cpp/util/benchmark_config.o: $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.pb.cc $(GENDIR)/src/proto/grpc/testing/perf_db.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/services.pb.cc $(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc
 
 
 LIBGRPC_CSHARP_EXT_SRC = \
     src/csharp/ext/grpc_csharp_ext.c \
 
+PUBLIC_HEADERS_C += \
 
 LIBGRPC_CSHARP_EXT_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC_CSHARP_EXT_SRC))))
 
@@ -4308,6 +4319,7 @@ LIBBORINGSSL_SRC = \
     third_party/boringssl/ssl/t1_lib.c \
     third_party/boringssl/ssl/tls_record.c \
 
+PUBLIC_HEADERS_C += \
 
 LIBBORINGSSL_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_SRC))))
 
@@ -4336,6 +4348,7 @@ LIBBORINGSSL_TEST_UTIL_SRC = \
     third_party/boringssl/crypto/test/malloc.cc \
     third_party/boringssl/crypto/test/test_util.cc \
 
+PUBLIC_HEADERS_CXX += \
 
 LIBBORINGSSL_TEST_UTIL_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_TEST_UTIL_SRC))))
 
@@ -4373,6 +4386,7 @@ endif
 LIBBORINGSSL_AES_TEST_LIB_SRC = \
     third_party/boringssl/crypto/aes/aes_test.cc \
 
+PUBLIC_HEADERS_CXX += \
 
 LIBBORINGSSL_AES_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_AES_TEST_LIB_SRC))))
 
@@ -4410,6 +4424,7 @@ endif
 LIBBORINGSSL_ASN1_TEST_LIB_SRC = \
     third_party/boringssl/crypto/asn1/asn1_test.cc \
 
+PUBLIC_HEADERS_CXX += \
 
 LIBBORINGSSL_ASN1_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_ASN1_TEST_LIB_SRC))))
 
@@ -4447,6 +4462,7 @@ endif
 LIBBORINGSSL_BASE64_TEST_LIB_SRC = \
     third_party/boringssl/crypto/base64/base64_test.cc \
 
+PUBLIC_HEADERS_CXX += \
 
 LIBBORINGSSL_BASE64_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_BASE64_TEST_LIB_SRC))))
 
@@ -4484,6 +4500,7 @@ endif
 LIBBORINGSSL_BIO_TEST_LIB_SRC = \
     third_party/boringssl/crypto/bio/bio_test.cc \
 
+PUBLIC_HEADERS_CXX += \
 
 LIBBORINGSSL_BIO_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_BIO_TEST_LIB_SRC))))
 
@@ -4521,6 +4538,7 @@ endif
 LIBBORINGSSL_BN_TEST_LIB_SRC = \
     third_party/boringssl/crypto/bn/bn_test.cc \
 
+PUBLIC_HEADERS_CXX += \
 
 LIBBORINGSSL_BN_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_BN_TEST_LIB_SRC))))
 
@@ -4558,6 +4576,7 @@ endif
 LIBBORINGSSL_BYTESTRING_TEST_LIB_SRC = \
     third_party/boringssl/crypto/bytestring/bytestring_test.cc \
 
+PUBLIC_HEADERS_CXX += \
 
 LIBBORINGSSL_BYTESTRING_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_BYTESTRING_TEST_LIB_SRC))))
 
@@ -4595,6 +4614,7 @@ endif
 LIBBORINGSSL_AEAD_TEST_LIB_SRC = \
     third_party/boringssl/crypto/cipher/aead_test.cc \
 
+PUBLIC_HEADERS_CXX += \
 
 LIBBORINGSSL_AEAD_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_AEAD_TEST_LIB_SRC))))
 
@@ -4632,6 +4652,7 @@ endif
 LIBBORINGSSL_CIPHER_TEST_LIB_SRC = \
     third_party/boringssl/crypto/cipher/cipher_test.cc \
 
+PUBLIC_HEADERS_CXX += \
 
 LIBBORINGSSL_CIPHER_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_CIPHER_TEST_LIB_SRC))))
 
@@ -4669,6 +4690,7 @@ endif
 LIBBORINGSSL_CMAC_TEST_LIB_SRC = \
     third_party/boringssl/crypto/cmac/cmac_test.cc \
 
+PUBLIC_HEADERS_CXX += \
 
 LIBBORINGSSL_CMAC_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_CMAC_TEST_LIB_SRC))))
 
@@ -4706,6 +4728,7 @@ endif
 LIBBORINGSSL_CONSTANT_TIME_TEST_LIB_SRC = \
     third_party/boringssl/crypto/constant_time_test.c \
 
+PUBLIC_HEADERS_C += \
 
 LIBBORINGSSL_CONSTANT_TIME_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_CONSTANT_TIME_TEST_LIB_SRC))))
 
@@ -4732,6 +4755,7 @@ endif
 LIBBORINGSSL_ED25519_TEST_LIB_SRC = \
     third_party/boringssl/crypto/curve25519/ed25519_test.cc \
 
+PUBLIC_HEADERS_CXX += \
 
 LIBBORINGSSL_ED25519_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_ED25519_TEST_LIB_SRC))))
 
@@ -4769,6 +4793,7 @@ endif
 LIBBORINGSSL_X25519_TEST_LIB_SRC = \
     third_party/boringssl/crypto/curve25519/x25519_test.cc \
 
+PUBLIC_HEADERS_CXX += \
 
 LIBBORINGSSL_X25519_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_X25519_TEST_LIB_SRC))))
 
@@ -4806,6 +4831,7 @@ endif
 LIBBORINGSSL_DH_TEST_LIB_SRC = \
     third_party/boringssl/crypto/dh/dh_test.cc \
 
+PUBLIC_HEADERS_CXX += \
 
 LIBBORINGSSL_DH_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_DH_TEST_LIB_SRC))))
 
@@ -4843,6 +4869,7 @@ endif
 LIBBORINGSSL_DIGEST_TEST_LIB_SRC = \
     third_party/boringssl/crypto/digest/digest_test.cc \
 
+PUBLIC_HEADERS_CXX += \
 
 LIBBORINGSSL_DIGEST_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_DIGEST_TEST_LIB_SRC))))
 
@@ -4880,6 +4907,7 @@ endif
 LIBBORINGSSL_DSA_TEST_LIB_SRC = \
     third_party/boringssl/crypto/dsa/dsa_test.c \
 
+PUBLIC_HEADERS_C += \
 
 LIBBORINGSSL_DSA_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_DSA_TEST_LIB_SRC))))
 
@@ -4906,6 +4934,7 @@ endif
 LIBBORINGSSL_EC_TEST_LIB_SRC = \
     third_party/boringssl/crypto/ec/ec_test.cc \
 
+PUBLIC_HEADERS_CXX += \
 
 LIBBORINGSSL_EC_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_EC_TEST_LIB_SRC))))
 
@@ -4943,6 +4972,7 @@ endif
 LIBBORINGSSL_EXAMPLE_MUL_LIB_SRC = \
     third_party/boringssl/crypto/ec/example_mul.c \
 
+PUBLIC_HEADERS_C += \
 
 LIBBORINGSSL_EXAMPLE_MUL_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_EXAMPLE_MUL_LIB_SRC))))
 
@@ -4969,6 +4999,7 @@ endif
 LIBBORINGSSL_ECDSA_TEST_LIB_SRC = \
     third_party/boringssl/crypto/ecdsa/ecdsa_test.cc \
 
+PUBLIC_HEADERS_CXX += \
 
 LIBBORINGSSL_ECDSA_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_ECDSA_TEST_LIB_SRC))))
 
@@ -5006,6 +5037,7 @@ endif
 LIBBORINGSSL_ERR_TEST_LIB_SRC = \
     third_party/boringssl/crypto/err/err_test.cc \
 
+PUBLIC_HEADERS_CXX += \
 
 LIBBORINGSSL_ERR_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_ERR_TEST_LIB_SRC))))
 
@@ -5043,6 +5075,7 @@ endif
 LIBBORINGSSL_EVP_EXTRA_TEST_LIB_SRC = \
     third_party/boringssl/crypto/evp/evp_extra_test.cc \
 
+PUBLIC_HEADERS_CXX += \
 
 LIBBORINGSSL_EVP_EXTRA_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_EVP_EXTRA_TEST_LIB_SRC))))
 
@@ -5080,6 +5113,7 @@ endif
 LIBBORINGSSL_EVP_TEST_LIB_SRC = \
     third_party/boringssl/crypto/evp/evp_test.cc \
 
+PUBLIC_HEADERS_CXX += \
 
 LIBBORINGSSL_EVP_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_EVP_TEST_LIB_SRC))))
 
@@ -5117,6 +5151,7 @@ endif
 LIBBORINGSSL_PBKDF_TEST_LIB_SRC = \
     third_party/boringssl/crypto/evp/pbkdf_test.cc \
 
+PUBLIC_HEADERS_CXX += \
 
 LIBBORINGSSL_PBKDF_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_PBKDF_TEST_LIB_SRC))))
 
@@ -5154,6 +5189,7 @@ endif
 LIBBORINGSSL_HKDF_TEST_LIB_SRC = \
     third_party/boringssl/crypto/hkdf/hkdf_test.c \
 
+PUBLIC_HEADERS_C += \
 
 LIBBORINGSSL_HKDF_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_HKDF_TEST_LIB_SRC))))
 
@@ -5180,6 +5216,7 @@ endif
 LIBBORINGSSL_HMAC_TEST_LIB_SRC = \
     third_party/boringssl/crypto/hmac/hmac_test.cc \
 
+PUBLIC_HEADERS_CXX += \
 
 LIBBORINGSSL_HMAC_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_HMAC_TEST_LIB_SRC))))
 
@@ -5217,6 +5254,7 @@ endif
 LIBBORINGSSL_LHASH_TEST_LIB_SRC = \
     third_party/boringssl/crypto/lhash/lhash_test.c \
 
+PUBLIC_HEADERS_C += \
 
 LIBBORINGSSL_LHASH_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_LHASH_TEST_LIB_SRC))))
 
@@ -5243,6 +5281,7 @@ endif
 LIBBORINGSSL_GCM_TEST_LIB_SRC = \
     third_party/boringssl/crypto/modes/gcm_test.c \
 
+PUBLIC_HEADERS_C += \
 
 LIBBORINGSSL_GCM_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_GCM_TEST_LIB_SRC))))
 
@@ -5269,6 +5308,7 @@ endif
 LIBBORINGSSL_PKCS12_TEST_LIB_SRC = \
     third_party/boringssl/crypto/pkcs8/pkcs12_test.cc \
 
+PUBLIC_HEADERS_CXX += \
 
 LIBBORINGSSL_PKCS12_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_PKCS12_TEST_LIB_SRC))))
 
@@ -5306,6 +5346,7 @@ endif
 LIBBORINGSSL_PKCS8_TEST_LIB_SRC = \
     third_party/boringssl/crypto/pkcs8/pkcs8_test.cc \
 
+PUBLIC_HEADERS_CXX += \
 
 LIBBORINGSSL_PKCS8_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_PKCS8_TEST_LIB_SRC))))
 
@@ -5343,6 +5384,7 @@ endif
 LIBBORINGSSL_POLY1305_TEST_LIB_SRC = \
     third_party/boringssl/crypto/poly1305/poly1305_test.cc \
 
+PUBLIC_HEADERS_CXX += \
 
 LIBBORINGSSL_POLY1305_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_POLY1305_TEST_LIB_SRC))))
 
@@ -5380,6 +5422,7 @@ endif
 LIBBORINGSSL_REFCOUNT_TEST_LIB_SRC = \
     third_party/boringssl/crypto/refcount_test.c \
 
+PUBLIC_HEADERS_C += \
 
 LIBBORINGSSL_REFCOUNT_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_REFCOUNT_TEST_LIB_SRC))))
 
@@ -5406,6 +5449,7 @@ endif
 LIBBORINGSSL_RSA_TEST_LIB_SRC = \
     third_party/boringssl/crypto/rsa/rsa_test.cc \
 
+PUBLIC_HEADERS_CXX += \
 
 LIBBORINGSSL_RSA_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_RSA_TEST_LIB_SRC))))
 
@@ -5443,6 +5487,7 @@ endif
 LIBBORINGSSL_THREAD_TEST_LIB_SRC = \
     third_party/boringssl/crypto/thread_test.c \
 
+PUBLIC_HEADERS_C += \
 
 LIBBORINGSSL_THREAD_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_THREAD_TEST_LIB_SRC))))
 
@@ -5469,6 +5514,7 @@ endif
 LIBBORINGSSL_PKCS7_TEST_LIB_SRC = \
     third_party/boringssl/crypto/x509/pkcs7_test.c \
 
+PUBLIC_HEADERS_C += \
 
 LIBBORINGSSL_PKCS7_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_PKCS7_TEST_LIB_SRC))))
 
@@ -5495,6 +5541,7 @@ endif
 LIBBORINGSSL_TAB_TEST_LIB_SRC = \
     third_party/boringssl/crypto/x509v3/tab_test.c \
 
+PUBLIC_HEADERS_C += \
 
 LIBBORINGSSL_TAB_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_TAB_TEST_LIB_SRC))))
 
@@ -5521,6 +5568,7 @@ endif
 LIBBORINGSSL_V3NAME_TEST_LIB_SRC = \
     third_party/boringssl/crypto/x509v3/v3name_test.c \
 
+PUBLIC_HEADERS_C += \
 
 LIBBORINGSSL_V3NAME_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_V3NAME_TEST_LIB_SRC))))
 
@@ -5547,6 +5595,7 @@ endif
 LIBBORINGSSL_PQUEUE_TEST_LIB_SRC = \
     third_party/boringssl/ssl/pqueue/pqueue_test.c \
 
+PUBLIC_HEADERS_C += \
 
 LIBBORINGSSL_PQUEUE_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_PQUEUE_TEST_LIB_SRC))))
 
@@ -5573,6 +5622,7 @@ endif
 LIBBORINGSSL_SSL_TEST_LIB_SRC = \
     third_party/boringssl/ssl/ssl_test.cc \
 
+PUBLIC_HEADERS_CXX += \
 
 LIBBORINGSSL_SSL_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_SSL_TEST_LIB_SRC))))
 
@@ -5624,6 +5674,7 @@ LIBZ_SRC = \
     third_party/zlib/uncompr.c \
     third_party/zlib/zutil.c \
 
+PUBLIC_HEADERS_C += \
 
 LIBZ_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBZ_SRC))))
 
@@ -5649,6 +5700,7 @@ endif
 LIBBAD_CLIENT_TEST_SRC = \
     test/core/bad_client/bad_client.c \
 
+PUBLIC_HEADERS_C += \
 
 LIBBAD_CLIENT_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBAD_CLIENT_TEST_SRC))))
 
@@ -5687,6 +5739,7 @@ endif
 LIBBAD_SSL_TEST_SERVER_SRC = \
     test/core/bad_ssl/server_common.c \
 
+PUBLIC_HEADERS_C += \
 
 LIBBAD_SSL_TEST_SERVER_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBAD_SSL_TEST_SERVER_SRC))))
 
@@ -5761,6 +5814,7 @@ LIBEND2END_TESTS_SRC = \
     test/core/end2end/tests/simple_request.c \
     test/core/end2end/tests/trailing_metadata.c \
 
+PUBLIC_HEADERS_C += \
 
 LIBEND2END_TESTS_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_TESTS_SRC))))
 
@@ -5834,6 +5888,7 @@ LIBEND2END_NOSEC_TESTS_SRC = \
     test/core/end2end/tests/simple_request.c \
     test/core/end2end/tests/trailing_metadata.c \
 
+PUBLIC_HEADERS_C += \
 
 LIBEND2END_NOSEC_TESTS_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_NOSEC_TESTS_SRC))))
 
@@ -13212,6 +13267,8 @@ ifneq ($(OPENSSL_DEP),)
 # This is to ensure the embedded OpenSSL is built beforehand, properly
 # installing headers to their final destination on the drive. We need this
 # otherwise parallel compilation will fail if a source is compiled first.
+src/core/ext/transport/chttp2/client/secure/secure_channel_create.c: $(OPENSSL_DEP)
+src/core/ext/transport/chttp2/server/secure/server_secure_chttp2.c: $(OPENSSL_DEP)
 src/core/lib/http/httpcli_security_connector.c: $(OPENSSL_DEP)
 src/core/lib/security/b64.c: $(OPENSSL_DEP)
 src/core/lib/security/client_auth_filter.c: $(OPENSSL_DEP)
@@ -13227,9 +13284,7 @@ src/core/lib/security/secure_endpoint.c: $(OPENSSL_DEP)
 src/core/lib/security/security_connector.c: $(OPENSSL_DEP)
 src/core/lib/security/security_context.c: $(OPENSSL_DEP)
 src/core/lib/security/server_auth_filter.c: $(OPENSSL_DEP)
-src/core/lib/security/server_secure_chttp2.c: $(OPENSSL_DEP)
 src/core/lib/surface/init_secure.c: $(OPENSSL_DEP)
-src/core/lib/surface/secure_channel_create.c: $(OPENSSL_DEP)
 src/core/lib/tsi/fake_transport_security.c: $(OPENSSL_DEP)
 src/core/lib/tsi/ssl_transport_security.c: $(OPENSSL_DEP)
 src/core/lib/tsi/transport_security.c: $(OPENSSL_DEP)
