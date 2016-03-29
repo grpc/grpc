@@ -40,6 +40,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/time.h>
 /* TODO(ctiller): find another way? - better not to include census here */
+#include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/census/grpc_plugin.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/client_channel.h"
@@ -67,7 +68,6 @@
 #include "src/core/lib/surface/lame_client.h"
 #include "src/core/lib/surface/server.h"
 #include "src/core/lib/surface/surface_trace.h"
-#include "src/core/lib/transport/chttp2_transport.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/transport_impl.h"
 
