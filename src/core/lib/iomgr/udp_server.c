@@ -206,8 +206,6 @@ static int prepare_socket(int fd, const struct sockaddr *addr,
                           size_t addr_len) {
   struct sockaddr_storage sockname_temp;
   socklen_t sockname_len;
-  int get_local_ip;
-  int rc;
 
   if (fd < 0) {
     goto error;
@@ -218,14 +216,9 @@ static int prepare_socket(int fd, const struct sockaddr *addr,
             strerror(errno));
   }
 
-  get_local_ip = 1;
-  rc = setsockopt(fd, IPPROTO_IP, IP_PKTINFO, &get_local_ip,
-                  sizeof(get_local_ip));
-  if (rc == 0 && addr->sa_family == AF_INET6) {
-#if !defined(__APPLE__)
-    rc = setsockopt(fd, IPPROTO_IPV6, IPV6_RECVPKTINFO, &get_local_ip,
-                    sizeof(get_local_ip));
-#endif
+  if (grpc_set_socket_ip_pktinfo_if_possible(fd) &&
+      addr->sa_family == AF_INET6) {
+    grpc_set_socket_ipv6_recvpktinfo_if_possible(fd);
   }
 
   GPR_ASSERT(addr_len < ~(socklen_t)0);
