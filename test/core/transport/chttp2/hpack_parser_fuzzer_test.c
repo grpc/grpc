@@ -37,7 +37,7 @@
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 
-#include "src/core/lib/transport/chttp2/hpack_parser.h"
+#include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 
 static void onhdr(void *ud, grpc_mdelem *md) { GRPC_MDELEM_UNREF(md); }
 
