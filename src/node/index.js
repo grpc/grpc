@@ -87,6 +87,10 @@ var loadObject = exports.loadObject;
  *   Buffers. Defaults to false
  * - longsAsStrings: deserialize long values as strings instead of objects.
  *   Defaults to true
+ * - deprecatedArgumentOrder: Use the beta method argument order for client
+ *   methods, with optional arguments after the callback. Defaults to false.
+ *   This option is only a temporary stopgap measure to smooth an API breakage.
+ *   It is deprecated, and new code should not use it.
  * @param {string|{root: string, file: string}} filename The file to load
  * @param {string=} format The file format to expect. Must be either 'proto' or
  *     'json'. Defaults to 'proto'
