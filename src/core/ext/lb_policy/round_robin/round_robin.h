@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_CLIENT_CONFIG_LB_POLICIES_ROUND_ROBIN_H
-#define GRPC_CORE_LIB_CLIENT_CONFIG_LB_POLICIES_ROUND_ROBIN_H
+#ifndef GRPC_CORE_EXT_LB_POLICY_ROUND_ROBIN_ROUND_ROBIN_H
+#define GRPC_CORE_EXT_LB_POLICY_ROUND_ROBIN_ROUND_ROBIN_H
 
 #include "src/core/lib/client_config/lb_policy.h"
 
@@ -43,4 +43,4 @@ extern int grpc_lb_round_robin_trace;
 /** Returns a load balancing factory for the round robin policy */
 grpc_lb_policy_factory *grpc_round_robin_lb_factory_create();
 
-#endif /* GRPC_CORE_LIB_CLIENT_CONFIG_LB_POLICIES_ROUND_ROBIN_H */
+#endif /* GRPC_CORE_EXT_LB_POLICY_ROUND_ROBIN_ROUND_ROBIN_H */
