@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -63,7 +63,7 @@ struct test_state {
 static struct test_state g_state;
 
 static void prepare_test(int is_client) {
-  int port;
+  int port = grpc_pick_unused_port_or_die();
   char *server_hostport;
   grpc_op *op;
   g_state.is_client = is_client;
@@ -85,7 +85,6 @@ static void prepare_test(int is_client) {
   } else {
     g_state.server = grpc_server_create(NULL, NULL);
     grpc_server_register_completion_queue(g_state.server, g_state.cq, NULL);
-    port = grpc_pick_unused_port_or_die();
     gpr_join_host_port(&server_hostport, "0.0.0.0", port);
     grpc_server_add_insecure_http2_port(g_state.server, server_hostport);
     grpc_server_start(g_state.server);
@@ -131,15 +130,16 @@ static void cleanup_test() {
     grpc_server_shutdown_and_notify(g_state.server, g_state.cq, tag(1000));
     GPR_ASSERT(grpc_completion_queue_pluck(g_state.cq, tag(1000),
                                            GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5),
-                                           NULL).type == GRPC_OP_COMPLETE);
+                                           NULL)
+                   .type == GRPC_OP_COMPLETE);
     grpc_server_destroy(g_state.server);
     grpc_call_details_destroy(&g_state.call_details);
     grpc_metadata_array_destroy(&g_state.server_initial_metadata_recv);
   }
   grpc_completion_queue_shutdown(g_state.cq);
   while (grpc_completion_queue_next(g_state.cq,
-                                    gpr_inf_future(GPR_CLOCK_REALTIME),
-                                    NULL).type != GRPC_QUEUE_SHUTDOWN)
+                                    gpr_inf_future(GPR_CLOCK_REALTIME), NULL)
+             .type != GRPC_QUEUE_SHUTDOWN)
     ;
   grpc_completion_queue_destroy(g_state.cq);
 }
