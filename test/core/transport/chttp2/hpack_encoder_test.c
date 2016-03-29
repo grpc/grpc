@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/lib/transport/chttp2/hpack_encoder.h"
+#include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -40,8 +40,8 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 #include "src/core/lib/support/string.h"
-#include "src/core/lib/transport/chttp2/hpack_parser.h"
 #include "src/core/lib/transport/metadata.h"
 #include "test/core/util/parse_hexstring.h"
 #include "test/core/util/slice_splitter.h"
