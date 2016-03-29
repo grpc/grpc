@@ -36,11 +36,11 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
-#include "src/core/lib/statistics/census_interface.h"
-#include "src/core/lib/statistics/census_rpc_stats.h"
-#include "src/core/lib/statistics/census_tracing.h"
-#include "src/core/lib/statistics/hash_table.h"
-#include "src/core/lib/statistics/window_stats.h"
+#include "src/core/ext/census/census_interface.h"
+#include "src/core/ext/census/census_rpc_stats.h"
+#include "src/core/ext/census/census_tracing.h"
+#include "src/core/ext/census/hash_table.h"
+#include "src/core/ext/census/window_stats.h"
 #include "src/core/lib/support/murmur_hash.h"
 #include "src/core/lib/support/string.h"
 

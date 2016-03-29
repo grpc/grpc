@@ -35,7 +35,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "src/core/lib/statistics/hash_table.h"
+#include "src/core/ext/census/hash_table.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>

@@ -39,9 +39,7 @@
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/time.h>
-/* TODO(ctiller): find another way? - better not to include census here */
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
-#include "src/core/lib/census/grpc_plugin.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/client_channel.h"
 #include "src/core/lib/channel/compress_filter.h"
@@ -85,8 +83,6 @@ static int g_initializations;
 static void do_basic_init(void) {
   gpr_mu_init(&g_init_mu);
   grpc_register_built_in_plugins();
-  /* TODO(ctiller): ideally remove this strict linkage */
-  grpc_register_plugin(census_grpc_plugin_init, census_grpc_plugin_destroy);
   g_initializations = 0;
 }
 
