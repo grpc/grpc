@@ -60,7 +60,7 @@ PATH="$PROTOC_PATH:$PATH" ./tools/codegen/core/gen_load_balancing_proto.sh \
   $NANOPB_TMP_OUTPUT
 
 # compare outputs to checked compiled code
-if ! diff -r $NANOPB_TMP_OUTPUT src/core/proto/grpc/lb/v0; then
-  echo "Outputs differ: $NANOPB_TMP_OUTPUT vs src/core/proto/grpc/lb/v0"
+if ! diff -r $NANOPB_TMP_OUTPUT src/core/lib/proto/grpc/lb/v0; then
+  echo "Outputs differ: $NANOPB_TMP_OUTPUT vs src/core/lib/proto/grpc/lb/v0"
   exit 2
 fi

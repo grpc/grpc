@@ -156,7 +156,7 @@ class CLanguage(object):
     }
     for polling_strategy in POLLING_STRATEGIES[self.platform]:
       env={'GRPC_DEFAULT_SSL_ROOTS_FILE_PATH':
-               _ROOT + '/src/core/tsi/test_creds/ca.pem',
+               _ROOT + '/src/core/lib/tsi/test_creds/ca.pem',
            'GRPC_POLLING_STRATEGY': polling_strategy}
       shortname_ext = '' if polling_strategy=='all' else ' polling=%s' % polling_strategy
       for target in binaries:
