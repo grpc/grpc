@@ -39,7 +39,7 @@
 #include <string.h>
 
 #include <grpc/support/log.h>
-#include "src/core/lib/transport/chttp2/huffsyms.h"
+#include "src/core/ext/transport/chttp2/transport/huffsyms.h"
 
 /*
  * first byte LUT generation
