@@ -69,28 +69,29 @@ static void test_code(void) {
   bool x = grpc_closure_list_empty(closure_list);
   grpc_closure_next(&closure);
 
-  /* endpoint.h */
-  grpc_endpoint_read(NULL, NULL, NULL, NULL);
-  grpc_endpoint_get_peer(NULL);
-  grpc_endpoint_write(NULL, NULL, NULL, NULL);
-  grpc_endpoint_shutdown(NULL, NULL);
-  grpc_endpoint_destroy(NULL, NULL);
-  grpc_endpoint_add_to_pollset(NULL, NULL, NULL);
-  grpc_endpoint_add_to_pollset_set(NULL, NULL, NULL);
-
-  grpc_endpoint endpoint;
-  grpc_endpoint_vtable vtable = {
-      grpc_endpoint_read, grpc_endpoint_write, grpc_endpoint_add_to_pollset,
-      grpc_endpoint_add_to_pollset_set, grpc_endpoint_shutdown,
-      grpc_endpoint_destroy, grpc_endpoint_get_peer};
-  endpoint.vtable = &vtable;
-
   /* exec_ctx.h */
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_exec_ctx_flush(&exec_ctx);
   grpc_exec_ctx_finish(&exec_ctx);
   grpc_exec_ctx_enqueue(&exec_ctx, &closure, x, NULL);
   grpc_exec_ctx_enqueue_list(&exec_ctx, &closure_list, NULL);
+
+  /* endpoint.h */
+  grpc_endpoint endpoint;
+  grpc_endpoint_vtable vtable = {
+      grpc_endpoint_read,           grpc_endpoint_write,
+      grpc_endpoint_add_to_pollset, grpc_endpoint_add_to_pollset_set,
+      grpc_endpoint_shutdown,       grpc_endpoint_destroy,
+      grpc_endpoint_get_peer};
+  endpoint.vtable = &vtable;
+
+  grpc_endpoint_read(&exec_ctx, &endpoint, NULL, NULL);
+  grpc_endpoint_get_peer(&endpoint);
+  grpc_endpoint_write(&exec_ctx, &endpoint, NULL, NULL);
+  grpc_endpoint_shutdown(&exec_ctx, &endpoint);
+  grpc_endpoint_destroy(&exec_ctx, &endpoint);
+  grpc_endpoint_add_to_pollset(&exec_ctx, &endpoint, NULL);
+  grpc_endpoint_add_to_pollset_set(&exec_ctx, &endpoint, NULL);
 
   /* executor.h */
   grpc_executor_init();
