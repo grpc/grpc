@@ -39,9 +39,9 @@
  * This test is NOT expected to be run directly.
  ******************************************************************************/
 
-#include "src/core/support/env.h"
-#include "src/core/support/load_file.h"
-#include "src/core/support/tmpfile.h"
+#include "src/core/lib/support/env.h"
+#include "src/core/lib/support/load_file.h"
+#include "src/core/lib/support/tmpfile.h"
 
 static void test_code(void) {
   /* env.h */
