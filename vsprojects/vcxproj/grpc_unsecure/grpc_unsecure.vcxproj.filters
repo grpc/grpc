@@ -4,7 +4,7 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\lb_policy\grpclb\load_balancer_api.c">
       <Filter>src\core\ext\lb_policy\grpclb</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\lb_policy\grpclb\proto\grpc\lb\v0\load_balancer.pb.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\lb_policy\grpclb\proto\grpc\lb\v0\load_balancer.pb.h">
       <Filter>src\core\ext\lb_policy\grpclb\proto\grpc\lb\v0</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\lb_policy\pick_first\pick_first.c">
@@ -479,7 +479,7 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\lb_policy\grpclb\load_balancer_api.h">
       <Filter>src\core\ext\lb_policy\grpclb</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\lb_policy\grpclb\proto\grpc\lb\v0\load_balancer.pb.h">
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\lb_policy\grpclb\proto\grpc\lb\v0\load_balancer.pb.c">
       <Filter>src\core\ext\lb_policy\grpclb\proto\grpc\lb\v0</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\alpn.h">
