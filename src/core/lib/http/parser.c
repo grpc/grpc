@@ -39,6 +39,8 @@
 #include <grpc/support/log.h>
 #include <grpc/support/useful.h>
 
+extern int grpc_http_trace;
+
 static char *buf2str(void *buffer, size_t length) {
   char *out = gpr_malloc(length + 1);
   memcpy(out, buffer, length);
@@ -72,7 +74,7 @@ static int handle_response_line(grpc_http_parser *parser) {
   return 1;
 
 error:
-  gpr_log(GPR_ERROR, "Failed parsing response line");
+  if (grpc_http_trace) gpr_log(GPR_ERROR, "Failed parsing response line");
   return 0;
 }
 
@@ -125,7 +127,7 @@ static int handle_request_line(grpc_http_parser *parser) {
   return 1;
 
 error:
-  gpr_log(GPR_ERROR, "Failed parsing request line");
+  if (grpc_http_trace) gpr_log(GPR_ERROR, "Failed parsing request line");
   return 0;
 }
 
@@ -150,7 +152,8 @@ static int add_header(grpc_http_parser *parser) {
   GPR_ASSERT(cur != end);
 
   if (*cur == ' ' || *cur == '\t') {
-    gpr_log(GPR_ERROR, "Continued header lines not supported yet");
+    if (grpc_http_trace)
+      gpr_log(GPR_ERROR, "Continued header lines not supported yet");
     goto error;
   }
 
@@ -158,7 +161,7 @@ static int add_header(grpc_http_parser *parser) {
     cur++;
   }
   if (cur == end) {
-    gpr_log(GPR_ERROR, "Didn't find ':' in header string");
+    if (grpc_http_trace) gpr_log(GPR_ERROR, "Didn't find ':' in header string");
     goto error;
   }
   GPR_ASSERT(cur >= beg);
@@ -249,8 +252,9 @@ static int addbyte(grpc_http_parser *parser, uint8_t byte) {
     case GRPC_HTTP_FIRST_LINE:
     case GRPC_HTTP_HEADERS:
       if (parser->cur_line_length >= GRPC_HTTP_PARSER_MAX_HEADER_LENGTH) {
-        gpr_log(GPR_ERROR, "HTTP client max line length (%d) exceeded",
-                GRPC_HTTP_PARSER_MAX_HEADER_LENGTH);
+        if (grpc_http_trace)
+          gpr_log(GPR_ERROR, "HTTP client max line length (%d) exceeded",
+                  GRPC_HTTP_PARSER_MAX_HEADER_LENGTH);
         return 0;
       }
       parser->cur_line[parser->cur_line_length] = byte;
