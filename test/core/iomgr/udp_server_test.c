@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/iomgr/udp_server.h"
+#include "src/core/lib/iomgr/udp_server.h"
 
 #include <netinet/in.h>
 #include <string.h>
@@ -42,8 +42,8 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
-#include "src/core/iomgr/ev_posix.h"
-#include "src/core/iomgr/iomgr.h"
+#include "src/core/lib/iomgr/ev_posix.h"
+#include "src/core/lib/iomgr/iomgr.h"
 #include "test/core/util/test_config.h"
 
 #ifdef GRPC_NEED_UDP

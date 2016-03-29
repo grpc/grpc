@@ -36,7 +36,7 @@ gRPC Python:
  * **Required skills:** Python programming language, PyPy Python interpreter.
  * **Likely mentors:** [Nathaniel Manista](https://github.com/nathanielmanistaatgoogle), [Masood Malekghassemi](https://github.com/soltanmm).
 1. Develop and test Python 3.5 Support for gRPC. Make necessary changes to port gRPC and package it for supported platforms.
- * **Required skills:** Python programming language, PyPy Python interpreter.
+ * **Required skills:** Python programming language, Python 3.5 interpreter.
  * **Likely mentors:** [Nathaniel Manista](https://github.com/nathanielmanistaatgoogle), [Masood Malekghassemi](https://github.com/soltanmm).
  
 gRPC Ruby/Java:
