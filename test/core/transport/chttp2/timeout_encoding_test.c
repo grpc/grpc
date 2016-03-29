@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/lib/transport/chttp2/timeout_encoding.h"
+#include "src/core/ext/transport/chttp2/transport/timeout_encoding.h"
 
 #include <stdio.h>
 #include <string.h>

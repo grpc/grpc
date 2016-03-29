@@ -267,23 +267,47 @@
   </ItemDefinitionGroup>
 
   <ItemGroup>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\grpc_security.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\byte_buffer.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\byte_buffer_reader.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\census.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\compression.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\grpc.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\status.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\grpc_security.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\byte_buffer.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\compression_types.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\connectivity_state.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\grpc_types.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\propagation_bits.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\status.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\census.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\status.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\alpn.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\bin_encoder.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\chttp2_transport.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\frame.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\frame_data.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\frame_goaway.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\frame_ping.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\frame_rst_stream.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\frame_settings.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\frame_window_update.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\hpack_encoder.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\hpack_parser.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\hpack_table.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\http2_errors.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\huffsyms.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\incoming_metadata.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\internal.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\status_conversion.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\stream_map.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\timeout_encoding.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\varint.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\census\aggregation.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\census\grpc_filter.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\census\grpc_plugin.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\census\mlog.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\census\rpc_metric_id.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\channel_args.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\channel_stack.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\channel_stack_builder.h" />
@@ -361,6 +385,15 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\json\json_reader.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\json\json_writer.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\proto\grpc\lb\v0\load_balancer.pb.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\auth_filters.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\b64.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\credentials.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\handshake.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\json_token.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\jwt_verifier.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\secure_endpoint.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\security_connector.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\security_context.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\statistics\census_interface.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\statistics\census_rpc_stats.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\surface\api_trace.h" />
@@ -376,61 +409,90 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\surface\server.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\surface\surface_trace.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\byte_stream.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\chttp2\alpn.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\chttp2\bin_encoder.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\chttp2\frame.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\chttp2\frame_data.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\chttp2\frame_goaway.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\chttp2\frame_ping.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\chttp2\frame_rst_stream.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\chttp2\frame_settings.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\chttp2\frame_window_update.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\chttp2\hpack_encoder.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\chttp2\hpack_parser.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\chttp2\hpack_table.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\chttp2\http2_errors.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\chttp2\huffsyms.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\chttp2\incoming_metadata.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\chttp2\internal.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\chttp2\status_conversion.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\chttp2\stream_map.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\chttp2\timeout_encoding.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\chttp2\varint.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\chttp2_transport.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\connectivity_state.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\metadata.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\metadata_batch.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\static_metadata.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\transport.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\transport_impl.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\auth_filters.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\b64.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\credentials.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\handshake.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\json_token.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\jwt_verifier.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\secure_endpoint.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\security_connector.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\security_context.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\tsi\fake_transport_security.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\tsi\ssl_transport_security.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\tsi\ssl_types.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\tsi\transport_security.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\tsi\transport_security_interface.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\census\aggregation.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\census\mlog.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\census\rpc_metric_id.h" />
     <ClInclude Include="$(SolutionDir)\..\third_party\nanopb\pb.h" />
     <ClInclude Include="$(SolutionDir)\..\third_party\nanopb\pb_common.h" />
     <ClInclude Include="$(SolutionDir)\..\third_party\nanopb\pb_decode.h" />
     <ClInclude Include="$(SolutionDir)\..\third_party\nanopb\pb_encode.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\client\insecure\channel_create.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\client\secure\secure_channel_create.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\server\insecure\server_chttp2.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\server\secure\server_secure_chttp2.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\alpn.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\bin_encoder.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\chttp2_transport.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\frame_data.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\frame_goaway.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\frame_ping.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\frame_rst_stream.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\frame_settings.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\frame_window_update.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\hpack_encoder.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\hpack_parser.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\hpack_table.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\huffsyms.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\incoming_metadata.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\parsing.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\status_conversion.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\stream_lists.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\stream_map.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\timeout_encoding.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\varint.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\writing.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\census\context.c">
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\census\grpc_context.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\census\grpc_filter.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\census\grpc_plugin.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\census\initialize.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\census\mlog.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\census\operation.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\census\placeholders.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\census\tracing.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\channel_args.c">
     </ClCompile>
@@ -497,6 +559,8 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\http\format_request.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\http\httpcli.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\http\httpcli_security_connector.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\http\parser.c">
     </ClCompile>
@@ -588,108 +652,6 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\proto\grpc\lb\v0\load_balancer.pb.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\alarm.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\api_trace.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\byte_buffer.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\byte_buffer_reader.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\call.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\call_details.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\call_log_batch.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\channel.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\channel_connectivity.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\channel_create.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\channel_init.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\channel_ping.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\channel_stack_type.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\completion_queue.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\event_string.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\init.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\lame_client.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\metadata_array.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\server.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\server_chttp2.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\validate_metadata.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\version.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\byte_stream.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\chttp2\alpn.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\chttp2\bin_encoder.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\chttp2\frame_data.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\chttp2\frame_goaway.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\chttp2\frame_ping.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\chttp2\frame_rst_stream.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\chttp2\frame_settings.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\chttp2\frame_window_update.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\chttp2\hpack_encoder.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\chttp2\hpack_parser.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\chttp2\hpack_table.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\chttp2\huffsyms.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\chttp2\incoming_metadata.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\chttp2\parsing.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\chttp2\status_conversion.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\chttp2\stream_lists.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\chttp2\stream_map.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\chttp2\timeout_encoding.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\chttp2\varint.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\chttp2\writing.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\chttp2_transport.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\connectivity_state.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\metadata.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\metadata_batch.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\static_metadata.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\transport.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\transport_op_string.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\http\httpcli_security_connector.c">
-    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\b64.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\client_auth_filter.c">
@@ -718,29 +680,67 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\server_auth_filter.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\server_secure_chttp2.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\alarm.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\api_trace.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\byte_buffer.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\byte_buffer_reader.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\call.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\call_details.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\call_log_batch.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\channel.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\channel_connectivity.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\channel_init.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\channel_ping.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\channel_stack_type.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\completion_queue.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\event_string.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\init.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\init_secure.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\secure_channel_create.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\lame_client.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\metadata_array.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\server.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\validate_metadata.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\version.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\byte_stream.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\connectivity_state.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\metadata.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\metadata_batch.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\static_metadata.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\transport.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\transport_op_string.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\tsi\fake_transport_security.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\tsi\ssl_transport_security.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\tsi\transport_security.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\census\context.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\census\initialize.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\census\mlog.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\census\operation.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\census\placeholders.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\census\tracing.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\third_party\nanopb\pb_common.c">
     </ClCompile>
