@@ -423,7 +423,7 @@ static grpc_lb_policy_factory *pick_first_lb_factory_create() {
 /* Plugin registration */
 
 void grpc_lb_policy_pick_first_init() {
-  grpc_lb_policy_registry_init(pick_first_lb_factory_create());
+  grpc_register_lb_policy(pick_first_lb_factory_create());
 }
 
 void grpc_lb_policy_pick_first_shutdown() {}
