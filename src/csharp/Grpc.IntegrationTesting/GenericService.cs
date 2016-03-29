@@ -1,6 +1,6 @@
 #region Copyright notice and license
 
-// Copyright 2015-2016, Google Inc.
+// Copyright 2016, Google Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -33,41 +33,39 @@
 
 using System;
 using System.Collections.Generic;
-using System.Threading;
+using System.Diagnostics;
+using System.IO;
+using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Google.Protobuf;
 using Grpc.Core;
 using Grpc.Core.Utils;
+using NUnit.Framework;
+using Grpc.Testing;
 
-namespace Grpc.Testing
+namespace Grpc.IntegrationTesting
 {
     /// <summary>
-    /// Implementation of BenchmarkService server
+    /// Utility methods for defining and calling a service that doesn't use protobufs
+    /// for serialization/deserialization.
     /// </summary>
-    public class BenchmarkServiceImpl : BenchmarkService.IBenchmarkService
+    public static class GenericService
     {
-        public BenchmarkServiceImpl()
-        {
-        }
+        readonly static Marshaller<byte[]> ByteArrayMarshaller = new Marshaller<byte[]>((b) => b, (b) => b);
 
-        public Task<SimpleResponse> UnaryCall(SimpleRequest request, ServerCallContext context)
-        {
-            var response = new SimpleResponse { Payload = CreateZerosPayload(request.ResponseSize) };
-            return Task.FromResult(response);
-        }
+        public readonly static Method<byte[], byte[]> StreamingCallMethod = new Method<byte[], byte[]>(
+            MethodType.DuplexStreaming,
+            "grpc.testing.BenchmarkService",
+            "StreamingCall",
+            ByteArrayMarshaller,
+            ByteArrayMarshaller
+        );
 
-        public async Task StreamingCall(IAsyncStreamReader<SimpleRequest> requestStream, IServerStreamWriter<SimpleResponse> responseStream, ServerCallContext context)
+        public static ServerServiceDefinition BindHandler(DuplexStreamingServerMethod<byte[], byte[]> handler)
         {
-            await requestStream.ForEachAsync(async request =>
-            {
-                var response = new SimpleResponse { Payload = CreateZerosPayload(request.ResponseSize) };
-                await responseStream.WriteAsync(response);
-            });
-        }
-
-        private static Payload CreateZerosPayload(int size)
-        {
-            return new Payload { Body = ByteString.CopyFrom(new byte[size]) };
+            return ServerServiceDefinition.CreateBuilder(StreamingCallMethod.ServiceName)
+                .AddMethod(StreamingCallMethod, handler).Build();
         }
     }
 }
