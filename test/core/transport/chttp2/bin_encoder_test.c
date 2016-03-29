@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/lib/transport/chttp2/bin_encoder.h"
+#include "src/core/ext/transport/chttp2/transport/bin_encoder.h"
 
 #include <string.h>
 
