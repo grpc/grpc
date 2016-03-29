@@ -41,7 +41,7 @@
 #include <grpc/support/slice_buffer.h>
 
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
-#include "src/core/lib/census/grpc_filter.h"
+#include "src/core/ext/census/grpc_filter.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/client_channel.h"
 #include "src/core/lib/channel/compress_filter.h"
