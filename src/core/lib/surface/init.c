@@ -48,8 +48,6 @@
 #include "src/core/lib/channel/connected_channel.h"
 #include "src/core/lib/channel/http_client_filter.h"
 #include "src/core/lib/channel/http_server_filter.h"
-#include "src/core/ext/lb_policy/pick_first/pick_first.h"
-#include "src/core/ext/lb_policy/round_robin/round_robin.h"
 #include "src/core/lib/client_config/lb_policy_registry.h"
 #include "src/core/lib/client_config/resolver_registry.h"
 #include "src/core/lib/client_config/resolvers/dns_resolver.h"
@@ -165,9 +163,6 @@ void grpc_init(void) {
     gpr_time_init();
     grpc_mdctx_global_init();
     grpc_channel_init_init();
-    grpc_lb_policy_registry_init(grpc_pick_first_lb_factory_create());
-    grpc_register_lb_policy(grpc_pick_first_lb_factory_create());
-    grpc_register_lb_policy(grpc_round_robin_lb_factory_create());
     grpc_resolver_registry_init(GRPC_DEFAULT_NAME_PREFIX);
     grpc_register_resolver_type(grpc_dns_resolver_factory_create());
     grpc_register_resolver_type(grpc_ipv4_resolver_factory_create());

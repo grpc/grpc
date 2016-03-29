@@ -241,6 +241,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/tsi/fake_transport_security.c \
     src/core/lib/tsi/ssl_transport_security.c \
     src/core/lib/tsi/transport_security.c \
+    src/core/plugin_registry/grpc_plugin_registry.c \
     third_party/nanopb/pb_common.c \
     third_party/nanopb/pb_decode.c \
     third_party/nanopb/pb_encode.c \
@@ -570,6 +571,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/surface)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/transport)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/tsi)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/plugin_registry)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/crypto)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/crypto/aes)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/crypto/asn1)

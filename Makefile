@@ -2581,6 +2581,7 @@ LIBGRPC_SRC = \
     src/core/lib/tsi/fake_transport_security.c \
     src/core/lib/tsi/ssl_transport_security.c \
     src/core/lib/tsi/transport_security.c \
+    src/core/plugin_registry/grpc_plugin_registry.c \
     third_party/nanopb/pb_common.c \
     third_party/nanopb/pb_decode.c \
     third_party/nanopb/pb_encode.c \
@@ -2922,6 +2923,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/transport/static_metadata.c \
     src/core/lib/transport/transport.c \
     src/core/lib/transport/transport_op_string.c \
+    src/core/plugin_registry/grpc_unsecure_plugin_registry.c \
     third_party/nanopb/pb_common.c \
     third_party/nanopb/pb_decode.c \
     third_party/nanopb/pb_encode.c \
@@ -13492,6 +13494,7 @@ src/core/lib/surface/init_secure.c: $(OPENSSL_DEP)
 src/core/lib/tsi/fake_transport_security.c: $(OPENSSL_DEP)
 src/core/lib/tsi/ssl_transport_security.c: $(OPENSSL_DEP)
 src/core/lib/tsi/transport_security.c: $(OPENSSL_DEP)
+src/core/plugin_registry/grpc_plugin_registry.c: $(OPENSSL_DEP)
 src/cpp/client/secure_credentials.cc: $(OPENSSL_DEP)
 src/cpp/common/auth_property_iterator.cc: $(OPENSSL_DEP)
 src/cpp/common/secure_auth_context.cc: $(OPENSSL_DEP)

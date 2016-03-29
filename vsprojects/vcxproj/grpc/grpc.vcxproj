@@ -284,8 +284,6 @@
   <ItemGroup>
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\lb_policy\grpclb\load_balancer_api.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\lb_policy\grpclb\proto\grpc\lb\v0\load_balancer.pb.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\lb_policy\pick_first\pick_first.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\lb_policy\round_robin\round_robin.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\alpn.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\bin_encoder.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\chttp2_transport.h" />
@@ -746,6 +744,8 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\tsi\ssl_transport_security.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\tsi\transport_security.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\plugin_registry\grpc_plugin_registry.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\third_party\nanopb\pb_common.c">
     </ClCompile>

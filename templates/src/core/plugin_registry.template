@@ -36,3 +36,17 @@ template: |
    * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
    *
    */
+
+  #include <grpc/grpc.h>
+
+  %for plugin in selected.plugins:
+  extern void ${plugin}_init(void);
+  extern void ${plugin}_shutdown(void);
+  %endfor
+
+  void grpc_register_built_in_plugins(void) {
+  %for plugin in selected.plugins:
+    grpc_register_plugin(${plugin}_init,
+                         ${plugin}_shutdown);
+  %endfor
+  }

@@ -484,6 +484,9 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\tsi\transport_security.c">
       <Filter>src\core\lib\tsi</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\plugin_registry\grpc_plugin_registry.c">
+      <Filter>src\core\plugin_registry</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\third_party\nanopb\pb_common.c">
       <Filter>third_party\nanopb</Filter>
     </ClCompile>
@@ -541,12 +544,6 @@
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\lb_policy\grpclb\proto\grpc\lb\v0\load_balancer.pb.h">
       <Filter>src\core\ext\lb_policy\grpclb\proto\grpc\lb\v0</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\lb_policy\pick_first\pick_first.h">
-      <Filter>src\core\ext\lb_policy\pick_first</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\lb_policy\round_robin\round_robin.h">
-      <Filter>src\core\ext\lb_policy\round_robin</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\alpn.h">
       <Filter>src\core\ext\transport\chttp2\transport</Filter>
@@ -1078,6 +1075,9 @@
     </Filter>
     <Filter Include="src\core\lib\tsi">
       <UniqueIdentifier>{95ad2811-c8d0-7a42-2a73-baf03fcbf699}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\plugin_registry">
+      <UniqueIdentifier>{02bec99b-ff39-88d7-9dea-e0ff9f4a2701}</UniqueIdentifier>
     </Filter>
     <Filter Include="third_party">
       <UniqueIdentifier>{aaab30a4-2a15-732e-c141-3fbc0f0f5a7a}</UniqueIdentifier>
