@@ -187,8 +187,9 @@ class CommonStressTest {
     stub_ = grpc::testing::EchoTestService::NewStub(channel);
   }
   grpc::testing::EchoTestService::Stub* GetStub() { return stub_.get(); }
+
  protected:
-  void SetUpStart(ServerBuilder *builder, Service *service) {
+  void SetUpStart(ServerBuilder* builder, Service* service) {
     int port = grpc_pick_unused_port_or_die();
     server_address_ << "localhost:" << port;
     // Setup server
@@ -199,11 +200,10 @@ class CommonStressTest {
         kMaxMessageSize_);  // For testing max message size.
     builder->RegisterService(&dup_pkg_service_);
   }
-  void SetUpEnd(ServerBuilder *builder) {
-    server_ = builder->BuildAndStart();
-  }
+  void SetUpEnd(ServerBuilder* builder) { server_ = builder->BuildAndStart(); }
   void TearDownStart() { server_->Shutdown(); }
-  void TearDownEnd() { }
+  void TearDownEnd() {}
+
  private:
   std::unique_ptr<grpc::testing::EchoTestService::Stub> stub_;
   std::unique_ptr<Server> server_;
@@ -223,12 +223,13 @@ class CommonStressTestSyncServer : public CommonStressTest<TestServiceImpl> {
     TearDownStart();
     TearDownEnd();
   }
+
  private:
   TestServiceImpl service_;
 };
 
-class CommonStressTestAsyncServer :
-      public CommonStressTest< ::grpc::testing::EchoTestService::AsyncService> {
+class CommonStressTestAsyncServer
+    : public CommonStressTest<::grpc::testing::EchoTestService::AsyncService> {
  public:
   void SetUp() GRPC_OVERRIDE {
     shutting_down_ = false;
@@ -241,7 +242,8 @@ class CommonStressTestAsyncServer :
       RefreshContext(i);
     }
     for (int i = 0; i < kNumAsyncServerThreads; i++) {
-      server_threads_.push_back(new std::thread(&CommonStressTestAsyncServer::ProcessRpcs, this));
+      server_threads_.push_back(
+          new std::thread(&CommonStressTestAsyncServer::ProcessRpcs, this));
     }
   }
   void TearDown() GRPC_OVERRIDE {
@@ -264,9 +266,10 @@ class CommonStressTestAsyncServer :
     TearDownEnd();
     delete[] contexts_;
   }
+
  private:
   void ProcessRpcs() {
-    void *tag;
+    void* tag;
     bool ok;
     while (cq_->Next(&tag, &ok)) {
       if (ok) {
@@ -276,7 +279,8 @@ class CommonStressTestAsyncServer :
             contexts_[i].state = Context::DONE;
             EchoResponse send_response;
             send_response.set_message(contexts_[i].recv_request.message());
-            contexts_[i].response_writer->Finish(send_response, Status::OK, tag);
+            contexts_[i].response_writer->Finish(send_response, Status::OK,
+                                                 tag);
             break;
           }
           case Context::DONE:
@@ -291,8 +295,11 @@ class CommonStressTestAsyncServer :
     if (!shutting_down_) {
       contexts_[i].state = Context::READY;
       contexts_[i].srv_ctx.reset(new ServerContext);
-      contexts_[i].response_writer.reset(new grpc::ServerAsyncResponseWriter<EchoResponse>(contexts_[i].srv_ctx.get()));
-      service_.RequestEcho(contexts_[i].srv_ctx.get(), &contexts_[i].recv_request,
+      contexts_[i].response_writer.reset(
+          new grpc::ServerAsyncResponseWriter<EchoResponse>(
+              contexts_[i].srv_ctx.get()));
+      service_.RequestEcho(contexts_[i].srv_ctx.get(),
+                           &contexts_[i].recv_request,
                            contexts_[i].response_writer.get(), cq_.get(),
                            cq_.get(), (void*)(intptr_t)i);
     }
@@ -300,15 +307,15 @@ class CommonStressTestAsyncServer :
   struct Context {
     std::unique_ptr<ServerContext> srv_ctx;
     std::unique_ptr<grpc::ServerAsyncResponseWriter<EchoResponse>>
-    response_writer;
+        response_writer;
     EchoRequest recv_request;
-    enum {READY, DONE} state;
-  } *contexts_;
+    enum { READY, DONE } state;
+  } * contexts_;
   ::grpc::testing::EchoTestService::AsyncService service_;
   std::unique_ptr<ServerCompletionQueue> cq_;
   bool shutting_down_;
   mutex mu_;
-  std::vector<std::thread *> server_threads_;
+  std::vector<std::thread*> server_threads_;
 };
 
 class End2endTest : public ::testing::Test {
