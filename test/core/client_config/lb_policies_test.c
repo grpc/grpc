@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -41,16 +41,18 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 
-#include "src/core/channel/channel_stack.h"
-#include "src/core/channel/client_channel.h"
-#include "src/core/client_config/lb_policies/round_robin.h"
-#include "src/core/client_config/lb_policy_registry.h"
-#include "src/core/support/string.h"
-#include "src/core/surface/channel.h"
-#include "src/core/surface/server.h"
+#include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/channel/client_channel.h"
+#include "src/core/lib/client_config/lb_policies/round_robin.h"
+#include "src/core/lib/client_config/lb_policy_registry.h"
+#include "src/core/lib/support/string.h"
+#include "src/core/lib/surface/channel.h"
+#include "src/core/lib/surface/server.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
+
+#define RETRY_TIMEOUT 300
 
 typedef struct servers_fixture {
   size_t num_servers;
@@ -137,8 +139,9 @@ static void kill_server(const servers_fixture *f, size_t i) {
   gpr_log(GPR_INFO, "KILLING SERVER %d", i);
   GPR_ASSERT(f->servers[i] != NULL);
   grpc_server_shutdown_and_notify(f->servers[i], f->cq, tag(10000));
-  GPR_ASSERT(grpc_completion_queue_pluck(f->cq, tag(10000), n_millis_time(5000),
-                                         NULL).type == GRPC_OP_COMPLETE);
+  GPR_ASSERT(
+      grpc_completion_queue_pluck(f->cq, tag(10000), n_millis_time(5000), NULL)
+          .type == GRPC_OP_COMPLETE);
   grpc_server_destroy(f->servers[i]);
   f->servers[i] = NULL;
 }
@@ -204,8 +207,8 @@ static void teardown_servers(servers_fixture *f) {
     if (f->servers[i] == NULL) continue;
     grpc_server_shutdown_and_notify(f->servers[i], f->cq, tag(10000));
     GPR_ASSERT(grpc_completion_queue_pluck(f->cq, tag(10000),
-                                           n_millis_time(5000),
-                                           NULL).type == GRPC_OP_COMPLETE);
+                                           n_millis_time(5000), NULL)
+                   .type == GRPC_OP_COMPLETE);
     grpc_server_destroy(f->servers[i]);
   }
   grpc_completion_queue_shutdown(f->cq);
@@ -302,9 +305,10 @@ static int *perform_request(servers_fixture *f, grpc_channel *client,
                grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(1), NULL));
 
     s_idx = -1;
-    while ((ev = grpc_completion_queue_next(
-                f->cq, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(1), NULL)).type !=
-           GRPC_QUEUE_TIMEOUT) {
+    while (
+        (ev = grpc_completion_queue_next(
+             f->cq, GRPC_TIMEOUT_MILLIS_TO_DEADLINE(10 * RETRY_TIMEOUT), NULL))
+            .type != GRPC_QUEUE_TIMEOUT) {
       GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
       read_tag = ((int)(intptr_t)ev.tag);
       gpr_log(GPR_DEBUG, "EVENT: success:%d, type:%d, tag:%d iter:%d",
@@ -376,9 +380,10 @@ static int *perform_request(servers_fixture *f, grpc_channel *client,
       }
     }
 
-    GPR_ASSERT(grpc_completion_queue_next(f->cq,
-                                          GRPC_TIMEOUT_MILLIS_TO_DEADLINE(200),
-                                          NULL).type == GRPC_QUEUE_TIMEOUT);
+    GPR_ASSERT(
+        grpc_completion_queue_next(
+            f->cq, GRPC_TIMEOUT_MILLIS_TO_DEADLINE(2 * RETRY_TIMEOUT), NULL)
+            .type == GRPC_QUEUE_TIMEOUT);
 
     grpc_metadata_array_destroy(&rdata->initial_metadata_recv);
     grpc_metadata_array_destroy(&rdata->trailing_metadata_recv);
@@ -506,7 +511,7 @@ void run_spec(const test_spec *spec) {
 
   arg.type = GRPC_ARG_INTEGER;
   arg.key = "grpc.testing.fixed_reconnect_backoff";
-  arg.value.integer = 100;
+  arg.value.integer = RETRY_TIMEOUT;
   args.num_args = 1;
   args.args = &arg;
 
@@ -542,7 +547,7 @@ static grpc_channel *create_client(const servers_fixture *f) {
 
   arg.type = GRPC_ARG_INTEGER;
   arg.key = "grpc.testing.fixed_reconnect_backoff";
-  arg.value.integer = 100;
+  arg.value.integer = RETRY_TIMEOUT;
   args.num_args = 1;
   args.args = &arg;
 

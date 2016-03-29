@@ -1,4 +1,4 @@
-# Copyright 2015, Google Inc.
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -46,7 +46,6 @@ class Relay(object):
   would be no reason to use an implementation of this interface instead of a
   thread pool.
   """
-  __metaclass__ = abc.ABCMeta
 
   @abc.abstractmethod
   def add_value(self, value):
