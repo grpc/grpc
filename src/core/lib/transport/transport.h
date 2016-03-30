@@ -78,6 +78,23 @@ void grpc_stream_unref(grpc_exec_ctx *exec_ctx, grpc_stream_refcount *refcount);
   grpc_stream_ref_init(rc, ir, cb, cb_arg)
 #endif
 
+typedef struct {
+  uint64_t framing_bytes;
+  uint64_t data_bytes;
+  uint64_t header_bytes;
+} grpc_transport_one_way_stats;
+
+typedef struct grpc_transport_stream_stats {
+  grpc_transport_one_way_stats incoming;
+  grpc_transport_one_way_stats outgoing;
+} grpc_transport_stream_stats;
+
+void grpc_transport_move_one_way_stats(grpc_transport_one_way_stats *from,
+                                       grpc_transport_one_way_stats *to);
+
+void grpc_transport_move_stats(grpc_transport_stream_stats *from,
+                               grpc_transport_stream_stats *to);
+
 /* Transport stream op: a set of operations to perform on a transport
    against a single stream */
 typedef struct grpc_transport_stream_op {
@@ -103,6 +120,9 @@ typedef struct grpc_transport_stream_op {
   /** Receive trailing metadata from the stream, into provided metadata batch.
    */
   grpc_metadata_batch *recv_trailing_metadata;
+
+  /** Collect any stats into provided buffer, zero internal stat counters */
+  grpc_transport_stream_stats *collect_stats;
 
   /** Should be enqueued when all requested operations (excluding recv_message
       and recv_initial_metadata which have their own closures) in a given batch
