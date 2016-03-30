@@ -28,36 +28,37 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-function finish() {
-  rv=$?
-  kill $STATIC_PID || true
-  curl "localhost:32767/drop/$STATIC_PORT" || true
-  exit $rv
-}
+# Creates an interop worker on GCE.
+# IMPORTANT: After this script finishes, there are still some manual
+# steps needed there are hard to automatize.
+# See go/grpc-jenkins-setup for followup instructions.
 
-trap finish EXIT
-
-NODE_VERSION=$1
-source ~/.nvm/nvm.sh
+set -ex
 
 cd $(dirname $0)
 
-nvm install $NODE_VERSION
-set -ex
+CLOUD_PROJECT=grpc-testing
+ZONE=us-east1-a  # canary gateway is reachable from this zone
 
-npm install -g node-static
+INSTANCE_NAME="${1:-grpc-canary-interop2}"
 
-STATIC_SERVER=127.0.0.1
-# If port_server is running, get port from that. Otherwise, assume we're in
-# docker and use 8080
-STATIC_PORT=$(curl 'localhost:32767/get' || echo '8080')
+gcloud compute instances create $INSTANCE_NAME \
+    --project="$CLOUD_PROJECT" \
+    --zone "$ZONE" \
+    --machine-type n1-standard-16 \
+    --image ubuntu-15-10 \
+    --boot-disk-size 1000 \
+    --scopes https://www.googleapis.com/auth/xapi.zoo
 
-# Serves the input_artifacts directory statically at localhost:
-static "$EXTERNAL_GIT_ROOT/input_artifacts" -a $STATIC_SERVER -p $STATIC_PORT &
-STATIC_PID=$!
+echo 'Created GCE instance, waiting 60 seconds for it to come online.'
+sleep 60
 
-STATIC_URL="http://$STATIC_SERVER:$STATIC_PORT/"
+gcloud compute copy-files \
+    --project="$CLOUD_PROJECT" \
+    --zone "$ZONE" \
+    jenkins_master.pub linux_worker_init.sh ${INSTANCE_NAME}:~
 
-npm install --unsafe-perm $STATIC_URL/grpc.tgz --grpc_node_binary_host_mirror=$STATIC_URL
-
-./distrib_test.js
+gcloud compute ssh \
+    --project="$CLOUD_PROJECT" \
+    --zone "$ZONE" \
+    $INSTANCE_NAME --command "./linux_worker_init.sh"
