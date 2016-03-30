@@ -53,17 +53,18 @@ class WorkerServiceImpl < Grpc::Testing::WorkerService::Service
   def run_server(reqs)
     q = EnumeratorQueue.new(self)
     Thread.new {
+      bms = ''
       reqs.each do |req|        
         case req.argtype.to_s
         when 'setup'
-          @bms = BenchmarkServer.new(req.setup, @server_port)
-          q.push(Grpc::Testing::ServerStatus.new(stats: @bms.mark(false), port: @bms.get_port))
+          bms = BenchmarkServer.new(req.setup, @server_port)
+          q.push(Grpc::Testing::ServerStatus.new(stats: bms.mark(false), port: bms.get_port))
         when 'mark'         
-          q.push(Grpc::Testing::ServerStatus.new(stats: @bms.mark(req.mark.reset), cores: cpu_cores))
+          q.push(Grpc::Testing::ServerStatus.new(stats: bms.mark(req.mark.reset), cores: cpu_cores))
         end
       end
       q.push(self)
-      @bms.stop
+      bms.stop
     }
     q.each_item
   end
