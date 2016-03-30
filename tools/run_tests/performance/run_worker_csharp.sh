@@ -32,15 +32,7 @@ set -ex
 
 cd $(dirname $0)/../../..
 
-#TODO(jtattermusch): add support for more languages
+# needed to correctly locate testca
+cd src/csharp/Grpc.IntegrationTesting.QpsWorker/bin/Release
 
-CONFIG=${CONFIG:-opt}
-
-# build C++ qps worker & driver
-make CONFIG=${CONFIG} qps_worker qps_driver -j8
-
-# build C# qps worker
-tools/run_tests/run_tests.py -l csharp -c $CONFIG --build_only -j 8
-
-# build Node qps worker
-tools/run_tests/run_tests.py -l node -c $CONFIG --build_only -j 8
+mono Grpc.IntegrationTesting.QpsWorker.exe $@

@@ -53,6 +53,9 @@ class CXXLanguage:
   def __init__(self):
     self.safename = 'cxx'
 
+  def worker_cmd(self):
+    return 'bins/opt/qps_worker'
+
   def scenarios(self):
     # TODO(jtattermusch): add more scenarios
     return {
@@ -96,6 +99,10 @@ class CSharpLanguage:
   def __init__(self):
     self.safename = str(self)
 
+  def worker_cmd(self):
+    return ('mono src/csharp/Grpc.IntegrationTesting.QpsWorker/bin/Release/'
+            'Grpc.IntegrationTesting.QpsWorker.exe')
+
   def __str__(self):
     return 'csharp'
 
@@ -105,6 +112,9 @@ class NodeLanguage:
   def __init__(self):
     pass
     self.safename = str(self)
+
+  def worker_cmd(self):
+    return 'node src/node/perfomance/worker.js'
 
   def __str__(self):
     return 'node'
@@ -135,7 +145,7 @@ class QpsWorkerJob:
 
 def create_qpsworker_job(language, port=10000, remote_host=None):
   # TODO: support more languages
-  cmd = 'bins/opt/qps_worker --driver_port=%s' % port
+  cmd = language.worker_cmd() + ' --driver_port=%s' % port
   if remote_host:
     user_at_host = '%s@%s' % (_REMOTE_HOST_USERNAME, remote_host)
     cmd = 'ssh %s "cd ~/performance_workspace/grpc/ && %s"' % (user_at_host, cmd)
