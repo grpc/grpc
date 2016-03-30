@@ -44,26 +44,26 @@ static gpr_allocation_functions g_old_allocs;
 void *guard_malloc(size_t size) {
   size_t *ptr;
   g_total_size += size;
-  ptr = g_old_allocs.malloc(size + sizeof(size));
+  ptr = g_old_allocs.malloc_fn(size + sizeof(size));
   *ptr++ = size;
   return ptr;
 }
 
-void *guard_realloc(void *ptr, size_t size) {
+void *guard_realloc(void *vptr, size_t size) {
   size_t *ptr = vptr;
   --ptr;
   g_total_size -= *ptr;
-  ptr = g_old_allocs.realloc(ptr, size + sizeof(size));
+  ptr = g_old_allocs.realloc_fn(ptr, size + sizeof(size));
   g_total_size += size;
   *ptr++ = size;
   return ptr;
 }
 
-void *guard_free(void *vptr) {
+void guard_free(void *vptr) {
   size_t *ptr = vptr;
   --ptr;
   g_total_size -= *ptr;
-  g_old_allocs.free(ptr);
+  g_old_allocs.free_fn(ptr);
 }
 
 struct gpr_allocation_functions g_guard_allocs = {
