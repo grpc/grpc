@@ -94,7 +94,7 @@ typedef struct internal_string {
 
   gpr_slice base64_and_huffman;
 
-  uint8_t has_size_in_decoder_table;
+  bool has_size_in_decoder_table;
   size_t size_in_decoder_table;
 
   struct internal_string *bucket_next;
@@ -411,7 +411,7 @@ grpc_mdstr *grpc_mdstr_from_buffer(const uint8_t *buf, size_t length) {
   }
   s->has_base64_and_huffman_encoded = 0;
   s->hash = hash;
-  s->has_size_in_decoder_table = 0;
+  s->has_size_in_decoder_table = false;
   s->size_in_decoder_table = 0;
   s->bucket_next = shard->strs[idx];
   shard->strs[idx] = s;
@@ -600,8 +600,8 @@ size_t grpc_mdelem_get_size_in_hpack_table(grpc_mdelem *elem) {
     }
   } else {
     internal_string *is = (internal_string *)elem->value;
-    if (is->has_size_in_decoder_table == 0) {
-      is->has_size_in_decoder_table = 1;
+    if (is->has_size_in_decoder_table == false) {
+      is->has_size_in_decoder_table = true;
       if (grpc_is_binary_header(
               (const char *)GPR_SLICE_START_PTR(elem->key->slice),
               GPR_SLICE_LENGTH(elem->key->slice))) {
