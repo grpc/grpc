@@ -478,7 +478,8 @@ class CSharpLanguage(object):
       _check_compiler(self.args.compiler, ['default'])
       if self.platform == 'mac':
         # On Mac, official distribution of mono is 32bit.
-        self._make_options = ['EMBED_OPENSSL=true', 'EMBED_ZLIB=true',
+        # TODO(jtattermusch): EMBED_ZLIB=true currently breaks the mac build
+        self._make_options = ['EMBED_OPENSSL=true',
                               'CFLAGS=-m32', 'LDFLAGS=-m32']
       else:
         self._make_options = ['EMBED_OPENSSL=true', 'EMBED_ZLIB=true']
