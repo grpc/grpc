@@ -54,15 +54,16 @@ class WorkerServiceImpl < Grpc::Testing::WorkerService::Service
     q = EnumeratorQueue.new(self)
     Thread.new {
       reqs.each do |req|        
-        case req.argtype
-        when "setup"
-          server = BenchmarkServer.new(req.setup)
-          q.push(Grpc::Testing::ServerStatus.new(stats: server.mark(false), port: server.get_port))
-        when "mark"
-          q.push(Grpc::Testing::ServerStatus.new(stats: server.mark(req.mark.reset), cores: cpu_cores))
+        case req.argtype.to_s
+        when 'setup'
+          @bms = BenchmarkServer.new(req.setup, @server_port)
+          q.push(Grpc::Testing::ServerStatus.new(stats: @bms.mark(false), port: @bms.get_port))
+        when 'mark'         
+          q.push(Grpc::Testing::ServerStatus.new(stats: @bms.mark(req.mark.reset), cores: cpu_cores))
         end
       end
       q.push(self)
+      @bms.stop
     }
     q.each_item
   end
@@ -71,10 +72,10 @@ class WorkerServiceImpl < Grpc::Testing::WorkerService::Service
     Thread.new {
       reqs.each do |req|
         case req.argtype
-        when "setup"
-          server = BenchmarkClient.new(req.setup)
+        when 'setup'
+          client = BenchmarkClient.new(req.setup)
           q.push(Grpc::Testing::ClientStatus.new(stats: client.mark(false)))
-        when "mark"
+        when 'mark'
           q.push(Grpc::Testing::ClientStatus.new(stats: client.mark(req.mark.reset)))
         end
       end
@@ -92,25 +93,30 @@ class WorkerServiceImpl < Grpc::Testing::WorkerService::Service
     }
     Grpc::Testing::Void.new
   end
-  def initialize(s)
+  def initialize(s, sp)
     @server = s
+    @server_port = sp
   end
 end
 
 def main
   options = {
-    'driver_port' => 0
+    'driver_port' => 0,
+    'server_port' => 0
   }
   OptionParser.new do |opts|
-    opts.banner = 'Usage: [--driver_port <port>]'
+    opts.banner = 'Usage: [--driver_port <port>] [--server_port <port>]'
     opts.on('--driver_port PORT', '<port>') do |v|
       options['driver_port'] = v
+    end
+    opts.on('--server_port PORT', '<port>') do |v|
+      options['server_port'] = v
     end
   end.parse!
   s = GRPC::RpcServer.new
   s.add_http2_port("0.0.0.0:" + options['driver_port'].to_s,
                    :this_port_is_insecure)
-  s.handle(WorkerServiceImpl.new(s))
+  s.handle(WorkerServiceImpl.new(s, options['server_port'].to_i))
   s.run
 end
 
