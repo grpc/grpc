@@ -66,7 +66,8 @@ class BenchmarkServer
   def initialize(config, port)
     if config.security_params
       certs = load_test_certs
-      cred = GRPC::Core::Credentials.new(certs[0])
+      cred = GRPC::Core::ServerCredentials.new(
+        nil, [{private_key: certs[1], cert_chain: certs[2]}], false)
     else
       cred = :this_port_is_insecure
     end
