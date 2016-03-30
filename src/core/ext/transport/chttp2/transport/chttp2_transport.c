@@ -870,7 +870,7 @@ static void perform_stream_op_locked(
     if (stream_global->write_closed) {
       grpc_chttp2_complete_closure_step(
           exec_ctx, stream_global, &stream_global->send_message_finished, 0);
-    } else if (stream_global->id != 0) {
+    } else {
       stream_global->send_message = op->send_message;
       if (stream_global->id != 0) {
         grpc_chttp2_become_writable(transport_global, stream_global);
