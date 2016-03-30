@@ -113,9 +113,40 @@ add_library(gpr
 target_link_libraries(gpr
 )
 add_library(grpc
+  src/core/ext/transport/chttp2/client/insecure/channel_create.c
+  src/core/ext/transport/chttp2/client/secure/secure_channel_create.c
+  src/core/ext/transport/chttp2/server/insecure/server_chttp2.c
+  src/core/ext/transport/chttp2/server/secure/server_secure_chttp2.c
+  src/core/ext/transport/chttp2/transport/alpn.c
+  src/core/ext/transport/chttp2/transport/bin_encoder.c
+  src/core/ext/transport/chttp2/transport/chttp2_transport.c
+  src/core/ext/transport/chttp2/transport/frame_data.c
+  src/core/ext/transport/chttp2/transport/frame_goaway.c
+  src/core/ext/transport/chttp2/transport/frame_ping.c
+  src/core/ext/transport/chttp2/transport/frame_rst_stream.c
+  src/core/ext/transport/chttp2/transport/frame_settings.c
+  src/core/ext/transport/chttp2/transport/frame_window_update.c
+  src/core/ext/transport/chttp2/transport/hpack_encoder.c
+  src/core/ext/transport/chttp2/transport/hpack_parser.c
+  src/core/ext/transport/chttp2/transport/hpack_table.c
+  src/core/ext/transport/chttp2/transport/huffsyms.c
+  src/core/ext/transport/chttp2/transport/incoming_metadata.c
+  src/core/ext/transport/chttp2/transport/parsing.c
+  src/core/ext/transport/chttp2/transport/status_conversion.c
+  src/core/ext/transport/chttp2/transport/stream_lists.c
+  src/core/ext/transport/chttp2/transport/stream_map.c
+  src/core/ext/transport/chttp2/transport/timeout_encoding.c
+  src/core/ext/transport/chttp2/transport/varint.c
+  src/core/ext/transport/chttp2/transport/writing.c
+  src/core/lib/census/context.c
   src/core/lib/census/grpc_context.c
   src/core/lib/census/grpc_filter.c
   src/core/lib/census/grpc_plugin.c
+  src/core/lib/census/initialize.c
+  src/core/lib/census/mlog.c
+  src/core/lib/census/operation.c
+  src/core/lib/census/placeholders.c
+  src/core/lib/census/tracing.c
   src/core/lib/channel/channel_args.c
   src/core/lib/channel/channel_stack.c
   src/core/lib/channel/channel_stack_builder.c
@@ -149,6 +180,7 @@ add_library(grpc
   src/core/lib/debug/trace.c
   src/core/lib/http/format_request.c
   src/core/lib/http/httpcli.c
+  src/core/lib/http/httpcli_security_connector.c
   src/core/lib/http/parser.c
   src/core/lib/iomgr/closure.c
   src/core/lib/iomgr/endpoint.c
@@ -197,57 +229,6 @@ add_library(grpc
   src/core/lib/json/json_string.c
   src/core/lib/json/json_writer.c
   src/core/lib/proto/grpc/lb/v0/load_balancer.pb.c
-  src/core/lib/surface/alarm.c
-  src/core/lib/surface/api_trace.c
-  src/core/lib/surface/byte_buffer.c
-  src/core/lib/surface/byte_buffer_reader.c
-  src/core/lib/surface/call.c
-  src/core/lib/surface/call_details.c
-  src/core/lib/surface/call_log_batch.c
-  src/core/lib/surface/channel.c
-  src/core/lib/surface/channel_connectivity.c
-  src/core/lib/surface/channel_create.c
-  src/core/lib/surface/channel_init.c
-  src/core/lib/surface/channel_ping.c
-  src/core/lib/surface/channel_stack_type.c
-  src/core/lib/surface/completion_queue.c
-  src/core/lib/surface/event_string.c
-  src/core/lib/surface/init.c
-  src/core/lib/surface/lame_client.c
-  src/core/lib/surface/metadata_array.c
-  src/core/lib/surface/server.c
-  src/core/lib/surface/server_chttp2.c
-  src/core/lib/surface/validate_metadata.c
-  src/core/lib/surface/version.c
-  src/core/lib/transport/byte_stream.c
-  src/core/lib/transport/chttp2/alpn.c
-  src/core/lib/transport/chttp2/bin_encoder.c
-  src/core/lib/transport/chttp2/frame_data.c
-  src/core/lib/transport/chttp2/frame_goaway.c
-  src/core/lib/transport/chttp2/frame_ping.c
-  src/core/lib/transport/chttp2/frame_rst_stream.c
-  src/core/lib/transport/chttp2/frame_settings.c
-  src/core/lib/transport/chttp2/frame_window_update.c
-  src/core/lib/transport/chttp2/hpack_encoder.c
-  src/core/lib/transport/chttp2/hpack_parser.c
-  src/core/lib/transport/chttp2/hpack_table.c
-  src/core/lib/transport/chttp2/huffsyms.c
-  src/core/lib/transport/chttp2/incoming_metadata.c
-  src/core/lib/transport/chttp2/parsing.c
-  src/core/lib/transport/chttp2/status_conversion.c
-  src/core/lib/transport/chttp2/stream_lists.c
-  src/core/lib/transport/chttp2/stream_map.c
-  src/core/lib/transport/chttp2/timeout_encoding.c
-  src/core/lib/transport/chttp2/varint.c
-  src/core/lib/transport/chttp2/writing.c
-  src/core/lib/transport/chttp2_transport.c
-  src/core/lib/transport/connectivity_state.c
-  src/core/lib/transport/metadata.c
-  src/core/lib/transport/metadata_batch.c
-  src/core/lib/transport/static_metadata.c
-  src/core/lib/transport/transport.c
-  src/core/lib/transport/transport_op_string.c
-  src/core/lib/http/httpcli_security_connector.c
   src/core/lib/security/b64.c
   src/core/lib/security/client_auth_filter.c
   src/core/lib/security/credentials.c
@@ -262,18 +243,37 @@ add_library(grpc
   src/core/lib/security/security_connector.c
   src/core/lib/security/security_context.c
   src/core/lib/security/server_auth_filter.c
-  src/core/lib/security/server_secure_chttp2.c
+  src/core/lib/surface/alarm.c
+  src/core/lib/surface/api_trace.c
+  src/core/lib/surface/byte_buffer.c
+  src/core/lib/surface/byte_buffer_reader.c
+  src/core/lib/surface/call.c
+  src/core/lib/surface/call_details.c
+  src/core/lib/surface/call_log_batch.c
+  src/core/lib/surface/channel.c
+  src/core/lib/surface/channel_connectivity.c
+  src/core/lib/surface/channel_init.c
+  src/core/lib/surface/channel_ping.c
+  src/core/lib/surface/channel_stack_type.c
+  src/core/lib/surface/completion_queue.c
+  src/core/lib/surface/event_string.c
+  src/core/lib/surface/init.c
   src/core/lib/surface/init_secure.c
-  src/core/lib/surface/secure_channel_create.c
+  src/core/lib/surface/lame_client.c
+  src/core/lib/surface/metadata_array.c
+  src/core/lib/surface/server.c
+  src/core/lib/surface/validate_metadata.c
+  src/core/lib/surface/version.c
+  src/core/lib/transport/byte_stream.c
+  src/core/lib/transport/connectivity_state.c
+  src/core/lib/transport/metadata.c
+  src/core/lib/transport/metadata_batch.c
+  src/core/lib/transport/static_metadata.c
+  src/core/lib/transport/transport.c
+  src/core/lib/transport/transport_op_string.c
   src/core/lib/tsi/fake_transport_security.c
   src/core/lib/tsi/ssl_transport_security.c
   src/core/lib/tsi/transport_security.c
-  src/core/lib/census/context.c
-  src/core/lib/census/initialize.c
-  src/core/lib/census/mlog.c
-  src/core/lib/census/operation.c
-  src/core/lib/census/placeholders.c
-  src/core/lib/census/tracing.c
   third_party/nanopb/pb_common.c
   third_party/nanopb/pb_decode.c
   third_party/nanopb/pb_encode.c
@@ -289,10 +289,38 @@ add_library(grpc_codegen_lib
 target_link_libraries(grpc_codegen_lib
 )
 add_library(grpc_unsecure
-  src/core/lib/surface/init_unsecure.c
+  src/core/ext/transport/chttp2/client/insecure/channel_create.c
+  src/core/ext/transport/chttp2/server/insecure/server_chttp2.c
+  src/core/ext/transport/chttp2/transport/alpn.c
+  src/core/ext/transport/chttp2/transport/bin_encoder.c
+  src/core/ext/transport/chttp2/transport/chttp2_transport.c
+  src/core/ext/transport/chttp2/transport/frame_data.c
+  src/core/ext/transport/chttp2/transport/frame_goaway.c
+  src/core/ext/transport/chttp2/transport/frame_ping.c
+  src/core/ext/transport/chttp2/transport/frame_rst_stream.c
+  src/core/ext/transport/chttp2/transport/frame_settings.c
+  src/core/ext/transport/chttp2/transport/frame_window_update.c
+  src/core/ext/transport/chttp2/transport/hpack_encoder.c
+  src/core/ext/transport/chttp2/transport/hpack_parser.c
+  src/core/ext/transport/chttp2/transport/hpack_table.c
+  src/core/ext/transport/chttp2/transport/huffsyms.c
+  src/core/ext/transport/chttp2/transport/incoming_metadata.c
+  src/core/ext/transport/chttp2/transport/parsing.c
+  src/core/ext/transport/chttp2/transport/status_conversion.c
+  src/core/ext/transport/chttp2/transport/stream_lists.c
+  src/core/ext/transport/chttp2/transport/stream_map.c
+  src/core/ext/transport/chttp2/transport/timeout_encoding.c
+  src/core/ext/transport/chttp2/transport/varint.c
+  src/core/ext/transport/chttp2/transport/writing.c
+  src/core/lib/census/context.c
   src/core/lib/census/grpc_context.c
   src/core/lib/census/grpc_filter.c
   src/core/lib/census/grpc_plugin.c
+  src/core/lib/census/initialize.c
+  src/core/lib/census/mlog.c
+  src/core/lib/census/operation.c
+  src/core/lib/census/placeholders.c
+  src/core/lib/census/tracing.c
   src/core/lib/channel/channel_args.c
   src/core/lib/channel/channel_stack.c
   src/core/lib/channel/channel_stack_builder.c
@@ -383,53 +411,25 @@ add_library(grpc_unsecure
   src/core/lib/surface/call_log_batch.c
   src/core/lib/surface/channel.c
   src/core/lib/surface/channel_connectivity.c
-  src/core/lib/surface/channel_create.c
   src/core/lib/surface/channel_init.c
   src/core/lib/surface/channel_ping.c
   src/core/lib/surface/channel_stack_type.c
   src/core/lib/surface/completion_queue.c
   src/core/lib/surface/event_string.c
   src/core/lib/surface/init.c
+  src/core/lib/surface/init_unsecure.c
   src/core/lib/surface/lame_client.c
   src/core/lib/surface/metadata_array.c
   src/core/lib/surface/server.c
-  src/core/lib/surface/server_chttp2.c
   src/core/lib/surface/validate_metadata.c
   src/core/lib/surface/version.c
   src/core/lib/transport/byte_stream.c
-  src/core/lib/transport/chttp2/alpn.c
-  src/core/lib/transport/chttp2/bin_encoder.c
-  src/core/lib/transport/chttp2/frame_data.c
-  src/core/lib/transport/chttp2/frame_goaway.c
-  src/core/lib/transport/chttp2/frame_ping.c
-  src/core/lib/transport/chttp2/frame_rst_stream.c
-  src/core/lib/transport/chttp2/frame_settings.c
-  src/core/lib/transport/chttp2/frame_window_update.c
-  src/core/lib/transport/chttp2/hpack_encoder.c
-  src/core/lib/transport/chttp2/hpack_parser.c
-  src/core/lib/transport/chttp2/hpack_table.c
-  src/core/lib/transport/chttp2/huffsyms.c
-  src/core/lib/transport/chttp2/incoming_metadata.c
-  src/core/lib/transport/chttp2/parsing.c
-  src/core/lib/transport/chttp2/status_conversion.c
-  src/core/lib/transport/chttp2/stream_lists.c
-  src/core/lib/transport/chttp2/stream_map.c
-  src/core/lib/transport/chttp2/timeout_encoding.c
-  src/core/lib/transport/chttp2/varint.c
-  src/core/lib/transport/chttp2/writing.c
-  src/core/lib/transport/chttp2_transport.c
   src/core/lib/transport/connectivity_state.c
   src/core/lib/transport/metadata.c
   src/core/lib/transport/metadata_batch.c
   src/core/lib/transport/static_metadata.c
   src/core/lib/transport/transport.c
   src/core/lib/transport/transport_op_string.c
-  src/core/lib/census/context.c
-  src/core/lib/census/initialize.c
-  src/core/lib/census/mlog.c
-  src/core/lib/census/operation.c
-  src/core/lib/census/placeholders.c
-  src/core/lib/census/tracing.c
   third_party/nanopb/pb_common.c
   third_party/nanopb/pb_decode.c
   third_party/nanopb/pb_encode.c
@@ -451,12 +451,6 @@ target_link_libraries(grpc_zookeeper
 )
 endif()
 add_library(grpc++
-  src/cpp/client/secure_credentials.cc
-  src/cpp/common/auth_property_iterator.cc
-  src/cpp/common/secure_auth_context.cc
-  src/cpp/common/secure_channel_arguments.cc
-  src/cpp/common/secure_create_auth_context.cc
-  src/cpp/server/secure_server_credentials.cc
   src/cpp/client/channel.cc
   src/cpp/client/client_context.cc
   src/cpp/client/create_channel.cc
@@ -464,14 +458,21 @@ add_library(grpc++
   src/cpp/client/credentials.cc
   src/cpp/client/generic_stub.cc
   src/cpp/client/insecure_credentials.cc
+  src/cpp/client/secure_credentials.cc
+  src/cpp/codegen/codegen_init.cc
+  src/cpp/common/auth_property_iterator.cc
   src/cpp/common/channel_arguments.cc
   src/cpp/common/completion_queue.cc
   src/cpp/common/core_codegen.cc
   src/cpp/common/rpc_method.cc
+  src/cpp/common/secure_auth_context.cc
+  src/cpp/common/secure_channel_arguments.cc
+  src/cpp/common/secure_create_auth_context.cc
   src/cpp/server/async_generic_service.cc
   src/cpp/server/create_default_thread_pool.cc
   src/cpp/server/dynamic_thread_pool.cc
   src/cpp/server/insecure_server_credentials.cc
+  src/cpp/server/secure_server_credentials.cc
   src/cpp/server/server.cc
   src/cpp/server/server_builder.cc
   src/cpp/server/server_context.cc
@@ -481,7 +482,6 @@ add_library(grpc++
   src/cpp/util/status.cc
   src/cpp/util/string_ref.cc
   src/cpp/util/time.cc
-  src/cpp/codegen/codegen_init.cc
 )
 add_dependencies(grpc++
   grpc
@@ -494,7 +494,6 @@ add_library(grpc++_codegen_lib
 target_link_libraries(grpc++_codegen_lib
 )
 add_library(grpc++_unsecure
-  src/cpp/common/insecure_create_auth_context.cc
   src/cpp/client/channel.cc
   src/cpp/client/client_context.cc
   src/cpp/client/create_channel.cc
@@ -502,9 +501,11 @@ add_library(grpc++_unsecure
   src/cpp/client/credentials.cc
   src/cpp/client/generic_stub.cc
   src/cpp/client/insecure_credentials.cc
+  src/cpp/codegen/codegen_init.cc
   src/cpp/common/channel_arguments.cc
   src/cpp/common/completion_queue.cc
   src/cpp/common/core_codegen.cc
+  src/cpp/common/insecure_create_auth_context.cc
   src/cpp/common/rpc_method.cc
   src/cpp/server/async_generic_service.cc
   src/cpp/server/create_default_thread_pool.cc
@@ -519,7 +520,6 @@ add_library(grpc++_unsecure
   src/cpp/util/status.cc
   src/cpp/util/string_ref.cc
   src/cpp/util/time.cc
-  src/cpp/codegen/codegen_init.cc
 )
 add_dependencies(grpc++_unsecure
   gpr
