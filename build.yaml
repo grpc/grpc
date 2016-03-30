@@ -744,6 +744,14 @@ libs:
   platforms:
   - linux
   secure: false
+- name: one_input_fuzzer
+  build: private
+  language: c
+  src:
+  - test/core/util/one_corpus_entry_fuzzer.c
+  deps:
+  - gpr
+  secure: false
 - name: reconnect_server
   build: private
   language: c
