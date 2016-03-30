@@ -67,11 +67,8 @@ void guard_free(void *vptr) {
   g_old_allocs.free_fn(ptr);
 }
 
-struct gpr_allocation_functions g_guard_allocs = {
-  guard_malloc,
-  guard_realloc,
-  guard_free
-};
+struct gpr_allocation_functions g_guard_allocs = {guard_malloc, guard_realloc,
+                                                  guard_free};
 
 int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   char *s;
