@@ -72,6 +72,10 @@ static ID id_cq;
  * the flags used to create metadata from a Hash */
 static ID id_flags;
 
+/* id_credentials is the name of the hidden ivar that preserves the value
+ * of the credentials added to the call */
+static ID id_credentials;
+
 /* id_input_md is the name of the hidden ivar that preserves the hash used to
  * create metadata, so that references to the strings it contains last as long
  * as the call the metadata is added to. */
@@ -299,6 +303,7 @@ static VALUE grpc_rb_call_set_credentials(VALUE self, VALUE credentials) {
              "grpc_call_set_credentials failed with %s (code=%d)",
              grpc_call_error_detail_of(err), err);
   }
+  rb_ivar_set(self, id_credentials, credentials);
   return Qnil;
 }
 
@@ -546,12 +551,25 @@ static void grpc_run_batch_stack_init(run_batch_stack *st,
 /* grpc_run_batch_stack_cleanup ensures the run_batch_stack is properly
  * cleaned up */
 static void grpc_run_batch_stack_cleanup(run_batch_stack *st) {
+  size_t i = 0;
+
   grpc_metadata_array_destroy(&st->send_metadata);
   grpc_metadata_array_destroy(&st->send_trailing_metadata);
   grpc_metadata_array_destroy(&st->recv_metadata);
   grpc_metadata_array_destroy(&st->recv_trailing_metadata);
+
   if (st->recv_status_details != NULL) {
     gpr_free(st->recv_status_details);
+  }
+
+  if (st->recv_message != NULL) {
+    grpc_byte_buffer_destroy(st->recv_message);
+  }
+
+  for (i = 0; i < st->op_num; i++) {
+    if (st->ops[i].op == GRPC_OP_SEND_MESSAGE) {
+      grpc_byte_buffer_destroy(st->ops[i].data.send_message);
+    }
   }
 }
 
@@ -638,7 +656,6 @@ static VALUE grpc_run_batch_stack_build_result(run_batch_stack *st) {
         break;
       case GRPC_OP_SEND_MESSAGE:
         rb_struct_aset(result, sym_send_message, Qtrue);
-        grpc_byte_buffer_destroy(st->ops[i].data.send_message);
         break;
       case GRPC_OP_SEND_CLOSE_FROM_CLIENT:
         rb_struct_aset(result, sym_send_close, Qtrue);
@@ -859,6 +876,7 @@ void Init_grpc_call() {
   id_cq = rb_intern("__cq");
   id_flags = rb_intern("__flags");
   id_input_md = rb_intern("__input_md");
+  id_credentials = rb_intern("__credentials");
 
   /* Ids used in constructing the batch result. */
   sym_send_message = ID2SYM(rb_intern("send_message"));

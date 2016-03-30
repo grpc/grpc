@@ -33,12 +33,12 @@
 
 /* Test of gpr thread support. */
 
-#include <stdio.h>
-#include <stdlib.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/thd.h>
 #include <grpc/support/time.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include "test/core/util/test_config.h"
 
 #define NUM_THREADS 300

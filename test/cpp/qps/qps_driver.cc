@@ -160,6 +160,10 @@ static void QpsDriver() {
     server_config.set_core_limit(FLAGS_server_core_limit);
   }
 
+  if (FLAGS_bbuf_resp_size >= 0) {
+    *server_config.mutable_payload_config() = client_config.payload_config();
+  }
+
   if (FLAGS_secure_test) {
     // Set up security params
     SecurityParams security;
