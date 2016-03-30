@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/iomgr/tcp_server.h"
+#include "src/core/lib/iomgr/tcp_server.h"
 
 #include <errno.h>
 #include <netinet/in.h>
@@ -45,8 +45,8 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
-#include "src/core/iomgr/iomgr.h"
-#include "src/core/iomgr/sockaddr_utils.h"
+#include "src/core/lib/iomgr/iomgr.h"
+#include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 

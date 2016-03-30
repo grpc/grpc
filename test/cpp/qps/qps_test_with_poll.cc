@@ -40,7 +40,7 @@
 #include "test/cpp/util/benchmark_config.h"
 
 extern "C" {
-#include "src/core/iomgr/pollset_posix.h"
+#include "src/core/lib/iomgr/pollset_posix.h"
 }
 
 namespace grpc {
