@@ -79,7 +79,8 @@ class BenchmarkServer
     }
   end
   def mark(reset)
-    s = Grpc::Testing::ServerStats.new(time_elapsed: (Time.now-@start_time).to_f)
+    s = Grpc::Testing::ServerStats.new(time_elapsed:
+                                         (Time.now-@start_time).to_f)
     @start_time = Time.now if reset
     s
   end
@@ -87,4 +88,3 @@ class BenchmarkServer
     @port
   end
 end
-
