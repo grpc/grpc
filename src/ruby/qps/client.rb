@@ -80,17 +80,24 @@ class BenchmarkClient
     (0..config.client_channels-1).each do |i|
       Thread.new {
         stub = ''
-        req = Grpc::Testing::SimpleRequest.new(response_type: Grpc::Testing::PayloadType::COMPRESSABLE,
-                                               response_size: config.payload_config.simple_params.resp_size,
-                                               payload: Grpc::Testing::Payload.new(type: Grpc::Testing::PayloadType::COMPRESSABLE,
-                                                                                   body: nulls(config.payload_config.simple_params.req_size)))
+        gtsr = Grpc::Testing::SimpleRequest
+        gtpt = Grpc::Testing::PayloadType
+        gtp = Grpc::Testing::Payload
+        simple_params = config.payload_config.simple_params
+        req = gtsr.new(response_type: gtpt::COMPRESSABLE,
+                       response_size: simple_params.resp_size,
+                       payload: gtp.new(type: gtpt::COMPRESSABLE,
+                                        body: nulls(simple_params.req_size)))
         case config.load_params.load.to_s
         when 'closed_loop'
           waiter = nil
         when 'poisson'
-          waiter = Poisson.new(config.load_params.poisson.offered_load / config.client_channels)
+          waiter = Poisson.new(config.load_params.poisson.offered_load /
+                               config.client_channels)
         end
-        stub = Grpc::Testing::BenchmarkService::Stub.new(config.server_targets[i % config.server_targets.length], cred)
+        gtbss = Grpc::Testing::BenchmarkService::Stub
+        st = config.server_targets
+        stub = gtbss.new(st[i % st.length], cred)
         case config.rpc_type
         when :UNARY
           unary_ping_ponger(req,stub,config,waiter)
