@@ -356,7 +356,8 @@ TEST_F(HybridEnd2endTest, AsyncEcho) {
 
 TEST_F(HybridEnd2endTest, AsyncEchoRequestStream) {
   EchoTestService::WithAsyncMethod_RequestStream<
-      EchoTestService::WithAsyncMethod_Echo<TestServiceImpl> > service;
+      EchoTestService::WithAsyncMethod_Echo<TestServiceImpl> >
+      service;
   SetUpServer(&service, nullptr, nullptr);
   ResetStub();
   std::thread echo_handler_thread(
@@ -436,7 +437,8 @@ TEST_F(HybridEnd2endTest, GenericEcho) {
 
 TEST_F(HybridEnd2endTest, GenericEchoAsyncRequestStream) {
   EchoTestService::WithAsyncMethod_RequestStream<
-      EchoTestService::WithGenericMethod_Echo<TestServiceImpl> > service;
+      EchoTestService::WithGenericMethod_Echo<TestServiceImpl> >
+      service;
   AsyncGenericService generic_service;
   SetUpServer(&service, nullptr, &generic_service);
   ResetStub();
@@ -453,7 +455,8 @@ TEST_F(HybridEnd2endTest, GenericEchoAsyncRequestStream) {
 // Add a second service with one sync method.
 TEST_F(HybridEnd2endTest, GenericEchoAsyncRequestStream_SyncDupService) {
   EchoTestService::WithAsyncMethod_RequestStream<
-      EchoTestService::WithGenericMethod_Echo<TestServiceImpl> > service;
+      EchoTestService::WithGenericMethod_Echo<TestServiceImpl> >
+      service;
   AsyncGenericService generic_service;
   TestServiceImplDupPkg dup_service;
   SetUpServer(&service, &dup_service, &generic_service);
@@ -472,7 +475,8 @@ TEST_F(HybridEnd2endTest, GenericEchoAsyncRequestStream_SyncDupService) {
 // Add a second service with one async method.
 TEST_F(HybridEnd2endTest, GenericEchoAsyncRequestStream_AsyncDupService) {
   EchoTestService::WithAsyncMethod_RequestStream<
-      EchoTestService::WithGenericMethod_Echo<TestServiceImpl> > service;
+      EchoTestService::WithGenericMethod_Echo<TestServiceImpl> >
+      service;
   AsyncGenericService generic_service;
   duplicate::EchoTestService::AsyncService dup_service;
   SetUpServer(&service, &dup_service, &generic_service);

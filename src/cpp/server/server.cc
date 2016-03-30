@@ -49,7 +49,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-#include "src/core/profiling/timers.h"
+#include "src/core/lib/profiling/timers.h"
 #include "src/cpp/server/thread_pool_interface.h"
 
 namespace grpc {

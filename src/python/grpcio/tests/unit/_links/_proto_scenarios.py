@@ -1,4 +1,4 @@
-# Copyright 2015, Google Inc.
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -32,13 +32,14 @@
 import abc
 import threading
 
+import six
+
 from tests.unit._junkdrawer import math_pb2
 from tests.unit.framework.common import test_constants
 
 
-class ProtoScenario(object):
+class ProtoScenario(six.with_metaclass(abc.ABCMeta)):
   """An RPC test scenario using protocol buffers."""
-  __metaclass__ = abc.ABCMeta
 
   @abc.abstractmethod
   def group_and_method(self):
