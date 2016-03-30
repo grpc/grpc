@@ -60,13 +60,13 @@ class BenchmarkClient
     if config.security_params
       if config.security_params.use_test_ca
         certs = load_test_certs
-        cred = GRPC::Core::Credentials.new(certs[0])
+        cred = GRPC::Core::ChannelCredentials.new(certs[0])
       else
         p 'Unsupported to use non-test CA (TBD)'
         exit
       end
       if config.security_params.server_host_override
-        p 'Unsupported to use severt host override (TBD)'
+        p 'Unsupported to use server host override (TBD)'
         exit
       end
     else
@@ -79,7 +79,6 @@ class BenchmarkClient
     @done = false
     (0..config.client_channels-1).each do |i|
       Thread.new {
-        stub = ''
         gtsr = Grpc::Testing::SimpleRequest
         gtpt = Grpc::Testing::PayloadType
         gtp = Grpc::Testing::Payload
