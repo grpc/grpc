@@ -34119,6 +34119,28 @@
   }, 
   {
     "args": [
+      "test/core/json/corpus/15a8f2e7f94aa00b46f1b991416aa015dd633580"
+    ], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "windows", 
+      "posix"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "json_fuzzer_test_one_entry", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
       "test/core/json/corpus/15c9c1284c27c8893559e15c9b2a50cbd5bbb56f"
     ], 
     "ci_platforms": [
@@ -35967,6 +35989,28 @@
   }, 
   {
     "args": [
+      "test/core/json/corpus/56cd60743c2cee939f5f357905bd36ec9363f441"
+    ], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "windows", 
+      "posix"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "json_fuzzer_test_one_entry", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
       "test/core/json/corpus/56e5f35e3d08b4e17e3558cacddf9e5ed13a0159"
     ], 
     "ci_platforms": [
@@ -36935,6 +36979,28 @@
   }, 
   {
     "args": [
+      "test/core/json/corpus/743e89b768af4bd591ea7228118550b1bfb8e7d1"
+    ], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "windows", 
+      "posix"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "json_fuzzer_test_one_entry", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
       "test/core/json/corpus/7714a1a32872442a2eaff472685f3ea69451a732"
     ], 
     "ci_platforms": [
@@ -36958,6 +37024,28 @@
   {
     "args": [
       "test/core/json/corpus/7719a1c782a1ba91c031a682a0a2f8658209adbf"
+    ], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "windows", 
+      "posix"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "json_fuzzer_test_one_entry", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "test/core/json/corpus/775e8ffda1f5d340dba472d06dc7c8bf8159e379"
     ], 
     "ci_platforms": [
       "linux", 
@@ -37464,6 +37552,28 @@
   {
     "args": [
       "test/core/json/corpus/8d8874439569824e371a0284460440175cdb8a27"
+    ], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "windows", 
+      "posix"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "json_fuzzer_test_one_entry", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "test/core/json/corpus/8d952ec2e33b2a6a1c7876898719a610f5546388"
     ], 
     "ci_platforms": [
       "linux", 
@@ -38344,6 +38454,28 @@
   {
     "args": [
       "test/core/json/corpus/a0931fae1d43e7887c1cabde83fdfc52eaeedba8"
+    ], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "windows", 
+      "posix"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "json_fuzzer_test_one_entry", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "test/core/json/corpus/a0d4af29c6c223b48fe34d6a09b3a7466242f33c"
     ], 
     "ci_platforms": [
       "linux", 
