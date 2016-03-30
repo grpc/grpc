@@ -69,6 +69,7 @@ static grpc_resolved_addresses *my_resolve_address(const char *name,
     grpc_resolved_addresses *addrs = gpr_malloc(sizeof(*addrs));
     addrs->naddrs = 1;
     addrs->addrs = gpr_malloc(sizeof(*addrs->addrs));
+    memset(addrs->addrs, 0, sizeof(*addrs->addrs));
     struct sockaddr_in *sa = (struct sockaddr_in *)addrs->addrs[0].addr;
     sa->sin_family = AF_INET;
     sa->sin_addr.s_addr = htonl(0x7f000001);
