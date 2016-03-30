@@ -34,10 +34,12 @@
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 
 #include <stdio.h>
+#include <string.h>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
+
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/transport/metadata.h"
@@ -93,7 +95,10 @@ static void verify(size_t window_available, int eof, size_t expect_window_used,
 
   gpr_slice_buffer_init(&output);
 
-  grpc_chttp2_encode_header(&g_compressor, 0xdeadbeef, &b, eof, &output);
+  grpc_transport_one_way_stats stats;
+  memset(&stats, 0, sizeof(stats));
+  grpc_chttp2_encode_header(&g_compressor, 0xdeadbeef, &b, eof, &stats,
+                            &output);
   merged = grpc_slice_merge(output.slices, output.count);
   gpr_slice_buffer_destroy(&output);
   grpc_metadata_batch_destroy(&b);
