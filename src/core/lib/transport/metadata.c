@@ -38,6 +38,7 @@
 #include <string.h>
 
 #include <grpc/compression.h>
+#include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
 #include <grpc/support/log.h>
@@ -92,6 +93,9 @@ typedef struct internal_string {
   gpr_slice_refcount refcount;
 
   gpr_slice base64_and_huffman;
+
+  uint8_t has_size_in_decoder_table;
+  size_t size_in_decoder_table;
 
   struct internal_string *bucket_next;
 } internal_string;
@@ -407,6 +411,8 @@ grpc_mdstr *grpc_mdstr_from_buffer(const uint8_t *buf, size_t length) {
   }
   s->has_base64_and_huffman_encoded = 0;
   s->hash = hash;
+  s->has_size_in_decoder_table = 0;
+  s->size_in_decoder_table = 0;
   s->bucket_next = shard->strs[idx];
   shard->strs[idx] = s;
 
@@ -574,6 +580,29 @@ grpc_mdelem *grpc_mdelem_from_string_and_buffer(const char *key,
                                                 size_t value_length) {
   return grpc_mdelem_from_metadata_strings(
       grpc_mdstr_from_string(key), grpc_mdstr_from_buffer(value, value_length));
+}
+
+size_t grpc_mdelem_get_size_in_hpack_table(grpc_mdelem *elem) {
+  size_t overhead_and_key = 32 + GPR_SLICE_LENGTH(elem->key->slice);
+  if (is_mdstr_static(elem->value)) {
+    return overhead_and_key + GPR_SLICE_LENGTH(elem->value->slice);
+  } else {
+    internal_string *is = (internal_string *)elem->value;
+    size_t value_len = GPR_SLICE_LENGTH(is->slice);
+    static const uint8_t tail_xtra[3] = {0, 2, 3};
+    if (is->has_size_in_decoder_table == 0) {
+      is->has_size_in_decoder_table = 1;
+      if (grpc_is_binary_header(
+              (const char *)GPR_SLICE_START_PTR(elem->key->slice),
+              GPR_SLICE_LENGTH(elem->key->slice))) {
+        is->size_in_decoder_table =
+            value_len / 3 * 4 + tail_xtra[value_len % 3];
+      } else {
+        is->size_in_decoder_table = value_len;
+      }
+    }
+    return overhead_and_key + is->size_in_decoder_table;
+  }
 }
 
 grpc_mdelem *grpc_mdelem_ref(grpc_mdelem *gmd DEBUG_ARGS) {
