@@ -36,7 +36,7 @@ class Histogram
   # @param {number} value The value to check
   # @return {number} The bucket index
   def bucket_for(value)
-    return (Math.log(value)/Math.log(@multiplier)).to_i
+    (Math.log(value)/Math.log(@multiplier)).to_i
   end
   # Initialize an empty histogram
   # @param {number} resolution The resolution of the histogram
@@ -68,21 +68,21 @@ class Histogram
     @buckets[bucket_for(value)] += 1
   end
   def minimum
-    return @min_seen
+    @min_seen
   end
   def maximum
-    return @max_seen
+    @max_seen
   end
   def sum
-    return @sum
+    @sum
   end
   def sum_of_squares
-    return @sum_of_squares
+    @sum_of_squares
   end
   def count
-    return @count
+    @count
   end
   def contents
-    return @buckets
+    @buckets
   end
 end
