@@ -41,5 +41,7 @@ cd /var/local/git/grpc
 
 make install-certs
 
+BUILD_TYPE=${BUILD_TYPE:=opt}
+
 # build C++ interop stress client, interop client and server
-make stress_test metrics_client interop_client interop_server
+make CONFIG=$BUILD_TYPE stress_test metrics_client interop_client interop_server
