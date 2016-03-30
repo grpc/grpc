@@ -115,6 +115,21 @@ class BenchmarkClient
     end
   end
   def streaming_ping_ponger(req, stub, config, waiter)
+    q = EnumeratorQueue.new(self)
+    resp = stub.streaming_call(q.each_item)
+    start = Time.now
+    q.push(req)
+    resp.each do |r|
+      @histogram.add((Time.now-start)*1e9)
+      if !@done
+        wait_to_issue(waiter)
+        start = Time.now
+        q.push(req)
+      else
+        q.push(self)
+        break
+      end
+    end
   end
   def mark(reset)
     lat = Grpc::Testing::HistogramData.new(
