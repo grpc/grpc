@@ -57,17 +57,17 @@ end
 
 class BenchmarkClient
   def initialize(config)
+    opts = {}
     if config.security_params
       if config.security_params.use_test_ca
         certs = load_test_certs
         cred = GRPC::Core::ChannelCredentials.new(certs[0])
       else
-        p 'Unsupported to use non-test CA (TBD)'
-        exit
+        cred = GRPC::Core::ChannelCredentials.new()
       end
       if config.security_params.server_host_override
-        p 'Unsupported to use server host override (TBD)'
-        exit
+        opts[GRPC::Core::Channel::SSL_TARGET] =
+          config.security_params.server_host_override
       end
     else
       cred = :this_channel_is_insecure
@@ -96,7 +96,7 @@ class BenchmarkClient
         end
         gtbss = Grpc::Testing::BenchmarkService::Stub
         st = config.server_targets
-        stub = gtbss.new(st[i % st.length], cred)
+        stub = gtbss.new(st[i % st.length], cred, **opts)
         case config.rpc_type
         when :UNARY
           unary_ping_ponger(req,stub,config,waiter)
