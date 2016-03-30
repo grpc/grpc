@@ -259,6 +259,7 @@ filegroups:
   - src/core/lib/channel/http_client_filter.h
   - src/core/lib/channel/http_server_filter.h
   - src/core/lib/channel/subchannel_call_holder.h
+  - src/core/lib/client_config/client_channel_factory.h
   - src/core/lib/client_config/client_config.h
   - src/core/lib/client_config/connector.h
   - src/core/lib/client_config/initial_connect_string.h
@@ -274,7 +275,6 @@ filegroups:
   - src/core/lib/client_config/resolvers/dns_resolver.h
   - src/core/lib/client_config/resolvers/sockaddr_resolver.h
   - src/core/lib/client_config/subchannel.h
-  - src/core/lib/client_config/subchannel_factory.h
   - src/core/lib/client_config/subchannel_index.h
   - src/core/lib/client_config/uri_parser.h
   - src/core/lib/compression/algorithm_metadata.h
@@ -359,6 +359,7 @@ filegroups:
   - src/core/lib/channel/http_client_filter.c
   - src/core/lib/channel/http_server_filter.c
   - src/core/lib/channel/subchannel_call_holder.c
+  - src/core/lib/client_config/client_channel_factory.c
   - src/core/lib/client_config/client_config.c
   - src/core/lib/client_config/connector.c
   - src/core/lib/client_config/default_initial_connect_string.c
@@ -375,7 +376,6 @@ filegroups:
   - src/core/lib/client_config/resolvers/dns_resolver.c
   - src/core/lib/client_config/resolvers/sockaddr_resolver.c
   - src/core/lib/client_config/subchannel.c
-  - src/core/lib/client_config/subchannel_factory.c
   - src/core/lib/client_config/subchannel_index.c
   - src/core/lib/client_config/uri_parser.c
   - src/core/lib/compression/compression_algorithm.c

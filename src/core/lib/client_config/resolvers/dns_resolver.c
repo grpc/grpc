@@ -60,7 +60,7 @@ typedef struct {
   /** default port to use */
   char *default_port;
   /** subchannel factory */
-  grpc_subchannel_factory *subchannel_factory;
+  grpc_client_channel_factory *client_channel_factory;
   /** load balancing policy name */
   char *lb_policy_name;
 
@@ -178,8 +178,9 @@ static void dns_on_resolved(grpc_exec_ctx *exec_ctx, void *arg,
       memset(&args, 0, sizeof(args));
       args.addr = (struct sockaddr *)(addresses->addrs[i].addr);
       args.addr_len = (size_t)addresses->addrs[i].len;
-      grpc_subchannel *subchannel = grpc_subchannel_factory_create_subchannel(
-          exec_ctx, r->subchannel_factory, &args);
+      grpc_subchannel *subchannel =
+          grpc_client_channel_factory_create_subchannel(
+              exec_ctx, r->client_channel_factory, &args);
       if (subchannel != NULL) {
         subchannels[naddrs++] = subchannel;
       }
@@ -244,7 +245,7 @@ static void dns_destroy(grpc_exec_ctx *exec_ctx, grpc_resolver *gr) {
   if (r->resolved_config) {
     grpc_client_config_unref(exec_ctx, r->resolved_config);
   }
-  grpc_subchannel_factory_unref(exec_ctx, r->subchannel_factory);
+  grpc_client_channel_factory_unref(exec_ctx, r->client_channel_factory);
   gpr_free(r->name);
   gpr_free(r->default_port);
   gpr_free(r->lb_policy_name);
@@ -271,10 +272,10 @@ static grpc_resolver *dns_create(grpc_resolver_args *args,
   grpc_resolver_init(&r->base, &dns_resolver_vtable);
   r->name = gpr_strdup(path);
   r->default_port = gpr_strdup(default_port);
-  r->subchannel_factory = args->subchannel_factory;
+  r->client_channel_factory = args->client_channel_factory;
   gpr_backoff_init(&r->backoff_state, BACKOFF_MULTIPLIER, BACKOFF_JITTER,
                    BACKOFF_MIN_SECONDS * 1000, BACKOFF_MAX_SECONDS * 1000);
-  grpc_subchannel_factory_ref(r->subchannel_factory);
+  grpc_client_channel_factory_ref(r->client_channel_factory);
   r->lb_policy_name = gpr_strdup(lb_policy_name);
   return &r->base;
 }

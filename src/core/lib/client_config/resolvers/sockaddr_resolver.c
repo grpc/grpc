@@ -53,7 +53,7 @@ typedef struct {
   /** refcount */
   gpr_refcount refs;
   /** subchannel factory */
-  grpc_subchannel_factory *subchannel_factory;
+  grpc_client_channel_factory *client_channel_factory;
   /** load balancing policy name */
   char *lb_policy_name;
 
@@ -139,8 +139,8 @@ static void sockaddr_maybe_finish_next_locked(grpc_exec_ctx *exec_ctx,
       memset(&args, 0, sizeof(args));
       args.addr = (struct sockaddr *)&r->addrs[i];
       args.addr_len = r->addrs_len[i];
-      subchannels[i] = grpc_subchannel_factory_create_subchannel(
-          exec_ctx, r->subchannel_factory, &args);
+      subchannels[i] = grpc_client_channel_factory_create_subchannel(
+          exec_ctx, r->client_channel_factory, &args);
     }
     memset(&lb_policy_args, 0, sizeof(lb_policy_args));
     lb_policy_args.subchannels = subchannels;
@@ -159,7 +159,7 @@ static void sockaddr_maybe_finish_next_locked(grpc_exec_ctx *exec_ctx,
 static void sockaddr_destroy(grpc_exec_ctx *exec_ctx, grpc_resolver *gr) {
   sockaddr_resolver *r = (sockaddr_resolver *)gr;
   gpr_mu_destroy(&r->mu);
-  grpc_subchannel_factory_unref(exec_ctx, r->subchannel_factory);
+  grpc_client_channel_factory_unref(exec_ctx, r->client_channel_factory);
   gpr_free(r->addrs);
   gpr_free(r->addrs_len);
   gpr_free(r->lb_policy_name);
@@ -337,8 +337,8 @@ static grpc_resolver *sockaddr_create(
   gpr_ref_init(&r->refs, 1);
   gpr_mu_init(&r->mu);
   grpc_resolver_init(&r->base, &sockaddr_resolver_vtable);
-  r->subchannel_factory = args->subchannel_factory;
-  grpc_subchannel_factory_ref(r->subchannel_factory);
+  r->client_channel_factory = args->client_channel_factory;
+  grpc_client_channel_factory_ref(r->client_channel_factory);
 
   return &r->base;
 }

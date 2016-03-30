@@ -31,36 +31,48 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_CLIENT_CONFIG_SUBCHANNEL_FACTORY_H
-#define GRPC_CORE_LIB_CLIENT_CONFIG_SUBCHANNEL_FACTORY_H
+#ifndef GRPC_CORE_LIB_CLIENT_CONFIG_CLIENT_CHANNEL_FACTORY_H
+#define GRPC_CORE_LIB_CLIENT_CONFIG_CLIENT_CHANNEL_FACTORY_H
+
+#include <grpc/grpc_security.h>
+#include <grpc/impl/codegen/grpc_types.h>
 
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/client_config/subchannel.h"
 
-typedef struct grpc_subchannel_factory grpc_subchannel_factory;
-typedef struct grpc_subchannel_factory_vtable grpc_subchannel_factory_vtable;
+typedef struct grpc_client_channel_factory grpc_client_channel_factory;
+typedef struct grpc_client_channel_factory_vtable
+    grpc_client_channel_factory_vtable;
 
 /** Constructor for new configured channels.
     Creating decorators around this type is encouraged to adapt behavior. */
-struct grpc_subchannel_factory {
-  const grpc_subchannel_factory_vtable *vtable;
+struct grpc_client_channel_factory {
+  const grpc_client_channel_factory_vtable *vtable;
 };
 
-struct grpc_subchannel_factory_vtable {
-  void (*ref)(grpc_subchannel_factory *factory);
-  void (*unref)(grpc_exec_ctx *exec_ctx, grpc_subchannel_factory *factory);
+struct grpc_client_channel_factory_vtable {
+  void (*ref)(grpc_client_channel_factory *factory);
+  void (*unref)(grpc_exec_ctx *exec_ctx, grpc_client_channel_factory *factory);
   grpc_subchannel *(*create_subchannel)(grpc_exec_ctx *exec_ctx,
-                                        grpc_subchannel_factory *factory,
+                                        grpc_client_channel_factory *factory,
                                         grpc_subchannel_args *args);
+  grpc_channel *(*create_channel)(grpc_exec_ctx *exec_ctx,
+                                  grpc_client_channel_factory *factory,
+                                  const char *target, grpc_channel_args *args);
 };
 
-void grpc_subchannel_factory_ref(grpc_subchannel_factory *factory);
-void grpc_subchannel_factory_unref(grpc_exec_ctx *exec_ctx,
-                                   grpc_subchannel_factory *factory);
+void grpc_client_channel_factory_ref(grpc_client_channel_factory *factory);
+void grpc_client_channel_factory_unref(grpc_exec_ctx *exec_ctx,
+                                       grpc_client_channel_factory *factory);
 
 /** Create a new grpc_subchannel */
-grpc_subchannel *grpc_subchannel_factory_create_subchannel(
-    grpc_exec_ctx *exec_ctx, grpc_subchannel_factory *factory,
+grpc_subchannel *grpc_client_channel_factory_create_subchannel(
+    grpc_exec_ctx *exec_ctx, grpc_client_channel_factory *factory,
     grpc_subchannel_args *args);
 
-#endif /* GRPC_CORE_LIB_CLIENT_CONFIG_SUBCHANNEL_FACTORY_H */
+/** Create a new grpc_channel */
+grpc_channel *grpc_client_channel_factory_create_channel(
+    grpc_exec_ctx *exec_ctx, grpc_client_channel_factory *factory,
+    const char *target, grpc_channel_args *args);
+
+#endif /* GRPC_CORE_LIB_CLIENT_CONFIG_CLIENT_CHANNEL_FACTORY_H */

@@ -59,7 +59,7 @@ typedef struct {
   /** name to resolve */
   char *name;
   /** subchannel factory */
-  grpc_subchannel_factory *subchannel_factory;
+  grpc_client_channel_factory *client_channel_factory;
   /** load balancing policy name */
   char *lb_policy_name;
 
@@ -196,8 +196,8 @@ static void zookeeper_on_resolved(grpc_exec_ctx *exec_ctx, void *arg,
       memset(&args, 0, sizeof(args));
       args.addr = (struct sockaddr *)(addresses->addrs[i].addr);
       args.addr_len = addresses->addrs[i].len;
-      subchannels[i] = grpc_subchannel_factory_create_subchannel(
-          exec_ctx, r->subchannel_factory, &args);
+      subchannels[i] = grpc_client_channel_factory_create_subchannel(
+          exec_ctx, r->client_channel_factory, &args);
     }
     lb_policy_args.subchannels = subchannels;
     lb_policy_args.num_subchannels = addresses->naddrs;
@@ -432,7 +432,7 @@ static void zookeeper_destroy(grpc_exec_ctx *exec_ctx, grpc_resolver *gr) {
   if (r->resolved_config != NULL) {
     grpc_client_config_unref(exec_ctx, r->resolved_config);
   }
-  grpc_subchannel_factory_unref(exec_ctx, r->subchannel_factory);
+  grpc_client_channel_factory_unref(exec_ctx, r->client_channel_factory);
   gpr_free(r->name);
   gpr_free(r->lb_policy_name);
   gpr_free(r);
@@ -462,8 +462,8 @@ static grpc_resolver *zookeeper_create(grpc_resolver_args *args,
   grpc_resolver_init(&r->base, &zookeeper_resolver_vtable);
   r->name = gpr_strdup(path);
 
-  r->subchannel_factory = args->subchannel_factory;
-  grpc_subchannel_factory_ref(r->subchannel_factory);
+  r->client_channel_factory = args->client_channel_factory;
+  grpc_client_channel_factory_ref(r->client_channel_factory);
 
   r->lb_policy_name = gpr_strdup(lb_policy_name);
 

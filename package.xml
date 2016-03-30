@@ -197,6 +197,7 @@
     <file baseinstalldir="/" name="src/core/lib/channel/http_client_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/http_server_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/subchannel_call_holder.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/client_config/client_channel_factory.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/client_config/client_config.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/client_config/connector.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/client_config/initial_connect_string.h" role="src" />
@@ -212,7 +213,6 @@
     <file baseinstalldir="/" name="src/core/lib/client_config/resolvers/dns_resolver.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/client_config/resolvers/sockaddr_resolver.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/client_config/subchannel.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/client_config/subchannel_factory.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/client_config/subchannel_index.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/client_config/uri_parser.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/compression/algorithm_metadata.h" role="src" />
@@ -345,6 +345,7 @@
     <file baseinstalldir="/" name="src/core/lib/channel/http_client_filter.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/http_server_filter.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/subchannel_call_holder.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/client_config/client_channel_factory.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/client_config/client_config.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/client_config/connector.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/client_config/default_initial_connect_string.c" role="src" />
@@ -361,7 +362,6 @@
     <file baseinstalldir="/" name="src/core/lib/client_config/resolvers/dns_resolver.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/client_config/resolvers/sockaddr_resolver.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/client_config/subchannel.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/client_config/subchannel_factory.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/client_config/subchannel_index.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/client_config/uri_parser.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/compression/compression_algorithm.c" role="src" />
