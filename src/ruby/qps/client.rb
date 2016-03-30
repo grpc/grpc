@@ -55,3 +55,84 @@ class Poisson
   end
 end
 
+class BenchmarkClient
+  def initialize(config)
+    if config.security_params
+      if config.security_params.use_test_ca
+        certs = load_test_certs
+        cred = GRPC::Core::Credentials.new(certs[0])
+      else
+        p 'Unsupported to use non-test CA (TBD)'
+        exit
+      end
+      if config.security_params.server_host_override
+        p 'Unsupported to use severt host override (TBD)'
+        exit
+      end
+    else
+      cred = :this_channel_is_insecure
+    end
+    @histres = config.histogram_params.resolution
+    @histmax = config.histogram_params.max_possible
+    @start_time = Time.now
+    @histogram = Histogram.new(@histres, @histmax)
+    @done = false
+    (0..config.client_channels-1).each do |i|
+      Thread.new {
+        stub = ''
+        req = Grpc::Testing::SimpleRequest.new(response_type: Grpc::Testing::PayloadType::COMPRESSABLE,
+                                               response_size: config.payload_config.simple_params.resp_size,
+                                               payload: Grpc::Testing::Payload.new(type: Grpc::Testing::PayloadType::COMPRESSABLE,
+                                                                                   body: nulls(config.payload_config.simple_params.req_size)))
+        case config.load_params.load.to_s
+        when 'closed_loop'
+          waiter = nil
+        when 'poisson'
+          waiter = Poisson.new(config.load_params.poisson.offered_load / config.client_channels)
+        end
+        stub = Grpc::Testing::BenchmarkService::Stub.new(config.server_targets[i % config.server_targets.length], cred)
+        case config.rpc_type
+        when :UNARY
+          unary_ping_ponger(req,stub,config,waiter)
+        when :STREAMING
+          streaming_ping_ponger(req,stub,config,waiter)
+        end
+      }
+    end
+  end
+  def wait_to_issue(waiter)
+    if waiter
+      delay = waiter.advance-Time.now
+      sleep delay if delay > 0
+    end
+  end
+  def unary_ping_ponger(req, stub, config,waiter)
+    while !@done
+      wait_to_issue(waiter)
+      start = Time.now
+      resp = stub.unary_call(req)
+      @histogram.add((Time.now-start)*1e9)
+    end
+  end
+  def streaming_ping_ponger(req, stub, config, waiter)
+  end
+  def mark(reset)
+    lat = Grpc::Testing::HistogramData.new(
+      bucket: @histogram.contents,
+      min_seen: @histogram.minimum,
+      max_seen: @histogram.maximum,
+      sum: @histogram.sum,
+      sum_of_squares: @histogram.sum_of_squares,
+      count: @histogram.count
+    )
+    elapsed = Time.now-@start_time
+    if reset
+      @start_time = Time.now
+      @histogram = Histogram.new(@histres, @histmax)
+    end
+    Grpc::Testing::ClientStats.new(latencies: lat, time_elapsed: elapsed)
+  end
+  def shutdown
+    @done = true
+  end
+end
