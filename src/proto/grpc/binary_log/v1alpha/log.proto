@@ -29,7 +29,7 @@
 
 syntax = "proto3";
 
-import "google/prootbuf/timestamp.proto"
+import "google/protobuf/timestamp.proto"
 
 package grpc.binary_log.v1alpha;
 
