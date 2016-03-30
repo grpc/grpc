@@ -162,38 +162,23 @@ static void dns_on_resolved(grpc_exec_ctx *exec_ctx, void *arg,
                             grpc_resolved_addresses *addresses) {
   dns_resolver *r = arg;
   grpc_client_config *config = NULL;
-  grpc_subchannel **subchannels;
-  grpc_subchannel_args args;
   grpc_lb_policy *lb_policy;
-  size_t i;
   gpr_mu_lock(&r->mu);
   GPR_ASSERT(r->resolving);
   r->resolving = 0;
   if (addresses != NULL) {
     grpc_lb_policy_args lb_policy_args;
     config = grpc_client_config_create();
-    subchannels = gpr_malloc(sizeof(grpc_subchannel *) * addresses->naddrs);
-    size_t naddrs = 0;
-    for (i = 0; i < addresses->naddrs; i++) {
-      memset(&args, 0, sizeof(args));
-      args.addr = (struct sockaddr *)(addresses->addrs[i].addr);
-      args.addr_len = (size_t)addresses->addrs[i].len;
-      grpc_subchannel *subchannel = grpc_subchannel_factory_create_subchannel(
-          exec_ctx, r->subchannel_factory, &args);
-      if (subchannel != NULL) {
-        subchannels[naddrs++] = subchannel;
-      }
-    }
     memset(&lb_policy_args, 0, sizeof(lb_policy_args));
-    lb_policy_args.subchannels = subchannels;
-    lb_policy_args.num_subchannels = naddrs;
-    lb_policy = grpc_lb_policy_create(r->lb_policy_name, &lb_policy_args);
+    lb_policy_args.addresses = addresses;
+    lb_policy_args.subchannel_factory = r->subchannel_factory;
+    lb_policy =
+        grpc_lb_policy_create(exec_ctx, r->lb_policy_name, &lb_policy_args);
     if (lb_policy != NULL) {
       grpc_client_config_set_lb_policy(config, lb_policy);
       GRPC_LB_POLICY_UNREF(exec_ctx, lb_policy, "construction");
     }
     grpc_resolved_addresses_destroy(addresses);
-    gpr_free(subchannels);
   } else {
     gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
     gpr_timespec next_try = gpr_backoff_step(&r->backoff_state, now);
