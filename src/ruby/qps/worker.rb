@@ -71,6 +71,7 @@ class WorkerServiceImpl < Grpc::Testing::WorkerService::Service
   def run_client(reqs)
     q = EnumeratorQueue.new(self)
     Thread.new {
+      client = ''
       reqs.each do |req|
         case req.argtype
         when 'setup'
