@@ -28,28 +28,37 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+# Creates an interop worker on GCE.
+# IMPORTANT: After this script finishes, there are still some manual
+# steps needed there are hard to automatize.
+# See go/grpc-jenkins-setup for followup instructions.
+
 set -ex
 
-# change to grpc repo root
-cd $(dirname $0)/../..
+cd $(dirname $0)
 
-ROOT=`pwd`
-export LD_LIBRARY_PATH=$ROOT/libs/$CONFIG
-export DYLD_LIBRARY_PATH=$ROOT/libs/$CONFIG
-export PATH=$ROOT/bins/$CONFIG:$ROOT/bins/$CONFIG/protobuf:$PATH
-export CFLAGS="-I$ROOT/include -std=c89"
-export LDFLAGS="-L$ROOT/libs/$CONFIG"
-export GRPC_PYTHON_BUILD_WITH_CYTHON=1
-export GRPC_PYTHON_USE_PRECOMPILED_BINARIES=0
+CLOUD_PROJECT=grpc-testing
+ZONE=us-east1-a  # canary gateway is reachable from this zone
 
-if [ "$CONFIG" = "gcov" ]
-then
-  export GRPC_PYTHON_ENABLE_CYTHON_TRACING=1
-  tox
-else
-  $ROOT/.tox/py27/bin/python $ROOT/setup.py test_lite
-fi
+INSTANCE_NAME="${1:-grpc-canary-interop2}"
 
-mkdir -p $ROOT/reports
-rm -rf $ROOT/reports/python-coverage
-(mv -T $ROOT/htmlcov $ROOT/reports/python-coverage) || true
+gcloud compute instances create $INSTANCE_NAME \
+    --project="$CLOUD_PROJECT" \
+    --zone "$ZONE" \
+    --machine-type n1-standard-16 \
+    --image ubuntu-15-10 \
+    --boot-disk-size 1000 \
+    --scopes https://www.googleapis.com/auth/xapi.zoo
+
+echo 'Created GCE instance, waiting 60 seconds for it to come online.'
+sleep 60
+
+gcloud compute copy-files \
+    --project="$CLOUD_PROJECT" \
+    --zone "$ZONE" \
+    jenkins_master.pub linux_worker_init.sh ${INSTANCE_NAME}:~
+
+gcloud compute ssh \
+    --project="$CLOUD_PROJECT" \
+    --zone "$ZONE" \
+    $INSTANCE_NAME --command "./linux_worker_init.sh"
