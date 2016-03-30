@@ -30,26 +30,15 @@
 
 set -ex
 
-# change to grpc repo root
-cd $(dirname $0)/../..
+cd $(dirname $0)/../../..
 
-ROOT=`pwd`
-export LD_LIBRARY_PATH=$ROOT/libs/$CONFIG
-export DYLD_LIBRARY_PATH=$ROOT/libs/$CONFIG
-export PATH=$ROOT/bins/$CONFIG:$ROOT/bins/$CONFIG/protobuf:$PATH
-export CFLAGS="-I$ROOT/include -std=c89"
-export LDFLAGS="-L$ROOT/libs/$CONFIG"
-export GRPC_PYTHON_BUILD_WITH_CYTHON=1
-export GRPC_PYTHON_USE_PRECOMPILED_BINARIES=0
+# cleanup after previous builds
+ssh "${USER_AT_HOST}" "rm -rf ~/performance_workspace && mkdir -p ~/performance_workspace"
 
-if [ "$CONFIG" = "gcov" ]
-then
-  export GRPC_PYTHON_ENABLE_CYTHON_TRACING=1
-  tox
-else
-  $ROOT/.tox/py27/bin/python $ROOT/setup.py test_lite
-fi
+# TODO(jtattermusch): To be sure there are not running processes that would
+# mess with the results, be rough and reboot the slave here
+# and wait for it to come back online.
 
-mkdir -p $ROOT/reports
-rm -rf $ROOT/reports/python-coverage
-(mv -T $ROOT/htmlcov $ROOT/reports/python-coverage) || true
+# push the current sources to the slave and unpack it.
+scp ../grpc.tar "${USER_AT_HOST}:~/performance_workspace"
+ssh "${USER_AT_HOST}" "tar -xf ~/performance_workspace/grpc.tar -C ~/performance_workspace"

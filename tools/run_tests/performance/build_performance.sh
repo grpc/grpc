@@ -30,26 +30,11 @@
 
 set -ex
 
-# change to grpc repo root
-cd $(dirname $0)/../..
+cd $(dirname $0)/../../..
 
-ROOT=`pwd`
-export LD_LIBRARY_PATH=$ROOT/libs/$CONFIG
-export DYLD_LIBRARY_PATH=$ROOT/libs/$CONFIG
-export PATH=$ROOT/bins/$CONFIG:$ROOT/bins/$CONFIG/protobuf:$PATH
-export CFLAGS="-I$ROOT/include -std=c89"
-export LDFLAGS="-L$ROOT/libs/$CONFIG"
-export GRPC_PYTHON_BUILD_WITH_CYTHON=1
-export GRPC_PYTHON_USE_PRECOMPILED_BINARIES=0
+#TODO(jtattermusch): add support for more languages
 
-if [ "$CONFIG" = "gcov" ]
-then
-  export GRPC_PYTHON_ENABLE_CYTHON_TRACING=1
-  tox
-else
-  $ROOT/.tox/py27/bin/python $ROOT/setup.py test_lite
-fi
+CONFIG=${CONFIG:-opt}
 
-mkdir -p $ROOT/reports
-rm -rf $ROOT/reports/python-coverage
-(mv -T $ROOT/htmlcov $ROOT/reports/python-coverage) || true
+# build C++ qps worker & driver
+make CONFIG=${CONFIG} qps_worker qps_driver -j8
