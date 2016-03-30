@@ -30,9 +30,9 @@
 
 NODE_VERSION=$1
 source ~/.nvm/nvm.sh
-set -ex
 
 nvm use $NODE_VERSION
+set -ex
 
 CONFIG=${CONFIG:-opt}
 

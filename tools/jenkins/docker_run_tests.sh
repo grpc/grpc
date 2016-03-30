@@ -34,7 +34,7 @@
 set -e
 
 export CONFIG=$config
-export ASAN_SYMBOLIZER_PATH=/usr/bin/llvm-symbolizer-3.5
+export ASAN_SYMBOLIZER_PATH=/usr/bin/llvm-symbolizer
 
 # Ensure that programs depending on current-user-ownership of cache directories
 # are satisfied (it's being mounted from outside the image).
