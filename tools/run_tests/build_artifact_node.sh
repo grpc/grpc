@@ -30,9 +30,9 @@
 
 NODE_TARGET_ARCH=$1
 source ~/.nvm/nvm.sh
-set -ex
 
 nvm use 4
+set -ex
 
 cd $(dirname $0)/../..
 
