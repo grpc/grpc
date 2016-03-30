@@ -44,6 +44,14 @@ def nulls(l)
   [].pack('x' * l).force_encoding('ascii-8bit')
 end
 
+# load the test-only certificates
+def load_test_certs
+  this_dir = File.expand_path(File.dirname(__FILE__))
+  data_dir = File.join(File.dirname(this_dir), 'spec/testdata')
+  files = ['ca.pem', 'server1.key', 'server1.pem']
+  files.map { |f| File.open(File.join(data_dir, f)).read }
+end
+
 # A EnumeratorQueue wraps a Queue yielding the items added to it via each_item.
 class EnumeratorQueue
   extend Forwardable

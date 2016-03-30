@@ -62,13 +62,6 @@ class BenchmarkServiceImpl < Grpc::Testing::BenchmarkService::Service
   end
 end
 
-def load_test_certs
-  this_dir = File.expand_path(File.dirname(__FILE__))
-  data_dir = File.join(File.dirname(this_dir), 'spec/testdata')
-  files = ['ca.pem', 'server1.key', 'server1.pem']
-  files.map { |f| File.open(File.join(data_dir, f)).read }
-end
-
 class BenchmarkServer
   def initialize(config, port)
     if config.security_params
@@ -87,9 +80,7 @@ class BenchmarkServer
   end
   def mark(reset)
     s = Grpc::Testing::ServerStats.new(time_elapsed: (Time.now-@start_time).to_f)
-    if reset
-      @start_time = Time.now
-    end
+    @start_time = Time.now if reset
     s
   end
   def get_port

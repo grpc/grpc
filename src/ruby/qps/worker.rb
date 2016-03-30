@@ -73,7 +73,7 @@ class WorkerServiceImpl < Grpc::Testing::WorkerService::Service
     Thread.new {
       client = ''
       reqs.each do |req|
-        case req.argtype
+        case req.argtype.to_s
         when 'setup'
           client = BenchmarkClient.new(req.setup)
           q.push(Grpc::Testing::ClientStatus.new(stats: client.mark(false)))
@@ -82,6 +82,7 @@ class WorkerServiceImpl < Grpc::Testing::WorkerService::Service
         end
       end
       q.push(self)
+      client.shutdown
     }
     q.each_item
   end
