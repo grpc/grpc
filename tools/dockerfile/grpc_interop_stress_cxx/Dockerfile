@@ -81,7 +81,7 @@ RUN pip install --upgrade google-api-python-client
 
 
 #=================
-# Update clang to a version with improved tsan
+# Update clang to a version with improved tsan and fuzzing capabilities
 
 RUN apt-get update && apt-get -y install python cmake && apt-get clean
 
@@ -111,7 +111,7 @@ RUN cd llvm-build && cmake \
   -DCMAKE_INSTALL_PREFIX:STRING=/usr \
   -DLLVM_TARGETS_TO_BUILD:STRING=X86 \
   ../llvm
-RUN make -C llvm-build && make -C llvm-build install && rm -rf llvm-build
+RUN make -C llvm-build -j 12 && make -C llvm-build install && rm -rf llvm-build
 
 # Define the default command.
 CMD ["bash"]
