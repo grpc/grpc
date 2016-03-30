@@ -110,6 +110,8 @@ grpc_mdelem *grpc_mdelem_from_string_and_buffer(const char *key,
                                                 const uint8_t *value,
                                                 size_t value_length);
 
+size_t grpc_mdelem_get_size_in_hpack_table(grpc_mdelem *elem);
+
 /* Mutator and accessor for grpc_mdelem user data. The destructor function
    is used as a type tag and is checked during user_data fetch. */
 void *grpc_mdelem_get_user_data(grpc_mdelem *md,
