@@ -40,6 +40,7 @@ require 'grpc'
 require 'qps-common'
 require 'src/proto/grpc/testing/messages'
 require 'src/proto/grpc/testing/services_services'
+require 'src/proto/grpc/testing/stats'
 
 class BenchmarkServiceImpl < Grpc::Testing::BenchmarkService::Service
   def unary_call(req, _call)
@@ -61,8 +62,38 @@ class BenchmarkServiceImpl < Grpc::Testing::BenchmarkService::Service
   end
 end
 
-def benchmark_server(config)
-  
+def load_test_certs
+  this_dir = File.expand_path(File.dirname(__FILE__))
+  data_dir = File.join(File.dirname(this_dir), 'spec/testdata')
+  files = ['ca.pem', 'server1.key', 'server1.pem']
+  files.map { |f| File.open(File.join(data_dir, f)).read }
 end
 
+class BenchmarkServer
+  def initialize(config, port)
+    if config.security_params
+      certs = load_test_certs
+      cred = GRPC::Core::Credentials.new(certs[0])
+    else
+      cred = :this_port_is_insecure
+    end
+    @server = GRPC::RpcServer.new
+    @port = @server.add_http2_port("0.0.0.0:" + port.to_s, cred)
+    @server.handle(BenchmarkServiceImpl.new)
+    @start_time = Time.now
+    Thread.new {
+      @server.run
+    }
+  end
+  def mark(reset)
+    s = Grpc::Testing::ServerStats.new(time_elapsed: (Time.now-@start_time).to_f)
+    if reset
+      @start_time = Time.now
+    end
+    s
+  end
+  def get_port
+    @port
+  end
+end
 
