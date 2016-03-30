@@ -43,6 +43,7 @@
 
 #include "src/core/ext/transport/chttp2/transport/bin_encoder.h"
 #include "src/core/lib/support/string.h"
+#include "src/core/lib/transport/static_metadata.h"
 #include "test/core/util/test_config.h"
 
 #define LOG_TEST(x) gpr_log(GPR_INFO, "%s", x)
@@ -301,6 +302,10 @@ static void test_mdelem_sizes_in_hpack(void) {
   for (uint8_t i = 0; i < BUFFER_SIZE; i++) {
     verify_binary_header_size("hello-bin", binary_value, i);
   }
+
+  const char *static_metadata = grpc_static_metadata_strings[0];
+  memcpy(binary_value, static_metadata, strlen(static_metadata));
+  verify_binary_header_size("hello-bin", binary_value, strlen(static_metadata));
 
   grpc_shutdown();
 }
