@@ -582,21 +582,30 @@ grpc_mdelem *grpc_mdelem_from_string_and_buffer(const char *key,
       grpc_mdstr_from_string(key), grpc_mdstr_from_buffer(value, value_length));
 }
 
+static size_t get_base64_encoded_size(size_t raw_length) {
+  static const uint8_t tail_xtra[3] = {0, 2, 3};
+  return raw_length / 3 * 4 + tail_xtra[raw_length % 3];
+}
+
 size_t grpc_mdelem_get_size_in_hpack_table(grpc_mdelem *elem) {
   size_t overhead_and_key = 32 + GPR_SLICE_LENGTH(elem->key->slice);
+  size_t value_len = GPR_SLICE_LENGTH(elem->value->slice);
   if (is_mdstr_static(elem->value)) {
-    return overhead_and_key + GPR_SLICE_LENGTH(elem->value->slice);
+    if (grpc_is_binary_header(
+            (const char *)GPR_SLICE_START_PTR(elem->key->slice),
+            GPR_SLICE_LENGTH(elem->key->slice))) {
+      return overhead_and_key + get_base64_encoded_size(value_len);
+    } else {
+      return overhead_and_key + value_len;
+    }
   } else {
     internal_string *is = (internal_string *)elem->value;
-    size_t value_len = GPR_SLICE_LENGTH(is->slice);
-    static const uint8_t tail_xtra[3] = {0, 2, 3};
     if (is->has_size_in_decoder_table == 0) {
       is->has_size_in_decoder_table = 1;
       if (grpc_is_binary_header(
               (const char *)GPR_SLICE_START_PTR(elem->key->slice),
               GPR_SLICE_LENGTH(elem->key->slice))) {
-        is->size_in_decoder_table =
-            value_len / 3 * 4 + tail_xtra[value_len % 3];
+        is->size_in_decoder_table = get_base64_encoded_size(value_len);
       } else {
         is->size_in_decoder_table = value_len;
       }
