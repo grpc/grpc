@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/iomgr/ev_epoll_linux.h"
+#include "src/core/lib/iomgr/ev_epoll_linux.h"
 
 #include <errno.h>
 #include <string.h>
@@ -64,7 +64,7 @@ typedef struct polling_island {
   gpr_mu mu;
   grpc_fd *only_fd;
   struct polling_island *became;
-  struct polling_island *next_free;
+  struct polling_island *next;
 } polling_island;
 
 struct grpc_fd {
@@ -138,7 +138,7 @@ static polling_island *polling_island_create(grpc_fd *initial_fd) {
   return r;
 }
 
-static void polling_island_add(polling_island *p, grpc_fd *fd) {
+static polling_island *polling_island_add(polling_island *p, grpc_fd *fd) {
   gpr_ref(&p->refs);
 
   gpr_mu_lock(&p->mu);
@@ -148,8 +148,53 @@ static void polling_island_add(polling_island *p, grpc_fd *fd) {
   add_fd_to_epoll_set(fd, p->pollable.fd);
 }
 
+static void add_siblings_to(polling_island *siblings, polling_island *dest) {
+  polling_island *sibling_tail = dest;
+  while (sibling_tail->next != NULL) {
+    sibling_tail = sibling_tail->next;
+  }
+  sibling_tail->next = siblings;
+}
+
 static polling_island *polling_island_merge(polling_island *a,
-                                            polling_island *b) {}
+                                            polling_island *b) {
+  GPR_ASSERT(a != b);
+  polling_island *out;
+
+  gpr_mu_lock(&GPR_MIN(a, b)->mu);
+  gpr_mu_lock(&GPR_MAX(a, b)->mu);
+
+  GPR_ASSERT(a->became == NULL);
+  GPR_ASSERT(b->became == NULL);
+
+  if (a->only_fd == NULL && b->only_fd == NULL) {
+    b->became = a;
+    add_siblings_to(b, a);
+    add_island_to_epoll_set(b, a->pollable.fd);
+    out = a;
+  } else if (a->only_fd == NULL) {
+    GPR_ASSERT(b->only_fd != NULL);
+    add_fd_to_epoll_set(b->only_fd, a->pollable.fd);
+    b->became = a;
+    out = a;
+  } else if (b->only_fd == NULL) {
+    GPR_ASSERT(a->only_fd != NULL);
+    add_fd_to_epoll_set(a->only_fd, b->pollable.fd);
+    a->became = b;
+    out = b;
+  } else {
+    add_fd_to_epoll_set(b->only_fd, a->pollable.fd);
+    a->only_fd = NULL;
+    b->only_fd = NULL;
+    b->became = a;
+    out = a;
+  }
+
+  gpr_mu_unlock(&a->mu);
+  gpr_mu_unlock(&b->mu);
+
+  return out;
+}
 
 static void polling_island_drop(polling_island *p) {}
 
@@ -214,7 +259,6 @@ static void fd_orphan(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
   }
 
   gpr_mu_lock(&fd->polling_island_mu);
-  polling_island_update(&fd->polling_island);
   if (fd->polling_island != NULL) {
     polling_island_drop(fd->polling_island);
   }
@@ -272,7 +316,6 @@ static void pollset_init(grpc_pollset *pollset, gpr_mu **mu) {
 
 static void pollset_destroy(grpc_pollset *pollset) {
   gpr_mu_destroy(&pollset->mu);
-  polling_island_update(&pollset->polling_island);
   if (pollset->polling_island) {
     polling_island_drop(pollset->polling_island);
   }
@@ -283,18 +326,15 @@ static void pollset_add_fd(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
   gpr_mu_lock(&pollset->mu);
   gpr_mu_lock(&fd->polling_island_mu);
 
-  polling_island_update(&fd->polling_island);
-  polling_island_update(&pollset->polling_island);
-
   if (fd->polling_island == NULL) {
     if (pollset->polling_island == NULL) {
       fd->polling_island = pollset->polling_island = polling_island_create(fd);
     } else {
-      fd->polling_island = pollset->polling_island;
-      polling_island_add(pollset->polling_island, fd->pollable.fd);
+      fd->polling_island =
+          polling_island_add(pollset->polling_island, fd->pollable.fd);
     }
   } else if (pollset->polling_island == NULL) {
-    pollset->polling_island = fd->polling_island;
+    pollset->polling_island = polling_island_ref(fd->polling_island);
   } else if (pollset->polling_island != fd->polling_island) {
     pollset->polling_island = fd->polling_island =
         polling_island_merge(pollset->polling_island, fd->polling_island);
