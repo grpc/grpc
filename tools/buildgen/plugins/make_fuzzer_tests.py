@@ -44,7 +44,7 @@ def mako_plugin(dictionary):
       new_target['deps'].insert(0, 'one_input_fuzzer')
       targets.append(new_target)
       for corpus in new_target['corpus_dirs']:
-        for fn in glob.glob('%s/*' % corpus):
+        for fn in sorted(glob.glob('%s/*' % corpus)):
           tests.append({
               'name': new_target['name'],
               'args': [fn],
