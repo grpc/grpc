@@ -29,6 +29,9 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 # Creates an interop worker on GCE.
+# IMPORTANT: After this script finishes, there are still some manual
+# steps needed there are hard to automatize.
+# See go/grpc-jenkins-setup for followup instructions.
 
 set -ex
 
