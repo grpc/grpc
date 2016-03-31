@@ -295,9 +295,7 @@ filegroups:
   - src/core/lib/iomgr/iomgr_internal.h
   - src/core/lib/iomgr/iomgr_posix.h
   - src/core/lib/iomgr/pollset.h
-  - src/core/lib/iomgr/pollset_posix.h
   - src/core/lib/iomgr/pollset_set.h
-  - src/core/lib/iomgr/pollset_set_posix.h
   - src/core/lib/iomgr/pollset_set_windows.h
   - src/core/lib/iomgr/pollset_windows.h
   - src/core/lib/iomgr/resolve_address.h
