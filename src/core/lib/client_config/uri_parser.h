@@ -34,11 +34,19 @@
 #ifndef GRPC_CORE_LIB_CLIENT_CONFIG_URI_PARSER_H
 #define GRPC_CORE_LIB_CLIENT_CONFIG_URI_PARSER_H
 
+#include <stddef.h>
+
 typedef struct {
   char *scheme;
   char *authority;
   char *path;
   char *query;
+  /** Query substrings separated by '&' */
+  char **query_parts;
+  /** Number of elements in \a query_parts and \a query_parts_values */
+  size_t num_query_parts;
+  /** Split each query part by '='. NULL if not present. */
+  char **query_parts_values;
   char *fragment;
 } grpc_uri;
 
