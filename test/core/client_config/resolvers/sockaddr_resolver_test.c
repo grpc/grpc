@@ -31,13 +31,11 @@
  *
  */
 
-#include "src/core/lib/client_config/resolvers/sockaddr_resolver.h"
-
 #include <string.h>
 
 #include <grpc/support/log.h>
 
-#include "src/core/lib/client_config/resolver.h"
+#include "src/core/lib/client_config/resolver_registry.h"
 #include "test/core/util/test_config.h"
 
 static void subchannel_factory_ref(grpc_subchannel_factory *scv) {}
@@ -92,9 +90,10 @@ static void test_fails(grpc_resolver_factory *factory, const char *string) {
 int main(int argc, char **argv) {
   grpc_resolver_factory *ipv4, *ipv6;
   grpc_test_init(argc, argv);
+  grpc_init();
 
-  ipv4 = grpc_ipv4_resolver_factory_create();
-  ipv6 = grpc_ipv6_resolver_factory_create();
+  ipv4 = grpc_resolver_factory_lookup("ipv4");
+  ipv6 = grpc_resolver_factory_lookup("ipv6");
 
   test_fails(ipv4, "ipv4:10.2.1.1");
   test_succeeds(ipv4, "ipv4:10.2.1.1:1234");
@@ -111,6 +110,7 @@ int main(int argc, char **argv) {
 
   grpc_resolver_factory_unref(ipv4);
   grpc_resolver_factory_unref(ipv6);
+  grpc_shutdown();
 
   return 0;
 }
