@@ -167,7 +167,7 @@ argp.add_argument('--precommit',
 args = argp.parse_args()
 
 KNOWN_BAD = set([
-    'src/core/lib/proto/grpc/lb/v0/load_balancer.pb.h',
+    'src/core/ext/lb_policy/grpclb/proto/grpc/lb/v0/load_balancer.pb.h',
 ])
 
 
