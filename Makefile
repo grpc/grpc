@@ -944,6 +944,9 @@ httpcli_format_request_test: $(BINDIR)/$(CONFIG)/httpcli_format_request_test
 httpcli_test: $(BINDIR)/$(CONFIG)/httpcli_test
 httpscli_test: $(BINDIR)/$(CONFIG)/httpscli_test
 init_test: $(BINDIR)/$(CONFIG)/init_test
+internal_api_canary_iomgr_test: $(BINDIR)/$(CONFIG)/internal_api_canary_iomgr_test
+internal_api_canary_support_test: $(BINDIR)/$(CONFIG)/internal_api_canary_support_test
+internal_api_canary_transport_test: $(BINDIR)/$(CONFIG)/internal_api_canary_transport_test
 invalid_call_argument_test: $(BINDIR)/$(CONFIG)/invalid_call_argument_test
 json_fuzzer_test: $(BINDIR)/$(CONFIG)/json_fuzzer_test
 json_rewrite: $(BINDIR)/$(CONFIG)/json_rewrite
@@ -1248,6 +1251,9 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/httpcli_test \
   $(BINDIR)/$(CONFIG)/httpscli_test \
   $(BINDIR)/$(CONFIG)/init_test \
+  $(BINDIR)/$(CONFIG)/internal_api_canary_iomgr_test \
+  $(BINDIR)/$(CONFIG)/internal_api_canary_support_test \
+  $(BINDIR)/$(CONFIG)/internal_api_canary_transport_test \
   $(BINDIR)/$(CONFIG)/invalid_call_argument_test \
   $(BINDIR)/$(CONFIG)/json_rewrite \
   $(BINDIR)/$(CONFIG)/json_rewrite_test \
@@ -2420,6 +2426,10 @@ endif
 
 
 LIBGRPC_SRC = \
+    src/core/ext/lb_policy/grpclb/load_balancer_api.c \
+    src/core/ext/lb_policy/grpclb/proto/grpc/lb/v0/load_balancer.pb.c \
+    src/core/ext/lb_policy/pick_first/pick_first.c \
+    src/core/ext/lb_policy/round_robin/round_robin.c \
     src/core/ext/transport/chttp2/client/insecure/channel_create.c \
     src/core/ext/transport/chttp2/client/secure/secure_channel_create.c \
     src/core/ext/transport/chttp2/server/insecure/server_chttp2.c \
@@ -2467,9 +2477,6 @@ LIBGRPC_SRC = \
     src/core/lib/client_config/connector.c \
     src/core/lib/client_config/default_initial_connect_string.c \
     src/core/lib/client_config/initial_connect_string.c \
-    src/core/lib/client_config/lb_policies/load_balancer_api.c \
-    src/core/lib/client_config/lb_policies/pick_first.c \
-    src/core/lib/client_config/lb_policies/round_robin.c \
     src/core/lib/client_config/lb_policy.c \
     src/core/lib/client_config/lb_policy_factory.c \
     src/core/lib/client_config/lb_policy_registry.c \
@@ -2533,7 +2540,6 @@ LIBGRPC_SRC = \
     src/core/lib/json/json_reader.c \
     src/core/lib/json/json_string.c \
     src/core/lib/json/json_writer.c \
-    src/core/lib/proto/grpc/lb/v0/load_balancer.pb.c \
     src/core/lib/security/b64.c \
     src/core/lib/security/client_auth_filter.c \
     src/core/lib/security/credentials.c \
@@ -2579,6 +2585,7 @@ LIBGRPC_SRC = \
     src/core/lib/tsi/fake_transport_security.c \
     src/core/lib/tsi/ssl_transport_security.c \
     src/core/lib/tsi/transport_security.c \
+    src/core/plugin_registry/grpc_plugin_registry.c \
     third_party/nanopb/pb_common.c \
     third_party/nanopb/pb_decode.c \
     third_party/nanopb/pb_encode.c \
@@ -2779,6 +2786,10 @@ endif
 
 
 LIBGRPC_UNSECURE_SRC = \
+    src/core/ext/lb_policy/grpclb/load_balancer_api.c \
+    src/core/ext/lb_policy/grpclb/proto/grpc/lb/v0/load_balancer.pb.c \
+    src/core/ext/lb_policy/pick_first/pick_first.c \
+    src/core/ext/lb_policy/round_robin/round_robin.c \
     src/core/ext/transport/chttp2/client/insecure/channel_create.c \
     src/core/ext/transport/chttp2/server/insecure/server_chttp2.c \
     src/core/ext/transport/chttp2/transport/alpn.c \
@@ -2824,9 +2835,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/client_config/connector.c \
     src/core/lib/client_config/default_initial_connect_string.c \
     src/core/lib/client_config/initial_connect_string.c \
-    src/core/lib/client_config/lb_policies/load_balancer_api.c \
-    src/core/lib/client_config/lb_policies/pick_first.c \
-    src/core/lib/client_config/lb_policies/round_robin.c \
     src/core/lib/client_config/lb_policy.c \
     src/core/lib/client_config/lb_policy_factory.c \
     src/core/lib/client_config/lb_policy_registry.c \
@@ -2889,7 +2897,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/json/json_reader.c \
     src/core/lib/json/json_string.c \
     src/core/lib/json/json_writer.c \
-    src/core/lib/proto/grpc/lb/v0/load_balancer.pb.c \
     src/core/lib/surface/alarm.c \
     src/core/lib/surface/api_trace.c \
     src/core/lib/surface/byte_buffer.c \
@@ -2918,6 +2925,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/transport/static_metadata.c \
     src/core/lib/transport/transport.c \
     src/core/lib/transport/transport_op_string.c \
+    src/core/plugin_registry/grpc_unsecure_plugin_registry.c \
     third_party/nanopb/pb_common.c \
     third_party/nanopb/pb_decode.c \
     third_party/nanopb/pb_encode.c \
@@ -5806,6 +5814,7 @@ LIBEND2END_TESTS_SRC = \
     test/core/end2end/tests/graceful_server_shutdown.c \
     test/core/end2end/tests/high_initial_seqno.c \
     test/core/end2end/tests/hpack_size.c \
+    test/core/end2end/tests/idempotent_request.c \
     test/core/end2end/tests/invoke_large_request.c \
     test/core/end2end/tests/large_metadata.c \
     test/core/end2end/tests/max_concurrent_streams.c \
@@ -5880,6 +5889,7 @@ LIBEND2END_NOSEC_TESTS_SRC = \
     test/core/end2end/tests/graceful_server_shutdown.c \
     test/core/end2end/tests/high_initial_seqno.c \
     test/core/end2end/tests/hpack_size.c \
+    test/core/end2end/tests/idempotent_request.c \
     test/core/end2end/tests/invoke_large_request.c \
     test/core/end2end/tests/large_metadata.c \
     test/core/end2end/tests/max_concurrent_streams.c \
@@ -8066,6 +8076,102 @@ deps_init_test: $(INIT_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(INIT_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+INTERNAL_API_CANARY_IOMGR_TEST_SRC = \
+    test/core/internal_api_canaries/iomgr.c \
+
+INTERNAL_API_CANARY_IOMGR_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(INTERNAL_API_CANARY_IOMGR_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/internal_api_canary_iomgr_test: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/internal_api_canary_iomgr_test: $(INTERNAL_API_CANARY_IOMGR_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(INTERNAL_API_CANARY_IOMGR_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/internal_api_canary_iomgr_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/internal_api_canaries/iomgr.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_internal_api_canary_iomgr_test: $(INTERNAL_API_CANARY_IOMGR_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(INTERNAL_API_CANARY_IOMGR_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+INTERNAL_API_CANARY_SUPPORT_TEST_SRC = \
+    test/core/internal_api_canaries/iomgr.c \
+
+INTERNAL_API_CANARY_SUPPORT_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(INTERNAL_API_CANARY_SUPPORT_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/internal_api_canary_support_test: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/internal_api_canary_support_test: $(INTERNAL_API_CANARY_SUPPORT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(INTERNAL_API_CANARY_SUPPORT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/internal_api_canary_support_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/internal_api_canaries/iomgr.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_internal_api_canary_support_test: $(INTERNAL_API_CANARY_SUPPORT_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(INTERNAL_API_CANARY_SUPPORT_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+INTERNAL_API_CANARY_TRANSPORT_TEST_SRC = \
+    test/core/internal_api_canaries/iomgr.c \
+
+INTERNAL_API_CANARY_TRANSPORT_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(INTERNAL_API_CANARY_TRANSPORT_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/internal_api_canary_transport_test: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/internal_api_canary_transport_test: $(INTERNAL_API_CANARY_TRANSPORT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(INTERNAL_API_CANARY_TRANSPORT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/internal_api_canary_transport_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/internal_api_canaries/iomgr.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_internal_api_canary_transport_test: $(INTERNAL_API_CANARY_TRANSPORT_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(INTERNAL_API_CANARY_TRANSPORT_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -13428,6 +13534,7 @@ src/core/lib/surface/init_secure.c: $(OPENSSL_DEP)
 src/core/lib/tsi/fake_transport_security.c: $(OPENSSL_DEP)
 src/core/lib/tsi/ssl_transport_security.c: $(OPENSSL_DEP)
 src/core/lib/tsi/transport_security.c: $(OPENSSL_DEP)
+src/core/plugin_registry/grpc_plugin_registry.c: $(OPENSSL_DEP)
 src/cpp/client/secure_credentials.cc: $(OPENSSL_DEP)
 src/cpp/common/auth_property_iterator.cc: $(OPENSSL_DEP)
 src/cpp/common/secure_auth_context.cc: $(OPENSSL_DEP)
