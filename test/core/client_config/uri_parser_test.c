@@ -56,6 +56,51 @@ static void test_fails(const char *uri_text) {
   GPR_ASSERT(NULL == grpc_uri_parse(uri_text, 0));
 }
 
+static void test_query_parts() {
+  {
+    const char *uri_text = "http://foo/path?a&b=B&c=&#frag";
+    grpc_uri *uri = grpc_uri_parse(uri_text, 0);
+    GPR_ASSERT(uri);
+
+    GPR_ASSERT(0 == strcmp("http", uri->scheme));
+    GPR_ASSERT(0 == strcmp("foo", uri->authority));
+    GPR_ASSERT(0 == strcmp("/path", uri->path));
+    GPR_ASSERT(0 == strcmp("a&b=B&c=&", uri->query));
+    GPR_ASSERT(4 == uri->num_query_parts);
+
+    GPR_ASSERT(0 == strcmp("a", uri->query_parts[0]));
+    GPR_ASSERT(NULL == uri->query_parts_values[0]);
+
+    GPR_ASSERT(0 == strcmp("b", uri->query_parts[1]));
+    GPR_ASSERT(0 == strcmp("B", uri->query_parts_values[1]));
+
+    GPR_ASSERT(0 == strcmp("c", uri->query_parts[2]));
+    GPR_ASSERT(0 == strcmp("", uri->query_parts_values[2]));
+
+    GPR_ASSERT(0 == strcmp("", uri->query_parts[3]));
+    GPR_ASSERT(NULL == uri->query_parts_values[3]);
+
+    GPR_ASSERT(0 == strcmp("frag", uri->fragment));
+    grpc_uri_destroy(uri);
+  }
+  {
+    /* empty query */
+    const char *uri_text = "http://foo/path";
+    grpc_uri *uri = grpc_uri_parse(uri_text, 0);
+    GPR_ASSERT(uri);
+
+    GPR_ASSERT(0 == strcmp("http", uri->scheme));
+    GPR_ASSERT(0 == strcmp("foo", uri->authority));
+    GPR_ASSERT(0 == strcmp("/path", uri->path));
+    GPR_ASSERT(0 == strcmp("", uri->query));
+    GPR_ASSERT(0 == uri->num_query_parts);
+    GPR_ASSERT(NULL == uri->query_parts);
+    GPR_ASSERT(NULL == uri->query_parts_values);
+    GPR_ASSERT(0 == strcmp("", uri->fragment));
+    grpc_uri_destroy(uri);
+  }
+}
+
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
   test_succeeds("http://www.google.com", "http", "www.google.com", "", "", "");
@@ -82,5 +127,6 @@ int main(int argc, char **argv) {
   test_fails("http://foo?x[bar]");
   test_fails("http://foo?bar#lol#");
 
+  test_query_parts();
   return 0;
 }
