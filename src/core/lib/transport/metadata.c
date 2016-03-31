@@ -80,6 +80,7 @@
 
 typedef void (*destroy_user_data_func)(void *user_data);
 
+#define SIZE_IN_DECODER_TABLE_NOT_SET -1
 /* Shadow structure for grpc_mdstr for non-static values */
 typedef struct internal_string {
   /* must be byte compatible with grpc_mdstr */
@@ -94,8 +95,7 @@ typedef struct internal_string {
 
   gpr_slice base64_and_huffman;
 
-  bool has_size_in_decoder_table;
-  size_t size_in_decoder_table;
+  gpr_atm size_in_decoder_table;
 
   struct internal_string *bucket_next;
 } internal_string;
@@ -411,8 +411,7 @@ grpc_mdstr *grpc_mdstr_from_buffer(const uint8_t *buf, size_t length) {
   }
   s->has_base64_and_huffman_encoded = 0;
   s->hash = hash;
-  s->has_size_in_decoder_table = false;
-  s->size_in_decoder_table = 0;
+  s->size_in_decoder_table = SIZE_IN_DECODER_TABLE_NOT_SET;
   s->bucket_next = shard->strs[idx];
   shard->strs[idx] = s;
 
@@ -600,17 +599,18 @@ size_t grpc_mdelem_get_size_in_hpack_table(grpc_mdelem *elem) {
     }
   } else {
     internal_string *is = (internal_string *)elem->value;
-    if (is->has_size_in_decoder_table == false) {
-      is->has_size_in_decoder_table = true;
+    gpr_atm current_size = gpr_atm_no_barrier_load(&is->size_in_decoder_table);
+    if (current_size == SIZE_IN_DECODER_TABLE_NOT_SET) {
       if (grpc_is_binary_header(
               (const char *)GPR_SLICE_START_PTR(elem->key->slice),
               GPR_SLICE_LENGTH(elem->key->slice))) {
-        is->size_in_decoder_table = get_base64_encoded_size(value_len);
+        current_size = (gpr_atm)get_base64_encoded_size(value_len);
       } else {
-        is->size_in_decoder_table = value_len;
+        current_size = (gpr_atm)value_len;
       }
+      gpr_atm_no_barrier_store(&is->size_in_decoder_table, current_size);
     }
-    return overhead_and_key + is->size_in_decoder_table;
+    return overhead_and_key + (size_t)current_size;
   }
 }
 
