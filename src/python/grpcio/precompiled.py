@@ -31,6 +31,7 @@ import os
 import platform
 import shutil
 import sys
+import sysconfig
 
 import setuptools
 
@@ -51,9 +52,15 @@ USE_PRECOMPILED_BINARIES = bool(int(os.environ.get(
 
 def _tagged_ext_name(base):
   uname = platform.uname()
-  tags = '-'.join((grpc_version.VERSION, uname[0], uname[4]))
-  flavor = 'ucs2' if sys.maxunicode == 65535 else 'ucs4'
-  return '{base}-{tags}-{flavor}'.format(base=base, tags=tags, flavor=flavor)
+  tags = (
+      grpc_version.VERSION,
+      'py{}'.format(sysconfig.get_python_version()),
+      uname[0],
+      uname[4],
+  )
+  ucs = 'ucs{}'.format(sysconfig.get_config_var('Py_UNICODE_SIZE'))
+  return '{base}-{tags}-{ucs}'.format(
+      base=base, tags='-'.join(tags), ucs=ucs)
 
 
 class BuildTaggedExt(setuptools.Command):
@@ -84,6 +91,9 @@ class BuildTaggedExt(setuptools.Command):
 
 
 def update_setup_arguments(setup_arguments):
+  if not USE_PRECOMPILED_BINARIES:
+    sys.stderr.write('not using precompiled extension')
+    return
   url = '{}/{}.so'.format(BINARIES_REPOSITORY, _tagged_ext_name('cygrpc'))
   target_path = os.path.join(PYTHON_STEM, 'grpc/_cython/cygrpc.so')
   try:

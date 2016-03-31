@@ -1,9 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="$(SolutionDir)\..\src\cpp\common\insecure_create_auth_context.cc">
-      <Filter>src\cpp\common</Filter>
-    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\client\channel.cc">
       <Filter>src\cpp\client</Filter>
     </ClCompile>
@@ -25,8 +22,8 @@
     <ClCompile Include="$(SolutionDir)\..\src\cpp\client\insecure_credentials.cc">
       <Filter>src\cpp\client</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\cpp\common\call.cc">
-      <Filter>src\cpp\common</Filter>
+    <ClCompile Include="$(SolutionDir)\..\src\cpp\codegen\codegen_init.cc">
+      <Filter>src\cpp\codegen</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\common\channel_arguments.cc">
       <Filter>src\cpp\common</Filter>
@@ -34,11 +31,14 @@
     <ClCompile Include="$(SolutionDir)\..\src\cpp\common\completion_queue.cc">
       <Filter>src\cpp\common</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\cpp\common\rpc_method.cc">
+    <ClCompile Include="$(SolutionDir)\..\src\cpp\common\core_codegen.cc">
       <Filter>src\cpp\common</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\cpp\proto\proto_utils.cc">
-      <Filter>src\cpp\proto</Filter>
+    <ClCompile Include="$(SolutionDir)\..\src\cpp\common\insecure_create_auth_context.cc">
+      <Filter>src\cpp\common</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\cpp\common\rpc_method.cc">
+      <Filter>src\cpp\common</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\server\async_generic_service.cc">
       <Filter>src\cpp\server</Filter>
@@ -79,9 +79,6 @@
     <ClCompile Include="$(SolutionDir)\..\src\cpp\util\time.cc">
       <Filter>src\cpp\util</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\cpp\codegen\grpc_library.cc">
-      <Filter>src\cpp\codegen</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\alarm.h">
@@ -113,6 +110,99 @@
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\client_unary_call.h">
       <Filter>include\grpc++\impl</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\async_stream.h">
+      <Filter>include\grpc++\impl\codegen</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\async_unary_call.h">
+      <Filter>include\grpc++\impl\codegen</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\call.h">
+      <Filter>include\grpc++\impl\codegen</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\call_hook.h">
+      <Filter>include\grpc++\impl\codegen</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\channel_interface.h">
+      <Filter>include\grpc++\impl\codegen</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\client_context.h">
+      <Filter>include\grpc++\impl\codegen</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\client_unary_call.h">
+      <Filter>include\grpc++\impl\codegen</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\completion_queue.h">
+      <Filter>include\grpc++\impl\codegen</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\completion_queue_tag.h">
+      <Filter>include\grpc++\impl\codegen</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\config.h">
+      <Filter>include\grpc++\impl\codegen</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\config_protobuf.h">
+      <Filter>include\grpc++\impl\codegen</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\core_codegen_interface.h">
+      <Filter>include\grpc++\impl\codegen</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\grpc_library.h">
+      <Filter>include\grpc++\impl\codegen</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\method_handler_impl.h">
+      <Filter>include\grpc++\impl\codegen</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\proto_utils.h">
+      <Filter>include\grpc++\impl\codegen</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\rpc_method.h">
+      <Filter>include\grpc++\impl\codegen</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\rpc_service_method.h">
+      <Filter>include\grpc++\impl\codegen</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\security\auth_context.h">
+      <Filter>include\grpc++\impl\codegen\security</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\serialization_traits.h">
+      <Filter>include\grpc++\impl\codegen</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\server_context.h">
+      <Filter>include\grpc++\impl\codegen</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\server_interface.h">
+      <Filter>include\grpc++\impl\codegen</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\service_type.h">
+      <Filter>include\grpc++\impl\codegen</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\status.h">
+      <Filter>include\grpc++\impl\codegen</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\status_code_enum.h">
+      <Filter>include\grpc++\impl\codegen</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\string_ref.h">
+      <Filter>include\grpc++\impl\codegen</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\stub_options.h">
+      <Filter>include\grpc++\impl\codegen</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\sync.h">
+      <Filter>include\grpc++\impl\codegen</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\sync_cxx11.h">
+      <Filter>include\grpc++\impl\codegen</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\sync_no_cxx11.h">
+      <Filter>include\grpc++\impl\codegen</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\sync_stream.h">
+      <Filter>include\grpc++\impl\codegen</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\time.h">
+      <Filter>include\grpc++\impl\codegen</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\grpc_library.h">
       <Filter>include\grpc++\impl</Filter>
@@ -216,100 +306,13 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\support\time.h">
       <Filter>include\grpc++\support</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\async_stream.h">
-      <Filter>include\grpc++\impl\codegen</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\async_unary_call.h">
-      <Filter>include\grpc++\impl\codegen</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\call.h">
-      <Filter>include\grpc++\impl\codegen</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\call_hook.h">
-      <Filter>include\grpc++\impl\codegen</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\channel_interface.h">
-      <Filter>include\grpc++\impl\codegen</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\client_context.h">
-      <Filter>include\grpc++\impl\codegen</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\client_unary_call.h">
-      <Filter>include\grpc++\impl\codegen</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\completion_queue.h">
-      <Filter>include\grpc++\impl\codegen</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\completion_queue_tag.h">
-      <Filter>include\grpc++\impl\codegen</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\config.h">
-      <Filter>include\grpc++\impl\codegen</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\config_protobuf.h">
-      <Filter>include\grpc++\impl\codegen</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\grpc_library.h">
-      <Filter>include\grpc++\impl\codegen</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\method_handler_impl.h">
-      <Filter>include\grpc++\impl\codegen</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\proto_utils.h">
-      <Filter>include\grpc++\impl\codegen</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\rpc_method.h">
-      <Filter>include\grpc++\impl\codegen</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\rpc_service_method.h">
-      <Filter>include\grpc++\impl\codegen</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\security\auth_context.h">
-      <Filter>include\grpc++\impl\codegen\security</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\serialization_traits.h">
-      <Filter>include\grpc++\impl\codegen</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\server_context.h">
-      <Filter>include\grpc++\impl\codegen</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\server_interface.h">
-      <Filter>include\grpc++\impl\codegen</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\service_type.h">
-      <Filter>include\grpc++\impl\codegen</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\status.h">
-      <Filter>include\grpc++\impl\codegen</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\status_code_enum.h">
-      <Filter>include\grpc++\impl\codegen</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\string_ref.h">
-      <Filter>include\grpc++\impl\codegen</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\stub_options.h">
-      <Filter>include\grpc++\impl\codegen</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\sync.h">
-      <Filter>include\grpc++\impl\codegen</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\sync_cxx11.h">
-      <Filter>include\grpc++\impl\codegen</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\sync_no_cxx11.h">
-      <Filter>include\grpc++\impl\codegen</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\sync_stream.h">
-      <Filter>include\grpc++\impl\codegen</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\time.h">
-      <Filter>include\grpc++\impl\codegen</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(SolutionDir)\..\src\cpp\client\create_channel_internal.h">
       <Filter>src\cpp\client</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\cpp\common\core_codegen.h">
+      <Filter>src\cpp\common</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\cpp\common\create_auth_context.h">
       <Filter>src\cpp\common</Filter>
@@ -361,9 +364,6 @@
     </Filter>
     <Filter Include="src\cpp\common">
       <UniqueIdentifier>{ed8e4daa-825f-fbe5-2a45-846ad9165d3d}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="src\cpp\proto">
-      <UniqueIdentifier>{10b51a99-2e57-249e-ce23-3ab8c6b99ffb}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\cpp\server">
       <UniqueIdentifier>{8a54a279-d14b-4237-0df3-1ffe1ef5a7af}</UniqueIdentifier>

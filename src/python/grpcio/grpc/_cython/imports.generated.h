@@ -166,7 +166,7 @@ extern grpc_compression_algorithm_parse_type grpc_compression_algorithm_parse_im
 typedef int(*grpc_compression_algorithm_name_type)(grpc_compression_algorithm algorithm, char **name);
 extern grpc_compression_algorithm_name_type grpc_compression_algorithm_name_import;
 #define grpc_compression_algorithm_name grpc_compression_algorithm_name_import
-typedef grpc_compression_algorithm(*grpc_compression_algorithm_for_level_type)(grpc_compression_level level);
+typedef grpc_compression_algorithm(*grpc_compression_algorithm_for_level_type)(grpc_compression_level level, uint32_t accepted_encodings);
 extern grpc_compression_algorithm_for_level_type grpc_compression_algorithm_for_level_import;
 #define grpc_compression_algorithm_for_level grpc_compression_algorithm_for_level_import
 typedef void(*grpc_compression_options_init_type)(grpc_compression_options *opts);
@@ -283,7 +283,7 @@ extern grpc_call_destroy_type grpc_call_destroy_import;
 typedef grpc_call_error(*grpc_server_request_call_type)(grpc_server *server, grpc_call **call, grpc_call_details *details, grpc_metadata_array *request_metadata, grpc_completion_queue *cq_bound_to_call, grpc_completion_queue *cq_for_notification, void *tag_new);
 extern grpc_server_request_call_type grpc_server_request_call_import;
 #define grpc_server_request_call grpc_server_request_call_import
-typedef void *(*grpc_server_register_method_type)(grpc_server *server, const char *method, const char *host);
+typedef void *(*grpc_server_register_method_type)(grpc_server *server, const char *method, const char *host, uint32_t flags);
 extern grpc_server_register_method_type grpc_server_register_method_import;
 #define grpc_server_register_method grpc_server_register_method_import
 typedef grpc_call_error(*grpc_server_request_registered_call_type)(grpc_server *server, void *registered_method, grpc_call **call, gpr_timespec *deadline, grpc_metadata_array *request_metadata, grpc_byte_buffer **optional_payload, grpc_completion_queue *cq_bound_to_call, grpc_completion_queue *cq_for_notification, void *tag_new);
