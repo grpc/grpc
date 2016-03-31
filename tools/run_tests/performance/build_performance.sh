@@ -37,7 +37,10 @@ cd $(dirname $0)/../../..
 CONFIG=${CONFIG:-opt}
 
 # build C++ qps worker & driver
-make CONFIG=${CONFIG} qps_worker qps_driver -j8
+# TODO(jtattermusch): not embedding OpenSSL breaks the C# build because
+# grpc_csharp_ext needs OpenSSL embedded and some intermediate files from
+# this build will be reused.
+make CONFIG=${CONFIG} EMBED_OPENSSL=true EMBED_ZLIB=true qps_worker qps_driver -j8
 
 # build C# qps worker
 tools/run_tests/run_tests.py -l csharp -c $CONFIG --build_only -j 8
