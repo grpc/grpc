@@ -33,8 +33,8 @@
 
 /* A very fast in-memory log, optimized for multiple writers. */
 
-#ifndef GRPC_CORE_LIB_CENSUS_MLOG_H
-#define GRPC_CORE_LIB_CENSUS_MLOG_H
+#ifndef GRPC_CORE_EXT_CENSUS_MLOG_H
+#define GRPC_CORE_EXT_CENSUS_MLOG_H
 
 #include <grpc/support/port_platform.h>
 #include <stddef.h>
@@ -92,4 +92,4 @@ size_t census_log_remaining_space(void);
    out-of-space. */
 int64_t census_log_out_of_space_count(void);
 
-#endif /* GRPC_CORE_LIB_CENSUS_MLOG_H */
+#endif /* GRPC_CORE_EXT_CENSUS_MLOG_H */
