@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/transport/chttp2/bin_encoder.h"
+#include "src/core/ext/transport/chttp2/transport/bin_encoder.h"
 
 #include <string.h>
 
@@ -39,9 +39,9 @@
  * TODO(murgatroid99): Remove this
  */
 #include <grpc/grpc.h>
-#include "src/core/support/string.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include "src/core/lib/support/string.h"
 
 static int all_ok = 1;
 

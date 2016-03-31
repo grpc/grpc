@@ -34,8 +34,8 @@
 // This file should be compiled as part of grpc++.
 
 #include <grpc++/impl/codegen/core_codegen_interface.h>
-#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/byte_buffer.h>
+#include <grpc/impl/codegen/grpc_types.h>
 
 namespace grpc {
 

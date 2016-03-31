@@ -34,10 +34,12 @@
 set -x
 
 # Params:
-#  INTEROP_IMAGE - name of tag of the final interop image
+#  INTEROP_IMAGE - Name of tag of the final interop image
 #  INTEROP_IMAGE_TAG - Optional. If set, the created image will be tagged using
 #    the command: 'docker tag $INTEROP_IMAGE $INTEROP_IMAGE_REPOSITORY_TAG'
-#  BASE_NAME - base name used to locate the base Dockerfile and build script
+#  BASE_NAME - Base name used to locate the base Dockerfile and build script
+#  BUILD_TYPE - The 'CONFIG' variable passed to the 'make' command (example:
+#  asan, tsan. Default value: opt).
 #  TTY_FLAG - optional -t flag to make docker allocate tty
 #  BUILD_INTEROP_DOCKER_EXTRA_ARGS - optional args to be passed to the
 #    docker run command
@@ -71,6 +73,7 @@ CONTAINER_NAME="build_${BASE_NAME}_$(uuidgen)"
 (docker run \
   -e CCACHE_DIR=/tmp/ccache \
   -e THIS_IS_REALLY_NEEDED='see https://github.com/docker/docker/issues/14203 for why docker is awful' \
+  -e BUILD_TYPE=${BUILD_TYPE:=opt} \
   -i $TTY_FLAG \
   $MOUNT_ARGS \
   $BUILD_INTEROP_DOCKER_EXTRA_ARGS \
