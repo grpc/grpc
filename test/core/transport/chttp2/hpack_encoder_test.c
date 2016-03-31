@@ -207,6 +207,7 @@ static void verify_table_size_change_match_elem_size(const char *key,
   grpc_metadata_batch_destroy(&b);
 
   GPR_ASSERT(g_compressor.table_size == elem_size + initial_table_size);
+  gpr_free(e);
 }
 
 static void test_encode_header_size(void) {
