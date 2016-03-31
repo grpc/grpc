@@ -37,12 +37,12 @@
 #include <map>
 #include <memory>
 
-#include <grpc/impl/codegen/compression_types.h>
-#include <grpc/impl/codegen/time.h>
-#include <grpc++/impl/codegen/security/auth_context.h>
 #include <grpc++/impl/codegen/config.h>
+#include <grpc++/impl/codegen/security/auth_context.h>
 #include <grpc++/impl/codegen/string_ref.h>
 #include <grpc++/impl/codegen/time.h>
+#include <grpc/impl/codegen/compression_types.h>
+#include <grpc/impl/codegen/time.h>
 
 struct gpr_timespec;
 struct grpc_metadata;
@@ -103,6 +103,9 @@ class ServerContext {
   void AddInitialMetadata(const grpc::string& key, const grpc::string& value);
   void AddTrailingMetadata(const grpc::string& key, const grpc::string& value);
 
+  // IsCancelled is always safe to call when using sync API
+  // When using async API, it is only safe to call IsCancelled after
+  // the AsyncNotifyWhenDone tag has been delivered
   bool IsCancelled() const;
 
   // Cancel the Call from the server. This is a best-effort API and depending on

@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/iomgr/workqueue.h"
+#include "src/core/lib/iomgr/workqueue.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>

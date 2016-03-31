@@ -80,7 +80,7 @@ class Config(object):
     self.timeout_multiplier = timeout_multiplier
 
   def job_spec(self, cmdline, hash_targets, timeout_seconds=5*60,
-               shortname=None, environ={}, cpu_cost=1.0):
+               shortname=None, environ={}, cpu_cost=1.0, flaky=False):
     """Construct a jobset.JobSpec for a test under this config
 
        Args:
@@ -102,7 +102,7 @@ class Config(object):
                           timeout_seconds=(self.timeout_multiplier * timeout_seconds if timeout_seconds else None),
                           hash_targets=hash_targets
                               if self.allow_hashing else None,
-                          flake_retries=5 if args.allow_flakes else 0,
+                          flake_retries=5 if flaky or args.allow_flakes else 0,
                           timeout_retries=3 if args.allow_flakes else 0)
 
 
@@ -120,7 +120,12 @@ def get_c_tests(travis, test_lang) :
 
 def _check_compiler(compiler, supported_compilers):
   if compiler not in supported_compilers:
-    raise Exception('Compiler %s not supported.' % compiler)
+    raise Exception('Compiler %s not supported (on this platform).' % compiler)
+
+
+def _check_arch(arch, supported_archs):
+  if arch not in supported_archs:
+    raise Exception('Architecture %s not supported.' % arch)
 
 
 def _is_use_docker_child():
@@ -142,9 +147,8 @@ class CLanguage(object):
       self._make_options = [_windows_toolset_option(self.args.compiler),
                             _windows_arch_option(self.args.arch)]
     else:
-      self._make_options = []
-      self._docker_distro = self._get_docker_distro(self.args.use_docker,
-                                                    self.args.compiler)
+      self._docker_distro, self._make_options = self._compiler_options(self.args.use_docker,
+                                                                       self.args.compiler)
 
   def test_specs(self):
     out = []
@@ -184,14 +188,15 @@ class CLanguage(object):
                                               shortname='%s:%s' % (binary, test),
                                               cpu_cost=target['cpu_cost'],
                                               environ={'GRPC_DEFAULT_SSL_ROOTS_FILE_PATH':
-                                                       _ROOT + '/src/core/tsi/test_creds/ca.pem'}))
+                                                       _ROOT + '/src/core/lib/tsi/test_creds/ca.pem'}))
         else:
           cmdline = [binary] + target['args']
           out.append(self.config.job_spec(cmdline, [binary],
                                           shortname=' '.join(cmdline),
                                           cpu_cost=target['cpu_cost'],
+                                          flaky=target.get('flaky', False),
                                           environ={'GRPC_DEFAULT_SSL_ROOTS_FILE_PATH':
-                                                   _ROOT + '/src/core/tsi/test_creds/ca.pem'}))
+                                                   _ROOT + '/src/core/lib/tsi/test_creds/ca.pem'}))
       elif self.args.regex == '.*' or self.platform == 'windows':
         print '\nWARNING: binary not found, skipping', binary
     return sorted(out)
@@ -229,18 +234,29 @@ class CLanguage(object):
   def makefile_name(self):
     return 'Makefile'
 
-  def _get_docker_distro(self, use_docker, compiler):
+  def _clang_make_options(self):
+    return ['CC=clang', 'CXX=clang++', 'LD=clang', 'LDXX=clang++']
+
+  def _gcc44_make_options(self):
+    return ['CC=gcc-4.4', 'CXX=g++-4.4', 'LD=gcc-4.4', 'LDXX=g++-4.4']
+
+  def _compiler_options(self, use_docker, compiler):
+    """Returns docker distro and make options to use for given compiler."""
     if _is_use_docker_child():
-      return "already_under_docker"
+      return ("already_under_docker", [])
     if not use_docker:
       _check_compiler(compiler, ['default'])
 
     if compiler == 'gcc4.9' or compiler == 'default':
-      return 'jessie'
+      return ('jessie', [])
     elif compiler == 'gcc4.4':
-      return 'squeeze'
+      return ('wheezy', self._gcc44_make_options())
     elif compiler == 'gcc5.3':
-      return 'ubuntu1604'
+      return ('ubuntu1604', [])
+    elif compiler == 'clang3.4':
+      return ('ubuntu1404', self._clang_make_options())
+    elif compiler == 'clang3.6':
+      return ('ubuntu1604', self._clang_make_options())
     else:
       raise Exception('Compiler %s not supported.' % compiler)
 
@@ -360,7 +376,7 @@ class PythonLanguage(object):
           ['tools/run_tests/run_python.sh'],
           None,
           environ=dict(environment.items() +
-                       [('GPRC_PYTHON_TESTRUNNER_FILTER', suite_name)]),
+                       [('GRPC_PYTHON_TESTRUNNER_FILTER', suite_name)]),
           shortname='py.test.%s' % suite_name,
           timeout_seconds=5*60)
           for suite_name in tests_json]
@@ -453,7 +469,20 @@ class CSharpLanguage(object):
   def configure(self, config, args):
     self.config = config
     self.args = args
-    _check_compiler(self.args.compiler, ['default'])
+    if self.platform == 'windows':
+      # Explicitly choosing between x86 and x64 arch doesn't work yet
+      _check_arch(self.args.arch, ['default'])
+      self._make_options = [_windows_toolset_option(self.args.compiler),
+                            _windows_arch_option(self.args.arch)]
+    else:
+      _check_compiler(self.args.compiler, ['default'])
+      if self.platform == 'mac':
+        # On Mac, official distribution of mono is 32bit.
+        # TODO(jtattermusch): EMBED_ZLIB=true currently breaks the mac build
+        self._make_options = ['EMBED_OPENSSL=true',
+                              'CFLAGS=-m32', 'LDFLAGS=-m32']
+      else:
+        self._make_options = ['EMBED_OPENSSL=true', 'EMBED_ZLIB=true']
 
   def test_specs(self):
     with open('src/csharp/tests.json') as f:
@@ -500,23 +529,16 @@ class CSharpLanguage(object):
       return [['tools/run_tests/pre_build_csharp.sh']]
 
   def make_targets(self):
-    # For Windows, this target doesn't really build anything,
-    # everything is build by buildall script later.
-    if self.platform == 'windows':
-      return []
-    else:
-      return ['grpc_csharp_ext']
+    return ['grpc_csharp_ext']
 
   def make_options(self):
-    if self.platform == 'mac':
-      # On Mac, official distribution of mono is 32bit.
-      return ['CFLAGS=-arch i386', 'LDFLAGS=-arch i386']
-    else:
-      return []
+    return self._make_options;
 
   def build_steps(self):
     if self.platform == 'windows':
-      return [['src\\csharp\\buildall.bat']]
+      return [[_windows_build_bat(self.args.compiler),
+               'src/csharp/Grpc.sln',
+               '/p:Configuration=%s' % _MSBUILD_CONFIG[self.config.build_config]]]
     else:
       return [['tools/run_tests/build_csharp.sh']]
 
@@ -774,6 +796,7 @@ argp.add_argument('--arch',
 argp.add_argument('--compiler',
                   choices=['default',
                            'gcc4.4', 'gcc4.9', 'gcc5.3',
+                           'clang3.4', 'clang3.6',
                            'vs2010', 'vs2013', 'vs2015'],
                   default='default',
                   help='Selects compiler to use. Allowed values depend on the platform and language.')
@@ -861,9 +884,16 @@ if args.use_docker:
 
   dockerfile_dirs = set([l.dockerfile_dir() for l in languages])
   if len(dockerfile_dirs) > 1:
-    print 'Languages to be tested require running under different docker images.'
-    sys.exit(1)
-  dockerfile_dir = next(iter(dockerfile_dirs))
+    if 'gcov' in args.config:
+      dockerfile_dir = 'tools/dockerfile/test/multilang_jessie_x64'
+      print ('Using multilang_jessie_x64 docker image for code coverage for '
+             'all languages.')
+    else:
+      print ('Languages to be tested require running under different docker '
+             'images.')
+      sys.exit(1)
+  else:
+    dockerfile_dir = next(iter(dockerfile_dirs))
 
   child_argv = [ arg for arg in sys.argv if not arg == '--use_docker' ]
   run_tests_cmd = 'python tools/run_tests/run_tests.py %s' % ' '.join(child_argv[1:])

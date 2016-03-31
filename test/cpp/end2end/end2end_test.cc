@@ -48,7 +48,7 @@
 #include <grpc/support/time.h>
 #include <gtest/gtest.h>
 
-#include "src/core/security/credentials.h"
+#include "src/core/lib/security/credentials.h"
 #include "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
@@ -59,6 +59,7 @@
 
 using grpc::testing::EchoRequest;
 using grpc::testing::EchoResponse;
+using grpc::testing::kTlsCredentialsType;
 using std::chrono::system_clock;
 
 namespace grpc {
@@ -1194,6 +1195,8 @@ TEST_P(SecureEnd2endTest, BlockingAuthMetadataPluginAndProcessorSuccess) {
   request.mutable_param()->set_echo_metadata(true);
   request.mutable_param()->set_expected_client_identity(
       TestAuthMetadataProcessor::kGoodGuy);
+  request.mutable_param()->set_expected_transport_security_type(
+      GetParam().credentials_type);
 
   Status s = stub_->Echo(&context, request, &response);
   EXPECT_EQ(request.message(), response.message());
@@ -1301,6 +1304,8 @@ TEST_P(SecureEnd2endTest, NonBlockingAuthMetadataPluginAndProcessorSuccess) {
   request.mutable_param()->set_echo_metadata(true);
   request.mutable_param()->set_expected_client_identity(
       TestAuthMetadataProcessor::kGoodGuy);
+  request.mutable_param()->set_expected_transport_security_type(
+      GetParam().credentials_type);
 
   Status s = stub_->Echo(&context, request, &response);
   EXPECT_EQ(request.message(), response.message());
@@ -1349,25 +1354,30 @@ TEST_P(SecureEnd2endTest, ClientAuthContext) {
   EchoRequest request;
   EchoResponse response;
   request.set_message("Hello");
-  request.mutable_param()->set_check_auth_context(true);
-
+  request.mutable_param()->set_check_auth_context(GetParam().credentials_type ==
+                                                  kTlsCredentialsType);
+  request.mutable_param()->set_expected_transport_security_type(
+      GetParam().credentials_type);
   ClientContext context;
   Status s = stub_->Echo(&context, request, &response);
   EXPECT_EQ(response.message(), request.message());
   EXPECT_TRUE(s.ok());
 
   std::shared_ptr<const AuthContext> auth_ctx = context.auth_context();
-  std::vector<grpc::string_ref> ssl =
+  std::vector<grpc::string_ref> tst =
       auth_ctx->FindPropertyValues("transport_security_type");
-  EXPECT_EQ(1u, ssl.size());
-  EXPECT_EQ("ssl", ToString(ssl[0]));
-  EXPECT_EQ("x509_subject_alternative_name",
-            auth_ctx->GetPeerIdentityPropertyName());
-  EXPECT_EQ(3u, auth_ctx->GetPeerIdentity().size());
-  EXPECT_EQ("*.test.google.fr", ToString(auth_ctx->GetPeerIdentity()[0]));
-  EXPECT_EQ("waterzooi.test.google.be",
-            ToString(auth_ctx->GetPeerIdentity()[1]));
-  EXPECT_EQ("*.test.youtube.com", ToString(auth_ctx->GetPeerIdentity()[2]));
+  EXPECT_EQ(1u, tst.size());
+  EXPECT_EQ(GetParam().credentials_type, ToString(tst[0]));
+  if (GetParam().credentials_type == kTlsCredentialsType) {
+    EXPECT_EQ("x509_subject_alternative_name",
+              auth_ctx->GetPeerIdentityPropertyName());
+    EXPECT_EQ(4u, auth_ctx->GetPeerIdentity().size());
+    EXPECT_EQ("*.test.google.fr", ToString(auth_ctx->GetPeerIdentity()[0]));
+    EXPECT_EQ("waterzooi.test.google.be",
+              ToString(auth_ctx->GetPeerIdentity()[1]));
+    EXPECT_EQ("*.test.youtube.com", ToString(auth_ctx->GetPeerIdentity()[2]));
+    EXPECT_EQ("192.168.1.3", ToString(auth_ctx->GetPeerIdentity()[3]));
+  }
 }
 
 std::vector<TestScenario> CreateTestScenarios(bool use_proxy,

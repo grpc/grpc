@@ -34,17 +34,17 @@
 #include <memory>
 #include <sstream>
 
-#include <grpc/grpc.h>
-#include <grpc/support/log.h>
 #include <gflags/gflags.h>
 #include <grpc++/channel.h>
 #include <grpc++/client_context.h>
 #include <grpc++/support/channel_arguments.h>
-#include "test/cpp/util/create_test_channel.h"
-#include "test/cpp/util/test_config.h"
-#include "src/proto/grpc/testing/test.grpc.pb.h"
+#include <grpc/grpc.h>
+#include <grpc/support/log.h>
 #include "src/proto/grpc/testing/empty.grpc.pb.h"
 #include "src/proto/grpc/testing/messages.grpc.pb.h"
+#include "src/proto/grpc/testing/test.grpc.pb.h"
+#include "test/cpp/util/create_test_channel.h"
+#include "test/cpp/util/test_config.h"
 
 DEFINE_int32(server_control_port, 0, "Server port for control rpcs.");
 DEFINE_int32(server_retry_port, 0, "Server port for testing reconnection.");
