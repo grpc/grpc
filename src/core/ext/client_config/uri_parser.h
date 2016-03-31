@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_CLIENT_CONFIG_URI_PARSER_H
-#define GRPC_CORE_LIB_CLIENT_CONFIG_URI_PARSER_H
+#ifndef GRPC_CORE_EXT_CLIENT_CONFIG_URI_PARSER_H
+#define GRPC_CORE_EXT_CLIENT_CONFIG_URI_PARSER_H
 
 typedef struct {
   char *scheme;
@@ -48,4 +48,4 @@ grpc_uri *grpc_uri_parse(const char *uri_text, int suppress_errors);
 /** destroy a uri */
 void grpc_uri_destroy(grpc_uri *uri);
 
-#endif /* GRPC_CORE_LIB_CLIENT_CONFIG_URI_PARSER_H */
+#endif /* GRPC_CORE_EXT_CLIENT_CONFIG_URI_PARSER_H */

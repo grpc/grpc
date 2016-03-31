@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_CLIENT_CONFIG_CLIENT_CONFIG_H
-#define GRPC_CORE_LIB_CLIENT_CONFIG_CLIENT_CONFIG_H
+#ifndef GRPC_CORE_EXT_CLIENT_CONFIG_CLIENT_CONFIG_H
+#define GRPC_CORE_EXT_CLIENT_CONFIG_CLIENT_CONFIG_H
 
 #include "src/core/ext/client_config/lb_policy.h"
 
@@ -50,4 +50,4 @@ void grpc_client_config_set_lb_policy(grpc_client_config *client_config,
 grpc_lb_policy *grpc_client_config_get_lb_policy(
     grpc_client_config *client_config);
 
-#endif /* GRPC_CORE_LIB_CLIENT_CONFIG_CLIENT_CONFIG_H */
+#endif /* GRPC_CORE_EXT_CLIENT_CONFIG_CLIENT_CONFIG_H */

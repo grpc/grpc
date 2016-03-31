@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_CLIENT_CONFIG_RESOLVER_FACTORY_H
-#define GRPC_CORE_LIB_CLIENT_CONFIG_RESOLVER_FACTORY_H
+#ifndef GRPC_CORE_EXT_CLIENT_CONFIG_RESOLVER_FACTORY_H
+#define GRPC_CORE_EXT_CLIENT_CONFIG_RESOLVER_FACTORY_H
 
 #include "src/core/ext/client_config/resolver.h"
 #include "src/core/ext/client_config/subchannel_factory.h"
@@ -79,4 +79,4 @@ grpc_resolver *grpc_resolver_factory_create_resolver(
 char *grpc_resolver_factory_get_default_authority(
     grpc_resolver_factory *factory, grpc_uri *uri);
 
-#endif /* GRPC_CORE_LIB_CLIENT_CONFIG_RESOLVER_FACTORY_H */
+#endif /* GRPC_CORE_EXT_CLIENT_CONFIG_RESOLVER_FACTORY_H */
