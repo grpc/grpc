@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -178,6 +178,37 @@ static void test_fails(grpc_slice_split_mode split_mode, char *response) {
   gpr_free(slices);
 }
 
+static const uint8_t failed_test1[] = {
+    0x9e, 0x48, 0x54, 0x54, 0x50, 0x2f, 0x31, 0x2e, 0x30, 0x4a,
+    0x48, 0x54, 0x54, 0x30, 0x32, 0x16, 0xa,  0x2f, 0x48, 0x20,
+    0x31, 0x2e, 0x31, 0x20, 0x32, 0x30, 0x31, 0x54, 0x54, 0xb9,
+    0x32, 0x31, 0x2e, 0x20, 0x32, 0x30, 0x20,
+};
+
+typedef struct {
+  const char *name;
+  const uint8_t *data;
+  size_t length;
+} failed_test;
+
+#define FAILED_TEST(name) \
+  { #name, name, sizeof(name) }
+
+failed_test failed_tests[] = {
+    FAILED_TEST(failed_test1),
+};
+
+static void test_doesnt_crash(failed_test t) {
+  gpr_log(GPR_DEBUG, "Run previously failed test: %s", t.name);
+  grpc_http_parser p;
+  grpc_http_parser_init(&p);
+  gpr_slice slice =
+      gpr_slice_from_copied_buffer((const char *)t.data, t.length);
+  grpc_http_parser_parse(&p, slice);
+  gpr_slice_unref(slice);
+  grpc_http_parser_destroy(&p);
+}
+
 int main(int argc, char **argv) {
   size_t i;
   const grpc_slice_split_mode split_modes[] = {GRPC_SLICE_SPLIT_IDENTITY,
@@ -185,6 +216,10 @@ int main(int argc, char **argv) {
   char *tmp1, *tmp2;
 
   grpc_test_init(argc, argv);
+
+  for (i = 0; i < GPR_ARRAY_SIZE(failed_tests); i++) {
+    test_doesnt_crash(failed_tests[i]);
+  }
 
   for (i = 0; i < GPR_ARRAY_SIZE(split_modes); i++) {
     test_succeeds(split_modes[i],

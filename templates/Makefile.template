@@ -7,7 +7,7 @@
   # This file can be regenerated from the template by running
   # tools/buildgen/generate_projects.sh
 
-  # Copyright 2015-2016, Google Inc.
+  # Copyright 2015, Google Inc.
   # All rights reserved.
   #
   # Redistribution and use in source and binary forms, with or without
@@ -1737,7 +1737,7 @@
    $(LIBDIR)/$(CONFIG)/lib${dep}.a\
   % endfor
 
-  % if tgt.language == "c++" or tgt.boringssl:
+  % if tgt.language == "c++" or tgt.boringssl or tgt.build == 'fuzzer':
   ## C++ targets specificies.
   % if tgt.build == 'protoc':
   	$(E) "[HOSTLD]  Linking $@"
@@ -1790,6 +1790,9 @@
    $(GTEST_LIB)\
   % elif tgt.language == 'c++' and tgt.build == 'benchmark':
    $(GTEST_LIB)\
+  % endif
+  % if tgt.build == 'fuzzer':
+   -lFuzzer\
   % endif
    -o $(BINDIR)/$(CONFIG)/${tgt.name}
   % if tgt.build == 'protoc' or tgt.language == 'c++':

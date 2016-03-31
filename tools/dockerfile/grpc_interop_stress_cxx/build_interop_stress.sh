@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2015-2016, Google Inc.
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -41,5 +41,7 @@ cd /var/local/git/grpc
 
 make install-certs
 
+BUILD_TYPE=${BUILD_TYPE:=opt}
+
 # build C++ interop stress client, interop client and server
-make stress_test metrics_client interop_client interop_server
+make CONFIG=$BUILD_TYPE stress_test metrics_client interop_client interop_server
