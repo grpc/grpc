@@ -161,6 +161,8 @@
     <file baseinstalldir="/" name="include/grpc/impl/codegen/propagation_bits.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/status.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/status.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/lb_policy/grpclb/load_balancer_api.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/lb_policy/grpclb/proto/grpc/lb/v0/load_balancer.pb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/alpn.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/bin_encoder.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/chttp2_transport.h" role="src" />
@@ -200,9 +202,6 @@
     <file baseinstalldir="/" name="src/core/lib/client_config/client_config.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/client_config/connector.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/client_config/initial_connect_string.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/client_config/lb_policies/load_balancer_api.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/client_config/lb_policies/pick_first.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/client_config/lb_policies/round_robin.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/client_config/lb_policy.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/client_config/lb_policy_factory.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/client_config/lb_policy_registry.h" role="src" />
@@ -235,9 +234,7 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/iomgr_internal.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/iomgr_posix.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/pollset.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/pollset_posix.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/pollset_set.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/pollset_set_posix.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/pollset_set_windows.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/pollset_windows.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/resolve_address.h" role="src" />
@@ -265,7 +262,6 @@
     <file baseinstalldir="/" name="src/core/lib/json/json_common.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/json/json_reader.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/json/json_writer.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/proto/grpc/lb/v0/load_balancer.pb.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/auth_filters.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/b64.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials.h" role="src" />
@@ -305,6 +301,10 @@
     <file baseinstalldir="/" name="third_party/nanopb/pb_common.h" role="src" />
     <file baseinstalldir="/" name="third_party/nanopb/pb_decode.h" role="src" />
     <file baseinstalldir="/" name="third_party/nanopb/pb_encode.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/lb_policy/grpclb/load_balancer_api.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/lb_policy/grpclb/proto/grpc/lb/v0/load_balancer.pb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/lb_policy/pick_first/pick_first.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/lb_policy/round_robin/round_robin.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/client/insecure/channel_create.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/client/secure/secure_channel_create.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/server/insecure/server_chttp2.c" role="src" />
@@ -352,9 +352,6 @@
     <file baseinstalldir="/" name="src/core/lib/client_config/connector.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/client_config/default_initial_connect_string.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/client_config/initial_connect_string.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/client_config/lb_policies/load_balancer_api.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/client_config/lb_policies/pick_first.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/client_config/lb_policies/round_robin.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/client_config/lb_policy.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/client_config/lb_policy_factory.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/client_config/lb_policy_registry.c" role="src" />
@@ -419,7 +416,6 @@
     <file baseinstalldir="/" name="src/core/lib/json/json_reader.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/json/json_string.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/json/json_writer.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/proto/grpc/lb/v0/load_balancer.pb.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/b64.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/client_auth_filter.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials.c" role="src" />
@@ -465,6 +461,7 @@
     <file baseinstalldir="/" name="src/core/lib/tsi/fake_transport_security.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/tsi/ssl_transport_security.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/tsi/transport_security.c" role="src" />
+    <file baseinstalldir="/" name="src/core/plugin_registry/grpc_plugin_registry.c" role="src" />
     <file baseinstalldir="/" name="third_party/nanopb/pb_common.c" role="src" />
     <file baseinstalldir="/" name="third_party/nanopb/pb_decode.c" role="src" />
     <file baseinstalldir="/" name="third_party/nanopb/pb_encode.c" role="src" />
