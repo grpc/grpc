@@ -91,6 +91,9 @@ class BuildTaggedExt(setuptools.Command):
 
 
 def update_setup_arguments(setup_arguments):
+  if not USE_PRECOMPILED_BINARIES:
+    sys.stderr.write('not using precompiled extension')
+    return
   url = '{}/{}.so'.format(BINARIES_REPOSITORY, _tagged_ext_name('cygrpc'))
   target_path = os.path.join(PYTHON_STEM, 'grpc/_cython/cygrpc.so')
   try:

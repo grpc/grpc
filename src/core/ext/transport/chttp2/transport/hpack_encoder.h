@@ -40,6 +40,7 @@
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/lib/transport/metadata.h"
 #include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/lib/transport/transport.h"
 
 #define GRPC_CHTTP2_HPACKC_NUM_FILTERS 256
 #define GRPC_CHTTP2_HPACKC_NUM_VALUES 256
@@ -90,6 +91,7 @@ void grpc_chttp2_hpack_compressor_set_max_usable_size(
 
 void grpc_chttp2_encode_header(grpc_chttp2_hpack_compressor *c, uint32_t id,
                                grpc_metadata_batch *metadata, int is_eof,
+                               grpc_transport_one_way_stats *stats,
                                gpr_slice_buffer *outbuf);
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HPACK_ENCODER_H */

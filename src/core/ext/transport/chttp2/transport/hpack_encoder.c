@@ -74,6 +74,7 @@ typedef struct {
   /* output stream id */
   uint32_t stream_id;
   gpr_slice_buffer *output;
+  grpc_transport_one_way_stats *stats;
 } framer_state;
 
 /* fills p (which is expected to be 9 bytes long) with a data frame header */
@@ -102,6 +103,7 @@ static void finish_frame(framer_state *st, int is_header_boundary,
       st->stream_id, st->output->length - st->output_length_at_start_of_frame,
       (uint8_t)((is_last_in_stream ? GRPC_CHTTP2_DATA_FLAG_END_STREAM : 0) |
                 (is_header_boundary ? GRPC_CHTTP2_DATA_FLAG_END_HEADERS : 0)));
+  st->stats->framing_bytes += 9;
   st->is_first_frame = 0;
 }
 
@@ -147,8 +149,10 @@ static void add_header_data(framer_state *st, gpr_slice slice) {
   remaining = GRPC_CHTTP2_MAX_PAYLOAD_LENGTH +
               st->output_length_at_start_of_frame - st->output->length;
   if (len <= remaining) {
+    st->stats->header_bytes += len;
     gpr_slice_buffer_add(st->output, slice);
   } else {
+    st->stats->header_bytes += remaining;
     gpr_slice_buffer_add(st->output, gpr_slice_split_head(&slice, remaining));
     finish_frame(st, 0, 0);
     begin_frame(st);
@@ -535,6 +539,7 @@ void grpc_chttp2_hpack_compressor_set_max_table_size(
 void grpc_chttp2_encode_header(grpc_chttp2_hpack_compressor *c,
                                uint32_t stream_id,
                                grpc_metadata_batch *metadata, int is_eof,
+                               grpc_transport_one_way_stats *stats,
                                gpr_slice_buffer *outbuf) {
   framer_state st;
   grpc_linked_mdelem *l;
@@ -546,6 +551,7 @@ void grpc_chttp2_encode_header(grpc_chttp2_hpack_compressor *c,
   st.stream_id = stream_id;
   st.output = outbuf;
   st.is_first_frame = 1;
+  st.stats = stats;
 
   /* Encode a metadata batch; store the returned values, representing
      a metadata element that needs to be unreffed back into the metadata

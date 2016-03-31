@@ -264,6 +264,7 @@ class Server::SyncRequest GRPC_FINAL : public CompletionQueueTag {
   void* const tag_;
   bool in_flight_;
   const bool has_request_payload_;
+  uint32_t incoming_flags_;
   grpc_call* call_;
   grpc_call_details* call_details_;
   gpr_timespec deadline_;
@@ -334,7 +335,7 @@ bool Server::RegisterService(const grpc::string* host, Service* service) {
     }
     RpcServiceMethod* method = it->get();
     void* tag = grpc_server_register_method(server_, method->name(),
-                                            host ? host->c_str() : nullptr);
+                                            host ? host->c_str() : nullptr, 0);
     if (tag == nullptr) {
       gpr_log(GPR_DEBUG, "Attempt to register %s multiple times",
               method->name());
