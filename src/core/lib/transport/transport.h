@@ -103,8 +103,12 @@ typedef struct grpc_transport_stream_op {
       have been completed. */
   grpc_closure *on_complete;
 
-  /** Send initial metadata to the peer, from the provided metadata batch. */
+  /** Send initial metadata to the peer, from the provided metadata batch.
+      idempotent_request MUST be set if this is non-null */
   grpc_metadata_batch *send_initial_metadata;
+  /** Iff send_initial_metadata != NULL, flags if this is an idempotent request
+      or not */
+  bool send_idempotent_request;
 
   /** Send trailing metadata to the peer, from the provided metadata batch. */
   grpc_metadata_batch *send_trailing_metadata;
@@ -114,6 +118,7 @@ typedef struct grpc_transport_stream_op {
 
   /** Receive initial metadata from the stream, into provided metadata batch. */
   grpc_metadata_batch *recv_initial_metadata;
+  bool *recv_idempotent_request;
   /** Should be enqueued when initial metadata is ready to be processed. */
   grpc_closure *recv_initial_metadata_ready;
 

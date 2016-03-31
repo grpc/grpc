@@ -52,6 +52,9 @@
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\hpack_size.c">
       <Filter>test\core\end2end\tests</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\idempotent_request.c">
+      <Filter>test\core\end2end\tests</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\invoke_large_request.c">
       <Filter>test\core\end2end\tests</Filter>
     </ClCompile>
