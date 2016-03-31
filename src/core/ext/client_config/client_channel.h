@@ -31,25 +31,33 @@
  *
  */
 
-#include "src/core/lib/client_config/resolver_factory.h"
+#ifndef GRPC_CORE_LIB_CHANNEL_CLIENT_CHANNEL_H
+#define GRPC_CORE_LIB_CHANNEL_CLIENT_CHANNEL_H
 
-void grpc_resolver_factory_ref(grpc_resolver_factory* factory) {
-  factory->vtable->ref(factory);
-}
+#include "src/core/lib/channel/channel_stack.h"
+#include "src/core/ext/client_config/resolver.h"
 
-void grpc_resolver_factory_unref(grpc_resolver_factory* factory) {
-  factory->vtable->unref(factory);
-}
+/* A client channel is a channel that begins disconnected, and can connect
+   to some endpoint on demand. If that endpoint disconnects, it will be
+   connected to again later.
 
-/** Create a resolver instance for a name */
-grpc_resolver* grpc_resolver_factory_create_resolver(
-    grpc_resolver_factory* factory, grpc_resolver_args* args) {
-  if (factory == NULL) return NULL;
-  return factory->vtable->create_resolver(factory, args);
-}
+   Calls on a disconnected client channel are queued until a connection is
+   established. */
 
-char* grpc_resolver_factory_get_default_authority(
-    grpc_resolver_factory* factory, grpc_uri* uri) {
-  if (factory == NULL) return NULL;
-  return factory->vtable->get_default_authority(factory, uri);
-}
+extern const grpc_channel_filter grpc_client_channel_filter;
+
+/* post-construction initializer to let the client channel know which
+   transport setup it should cancel upon destruction, or initiate when it needs
+   a connection */
+void grpc_client_channel_set_resolver(grpc_exec_ctx *exec_ctx,
+                                      grpc_channel_stack *channel_stack,
+                                      grpc_resolver *resolver);
+
+grpc_connectivity_state grpc_client_channel_check_connectivity_state(
+    grpc_exec_ctx *exec_ctx, grpc_channel_element *elem, int try_to_connect);
+
+void grpc_client_channel_watch_connectivity_state(
+    grpc_exec_ctx *exec_ctx, grpc_channel_element *elem, grpc_pollset *pollset,
+    grpc_connectivity_state *state, grpc_closure *on_complete);
+
+#endif /* GRPC_CORE_LIB_CHANNEL_CLIENT_CHANNEL_H */

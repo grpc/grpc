@@ -31,25 +31,25 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_CLIENT_CONFIG_LB_POLICY_REGISTRY_H
-#define GRPC_CORE_LIB_CLIENT_CONFIG_LB_POLICY_REGISTRY_H
+#include "src/core/ext/client_config/connector.h"
 
-#include "src/core/lib/client_config/lb_policy_factory.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
+grpc_connector* grpc_connector_ref(grpc_connector* connector) {
+  connector->vtable->ref(connector);
+  return connector;
+}
 
-/** Initialize the registry and set \a default_factory as the factory to be
- * returned when no name is provided in a lookup */
-void grpc_lb_policy_registry_init(void);
-void grpc_lb_policy_registry_shutdown(void);
+void grpc_connector_unref(grpc_exec_ctx* exec_ctx, grpc_connector* connector) {
+  connector->vtable->unref(exec_ctx, connector);
+}
 
-/** Register a LB policy factory. */
-void grpc_register_lb_policy(grpc_lb_policy_factory *factory);
+void grpc_connector_connect(grpc_exec_ctx* exec_ctx, grpc_connector* connector,
+                            const grpc_connect_in_args* in_args,
+                            grpc_connect_out_args* out_args,
+                            grpc_closure* notify) {
+  connector->vtable->connect(exec_ctx, connector, in_args, out_args, notify);
+}
 
-/** Create a \a grpc_lb_policy instance.
- *
- * If \a name is NULL, the default factory from \a grpc_lb_policy_registry_init
- * will be returned. */
-grpc_lb_policy *grpc_lb_policy_create(grpc_exec_ctx *exec_ctx, const char *name,
-                                      grpc_lb_policy_args *args);
-
-#endif /* GRPC_CORE_LIB_CLIENT_CONFIG_LB_POLICY_REGISTRY_H */
+void grpc_connector_shutdown(grpc_exec_ctx* exec_ctx,
+                             grpc_connector* connector) {
+  connector->vtable->shutdown(exec_ctx, connector);
+}

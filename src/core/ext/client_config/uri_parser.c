@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/lib/client_config/uri_parser.h"
+#include "src/core/ext/client_config/uri_parser.h"
 
 #include <string.h>
 

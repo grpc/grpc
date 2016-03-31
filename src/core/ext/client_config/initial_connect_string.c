@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/lib/client_config/initial_connect_string.h"
+#include "src/core/ext/client_config/initial_connect_string.h"
 
 #include <stddef.h>
 

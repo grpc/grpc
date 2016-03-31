@@ -31,19 +31,25 @@
  *
  */
 
-#include "src/core/lib/client_config/subchannel_factory.h"
+#include "src/core/ext/client_config/resolver_factory.h"
 
-void grpc_subchannel_factory_ref(grpc_subchannel_factory* factory) {
+void grpc_resolver_factory_ref(grpc_resolver_factory* factory) {
   factory->vtable->ref(factory);
 }
 
-void grpc_subchannel_factory_unref(grpc_exec_ctx* exec_ctx,
-                                   grpc_subchannel_factory* factory) {
-  factory->vtable->unref(exec_ctx, factory);
+void grpc_resolver_factory_unref(grpc_resolver_factory* factory) {
+  factory->vtable->unref(factory);
 }
 
-grpc_subchannel* grpc_subchannel_factory_create_subchannel(
-    grpc_exec_ctx* exec_ctx, grpc_subchannel_factory* factory,
-    grpc_subchannel_args* args) {
-  return factory->vtable->create_subchannel(exec_ctx, factory, args);
+/** Create a resolver instance for a name */
+grpc_resolver* grpc_resolver_factory_create_resolver(
+    grpc_resolver_factory* factory, grpc_resolver_args* args) {
+  if (factory == NULL) return NULL;
+  return factory->vtable->create_resolver(factory, args);
+}
+
+char* grpc_resolver_factory_get_default_authority(
+    grpc_resolver_factory* factory, grpc_uri* uri) {
+  if (factory == NULL) return NULL;
+  return factory->vtable->get_default_authority(factory, uri);
 }

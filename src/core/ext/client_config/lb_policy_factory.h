@@ -34,8 +34,8 @@
 #ifndef GRPC_CORE_LIB_CLIENT_CONFIG_LB_POLICY_FACTORY_H
 #define GRPC_CORE_LIB_CLIENT_CONFIG_LB_POLICY_FACTORY_H
 
-#include "src/core/lib/client_config/lb_policy.h"
-#include "src/core/lib/client_config/subchannel_factory.h"
+#include "src/core/ext/client_config/lb_policy.h"
+#include "src/core/ext/client_config/subchannel_factory.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 
 #include "src/core/lib/iomgr/exec_ctx.h"

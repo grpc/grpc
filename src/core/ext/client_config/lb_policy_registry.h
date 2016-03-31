@@ -31,33 +31,25 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_CHANNEL_CLIENT_CHANNEL_H
-#define GRPC_CORE_LIB_CHANNEL_CLIENT_CHANNEL_H
+#ifndef GRPC_CORE_LIB_CLIENT_CONFIG_LB_POLICY_REGISTRY_H
+#define GRPC_CORE_LIB_CLIENT_CONFIG_LB_POLICY_REGISTRY_H
 
-#include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/client_config/resolver.h"
+#include "src/core/ext/client_config/lb_policy_factory.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 
-/* A client channel is a channel that begins disconnected, and can connect
-   to some endpoint on demand. If that endpoint disconnects, it will be
-   connected to again later.
+/** Initialize the registry and set \a default_factory as the factory to be
+ * returned when no name is provided in a lookup */
+void grpc_lb_policy_registry_init(void);
+void grpc_lb_policy_registry_shutdown(void);
 
-   Calls on a disconnected client channel are queued until a connection is
-   established. */
+/** Register a LB policy factory. */
+void grpc_register_lb_policy(grpc_lb_policy_factory *factory);
 
-extern const grpc_channel_filter grpc_client_channel_filter;
+/** Create a \a grpc_lb_policy instance.
+ *
+ * If \a name is NULL, the default factory from \a grpc_lb_policy_registry_init
+ * will be returned. */
+grpc_lb_policy *grpc_lb_policy_create(grpc_exec_ctx *exec_ctx, const char *name,
+                                      grpc_lb_policy_args *args);
 
-/* post-construction initializer to let the client channel know which
-   transport setup it should cancel upon destruction, or initiate when it needs
-   a connection */
-void grpc_client_channel_set_resolver(grpc_exec_ctx *exec_ctx,
-                                      grpc_channel_stack *channel_stack,
-                                      grpc_resolver *resolver);
-
-grpc_connectivity_state grpc_client_channel_check_connectivity_state(
-    grpc_exec_ctx *exec_ctx, grpc_channel_element *elem, int try_to_connect);
-
-void grpc_client_channel_watch_connectivity_state(
-    grpc_exec_ctx *exec_ctx, grpc_channel_element *elem, grpc_pollset *pollset,
-    grpc_connectivity_state *state, grpc_closure *on_complete);
-
-#endif /* GRPC_CORE_LIB_CHANNEL_CLIENT_CHANNEL_H */
+#endif /* GRPC_CORE_LIB_CLIENT_CONFIG_LB_POLICY_REGISTRY_H */

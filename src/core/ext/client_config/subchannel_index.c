@@ -31,7 +31,7 @@
 //
 //
 
-#include "src/core/lib/client_config/subchannel_index.h"
+#include "src/core/ext/client_config/subchannel_index.h"
 
 #include <stdbool.h>
 #include <string.h>
