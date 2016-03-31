@@ -77,33 +77,38 @@ class BenchmarkClient
     @start_time = Time.now
     @histogram = Histogram.new(@histres, @histmax)
     @done = false
-    (0..config.client_channels-1).each do |i|
-      Thread.new {
-        gtsr = Grpc::Testing::SimpleRequest
-        gtpt = Grpc::Testing::PayloadType
-        gtp = Grpc::Testing::Payload
-        simple_params = config.payload_config.simple_params
-        req = gtsr.new(response_type: gtpt::COMPRESSABLE,
-                       response_size: simple_params.resp_size,
-                       payload: gtp.new(type: gtpt::COMPRESSABLE,
-                                        body: nulls(simple_params.req_size)))
-        case config.load_params.load.to_s
-        when 'closed_loop'
-          waiter = nil
-        when 'poisson'
-          waiter = Poisson.new(config.load_params.poisson.offered_load /
-                               config.client_channels)
-        end
-        gtbss = Grpc::Testing::BenchmarkService::Stub
-        st = config.server_targets
-        stub = gtbss.new(st[i % st.length], cred, **opts)
-        case config.rpc_type
-        when :UNARY
-          unary_ping_ponger(req,stub,config,waiter)
-        when :STREAMING
-          streaming_ping_ponger(req,stub,config,waiter)
-        end
-      }
+
+    gtsr = Grpc::Testing::SimpleRequest
+    gtpt = Grpc::Testing::PayloadType
+    gtp = Grpc::Testing::Payload
+    simple_params = config.payload_config.simple_params
+    req = gtsr.new(response_type: gtpt::COMPRESSABLE,
+                   response_size: simple_params.resp_size,
+                   payload: gtp.new(type: gtpt::COMPRESSABLE,
+                                    body: nulls(simple_params.req_size)))
+
+    (0..config.client_channels-1).each do |chan|
+      gtbss = Grpc::Testing::BenchmarkService::Stub
+      st = config.server_targets
+      stub = gtbss.new(st[chan % st.length], cred, **opts)
+      (0..config.outstanding_rpcs_per_channel-1).each do |r|
+        Thread.new {
+          case config.load_params.load.to_s
+          when 'closed_loop'
+            waiter = nil
+          when 'poisson'
+            waiter = Poisson.new(config.load_params.poisson.offered_load /
+                                 (config.client_channels *
+                                  config.outstanding_rpcs_per_channel))
+          end
+          case config.rpc_type
+          when :UNARY
+            unary_ping_ponger(req,stub,config,waiter)
+          when :STREAMING
+            streaming_ping_ponger(req,stub,config,waiter)
+          end
+        }
+      end
     end
   end
   def wait_to_issue(waiter)
