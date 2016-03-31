@@ -52,6 +52,8 @@
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/support/string.h"
 
+extern int grpc_http_trace;
+
 typedef enum {
   NOT_BINARY,
   B64_BYTE0,
@@ -723,7 +725,9 @@ static int finish_indexed_field(grpc_chttp2_hpack_parser *p, const uint8_t *cur,
                                 const uint8_t *end) {
   grpc_mdelem *md = grpc_chttp2_hptbl_lookup(&p->table, p->index);
   if (md == NULL) {
-    gpr_log(GPR_ERROR, "Invalid HPACK index received: %d", p->index);
+    if (grpc_http_trace) {
+      gpr_log(GPR_ERROR, "Invalid HPACK index received: %d", p->index);
+    }
     return 0;
   }
   GRPC_MDELEM_REF(md);
@@ -919,7 +923,9 @@ static int parse_lithdr_nvridx_v(grpc_chttp2_hpack_parser *p,
 /* finish parsing a max table size change */
 static int finish_max_tbl_size(grpc_chttp2_hpack_parser *p, const uint8_t *cur,
                                const uint8_t *end) {
-  gpr_log(GPR_INFO, "MAX TABLE SIZE: %d", p->index);
+  if (grpc_http_trace) {
+    gpr_log(GPR_INFO, "MAX TABLE SIZE: %d", p->index);
+  }
   return grpc_chttp2_hptbl_set_current_table_size(&p->table, p->index) &&
          parse_begin(p, cur, end);
 }
@@ -960,7 +966,9 @@ static int parse_error(grpc_chttp2_hpack_parser *p, const uint8_t *cur,
 static int parse_illegal_op(grpc_chttp2_hpack_parser *p, const uint8_t *cur,
                             const uint8_t *end) {
   GPR_ASSERT(cur != end);
-  gpr_log(GPR_DEBUG, "Illegal hpack op code %d", *cur);
+  if (grpc_http_trace) {
+    gpr_log(GPR_DEBUG, "Illegal hpack op code %d", *cur);
+  }
   return parse_error(p, cur, end);
 }
 
@@ -1069,10 +1077,12 @@ static int parse_value4(grpc_chttp2_hpack_parser *p, const uint8_t *cur,
   }
 
 error:
-  gpr_log(GPR_ERROR,
-          "integer overflow in hpack integer decoding: have 0x%08x, "
-          "got byte 0x%02x on byte 5",
-          *p->parsing.value, *cur);
+  if (grpc_http_trace) {
+    gpr_log(GPR_ERROR,
+            "integer overflow in hpack integer decoding: have 0x%08x, "
+            "got byte 0x%02x on byte 5",
+            *p->parsing.value, *cur);
+  }
   return parse_error(p, cur, end);
 }
 
@@ -1094,10 +1104,12 @@ static int parse_value5up(grpc_chttp2_hpack_parser *p, const uint8_t *cur,
     return parse_next(p, cur + 1, end);
   }
 
-  gpr_log(GPR_ERROR,
-          "integer overflow in hpack integer decoding: have 0x%08x, "
-          "got byte 0x%02x sometime after byte 5",
-          *p->parsing.value, *cur);
+  if (grpc_http_trace) {
+    gpr_log(GPR_ERROR,
+            "integer overflow in hpack integer decoding: have 0x%08x, "
+            "got byte 0x%02x sometime after byte 5",
+            *p->parsing.value, *cur);
+  }
   return parse_error(p, cur, end);
 }
 
@@ -1329,7 +1341,9 @@ static is_binary_header is_binary_literal_header(grpc_chttp2_hpack_parser *p) {
 static is_binary_header is_binary_indexed_header(grpc_chttp2_hpack_parser *p) {
   grpc_mdelem *elem = grpc_chttp2_hptbl_lookup(&p->table, p->index);
   if (!elem) {
-    gpr_log(GPR_ERROR, "Invalid HPACK index received: %d", p->index);
+    if (grpc_http_trace) {
+      gpr_log(GPR_ERROR, "Invalid HPACK index received: %d", p->index);
+    }
     return ERROR_HEADER;
   }
   return grpc_is_binary_header(
@@ -1412,6 +1426,9 @@ grpc_chttp2_parse_error grpc_chttp2_header_parser_parse(
     grpc_chttp2_stream_parsing *stream_parsing, gpr_slice slice, int is_last) {
   grpc_chttp2_hpack_parser *parser = hpack_parser;
   GPR_TIMER_BEGIN("grpc_chttp2_hpack_parser_parse", 0);
+  if (stream_parsing != NULL) {
+    stream_parsing->stats.incoming.header_bytes += GPR_SLICE_LENGTH(slice);
+  }
   if (!grpc_chttp2_hpack_parser_parse(parser, GPR_SLICE_START_PTR(slice),
                                       GPR_SLICE_END_PTR(slice))) {
     GPR_TIMER_END("grpc_chttp2_hpack_parser_parse", 0);
