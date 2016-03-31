@@ -34,7 +34,7 @@
 #include <gtest/gtest.h>
 #include <string>
 
-#include "src/core/client_config/lb_policies/load_balancer_api.h"
+#include "src/core/ext/lb_policy/grpclb/load_balancer_api.h"
 #include "src/proto/grpc/lb/v0/load_balancer.pb.h"  // C++ version
 
 namespace grpc {

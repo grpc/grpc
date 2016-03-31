@@ -54,7 +54,9 @@
        GRPC_XMACRO_ITEM.
 #endif
 
+#if TARGET_OS_IPHONE
 GRPC_XMACRO_ITEM(isCell, IsWWAN)
+#endif
 GRPC_XMACRO_ITEM(reachable, Reachable)
 GRPC_XMACRO_ITEM(transientConnection, TransientConnection)
 GRPC_XMACRO_ITEM(connectionRequired, ConnectionRequired)
