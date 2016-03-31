@@ -200,7 +200,9 @@ static void verify_table_size_change_match_elem_size(const char *key,
   b.list.tail = &e[0];
   gpr_slice_buffer_init(&output);
 
-  grpc_chttp2_encode_header(&g_compressor, 0xdeadbeef, &b, 0, &output);
+  grpc_transport_one_way_stats stats;
+  memset(&stats, 0, sizeof(stats));
+  grpc_chttp2_encode_header(&g_compressor, 0xdeadbeef, &b, 0, &stats, &output);
   gpr_slice_buffer_destroy(&output);
   grpc_metadata_batch_destroy(&b);
 
