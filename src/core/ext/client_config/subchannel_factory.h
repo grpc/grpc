@@ -31,25 +31,36 @@
  *
  */
 
-#include "src/core/lib/client_config/connector.h"
+#ifndef GRPC_CORE_LIB_CLIENT_CONFIG_SUBCHANNEL_FACTORY_H
+#define GRPC_CORE_LIB_CLIENT_CONFIG_SUBCHANNEL_FACTORY_H
 
-grpc_connector* grpc_connector_ref(grpc_connector* connector) {
-  connector->vtable->ref(connector);
-  return connector;
-}
+#include "src/core/lib/channel/channel_stack.h"
+#include "src/core/ext/client_config/subchannel.h"
 
-void grpc_connector_unref(grpc_exec_ctx* exec_ctx, grpc_connector* connector) {
-  connector->vtable->unref(exec_ctx, connector);
-}
+typedef struct grpc_subchannel_factory grpc_subchannel_factory;
+typedef struct grpc_subchannel_factory_vtable grpc_subchannel_factory_vtable;
 
-void grpc_connector_connect(grpc_exec_ctx* exec_ctx, grpc_connector* connector,
-                            const grpc_connect_in_args* in_args,
-                            grpc_connect_out_args* out_args,
-                            grpc_closure* notify) {
-  connector->vtable->connect(exec_ctx, connector, in_args, out_args, notify);
-}
+/** Constructor for new configured channels.
+    Creating decorators around this type is encouraged to adapt behavior. */
+struct grpc_subchannel_factory {
+  const grpc_subchannel_factory_vtable *vtable;
+};
 
-void grpc_connector_shutdown(grpc_exec_ctx* exec_ctx,
-                             grpc_connector* connector) {
-  connector->vtable->shutdown(exec_ctx, connector);
-}
+struct grpc_subchannel_factory_vtable {
+  void (*ref)(grpc_subchannel_factory *factory);
+  void (*unref)(grpc_exec_ctx *exec_ctx, grpc_subchannel_factory *factory);
+  grpc_subchannel *(*create_subchannel)(grpc_exec_ctx *exec_ctx,
+                                        grpc_subchannel_factory *factory,
+                                        grpc_subchannel_args *args);
+};
+
+void grpc_subchannel_factory_ref(grpc_subchannel_factory *factory);
+void grpc_subchannel_factory_unref(grpc_exec_ctx *exec_ctx,
+                                   grpc_subchannel_factory *factory);
+
+/** Create a new grpc_subchannel */
+grpc_subchannel *grpc_subchannel_factory_create_subchannel(
+    grpc_exec_ctx *exec_ctx, grpc_subchannel_factory *factory,
+    grpc_subchannel_args *args);
+
+#endif /* GRPC_CORE_LIB_CLIENT_CONFIG_SUBCHANNEL_FACTORY_H */

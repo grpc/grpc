@@ -36,7 +36,7 @@
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 
-#include "src/core/lib/client_config/resolver_registry.h"
+#include "src/core/ext/client_config/resolver_registry.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "test/core/util/test_config.h"

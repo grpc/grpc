@@ -31,19 +31,53 @@
  *
  */
 
-#include "src/core/lib/client_config/lb_policy_factory.h"
+#include "src/core/ext/client_config/lb_policy_registry.h"
 
-void grpc_lb_policy_factory_ref(grpc_lb_policy_factory* factory) {
-  factory->vtable->ref(factory);
+#include <string.h>
+
+#define MAX_POLICIES 10
+
+static grpc_lb_policy_factory *g_all_of_the_lb_policies[MAX_POLICIES];
+static int g_number_of_lb_policies = 0;
+
+void grpc_lb_policy_registry_init(void) { g_number_of_lb_policies = 0; }
+
+void grpc_lb_policy_registry_shutdown(void) {
+  int i;
+  for (i = 0; i < g_number_of_lb_policies; i++) {
+    grpc_lb_policy_factory_unref(g_all_of_the_lb_policies[i]);
+  }
 }
 
-void grpc_lb_policy_factory_unref(grpc_lb_policy_factory* factory) {
-  factory->vtable->unref(factory);
+void grpc_register_lb_policy(grpc_lb_policy_factory *factory) {
+  int i;
+  for (i = 0; i < g_number_of_lb_policies; i++) {
+    GPR_ASSERT(0 != strcmp(factory->vtable->name,
+                           g_all_of_the_lb_policies[i]->vtable->name));
+  }
+  GPR_ASSERT(g_number_of_lb_policies != MAX_POLICIES);
+  grpc_lb_policy_factory_ref(factory);
+  g_all_of_the_lb_policies[g_number_of_lb_policies++] = factory;
 }
 
-grpc_lb_policy* grpc_lb_policy_factory_create_lb_policy(
-    grpc_exec_ctx* exec_ctx, grpc_lb_policy_factory* factory,
-    grpc_lb_policy_args* args) {
-  if (factory == NULL) return NULL;
-  return factory->vtable->create_lb_policy(exec_ctx, factory, args);
+static grpc_lb_policy_factory *lookup_factory(const char *name) {
+  int i;
+
+  if (name == NULL) return NULL;
+
+  for (i = 0; i < g_number_of_lb_policies; i++) {
+    if (0 == strcmp(name, g_all_of_the_lb_policies[i]->vtable->name)) {
+      return g_all_of_the_lb_policies[i];
+    }
+  }
+
+  return NULL;
+}
+
+grpc_lb_policy *grpc_lb_policy_create(grpc_exec_ctx *exec_ctx, const char *name,
+                                      grpc_lb_policy_args *args) {
+  grpc_lb_policy_factory *factory = lookup_factory(name);
+  grpc_lb_policy *lb_policy =
+      grpc_lb_policy_factory_create_lb_policy(exec_ctx, factory, args);
+  return lb_policy;
 }

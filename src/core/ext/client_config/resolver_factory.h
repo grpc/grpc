@@ -34,9 +34,9 @@
 #ifndef GRPC_CORE_LIB_CLIENT_CONFIG_RESOLVER_FACTORY_H
 #define GRPC_CORE_LIB_CLIENT_CONFIG_RESOLVER_FACTORY_H
 
-#include "src/core/lib/client_config/resolver.h"
-#include "src/core/lib/client_config/subchannel_factory.h"
-#include "src/core/lib/client_config/uri_parser.h"
+#include "src/core/ext/client_config/resolver.h"
+#include "src/core/ext/client_config/subchannel_factory.h"
+#include "src/core/ext/client_config/uri_parser.h"
 
 typedef struct grpc_resolver_factory grpc_resolver_factory;
 typedef struct grpc_resolver_factory_vtable grpc_resolver_factory_vtable;

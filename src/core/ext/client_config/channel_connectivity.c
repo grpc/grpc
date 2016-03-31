@@ -36,7 +36,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-#include "src/core/lib/channel/client_channel.h"
+#include "src/core/ext/client_config/client_channel.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/completion_queue.h"
