@@ -281,6 +281,18 @@ grpc_uri *grpc_uri_parse(const char *uri_text, int suppress_errors) {
   return uri;
 }
 
+const char *grpc_uri_get_query_arg(const grpc_uri *uri, const char *key) {
+  GPR_ASSERT(key != NULL);
+  if (key[0] == '\0') return NULL;
+
+  for (size_t i = 0; i < uri->num_query_parts; ++i) {
+    if (0 == strcmp(key, uri->query_parts[i])) {
+      return uri->query_parts_values[i];
+    }
+  }
+  return NULL;
+}
+
 void grpc_uri_destroy(grpc_uri *uri) {
   if (!uri) return;
   gpr_free(uri->scheme);

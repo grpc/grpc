@@ -80,6 +80,11 @@ static void test_query_parts() {
     GPR_ASSERT(0 == strcmp("", uri->query_parts[3]));
     GPR_ASSERT(NULL == uri->query_parts_values[3]);
 
+    GPR_ASSERT(NULL == grpc_uri_get_query_arg(uri, "a"));
+    GPR_ASSERT(0 == strcmp("B", grpc_uri_get_query_arg(uri, "b")));
+    GPR_ASSERT(0 == strcmp("", grpc_uri_get_query_arg(uri, "c")));
+    GPR_ASSERT(NULL == grpc_uri_get_query_arg(uri, ""));
+
     GPR_ASSERT(0 == strcmp("frag", uri->fragment));
     grpc_uri_destroy(uri);
   }
