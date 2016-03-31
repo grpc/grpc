@@ -1,6 +1,6 @@
 #!/usr/bin/env python2.7
 
-# Copyright 2015-2016, Google Inc.
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -155,23 +155,7 @@ for filename in filename_list:
     continue
   m = re.search(re_license, text)
   if m:
-    gdict = m.groupdict()
-    last_modified = int(subprocess.check_output('git log -1 --format="%ad" --date=short -- ' + filename, shell=True)[0:4])
-    latest_claimed = int(gdict['last_year'])
-    if last_modified > latest_claimed:
-      print '%s modified %d but copyright only extends to %d' % (filename, last_modified, latest_claimed)
-      ok = False
-      if args.fix:
-        span_start, span_end = m.span(2)
-        if not gdict['first_year']:
-          # prepend the old year to the current one.
-          text = '{}-{}{}'.format(text[:span_end], last_modified, text[span_end:])
-        else:  # already a year range
-          # simply update the last year
-          text = '{}{}{}'.format(text[:span_start], last_modified, text[span_end:])
-        save(filename, text)
-        print 'Fixed!'
-        ok = True
+    pass
   elif 'DO NOT EDIT' not in text and 'AssemblyInfo.cs' not in filename and filename != 'src/boringssl/err_data.c':
     log(1, 'copyright missing', filename)
     ok = False
