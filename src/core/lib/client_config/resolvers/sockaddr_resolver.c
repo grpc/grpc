@@ -265,17 +265,13 @@ static grpc_resolver *sockaddr_create(
   r = gpr_malloc(sizeof(sockaddr_resolver));
   memset(r, 0, sizeof(*r));
 
-  r->lb_policy_name = NULL;
-  bool lb_enabled = false;
-  for (size_t i = 0; i < args->uri->num_query_parts; ++i) {
-    if (0 == strcmp("lb_policy", args->uri->query_parts[i])) {
-      GPR_ASSERT(args->uri->query_parts_values[i] != NULL);
-      r->lb_policy_name = gpr_strdup(args->uri->query_parts_values[i]);
-    } else if (0 == strcmp("lb_enabled", args->uri->query_parts[i])) {
-      GPR_ASSERT(args->uri->query_parts_values[i] != NULL);
-      lb_enabled = (strcmp("0", args->uri->query_parts_values[i]) != 0);
-    }
-  }
+  r->lb_policy_name =
+      gpr_strdup(grpc_uri_get_query_arg(args->uri, "lb_policy"));
+  const char *lb_enabled_qpart =
+      grpc_uri_get_query_arg(args->uri, "lb_enabled");
+  /* anything other than "0" is interpreted as true */
+  const bool lb_enabled =
+      (lb_enabled_qpart != NULL && (strcmp("0", lb_enabled_qpart) != 0));
 
   if (r->lb_policy_name != NULL && strcmp("grpclb", r->lb_policy_name) == 0 &&
       !lb_enabled) {
