@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_CLIENT_CONFIG_SUBCHANNEL_H
-#define GRPC_CORE_LIB_CLIENT_CONFIG_SUBCHANNEL_H
+#ifndef GRPC_CORE_EXT_CLIENT_CONFIG_SUBCHANNEL_H
+#define GRPC_CORE_EXT_CLIENT_CONFIG_SUBCHANNEL_H
 
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/ext/client_config/connector.h"
@@ -171,4 +171,4 @@ grpc_subchannel *grpc_subchannel_create(grpc_exec_ctx *exec_ctx,
                                         grpc_connector *connector,
                                         grpc_subchannel_args *args);
 
-#endif /* GRPC_CORE_LIB_CLIENT_CONFIG_SUBCHANNEL_H */
+#endif /* GRPC_CORE_EXT_CLIENT_CONFIG_SUBCHANNEL_H */
