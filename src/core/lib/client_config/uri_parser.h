@@ -53,6 +53,10 @@ typedef struct {
 /** parse a uri, return NULL on failure */
 grpc_uri *grpc_uri_parse(const char *uri_text, int suppress_errors);
 
+/** return the part of a query string after the '=' in "?key=xxx&...", or NULL
+ * if key is not present */
+const char *grpc_uri_get_query_arg(const grpc_uri *uri, const char *key);
+
 /** destroy a uri */
 void grpc_uri_destroy(grpc_uri *uri);
 
