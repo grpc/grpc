@@ -40,6 +40,7 @@ export PATH=$ROOT/bins/$CONFIG:$ROOT/bins/$CONFIG/protobuf:$PATH
 export CFLAGS="-I$ROOT/include -std=c89"
 export LDFLAGS="-L$ROOT/libs/$CONFIG"
 export GRPC_PYTHON_BUILD_WITH_CYTHON=1
+export GRPC_PYTHON_USE_PRECOMPILED_BINARIES=0
 
 if [ "$CONFIG" = "gcov" ]
 then

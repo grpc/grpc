@@ -35,6 +35,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
 #include <grpc/support/log.h>
+#include <grpc/support/sync.h>
 #include "src/core/lib/transport/transport_impl.h"
 
 #ifdef GRPC_STREAM_REFCOUNT_DEBUG
@@ -74,6 +75,24 @@ void grpc_stream_ref_init(grpc_stream_refcount *refcount, int initial_refs,
 #endif
   gpr_ref_init(&refcount->refs, initial_refs);
   grpc_closure_init(&refcount->destroy, cb, cb_arg);
+}
+
+static void move64(uint64_t *from, uint64_t *to) {
+  *to += *from;
+  *from = 0;
+}
+
+void grpc_transport_move_one_way_stats(grpc_transport_one_way_stats *from,
+                                       grpc_transport_one_way_stats *to) {
+  move64(&from->framing_bytes, &to->framing_bytes);
+  move64(&from->data_bytes, &to->data_bytes);
+  move64(&from->header_bytes, &to->header_bytes);
+}
+
+void grpc_transport_move_stats(grpc_transport_stream_stats *from,
+                               grpc_transport_stream_stats *to) {
+  grpc_transport_move_one_way_stats(&from->incoming, &to->incoming);
+  grpc_transport_move_one_way_stats(&from->outgoing, &to->outgoing);
 }
 
 size_t grpc_transport_stream_size(grpc_transport *transport) {

@@ -41,6 +41,7 @@
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/transport/byte_stream.h"
+#include "src/core/lib/transport/transport.h"
 
 typedef enum {
   GRPC_CHTTP2_DATA_FH_0,
@@ -96,6 +97,7 @@ grpc_chttp2_parse_error grpc_chttp2_data_parser_parse(
 
 void grpc_chttp2_encode_data(uint32_t id, gpr_slice_buffer *inbuf,
                              uint32_t write_bytes, int is_eof,
+                             grpc_transport_one_way_stats *stats,
                              gpr_slice_buffer *outbuf);
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FRAME_DATA_H */

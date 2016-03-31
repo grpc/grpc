@@ -41,7 +41,7 @@
 
 typedef struct call_data {
   uint8_t seen_path;
-  uint8_t seen_post;
+  uint8_t seen_method;
   uint8_t sent_status;
   uint8_t seen_scheme;
   uint8_t seen_te_trailers;
@@ -50,6 +50,7 @@ typedef struct call_data {
   grpc_linked_mdelem content_type;
 
   grpc_metadata_batch *recv_initial_metadata;
+  bool *recv_idempotent_request;
   /** Closure to call when finished with the hs_on_recv hook */
   grpc_closure *on_done_recv;
   /** Receive closures are chained: we inject this closure as the on_done_recv
@@ -72,11 +73,16 @@ static grpc_mdelem *server_filter(void *user_data, grpc_mdelem *md) {
 
   /* Check if it is one of the headers we care about. */
   if (md == GRPC_MDELEM_TE_TRAILERS || md == GRPC_MDELEM_METHOD_POST ||
-      md == GRPC_MDELEM_SCHEME_HTTP || md == GRPC_MDELEM_SCHEME_HTTPS ||
+      md == GRPC_MDELEM_METHOD_PUT || md == GRPC_MDELEM_SCHEME_HTTP ||
+      md == GRPC_MDELEM_SCHEME_HTTPS ||
       md == GRPC_MDELEM_CONTENT_TYPE_APPLICATION_SLASH_GRPC) {
     /* swallow it */
     if (md == GRPC_MDELEM_METHOD_POST) {
-      calld->seen_post = 1;
+      calld->seen_method = 1;
+      *calld->recv_idempotent_request = false;
+    } else if (md == GRPC_MDELEM_METHOD_PUT) {
+      calld->seen_method = 1;
+      *calld->recv_idempotent_request = true;
     } else if (md->key == GRPC_MDSTR_SCHEME) {
       calld->seen_scheme = 1;
     } else if (md == GRPC_MDELEM_TE_TRAILERS) {
@@ -142,7 +148,7 @@ static void hs_on_recv(grpc_exec_ctx *exec_ctx, void *user_data, bool success) {
     /* Have we seen the required http2 transport headers?
        (:method, :scheme, content-type, with :path and :authority covered
        at the channel level right now) */
-    if (calld->seen_post && calld->seen_scheme && calld->seen_te_trailers &&
+    if (calld->seen_method && calld->seen_scheme && calld->seen_te_trailers &&
         calld->seen_path && calld->seen_authority) {
       /* do nothing */
     } else {
@@ -152,7 +158,7 @@ static void hs_on_recv(grpc_exec_ctx *exec_ctx, void *user_data, bool success) {
       if (!calld->seen_authority) {
         gpr_log(GPR_ERROR, "Missing :authority header");
       }
-      if (!calld->seen_post) {
+      if (!calld->seen_method) {
         gpr_log(GPR_ERROR, "Missing :method header");
       }
       if (!calld->seen_scheme) {
@@ -185,7 +191,9 @@ static void hs_mutate_op(grpc_call_element *elem,
 
   if (op->recv_initial_metadata) {
     /* substitute our callback for the higher callback */
+    GPR_ASSERT(op->recv_idempotent_request != NULL);
     calld->recv_initial_metadata = op->recv_initial_metadata;
+    calld->recv_idempotent_request = op->recv_idempotent_request;
     calld->on_done_recv = op->recv_initial_metadata_ready;
     op->recv_initial_metadata_ready = &calld->hs_on_recv;
   }
