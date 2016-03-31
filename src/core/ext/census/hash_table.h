@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_STATISTICS_HASH_TABLE_H
-#define GRPC_CORE_LIB_STATISTICS_HASH_TABLE_H
+#ifndef GRPC_CORE_EXT_CENSUS_HASH_TABLE_H
+#define GRPC_CORE_EXT_CENSUS_HASH_TABLE_H
 
 #include <stddef.h>
 
@@ -128,4 +128,4 @@ typedef void (*census_ht_itr_cb)(census_ht_key key, const void *val_ptr,
    should not invalidate data entries. */
 uint64_t census_ht_for_all(const census_ht *ht, census_ht_itr_cb);
 
-#endif /* GRPC_CORE_LIB_STATISTICS_HASH_TABLE_H */
+#endif /* GRPC_CORE_EXT_CENSUS_HASH_TABLE_H */
