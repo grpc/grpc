@@ -41,8 +41,9 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
 #include <grpc/support/log.h>
+#include <grpc/support/useful.h>
 
-#include "src/core/iomgr/iomgr_internal.h"
+#include "src/core/lib/iomgr/iomgr_internal.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 // Definitions
@@ -60,8 +61,8 @@ typedef struct {
 
 typedef struct polling_island {
   pollable_object pollable;
-  gpr_refcount refs;
   gpr_mu mu;
+  int refs;
   grpc_fd *only_fd;
   struct polling_island *became;
   struct polling_island *next;
@@ -116,6 +117,10 @@ static void add_fd_to_epoll_set(grpc_fd *fd, int epoll_set) {
                             EPOLLIN | EPOLLOUT | EPOLLET);
 }
 
+static void add_island_to_epoll_set(polling_island *pi, int epoll_set) {
+  add_pollable_to_epoll_set(&pi->pollable, epoll_set, EPOLLIN | EPOLLET);
+}
+
 static polling_island *polling_island_create(grpc_fd *initial_fd) {
   polling_island *r = NULL;
   gpr_mu_lock(&g_pi_freelist_mu);
@@ -123,29 +128,33 @@ static polling_island *polling_island_create(grpc_fd *initial_fd) {
     r = gpr_malloc(sizeof(*r));
     r->pollable.type = POLLABLE_EPOLL_SET;
     gpr_mu_init(&r->mu);
-    gpr_ref_init(&r->refs, 0);
   } else {
     r = g_first_free_pi;
-    g_first_free_pi = r->next_free;
+    g_first_free_pi = r->next;
   }
   gpr_mu_unlock(&g_pi_freelist_mu);
 
   r->pollable.fd = epoll_create1(EPOLL_CLOEXEC);
-  r->only_fd = initial_fd;
   GPR_ASSERT(r->pollable.fd >= 0);
+
+  gpr_mu_lock(&r->mu);
+  r->only_fd = initial_fd;
+  r->refs = 2;  // creation of a polling island => a referencing pollset & fd
+  gpr_mu_unlock(&r->mu);
 
   add_fd_to_epoll_set(initial_fd, r->pollable.fd);
   return r;
 }
 
 static polling_island *polling_island_add(polling_island *p, grpc_fd *fd) {
-  gpr_ref(&p->refs);
-
   gpr_mu_lock(&p->mu);
   p->only_fd = NULL;
+  p->refs++;  // new fd picks up a ref
   gpr_mu_unlock(&p->mu);
 
   add_fd_to_epoll_set(fd, p->pollable.fd);
+
+  return p;
 }
 
 static void add_siblings_to(polling_island *siblings, polling_island *dest) {
@@ -196,28 +205,39 @@ static polling_island *polling_island_merge(polling_island *a,
   return out;
 }
 
+static polling_island *polling_island_update_and_lock(polling_island *p) {
+  gpr_mu_lock(&p->mu);
+  if (p->became != NULL) {
+    do {
+      polling_island *from = p;
+      p = p->became;
+      gpr_mu_lock(&p->mu);
+      bool delete_from = 0 == --from->refs;
+      p->refs++;
+      gpr_mu_unlock(&from->mu);
+      if (delete_from) {
+        polling_island_delete(from);
+      }
+    } while (p->became != NULL);
+  }
+  return p;
+}
+
+static polling_island *polling_island_ref(polling_island *p) {
+  gpr_mu_lock(&p->mu);
+  gpr_mu_unlock(&p->mu);
+  return p;
+}
+
 static void polling_island_drop(polling_island *p) {}
 
-static void polling_island_update(polling_island **p) {
-  polling_island *cur = *p;
-
-  if (cur != NULL) {
-    bool done;
-    do {
-      done = true;
-      gpr_mu_lock(&cur->mu);
-      if (cur->became != NULL) {
-        polling_island *next = cur->became;
-        gpr_mu_unlock(&cur->mu);
-        cur = next;
-        done = false;
-      } else {
-        gpr_mu_unlock(&cur->mu);
-      }
-    } while (!done);
-  }
-
-  *p = cur;
+static polling_island *polling_island_update(polling_island *p,
+                                             int updating_owner_count) {
+  p = polling_island_update_and_lock(p);
+  GPR_ASSERT(p->refs != 0);
+  p->refs += updating_owner_count;
+  gpr_mu_unlock(&p->mu);
+  return p;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -326,21 +346,23 @@ static void pollset_add_fd(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
   gpr_mu_lock(&pollset->mu);
   gpr_mu_lock(&fd->polling_island_mu);
 
+  polling_island *new;
+
   if (fd->polling_island == NULL) {
     if (pollset->polling_island == NULL) {
-      fd->polling_island = pollset->polling_island = polling_island_create(fd);
+      new = polling_island_create(fd);
     } else {
-      fd->polling_island =
-          polling_island_add(pollset->polling_island, fd->pollable.fd);
+      new = polling_island_add(pollset->polling_island, fd);
     }
   } else if (pollset->polling_island == NULL) {
-    pollset->polling_island = polling_island_ref(fd->polling_island);
+    new = polling_island_ref(fd->polling_island);
   } else if (pollset->polling_island != fd->polling_island) {
-    pollset->polling_island = fd->polling_island =
-        polling_island_merge(pollset->polling_island, fd->polling_island);
+    new = polling_island_merge(pollset->polling_island, fd->polling_island);
+  } else {
+    new = polling_island_update(pollset->polling_island, 1);
   }
 
-  GPR_ASSERT(pollset->polling_island == fd->polling_island);
+  fd->polling_island = pollset->polling_island = new;
 
   gpr_mu_unlock(&fd->polling_island_mu);
   gpr_mu_unlock(&pollset->mu);
