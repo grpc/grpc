@@ -1,6 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\lb_policy\grpclb\load_balancer_api.c">
+      <Filter>src\core\ext\lb_policy\grpclb</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\lb_policy\grpclb\proto\grpc\lb\v0\load_balancer.pb.c">
+      <Filter>src\core\ext\lb_policy\grpclb\proto\grpc\lb\v0</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\lb_policy\pick_first\pick_first.c">
+      <Filter>src\core\ext\lb_policy\pick_first</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\lb_policy\round_robin\round_robin.c">
+      <Filter>src\core\ext\lb_policy\round_robin</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\client\insecure\channel_create.c">
       <Filter>src\core\ext\transport\chttp2\client\insecure</Filter>
     </ClCompile>
@@ -141,15 +153,6 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\client_config\initial_connect_string.c">
       <Filter>src\core\lib\client_config</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\client_config\lb_policies\load_balancer_api.c">
-      <Filter>src\core\lib\client_config\lb_policies</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\client_config\lb_policies\pick_first.c">
-      <Filter>src\core\lib\client_config\lb_policies</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\client_config\lb_policies\round_robin.c">
-      <Filter>src\core\lib\client_config\lb_policies</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\client_config\lb_policy.c">
       <Filter>src\core\lib\client_config</Filter>
@@ -346,9 +349,6 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\json\json_writer.c">
       <Filter>src\core\lib\json</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\proto\grpc\lb\v0\load_balancer.pb.c">
-      <Filter>src\core\lib\proto\grpc\lb\v0</Filter>
-    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\b64.c">
       <Filter>src\core\lib\security</Filter>
     </ClCompile>
@@ -484,6 +484,9 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\tsi\transport_security.c">
       <Filter>src\core\lib\tsi</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\plugin_registry\grpc_plugin_registry.c">
+      <Filter>src\core\plugin_registry</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\third_party\nanopb\pb_common.c">
       <Filter>third_party\nanopb</Filter>
     </ClCompile>
@@ -536,6 +539,12 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\lb_policy\grpclb\load_balancer_api.h">
+      <Filter>src\core\ext\lb_policy\grpclb</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\lb_policy\grpclb\proto\grpc\lb\v0\load_balancer.pb.h">
+      <Filter>src\core\ext\lb_policy\grpclb\proto\grpc\lb\v0</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\alpn.h">
       <Filter>src\core\ext\transport\chttp2\transport</Filter>
     </ClInclude>
@@ -652,15 +661,6 @@
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\client_config\initial_connect_string.h">
       <Filter>src\core\lib\client_config</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\client_config\lb_policies\load_balancer_api.h">
-      <Filter>src\core\lib\client_config\lb_policies</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\client_config\lb_policies\pick_first.h">
-      <Filter>src\core\lib\client_config\lb_policies</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\client_config\lb_policies\round_robin.h">
-      <Filter>src\core\lib\client_config\lb_policies</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\client_config\lb_policy.h">
       <Filter>src\core\lib\client_config</Filter>
@@ -839,9 +839,6 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\json\json_writer.h">
       <Filter>src\core\lib\json</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\proto\grpc\lb\v0\load_balancer.pb.h">
-      <Filter>src\core\lib\proto\grpc\lb\v0</Filter>
-    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\auth_filters.h">
       <Filter>src\core\lib\security</Filter>
     </ClInclude>
@@ -983,6 +980,30 @@
     <Filter Include="src\core\ext">
       <UniqueIdentifier>{3f32a58f-394f-5f13-06aa-6cc52cc2daaf}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\core\ext\lb_policy">
+      <UniqueIdentifier>{030f00ff-6c54-76c8-12df-37e3008335d1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\ext\lb_policy\grpclb">
+      <UniqueIdentifier>{fe41339e-53fb-39b3-7457-7a0fbb238dbe}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\ext\lb_policy\grpclb\proto">
+      <UniqueIdentifier>{a7c27f6b-6d15-01cf-76d9-c30dddea0990}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\ext\lb_policy\grpclb\proto\grpc">
+      <UniqueIdentifier>{bc714e6d-8aba-91df-7db9-7f189f05a6ff}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\ext\lb_policy\grpclb\proto\grpc\lb">
+      <UniqueIdentifier>{adf7e553-94ef-14fd-e845-03104f00a06f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\ext\lb_policy\grpclb\proto\grpc\lb\v0">
+      <UniqueIdentifier>{0406d191-8817-38c3-a562-e3541201f424}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\ext\lb_policy\pick_first">
+      <UniqueIdentifier>{b63ded00-b24f-708e-333f-ce199e421875}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\ext\lb_policy\round_robin">
+      <UniqueIdentifier>{2472d352-cf94-f317-646e-72b769cea846}</UniqueIdentifier>
+    </Filter>
     <Filter Include="src\core\ext\transport">
       <UniqueIdentifier>{e3abfd0a-064e-0f2f-c8e8-7c5a7e98142a}</UniqueIdentifier>
     </Filter>
@@ -1022,9 +1043,6 @@
     <Filter Include="src\core\lib\client_config">
       <UniqueIdentifier>{2f3260de-be57-d18d-6882-61d115baa159}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\core\lib\client_config\lb_policies">
-      <UniqueIdentifier>{118d2bb5-086f-54f3-11de-26d7d7f73f9d}</UniqueIdentifier>
-    </Filter>
     <Filter Include="src\core\lib\client_config\resolvers">
       <UniqueIdentifier>{b9d8db6c-2c68-1c90-fe5e-37da90f47ae6}</UniqueIdentifier>
     </Filter>
@@ -1043,18 +1061,6 @@
     <Filter Include="src\core\lib\json">
       <UniqueIdentifier>{cb2b0073-f2a7-5c63-d182-8874b24bdf36}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\core\lib\proto">
-      <UniqueIdentifier>{b4b19f9a-1575-8a21-0bca-537746f858b7}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="src\core\lib\proto\grpc">
-      <UniqueIdentifier>{cbc8ce67-4a97-d533-8dc3-f949c63e2771}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="src\core\lib\proto\grpc\lb">
-      <UniqueIdentifier>{933530ae-447b-ea8d-3531-98f0556960b0}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="src\core\lib\proto\grpc\lb\v0">
-      <UniqueIdentifier>{c33f944f-37d4-42fd-abc3-61f0d4400462}</UniqueIdentifier>
-    </Filter>
     <Filter Include="src\core\lib\security">
       <UniqueIdentifier>{c4661d64-349f-01c1-1ba8-0602f9047595}</UniqueIdentifier>
     </Filter>
@@ -1069,6 +1075,9 @@
     </Filter>
     <Filter Include="src\core\lib\tsi">
       <UniqueIdentifier>{95ad2811-c8d0-7a42-2a73-baf03fcbf699}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\plugin_registry">
+      <UniqueIdentifier>{02bec99b-ff39-88d7-9dea-e0ff9f4a2701}</UniqueIdentifier>
     </Filter>
     <Filter Include="third_party">
       <UniqueIdentifier>{aaab30a4-2a15-732e-c141-3fbc0f0f5a7a}</UniqueIdentifier>
