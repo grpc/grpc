@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -42,6 +42,7 @@
 #include <grpc/support/slice_buffer.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/ext/transport/chttp2/transport/alpn.h"
 #include "src/core/lib/security/credentials.h"
 #include "src/core/lib/security/handshake.h"
 #include "src/core/lib/security/secure_endpoint.h"
@@ -49,7 +50,6 @@
 #include "src/core/lib/support/env.h"
 #include "src/core/lib/support/load_file.h"
 #include "src/core/lib/support/string.h"
-#include "src/core/lib/transport/chttp2/alpn.h"
 #include "src/core/lib/tsi/fake_transport_security.h"
 #include "src/core/lib/tsi/ssl_transport_security.h"
 

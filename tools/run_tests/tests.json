@@ -4651,6 +4651,28 @@
   }, 
   {
     "args": [
+      "idempotent_request"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_census_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
       "invoke_large_request"
     ], 
     "ci_platforms": [
@@ -5443,6 +5465,28 @@
   }, 
   {
     "args": [
+      "idempotent_request"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_compress_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
       "invoke_large_request"
     ], 
     "ci_platforms": [
@@ -6218,6 +6262,27 @@
   }, 
   {
     "args": [
+      "idempotent_request"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_fakesec_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
       "invoke_large_request"
     ], 
     "ci_platforms": [
@@ -6991,6 +7056,28 @@
   }, 
   {
     "args": [
+      "idempotent_request"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_full_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
       "invoke_large_request"
     ], 
     "ci_platforms": [
@@ -7681,6 +7768,22 @@
   }, 
   {
     "args": [
+      "idempotent_request"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_full+pipe_test", 
+    "platforms": [
+      "linux"
+    ]
+  }, 
+  {
+    "args": [
       "invoke_large_request"
     ], 
     "ci_platforms": [
@@ -8257,6 +8360,22 @@
   }, 
   {
     "args": [
+      "idempotent_request"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_full+poll_test", 
+    "platforms": [
+      "linux"
+    ]
+  }, 
+  {
+    "args": [
       "invoke_large_request"
     ], 
     "ci_platforms": [
@@ -8833,6 +8952,22 @@
   }, 
   {
     "args": [
+      "idempotent_request"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_full+poll+pipe_test", 
+    "platforms": [
+      "linux"
+    ]
+  }, 
+  {
+    "args": [
       "invoke_large_request"
     ], 
     "ci_platforms": [
@@ -9489,6 +9624,28 @@
   }, 
   {
     "args": [
+      "idempotent_request"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_full+trace_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
       "invoke_large_request"
     ], 
     "ci_platforms": [
@@ -10264,6 +10421,27 @@
   }, 
   {
     "args": [
+      "idempotent_request"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_oauth2_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
       "invoke_large_request"
     ], 
     "ci_platforms": [
@@ -10957,6 +11135,27 @@
   }, 
   {
     "args": [
+      "idempotent_request"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_proxy_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
       "invoke_large_request"
     ], 
     "ci_platforms": [
@@ -11587,6 +11786,27 @@
   }, 
   {
     "args": [
+      "idempotent_request"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_sockpair_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
       "invoke_large_request"
     ], 
     "ci_platforms": [
@@ -12197,6 +12417,27 @@
   {
     "args": [
       "high_initial_seqno"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_sockpair+trace_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "idempotent_request"
     ], 
     "ci_platforms": [
       "windows", 
@@ -12848,6 +13089,27 @@
   {
     "args": [
       "hpack_size"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_sockpair_1byte_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "idempotent_request"
     ], 
     "ci_platforms": [
       "windows", 
@@ -13599,6 +13861,28 @@
   }, 
   {
     "args": [
+      "idempotent_request"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_ssl_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
       "invoke_large_request"
     ], 
     "ci_platforms": [
@@ -14289,6 +14573,22 @@
   }, 
   {
     "args": [
+      "idempotent_request"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_ssl+poll_test", 
+    "platforms": [
+      "linux"
+    ]
+  }, 
+  {
+    "args": [
       "invoke_large_request"
     ], 
     "ci_platforms": [
@@ -14887,6 +15187,27 @@
   }, 
   {
     "args": [
+      "idempotent_request"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_ssl_proxy_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
       "invoke_large_request"
     ], 
     "ci_platforms": [
@@ -15543,6 +15864,26 @@
   }, 
   {
     "args": [
+      "idempotent_request"
+    ], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_uds_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
       "invoke_large_request"
     ], 
     "ci_platforms": [
@@ -16179,6 +16520,22 @@
   }, 
   {
     "args": [
+      "idempotent_request"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_uds+poll_test", 
+    "platforms": [
+      "linux"
+    ]
+  }, 
+  {
+    "args": [
       "invoke_large_request"
     ], 
     "ci_platforms": [
@@ -16835,6 +17192,28 @@
   }, 
   {
     "args": [
+      "idempotent_request"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_census_nosec_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
       "invoke_large_request"
     ], 
     "ci_platforms": [
@@ -17605,6 +17984,28 @@
   }, 
   {
     "args": [
+      "idempotent_request"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_compress_nosec_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
       "invoke_large_request"
     ], 
     "ci_platforms": [
@@ -18354,6 +18755,28 @@
   {
     "args": [
       "hpack_size"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_full_nosec_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "idempotent_request"
     ], 
     "ci_platforms": [
       "windows", 
@@ -19034,6 +19457,22 @@
   {
     "args": [
       "hpack_size"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_full+pipe_nosec_test", 
+    "platforms": [
+      "linux"
+    ]
+  }, 
+  {
+    "args": [
+      "idempotent_request"
     ], 
     "ci_platforms": [
       "linux"
@@ -19594,6 +20033,22 @@
   {
     "args": [
       "hpack_size"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_full+poll_nosec_test", 
+    "platforms": [
+      "linux"
+    ]
+  }, 
+  {
+    "args": [
+      "idempotent_request"
     ], 
     "ci_platforms": [
       "linux"
@@ -20154,6 +20609,22 @@
   {
     "args": [
       "hpack_size"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_full+poll+pipe_nosec_test", 
+    "platforms": [
+      "linux"
+    ]
+  }, 
+  {
+    "args": [
+      "idempotent_request"
     ], 
     "ci_platforms": [
       "linux"
@@ -20782,6 +21253,28 @@
   {
     "args": [
       "high_initial_seqno"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_full+trace_nosec_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "idempotent_request"
     ], 
     "ci_platforms": [
       "windows", 
@@ -21474,6 +21967,27 @@
   {
     "args": [
       "high_initial_seqno"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_proxy_nosec_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "idempotent_request"
     ], 
     "ci_platforms": [
       "windows", 
@@ -22083,6 +22597,27 @@
   {
     "args": [
       "hpack_size"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_sockpair_nosec_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "idempotent_request"
     ], 
     "ci_platforms": [
       "windows", 
@@ -22692,6 +23227,27 @@
   {
     "args": [
       "high_initial_seqno"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_sockpair+trace_nosec_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "idempotent_request"
     ], 
     "ci_platforms": [
       "windows", 
@@ -23322,6 +23878,27 @@
   {
     "args": [
       "hpack_size"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_sockpair_1byte_nosec_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "idempotent_request"
     ], 
     "ci_platforms": [
       "windows", 
@@ -23980,6 +24557,26 @@
   {
     "args": [
       "hpack_size"
+    ], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_uds_nosec_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "idempotent_request"
     ], 
     "ci_platforms": [
       "linux", 
@@ -24604,6 +25201,22 @@
   {
     "args": [
       "hpack_size"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_uds+poll_nosec_test", 
+    "platforms": [
+      "linux"
+    ]
+  }, 
+  {
+    "args": [
+      "idempotent_request"
     ], 
     "ci_platforms": [
       "linux"

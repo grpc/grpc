@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -50,21 +50,18 @@ grpc_byte_buffer* grpc_rb_s_to_byte_buffer(char *string, size_t length) {
 }
 
 VALUE grpc_rb_byte_buffer_to_s(grpc_byte_buffer *buffer) {
-  size_t length = 0;
-  char *string = NULL;
-  size_t offset = 0;
+  VALUE rb_string;
   grpc_byte_buffer_reader reader;
   gpr_slice next;
   if (buffer == NULL) {
     return Qnil;
-
   }
-  length = grpc_byte_buffer_length(buffer);
-  string = xmalloc(length + 1);
+  rb_string = rb_str_buf_new(grpc_byte_buffer_length(buffer));
   grpc_byte_buffer_reader_init(&reader, buffer);
   while (grpc_byte_buffer_reader_next(&reader, &next) != 0) {
-    memcpy(string + offset, GPR_SLICE_START_PTR(next), GPR_SLICE_LENGTH(next));
-    offset += GPR_SLICE_LENGTH(next);
+    rb_str_cat(rb_string, (const char *) GPR_SLICE_START_PTR(next),
+               GPR_SLICE_LENGTH(next));
+    gpr_slice_unref(next);
   }
-  return rb_str_new(string, length);
+  return rb_string;
 }

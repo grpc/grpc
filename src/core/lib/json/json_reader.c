@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -280,13 +280,14 @@ grpc_json_reader_status grpc_json_reader_run(grpc_json_reader *reader) {
             break;
 
           case GRPC_JSON_STATE_OBJECT_KEY_STRING:
-            GPR_ASSERT(reader->unicode_high_surrogate == 0);
+            if (reader->unicode_high_surrogate != 0)
+              return GRPC_JSON_PARSE_ERROR;
             if (c == '"') {
               reader->state = GRPC_JSON_STATE_OBJECT_KEY_END;
               json_reader_set_key(reader);
               json_reader_string_clear(reader);
             } else {
-              if (c <= 0x001f) return GRPC_JSON_PARSE_ERROR;
+              if (c < 32) return GRPC_JSON_PARSE_ERROR;
               json_reader_string_add_char(reader, c);
             }
             break;
@@ -362,6 +363,8 @@ grpc_json_reader_status grpc_json_reader_run(grpc_json_reader *reader) {
                 reader->in_object = 0;
                 reader->in_array = 1;
                 break;
+              default:
+                return GRPC_JSON_PARSE_ERROR;
             }
             break;
 
