@@ -202,8 +202,10 @@ grpc_json_reader_status grpc_json_reader_run(grpc_json_reader *reader) {
               }
               if (reader->in_object) {
                 reader->state = GRPC_JSON_STATE_OBJECT_KEY_BEGIN;
-              } else {
+              } else if (reader->in_array) {
                 reader->state = GRPC_JSON_STATE_VALUE_BEGIN;
+              } else {
+                return GRPC_JSON_PARSE_ERROR;
               }
             } else {
               if (reader->depth-- == 0) return GRPC_JSON_PARSE_ERROR;
