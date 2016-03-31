@@ -5,7 +5,7 @@
 # This file can be regenerated from the template by running
 # tools/buildgen/generate_projects.sh
 
-# Copyright 2015-2016, Google Inc.
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -558,6 +558,10 @@
         'gpr',
       ],
       'sources': [
+        'src/core/ext/lb_policy/grpclb/load_balancer_api.c',
+        'src/core/ext/lb_policy/grpclb/proto/grpc/lb/v0/load_balancer.pb.c',
+        'src/core/ext/lb_policy/pick_first/pick_first.c',
+        'src/core/ext/lb_policy/round_robin/round_robin.c',
         'src/core/ext/transport/chttp2/client/insecure/channel_create.c',
         'src/core/ext/transport/chttp2/client/secure/secure_channel_create.c',
         'src/core/ext/transport/chttp2/server/insecure/server_chttp2.c',
@@ -605,9 +609,6 @@
         'src/core/lib/client_config/connector.c',
         'src/core/lib/client_config/default_initial_connect_string.c',
         'src/core/lib/client_config/initial_connect_string.c',
-        'src/core/lib/client_config/lb_policies/load_balancer_api.c',
-        'src/core/lib/client_config/lb_policies/pick_first.c',
-        'src/core/lib/client_config/lb_policies/round_robin.c',
         'src/core/lib/client_config/lb_policy.c',
         'src/core/lib/client_config/lb_policy_factory.c',
         'src/core/lib/client_config/lb_policy_registry.c',
@@ -673,7 +674,6 @@
         'src/core/lib/json/json_reader.c',
         'src/core/lib/json/json_string.c',
         'src/core/lib/json/json_writer.c',
-        'src/core/lib/proto/grpc/lb/v0/load_balancer.pb.c',
         'src/core/lib/security/b64.c',
         'src/core/lib/security/client_auth_filter.c',
         'src/core/lib/security/credentials.c',
@@ -719,6 +719,7 @@
         'src/core/lib/tsi/fake_transport_security.c',
         'src/core/lib/tsi/ssl_transport_security.c',
         'src/core/lib/tsi/transport_security.c',
+        'src/core/plugin_registry/grpc_plugin_registry.c',
         'third_party/nanopb/pb_common.c',
         'third_party/nanopb/pb_decode.c',
         'third_party/nanopb/pb_encode.c',
