@@ -89,9 +89,12 @@ message ClientConfig {
   repeated string server_targets = 1;
   ClientType client_type = 2;
   SecurityParams security_params = 3;
-  // How many concurrent RPCs to start for each channel.
+  // Maximum limit of how many concurrent RPCs to start for each channel.
   // For synchronous client, use a separate thread for each outstanding RPC.
-  int32 outstanding_rpcs_per_channel = 4;
+  // In practice, this can be a limit on QPS for both closed-loop and open-loop
+  // tests. This value should be set to at least the Little's law value for your
+  // desired QPS: namely at least QPS/channel * message latency .
+  int32 max_outstanding_rpcs_per_channel = 4;
   // Number of independent client channels to create.
   // i-th channel will connect to server_target[i % server_targets.size()]
   int32 client_channels = 5;
