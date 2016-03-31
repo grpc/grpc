@@ -73,7 +73,9 @@ function getQps() {
 function start(server_addresses, test_cases, channels_per_server,
                parallel_calls_per_channel, metrics_port) {
   running = true;
-  // Assuming that we are not calling unimplemented_method
+  /* Assuming that we are not calling unimplemented_method. The client class
+   * used by empty_unary is (currently) the client class used by every interop
+   * test except unimplemented_method */
   var Client = interop_client.test_cases.empty_unary.Client;
   /* Make channels_per_server clients connecting to each server address */
   var channels = _.flatten(_.times(
