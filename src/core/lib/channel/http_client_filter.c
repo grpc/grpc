@@ -112,7 +112,9 @@ static void hc_mutate_op(grpc_call_element *elem,
     /* Send : prefixed headers, which have to be before any application
        layer headers. */
     grpc_metadata_batch_add_head(op->send_initial_metadata, &calld->method,
-                                 GRPC_MDELEM_METHOD_POST);
+                                 op->send_idempotent_request
+                                     ? GRPC_MDELEM_METHOD_PUT
+                                     : GRPC_MDELEM_METHOD_POST);
     grpc_metadata_batch_add_head(op->send_initial_metadata, &calld->scheme,
                                  channeld->static_scheme);
     grpc_metadata_batch_add_tail(op->send_initial_metadata, &calld->te_trailers,

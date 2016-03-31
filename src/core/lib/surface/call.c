@@ -911,11 +911,20 @@ static void set_cancelled_value(grpc_status_code status, void *dest) {
   *(int *)dest = (status != GRPC_STATUS_OK);
 }
 
-static int are_write_flags_valid(uint32_t flags) {
+static bool are_write_flags_valid(uint32_t flags) {
   /* check that only bits in GRPC_WRITE_(INTERNAL?)_USED_MASK are set */
   const uint32_t allowed_write_positions =
       (GRPC_WRITE_USED_MASK | GRPC_WRITE_INTERNAL_USED_MASK);
   const uint32_t invalid_positions = ~allowed_write_positions;
+  return !(flags & invalid_positions);
+}
+
+static bool are_initial_metadata_flags_valid(uint32_t flags, bool is_client) {
+  /* check that only bits in GRPC_WRITE_(INTERNAL?)_USED_MASK are set */
+  uint32_t invalid_positions = ~GRPC_INITIAL_METADATA_USED_MASK;
+  if (!is_client) {
+    invalid_positions |= GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST;
+  }
   return !(flags & invalid_positions);
 }
 
@@ -1198,7 +1207,7 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
     switch (op->op) {
       case GRPC_OP_SEND_INITIAL_METADATA:
         /* Flag validation: currently allow no flags */
-        if (op->flags != 0) {
+        if (!are_initial_metadata_flags_valid(op->flags, call->is_client)) {
           error = GRPC_CALL_ERROR_INVALID_FLAGS;
           goto done_with_error;
         }
@@ -1222,6 +1231,8 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
         call->metadata_batch[0][0].deadline = call->send_deadline;
         stream_op.send_initial_metadata =
             &call->metadata_batch[0 /* is_receiving */][0 /* is_trailing */];
+        stream_op.send_idempotent_request =
+            (op->flags & GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST) != 0;
         break;
       case GRPC_OP_SEND_MESSAGE:
         if (!are_write_flags_valid(op->flags)) {
