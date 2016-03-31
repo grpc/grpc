@@ -42,7 +42,7 @@ service BenchmarkService {
   rpc UnaryCall(SimpleRequest) returns (SimpleResponse);
 
   // A stream of repeated ping-pongs.
-  rpc StreamingCall(stream SimpleRequest) returns (stream SimpleResponse);
+  rpc StreamingPingPong(stream SimpleRequest) returns (stream SimpleResponse);
 
   // One request followed by unbounded responses.
   rpc ServerStreamingCall(SimpleRequest) returns (stream SimpleResponse);

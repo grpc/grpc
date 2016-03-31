@@ -46,10 +46,13 @@ enum ServerType {
 }
 
 enum RpcType {
+  option allow_alias = true;
   // First there are ping-pong RPCs in which the client sends a request and the
   // server sends a response
-  UNARY = 0; // unary ping-pong RPCs
-  STREAMING = 1; // streaming ping-pong RPCs
+  UNARY_PING_PONG = 0; // unary ping-pong RPCs
+  UNARY = 0; // alias for older tests
+  STREAMING_PING_PONG = 1; // streaming ping-pong RPCs
+  STREAMING = 1; // alias for older tests
   // Then there are RPCs where a side sends to the other without regard to the
   // sends coming from the other side
   SERVER_STREAMING = 2; // 1-directional server->client streaming
