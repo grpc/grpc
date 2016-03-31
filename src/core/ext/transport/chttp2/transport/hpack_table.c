@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -40,6 +40,8 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/support/murmur_hash.h"
+
+extern int grpc_http_trace;
 
 static struct {
   const char *key;
@@ -264,12 +266,16 @@ int grpc_chttp2_hptbl_set_current_table_size(grpc_chttp2_hptbl *tbl,
     return 1;
   }
   if (bytes > tbl->max_bytes) {
-    gpr_log(GPR_ERROR,
-            "Attempt to make hpack table %d bytes when max is %d bytes", bytes,
-            tbl->max_bytes);
+    if (grpc_http_trace) {
+      gpr_log(GPR_ERROR,
+              "Attempt to make hpack table %d bytes when max is %d bytes",
+              bytes, tbl->max_bytes);
+    }
     return 0;
   }
-  gpr_log(GPR_DEBUG, "Update hpack parser table size to %d", bytes);
+  if (grpc_http_trace) {
+    gpr_log(GPR_DEBUG, "Update hpack parser table size to %d", bytes);
+  }
   while (tbl->mem_used > bytes) {
     evict1(tbl);
   }
@@ -293,10 +299,12 @@ int grpc_chttp2_hptbl_add(grpc_chttp2_hptbl *tbl, grpc_mdelem *md) {
                       GRPC_CHTTP2_HPACK_ENTRY_OVERHEAD;
 
   if (tbl->current_table_bytes > tbl->max_bytes) {
-    gpr_log(GPR_ERROR,
-            "HPACK max table size reduced to %d but not reflected by hpack "
-            "stream (still at %d)",
-            tbl->max_bytes, tbl->current_table_bytes);
+    if (grpc_http_trace) {
+      gpr_log(GPR_ERROR,
+              "HPACK max table size reduced to %d but not reflected by hpack "
+              "stream (still at %d)",
+              tbl->max_bytes, tbl->current_table_bytes);
+    }
     return 0;
   }
 

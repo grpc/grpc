@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -37,7 +37,7 @@
 
 #include "src/core/lib/iomgr/pollset_set_windows.h"
 
-grpc_pollset_set* grpc_pollset_set_create(pollset_set) { return NULL; }
+grpc_pollset_set* grpc_pollset_set_create(void) { return NULL; }
 
 void grpc_pollset_set_destroy(grpc_pollset_set* pollset_set) {}
 

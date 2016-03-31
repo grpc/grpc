@@ -1,5 +1,5 @@
 @rem Convenience wrapper that runs specified gRPC target using msbuild
-@rem Usage: build.bat TARGET_NAME
+@rem Usage: build_vs2015.bat TARGET_NAME
 
 setlocal
 @rem Set VS variables (uses Visual Studio 2015)

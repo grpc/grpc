@@ -3,6 +3,14 @@
     "config": "opt"
   }, 
   {
+    "config": "asan-trace-cmp", 
+    "environ": {
+      "ASAN_OPTIONS": "detect_leaks=1:color=always", 
+      "LSAN_OPTIONS": "suppressions=tools/lsan_suppressions.txt:report_objects=1"
+    }, 
+    "timeout_multiplier": 3
+  }, 
+  {
     "config": "dbg"
   }, 
   {

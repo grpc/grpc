@@ -262,9 +262,6 @@ filegroups:
   - src/core/lib/client_config/client_config.h
   - src/core/lib/client_config/connector.h
   - src/core/lib/client_config/initial_connect_string.h
-  - src/core/lib/client_config/lb_policies/load_balancer_api.h
-  - src/core/lib/client_config/lb_policies/pick_first.h
-  - src/core/lib/client_config/lb_policies/round_robin.h
   - src/core/lib/client_config/lb_policy.h
   - src/core/lib/client_config/lb_policy_factory.h
   - src/core/lib/client_config/lb_policy_registry.h
@@ -324,7 +321,6 @@ filegroups:
   - src/core/lib/json/json_common.h
   - src/core/lib/json/json_reader.h
   - src/core/lib/json/json_writer.h
-  - src/core/lib/proto/grpc/lb/v0/load_balancer.pb.h
   - src/core/lib/statistics/census_interface.h
   - src/core/lib/statistics/census_rpc_stats.h
   - src/core/lib/surface/api_trace.h
@@ -363,9 +359,6 @@ filegroups:
   - src/core/lib/client_config/connector.c
   - src/core/lib/client_config/default_initial_connect_string.c
   - src/core/lib/client_config/initial_connect_string.c
-  - src/core/lib/client_config/lb_policies/load_balancer_api.c
-  - src/core/lib/client_config/lb_policies/pick_first.c
-  - src/core/lib/client_config/lb_policies/round_robin.c
   - src/core/lib/client_config/lb_policy.c
   - src/core/lib/client_config/lb_policy_factory.c
   - src/core/lib/client_config/lb_policy_registry.c
@@ -430,7 +423,6 @@ filegroups:
   - src/core/lib/json/json_reader.c
   - src/core/lib/json/json_string.c
   - src/core/lib/json/json_writer.c
-  - src/core/lib/proto/grpc/lb/v0/load_balancer.pb.c
   - src/core/lib/surface/alarm.c
   - src/core/lib/surface/api_trace.c
   - src/core/lib/surface/byte_buffer.c
@@ -466,6 +458,27 @@ filegroups:
   - include/grpc/impl/codegen/grpc_types.h
   - include/grpc/impl/codegen/propagation_bits.h
   - include/grpc/impl/codegen/status.h
+- name: grpc_lb_policy_grpclb
+  headers:
+  - src/core/ext/lb_policy/grpclb/load_balancer_api.h
+  - src/core/ext/lb_policy/grpclb/proto/grpc/lb/v0/load_balancer.pb.h
+  src:
+  - src/core/ext/lb_policy/grpclb/load_balancer_api.c
+  - src/core/ext/lb_policy/grpclb/proto/grpc/lb/v0/load_balancer.pb.c
+  uses:
+  - grpc_base
+- name: grpc_lb_policy_pick_first
+  src:
+  - src/core/ext/lb_policy/pick_first/pick_first.c
+  plugin: grpc_lb_policy_pick_first
+  uses:
+  - grpc_base
+- name: grpc_lb_policy_round_robin
+  src:
+  - src/core/ext/lb_policy/round_robin/round_robin.c
+  plugin: grpc_lb_policy_round_robin
+  uses:
+  - grpc_base
 - name: grpc_secure
   headers:
   - src/core/lib/security/auth_filters.h
@@ -639,10 +652,14 @@ libs:
   - grpc_transport_chttp2_client_secure
   - grpc_transport_chttp2_server_insecure
   - grpc_transport_chttp2_client_insecure
+  - grpc_lb_policy_grpclb
+  - grpc_lb_policy_pick_first
+  - grpc_lb_policy_round_robin
   - grpc_secure
   - grpc_codegen
   - census
   - nanopb
+  generate_plugin_registry: true
   secure: true
   vs_packages:
   - grpc.dependencies.openssl
@@ -722,9 +739,13 @@ libs:
   - grpc_base
   - grpc_transport_chttp2_server_insecure
   - grpc_transport_chttp2_client_insecure
+  - grpc_lb_policy_grpclb
+  - grpc_lb_policy_pick_first
+  - grpc_lb_policy_round_robin
   - grpc_codegen
   - census
   - nanopb
+  generate_plugin_registry: true
   secure: false
   vs_project_guid: '{46CEDFFF-9692-456A-AA24-38B5D6BCF4C5}'
 - name: grpc_zookeeper
@@ -1574,6 +1595,18 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: hpack_parser_fuzzer_test
+  build: fuzzer
+  language: c
+  src:
+  - test/core/transport/chttp2/hpack_parser_fuzzer_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  corpus_dirs:
+  - test/core/transport/chttp2/hpack_parser_corpus
 - name: hpack_parser_test
   build: test
   language: c
@@ -1594,6 +1627,18 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: http_fuzzer_test
+  build: fuzzer
+  language: c
+  src:
+  - test/core/http/fuzzer.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  corpus_dirs:
+  - test/core/http/corpus
 - name: http_parser_test
   build: test
   language: c
@@ -1652,6 +1697,39 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: internal_api_canary_iomgr_test
+  build: test
+  run: false
+  language: c
+  src:
+  - test/core/internal_api_canaries/iomgr.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: internal_api_canary_support_test
+  build: test
+  run: false
+  language: c
+  src:
+  - test/core/internal_api_canaries/iomgr.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: internal_api_canary_transport_test
+  build: test
+  run: false
+  language: c
+  src:
+  - test/core/internal_api_canaries/iomgr.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: invalid_call_argument_test
   build: test
   language: c
@@ -1662,6 +1740,18 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: json_fuzzer_test
+  build: fuzzer
+  language: c
+  src:
+  - test/core/json/fuzzer.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  corpus_dirs:
+  - test/core/json/corpus
 - name: json_rewrite
   build: test
   run: false
@@ -2025,6 +2115,18 @@ targets:
   - mac
   - linux
   - posix
+- name: uri_fuzzer_test
+  build: fuzzer
+  language: c
+  src:
+  - test/core/client_config/uri_fuzzer_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  corpus_dirs:
+  - test/core/client_config/uri_corpus
 - name: uri_parser_test
   build: test
   language: c
@@ -2806,8 +2908,8 @@ vspackages:
 configs:
   asan:
     CC: clang
-    CPPFLAGS: -O0 -fsanitize=address -fno-omit-frame-pointer -Wno-unused-command-line-argument
-      -DGPR_NO_DIRECT_SYSCALLS
+    CPPFLAGS: -O0 -fsanitize-coverage=edge -fsanitize=address -fno-omit-frame-pointer
+      -Wno-unused-command-line-argument -DGPR_NO_DIRECT_SYSCALLS
     CXX: clang++
     LD: clang
     LDFLAGS: -fsanitize=address
@@ -2819,8 +2921,8 @@ configs:
     timeout_multiplier: 3
   asan-noleaks:
     CC: clang
-    CPPFLAGS: -O0 -fsanitize=address -fno-omit-frame-pointer -Wno-unused-command-line-argument
-      -DGPR_NO_DIRECT_SYSCALLS
+    CPPFLAGS: -O0 -fsanitize-coverage=edge -fsanitize=address -fno-omit-frame-pointer
+      -Wno-unused-command-line-argument -DGPR_NO_DIRECT_SYSCALLS
     CXX: clang++
     LD: clang
     LDFLAGS: -fsanitize=address
@@ -2828,6 +2930,19 @@ configs:
     compile_the_world: true
     test_environ:
       ASAN_OPTIONS: detect_leaks=0:color=always
+    timeout_multiplier: 3
+  asan-trace-cmp:
+    CC: clang
+    CPPFLAGS: -O0 -fsanitize-coverage=edge -fsanitize-coverage=trace-cmp -fsanitize=address
+      -fno-omit-frame-pointer -Wno-unused-command-line-argument -DGPR_NO_DIRECT_SYSCALLS
+    CXX: clang++
+    LD: clang
+    LDFLAGS: -fsanitize=address
+    LDXX: clang++
+    compile_the_world: true
+    test_environ:
+      ASAN_OPTIONS: detect_leaks=1:color=always
+      LSAN_OPTIONS: suppressions=tools/lsan_suppressions.txt:report_objects=1
     timeout_multiplier: 3
   basicprof:
     CPPFLAGS: -O2 -DGRPC_BASIC_PROFILER -DGRPC_TIMERS_RDTSC
@@ -2837,8 +2952,8 @@ configs:
     DEFINES: _DEBUG DEBUG
   easan:
     CC: clang
-    CPPFLAGS: -O0 -fsanitize=address -fno-omit-frame-pointer -Wno-unused-command-line-argument
-      -DGPR_NO_DIRECT_SYSCALLS
+    CPPFLAGS: -O0 -fsanitize-coverage=edge -fsanitize=address -fno-omit-frame-pointer
+      -Wno-unused-command-line-argument -DGPR_NO_DIRECT_SYSCALLS
     CXX: clang++
     DEFINES: _DEBUG DEBUG GRPC_EXECUTION_CONTEXT_SANITIZER
     LD: clang
@@ -2887,9 +3002,9 @@ configs:
     valgrind: --tool=memcheck --leak-check=full
   msan:
     CC: clang
-    CPPFLAGS: -O0 -fsanitize=memory -fsanitize-memory-track-origins -fno-omit-frame-pointer
-      -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1 -Wno-unused-command-line-argument
-      -fPIE -pie -DGPR_NO_DIRECT_SYSCALLS
+    CPPFLAGS: -O0 -fsanitize-coverage=edge -fsanitize=memory -fsanitize-memory-track-origins
+      -fno-omit-frame-pointer -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1
+      -Wno-unused-command-line-argument -fPIE -pie -DGPR_NO_DIRECT_SYSCALLS
     CXX: clang++
     DEFINES: NDEBUG
     LD: clang
@@ -2922,7 +3037,8 @@ configs:
     timeout_multiplier: 5
   ubsan:
     CC: clang
-    CPPFLAGS: -O1 -fsanitize=undefined -fno-omit-frame-pointer -Wno-unused-command-line-argument
+    CPPFLAGS: -O1 -fsanitize-coverage=edge -fsanitize=undefined -fno-omit-frame-pointer
+      -Wno-unused-command-line-argument
     CXX: clang++
     DEFINES: NDEBUG
     LD: clang
