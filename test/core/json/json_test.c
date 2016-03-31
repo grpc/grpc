@@ -90,6 +90,7 @@ static testing_pair testing_pairs[] = {
     {"{\"foo\": bar\"x\"}", NULL},
     {"fals", NULL},
     {"0,0 ", NULL},
+    {"\"foo\",[]", NULL},
     /* Testing unterminated string. */
     {"\"\\x", NULL},
     /* Testing invalid UTF-16 number. */
