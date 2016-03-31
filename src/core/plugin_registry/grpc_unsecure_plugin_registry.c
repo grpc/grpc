@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,13 +31,16 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_CLIENT_CONFIG_LB_POLICIES_PICK_FIRST_H
-#define GRPC_CORE_LIB_CLIENT_CONFIG_LB_POLICIES_PICK_FIRST_H
+#include <grpc/grpc.h>
 
-#include "src/core/lib/client_config/lb_policy_factory.h"
+extern void grpc_lb_policy_pick_first_init(void);
+extern void grpc_lb_policy_pick_first_shutdown(void);
+extern void grpc_lb_policy_round_robin_init(void);
+extern void grpc_lb_policy_round_robin_shutdown(void);
 
-/** Returns a load balancing factory for the pick first policy, which picks up
- * the first subchannel from \a subchannels to succesfully connect */
-grpc_lb_policy_factory *grpc_pick_first_lb_factory_create();
-
-#endif /* GRPC_CORE_LIB_CLIENT_CONFIG_LB_POLICIES_PICK_FIRST_H */
+void grpc_register_built_in_plugins(void) {
+  grpc_register_plugin(grpc_lb_policy_pick_first_init,
+                       grpc_lb_policy_pick_first_shutdown);
+  grpc_register_plugin(grpc_lb_policy_round_robin_init,
+                       grpc_lb_policy_round_robin_shutdown);
+}

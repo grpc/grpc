@@ -75,11 +75,20 @@ def mako_plugin(dictionary):
       todo.append(cur)
     else:
       skips = 0
+      assert 'plugins' not in cur
+      plugins = []
       for uses in cur.get('uses', []):
+        for plugin in filegroups[uses]['plugins']:
+          if plugin not in plugins:
+            plugins.append(plugin)
         for lst in FILEGROUP_LISTS:
           vals = cur.get(lst, [])
           vals.extend(filegroups[uses].get(lst, []))
           cur[lst] = vals
+      cur_plugin_name = cur.get('plugin')
+      if cur_plugin_name:
+        plugins.append(cur_plugin_name)
+      cur['plugins'] = plugins
       filegroups[cur['name']] = cur
 
   # the above expansion can introduce duplicate filenames: contract them here
@@ -88,13 +97,20 @@ def mako_plugin(dictionary):
       fg[lst] = sorted(list(set(fg.get(lst, []))))
 
   for lib in libs:
+    assert 'plugins' not in lib
+    plugins = []
     for fg_name in lib.get('filegroups', []):
       fg = filegroups[fg_name]
-
+      for plugin in fg['plugins']:
+        if plugin not in plugins:
+          plugins.append(plugin)
       for lst in FILEGROUP_LISTS:
         vals = lib.get(lst, [])
         vals.extend(fg.get(lst, []))
         lib[lst] = vals
-
+      lib['plugins'] = plugins
+    if lib.get('generate_plugin_registry', False):
+      lib['src'].append('src/core/plugin_registry/%s_plugin_registry.c' %
+                        lib['name'])
     for lst in FILEGROUP_LISTS:
       lib[lst] = sorted(list(set(lib.get(lst, []))))
