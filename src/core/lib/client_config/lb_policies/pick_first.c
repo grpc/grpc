@@ -32,11 +32,11 @@
  */
 
 #include "src/core/lib/client_config/lb_policies/pick_first.h"
-#include "src/core/lib/client_config/lb_policy_factory.h"
 
 #include <string.h>
 
 #include <grpc/support/alloc.h>
+#include "src/core/lib/client_config/lb_policy_factory.h"
 #include "src/core/lib/transport/connectivity_state.h"
 
 typedef struct pending_pick {
@@ -415,19 +415,42 @@ static void pick_first_factory_ref(grpc_lb_policy_factory *factory) {}
 
 static void pick_first_factory_unref(grpc_lb_policy_factory *factory) {}
 
-static grpc_lb_policy *create_pick_first(grpc_lb_policy_factory *factory,
+static grpc_lb_policy *create_pick_first(grpc_exec_ctx *exec_ctx,
+                                         grpc_lb_policy_factory *factory,
                                          grpc_lb_policy_args *args) {
-  if (args->num_subchannels == 0) return NULL;
+  GPR_ASSERT(args->addresses != NULL);
+  GPR_ASSERT(args->subchannel_factory != NULL);
+
+  if (args->addresses->naddrs == 0) return NULL;
+
   pick_first_lb_policy *p = gpr_malloc(sizeof(*p));
   memset(p, 0, sizeof(*p));
-  grpc_lb_policy_init(&p->base, &pick_first_lb_policy_vtable);
+
   p->subchannels =
-      gpr_malloc(sizeof(grpc_subchannel *) * args->num_subchannels);
-  p->num_subchannels = args->num_subchannels;
-  grpc_connectivity_state_init(&p->state_tracker, GRPC_CHANNEL_IDLE,
-                               "pick_first");
-  memcpy(p->subchannels, args->subchannels,
-         sizeof(grpc_subchannel *) * args->num_subchannels);
+      gpr_malloc(sizeof(grpc_subchannel *) * args->addresses->naddrs);
+  memset(p->subchannels, 0, sizeof(*p->subchannels) * args->addresses->naddrs);
+  grpc_subchannel_args sc_args;
+  size_t subchannel_idx = 0;
+  for (size_t i = 0; i < args->addresses->naddrs; i++) {
+    memset(&sc_args, 0, sizeof(grpc_subchannel_args));
+    sc_args.addr = (struct sockaddr *)(args->addresses->addrs[i].addr);
+    sc_args.addr_len = (size_t)args->addresses->addrs[i].len;
+
+    grpc_subchannel *subchannel = grpc_subchannel_factory_create_subchannel(
+        exec_ctx, args->subchannel_factory, &sc_args);
+
+    if (subchannel != NULL) {
+      p->subchannels[subchannel_idx++] = subchannel;
+    }
+  }
+  if (subchannel_idx == 0) {
+    gpr_free(p->subchannels);
+    gpr_free(p);
+    return NULL;
+  }
+  p->num_subchannels = subchannel_idx;
+
+  grpc_lb_policy_init(&p->base, &pick_first_lb_policy_vtable);
   grpc_closure_init(&p->connectivity_changed, pf_connectivity_changed, p);
   gpr_mu_init(&p->mu);
   return &p->base;
