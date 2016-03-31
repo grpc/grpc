@@ -161,7 +161,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/census/census_interface.h )
   s.files += %w( src/core/ext/census/census_rpc_stats.h )
   s.files += %w( src/core/ext/census/grpc_filter.h )
-  s.files += %w( src/core/ext/census/grpc_plugin.h )
   s.files += %w( src/core/ext/census/mlog.h )
   s.files += %w( src/core/ext/census/rpc_metric_id.h )
   s.files += %w( src/core/ext/lb_policy/grpclb/load_balancer_api.h )

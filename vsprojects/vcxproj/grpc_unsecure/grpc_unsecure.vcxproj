@@ -276,7 +276,6 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\census_interface.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\census_rpc_stats.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\grpc_filter.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\grpc_plugin.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\mlog.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\rpc_metric_id.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\lb_policy\grpclb\load_balancer_api.h" />
