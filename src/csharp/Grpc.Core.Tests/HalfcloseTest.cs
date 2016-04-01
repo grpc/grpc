@@ -74,7 +74,6 @@ namespace Grpc.Core.Tests
         /// before we halfclose the request stream, an attempt to halfclose
         /// (complete the request stream) shouldn't be treated as an error.
         /// </summary>
-        /// <returns>The after fullclose client streaming call.</returns>
         [Test]
         public async Task HalfcloseAfterFullclose_ClientStreamingCall()
         {
