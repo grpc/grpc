@@ -1,0 +1,8 @@
+%YAML 1.2
+---
+foreach: performance_scenarios
+output_name: ${selected.config_protobuf.name}.json
+template: |
+  <% import json %>
+  ${json.dumps({'scenarios': [selected.config_protobuf]},
+               sort_keys=True, indent=2)}

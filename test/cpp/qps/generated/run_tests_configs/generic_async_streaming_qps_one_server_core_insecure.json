@@ -1,0 +1,41 @@
+
+{
+  "scenarios": [
+    {
+      "benchmark_seconds": 30, 
+      "client_config": {
+        "async_client_threads": 1, 
+        "client_channels": 64, 
+        "client_type": "ASYNC_CLIENT", 
+        "load_params": {
+          "closed_loop": {}
+        }, 
+        "outstanding_rpcs_per_channel": 100, 
+        "payload_config": {
+          "bytebuf_params": {
+            "req_size": 0, 
+            "resp_size": 0
+          }
+        }, 
+        "rpc_type": "STREAMING", 
+        "security_params": null
+      }, 
+      "name": "generic_async_streaming_qps_one_server_core_insecure", 
+      "num_clients": 0, 
+      "num_servers": 1, 
+      "server_config": {
+        "async_server_threads": 1, 
+        "core_limit": 1, 
+        "payload_config": {
+          "bytebuf_params": {
+            "req_size": 0, 
+            "resp_size": 0
+          }
+        }, 
+        "security_params": null, 
+        "server_type": "ASYNC_GENERIC_SERVER"
+      }, 
+      "warmup_seconds": 5
+    }
+  ]
+}

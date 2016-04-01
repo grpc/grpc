@@ -25552,5 +25552,209 @@
     "platforms": [
       "linux"
     ]
+  }, 
+  {
+    "args": [
+      "--scenarios_file", 
+      "test/cpp/qps/generated/run_tests_configs/generic_async_streaming_ping_pong_secure.json"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 1000, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c++", 
+    "name": "json_run_localhost", 
+    "platforms": [
+      "linux"
+    ]
+  }, 
+  {
+    "args": [
+      "--scenarios_file", 
+      "test/cpp/qps/generated/run_tests_configs/generic_async_streaming_qps_unconstrained_secure.json"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 1000, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c++", 
+    "name": "json_run_localhost", 
+    "platforms": [
+      "linux"
+    ]
+  }, 
+  {
+    "args": [
+      "--scenarios_file", 
+      "test/cpp/qps/generated/run_tests_configs/generic_async_streaming_qps_one_server_core_secure.json"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 1000, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c++", 
+    "name": "json_run_localhost", 
+    "platforms": [
+      "linux"
+    ]
+  }, 
+  {
+    "args": [
+      "--scenarios_file", 
+      "test/cpp/qps/generated/run_tests_configs/protobuf_async_qps_unconstrained_secure.json"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 1000, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c++", 
+    "name": "json_run_localhost", 
+    "platforms": [
+      "linux"
+    ]
+  }, 
+  {
+    "args": [
+      "--scenarios_file", 
+      "test/cpp/qps/generated/run_tests_configs/single_channel_throughput_secure.json"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 1000, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c++", 
+    "name": "json_run_localhost", 
+    "platforms": [
+      "linux"
+    ]
+  }, 
+  {
+    "args": [
+      "--scenarios_file", 
+      "test/cpp/qps/generated/run_tests_configs/protobuf_async_ping_pong_secure.json"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 1000, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c++", 
+    "name": "json_run_localhost", 
+    "platforms": [
+      "linux"
+    ]
+  }, 
+  {
+    "args": [
+      "--scenarios_file", 
+      "test/cpp/qps/generated/run_tests_configs/generic_async_streaming_ping_pong_insecure.json"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 1000, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c++", 
+    "name": "json_run_localhost", 
+    "platforms": [
+      "linux"
+    ]
+  }, 
+  {
+    "args": [
+      "--scenarios_file", 
+      "test/cpp/qps/generated/run_tests_configs/generic_async_streaming_qps_unconstrained_insecure.json"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 1000, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c++", 
+    "name": "json_run_localhost", 
+    "platforms": [
+      "linux"
+    ]
+  }, 
+  {
+    "args": [
+      "--scenarios_file", 
+      "test/cpp/qps/generated/run_tests_configs/generic_async_streaming_qps_one_server_core_insecure.json"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 1000, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c++", 
+    "name": "json_run_localhost", 
+    "platforms": [
+      "linux"
+    ]
+  }, 
+  {
+    "args": [
+      "--scenarios_file", 
+      "test/cpp/qps/generated/run_tests_configs/protobuf_async_qps_unconstrained_insecure.json"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 1000, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c++", 
+    "name": "json_run_localhost", 
+    "platforms": [
+      "linux"
+    ]
+  }, 
+  {
+    "args": [
+      "--scenarios_file", 
+      "test/cpp/qps/generated/run_tests_configs/single_channel_throughput_insecure.json"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 1000, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c++", 
+    "name": "json_run_localhost", 
+    "platforms": [
+      "linux"
+    ]
+  }, 
+  {
+    "args": [
+      "--scenarios_file", 
+      "test/cpp/qps/generated/run_tests_configs/protobuf_async_ping_pong_insecure.json"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 1000, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c++", 
+    "name": "json_run_localhost", 
+    "platforms": [
+      "linux"
+    ]
   }
 ]

@@ -2194,6 +2194,25 @@
   {
     "deps": [
       "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test_config", 
+      "grpc++_test_util", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "json_run_localhost", 
+    "src": [
+      "test/cpp/qps/json_run_localhost.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
       "grpc", 
       "grpc++", 
       "grpc++_test_config"
@@ -2265,6 +2284,26 @@
     "name": "qps_interarrival_test", 
     "src": [
       "test/cpp/qps/qps_interarrival_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test_config", 
+      "grpc++_test_util", 
+      "grpc_test_util", 
+      "qps"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "qps_json_driver", 
+    "src": [
+      "test/cpp/qps/qps_json_driver.cc"
     ], 
     "third_party": false, 
     "type": "target"

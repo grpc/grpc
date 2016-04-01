@@ -1,0 +1,47 @@
+
+{
+  "scenarios": [
+    {
+      "benchmark_seconds": 30, 
+      "client_config": {
+        "async_client_threads": 1, 
+        "client_channels": 1, 
+        "client_type": "ASYNC_CLIENT", 
+        "load_params": {
+          "closed_loop": {}
+        }, 
+        "outstanding_rpcs_per_channel": 1, 
+        "payload_config": {
+          "bytebuf_params": {
+            "req_size": 0, 
+            "resp_size": 0
+          }
+        }, 
+        "rpc_type": "STREAMING", 
+        "security_params": {
+          "server_host_override": "foo.test.google.fr", 
+          "use_test_ca": true
+        }
+      }, 
+      "name": "generic_async_streaming_ping_pong_secure", 
+      "num_clients": 1, 
+      "num_servers": 1, 
+      "server_config": {
+        "async_server_threads": 1, 
+        "core_limit": 4, 
+        "payload_config": {
+          "bytebuf_params": {
+            "req_size": 0, 
+            "resp_size": 0
+          }
+        }, 
+        "security_params": {
+          "server_host_override": "foo.test.google.fr", 
+          "use_test_ca": true
+        }, 
+        "server_type": "ASYNC_GENERIC_SERVER"
+      }, 
+      "warmup_seconds": 5
+    }
+  ]
+}

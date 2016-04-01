@@ -2547,6 +2547,20 @@ targets:
   - mac
   - linux
   - posix
+- name: json_run_localhost
+  build: test
+  run: false
+  language: c++
+  src:
+  - test/cpp/qps/json_run_localhost.cc
+  deps:
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
+  - grpc++_test_config
 - name: metrics_client
   build: test
   run: false
@@ -2606,6 +2620,21 @@ targets:
   - mac
   - linux
   - posix
+- name: qps_json_driver
+  build: test
+  run: false
+  language: c++
+  src:
+  - test/cpp/qps/qps_json_driver.cc
+  deps:
+  - qps
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
+  - grpc++_test_config
 - name: qps_openloop_test
   cpu_cost: 0.5
   build: test
@@ -2645,7 +2674,8 @@ targets:
   - linux
   - posix
 - name: qps_worker
-  build: benchmark
+  build: test
+  run: false
   language: c++
   headers:
   - test/cpp/qps/client.h
