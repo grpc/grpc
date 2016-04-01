@@ -80,6 +80,15 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/support/tmpfile_posix.c \
     src/core/lib/support/tmpfile_win32.c \
     src/core/lib/support/wrap_memcpy.c \
+    src/core/ext/census/context.c \
+    src/core/ext/census/grpc_context.c \
+    src/core/ext/census/grpc_filter.c \
+    src/core/ext/census/grpc_plugin.c \
+    src/core/ext/census/initialize.c \
+    src/core/ext/census/mlog.c \
+    src/core/ext/census/operation.c \
+    src/core/ext/census/placeholders.c \
+    src/core/ext/census/tracing.c \
     src/core/ext/lb_policy/grpclb/load_balancer_api.c \
     src/core/ext/lb_policy/grpclb/proto/grpc/lb/v0/load_balancer.pb.c \
     src/core/ext/lb_policy/pick_first/pick_first.c \
@@ -109,15 +118,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/transport/chttp2/transport/timeout_encoding.c \
     src/core/ext/transport/chttp2/transport/varint.c \
     src/core/ext/transport/chttp2/transport/writing.c \
-    src/core/lib/census/context.c \
-    src/core/lib/census/grpc_context.c \
-    src/core/lib/census/grpc_filter.c \
-    src/core/lib/census/grpc_plugin.c \
-    src/core/lib/census/initialize.c \
-    src/core/lib/census/mlog.c \
-    src/core/lib/census/operation.c \
-    src/core/lib/census/placeholders.c \
-    src/core/lib/census/tracing.c \
     src/core/lib/channel/channel_args.c \
     src/core/lib/channel/channel_stack.c \
     src/core/lib/channel/channel_stack_builder.c \
@@ -154,17 +154,14 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/iomgr/endpoint.c \
     src/core/lib/iomgr/endpoint_pair_posix.c \
     src/core/lib/iomgr/endpoint_pair_windows.c \
+    src/core/lib/iomgr/ev_poll_and_epoll_posix.c \
+    src/core/lib/iomgr/ev_posix.c \
     src/core/lib/iomgr/exec_ctx.c \
     src/core/lib/iomgr/executor.c \
-    src/core/lib/iomgr/fd_posix.c \
     src/core/lib/iomgr/iocp_windows.c \
     src/core/lib/iomgr/iomgr.c \
     src/core/lib/iomgr/iomgr_posix.c \
     src/core/lib/iomgr/iomgr_windows.c \
-    src/core/lib/iomgr/pollset_multipoller_with_epoll.c \
-    src/core/lib/iomgr/pollset_multipoller_with_poll_posix.c \
-    src/core/lib/iomgr/pollset_posix.c \
-    src/core/lib/iomgr/pollset_set_posix.c \
     src/core/lib/iomgr/pollset_set_windows.c \
     src/core/lib/iomgr/pollset_windows.c \
     src/core/lib/iomgr/resolve_address_posix.c \
@@ -547,6 +544,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/php/ext/grpc)
 
   PHP_ADD_BUILD_DIR($ext_builddir/src/boringssl)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/census)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/lb_policy/grpclb)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/lb_policy/grpclb/proto/grpc/lb/v0)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/lb_policy/pick_first)
@@ -556,7 +554,6 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/transport/chttp2/server/insecure)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/transport/chttp2/server/secure)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/transport/chttp2/transport)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/census)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/channel)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/client_config)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/client_config/resolvers)
