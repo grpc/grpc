@@ -62,7 +62,8 @@ Status BlockingUnaryCall(ChannelInterface* channel, const RpcMethod& method,
   if (!status.ok()) {
     return status;
   }
-  ops.SendInitialMetadata(context->send_initial_metadata_);
+  ops.SendInitialMetadata(context->send_initial_metadata_,
+                          context->initial_metadata_flags());
   ops.RecvInitialMetadata(context);
   ops.RecvMessage(result);
   ops.ClientSendClose();
