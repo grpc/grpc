@@ -55,7 +55,7 @@ popd
 
 
 # nanopb-compile the proto to a temp location
-PATH="$PROTOC_PATH:$PATH" ./tools/codegen/core/gen_load_balancing_proto.sh \
+PATH="$PROTOC_PATH:$PATH" ./tools/codegen/core/gen_nano_proto.sh \
   src/proto/grpc/lb/v0/load_balancer.proto \
   $NANOPB_TMP_OUTPUT
 
