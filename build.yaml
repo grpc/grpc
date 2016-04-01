@@ -17,7 +17,6 @@ filegroups:
   - src/core/ext/census/census_interface.h
   - src/core/ext/census/census_rpc_stats.h
   - src/core/ext/census/grpc_filter.h
-  - src/core/ext/census/grpc_plugin.h
   - src/core/ext/census/mlog.h
   - src/core/ext/census/rpc_metric_id.h
   src:
