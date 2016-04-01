@@ -3012,7 +3012,7 @@ endif
 
 
 LIBGRPC_ZOOKEEPER_SRC = \
-    src/core/ext/resolver/zookeeper_resolver.c \
+    src/core/ext/resolver/zookeeper/zookeeper_resolver.c \
 
 PUBLIC_HEADERS_C += \
     include/grpc/grpc_zookeeper.h \

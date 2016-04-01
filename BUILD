@@ -819,7 +819,7 @@ cc_library(
 cc_library(
   name = "grpc_zookeeper",
   srcs = [
-    "src/core/ext/resolver/zookeeper_resolver.c",
+    "src/core/ext/resolver/zookeeper/zookeeper_resolver.c",
   ],
   hdrs = [
     "include/grpc/grpc_zookeeper.h",
