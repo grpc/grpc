@@ -96,7 +96,7 @@ if [[ ! -f "${EXPECTED_OPTIONS_FILE_PATH}" ]]; then
   exit 4
 fi
 
-mkdir -p "ABS_OUTPUT_DIR"
+mkdir -p "$ABS_OUTPUT_DIR"
 if [ $? != 0 ]; then
   echo "Error creating output directory $ABS_OUTPUT_DIR"
   exit 2
