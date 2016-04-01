@@ -50,6 +50,8 @@ grpc_subchannel* grpc_client_channel_factory_create_subchannel(
 
 grpc_channel* grpc_client_channel_factory_create_channel(
     grpc_exec_ctx* exec_ctx, grpc_client_channel_factory* factory,
-    const char* target, grpc_channel_args* args) {
-  return factory->vtable->create_channel(exec_ctx, factory, target, args);
+    const char* target, grpc_client_channel_type type,
+    grpc_channel_args* args) {
+  return factory->vtable->create_client_channel(exec_ctx, factory, target, type,
+                                                args);
 }

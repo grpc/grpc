@@ -53,7 +53,8 @@ static grpc_subchannel *client_channel_factory_create_subchannel(
 
 static grpc_channel *client_channel_factory_create_channel(
     grpc_exec_ctx *exec_ctx, grpc_client_channel_factory *cc_factory,
-    const char *target, grpc_channel_args *args) {
+    const char *target, grpc_client_channel_type type,
+    grpc_channel_args *args) {
   GPR_UNREACHABLE_CODE(return NULL);
 }
 
