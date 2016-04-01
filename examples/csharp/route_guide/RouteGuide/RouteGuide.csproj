@@ -62,6 +62,12 @@
     <Compile Include="RouteGuideUtil.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\..\..\protos\route_guide.proto">
+      <Link>protos\route_guide.proto</Link>
+    </None>
+    <None Include="..\generate_protos.bat">
+      <Link>generate_protos.bat</Link>
+    </None>
     <None Include="packages.config" />
     <None Include="route_guide_db.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

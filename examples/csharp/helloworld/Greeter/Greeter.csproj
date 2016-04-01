@@ -52,8 +52,13 @@
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
+    <None Include="..\..\..\protos\helloworld.proto">
+      <Link>protos\helloworld.proto</Link>
+    </None>
+    <None Include="..\generate_protos.bat">
+      <Link>generate_protos.bat</Link>
+    </None>
     <None Include="packages.config" />
-    <None Include="protos\helloworld.proto" />
   </ItemGroup>
   <ItemGroup />
   <Import Project="..\packages\grpc.native.csharp.0.13.1\build\portable-net45+netcore45+wpa81+wp8\grpc.native.csharp.targets" Condition="Exists('..\packages\grpc.native.csharp.0.13.1\build\portable-net45+netcore45+wpa81+wp8\grpc.native.csharp.targets')" />
