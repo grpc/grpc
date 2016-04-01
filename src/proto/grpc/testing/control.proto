@@ -37,12 +37,20 @@ package grpc.testing;
 enum ClientType {
   SYNC_CLIENT = 0;
   ASYNC_CLIENT = 1;
+  CLIENT_VARIANT_1 = 2;
+  CLIENT_VARIANT_2 = 3;
+  CLIENT_VARIANT_3 = 4;
+  CLIENT_VARIANT_4 = 5;
 }
 
 enum ServerType {
   SYNC_SERVER = 0;
   ASYNC_SERVER = 1;
   ASYNC_GENERIC_SERVER = 2;
+  SERVER_VARIANT_1 = 3;
+  SERVER_VARIANT_2 = 4;
+  SERVER_VARIANT_3 = 5;
+  SERVER_VARIANT_4 = 6;
 }
 
 enum RpcType {
@@ -106,9 +114,39 @@ message ClientConfig {
   // Specify the cores we should run the client on, if desired
   repeated int32 core_list = 13;
   int32 core_limit = 14;
+
+  // What the driver calls the scenario
+  string scenario_name = 15;
 }
 
-message ClientStatus { ClientStats stats = 1; }
+message DriverCommandAccepted {
+  // The worker may respond with a map of options and their meaning  
+  map<string,string> tags = 1;
+}
+
+message DriverCommandUnimplemented {
+  // The worker may respond with a map of unimplemented options and
+  // the problem
+  map<string,string> reasons = 1;
+}
+
+message DriverResponse {
+  oneof response {
+    // The presence of either of these means that the command was either
+    // accepted (with possible explanation) or unimplemented (with possible
+    // explanation). If both are missing, assume accepted as is
+    DriverCommandAccepted accepted = 1;
+    DriverCommandUnimplemented unimplemented = 2;
+  }
+}
+
+message ClientStatus {
+  // Stats response from client
+  ClientStats stats = 1;
+  // Response to driver request. No response means ok. A response may mean
+  // ok or failure, with possible additional explanation either way
+  DriverResponse response = 2;  
+}
 
 // Request current stats
 message Mark {
@@ -137,6 +175,9 @@ message ServerConfig {
 
   // Specify the cores we should run the server on, if desired
   repeated int32 core_list = 10;
+
+  // What the driver calls the scenario
+  string scenario_name = 11;
 }
 
 message ServerArgs {
@@ -152,6 +193,9 @@ message ServerStatus {
   int32 port = 2;
   // Number of cores available to the server
   int32 cores = 3;
+  // Response to driver request. No response means ok. A response may mean
+  // ok or failure, with possible additional explanation either way
+  DriverResponse response = 4;
 }
 
 message CoreRequest {
