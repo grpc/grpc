@@ -34,6 +34,9 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_config\client_channel.c">
       <Filter>src\core\ext\client_config</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_config\client_channel_factory.c">
+      <Filter>src\core\ext\client_config</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_config\client_config.c">
       <Filter>src\core\ext\client_config</Filter>
     </ClCompile>
@@ -65,9 +68,6 @@
       <Filter>src\core\ext\client_config</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_config\subchannel.c">
-      <Filter>src\core\ext\client_config</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_config\subchannel_factory.c">
       <Filter>src\core\ext\client_config</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_config\subchannel_index.c">
@@ -488,6 +488,9 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_config\client_channel.h">
       <Filter>src\core\ext\client_config</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_config\client_channel_factory.h">
+      <Filter>src\core\ext\client_config</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_config\client_config.h">
       <Filter>src\core\ext\client_config</Filter>
     </ClInclude>
@@ -516,9 +519,6 @@
       <Filter>src\core\ext\client_config</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_config\subchannel.h">
-      <Filter>src\core\ext\client_config</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_config\subchannel_factory.h">
       <Filter>src\core\ext\client_config</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_config\subchannel_index.h">

@@ -56,7 +56,7 @@ void grpc_register_resolver_type(grpc_resolver_factory *factory);
     return it.
     If a resolver factory was not found, return NULL. */
 grpc_resolver *grpc_resolver_create(
-    const char *target, grpc_subchannel_factory *subchannel_factory);
+    const char *target, grpc_client_channel_factory *client_channel_factory);
 
 /** Find a resolver factory given a name and return an (owned-by-the-caller)
  *  reference to it */

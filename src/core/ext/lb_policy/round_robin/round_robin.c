@@ -502,7 +502,7 @@ static grpc_lb_policy *create_round_robin(grpc_exec_ctx *exec_ctx,
                                           grpc_lb_policy_factory *factory,
                                           grpc_lb_policy_args *args) {
   GPR_ASSERT(args->addresses != NULL);
-  GPR_ASSERT(args->subchannel_factory != NULL);
+  GPR_ASSERT(args->client_channel_factory != NULL);
 
   round_robin_lb_policy *p = gpr_malloc(sizeof(*p));
   memset(p, 0, sizeof(*p));
@@ -518,8 +518,8 @@ static grpc_lb_policy *create_round_robin(grpc_exec_ctx *exec_ctx,
     sc_args.addr = (struct sockaddr *)(args->addresses->addrs[i].addr);
     sc_args.addr_len = (size_t)args->addresses->addrs[i].len;
 
-    grpc_subchannel *subchannel = grpc_subchannel_factory_create_subchannel(
-        exec_ctx, args->subchannel_factory, &sc_args);
+    grpc_subchannel *subchannel = grpc_client_channel_factory_create_subchannel(
+        exec_ctx, args->client_channel_factory, &sc_args);
 
     if (subchannel != NULL) {
       subchannel_data *sd = gpr_malloc(sizeof(*sd));
