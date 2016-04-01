@@ -1,9 +1,9 @@
 {
   "dockerImages": {
-    "grpc_stress_cxx_opt" : {
+    "grpc_stress_cxx_tsan" : {
       "buildScript": "tools/jenkins/build_interop_stress_image.sh",
       "dockerFileDir": "grpc_interop_stress_cxx",
-      "buildType": "opt"
+      "buildType": "tsan"
     }
   },
 
@@ -27,10 +27,10 @@
       }
     },
     "templates": {
-      "cxx_client_opt": {
+      "cxx_client_tsan": {
         "baseTemplate": "default",
-        "clientImagePath": "/var/local/git/grpc/bins/opt/stress_test",
-        "metricsClientImagePath": "/var/local/git/grpc/bins/opt/metrics_client"
+        "clientImagePath": "/var/local/git/grpc/bins/tsan/stress_test",
+        "metricsClientImagePath": "/var/local/git/grpc/bins/tsan/metrics_client"
       }
     }
   },
@@ -46,28 +46,28 @@
       }
     },
     "templates": {
-      "cxx_server_opt": {
+      "cxx_server_tsan": {
         "baseTemplate": "default",
-        "serverImagePath": "/var/local/git/grpc/bins/opt/interop_server"
+        "serverImagePath": "/var/local/git/grpc/bins/tsan/interop_server"
       }
     }
   },
 
   "testMatrix": {
     "serverPodSpecs": {
-      "stress-server-opt": {
-        "serverTemplate": "cxx_server_opt",
-        "dockerImage": "grpc_stress_cxx_opt",
+      "stress-server-tsan": {
+        "serverTemplate": "cxx_server_tsan",
+        "dockerImage": "grpc_stress_cxx_tsan",
         "numInstances": 1
       }
     },
 
     "clientPodSpecs": {
-      "stress-client-opt": {
-        "clientTemplate": "cxx_client_opt",
-        "dockerImage": "grpc_stress_cxx_opt",
+      "stress-client-tsan": {
+        "clientTemplate": "cxx_client_tsan",
+        "dockerImage": "grpc_stress_cxx_tsan",
         "numInstances": 10,
-        "serverPodSpec": "stress-server-opt"
+        "serverPodSpec": "stress-server-tsan"
       }
     }
   },
@@ -77,7 +77,7 @@
     "pollIntervalSecs": 60,
     "testDurationSecs": 7200,
     "kubernetesProxyPort": 8001,
-    "datasetIdNamePrefix": "stress_test_opt",
+    "datasetIdNamePrefix": "stress_test_tsan",
     "summaryTableId": "summary",
     "qpsTableId": "qps",
     "podWarmupSecs": 60
