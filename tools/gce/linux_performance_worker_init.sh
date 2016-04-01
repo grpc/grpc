@@ -40,9 +40,6 @@ sudo apt-get update
 sudo apt-get install -y openjdk-8-jdk
 sudo apt-get install -y unzip lsof
 
-# Setup jenkins user (or the user will already exist bcuz magic)
-sudo adduser jenkins --disabled-password || true
-
 # Add pubkey of jenkins@grpc-jenkins-master to authorized keys of jenkins@
 # This needs to happen as the last step to prevent Jenkins master from connecting
 # to a machine that hasn't been properly setup yet.
@@ -89,8 +86,7 @@ curl -O https://bootstrap.pypa.io/get-pip.py
 sudo pypy get-pip.py
 sudo pypy -m pip install tabulate
 
-# Node dependences.
-# TODO(jtattermusch) nvm has to be installed under user jenkins
+# Node dependencies (nvm has to be installed under user jenkins)
 touch .profile
 curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.25.4/install.sh | bash
 nvm install 0.12 && npm config set cache /tmp/npm-cache
