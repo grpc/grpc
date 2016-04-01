@@ -45,6 +45,7 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/iomgr/iomgr.h"
+#include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "test/core/util/test_config.h"

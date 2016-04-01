@@ -31,15 +31,11 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_IOMGR_POLLSET_SET_POSIX_H
-#define GRPC_CORE_LIB_IOMGR_POLLSET_SET_POSIX_H
+#ifndef GRPC_CORE_LIB_IOMGR_EV_POLL_AND_EPOLL_POSIX_H
+#define GRPC_CORE_LIB_IOMGR_EV_POLL_AND_EPOLL_POSIX_H
 
-#include "src/core/lib/iomgr/fd_posix.h"
-#include "src/core/lib/iomgr/pollset_set.h"
+#include "src/core/lib/iomgr/ev_posix.h"
 
-void grpc_pollset_set_add_fd(grpc_exec_ctx *exec_ctx,
-                             grpc_pollset_set *pollset_set, grpc_fd *fd);
-void grpc_pollset_set_del_fd(grpc_exec_ctx *exec_ctx,
-                             grpc_pollset_set *pollset_set, grpc_fd *fd);
+const grpc_event_engine_vtable *grpc_init_poll_and_epoll_posix(void);
 
-#endif /* GRPC_CORE_LIB_IOMGR_POLLSET_SET_POSIX_H */
+#endif /* GRPC_CORE_LIB_IOMGR_EV_POLL_AND_EPOLL_POSIX_H */
