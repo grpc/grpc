@@ -35,7 +35,12 @@
 
 #ifndef GPR_HAVE_UNIX_SOCKET
 
-void grpc_create_socketpair_if_unix(int sv[2]) {}
+void grpc_create_socketpair_if_unix(int sv[2]) {
+  // TODO: Either implement this for the non-Unix socket case or make
+  // sure that it is never called in any such case. Until then, leave an
+  // assertion to notify if this gets called inadvertently
+  GPR_ASSERT(0);
+}
 
 grpc_resolved_addresses *grpc_resolve_unix_domain_address(const char *name) {
   return NULL;
