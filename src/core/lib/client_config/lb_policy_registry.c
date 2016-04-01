@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -40,12 +40,7 @@
 static grpc_lb_policy_factory *g_all_of_the_lb_policies[MAX_POLICIES];
 static int g_number_of_lb_policies = 0;
 
-static grpc_lb_policy_factory *g_default_lb_policy_factory;
-
-void grpc_lb_policy_registry_init(grpc_lb_policy_factory *default_factory) {
-  g_number_of_lb_policies = 0;
-  g_default_lb_policy_factory = default_factory;
-}
+void grpc_lb_policy_registry_init(void) { g_number_of_lb_policies = 0; }
 
 void grpc_lb_policy_registry_shutdown(void) {
   int i;

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -34,16 +34,28 @@
 #ifndef GRPC_CORE_LIB_CLIENT_CONFIG_URI_PARSER_H
 #define GRPC_CORE_LIB_CLIENT_CONFIG_URI_PARSER_H
 
+#include <stddef.h>
+
 typedef struct {
   char *scheme;
   char *authority;
   char *path;
   char *query;
+  /** Query substrings separated by '&' */
+  char **query_parts;
+  /** Number of elements in \a query_parts and \a query_parts_values */
+  size_t num_query_parts;
+  /** Split each query part by '='. NULL if not present. */
+  char **query_parts_values;
   char *fragment;
 } grpc_uri;
 
 /** parse a uri, return NULL on failure */
 grpc_uri *grpc_uri_parse(const char *uri_text, int suppress_errors);
+
+/** return the part of a query string after the '=' in "?key=xxx&...", or NULL
+ * if key is not present */
+const char *grpc_uri_get_query_arg(const grpc_uri *uri, const char *key);
 
 /** destroy a uri */
 void grpc_uri_destroy(grpc_uri *uri);

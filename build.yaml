@@ -13,16 +13,23 @@ filegroups:
   public_headers:
   - include/grpc/census.h
   headers:
-  - src/core/lib/census/aggregation.h
-  - src/core/lib/census/mlog.h
-  - src/core/lib/census/rpc_metric_id.h
+  - src/core/ext/census/aggregation.h
+  - src/core/ext/census/census_interface.h
+  - src/core/ext/census/census_rpc_stats.h
+  - src/core/ext/census/grpc_filter.h
+  - src/core/ext/census/mlog.h
+  - src/core/ext/census/rpc_metric_id.h
   src:
-  - src/core/lib/census/context.c
-  - src/core/lib/census/initialize.c
-  - src/core/lib/census/mlog.c
-  - src/core/lib/census/operation.c
-  - src/core/lib/census/placeholders.c
-  - src/core/lib/census/tracing.c
+  - src/core/ext/census/context.c
+  - src/core/ext/census/grpc_context.c
+  - src/core/ext/census/grpc_filter.c
+  - src/core/ext/census/grpc_plugin.c
+  - src/core/ext/census/initialize.c
+  - src/core/ext/census/mlog.c
+  - src/core/ext/census/operation.c
+  - src/core/ext/census/placeholders.c
+  - src/core/ext/census/tracing.c
+  plugin: census_grpc_plugin
 - name: gpr
   public_headers:
   - include/grpc/support/alloc.h
@@ -247,8 +254,6 @@ filegroups:
   - include/grpc/grpc.h
   - include/grpc/status.h
   headers:
-  - src/core/lib/census/grpc_filter.h
-  - src/core/lib/census/grpc_plugin.h
   - src/core/lib/channel/channel_args.h
   - src/core/lib/channel/channel_stack.h
   - src/core/lib/channel/channel_stack_builder.h
@@ -262,9 +267,6 @@ filegroups:
   - src/core/lib/client_config/client_config.h
   - src/core/lib/client_config/connector.h
   - src/core/lib/client_config/initial_connect_string.h
-  - src/core/lib/client_config/lb_policies/load_balancer_api.h
-  - src/core/lib/client_config/lb_policies/pick_first.h
-  - src/core/lib/client_config/lb_policies/round_robin.h
   - src/core/lib/client_config/lb_policy.h
   - src/core/lib/client_config/lb_policy_factory.h
   - src/core/lib/client_config/lb_policy_registry.h
@@ -324,9 +326,6 @@ filegroups:
   - src/core/lib/json/json_common.h
   - src/core/lib/json/json_reader.h
   - src/core/lib/json/json_writer.h
-  - src/core/lib/proto/grpc/lb/v0/load_balancer.pb.h
-  - src/core/lib/statistics/census_interface.h
-  - src/core/lib/statistics/census_rpc_stats.h
   - src/core/lib/surface/api_trace.h
   - src/core/lib/surface/call.h
   - src/core/lib/surface/call_test_only.h
@@ -347,9 +346,6 @@ filegroups:
   - src/core/lib/transport/transport.h
   - src/core/lib/transport/transport_impl.h
   src:
-  - src/core/lib/census/grpc_context.c
-  - src/core/lib/census/grpc_filter.c
-  - src/core/lib/census/grpc_plugin.c
   - src/core/lib/channel/channel_args.c
   - src/core/lib/channel/channel_stack.c
   - src/core/lib/channel/channel_stack_builder.c
@@ -363,9 +359,6 @@ filegroups:
   - src/core/lib/client_config/connector.c
   - src/core/lib/client_config/default_initial_connect_string.c
   - src/core/lib/client_config/initial_connect_string.c
-  - src/core/lib/client_config/lb_policies/load_balancer_api.c
-  - src/core/lib/client_config/lb_policies/pick_first.c
-  - src/core/lib/client_config/lb_policies/round_robin.c
   - src/core/lib/client_config/lb_policy.c
   - src/core/lib/client_config/lb_policy_factory.c
   - src/core/lib/client_config/lb_policy_registry.c
@@ -430,7 +423,6 @@ filegroups:
   - src/core/lib/json/json_reader.c
   - src/core/lib/json/json_string.c
   - src/core/lib/json/json_writer.c
-  - src/core/lib/proto/grpc/lb/v0/load_balancer.pb.c
   - src/core/lib/surface/alarm.c
   - src/core/lib/surface/api_trace.c
   - src/core/lib/surface/byte_buffer.c
@@ -466,6 +458,27 @@ filegroups:
   - include/grpc/impl/codegen/grpc_types.h
   - include/grpc/impl/codegen/propagation_bits.h
   - include/grpc/impl/codegen/status.h
+- name: grpc_lb_policy_grpclb
+  headers:
+  - src/core/ext/lb_policy/grpclb/load_balancer_api.h
+  - src/core/ext/lb_policy/grpclb/proto/grpc/lb/v0/load_balancer.pb.h
+  src:
+  - src/core/ext/lb_policy/grpclb/load_balancer_api.c
+  - src/core/ext/lb_policy/grpclb/proto/grpc/lb/v0/load_balancer.pb.c
+  uses:
+  - grpc_base
+- name: grpc_lb_policy_pick_first
+  src:
+  - src/core/ext/lb_policy/pick_first/pick_first.c
+  plugin: grpc_lb_policy_pick_first
+  uses:
+  - grpc_base
+- name: grpc_lb_policy_round_robin
+  src:
+  - src/core/ext/lb_policy/round_robin/round_robin.c
+  plugin: grpc_lb_policy_round_robin
+  uses:
+  - grpc_base
 - name: grpc_secure
   headers:
   - src/core/lib/security/auth_filters.h
@@ -639,10 +652,14 @@ libs:
   - grpc_transport_chttp2_client_secure
   - grpc_transport_chttp2_server_insecure
   - grpc_transport_chttp2_client_insecure
+  - grpc_lb_policy_grpclb
+  - grpc_lb_policy_pick_first
+  - grpc_lb_policy_round_robin
   - grpc_secure
   - grpc_codegen
   - census
   - nanopb
+  generate_plugin_registry: true
   secure: true
   vs_packages:
   - grpc.dependencies.openssl
@@ -722,9 +739,13 @@ libs:
   - grpc_base
   - grpc_transport_chttp2_server_insecure
   - grpc_transport_chttp2_client_insecure
+  - grpc_lb_policy_grpclb
+  - grpc_lb_policy_pick_first
+  - grpc_lb_policy_round_robin
   - grpc_codegen
   - census
   - nanopb
+  generate_plugin_registry: true
   secure: false
   vs_project_guid: '{46CEDFFF-9692-456A-AA24-38B5D6BCF4C5}'
 - name: grpc_zookeeper
@@ -743,6 +764,14 @@ libs:
   - zookeeper
   platforms:
   - linux
+  secure: false
+- name: one_input_fuzzer
+  build: private
+  language: c
+  src:
+  - test/core/util/one_corpus_entry_fuzzer.c
+  deps:
+  - gpr
   secure: false
 - name: reconnect_server
   build: private
@@ -1273,6 +1302,21 @@ targets:
   src:
   - tools/codegen/core/gen_legal_metadata_characters.c
   deps: []
+- name: goaway_server_test
+  cpu_cost: 0.1
+  build: test
+  language: c
+  src:
+  - test/core/end2end/goaway_server_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  platforms:
+  - mac
+  - linux
+  - posix
 - name: gpr_avl_test
   build: test
   language: c

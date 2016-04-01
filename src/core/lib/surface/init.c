@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -39,17 +39,13 @@
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/time.h>
-/* TODO(ctiller): find another way? - better not to include census here */
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
-#include "src/core/lib/census/grpc_plugin.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/client_channel.h"
 #include "src/core/lib/channel/compress_filter.h"
 #include "src/core/lib/channel/connected_channel.h"
 #include "src/core/lib/channel/http_client_filter.h"
 #include "src/core/lib/channel/http_server_filter.h"
-#include "src/core/lib/client_config/lb_policies/pick_first.h"
-#include "src/core/lib/client_config/lb_policies/round_robin.h"
 #include "src/core/lib/client_config/lb_policy_registry.h"
 #include "src/core/lib/client_config/resolver_registry.h"
 #include "src/core/lib/client_config/resolvers/dns_resolver.h"
@@ -75,6 +71,9 @@
 #define GRPC_DEFAULT_NAME_PREFIX "dns:///"
 #endif
 
+/* (generated) built in registry of plugins */
+extern void grpc_register_built_in_plugins(void);
+
 #define MAX_PLUGINS 128
 
 static gpr_once g_basic_init = GPR_ONCE_INIT;
@@ -83,8 +82,7 @@ static int g_initializations;
 
 static void do_basic_init(void) {
   gpr_mu_init(&g_init_mu);
-  /* TODO(ctiller): ideally remove this strict linkage */
-  grpc_register_plugin(census_grpc_plugin_init, census_grpc_plugin_destroy);
+  grpc_register_built_in_plugins();
   g_initializations = 0;
 }
 
@@ -165,14 +163,12 @@ void grpc_init(void) {
     gpr_time_init();
     grpc_mdctx_global_init();
     grpc_channel_init_init();
-    grpc_lb_policy_registry_init(grpc_pick_first_lb_factory_create());
-    grpc_register_lb_policy(grpc_pick_first_lb_factory_create());
-    grpc_register_lb_policy(grpc_round_robin_lb_factory_create());
+    grpc_lb_policy_registry_init();
     grpc_resolver_registry_init(GRPC_DEFAULT_NAME_PREFIX);
     grpc_register_resolver_type(grpc_dns_resolver_factory_create());
     grpc_register_resolver_type(grpc_ipv4_resolver_factory_create());
     grpc_register_resolver_type(grpc_ipv6_resolver_factory_create());
-#ifdef GPR_POSIX_SOCKET
+#ifdef GPR_HAVE_UNIX_SOCKET
     grpc_register_resolver_type(grpc_unix_resolver_factory_create());
 #endif
     grpc_register_tracer("api", &grpc_api_trace);
