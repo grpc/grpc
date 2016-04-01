@@ -31,8 +31,9 @@
 
 #
 # Example usage:
-#   tools/codegen/core/gen_load_balancing_proto.sh \
+#   tools/codegen/core/gen_nano_proto.sh \
 #     src/proto/grpc/lb/v0/load_balancer.proto
+#     src/core/ext/lb_policy/grpclb/proto/grpc/lb/v0
 
 read -r -d '' COPYRIGHT <<'EOF'
 /*
@@ -75,32 +76,30 @@ COPYRIGHT_FILE=$(mktemp)
 echo "${COPYRIGHT/<YEAR>/$CURRENT_YEAR}" > $COPYRIGHT_FILE
 
 set -ex
-if [ $# -eq 0 ]; then
-  echo "Usage: $0 <load_balancer.proto> [output dir]"
+if [ $# -ne 2 ]; then
+  echo "Usage: $0 <input.proto> <output dir>"
   exit 1
 fi
 
 readonly GRPC_ROOT=$PWD
-
-OUTPUT_DIR="$GRPC_ROOT/src/core/ext/lb_policy/grpclb/proto/grpc/lb/v0"
-if [ $# -eq 2 ]; then
-  mkdir -p "$2"
-  if [ $? != 0 ]; then
-    echo "Error creating output directory $2"
-    exit 2
-  fi
-  OUTPUT_DIR="$2"
-fi
-
+readonly INPUT_PROTO="$1"
+readonly REL_OUTPUT_DIR="$2"
+readonly ABS_OUTPUT_DIR="$GRPC_ROOT/$2"
 readonly EXPECTED_OPTIONS_FILE_PATH="${1%.*}.options"
 
-if [[ ! -f "$1" ]]; then
-  echo "Input proto file '$1' doesn't exist."
+if [[ ! -f "$INPUT_PROTO" ]]; then
+  echo "Input proto file '$INPUT_PROTO' doesn't exist."
   exit 3
 fi
 if [[ ! -f "${EXPECTED_OPTIONS_FILE_PATH}" ]]; then
   echo "Expected nanopb options file '${EXPECTED_OPTIONS_FILE_PATH}' missing"
   exit 4
+fi
+
+mkdir -p "ABS_OUTPUT_DIR"
+if [ $? != 0 ]; then
+  echo "Error creating output directory $ABS_OUTPUT_DIR"
+  exit 2
 fi
 
 readonly VENV_DIR=$(mktemp -d)
@@ -114,23 +113,23 @@ popd
 # ideally we'd update this as a template to ensure that
 pip install protobuf==3.0.0b2
 
-pushd "$(dirname $1)" > /dev/null
+pushd "$(dirname $INPUT_PROTO)" > /dev/null
 
 protoc \
 --plugin=protoc-gen-nanopb="$GRPC_ROOT/third_party/nanopb/generator/protoc-gen-nanopb" \
---nanopb_out='-T -L#include\ \"third_party/nanopb/pb.h\"'":$OUTPUT_DIR" \
-"$(basename $1)"
+--nanopb_out='-T -L#include\ \"third_party/nanopb/pb.h\"'":$ABS_OUTPUT_DIR" \
+"$(basename $INPUT_PROTO)"
 
-readonly PROTO_BASENAME=$(basename $1 .proto)
-sed -i "s:$PROTO_BASENAME.pb.h:src/core/ext/lb_policy/grpclb/proto/grpc/lb/v0/$PROTO_BASENAME.pb.h:g" \
-    "$OUTPUT_DIR/$PROTO_BASENAME.pb.c"
+readonly PROTO_BASENAME=$(basename $INPUT_PROTO .proto)
+sed -i "s:$PROTO_BASENAME.pb.h:$REL_OUTPUT_DIR/$PROTO_BASENAME.pb.h:g" \
+  "$ABS_OUTPUT_DIR/$PROTO_BASENAME.pb.c"
 
 # prepend copyright
 TMPFILE=$(mktemp)
-cat $COPYRIGHT_FILE "$OUTPUT_DIR/$PROTO_BASENAME.pb.c" > $TMPFILE
-mv -v $TMPFILE "$OUTPUT_DIR/$PROTO_BASENAME.pb.c"
-cat $COPYRIGHT_FILE "$OUTPUT_DIR/$PROTO_BASENAME.pb.h" > $TMPFILE
-mv -v $TMPFILE "$OUTPUT_DIR/$PROTO_BASENAME.pb.h"
+cat $COPYRIGHT_FILE "$ABS_OUTPUT_DIR/$PROTO_BASENAME.pb.c" > $TMPFILE
+mv -v $TMPFILE "$ABS_OUTPUT_DIR/$PROTO_BASENAME.pb.c"
+cat $COPYRIGHT_FILE "$ABS_OUTPUT_DIR/$PROTO_BASENAME.pb.h" > $TMPFILE
+mv -v $TMPFILE "$ABS_OUTPUT_DIR/$PROTO_BASENAME.pb.h"
 
 deactivate
 rm -rf $VENV_DIR
