@@ -67,6 +67,8 @@ class MethodHandler {
     int max_message_size;
   };
   virtual void RunHandler(const HandlerParameter& param) = 0;
+  virtual void* CreatePrototypeMessage(bool request,
+                                       const char* serialization_format) = 0;
 };
 
 // Server side rpc method class

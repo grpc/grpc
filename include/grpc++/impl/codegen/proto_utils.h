@@ -51,6 +51,7 @@ template <class T>
 class SerializationTraits<T, typename std::enable_if<std::is_base_of<
                                  grpc::protobuf::Message, T>::value>::type> {
  public:
+  static const char* name() { return "protobuf"; }
   static Status Serialize(const grpc::protobuf::Message& msg,
                           grpc_byte_buffer** buffer, bool* own_buffer) {
     *own_buffer = true;
