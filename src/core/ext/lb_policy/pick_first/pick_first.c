@@ -315,11 +315,14 @@ static void pf_connectivity_changed(grpc_exec_ctx *exec_ctx, void *arg,
             &p->checking_connectivity, &p->connectivity_changed);
         break;
       case GRPC_CHANNEL_TRANSIENT_FAILURE:
-        grpc_connectivity_state_set(exec_ctx, &p->state_tracker,
-                                    GRPC_CHANNEL_TRANSIENT_FAILURE,
-                                    "connecting_transient_failure");
         p->checking_subchannel =
             (p->checking_subchannel + 1) % p->num_subchannels;
+        if (p->checking_subchannel == 0) {
+          /* only trigger transient failure when we've tried all alternatives */
+          grpc_connectivity_state_set(exec_ctx, &p->state_tracker,
+                                      GRPC_CHANNEL_TRANSIENT_FAILURE,
+                                      "connecting_transient_failure");
+        }
         p->checking_connectivity = grpc_subchannel_check_connectivity(
             p->subchannels[p->checking_subchannel]);
         if (p->checking_connectivity == GRPC_CHANNEL_TRANSIENT_FAILURE) {
