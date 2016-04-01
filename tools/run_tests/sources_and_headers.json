@@ -5063,15 +5063,13 @@
       "grpc"
     ], 
     "headers": [
-      "include/grpc/grpc_zookeeper.h", 
-      "src/core/lib/client_config/resolvers/zookeeper_resolver.h"
+      "include/grpc/grpc_zookeeper.h"
     ], 
     "language": "c", 
     "name": "grpc_zookeeper", 
     "src": [
       "include/grpc/grpc_zookeeper.h", 
-      "src/core/lib/client_config/resolvers/zookeeper_resolver.c", 
-      "src/core/lib/client_config/resolvers/zookeeper_resolver.h"
+      "src/core/ext/resolver/zookeeper_resolver.c"
     ], 
     "third_party": false, 
     "type": "lib"
