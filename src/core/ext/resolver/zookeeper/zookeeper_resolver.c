@@ -31,8 +31,6 @@
  *
  */
 
-#include "src/core/lib/client_config/resolvers/zookeeper_resolver.h"
-
 #include <string.h>
 
 #include <grpc/support/alloc.h>

@@ -766,7 +766,7 @@ libs:
   public_headers:
   - include/grpc/grpc_zookeeper.h
   src:
-  - src/core/ext/resolver/zookeeper_resolver.c
+  - src/core/ext/resolver/zookeeper/zookeeper_resolver.c
   deps:
   - gpr
   - grpc

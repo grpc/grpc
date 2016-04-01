@@ -5153,7 +5153,7 @@
     "name": "grpc_zookeeper", 
     "src": [
       "include/grpc/grpc_zookeeper.h", 
-      "src/core/ext/resolver/zookeeper_resolver.c"
+      "src/core/ext/resolver/zookeeper/zookeeper_resolver.c"
     ], 
     "third_party": false, 
     "type": "lib"
