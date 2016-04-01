@@ -34,8 +34,8 @@
 #ifndef GRPC_CORE_EXT_CLIENT_CONFIG_SUBCHANNEL_FACTORY_H
 #define GRPC_CORE_EXT_CLIENT_CONFIG_SUBCHANNEL_FACTORY_H
 
-#include "src/core/lib/channel/channel_stack.h"
 #include "src/core/ext/client_config/subchannel.h"
+#include "src/core/lib/channel/channel_stack.h"
 
 typedef struct grpc_subchannel_factory grpc_subchannel_factory;
 typedef struct grpc_subchannel_factory_vtable grpc_subchannel_factory_vtable;

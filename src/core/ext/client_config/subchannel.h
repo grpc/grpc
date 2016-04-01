@@ -34,8 +34,8 @@
 #ifndef GRPC_CORE_EXT_CLIENT_CONFIG_SUBCHANNEL_H
 #define GRPC_CORE_EXT_CLIENT_CONFIG_SUBCHANNEL_H
 
-#include "src/core/lib/channel/channel_stack.h"
 #include "src/core/ext/client_config/connector.h"
+#include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/transport/connectivity_state.h"
 
 /** A (sub-)channel that knows how to connect to exactly one target
