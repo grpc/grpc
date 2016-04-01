@@ -31,11 +31,11 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_STATISTICS_CENSUS_RPC_STATS_H
-#define GRPC_CORE_LIB_STATISTICS_CENSUS_RPC_STATS_H
+#ifndef GRPC_CORE_EXT_CENSUS_CENSUS_RPC_STATS_H
+#define GRPC_CORE_EXT_CENSUS_CENSUS_RPC_STATS_H
 
 #include <grpc/support/port_platform.h>
-#include "src/core/lib/statistics/census_interface.h"
+#include "src/core/ext/census/census_interface.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -98,4 +98,4 @@ void census_stats_store_shutdown(void);
 }
 #endif
 
-#endif /* GRPC_CORE_LIB_STATISTICS_CENSUS_RPC_STATS_H */
+#endif /* GRPC_CORE_EXT_CENSUS_CENSUS_RPC_STATS_H */

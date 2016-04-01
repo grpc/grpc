@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/lib/census/grpc_filter.h"
+#include "src/core/ext/census/grpc_filter.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -42,9 +42,9 @@
 #include <grpc/support/slice.h>
 #include <grpc/support/time.h>
 
+#include "src/core/ext/census/census_interface.h"
+#include "src/core/ext/census/census_rpc_stats.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/statistics/census_interface.h"
-#include "src/core/lib/statistics/census_rpc_stats.h"
 #include "src/core/lib/transport/static_metadata.h"
 
 typedef struct call_data {

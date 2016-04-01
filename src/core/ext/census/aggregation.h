@@ -31,21 +31,36 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_CENSUS_RPC_METRIC_ID_H
-#define GRPC_CORE_LIB_CENSUS_RPC_METRIC_ID_H
+#include <stddef.h>
 
-/* Metric ID's used for RPC measurements. */
-/* Count of client requests sent. */
-#define CENSUS_METRIC_RPC_CLIENT_REQUESTS ((uint32_t)0)
-/* Count of server requests sent. */
-#define CENSUS_METRIC_RPC_SERVER_REQUESTS ((uint32_t)1)
-/* Client error counts. */
-#define CENSUS_METRIC_RPC_CLIENT_ERRORS ((uint32_t)2)
-/* Server error counts. */
-#define CENSUS_METRIC_RPC_SERVER_ERRORS ((uint32_t)3)
-/* Client side request latency. */
-#define CENSUS_METRIC_RPC_CLIENT_LATENCY ((uint32_t)4)
-/* Server side request latency. */
-#define CENSUS_METRIC_RPC_SERVER_LATENCY ((uint32_t)5)
+#ifndef GRPC_CORE_EXT_CENSUS_AGGREGATION_H
+#define GRPC_CORE_EXT_CENSUS_AGGREGATION_H
 
-#endif /* GRPC_CORE_LIB_CENSUS_RPC_METRIC_ID_H */
+/** Structure used to describe an aggregation type. */
+struct census_aggregation_ops {
+  /* Create a new aggregation. The pointer returned can be used in future calls
+     to clone(), free(), record(), data() and reset(). */
+  void *(*create)(const void *create_arg);
+  /* Make a copy of an aggregation created by create() */
+  void *(*clone)(const void *aggregation);
+  /* Destroy an aggregation created by create() */
+  void (*free)(void *aggregation);
+  /* Record a new value against aggregation. */
+  void (*record)(void *aggregation, double value);
+  /* Return current aggregation data. The caller must cast this object into
+     the correct type for the aggregation result. The object returned can be
+     freed by using free_data(). */
+  void *(*data)(const void *aggregation);
+  /* free data returned by data() */
+  void (*free_data)(void *data);
+  /* Reset an aggregation to default (zero) values. */
+  void (*reset)(void *aggregation);
+  /* Merge 'from' aggregation into 'to'. Both aggregations must be compatible */
+  void (*merge)(void *to, const void *from);
+  /* Fill buffer with printable string version of aggregation contents. For
+     debugging only. Returns the number of bytes added to buffer (a value == n
+     implies the buffer was of insufficient size). */
+  size_t (*print)(const void *aggregation, char *buffer, size_t n);
+};
+
+#endif /* GRPC_CORE_EXT_CENSUS_AGGREGATION_H */

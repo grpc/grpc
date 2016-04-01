@@ -31,10 +31,18 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_CENSUS_GRPC_PLUGIN_H
-#define GRPC_CORE_LIB_CENSUS_GRPC_PLUGIN_H
+#include "src/core/ext/census/census_interface.h"
 
-void census_grpc_plugin_init(void);
-void census_grpc_plugin_destroy(void);
+#include <grpc/support/log.h>
+#include "src/core/ext/census/census_rpc_stats.h"
+#include "src/core/ext/census/census_tracing.h"
 
-#endif /* GRPC_CORE_LIB_CENSUS_GRPC_PLUGIN_H */
+void census_init(void) {
+  census_tracing_init();
+  census_stats_store_init();
+}
+
+void census_shutdown(void) {
+  census_stats_store_shutdown();
+  census_tracing_shutdown();
+}
