@@ -775,6 +775,14 @@ libs:
   platforms:
   - linux
   secure: false
+- name: one_input_fuzzer
+  build: private
+  language: c
+  src:
+  - test/core/util/one_corpus_entry_fuzzer.c
+  deps:
+  - gpr
+  secure: false
 - name: reconnect_server
   build: private
   language: c
@@ -1304,6 +1312,21 @@ targets:
   src:
   - tools/codegen/core/gen_legal_metadata_characters.c
   deps: []
+- name: goaway_server_test
+  cpu_cost: 0.1
+  build: test
+  language: c
+  src:
+  - test/core/end2end/goaway_server_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  platforms:
+  - mac
+  - linux
+  - posix
 - name: gpr_avl_test
   build: test
   language: c
