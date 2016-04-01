@@ -31,13 +31,11 @@
  *
  */
 
-#include "src/core/lib/client_config/resolvers/dns_resolver.h"
-
 #include <string.h>
 
 #include <grpc/support/log.h>
 
-#include "src/core/lib/client_config/resolver.h"
+#include "src/core/lib/client_config/resolver_registry.h"
 #include "test/core/util/test_config.h"
 
 static void client_channel_factory_ref(grpc_client_channel_factory *scv) {}
@@ -100,8 +98,9 @@ static void test_fails(grpc_resolver_factory *factory, const char *string) {
 int main(int argc, char **argv) {
   grpc_resolver_factory *dns;
   grpc_test_init(argc, argv);
+  grpc_init();
 
-  dns = grpc_dns_resolver_factory_create();
+  dns = grpc_resolver_factory_lookup("dns");
 
   test_succeeds(dns, "dns:10.2.1.1");
   test_succeeds(dns, "dns:10.2.1.1:1234");
@@ -109,6 +108,7 @@ int main(int argc, char **argv) {
   test_fails(dns, "ipv4://8.8.8.8/8.8.8.8:8888");
 
   grpc_resolver_factory_unref(dns);
+  grpc_shutdown();
 
   return 0;
 }

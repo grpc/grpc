@@ -4050,8 +4050,6 @@
       "src/core/lib/client_config/resolver.h", 
       "src/core/lib/client_config/resolver_factory.h", 
       "src/core/lib/client_config/resolver_registry.h", 
-      "src/core/lib/client_config/resolvers/dns_resolver.h", 
-      "src/core/lib/client_config/resolvers/sockaddr_resolver.h", 
       "src/core/lib/client_config/subchannel.h", 
       "src/core/lib/client_config/subchannel_index.h", 
       "src/core/lib/client_config/uri_parser.h", 
@@ -4176,6 +4174,8 @@
       "src/core/ext/lb_policy/grpclb/proto/grpc/lb/v0/load_balancer.pb.h", 
       "src/core/ext/lb_policy/pick_first/pick_first.c", 
       "src/core/ext/lb_policy/round_robin/round_robin.c", 
+      "src/core/ext/resolver/dns/native/dns_resolver.c", 
+      "src/core/ext/resolver/sockaddr/sockaddr_resolver.c", 
       "src/core/ext/transport/chttp2/client/insecure/channel_create.c", 
       "src/core/ext/transport/chttp2/client/secure/secure_channel_create.c", 
       "src/core/ext/transport/chttp2/server/insecure/server_chttp2.c", 
@@ -4262,10 +4262,6 @@
       "src/core/lib/client_config/resolver_factory.h", 
       "src/core/lib/client_config/resolver_registry.c", 
       "src/core/lib/client_config/resolver_registry.h", 
-      "src/core/lib/client_config/resolvers/dns_resolver.c", 
-      "src/core/lib/client_config/resolvers/dns_resolver.h", 
-      "src/core/lib/client_config/resolvers/sockaddr_resolver.c", 
-      "src/core/lib/client_config/resolvers/sockaddr_resolver.h", 
       "src/core/lib/client_config/subchannel.c", 
       "src/core/lib/client_config/subchannel.h", 
       "src/core/lib/client_config/subchannel_index.c", 
@@ -4668,8 +4664,6 @@
       "src/core/lib/client_config/resolver.h", 
       "src/core/lib/client_config/resolver_factory.h", 
       "src/core/lib/client_config/resolver_registry.h", 
-      "src/core/lib/client_config/resolvers/dns_resolver.h", 
-      "src/core/lib/client_config/resolvers/sockaddr_resolver.h", 
       "src/core/lib/client_config/subchannel.h", 
       "src/core/lib/client_config/subchannel_index.h", 
       "src/core/lib/client_config/uri_parser.h", 
@@ -4779,6 +4773,8 @@
       "src/core/ext/lb_policy/grpclb/proto/grpc/lb/v0/load_balancer.pb.h", 
       "src/core/ext/lb_policy/pick_first/pick_first.c", 
       "src/core/ext/lb_policy/round_robin/round_robin.c", 
+      "src/core/ext/resolver/dns/native/dns_resolver.c", 
+      "src/core/ext/resolver/sockaddr/sockaddr_resolver.c", 
       "src/core/ext/transport/chttp2/client/insecure/channel_create.c", 
       "src/core/ext/transport/chttp2/server/insecure/server_chttp2.c", 
       "src/core/ext/transport/chttp2/transport/alpn.c", 
@@ -4863,10 +4859,6 @@
       "src/core/lib/client_config/resolver_factory.h", 
       "src/core/lib/client_config/resolver_registry.c", 
       "src/core/lib/client_config/resolver_registry.h", 
-      "src/core/lib/client_config/resolvers/dns_resolver.c", 
-      "src/core/lib/client_config/resolvers/dns_resolver.h", 
-      "src/core/lib/client_config/resolvers/sockaddr_resolver.c", 
-      "src/core/lib/client_config/resolvers/sockaddr_resolver.h", 
       "src/core/lib/client_config/subchannel.c", 
       "src/core/lib/client_config/subchannel.h", 
       "src/core/lib/client_config/subchannel_index.c", 
@@ -5026,15 +5018,13 @@
       "grpc"
     ], 
     "headers": [
-      "include/grpc/grpc_zookeeper.h", 
-      "src/core/lib/client_config/resolvers/zookeeper_resolver.h"
+      "include/grpc/grpc_zookeeper.h"
     ], 
     "language": "c", 
     "name": "grpc_zookeeper", 
     "src": [
       "include/grpc/grpc_zookeeper.h", 
-      "src/core/lib/client_config/resolvers/zookeeper_resolver.c", 
-      "src/core/lib/client_config/resolvers/zookeeper_resolver.h"
+      "src/core/ext/resolver/zookeeper/zookeeper_resolver.c"
     ], 
     "third_party": false, 
     "type": "lib"
