@@ -91,6 +91,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/census/tracing.c \
     src/core/ext/client_config/channel_connectivity.c \
     src/core/ext/client_config/client_channel.c \
+    src/core/ext/client_config/client_channel_factory.c \
     src/core/ext/client_config/client_config.c \
     src/core/ext/client_config/connector.c \
     src/core/ext/client_config/default_initial_connect_string.c \
@@ -102,7 +103,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/client_config/resolver_factory.c \
     src/core/ext/client_config/resolver_registry.c \
     src/core/ext/client_config/subchannel.c \
-    src/core/ext/client_config/subchannel_factory.c \
     src/core/ext/client_config/subchannel_index.c \
     src/core/ext/client_config/uri_parser.c \
     src/core/ext/lb_policy/grpclb/load_balancer_api.c \

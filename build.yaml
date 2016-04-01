@@ -415,6 +415,7 @@ filegroups:
 - name: grpc_client_config
   headers:
   - src/core/ext/client_config/client_channel.h
+  - src/core/ext/client_config/client_channel_factory.h
   - src/core/ext/client_config/client_config.h
   - src/core/ext/client_config/connector.h
   - src/core/ext/client_config/initial_connect_string.h
@@ -425,12 +426,12 @@ filegroups:
   - src/core/ext/client_config/resolver_factory.h
   - src/core/ext/client_config/resolver_registry.h
   - src/core/ext/client_config/subchannel.h
-  - src/core/ext/client_config/subchannel_factory.h
   - src/core/ext/client_config/subchannel_index.h
   - src/core/ext/client_config/uri_parser.h
   src:
   - src/core/ext/client_config/channel_connectivity.c
   - src/core/ext/client_config/client_channel.c
+  - src/core/ext/client_config/client_channel_factory.c
   - src/core/ext/client_config/client_config.c
   - src/core/ext/client_config/connector.c
   - src/core/ext/client_config/default_initial_connect_string.c
@@ -442,7 +443,6 @@ filegroups:
   - src/core/ext/client_config/resolver_factory.c
   - src/core/ext/client_config/resolver_registry.c
   - src/core/ext/client_config/subchannel.c
-  - src/core/ext/client_config/subchannel_factory.c
   - src/core/ext/client_config/subchannel_index.c
   - src/core/ext/client_config/uri_parser.c
 - name: grpc_codegen
