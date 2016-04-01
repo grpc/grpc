@@ -28,22 +28,11 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+source ~/.nvm/nvm.sh
+nvm use 0.12
+
 set -ex
 
 cd $(dirname $0)/../../..
 
-#TODO(jtattermusch): add support for more languages
-
-CONFIG=${CONFIG:-opt}
-
-# build C++ qps worker & driver
-# TODO(jtattermusch): not embedding OpenSSL breaks the C# build because
-# grpc_csharp_ext needs OpenSSL embedded and some intermediate files from
-# this build will be reused.
-make CONFIG=${CONFIG} EMBED_OPENSSL=true EMBED_ZLIB=true qps_worker qps_driver -j8
-
-# build C# qps worker
-tools/run_tests/run_tests.py -l csharp -c $CONFIG --build_only -j 8
-
-# build Node qps worker
-tools/run_tests/run_tests.py -l node -c $CONFIG --build_only -j 8
+node src/node/performance/worker.js $@
