@@ -1,5 +1,6 @@
-#!/bin/sh
-# Copyright 2015, Google Inc.
+#!/usr/bin/env ruby
+
+# Copyright 2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -28,31 +29,48 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# Regenerates gRPC service stubs from proto files.
-set +e
-cd $(dirname $0)/../../..
+# Worker and worker service implementation
 
-PROTOC=bins/opt/protobuf/protoc
-PLUGIN=protoc-gen-grpc=bins/opt/grpc_ruby_plugin
+this_dir = File.expand_path(File.dirname(__FILE__))
+lib_dir = File.join(File.dirname(this_dir), 'lib')
+$LOAD_PATH.unshift(lib_dir) unless $LOAD_PATH.include?(lib_dir)
+$LOAD_PATH.unshift(this_dir) unless $LOAD_PATH.include?(this_dir)
 
-$PROTOC -I src/proto src/proto/grpc/health/v1/health.proto \
-    --grpc_out=src/ruby/pb \
-    --ruby_out=src/ruby/pb \
-    --plugin=$PLUGIN
+require 'grpc'
 
-$PROTOC -I . \
-    src/proto/grpc/testing/{messages,test,empty}.proto \
-    --grpc_out=src/ruby/pb \
-    --ruby_out=src/ruby/pb \
-    --plugin=$PLUGIN
+# produces a string of null chars (\0 aka pack 'x') of length l.
+def nulls(l)
+  fail 'requires #{l} to be +ve' if l < 0
+  [].pack('x' * l).force_encoding('ascii-8bit')
+end
 
-$PROTOC -I . \
-    src/proto/grpc/testing/{messages,payloads,stats,services,control}.proto \
-    --grpc_out=src/ruby/qps \
-    --ruby_out=src/ruby/qps \
-    --plugin=$PLUGIN
+# load the test-only certificates
+def load_test_certs
+  this_dir = File.expand_path(File.dirname(__FILE__))
+  data_dir = File.join(File.dirname(this_dir), 'spec/testdata')
+  files = ['ca.pem', 'server1.key', 'server1.pem']
+  files.map { |f| File.open(File.join(data_dir, f)).read }
+end
 
-$PROTOC -I src/proto/math src/proto/math/math.proto \
-    --grpc_out=src/ruby/bin \
-    --ruby_out=src/ruby/bin \
-    --plugin=$PLUGIN
+# A EnumeratorQueue wraps a Queue yielding the items added to it via each_item.
+class EnumeratorQueue
+  extend Forwardable
+  def_delegators :@q, :push
+
+  def initialize(sentinel)
+    @q = Queue.new
+    @sentinel = sentinel
+  end
+
+  def each_item
+    return enum_for(:each_item) unless block_given?
+    loop do
+      r = @q.pop
+      break if r.equal?(@sentinel)
+      fail r if r.is_a? Exception
+      yield r
+    end
+  end
+end
+
+
