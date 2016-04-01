@@ -2451,6 +2451,8 @@ LIBGRPC_SRC = \
     src/core/ext/lb_policy/grpclb/proto/grpc/lb/v0/load_balancer.pb.c \
     src/core/ext/lb_policy/pick_first/pick_first.c \
     src/core/ext/lb_policy/round_robin/round_robin.c \
+    src/core/ext/resolver/dns/native/dns_resolver.c \
+    src/core/ext/resolver/sockaddr/sockaddr_resolver.c \
     src/core/ext/transport/chttp2/client/insecure/channel_create.c \
     src/core/ext/transport/chttp2/client/secure/secure_channel_create.c \
     src/core/ext/transport/chttp2/server/insecure/server_chttp2.c \
@@ -2496,8 +2498,6 @@ LIBGRPC_SRC = \
     src/core/lib/client_config/resolver.c \
     src/core/lib/client_config/resolver_factory.c \
     src/core/lib/client_config/resolver_registry.c \
-    src/core/lib/client_config/resolvers/dns_resolver.c \
-    src/core/lib/client_config/resolvers/sockaddr_resolver.c \
     src/core/lib/client_config/subchannel.c \
     src/core/lib/client_config/subchannel_index.c \
     src/core/lib/client_config/uri_parser.c \
@@ -2810,6 +2810,8 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/lb_policy/grpclb/proto/grpc/lb/v0/load_balancer.pb.c \
     src/core/ext/lb_policy/pick_first/pick_first.c \
     src/core/ext/lb_policy/round_robin/round_robin.c \
+    src/core/ext/resolver/dns/native/dns_resolver.c \
+    src/core/ext/resolver/sockaddr/sockaddr_resolver.c \
     src/core/ext/transport/chttp2/client/insecure/channel_create.c \
     src/core/ext/transport/chttp2/server/insecure/server_chttp2.c \
     src/core/ext/transport/chttp2/transport/alpn.c \
@@ -2853,8 +2855,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/client_config/resolver.c \
     src/core/lib/client_config/resolver_factory.c \
     src/core/lib/client_config/resolver_registry.c \
-    src/core/lib/client_config/resolvers/dns_resolver.c \
-    src/core/lib/client_config/resolvers/sockaddr_resolver.c \
     src/core/lib/client_config/subchannel.c \
     src/core/lib/client_config/subchannel_index.c \
     src/core/lib/client_config/uri_parser.c \
@@ -2992,7 +2992,7 @@ endif
 
 
 LIBGRPC_ZOOKEEPER_SRC = \
-    src/core/lib/client_config/resolvers/zookeeper_resolver.c \
+    src/core/ext/resolver/zookeeper/zookeeper_resolver.c \
 
 PUBLIC_HEADERS_C += \
     include/grpc/grpc_zookeeper.h \

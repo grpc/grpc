@@ -31,8 +31,6 @@
  *
  */
 
-#include "src/core/lib/client_config/resolvers/dns_resolver.h"
-
 #include <string.h>
 
 #include <grpc/support/alloc.h>
@@ -40,6 +38,7 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/client_config/lb_policy_registry.h"
+#include "src/core/lib/client_config/resolver_registry.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/support/backoff.h"
@@ -277,8 +276,8 @@ static grpc_resolver *dns_factory_create_resolver(
   return dns_create(args, "https", "pick_first");
 }
 
-char *dns_factory_get_default_host_name(grpc_resolver_factory *factory,
-                                        grpc_uri *uri) {
+static char *dns_factory_get_default_host_name(grpc_resolver_factory *factory,
+                                               grpc_uri *uri) {
   const char *path = uri->path;
   if (path[0] == '/') ++path;
   return gpr_strdup(path);
@@ -289,6 +288,12 @@ static const grpc_resolver_factory_vtable dns_factory_vtable = {
     dns_factory_get_default_host_name, "dns"};
 static grpc_resolver_factory dns_resolver_factory = {&dns_factory_vtable};
 
-grpc_resolver_factory *grpc_dns_resolver_factory_create() {
+static grpc_resolver_factory *dns_resolver_factory_create() {
   return &dns_resolver_factory;
 }
+
+void grpc_resolver_dns_native_init(void) {
+  grpc_register_resolver_type(dns_resolver_factory_create());
+}
+
+void grpc_resolver_dns_native_shutdown(void) {}

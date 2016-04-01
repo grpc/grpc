@@ -33,8 +33,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/client_config/resolvers/sockaddr_resolver.h"
-
 #include <stdio.h>
 #include <string.h>
 
@@ -43,6 +41,7 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/client_config/lb_policy_registry.h"
+#include "src/core/lib/client_config/resolver_registry.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
 #include "src/core/lib/support/string.h"
@@ -343,12 +342,20 @@ static void sockaddr_factory_unref(grpc_resolver_factory *factory) {}
       name##_factory_create_resolver, prefix##name##_get_default_authority, \
       #name};                                                               \
   static grpc_resolver_factory name##_resolver_factory = {                  \
-      &name##_factory_vtable};                                              \
-  grpc_resolver_factory *grpc_##name##_resolver_factory_create() {          \
-    return &name##_resolver_factory;                                        \
-  }
+      &name##_factory_vtable}
 
 #ifdef GPR_HAVE_UNIX_SOCKET
-DECL_FACTORY(unix, grpc_)
+DECL_FACTORY(unix, grpc_);
 #endif
-DECL_FACTORY(ipv4, ) DECL_FACTORY(ipv6, )
+DECL_FACTORY(ipv4, );
+DECL_FACTORY(ipv6, );
+
+void grpc_resolver_sockaddr_init(void) {
+  grpc_register_resolver_type(&ipv4_resolver_factory);
+  grpc_register_resolver_type(&ipv6_resolver_factory);
+#ifdef GPR_HAVE_UNIX_SOCKET
+  grpc_register_resolver_type(&unix_resolver_factory);
+#endif
+}
+
+void grpc_resolver_sockaddr_shutdown(void) {}
