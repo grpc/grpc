@@ -282,6 +282,14 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc\status.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\aggregation.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\census_interface.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\census_rpc_stats.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\grpc_filter.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\mlog.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\rpc_metric_id.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\lb_policy\grpclb\load_balancer_api.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\lb_policy\grpclb\proto\grpc\lb\v0\load_balancer.pb.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\alpn.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\bin_encoder.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\chttp2_transport.h" />
@@ -303,11 +311,6 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\stream_map.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\timeout_encoding.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\varint.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\census\aggregation.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\census\grpc_filter.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\census\grpc_plugin.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\census\mlog.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\census\rpc_metric_id.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\channel_args.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\channel_stack.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\channel_stack_builder.h" />
@@ -321,9 +324,6 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\client_config\client_config.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\client_config\connector.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\client_config\initial_connect_string.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\client_config\lb_policies\load_balancer_api.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\client_config\lb_policies\pick_first.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\client_config\lb_policies\round_robin.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\client_config\lb_policy.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\client_config\lb_policy_factory.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\client_config\lb_policy_registry.h" />
@@ -383,7 +383,6 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\json\json_common.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\json\json_reader.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\json\json_writer.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\proto\grpc\lb\v0\load_balancer.pb.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\auth_filters.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\b64.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\credentials.h" />
@@ -393,8 +392,6 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\secure_endpoint.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\security_connector.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\security_context.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\statistics\census_interface.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\statistics\census_rpc_stats.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\surface\api_trace.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\surface\call.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\surface\call_test_only.h" />
@@ -425,6 +422,32 @@
     <ClInclude Include="$(SolutionDir)\..\third_party\nanopb\pb_encode.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\census\context.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\census\grpc_context.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\census\grpc_filter.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\census\grpc_plugin.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\census\initialize.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\census\mlog.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\census\operation.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\census\placeholders.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\census\tracing.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\lb_policy\grpclb\load_balancer_api.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\lb_policy\grpclb\proto\grpc\lb\v0\load_balancer.pb.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\lb_policy\pick_first\pick_first.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\lb_policy\round_robin\round_robin.c">
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\client\insecure\channel_create.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\client\secure\secure_channel_create.c">
@@ -475,24 +498,6 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\writing.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\census\context.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\census\grpc_context.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\census\grpc_filter.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\census\grpc_plugin.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\census\initialize.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\census\mlog.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\census\operation.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\census\placeholders.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\census\tracing.c">
-    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\channel_args.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\channel_stack.c">
@@ -518,12 +523,6 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\client_config\default_initial_connect_string.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\client_config\initial_connect_string.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\client_config\lb_policies\load_balancer_api.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\client_config\lb_policies\pick_first.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\client_config\lb_policies\round_robin.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\client_config\lb_policy.c">
     </ClCompile>
@@ -655,8 +654,6 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\json\json_writer.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\proto\grpc\lb\v0\load_balancer.pb.c">
-    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\b64.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\client_auth_filter.c">
@@ -746,6 +743,8 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\tsi\ssl_transport_security.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\tsi\transport_security.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\plugin_registry\grpc_plugin_registry.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\third_party\nanopb\pb_common.c">
     </ClCompile>

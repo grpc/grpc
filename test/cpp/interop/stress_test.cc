@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -98,11 +98,11 @@ DEFINE_string(test_cases, "",
               " 'large_unary', 10% of the time and 'empty_stream' the remaining"
               " 70% of the time");
 
-DEFINE_int32(log_level, GPR_LOG_SEVERITY_DEBUG,
+DEFINE_int32(log_level, GPR_LOG_SEVERITY_INFO,
              "Severity level of messages that should be logged. Any messages "
              "greater than or equal to the level set here will be logged. "
              "The choices are: 0 (GPR_LOG_SEVERITY_DEBUG), 1 "
-             "(GPR_LOG_SEVERITY_INFO) and 2 (GPR_LOG_SEVERITY_ERROR.");
+             "(GPR_LOG_SEVERITY_INFO) and 2 (GPR_LOG_SEVERITY_ERROR)");
 
 using grpc::testing::kTestCaseList;
 using grpc::testing::MetricsService;
