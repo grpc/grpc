@@ -44,10 +44,10 @@ namespace grpc {
 template <class ServiceType, class RequestType, class ResponseType>
 class RpcMethodHandler : public MethodHandler {
  public:
-  RpcMethodHandler(
-      std::function<Status(ServiceType*, ServerContext*, const RequestType*,
-                           ResponseType*)> func,
-      ServiceType* service)
+  RpcMethodHandler(std::function<Status(ServiceType*, ServerContext*,
+                                        const RequestType*, ResponseType*)>
+                       func,
+                   ServiceType* service)
       : func_(func), service_(service) {}
 
   void RunHandler(const HandlerParameter& param) GRPC_FINAL {
@@ -63,7 +63,8 @@ class RpcMethodHandler : public MethodHandler {
     CallOpSet<CallOpSendInitialMetadata, CallOpSendMessage,
               CallOpServerSendStatus>
         ops;
-    ops.SendInitialMetadata(param.server_context->initial_metadata_);
+    ops.SendInitialMetadata(param.server_context->initial_metadata_,
+                            param.server_context->initial_metadata_flags());
     if (status.ok()) {
       status = ops.SendMessage(rsp);
     }
@@ -87,7 +88,8 @@ class ClientStreamingHandler : public MethodHandler {
  public:
   ClientStreamingHandler(
       std::function<Status(ServiceType*, ServerContext*,
-                           ServerReader<RequestType>*, ResponseType*)> func,
+                           ServerReader<RequestType>*, ResponseType*)>
+          func,
       ServiceType* service)
       : func_(func), service_(service) {}
 
@@ -100,7 +102,8 @@ class ClientStreamingHandler : public MethodHandler {
     CallOpSet<CallOpSendInitialMetadata, CallOpSendMessage,
               CallOpServerSendStatus>
         ops;
-    ops.SendInitialMetadata(param.server_context->initial_metadata_);
+    ops.SendInitialMetadata(param.server_context->initial_metadata_,
+                            param.server_context->initial_metadata_flags());
     if (status.ok()) {
       status = ops.SendMessage(rsp);
     }
@@ -122,7 +125,8 @@ class ServerStreamingHandler : public MethodHandler {
  public:
   ServerStreamingHandler(
       std::function<Status(ServiceType*, ServerContext*, const RequestType*,
-                           ServerWriter<ResponseType>*)> func,
+                           ServerWriter<ResponseType>*)>
+          func,
       ServiceType* service)
       : func_(func), service_(service) {}
 
@@ -138,7 +142,8 @@ class ServerStreamingHandler : public MethodHandler {
 
     CallOpSet<CallOpSendInitialMetadata, CallOpServerSendStatus> ops;
     if (!param.server_context->sent_initial_metadata_) {
-      ops.SendInitialMetadata(param.server_context->initial_metadata_);
+      ops.SendInitialMetadata(param.server_context->initial_metadata_,
+                              param.server_context->initial_metadata_flags());
     }
     ops.ServerSendStatus(param.server_context->trailing_metadata_, status);
     param.call->PerformOps(&ops);
@@ -170,7 +175,8 @@ class BidiStreamingHandler : public MethodHandler {
 
     CallOpSet<CallOpSendInitialMetadata, CallOpServerSendStatus> ops;
     if (!param.server_context->sent_initial_metadata_) {
-      ops.SendInitialMetadata(param.server_context->initial_metadata_);
+      ops.SendInitialMetadata(param.server_context->initial_metadata_,
+                              param.server_context->initial_metadata_flags());
     }
     ops.ServerSendStatus(param.server_context->trailing_metadata_, status);
     param.call->PerformOps(&ops);
@@ -191,7 +197,8 @@ class UnknownMethodHandler : public MethodHandler {
   static void FillOps(ServerContext* context, T* ops) {
     Status status(StatusCode::UNIMPLEMENTED, "");
     if (!context->sent_initial_metadata_) {
-      ops->SendInitialMetadata(context->initial_metadata_);
+      ops->SendInitialMetadata(context->initial_metadata_,
+                               context->initial_metadata_flags());
       context->sent_initial_metadata_ = true;
     }
     ops->ServerSendStatus(context->trailing_metadata_, status);
