@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/lib/statistics/census_log.h"
+#include "src/core/ext/census/census_log.h"
 #include <grpc/support/cpu.h>
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>

@@ -31,8 +31,8 @@
  *
  */
 
-#include "src/core/lib/statistics/census_tracing.h"
-#include "src/core/lib/statistics/census_interface.h"
+#include "src/core/ext/census/census_tracing.h"
+#include "src/core/ext/census/census_interface.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -41,7 +41,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/sync.h>
-#include "src/core/lib/statistics/hash_table.h"
+#include "src/core/ext/census/hash_table.h"
 #include "src/core/lib/support/string.h"
 
 void census_trace_obj_destroy(census_trace_obj *obj) {

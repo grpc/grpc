@@ -31,18 +31,21 @@
  *
  */
 
-#include "src/core/lib/statistics/census_interface.h"
+#ifndef GRPC_CORE_EXT_CENSUS_RPC_METRIC_ID_H
+#define GRPC_CORE_EXT_CENSUS_RPC_METRIC_ID_H
 
-#include <grpc/support/log.h>
-#include "src/core/lib/statistics/census_rpc_stats.h"
-#include "src/core/lib/statistics/census_tracing.h"
+/* Metric ID's used for RPC measurements. */
+/* Count of client requests sent. */
+#define CENSUS_METRIC_RPC_CLIENT_REQUESTS ((uint32_t)0)
+/* Count of server requests sent. */
+#define CENSUS_METRIC_RPC_SERVER_REQUESTS ((uint32_t)1)
+/* Client error counts. */
+#define CENSUS_METRIC_RPC_CLIENT_ERRORS ((uint32_t)2)
+/* Server error counts. */
+#define CENSUS_METRIC_RPC_SERVER_ERRORS ((uint32_t)3)
+/* Client side request latency. */
+#define CENSUS_METRIC_RPC_CLIENT_LATENCY ((uint32_t)4)
+/* Server side request latency. */
+#define CENSUS_METRIC_RPC_SERVER_LATENCY ((uint32_t)5)
 
-void census_init(void) {
-  census_tracing_init();
-  census_stats_store_init();
-}
-
-void census_shutdown(void) {
-  census_stats_store_shutdown();
-  census_tracing_shutdown();
-}
+#endif /* GRPC_CORE_EXT_CENSUS_RPC_METRIC_ID_H */

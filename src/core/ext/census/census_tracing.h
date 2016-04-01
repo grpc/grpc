@@ -31,11 +31,11 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_STATISTICS_CENSUS_TRACING_H
-#define GRPC_CORE_LIB_STATISTICS_CENSUS_TRACING_H
+#ifndef GRPC_CORE_EXT_CENSUS_CENSUS_TRACING_H
+#define GRPC_CORE_EXT_CENSUS_CENSUS_TRACING_H
 
 #include <grpc/support/time.h>
-#include "src/core/lib/statistics/census_rpc_stats.h"
+#include "src/core/ext/census/census_rpc_stats.h"
 
 /* WARNING: The data structures and APIs provided by this file are for GRPC
    library's internal use ONLY. They might be changed in backward-incompatible
@@ -93,4 +93,4 @@ census_trace_obj **census_get_active_ops(int *num_active_ops);
 }
 #endif
 
-#endif /* GRPC_CORE_LIB_STATISTICS_CENSUS_TRACING_H */
+#endif /* GRPC_CORE_EXT_CENSUS_CENSUS_TRACING_H */
