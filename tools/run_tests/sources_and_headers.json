@@ -393,6 +393,22 @@
   {
     "deps": [
       "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "goaway_server_test", 
+    "src": [
+      "test/core/end2end/goaway_server_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
       "gpr_test_util"
     ], 
     "headers": [], 
@@ -3840,6 +3856,74 @@
     "type": "target"
   }, 
   {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util", 
+      "one_input_fuzzer"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "hpack_parser_fuzzer_test_one_entry", 
+    "src": [
+      "test/core/transport/chttp2/hpack_parser_fuzzer_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util", 
+      "one_input_fuzzer"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "http_fuzzer_test_one_entry", 
+    "src": [
+      "test/core/http/fuzzer.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util", 
+      "one_input_fuzzer"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "json_fuzzer_test_one_entry", 
+    "src": [
+      "test/core/json/fuzzer.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util", 
+      "one_input_fuzzer"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "uri_fuzzer_test_one_entry", 
+    "src": [
+      "test/core/client_config/uri_fuzzer_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
     "deps": [], 
     "headers": [
       "include/grpc/impl/codegen/alloc.h", 
@@ -4040,7 +4124,6 @@
       "src/core/ext/census/census_interface.h", 
       "src/core/ext/census/census_rpc_stats.h", 
       "src/core/ext/census/grpc_filter.h", 
-      "src/core/ext/census/grpc_plugin.h", 
       "src/core/ext/census/mlog.h", 
       "src/core/ext/census/rpc_metric_id.h", 
       "src/core/ext/client_config/client_channel.h", 
@@ -4198,7 +4281,6 @@
       "src/core/ext/census/grpc_filter.c", 
       "src/core/ext/census/grpc_filter.h", 
       "src/core/ext/census/grpc_plugin.c", 
-      "src/core/ext/census/grpc_plugin.h", 
       "src/core/ext/census/initialize.c", 
       "src/core/ext/census/mlog.c", 
       "src/core/ext/census/mlog.h", 
@@ -4661,7 +4743,6 @@
       "src/core/ext/census/census_interface.h", 
       "src/core/ext/census/census_rpc_stats.h", 
       "src/core/ext/census/grpc_filter.h", 
-      "src/core/ext/census/grpc_plugin.h", 
       "src/core/ext/census/mlog.h", 
       "src/core/ext/census/rpc_metric_id.h", 
       "src/core/ext/client_config/client_channel.h", 
@@ -4804,7 +4885,6 @@
       "src/core/ext/census/grpc_filter.c", 
       "src/core/ext/census/grpc_filter.h", 
       "src/core/ext/census/grpc_plugin.c", 
-      "src/core/ext/census/grpc_plugin.h", 
       "src/core/ext/census/initialize.c", 
       "src/core/ext/census/mlog.c", 
       "src/core/ext/census/mlog.h", 
@@ -5067,15 +5147,26 @@
       "grpc"
     ], 
     "headers": [
-      "include/grpc/grpc_zookeeper.h", 
-      "src/core/ext/client_config/resolvers/zookeeper_resolver.h"
+      "include/grpc/grpc_zookeeper.h"
     ], 
     "language": "c", 
     "name": "grpc_zookeeper", 
     "src": [
       "include/grpc/grpc_zookeeper.h", 
-      "src/core/ext/client_config/resolvers/zookeeper_resolver.c", 
-      "src/core/ext/client_config/resolvers/zookeeper_resolver.h"
+      "src/core/ext/resolver/zookeeper/zookeeper_resolver.c"
+    ], 
+    "third_party": false, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
+      "gpr"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "one_input_fuzzer", 
+    "src": [
+      "test/core/util/one_corpus_entry_fuzzer.c"
     ], 
     "third_party": false, 
     "type": "lib"

@@ -163,7 +163,6 @@ cc_library(
     "src/core/ext/census/census_interface.h",
     "src/core/ext/census/census_rpc_stats.h",
     "src/core/ext/census/grpc_filter.h",
-    "src/core/ext/census/grpc_plugin.h",
     "src/core/ext/census/mlog.h",
     "src/core/ext/census/rpc_metric_id.h",
     "src/core/ext/client_config/client_channel.h",
@@ -531,7 +530,6 @@ cc_library(
     "src/core/ext/census/census_interface.h",
     "src/core/ext/census/census_rpc_stats.h",
     "src/core/ext/census/grpc_filter.h",
-    "src/core/ext/census/grpc_plugin.h",
     "src/core/ext/census/mlog.h",
     "src/core/ext/census/rpc_metric_id.h",
     "src/core/ext/client_config/client_channel.h",
@@ -821,8 +819,7 @@ cc_library(
 cc_library(
   name = "grpc_zookeeper",
   srcs = [
-    "src/core/ext/client_config/resolvers/zookeeper_resolver.h",
-    "src/core/ext/client_config/resolvers/zookeeper_resolver.c",
+    "src/core/ext/resolver/zookeeper/zookeeper_resolver.c",
   ],
   hdrs = [
     "include/grpc/grpc_zookeeper.h",
@@ -1536,7 +1533,6 @@ objc_library(
     "src/core/ext/census/census_interface.h",
     "src/core/ext/census/census_rpc_stats.h",
     "src/core/ext/census/grpc_filter.h",
-    "src/core/ext/census/grpc_plugin.h",
     "src/core/ext/census/mlog.h",
     "src/core/ext/census/rpc_metric_id.h",
     "src/core/ext/client_config/client_channel.h",
