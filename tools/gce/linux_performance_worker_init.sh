@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2015-2016, Google Inc.
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -36,8 +36,8 @@ set -ex
 
 sudo apt-get update
 
-# Install JRE
-sudo apt-get install -y openjdk-7-jre
+# Install Java 8 JDK (to build gRPC Java)
+sudo apt-get install -y openjdk-8-jdk
 sudo apt-get install -y unzip lsof
 
 # Setup jenkins user (or the user will already exist bcuz magic)
@@ -90,6 +90,7 @@ sudo pypy get-pip.py
 sudo pypy -m pip install tabulate
 
 # Node dependences.
+# TODO(jtattermusch) nvm has to be installed under user jenkins
 touch .profile
 curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.25.4/install.sh | bash
 nvm install 0.12 && npm config set cache /tmp/npm-cache
@@ -104,3 +105,5 @@ sudo apt-get install -y mono-devel nuget
 # Ruby dependencies
 gpg --keyserver hkp://keys.gnupg.net --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3
 curl -sSL https://get.rvm.io | bash -s stable --ruby
+
+# Java dependencies - nothing as we already have Java JDK 8
