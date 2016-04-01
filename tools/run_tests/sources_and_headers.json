@@ -393,6 +393,22 @@
   {
     "deps": [
       "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "goaway_server_test", 
+    "src": [
+      "test/core/end2end/goaway_server_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
       "gpr_test_util"
     ], 
     "headers": [], 
@@ -3840,6 +3856,74 @@
     "type": "target"
   }, 
   {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util", 
+      "one_input_fuzzer"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "hpack_parser_fuzzer_test_one_entry", 
+    "src": [
+      "test/core/transport/chttp2/hpack_parser_fuzzer_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util", 
+      "one_input_fuzzer"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "http_fuzzer_test_one_entry", 
+    "src": [
+      "test/core/http/fuzzer.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util", 
+      "one_input_fuzzer"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "json_fuzzer_test_one_entry", 
+    "src": [
+      "test/core/json/fuzzer.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util", 
+      "one_input_fuzzer"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "uri_fuzzer_test_one_entry", 
+    "src": [
+      "test/core/client_config/uri_fuzzer_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
     "deps": [], 
     "headers": [
       "include/grpc/impl/codegen/alloc.h", 
@@ -4036,6 +4120,8 @@
       "include/grpc/impl/codegen/propagation_bits.h", 
       "include/grpc/impl/codegen/status.h", 
       "include/grpc/status.h", 
+      "src/core/ext/lb_policy/grpclb/load_balancer_api.h", 
+      "src/core/ext/lb_policy/grpclb/proto/grpc/lb/v0/load_balancer.pb.h", 
       "src/core/ext/transport/chttp2/transport/alpn.h", 
       "src/core/ext/transport/chttp2/transport/bin_encoder.h", 
       "src/core/ext/transport/chttp2/transport/chttp2_transport.h", 
@@ -4075,9 +4161,6 @@
       "src/core/lib/client_config/client_config.h", 
       "src/core/lib/client_config/connector.h", 
       "src/core/lib/client_config/initial_connect_string.h", 
-      "src/core/lib/client_config/lb_policies/load_balancer_api.h", 
-      "src/core/lib/client_config/lb_policies/pick_first.h", 
-      "src/core/lib/client_config/lb_policies/round_robin.h", 
       "src/core/lib/client_config/lb_policy.h", 
       "src/core/lib/client_config/lb_policy_factory.h", 
       "src/core/lib/client_config/lb_policy_registry.h", 
@@ -4137,7 +4220,6 @@
       "src/core/lib/json/json_common.h", 
       "src/core/lib/json/json_reader.h", 
       "src/core/lib/json/json_writer.h", 
-      "src/core/lib/proto/grpc/lb/v0/load_balancer.pb.h", 
       "src/core/lib/security/auth_filters.h", 
       "src/core/lib/security/b64.h", 
       "src/core/lib/security/credentials.h", 
@@ -4194,6 +4276,12 @@
       "include/grpc/impl/codegen/propagation_bits.h", 
       "include/grpc/impl/codegen/status.h", 
       "include/grpc/status.h", 
+      "src/core/ext/lb_policy/grpclb/load_balancer_api.c", 
+      "src/core/ext/lb_policy/grpclb/load_balancer_api.h", 
+      "src/core/ext/lb_policy/grpclb/proto/grpc/lb/v0/load_balancer.pb.c", 
+      "src/core/ext/lb_policy/grpclb/proto/grpc/lb/v0/load_balancer.pb.h", 
+      "src/core/ext/lb_policy/pick_first/pick_first.c", 
+      "src/core/ext/lb_policy/round_robin/round_robin.c", 
       "src/core/ext/transport/chttp2/client/insecure/channel_create.c", 
       "src/core/ext/transport/chttp2/client/secure/secure_channel_create.c", 
       "src/core/ext/transport/chttp2/server/insecure/server_chttp2.c", 
@@ -4280,12 +4368,6 @@
       "src/core/lib/client_config/default_initial_connect_string.c", 
       "src/core/lib/client_config/initial_connect_string.c", 
       "src/core/lib/client_config/initial_connect_string.h", 
-      "src/core/lib/client_config/lb_policies/load_balancer_api.c", 
-      "src/core/lib/client_config/lb_policies/load_balancer_api.h", 
-      "src/core/lib/client_config/lb_policies/pick_first.c", 
-      "src/core/lib/client_config/lb_policies/pick_first.h", 
-      "src/core/lib/client_config/lb_policies/round_robin.c", 
-      "src/core/lib/client_config/lb_policies/round_robin.h", 
       "src/core/lib/client_config/lb_policy.c", 
       "src/core/lib/client_config/lb_policy.h", 
       "src/core/lib/client_config/lb_policy_factory.c", 
@@ -4410,8 +4492,6 @@
       "src/core/lib/json/json_string.c", 
       "src/core/lib/json/json_writer.c", 
       "src/core/lib/json/json_writer.h", 
-      "src/core/lib/proto/grpc/lb/v0/load_balancer.pb.c", 
-      "src/core/lib/proto/grpc/lb/v0/load_balancer.pb.h", 
       "src/core/lib/security/auth_filters.h", 
       "src/core/lib/security/b64.c", 
       "src/core/lib/security/b64.h", 
@@ -4491,7 +4571,8 @@
       "src/core/lib/tsi/ssl_types.h", 
       "src/core/lib/tsi/transport_security.c", 
       "src/core/lib/tsi/transport_security.h", 
-      "src/core/lib/tsi/transport_security_interface.h"
+      "src/core/lib/tsi/transport_security_interface.h", 
+      "src/core/plugin_registry/grpc_plugin_registry.c"
     ], 
     "third_party": false, 
     "type": "lib"
@@ -4664,6 +4745,8 @@
       "include/grpc/impl/codegen/propagation_bits.h", 
       "include/grpc/impl/codegen/status.h", 
       "include/grpc/status.h", 
+      "src/core/ext/lb_policy/grpclb/load_balancer_api.h", 
+      "src/core/ext/lb_policy/grpclb/proto/grpc/lb/v0/load_balancer.pb.h", 
       "src/core/ext/transport/chttp2/transport/alpn.h", 
       "src/core/ext/transport/chttp2/transport/bin_encoder.h", 
       "src/core/ext/transport/chttp2/transport/chttp2_transport.h", 
@@ -4703,9 +4786,6 @@
       "src/core/lib/client_config/client_config.h", 
       "src/core/lib/client_config/connector.h", 
       "src/core/lib/client_config/initial_connect_string.h", 
-      "src/core/lib/client_config/lb_policies/load_balancer_api.h", 
-      "src/core/lib/client_config/lb_policies/pick_first.h", 
-      "src/core/lib/client_config/lb_policies/round_robin.h", 
       "src/core/lib/client_config/lb_policy.h", 
       "src/core/lib/client_config/lb_policy_factory.h", 
       "src/core/lib/client_config/lb_policy_registry.h", 
@@ -4765,7 +4845,6 @@
       "src/core/lib/json/json_common.h", 
       "src/core/lib/json/json_reader.h", 
       "src/core/lib/json/json_writer.h", 
-      "src/core/lib/proto/grpc/lb/v0/load_balancer.pb.h", 
       "src/core/lib/statistics/census_interface.h", 
       "src/core/lib/statistics/census_rpc_stats.h", 
       "src/core/lib/surface/api_trace.h", 
@@ -4807,6 +4886,12 @@
       "include/grpc/impl/codegen/propagation_bits.h", 
       "include/grpc/impl/codegen/status.h", 
       "include/grpc/status.h", 
+      "src/core/ext/lb_policy/grpclb/load_balancer_api.c", 
+      "src/core/ext/lb_policy/grpclb/load_balancer_api.h", 
+      "src/core/ext/lb_policy/grpclb/proto/grpc/lb/v0/load_balancer.pb.c", 
+      "src/core/ext/lb_policy/grpclb/proto/grpc/lb/v0/load_balancer.pb.h", 
+      "src/core/ext/lb_policy/pick_first/pick_first.c", 
+      "src/core/ext/lb_policy/round_robin/round_robin.c", 
       "src/core/ext/transport/chttp2/client/insecure/channel_create.c", 
       "src/core/ext/transport/chttp2/server/insecure/server_chttp2.c", 
       "src/core/ext/transport/chttp2/transport/alpn.c", 
@@ -4891,12 +4976,6 @@
       "src/core/lib/client_config/default_initial_connect_string.c", 
       "src/core/lib/client_config/initial_connect_string.c", 
       "src/core/lib/client_config/initial_connect_string.h", 
-      "src/core/lib/client_config/lb_policies/load_balancer_api.c", 
-      "src/core/lib/client_config/lb_policies/load_balancer_api.h", 
-      "src/core/lib/client_config/lb_policies/pick_first.c", 
-      "src/core/lib/client_config/lb_policies/pick_first.h", 
-      "src/core/lib/client_config/lb_policies/round_robin.c", 
-      "src/core/lib/client_config/lb_policies/round_robin.h", 
       "src/core/lib/client_config/lb_policy.c", 
       "src/core/lib/client_config/lb_policy.h", 
       "src/core/lib/client_config/lb_policy_factory.c", 
@@ -5020,8 +5099,6 @@
       "src/core/lib/json/json_string.c", 
       "src/core/lib/json/json_writer.c", 
       "src/core/lib/json/json_writer.h", 
-      "src/core/lib/proto/grpc/lb/v0/load_balancer.pb.c", 
-      "src/core/lib/proto/grpc/lb/v0/load_balancer.pb.h", 
       "src/core/lib/statistics/census_interface.h", 
       "src/core/lib/statistics/census_rpc_stats.h", 
       "src/core/lib/surface/alarm.c", 
@@ -5070,7 +5147,8 @@
       "src/core/lib/transport/transport.c", 
       "src/core/lib/transport/transport.h", 
       "src/core/lib/transport/transport_impl.h", 
-      "src/core/lib/transport/transport_op_string.c"
+      "src/core/lib/transport/transport_op_string.c", 
+      "src/core/plugin_registry/grpc_unsecure_plugin_registry.c"
     ], 
     "third_party": false, 
     "type": "lib"
@@ -5090,6 +5168,19 @@
       "include/grpc/grpc_zookeeper.h", 
       "src/core/lib/client_config/resolvers/zookeeper_resolver.c", 
       "src/core/lib/client_config/resolvers/zookeeper_resolver.h"
+    ], 
+    "third_party": false, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
+      "gpr"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "one_input_fuzzer", 
+    "src": [
+      "test/core/util/one_corpus_entry_fuzzer.c"
     ], 
     "third_party": false, 
     "type": "lib"
@@ -6627,6 +6718,7 @@
       "test/core/end2end/tests/graceful_server_shutdown.c", 
       "test/core/end2end/tests/high_initial_seqno.c", 
       "test/core/end2end/tests/hpack_size.c", 
+      "test/core/end2end/tests/idempotent_request.c", 
       "test/core/end2end/tests/invoke_large_request.c", 
       "test/core/end2end/tests/large_metadata.c", 
       "test/core/end2end/tests/max_concurrent_streams.c", 
@@ -6683,6 +6775,7 @@
       "test/core/end2end/tests/graceful_server_shutdown.c", 
       "test/core/end2end/tests/high_initial_seqno.c", 
       "test/core/end2end/tests/hpack_size.c", 
+      "test/core/end2end/tests/idempotent_request.c", 
       "test/core/end2end/tests/invoke_large_request.c", 
       "test/core/end2end/tests/large_metadata.c", 
       "test/core/end2end/tests/max_concurrent_streams.c", 

@@ -31,13 +31,13 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_CLIENT_CONFIG_LB_POLICIES_LOAD_BALANCER_API_H
-#define GRPC_CORE_LIB_CLIENT_CONFIG_LB_POLICIES_LOAD_BALANCER_API_H
+#ifndef GRPC_CORE_EXT_LB_POLICY_GRPCLB_LOAD_BALANCER_API_H
+#define GRPC_CORE_EXT_LB_POLICY_GRPCLB_LOAD_BALANCER_API_H
 
 #include <grpc/support/slice_buffer.h>
 
+#include "src/core/ext/lb_policy/grpclb/proto/grpc/lb/v0/load_balancer.pb.h"
 #include "src/core/lib/client_config/lb_policy_factory.h"
-#include "src/core/lib/proto/grpc/lb/v0/load_balancer.pb.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -82,4 +82,4 @@ void grpc_grpclb_response_destroy(grpc_grpclb_response *response);
 }
 #endif
 
-#endif /* GRPC_CORE_LIB_CLIENT_CONFIG_LB_POLICIES_LOAD_BALANCER_API_H */
+#endif /* GRPC_CORE_EXT_LB_POLICY_GRPCLB_LOAD_BALANCER_API_H */
