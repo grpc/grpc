@@ -44,6 +44,12 @@ typedef struct grpc_client_channel_factory grpc_client_channel_factory;
 typedef struct grpc_client_channel_factory_vtable
     grpc_client_channel_factory_vtable;
 
+typedef enum {
+  GRPC_CLIENT_CHANNEL_TYPE_REGULAR, /** for the user-level regular calls */
+  GRPC_CLIENT_CHANNEL_TYPE_LOAD_BALANCING, /** for communication with a load
+                                              balancing service */
+} grpc_client_channel_type;
+
 /** Constructor for new configured channels.
     Creating decorators around this type is encouraged to adapt behavior. */
 struct grpc_client_channel_factory {
@@ -56,9 +62,11 @@ struct grpc_client_channel_factory_vtable {
   grpc_subchannel *(*create_subchannel)(grpc_exec_ctx *exec_ctx,
                                         grpc_client_channel_factory *factory,
                                         grpc_subchannel_args *args);
-  grpc_channel *(*create_channel)(grpc_exec_ctx *exec_ctx,
-                                  grpc_client_channel_factory *factory,
-                                  const char *target, grpc_channel_args *args);
+  grpc_channel *(*create_client_channel)(grpc_exec_ctx *exec_ctx,
+                                         grpc_client_channel_factory *factory,
+                                         const char *target,
+                                         grpc_client_channel_type type,
+                                         grpc_channel_args *args);
 };
 
 void grpc_client_channel_factory_ref(grpc_client_channel_factory *factory);
@@ -73,6 +81,6 @@ grpc_subchannel *grpc_client_channel_factory_create_subchannel(
 /** Create a new grpc_channel */
 grpc_channel *grpc_client_channel_factory_create_channel(
     grpc_exec_ctx *exec_ctx, grpc_client_channel_factory *factory,
-    const char *target, grpc_channel_args *args);
+    const char *target, grpc_client_channel_type type, grpc_channel_args *args);
 
 #endif /* GRPC_CORE_LIB_CLIENT_CONFIG_CLIENT_CHANNEL_FACTORY_H */

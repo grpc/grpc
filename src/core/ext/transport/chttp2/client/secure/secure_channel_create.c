@@ -242,7 +242,8 @@ static grpc_subchannel *client_channel_factory_create_subchannel(
 
 static grpc_channel *client_channel_factory_create_channel(
     grpc_exec_ctx *exec_ctx, grpc_client_channel_factory *cc_factory,
-    const char *target, grpc_channel_args *args) {
+    const char *target, grpc_client_channel_type type,
+    grpc_channel_args *args) {
   client_channel_factory *f = (client_channel_factory *)cc_factory;
 
   grpc_channel_args *final_args = grpc_channel_args_merge(args, f->merge_args);
@@ -328,8 +329,8 @@ grpc_channel *grpc_secure_channel_create(grpc_channel_credentials *creds,
                               "grpc_secure_channel_create");
   f->security_connector = security_connector;
 
-  grpc_channel *channel =
-      client_channel_factory_create_channel(&exec_ctx, &f->base, target, NULL);
+  grpc_channel *channel = client_channel_factory_create_channel(
+      &exec_ctx, &f->base, target, GRPC_CLIENT_CHANNEL_TYPE_REGULAR, NULL);
   if (channel != NULL) {
     f->master = channel;
     GRPC_CHANNEL_INTERNAL_REF(f->master, "grpc_secure_channel_create");
