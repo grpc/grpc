@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,57 +31,16 @@
  *
  */
 
-#include <stdint.h>
-#include <string.h>
-
-#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include "src/core/lib/support/load_file.h"
 
-#include "src/core/lib/json/json.h"
+extern int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size);
 
-static size_t g_total_size = 0;
-static gpr_allocation_functions g_old_allocs;
-
-void *guard_malloc(size_t size) {
-  size_t *ptr;
-  g_total_size += size;
-  ptr = g_old_allocs.malloc_fn(size + sizeof(size));
-  *ptr++ = size;
-  return ptr;
-}
-
-void *guard_realloc(void *vptr, size_t size) {
-  size_t *ptr = vptr;
-  --ptr;
-  g_total_size -= *ptr;
-  ptr = g_old_allocs.realloc_fn(ptr, size + sizeof(size));
-  g_total_size += size;
-  *ptr++ = size;
-  return ptr;
-}
-
-void guard_free(void *vptr) {
-  size_t *ptr = vptr;
-  --ptr;
-  g_total_size -= *ptr;
-  g_old_allocs.free_fn(ptr);
-}
-
-struct gpr_allocation_functions g_guard_allocs = {guard_malloc, guard_realloc,
-                                                  guard_free};
-
-int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
-  char *s;
-  g_old_allocs = gpr_get_allocation_functions();
-  gpr_set_allocation_functions(g_guard_allocs);
-  s = gpr_malloc(size);
-  memcpy(s, data, size);
-  grpc_json *x;
-  if ((x = grpc_json_parse_string_with_len(s, size))) {
-    grpc_json_destroy(x);
-  }
-  gpr_free(s);
-  gpr_set_allocation_functions(g_old_allocs);
-  GPR_ASSERT(g_total_size == 0);
+int main(int argc, char **argv) {
+  int ok = 0;
+  gpr_slice buffer = gpr_load_file(argv[1], 0, &ok);
+  GPR_ASSERT(ok);
+  LLVMFuzzerTestOneInput(GPR_SLICE_START_PTR(buffer), GPR_SLICE_LENGTH(buffer));
+  gpr_slice_unref(buffer);
   return 0;
 }
