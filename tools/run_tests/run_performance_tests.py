@@ -272,7 +272,7 @@ def prepare_remote_hosts(hosts):
     sys.exit(1)
 
 
-def build_on_remote_hosts(hosts, build_local=False):
+def build_on_remote_hosts(hosts, languages=_LANGUAGES.keys(), build_local=False):
   """Builds performance worker on remote hosts (and maybe also locally)."""
   build_timeout = 15*60
   build_jobs = []
@@ -280,7 +280,7 @@ def build_on_remote_hosts(hosts, build_local=False):
     user_at_host = '%s@%s' % (_REMOTE_HOST_USERNAME, host)
     build_jobs.append(
         jobset.JobSpec(
-            cmdline=['tools/run_tests/performance/remote_host_build.sh'],
+            cmdline=['tools/run_tests/performance/remote_host_build.sh'] + languages,
             shortname='remote_host_build.%s' % host,
             environ = {'USER_AT_HOST': user_at_host, 'CONFIG': 'opt'},
             timeout_seconds=build_timeout))
@@ -288,7 +288,7 @@ def build_on_remote_hosts(hosts, build_local=False):
     # Build locally as well
     build_jobs.append(
         jobset.JobSpec(
-            cmdline=['tools/run_tests/performance/build_performance.sh'],
+            cmdline=['tools/run_tests/performance/build_performance.sh'] + languages,
             shortname='local_build',
             environ = {'CONFIG': 'opt'},
             timeout_seconds=build_timeout))
@@ -400,7 +400,7 @@ if remote_hosts:
 build_local = False
 if not args.remote_driver_host:
   build_local = True
-build_on_remote_hosts(remote_hosts, build_local=build_local)
+build_on_remote_hosts(remote_hosts, languages=[str(l) for l in languages], build_local=build_local)
 
 qpsworker_jobs = start_qpsworkers(languages, args.remote_worker_host)
 
