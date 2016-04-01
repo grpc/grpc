@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,11 +31,12 @@
  *
  */
 
-#include "src/core/lib/client_config/lb_policies/round_robin.h"
-
 #include <string.h>
 
 #include <grpc/support/alloc.h>
+
+#include "src/core/lib/client_config/lb_policy_registry.h"
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/transport/connectivity_state.h"
 
 typedef struct round_robin_lb_policy round_robin_lb_policy;
@@ -199,7 +200,7 @@ static void remove_disconnected_sc_locked(round_robin_lb_policy *p,
   gpr_free(node);
 }
 
-void rr_destroy(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
+static void rr_destroy(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
   round_robin_lb_policy *p = (round_robin_lb_policy *)pol;
   size_t i;
   ready_list *elem;
@@ -226,7 +227,7 @@ void rr_destroy(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
   gpr_free(p);
 }
 
-void rr_shutdown(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
+static void rr_shutdown(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
   round_robin_lb_policy *p = (round_robin_lb_policy *)pol;
   pending_pick *pp;
   size_t i;
@@ -291,7 +292,7 @@ static void start_picking(grpc_exec_ctx *exec_ctx, round_robin_lb_policy *p) {
   }
 }
 
-void rr_exit_idle(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
+static void rr_exit_idle(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
   round_robin_lb_policy *p = (round_robin_lb_policy *)pol;
   gpr_mu_lock(&p->mu);
   if (!p->started_picking) {
@@ -300,9 +301,10 @@ void rr_exit_idle(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
   gpr_mu_unlock(&p->mu);
 }
 
-int rr_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol, grpc_pollset *pollset,
-            grpc_metadata_batch *initial_metadata,
-            grpc_connected_subchannel **target, grpc_closure *on_complete) {
+static int rr_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
+                   grpc_pollset *pollset, grpc_metadata_batch *initial_metadata,
+                   grpc_connected_subchannel **target,
+                   grpc_closure *on_complete) {
   round_robin_lb_policy *p = (round_robin_lb_policy *)pol;
   pending_pick *pp;
   ready_list *selected;
@@ -496,30 +498,47 @@ static void round_robin_factory_ref(grpc_lb_policy_factory *factory) {}
 
 static void round_robin_factory_unref(grpc_lb_policy_factory *factory) {}
 
-static grpc_lb_policy *create_round_robin(grpc_lb_policy_factory *factory,
+static grpc_lb_policy *create_round_robin(grpc_exec_ctx *exec_ctx,
+                                          grpc_lb_policy_factory *factory,
                                           grpc_lb_policy_args *args) {
-  size_t i;
-  round_robin_lb_policy *p = gpr_malloc(sizeof(*p));
-  GPR_ASSERT(args->num_subchannels > 0);
-  memset(p, 0, sizeof(*p));
-  grpc_lb_policy_init(&p->base, &round_robin_lb_policy_vtable);
-  p->num_subchannels = args->num_subchannels;
-  p->subchannels = gpr_malloc(sizeof(*p->subchannels) * p->num_subchannels);
-  memset(p->subchannels, 0, sizeof(*p->subchannels) * p->num_subchannels);
-  grpc_connectivity_state_init(&p->state_tracker, GRPC_CHANNEL_IDLE,
-                               "round_robin");
+  GPR_ASSERT(args->addresses != NULL);
+  GPR_ASSERT(args->client_channel_factory != NULL);
 
-  gpr_mu_init(&p->mu);
-  for (i = 0; i < args->num_subchannels; i++) {
-    subchannel_data *sd = gpr_malloc(sizeof(*sd));
-    memset(sd, 0, sizeof(*sd));
-    p->subchannels[i] = sd;
-    sd->policy = p;
-    sd->index = i;
-    sd->subchannel = args->subchannels[i];
-    grpc_closure_init(&sd->connectivity_changed_closure,
-                      rr_connectivity_changed, sd);
+  round_robin_lb_policy *p = gpr_malloc(sizeof(*p));
+  memset(p, 0, sizeof(*p));
+
+  p->subchannels =
+      gpr_malloc(sizeof(*p->subchannels) * args->addresses->naddrs);
+  memset(p->subchannels, 0, sizeof(*p->subchannels) * args->addresses->naddrs);
+
+  grpc_subchannel_args sc_args;
+  size_t subchannel_idx = 0;
+  for (size_t i = 0; i < args->addresses->naddrs; i++) {
+    memset(&sc_args, 0, sizeof(grpc_subchannel_args));
+    sc_args.addr = (struct sockaddr *)(args->addresses->addrs[i].addr);
+    sc_args.addr_len = (size_t)args->addresses->addrs[i].len;
+
+    grpc_subchannel *subchannel = grpc_client_channel_factory_create_subchannel(
+        exec_ctx, args->client_channel_factory, &sc_args);
+
+    if (subchannel != NULL) {
+      subchannel_data *sd = gpr_malloc(sizeof(*sd));
+      memset(sd, 0, sizeof(*sd));
+      p->subchannels[subchannel_idx] = sd;
+      sd->policy = p;
+      sd->index = subchannel_idx;
+      sd->subchannel = subchannel;
+      ++subchannel_idx;
+      grpc_closure_init(&sd->connectivity_changed_closure,
+                        rr_connectivity_changed, sd);
+    }
   }
+  if (subchannel_idx == 0) {
+    gpr_free(p->subchannels);
+    gpr_free(p);
+    return NULL;
+  }
+  p->num_subchannels = subchannel_idx;
 
   /* The (dummy node) root of the ready list */
   p->ready_list.subchannel = NULL;
@@ -527,6 +546,10 @@ static grpc_lb_policy *create_round_robin(grpc_lb_policy_factory *factory,
   p->ready_list.next = NULL;
   p->ready_list_last_pick = &p->ready_list;
 
+  grpc_lb_policy_init(&p->base, &round_robin_lb_policy_vtable);
+  grpc_connectivity_state_init(&p->state_tracker, GRPC_CHANNEL_IDLE,
+                               "round_robin");
+  gpr_mu_init(&p->mu);
   return &p->base;
 }
 
@@ -537,6 +560,15 @@ static const grpc_lb_policy_factory_vtable round_robin_factory_vtable = {
 static grpc_lb_policy_factory round_robin_lb_policy_factory = {
     &round_robin_factory_vtable};
 
-grpc_lb_policy_factory *grpc_round_robin_lb_factory_create() {
+static grpc_lb_policy_factory *round_robin_lb_factory_create() {
   return &round_robin_lb_policy_factory;
 }
+
+/* Plugin registration */
+
+void grpc_lb_policy_round_robin_init() {
+  grpc_register_lb_policy(round_robin_lb_factory_create());
+  grpc_register_tracer("round_robin", &grpc_lb_round_robin_trace);
+}
+
+void grpc_lb_policy_round_robin_shutdown() {}
