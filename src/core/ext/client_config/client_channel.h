@@ -34,8 +34,8 @@
 #ifndef GRPC_CORE_EXT_CLIENT_CONFIG_CLIENT_CHANNEL_H
 #define GRPC_CORE_EXT_CLIENT_CONFIG_CLIENT_CHANNEL_H
 
-#include "src/core/lib/channel/channel_stack.h"
 #include "src/core/ext/client_config/resolver.h"
+#include "src/core/lib/channel/channel_stack.h"
 
 /* A client channel is a channel that begins disconnected, and can connect
    to some endpoint on demand. If that endpoint disconnects, it will be
