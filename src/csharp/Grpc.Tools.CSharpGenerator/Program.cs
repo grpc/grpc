@@ -73,19 +73,22 @@ namespace Grpc.Tools.CSharpGenerator
                 var protosIncludeDir = projectDir;
                 var outputDir = Path.Combine(projectDir, intermediateOutputDir);
 
-                foreach (var inputFile in args.Skip(2))
+                var inputFiles = from protofile in args.Skip(2).TakeWhile(s => true)
+                                 select Path.Combine(projectDir, protofile);
+                foreach (var f in inputFiles)
+                    Console.WriteLine("Going to process: {0}", f);
+
+                foreach (var inputFile in inputFiles)
                 {
-                    var inputFilePath = Path.Combine(projectDir, inputFile);
-                    var outputFilePath = Path.Combine(projectDir, intermediateOutputDir, string.Format("{0}.cs", Path.GetFileName(inputFile)));
-                    var protocArguments = string.Format("-I{0} --csharp_out {1} --grpc_out {1} --plugin=protoc-gen-grpc={2} {3}", protosIncludeDir, outputDir, grpcCSharpPluginPath, inputFilePath);
+                    var protocArguments = string.Format("-I{0} --csharp_out {1} --grpc_out {1} --plugin=protoc-gen-grpc={2} {3}", protosIncludeDir, outputDir, grpcCSharpPluginPath, inputFile);
                     Console.WriteLine("Generating Grpc for {0}...", inputFile);
-					Console.WriteLine("Command line: {0} {1}", protocPath, protocArguments);
+                    Console.WriteLine("Command line: {0} {1}", protocPath, protocArguments);
                     var process = Process.Start(new ProcessStartInfo
                         {
                             FileName = protocPath,
                             Arguments = protocArguments,
                             WindowStyle = ProcessWindowStyle.Hidden,
-							UseShellExecute = false
+                            UseShellExecute = false
                         });
                     process.WaitForExit();
                     if (process.ExitCode != 0)
