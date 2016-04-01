@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,12 +31,10 @@
  *
  */
 
-#include "src/core/lib/client_config/lb_policies/pick_first.h"
-#include "src/core/lib/client_config/lb_policy_factory.h"
-
 #include <string.h>
 
 #include <grpc/support/alloc.h>
+#include "src/core/lib/client_config/lb_policy_registry.h"
 #include "src/core/lib/transport/connectivity_state.h"
 
 typedef struct pending_pick {
@@ -78,7 +76,7 @@ typedef struct {
 #define GET_SELECTED(p) \
   ((grpc_connected_subchannel *)gpr_atm_acq_load(&(p)->selected))
 
-void pf_destroy(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
+static void pf_destroy(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
   pick_first_lb_policy *p = (pick_first_lb_policy *)pol;
   grpc_connected_subchannel *selected = GET_SELECTED(p);
   size_t i;
@@ -95,7 +93,7 @@ void pf_destroy(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
   gpr_free(p);
 }
 
-void pf_shutdown(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
+static void pf_shutdown(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
   pick_first_lb_policy *p = (pick_first_lb_policy *)pol;
   pending_pick *pp;
   grpc_connected_subchannel *selected;
@@ -162,7 +160,7 @@ static void start_picking(grpc_exec_ctx *exec_ctx, pick_first_lb_policy *p) {
       &p->connectivity_changed);
 }
 
-void pf_exit_idle(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
+static void pf_exit_idle(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
   pick_first_lb_policy *p = (pick_first_lb_policy *)pol;
   gpr_mu_lock(&p->mu);
   if (!p->started_picking) {
@@ -171,9 +169,10 @@ void pf_exit_idle(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
   gpr_mu_unlock(&p->mu);
 }
 
-int pf_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol, grpc_pollset *pollset,
-            grpc_metadata_batch *initial_metadata,
-            grpc_connected_subchannel **target, grpc_closure *on_complete) {
+static int pf_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
+                   grpc_pollset *pollset, grpc_metadata_batch *initial_metadata,
+                   grpc_connected_subchannel **target,
+                   grpc_closure *on_complete) {
   pick_first_lb_policy *p = (pick_first_lb_policy *)pol;
   pending_pick *pp;
 
@@ -356,9 +355,10 @@ static grpc_connectivity_state pf_check_connectivity(grpc_exec_ctx *exec_ctx,
   return st;
 }
 
-void pf_notify_on_state_change(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
-                               grpc_connectivity_state *current,
-                               grpc_closure *notify) {
+static void pf_notify_on_state_change(grpc_exec_ctx *exec_ctx,
+                                      grpc_lb_policy *pol,
+                                      grpc_connectivity_state *current,
+                                      grpc_closure *notify) {
   pick_first_lb_policy *p = (pick_first_lb_policy *)pol;
   gpr_mu_lock(&p->mu);
   grpc_connectivity_state_notify_on_state_change(exec_ctx, &p->state_tracker,
@@ -366,8 +366,8 @@ void pf_notify_on_state_change(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
   gpr_mu_unlock(&p->mu);
 }
 
-void pf_ping_one(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
-                 grpc_closure *closure) {
+static void pf_ping_one(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
+                        grpc_closure *closure) {
   pick_first_lb_policy *p = (pick_first_lb_policy *)pol;
   grpc_connected_subchannel *selected = GET_SELECTED(p);
   if (selected) {
@@ -391,19 +391,42 @@ static void pick_first_factory_ref(grpc_lb_policy_factory *factory) {}
 
 static void pick_first_factory_unref(grpc_lb_policy_factory *factory) {}
 
-static grpc_lb_policy *create_pick_first(grpc_lb_policy_factory *factory,
+static grpc_lb_policy *create_pick_first(grpc_exec_ctx *exec_ctx,
+                                         grpc_lb_policy_factory *factory,
                                          grpc_lb_policy_args *args) {
-  if (args->num_subchannels == 0) return NULL;
+  GPR_ASSERT(args->addresses != NULL);
+  GPR_ASSERT(args->client_channel_factory != NULL);
+
+  if (args->addresses->naddrs == 0) return NULL;
+
   pick_first_lb_policy *p = gpr_malloc(sizeof(*p));
   memset(p, 0, sizeof(*p));
-  grpc_lb_policy_init(&p->base, &pick_first_lb_policy_vtable);
+
   p->subchannels =
-      gpr_malloc(sizeof(grpc_subchannel *) * args->num_subchannels);
-  p->num_subchannels = args->num_subchannels;
-  grpc_connectivity_state_init(&p->state_tracker, GRPC_CHANNEL_IDLE,
-                               "pick_first");
-  memcpy(p->subchannels, args->subchannels,
-         sizeof(grpc_subchannel *) * args->num_subchannels);
+      gpr_malloc(sizeof(grpc_subchannel *) * args->addresses->naddrs);
+  memset(p->subchannels, 0, sizeof(*p->subchannels) * args->addresses->naddrs);
+  grpc_subchannel_args sc_args;
+  size_t subchannel_idx = 0;
+  for (size_t i = 0; i < args->addresses->naddrs; i++) {
+    memset(&sc_args, 0, sizeof(grpc_subchannel_args));
+    sc_args.addr = (struct sockaddr *)(args->addresses->addrs[i].addr);
+    sc_args.addr_len = (size_t)args->addresses->addrs[i].len;
+
+    grpc_subchannel *subchannel = grpc_client_channel_factory_create_subchannel(
+        exec_ctx, args->client_channel_factory, &sc_args);
+
+    if (subchannel != NULL) {
+      p->subchannels[subchannel_idx++] = subchannel;
+    }
+  }
+  if (subchannel_idx == 0) {
+    gpr_free(p->subchannels);
+    gpr_free(p);
+    return NULL;
+  }
+  p->num_subchannels = subchannel_idx;
+
+  grpc_lb_policy_init(&p->base, &pick_first_lb_policy_vtable);
   grpc_closure_init(&p->connectivity_changed, pf_connectivity_changed, p);
   gpr_mu_init(&p->mu);
   return &p->base;
@@ -416,6 +439,14 @@ static const grpc_lb_policy_factory_vtable pick_first_factory_vtable = {
 static grpc_lb_policy_factory pick_first_lb_policy_factory = {
     &pick_first_factory_vtable};
 
-grpc_lb_policy_factory *grpc_pick_first_lb_factory_create() {
+static grpc_lb_policy_factory *pick_first_lb_factory_create() {
   return &pick_first_lb_policy_factory;
 }
+
+/* Plugin registration */
+
+void grpc_lb_policy_pick_first_init() {
+  grpc_register_lb_policy(pick_first_lb_factory_create());
+}
+
+void grpc_lb_policy_pick_first_shutdown() {}

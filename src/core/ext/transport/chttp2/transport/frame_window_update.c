@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -36,9 +36,11 @@
 
 #include <grpc/support/log.h>
 
-gpr_slice grpc_chttp2_window_update_create(uint32_t id,
-                                           uint32_t window_update) {
-  gpr_slice slice = gpr_slice_malloc(13);
+gpr_slice grpc_chttp2_window_update_create(
+    uint32_t id, uint32_t window_update, grpc_transport_one_way_stats *stats) {
+  static const size_t frame_size = 13;
+  gpr_slice slice = gpr_slice_malloc(frame_size);
+  stats->header_bytes += frame_size;
   uint8_t *p = GPR_SLICE_START_PTR(slice);
 
   GPR_ASSERT(window_update);
@@ -85,6 +87,10 @@ grpc_chttp2_parse_error grpc_chttp2_window_update_parser_parse(
     p->amount |= ((uint32_t)*cur) << (8 * (3 - p->byte));
     cur++;
     p->byte++;
+  }
+
+  if (stream_parsing != NULL) {
+    stream_parsing->stats.incoming.framing_bytes += (uint32_t)(end - cur);
   }
 
   if (p->byte == 4) {
