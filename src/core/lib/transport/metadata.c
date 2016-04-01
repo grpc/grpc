@@ -599,7 +599,7 @@ size_t grpc_mdelem_get_size_in_hpack_table(grpc_mdelem *elem) {
     }
   } else {
     internal_string *is = (internal_string *)elem->value;
-    gpr_atm current_size = gpr_atm_no_barrier_load(&is->size_in_decoder_table);
+    gpr_atm current_size = gpr_atm_acq_load(&is->size_in_decoder_table);
     if (current_size == SIZE_IN_DECODER_TABLE_NOT_SET) {
       if (grpc_is_binary_header(
               (const char *)GPR_SLICE_START_PTR(elem->key->slice),
@@ -608,7 +608,7 @@ size_t grpc_mdelem_get_size_in_hpack_table(grpc_mdelem *elem) {
       } else {
         current_size = (gpr_atm)value_len;
       }
-      gpr_atm_no_barrier_store(&is->size_in_decoder_table, current_size);
+      gpr_atm_rel_store(&is->size_in_decoder_table, current_size);
     }
     return overhead_and_key + (size_t)current_size;
   }
