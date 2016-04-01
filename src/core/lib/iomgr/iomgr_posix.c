@@ -36,17 +36,17 @@
 #ifdef GPR_POSIX_SOCKET
 
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/iomgr/fd_posix.h"
+#include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/iomgr_posix.h"
 #include "src/core/lib/iomgr/tcp_posix.h"
 
 void grpc_iomgr_platform_init(void) {
-  grpc_fd_global_init();
+  grpc_event_engine_init();
   grpc_register_tracer("tcp", &grpc_tcp_trace);
 }
 
 void grpc_iomgr_platform_flush(void) {}
 
-void grpc_iomgr_platform_shutdown(void) { grpc_fd_global_shutdown(); }
+void grpc_iomgr_platform_shutdown(void) { grpc_event_engine_shutdown(); }
 
 #endif /* GRPC_POSIX_SOCKET */
