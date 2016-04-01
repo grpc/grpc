@@ -72,4 +72,7 @@ struct grpc_pollset {
   grpc_closure *on_shutdown;
 };
 
+void grpc_pollset_global_init(void);
+void grpc_pollset_global_shutdown(void);
+
 #endif /* GRPC_CORE_LIB_IOMGR_POLLSET_WINDOWS_H */

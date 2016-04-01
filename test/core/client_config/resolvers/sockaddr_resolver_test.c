@@ -106,6 +106,7 @@ int main(int argc, char **argv) {
 
   test_fails(ipv4, "ipv4:10.2.1.1");
   test_succeeds(ipv4, "ipv4:10.2.1.1:1234");
+  test_succeeds(ipv4, "ipv4:10.2.1.1:1234,127.0.0.1:4321");
   test_fails(ipv4, "ipv4:10.2.1.1:123456");
   test_fails(ipv4, "ipv4:www.google.com");
   test_fails(ipv4, "ipv4:[");
