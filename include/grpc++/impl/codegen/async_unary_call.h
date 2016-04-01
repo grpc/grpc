@@ -150,7 +150,8 @@ class ServerAsyncResponseWriter GRPC_FINAL
     GPR_CODEGEN_ASSERT(!status.ok());
     finish_buf_.set_output_tag(tag);
     if (!ctx_->sent_initial_metadata_) {
-      finish_buf_.SendInitialMetadata(ctx_->initial_metadata_);
+      finish_buf_.SendInitialMetadata(ctx_->initial_metadata_,
+                                      ctx_->initial_metadata_flags());
       ctx_->sent_initial_metadata_ = true;
     }
     finish_buf_.ServerSendStatus(ctx_->trailing_metadata_, status);
