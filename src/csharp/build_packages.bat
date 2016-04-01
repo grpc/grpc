@@ -8,7 +8,7 @@ set PROTOBUF_VERSION=3.0.0-beta2
 set VERSION_WITH_BETA=%VERSION%-beta
 
 @rem Adjust the location of nuget.exe
-set NUGET=C:\nuget\nuget.exe
+set NUGET=%~dp0\.nuget\nuget.exe
 
 @rem Collect the artifacts built by the previous build step if running on Jenkins
 @rem TODO(jtattermusch): is there a better way to do this?
@@ -47,7 +47,7 @@ endlocal
 %NUGET% pack Grpc.Core\Grpc.Core.nuspec -Symbols -Version %VERSION% || goto :error
 %NUGET% pack Grpc.HealthCheck\Grpc.HealthCheck.nuspec -Symbols -Version %VERSION_WITH_BETA% -Properties ProtobufVersion=%PROTOBUF_VERSION% || goto :error
 %NUGET% pack Grpc.nuspec -Version %VERSION% || goto :error
-%NUGET% pack Grpc.Tools.nuspec -Version %VERSION% || goto :error
+%NUGET% pack Grpc.Tools\Grpc.Tools.nuspec -Version %VERSION% || goto :error
 
 @rem copy resulting nuget packages to artifacts directory
 xcopy /Y /I *.nupkg ..\..\artifacts\

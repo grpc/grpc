@@ -1,0 +1,21 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <CoreCompileDependsOn>Proto;$(CoreCompileDependsOn)</CoreCompileDependsOn>
+  </PropertyGroup>
+  <ItemGroup>
+    <AvailableItemName Include="Proto"/>
+  </ItemGroup>
+  <Target Name="Proto" Inputs="@(Proto)" Outputs="@(Proto->'$(IntermediateOutputPath)%(FileName).cs')">
+    <Message Text="WorkingDirectory is %(Nodes.rootdir)%(Nodes.directory)"/>
+    <Exec Condition="'$(OS)' == 'Windows_NT'" Command="$(MSBuildThisFileDirectory)..\tools\Grpc.Tools.CSharpGenerator.exe $(ProjectDir) $(IntermediateOutputPath) @(Proto)" LogStandardErrorAsError="true"/>
+    <Exec Condition="'$(OS)' == 'Unix'" Command="mono $(MSBuildThisFileDirectory)..\tools\Grpc.Tools.CSharpGenerator.exe $(ProjectDir) $(IntermediateOutputPath) @(Proto)" LogStandardErrorAsError="true"/>
+  </Target>
+  <ItemGroup>
+    <Compile Include="@(Proto->'$(IntermediateOutputPath)%(FileName).cs')" Condition="Exists(@(Proto->'$(IntermediateOutputPath)%(FileName).cs'))">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Compile>
+    <Compile Include="@(Proto->'$(IntermediateOutputPath)%(FileName)Grpc.cs')" Condition="Exists(@(Proto->'$(IntermediateOutputPath)%(FileName)Grpc.cs'))">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Compile>
+  </ItemGroup>
+</Project>
