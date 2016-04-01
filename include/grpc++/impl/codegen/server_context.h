@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -37,12 +37,12 @@
 #include <map>
 #include <memory>
 
-#include <grpc/impl/codegen/compression_types.h>
-#include <grpc/impl/codegen/time.h>
-#include <grpc++/impl/codegen/security/auth_context.h>
 #include <grpc++/impl/codegen/config.h>
+#include <grpc++/impl/codegen/security/auth_context.h>
 #include <grpc++/impl/codegen/string_ref.h>
 #include <grpc++/impl/codegen/time.h>
+#include <grpc/impl/codegen/compression_types.h>
+#include <grpc/impl/codegen/time.h>
 
 struct gpr_timespec;
 struct grpc_metadata;

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/iomgr/fd_posix.h"
+#include "src/core/lib/iomgr/fd_posix.h"
 
 #include <ctype.h>
 #include <errno.h>
@@ -50,7 +50,7 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
-#include "src/core/iomgr/pollset_posix.h"
+#include "src/core/lib/iomgr/pollset_posix.h"
 #include "test/core/util/test_config.h"
 
 static gpr_mu *g_mu;

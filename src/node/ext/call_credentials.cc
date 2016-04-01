@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -34,6 +34,8 @@
 #include <node.h>
 #include <nan.h>
 #include <uv.h>
+
+#include <list>
 
 #include "grpc/grpc.h"
 #include "grpc/grpc_security.h"
@@ -161,6 +163,15 @@ NAN_METHOD(CallCredentials::CreateFromPlugin) {
   grpc_metadata_credentials_plugin plugin;
   plugin_state *state = new plugin_state;
   state->callback = new Nan::Callback(info[0].As<Function>());
+  state->pending_callbacks = new std::list<plugin_callback_data*>();
+  uv_mutex_init(&state->plugin_mutex);
+  uv_async_init(uv_default_loop(),
+                &state->plugin_async,
+                SendPluginCallback);
+  uv_unref((uv_handle_t*)&state->plugin_async);
+
+  state->plugin_async.data = state;
+
   plugin.get_metadata = plugin_get_metadata;
   plugin.destroy = plugin_destroy_state;
   plugin.state = reinterpret_cast<void*>(state);
@@ -208,48 +219,60 @@ NAN_METHOD(PluginCallback) {
 
 NAUV_WORK_CB(SendPluginCallback) {
   Nan::HandleScope scope;
-  plugin_callback_data *data = reinterpret_cast<plugin_callback_data*>(
-      async->data);
-  // Attach cb and user_data to plugin_callback so that it can access them later
-  v8::Local<v8::Function> plugin_callback = Nan::GetFunction(
-      Nan::New<v8::FunctionTemplate>(PluginCallback)).ToLocalChecked();
-  Nan::Set(plugin_callback, Nan::New("cb").ToLocalChecked(),
-           Nan::New<v8::External>(reinterpret_cast<void*>(data->cb)));
-  Nan::Set(plugin_callback, Nan::New("user_data").ToLocalChecked(),
-           Nan::New<v8::External>(data->user_data));
-  const int argc = 2;
-  v8::Local<v8::Value> argv[argc] = {
-    Nan::New(data->service_url).ToLocalChecked(),
-    plugin_callback
-  };
-  Nan::Callback *callback = data->state->callback;
-  callback->Call(argc, argv);
-  delete data;
-  uv_unref((uv_handle_t *)async);
-  uv_close((uv_handle_t *)async, (uv_close_cb)free);
+  plugin_state *state = reinterpret_cast<plugin_state*>(async->data);
+  std::list<plugin_callback_data*> callbacks;
+  uv_mutex_lock(&state->plugin_mutex);
+  callbacks.splice(callbacks.begin(), *state->pending_callbacks);
+  uv_mutex_unlock(&state->plugin_mutex);
+  while (!callbacks.empty()) {
+    plugin_callback_data *data = callbacks.front();
+    callbacks.pop_front();
+    // Attach cb and user_data to plugin_callback so that it can access them later
+    v8::Local<v8::Function> plugin_callback = Nan::GetFunction(
+        Nan::New<v8::FunctionTemplate>(PluginCallback)).ToLocalChecked();
+    Nan::Set(plugin_callback, Nan::New("cb").ToLocalChecked(),
+             Nan::New<v8::External>(reinterpret_cast<void*>(data->cb)));
+    Nan::Set(plugin_callback, Nan::New("user_data").ToLocalChecked(),
+             Nan::New<v8::External>(data->user_data));
+    const int argc = 2;
+    v8::Local<v8::Value> argv[argc] = {
+      Nan::New(data->service_url).ToLocalChecked(),
+      plugin_callback
+    };
+    Nan::Callback *callback = state->callback;
+    callback->Call(argc, argv);
+    delete data;
+  }
 }
 
 void plugin_get_metadata(void *state, grpc_auth_metadata_context context,
                          grpc_credentials_plugin_metadata_cb cb,
                          void *user_data) {
-  uv_async_t *async = static_cast<uv_async_t*>(malloc(sizeof(uv_async_t)));
-  uv_async_init(uv_default_loop(),
-                async,
-                SendPluginCallback);
+  plugin_state *p_state = reinterpret_cast<plugin_state*>(state);
   plugin_callback_data *data = new plugin_callback_data;
-  data->state = reinterpret_cast<plugin_state*>(state);
   data->service_url = context.service_url;
   data->cb = cb;
   data->user_data = user_data;
-  async->data = data;
-  /* libuv says that it will coalesce calls to uv_async_send. If there is ever a
-   * problem with a callback not getting called, that is probably the reason */
-  uv_async_send(async);
+
+  uv_mutex_lock(&p_state->plugin_mutex);
+  p_state->pending_callbacks->push_back(data);
+  uv_mutex_unlock(&p_state->plugin_mutex);
+
+  uv_async_send(&p_state->plugin_async);
+}
+
+void plugin_uv_close_cb(uv_handle_t *handle) {
+  uv_async_t *async = reinterpret_cast<uv_async_t*>(handle);
+  plugin_state *state = reinterpret_cast<plugin_state *>(async->data);
+  uv_mutex_destroy(&state->plugin_mutex);
+  delete state->pending_callbacks;
+  delete state->callback;
+  delete state;
 }
 
 void plugin_destroy_state(void *ptr) {
   plugin_state *state = reinterpret_cast<plugin_state *>(ptr);
-  delete state->callback;
+  uv_close((uv_handle_t*)&state->plugin_async, plugin_uv_close_cb);
 }
 
 }  // namespace node

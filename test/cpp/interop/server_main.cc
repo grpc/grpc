@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -40,19 +40,19 @@
 #include <thread>
 
 #include <gflags/gflags.h>
-#include <grpc/grpc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/useful.h>
+#include <grpc++/security/server_credentials.h>
 #include <grpc++/server.h>
 #include <grpc++/server_builder.h>
 #include <grpc++/server_context.h>
-#include <grpc++/security/server_credentials.h>
+#include <grpc/grpc.h>
+#include <grpc/support/log.h>
+#include <grpc/support/useful.h>
 
-#include "test/cpp/interop/server_helper.h"
-#include "test/cpp/util/test_config.h"
-#include "src/proto/grpc/testing/test.grpc.pb.h"
 #include "src/proto/grpc/testing/empty.grpc.pb.h"
 #include "src/proto/grpc/testing/messages.grpc.pb.h"
+#include "src/proto/grpc/testing/test.grpc.pb.h"
+#include "test/cpp/interop/server_helper.h"
+#include "test/cpp/util/test_config.h"
 
 DEFINE_bool(use_tls, false, "Whether to use tls.");
 DEFINE_int32(port, 0, "Server port.");

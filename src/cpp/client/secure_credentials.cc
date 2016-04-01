@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,12 +31,12 @@
  *
  */
 
+#include "src/cpp/client/secure_credentials.h"
 #include <grpc++/channel.h>
 #include <grpc++/impl/grpc_library.h>
 #include <grpc++/support/channel_arguments.h>
 #include <grpc/support/log.h>
 #include "src/cpp/client/create_channel_internal.h"
-#include "src/cpp/client/secure_credentials.h"
 #include "src/cpp/common/secure_auth_context.h"
 
 namespace grpc {

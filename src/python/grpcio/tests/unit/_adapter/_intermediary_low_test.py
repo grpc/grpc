@@ -29,10 +29,12 @@
 
 """Tests for the old '_low'."""
 
-import Queue
 import threading
 import time
 import unittest
+
+import six
+from six.moves import queue
 
 from grpc._adapter import _intermediary_low as _low
 
@@ -67,7 +69,7 @@ class LonelyClientTest(unittest.TestCase):
     second_event = completion_queue.get(after_deadline)
     self.assertIsNotNone(second_event)
     kinds = [event.kind for event in (first_event, second_event)]
-    self.assertItemsEqual(
+    six.assertCountEqual(self,
         (_low.Event.Kind.METADATA_ACCEPTED, _low.Event.Kind.FINISH),
         kinds)
 
@@ -99,7 +101,7 @@ class EchoTest(unittest.TestCase):
     self.server = _low.Server(self.server_completion_queue)
     port = self.server.add_http2_addr('[::]:0')
     self.server.start()
-    self.server_events = Queue.Queue()
+    self.server_events = queue.Queue()
     self.server_completion_queue_thread = threading.Thread(
         target=_drive_completion_queue,
         args=(self.server_completion_queue, self.server_events))
@@ -107,7 +109,7 @@ class EchoTest(unittest.TestCase):
 
     self.client_completion_queue = _low.CompletionQueue()
     self.channel = _low.Channel('%s:%d' % (self.host, port), None)
-    self.client_events = Queue.Queue()
+    self.client_events = queue.Queue()
     self.client_completion_queue_thread = threading.Thread(
         target=_drive_completion_queue,
         args=(self.client_completion_queue, self.client_events))
@@ -315,7 +317,7 @@ class CancellationTest(unittest.TestCase):
     self.server = _low.Server(self.server_completion_queue)
     port = self.server.add_http2_addr('[::]:0')
     self.server.start()
-    self.server_events = Queue.Queue()
+    self.server_events = queue.Queue()
     self.server_completion_queue_thread = threading.Thread(
         target=_drive_completion_queue,
         args=(self.server_completion_queue, self.server_events))
@@ -323,7 +325,7 @@ class CancellationTest(unittest.TestCase):
 
     self.client_completion_queue = _low.CompletionQueue()
     self.channel = _low.Channel('%s:%d' % (self.host, port), None)
-    self.client_events = Queue.Queue()
+    self.client_events = queue.Queue()
     self.client_completion_queue_thread = threading.Thread(
         target=_drive_completion_queue,
         args=(self.client_completion_queue, self.client_events))

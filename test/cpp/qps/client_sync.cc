@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -53,7 +53,7 @@
 #include <grpc/support/time.h>
 #include <gtest/gtest.h>
 
-#include "src/core/profiling/timers.h"
+#include "src/core/lib/profiling/timers.h"
 #include "src/proto/grpc/testing/services.grpc.pb.h"
 #include "test/cpp/qps/client.h"
 #include "test/cpp/qps/histogram.h"

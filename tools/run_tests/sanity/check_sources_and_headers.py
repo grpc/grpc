@@ -1,5 +1,5 @@
 #!/usr/bin/env python2.7
-# Copyright 2015-2016, Google Inc.
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -55,7 +55,7 @@ def target_has_header(target, name):
   for dep in target['deps']:
     if target_has_header(get_target(dep), name):
       return True
-  if name == 'src/core/profiling/stap_probes.h':
+  if name == 'src/core/lib/profiling/stap_probes.h':
     return True
   return False
 

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -215,7 +215,8 @@ class ClientAsyncWriter GRPC_FINAL : public ClientAsyncWriterInterface<W> {
   CallOpSet<CallOpSendMessage> write_ops_;
   CallOpSet<CallOpClientSendClose> writes_done_ops_;
   CallOpSet<CallOpRecvInitialMetadata, CallOpGenericRecvMessage,
-            CallOpClientRecvStatus> finish_ops_;
+            CallOpClientRecvStatus>
+      finish_ops_;
 };
 
 /// Client-side interface for asynchronous bi-directional streaming.
@@ -350,7 +351,8 @@ class ServerAsyncReader GRPC_FINAL : public ServerAsyncStreamingInterface,
   CallOpSet<CallOpSendInitialMetadata> meta_ops_;
   CallOpSet<CallOpRecvMessage<R>> read_ops_;
   CallOpSet<CallOpSendInitialMetadata, CallOpSendMessage,
-            CallOpServerSendStatus> finish_ops_;
+            CallOpServerSendStatus>
+      finish_ops_;
 };
 
 template <class W>

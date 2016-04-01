@@ -1,5 +1,5 @@
 #!/usr/bin/env python2.7
-# Copyright 2015-2016, Google Inc.
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -72,7 +72,6 @@ END2END_FIXTURES = {
     'h2_ssl+poll': default_secure_fixture_options._replace(platforms=['linux']),
     'h2_ssl_proxy': default_secure_fixture_options._replace(includes_proxy=True,
                                                             ci_mac=False),
-    'h2_uchannel': default_unsecure_fixture_options._replace(fullstack=False),
     'h2_uds+poll': uds_fixture_options._replace(platforms=['linux']),
     'h2_uds': uds_fixture_options,
 }
@@ -105,6 +104,7 @@ END2END_TESTS = {
     'hpack_size': default_test_options._replace(proxyable=False,
                                                 traceable=False),
     'high_initial_seqno': default_test_options,
+    'idempotent_request': default_test_options,
     'invoke_large_request': default_test_options,
     'large_metadata': default_test_options,
     'max_concurrent_streams': default_test_options._replace(proxyable=False),

@@ -31,17 +31,17 @@
  *
  */
 
+#include <cfloat>
 #include <iostream>
 #include <memory>
 #include <string>
-#include <cfloat>
 
-#include <grpc/grpc.h>
-#include <grpc++/support/channel_arguments.h>
 #include <grpc++/channel.h>
 #include <grpc++/client_context.h>
 #include <grpc++/create_channel.h>
 #include <grpc++/security/credentials.h>
+#include <grpc++/support/channel_arguments.h>
+#include <grpc/grpc.h>
 #include "src/proto/grpc/testing/perf_db.grpc.pb.h"
 
 namespace grpc {

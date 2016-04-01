@@ -42,6 +42,8 @@ import threading
 import time
 import unittest
 
+from six import moves
+
 from grpc.beta import implementations
 from grpc.framework.foundation import future
 from grpc.framework.interfaces.face import face
@@ -250,7 +252,7 @@ class PythonPluginTest(unittest.TestCase):
   def testImportAttributes(self):
     # check that we can access the generated module and its members.
     import protoc_plugin_test_pb2 as test_pb2  # pylint: disable=g-import-not-at-top
-    reload(test_pb2)
+    moves.reload_module(test_pb2)
     self.assertIsNotNone(getattr(test_pb2, SERVICER_IDENTIFIER, None))
     self.assertIsNotNone(getattr(test_pb2, STUB_IDENTIFIER, None))
     self.assertIsNotNone(getattr(test_pb2, SERVER_FACTORY_IDENTIFIER, None))
@@ -258,13 +260,13 @@ class PythonPluginTest(unittest.TestCase):
 
   def testUpDown(self):
     import protoc_plugin_test_pb2 as test_pb2
-    reload(test_pb2)
+    moves.reload_module(test_pb2)
     with _CreateService(test_pb2) as (servicer, stub):
       request = test_pb2.SimpleRequest(response_size=13)
 
   def testUnaryCall(self):
     import protoc_plugin_test_pb2 as test_pb2  # pylint: disable=g-import-not-at-top
-    reload(test_pb2)
+    moves.reload_module(test_pb2)
     with _CreateService(test_pb2) as (methods, stub):
       request = test_pb2.SimpleRequest(response_size=13)
       response = stub.UnaryCall(request, test_constants.LONG_TIMEOUT)
@@ -273,7 +275,7 @@ class PythonPluginTest(unittest.TestCase):
 
   def testUnaryCallFuture(self):
     import protoc_plugin_test_pb2 as test_pb2  # pylint: disable=g-import-not-at-top
-    reload(test_pb2)
+    moves.reload_module(test_pb2)
     request = test_pb2.SimpleRequest(response_size=13)
     with _CreateService(test_pb2) as (methods, stub):
       # Check that the call does not block waiting for the server to respond.
@@ -286,7 +288,7 @@ class PythonPluginTest(unittest.TestCase):
 
   def testUnaryCallFutureExpired(self):
     import protoc_plugin_test_pb2 as test_pb2  # pylint: disable=g-import-not-at-top
-    reload(test_pb2)
+    moves.reload_module(test_pb2)
     with _CreateService(test_pb2) as (methods, stub):
       request = test_pb2.SimpleRequest(response_size=13)
       with methods.pause():
@@ -297,7 +299,7 @@ class PythonPluginTest(unittest.TestCase):
 
   def testUnaryCallFutureCancelled(self):
     import protoc_plugin_test_pb2 as test_pb2  # pylint: disable=g-import-not-at-top
-    reload(test_pb2)
+    moves.reload_module(test_pb2)
     request = test_pb2.SimpleRequest(response_size=13)
     with _CreateService(test_pb2) as (methods, stub):
       with methods.pause():
@@ -307,7 +309,7 @@ class PythonPluginTest(unittest.TestCase):
 
   def testUnaryCallFutureFailed(self):
     import protoc_plugin_test_pb2 as test_pb2  # pylint: disable=g-import-not-at-top
-    reload(test_pb2)
+    moves.reload_module(test_pb2)
     request = test_pb2.SimpleRequest(response_size=13)
     with _CreateService(test_pb2) as (methods, stub):
       with methods.fail():
@@ -317,20 +319,20 @@ class PythonPluginTest(unittest.TestCase):
 
   def testStreamingOutputCall(self):
     import protoc_plugin_test_pb2 as test_pb2  # pylint: disable=g-import-not-at-top
-    reload(test_pb2)
+    moves.reload_module(test_pb2)
     request = _streaming_output_request(test_pb2)
     with _CreateService(test_pb2) as (methods, stub):
       responses = stub.StreamingOutputCall(
           request, test_constants.LONG_TIMEOUT)
       expected_responses = methods.StreamingOutputCall(
           request, 'not a real RpcContext!')
-      for expected_response, response in itertools.izip_longest(
+      for expected_response, response in moves.zip_longest(
           expected_responses, responses):
         self.assertEqual(expected_response, response)
 
   def testStreamingOutputCallExpired(self):
     import protoc_plugin_test_pb2 as test_pb2  # pylint: disable=g-import-not-at-top
-    reload(test_pb2)
+    moves.reload_module(test_pb2)
     request = _streaming_output_request(test_pb2)
     with _CreateService(test_pb2) as (methods, stub):
       with methods.pause():
@@ -341,7 +343,7 @@ class PythonPluginTest(unittest.TestCase):
 
   def testStreamingOutputCallCancelled(self):
     import protoc_plugin_test_pb2 as test_pb2  # pylint: disable=g-import-not-at-top
-    reload(test_pb2)
+    moves.reload_module(test_pb2)
     request = _streaming_output_request(test_pb2)
     with _CreateService(test_pb2) as (unused_methods, stub):
       responses = stub.StreamingOutputCall(
@@ -353,7 +355,7 @@ class PythonPluginTest(unittest.TestCase):
 
   def testStreamingOutputCallFailed(self):
     import protoc_plugin_test_pb2 as test_pb2  # pylint: disable=g-import-not-at-top
-    reload(test_pb2)
+    moves.reload_module(test_pb2)
     request = _streaming_output_request(test_pb2)
     with _CreateService(test_pb2) as (methods, stub):
       with methods.fail():
@@ -364,7 +366,7 @@ class PythonPluginTest(unittest.TestCase):
 
   def testStreamingInputCall(self):
     import protoc_plugin_test_pb2 as test_pb2  # pylint: disable=g-import-not-at-top
-    reload(test_pb2)
+    moves.reload_module(test_pb2)
     with _CreateService(test_pb2) as (methods, stub):
       response = stub.StreamingInputCall(
           _streaming_input_request_iterator(test_pb2),
@@ -375,7 +377,7 @@ class PythonPluginTest(unittest.TestCase):
 
   def testStreamingInputCallFuture(self):
     import protoc_plugin_test_pb2 as test_pb2  # pylint: disable=g-import-not-at-top
-    reload(test_pb2)
+    moves.reload_module(test_pb2)
     with _CreateService(test_pb2) as (methods, stub):
       with methods.pause():
         response_future = stub.StreamingInputCall.future(
@@ -388,7 +390,7 @@ class PythonPluginTest(unittest.TestCase):
 
   def testStreamingInputCallFutureExpired(self):
     import protoc_plugin_test_pb2 as test_pb2  # pylint: disable=g-import-not-at-top
-    reload(test_pb2)
+    moves.reload_module(test_pb2)
     with _CreateService(test_pb2) as (methods, stub):
       with methods.pause():
         response_future = stub.StreamingInputCall.future(
@@ -401,7 +403,7 @@ class PythonPluginTest(unittest.TestCase):
 
   def testStreamingInputCallFutureCancelled(self):
     import protoc_plugin_test_pb2 as test_pb2  # pylint: disable=g-import-not-at-top
-    reload(test_pb2)
+    moves.reload_module(test_pb2)
     with _CreateService(test_pb2) as (methods, stub):
       with methods.pause():
         response_future = stub.StreamingInputCall.future(
@@ -414,7 +416,7 @@ class PythonPluginTest(unittest.TestCase):
 
   def testStreamingInputCallFutureFailed(self):
     import protoc_plugin_test_pb2 as test_pb2  # pylint: disable=g-import-not-at-top
-    reload(test_pb2)
+    moves.reload_module(test_pb2)
     with _CreateService(test_pb2) as (methods, stub):
       with methods.fail():
         response_future = stub.StreamingInputCall.future(
@@ -424,19 +426,19 @@ class PythonPluginTest(unittest.TestCase):
 
   def testFullDuplexCall(self):
     import protoc_plugin_test_pb2 as test_pb2  # pylint: disable=g-import-not-at-top
-    reload(test_pb2)
+    moves.reload_module(test_pb2)
     with _CreateService(test_pb2) as (methods, stub):
       responses = stub.FullDuplexCall(
           _full_duplex_request_iterator(test_pb2), test_constants.LONG_TIMEOUT)
       expected_responses = methods.FullDuplexCall(
           _full_duplex_request_iterator(test_pb2), 'not a real RpcContext!')
-      for expected_response, response in itertools.izip_longest(
+      for expected_response, response in moves.zip_longest(
           expected_responses, responses):
         self.assertEqual(expected_response, response)
 
   def testFullDuplexCallExpired(self):
     import protoc_plugin_test_pb2 as test_pb2  # pylint: disable=g-import-not-at-top
-    reload(test_pb2)
+    moves.reload_module(test_pb2)
     request_iterator = _full_duplex_request_iterator(test_pb2)
     with _CreateService(test_pb2) as (methods, stub):
       with methods.pause():
@@ -447,7 +449,7 @@ class PythonPluginTest(unittest.TestCase):
 
   def testFullDuplexCallCancelled(self):
     import protoc_plugin_test_pb2 as test_pb2  # pylint: disable=g-import-not-at-top
-    reload(test_pb2)
+    moves.reload_module(test_pb2)
     with _CreateService(test_pb2) as (methods, stub):
       request_iterator = _full_duplex_request_iterator(test_pb2)
       responses = stub.FullDuplexCall(
@@ -459,7 +461,7 @@ class PythonPluginTest(unittest.TestCase):
 
   def testFullDuplexCallFailed(self):
     import protoc_plugin_test_pb2 as test_pb2  # pylint: disable=g-import-not-at-top
-    reload(test_pb2)
+    moves.reload_module(test_pb2)
     request_iterator = _full_duplex_request_iterator(test_pb2)
     with _CreateService(test_pb2) as (methods, stub):
       with methods.fail():
@@ -471,7 +473,7 @@ class PythonPluginTest(unittest.TestCase):
 
   def testHalfDuplexCall(self):
     import protoc_plugin_test_pb2 as test_pb2  # pylint: disable=g-import-not-at-top
-    reload(test_pb2)
+    moves.reload_module(test_pb2)
     with _CreateService(test_pb2) as (methods, stub):
       def half_duplex_request_iterator():
         request = test_pb2.StreamingOutputCallRequest()
@@ -485,13 +487,13 @@ class PythonPluginTest(unittest.TestCase):
           half_duplex_request_iterator(), test_constants.LONG_TIMEOUT)
       expected_responses = methods.HalfDuplexCall(
           half_duplex_request_iterator(), 'not a real RpcContext!')
-      for check in itertools.izip_longest(expected_responses, responses):
+      for check in moves.zip_longest(expected_responses, responses):
         expected_response, response = check
         self.assertEqual(expected_response, response)
 
   def testHalfDuplexCallWedged(self):
     import protoc_plugin_test_pb2 as test_pb2  # pylint: disable=g-import-not-at-top
-    reload(test_pb2)
+    moves.reload_module(test_pb2)
     condition = threading.Condition()
     wait_cell = [False]
     @contextlib.contextmanager

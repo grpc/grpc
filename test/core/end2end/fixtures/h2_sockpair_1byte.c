@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -35,21 +35,21 @@
 
 #include <string.h>
 
-#include "src/core/channel/client_channel.h"
-#include "src/core/channel/connected_channel.h"
-#include "src/core/channel/http_client_filter.h"
-#include "src/core/channel/http_server_filter.h"
-#include "src/core/channel/compress_filter.h"
-#include "src/core/iomgr/endpoint_pair.h"
-#include "src/core/iomgr/iomgr.h"
-#include "src/core/surface/channel.h"
-#include "src/core/surface/server.h"
-#include "src/core/transport/chttp2_transport.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/thd.h>
 #include <grpc/support/useful.h>
+#include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
+#include "src/core/lib/channel/client_channel.h"
+#include "src/core/lib/channel/compress_filter.h"
+#include "src/core/lib/channel/connected_channel.h"
+#include "src/core/lib/channel/http_client_filter.h"
+#include "src/core/lib/channel/http_server_filter.h"
+#include "src/core/lib/iomgr/endpoint_pair.h"
+#include "src/core/lib/iomgr/iomgr.h"
+#include "src/core/lib/surface/channel.h"
+#include "src/core/lib/surface/server.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 

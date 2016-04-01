@@ -29,6 +29,8 @@
 
 """Entry points into the Face layer of RPC Framework."""
 
+import six
+
 from grpc.framework.common import cardinality
 from grpc.framework.common import style
 from grpc.framework.base import exceptions as _base_exceptions
@@ -228,7 +230,7 @@ class _DynamicStub(interfaces.DynamicStub):
 
 def _adapt_method_implementations(method_implementations, pool):
   adapted_implementations = {}
-  for name, method_implementation in method_implementations.iteritems():
+  for name, method_implementation in six.iteritems(method_implementations):
     if method_implementation.style is style.Service.INLINE:
       if method_implementation.cardinality is cardinality.Cardinality.UNARY_UNARY:
         adapted_implementations[name] = _service.adapt_inline_value_in_value_out(

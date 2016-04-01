@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -43,12 +43,12 @@
 #include <grpc++/impl/thd.h>
 #include <grpc/support/time.h>
 
+#include "src/proto/grpc/testing/metrics.grpc.pb.h"
+#include "src/proto/grpc/testing/metrics.pb.h"
 #include "test/cpp/interop/interop_client.h"
 #include "test/cpp/interop/stress_interop_client.h"
 #include "test/cpp/util/metrics_server.h"
 #include "test/cpp/util/test_config.h"
-#include "src/proto/grpc/testing/metrics.grpc.pb.h"
-#include "src/proto/grpc/testing/metrics.pb.h"
 
 extern "C" {
 extern void gpr_default_log(gpr_log_func_args* args);

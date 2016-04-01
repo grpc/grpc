@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -141,7 +141,8 @@ class ClientRpcContextUnaryImpl : public ClientRpcContext {
   std::function<gpr_timespec()> next_issue_;
   std::function<std::unique_ptr<grpc::ClientAsyncResponseReader<ResponseType>>(
       BenchmarkService::Stub*, grpc::ClientContext*, const RequestType&,
-      CompletionQueue*)> start_req_;
+      CompletionQueue*)>
+      start_req_;
   grpc::Status status_;
   double start_;
   std::unique_ptr<grpc::ClientAsyncResponseReader<ResponseType>>
@@ -359,10 +360,10 @@ class ClientRpcContextStreamingImpl : public ClientRpcContext {
   State next_state_;
   std::function<void(grpc::Status, ResponseType*)> callback_;
   std::function<gpr_timespec()> next_issue_;
-  std::function<
-      std::unique_ptr<grpc::ClientAsyncReaderWriter<RequestType, ResponseType>>(
-          BenchmarkService::Stub*, grpc::ClientContext*, CompletionQueue*,
-          void*)> start_req_;
+  std::function<std::unique_ptr<
+      grpc::ClientAsyncReaderWriter<RequestType, ResponseType>>(
+      BenchmarkService::Stub*, grpc::ClientContext*, CompletionQueue*, void*)>
+      start_req_;
   grpc::Status status_;
   double start_;
   std::unique_ptr<grpc::ClientAsyncReaderWriter<RequestType, ResponseType>>
@@ -491,7 +492,8 @@ class ClientRpcContextGenericStreamingImpl : public ClientRpcContext {
   std::function<gpr_timespec()> next_issue_;
   std::function<std::unique_ptr<grpc::GenericClientAsyncReaderWriter>(
       grpc::GenericStub*, grpc::ClientContext*, const grpc::string&,
-      CompletionQueue*, void*)> start_req_;
+      CompletionQueue*, void*)>
+      start_req_;
   grpc::Status status_;
   double start_;
   std::unique_ptr<grpc::GenericClientAsyncReaderWriter> stream_;

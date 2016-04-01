@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -36,8 +36,8 @@
 
 #include <memory>
 
-#include "test/cpp/qps/histogram.h"
 #include "src/proto/grpc/testing/control.grpc.pb.h"
+#include "test/cpp/qps/histogram.h"
 
 namespace grpc {
 namespace testing {

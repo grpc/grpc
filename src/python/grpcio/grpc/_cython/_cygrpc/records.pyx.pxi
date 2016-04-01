@@ -1,4 +1,4 @@
-# Copyright 2015-2016, Google Inc.
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -254,7 +254,7 @@ cdef class ByteBuffer:
     if self.c_byte_buffer != NULL:
       with nogil:
         grpc_byte_buffer_reader_init(&reader, self.c_byte_buffer)
-      result = b""
+      result = bytearray()
       with nogil:
         while grpc_byte_buffer_reader_next(&reader, &data_slice):
           data_slice_pointer = gpr_slice_start_ptr(data_slice)
@@ -263,7 +263,7 @@ cdef class ByteBuffer:
             result += (<char *>data_slice_pointer)[:data_slice_length]
       with nogil:
         grpc_byte_buffer_reader_destroy(&reader)
-      return result
+      return bytes(result)
     else:
       return None
 

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -80,9 +80,8 @@ grpc_auth_context_peer_identity(const grpc_auth_context *ctx);
 
 /* Finds a property in the context. May return an empty iterator (first _next
    will return NULL) if no property with this name was found in the context. */
-GRPCAPI grpc_auth_property_iterator
-grpc_auth_context_find_properties_by_name(const grpc_auth_context *ctx,
-                                          const char *name);
+GRPCAPI grpc_auth_property_iterator grpc_auth_context_find_properties_by_name(
+    const grpc_auth_context *ctx, const char *name);
 
 /* Gets the name of the property that indicates the peer identity. Will return
    NULL if the peer is not authenticated. */
@@ -363,8 +362,8 @@ GRPCAPI int grpc_server_add_secure_http2_port(grpc_server *server,
 
 /* Sets a credentials to a call. Can only be called on the client side before
    grpc_call_start_batch. */
-GRPCAPI grpc_call_error
-grpc_call_set_credentials(grpc_call *call, grpc_call_credentials *creds);
+GRPCAPI grpc_call_error grpc_call_set_credentials(grpc_call *call,
+                                                  grpc_call_credentials *creds);
 
 /* --- Auth Metadata Processing --- */
 

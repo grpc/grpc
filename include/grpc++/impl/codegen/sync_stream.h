@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -123,7 +123,8 @@ class ClientReader GRPC_FINAL : public ClientReaderInterface<R> {
                ClientContext* context, const W& request)
       : context_(context), call_(channel->CreateCall(method, context, &cq_)) {
     CallOpSet<CallOpSendInitialMetadata, CallOpSendMessage,
-              CallOpClientSendClose> ops;
+              CallOpClientSendClose>
+        ops;
     ops.SendInitialMetadata(context->send_initial_metadata_);
     // TODO(ctiller): don't assert
     GPR_CODEGEN_ASSERT(ops.SendMessage(request).ok());
@@ -235,7 +236,8 @@ class ClientWriter : public ClientWriterInterface<W> {
  private:
   ClientContext* context_;
   CallOpSet<CallOpRecvInitialMetadata, CallOpGenericRecvMessage,
-            CallOpClientRecvStatus> finish_ops_;
+            CallOpClientRecvStatus>
+      finish_ops_;
   CompletionQueue cq_;
   Call call_;
 };

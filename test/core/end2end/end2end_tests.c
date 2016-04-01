@@ -1,7 +1,7 @@
 
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -35,7 +35,9 @@
 /* This file is auto-generated */
 
 #include "test/core/end2end/end2end_tests.h"
+
 #include <string.h>
+
 #include <grpc/support/log.h>
 
 extern void bad_hostname(grpc_end2end_test_config config);
@@ -55,6 +57,7 @@ extern void empty_batch(grpc_end2end_test_config config);
 extern void graceful_server_shutdown(grpc_end2end_test_config config);
 extern void high_initial_seqno(grpc_end2end_test_config config);
 extern void hpack_size(grpc_end2end_test_config config);
+extern void idempotent_request(grpc_end2end_test_config config);
 extern void invoke_large_request(grpc_end2end_test_config config);
 extern void large_metadata(grpc_end2end_test_config config);
 extern void max_concurrent_streams(grpc_end2end_test_config config);
@@ -97,6 +100,7 @@ void grpc_end2end_tests(int argc, char **argv,
     graceful_server_shutdown(config);
     high_initial_seqno(config);
     hpack_size(config);
+    idempotent_request(config);
     invoke_large_request(config);
     large_metadata(config);
     max_concurrent_streams(config);
@@ -186,6 +190,10 @@ void grpc_end2end_tests(int argc, char **argv,
     }
     if (0 == strcmp("hpack_size", argv[i])) {
       hpack_size(config);
+      continue;
+    }
+    if (0 == strcmp("idempotent_request", argv[i])) {
+      idempotent_request(config);
       continue;
     }
     if (0 == strcmp("invoke_large_request", argv[i])) {

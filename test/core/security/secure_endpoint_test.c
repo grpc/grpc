@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -39,10 +39,10 @@
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include "src/core/iomgr/endpoint_pair.h"
-#include "src/core/iomgr/iomgr.h"
-#include "src/core/security/secure_endpoint.h"
-#include "src/core/tsi/fake_transport_security.h"
+#include "src/core/lib/iomgr/endpoint_pair.h"
+#include "src/core/lib/iomgr/iomgr.h"
+#include "src/core/lib/security/secure_endpoint.h"
+#include "src/core/lib/tsi/fake_transport_security.h"
 #include "test/core/util/test_config.h"
 
 static gpr_mu *g_mu;

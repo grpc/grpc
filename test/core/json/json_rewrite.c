@@ -38,8 +38,8 @@
 #include <grpc/support/cmdline.h>
 #include <grpc/support/log.h>
 
-#include "src/core/json/json_reader.h"
-#include "src/core/json/json_writer.h"
+#include "src/core/lib/json/json_reader.h"
+#include "src/core/lib/json/json_writer.h"
 
 typedef struct json_writer_userdata { FILE *out; } json_writer_userdata;
 

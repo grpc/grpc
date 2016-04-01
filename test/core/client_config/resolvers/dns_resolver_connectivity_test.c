@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,15 +31,15 @@
  *
  */
 
-#include "src/core/client_config/resolvers/dns_resolver.h"
+#include "src/core/lib/client_config/resolvers/dns_resolver.h"
 
 #include <string.h>
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 
-#include "src/core/iomgr/resolve_address.h"
-#include "src/core/iomgr/timer.h"
+#include "src/core/lib/iomgr/resolve_address.h"
+#include "src/core/lib/iomgr/timer.h"
 #include "test/core/util/test_config.h"
 
 static void subchannel_factory_ref(grpc_subchannel_factory *scv) {}
