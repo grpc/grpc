@@ -3856,6 +3856,74 @@
     "type": "target"
   }, 
   {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util", 
+      "one_input_fuzzer"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "hpack_parser_fuzzer_test_one_entry", 
+    "src": [
+      "test/core/transport/chttp2/hpack_parser_fuzzer_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util", 
+      "one_input_fuzzer"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "http_fuzzer_test_one_entry", 
+    "src": [
+      "test/core/http/fuzzer.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util", 
+      "one_input_fuzzer"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "json_fuzzer_test_one_entry", 
+    "src": [
+      "test/core/json/fuzzer.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util", 
+      "one_input_fuzzer"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "uri_fuzzer_test_one_entry", 
+    "src": [
+      "test/core/client_config/uri_fuzzer_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
     "deps": [], 
     "headers": [
       "include/grpc/impl/codegen/alloc.h", 
@@ -5100,6 +5168,19 @@
       "include/grpc/grpc_zookeeper.h", 
       "src/core/lib/client_config/resolvers/zookeeper_resolver.c", 
       "src/core/lib/client_config/resolvers/zookeeper_resolver.h"
+    ], 
+    "third_party": false, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
+      "gpr"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "one_input_fuzzer", 
+    "src": [
+      "test/core/util/one_corpus_entry_fuzzer.c"
     ], 
     "third_party": false, 
     "type": "lib"

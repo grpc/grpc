@@ -1,5 +1,4 @@
-#!/bin/bash
-# Copyright 2015-2016, Google Inc.
+# Copyright 2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -28,22 +27,31 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-set -ex
+"""Create tests for each fuzzer"""
 
-cd $(dirname $0)/../../..
+import copy
+import glob
 
-#TODO(jtattermusch): add support for more languages
-
-CONFIG=${CONFIG:-opt}
-
-# build C++ qps worker & driver
-# TODO(jtattermusch): not embedding OpenSSL breaks the C# build because
-# grpc_csharp_ext needs OpenSSL embedded and some intermediate files from
-# this build will be reused.
-make CONFIG=${CONFIG} EMBED_OPENSSL=true EMBED_ZLIB=true qps_worker qps_driver -j8
-
-# build C# qps worker
-tools/run_tests/run_tests.py -l csharp -c $CONFIG --build_only -j 8
-
-# build Node qps worker
-tools/run_tests/run_tests.py -l node -c $CONFIG --build_only -j 8
+def mako_plugin(dictionary):
+  targets = dictionary['targets']
+  tests = dictionary['tests']
+  for tgt in targets:
+    if tgt['build'] == 'fuzzer':
+      new_target = copy.deepcopy(tgt)
+      new_target['build'] = 'test'
+      new_target['name'] += '_one_entry'
+      new_target['run'] = False
+      new_target['deps'].insert(0, 'one_input_fuzzer')
+      targets.append(new_target)
+      for corpus in new_target['corpus_dirs']:
+        for fn in sorted(glob.glob('%s/*' % corpus)):
+          tests.append({
+              'name': new_target['name'],
+              'args': [fn],
+              'exclude_configs': [],
+              'platforms': ['linux', 'mac', 'windows', 'posix'],
+              'ci_platforms': ['linux', 'mac', 'windows', 'posix'],
+              'flaky': False,
+              'language': 'c',
+              'cpu_cost': 0.1,
+          })
