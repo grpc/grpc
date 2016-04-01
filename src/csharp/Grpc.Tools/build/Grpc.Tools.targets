@@ -16,14 +16,12 @@
     <!-- Run our platform independent wrapper that launches protoc with the right arguments -->
     <Exec Condition="'$(OS)' == 'Unix'" Command="mono $(MSBuildThisFileDirectory)../tools/Grpc.Tools.CSharpGenerator.exe $(ProjectDir) $(IntermediateOutputPath) @(Proto->'%(filename)%(extension)', ' ')" LogStandardErrorAsError="true"/>
     
-    <!-- Remove duplicate cs files that may be included because of proto includes + csharp generation -->
-    <RemoveDuplicates Inputs="@(Proto->'$(IntermediateOutputPath)%(FileName)*.cs')">
-        <Output TaskParameter="Filtered" ItemName="FilteredCSFiles"/>
-    </RemoveDuplicates>
+    <!-- Ensure that only files that exist (are touchable) are added in to the Compile target -->
+    <Touch Files="@(Proto->'$(IntermediateOutputPath)%(FileName).cs')" ForceTouch="true">
+        <Output TaskParameter="TouchedFiles" ItemName="Compile" />
+    </Touch>
+    <Touch Files="@(Proto->'$(IntermediateOutputPath)%(FileName)Grpc.cs')" ForceTouch="true">
+        <Output TaskParameter="TouchedFiles" ItemName="Compile" />
+    </Touch>
   </Target>
-  <ItemGroup>
-    <Compile Include="@(FilteredCSFiles)" >
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </Compile>
-  </ItemGroup>
 </Project>
