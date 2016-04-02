@@ -36,6 +36,8 @@
     "Grpc.HealthCheck.Tests.HealthClientServerTest",
     "Grpc.HealthCheck.Tests.HealthServiceImplTest",
     "Grpc.IntegrationTesting.HistogramTest",
+    "Grpc.IntegrationTesting.GeneratedClientTest",
+    "Grpc.IntegrationTesting.GeneratedServiceBaseTest",
     "Grpc.IntegrationTesting.InteropClientServerTest",
     "Grpc.IntegrationTesting.MetadataCredentialsTest",
     "Grpc.IntegrationTesting.RunnerClientServerTest",

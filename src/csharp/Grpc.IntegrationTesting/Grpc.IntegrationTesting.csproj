@@ -113,6 +113,8 @@
     <Compile Include="QpsWorker.cs" />
     <Compile Include="WallClockStopwatch.cs" />
     <Compile Include="GenericService.cs" />
+    <Compile Include="GeneratedServiceBaseTest.cs" />
+    <Compile Include="GeneratedClientTest.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
