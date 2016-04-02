@@ -33,7 +33,7 @@
 # Example usage:
 #   tools/codegen/core/gen_nano_proto.sh \
 #     src/proto/grpc/lb/v0/load_balancer.proto
-#     src/core/ext/lb_policy/grpclb/proto/grpc/lb/v0
+#     $PWD/src/core/ext/lb_policy/grpclb/proto/grpc/lb/v0
 
 read -r -d '' COPYRIGHT <<'EOF'
 /*
@@ -76,15 +76,15 @@ COPYRIGHT_FILE=$(mktemp)
 echo "${COPYRIGHT/<YEAR>/$CURRENT_YEAR}" > $COPYRIGHT_FILE
 
 set -ex
-if [ $# -ne 2 ]; then
-  echo "Usage: $0 <input.proto> <output dir>"
+if [ $# -lt 2 ]; then
+  echo "Usage: $0 <input.proto> <absolute path to output dir> [grpc path]"
   exit 1
 fi
 
-readonly GRPC_ROOT=$PWD
+readonly GRPC_ROOT="$PWD"
 readonly INPUT_PROTO="$1"
-readonly REL_OUTPUT_DIR="$2"
-readonly ABS_OUTPUT_DIR="$GRPC_ROOT/$2"
+readonly OUTPUT_DIR="$2"
+readonly GRPC_OUTPUT_DIR="${3:-$OUTPUT_DIR}"
 readonly EXPECTED_OPTIONS_FILE_PATH="${1%.*}.options"
 
 if [[ ! -f "$INPUT_PROTO" ]]; then
@@ -96,9 +96,14 @@ if [[ ! -f "${EXPECTED_OPTIONS_FILE_PATH}" ]]; then
   exit 4
 fi
 
-mkdir -p "$ABS_OUTPUT_DIR"
+if [[ "${OUTPUT_DIR:0:1}" != '/' ]]; then
+  echo "The output directory must be an absolute path. Got '$OUTPUT_DIR'"
+  exit 5
+fi
+
+mkdir -p "$OUTPUT_DIR"
 if [ $? != 0 ]; then
-  echo "Error creating output directory $ABS_OUTPUT_DIR"
+  echo "Error creating output directory $OUTPUT_DIR"
   exit 2
 fi
 
@@ -117,19 +122,19 @@ pushd "$(dirname $INPUT_PROTO)" > /dev/null
 
 protoc \
 --plugin=protoc-gen-nanopb="$GRPC_ROOT/third_party/nanopb/generator/protoc-gen-nanopb" \
---nanopb_out='-T -L#include\ \"third_party/nanopb/pb.h\"'":$ABS_OUTPUT_DIR" \
+--nanopb_out='-T -L#include\ \"third_party/nanopb/pb.h\"'":$OUTPUT_DIR" \
 "$(basename $INPUT_PROTO)"
 
 readonly PROTO_BASENAME=$(basename $INPUT_PROTO .proto)
-sed -i "s:$PROTO_BASENAME.pb.h:$REL_OUTPUT_DIR/$PROTO_BASENAME.pb.h:g" \
-  "$ABS_OUTPUT_DIR/$PROTO_BASENAME.pb.c"
+sed -i "s:$PROTO_BASENAME.pb.h:${GRPC_OUTPUT_DIR}/$PROTO_BASENAME.pb.h:g" \
+  "$OUTPUT_DIR/$PROTO_BASENAME.pb.c"
 
 # prepend copyright
 TMPFILE=$(mktemp)
-cat $COPYRIGHT_FILE "$ABS_OUTPUT_DIR/$PROTO_BASENAME.pb.c" > $TMPFILE
-mv -v $TMPFILE "$ABS_OUTPUT_DIR/$PROTO_BASENAME.pb.c"
-cat $COPYRIGHT_FILE "$ABS_OUTPUT_DIR/$PROTO_BASENAME.pb.h" > $TMPFILE
-mv -v $TMPFILE "$ABS_OUTPUT_DIR/$PROTO_BASENAME.pb.h"
+cat $COPYRIGHT_FILE "$OUTPUT_DIR/$PROTO_BASENAME.pb.c" > $TMPFILE
+mv -v $TMPFILE "$OUTPUT_DIR/$PROTO_BASENAME.pb.c"
+cat $COPYRIGHT_FILE "$OUTPUT_DIR/$PROTO_BASENAME.pb.h" > $TMPFILE
+mv -v $TMPFILE "$OUTPUT_DIR/$PROTO_BASENAME.pb.h"
 
 deactivate
 rm -rf $VENV_DIR
