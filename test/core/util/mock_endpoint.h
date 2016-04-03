@@ -34,9 +34,10 @@
 #ifndef MOCK_ENDPOINT_H
 #define MOCK_ENDPOINT_H
 
-grpc_endpoint *grpc_mock_endpoint_create();
-void grpc_mock_endpoint_put_read(grpc_endpoint *mock_endpoint, gpr_slice slice);
-void grpc_mock_endpoint_on_write(grpc_endpoint *mock_endpoint,
-                                 void (*cb)(gpr_slice slice));
+#include "src/core/lib/iomgr/endpoint.h"
+
+grpc_endpoint *grpc_mock_endpoint_create(void (*on_write)(gpr_slice slice));
+void grpc_mock_endpoint_put_read(grpc_exec_ctx *exec_ctx,
+                                 grpc_endpoint *mock_endpoint, gpr_slice slice);
 
 #endif
