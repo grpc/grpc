@@ -63,8 +63,8 @@
 The stress tests are launched by the following script (path is relative to GRPC root directory) :
 `tools/run_tests/stress_test/run_stress_tests_on_gke.py`
 
-The script has several parameters and you can find out more details by using the `--help` flag.
-  - `<grpc_root_dir>$ tools/run_tests/stress_test/run_stress_tests_on_gke.py --help`
+You can find out more details by using the `--help` flag.
+  - `<grpc_root_dir>$ tools/run_tests/stress_test/run_on_gke.py --help`
 
 > **Example**
 > ```bash

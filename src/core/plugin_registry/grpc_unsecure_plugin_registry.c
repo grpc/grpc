@@ -33,14 +33,26 @@
 
 #include <grpc/grpc.h>
 
+extern void grpc_resolver_dns_native_init(void);
+extern void grpc_resolver_dns_native_shutdown(void);
+extern void grpc_resolver_sockaddr_init(void);
+extern void grpc_resolver_sockaddr_shutdown(void);
 extern void grpc_lb_policy_pick_first_init(void);
 extern void grpc_lb_policy_pick_first_shutdown(void);
 extern void grpc_lb_policy_round_robin_init(void);
 extern void grpc_lb_policy_round_robin_shutdown(void);
+extern void census_grpc_plugin_init(void);
+extern void census_grpc_plugin_shutdown(void);
 
 void grpc_register_built_in_plugins(void) {
+  grpc_register_plugin(grpc_resolver_dns_native_init,
+                       grpc_resolver_dns_native_shutdown);
+  grpc_register_plugin(grpc_resolver_sockaddr_init,
+                       grpc_resolver_sockaddr_shutdown);
   grpc_register_plugin(grpc_lb_policy_pick_first_init,
                        grpc_lb_policy_pick_first_shutdown);
   grpc_register_plugin(grpc_lb_policy_round_robin_init,
                        grpc_lb_policy_round_robin_shutdown);
+  grpc_register_plugin(census_grpc_plugin_init,
+                       census_grpc_plugin_shutdown);
 }
