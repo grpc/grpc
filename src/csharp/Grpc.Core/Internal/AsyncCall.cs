@@ -258,9 +258,19 @@ namespace Grpc.Core.Internal
             lock (myLock)
             {
                 GrpcPreconditions.CheckNotNull(completionDelegate, "Completion delegate cannot be null");
-                CheckSendingAllowed();
+                CheckSendingAllowed(allowFinished: true);
 
-                call.StartSendCloseFromClient(HandleHalfclosed);
+                if (!disposed && !finished)
+                {
+                    call.StartSendCloseFromClient(HandleSendCloseFromClientFinished);
+                }
+                else
+                {
+                    // In case the call has already been finished by the serverside,
+                    // the halfclose has already been done implicitly, so we only
+                    // emit the notification for the completion delegate.
+                    Task.Run(() => HandleSendCloseFromClientFinished(true));
+                }
 
                 halfcloseRequested = true;
                 sendCompletionDelegate = completionDelegate;
