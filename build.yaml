@@ -2741,6 +2741,16 @@ targets:
   - mac
   - linux
   - posix
+- name: server_cq_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - test/cpp/server/server_cq_test.cc
+  deps:
+  - grpc++
+  - grpc
+  - gpr
 - name: server_crash_test
   gtest: true
   cpu_cost: 0.1

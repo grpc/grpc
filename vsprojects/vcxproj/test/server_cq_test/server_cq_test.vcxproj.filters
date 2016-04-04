@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\test\cpp\server\server_cq_test.cc">
+      <Filter>test\cpp\server</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="test">
+      <UniqueIdentifier>{8790adf5-1164-56ac-701a-7448fce90584}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\cpp">
+      <UniqueIdentifier>{369a7247-75e7-dd4b-071b-8716ad46a316}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\cpp\server">
+      <UniqueIdentifier>{c650d978-3ac7-9d8f-08f3-c6149ddb47e7}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+
