@@ -1,6 +1,33 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\census\context.c">
+      <Filter>src\core\ext\census</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\census\grpc_context.c">
+      <Filter>src\core\ext\census</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\census\grpc_filter.c">
+      <Filter>src\core\ext\census</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\census\grpc_plugin.c">
+      <Filter>src\core\ext\census</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\census\initialize.c">
+      <Filter>src\core\ext\census</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\census\mlog.c">
+      <Filter>src\core\ext\census</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\census\operation.c">
+      <Filter>src\core\ext\census</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\census\placeholders.c">
+      <Filter>src\core\ext\census</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\census\tracing.c">
+      <Filter>src\core\ext\census</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\lb_policy\grpclb\load_balancer_api.c">
       <Filter>src\core\ext\lb_policy\grpclb</Filter>
     </ClCompile>
@@ -12,6 +39,12 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\lb_policy\round_robin\round_robin.c">
       <Filter>src\core\ext\lb_policy\round_robin</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\resolver\dns\native\dns_resolver.c">
+      <Filter>src\core\ext\resolver\dns\native</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\resolver\sockaddr\sockaddr_resolver.c">
+      <Filter>src\core\ext\resolver\sockaddr</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\client\insecure\channel_create.c">
       <Filter>src\core\ext\transport\chttp2\client\insecure</Filter>
@@ -88,33 +121,6 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\writing.c">
       <Filter>src\core\ext\transport\chttp2\transport</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\census\context.c">
-      <Filter>src\core\lib\census</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\census\grpc_context.c">
-      <Filter>src\core\lib\census</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\census\grpc_filter.c">
-      <Filter>src\core\lib\census</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\census\grpc_plugin.c">
-      <Filter>src\core\lib\census</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\census\initialize.c">
-      <Filter>src\core\lib\census</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\census\mlog.c">
-      <Filter>src\core\lib\census</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\census\operation.c">
-      <Filter>src\core\lib\census</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\census\placeholders.c">
-      <Filter>src\core\lib\census</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\census\tracing.c">
-      <Filter>src\core\lib\census</Filter>
-    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\channel_args.c">
       <Filter>src\core\lib\channel</Filter>
     </ClCompile>
@@ -171,12 +177,6 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\client_config\resolver_registry.c">
       <Filter>src\core\lib\client_config</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\client_config\resolvers\dns_resolver.c">
-      <Filter>src\core\lib\client_config\resolvers</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\client_config\resolvers\sockaddr_resolver.c">
-      <Filter>src\core\lib\client_config\resolvers</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\client_config\subchannel.c">
       <Filter>src\core\lib\client_config</Filter>
@@ -536,6 +536,24 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\aggregation.h">
+      <Filter>src\core\ext\census</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\census_interface.h">
+      <Filter>src\core\ext\census</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\census_rpc_stats.h">
+      <Filter>src\core\ext\census</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\grpc_filter.h">
+      <Filter>src\core\ext\census</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\mlog.h">
+      <Filter>src\core\ext\census</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\rpc_metric_id.h">
+      <Filter>src\core\ext\census</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\lb_policy\grpclb\load_balancer_api.h">
       <Filter>src\core\ext\lb_policy\grpclb</Filter>
     </ClInclude>
@@ -605,21 +623,6 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\varint.h">
       <Filter>src\core\ext\transport\chttp2\transport</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\census\aggregation.h">
-      <Filter>src\core\lib\census</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\census\grpc_filter.h">
-      <Filter>src\core\lib\census</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\census\grpc_plugin.h">
-      <Filter>src\core\lib\census</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\census\mlog.h">
-      <Filter>src\core\lib\census</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\census\rpc_metric_id.h">
-      <Filter>src\core\lib\census</Filter>
-    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\channel_args.h">
       <Filter>src\core\lib\channel</Filter>
     </ClInclude>
@@ -676,12 +679,6 @@
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\client_config\resolver_registry.h">
       <Filter>src\core\lib\client_config</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\client_config\resolvers\dns_resolver.h">
-      <Filter>src\core\lib\client_config\resolvers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\client_config\resolvers\sockaddr_resolver.h">
-      <Filter>src\core\lib\client_config\resolvers</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\client_config\subchannel.h">
       <Filter>src\core\lib\client_config</Filter>
@@ -866,12 +863,6 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\security_context.h">
       <Filter>src\core\lib\security</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\statistics\census_interface.h">
-      <Filter>src\core\lib\statistics</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\statistics\census_rpc_stats.h">
-      <Filter>src\core\lib\statistics</Filter>
-    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\surface\api_trace.h">
       <Filter>src\core\lib\surface</Filter>
     </ClInclude>
@@ -980,6 +971,9 @@
     <Filter Include="src\core\ext">
       <UniqueIdentifier>{3f32a58f-394f-5f13-06aa-6cc52cc2daaf}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\core\ext\census">
+      <UniqueIdentifier>{9bf70bd2-f553-11b2-c237-abd148971eea}</UniqueIdentifier>
+    </Filter>
     <Filter Include="src\core\ext\lb_policy">
       <UniqueIdentifier>{030f00ff-6c54-76c8-12df-37e3008335d1}</UniqueIdentifier>
     </Filter>
@@ -1003,6 +997,18 @@
     </Filter>
     <Filter Include="src\core\ext\lb_policy\round_robin">
       <UniqueIdentifier>{2472d352-cf94-f317-646e-72b769cea846}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\ext\resolver">
+      <UniqueIdentifier>{6bfa6808-9dcb-8990-deed-5cf58a149dda}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\ext\resolver\dns">
+      <UniqueIdentifier>{e8fe6413-ab8c-48d5-2c7b-aa79e3db4ab2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\ext\resolver\dns\native">
+      <UniqueIdentifier>{94e34be0-29d2-1731-3c1e-617ec4986acb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\ext\resolver\sockaddr">
+      <UniqueIdentifier>{98c1ccc2-2c91-a3d2-6040-a2e15993d51a}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\core\ext\transport">
       <UniqueIdentifier>{e3abfd0a-064e-0f2f-c8e8-7c5a7e98142a}</UniqueIdentifier>
@@ -1034,17 +1040,11 @@
     <Filter Include="src\core\lib">
       <UniqueIdentifier>{5b2ded3f-84a5-f6b4-2060-286c7d1dc945}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\core\lib\census">
-      <UniqueIdentifier>{f4108884-98c3-ac2e-c669-83cd41343975}</UniqueIdentifier>
-    </Filter>
     <Filter Include="src\core\lib\channel">
       <UniqueIdentifier>{1931b044-90f3-cd68-b5f8-23be77ca8efc}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\core\lib\client_config">
       <UniqueIdentifier>{2f3260de-be57-d18d-6882-61d115baa159}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="src\core\lib\client_config\resolvers">
-      <UniqueIdentifier>{b9d8db6c-2c68-1c90-fe5e-37da90f47ae6}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\core\lib\compression">
       <UniqueIdentifier>{dadf7fe9-3f15-d431-e4f6-f987b090536c}</UniqueIdentifier>
@@ -1063,9 +1063,6 @@
     </Filter>
     <Filter Include="src\core\lib\security">
       <UniqueIdentifier>{c4661d64-349f-01c1-1ba8-0602f9047595}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="src\core\lib\statistics">
-      <UniqueIdentifier>{4dc3c48b-e931-ed47-ffa2-b4ea3a7956ec}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\core\lib\surface">
       <UniqueIdentifier>{a21971fb-304f-da08-b1b2-7bd8df8ac373}</UniqueIdentifier>
