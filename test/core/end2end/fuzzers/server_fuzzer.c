@@ -102,6 +102,7 @@ done:
   grpc_call_details_destroy(&call_details1);
   grpc_metadata_array_destroy(&request_metadata1);
   grpc_server_shutdown_and_notify(server, cq, tag(0xdead));
+  grpc_server_cancel_all_calls(server);
   for (int i = 0; i <= requested_calls; i++) {
     ev = grpc_completion_queue_next(cq, gpr_inf_past(GPR_CLOCK_REALTIME), NULL);
     GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
