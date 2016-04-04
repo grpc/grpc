@@ -42,11 +42,11 @@ static void discard_write(gpr_slice slice) {}
 static void *tag(int n) { return (void *)(uintptr_t)n; }
 static int detag(void *p) { return (int)(uintptr_t)p; }
 
-static void dont_log(gpr_log_func_args *args) {}
+//static void dont_log(gpr_log_func_args *args) {}
 
 int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   grpc_test_only_set_metadata_hash_seed(0);
-  gpr_set_log_function(dont_log);
+  //gpr_set_log_function(dont_log);
   grpc_init();
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
@@ -67,11 +67,16 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   grpc_server_setup_transport(&exec_ctx, server, transport, NULL);
   grpc_chttp2_transport_start_reading(&exec_ctx, transport, NULL, 0);
 
-  grpc_call *call1;
+  grpc_call *call1 = NULL;
   grpc_call_details call_details1;
   grpc_metadata_array request_metadata1;
+  grpc_call_details_init(&call_details1);
+  grpc_metadata_array_init(&request_metadata1);
+  int requested_calls = 0;
+
   grpc_server_request_call(server, &call1, &call_details1, &request_metadata1,
                            cq, cq, tag(1));
+  requested_calls++;
 
   while (1) {
     grpc_exec_ctx_flush(&exec_ctx);
@@ -85,11 +90,21 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
       case GRPC_OP_COMPLETE:
         switch (detag(ev.tag)) {
           case 1:
+            requested_calls--;
             abort();
         }
     }
   }
+
 done:
+  if (call1 != NULL) grpc_call_destroy(call1);
+  grpc_server_shutdown_and_notify(server, cq, tag(0xdead));
+  for (int i=0; i<=requested_calls; i++)
+  GPR_ASSERT(grpc_completion_queue_next(cq, gpr_inf_past(GPR_CLOCK_REALTIME), NULL).type == GRPC_OP_COMPLETE);
+  grpc_completion_queue_shutdown(cq);
+  GPR_ASSERT(grpc_completion_queue_next(cq, gpr_inf_past(GPR_CLOCK_REALTIME), NULL).type == GRPC_QUEUE_SHUTDOWN);
+  grpc_server_destroy(server);
+  grpc_completion_queue_destroy(cq);
   grpc_shutdown();
   return 0;
 }
