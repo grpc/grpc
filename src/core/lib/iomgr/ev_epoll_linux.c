@@ -78,6 +78,10 @@ struct grpc_fd {
   gpr_atm on_readable;
   gpr_atm on_writable;
 
+  // mutex guarding set_ready & shutdown state
+  gpr_mu set_ready_mu;
+  bool shutdown;
+
   // mutex protecting polling_island
   gpr_mu polling_island_mu;
   // current polling island
@@ -144,6 +148,13 @@ static polling_island *polling_island_create(grpc_fd *initial_fd) {
 
   add_fd_to_epoll_set(initial_fd, r->pollable.fd);
   return r;
+}
+
+static void polling_island_delete(polling_island *p) {
+  gpr_mu_lock(&g_pi_freelist_mu);
+  p->next = g_first_free_pi;
+  g_first_free_pi = p;
+  gpr_mu_unlock(&g_pi_freelist_mu);
 }
 
 static polling_island *polling_island_add(polling_island *p, grpc_fd *fd) {
@@ -255,6 +266,7 @@ static grpc_fd *fd_create(int fd, const char *name) {
     gpr_atm_rel_store(&r->on_readable, 0);
     gpr_atm_rel_store(&r->on_writable, 0);
     gpr_mu_init(&r->polling_island_mu);
+    gpr_mu_init(&r->set_ready_mu);
   } else {
     r = g_first_free_fd;
     g_first_free_fd = r->next_free;
@@ -323,6 +335,34 @@ static void destroy_fd_freelist(void) {
     gpr_free(next);
     g_first_free_fd = next;
   }
+}
+
+static void set_ready_locked(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
+                             gpr_atm *state) {
+  if (gpr_atm_acq_cas(state, STATE_NOT_READY, STATE_READY)) {
+    // state was not ready, and is now ready - we're done
+  } else {
+    // cas failed - either there's a closure queued which we should consume OR
+    // the state was already STATE_READY
+    gpr_atm cur_state = gpr_atm_acq_load(state);
+    if (cur_state != STATE_READY) {
+      // state wasn't STATE_READY - it *must* have been a closure
+      // since it's illegal to ask for notification twice, it's safe to assume
+      // that we'll resume being the closure
+      GPR_ASSERT(gpr_atm_rel_cas(state, cur_state, STATE_NOT_READY));
+      grpc_exec_ctx_enqueue(exec_ctx, (grpc_closure *)cur_state, !fd->shutdown,
+                            NULL);
+    }
+  }
+}
+
+static void fd_shutdown(grpc_exec_ctx *exec_ctx, grpc_fd *fd) {
+  gpr_mu_lock(&fd->set_ready_mu);
+  GPR_ASSERT(!fd->shutdown);
+  fd->shutdown = 1;
+  set_ready_locked(exec_ctx, fd, &fd->on_readable);
+  set_ready_locked(exec_ctx, fd, &fd->on_writable);
+  gpr_mu_unlock(&fd->set_ready_mu);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
