@@ -173,6 +173,7 @@ struct request_matcher {
 struct registered_method {
   char *method;
   char *host;
+  grpc_server_register_method_payload_handling payload_handling;
   uint32_t flags;
   request_matcher request_matcher;
   registered_method *next;
@@ -415,6 +416,69 @@ static void destroy_channel(grpc_exec_ctx *exec_ctx, channel_data *chand) {
                        grpc_channel_stack_element(
                            grpc_channel_get_channel_stack(chand->channel), 0),
                        &op);
+}
+
+static void publish_registered_or_batch(grpc_exec_ctx *exec_ctx,
+                                        void *user_data, bool success);
+
+static void cpstr(char **dest, size_t *capacity, grpc_mdstr *value) {
+  gpr_slice slice = value->slice;
+  size_t len = GPR_SLICE_LENGTH(slice);
+
+  if (len + 1 > *capacity) {
+    *capacity = GPR_MAX(len + 1, *capacity * 2);
+    *dest = gpr_realloc(*dest, *capacity);
+  }
+  memcpy(*dest, grpc_mdstr_as_c_string(value), len + 1);
+}
+
+static void begin_call(grpc_exec_ctx *exec_ctx, grpc_server *server,
+                       call_data *calld, requested_call *rc) {
+  grpc_op ops[1];
+  grpc_op *op = ops;
+
+  memset(ops, 0, sizeof(ops));
+
+  /* called once initial metadata has been read by the call, but BEFORE
+     the ioreq to fetch it out of the call has been executed.
+     This means metadata related fields can be relied on in calld, but to
+     fill in the metadata array passed by the client, we need to perform
+     an ioreq op, that should complete immediately. */
+
+  grpc_call_set_completion_queue(exec_ctx, calld->call, rc->cq_bound_to_call);
+  grpc_closure_init(&rc->publish, publish_registered_or_batch, rc);
+  *rc->call = calld->call;
+  calld->cq_new = rc->cq_for_notification;
+  GPR_SWAP(grpc_metadata_array, *rc->initial_metadata, calld->initial_metadata);
+  switch (rc->type) {
+    case BATCH_CALL:
+      GPR_ASSERT(calld->host != NULL);
+      GPR_ASSERT(calld->path != NULL);
+      cpstr(&rc->data.batch.details->host,
+            &rc->data.batch.details->host_capacity, calld->host);
+      cpstr(&rc->data.batch.details->method,
+            &rc->data.batch.details->method_capacity, calld->path);
+      rc->data.batch.details->deadline = calld->deadline;
+      rc->data.batch.details->flags =
+          0 | (calld->recv_idempotent_request
+                   ? GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST
+                   : 0);
+      break;
+    case REGISTERED_CALL:
+      *rc->data.registered.deadline = calld->deadline;
+      if (rc->data.registered.optional_payload) {
+        op->op = GRPC_OP_RECV_MESSAGE;
+        op->data.recv_message = rc->data.registered.optional_payload;
+        op++;
+      }
+      break;
+    default:
+      GPR_UNREACHABLE_CODE(return );
+  }
+
+  GRPC_CALL_INTERNAL_REF(calld->call, "server");
+  grpc_call_start_batch_and_execute(exec_ctx, calld->call, ops,
+                                    (size_t)(op - ops), &rc->publish);
 }
 
 static void finish_start_new_rpc(grpc_exec_ctx *exec_ctx, grpc_server *server,
@@ -840,8 +904,10 @@ static int streq(const char *a, const char *b) {
   return 0 == strcmp(a, b);
 }
 
-void *grpc_server_register_method(grpc_server *server, const char *method,
-                                  const char *host, uint32_t flags) {
+void *grpc_server_register_method(
+    grpc_server *server, const char *method, const char *host,
+    grpc_server_register_method_payload_handling payload_handling,
+    uint32_t flags) {
   registered_method *m;
   GRPC_API_TRACE(
       "grpc_server_register_method(server=%p, method=%s, host=%s, "
@@ -1209,6 +1275,12 @@ grpc_call_error grpc_server_request_registered_call(
     error = GRPC_CALL_ERROR_NOT_SERVER_COMPLETION_QUEUE;
     goto done;
   }
+  if ((optional_payload == NULL) !=
+      (rm->payload_handling == GRPC_SRM_PAYLOAD_NONE)) {
+    gpr_free(rc);
+    error = GRPC_CALL_ERROR_PAYLOAD_TYPE_MISMATCH;
+    goto done;
+  }
   grpc_cq_begin_op(cq_for_notification, tag);
   rc->type = REGISTERED_CALL;
   rc->server = server;
@@ -1224,69 +1296,6 @@ grpc_call_error grpc_server_request_registered_call(
 done:
   grpc_exec_ctx_finish(&exec_ctx);
   return error;
-}
-
-static void publish_registered_or_batch(grpc_exec_ctx *exec_ctx,
-                                        void *user_data, bool success);
-
-static void cpstr(char **dest, size_t *capacity, grpc_mdstr *value) {
-  gpr_slice slice = value->slice;
-  size_t len = GPR_SLICE_LENGTH(slice);
-
-  if (len + 1 > *capacity) {
-    *capacity = GPR_MAX(len + 1, *capacity * 2);
-    *dest = gpr_realloc(*dest, *capacity);
-  }
-  memcpy(*dest, grpc_mdstr_as_c_string(value), len + 1);
-}
-
-static void begin_call(grpc_exec_ctx *exec_ctx, grpc_server *server,
-                       call_data *calld, requested_call *rc) {
-  grpc_op ops[1];
-  grpc_op *op = ops;
-
-  memset(ops, 0, sizeof(ops));
-
-  /* called once initial metadata has been read by the call, but BEFORE
-     the ioreq to fetch it out of the call has been executed.
-     This means metadata related fields can be relied on in calld, but to
-     fill in the metadata array passed by the client, we need to perform
-     an ioreq op, that should complete immediately. */
-
-  grpc_call_set_completion_queue(exec_ctx, calld->call, rc->cq_bound_to_call);
-  grpc_closure_init(&rc->publish, publish_registered_or_batch, rc);
-  *rc->call = calld->call;
-  calld->cq_new = rc->cq_for_notification;
-  GPR_SWAP(grpc_metadata_array, *rc->initial_metadata, calld->initial_metadata);
-  switch (rc->type) {
-    case BATCH_CALL:
-      GPR_ASSERT(calld->host != NULL);
-      GPR_ASSERT(calld->path != NULL);
-      cpstr(&rc->data.batch.details->host,
-            &rc->data.batch.details->host_capacity, calld->host);
-      cpstr(&rc->data.batch.details->method,
-            &rc->data.batch.details->method_capacity, calld->path);
-      rc->data.batch.details->deadline = calld->deadline;
-      rc->data.batch.details->flags =
-          0 | (calld->recv_idempotent_request
-                   ? GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST
-                   : 0);
-      break;
-    case REGISTERED_CALL:
-      *rc->data.registered.deadline = calld->deadline;
-      if (rc->data.registered.optional_payload) {
-        op->op = GRPC_OP_RECV_MESSAGE;
-        op->data.recv_message = rc->data.registered.optional_payload;
-        op++;
-      }
-      break;
-    default:
-      GPR_UNREACHABLE_CODE(return );
-  }
-
-  GRPC_CALL_INTERNAL_REF(calld->call, "server");
-  grpc_call_start_batch_and_execute(exec_ctx, calld->call, ops,
-                                    (size_t)(op - ops), &rc->publish);
 }
 
 static void done_request_event(grpc_exec_ctx *exec_ctx, void *req,
