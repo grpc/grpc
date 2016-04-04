@@ -40,7 +40,7 @@ import sys
 import tempfile
 import time
 import uuid
-import performance.config as config
+import performance.scenario_config as scenario_config
 
 
 _ROOT = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), '../..'))
@@ -149,7 +149,7 @@ def prepare_remote_hosts(hosts):
     sys.exit(1)
 
 
-def build_on_remote_hosts(hosts, languages=config.LANGUAGES.keys(), build_local=False):
+def build_on_remote_hosts(hosts, languages=scenario_config.LANGUAGES.keys(), build_local=False):
   """Builds performance worker on remote hosts (and maybe also locally)."""
   build_timeout = 15*60
   build_jobs = []
@@ -243,7 +243,7 @@ def finish_qps_workers(jobs):
 
 argp = argparse.ArgumentParser(description='Run performance tests.')
 argp.add_argument('-l', '--language',
-                  choices=['all'] + sorted(config.LANGUAGES.keys()),
+                  choices=['all'] + sorted(scenario_config.LANGUAGES.keys()),
                   nargs='+',
                   default=['all'],
                   help='Languages to benchmark.')
@@ -257,9 +257,9 @@ argp.add_argument('--remote_worker_host',
 
 args = argp.parse_args()
 
-languages = set(config.LANGUAGES[l]
+languages = set(scenario_config.LANGUAGES[l]
                 for l in itertools.chain.from_iterable(
-                      config.LANGUAGES.iterkeys() if x == 'all' else [x]
+                      scenario_config.LANGUAGES.iterkeys() if x == 'all' else [x]
                       for x in args.language))
 
 # Put together set of remote hosts where to run and build
