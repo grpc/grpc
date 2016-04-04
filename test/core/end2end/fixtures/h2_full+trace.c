@@ -116,6 +116,7 @@ int main(int argc, char **argv) {
 #endif
 
   grpc_test_init(argc, argv);
+  grpc_end2end_tests_pre_init();
   grpc_init();
 
   GPR_ASSERT(0 == grpc_tracer_set_enabled("also-doesnt-exist", 0));

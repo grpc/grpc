@@ -37,17 +37,31 @@
 
 #include "test/core/end2end/end2end_tests.h"
 
+#include <stdbool.h>
 #include <string.h>
 
 #include <grpc/support/log.h>
 
+static bool g_pre_init_called = false;
+
 % for test in tests:
 extern void ${test}(grpc_end2end_test_config config);
+extern void ${test}_pre_init(void);
 % endfor
+
+void grpc_end2end_tests_pre_init(void) {
+  GPR_ASSERT(!g_pre_init_called);
+  g_pre_init_called = true;
+% for test in tests:
+  ${test}_pre_init();
+% endfor
+}
 
 void grpc_end2end_tests(int argc, char **argv,
                         grpc_end2end_test_config config) {
   int i;
+
+  GPR_ASSERT(g_pre_init_called);
 
   if (argc <= 1) {
 % for test in tests:

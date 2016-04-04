@@ -210,3 +210,5 @@ static void test_invoke_simple_request(grpc_end2end_test_config config) {
 void server_finishes_request(grpc_end2end_test_config config) {
   test_invoke_simple_request(config);
 }
+
+void server_finishes_request_pre_init(void) {}
