@@ -31,12 +31,11 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_CLIENT_CONFIG_RESOLVERS_ZOOKEEPER_RESOLVER_H
-#define GRPC_CORE_LIB_CLIENT_CONFIG_RESOLVERS_ZOOKEEPER_RESOLVER_H
+#ifndef GRPC_CORE_LIB_IOMGR_EV_POLL_AND_EPOLL_POSIX_H
+#define GRPC_CORE_LIB_IOMGR_EV_POLL_AND_EPOLL_POSIX_H
 
-#include "src/core/lib/client_config/resolver_factory.h"
+#include "src/core/lib/iomgr/ev_posix.h"
 
-/** Create a zookeeper resolver factory */
-grpc_resolver_factory *grpc_zookeeper_resolver_factory_create(void);
+const grpc_event_engine_vtable *grpc_init_poll_and_epoll_posix(void);
 
-#endif /* GRPC_CORE_LIB_CLIENT_CONFIG_RESOLVERS_ZOOKEEPER_RESOLVER_H */
+#endif /* GRPC_CORE_LIB_IOMGR_EV_POLL_AND_EPOLL_POSIX_H */

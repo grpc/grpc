@@ -31,13 +31,12 @@
  *
  */
 
-#include "src/core/lib/client_config/resolvers/dns_resolver.h"
-
 #include <string.h>
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 
+#include "src/core/lib/client_config/resolver_registry.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "test/core/util/test_config.h"
@@ -79,7 +78,7 @@ static grpc_resolved_addresses *my_resolve_address(const char *name,
 }
 
 static grpc_resolver *create_resolver(const char *name) {
-  grpc_resolver_factory *factory = grpc_dns_resolver_factory_create();
+  grpc_resolver_factory *factory = grpc_resolver_factory_lookup("dns");
   grpc_uri *uri = grpc_uri_parse(name, 0);
   GPR_ASSERT(uri);
   grpc_resolver_args args;
