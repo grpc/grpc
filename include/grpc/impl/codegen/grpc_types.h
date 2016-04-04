@@ -185,7 +185,9 @@ typedef enum grpc_call_error {
       server */
   GRPC_CALL_ERROR_NOT_SERVER_COMPLETION_QUEUE,
   /** this batch of operations leads to more operations than allowed */
-  GRPC_CALL_ERROR_BATCH_TOO_BIG
+  GRPC_CALL_ERROR_BATCH_TOO_BIG,
+  /** payload type requested is not the type registered */
+  GRPC_CALL_ERROR_PAYLOAD_TYPE_MISMATCH
 } grpc_call_error;
 
 /* Write Flags: */
