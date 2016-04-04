@@ -31,10 +31,10 @@
   
   FROM debian:jessie
   
-  <%include file="../apt_get_basic.include"/>
-  <%include file="../ccache_setup.include"/>
-  <%include file="../cxx_deps.include"/>
-  <%include file="../gcp_api_libraries.include"/>
-  <%include file="../clang_update.include"/>
+  <%include file="../../apt_get_basic.include"/>
+  <%include file="../../ccache_setup.include"/>
+  <%include file="../../cxx_deps.include"/>
+  <%include file="../../gcp_api_libraries.include"/>
+  <%include file="../../clang_update.include"/>
   # Define the default command.
   CMD ["bash"]

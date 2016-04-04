@@ -17,7 +17,7 @@
           "num_stubs_per_channel":10,
           "test_cases": "empty_unary:1,large_unary:1,client_streaming:1,server_streaming:1,empty_stream:1",
           "metrics_port": 8081,
-          "metrics_collection_interval_secs":60
+          "metrics_collection_interval_secs":10
         },
         "metricsPort": 8081,
         "metricsArgs": {
@@ -29,8 +29,8 @@
     "templates": {
       "cxx_client_asan": {
         "baseTemplate": "default",
-        "clientImagePath": "/var/local/git/grpc/bins/asan/stress_test",
-        "metricsClientImagePath": "/var/local/git/grpc/bins/asan/metrics_client"
+        "stressClientCmd": "/var/local/git/grpc/bins/asan/stress_test",
+        "metricsClientCmd": "/var/local/git/grpc/bins/asan/metrics_client"
       }
     }
   },
@@ -48,7 +48,7 @@
     "templates": {
       "cxx_server_asan": {
         "baseTemplate": "default",
-        "serverImagePath": "/var/local/git/grpc/bins/asan/interop_server"
+        "stressServerCmd": "/var/local/git/grpc/bins/asan/interop_server"
       }
     }
   },
@@ -74,8 +74,8 @@
 
   "globalSettings": {
     "buildDockerImages": true,
-    "pollIntervalSecs": 60,
-    "testDurationSecs": 7200,
+    "pollIntervalSecs": 10,
+    "testDurationSecs": 60,
     "kubernetesProxyPort": 8001,
     "datasetIdNamePrefix": "stress_test_asan",
     "summaryTableId": "summary",

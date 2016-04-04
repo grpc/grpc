@@ -67,12 +67,12 @@ class GlobalSettings:
 class ClientTemplate:
   """ Contains all the common settings that are used by a stress client """
 
-  def __init__(self, name, client_image_path, metrics_client_image_path,
+  def __init__(self, name, stress_client_cmd, metrics_client_cmd,
                metrics_port, wrapper_script_path, poll_interval_secs,
                client_args_dict, metrics_args_dict):
     self.name = name
-    self.client_image_path = client_image_path
-    self.metrics_client_image_path = metrics_client_image_path
+    self.stress_client_cmd = stress_client_cmd
+    self.metrics_client_cmd = metrics_client_cmd
     self.metrics_port = metrics_port
     self.wrapper_script_path = wrapper_script_path
     self.poll_interval_secs = poll_interval_secs
@@ -83,10 +83,10 @@ class ClientTemplate:
 class ServerTemplate:
   """ Contains all the common settings used by a stress server """
 
-  def __init__(self, name, server_image_path, wrapper_script_path, server_port,
+  def __init__(self, name, server_cmd, wrapper_script_path, server_port,
                server_args_dict):
     self.name = name
-    self.server_image_path = server_image_path
+    self.server_cmd = server_cmd
     self.wrapper_script_path = wrapper_script_path
     self.server_port = server_port
     self.server_args_dict = server_args_dict
@@ -240,7 +240,7 @@ class Gke:
     server_env = self.gke_env.copy()
     server_env.update({
         'STRESS_TEST_IMAGE_TYPE': 'SERVER',
-        'STRESS_TEST_IMAGE': server_pod_spec.template.server_image_path,
+        'STRESS_TEST_CMD': server_pod_spec.template.server_cmd,
         'STRESS_TEST_ARGS_STR': self._args_dict_to_str(
             server_pod_spec.template.server_args_dict)
     })
@@ -282,11 +282,11 @@ class Gke:
     client_env = self.gke_env.copy()
     client_env.update({
         'STRESS_TEST_IMAGE_TYPE': 'CLIENT',
-        'STRESS_TEST_IMAGE': client_pod_spec.template.client_image_path,
+        'STRESS_TEST_CMD': client_pod_spec.template.stress_client_cmd,
         'STRESS_TEST_ARGS_STR': self._args_dict_to_str(
             client_pod_spec.get_client_args_dict()),
-        'METRICS_CLIENT_IMAGE':
-            client_pod_spec.template.metrics_client_image_path,
+        'METRICS_CLIENT_CMD':
+            client_pod_spec.template.metrics_client_cmd,
         'METRICS_CLIENT_ARGS_STR': self._args_dict_to_str(
             client_pod_spec.template.metrics_args_dict),
         'POLL_INTERVAL_SECS': str(client_pod_spec.template.poll_interval_secs)
@@ -383,7 +383,7 @@ class Config:
     for image_name in docker_config_dict.keys():
       build_script_path = docker_config_dict[image_name]['buildScript']
       dockerfile_dir = docker_config_dict[image_name]['dockerFileDir']
-      build_type = docker_config_dict[image_name]['buildType']
+      build_type = docker_config_dict[image_name].get('buildType', 'opt')
       docker_images_dict[image_name] = DockerImage(gcp_project_id, image_name,
                                                    build_script_path,
                                                    dockerfile_dir, build_type)
@@ -417,8 +417,8 @@ class Config:
 
       # Create and add ClientTemplate object to the final client_templates_dict
       client_templates_dict[template_name] = ClientTemplate(
-          template_name, temp_dict['clientImagePath'],
-          temp_dict['metricsClientImagePath'], temp_dict['metricsPort'],
+          template_name, temp_dict['stressClientCmd'],
+          temp_dict['metricsClientCmd'], temp_dict['metricsPort'],
           temp_dict['wrapperScriptPath'], temp_dict['pollIntervalSecs'],
           temp_dict['clientArgs'].copy(), temp_dict['metricsArgs'].copy())
 
@@ -453,7 +453,7 @@ class Config:
 
       # Create and add ServerTemplate object to the final server_templates_dict
       server_templates_dict[template_name] = ServerTemplate(
-          template_name, temp_dict['serverImagePath'],
+          template_name, temp_dict['stressServerCmd'],
           temp_dict['wrapperScriptPath'], temp_dict['serverPort'],
           temp_dict['serverArgs'].copy())
 
