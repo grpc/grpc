@@ -36,8 +36,8 @@
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
+#include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/iomgr.h"
-#include "src/core/lib/iomgr/pollset_posix.h"
 #include "test/core/util/test_config.h"
 
 #include <netinet/in.h>

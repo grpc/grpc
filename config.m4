@@ -93,6 +93,8 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/lb_policy/grpclb/proto/grpc/lb/v0/load_balancer.pb.c \
     src/core/ext/lb_policy/pick_first/pick_first.c \
     src/core/ext/lb_policy/round_robin/round_robin.c \
+    src/core/ext/resolver/dns/native/dns_resolver.c \
+    src/core/ext/resolver/sockaddr/sockaddr_resolver.c \
     src/core/ext/transport/chttp2/client/insecure/channel_create.c \
     src/core/ext/transport/chttp2/client/secure/secure_channel_create.c \
     src/core/ext/transport/chttp2/server/insecure/server_chttp2.c \
@@ -137,8 +139,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/client_config/resolver.c \
     src/core/lib/client_config/resolver_factory.c \
     src/core/lib/client_config/resolver_registry.c \
-    src/core/lib/client_config/resolvers/dns_resolver.c \
-    src/core/lib/client_config/resolvers/sockaddr_resolver.c \
     src/core/lib/client_config/subchannel.c \
     src/core/lib/client_config/subchannel_factory.c \
     src/core/lib/client_config/subchannel_index.c \
@@ -154,17 +154,14 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/iomgr/endpoint.c \
     src/core/lib/iomgr/endpoint_pair_posix.c \
     src/core/lib/iomgr/endpoint_pair_windows.c \
+    src/core/lib/iomgr/ev_poll_and_epoll_posix.c \
+    src/core/lib/iomgr/ev_posix.c \
     src/core/lib/iomgr/exec_ctx.c \
     src/core/lib/iomgr/executor.c \
-    src/core/lib/iomgr/fd_posix.c \
     src/core/lib/iomgr/iocp_windows.c \
     src/core/lib/iomgr/iomgr.c \
     src/core/lib/iomgr/iomgr_posix.c \
     src/core/lib/iomgr/iomgr_windows.c \
-    src/core/lib/iomgr/pollset_multipoller_with_epoll.c \
-    src/core/lib/iomgr/pollset_multipoller_with_poll_posix.c \
-    src/core/lib/iomgr/pollset_posix.c \
-    src/core/lib/iomgr/pollset_set_posix.c \
     src/core/lib/iomgr/pollset_set_windows.c \
     src/core/lib/iomgr/pollset_windows.c \
     src/core/lib/iomgr/resolve_address_posix.c \
@@ -552,6 +549,8 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/lb_policy/grpclb/proto/grpc/lb/v0)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/lb_policy/pick_first)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/lb_policy/round_robin)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/resolver/dns/native)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/resolver/sockaddr)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/transport/chttp2/client/insecure)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/transport/chttp2/client/secure)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/transport/chttp2/server/insecure)
@@ -559,7 +558,6 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/transport/chttp2/transport)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/channel)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/client_config)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/client_config/resolvers)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/compression)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/debug)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/http)
