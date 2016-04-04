@@ -13,16 +13,23 @@ filegroups:
   public_headers:
   - include/grpc/census.h
   headers:
-  - src/core/lib/census/aggregation.h
-  - src/core/lib/census/mlog.h
-  - src/core/lib/census/rpc_metric_id.h
+  - src/core/ext/census/aggregation.h
+  - src/core/ext/census/census_interface.h
+  - src/core/ext/census/census_rpc_stats.h
+  - src/core/ext/census/grpc_filter.h
+  - src/core/ext/census/mlog.h
+  - src/core/ext/census/rpc_metric_id.h
   src:
-  - src/core/lib/census/context.c
-  - src/core/lib/census/initialize.c
-  - src/core/lib/census/mlog.c
-  - src/core/lib/census/operation.c
-  - src/core/lib/census/placeholders.c
-  - src/core/lib/census/tracing.c
+  - src/core/ext/census/context.c
+  - src/core/ext/census/grpc_context.c
+  - src/core/ext/census/grpc_filter.c
+  - src/core/ext/census/grpc_plugin.c
+  - src/core/ext/census/initialize.c
+  - src/core/ext/census/mlog.c
+  - src/core/ext/census/operation.c
+  - src/core/ext/census/placeholders.c
+  - src/core/ext/census/tracing.c
+  plugin: census_grpc_plugin
 - name: gpr
   public_headers:
   - include/grpc/support/alloc.h
@@ -247,8 +254,6 @@ filegroups:
   - include/grpc/grpc.h
   - include/grpc/status.h
   headers:
-  - src/core/lib/census/grpc_filter.h
-  - src/core/lib/census/grpc_plugin.h
   - src/core/lib/channel/channel_args.h
   - src/core/lib/channel/channel_stack.h
   - src/core/lib/channel/channel_stack_builder.h
@@ -268,8 +273,6 @@ filegroups:
   - src/core/lib/client_config/resolver.h
   - src/core/lib/client_config/resolver_factory.h
   - src/core/lib/client_config/resolver_registry.h
-  - src/core/lib/client_config/resolvers/dns_resolver.h
-  - src/core/lib/client_config/resolvers/sockaddr_resolver.h
   - src/core/lib/client_config/subchannel.h
   - src/core/lib/client_config/subchannel_factory.h
   - src/core/lib/client_config/subchannel_index.h
@@ -321,8 +324,6 @@ filegroups:
   - src/core/lib/json/json_common.h
   - src/core/lib/json/json_reader.h
   - src/core/lib/json/json_writer.h
-  - src/core/lib/statistics/census_interface.h
-  - src/core/lib/statistics/census_rpc_stats.h
   - src/core/lib/surface/api_trace.h
   - src/core/lib/surface/call.h
   - src/core/lib/surface/call_test_only.h
@@ -343,9 +344,6 @@ filegroups:
   - src/core/lib/transport/transport.h
   - src/core/lib/transport/transport_impl.h
   src:
-  - src/core/lib/census/grpc_context.c
-  - src/core/lib/census/grpc_filter.c
-  - src/core/lib/census/grpc_plugin.c
   - src/core/lib/channel/channel_args.c
   - src/core/lib/channel/channel_stack.c
   - src/core/lib/channel/channel_stack_builder.c
@@ -365,8 +363,6 @@ filegroups:
   - src/core/lib/client_config/resolver.c
   - src/core/lib/client_config/resolver_factory.c
   - src/core/lib/client_config/resolver_registry.c
-  - src/core/lib/client_config/resolvers/dns_resolver.c
-  - src/core/lib/client_config/resolvers/sockaddr_resolver.c
   - src/core/lib/client_config/subchannel.c
   - src/core/lib/client_config/subchannel_factory.c
   - src/core/lib/client_config/subchannel_index.c
@@ -475,6 +471,18 @@ filegroups:
   src:
   - src/core/ext/lb_policy/round_robin/round_robin.c
   plugin: grpc_lb_policy_round_robin
+  uses:
+  - grpc_base
+- name: grpc_resolver_dns_native
+  src:
+  - src/core/ext/resolver/dns/native/dns_resolver.c
+  plugin: grpc_resolver_dns_native
+  uses:
+  - grpc_base
+- name: grpc_resolver_sockaddr
+  src:
+  - src/core/ext/resolver/sockaddr/sockaddr_resolver.c
+  plugin: grpc_resolver_sockaddr
   uses:
   - grpc_base
 - name: grpc_secure
@@ -653,6 +661,8 @@ libs:
   - grpc_lb_policy_grpclb
   - grpc_lb_policy_pick_first
   - grpc_lb_policy_round_robin
+  - grpc_resolver_dns_native
+  - grpc_resolver_sockaddr
   - grpc_secure
   - grpc_codegen
   - census
@@ -737,6 +747,8 @@ libs:
   - grpc_base
   - grpc_transport_chttp2_server_insecure
   - grpc_transport_chttp2_client_insecure
+  - grpc_resolver_dns_native
+  - grpc_resolver_sockaddr
   - grpc_lb_policy_grpclb
   - grpc_lb_policy_pick_first
   - grpc_lb_policy_round_robin
@@ -751,10 +763,8 @@ libs:
   language: c
   public_headers:
   - include/grpc/grpc_zookeeper.h
-  headers:
-  - src/core/lib/client_config/resolvers/zookeeper_resolver.h
   src:
-  - src/core/lib/client_config/resolvers/zookeeper_resolver.c
+  - src/core/ext/resolver/zookeeper/zookeeper_resolver.c
   deps:
   - gpr
   - grpc
@@ -762,6 +772,14 @@ libs:
   - zookeeper
   platforms:
   - linux
+  secure: false
+- name: one_input_fuzzer
+  build: private
+  language: c
+  src:
+  - test/core/util/one_corpus_entry_fuzzer.c
+  deps:
+  - gpr
   secure: false
 - name: reconnect_server
   build: private
@@ -1292,6 +1310,21 @@ targets:
   src:
   - tools/codegen/core/gen_legal_metadata_characters.c
   deps: []
+- name: goaway_server_test
+  cpu_cost: 0.1
+  build: test
+  language: c
+  src:
+  - test/core/end2end/goaway_server_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  platforms:
+  - mac
+  - linux
+  - posix
 - name: gpr_avl_test
   build: test
   language: c

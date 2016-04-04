@@ -180,6 +180,13 @@ grpc_json_reader_status grpc_json_reader_run(grpc_json_reader *reader) {
           case GRPC_JSON_STATE_VALUE_NUMBER_WITH_DECIMAL:
           case GRPC_JSON_STATE_VALUE_NUMBER_ZERO:
           case GRPC_JSON_STATE_VALUE_NUMBER_EPM:
+            if (reader->depth == 0) {
+              return GRPC_JSON_PARSE_ERROR;
+            } else if ((c == '}') && !reader->in_object) {
+              return GRPC_JSON_PARSE_ERROR;
+            } else if ((c == ']') && !reader->in_array) {
+              return GRPC_JSON_PARSE_ERROR;
+            }
             success = (uint32_t)json_reader_set_number(reader);
             if (!success) return GRPC_JSON_PARSE_ERROR;
             json_reader_string_clear(reader);
@@ -195,8 +202,10 @@ grpc_json_reader_status grpc_json_reader_run(grpc_json_reader *reader) {
               }
               if (reader->in_object) {
                 reader->state = GRPC_JSON_STATE_OBJECT_KEY_BEGIN;
-              } else {
+              } else if (reader->in_array) {
                 reader->state = GRPC_JSON_STATE_VALUE_BEGIN;
+              } else {
+                return GRPC_JSON_PARSE_ERROR;
               }
             } else {
               if (reader->depth-- == 0) return GRPC_JSON_PARSE_ERROR;
