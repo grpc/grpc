@@ -35,7 +35,7 @@
 #define GRPC_CORE_LIB_IOMGR_UDP_SERVER_H
 
 #include "src/core/lib/iomgr/endpoint.h"
-#include "src/core/lib/iomgr/fd_posix.h"
+#include "src/core/lib/iomgr/ev_posix.h"
 
 /* Forward decl of struct grpc_server */
 /* This is not typedef'ed to avoid a typedef-redefinition error */

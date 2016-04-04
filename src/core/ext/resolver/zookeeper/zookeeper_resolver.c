@@ -31,8 +31,6 @@
  *
  */
 
-#include "src/core/lib/client_config/resolvers/zookeeper_resolver.h"
-
 #include <string.h>
 
 #include <grpc/support/alloc.h>
@@ -474,15 +472,6 @@ static grpc_resolver *zookeeper_create(grpc_resolver_args *args,
   return &r->base;
 }
 
-static void zookeeper_plugin_init() {
-  grpc_register_resolver_type(grpc_zookeeper_resolver_factory_create());
-}
-
-void grpc_zookeeper_register() {
-  GRPC_API_TRACE("grpc_zookeeper_register(void)", 0, ());
-  grpc_register_plugin(zookeeper_plugin_init, NULL);
-}
-
 /*
  * FACTORY
  */
@@ -509,6 +498,15 @@ static const grpc_resolver_factory_vtable zookeeper_factory_vtable = {
 static grpc_resolver_factory zookeeper_resolver_factory = {
     &zookeeper_factory_vtable};
 
-grpc_resolver_factory *grpc_zookeeper_resolver_factory_create() {
+static grpc_resolver_factory *zookeeper_resolver_factory_create() {
   return &zookeeper_resolver_factory;
+}
+
+static void zookeeper_plugin_init() {
+  grpc_register_resolver_type(zookeeper_resolver_factory_create());
+}
+
+void grpc_zookeeper_register() {
+  GRPC_API_TRACE("grpc_zookeeper_register(void)", 0, ());
+  grpc_register_plugin(zookeeper_plugin_init, NULL);
 }
