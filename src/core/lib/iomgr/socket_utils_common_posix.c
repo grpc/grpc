@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -85,6 +85,28 @@ int grpc_set_socket_no_sigpipe_if_possible(int fd) {
          0 == getsockopt(fd, SOL_SOCKET, SO_NOSIGPIPE, &newval, &intlen) &&
          (newval != 0) == val;
 #else
+  return 1;
+#endif
+}
+
+int grpc_set_socket_ip_pktinfo_if_possible(int fd) {
+#ifdef GPR_HAVE_IP_PKTINFO
+  int get_local_ip = 1;
+  return 0 == setsockopt(fd, IPPROTO_IP, IP_PKTINFO, &get_local_ip,
+                         sizeof(get_local_ip));
+#else
+  (void)fd;
+  return 1;
+#endif
+}
+
+int grpc_set_socket_ipv6_recvpktinfo_if_possible(int fd) {
+#ifdef GPR_HAVE_IPV6_RECVPKTINFO
+  int get_local_ip = 1;
+  return 0 == setsockopt(fd, IPPROTO_IPV6, IPV6_RECVPKTINFO, &get_local_ip,
+                         sizeof(get_local_ip));
+#else
+  (void)fd;
   return 1;
 #endif
 }

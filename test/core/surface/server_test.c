@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -42,11 +42,19 @@ void test_register_method_fail(void) {
   grpc_server *server = grpc_server_create(NULL, NULL);
   void *method;
   void *method_old;
-  method = grpc_server_register_method(server, NULL, NULL);
+  method = grpc_server_register_method(server, NULL, NULL, 0);
   GPR_ASSERT(method == NULL);
-  method_old = grpc_server_register_method(server, "m", "h");
+  method_old = grpc_server_register_method(server, "m", "h", 0);
   GPR_ASSERT(method_old != NULL);
-  method = grpc_server_register_method(server, "m", "h");
+  method = grpc_server_register_method(server, "m", "h", 0);
+  GPR_ASSERT(method == NULL);
+  method_old = grpc_server_register_method(
+      server, "m2", "h2", GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST);
+  GPR_ASSERT(method_old != NULL);
+  method = grpc_server_register_method(server, "m2", "h2", 0);
+  GPR_ASSERT(method == NULL);
+  method = grpc_server_register_method(
+      server, "m2", "h2", GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST);
   GPR_ASSERT(method == NULL);
   grpc_server_destroy(server);
 }

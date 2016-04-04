@@ -1,6 +1,6 @@
 #region Copyright notice and license
 
-// Copyright 2015-2016, Google Inc.
+// Copyright 2015, Google Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -55,14 +55,7 @@ namespace Grpc.IntegrationTesting
         {
             var serverConfig = new ServerConfig
             {
-                ServerType = ServerType.ASYNC_SERVER,
-                PayloadConfig = new PayloadConfig
-                {
-                    SimpleParams = new SimpleProtoParams
-                    {
-                        RespSize = 100
-                    }
-                }
+                ServerType = ServerType.ASYNC_SERVER
             };
             serverRunner = ServerRunners.CreateStarted(serverConfig);
         }
@@ -88,7 +81,8 @@ namespace Grpc.IntegrationTesting
                 {
                     SimpleParams = new SimpleProtoParams
                     {
-                        ReqSize = 100
+                        ReqSize = 100,
+                        RespSize = 100
                     }
                 },
                 HistogramParams = new HistogramParams

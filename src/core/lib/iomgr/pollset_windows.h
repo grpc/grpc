@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -71,5 +71,8 @@ struct grpc_pollset {
   grpc_pollset_worker root_worker;
   grpc_closure *on_shutdown;
 };
+
+void grpc_pollset_global_init(void);
+void grpc_pollset_global_shutdown(void);
 
 #endif /* GRPC_CORE_LIB_IOMGR_POLLSET_WINDOWS_H */
