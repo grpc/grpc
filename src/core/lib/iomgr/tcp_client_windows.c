@@ -103,7 +103,8 @@ static void on_connect(grpc_exec_ctx *exec_ctx, void *acp, bool from_iocp) {
     GPR_ASSERT(transfered_bytes == 0);
     if (!wsa_success) {
       char *utf8_message = gpr_format_message(WSAGetLastError());
-      gpr_log(GPR_ERROR, "on_connect error: %s", utf8_message);
+      gpr_log(GPR_ERROR, "on_connect error connecting to '%s': %s",
+              ac->addr_name, utf8_message);
       gpr_free(utf8_message);
     } else {
       *ep = grpc_tcp_create(ac->socket, ac->addr_name);

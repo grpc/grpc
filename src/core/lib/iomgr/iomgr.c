@@ -63,7 +63,6 @@ void grpc_iomgr_init(void) {
   g_root_object.next = g_root_object.prev = &g_root_object;
   g_root_object.name = "root";
   grpc_iomgr_platform_init();
-  grpc_pollset_global_init();
 }
 
 static size_t count_objects(void) {
@@ -138,7 +137,6 @@ void grpc_iomgr_shutdown(void) {
   gpr_mu_lock(&g_mu);
   gpr_mu_unlock(&g_mu);
 
-  grpc_pollset_global_shutdown();
   grpc_iomgr_platform_shutdown();
   grpc_exec_ctx_global_shutdown();
   gpr_mu_destroy(&g_mu);

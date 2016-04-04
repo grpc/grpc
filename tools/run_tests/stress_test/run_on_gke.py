@@ -633,4 +633,5 @@ if __name__ == '__main__':
       os.path.dirname(sys.argv[0]), '../../..'))
   os.chdir(grpc_root)
 
-  run_tests(config)
+  if not run_tests(config):
+    sys.exit(1)
