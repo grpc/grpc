@@ -42,11 +42,11 @@ static void discard_write(gpr_slice slice) {}
 static void *tag(int n) { return (void *)(uintptr_t)n; }
 static int detag(void *p) { return (int)(uintptr_t)p; }
 
-//static void dont_log(gpr_log_func_args *args) {}
+static void dont_log(gpr_log_func_args *args) {}
 
 int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   grpc_test_only_set_metadata_hash_seed(0);
-  //gpr_set_log_function(dont_log);
+  gpr_set_log_function(dont_log);
   grpc_init();
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
