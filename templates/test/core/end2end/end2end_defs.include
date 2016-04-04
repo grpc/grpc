@@ -37,6 +37,7 @@
 
 #include "test/core/end2end/end2end_tests.h"
 
+#include <stdbool.h>
 #include <string.h>
 
 #include <grpc/support/log.h>

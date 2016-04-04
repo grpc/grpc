@@ -36,9 +36,12 @@
 
 #include "test/core/end2end/end2end_tests.h"
 
+#include <stdbool.h>
 #include <string.h>
 
 #include <grpc/support/log.h>
+
+static bool g_pre_init_called = false;
 
 extern void bad_hostname(grpc_end2end_test_config config);
 extern void bad_hostname_pre_init(void);
@@ -68,6 +71,8 @@ extern void disappearing_server(grpc_end2end_test_config config);
 extern void disappearing_server_pre_init(void);
 extern void empty_batch(grpc_end2end_test_config config);
 extern void empty_batch_pre_init(void);
+extern void filter_causes_close(grpc_end2end_test_config config);
+extern void filter_causes_close_pre_init(void);
 extern void graceful_server_shutdown(grpc_end2end_test_config config);
 extern void graceful_server_shutdown_pre_init(void);
 extern void high_initial_seqno(grpc_end2end_test_config config);
@@ -116,6 +121,8 @@ extern void trailing_metadata(grpc_end2end_test_config config);
 extern void trailing_metadata_pre_init(void);
 
 void grpc_end2end_tests_pre_init(void) {
+  GPR_ASSERT(!g_pre_init_called);
+  g_pre_init_called = true;
   bad_hostname_pre_init();
   binary_metadata_pre_init();
   call_creds_pre_init();
@@ -130,6 +137,7 @@ void grpc_end2end_tests_pre_init(void) {
   default_host_pre_init();
   disappearing_server_pre_init();
   empty_batch_pre_init();
+  filter_causes_close_pre_init();
   graceful_server_shutdown_pre_init();
   high_initial_seqno_pre_init();
   hpack_size_pre_init();
@@ -159,6 +167,8 @@ void grpc_end2end_tests(int argc, char **argv,
                         grpc_end2end_test_config config) {
   int i;
 
+  GPR_ASSERT(g_pre_init_called);
+
   if (argc <= 1) {
     bad_hostname(config);
     binary_metadata(config);
@@ -174,6 +184,7 @@ void grpc_end2end_tests(int argc, char **argv,
     default_host(config);
     disappearing_server(config);
     empty_batch(config);
+    filter_causes_close(config);
     graceful_server_shutdown(config);
     high_initial_seqno(config);
     hpack_size(config);
@@ -255,6 +266,10 @@ void grpc_end2end_tests(int argc, char **argv,
     }
     if (0 == strcmp("empty_batch", argv[i])) {
       empty_batch(config);
+      continue;
+    }
+    if (0 == strcmp("filter_causes_close", argv[i])) {
+      filter_causes_close(config);
       continue;
     }
     if (0 == strcmp("graceful_server_shutdown", argv[i])) {
