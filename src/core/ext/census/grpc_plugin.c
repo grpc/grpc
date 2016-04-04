@@ -40,12 +40,12 @@
 #include "src/core/lib/surface/channel_init.h"
 
 static bool maybe_add_census_filter(grpc_channel_stack_builder *builder,
-                                    void *arg_must_be_null) {
+                                    void *arg) {
   const grpc_channel_args *args =
       grpc_channel_stack_builder_get_channel_arguments(builder);
   if (grpc_channel_args_is_census_enabled(args)) {
     return grpc_channel_stack_builder_prepend_filter(
-        builder, &grpc_client_census_filter, NULL, NULL);
+        builder, (const grpc_channel_filter *)arg, NULL, NULL);
   }
   return true;
 }
@@ -60,9 +60,11 @@ void census_grpc_plugin_init(void) {
     }
   }
   grpc_channel_init_register_stage(GRPC_CLIENT_CHANNEL, INT_MAX,
-                                   maybe_add_census_filter, NULL);
+                                   maybe_add_census_filter,
+                                   (void *)&grpc_client_census_filter);
   grpc_channel_init_register_stage(GRPC_SERVER_CHANNEL, INT_MAX,
-                                   maybe_add_census_filter, NULL);
+                                   maybe_add_census_filter,
+                                   (void *)&grpc_server_census_filter);
 }
 
 void census_grpc_plugin_shutdown(void) { census_shutdown(); }
