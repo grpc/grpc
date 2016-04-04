@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -43,8 +43,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/useful.h>
 
-#include "src/core/lib/iomgr/fd_posix.h"
-#include "src/core/lib/iomgr/pollset_posix.h"
+#include "src/core/lib/iomgr/ev_posix.h"
 
 static void on_readable(grpc_exec_ctx *exec_ctx, void *arg, bool success);
 
