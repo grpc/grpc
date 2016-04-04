@@ -38,14 +38,13 @@ from tests.unit import resources
 class ChannelCredentialsTest(unittest.TestCase):
 
   def test_runtime_provided_root_certificates(self):
-    channel_credentials = implementations.ssl_channel_credentials(
-        None, None, None)
+    channel_credentials = implementations.ssl_channel_credentials()
     self.assertIsInstance(
         channel_credentials, implementations.ChannelCredentials)
   
   def test_application_provided_root_certificates(self):
     channel_credentials = implementations.ssl_channel_credentials(
-        resources.test_root_certificates(), None, None)
+        resources.test_root_certificates())
     self.assertIsInstance(
         channel_credentials, implementations.ChannelCredentials)
 
