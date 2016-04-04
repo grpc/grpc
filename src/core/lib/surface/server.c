@@ -936,6 +936,7 @@ void *grpc_server_register_method(
   m->method = gpr_strdup(method);
   m->host = gpr_strdup(host);
   m->next = server->registered_methods;
+  m->payload_handling = payload_handling;
   m->flags = flags;
   server->registered_methods = m;
   return m;
