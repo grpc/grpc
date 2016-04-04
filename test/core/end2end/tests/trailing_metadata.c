@@ -268,3 +268,5 @@ static void test_request_response_with_metadata_and_payload(
 void trailing_metadata(grpc_end2end_test_config config) {
   test_request_response_with_metadata_and_payload(config);
 }
+
+void trailing_metadata_pre_init(void) {}

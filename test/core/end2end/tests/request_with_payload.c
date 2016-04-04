@@ -232,3 +232,5 @@ static void test_invoke_request_with_payload(grpc_end2end_test_config config) {
 void request_with_payload(grpc_end2end_test_config config) {
   test_invoke_request_with_payload(config);
 }
+
+void request_with_payload_pre_init(void) {}

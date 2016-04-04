@@ -221,3 +221,5 @@ void simple_delayed_request(grpc_end2end_test_config config) {
   test_simple_delayed_request_short(config);
   test_simple_delayed_request_long(config);
 }
+
+void simple_delayed_request_pre_init(void) {}

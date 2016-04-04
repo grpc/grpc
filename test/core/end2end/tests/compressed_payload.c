@@ -336,3 +336,5 @@ void compressed_payload(grpc_end2end_test_config config) {
   test_invoke_request_with_compressed_payload(config);
   test_invoke_request_with_compressed_payload_md_override(config);
 }
+
+void compressed_payload_pre_init(void) {}
