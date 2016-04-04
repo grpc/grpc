@@ -91,13 +91,16 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
         switch (detag(ev.tag)) {
           case 1:
             requested_calls--;
-            abort();
+            // TODO(ctiller): keep reading that call!
+            break;
         }
     }
   }
 
 done:
   if (call1 != NULL) grpc_call_destroy(call1);
+  grpc_call_details_destroy(&call_details1);
+  grpc_metadata_array_destroy(&request_metadata1);
   grpc_server_shutdown_and_notify(server, cq, tag(0xdead));
   for (int i=0; i<=requested_calls; i++)
   GPR_ASSERT(grpc_completion_queue_next(cq, gpr_inf_past(GPR_CLOCK_REALTIME), NULL).type == GRPC_OP_COMPLETE);
