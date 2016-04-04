@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -41,6 +41,7 @@
 
 #include "src/core/lib/iomgr/iocp_windows.h"
 #include "src/core/lib/iomgr/iomgr.h"
+#include "src/core/lib/iomgr/pollset_windows.h"
 #include "src/core/lib/iomgr/socket_windows.h"
 
 /* Windows' io manager is going to be fully designed using IO completion
@@ -61,11 +62,13 @@ static void winsock_shutdown(void) {
 void grpc_iomgr_platform_init(void) {
   winsock_init();
   grpc_iocp_init();
+  grpc_pollset_global_init();
 }
 
 void grpc_iomgr_platform_flush(void) { grpc_iocp_flush(); }
 
 void grpc_iomgr_platform_shutdown(void) {
+  grpc_pollset_global_shutdown();
   grpc_iocp_shutdown();
   winsock_shutdown();
 }

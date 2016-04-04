@@ -1,5 +1,5 @@
 #!/usr/bin/env python2.7
-# Copyright 2015-2016, Google Inc.
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -633,4 +633,5 @@ if __name__ == '__main__':
       os.path.dirname(sys.argv[0]), '../../..'))
   os.chdir(grpc_root)
 
-  run_tests(config)
+  if not run_tests(config):
+    sys.exit(1)

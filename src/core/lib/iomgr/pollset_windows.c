@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -47,7 +47,7 @@ gpr_mu grpc_polling_mu;
 static grpc_pollset_worker *g_active_poller;
 static grpc_pollset_worker g_global_root_worker;
 
-void grpc_pollset_global_init() {
+void grpc_pollset_global_init(void) {
   gpr_mu_init(&grpc_polling_mu);
   g_active_poller = NULL;
   g_global_root_worker.links[GRPC_POLLSET_WORKER_LINK_GLOBAL].next =
@@ -55,7 +55,7 @@ void grpc_pollset_global_init() {
           &g_global_root_worker;
 }
 
-void grpc_pollset_global_shutdown() { gpr_mu_destroy(&grpc_polling_mu); }
+void grpc_pollset_global_shutdown(void) { gpr_mu_destroy(&grpc_polling_mu); }
 
 static void remove_worker(grpc_pollset_worker *worker,
                           grpc_pollset_worker_link_type type) {

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -57,6 +57,10 @@ void grpc_register_resolver_type(grpc_resolver_factory *factory);
     If a resolver factory was not found, return NULL. */
 grpc_resolver *grpc_resolver_create(
     const char *target, grpc_subchannel_factory *subchannel_factory);
+
+/** Find a resolver factory given a name and return an (owned-by-the-caller)
+ *  reference to it */
+grpc_resolver_factory *grpc_resolver_factory_lookup(const char *name);
 
 /** Given a target, return a (freshly allocated with gpr_malloc) string
     representing the default authority to pass from a client. */
