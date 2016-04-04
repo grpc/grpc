@@ -29,7 +29,11 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 
+<<<<<<< HEAD
 flags="-max_total_time=300"
+=======
+flags="-max_total_time=3600 -jobs=3 -workers=3 -artifact_prefix=fuzzer_output/"
+>>>>>>> 762a8df773a0d2289cac11522bc852972821a78b
 if [ "$config" == "asan-trace-cmp" ]
 then
   flags="-use_traces=1 $flags"
