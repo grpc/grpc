@@ -1074,25 +1074,30 @@ static void receiving_initial_metadata_ready(grpc_exec_ctx *exec_ctx,
 
   gpr_mu_lock(&call->mu);
 
-  grpc_metadata_batch *md =
-      &call->metadata_batch[1 /* is_receiving */][0 /* is_trailing */];
-  grpc_metadata_batch_filter(md, recv_initial_filter, call);
-  call->has_initial_md_been_received = true;
+  if (!success) {
+    bctl->success = false;
+  } else {
+    grpc_metadata_batch *md =
+        &call->metadata_batch[1 /* is_receiving */][0 /* is_trailing */];
+    grpc_metadata_batch_filter(md, recv_initial_filter, call);
+    call->has_initial_md_been_received = true;
 
-  if (gpr_time_cmp(md->deadline, gpr_inf_future(md->deadline.clock_type)) !=
-          0 &&
-      !call->is_client) {
-    GPR_TIMER_BEGIN("set_deadline_alarm", 0);
-    set_deadline_alarm(exec_ctx, call, md->deadline);
-    GPR_TIMER_END("set_deadline_alarm", 0);
-  }
+    if (gpr_time_cmp(md->deadline, gpr_inf_future(md->deadline.clock_type)) !=
+            0 &&
+        !call->is_client) {
+      GPR_TIMER_BEGIN("set_deadline_alarm", 0);
+      set_deadline_alarm(exec_ctx, call, md->deadline);
+      GPR_TIMER_END("set_deadline_alarm", 0);
+    }
 
-  if (call->saved_receiving_stream_ready_ctx.bctlp != NULL) {
-    grpc_closure *saved_rsr_closure = grpc_closure_create(
-        receiving_stream_ready, call->saved_receiving_stream_ready_ctx.bctlp);
-    grpc_exec_ctx_enqueue(exec_ctx, saved_rsr_closure,
-                          call->saved_receiving_stream_ready_ctx.success, NULL);
-    call->saved_receiving_stream_ready_ctx.bctlp = NULL;
+    if (call->saved_receiving_stream_ready_ctx.bctlp != NULL) {
+      grpc_closure *saved_rsr_closure = grpc_closure_create(
+          receiving_stream_ready, call->saved_receiving_stream_ready_ctx.bctlp);
+      grpc_exec_ctx_enqueue(exec_ctx, saved_rsr_closure,
+                            call->saved_receiving_stream_ready_ctx.success,
+                            NULL);
+      call->saved_receiving_stream_ready_ctx.bctlp = NULL;
+    }
   }
 
   gpr_mu_unlock(&call->mu);
