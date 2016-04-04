@@ -78,10 +78,10 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
                            cq, cq, tag(1));
   requested_calls++;
 
+  grpc_event ev;
   while (1) {
     grpc_exec_ctx_flush(&exec_ctx);
-    grpc_event ev =
-        grpc_completion_queue_next(cq, gpr_inf_past(GPR_CLOCK_REALTIME), NULL);
+    ev = grpc_completion_queue_next(cq, gpr_inf_past(GPR_CLOCK_REALTIME), NULL);
     switch (ev.type) {
       case GRPC_QUEUE_TIMEOUT:
         goto done;
@@ -102,10 +102,15 @@ done:
   grpc_call_details_destroy(&call_details1);
   grpc_metadata_array_destroy(&request_metadata1);
   grpc_server_shutdown_and_notify(server, cq, tag(0xdead));
-  for (int i=0; i<=requested_calls; i++)
-  GPR_ASSERT(grpc_completion_queue_next(cq, gpr_inf_past(GPR_CLOCK_REALTIME), NULL).type == GRPC_OP_COMPLETE);
+  for (int i = 0; i <= requested_calls; i++) {
+    ev = grpc_completion_queue_next(cq, gpr_inf_past(GPR_CLOCK_REALTIME), NULL);
+    GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
+  }
   grpc_completion_queue_shutdown(cq);
-  GPR_ASSERT(grpc_completion_queue_next(cq, gpr_inf_past(GPR_CLOCK_REALTIME), NULL).type == GRPC_QUEUE_SHUTDOWN);
+  for (int i = 0; i <= requested_calls; i++) {
+    ev = grpc_completion_queue_next(cq, gpr_inf_past(GPR_CLOCK_REALTIME), NULL);
+    GPR_ASSERT(ev.type == GRPC_QUEUE_SHUTDOWN);
+  }
   grpc_server_destroy(server);
   grpc_completion_queue_destroy(cq);
   grpc_shutdown();
