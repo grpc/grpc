@@ -273,8 +273,6 @@ filegroups:
   - src/core/lib/client_config/resolver.h
   - src/core/lib/client_config/resolver_factory.h
   - src/core/lib/client_config/resolver_registry.h
-  - src/core/lib/client_config/resolvers/dns_resolver.h
-  - src/core/lib/client_config/resolvers/sockaddr_resolver.h
   - src/core/lib/client_config/subchannel.h
   - src/core/lib/client_config/subchannel_factory.h
   - src/core/lib/client_config/subchannel_index.h
@@ -288,17 +286,16 @@ filegroups:
   - src/core/lib/iomgr/closure.h
   - src/core/lib/iomgr/endpoint.h
   - src/core/lib/iomgr/endpoint_pair.h
+  - src/core/lib/iomgr/ev_poll_and_epoll_posix.h
+  - src/core/lib/iomgr/ev_posix.h
   - src/core/lib/iomgr/exec_ctx.h
   - src/core/lib/iomgr/executor.h
-  - src/core/lib/iomgr/fd_posix.h
   - src/core/lib/iomgr/iocp_windows.h
   - src/core/lib/iomgr/iomgr.h
   - src/core/lib/iomgr/iomgr_internal.h
   - src/core/lib/iomgr/iomgr_posix.h
   - src/core/lib/iomgr/pollset.h
-  - src/core/lib/iomgr/pollset_posix.h
   - src/core/lib/iomgr/pollset_set.h
-  - src/core/lib/iomgr/pollset_set_posix.h
   - src/core/lib/iomgr/pollset_set_windows.h
   - src/core/lib/iomgr/pollset_windows.h
   - src/core/lib/iomgr/resolve_address.h
@@ -365,8 +362,6 @@ filegroups:
   - src/core/lib/client_config/resolver.c
   - src/core/lib/client_config/resolver_factory.c
   - src/core/lib/client_config/resolver_registry.c
-  - src/core/lib/client_config/resolvers/dns_resolver.c
-  - src/core/lib/client_config/resolvers/sockaddr_resolver.c
   - src/core/lib/client_config/subchannel.c
   - src/core/lib/client_config/subchannel_factory.c
   - src/core/lib/client_config/subchannel_index.c
@@ -381,17 +376,14 @@ filegroups:
   - src/core/lib/iomgr/endpoint.c
   - src/core/lib/iomgr/endpoint_pair_posix.c
   - src/core/lib/iomgr/endpoint_pair_windows.c
+  - src/core/lib/iomgr/ev_poll_and_epoll_posix.c
+  - src/core/lib/iomgr/ev_posix.c
   - src/core/lib/iomgr/exec_ctx.c
   - src/core/lib/iomgr/executor.c
-  - src/core/lib/iomgr/fd_posix.c
   - src/core/lib/iomgr/iocp_windows.c
   - src/core/lib/iomgr/iomgr.c
   - src/core/lib/iomgr/iomgr_posix.c
   - src/core/lib/iomgr/iomgr_windows.c
-  - src/core/lib/iomgr/pollset_multipoller_with_epoll.c
-  - src/core/lib/iomgr/pollset_multipoller_with_poll_posix.c
-  - src/core/lib/iomgr/pollset_posix.c
-  - src/core/lib/iomgr/pollset_set_posix.c
   - src/core/lib/iomgr/pollset_set_windows.c
   - src/core/lib/iomgr/pollset_windows.c
   - src/core/lib/iomgr/resolve_address_posix.c
@@ -477,6 +469,18 @@ filegroups:
   src:
   - src/core/ext/lb_policy/round_robin/round_robin.c
   plugin: grpc_lb_policy_round_robin
+  uses:
+  - grpc_base
+- name: grpc_resolver_dns_native
+  src:
+  - src/core/ext/resolver/dns/native/dns_resolver.c
+  plugin: grpc_resolver_dns_native
+  uses:
+  - grpc_base
+- name: grpc_resolver_sockaddr
+  src:
+  - src/core/ext/resolver/sockaddr/sockaddr_resolver.c
+  plugin: grpc_resolver_sockaddr
   uses:
   - grpc_base
 - name: grpc_secure
@@ -655,6 +659,8 @@ libs:
   - grpc_lb_policy_grpclb
   - grpc_lb_policy_pick_first
   - grpc_lb_policy_round_robin
+  - grpc_resolver_dns_native
+  - grpc_resolver_sockaddr
   - grpc_secure
   - grpc_codegen
   - census
@@ -739,6 +745,8 @@ libs:
   - grpc_base
   - grpc_transport_chttp2_server_insecure
   - grpc_transport_chttp2_client_insecure
+  - grpc_resolver_dns_native
+  - grpc_resolver_sockaddr
   - grpc_lb_policy_grpclb
   - grpc_lb_policy_pick_first
   - grpc_lb_policy_round_robin
@@ -753,10 +761,8 @@ libs:
   language: c
   public_headers:
   - include/grpc/grpc_zookeeper.h
-  headers:
-  - src/core/lib/client_config/resolvers/zookeeper_resolver.h
   src:
-  - src/core/lib/client_config/resolvers/zookeeper_resolver.c
+  - src/core/ext/resolver/zookeeper/zookeeper_resolver.c
   deps:
   - gpr
   - grpc
