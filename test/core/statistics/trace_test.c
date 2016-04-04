@@ -41,9 +41,9 @@
 #include <grpc/support/thd.h>
 #include <grpc/support/time.h>
 #include <grpc/support/useful.h>
-#include "src/core/lib/statistics/census_interface.h"
-#include "src/core/lib/statistics/census_tracing.h"
-#include "src/core/lib/statistics/census_tracing.h"
+#include "src/core/ext/census/census_interface.h"
+#include "src/core/ext/census/census_tracing.h"
+#include "src/core/ext/census/census_tracing.h"
 #include "test/core/util/test_config.h"
 
 /* Ensure all possible state transitions are called without causing problem */

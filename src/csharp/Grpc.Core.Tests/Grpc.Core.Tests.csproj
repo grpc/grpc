@@ -93,6 +93,7 @@
     <Compile Include="MetadataTest.cs" />
     <Compile Include="PerformanceTest.cs" />
     <Compile Include="SanityTest.cs" />
+    <Compile Include="HalfcloseTest.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
