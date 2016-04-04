@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -37,23 +37,23 @@
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
 
-/* Copy some arguments */
+/** Copy the arguments in \a src into a new instance */
 grpc_channel_args *grpc_channel_args_copy(const grpc_channel_args *src);
 
-/* Copy some arguments, stably sorting keys */
-grpc_channel_args *grpc_channel_args_normalize(const grpc_channel_args *a);
+/** Copy the arguments in \a src into a new instance, stably sorting keys */
+grpc_channel_args *grpc_channel_args_normalize(const grpc_channel_args *src);
 
-/** Copy some arguments and add the to_add parameter in the end.
-   If to_add is NULL, it is equivalent to call grpc_channel_args_copy. */
+/** Copy the arguments in \a src and append \a to_add. If \a to_add is NULL, it
+ * is equivalent to calling \a grpc_channel_args_copy. */
 grpc_channel_args *grpc_channel_args_copy_and_add(const grpc_channel_args *src,
                                                   const grpc_arg *to_add,
                                                   size_t num_to_add);
 
-/** Copy args from a then args from b into a new channel args */
+/** Concatenate args from \a a and \a b into a new instance */
 grpc_channel_args *grpc_channel_args_merge(const grpc_channel_args *a,
                                            const grpc_channel_args *b);
 
-/** Destroy arguments created by grpc_channel_args_copy */
+/** Destroy arguments created by \a grpc_channel_args_copy */
 void grpc_channel_args_destroy(grpc_channel_args *a);
 
 /** Reads census_enabled settings from channel args. Returns 1 if census_enabled

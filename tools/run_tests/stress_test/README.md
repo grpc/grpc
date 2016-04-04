@@ -63,12 +63,14 @@
 The stress tests are launched by the following script (path is relative to GRPC root directory) :
 `tools/run_tests/stress_test/run_stress_tests_on_gke.py`
 
-The script has several parameters and you can find out more details by using the `--help` flag.
-  - `<grpc_root_dir>$ tools/run_tests/stress_test/run_stress_tests_on_gke.py --help`
+You can find out more details by using the `--help` flag.
+  - `<grpc_root_dir>$ tools/run_tests/stress_test/run_on_gke.py --help`
 
 > **Example**
-> `$ tools/run_tests/stress_test/run_stress_tests_on_gke.py --project_id=sree-gce --test_duration_secs=180 --num_clients=5`
+> ```bash
+> $ # Change to the grpc root directory
+> $ cd $GRPC_ROOT
+> $ tools/run_tests/stress_test/run_on_gke.py --project_id=sree-gce --config_file=tools/run_tests/stress_test/configs/opt.json
+> ```
 
-> Launches the 5 instances of stress test clients, 1 instance of stress test server and runs the test for 180 seconds. The test would be run on the default container cluster (that you have set in `gcloud`) in the project `sree-gce`.
-
-> Note: we currently do not have the ability to launch multiple instances of the server. This can be added very easily in future
+> The above runs the stress test on GKE under the project `sree-gce` in the default cluster (that you set by `gcloud` command earlier). The test settings (like number of client instances, servers, the parmeters to pass, test cases etc) are all loaded from the config file `$GRPC_ROOT/tools/run_tests/stress_test/opt.json`

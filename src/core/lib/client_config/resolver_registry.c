@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -70,19 +70,27 @@ void grpc_register_resolver_type(grpc_resolver_factory *factory) {
   g_all_of_the_resolvers[g_number_of_resolvers++] = factory;
 }
 
-static grpc_resolver_factory *lookup_factory(grpc_uri *uri) {
+static grpc_resolver_factory *lookup_factory(const char *name) {
   int i;
 
-  /* handling NULL uri's here simplifies grpc_resolver_create */
-  if (!uri) return NULL;
-
   for (i = 0; i < g_number_of_resolvers; i++) {
-    if (0 == strcmp(uri->scheme, g_all_of_the_resolvers[i]->vtable->scheme)) {
+    if (0 == strcmp(name, g_all_of_the_resolvers[i]->vtable->scheme)) {
       return g_all_of_the_resolvers[i];
     }
   }
 
   return NULL;
+}
+
+grpc_resolver_factory *grpc_resolver_factory_lookup(const char *name) {
+  grpc_resolver_factory *f = lookup_factory(name);
+  if (f) grpc_resolver_factory_ref(f);
+  return f;
+}
+
+static grpc_resolver_factory *lookup_factory_by_uri(grpc_uri *uri) {
+  if (!uri) return NULL;
+  return lookup_factory(uri->scheme);
 }
 
 static grpc_resolver_factory *resolve_factory(const char *target,
@@ -92,13 +100,13 @@ static grpc_resolver_factory *resolve_factory(const char *target,
 
   GPR_ASSERT(uri != NULL);
   *uri = grpc_uri_parse(target, 1);
-  factory = lookup_factory(*uri);
+  factory = lookup_factory_by_uri(*uri);
   if (factory == NULL) {
     if (g_default_resolver_prefix != NULL) {
       grpc_uri_destroy(*uri);
       gpr_asprintf(&tmp, "%s%s", g_default_resolver_prefix, target);
       *uri = grpc_uri_parse(tmp, 1);
-      factory = lookup_factory(*uri);
+      factory = lookup_factory_by_uri(*uri);
       if (factory == NULL) {
         grpc_uri_destroy(grpc_uri_parse(target, 0));
         grpc_uri_destroy(grpc_uri_parse(tmp, 0));

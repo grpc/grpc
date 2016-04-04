@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -152,7 +152,7 @@ static void simple_request_body(grpc_end2end_test_fixture f) {
   cq_expect_completion(cqv, tag(1), 1);
   cq_verify(cqv);
 
-  GPR_ASSERT(status == GRPC_STATUS_INVALID_ARGUMENT);
+  GPR_ASSERT(status == GRPC_STATUS_INTERNAL);
 
   gpr_free(details);
   grpc_metadata_array_destroy(&initial_metadata_recv);
