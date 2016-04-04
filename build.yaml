@@ -1638,6 +1638,7 @@ targets:
   - gpr
   corpus_dirs:
   - test/core/transport/chttp2/hpack_parser_corpus
+  maxlen: 512
 - name: hpack_parser_test
   build: test
   language: c
@@ -1670,6 +1671,7 @@ targets:
   - gpr
   corpus_dirs:
   - test/core/http/corpus
+  maxlen: 2048
 - name: http_parser_test
   build: test
   language: c
@@ -1783,6 +1785,7 @@ targets:
   - gpr
   corpus_dirs:
   - test/core/json/corpus
+  maxlen: 512
 - name: json_rewrite
   build: test
   run: false
@@ -1960,6 +1963,7 @@ targets:
   - gpr
   corpus_dirs:
   - test/core/end2end/fuzzers/server_fuzzer_corpus
+  maxlen: 2048
 - name: server_test
   build: test
   language: c
@@ -2170,6 +2174,7 @@ targets:
   - gpr
   corpus_dirs:
   - test/core/client_config/uri_corpus
+  maxlen: 128
 - name: uri_parser_test
   build: test
   language: c
