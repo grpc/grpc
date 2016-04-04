@@ -110,7 +110,6 @@ static void test_request(grpc_end2end_test_config config) {
   grpc_byte_buffer *request_payload =
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
   gpr_timespec deadline = five_seconds_time();
-  grpc_metadata meta;
   grpc_end2end_test_fixture f =
       begin_test(config, "filter_causes_close", NULL, NULL);
   cq_verifier *cqv = cq_verifier_create(f.cq);
@@ -177,8 +176,6 @@ static void test_request(grpc_end2end_test_config config) {
 
   GPR_ASSERT(status == GRPC_STATUS_PERMISSION_DENIED);
   GPR_ASSERT(0 == strcmp(details, "Random failure that's not preventable."));
-  GPR_ASSERT(byte_buffer_eq_string(request_payload_recv, "hello world"));
-  GPR_ASSERT(contains_metadata(&request_metadata_recv, "key", meta.value));
 
   gpr_free(details);
   grpc_metadata_array_destroy(&initial_metadata_recv);
@@ -187,14 +184,11 @@ static void test_request(grpc_end2end_test_config config) {
   grpc_call_details_destroy(&call_details);
 
   grpc_call_destroy(c);
-  grpc_call_destroy(s);
 
   cq_verifier_destroy(cqv);
 
   grpc_byte_buffer_destroy(request_payload);
   grpc_byte_buffer_destroy(request_payload_recv);
-
-  gpr_free((char *)meta.value);
 
   end_test(&f);
   config.tear_down_data(&f);
