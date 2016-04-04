@@ -40,9 +40,16 @@ $PROTOC -I src/proto src/proto/grpc/health/v1/health.proto \
     --ruby_out=src/ruby/pb \
     --plugin=$PLUGIN
 
-$PROTOC -I . test/proto/{messages,test,empty}.proto \
+$PROTOC -I . \
+    src/proto/grpc/testing/{messages,test,empty}.proto \
     --grpc_out=src/ruby/pb \
     --ruby_out=src/ruby/pb \
+    --plugin=$PLUGIN
+
+$PROTOC -I . \
+    src/proto/grpc/testing/{messages,payloads,stats,services,control}.proto \
+    --grpc_out=src/ruby/qps \
+    --ruby_out=src/ruby/qps \
     --plugin=$PLUGIN
 
 $PROTOC -I src/proto/math src/proto/math/math.proto \
