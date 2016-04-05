@@ -200,8 +200,7 @@ static void test_request(grpc_end2end_test_config config) {
 
 typedef struct { grpc_closure *recv_im_ready; } call_data;
 
-typedef struct {
-} channel_data;
+typedef struct { uint8_t unused; } channel_data;
 
 static void recv_im_ready(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
   grpc_call_element *elem = arg;
