@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_CHANNEL_SUBCHANNEL_CALL_HOLDER_H
-#define GRPC_CORE_LIB_CHANNEL_SUBCHANNEL_CALL_HOLDER_H
+#ifndef GRPC_CORE_EXT_CLIENT_CONFIG_SUBCHANNEL_CALL_HOLDER_H
+#define GRPC_CORE_EXT_CLIENT_CONFIG_SUBCHANNEL_CALL_HOLDER_H
 
 #include "src/core/ext/client_config/subchannel.h"
 
@@ -95,4 +95,4 @@ void grpc_subchannel_call_holder_perform_op(grpc_exec_ctx *exec_ctx,
 char *grpc_subchannel_call_holder_get_peer(grpc_exec_ctx *exec_ctx,
                                            grpc_subchannel_call_holder *holder);
 
-#endif /* GRPC_CORE_LIB_CHANNEL_SUBCHANNEL_CALL_HOLDER_H */
+#endif /* GRPC_CORE_EXT_CLIENT_CONFIG_SUBCHANNEL_CALL_HOLDER_H */
