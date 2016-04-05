@@ -40,49 +40,32 @@ using System.Threading.Tasks;
 using Grpc.Core;
 using Grpc.Core.Utils;
 using Grpc.Testing;
+using Moq;
 using NUnit.Framework;
 
 namespace Grpc.IntegrationTesting
 {
-    /// <summary>
-    /// Test SSL credentials where server authenticates client 
-    /// and client authenticates the server.
-    /// </summary>
-    public class SslCredentialsTest
+    public class GeneratedServiceBaseTest
     {
         const string Host = "localhost";
         Server server;
         Channel channel;
         TestService.TestServiceClient client;
 
-        [TestFixtureSetUp]
+        [SetUp]
         public void Init()
         {
-            var rootCert = File.ReadAllText(TestCredentials.ClientCertAuthorityPath);
-            var keyCertPair = new KeyCertificatePair(
-                File.ReadAllText(TestCredentials.ServerCertChainPath),
-                File.ReadAllText(TestCredentials.ServerPrivateKeyPath));
-
-            var serverCredentials = new SslServerCredentials(new[] { keyCertPair }, rootCert, true);
-            var clientCredentials = new SslCredentials(rootCert, keyCertPair);
-
             server = new Server
             {
-                Services = { TestService.BindService(new TestServiceImpl()) },
-                Ports = { { Host, ServerPort.PickUnused, serverCredentials } }
+                Services = { TestService.BindService(new UnimplementedTestServiceImpl()) },
+                Ports = { { Host, ServerPort.PickUnused, SslServerCredentials.Insecure } }
             };
             server.Start();
-
-            var options = new List<ChannelOption>
-            {
-                new ChannelOption(ChannelOptions.SslTargetNameOverride, TestCredentials.DefaultHostOverride)
-            };
-
-            channel = new Channel(Host, server.Ports.Single().BoundPort, clientCredentials, options);
+            channel = new Channel(Host, server.Ports.Single().BoundPort, ChannelCredentials.Insecure);
             client = TestService.NewClient(channel);
         }
 
-        [TestFixtureTearDown]
+        [TearDown]
         public void Cleanup()
         {
             channel.ShutdownAsync().Wait();
@@ -90,10 +73,44 @@ namespace Grpc.IntegrationTesting
         }
 
         [Test]
-        public void AuthenticatedClientAndServer()
+        public void UnimplementedByDefault_Unary()
         {
-            var response = client.UnaryCall(new SimpleRequest { ResponseSize = 10 });
-            Assert.AreEqual(10, response.Payload.Body.Length);
+            var ex = Assert.Throws<RpcException>(() => client.UnaryCall(new SimpleRequest { }));
+            Assert.AreEqual(StatusCode.Unimplemented, ex.Status.StatusCode);
+        }
+
+        [Test]
+        public async Task UnimplementedByDefault_ClientStreaming()
+        {
+            var call = client.StreamingInputCall();
+
+            var ex = Assert.Throws<RpcException>(async () => await call);
+            Assert.AreEqual(StatusCode.Unimplemented, ex.Status.StatusCode);
+        }
+
+        [Test]
+        public async Task UnimplementedByDefault_ServerStreamingCall()
+        {
+            var call = client.StreamingOutputCall(new StreamingOutputCallRequest());
+
+            var ex = Assert.Throws<RpcException>(async () => await call.ResponseStream.MoveNext());
+            Assert.AreEqual(StatusCode.Unimplemented, ex.Status.StatusCode);
+        }
+
+        [Test]
+        public async Task UnimplementedByDefault_DuplexStreamingCall()
+        {
+            var call = client.FullDuplexCall();
+
+            var ex = Assert.Throws<RpcException>(async () => await call.ResponseStream.MoveNext());
+            Assert.AreEqual(StatusCode.Unimplemented, ex.Status.StatusCode);
+        }
+
+        /// <summary>
+        /// Implementation of TestService that doesn't override any methods.
+        /// </summary>
+        private class UnimplementedTestServiceImpl : TestService.TestServiceBase
+        {
         }
     }
 }

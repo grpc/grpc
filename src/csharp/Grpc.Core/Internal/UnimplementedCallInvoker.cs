@@ -32,42 +32,44 @@
 #endregion
 
 using System;
-using System.Collections.Generic;
-using System.Threading;
 using System.Threading.Tasks;
-using Google.Protobuf;
 using Grpc.Core;
 using Grpc.Core.Utils;
 
-namespace Grpc.Testing
+namespace Grpc.Core.Internal
 {
     /// <summary>
-    /// Implementation of BenchmarkService server
+    /// Call invoker that throws <c>NotImplementedException</c> for all requests.
     /// </summary>
-    public class BenchmarkServiceImpl : BenchmarkService.BenchmarkServiceBase
+    internal class UnimplementedCallInvoker : CallInvoker
     {
-        public BenchmarkServiceImpl()
+        public UnimplementedCallInvoker()
         {
         }
 
-        public override Task<SimpleResponse> UnaryCall(SimpleRequest request, ServerCallContext context)
+        public override TResponse BlockingUnaryCall<TRequest, TResponse>(Method<TRequest, TResponse> method, string host, CallOptions options, TRequest request)
         {
-            var response = new SimpleResponse { Payload = CreateZerosPayload(request.ResponseSize) };
-            return Task.FromResult(response);
+            throw new NotImplementedException();
         }
 
-        public override async Task StreamingCall(IAsyncStreamReader<SimpleRequest> requestStream, IServerStreamWriter<SimpleResponse> responseStream, ServerCallContext context)
+        public override AsyncUnaryCall<TResponse> AsyncUnaryCall<TRequest, TResponse>(Method<TRequest, TResponse> method, string host, CallOptions options, TRequest request)
         {
-            await requestStream.ForEachAsync(async request =>
-            {
-                var response = new SimpleResponse { Payload = CreateZerosPayload(request.ResponseSize) };
-                await responseStream.WriteAsync(response);
-            });
+            throw new NotImplementedException();
         }
 
-        private static Payload CreateZerosPayload(int size)
+        public override AsyncServerStreamingCall<TResponse> AsyncServerStreamingCall<TRequest, TResponse>(Method<TRequest, TResponse> method, string host, CallOptions options, TRequest request)
         {
-            return new Payload { Body = ByteString.CopyFrom(new byte[size]) };
+            throw new NotImplementedException();
+        }
+
+        public override AsyncClientStreamingCall<TRequest, TResponse> AsyncClientStreamingCall<TRequest, TResponse>(Method<TRequest, TResponse> method, string host, CallOptions options)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override AsyncDuplexStreamingCall<TRequest, TResponse> AsyncDuplexStreamingCall<TRequest, TResponse>(Method<TRequest, TResponse> method, string host, CallOptions options)
+        {
+            throw new NotImplementedException();
         }
     }
 }

@@ -40,6 +40,7 @@ import sys
 import tempfile
 import time
 import uuid
+import performance.scenario_config as scenario_config
 
 
 _ROOT = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), '../..'))
@@ -47,130 +48,6 @@ os.chdir(_ROOT)
 
 
 _REMOTE_HOST_USERNAME = 'jenkins'
-
-
-class CXXLanguage:
-
-  def __init__(self):
-    self.safename = 'cxx'
-
-  def worker_cmdline(self):
-    return ['bins/opt/qps_worker']
-
-  def worker_port_offset(self):
-    return 0
-
-  def scenarios(self):
-    # TODO(jtattermusch): add more scenarios
-    return {
-            # Scenario 1: generic async streaming ping-pong (contentionless latency)
-            'cpp_async_generic_streaming_ping_pong': [
-                '--rpc_type=STREAMING',
-                '--client_type=ASYNC_CLIENT',
-                '--server_type=ASYNC_GENERIC_SERVER',
-                '--outstanding_rpcs_per_channel=1',
-                '--client_channels=1',
-                '--bbuf_req_size=0',
-                '--bbuf_resp_size=0',
-                '--async_client_threads=1',
-                '--async_server_threads=1',
-                '--secure_test=true',
-                '--num_servers=1',
-                '--num_clients=1',
-                '--server_core_limit=0',
-                '--client_core_limit=0'],
-            # Scenario 5: Sync unary ping-pong with protobufs
-            'cpp_sync_unary_ping_pong_protobuf': [
-                '--rpc_type=UNARY',
-                '--client_type=SYNC_CLIENT',
-                '--server_type=SYNC_SERVER',
-                '--outstanding_rpcs_per_channel=1',
-                '--client_channels=1',
-                '--simple_req_size=0',
-                '--simple_resp_size=0',
-                '--secure_test=true',
-                '--num_servers=1',
-                '--num_clients=1',
-                '--server_core_limit=0',
-                '--client_core_limit=0']}
-
-  def __str__(self):
-    return 'c++'
-
-
-class CSharpLanguage:
-
-  def __init__(self):
-    self.safename = str(self)
-
-  def worker_cmdline(self):
-    return ['tools/run_tests/performance/run_worker_csharp.sh']
-
-  def worker_port_offset(self):
-    return 100
-
-  def scenarios(self):
-    # TODO(jtattermusch): add more scenarios
-    return {
-            # Scenario 1: generic async streaming ping-pong (contentionless latency)
-            'csharp_async_generic_streaming_ping_pong': [
-                '--rpc_type=STREAMING',
-                '--client_type=ASYNC_CLIENT',
-                '--server_type=ASYNC_GENERIC_SERVER',
-                '--outstanding_rpcs_per_channel=1',
-                '--client_channels=1',
-                '--bbuf_req_size=0',
-                '--bbuf_resp_size=0',
-                '--async_client_threads=1',
-                '--async_server_threads=1',
-                '--secure_test=true',
-                '--num_servers=1',
-                '--num_clients=1',
-                '--server_core_limit=0',
-                '--client_core_limit=0']}
-
-  def __str__(self):
-    return 'csharp'
-
-
-class NodeLanguage:
-
-  def __init__(self):
-    pass
-    self.safename = str(self)
-
-  def worker_cmdline(self):
-    return ['tools/run_tests/performance/run_worker_node.sh']
-
-  def worker_port_offset(self):
-    return 200
-
-  def scenarios(self):
-    # TODO(jtattermusch): add more scenarios
-    return {
-             'node_sync_unary_ping_pong_protobuf': [
-                '--rpc_type=UNARY',
-                '--client_type=ASYNC_CLIENT',
-                '--server_type=ASYNC_SERVER',
-                '--outstanding_rpcs_per_channel=1',
-                '--client_channels=1',
-                '--simple_req_size=0',
-                '--simple_resp_size=0',
-                '--secure_test=false',
-                '--num_servers=1',
-                '--num_clients=1',
-                '--server_core_limit=0',
-                '--client_core_limit=0']}
-
-  def __str__(self):
-    return 'node'
-
-
-_LANGUAGES = {
-    'c++' : CXXLanguage(),
-    'csharp' : CSharpLanguage(),
-    'node' : NodeLanguage(),
-}
 
 
 class QpsWorkerJob:
@@ -272,7 +149,7 @@ def prepare_remote_hosts(hosts):
     sys.exit(1)
 
 
-def build_on_remote_hosts(hosts, languages=_LANGUAGES.keys(), build_local=False):
+def build_on_remote_hosts(hosts, languages=scenario_config.LANGUAGES.keys(), build_local=False):
   """Builds performance worker on remote hosts (and maybe also locally)."""
   build_timeout = 15*60
   build_jobs = []
@@ -366,7 +243,7 @@ def finish_qps_workers(jobs):
 
 argp = argparse.ArgumentParser(description='Run performance tests.')
 argp.add_argument('-l', '--language',
-                  choices=['all'] + sorted(_LANGUAGES.keys()),
+                  choices=['all'] + sorted(scenario_config.LANGUAGES.keys()),
                   nargs='+',
                   default=['all'],
                   help='Languages to benchmark.')
@@ -380,9 +257,9 @@ argp.add_argument('--remote_worker_host',
 
 args = argp.parse_args()
 
-languages = set(_LANGUAGES[l]
+languages = set(scenario_config.LANGUAGES[l]
                 for l in itertools.chain.from_iterable(
-                      _LANGUAGES.iterkeys() if x == 'all' else [x]
+                      scenario_config.LANGUAGES.iterkeys() if x == 'all' else [x]
                       for x in args.language))
 
 # Put together set of remote hosts where to run and build
