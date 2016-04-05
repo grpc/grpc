@@ -76,21 +76,21 @@
       "node-stress-client": {
         "clientTemplate": "node_client",
         "dockerImage": "grpc_stress_node",
-        "numInstances": 2,
+        "numInstances": 15,
         "serverPodSpec": "node-stress-server"
       }
     }
   },
 
   "globalSettings": {
-    "buildDockerImages": false,
-    "pollIntervalSecs": 10,
-    "testDurationSecs": 120,
-    "kubernetesProxyPort": 8001,
+    "buildDockerImages": true,
+    "pollIntervalSecs": 60,
+    "testDurationSecs": 7200,
+    "kubernetesProxyPort": 8005,
     "datasetIdNamePrefix": "stress_test_node",
     "summaryTableId": "summary",
     "qpsTableId": "qps",
-    "podWarmupSecs": 10
+    "podWarmupSecs": 60
   }
 }
 

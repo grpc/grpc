@@ -27,7 +27,7 @@
           "num_stubs_per_channel":10,
           "test_cases": "empty_unary:1,large_unary:1,client_streaming:1,server_streaming:1,empty_stream:1",
           "metrics_port": 8081,
-          "metrics_collection_interval_secs":10
+          "metrics_collection_interval_secs": 60
         },
         "metricsPort": 8081,
         "metricsArgs": {
@@ -104,19 +104,19 @@
       "stress-client-opt": {
         "clientTemplate": "cxx_client_opt",
         "dockerImage": "grpc_stress_cxx_opt",
-        "numInstances": 3,
+        "numInstances": 5,
         "serverPodSpec": "stress-server-opt"
       },
       "stress-client-tsan": {
         "clientTemplate": "cxx_client_tsan",
         "dockerImage": "grpc_stress_cxx_tsan",
-        "numInstances": 3,
+        "numInstances": 10,
         "serverPodSpec": "stress-server-tsan"
       },
       "stress-client-asan": {
         "clientTemplate": "cxx_client_asan",
         "dockerImage": "grpc_stress_cxx_asan",
-        "numInstances": 3,
+        "numInstances": 10,
         "serverPodSpec": "stress-server-asan"
       }
     }
@@ -124,9 +124,9 @@
 
   "globalSettings": {
     "buildDockerImages": true,
-    "pollIntervalSecs": 10,
-    "testDurationSecs": 60,
-    "kubernetesProxyPort": 8001,
+    "pollIntervalSecs": 60,
+    "testDurationSecs": 7200,
+    "kubernetesProxyPort": 8004,
     "datasetIdNamePrefix": "stress_test_opt_tsan",
     "summaryTableId": "summary",
     "qpsTableId": "qps",
