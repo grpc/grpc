@@ -352,6 +352,25 @@ grpc_subchannel *grpc_subchannel_create(grpc_exec_ctx *exec_ctx,
                          c->args->args[i].value.integer,
                          c->args->args[i].value.integer);
       }
+      if (0 ==
+          strcmp(c->args->args[i].key, GRPC_ARG_MAX_RECONNECT_BACKOFF_MS)) {
+        if (c->args->args[i].type == GRPC_ARG_INTEGER) {
+          if (c->args->args[i].value.integer >= 0) {
+            gpr_backoff_init(
+                &c->backoff_state, GRPC_SUBCHANNEL_RECONNECT_BACKOFF_MULTIPLIER,
+                GRPC_SUBCHANNEL_RECONNECT_JITTER,
+                GPR_MIN(c->args->args[i].value.integer,
+                        GRPC_SUBCHANNEL_INITIAL_CONNECT_BACKOFF_SECONDS * 1000),
+                c->args->args[i].value.integer);
+          } else {
+            gpr_log(GPR_ERROR, GRPC_ARG_MAX_RECONNECT_BACKOFF_MS
+                    " : must be non-negative");
+          }
+        } else {
+          gpr_log(GPR_ERROR,
+                  GRPC_ARG_MAX_RECONNECT_BACKOFF_MS " : must be an integer");
+        }
+      }
     }
   }
   gpr_mu_init(&c->mu);
