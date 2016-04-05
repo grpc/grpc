@@ -29,8 +29,8 @@
     "templates": {
       "cxx_client_asan": {
         "baseTemplate": "default",
-        "stressClientCmd": "/var/local/git/grpc/bins/asan/stress_test",
-        "metricsClientCmd": "/var/local/git/grpc/bins/asan/metrics_client"
+        "stressClientCmd": ["/var/local/git/grpc/bins/asan/stress_test"],
+        "metricsClientCmd": ["/var/local/git/grpc/bins/asan/metrics_client"]
       }
     }
   },
@@ -48,7 +48,7 @@
     "templates": {
       "cxx_server_asan": {
         "baseTemplate": "default",
-        "stressServerCmd": "/var/local/git/grpc/bins/asan/interop_server"
+        "stressServerCmd": ["/var/local/git/grpc/bins/asan/interop_server"]
       }
     }
   },
