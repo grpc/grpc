@@ -101,15 +101,24 @@ void grpc_lb_policy_weak_unref(grpc_exec_ctx *exec_ctx,
 int grpc_lb_policy_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
                         grpc_pollset *pollset,
                         grpc_metadata_batch *initial_metadata,
+                        uint32_t initial_metadata_flags,
                         grpc_connected_subchannel **target,
                         grpc_closure *on_complete) {
   return policy->vtable->pick(exec_ctx, policy, pollset, initial_metadata,
-                              target, on_complete);
+                              initial_metadata_flags, target, on_complete);
 }
 
 void grpc_lb_policy_cancel_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
                                 grpc_connected_subchannel **target) {
   policy->vtable->cancel_pick(exec_ctx, policy, target);
+}
+
+void grpc_lb_policy_cancel_picks(grpc_exec_ctx *exec_ctx,
+                                 grpc_lb_policy *policy,
+                                 uint32_t initial_metadata_flags_mask,
+                                 uint32_t initial_metadata_flags_eq) {
+  policy->vtable->cancel_picks(exec_ctx, policy, initial_metadata_flags_mask,
+                               initial_metadata_flags_eq);
 }
 
 void grpc_lb_policy_exit_idle(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy) {
