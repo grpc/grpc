@@ -1,7 +1,9 @@
 # C/C++ build outputs
 bins
+bin
 gens
 libs
+lib
 objs
 
 # Python items
@@ -37,8 +39,16 @@ coverage
 .run_tests_cache
 .preprocessed_build
 
+# cmake related stuff
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+
 # emacs temp files
 *~
+
+# generated Makefile by cmake, gyp, etc
+Makefile
 
 # vim temp files
 .*.swp

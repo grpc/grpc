@@ -1,0 +1,132 @@
+%YAML 1.2
+--- |
+  cmake_minimum_required (VERSION 2.8.4 FATAL_ERROR)
+
+  <%
+  import os
+
+  PLATFORM_CHECK = {
+    'linux': '(CMAKE_SYSTEM EQUAL Linux)',
+    'mac': '(CMAKE_SYSTEM EQUAL Darwin)',
+    'windows': '(CMAKE_SYSTEM EQUAL Windows)',
+    'posix': '(NOT (CMAKE_SYSTEM EQUAL Windows))'
+  }
+
+  THINGS_CMAKE_BUILDS = set(['all', 'protoc', 'tool'])
+  %>
+
+  set (PACKAGE_NAME      "grpc")
+  set (PACKAGE_VERSION   "${settings.core_version}")
+  set (PACKAGE_STRING    "<%text>${PACKAGE_NAME} ${PACKAGE_VERSION}</%text>")
+  set (PACKAGE_TARNAME   "<%text>${PACKAGE_NAME}-${PACKAGE_VERSION}</%text>")
+  set (PACKAGE_BUGREPORT "https://github.com/grpc/grpc/issues/")
+  set (CMAKE_ARCHIVE_OUTPUT_DIRECTORY <%text>${CMAKE_BINARY_DIR}/lib</%text>)
+  set (CMAKE_LIBRARY_OUTPUT_DIRECTORY <%text>${CMAKE_BINARY_DIR}/lib</%text>)
+  set (CMAKE_RUNTIME_OUTPUT_DIRECTORY <%text>${CMAKE_BINARY_DIR}/bin</%text>)
+
+  project (<%text>${PACKAGE_NAME}</%text> C CXX)
+
+  set (PACKAGE_SOVERSION <%text>${PACKAGE_VERSION_MAJOR}</%text>)
+  set (CMAKE_INCLUDE_CURRENT_DIR ON)
+
+  include_directories(include)
+  include_directories(third_party/googletest/include)
+
+  include(CheckCXXCompilerFlag)
+  CHECK_CXX_COMPILER_FLAG("-std=c++11" COMPILER_SUPPORTS_CXX11)
+  CHECK_CXX_COMPILER_FLAG("-std=c++0x" COMPILER_SUPPORTS_CXX0X)
+  if(COMPILER_SUPPORTS_CXX11)
+      set(CMAKE_CXX_FLAGS "<%text>${CMAKE_CXX_FLAGS}</%text> -std=c++11")
+  elseif(COMPILER_SUPPORTS_CXX0X)
+      set(CMAKE_CXX_FLAGS "<%text>${CMAKE_CXX_FLAGS}</%text> -std=c++0x")
+  else()
+      message(STATUS "The compiler <%text>${CMAKE_CXX_COMPILER}</%text> has no C++11 support. Please use a different C++ compiler.")
+  endif()
+
+  set(CMAKE_C_FLAGS "<%text>${CMAKE_C_FLAGS}</%text> -std=c99")
+
+  find_package(Protobuf REQUIRED)
+  set(PROTOBUF_IMPORT_DIRS <%text>${CMAKE_BINARY_DIR}</%text>)
+  if (PROTOBUF_FOUND)
+    include_directories(<%text>${PROTOBUF_INCLUDE_DIRS}</%text>)
+  endif(PROTOBUF_FOUND)
+
+  find_package(ZLIB REQUIRED)
+  if (ZLIB_FOUND)
+    include_directories(<%text>${ZLIB_INCLUDE_DIRS}</%text>)
+  endif(ZLIB_FOUND)
+
+  find_package(OpenSSL REQUIRED)
+  if (OPENSSL_FOUND)
+    include_directories(<%text>${OPENSSL_INCLUDE_DIRS}</%text>)
+  endif(OPENSSL_FOUND)
+
+  find_package(Threads REQUIRED)
+
+  include(CheckSymbolExists)
+  check_symbol_exists(SSL_get0_alpn_selected openssl/ssl.h HAVE_ALPN)
+  if(HAVE_ALPN)
+    add_definitions(-DTSI_OPENSSL_ALPN_SUPPORT=1)
+  else()
+    add_definitions(-DTSI_OPENSSL_ALPN_SUPPORT=0)
+  endif()
+
+  if(UNIX)
+    set(MATH_LIB -lm)
+  else()
+    set(MATH_LIB)
+  endif()
+
+  % for lib in libs:
+  %  if lib.build in THINGS_CMAKE_BUILDS:
+  %   if lib.get('platforms', None) is not None:
+  if (${' OR '.join(PLATFORM_CHECK[chk] for chk in lib.platforms)})
+  %   endif
+  add_library(${lib.name}
+  %   for src in (lib.src if lib.src else ['vsprojects/dummy.c']):
+    ${src}
+  %   endfor
+  )
+  %   if lib.get('deps', []):
+  add_dependencies(${lib.name}
+  %   for dep in lib.deps:
+    ${dep}
+  %   endfor
+  )
+  %   endif
+  target_link_libraries(${lib.name}
+  )
+  %   if lib.get('platforms', None) is not None:
+  endif()
+  %   endif
+  %  endif
+  % endfor
+
+  % for tgt in targets:
+  %  if tgt.build in THINGS_CMAKE_BUILDS:
+  if (${' OR '.join(PLATFORM_CHECK[chk] for chk in tgt.platforms)})
+  add_executable(${tgt.name}
+  %   for src in (tgt.src if tgt.src else ['vsprojects/dummy.c']):
+    ${src}
+  %   endfor
+  )
+  target_link_libraries(${tgt.name}
+  %   for dep in tgt.deps:
+    ${dep}
+  %   endfor
+  %   if tgt.build == 'protoc':
+    <%text>${PROTOBUF_PROTOC_LIBRARY}</%text>
+  %   endif
+  %   if tgt.language == 'c++':
+    <%text>${PROTOBUF_LIBRARIES}</%text>
+  %   endif
+    <%text>${ZLIB_LIBRARIES}</%text>
+  %   if tgt.get('secure', 'check'):
+    <%text>${OPENSSL_LIBRARIES}</%text>
+  %   endif
+    <%text>${CMAKE_THREAD_LIBS_INIT}</%text>
+    <%text>${MATH_LIB}</%text>
+  )
+  endif()
+  %  endif
+  % endfor

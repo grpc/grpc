@@ -71,24 +71,25 @@ with open('LICENSE') as f:
 # that given a line of license text, returns what should
 # be in the file
 LICENSE_PREFIX = {
-  '.c':         r'\s*(?://|\*)\s*',
-  '.cc':        r'\s*(?://|\*)\s*',
-  '.h':         r'\s*(?://|\*)\s*',
-  '.m':         r'\s*\*\s*',
-  '.php':       r'\s*\*\s*',
-  '.js':        r'\s*\*\s*',
-  '.py':        r'#\s*',
-  '.pyx':       r'#\s*',
-  '.pxd':       r'#\s*',
-  '.pxi':       r'#\s*',
-  '.rb':        r'#\s*',
-  '.sh':        r'#\s*',
-  '.proto':     r'//\s*',
-  '.cs':        r'//\s*',
-  '.mak':       r'#\s*',
-  'Makefile':   r'#\s*',
-  'Dockerfile': r'#\s*',
-  'LICENSE':    '',
+  '.c':          r'\s*(?://|\*)\s*',
+  '.cc':         r'\s*(?://|\*)\s*',
+  '.h':          r'\s*(?://|\*)\s*',
+  '.m':          r'\s*\*\s*',
+  '.php':        r'\s*\*\s*',
+  '.js':         r'\s*\*\s*',
+  '.py':         r'#\s*',
+  '.pyx':        r'#\s*',
+  '.pxd':        r'#\s*',
+  '.pxi':        r'#\s*',
+  '.rb':         r'#\s*',
+  '.sh':         r'#\s*',
+  '.proto':      r'//\s*',
+  '.cs':         r'//\s*',
+  '.mak':        r'#\s*',
+  'Makefile':    r'#\s*',
+  'GNUmakefile': r'#\s*',
+  'Dockerfile':  r'#\s*',
+  'LICENSE':     '',
 }
 
 KNOWN_BAD = set([
@@ -118,7 +119,7 @@ def save(name, text):
     f.write(text)
 
 assert(re.search(RE_LICENSE['LICENSE'], load('LICENSE')))
-assert(re.search(RE_LICENSE['Makefile'], load('Makefile')))
+assert(re.search(RE_LICENSE['GNUmakefile'], load('GNUmakefile')))
 
 
 def log(cond, why, filename):

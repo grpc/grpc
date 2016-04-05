@@ -232,7 +232,7 @@ class CLanguage(object):
       return [['tools/run_tests/post_tests_c.sh']]
 
   def makefile_name(self):
-    return 'Makefile'
+    return 'GNUmakefile'
 
   def _clang_make_options(self):
     return ['CC=clang', 'CXX=clang++', 'LD=clang', 'LDXX=clang++']
@@ -309,7 +309,7 @@ class NodeLanguage(object):
     return []
 
   def makefile_name(self):
-    return 'Makefile'
+    return 'GNUmakefile'
 
   def dockerfile_dir(self):
     return 'tools/dockerfile/test/node_jessie_%s' % _docker_arch_suffix(self.args.arch)
@@ -345,7 +345,7 @@ class PhpLanguage(object):
     return [['tools/run_tests/post_tests_php.sh']]
 
   def makefile_name(self):
-    return 'Makefile'
+    return 'GNUmakefile'
 
   def dockerfile_dir(self):
     return 'tools/dockerfile/test/php_jessie_%s' % _docker_arch_suffix(self.args.arch)
@@ -415,7 +415,7 @@ class PythonLanguage(object):
     return []
 
   def makefile_name(self):
-    return 'Makefile'
+    return 'GNUmakefile'
 
   def dockerfile_dir(self):
     return 'tools/dockerfile/test/python_jessie_%s' % _docker_arch_suffix(self.args.arch)
@@ -452,7 +452,7 @@ class RubyLanguage(object):
     return [['tools/run_tests/post_tests_ruby.sh']]
 
   def makefile_name(self):
-    return 'Makefile'
+    return 'GNUmakefile'
 
   def dockerfile_dir(self):
     return 'tools/dockerfile/test/ruby_jessie_%s' % _docker_arch_suffix(self.args.arch)
@@ -546,7 +546,7 @@ class CSharpLanguage(object):
     return []
 
   def makefile_name(self):
-    return 'Makefile'
+    return 'GNUmakefile'
 
   def dockerfile_dir(self):
     return 'tools/dockerfile/test/csharp_jessie_%s' % _docker_arch_suffix(self.args.arch)
@@ -582,7 +582,7 @@ class ObjCLanguage(object):
     return []
 
   def makefile_name(self):
-    return 'Makefile'
+    return 'GNUmakefile'
 
   def dockerfile_dir(self):
     return None
@@ -622,7 +622,7 @@ class Sanity(object):
     return []
 
   def makefile_name(self):
-    return 'Makefile'
+    return 'GNUmakefile'
 
   def dockerfile_dir(self):
     return 'tools/dockerfile/test/sanity'
@@ -914,7 +914,7 @@ if args.use_docker:
 
 _check_arch_option(args.arch)
 
-def make_jobspec(cfg, targets, makefile='Makefile'):
+def make_jobspec(cfg, targets, makefile='GNUmakefile'):
   if platform_string() == 'windows':
     extra_args = []
     # better do parallel compilation

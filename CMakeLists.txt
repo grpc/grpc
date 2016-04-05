@@ -1,0 +1,675 @@
+cmake_minimum_required (VERSION 2.8.4 FATAL_ERROR)
+
+
+
+set (PACKAGE_NAME      "grpc")
+set (PACKAGE_VERSION   "0.14.0-dev")
+set (PACKAGE_STRING    "${PACKAGE_NAME} ${PACKAGE_VERSION}")
+set (PACKAGE_TARNAME   "${PACKAGE_NAME}-${PACKAGE_VERSION}")
+set (PACKAGE_BUGREPORT "https://github.com/grpc/grpc/issues/")
+set (CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+set (CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+set (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+
+project (${PACKAGE_NAME} C CXX)
+
+set (PACKAGE_SOVERSION ${PACKAGE_VERSION_MAJOR})
+set (CMAKE_INCLUDE_CURRENT_DIR ON)
+
+include_directories(include)
+include_directories(third_party/googletest/include)
+
+include(CheckCXXCompilerFlag)
+CHECK_CXX_COMPILER_FLAG("-std=c++11" COMPILER_SUPPORTS_CXX11)
+CHECK_CXX_COMPILER_FLAG("-std=c++0x" COMPILER_SUPPORTS_CXX0X)
+if(COMPILER_SUPPORTS_CXX11)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+elseif(COMPILER_SUPPORTS_CXX0X)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
+else()
+    message(STATUS "The compiler ${CMAKE_CXX_COMPILER} has no C++11 support. Please use a different C++ compiler.")
+endif()
+
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99")
+
+find_package(Protobuf REQUIRED)
+set(PROTOBUF_IMPORT_DIRS ${CMAKE_BINARY_DIR})
+if (PROTOBUF_FOUND)
+  include_directories(${PROTOBUF_INCLUDE_DIRS})
+endif(PROTOBUF_FOUND)
+
+find_package(ZLIB REQUIRED)
+if (ZLIB_FOUND)
+  include_directories(${ZLIB_INCLUDE_DIRS})
+endif(ZLIB_FOUND)
+
+find_package(OpenSSL REQUIRED)
+if (OPENSSL_FOUND)
+  include_directories(${OPENSSL_INCLUDE_DIRS})
+endif(OPENSSL_FOUND)
+
+find_package(Threads REQUIRED)
+
+include(CheckSymbolExists)
+check_symbol_exists(SSL_get0_alpn_selected openssl/ssl.h HAVE_ALPN)
+if(HAVE_ALPN)
+  add_definitions(-DTSI_OPENSSL_ALPN_SUPPORT=1)
+else()
+  add_definitions(-DTSI_OPENSSL_ALPN_SUPPORT=0)
+endif()
+
+if(UNIX)
+  set(MATH_LIB -lm)
+else()
+  set(MATH_LIB)
+endif()
+
+add_library(gpr
+  src/core/lib/profiling/basic_timers.c
+  src/core/lib/profiling/stap_timers.c
+  src/core/lib/support/alloc.c
+  src/core/lib/support/avl.c
+  src/core/lib/support/backoff.c
+  src/core/lib/support/cmdline.c
+  src/core/lib/support/cpu_iphone.c
+  src/core/lib/support/cpu_linux.c
+  src/core/lib/support/cpu_posix.c
+  src/core/lib/support/cpu_windows.c
+  src/core/lib/support/env_linux.c
+  src/core/lib/support/env_posix.c
+  src/core/lib/support/env_win32.c
+  src/core/lib/support/histogram.c
+  src/core/lib/support/host_port.c
+  src/core/lib/support/load_file.c
+  src/core/lib/support/log.c
+  src/core/lib/support/log_android.c
+  src/core/lib/support/log_linux.c
+  src/core/lib/support/log_posix.c
+  src/core/lib/support/log_win32.c
+  src/core/lib/support/murmur_hash.c
+  src/core/lib/support/slice.c
+  src/core/lib/support/slice_buffer.c
+  src/core/lib/support/stack_lockfree.c
+  src/core/lib/support/string.c
+  src/core/lib/support/string_posix.c
+  src/core/lib/support/string_win32.c
+  src/core/lib/support/subprocess_posix.c
+  src/core/lib/support/subprocess_windows.c
+  src/core/lib/support/sync.c
+  src/core/lib/support/sync_posix.c
+  src/core/lib/support/sync_win32.c
+  src/core/lib/support/thd.c
+  src/core/lib/support/thd_posix.c
+  src/core/lib/support/thd_win32.c
+  src/core/lib/support/time.c
+  src/core/lib/support/time_posix.c
+  src/core/lib/support/time_precise.c
+  src/core/lib/support/time_win32.c
+  src/core/lib/support/tls_pthread.c
+  src/core/lib/support/tmpfile_posix.c
+  src/core/lib/support/tmpfile_win32.c
+  src/core/lib/support/wrap_memcpy.c
+)
+target_link_libraries(gpr
+)
+add_library(grpc
+  src/core/ext/census/context.c
+  src/core/ext/census/grpc_context.c
+  src/core/ext/census/grpc_filter.c
+  src/core/ext/census/grpc_plugin.c
+  src/core/ext/census/initialize.c
+  src/core/ext/census/mlog.c
+  src/core/ext/census/operation.c
+  src/core/ext/census/placeholders.c
+  src/core/ext/census/tracing.c
+  src/core/ext/lb_policy/grpclb/load_balancer_api.c
+  src/core/ext/lb_policy/grpclb/proto/grpc/lb/v0/load_balancer.pb.c
+  src/core/ext/lb_policy/pick_first/pick_first.c
+  src/core/ext/lb_policy/round_robin/round_robin.c
+  src/core/ext/resolver/dns/native/dns_resolver.c
+  src/core/ext/resolver/sockaddr/sockaddr_resolver.c
+  src/core/ext/transport/chttp2/client/insecure/channel_create.c
+  src/core/ext/transport/chttp2/client/secure/secure_channel_create.c
+  src/core/ext/transport/chttp2/server/insecure/server_chttp2.c
+  src/core/ext/transport/chttp2/server/secure/server_secure_chttp2.c
+  src/core/ext/transport/chttp2/transport/alpn.c
+  src/core/ext/transport/chttp2/transport/bin_encoder.c
+  src/core/ext/transport/chttp2/transport/chttp2_transport.c
+  src/core/ext/transport/chttp2/transport/frame_data.c
+  src/core/ext/transport/chttp2/transport/frame_goaway.c
+  src/core/ext/transport/chttp2/transport/frame_ping.c
+  src/core/ext/transport/chttp2/transport/frame_rst_stream.c
+  src/core/ext/transport/chttp2/transport/frame_settings.c
+  src/core/ext/transport/chttp2/transport/frame_window_update.c
+  src/core/ext/transport/chttp2/transport/hpack_encoder.c
+  src/core/ext/transport/chttp2/transport/hpack_parser.c
+  src/core/ext/transport/chttp2/transport/hpack_table.c
+  src/core/ext/transport/chttp2/transport/huffsyms.c
+  src/core/ext/transport/chttp2/transport/incoming_metadata.c
+  src/core/ext/transport/chttp2/transport/parsing.c
+  src/core/ext/transport/chttp2/transport/status_conversion.c
+  src/core/ext/transport/chttp2/transport/stream_lists.c
+  src/core/ext/transport/chttp2/transport/stream_map.c
+  src/core/ext/transport/chttp2/transport/timeout_encoding.c
+  src/core/ext/transport/chttp2/transport/varint.c
+  src/core/ext/transport/chttp2/transport/writing.c
+  src/core/lib/channel/channel_args.c
+  src/core/lib/channel/channel_stack.c
+  src/core/lib/channel/channel_stack_builder.c
+  src/core/lib/channel/client_channel.c
+  src/core/lib/channel/compress_filter.c
+  src/core/lib/channel/connected_channel.c
+  src/core/lib/channel/http_client_filter.c
+  src/core/lib/channel/http_server_filter.c
+  src/core/lib/channel/subchannel_call_holder.c
+  src/core/lib/client_config/client_config.c
+  src/core/lib/client_config/connector.c
+  src/core/lib/client_config/default_initial_connect_string.c
+  src/core/lib/client_config/initial_connect_string.c
+  src/core/lib/client_config/lb_policy.c
+  src/core/lib/client_config/lb_policy_factory.c
+  src/core/lib/client_config/lb_policy_registry.c
+  src/core/lib/client_config/resolver.c
+  src/core/lib/client_config/resolver_factory.c
+  src/core/lib/client_config/resolver_registry.c
+  src/core/lib/client_config/subchannel.c
+  src/core/lib/client_config/subchannel_factory.c
+  src/core/lib/client_config/subchannel_index.c
+  src/core/lib/client_config/uri_parser.c
+  src/core/lib/compression/compression_algorithm.c
+  src/core/lib/compression/message_compress.c
+  src/core/lib/debug/trace.c
+  src/core/lib/http/format_request.c
+  src/core/lib/http/httpcli.c
+  src/core/lib/http/httpcli_security_connector.c
+  src/core/lib/http/parser.c
+  src/core/lib/iomgr/closure.c
+  src/core/lib/iomgr/endpoint.c
+  src/core/lib/iomgr/endpoint_pair_posix.c
+  src/core/lib/iomgr/endpoint_pair_windows.c
+  src/core/lib/iomgr/ev_poll_and_epoll_posix.c
+  src/core/lib/iomgr/ev_posix.c
+  src/core/lib/iomgr/exec_ctx.c
+  src/core/lib/iomgr/executor.c
+  src/core/lib/iomgr/iocp_windows.c
+  src/core/lib/iomgr/iomgr.c
+  src/core/lib/iomgr/iomgr_posix.c
+  src/core/lib/iomgr/iomgr_windows.c
+  src/core/lib/iomgr/pollset_set_windows.c
+  src/core/lib/iomgr/pollset_windows.c
+  src/core/lib/iomgr/resolve_address_posix.c
+  src/core/lib/iomgr/resolve_address_windows.c
+  src/core/lib/iomgr/sockaddr_utils.c
+  src/core/lib/iomgr/socket_utils_common_posix.c
+  src/core/lib/iomgr/socket_utils_linux.c
+  src/core/lib/iomgr/socket_utils_posix.c
+  src/core/lib/iomgr/socket_windows.c
+  src/core/lib/iomgr/tcp_client_posix.c
+  src/core/lib/iomgr/tcp_client_windows.c
+  src/core/lib/iomgr/tcp_posix.c
+  src/core/lib/iomgr/tcp_server_posix.c
+  src/core/lib/iomgr/tcp_server_windows.c
+  src/core/lib/iomgr/tcp_windows.c
+  src/core/lib/iomgr/time_averaged_stats.c
+  src/core/lib/iomgr/timer.c
+  src/core/lib/iomgr/timer_heap.c
+  src/core/lib/iomgr/udp_server.c
+  src/core/lib/iomgr/unix_sockets_posix.c
+  src/core/lib/iomgr/unix_sockets_posix_noop.c
+  src/core/lib/iomgr/wakeup_fd_eventfd.c
+  src/core/lib/iomgr/wakeup_fd_nospecial.c
+  src/core/lib/iomgr/wakeup_fd_pipe.c
+  src/core/lib/iomgr/wakeup_fd_posix.c
+  src/core/lib/iomgr/workqueue_posix.c
+  src/core/lib/iomgr/workqueue_windows.c
+  src/core/lib/json/json.c
+  src/core/lib/json/json_reader.c
+  src/core/lib/json/json_string.c
+  src/core/lib/json/json_writer.c
+  src/core/lib/security/b64.c
+  src/core/lib/security/client_auth_filter.c
+  src/core/lib/security/credentials.c
+  src/core/lib/security/credentials_metadata.c
+  src/core/lib/security/credentials_posix.c
+  src/core/lib/security/credentials_win32.c
+  src/core/lib/security/google_default_credentials.c
+  src/core/lib/security/handshake.c
+  src/core/lib/security/json_token.c
+  src/core/lib/security/jwt_verifier.c
+  src/core/lib/security/secure_endpoint.c
+  src/core/lib/security/security_connector.c
+  src/core/lib/security/security_context.c
+  src/core/lib/security/server_auth_filter.c
+  src/core/lib/surface/alarm.c
+  src/core/lib/surface/api_trace.c
+  src/core/lib/surface/byte_buffer.c
+  src/core/lib/surface/byte_buffer_reader.c
+  src/core/lib/surface/call.c
+  src/core/lib/surface/call_details.c
+  src/core/lib/surface/call_log_batch.c
+  src/core/lib/surface/channel.c
+  src/core/lib/surface/channel_connectivity.c
+  src/core/lib/surface/channel_init.c
+  src/core/lib/surface/channel_ping.c
+  src/core/lib/surface/channel_stack_type.c
+  src/core/lib/surface/completion_queue.c
+  src/core/lib/surface/event_string.c
+  src/core/lib/surface/init.c
+  src/core/lib/surface/init_secure.c
+  src/core/lib/surface/lame_client.c
+  src/core/lib/surface/metadata_array.c
+  src/core/lib/surface/server.c
+  src/core/lib/surface/validate_metadata.c
+  src/core/lib/surface/version.c
+  src/core/lib/transport/byte_stream.c
+  src/core/lib/transport/connectivity_state.c
+  src/core/lib/transport/metadata.c
+  src/core/lib/transport/metadata_batch.c
+  src/core/lib/transport/static_metadata.c
+  src/core/lib/transport/transport.c
+  src/core/lib/transport/transport_op_string.c
+  src/core/lib/tsi/fake_transport_security.c
+  src/core/lib/tsi/ssl_transport_security.c
+  src/core/lib/tsi/transport_security.c
+  src/core/plugin_registry/grpc_plugin_registry.c
+  third_party/nanopb/pb_common.c
+  third_party/nanopb/pb_decode.c
+  third_party/nanopb/pb_encode.c
+)
+add_dependencies(grpc
+  gpr
+)
+target_link_libraries(grpc
+)
+add_library(grpc_codegen_lib
+  vsprojects/dummy.c
+)
+target_link_libraries(grpc_codegen_lib
+)
+add_library(grpc_unsecure
+  src/core/ext/census/context.c
+  src/core/ext/census/grpc_context.c
+  src/core/ext/census/grpc_filter.c
+  src/core/ext/census/grpc_plugin.c
+  src/core/ext/census/initialize.c
+  src/core/ext/census/mlog.c
+  src/core/ext/census/operation.c
+  src/core/ext/census/placeholders.c
+  src/core/ext/census/tracing.c
+  src/core/ext/lb_policy/grpclb/load_balancer_api.c
+  src/core/ext/lb_policy/grpclb/proto/grpc/lb/v0/load_balancer.pb.c
+  src/core/ext/lb_policy/pick_first/pick_first.c
+  src/core/ext/lb_policy/round_robin/round_robin.c
+  src/core/ext/resolver/dns/native/dns_resolver.c
+  src/core/ext/resolver/sockaddr/sockaddr_resolver.c
+  src/core/ext/transport/chttp2/client/insecure/channel_create.c
+  src/core/ext/transport/chttp2/server/insecure/server_chttp2.c
+  src/core/ext/transport/chttp2/transport/alpn.c
+  src/core/ext/transport/chttp2/transport/bin_encoder.c
+  src/core/ext/transport/chttp2/transport/chttp2_transport.c
+  src/core/ext/transport/chttp2/transport/frame_data.c
+  src/core/ext/transport/chttp2/transport/frame_goaway.c
+  src/core/ext/transport/chttp2/transport/frame_ping.c
+  src/core/ext/transport/chttp2/transport/frame_rst_stream.c
+  src/core/ext/transport/chttp2/transport/frame_settings.c
+  src/core/ext/transport/chttp2/transport/frame_window_update.c
+  src/core/ext/transport/chttp2/transport/hpack_encoder.c
+  src/core/ext/transport/chttp2/transport/hpack_parser.c
+  src/core/ext/transport/chttp2/transport/hpack_table.c
+  src/core/ext/transport/chttp2/transport/huffsyms.c
+  src/core/ext/transport/chttp2/transport/incoming_metadata.c
+  src/core/ext/transport/chttp2/transport/parsing.c
+  src/core/ext/transport/chttp2/transport/status_conversion.c
+  src/core/ext/transport/chttp2/transport/stream_lists.c
+  src/core/ext/transport/chttp2/transport/stream_map.c
+  src/core/ext/transport/chttp2/transport/timeout_encoding.c
+  src/core/ext/transport/chttp2/transport/varint.c
+  src/core/ext/transport/chttp2/transport/writing.c
+  src/core/lib/channel/channel_args.c
+  src/core/lib/channel/channel_stack.c
+  src/core/lib/channel/channel_stack_builder.c
+  src/core/lib/channel/client_channel.c
+  src/core/lib/channel/compress_filter.c
+  src/core/lib/channel/connected_channel.c
+  src/core/lib/channel/http_client_filter.c
+  src/core/lib/channel/http_server_filter.c
+  src/core/lib/channel/subchannel_call_holder.c
+  src/core/lib/client_config/client_config.c
+  src/core/lib/client_config/connector.c
+  src/core/lib/client_config/default_initial_connect_string.c
+  src/core/lib/client_config/initial_connect_string.c
+  src/core/lib/client_config/lb_policy.c
+  src/core/lib/client_config/lb_policy_factory.c
+  src/core/lib/client_config/lb_policy_registry.c
+  src/core/lib/client_config/resolver.c
+  src/core/lib/client_config/resolver_factory.c
+  src/core/lib/client_config/resolver_registry.c
+  src/core/lib/client_config/subchannel.c
+  src/core/lib/client_config/subchannel_factory.c
+  src/core/lib/client_config/subchannel_index.c
+  src/core/lib/client_config/uri_parser.c
+  src/core/lib/compression/compression_algorithm.c
+  src/core/lib/compression/message_compress.c
+  src/core/lib/debug/trace.c
+  src/core/lib/http/format_request.c
+  src/core/lib/http/httpcli.c
+  src/core/lib/http/parser.c
+  src/core/lib/iomgr/closure.c
+  src/core/lib/iomgr/endpoint.c
+  src/core/lib/iomgr/endpoint_pair_posix.c
+  src/core/lib/iomgr/endpoint_pair_windows.c
+  src/core/lib/iomgr/ev_poll_and_epoll_posix.c
+  src/core/lib/iomgr/ev_posix.c
+  src/core/lib/iomgr/exec_ctx.c
+  src/core/lib/iomgr/executor.c
+  src/core/lib/iomgr/iocp_windows.c
+  src/core/lib/iomgr/iomgr.c
+  src/core/lib/iomgr/iomgr_posix.c
+  src/core/lib/iomgr/iomgr_windows.c
+  src/core/lib/iomgr/pollset_set_windows.c
+  src/core/lib/iomgr/pollset_windows.c
+  src/core/lib/iomgr/resolve_address_posix.c
+  src/core/lib/iomgr/resolve_address_windows.c
+  src/core/lib/iomgr/sockaddr_utils.c
+  src/core/lib/iomgr/socket_utils_common_posix.c
+  src/core/lib/iomgr/socket_utils_linux.c
+  src/core/lib/iomgr/socket_utils_posix.c
+  src/core/lib/iomgr/socket_windows.c
+  src/core/lib/iomgr/tcp_client_posix.c
+  src/core/lib/iomgr/tcp_client_windows.c
+  src/core/lib/iomgr/tcp_posix.c
+  src/core/lib/iomgr/tcp_server_posix.c
+  src/core/lib/iomgr/tcp_server_windows.c
+  src/core/lib/iomgr/tcp_windows.c
+  src/core/lib/iomgr/time_averaged_stats.c
+  src/core/lib/iomgr/timer.c
+  src/core/lib/iomgr/timer_heap.c
+  src/core/lib/iomgr/udp_server.c
+  src/core/lib/iomgr/unix_sockets_posix.c
+  src/core/lib/iomgr/unix_sockets_posix_noop.c
+  src/core/lib/iomgr/wakeup_fd_eventfd.c
+  src/core/lib/iomgr/wakeup_fd_nospecial.c
+  src/core/lib/iomgr/wakeup_fd_pipe.c
+  src/core/lib/iomgr/wakeup_fd_posix.c
+  src/core/lib/iomgr/workqueue_posix.c
+  src/core/lib/iomgr/workqueue_windows.c
+  src/core/lib/json/json.c
+  src/core/lib/json/json_reader.c
+  src/core/lib/json/json_string.c
+  src/core/lib/json/json_writer.c
+  src/core/lib/surface/alarm.c
+  src/core/lib/surface/api_trace.c
+  src/core/lib/surface/byte_buffer.c
+  src/core/lib/surface/byte_buffer_reader.c
+  src/core/lib/surface/call.c
+  src/core/lib/surface/call_details.c
+  src/core/lib/surface/call_log_batch.c
+  src/core/lib/surface/channel.c
+  src/core/lib/surface/channel_connectivity.c
+  src/core/lib/surface/channel_init.c
+  src/core/lib/surface/channel_ping.c
+  src/core/lib/surface/channel_stack_type.c
+  src/core/lib/surface/completion_queue.c
+  src/core/lib/surface/event_string.c
+  src/core/lib/surface/init.c
+  src/core/lib/surface/init_unsecure.c
+  src/core/lib/surface/lame_client.c
+  src/core/lib/surface/metadata_array.c
+  src/core/lib/surface/server.c
+  src/core/lib/surface/validate_metadata.c
+  src/core/lib/surface/version.c
+  src/core/lib/transport/byte_stream.c
+  src/core/lib/transport/connectivity_state.c
+  src/core/lib/transport/metadata.c
+  src/core/lib/transport/metadata_batch.c
+  src/core/lib/transport/static_metadata.c
+  src/core/lib/transport/transport.c
+  src/core/lib/transport/transport_op_string.c
+  src/core/plugin_registry/grpc_unsecure_plugin_registry.c
+  third_party/nanopb/pb_common.c
+  third_party/nanopb/pb_decode.c
+  third_party/nanopb/pb_encode.c
+)
+add_dependencies(grpc_unsecure
+  gpr
+)
+target_link_libraries(grpc_unsecure
+)
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_library(grpc_zookeeper
+  src/core/ext/resolver/zookeeper/zookeeper_resolver.c
+)
+add_dependencies(grpc_zookeeper
+  gpr
+  grpc
+)
+target_link_libraries(grpc_zookeeper
+)
+endif()
+add_library(grpc++
+  src/cpp/client/channel.cc
+  src/cpp/client/client_context.cc
+  src/cpp/client/create_channel.cc
+  src/cpp/client/create_channel_internal.cc
+  src/cpp/client/credentials.cc
+  src/cpp/client/generic_stub.cc
+  src/cpp/client/insecure_credentials.cc
+  src/cpp/client/secure_credentials.cc
+  src/cpp/codegen/codegen_init.cc
+  src/cpp/common/auth_property_iterator.cc
+  src/cpp/common/channel_arguments.cc
+  src/cpp/common/completion_queue.cc
+  src/cpp/common/core_codegen.cc
+  src/cpp/common/rpc_method.cc
+  src/cpp/common/secure_auth_context.cc
+  src/cpp/common/secure_channel_arguments.cc
+  src/cpp/common/secure_create_auth_context.cc
+  src/cpp/server/async_generic_service.cc
+  src/cpp/server/create_default_thread_pool.cc
+  src/cpp/server/dynamic_thread_pool.cc
+  src/cpp/server/insecure_server_credentials.cc
+  src/cpp/server/secure_server_credentials.cc
+  src/cpp/server/server.cc
+  src/cpp/server/server_builder.cc
+  src/cpp/server/server_context.cc
+  src/cpp/server/server_credentials.cc
+  src/cpp/util/byte_buffer.cc
+  src/cpp/util/slice.cc
+  src/cpp/util/status.cc
+  src/cpp/util/string_ref.cc
+  src/cpp/util/time.cc
+)
+add_dependencies(grpc++
+  grpc
+)
+target_link_libraries(grpc++
+)
+add_library(grpc++_codegen_lib
+  src/cpp/codegen/codegen_init.cc
+)
+target_link_libraries(grpc++_codegen_lib
+)
+add_library(grpc++_unsecure
+  src/cpp/client/channel.cc
+  src/cpp/client/client_context.cc
+  src/cpp/client/create_channel.cc
+  src/cpp/client/create_channel_internal.cc
+  src/cpp/client/credentials.cc
+  src/cpp/client/generic_stub.cc
+  src/cpp/client/insecure_credentials.cc
+  src/cpp/codegen/codegen_init.cc
+  src/cpp/common/channel_arguments.cc
+  src/cpp/common/completion_queue.cc
+  src/cpp/common/core_codegen.cc
+  src/cpp/common/insecure_create_auth_context.cc
+  src/cpp/common/rpc_method.cc
+  src/cpp/server/async_generic_service.cc
+  src/cpp/server/create_default_thread_pool.cc
+  src/cpp/server/dynamic_thread_pool.cc
+  src/cpp/server/insecure_server_credentials.cc
+  src/cpp/server/server.cc
+  src/cpp/server/server_builder.cc
+  src/cpp/server/server_context.cc
+  src/cpp/server/server_credentials.cc
+  src/cpp/util/byte_buffer.cc
+  src/cpp/util/slice.cc
+  src/cpp/util/status.cc
+  src/cpp/util/string_ref.cc
+  src/cpp/util/time.cc
+)
+add_dependencies(grpc++_unsecure
+  gpr
+  grpc_unsecure
+)
+target_link_libraries(grpc++_unsecure
+)
+add_library(grpc_plugin_support
+  src/compiler/cpp_generator.cc
+  src/compiler/csharp_generator.cc
+  src/compiler/objective_c_generator.cc
+  src/compiler/python_generator.cc
+  src/compiler/ruby_generator.cc
+)
+add_dependencies(grpc_plugin_support
+  grpc++_codegen_lib
+)
+target_link_libraries(grpc_plugin_support
+)
+add_library(grpc_csharp_ext
+  src/csharp/ext/grpc_csharp_ext.c
+)
+add_dependencies(grpc_csharp_ext
+  grpc
+  gpr
+)
+target_link_libraries(grpc_csharp_ext
+)
+
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(gen_hpack_tables
+  tools/codegen/core/gen_hpack_tables.c
+)
+target_link_libraries(gen_hpack_tables
+  gpr
+  grpc
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(gen_legal_metadata_characters
+  tools/codegen/core/gen_legal_metadata_characters.c
+)
+target_link_libraries(gen_legal_metadata_characters
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(grpc_create_jwt
+  test/core/security/create_jwt.c
+)
+target_link_libraries(grpc_create_jwt
+  grpc
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(grpc_print_google_default_creds_token
+  test/core/security/print_google_default_creds_token.c
+)
+target_link_libraries(grpc_print_google_default_creds_token
+  grpc
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(grpc_verify_jwt
+  test/core/security/verify_jwt.c
+)
+target_link_libraries(grpc_verify_jwt
+  grpc
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(grpc_cpp_plugin
+  src/compiler/cpp_plugin.cc
+)
+target_link_libraries(grpc_cpp_plugin
+  grpc_plugin_support
+  ${PROTOBUF_PROTOC_LIBRARY}
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(grpc_csharp_plugin
+  src/compiler/csharp_plugin.cc
+)
+target_link_libraries(grpc_csharp_plugin
+  grpc_plugin_support
+  ${PROTOBUF_PROTOC_LIBRARY}
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(grpc_objective_c_plugin
+  src/compiler/objective_c_plugin.cc
+)
+target_link_libraries(grpc_objective_c_plugin
+  grpc_plugin_support
+  ${PROTOBUF_PROTOC_LIBRARY}
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(grpc_python_plugin
+  src/compiler/python_plugin.cc
+)
+target_link_libraries(grpc_python_plugin
+  grpc_plugin_support
+  ${PROTOBUF_PROTOC_LIBRARY}
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(grpc_ruby_plugin
+  src/compiler/ruby_plugin.cc
+)
+target_link_libraries(grpc_ruby_plugin
+  grpc_plugin_support
+  ${PROTOBUF_PROTOC_LIBRARY}
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
