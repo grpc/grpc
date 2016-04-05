@@ -1,6 +1,6 @@
 #region Copyright notice and license
 
-// Copyright 2015, Google Inc.
+// Copyright 2015-2016, Google Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -43,14 +43,14 @@ namespace Math
     /// <summary>
     /// Implementation of MathService server
     /// </summary>
-    public class MathServiceImpl : Math.IMath
+    public class MathServiceImpl : Math.MathBase
     {
-        public Task<DivReply> Div(DivArgs request, ServerCallContext context)
+        public override Task<DivReply> Div(DivArgs request, ServerCallContext context)
         {
             return Task.FromResult(DivInternal(request));
         }
 
-        public async Task Fib(FibArgs request, IServerStreamWriter<Num> responseStream, ServerCallContext context)
+        public override async Task Fib(FibArgs request, IServerStreamWriter<Num> responseStream, ServerCallContext context)
         {
             if (request.Limit <= 0)
             {
@@ -72,7 +72,7 @@ namespace Math
             }
         }
 
-        public async Task<Num> Sum(IAsyncStreamReader<Num> requestStream, ServerCallContext context)
+        public override async Task<Num> Sum(IAsyncStreamReader<Num> requestStream, ServerCallContext context)
         {
             long sum = 0;
             await requestStream.ForEachAsync(async num =>
@@ -82,7 +82,7 @@ namespace Math
             return new Num { Num_ = sum };
         }
 
-        public async Task DivMany(IAsyncStreamReader<DivArgs> requestStream, IServerStreamWriter<DivReply> responseStream, ServerCallContext context)
+        public override async Task DivMany(IAsyncStreamReader<DivArgs> requestStream, IServerStreamWriter<DivReply> responseStream, ServerCallContext context)
         {
             await requestStream.ForEachAsync(async divArgs => await responseStream.WriteAsync(DivInternal(divArgs)));
         }
