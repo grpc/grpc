@@ -34,7 +34,6 @@
 #ifndef GRPC_CORE_LIB_CLIENT_CONFIG_CLIENT_CHANNEL_FACTORY_H
 #define GRPC_CORE_LIB_CLIENT_CONFIG_CLIENT_CHANNEL_FACTORY_H
 
-#include <grpc/grpc_security.h>
 #include <grpc/impl/codegen/grpc_types.h>
 
 #include "src/core/ext/client_config/subchannel.h"
