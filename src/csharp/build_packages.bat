@@ -48,6 +48,7 @@ endlocal
 %NUGET% pack Grpc.HealthCheck\Grpc.HealthCheck.nuspec -Symbols -Version %VERSION_WITH_BETA% -Properties ProtobufVersion=%PROTOBUF_VERSION% || goto :error
 %NUGET% pack Grpc.nuspec -Version %VERSION% || goto :error
 %NUGET% pack Grpc.Tools.nuspec -Version %VERSION% || goto :error
+%NUGET% pack Grpc.Tools.MSBuildIntegration.nuspec -Version %VERSION% || goto :error
 
 @rem copy resulting nuget packages to artifacts directory
 xcopy /Y /I *.nupkg ..\..\artifacts\
