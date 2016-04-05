@@ -38,8 +38,6 @@
 
 #include <grpc/support/string_util.h>
 
-#include "src/core/ext/client_config/resolver_factory.h"
-#include "src/core/ext/client_config/uri_parser.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 

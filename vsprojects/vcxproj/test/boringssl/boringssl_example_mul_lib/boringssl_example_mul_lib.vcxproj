@@ -151,11 +151,11 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="$(SolutionDir)\..\vsprojects\vcxproj\.\boringssl_test_util\boringssl_test_util.vcxproj">
-      <Project>{427037B1-B51B-D6F1-5025-AD12B200266A}</Project>
-    </ProjectReference>
     <ProjectReference Include="$(SolutionDir)\..\vsprojects\vcxproj\.\boringssl\boringssl.vcxproj">
       <Project>{9FD9A3EF-C4A3-8390-D8F4-6F86C22A58CE}</Project>
+    </ProjectReference>
+    <ProjectReference Include="$(SolutionDir)\..\vsprojects\vcxproj\.\boringssl_test_util\boringssl_test_util.vcxproj">
+      <Project>{427037B1-B51B-D6F1-5025-AD12B200266A}</Project>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

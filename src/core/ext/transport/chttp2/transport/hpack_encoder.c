@@ -45,7 +45,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/useful.h>
 
-#include "src/core/ext/transport/chttp2/transport/bin_encoder.h"
+#include "src/core/lib/transport/bin_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_table.h"
 #include "src/core/ext/transport/chttp2/transport/timeout_encoding.h"
 #include "src/core/ext/transport/chttp2/transport/varint.h"
