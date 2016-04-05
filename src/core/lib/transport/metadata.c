@@ -244,7 +244,8 @@ void grpc_mdctx_global_shutdown(void) {
               shard->count);
       for (size_t j = 0; j < shard->capacity; j++) {
         for (internal_string *s = shard->strs[j]; s; s = s->bucket_next) {
-          gpr_log(GPR_DEBUG, "LEAKED: %s", grpc_mdstr_as_c_string((grpc_mdstr*)s));
+          gpr_log(GPR_DEBUG, "LEAKED: %s",
+                  grpc_mdstr_as_c_string((grpc_mdstr *)s));
         }
       }
       if (grpc_iomgr_abort_on_leaks()) {
