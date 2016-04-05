@@ -31,19 +31,27 @@
  *
  */
 
-#include "src/core/lib/client_config/subchannel_factory.h"
+#include "src/core/lib/client_config/client_channel_factory.h"
 
-void grpc_subchannel_factory_ref(grpc_subchannel_factory* factory) {
+void grpc_client_channel_factory_ref(grpc_client_channel_factory* factory) {
   factory->vtable->ref(factory);
 }
 
-void grpc_subchannel_factory_unref(grpc_exec_ctx* exec_ctx,
-                                   grpc_subchannel_factory* factory) {
+void grpc_client_channel_factory_unref(grpc_exec_ctx* exec_ctx,
+                                       grpc_client_channel_factory* factory) {
   factory->vtable->unref(exec_ctx, factory);
 }
 
-grpc_subchannel* grpc_subchannel_factory_create_subchannel(
-    grpc_exec_ctx* exec_ctx, grpc_subchannel_factory* factory,
+grpc_subchannel* grpc_client_channel_factory_create_subchannel(
+    grpc_exec_ctx* exec_ctx, grpc_client_channel_factory* factory,
     grpc_subchannel_args* args) {
   return factory->vtable->create_subchannel(exec_ctx, factory, args);
+}
+
+grpc_channel* grpc_client_channel_factory_create_channel(
+    grpc_exec_ctx* exec_ctx, grpc_client_channel_factory* factory,
+    const char* target, grpc_client_channel_type type,
+    grpc_channel_args* args) {
+  return factory->vtable->create_client_channel(exec_ctx, factory, target, type,
+                                                args);
 }
