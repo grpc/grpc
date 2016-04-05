@@ -113,6 +113,21 @@ add_library(gpr
 target_link_libraries(gpr
 )
 add_library(grpc
+  src/core/ext/census/context.c
+  src/core/ext/census/grpc_context.c
+  src/core/ext/census/grpc_filter.c
+  src/core/ext/census/grpc_plugin.c
+  src/core/ext/census/initialize.c
+  src/core/ext/census/mlog.c
+  src/core/ext/census/operation.c
+  src/core/ext/census/placeholders.c
+  src/core/ext/census/tracing.c
+  src/core/ext/lb_policy/grpclb/load_balancer_api.c
+  src/core/ext/lb_policy/grpclb/proto/grpc/lb/v0/load_balancer.pb.c
+  src/core/ext/lb_policy/pick_first/pick_first.c
+  src/core/ext/lb_policy/round_robin/round_robin.c
+  src/core/ext/resolver/dns/native/dns_resolver.c
+  src/core/ext/resolver/sockaddr/sockaddr_resolver.c
   src/core/ext/transport/chttp2/client/insecure/channel_create.c
   src/core/ext/transport/chttp2/client/secure/secure_channel_create.c
   src/core/ext/transport/chttp2/server/insecure/server_chttp2.c
@@ -138,15 +153,6 @@ add_library(grpc
   src/core/ext/transport/chttp2/transport/timeout_encoding.c
   src/core/ext/transport/chttp2/transport/varint.c
   src/core/ext/transport/chttp2/transport/writing.c
-  src/core/lib/census/context.c
-  src/core/lib/census/grpc_context.c
-  src/core/lib/census/grpc_filter.c
-  src/core/lib/census/grpc_plugin.c
-  src/core/lib/census/initialize.c
-  src/core/lib/census/mlog.c
-  src/core/lib/census/operation.c
-  src/core/lib/census/placeholders.c
-  src/core/lib/census/tracing.c
   src/core/lib/channel/channel_args.c
   src/core/lib/channel/channel_stack.c
   src/core/lib/channel/channel_stack_builder.c
@@ -160,17 +166,12 @@ add_library(grpc
   src/core/lib/client_config/connector.c
   src/core/lib/client_config/default_initial_connect_string.c
   src/core/lib/client_config/initial_connect_string.c
-  src/core/lib/client_config/lb_policies/load_balancer_api.c
-  src/core/lib/client_config/lb_policies/pick_first.c
-  src/core/lib/client_config/lb_policies/round_robin.c
   src/core/lib/client_config/lb_policy.c
   src/core/lib/client_config/lb_policy_factory.c
   src/core/lib/client_config/lb_policy_registry.c
   src/core/lib/client_config/resolver.c
   src/core/lib/client_config/resolver_factory.c
   src/core/lib/client_config/resolver_registry.c
-  src/core/lib/client_config/resolvers/dns_resolver.c
-  src/core/lib/client_config/resolvers/sockaddr_resolver.c
   src/core/lib/client_config/subchannel.c
   src/core/lib/client_config/subchannel_factory.c
   src/core/lib/client_config/subchannel_index.c
@@ -186,17 +187,14 @@ add_library(grpc
   src/core/lib/iomgr/endpoint.c
   src/core/lib/iomgr/endpoint_pair_posix.c
   src/core/lib/iomgr/endpoint_pair_windows.c
+  src/core/lib/iomgr/ev_poll_and_epoll_posix.c
+  src/core/lib/iomgr/ev_posix.c
   src/core/lib/iomgr/exec_ctx.c
   src/core/lib/iomgr/executor.c
-  src/core/lib/iomgr/fd_posix.c
   src/core/lib/iomgr/iocp_windows.c
   src/core/lib/iomgr/iomgr.c
   src/core/lib/iomgr/iomgr_posix.c
   src/core/lib/iomgr/iomgr_windows.c
-  src/core/lib/iomgr/pollset_multipoller_with_epoll.c
-  src/core/lib/iomgr/pollset_multipoller_with_poll_posix.c
-  src/core/lib/iomgr/pollset_posix.c
-  src/core/lib/iomgr/pollset_set_posix.c
   src/core/lib/iomgr/pollset_set_windows.c
   src/core/lib/iomgr/pollset_windows.c
   src/core/lib/iomgr/resolve_address_posix.c
@@ -228,7 +226,6 @@ add_library(grpc
   src/core/lib/json/json_reader.c
   src/core/lib/json/json_string.c
   src/core/lib/json/json_writer.c
-  src/core/lib/proto/grpc/lb/v0/load_balancer.pb.c
   src/core/lib/security/b64.c
   src/core/lib/security/client_auth_filter.c
   src/core/lib/security/credentials.c
@@ -274,6 +271,7 @@ add_library(grpc
   src/core/lib/tsi/fake_transport_security.c
   src/core/lib/tsi/ssl_transport_security.c
   src/core/lib/tsi/transport_security.c
+  src/core/plugin_registry/grpc_plugin_registry.c
   third_party/nanopb/pb_common.c
   third_party/nanopb/pb_decode.c
   third_party/nanopb/pb_encode.c
@@ -289,6 +287,21 @@ add_library(grpc_codegen_lib
 target_link_libraries(grpc_codegen_lib
 )
 add_library(grpc_unsecure
+  src/core/ext/census/context.c
+  src/core/ext/census/grpc_context.c
+  src/core/ext/census/grpc_filter.c
+  src/core/ext/census/grpc_plugin.c
+  src/core/ext/census/initialize.c
+  src/core/ext/census/mlog.c
+  src/core/ext/census/operation.c
+  src/core/ext/census/placeholders.c
+  src/core/ext/census/tracing.c
+  src/core/ext/lb_policy/grpclb/load_balancer_api.c
+  src/core/ext/lb_policy/grpclb/proto/grpc/lb/v0/load_balancer.pb.c
+  src/core/ext/lb_policy/pick_first/pick_first.c
+  src/core/ext/lb_policy/round_robin/round_robin.c
+  src/core/ext/resolver/dns/native/dns_resolver.c
+  src/core/ext/resolver/sockaddr/sockaddr_resolver.c
   src/core/ext/transport/chttp2/client/insecure/channel_create.c
   src/core/ext/transport/chttp2/server/insecure/server_chttp2.c
   src/core/ext/transport/chttp2/transport/alpn.c
@@ -312,15 +325,6 @@ add_library(grpc_unsecure
   src/core/ext/transport/chttp2/transport/timeout_encoding.c
   src/core/ext/transport/chttp2/transport/varint.c
   src/core/ext/transport/chttp2/transport/writing.c
-  src/core/lib/census/context.c
-  src/core/lib/census/grpc_context.c
-  src/core/lib/census/grpc_filter.c
-  src/core/lib/census/grpc_plugin.c
-  src/core/lib/census/initialize.c
-  src/core/lib/census/mlog.c
-  src/core/lib/census/operation.c
-  src/core/lib/census/placeholders.c
-  src/core/lib/census/tracing.c
   src/core/lib/channel/channel_args.c
   src/core/lib/channel/channel_stack.c
   src/core/lib/channel/channel_stack_builder.c
@@ -334,17 +338,12 @@ add_library(grpc_unsecure
   src/core/lib/client_config/connector.c
   src/core/lib/client_config/default_initial_connect_string.c
   src/core/lib/client_config/initial_connect_string.c
-  src/core/lib/client_config/lb_policies/load_balancer_api.c
-  src/core/lib/client_config/lb_policies/pick_first.c
-  src/core/lib/client_config/lb_policies/round_robin.c
   src/core/lib/client_config/lb_policy.c
   src/core/lib/client_config/lb_policy_factory.c
   src/core/lib/client_config/lb_policy_registry.c
   src/core/lib/client_config/resolver.c
   src/core/lib/client_config/resolver_factory.c
   src/core/lib/client_config/resolver_registry.c
-  src/core/lib/client_config/resolvers/dns_resolver.c
-  src/core/lib/client_config/resolvers/sockaddr_resolver.c
   src/core/lib/client_config/subchannel.c
   src/core/lib/client_config/subchannel_factory.c
   src/core/lib/client_config/subchannel_index.c
@@ -359,17 +358,14 @@ add_library(grpc_unsecure
   src/core/lib/iomgr/endpoint.c
   src/core/lib/iomgr/endpoint_pair_posix.c
   src/core/lib/iomgr/endpoint_pair_windows.c
+  src/core/lib/iomgr/ev_poll_and_epoll_posix.c
+  src/core/lib/iomgr/ev_posix.c
   src/core/lib/iomgr/exec_ctx.c
   src/core/lib/iomgr/executor.c
-  src/core/lib/iomgr/fd_posix.c
   src/core/lib/iomgr/iocp_windows.c
   src/core/lib/iomgr/iomgr.c
   src/core/lib/iomgr/iomgr_posix.c
   src/core/lib/iomgr/iomgr_windows.c
-  src/core/lib/iomgr/pollset_multipoller_with_epoll.c
-  src/core/lib/iomgr/pollset_multipoller_with_poll_posix.c
-  src/core/lib/iomgr/pollset_posix.c
-  src/core/lib/iomgr/pollset_set_posix.c
   src/core/lib/iomgr/pollset_set_windows.c
   src/core/lib/iomgr/pollset_windows.c
   src/core/lib/iomgr/resolve_address_posix.c
@@ -401,7 +397,6 @@ add_library(grpc_unsecure
   src/core/lib/json/json_reader.c
   src/core/lib/json/json_string.c
   src/core/lib/json/json_writer.c
-  src/core/lib/proto/grpc/lb/v0/load_balancer.pb.c
   src/core/lib/surface/alarm.c
   src/core/lib/surface/api_trace.c
   src/core/lib/surface/byte_buffer.c
@@ -430,6 +425,7 @@ add_library(grpc_unsecure
   src/core/lib/transport/static_metadata.c
   src/core/lib/transport/transport.c
   src/core/lib/transport/transport_op_string.c
+  src/core/plugin_registry/grpc_unsecure_plugin_registry.c
   third_party/nanopb/pb_common.c
   third_party/nanopb/pb_decode.c
   third_party/nanopb/pb_encode.c
@@ -441,7 +437,7 @@ target_link_libraries(grpc_unsecure
 )
 if ((CMAKE_SYSTEM EQUAL Linux))
 add_library(grpc_zookeeper
-  src/core/lib/client_config/resolvers/zookeeper_resolver.c
+  src/core/ext/resolver/zookeeper/zookeeper_resolver.c
 )
 add_dependencies(grpc_zookeeper
   gpr
