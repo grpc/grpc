@@ -530,6 +530,8 @@ def run_tests(config):
   # run id. This is useful in debugging when looking at records in Biq query)
   run_id = datetime.datetime.now().strftime('%Y_%m_%d_%H_%M_%S')
   dataset_id = '%s_%s' % (config.global_settings.dataset_id_prefix, run_id)
+  print 'Run id:', run_id
+  print 'Dataset id:', dataset_id
 
   bq_helper = BigQueryHelper(run_id, '', '',
                              config.global_settings.gcp_project_id, dataset_id,
