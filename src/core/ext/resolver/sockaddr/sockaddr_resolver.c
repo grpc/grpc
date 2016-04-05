@@ -31,13 +31,13 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
-
+#include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/host_port.h>
+#include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/client_config/lb_policy_registry.h"
@@ -263,22 +263,24 @@ static grpc_resolver *sockaddr_create(
   r = gpr_malloc(sizeof(sockaddr_resolver));
   memset(r, 0, sizeof(*r));
 
-  r->lb_policy_name = NULL;
-  if (0 != strcmp(args->uri->query, "")) {
-    gpr_slice query_slice;
-    gpr_slice_buffer query_parts;
+  r->lb_policy_name =
+      gpr_strdup(grpc_uri_get_query_arg(args->uri, "lb_policy"));
+  const char *lb_enabled_qpart =
+      grpc_uri_get_query_arg(args->uri, "lb_enabled");
+  /* anything other than "0" is interpreted as true */
+  const bool lb_enabled =
+      (lb_enabled_qpart != NULL && (strcmp("0", lb_enabled_qpart) != 0));
 
-    query_slice =
-        gpr_slice_new(args->uri->query, strlen(args->uri->query), do_nothing);
-    gpr_slice_buffer_init(&query_parts);
-    gpr_slice_split(query_slice, "=", &query_parts);
-    GPR_ASSERT(query_parts.count == 2);
-    if (0 == gpr_slice_str_cmp(query_parts.slices[0], "lb_policy")) {
-      r->lb_policy_name = gpr_dump_slice(query_parts.slices[1], GPR_DUMP_ASCII);
-    }
-    gpr_slice_buffer_destroy(&query_parts);
-    gpr_slice_unref(query_slice);
+  if (r->lb_policy_name != NULL && strcmp("grpclb", r->lb_policy_name) == 0 &&
+      !lb_enabled) {
+    /* we want grpclb but the "resolved" addresses aren't LB enabled. Bail
+     * out, as this is meant mostly for tests. */
+    gpr_log(GPR_ERROR,
+            "Requested 'grpclb' LB policy but resolved addresses don't "
+            "support load balancing.");
+    abort();
   }
+
   if (r->lb_policy_name == NULL) {
     r->lb_policy_name = gpr_strdup(default_lb_policy_name);
   }
