@@ -1,4 +1,4 @@
-# Copyright 2015-2016, Google Inc.
+# Copyright 2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -27,5 +27,13 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-__import__('pkg_resources').declare_namespace(__name__)
+from libc cimport stdlib
 
+cdef extern from "grpc/protoc/main.h":
+  int main(int argc, char *argv[])
+
+def run_main(list args not None):
+  cdef char **argv = <char **>stdlib.malloc(len(args)*sizeof(char *))
+  for i in range(len(args)):
+    argv[i] = args[i]
+  return main(len(args), argv)

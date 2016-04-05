@@ -1,4 +1,4 @@
-# Copyright 2015-2016, Google Inc.
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -27,5 +27,27 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-__import__('pkg_resources').declare_namespace(__name__)
+FROM ubuntu:wily
+RUN apt-get update
+RUN apt-get -y install software-properties-common python-software-properties
+RUN add-apt-repository ppa:webupd8team/java
+RUN apt-get update
+RUN apt-get -y install \
+	vim            \
+	wget           \
+	openjdk-8-jdk  \
+	pkg-config     \
+	zip            \
+	g++            \
+	zlib1g-dev     \
+	unzip          \
+	git
 
+RUN git clone https://github.com/bazelbuild/bazel.git /bazel
+RUN cd /bazel &&     \
+	./compile.sh
+
+RUN cp /bazel/output/bazel /bin/bazel
+
+# ensure the installation has been extracted
+RUN bazel
