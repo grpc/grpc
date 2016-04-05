@@ -1895,6 +1895,30 @@ targets:
   deps:
   - gpr_test_util
   - gpr
+- name: nanopb_fuzzer_response_test
+  build: fuzzer
+  language: c
+  src:
+  - test/core/nanopb/fuzzer_response.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  corpus_dirs:
+  - test/core/nanopb/corpus_response
+- name: nanopb_fuzzer_serverlist_test
+  build: fuzzer
+  language: c
+  src:
+  - test/core/nanopb/fuzzer_serverlist.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  corpus_dirs:
+  - test/core/nanopb/corpus_serverlist
 - name: no_server_test
   cpu_cost: 0.1
   build: test
