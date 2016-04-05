@@ -25247,6 +25247,28 @@
   }, 
   {
     "args": [
+      "test/core/transport/chttp2/hpack_parser_corpus/7ff3b6239b04479a9caf67f45b2d0c619f712815"
+    ], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "windows", 
+      "posix"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "hpack_parser_fuzzer_test_one_entry", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
       "test/core/transport/chttp2/hpack_parser_corpus/8035c81c95dedfc27c3649064f98f49e3e72c21f"
     ], 
     "ci_platforms": [
@@ -27821,6 +27843,28 @@
   }, 
   {
     "args": [
+      "test/core/transport/chttp2/hpack_parser_corpus/d1c7ae01a81a122c2fd7c5d8debcae7566e9ee2f"
+    ], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "windows", 
+      "posix"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "hpack_parser_fuzzer_test_one_entry", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
       "test/core/transport/chttp2/hpack_parser_corpus/d2817b89d7aaa7fa880c077b1a67168ec2f4f0f7"
     ], 
     "ci_platforms": [
@@ -29120,6 +29164,28 @@
   {
     "args": [
       "test/core/transport/chttp2/hpack_parser_corpus/ff2097734bd7bb8451aece13c9336c4624735170"
+    ], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "windows", 
+      "posix"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "hpack_parser_fuzzer_test_one_entry", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "test/core/transport/chttp2/hpack_parser_corpus/ff2c949863eb4e14d9e835c51591304403d91b6c"
     ], 
     "ci_platforms": [
       "linux", 
