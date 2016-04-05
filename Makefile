@@ -2487,6 +2487,7 @@ LIBGRPC_SRC = \
     src/core/lib/channel/http_client_filter.c \
     src/core/lib/channel/http_server_filter.c \
     src/core/lib/channel/subchannel_call_holder.c \
+    src/core/lib/client_config/client_channel_factory.c \
     src/core/lib/client_config/client_config.c \
     src/core/lib/client_config/connector.c \
     src/core/lib/client_config/default_initial_connect_string.c \
@@ -2498,7 +2499,6 @@ LIBGRPC_SRC = \
     src/core/lib/client_config/resolver_factory.c \
     src/core/lib/client_config/resolver_registry.c \
     src/core/lib/client_config/subchannel.c \
-    src/core/lib/client_config/subchannel_factory.c \
     src/core/lib/client_config/subchannel_index.c \
     src/core/lib/client_config/uri_parser.c \
     src/core/lib/compression/compression_algorithm.c \
@@ -2844,6 +2844,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/channel/http_client_filter.c \
     src/core/lib/channel/http_server_filter.c \
     src/core/lib/channel/subchannel_call_holder.c \
+    src/core/lib/client_config/client_channel_factory.c \
     src/core/lib/client_config/client_config.c \
     src/core/lib/client_config/connector.c \
     src/core/lib/client_config/default_initial_connect_string.c \
@@ -2855,7 +2856,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/client_config/resolver_factory.c \
     src/core/lib/client_config/resolver_registry.c \
     src/core/lib/client_config/subchannel.c \
-    src/core/lib/client_config/subchannel_factory.c \
     src/core/lib/client_config/subchannel_index.c \
     src/core/lib/client_config/uri_parser.c \
     src/core/lib/compression/compression_algorithm.c \
