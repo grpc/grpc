@@ -1,3 +1,4 @@
+#!/bin/bash
 # Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
@@ -27,41 +28,11 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""Secure client-server interoperability as a unit test."""
+set -ex
 
-import unittest
+cd $(dirname $0)/../../..
 
-from grpc.beta import implementations
+# needed to correctly locate testca
+cd src/csharp/Grpc.IntegrationTesting.QpsWorker/bin/Release
 
-from tests.interop import _interop_test_case
-from tests.interop import methods
-from tests.interop import resources
-from tests.interop import test_pb2
-
-from tests.unit.beta import test_utilities
-
-_SERVER_HOST_OVERRIDE = 'foo.test.google.fr'
-
-
-class SecureInteropTest(
-    _interop_test_case.InteropTestCase,
-    unittest.TestCase):
-
-  def setUp(self):
-    self.server = test_pb2.beta_create_TestService_server(methods.TestService())
-    port = self.server.add_secure_port(
-        '[::]:0', implementations.ssl_server_credentials(
-            [(resources.private_key(), resources.certificate_chain())]))
-    self.server.start()
-    self.stub = test_pb2.beta_create_TestService_stub(
-        test_utilities.not_really_secure_channel(
-            '[::]', port, implementations.ssl_channel_credentials(
-                resources.test_root_certificates()),
-                _SERVER_HOST_OVERRIDE))
-
-  def tearDown(self):
-    self.server.stop(0)
-
-
-if __name__ == '__main__':
-  unittest.main(verbosity=2)
+mono Grpc.IntegrationTesting.QpsWorker.exe $@
