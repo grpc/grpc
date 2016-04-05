@@ -35,7 +35,6 @@
 #include <grpc/grpc.h>
 #include "src/core/lib/support/string.h"
 
-#include <grpc/census.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
@@ -163,17 +162,6 @@ void grpc_channel_args_destroy(grpc_channel_args *a) {
   }
   gpr_free(a->args);
   gpr_free(a);
-}
-
-int grpc_channel_args_is_census_enabled(const grpc_channel_args *a) {
-  size_t i;
-  if (a == NULL) return 0;
-  for (i = 0; i < a->num_args; i++) {
-    if (0 == strcmp(a->args[i].key, GRPC_ARG_ENABLE_CENSUS)) {
-      return a->args[i].value.integer != 0 && census_enabled();
-    }
-  }
-  return census_enabled();
 }
 
 grpc_compression_algorithm grpc_channel_args_get_compression_algorithm(

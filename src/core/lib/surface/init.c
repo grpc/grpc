@@ -39,12 +39,6 @@
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/time.h>
-#include "src/core/ext/client_config/client_channel.h"
-#include "src/core/ext/client_config/lb_policy_registry.h"
-#include "src/core/ext/client_config/resolver_registry.h"
-#include "src/core/ext/client_config/subchannel.h"
-#include "src/core/ext/client_config/subchannel_index.h"
-#include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/compress_filter.h"
 #include "src/core/lib/channel/connected_channel.h"
