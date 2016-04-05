@@ -36,7 +36,7 @@ import os
 import re
 import sys
 
-def update_deps(key, proto_filename, deps, is_trans, visited):
+def update_deps(key, proto_filename, deps, deps_external, is_trans, visited):
   if not proto_filename in visited:
     visited.append(proto_filename)
     with open(proto_filename) as inp:
@@ -44,10 +44,17 @@ def update_deps(key, proto_filename, deps, is_trans, visited):
         imp = re.search(r'import "([^"]*)"', line)
         if not imp: continue
         imp_proto = imp.group(1)
+        # This indicates an external dependency, which we should handle
+        # differently and not traverse recursively
+        if imp_proto.startswith('google/'):
+          if key not in deps_external:
+            deps_external[key] = []
+          deps_external[key].append(imp_proto[:-6])
+          continue
         if key not in deps: deps[key] = []
         deps[key].append(imp_proto[:-6])
         if is_trans:
-          update_deps(key, imp_proto, deps, is_trans, visited)
+          update_deps(key, imp_proto, deps, deps_external, is_trans, visited)
 
 def main():
   proto_dir = os.path.abspath(os.path.dirname(sys.argv[0]))
@@ -55,17 +62,23 @@ def main():
 
   deps = {}
   deps_trans = {}
+  deps_external = {}
+  deps_external_trans = {}
   for root, dirs, files in os.walk('src/proto'):
     for f in files:
       if f[-6:] != '.proto': continue
       look_at = os.path.join(root, f)
       deps_for = look_at[:-6]
-      update_deps(deps_for, look_at, deps, False, [])      # First level deps
-      update_deps(deps_for, look_at, deps_trans, True, []) # Transitive deps
+      # First level deps
+      update_deps(deps_for, look_at, deps, deps_external, False, [])
+      # Transitive deps
+      update_deps(deps_for, look_at, deps_trans, deps_external_trans, True, [])
 
   json = {
     'proto_deps': deps,
-    'proto_transitive_deps': deps_trans
+    'proto_transitive_deps': deps_trans,
+    'proto_external_deps': deps_external,
+    'proto_transitive_external_deps': deps_external_trans
   }
 
   print yaml.dump(json)
