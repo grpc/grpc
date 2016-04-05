@@ -40,7 +40,7 @@ decisions (for example, by avoiding disconnected backends).
 Configured sub-channels are fully setup to participate in the grpc data plane.
 Their behavior is specified by a set of grpc channel filters defined at their
 construction. To customize this behavior, resolvers build
-grpc_subchannel_factory objects, which use the decorator pattern to customize
+grpc_client_channel_factory objects, which use the decorator pattern to customize
 construction arguments for concrete grpc_subchannel instances.
 
 
