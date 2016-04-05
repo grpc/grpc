@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -39,7 +39,7 @@
 
 /** Initialize the registry and set \a default_factory as the factory to be
  * returned when no name is provided in a lookup */
-void grpc_lb_policy_registry_init(grpc_lb_policy_factory *default_factory);
+void grpc_lb_policy_registry_init(void);
 void grpc_lb_policy_registry_shutdown(void);
 
 /** Register a LB policy factory. */

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -544,6 +544,8 @@ var test_cases = {
   per_rpc_creds: {run: perRpcAuthTest,
                   Client: testProto.TestService}
 };
+
+exports.test_cases = test_cases;
 
 /**
  * Execute a single test case.
