@@ -35,8 +35,8 @@
 #include <string.h>
 
 #include <grpc/grpc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 
