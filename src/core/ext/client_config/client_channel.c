@@ -41,9 +41,9 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/useful.h>
 
+#include "src/core/ext/client_config/subchannel_call_holder.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/connected_channel.h"
-#include "src/core/ext/client_config/subchannel_call_holder.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/support/string.h"
