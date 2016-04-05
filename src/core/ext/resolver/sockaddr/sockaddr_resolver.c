@@ -31,13 +31,13 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
-
+#include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/host_port.h>
+#include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/client_config/lb_policy_registry.h"
@@ -52,7 +52,7 @@ typedef struct {
   /** refcount */
   gpr_refcount refs;
   /** subchannel factory */
-  grpc_subchannel_factory *subchannel_factory;
+  grpc_client_channel_factory *client_channel_factory;
   /** load balancing policy name */
   char *lb_policy_name;
 
@@ -125,7 +125,7 @@ static void sockaddr_maybe_finish_next_locked(grpc_exec_ctx *exec_ctx,
     grpc_lb_policy_args lb_policy_args;
     memset(&lb_policy_args, 0, sizeof(lb_policy_args));
     lb_policy_args.addresses = r->addresses;
-    lb_policy_args.subchannel_factory = r->subchannel_factory;
+    lb_policy_args.client_channel_factory = r->client_channel_factory;
     grpc_lb_policy *lb_policy =
         grpc_lb_policy_create(exec_ctx, r->lb_policy_name, &lb_policy_args);
     grpc_client_config_set_lb_policy(cfg, lb_policy);
@@ -140,7 +140,7 @@ static void sockaddr_maybe_finish_next_locked(grpc_exec_ctx *exec_ctx,
 static void sockaddr_destroy(grpc_exec_ctx *exec_ctx, grpc_resolver *gr) {
   sockaddr_resolver *r = (sockaddr_resolver *)gr;
   gpr_mu_destroy(&r->mu);
-  grpc_subchannel_factory_unref(exec_ctx, r->subchannel_factory);
+  grpc_client_channel_factory_unref(exec_ctx, r->client_channel_factory);
   grpc_resolved_addresses_destroy(r->addresses);
   gpr_free(r->lb_policy_name);
   gpr_free(r);
@@ -263,22 +263,24 @@ static grpc_resolver *sockaddr_create(
   r = gpr_malloc(sizeof(sockaddr_resolver));
   memset(r, 0, sizeof(*r));
 
-  r->lb_policy_name = NULL;
-  if (0 != strcmp(args->uri->query, "")) {
-    gpr_slice query_slice;
-    gpr_slice_buffer query_parts;
+  r->lb_policy_name =
+      gpr_strdup(grpc_uri_get_query_arg(args->uri, "lb_policy"));
+  const char *lb_enabled_qpart =
+      grpc_uri_get_query_arg(args->uri, "lb_enabled");
+  /* anything other than "0" is interpreted as true */
+  const bool lb_enabled =
+      (lb_enabled_qpart != NULL && (strcmp("0", lb_enabled_qpart) != 0));
 
-    query_slice =
-        gpr_slice_new(args->uri->query, strlen(args->uri->query), do_nothing);
-    gpr_slice_buffer_init(&query_parts);
-    gpr_slice_split(query_slice, "=", &query_parts);
-    GPR_ASSERT(query_parts.count == 2);
-    if (0 == gpr_slice_str_cmp(query_parts.slices[0], "lb_policy")) {
-      r->lb_policy_name = gpr_dump_slice(query_parts.slices[1], GPR_DUMP_ASCII);
-    }
-    gpr_slice_buffer_destroy(&query_parts);
-    gpr_slice_unref(query_slice);
+  if (r->lb_policy_name != NULL && strcmp("grpclb", r->lb_policy_name) == 0 &&
+      !lb_enabled) {
+    /* we want grpclb but the "resolved" addresses aren't LB enabled. Bail
+     * out, as this is meant mostly for tests. */
+    gpr_log(GPR_ERROR,
+            "Requested 'grpclb' LB policy but resolved addresses don't "
+            "support load balancing.");
+    abort();
   }
+
   if (r->lb_policy_name == NULL) {
     r->lb_policy_name = gpr_strdup(default_lb_policy_name);
   }
@@ -318,8 +320,8 @@ static grpc_resolver *sockaddr_create(
   gpr_ref_init(&r->refs, 1);
   gpr_mu_init(&r->mu);
   grpc_resolver_init(&r->base, &sockaddr_resolver_vtable);
-  r->subchannel_factory = args->subchannel_factory;
-  grpc_subchannel_factory_ref(r->subchannel_factory);
+  r->client_channel_factory = args->client_channel_factory;
+  grpc_client_channel_factory_ref(r->client_channel_factory);
 
   return &r->base;
 }
