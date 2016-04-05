@@ -36,16 +36,17 @@ cd $(dirname $0)/../../..
 
 CONFIG=${CONFIG:-opt}
 
+# build C++ qps worker & driver always - we need at least the driver to
+# run any of the scenarios.
+# TODO(jtattermusch): not embedding OpenSSL breaks the C# build because
+# grpc_csharp_ext needs OpenSSL embedded and some intermediate files from
+# this build will be reused.
+make CONFIG=${CONFIG} EMBED_OPENSSL=true EMBED_ZLIB=true qps_worker qps_driver -j8
+
 for language in $@
 do
-  if [ "$language" == "c++" ]
+  if [ "$language" != "c++" ]
   then
-    # build C++ qps worker & driver
-    # TODO(jtattermusch): not embedding OpenSSL breaks the C# build because
-    # grpc_csharp_ext needs OpenSSL embedded and some intermediate files from
-    # this build will be reused.
-    make CONFIG=${CONFIG} EMBED_OPENSSL=true EMBED_ZLIB=true qps_worker qps_driver -j8
-  else
     tools/run_tests/run_tests.py -l $language -c $CONFIG --build_only -j 8
   fi
 done
