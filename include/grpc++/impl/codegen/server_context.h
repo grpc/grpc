@@ -195,6 +195,8 @@ class ServerContext {
 
   void set_call(grpc_call* call);
 
+  uint32_t initial_metadata_flags() const { return 0; }
+
   CompletionOp* completion_op_;
   bool has_notify_when_done_tag_;
   void* async_notify_when_done_tag_;
