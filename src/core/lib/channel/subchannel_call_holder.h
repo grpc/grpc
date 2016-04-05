@@ -42,6 +42,7 @@
     called when the subchannel is available) */
 typedef int (*grpc_subchannel_call_holder_pick_subchannel)(
     grpc_exec_ctx *exec_ctx, void *arg, grpc_metadata_batch *initial_metadata,
+    uint32_t initial_metadata_flags,
     grpc_connected_subchannel **connected_subchannel, grpc_closure *on_ready);
 
 typedef enum {
