@@ -78,8 +78,6 @@ namespace Grpc.IntegrationTesting
     /// </summary>
     public class PoissonInterarrivalTimer : IInterarrivalTimer
     {
-        const double NanosToSeconds = 1e-9;
-
         readonly ExponentialDistribution exponentialDistribution;
         DateTime? lastEventTime;
 
@@ -119,7 +117,7 @@ namespace Grpc.IntegrationTesting
             }
 
             var origLastEventTime = this.lastEventTime.Value;
-            this.lastEventTime = origLastEventTime + TimeSpan.FromSeconds(exponentialDistribution.Next() * NanosToSeconds);
+            this.lastEventTime = origLastEventTime + TimeSpan.FromSeconds(exponentialDistribution.Next());
             return this.lastEventTime.Value - origLastEventTime;
         }
 
