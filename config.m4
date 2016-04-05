@@ -103,6 +103,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/client_config/resolver_factory.c \
     src/core/ext/client_config/resolver_registry.c \
     src/core/ext/client_config/subchannel.c \
+    src/core/ext/client_config/subchannel_call_holder.c \
     src/core/ext/client_config/subchannel_index.c \
     src/core/ext/client_config/uri_parser.c \
     src/core/ext/lb_policy/grpclb/load_balancer_api.c \
@@ -143,7 +144,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/channel/connected_channel.c \
     src/core/lib/channel/http_client_filter.c \
     src/core/lib/channel/http_server_filter.c \
-    src/core/lib/channel/subchannel_call_holder.c \
     src/core/lib/compression/compression_algorithm.c \
     src/core/lib/compression/message_compress.c \
     src/core/lib/debug/trace.c \

@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/lib/channel/subchannel_call_holder.h"
+#include "src/core/ext/client_config/subchannel_call_holder.h"
 
 #include <grpc/support/alloc.h>
 
