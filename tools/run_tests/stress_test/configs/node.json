@@ -27,8 +27,16 @@
     "templates": {
       "node_client": {
         "baseTemplate": "default",
-        "stressClientCmd": "node /var/local/git/grpc/src/node/stress/stress_client.js",
-        "metricsClientCmd": "node /var/local/git/grpc/src/node/stress/metrics_client.js"
+        "stressClientCmd": [
+          "/var/local/git/grpc/tools/gcp/stress_test/run_node.sh",
+          "node",
+          "/var/local/git/grpc/src/node/stress/stress_client.js"
+        ],
+        "metricsClientCmd": [
+          "/var/local/git/grpc/tools/gcp/stress_test/run_node.sh",
+          "node",
+          "/var/local/git/grpc/src/node/stress/metrics_client.js"
+        ]
       }
     }
   },
@@ -46,7 +54,11 @@
     "templates": {
       "node_server": {
         "baseTemplate": "default",
-        "stressServerCmd": "node /var/local/git/grpc/src/node/interop/interop_server.js"
+        "stressServerCmd": [
+          "/var/local/git/grpc/tools/gcp/stress_test/run_node.sh",
+          "node",
+          "/var/local/git/grpc/src/node/interop/interop_server.js"
+        ]
       }
     }
   },
@@ -64,7 +76,7 @@
       "node-stress-client": {
         "clientTemplate": "node_client",
         "dockerImage": "grpc_stress_node",
-        "numInstances": 1,
+        "numInstances": 2,
         "serverPodSpec": "node-stress-server"
       }
     }
@@ -73,7 +85,7 @@
   "globalSettings": {
     "buildDockerImages": false,
     "pollIntervalSecs": 10,
-    "testDurationSecs": 60,
+    "testDurationSecs": 120,
     "kubernetesProxyPort": 8001,
     "datasetIdNamePrefix": "stress_test_node",
     "summaryTableId": "summary",

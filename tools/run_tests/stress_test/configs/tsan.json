@@ -29,8 +29,8 @@
     "templates": {
       "cxx_client_tsan": {
         "baseTemplate": "default",
-        "stressClientCmd": "/var/local/git/grpc/bins/tsan/stress_test",
-        "metricsClientCmd": "/var/local/git/grpc/bins/tsan/metrics_client"
+        "stressClientCmd": ["/var/local/git/grpc/bins/tsan/stress_test"],
+        "metricsClientCmd": ["/var/local/git/grpc/bins/tsan/metrics_client"]
       }
     }
   },
@@ -48,7 +48,7 @@
     "templates": {
       "cxx_server_tsan": {
         "baseTemplate": "default",
-        "stressServerCmd": "/var/local/git/grpc/bins/tsan/interop_server"
+        "stressServerCmd": ["/var/local/git/grpc/bins/tsan/interop_server"]
       }
     }
   },

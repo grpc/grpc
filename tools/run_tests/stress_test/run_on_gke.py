@@ -67,9 +67,9 @@ class GlobalSettings:
 class ClientTemplate:
   """ Contains all the common settings that are used by a stress client """
 
-  def __init__(self, name, stress_client_cmd, metrics_client_cmd,
-               metrics_port, wrapper_script_path, poll_interval_secs,
-               client_args_dict, metrics_args_dict):
+  def __init__(self, name, stress_client_cmd, metrics_client_cmd, metrics_port,
+               wrapper_script_path, poll_interval_secs, client_args_dict,
+               metrics_args_dict):
     self.name = name
     self.stress_client_cmd = stress_client_cmd
     self.metrics_client_cmd = metrics_client_cmd
@@ -285,8 +285,7 @@ class Gke:
         'STRESS_TEST_CMD': client_pod_spec.template.stress_client_cmd,
         'STRESS_TEST_ARGS_STR': self._args_dict_to_str(
             client_pod_spec.get_client_args_dict()),
-        'METRICS_CLIENT_CMD':
-            client_pod_spec.template.metrics_client_cmd,
+        'METRICS_CLIENT_CMD': client_pod_spec.template.metrics_client_cmd,
         'METRICS_CLIENT_ARGS_STR': self._args_dict_to_str(
             client_pod_spec.template.metrics_args_dict),
         'POLL_INTERVAL_SECS': str(client_pod_spec.template.poll_interval_secs)
@@ -416,11 +415,13 @@ class Config:
       temp_dict.update(templates_dict[template_name])
 
       # Create and add ClientTemplate object to the final client_templates_dict
+      stress_client_cmd = ' '.join(temp_dict['stressClientCmd'])
+      metrics_client_cmd = ' '.join(temp_dict['metricsClientCmd'])
       client_templates_dict[template_name] = ClientTemplate(
-          template_name, temp_dict['stressClientCmd'],
-          temp_dict['metricsClientCmd'], temp_dict['metricsPort'],
-          temp_dict['wrapperScriptPath'], temp_dict['pollIntervalSecs'],
-          temp_dict['clientArgs'].copy(), temp_dict['metricsArgs'].copy())
+          template_name, stress_client_cmd, metrics_client_cmd,
+          temp_dict['metricsPort'], temp_dict['wrapperScriptPath'],
+          temp_dict['pollIntervalSecs'], temp_dict['clientArgs'].copy(),
+          temp_dict['metricsArgs'].copy())
 
     return client_templates_dict
 
@@ -452,10 +453,10 @@ class Config:
       temp_dict.update(templates_dict[template_name])
 
       # Create and add ServerTemplate object to the final server_templates_dict
+      stress_server_cmd = ' '.join(temp_dict['stressServerCmd'])
       server_templates_dict[template_name] = ServerTemplate(
-          template_name, temp_dict['stressServerCmd'],
-          temp_dict['wrapperScriptPath'], temp_dict['serverPort'],
-          temp_dict['serverArgs'].copy())
+          template_name, stress_server_cmd, temp_dict['wrapperScriptPath'],
+          temp_dict['serverPort'], temp_dict['serverArgs'].copy())
 
     return server_templates_dict
 
