@@ -40,7 +40,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/lib/client_config/resolver_registry.h"
+#include "src/core/ext/client_config/resolver_registry.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/surface/api_trace.h"
