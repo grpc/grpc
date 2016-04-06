@@ -322,6 +322,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/client_config/client_channel.c',
                       'src/core/ext/client_config/client_channel_factory.c',
                       'src/core/ext/client_config/client_config.c',
+                      'src/core/ext/client_config/client_config_plugin.c',
                       'src/core/ext/client_config/connector.c',
                       'src/core/ext/client_config/default_initial_connect_string.c',
                       'src/core/ext/client_config/initial_connect_string.c',

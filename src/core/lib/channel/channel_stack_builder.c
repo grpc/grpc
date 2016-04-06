@@ -84,6 +84,11 @@ void grpc_channel_stack_builder_set_target(grpc_channel_stack_builder *b,
   b->target = gpr_strdup(target);
 }
 
+const char *grpc_channel_stack_builder_get_target(
+    grpc_channel_stack_builder *b) {
+  return b->target;
+}
+
 static grpc_channel_stack_builder_iterator *create_iterator_at_filter_node(
     grpc_channel_stack_builder *builder, filter_node *node) {
   grpc_channel_stack_builder_iterator *it = gpr_malloc(sizeof(*it));

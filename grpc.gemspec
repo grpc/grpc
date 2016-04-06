@@ -305,6 +305,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/client_config/client_channel.c )
   s.files += %w( src/core/ext/client_config/client_channel_factory.c )
   s.files += %w( src/core/ext/client_config/client_config.c )
+  s.files += %w( src/core/ext/client_config/client_config_plugin.c )
   s.files += %w( src/core/ext/client_config/connector.c )
   s.files += %w( src/core/ext/client_config/default_initial_connect_string.c )
   s.files += %w( src/core/ext/client_config/initial_connect_string.c )
