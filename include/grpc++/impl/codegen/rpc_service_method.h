@@ -43,6 +43,7 @@
 #include <grpc++/impl/codegen/config.h>
 #include <grpc++/impl/codegen/rpc_method.h>
 #include <grpc++/impl/codegen/status.h>
+#include <grpc/impl/codegen/byte_buffer.h>
 
 namespace grpc {
 class ServerContext;

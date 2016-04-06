@@ -33,13 +33,13 @@
 
 /* Test of gpr synchronization support. */
 
-#include <stdio.h>
-#include <stdlib.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/thd.h>
 #include <grpc/support/time.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include "test/core/util/test_config.h"
 
 /* ==================Example use of interface===================
@@ -251,7 +251,7 @@ static void test(const char *name, void (*body)(void *m),
   gpr_timespec start = gpr_now(GPR_CLOCK_REALTIME);
   gpr_timespec time_taken;
   gpr_timespec deadline = gpr_time_add(
-      start, gpr_time_from_micros(timeout_s * 1000000, GPR_TIMESPAN));
+      start, gpr_time_from_micros((int64_t)timeout_s * 1000000, GPR_TIMESPAN));
   fprintf(stderr, "%s:", name);
   while (gpr_time_cmp(gpr_now(GPR_CLOCK_REALTIME), deadline) < 0) {
     iterations <<= 1;

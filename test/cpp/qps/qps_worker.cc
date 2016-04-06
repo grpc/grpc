@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -101,10 +101,23 @@ static std::unique_ptr<Server> CreateServer(const ServerConfig& config) {
   abort();
 }
 
+class ScopedProfile GRPC_FINAL {
+ public:
+  ScopedProfile(const char* filename, bool enable) : enable_(enable) {
+    if (enable_) grpc_profiler_start(filename);
+  }
+  ~ScopedProfile() {
+    if (enable_) grpc_profiler_stop();
+  }
+
+ private:
+  const bool enable_;
+};
+
 class WorkerServiceImpl GRPC_FINAL : public WorkerService::Service {
  public:
-  explicit WorkerServiceImpl(int server_port)
-      : acquired_(false), server_port_(server_port) {}
+  WorkerServiceImpl(int server_port, QpsWorker* worker)
+      : acquired_(false), server_port_(server_port), worker_(worker) {}
 
   Status RunClient(ServerContext* ctx,
                    ServerReaderWriter<ClientStatus, ClientArgs>* stream)
@@ -114,9 +127,8 @@ class WorkerServiceImpl GRPC_FINAL : public WorkerService::Service {
       return Status(StatusCode::RESOURCE_EXHAUSTED, "");
     }
 
-    grpc_profiler_start("qps_client.prof");
+    ScopedProfile profile("qps_client.prof", false);
     Status ret = RunClientBody(ctx, stream);
-    grpc_profiler_stop();
     return ret;
   }
 
@@ -128,15 +140,24 @@ class WorkerServiceImpl GRPC_FINAL : public WorkerService::Service {
       return Status(StatusCode::RESOURCE_EXHAUSTED, "");
     }
 
-    grpc_profiler_start("qps_server.prof");
+    ScopedProfile profile("qps_server.prof", false);
     Status ret = RunServerBody(ctx, stream);
-    grpc_profiler_stop();
     return ret;
   }
 
   Status CoreCount(ServerContext* ctx, const CoreRequest*,
                    CoreResponse* resp) GRPC_OVERRIDE {
     resp->set_cores(gpr_cpu_num_cores());
+    return Status::OK;
+  }
+
+  Status QuitWorker(ServerContext* ctx, const Void*, Void*) GRPC_OVERRIDE {
+    InstanceGuard g(this);
+    if (!g.Acquired()) {
+      return Status(StatusCode::RESOURCE_EXHAUSTED, "");
+    }
+
+    worker_->MarkDone();
     return Status::OK;
   }
 
@@ -250,10 +271,12 @@ class WorkerServiceImpl GRPC_FINAL : public WorkerService::Service {
   std::mutex mu_;
   bool acquired_;
   int server_port_;
+  QpsWorker* worker_;
 };
 
 QpsWorker::QpsWorker(int driver_port, int server_port) {
-  impl_.reset(new WorkerServiceImpl(server_port));
+  impl_.reset(new WorkerServiceImpl(server_port, this));
+  gpr_atm_rel_store(&done_, static_cast<gpr_atm>(0));
 
   char* server_address = NULL;
   gpr_join_host_port(&server_address, "::", driver_port);
@@ -269,5 +292,11 @@ QpsWorker::QpsWorker(int driver_port, int server_port) {
 
 QpsWorker::~QpsWorker() {}
 
+bool QpsWorker::Done() const {
+  return (gpr_atm_acq_load(&done_) != static_cast<gpr_atm>(0));
+}
+void QpsWorker::MarkDone() {
+  gpr_atm_rel_store(&done_, static_cast<gpr_atm>(1));
+}
 }  // namespace testing
 }  // namespace grpc

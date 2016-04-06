@@ -39,4 +39,8 @@ set -ex -o igncr || set -ex
 curr_platform="$platform"
 unset platform  # variable named 'platform' breaks the windows build
 
-python tools/run_tests/task_runner.py -f artifact $language $curr_platform $architecture
+if [ "$curr_platform" == "linux" ] && [ "$language" == "ruby" ] ; then
+  ./tools/run_tests/build_artifact_ruby.sh
+else
+  python tools/run_tests/task_runner.py -f artifact $language $curr_platform $architecture
+fi

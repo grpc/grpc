@@ -1,4 +1,4 @@
-# Copyright 2015-2016, Google Inc.
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -29,6 +29,4 @@
 
 FROM debian:jessie
 
-RUN apt-get update
-RUN apt-get install -y git python python-pip
-
+RUN apt-get update && apt-get install -y python python-pip

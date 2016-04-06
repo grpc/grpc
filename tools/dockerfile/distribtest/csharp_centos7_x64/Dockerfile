@@ -1,4 +1,4 @@
-# Copyright 2015-2016, Google Inc.
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -33,6 +33,5 @@ RUN rpm --import "http://keyserver.ubuntu.com/pks/lookup?op=get&search=0x3FA7E03
 RUN yum-config-manager --add-repo http://download.mono-project.com/repo/centos/
 
 RUN yum install -y mono
-RUN yum install -y git
 RUN yum install -y unzip
 RUN yum install -y nuget

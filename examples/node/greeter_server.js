@@ -31,9 +31,9 @@
  *
  */
 
-var PROTO_PATH = __dirname + '/helloworld.proto';
+var PROTO_PATH = __dirname + '/../protos/helloworld.proto';
 
-var grpc = require('../../');
+var grpc = require('grpc');
 var hello_proto = grpc.load(PROTO_PATH).helloworld;
 
 /**

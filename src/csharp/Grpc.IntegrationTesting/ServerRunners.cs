@@ -41,6 +41,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Google.Protobuf;
 using Grpc.Core;
+using Grpc.Core.Logging;
 using Grpc.Core.Utils;
 using NUnit.Framework;
 using Grpc.Testing;
@@ -50,26 +51,77 @@ namespace Grpc.IntegrationTesting
     /// <summary>
     /// Helper methods to start server runners for performance testing.
     /// </summary>
-    public static class ServerRunners
+    public class ServerRunners
     {
+        static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<ServerRunners>();
+
         /// <summary>
         /// Creates a started server runner.
         /// </summary>
         public static IServerRunner CreateStarted(ServerConfig config)
         {
-            Grpc.Core.Utils.Preconditions.CheckArgument(config.ServerType == ServerType.ASYNC_SERVER);
+            Logger.Debug("ServerConfig: {0}", config);
             var credentials = config.SecurityParams != null ? TestCredentials.CreateSslServerCredentials() : ServerCredentials.Insecure;
 
-            // TODO: qps_driver needs to setup payload properly...
-            int responseSize = config.PayloadConfig != null ? config.PayloadConfig.SimpleParams.RespSize : 0;
+            if (config.AsyncServerThreads != 0)
+            {
+                Logger.Warning("ServerConfig.AsyncServerThreads is not supported for C#. Ignoring the value");
+            }
+            if (config.CoreLimit != 0)
+            {
+                Logger.Warning("ServerConfig.CoreLimit is not supported for C#. Ignoring the value");
+            }
+            if (config.CoreList.Count > 0)
+            {
+                Logger.Warning("ServerConfig.CoreList is not supported for C#. Ignoring the value");
+            }
+
+            ServerServiceDefinition service = null;
+            if (config.ServerType == ServerType.ASYNC_SERVER)
+            {
+                GrpcPreconditions.CheckArgument(config.PayloadConfig == null,
+                    "ServerConfig.PayloadConfig shouldn't be set for BenchmarkService based server.");    
+                service = BenchmarkService.BindService(new BenchmarkServiceImpl());
+            }
+            else if (config.ServerType == ServerType.ASYNC_GENERIC_SERVER)
+            {
+                var genericService = new GenericServiceImpl(config.PayloadConfig.BytebufParams.RespSize);
+                service = GenericService.BindHandler(genericService.StreamingCall);
+            }
+            else
+            {
+                throw new ArgumentException("Unsupported ServerType");
+            }
+
             var server = new Server
             {
-                Services = { BenchmarkService.BindService(new BenchmarkServiceImpl(responseSize)) },
-                Ports = { new ServerPort(config.Host, config.Port, credentials) }
+                Services = { service },
+                Ports = { new ServerPort("[::]", config.Port, credentials) }
             };
 
             server.Start();
             return new ServerRunnerImpl(server);
+        }
+
+        private class GenericServiceImpl
+        {
+            readonly byte[] response;
+
+            public GenericServiceImpl(int responseSize)
+            {
+                this.response = new byte[responseSize];
+            }
+
+            /// <summary>
+            /// Generic streaming call handler.
+            /// </summary>
+            public async Task StreamingCall(IAsyncStreamReader<byte[]> requestStream, IServerStreamWriter<byte[]> responseStream, ServerCallContext context)
+            {
+                await requestStream.ForEachAsync(async request =>
+                {
+                    await responseStream.WriteAsync(response);
+                });
+            }
         }
     }
 
@@ -83,7 +135,7 @@ namespace Grpc.IntegrationTesting
 
         public ServerRunnerImpl(Server server)
         {
-            this.server = Grpc.Core.Utils.Preconditions.CheckNotNull(server);
+            this.server = GrpcPreconditions.CheckNotNull(server);
         }
 
         public int BoundPort
@@ -119,6 +171,5 @@ namespace Grpc.IntegrationTesting
         {
             return server.ShutdownAsync();
         }
-    }
-        
+    }        
 }

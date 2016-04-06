@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -43,17 +43,17 @@ extern "C" {
 typedef struct gpr_subprocess gpr_subprocess;
 
 /* .exe on windows, empty on unices */
-GPR_API const char *gpr_subprocess_binary_extension();
+GPRAPI const char *gpr_subprocess_binary_extension();
 
-GPR_API gpr_subprocess *gpr_subprocess_create(int argc, const char **argv);
+GPRAPI gpr_subprocess *gpr_subprocess_create(int argc, const char **argv);
 /* if subprocess has not been joined, kill it */
-GPR_API void gpr_subprocess_destroy(gpr_subprocess *p);
+GPRAPI void gpr_subprocess_destroy(gpr_subprocess *p);
 /* returns exit status; can be called at most once */
-GPR_API int gpr_subprocess_join(gpr_subprocess *p);
-GPR_API void gpr_subprocess_interrupt(gpr_subprocess *p);
+GPRAPI int gpr_subprocess_join(gpr_subprocess *p);
+GPRAPI void gpr_subprocess_interrupt(gpr_subprocess *p);
 
 #ifdef __cplusplus
 }  // extern "C"
 #endif
 
-#endif
+#endif /* GRPC_SUPPORT_SUBPROCESS_H */

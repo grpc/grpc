@@ -1,4 +1,4 @@
-# Copyright 2015-2016, Google Inc.
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -29,8 +29,4 @@
 
 FROM ubuntu:15.04
 
-RUN apt-get update -y
-RUN apt-get install -y git
-RUN apt-get install -y python
-RUN apt-get install -y python-pip
-
+RUN apt-get update -y && apt-get install -y python python-pip

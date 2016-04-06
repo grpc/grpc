@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -78,6 +78,8 @@ DEFINE_int32(client_core_limit, -1, "Limit on client cores to use");
 
 DEFINE_bool(secure_test, false, "Run a secure test");
 
+DEFINE_bool(quit, false, "Quit the workers");
+
 using grpc::testing::ClientConfig;
 using grpc::testing::ServerConfig;
 using grpc::testing::ClientType;
@@ -90,6 +92,11 @@ namespace grpc {
 namespace testing {
 
 static void QpsDriver() {
+  if (FLAGS_quit) {
+    RunQuit();
+    return;
+  }
+
   RpcType rpc_type;
   GPR_ASSERT(RpcType_Parse(FLAGS_rpc_type, &rpc_type));
 
@@ -162,6 +169,10 @@ static void QpsDriver() {
 
   if (FLAGS_server_core_limit > 0) {
     server_config.set_core_limit(FLAGS_server_core_limit);
+  }
+
+  if (FLAGS_bbuf_resp_size >= 0) {
+    *server_config.mutable_payload_config() = client_config.payload_config();
   }
 
   if (FLAGS_secure_test) {

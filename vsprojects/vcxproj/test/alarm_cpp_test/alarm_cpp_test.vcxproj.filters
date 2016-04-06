@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\test\cpp\common\alarm_cpp_test.cc">
+      <Filter>test\cpp\common</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="test">
+      <UniqueIdentifier>{ee2d2282-632f-e0ff-cd3e-cec1507e6831}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\cpp">
+      <UniqueIdentifier>{672815bb-fd6d-b5a2-b2b8-ee145fecd451}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\cpp\common">
+      <UniqueIdentifier>{6e1a5a97-6bd9-847e-afea-0ca2ac4cc6b7}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

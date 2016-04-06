@@ -1,4 +1,4 @@
-# Copyright 2015-2016, Google Inc.
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -29,7 +29,6 @@
 
 FROM centos:7
 
-RUN yum install -y git
 RUN yum install -y python
 RUN yum install -y epel-release
 RUN yum install -y python-pip

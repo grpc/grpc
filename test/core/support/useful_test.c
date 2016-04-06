@@ -31,9 +31,9 @@
  *
  */
 
-#include <grpc/support/useful.h>
-#include <grpc/support/port_platform.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/useful.h>
 #include "test/core/util/test_config.h"
 
 int main(int argc, char **argv) {

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -36,10 +36,10 @@
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include "src/core/channel/channel_stack.h"
-#include "src/core/iomgr/closure.h"
-#include "src/core/surface/channel.h"
-#include "src/core/transport/transport.h"
+#include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/surface/channel.h"
+#include "src/core/lib/transport/transport.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/util/test_config.h"
 

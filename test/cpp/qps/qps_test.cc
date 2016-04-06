@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -43,7 +43,7 @@ namespace grpc {
 namespace testing {
 
 static const int WARMUP = 20;
-static const int BENCHMARK = 40;
+static const int BENCHMARK = 20;
 
 static void RunQPS() {
   gpr_log(GPR_INFO, "Running QPS test");
@@ -53,7 +53,7 @@ static void RunQPS() {
   client_config.set_outstanding_rpcs_per_channel(1000);
   client_config.set_client_channels(8);
   client_config.set_async_client_threads(8);
-  client_config.set_rpc_type(UNARY);
+  client_config.set_rpc_type(STREAMING);
   client_config.mutable_load_params()->mutable_closed_loop();
 
   ServerConfig server_config;

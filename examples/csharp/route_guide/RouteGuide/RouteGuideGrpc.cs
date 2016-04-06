@@ -49,7 +49,7 @@ namespace Routeguide {
     // service descriptor
     public static global::Google.Protobuf.Reflection.ServiceDescriptor Descriptor
     {
-      get { return global::Routeguide.Proto.RouteGuide.Descriptor.Services[0]; }
+      get { return global::Routeguide.RouteGuideReflection.Descriptor.Services[0]; }
     }
 
     // client interface

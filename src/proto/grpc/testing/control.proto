@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Google Inc.
+// Copyright 2015, Google Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -165,4 +165,7 @@ message CoreRequest {
 message CoreResponse {
   // Number of cores available on the server
   int32 cores = 1;
+}
+
+message Void {
 }

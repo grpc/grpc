@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -56,7 +56,7 @@ namespace testing {
 static void RunServer() {
   QpsWorker worker(FLAGS_driver_port, FLAGS_server_port);
 
-  while (!got_sigint) {
+  while (!got_sigint && !worker.Done()) {
     gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
                                  gpr_time_from_seconds(5, GPR_TIMESPAN)));
   }

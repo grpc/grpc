@@ -32,6 +32,8 @@
 import collections
 import threading
 
+import six
+
 # test_control, _service, and test_interfaces are referenced from specification
 # in this module.
 from grpc.framework.common import cardinality
@@ -363,7 +365,7 @@ def _assemble(
   events = {}
   adaptations = {}
   messages = {}
-  for identifier, scenario in scenarios.iteritems():
+  for identifier, scenario in six.iteritems(scenarios):
     if identifier in identifiers:
       raise ValueError('Repeated identifier "(%s, %s)"!' % identifier)
 

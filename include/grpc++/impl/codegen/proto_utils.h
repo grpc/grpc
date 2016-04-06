@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -36,22 +36,16 @@
 
 #include <type_traits>
 
-#include <grpc/impl/codegen/byte_buffer.h>
-#include <grpc++/impl/codegen/serialization_traits.h>
 #include <grpc++/impl/codegen/config_protobuf.h>
+#include <grpc++/impl/codegen/core_codegen_interface.h>
+#include <grpc++/impl/codegen/serialization_traits.h>
 #include <grpc++/impl/codegen/status.h>
+#include <grpc/impl/codegen/byte_buffer.h>
+#include <grpc/impl/codegen/log.h>
 
 namespace grpc {
 
-// Serialize the msg into a buffer created inside the function. The caller
-// should destroy the returned buffer when done with it. If serialization fails,
-// false is returned and buffer is left unchanged.
-Status SerializeProto(const grpc::protobuf::Message& msg,
-                      grpc_byte_buffer** buffer);
-
-// The caller keeps ownership of buffer and msg.
-Status DeserializeProto(grpc_byte_buffer* buffer, grpc::protobuf::Message* msg,
-                        int max_message_size);
+extern CoreCodegenInterface* g_core_codegen_interface;
 
 template <class T>
 class SerializationTraits<T, typename std::enable_if<std::is_base_of<
@@ -60,14 +54,13 @@ class SerializationTraits<T, typename std::enable_if<std::is_base_of<
   static Status Serialize(const grpc::protobuf::Message& msg,
                           grpc_byte_buffer** buffer, bool* own_buffer) {
     *own_buffer = true;
-    return SerializeProto(msg, buffer);
+    return g_core_codegen_interface->SerializeProto(msg, buffer);
   }
   static Status Deserialize(grpc_byte_buffer* buffer,
                             grpc::protobuf::Message* msg,
                             int max_message_size) {
-    auto status = DeserializeProto(buffer, msg, max_message_size);
-    grpc_byte_buffer_destroy(buffer);
-    return status;
+    return g_core_codegen_interface->DeserializeProto(buffer, msg,
+                                                      max_message_size);
   }
 };
 

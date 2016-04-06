@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -83,6 +83,28 @@ grpc::string FilenameIdentifier(const grpc::string &filename) {
 }
 }  // namespace
 
+template<class T, size_t N>
+T *array_end(T (&array)[N]) { return array + N; }
+
+void PrintIncludes(grpc::protobuf::io::Printer *printer, const std::vector<grpc::string>& headers, const Parameters &params) {
+  std::map<grpc::string, grpc::string> vars;
+
+  vars["l"] = params.use_system_headers ? '<' : '"';
+  vars["r"] = params.use_system_headers ? '>' : '"';
+
+  if (!params.grpc_search_path.empty()) {
+    vars["l"] += params.grpc_search_path;
+    if (params.grpc_search_path.back() != '/') {
+      vars["l"] += '/';
+    }
+  }
+
+  for (auto i = headers.begin(); i != headers.end(); i++) {
+    vars["h"] = *i;
+    printer->Print(vars, "#include $l$$h$$r$\n");
+  }
+}
+
 grpc::string GetHeaderPrologue(const grpc::protobuf::FileDescriptor *file,
                                const Parameters &params) {
   grpc::string output;
@@ -111,36 +133,46 @@ grpc::string GetHeaderPrologue(const grpc::protobuf::FileDescriptor *file,
 
 grpc::string GetHeaderIncludes(const grpc::protobuf::FileDescriptor *file,
                                const Parameters &params) {
-  grpc::string temp =
-      "#include <grpc++/impl/codegen/async_stream.h>\n"
-      "#include <grpc++/impl/codegen/async_unary_call.h>\n"
-      "#include <grpc++/impl/codegen/proto_utils.h>\n"
-      "#include <grpc++/impl/codegen/rpc_method.h>\n"
-      "#include <grpc++/impl/codegen/service_type.h>\n"
-      "#include <grpc++/impl/codegen/status.h>\n"
-      "#include <grpc++/impl/codegen/stub_options.h>\n"
-      "#include <grpc++/impl/codegen/sync_stream.h>\n"
-      "\n"
-      "namespace grpc {\n"
-      "class CompletionQueue;\n"
-      "class RpcService;\n"
-      "class ServerCompletionQueue;\n"
-      "class ServerContext;\n"
-      "}  // namespace grpc\n\n";
+  grpc::string output;
+  {
+    // Scope the output stream so it closes and finalizes output to the string.
+    grpc::protobuf::io::StringOutputStream output_stream(&output);
+    grpc::protobuf::io::Printer printer(&output_stream, '$');
+    std::map<grpc::string, grpc::string> vars;
 
-  if (!file->package().empty()) {
-    std::vector<grpc::string> parts =
-        grpc_generator::tokenize(file->package(), ".");
+    static const char *headers_strs[] = {
+      "grpc++/impl/codegen/async_stream.h",
+      "grpc++/impl/codegen/async_unary_call.h",
+      "grpc++/impl/codegen/proto_utils.h",
+      "grpc++/impl/codegen/rpc_method.h",
+      "grpc++/impl/codegen/service_type.h",
+      "grpc++/impl/codegen/status.h",
+      "grpc++/impl/codegen/stub_options.h",
+      "grpc++/impl/codegen/sync_stream.h"
+    };
+    std::vector<grpc::string> headers(headers_strs, array_end(headers_strs));
+    PrintIncludes(&printer, headers, params);
+    printer.Print(vars, "\n");
+    printer.Print(vars, "namespace grpc {\n");
+    printer.Print(vars, "class CompletionQueue;\n");
+    printer.Print(vars, "class Channel;\n");
+    printer.Print(vars, "class RpcService;\n");
+    printer.Print(vars, "class ServerCompletionQueue;\n");
+    printer.Print(vars, "class ServerContext;\n");
+    printer.Print(vars, "}  // namespace grpc\n\n");
 
-    for (auto part = parts.begin(); part != parts.end(); part++) {
-      temp.append("namespace ");
-      temp.append(*part);
-      temp.append(" {\n");
+    if (!file->package().empty()) {
+      std::vector<grpc::string> parts =
+          grpc_generator::tokenize(file->package(), ".");
+
+      for (auto part = parts.begin(); part != parts.end(); part++) {
+        vars["part"] = *part;
+        printer.Print(vars, "namespace $part$ {\n");
+      }
+      printer.Print(vars, "\n");
     }
-    temp.append("\n");
   }
-
-  return temp;
+  return output;
 }
 
 void PrintHeaderClientMethodInterfaces(
@@ -852,7 +884,7 @@ grpc::string GetSourcePrologue(const grpc::protobuf::FileDescriptor *file,
 }
 
 grpc::string GetSourceIncludes(const grpc::protobuf::FileDescriptor *file,
-                               const Parameters &param) {
+                               const Parameters &params) {
   grpc::string output;
   {
     // Scope the output stream so it closes and finalizes output to the string.
@@ -860,16 +892,18 @@ grpc::string GetSourceIncludes(const grpc::protobuf::FileDescriptor *file,
     grpc::protobuf::io::Printer printer(&output_stream, '$');
     std::map<grpc::string, grpc::string> vars;
 
-    printer.Print(vars, "#include <grpc++/impl/codegen/async_stream.h>\n");
-    printer.Print(vars, "#include <grpc++/impl/codegen/async_unary_call.h>\n");
-    printer.Print(vars, "#include <grpc++/impl/codegen/channel_interface.h>\n");
-    printer.Print(vars, "#include <grpc++/impl/codegen/client_unary_call.h>\n");
-    printer.Print(vars,
-                  "#include <grpc++/impl/codegen/method_handler_impl.h>\n");
-    printer.Print(vars,
-                  "#include <grpc++/impl/codegen/rpc_service_method.h>\n");
-    printer.Print(vars, "#include <grpc++/impl/codegen/service_type.h>\n");
-    printer.Print(vars, "#include <grpc++/impl/codegen/sync_stream.h>\n");
+    static const char *headers_strs[] = {
+      "grpc++/impl/codegen/async_stream.h",
+      "grpc++/impl/codegen/async_unary_call.h",
+      "grpc++/impl/codegen/channel_interface.h",
+      "grpc++/impl/codegen/client_unary_call.h",
+      "grpc++/impl/codegen/method_handler_impl.h",
+      "grpc++/impl/codegen/rpc_service_method.h",
+      "grpc++/impl/codegen/service_type.h",
+      "grpc++/impl/codegen/sync_stream.h"
+    };
+    std::vector<grpc::string> headers(headers_strs, array_end(headers_strs));
+    PrintIncludes(&printer, headers, params);
 
     if (!file->package().empty()) {
       std::vector<grpc::string> parts =
@@ -1106,6 +1140,7 @@ void PrintSourceService(grpc::protobuf::io::Printer *printer,
 
   printer->Print(*vars, "$ns$$Service$::Service::Service() {\n");
   printer->Indent();
+  printer->Print(*vars, "(void)$prefix$$Service$_method_names;\n");
   for (int i = 0; i < service->method_count(); ++i) {
     const grpc::protobuf::MethodDescriptor *method = service->method(i);
     (*vars)["Idx"] = as_string(i);

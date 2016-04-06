@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2015-2016, Google Inc.
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -32,5 +32,13 @@ set -ex
 
 cd $(dirname $0)
 
-# do something ruby-ish
+# Create an indexed local gem source with gRPC gems to test
+GEM_SOURCE=../../../gem_source
+mkdir -p ${GEM_SOURCE}/gems
+cp -r $EXTERNAL_GIT_ROOT/input_artifacts/*.gem ${GEM_SOURCE}/gems
+gem install builder
+gem generate_index --directory ${GEM_SOURCE}
 
+bundle install
+
+bundle exec ./distribtest.rb

@@ -183,9 +183,9 @@ namespace Grpc.Core
         /// <param name="callCredentials">channelCredentials to compose</param>
         public CompositeChannelCredentials(ChannelCredentials channelCredentials, CallCredentials callCredentials)
         {
-            this.channelCredentials = Preconditions.CheckNotNull(channelCredentials);
-            this.callCredentials = Preconditions.CheckNotNull(callCredentials);
-            Preconditions.CheckArgument(channelCredentials.IsComposable, "Supplied channel credentials do not allow composition.");
+            this.channelCredentials = GrpcPreconditions.CheckNotNull(channelCredentials);
+            this.callCredentials = GrpcPreconditions.CheckNotNull(callCredentials);
+            GrpcPreconditions.CheckArgument(channelCredentials.IsComposable, "Supplied channel credentials do not allow composition.");
         }
 
         internal override ChannelCredentialsSafeHandle ToNativeCredentials()

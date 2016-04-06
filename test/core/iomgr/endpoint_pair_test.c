@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,18 +31,17 @@
  *
  */
 
-#include "src/core/iomgr/tcp_posix.h"
-
+#include "src/core/lib/iomgr/endpoint_pair.h"
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 #include <grpc/support/useful.h>
-#include "src/core/iomgr/endpoint_pair.h"
-#include "test/core/util/test_config.h"
 #include "test/core/iomgr/endpoint_tests.h"
+#include "test/core/util/test_config.h"
 
-static grpc_pollset g_pollset;
+static gpr_mu *g_mu;
+static grpc_pollset *g_pollset;
 
 static void clean_up(void) {}
 
@@ -54,8 +53,8 @@ static grpc_endpoint_test_fixture create_fixture_endpoint_pair(
 
   f.client_ep = p.client;
   f.server_ep = p.server;
-  grpc_endpoint_add_to_pollset(&exec_ctx, f.client_ep, &g_pollset);
-  grpc_endpoint_add_to_pollset(&exec_ctx, f.server_ep, &g_pollset);
+  grpc_endpoint_add_to_pollset(&exec_ctx, f.client_ep, g_pollset);
+  grpc_endpoint_add_to_pollset(&exec_ctx, f.server_ep, g_pollset);
   grpc_exec_ctx_finish(&exec_ctx);
 
   return f;
@@ -74,12 +73,14 @@ int main(int argc, char **argv) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_test_init(argc, argv);
   grpc_init();
-  grpc_pollset_init(&g_pollset);
-  grpc_endpoint_tests(configs[0], &g_pollset);
-  grpc_closure_init(&destroyed, destroy_pollset, &g_pollset);
-  grpc_pollset_shutdown(&exec_ctx, &g_pollset, &destroyed);
+  g_pollset = gpr_malloc(grpc_pollset_size());
+  grpc_pollset_init(g_pollset, &g_mu);
+  grpc_endpoint_tests(configs[0], g_pollset, g_mu);
+  grpc_closure_init(&destroyed, destroy_pollset, g_pollset);
+  grpc_pollset_shutdown(&exec_ctx, g_pollset, &destroyed);
   grpc_exec_ctx_finish(&exec_ctx);
   grpc_shutdown();
+  gpr_free(g_pollset);
 
   return 0;
 }

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -63,6 +63,10 @@ grpc_byte_buffer *BufferToByteBuffer(Local<Value> buffer) {
   return byte_buffer;
 }
 
+namespace {
+void delete_buffer(char *data, void *hint) { delete[] data; }
+}
+
 Local<Value> ByteBufferToBuffer(grpc_byte_buffer *buffer) {
   Nan::EscapableHandleScope scope;
   if (buffer == NULL) {
@@ -80,7 +84,7 @@ Local<Value> ByteBufferToBuffer(grpc_byte_buffer *buffer) {
     gpr_slice_unref(next);
   }
   return scope.Escape(MakeFastBuffer(
-      Nan::NewBuffer(result, length).ToLocalChecked()));
+      Nan::NewBuffer(result, length, delete_buffer, NULL).ToLocalChecked()));
 }
 
 Local<Value> MakeFastBuffer(Local<Value> slowBuffer) {

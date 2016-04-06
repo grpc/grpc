@@ -33,6 +33,8 @@
 import abc
 import unittest  # pylint: disable=unused-import
 
+import six
+
 from grpc.framework.face import exceptions
 from tests.unit.framework.common import test_constants
 from tests.unit.framework.face.testing import control
@@ -43,12 +45,12 @@ from tests.unit.framework.face.testing import test_case
 
 
 class BlockingInvocationInlineServiceTestCase(
-    test_case.FaceTestCase, coverage.BlockingCoverage):
+    six.with_metaclass(abc.ABCMeta,
+    test_case.FaceTestCase, coverage.BlockingCoverage)):
   """A test of the Face layer of RPC Framework.
 
   Concrete subclasses must also extend unittest.TestCase.
   """
-  __metaclass__ = abc.ABCMeta
 
   def setUp(self):
     """See unittest.TestCase.setUp for full specification.
@@ -72,7 +74,7 @@ class BlockingInvocationInlineServiceTestCase(
 
   def testSuccessfulUnaryRequestUnaryResponse(self):
     for name, test_messages_sequence in (
-        self.digest.unary_unary_messages_sequences.iteritems()):
+        six.iteritems(self.digest.unary_unary_messages_sequences)):
       for test_messages in test_messages_sequence:
         request = test_messages.request()
 
@@ -83,7 +85,7 @@ class BlockingInvocationInlineServiceTestCase(
 
   def testSuccessfulUnaryRequestStreamResponse(self):
     for name, test_messages_sequence in (
-        self.digest.unary_stream_messages_sequences.iteritems()):
+        six.iteritems(self.digest.unary_stream_messages_sequences)):
       for test_messages in test_messages_sequence:
         request = test_messages.request()
 
@@ -95,7 +97,7 @@ class BlockingInvocationInlineServiceTestCase(
 
   def testSuccessfulStreamRequestUnaryResponse(self):
     for name, test_messages_sequence in (
-        self.digest.stream_unary_messages_sequences.iteritems()):
+        six.iteritems(self.digest.stream_unary_messages_sequences)):
       for test_messages in test_messages_sequence:
         requests = test_messages.requests()
 
@@ -106,7 +108,7 @@ class BlockingInvocationInlineServiceTestCase(
 
   def testSuccessfulStreamRequestStreamResponse(self):
     for name, test_messages_sequence in (
-        self.digest.stream_stream_messages_sequences.iteritems()):
+        six.iteritems(self.digest.stream_stream_messages_sequences)):
       for test_messages in test_messages_sequence:
         requests = test_messages.requests()
 
@@ -118,7 +120,7 @@ class BlockingInvocationInlineServiceTestCase(
 
   def testSequentialInvocations(self):
     for name, test_messages_sequence in (
-        self.digest.unary_unary_messages_sequences.iteritems()):
+        six.iteritems(self.digest.unary_unary_messages_sequences)):
       for test_messages in test_messages_sequence:
         first_request = test_messages.request()
         second_request = test_messages.request()
@@ -135,7 +137,7 @@ class BlockingInvocationInlineServiceTestCase(
 
   def testExpiredUnaryRequestUnaryResponse(self):
     for name, test_messages_sequence in (
-        self.digest.unary_unary_messages_sequences.iteritems()):
+        six.iteritems(self.digest.unary_unary_messages_sequences)):
       for test_messages in test_messages_sequence:
         request = test_messages.request()
 
@@ -146,7 +148,7 @@ class BlockingInvocationInlineServiceTestCase(
 
   def testExpiredUnaryRequestStreamResponse(self):
     for name, test_messages_sequence in (
-        self.digest.unary_stream_messages_sequences.iteritems()):
+        six.iteritems(self.digest.unary_stream_messages_sequences)):
       for test_messages in test_messages_sequence:
         request = test_messages.request()
 
@@ -158,7 +160,7 @@ class BlockingInvocationInlineServiceTestCase(
 
   def testExpiredStreamRequestUnaryResponse(self):
     for name, test_messages_sequence in (
-        self.digest.stream_unary_messages_sequences.iteritems()):
+        six.iteritems(self.digest.stream_unary_messages_sequences)):
       for test_messages in test_messages_sequence:
         requests = test_messages.requests()
 
@@ -169,7 +171,7 @@ class BlockingInvocationInlineServiceTestCase(
 
   def testExpiredStreamRequestStreamResponse(self):
     for name, test_messages_sequence in (
-        self.digest.stream_stream_messages_sequences.iteritems()):
+        six.iteritems(self.digest.stream_stream_messages_sequences)):
       for test_messages in test_messages_sequence:
         requests = test_messages.requests()
 
@@ -181,7 +183,7 @@ class BlockingInvocationInlineServiceTestCase(
 
   def testFailedUnaryRequestUnaryResponse(self):
     for name, test_messages_sequence in (
-        self.digest.unary_unary_messages_sequences.iteritems()):
+        six.iteritems(self.digest.unary_unary_messages_sequences)):
       for test_messages in test_messages_sequence:
         request = test_messages.request()
 
@@ -191,7 +193,7 @@ class BlockingInvocationInlineServiceTestCase(
 
   def testFailedUnaryRequestStreamResponse(self):
     for name, test_messages_sequence in (
-        self.digest.unary_stream_messages_sequences.iteritems()):
+        six.iteritems(self.digest.unary_stream_messages_sequences)):
       for test_messages in test_messages_sequence:
         request = test_messages.request()
 
@@ -202,7 +204,7 @@ class BlockingInvocationInlineServiceTestCase(
 
   def testFailedStreamRequestUnaryResponse(self):
     for name, test_messages_sequence in (
-        self.digest.stream_unary_messages_sequences.iteritems()):
+        six.iteritems(self.digest.stream_unary_messages_sequences)):
       for test_messages in test_messages_sequence:
         requests = test_messages.requests()
 
@@ -212,7 +214,7 @@ class BlockingInvocationInlineServiceTestCase(
 
   def testFailedStreamRequestStreamResponse(self):
     for name, test_messages_sequence in (
-        self.digest.stream_stream_messages_sequences.iteritems()):
+        six.iteritems(self.digest.stream_stream_messages_sequences)):
       for test_messages in test_messages_sequence:
         requests = test_messages.requests()
 

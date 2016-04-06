@@ -1,6 +1,6 @@
 #!/usr/bin/env python2.7
 
-# Copyright 2015-2016, Google Inc.
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -45,12 +45,12 @@ import jobset
 os.chdir(os.path.join(os.path.dirname(sys.argv[0]), '..', '..'))
 
 argp = argparse.ArgumentParser()
-argp.add_argument('json', nargs='+')
+argp.add_argument('build_files', nargs='+', default=[])
 argp.add_argument('--templates', nargs='+', default=[])
 argp.add_argument('--jobs', '-j', default=multiprocessing.cpu_count(), type=int)
 args = argp.parse_args()
 
-json = args.json
+json = args.build_files
 
 test = {} if 'TEST' in os.environ else None
 
@@ -62,21 +62,31 @@ if not templates:
     for f in files:
       templates.append(os.path.join(root, f))
 
+pre_jobs = []
+base_cmd = ['python2.7', 'tools/buildgen/mako_renderer.py']
+cmd = base_cmd[:]
+for plugin in plugins:
+  cmd.append('-p')
+  cmd.append(plugin)
+for js in json:
+  cmd.append('-d')
+  cmd.append(js)
+cmd.append('-w')
+preprocessed_build = '.preprocessed_build'
+cmd.append(preprocessed_build)
+pre_jobs.append(jobset.JobSpec(cmd, shortname='preprocess', timeout_seconds=None))
+
 jobs = []
-for template in templates:
+for template in reversed(sorted(templates)):
   root, f = os.path.split(template)
   if os.path.splitext(f)[1] == '.template':
     out_dir = '.' + root[len('templates'):]
     out = out_dir + '/' + os.path.splitext(f)[0]
     if not os.path.exists(out_dir):
       os.makedirs(out_dir)
-    cmd = ['python2.7', 'tools/buildgen/mako_renderer.py']
-    for plugin in plugins:
-      cmd.append('-p')
-      cmd.append(plugin)
-    for js in json:
-      cmd.append('-d')
-      cmd.append(js)
+    cmd = base_cmd[:]
+    cmd.append('-P')
+    cmd.append(preprocessed_build)
     cmd.append('-o')
     if test is None:
       cmd.append(out)
@@ -88,6 +98,7 @@ for template in templates:
     cmd.append(root + '/' + f)
     jobs.append(jobset.JobSpec(cmd, shortname=out, timeout_seconds=None))
 
+jobset.run(pre_jobs, maxjobs=args.jobs)
 jobset.run(jobs, maxjobs=args.jobs)
 
 if test is not None:

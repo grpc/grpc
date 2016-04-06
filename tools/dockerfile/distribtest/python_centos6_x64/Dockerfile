@@ -1,4 +1,4 @@
-# Copyright 2015-2016, Google Inc.
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -29,9 +29,18 @@
 
 FROM centos:6
 
-RUN yum install -y git
-RUN yum install -y python
+RUN yum -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-6.noarch.rpm
 
-RUN rpm -ivh http://dl.fedoraproject.org/pub/epel/6/i386/epel-release-6-8.noarch.rpm
-RUN yum install -y python-pip
+# Vanilla CentOS6 only has python 2.6 and we don't support that.
+RUN yum -y install yum -y install https://centos6.iuscommunity.org/ius-release.rpm
+RUN yum install -y python27
 
+# Override python2.6
+RUN ln -s /usr/bin/python2.7 /usr/local/bin/python
+RUN ln -s /usr/bin/python2.7 /usr/local/bin/python2
+
+# Install pip
+RUN curl https://bootstrap.pypa.io/get-pip.py | python -
+
+# "which" command required by python's run_distrib_test.sh
+RUN yum install -y which

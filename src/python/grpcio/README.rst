@@ -1,22 +1,92 @@
 gRPC Python
 ===========
 
-Package for GRPC Python.
+Package for gRPC Python.
 
-Dependencies
+Installation
 ------------
 
-Ensure you have installed the gRPC core.  On Mac OS X, install homebrew_.
-Run the following command to install gRPC Python.
+gRPC Python is available for Linux, Mac OS X, and Windows running Python 2.7.
+
+From PyPI
+~~~~~~~~~
+
+If you are installing locally...
 
 ::
 
-  $ curl -fsSL https://goo.gl/getgrpc | bash -s python
+  $ pip install grpcio
 
-This will download and run the [gRPC install script][] to install grpc core. The script then uses pip to install this package.  It also installs the Protocol Buffers compiler (_protoc_) and the gRPC _protoc_ plugin for python.
+Else system wide (on Ubuntu)...
 
-Otherwise, `install from source`_
+::
 
-.. _`install from source`: https://github.com/grpc/grpc/blob/master/src/python/README.md#building-from-source
-.. _homebrew: http://brew.sh
-.. _`gRPC install script`: https://raw.githubusercontent.com/grpc/homebrew-grpc/master/scripts/install
+  $ sudo pip install grpcio
+
+n.b. On Windows and on Mac OS X one *must* have a recent release of :code:`pip`
+to retrieve the proper wheel from PyPI. Be sure to upgrade to the latest
+version!
+
+From Source
+~~~~~~~~~~~
+
+Building from source requires that you have the Python headers (usually a
+package named :code:`python-dev`).
+
+::
+
+  $ export REPO_ROOT=grpc  # REPO_ROOT can be any directory of your choice
+  $ git clone https://github.com/grpc/grpc.git $REPO_ROOT
+  $ cd $REPO_ROOT
+
+  # For the next two commands do `sudo pip install` if you get permission-denied errors
+  $ pip install -rrequirements.txt
+  $ GRPC_PYTHON_BUILD_WITH_CYTHON=1 pip install .
+
+
+Troubleshooting
+~~~~~~~~~~~~~~~
+
+Help, I ...
+
+* **... see a** :code:`pkg_resources.VersionConflict` **when I try to install
+  grpc**
+
+  This is likely because :code:`pip` doesn't own the offending dependency,
+  which in turn is likely because your operating system's package manager owns
+  it. You'll need to force the installation of the dependency:
+
+  :code:`pip install --ignore-installed $OFFENDING_DEPENDENCY`
+
+  For example, if you get an error like the following:
+
+  ::
+
+    Traceback (most recent call last):
+    File "<string>", line 17, in <module>
+     ...
+    File "/usr/lib/python2.7/dist-packages/pkg_resources.py", line 509, in find
+      raise VersionConflict(dist, req)
+    pkg_resources.VersionConflict: (six 1.8.0 (/usr/lib/python2.7/dist-packages), Requirement.parse('six>=1.10'))
+
+  You can fix it by doing:
+
+  ::
+
+    sudo pip install --ignore-installed six
+
+* **... see the following error on some platforms**
+
+  ::
+
+    /tmp/pip-build-U8pSsr/cython/Cython/Plex/Scanners.c:4:20: fatal error: Python.h: No such file or directory
+    #include "Python.h"
+                    ^
+    compilation terminated.
+
+  You can fix it by installing `python-dev` package. i.e
+
+  ::
+
+    sudo apt-get install python-dev
+

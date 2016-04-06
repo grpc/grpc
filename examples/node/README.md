@@ -4,16 +4,17 @@ gRPC in 3 minutes (Node.js)
 PREREQUISITES
 -------------
 
-- `node`: This requires Node 0.10.x or greater.
-- [homebrew][] on Mac OS X.  This simplifies the installation of the gRPC C core.
+- `node`: This requires Node 0.12.x or greater.
 
 INSTALL
 -------
- - [Install gRPC Node][]
-
- - Install this package's dependencies
 
    ```sh
+   $ # Get the gRPC repository
+   $ export REPO_ROOT=grpc # REPO root can be any directory of your choice
+   $ git clone https://github.com/grpc/grpc.git $REPO_ROOT
+   $ cd $REPO_ROOT
+
    $ cd examples/node
    $ npm install
    ```
@@ -24,7 +25,7 @@ TRY IT!
  - Run the server
 
    ```sh
-   $ # from this directory (grpc_common/node).
+   $ # from this directory
    $ node ./greeter_server.js &
    ```
 
@@ -35,15 +36,9 @@ TRY IT!
    $ node ./greeter_client.js
    ```
 
-NOTE
-----
-This directory has a copy of `helloworld.proto` because it currently depends on
-some Protocol Buffer 2.0 syntax that is deprecated in Protocol Buffer 3.0.
-
 TUTORIAL
 --------
 You can find a more detailed tutorial in [gRPC Basics: Node.js][]
 
-[homebrew]:http://brew.sh
 [Install gRPC Node]:../../src/node
 [gRPC Basics: Node.js]:http://www.grpc.io/docs/tutorials/basic/node.html
