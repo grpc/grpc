@@ -40,10 +40,10 @@
 #include <grpc/support/slice.h>
 #include <grpc/support/slice_buffer.h>
 
+#include "src/core/ext/client_config/client_channel.h"
+#include "src/core/ext/client_config/resolver_registry.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/channel/client_channel.h"
-#include "src/core/lib/client_config/resolver_registry.h"
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/security/auth_filters.h"
 #include "src/core/lib/security/credentials.h"
@@ -192,34 +192,38 @@ static const grpc_connector_vtable connector_vtable = {
     connector_ref, connector_unref, connector_shutdown, connector_connect};
 
 typedef struct {
-  grpc_subchannel_factory base;
+  grpc_client_channel_factory base;
   gpr_refcount refs;
   grpc_channel_args *merge_args;
   grpc_channel_security_connector *security_connector;
   grpc_channel *master;
-} subchannel_factory;
+} client_channel_factory;
 
-static void subchannel_factory_ref(grpc_subchannel_factory *scf) {
-  subchannel_factory *f = (subchannel_factory *)scf;
+static void client_channel_factory_ref(
+    grpc_client_channel_factory *cc_factory) {
+  client_channel_factory *f = (client_channel_factory *)cc_factory;
   gpr_ref(&f->refs);
 }
 
-static void subchannel_factory_unref(grpc_exec_ctx *exec_ctx,
-                                     grpc_subchannel_factory *scf) {
-  subchannel_factory *f = (subchannel_factory *)scf;
+static void client_channel_factory_unref(
+    grpc_exec_ctx *exec_ctx, grpc_client_channel_factory *cc_factory) {
+  client_channel_factory *f = (client_channel_factory *)cc_factory;
   if (gpr_unref(&f->refs)) {
     GRPC_SECURITY_CONNECTOR_UNREF(&f->security_connector->base,
-                                  "subchannel_factory");
-    GRPC_CHANNEL_INTERNAL_UNREF(exec_ctx, f->master, "subchannel_factory");
+                                  "client_channel_factory");
+    if (f->master != NULL) {
+      GRPC_CHANNEL_INTERNAL_UNREF(exec_ctx, f->master,
+                                  "client_channel_factory");
+    }
     grpc_channel_args_destroy(f->merge_args);
     gpr_free(f);
   }
 }
 
-static grpc_subchannel *subchannel_factory_create_subchannel(
-    grpc_exec_ctx *exec_ctx, grpc_subchannel_factory *scf,
+static grpc_subchannel *client_channel_factory_create_subchannel(
+    grpc_exec_ctx *exec_ctx, grpc_client_channel_factory *cc_factory,
     grpc_subchannel_args *args) {
-  subchannel_factory *f = (subchannel_factory *)scf;
+  client_channel_factory *f = (client_channel_factory *)cc_factory;
   connector *c = gpr_malloc(sizeof(*c));
   grpc_channel_args *final_args =
       grpc_channel_args_merge(args->args, f->merge_args);
@@ -236,9 +240,37 @@ static grpc_subchannel *subchannel_factory_create_subchannel(
   return s;
 }
 
-static const grpc_subchannel_factory_vtable subchannel_factory_vtable = {
-    subchannel_factory_ref, subchannel_factory_unref,
-    subchannel_factory_create_subchannel};
+static grpc_channel *client_channel_factory_create_channel(
+    grpc_exec_ctx *exec_ctx, grpc_client_channel_factory *cc_factory,
+    const char *target, grpc_client_channel_type type,
+    grpc_channel_args *args) {
+  client_channel_factory *f = (client_channel_factory *)cc_factory;
+
+  grpc_channel_args *final_args = grpc_channel_args_merge(args, f->merge_args);
+  grpc_channel *channel = grpc_channel_create(exec_ctx, target, final_args,
+                                              GRPC_CLIENT_CHANNEL, NULL);
+  grpc_channel_args_destroy(final_args);
+
+  grpc_resolver *resolver = grpc_resolver_create(target, &f->base);
+  if (resolver != NULL) {
+    grpc_client_channel_set_resolver(
+        exec_ctx, grpc_channel_get_channel_stack(channel), resolver);
+    GRPC_RESOLVER_UNREF(exec_ctx, resolver, "create");
+  } else {
+    GRPC_CHANNEL_INTERNAL_UNREF(exec_ctx, channel,
+                                "client_channel_factory_create_channel");
+    channel = NULL;
+  }
+
+  GRPC_SECURITY_CONNECTOR_UNREF(&f->security_connector->base,
+                                "client_channel_factory_create_channel");
+  return channel;
+}
+
+static const grpc_client_channel_factory_vtable client_channel_factory_vtable =
+    {client_channel_factory_ref, client_channel_factory_unref,
+     client_channel_factory_create_subchannel,
+     client_channel_factory_create_channel};
 
 /* Create a secure client channel:
    Asynchronously: - resolve target
@@ -248,13 +280,11 @@ grpc_channel *grpc_secure_channel_create(grpc_channel_credentials *creds,
                                          const char *target,
                                          const grpc_channel_args *args,
                                          void *reserved) {
-  grpc_channel *channel;
   grpc_arg connector_arg;
   grpc_channel_args *args_copy;
   grpc_channel_args *new_args_from_connector;
   grpc_channel_security_connector *security_connector;
-  grpc_resolver *resolver;
-  subchannel_factory *f;
+  client_channel_factory *f;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
   GRPC_API_TRACE(
@@ -284,35 +314,30 @@ grpc_channel *grpc_secure_channel_create(grpc_channel_credentials *creds,
       new_args_from_connector != NULL ? new_args_from_connector : args,
       &connector_arg, 1);
 
-  channel = grpc_channel_create(&exec_ctx, target, args_copy,
-                                GRPC_CLIENT_CHANNEL, NULL);
-
   f = gpr_malloc(sizeof(*f));
-  f->base.vtable = &subchannel_factory_vtable;
+  memset(f, 0, sizeof(*f));
+  f->base.vtable = &client_channel_factory_vtable;
   gpr_ref_init(&f->refs, 1);
-  GRPC_SECURITY_CONNECTOR_REF(&security_connector->base, "subchannel_factory");
-  f->security_connector = security_connector;
+
   f->merge_args = grpc_channel_args_copy(args_copy);
-  f->master = channel;
-  GRPC_CHANNEL_INTERNAL_REF(channel, "subchannel_factory");
-  resolver = grpc_resolver_create(target, &f->base);
-  if (resolver) {
-    grpc_client_channel_set_resolver(
-        &exec_ctx, grpc_channel_get_channel_stack(channel), resolver);
-    GRPC_RESOLVER_UNREF(&exec_ctx, resolver, "create");
-  }
-  grpc_subchannel_factory_unref(&exec_ctx, &f->base);
-  GRPC_SECURITY_CONNECTOR_UNREF(&security_connector->base, "channel_create");
   grpc_channel_args_destroy(args_copy);
   if (new_args_from_connector != NULL) {
     grpc_channel_args_destroy(new_args_from_connector);
   }
 
-  if (!resolver) {
-    GRPC_CHANNEL_INTERNAL_UNREF(&exec_ctx, channel, "subchannel_factory");
-    channel = NULL;
+  GRPC_SECURITY_CONNECTOR_REF(&security_connector->base,
+                              "grpc_secure_channel_create");
+  f->security_connector = security_connector;
+
+  grpc_channel *channel = client_channel_factory_create_channel(
+      &exec_ctx, &f->base, target, GRPC_CLIENT_CHANNEL_TYPE_REGULAR, NULL);
+  if (channel != NULL) {
+    f->master = channel;
+    GRPC_CHANNEL_INTERNAL_REF(f->master, "grpc_secure_channel_create");
   }
+
+  grpc_client_channel_factory_unref(&exec_ctx, &f->base);
   grpc_exec_ctx_finish(&exec_ctx);
 
-  return channel;
+  return channel; /* may be NULL */
 }

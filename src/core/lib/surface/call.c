@@ -81,11 +81,11 @@ typedef enum {
   /* Status came from the application layer overriding whatever
      the wire says */
   STATUS_FROM_API_OVERRIDE = 0,
-  /* Status was created by some internal channel stack operation */
-  STATUS_FROM_CORE,
   /* Status came from 'the wire' - or somewhere below the surface
      layer */
   STATUS_FROM_WIRE,
+  /* Status was created by some internal channel stack operation */
+  STATUS_FROM_CORE,
   /* Status came from the server sending status */
   STATUS_FROM_SERVER_STATUS,
   STATUS_SOURCE_COUNT
@@ -1115,6 +1115,9 @@ static void finish_batch(grpc_exec_ctx *exec_ctx, void *bctlp, bool success) {
 
   gpr_mu_lock(&call->mu);
   if (bctl->send_initial_metadata) {
+    if (!success) {
+      set_status_code(call, STATUS_FROM_CORE, GRPC_STATUS_UNAVAILABLE);
+    }
     grpc_metadata_batch_destroy(
         &call->metadata_batch[0 /* is_receiving */][0 /* is_trailing */]);
   }
@@ -1237,8 +1240,7 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
         call->metadata_batch[0][0].deadline = call->send_deadline;
         stream_op.send_initial_metadata =
             &call->metadata_batch[0 /* is_receiving */][0 /* is_trailing */];
-        stream_op.send_idempotent_request =
-            (op->flags & GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST) != 0;
+        stream_op.send_initial_metadata_flags = op->flags;
         break;
       case GRPC_OP_SEND_MESSAGE:
         if (!are_write_flags_valid(op->flags)) {
