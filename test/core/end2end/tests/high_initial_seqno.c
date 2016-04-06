@@ -237,3 +237,5 @@ void high_initial_seqno(grpc_end2end_test_config config) {
     test_invoke_10_simple_requests(config, 2147483645);
   }
 }
+
+void high_initial_seqno_pre_init(void) {}

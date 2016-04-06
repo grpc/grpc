@@ -685,10 +685,14 @@ static grpc_mdelem *server_filter(void *user_data, grpc_mdelem *md) {
   grpc_call_element *elem = user_data;
   call_data *calld = elem->call_data;
   if (md->key == GRPC_MDSTR_PATH) {
-    calld->path = GRPC_MDSTR_REF(md->value);
+    if (calld->path == NULL) {
+      calld->path = GRPC_MDSTR_REF(md->value);
+    }
     return NULL;
   } else if (md->key == GRPC_MDSTR_AUTHORITY) {
-    calld->host = GRPC_MDSTR_REF(md->value);
+    if (calld->host == NULL) {
+      calld->host = GRPC_MDSTR_REF(md->value);
+    }
     return NULL;
   }
   return md;
