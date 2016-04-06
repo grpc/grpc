@@ -166,7 +166,7 @@ class CLanguage(object):
       for polling_strategy in polling_strategies:
         env={'GRPC_DEFAULT_SSL_ROOTS_FILE_PATH':
                  _ROOT + '/src/core/lib/tsi/test_creds/ca.pem',
-             'GRPC_POLLING_STRATEGY': polling_strategy}
+             'GRPC_POLL_STRATEGY': polling_strategy}
         shortname_ext = '' if polling_strategy=='all' else ' polling=%s' % polling_strategy
         if self.config.build_config in target['exclude_configs']:
           continue
