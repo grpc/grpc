@@ -49,7 +49,8 @@ typedef enum {
   GRPC_CHTTP2_DATA_FH_2,
   GRPC_CHTTP2_DATA_FH_3,
   GRPC_CHTTP2_DATA_FH_4,
-  GRPC_CHTTP2_DATA_FRAME
+  GRPC_CHTTP2_DATA_FRAME,
+  GRPC_CHTTP2_DATA_ERROR
 } grpc_chttp2_stream_state;
 
 typedef struct grpc_chttp2_incoming_byte_stream
