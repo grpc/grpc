@@ -548,7 +548,7 @@ static void publish_transport_locked(grpc_exec_ctx *exec_ctx,
   /* construct channel stack */
   con = grpc_channel_init_create_stack(
       exec_ctx, GRPC_CLIENT_SUBCHANNEL, 0, c->connecting_result.channel_args, 1,
-      connection_destroy, NULL, c->connecting_result.transport);
+      connection_destroy, NULL, c->connecting_result.transport, NULL);
   stk = CHANNEL_STACK_FROM_CONNECTION(con);
   memset(&c->connecting_result, 0, sizeof(c->connecting_result));
 

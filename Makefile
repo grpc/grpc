@@ -2474,12 +2474,13 @@ LIBGRPC_SRC = \
     src/core/ext/lb_policy/round_robin/round_robin.c \
     src/core/ext/resolver/dns/native/dns_resolver.c \
     src/core/ext/resolver/sockaddr/sockaddr_resolver.c \
+    src/core/ext/transport/chttp2/alpn/alpn.c \
     src/core/ext/transport/chttp2/client/insecure/channel_create.c \
     src/core/ext/transport/chttp2/client/secure/secure_channel_create.c \
     src/core/ext/transport/chttp2/server/insecure/server_chttp2.c \
     src/core/ext/transport/chttp2/server/secure/server_secure_chttp2.c \
-    src/core/ext/transport/chttp2/alpn/alpn.c \
-    src/core/lib/transport/bin_encoder.c \
+    src/core/ext/transport/chttp2/transport/bin_encoder.c \
+    src/core/ext/transport/chttp2/transport/chttp2_plugin.c \
     src/core/ext/transport/chttp2/transport/chttp2_transport.c \
     src/core/ext/transport/chttp2/transport/frame_data.c \
     src/core/ext/transport/chttp2/transport/frame_goaway.c \
@@ -2717,88 +2718,6 @@ endif
 
 
 LIBGRPC_TEST_UTIL_SRC = \
-    src/core/lib/channel/channel_args.c \
-    src/core/lib/channel/channel_stack.c \
-    src/core/lib/channel/channel_stack_builder.c \
-    src/core/lib/channel/compress_filter.c \
-    src/core/lib/channel/connected_channel.c \
-    src/core/lib/channel/http_client_filter.c \
-    src/core/lib/channel/http_server_filter.c \
-    src/core/lib/compression/compression_algorithm.c \
-    src/core/lib/compression/message_compress.c \
-    src/core/lib/debug/trace.c \
-    src/core/lib/http/format_request.c \
-    src/core/lib/http/httpcli.c \
-    src/core/lib/http/parser.c \
-    src/core/lib/iomgr/closure.c \
-    src/core/lib/iomgr/endpoint.c \
-    src/core/lib/iomgr/endpoint_pair_posix.c \
-    src/core/lib/iomgr/endpoint_pair_windows.c \
-    src/core/lib/iomgr/ev_poll_and_epoll_posix.c \
-    src/core/lib/iomgr/ev_posix.c \
-    src/core/lib/iomgr/exec_ctx.c \
-    src/core/lib/iomgr/executor.c \
-    src/core/lib/iomgr/iocp_windows.c \
-    src/core/lib/iomgr/iomgr.c \
-    src/core/lib/iomgr/iomgr_posix.c \
-    src/core/lib/iomgr/iomgr_windows.c \
-    src/core/lib/iomgr/pollset_set_windows.c \
-    src/core/lib/iomgr/pollset_windows.c \
-    src/core/lib/iomgr/resolve_address_posix.c \
-    src/core/lib/iomgr/resolve_address_windows.c \
-    src/core/lib/iomgr/sockaddr_utils.c \
-    src/core/lib/iomgr/socket_utils_common_posix.c \
-    src/core/lib/iomgr/socket_utils_linux.c \
-    src/core/lib/iomgr/socket_utils_posix.c \
-    src/core/lib/iomgr/socket_windows.c \
-    src/core/lib/iomgr/tcp_client_posix.c \
-    src/core/lib/iomgr/tcp_client_windows.c \
-    src/core/lib/iomgr/tcp_posix.c \
-    src/core/lib/iomgr/tcp_server_posix.c \
-    src/core/lib/iomgr/tcp_server_windows.c \
-    src/core/lib/iomgr/tcp_windows.c \
-    src/core/lib/iomgr/time_averaged_stats.c \
-    src/core/lib/iomgr/timer.c \
-    src/core/lib/iomgr/timer_heap.c \
-    src/core/lib/iomgr/udp_server.c \
-    src/core/lib/iomgr/unix_sockets_posix.c \
-    src/core/lib/iomgr/unix_sockets_posix_noop.c \
-    src/core/lib/iomgr/wakeup_fd_eventfd.c \
-    src/core/lib/iomgr/wakeup_fd_nospecial.c \
-    src/core/lib/iomgr/wakeup_fd_pipe.c \
-    src/core/lib/iomgr/wakeup_fd_posix.c \
-    src/core/lib/iomgr/workqueue_posix.c \
-    src/core/lib/iomgr/workqueue_windows.c \
-    src/core/lib/json/json.c \
-    src/core/lib/json/json_reader.c \
-    src/core/lib/json/json_string.c \
-    src/core/lib/json/json_writer.c \
-    src/core/lib/surface/alarm.c \
-    src/core/lib/surface/api_trace.c \
-    src/core/lib/surface/byte_buffer.c \
-    src/core/lib/surface/byte_buffer_reader.c \
-    src/core/lib/surface/call.c \
-    src/core/lib/surface/call_details.c \
-    src/core/lib/surface/call_log_batch.c \
-    src/core/lib/surface/channel.c \
-    src/core/lib/surface/channel_init.c \
-    src/core/lib/surface/channel_ping.c \
-    src/core/lib/surface/channel_stack_type.c \
-    src/core/lib/surface/completion_queue.c \
-    src/core/lib/surface/event_string.c \
-    src/core/lib/surface/init.c \
-    src/core/lib/surface/lame_client.c \
-    src/core/lib/surface/metadata_array.c \
-    src/core/lib/surface/server.c \
-    src/core/lib/surface/validate_metadata.c \
-    src/core/lib/surface/version.c \
-    src/core/lib/transport/byte_stream.c \
-    src/core/lib/transport/connectivity_state.c \
-    src/core/lib/transport/metadata.c \
-    src/core/lib/transport/metadata_batch.c \
-    src/core/lib/transport/static_metadata.c \
-    src/core/lib/transport/transport.c \
-    src/core/lib/transport/transport_op_string.c \
     test/core/end2end/cq_verifier.c \
     test/core/end2end/data/server1_cert.c \
     test/core/end2end/data/server1_key.c \
@@ -2814,11 +2733,6 @@ LIBGRPC_TEST_UTIL_SRC = \
     test/core/util/slice_splitter.c \
 
 PUBLIC_HEADERS_C += \
-    include/grpc/byte_buffer.h \
-    include/grpc/byte_buffer_reader.h \
-    include/grpc/compression.h \
-    include/grpc/grpc.h \
-    include/grpc/status.h \
 
 LIBGRPC_TEST_UTIL_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC_TEST_UTIL_SRC))))
 
@@ -2855,88 +2769,6 @@ endif
 
 
 LIBGRPC_TEST_UTIL_UNSECURE_SRC = \
-    src/core/lib/channel/channel_args.c \
-    src/core/lib/channel/channel_stack.c \
-    src/core/lib/channel/channel_stack_builder.c \
-    src/core/lib/channel/compress_filter.c \
-    src/core/lib/channel/connected_channel.c \
-    src/core/lib/channel/http_client_filter.c \
-    src/core/lib/channel/http_server_filter.c \
-    src/core/lib/compression/compression_algorithm.c \
-    src/core/lib/compression/message_compress.c \
-    src/core/lib/debug/trace.c \
-    src/core/lib/http/format_request.c \
-    src/core/lib/http/httpcli.c \
-    src/core/lib/http/parser.c \
-    src/core/lib/iomgr/closure.c \
-    src/core/lib/iomgr/endpoint.c \
-    src/core/lib/iomgr/endpoint_pair_posix.c \
-    src/core/lib/iomgr/endpoint_pair_windows.c \
-    src/core/lib/iomgr/ev_poll_and_epoll_posix.c \
-    src/core/lib/iomgr/ev_posix.c \
-    src/core/lib/iomgr/exec_ctx.c \
-    src/core/lib/iomgr/executor.c \
-    src/core/lib/iomgr/iocp_windows.c \
-    src/core/lib/iomgr/iomgr.c \
-    src/core/lib/iomgr/iomgr_posix.c \
-    src/core/lib/iomgr/iomgr_windows.c \
-    src/core/lib/iomgr/pollset_set_windows.c \
-    src/core/lib/iomgr/pollset_windows.c \
-    src/core/lib/iomgr/resolve_address_posix.c \
-    src/core/lib/iomgr/resolve_address_windows.c \
-    src/core/lib/iomgr/sockaddr_utils.c \
-    src/core/lib/iomgr/socket_utils_common_posix.c \
-    src/core/lib/iomgr/socket_utils_linux.c \
-    src/core/lib/iomgr/socket_utils_posix.c \
-    src/core/lib/iomgr/socket_windows.c \
-    src/core/lib/iomgr/tcp_client_posix.c \
-    src/core/lib/iomgr/tcp_client_windows.c \
-    src/core/lib/iomgr/tcp_posix.c \
-    src/core/lib/iomgr/tcp_server_posix.c \
-    src/core/lib/iomgr/tcp_server_windows.c \
-    src/core/lib/iomgr/tcp_windows.c \
-    src/core/lib/iomgr/time_averaged_stats.c \
-    src/core/lib/iomgr/timer.c \
-    src/core/lib/iomgr/timer_heap.c \
-    src/core/lib/iomgr/udp_server.c \
-    src/core/lib/iomgr/unix_sockets_posix.c \
-    src/core/lib/iomgr/unix_sockets_posix_noop.c \
-    src/core/lib/iomgr/wakeup_fd_eventfd.c \
-    src/core/lib/iomgr/wakeup_fd_nospecial.c \
-    src/core/lib/iomgr/wakeup_fd_pipe.c \
-    src/core/lib/iomgr/wakeup_fd_posix.c \
-    src/core/lib/iomgr/workqueue_posix.c \
-    src/core/lib/iomgr/workqueue_windows.c \
-    src/core/lib/json/json.c \
-    src/core/lib/json/json_reader.c \
-    src/core/lib/json/json_string.c \
-    src/core/lib/json/json_writer.c \
-    src/core/lib/surface/alarm.c \
-    src/core/lib/surface/api_trace.c \
-    src/core/lib/surface/byte_buffer.c \
-    src/core/lib/surface/byte_buffer_reader.c \
-    src/core/lib/surface/call.c \
-    src/core/lib/surface/call_details.c \
-    src/core/lib/surface/call_log_batch.c \
-    src/core/lib/surface/channel.c \
-    src/core/lib/surface/channel_init.c \
-    src/core/lib/surface/channel_ping.c \
-    src/core/lib/surface/channel_stack_type.c \
-    src/core/lib/surface/completion_queue.c \
-    src/core/lib/surface/event_string.c \
-    src/core/lib/surface/init.c \
-    src/core/lib/surface/lame_client.c \
-    src/core/lib/surface/metadata_array.c \
-    src/core/lib/surface/server.c \
-    src/core/lib/surface/validate_metadata.c \
-    src/core/lib/surface/version.c \
-    src/core/lib/transport/byte_stream.c \
-    src/core/lib/transport/connectivity_state.c \
-    src/core/lib/transport/metadata.c \
-    src/core/lib/transport/metadata_batch.c \
-    src/core/lib/transport/static_metadata.c \
-    src/core/lib/transport/transport.c \
-    src/core/lib/transport/transport_op_string.c \
     test/core/end2end/cq_verifier.c \
     test/core/end2end/fixtures/proxy.c \
     test/core/iomgr/endpoint_tests.c \
@@ -2948,11 +2780,6 @@ LIBGRPC_TEST_UTIL_UNSECURE_SRC = \
     test/core/util/slice_splitter.c \
 
 PUBLIC_HEADERS_C += \
-    include/grpc/byte_buffer.h \
-    include/grpc/byte_buffer_reader.h \
-    include/grpc/compression.h \
-    include/grpc/grpc.h \
-    include/grpc/status.h \
 
 LIBGRPC_TEST_UTIL_UNSECURE_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC_TEST_UTIL_UNSECURE_SRC))))
 
@@ -3007,10 +2834,11 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/lb_policy/round_robin/round_robin.c \
     src/core/ext/resolver/dns/native/dns_resolver.c \
     src/core/ext/resolver/sockaddr/sockaddr_resolver.c \
+    src/core/ext/transport/chttp2/alpn/alpn.c \
     src/core/ext/transport/chttp2/client/insecure/channel_create.c \
     src/core/ext/transport/chttp2/server/insecure/server_chttp2.c \
-    src/core/ext/transport/chttp2/alpn/alpn.c \
-    src/core/lib/transport/bin_encoder.c \
+    src/core/ext/transport/chttp2/transport/bin_encoder.c \
+    src/core/ext/transport/chttp2/transport/chttp2_plugin.c \
     src/core/ext/transport/chttp2/transport/chttp2_transport.c \
     src/core/ext/transport/chttp2/transport/frame_data.c \
     src/core/ext/transport/chttp2/transport/frame_goaway.c \
@@ -3569,18 +3397,18 @@ endif
 
 
 ifeq ($(SYSTEM),MINGW32)
-$(LIBDIR)/$(CONFIG)/grpc++_codegen_lib$(SHARED_VERSION).$(SHARED_EXT): $(LIBGRPC++_CODEGEN_LIB_OBJS)  $(ZLIB_DEP) $(PROTOBUF_DEP)
+$(LIBDIR)/$(CONFIG)/grpc++_codegen_lib$(SHARED_VERSION).$(SHARED_EXT): $(LIBGRPC++_CODEGEN_LIB_OBJS)  $(ZLIB_DEP) $(PROTOBUF_DEP) $(LIBDIR)/$(CONFIG)/gpr.$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/grpc.$(SHARED_EXT)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared grpc++_codegen_lib.def -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc++_codegen_lib$(SHARED_VERSION).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc++_codegen_lib$(SHARED_VERSION)-dll.a -o $(LIBDIR)/$(CONFIG)/grpc++_codegen_lib$(SHARED_VERSION).$(SHARED_EXT) $(LIBGRPC++_CODEGEN_LIB_OBJS) $(LDLIBS) $(ZLIB_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF)
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared grpc++_codegen_lib.def -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc++_codegen_lib$(SHARED_VERSION).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc++_codegen_lib$(SHARED_VERSION)-dll.a -o $(LIBDIR)/$(CONFIG)/grpc++_codegen_lib$(SHARED_VERSION).$(SHARED_EXT) $(LIBGRPC++_CODEGEN_LIB_OBJS) $(LDLIBS) $(ZLIB_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) -lgpr-imp -lgrpc-imp
 else
-$(LIBDIR)/$(CONFIG)/libgrpc++_codegen_lib$(SHARED_VERSION).$(SHARED_EXT): $(LIBGRPC++_CODEGEN_LIB_OBJS)  $(ZLIB_DEP) $(PROTOBUF_DEP)
+$(LIBDIR)/$(CONFIG)/libgrpc++_codegen_lib$(SHARED_VERSION).$(SHARED_EXT): $(LIBGRPC++_CODEGEN_LIB_OBJS)  $(ZLIB_DEP) $(PROTOBUF_DEP) $(LIBDIR)/$(CONFIG)/libgpr.$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc.$(SHARED_EXT)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
 ifeq ($(SYSTEM),Darwin)
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc++_codegen_lib$(SHARED_VERSION).$(SHARED_EXT) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc++_codegen_lib$(SHARED_VERSION).$(SHARED_EXT) $(LIBGRPC++_CODEGEN_LIB_OBJS) $(LDLIBS) $(ZLIB_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF)
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc++_codegen_lib$(SHARED_VERSION).$(SHARED_EXT) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc++_codegen_lib$(SHARED_VERSION).$(SHARED_EXT) $(LIBGRPC++_CODEGEN_LIB_OBJS) $(LDLIBS) $(ZLIB_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) -lgpr -lgrpc
 else
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc++_codegen_lib.so.0 -o $(LIBDIR)/$(CONFIG)/libgrpc++_codegen_lib$(SHARED_VERSION).$(SHARED_EXT) $(LIBGRPC++_CODEGEN_LIB_OBJS) $(LDLIBS) $(ZLIB_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF)
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc++_codegen_lib.so.0 -o $(LIBDIR)/$(CONFIG)/libgrpc++_codegen_lib$(SHARED_VERSION).$(SHARED_EXT) $(LIBGRPC++_CODEGEN_LIB_OBJS) $(LDLIBS) $(ZLIB_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) -lgpr -lgrpc
 	$(Q) ln -sf $(SHARED_PREFIX)grpc++_codegen_lib$(SHARED_VERSION).$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc++_codegen_lib$(SHARED_VERSION).so.0
 	$(Q) ln -sf $(SHARED_PREFIX)grpc++_codegen_lib$(SHARED_VERSION).$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc++_codegen_lib$(SHARED_VERSION).so
 endif
@@ -3837,18 +3665,18 @@ endif
 
 
 ifeq ($(SYSTEM),MINGW32)
-$(LIBDIR)/$(CONFIG)/grpc++_unsecure$(SHARED_VERSION).$(SHARED_EXT): $(LIBGRPC++_UNSECURE_OBJS)  $(ZLIB_DEP) $(PROTOBUF_DEP) $(LIBDIR)/$(CONFIG)/gpr.$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/grpc_unsecure.$(SHARED_EXT)
+$(LIBDIR)/$(CONFIG)/grpc++_unsecure$(SHARED_VERSION).$(SHARED_EXT): $(LIBGRPC++_UNSECURE_OBJS)  $(ZLIB_DEP) $(PROTOBUF_DEP) $(LIBDIR)/$(CONFIG)/gpr.$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/grpc.$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/grpc_unsecure.$(SHARED_EXT)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared grpc++_unsecure.def -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc++_unsecure$(SHARED_VERSION).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc++_unsecure$(SHARED_VERSION)-dll.a -o $(LIBDIR)/$(CONFIG)/grpc++_unsecure$(SHARED_VERSION).$(SHARED_EXT) $(LIBGRPC++_UNSECURE_OBJS) $(LDLIBS) $(ZLIB_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) -lgpr-imp -lgrpc_unsecure-imp
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared grpc++_unsecure.def -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc++_unsecure$(SHARED_VERSION).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc++_unsecure$(SHARED_VERSION)-dll.a -o $(LIBDIR)/$(CONFIG)/grpc++_unsecure$(SHARED_VERSION).$(SHARED_EXT) $(LIBGRPC++_UNSECURE_OBJS) $(LDLIBS) $(ZLIB_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) -lgpr-imp -lgrpc-imp -lgrpc_unsecure-imp
 else
-$(LIBDIR)/$(CONFIG)/libgrpc++_unsecure$(SHARED_VERSION).$(SHARED_EXT): $(LIBGRPC++_UNSECURE_OBJS)  $(ZLIB_DEP) $(PROTOBUF_DEP) $(LIBDIR)/$(CONFIG)/libgpr.$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.$(SHARED_EXT)
+$(LIBDIR)/$(CONFIG)/libgrpc++_unsecure$(SHARED_VERSION).$(SHARED_EXT): $(LIBGRPC++_UNSECURE_OBJS)  $(ZLIB_DEP) $(PROTOBUF_DEP) $(LIBDIR)/$(CONFIG)/libgpr.$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc.$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.$(SHARED_EXT)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
 ifeq ($(SYSTEM),Darwin)
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc++_unsecure$(SHARED_VERSION).$(SHARED_EXT) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure$(SHARED_VERSION).$(SHARED_EXT) $(LIBGRPC++_UNSECURE_OBJS) $(LDLIBS) $(ZLIB_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) -lgpr -lgrpc_unsecure
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc++_unsecure$(SHARED_VERSION).$(SHARED_EXT) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure$(SHARED_VERSION).$(SHARED_EXT) $(LIBGRPC++_UNSECURE_OBJS) $(LDLIBS) $(ZLIB_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) -lgpr -lgrpc -lgrpc_unsecure
 else
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc++_unsecure.so.0 -o $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure$(SHARED_VERSION).$(SHARED_EXT) $(LIBGRPC++_UNSECURE_OBJS) $(LDLIBS) $(ZLIB_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) -lgpr -lgrpc_unsecure
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc++_unsecure.so.0 -o $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure$(SHARED_VERSION).$(SHARED_EXT) $(LIBGRPC++_UNSECURE_OBJS) $(LDLIBS) $(ZLIB_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) -lgpr -lgrpc -lgrpc_unsecure
 	$(Q) ln -sf $(SHARED_PREFIX)grpc++_unsecure$(SHARED_VERSION).$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure$(SHARED_VERSION).so.0
 	$(Q) ln -sf $(SHARED_PREFIX)grpc++_unsecure$(SHARED_VERSION).$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure$(SHARED_VERSION).so
 endif
