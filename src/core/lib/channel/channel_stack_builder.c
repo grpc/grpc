@@ -142,7 +142,7 @@ void grpc_channel_stack_builder_set_channel_arguments(
   if (builder->args != NULL) {
     grpc_channel_args_destroy(builder->args);
   }
-  builder->args = grpc_channel_args_copy(builder->args);
+  builder->args = grpc_channel_args_copy(args);
 }
 
 void grpc_channel_stack_builder_set_transport(

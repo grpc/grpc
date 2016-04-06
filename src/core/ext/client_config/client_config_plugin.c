@@ -35,6 +35,8 @@
 #include <stdbool.h>
 #include <string.h>
 
+#include <grpc/support/alloc.h>
+
 #include "src/core/ext/client_config/client_channel.h"
 #include "src/core/ext/client_config/lb_policy_registry.h"
 #include "src/core/ext/client_config/resolver_registry.h"
@@ -64,8 +66,10 @@ static bool set_default_host_if_unset(grpc_channel_stack_builder *builder,
   arg.key = GRPC_ARG_DEFAULT_AUTHORITY;
   arg.value.string = grpc_get_default_authority(
       grpc_channel_stack_builder_get_target(builder));
-  grpc_channel_stack_builder_set_channel_arguments(
-      builder, grpc_channel_args_copy_and_add(args, &arg, 1));
+  grpc_channel_args *new_args = grpc_channel_args_copy_and_add(args, &arg, 1);
+  grpc_channel_stack_builder_set_channel_arguments(builder, new_args);
+  gpr_free(arg.value.string);
+  grpc_channel_args_destroy(new_args);
   return true;
 }
 
