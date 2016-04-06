@@ -40,6 +40,9 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_config\client_config.c">
       <Filter>src\core\ext\client_config</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_config\client_config_plugin.c">
+      <Filter>src\core\ext\client_config</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_config\connector.c">
       <Filter>src\core\ext\client_config</Filter>
     </ClCompile>

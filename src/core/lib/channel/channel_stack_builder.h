@@ -55,6 +55,10 @@ void grpc_channel_stack_builder_set_name(grpc_channel_stack_builder *builder,
 /// Set the target uri
 void grpc_channel_stack_builder_set_target(grpc_channel_stack_builder *b,
                                            const char *target);
+
+const char *grpc_channel_stack_builder_get_target(
+    grpc_channel_stack_builder *b);
+
 /// Attach \a transport to the builder (does not take ownership)
 void grpc_channel_stack_builder_set_transport(
     grpc_channel_stack_builder *builder, grpc_transport *transport);

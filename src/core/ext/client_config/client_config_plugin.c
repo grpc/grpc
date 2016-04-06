@@ -32,10 +32,27 @@
  */
 
 #include <limits.h>
+#include <stdbool.h>
+#include <string.h>
+
+#include "src/core/ext/client_config/client_channel.h"
+#include "src/core/ext/client_config/lb_policy_registry.h"
+#include "src/core/ext/client_config/resolver_registry.h"
+#include "src/core/ext/client_config/subchannel_index.h"
+#include "src/core/lib/surface/channel_init.h"
+
+#ifndef GRPC_DEFAULT_NAME_PREFIX
+#define GRPC_DEFAULT_NAME_PREFIX "dns:///"
+#endif
+
+static bool append_filter(grpc_channel_stack_builder *builder, void *arg) {
+  return grpc_channel_stack_builder_append_filter(
+      builder, (const grpc_channel_filter *)arg, NULL, NULL);
+}
 
 static bool set_default_host_if_unset(grpc_channel_stack_builder *builder,
-                                      void *arg) {
-  grpc_channel_args *args =
+                                      void *unused) {
+  const grpc_channel_args *args =
       grpc_channel_stack_builder_get_channel_arguments(builder);
   for (size_t i = 0; i < args->num_args; i++) {
     if (0 == strcmp(args->args[i].key, GRPC_ARG_DEFAULT_AUTHORITY)) {
@@ -45,9 +62,11 @@ static bool set_default_host_if_unset(grpc_channel_stack_builder *builder,
   grpc_arg arg;
   arg.type = GRPC_ARG_STRING;
   arg.key = GRPC_ARG_DEFAULT_AUTHORITY;
-  arg.value.string = grpc_get_default_authority();
+  arg.value.string = grpc_get_default_authority(
+      grpc_channel_stack_builder_get_target(builder));
   grpc_channel_stack_builder_set_channel_arguments(
       builder, grpc_channel_args_copy_and_add(args, &arg, 1));
+  return true;
 }
 
 void grpc_client_config_init(void) {

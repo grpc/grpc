@@ -59,10 +59,6 @@
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/transport_impl.h"
 
-#ifndef GRPC_DEFAULT_NAME_PREFIX
-#define GRPC_DEFAULT_NAME_PREFIX "dns:///"
-#endif
-
 /* (generated) built in registry of plugins */
 extern void grpc_register_built_in_plugins(void);
 

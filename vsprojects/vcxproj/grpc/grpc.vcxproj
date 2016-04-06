@@ -445,6 +445,8 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_config\client_config.c">
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_config\client_config_plugin.c">
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_config\connector.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_config\default_initial_connect_string.c">
