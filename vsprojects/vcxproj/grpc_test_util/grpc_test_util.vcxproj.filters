@@ -25,6 +25,9 @@
     <ClCompile Include="$(SolutionDir)\..\test\core\util\grpc_profiler.c">
       <Filter>test\core\util</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\util\mock_endpoint.c">
+      <Filter>test\core\util</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\util\parse_hexstring.c">
       <Filter>test\core\util</Filter>
     </ClCompile>
@@ -58,6 +61,9 @@
       <Filter>test\core\security</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\test\core\util\grpc_profiler.h">
+      <Filter>test\core\util</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\test\core\util\mock_endpoint.h">
       <Filter>test\core\util</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\test\core\util\parse_hexstring.h">
