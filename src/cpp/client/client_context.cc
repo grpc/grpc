@@ -60,6 +60,8 @@ static ClientContext::GlobalCallbacks* g_client_callbacks =
 
 ClientContext::ClientContext()
     : initial_metadata_received_(false),
+      fail_fast_(true),
+      idempotent_(false),
       call_(nullptr),
       call_canceled_(false),
       deadline_(gpr_inf_future(GPR_CLOCK_REALTIME)),

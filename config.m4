@@ -89,6 +89,23 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/census/operation.c \
     src/core/ext/census/placeholders.c \
     src/core/ext/census/tracing.c \
+    src/core/ext/client_config/channel_connectivity.c \
+    src/core/ext/client_config/client_channel.c \
+    src/core/ext/client_config/client_channel_factory.c \
+    src/core/ext/client_config/client_config.c \
+    src/core/ext/client_config/connector.c \
+    src/core/ext/client_config/default_initial_connect_string.c \
+    src/core/ext/client_config/initial_connect_string.c \
+    src/core/ext/client_config/lb_policy.c \
+    src/core/ext/client_config/lb_policy_factory.c \
+    src/core/ext/client_config/lb_policy_registry.c \
+    src/core/ext/client_config/resolver.c \
+    src/core/ext/client_config/resolver_factory.c \
+    src/core/ext/client_config/resolver_registry.c \
+    src/core/ext/client_config/subchannel.c \
+    src/core/ext/client_config/subchannel_call_holder.c \
+    src/core/ext/client_config/subchannel_index.c \
+    src/core/ext/client_config/uri_parser.c \
     src/core/ext/lb_policy/grpclb/load_balancer_api.c \
     src/core/ext/lb_policy/grpclb/proto/grpc/lb/v0/load_balancer.pb.c \
     src/core/ext/lb_policy/pick_first/pick_first.c \
@@ -123,26 +140,10 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/channel/channel_args.c \
     src/core/lib/channel/channel_stack.c \
     src/core/lib/channel/channel_stack_builder.c \
-    src/core/lib/channel/client_channel.c \
     src/core/lib/channel/compress_filter.c \
     src/core/lib/channel/connected_channel.c \
     src/core/lib/channel/http_client_filter.c \
     src/core/lib/channel/http_server_filter.c \
-    src/core/lib/channel/subchannel_call_holder.c \
-    src/core/lib/client_config/client_config.c \
-    src/core/lib/client_config/connector.c \
-    src/core/lib/client_config/default_initial_connect_string.c \
-    src/core/lib/client_config/initial_connect_string.c \
-    src/core/lib/client_config/lb_policy.c \
-    src/core/lib/client_config/lb_policy_factory.c \
-    src/core/lib/client_config/lb_policy_registry.c \
-    src/core/lib/client_config/resolver.c \
-    src/core/lib/client_config/resolver_factory.c \
-    src/core/lib/client_config/resolver_registry.c \
-    src/core/lib/client_config/subchannel.c \
-    src/core/lib/client_config/subchannel_factory.c \
-    src/core/lib/client_config/subchannel_index.c \
-    src/core/lib/client_config/uri_parser.c \
     src/core/lib/compression/compression_algorithm.c \
     src/core/lib/compression/message_compress.c \
     src/core/lib/debug/trace.c \
@@ -215,7 +216,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/surface/call_details.c \
     src/core/lib/surface/call_log_batch.c \
     src/core/lib/surface/channel.c \
-    src/core/lib/surface/channel_connectivity.c \
     src/core/lib/surface/channel_init.c \
     src/core/lib/surface/channel_ping.c \
     src/core/lib/surface/channel_stack_type.c \
@@ -545,6 +545,7 @@ if test "$PHP_GRPC" != "no"; then
 
   PHP_ADD_BUILD_DIR($ext_builddir/src/boringssl)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/census)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/client_config)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/lb_policy/grpclb)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/lb_policy/grpclb/proto/grpc/lb/v0)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/lb_policy/pick_first)
@@ -557,7 +558,6 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/transport/chttp2/server/secure)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/transport/chttp2/transport)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/channel)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/client_config)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/compression)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/debug)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/http)
