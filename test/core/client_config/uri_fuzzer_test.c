@@ -36,7 +36,7 @@
 
 #include <grpc/support/alloc.h>
 
-#include "src/core/lib/client_config/uri_parser.h"
+#include "src/core/ext/client_config/uri_parser.h"
 
 int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   char *s = gpr_malloc(size + 1);

@@ -39,8 +39,8 @@
 #include <grpc/grpc_zookeeper.h>
 #include <zookeeper/zookeeper.h>
 
-#include "src/core/lib/client_config/lb_policy_registry.h"
-#include "src/core/lib/client_config/resolver_registry.h"
+#include "src/core/ext/client_config/lb_policy_registry.h"
+#include "src/core/ext/client_config/resolver_registry.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/support/string.h"
