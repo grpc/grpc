@@ -232,3 +232,5 @@ void default_host(grpc_end2end_test_config config) {
     return;
   test_invoke_simple_request(config);
 }
+
+void default_host_pre_init(void) {}

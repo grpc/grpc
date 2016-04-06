@@ -150,6 +150,7 @@ int main(int argc, char **argv) {
 #endif
 
   grpc_test_init(argc, argv);
+  grpc_end2end_tests_pre_init();
   grpc_init();
   grpc_exec_ctx_finish(&exec_ctx);
 
