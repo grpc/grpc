@@ -118,8 +118,8 @@ function main() {
   }));
   start(server_addresses, test_cases, argv.num_channels_per_server,
         argv.num_stubs_per_channel, argv.metrics_port);
-  if (argv['test_duration_secs'] > -1) {
-    setTimeout(stop, argv['test_duration_secs'] * 1000);
+  if (argv.test_duration_secs > -1) {
+    setTimeout(stop, argv.test_duration_secs * 1000);
   }
 }
 
