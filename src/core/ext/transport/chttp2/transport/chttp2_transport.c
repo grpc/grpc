@@ -1236,16 +1236,18 @@ static void cancel_from_api(grpc_exec_ctx *exec_ctx,
                             grpc_chttp2_transport_global *transport_global,
                             grpc_chttp2_stream_global *stream_global,
                             grpc_status_code status) {
-  if (stream_global->id != 0) {
-    gpr_slice_buffer_add(
-        &transport_global->qbuf,
-        grpc_chttp2_rst_stream_create(
-            stream_global->id,
-            (uint32_t)grpc_chttp2_grpc_status_to_http2_error(status),
-            &stream_global->stats.outgoing));
+  if (!stream_global->read_closed || !stream_global->write_closed) {
+    if (stream_global->id != 0) {
+      gpr_slice_buffer_add(
+          &transport_global->qbuf,
+          grpc_chttp2_rst_stream_create(
+              stream_global->id,
+              (uint32_t)grpc_chttp2_grpc_status_to_http2_error(status),
+              &stream_global->stats.outgoing));
+    }
+    grpc_chttp2_fake_status(exec_ctx, transport_global, stream_global, status,
+                            NULL);
   }
-  grpc_chttp2_fake_status(exec_ctx, transport_global, stream_global, status,
-                          NULL);
   grpc_chttp2_mark_stream_closed(exec_ctx, transport_global, stream_global, 1,
                                  1);
 }

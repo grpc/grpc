@@ -533,6 +533,7 @@ filegroups:
   - test/core/end2end/fixtures/proxy.h
   - test/core/iomgr/endpoint_tests.h
   - test/core/util/grpc_profiler.h
+  - test/core/util/mock_endpoint.h
   - test/core/util/parse_hexstring.h
   - test/core/util/port.h
   - test/core/util/port_server_client.h
@@ -542,6 +543,7 @@ filegroups:
   - test/core/end2end/fixtures/proxy.c
   - test/core/iomgr/endpoint_tests.c
   - test/core/util/grpc_profiler.c
+  - test/core/util/mock_endpoint.c
   - test/core/util/parse_hexstring.c
   - test/core/util/port_posix.c
   - test/core/util/port_server_client.c
@@ -1644,6 +1646,7 @@ targets:
   - gpr
   corpus_dirs:
   - test/core/transport/chttp2/hpack_parser_corpus
+  maxlen: 512
 - name: hpack_parser_test
   build: test
   language: c
@@ -1676,6 +1679,7 @@ targets:
   - gpr
   corpus_dirs:
   - test/core/http/corpus
+  maxlen: 2048
 - name: http_parser_test
   build: test
   language: c
@@ -1789,6 +1793,7 @@ targets:
   - gpr
   corpus_dirs:
   - test/core/json/corpus
+  maxlen: 512
 - name: json_rewrite
   build: test
   run: false
@@ -1915,6 +1920,7 @@ targets:
   - gpr
   corpus_dirs:
   - test/core/nanopb/corpus_response
+  maxlen: 128
 - name: nanopb_fuzzer_serverlist_test
   build: fuzzer
   language: c
@@ -1927,6 +1933,7 @@ targets:
   - gpr
   corpus_dirs:
   - test/core/nanopb/corpus_serverlist
+  maxlen: 128
 - name: no_server_test
   cpu_cost: 0.1
   build: test
@@ -1978,6 +1985,19 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: server_fuzzer
+  build: fuzzer
+  language: c
+  src:
+  - test/core/end2end/fuzzers/server_fuzzer.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  corpus_dirs:
+  - test/core/end2end/fuzzers/server_fuzzer_corpus
+  maxlen: 2048
 - name: server_test
   build: test
   language: c
@@ -2188,6 +2208,7 @@ targets:
   - gpr
   corpus_dirs:
   - test/core/client_config/uri_corpus
+  maxlen: 128
 - name: uri_parser_test
   build: test
   language: c

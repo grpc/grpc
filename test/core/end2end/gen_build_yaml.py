@@ -94,6 +94,7 @@ END2END_TESTS = {
                                                   needs_dns=True),
     'disappearing_server': connectivity_test_options,
     'empty_batch': default_test_options,
+    'filter_causes_close': default_test_options,
     'graceful_server_shutdown': default_test_options._replace(cpu_cost=LOWCPU),
     'hpack_size': default_test_options._replace(proxyable=False,
                                                 traceable=False),

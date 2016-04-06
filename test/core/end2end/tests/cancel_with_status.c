@@ -182,3 +182,5 @@ void cancel_with_status(grpc_end2end_test_config config) {
     test_invoke_simple_request(config, i);
   }
 }
+
+void cancel_with_status_pre_init(void) {}

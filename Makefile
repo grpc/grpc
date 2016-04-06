@@ -968,6 +968,7 @@ resolve_address_test: $(BINDIR)/$(CONFIG)/resolve_address_test
 secure_channel_create_test: $(BINDIR)/$(CONFIG)/secure_channel_create_test
 secure_endpoint_test: $(BINDIR)/$(CONFIG)/secure_endpoint_test
 server_chttp2_test: $(BINDIR)/$(CONFIG)/server_chttp2_test
+server_fuzzer: $(BINDIR)/$(CONFIG)/server_fuzzer
 server_test: $(BINDIR)/$(CONFIG)/server_test
 set_initial_connect_string_test: $(BINDIR)/$(CONFIG)/set_initial_connect_string_test
 sockaddr_resolver_test: $(BINDIR)/$(CONFIG)/sockaddr_resolver_test
@@ -1120,6 +1121,7 @@ http_fuzzer_test_one_entry: $(BINDIR)/$(CONFIG)/http_fuzzer_test_one_entry
 json_fuzzer_test_one_entry: $(BINDIR)/$(CONFIG)/json_fuzzer_test_one_entry
 nanopb_fuzzer_response_test_one_entry: $(BINDIR)/$(CONFIG)/nanopb_fuzzer_response_test_one_entry
 nanopb_fuzzer_serverlist_test_one_entry: $(BINDIR)/$(CONFIG)/nanopb_fuzzer_serverlist_test_one_entry
+server_fuzzer_one_entry: $(BINDIR)/$(CONFIG)/server_fuzzer_one_entry
 uri_fuzzer_test_one_entry: $(BINDIR)/$(CONFIG)/uri_fuzzer_test_one_entry
 
 run_dep_checks:
@@ -1345,6 +1347,7 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/json_fuzzer_test_one_entry \
   $(BINDIR)/$(CONFIG)/nanopb_fuzzer_response_test_one_entry \
   $(BINDIR)/$(CONFIG)/nanopb_fuzzer_serverlist_test_one_entry \
+  $(BINDIR)/$(CONFIG)/server_fuzzer_one_entry \
   $(BINDIR)/$(CONFIG)/uri_fuzzer_test_one_entry \
 
 
@@ -2736,6 +2739,7 @@ LIBGRPC_TEST_UTIL_SRC = \
     test/core/iomgr/endpoint_tests.c \
     test/core/security/oauth2_utils.c \
     test/core/util/grpc_profiler.c \
+    test/core/util/mock_endpoint.c \
     test/core/util/parse_hexstring.c \
     test/core/util/port_posix.c \
     test/core/util/port_server_client.c \
@@ -2783,6 +2787,7 @@ LIBGRPC_TEST_UTIL_UNSECURE_SRC = \
     test/core/end2end/fixtures/proxy.c \
     test/core/iomgr/endpoint_tests.c \
     test/core/util/grpc_profiler.c \
+    test/core/util/mock_endpoint.c \
     test/core/util/parse_hexstring.c \
     test/core/util/port_posix.c \
     test/core/util/port_server_client.c \
@@ -5861,6 +5866,7 @@ LIBEND2END_TESTS_SRC = \
     test/core/end2end/tests/default_host.c \
     test/core/end2end/tests/disappearing_server.c \
     test/core/end2end/tests/empty_batch.c \
+    test/core/end2end/tests/filter_causes_close.c \
     test/core/end2end/tests/graceful_server_shutdown.c \
     test/core/end2end/tests/high_initial_seqno.c \
     test/core/end2end/tests/hpack_size.c \
@@ -5936,6 +5942,7 @@ LIBEND2END_NOSEC_TESTS_SRC = \
     test/core/end2end/tests/default_host.c \
     test/core/end2end/tests/disappearing_server.c \
     test/core/end2end/tests/empty_batch.c \
+    test/core/end2end/tests/filter_causes_close.c \
     test/core/end2end/tests/graceful_server_shutdown.c \
     test/core/end2end/tests/high_initial_seqno.c \
     test/core/end2end/tests/hpack_size.c \
@@ -8894,6 +8901,38 @@ deps_server_chttp2_test: $(SERVER_CHTTP2_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(SERVER_CHTTP2_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+SERVER_FUZZER_SRC = \
+    test/core/end2end/fuzzers/server_fuzzer.c \
+
+SERVER_FUZZER_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(SERVER_FUZZER_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/server_fuzzer: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/server_fuzzer: $(SERVER_FUZZER_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(SERVER_FUZZER_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -lFuzzer -o $(BINDIR)/$(CONFIG)/server_fuzzer
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/end2end/fuzzers/server_fuzzer.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_server_fuzzer: $(SERVER_FUZZER_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(SERVER_FUZZER_OBJS:.o=.dep)
 endif
 endif
 
@@ -13913,6 +13952,38 @@ deps_nanopb_fuzzer_serverlist_test_one_entry: $(NANOPB_FUZZER_SERVERLIST_TEST_ON
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(NANOPB_FUZZER_SERVERLIST_TEST_ONE_ENTRY_OBJS:.o=.dep)
+endif
+endif
+
+
+SERVER_FUZZER_ONE_ENTRY_SRC = \
+    test/core/end2end/fuzzers/server_fuzzer.c \
+
+SERVER_FUZZER_ONE_ENTRY_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(SERVER_FUZZER_ONE_ENTRY_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/server_fuzzer_one_entry: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/server_fuzzer_one_entry: $(SERVER_FUZZER_ONE_ENTRY_OBJS) $(LIBDIR)/$(CONFIG)/libone_input_fuzzer.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(SERVER_FUZZER_ONE_ENTRY_OBJS) $(LIBDIR)/$(CONFIG)/libone_input_fuzzer.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/server_fuzzer_one_entry
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/end2end/fuzzers/server_fuzzer.o:  $(LIBDIR)/$(CONFIG)/libone_input_fuzzer.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_server_fuzzer_one_entry: $(SERVER_FUZZER_ONE_ENTRY_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(SERVER_FUZZER_ONE_ENTRY_OBJS:.o=.dep)
 endif
 endif
 
