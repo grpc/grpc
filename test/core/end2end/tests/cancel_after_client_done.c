@@ -237,3 +237,5 @@ void cancel_after_client_done(grpc_end2end_test_config config) {
     test_cancel_after_accept_and_writes_closed(config, cancellation_modes[i]);
   }
 }
+
+void cancel_after_client_done_pre_init(void) {}

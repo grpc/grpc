@@ -41,8 +41,8 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/thd.h>
 #include <grpc/support/useful.h>
+#include "src/core/ext/client_config/client_channel.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
-#include "src/core/lib/channel/client_channel.h"
 #include "src/core/lib/channel/connected_channel.h"
 #include "src/core/lib/channel/http_server_filter.h"
 #include "src/core/lib/support/env.h"
@@ -116,6 +116,7 @@ int main(int argc, char **argv) {
 #endif
 
   grpc_test_init(argc, argv);
+  grpc_end2end_tests_pre_init();
   grpc_init();
 
   GPR_ASSERT(0 == grpc_tracer_set_enabled("also-doesnt-exist", 0));

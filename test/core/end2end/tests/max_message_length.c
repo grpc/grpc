@@ -221,3 +221,5 @@ static void test_max_message_length(grpc_end2end_test_config config) {
 void max_message_length(grpc_end2end_test_config config) {
   test_max_message_length(config);
 }
+
+void max_message_length_pre_init(void) {}

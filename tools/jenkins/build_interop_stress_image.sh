@@ -35,7 +35,7 @@ set -x
 
 # Params:
 #  INTEROP_IMAGE - Name of tag of the final interop image
-#  INTEROP_IMAGE_TAG - Optional. If set, the created image will be tagged using
+#  INTEROP_IMAGE_REPOSITORY_TAG - Optional. If set, the created image will be tagged using
 #    the command: 'docker tag $INTEROP_IMAGE $INTEROP_IMAGE_REPOSITORY_TAG'
 #  BASE_NAME - Base name used to locate the base Dockerfile and build script
 #  BUILD_TYPE - The 'CONFIG' variable passed to the 'make' command (example:
@@ -59,10 +59,10 @@ then
 fi
 
 # Use image name based on Dockerfile checksum
-BASE_IMAGE=${BASE_NAME}_base:`sha1sum tools/dockerfile/$BASE_NAME/Dockerfile | cut -f1 -d\ `
+BASE_IMAGE=${BASE_NAME}_base:`sha1sum tools/dockerfile/stress_test/$BASE_NAME/Dockerfile | cut -f1 -d\ `
 
 # Make sure base docker image has been built. Should be instantaneous if so.
-docker build -t $BASE_IMAGE --force-rm=true tools/dockerfile/$BASE_NAME || exit $?
+docker build -t $BASE_IMAGE --force-rm=true tools/dockerfile/stress_test/$BASE_NAME || exit $?
 
 # Create a local branch so the child Docker script won't complain
 git branch -f jenkins-docker
@@ -80,7 +80,7 @@ CONTAINER_NAME="build_${BASE_NAME}_$(uuidgen)"
   -v /tmp/ccache:/tmp/ccache \
   --name=$CONTAINER_NAME \
   $BASE_IMAGE \
-  bash -l /var/local/jenkins/grpc/tools/dockerfile/$BASE_NAME/build_interop_stress.sh \
+  bash -l /var/local/jenkins/grpc/tools/dockerfile/stress_test/$BASE_NAME/build_interop_stress.sh \
   && docker commit $CONTAINER_NAME $INTEROP_IMAGE \
   && ( if [ -n "$INTEROP_IMAGE_REPOSITORY_TAG" ]; then docker tag -f $INTEROP_IMAGE $INTEROP_IMAGE_REPOSITORY_TAG ; fi ) \
   && echo "Successfully built image $INTEROP_IMAGE")

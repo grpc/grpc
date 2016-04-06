@@ -233,3 +233,5 @@ void cancel_after_accept(grpc_end2end_test_config config) {
     test_cancel_after_accept(config, cancellation_modes[i]);
   }
 }
+
+void cancel_after_accept_pre_init(void) {}
