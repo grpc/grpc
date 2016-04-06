@@ -61,15 +61,18 @@ static bool set_default_host_if_unset(grpc_channel_stack_builder *builder,
       return true;
     }
   }
-  grpc_arg arg;
-  arg.type = GRPC_ARG_STRING;
-  arg.key = GRPC_ARG_DEFAULT_AUTHORITY;
-  arg.value.string = grpc_get_default_authority(
+  char *default_authority = grpc_get_default_authority(
       grpc_channel_stack_builder_get_target(builder));
-  grpc_channel_args *new_args = grpc_channel_args_copy_and_add(args, &arg, 1);
-  grpc_channel_stack_builder_set_channel_arguments(builder, new_args);
-  gpr_free(arg.value.string);
-  grpc_channel_args_destroy(new_args);
+  if (default_authority != NULL) {
+    grpc_arg arg;
+    arg.type = GRPC_ARG_STRING;
+    arg.key = GRPC_ARG_DEFAULT_AUTHORITY;
+    arg.value.string = default_authority;
+    grpc_channel_args *new_args = grpc_channel_args_copy_and_add(args, &arg, 1);
+    grpc_channel_stack_builder_set_channel_arguments(builder, new_args);
+    gpr_free(default_authority);
+    grpc_channel_args_destroy(new_args);
+  }
   return true;
 }
 
