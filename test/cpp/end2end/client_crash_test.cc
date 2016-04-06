@@ -88,6 +88,7 @@ TEST_F(CrashTest, KillBeforeWrite) {
   EchoRequest request;
   EchoResponse response;
   ClientContext context;
+  context.set_fail_fast(false);
 
   auto stream = stub->BidiStream(&context);
 
@@ -113,6 +114,7 @@ TEST_F(CrashTest, KillAfterWrite) {
   EchoRequest request;
   EchoResponse response;
   ClientContext context;
+  context.set_fail_fast(false);
 
   auto stream = stub->BidiStream(&context);
 
