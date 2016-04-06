@@ -159,12 +159,15 @@ class CLanguage(object):
       'posix': ['all'],
       'linux': ['poll', 'legacy']
     }
-    for polling_strategy in POLLING_STRATEGIES[self.platform]:
-      env={'GRPC_DEFAULT_SSL_ROOTS_FILE_PATH':
-               _ROOT + '/src/core/lib/tsi/test_creds/ca.pem',
-           'GRPC_POLLING_STRATEGY': polling_strategy}
-      shortname_ext = '' if polling_strategy=='all' else ' polling=%s' % polling_strategy
-      for target in binaries:
+    for target in binaries:
+      polling_strategies = (POLLING_STRATEGIES[self.platform]
+                            if target.get('uses_polling', True)
+                            else ['all'])
+      for polling_strategy in polling_strategies:
+        env={'GRPC_DEFAULT_SSL_ROOTS_FILE_PATH':
+                 _ROOT + '/src/core/lib/tsi/test_creds/ca.pem',
+             'GRPC_POLLING_STRATEGY': polling_strategy}
+        shortname_ext = '' if polling_strategy=='all' else ' polling=%s' % polling_strategy
         if self.config.build_config in target['exclude_configs']:
           continue
         if self.platform == 'windows':
