@@ -49,6 +49,7 @@
 #include "src/core/ext/transport/chttp2/transport/hpack_table.h"
 #include "src/core/ext/transport/chttp2/transport/timeout_encoding.h"
 #include "src/core/ext/transport/chttp2/transport/varint.h"
+#include "src/core/lib/transport/metadata.h"
 #include "src/core/lib/transport/static_metadata.h"
 
 #define HASH_FRAGMENT_1(x) ((x)&255)
@@ -182,8 +183,7 @@ static void add_elem(grpc_chttp2_hpack_compressor *c, grpc_mdelem *elem) {
   uint32_t key_hash = elem->key->hash;
   uint32_t elem_hash = GRPC_MDSTR_KV_HASH(key_hash, elem->value->hash);
   uint32_t new_index = c->tail_remote_index + c->table_elems + 1;
-  size_t elem_size = 32 + GPR_SLICE_LENGTH(elem->key->slice) +
-                     GPR_SLICE_LENGTH(elem->value->slice);
+  size_t elem_size = grpc_mdelem_get_size_in_hpack_table(elem);
 
   GPR_ASSERT(elem_size < 65536);
 
@@ -399,8 +399,7 @@ static void hpack_enc(grpc_chttp2_hpack_compressor *c, grpc_mdelem *elem,
   }
 
   /* should this elem be in the table? */
-  decoder_space_usage = 32 + GPR_SLICE_LENGTH(elem->key->slice) +
-                        GPR_SLICE_LENGTH(elem->value->slice);
+  decoder_space_usage = grpc_mdelem_get_size_in_hpack_table(elem);
   should_add_elem = decoder_space_usage < MAX_DECODER_SPACE_USAGE &&
                     c->filter_elems[HASH_FRAGMENT_1(elem_hash)] >=
                         c->filter_elems_sum / ONE_ON_ADD_PROBABILITY;
