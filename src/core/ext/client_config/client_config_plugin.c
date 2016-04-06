@@ -57,7 +57,8 @@ static bool set_default_host_if_unset(grpc_channel_stack_builder *builder,
   const grpc_channel_args *args =
       grpc_channel_stack_builder_get_channel_arguments(builder);
   for (size_t i = 0; i < args->num_args; i++) {
-    if (0 == strcmp(args->args[i].key, GRPC_ARG_DEFAULT_AUTHORITY)) {
+    if (0 == strcmp(args->args[i].key, GRPC_ARG_DEFAULT_AUTHORITY) ||
+        0 == strcmp(args->args[i].key, GRPC_SSL_TARGET_NAME_OVERRIDE_ARG)) {
       return true;
     }
   }
