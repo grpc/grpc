@@ -28,4 +28,4 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-gource -c 4 -s 0.1 --max-file-lag 0.05 --max-files 0 -e 0.01 --hide filenames,dirnames --file-filter 'doc/ref|vsprojects/vcxproj' $*
+gource --multi-sampling -c 4 -s 0.1 --max-file-lag 0.05 --max-files 0 -e 0.05 --hide filenames,dirnames $*
