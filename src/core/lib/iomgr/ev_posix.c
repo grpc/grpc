@@ -104,6 +104,7 @@ static void try_engine(const char *engine) {
   for (size_t i = 0; i < GPR_ARRAY_SIZE(g_factories); i++) {
     if (is(engine, g_factories[i].name)) {
       if ((g_event_engine = g_factories[i].factory())) {
+        gpr_log(GPR_DEBUG, "Using polling engine: %s", g_factories[i].name);
         return;
       }
     }
