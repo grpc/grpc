@@ -192,7 +192,7 @@ class CLanguage(object):
         else:
           cmdline = [binary] + target['args']
           out.append(self.config.job_spec(cmdline, [binary],
-                                          shortname=' '.join(cmdline),
+                                          shortname=target.get('shortname', ' '.join(cmdline)),
                                           cpu_cost=target['cpu_cost'],
                                           flaky=target.get('flaky', False),
                                           environ={'GRPC_DEFAULT_SSL_ROOTS_FILE_PATH':

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,29 +31,56 @@
  *
  */
 
+#include <memory>
+#include <sstream>
+#include <string>
+
+#include <grpc/support/log.h>
+
+#include "src/core/lib/support/env.h"
+#include "test/core/util/port.h"
 #include "test/cpp/util/subprocess.h"
 
-#include <vector>
+using grpc::SubProcess;
 
-#include <grpc/support/subprocess.h>
-
-namespace grpc {
-
-static gpr_subprocess* MakeProcess(const std::vector<std::string>& args) {
-  std::vector<const char*> vargs;
-  for (auto it = args.begin(); it != args.end(); ++it) {
-    vargs.push_back(it->c_str());
-  }
-  return gpr_subprocess_create(vargs.size(), &vargs[0]);
+template <class T>
+std::string as_string(const T& val) {
+  std::ostringstream out;
+  out << val;
+  return out.str();
 }
 
-SubProcess::SubProcess(const std::vector<std::string>& args)
-    : subprocess_(MakeProcess(args)) {}
+int main(int argc, char** argv) {
+  typedef std::unique_ptr<SubProcess> SubProcessPtr;
+  std::vector<SubProcessPtr> jobs;
 
-SubProcess::~SubProcess() { gpr_subprocess_destroy(subprocess_); }
+  std::string my_bin = argv[0];
+  std::string bin_dir = my_bin.substr(0, my_bin.rfind('/'));
 
-int SubProcess::Join() { return gpr_subprocess_join(subprocess_); }
+  std::ostringstream env;
+  bool first = true;
 
-void SubProcess::Interrupt() { gpr_subprocess_interrupt(subprocess_); }
+  for (int i = 0; i < 2; i++) {
+    auto port = grpc_pick_unused_port_or_die();
+    std::vector<std::string> args = {bin_dir + "/qps_worker", "-driver_port",
+                                     as_string(port)};
+    jobs.emplace_back(new SubProcess(args));
+    if (!first) env << ",";
+    env << "localhost:" << port;
+    first = false;
+  }
 
-}  // namespace grpc
+  gpr_setenv("QPS_WORKERS", env.str().c_str());
+  std::vector<std::string> args = {bin_dir + "/qps_json_driver"};
+  for (int i = 1; i < argc; i++) {
+    args.push_back(argv[i]);
+  }
+  SubProcess(args).Join();
+
+  for (auto it = jobs.begin(); it != jobs.end(); ++it) {
+    (*it)->Interrupt();
+  }
+  for (auto it = jobs.begin(); it != jobs.end(); ++it) {
+    (*it)->Join();
+  }
+}
