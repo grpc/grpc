@@ -110,6 +110,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/lb_policy/grpclb/proto/grpc/lb/v0/load_balancer.pb.c \
     src/core/ext/lb_policy/pick_first/pick_first.c \
     src/core/ext/lb_policy/round_robin/round_robin.c \
+    src/core/ext/load_reporting/load_reporting_filter.c \
     src/core/ext/resolver/dns/native/dns_resolver.c \
     src/core/ext/resolver/sockaddr/sockaddr_resolver.c \
     src/core/ext/transport/chttp2/client/insecure/channel_create.c \
@@ -194,6 +195,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/json/json_reader.c \
     src/core/lib/json/json_string.c \
     src/core/lib/json/json_writer.c \
+    src/core/lib/load_reporting/load_reporting.c \
     src/core/lib/security/b64.c \
     src/core/lib/security/client_auth_filter.c \
     src/core/lib/security/credentials.c \
@@ -550,6 +552,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/lb_policy/grpclb/proto/grpc/lb/v0)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/lb_policy/pick_first)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/lb_policy/round_robin)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/load_reporting)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/resolver/dns/native)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/resolver/sockaddr)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/transport/chttp2/client/insecure)
@@ -563,6 +566,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/http)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/iomgr)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/json)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/load_reporting)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/profiling)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/support)

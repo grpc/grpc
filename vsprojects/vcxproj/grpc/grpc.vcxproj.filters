@@ -91,6 +91,9 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\lb_policy\round_robin\round_robin.c">
       <Filter>src\core\ext\lb_policy\round_robin</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\load_reporting\load_reporting_filter.c">
+      <Filter>src\core\ext\load_reporting</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\resolver\dns\native\dns_resolver.c">
       <Filter>src\core\ext\resolver\dns\native</Filter>
     </ClCompile>
@@ -342,6 +345,9 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\json\json_writer.c">
       <Filter>src\core\lib\json</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\load_reporting\load_reporting.c">
+      <Filter>src\core\lib\load_reporting</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\b64.c">
       <Filter>src\core\lib\security</Filter>
@@ -599,6 +605,9 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\lb_policy\grpclb\proto\grpc\lb\v0\load_balancer.pb.h">
       <Filter>src\core\ext\lb_policy\grpclb\proto\grpc\lb\v0</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\load_reporting\load_reporting_filter.h">
+      <Filter>src\core\ext\load_reporting</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\alpn.h">
       <Filter>src\core\ext\transport\chttp2\transport</Filter>
     </ClInclude>
@@ -824,6 +833,9 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\json\json_writer.h">
       <Filter>src\core\lib\json</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\load_reporting\load_reporting.h">
+      <Filter>src\core\lib\load_reporting</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\auth_filters.h">
       <Filter>src\core\lib\security</Filter>
     </ClInclude>
@@ -989,6 +1001,9 @@
     <Filter Include="src\core\ext\lb_policy\round_robin">
       <UniqueIdentifier>{2472d352-cf94-f317-646e-72b769cea846}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\core\ext\load_reporting">
+      <UniqueIdentifier>{b6c863cd-a135-32e8-df03-02365f526f0d}</UniqueIdentifier>
+    </Filter>
     <Filter Include="src\core\ext\resolver">
       <UniqueIdentifier>{6bfa6808-9dcb-8990-deed-5cf58a149dda}</UniqueIdentifier>
     </Filter>
@@ -1048,6 +1063,9 @@
     </Filter>
     <Filter Include="src\core\lib\json">
       <UniqueIdentifier>{cb2b0073-f2a7-5c63-d182-8874b24bdf36}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\lib\load_reporting">
+      <UniqueIdentifier>{0048bb64-a4b2-9f8e-c029-b43c8c207264}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\core\lib\security">
       <UniqueIdentifier>{c4661d64-349f-01c1-1ba8-0602f9047595}</UniqueIdentifier>
