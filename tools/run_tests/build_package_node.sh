@@ -28,13 +28,17 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+source ~/.nvm/nvm.sh
+
+nvm use 4
 set -ex
 
 cd $(dirname $0)/../..
 
 mkdir -p artifacts/
-cp -r architecture={x86,x64},language=node,platform={windows,linux,macos}/artifacts/* artifacts/ || true
+cp -r $EXTERNAL_GIT_ROOT/architecture={x86,x64},language=node,platform={windows,linux,macos}/artifacts/* artifacts/ || true
 
+npm update
 npm pack
 
-cp grpc-*.tgz artifacts/
+cp grpc-*.tgz artifacts/grpc.tgz

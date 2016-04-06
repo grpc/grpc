@@ -1,4 +1,4 @@
-# Copyright 2015-2016, Google Inc.
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -30,7 +30,7 @@
 FROM base/archlinux
 
 RUN pacman --noconfirm -Syy
-RUN pacman --noconfirm -S git
-RUN pacman --noconfirm -S python
-RUN pacman --noconfirm -S python-pip
+RUN pacman --noconfirm -S openssl
+RUN pacman --noconfirm -S python2
+RUN pacman --noconfirm -S python2-pip
 

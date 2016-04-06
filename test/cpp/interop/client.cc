@@ -35,11 +35,11 @@
 
 #include <unistd.h>
 
-#include <grpc/grpc.h>
-#include <grpc/support/log.h>
 #include <gflags/gflags.h>
 #include <grpc++/channel.h>
 #include <grpc++/client_context.h>
+#include <grpc/grpc.h>
+#include <grpc/support/log.h>
 
 #include "test/cpp/interop/client_helper.h"
 #include "test/cpp/interop/interop_client.h"
@@ -74,6 +74,7 @@ DEFINE_string(test_case, "large_unary",
               "oauth2_auth_token: raw oauth2 access token auth; "
               "per_rpc_creds: raw oauth2 access token on a single rpc; "
               "status_code_and_message: verify status code & message; "
+              "custom_metadata: server will echo custom metadata;"
               "all : all of above.");
 DEFINE_string(default_service_account, "",
               "Email of GCE default service account");
@@ -129,6 +130,8 @@ int main(int argc, char** argv) {
     client.DoPerRpcCreds(json_key);
   } else if (FLAGS_test_case == "status_code_and_message") {
     client.DoStatusWithMessage();
+  } else if (FLAGS_test_case == "custom_metadata") {
+    client.DoCustomMetadata();
   } else if (FLAGS_test_case == "all") {
     client.DoEmpty();
     client.DoLargeUnary();
@@ -142,6 +145,7 @@ int main(int argc, char** argv) {
     client.DoTimeoutOnSleepingServer();
     client.DoEmptyStream();
     client.DoStatusWithMessage();
+    client.DoCustomMetadata();
     // service_account_creds and jwt_token_creds can only run with ssl.
     if (FLAGS_use_tls) {
       grpc::string json_key = GetServiceAccountJsonKey();
@@ -159,7 +163,7 @@ int main(int argc, char** argv) {
         "server_compressed_streaming|half_duplex|ping_pong|cancel_after_begin|"
         "cancel_after_first_response|timeout_on_sleeping_server|empty_stream|"
         "compute_engine_creds|jwt_token_creds|oauth2_auth_token|per_rpc_creds",
-        FLAGS_test_case.c_str());
+        "status_code_and_message|custom_metadata", FLAGS_test_case.c_str());
     ret = 1;
   }
 

@@ -1,5 +1,5 @@
 #region Copyright notice and license
-// Copyright 2015-2016, Google Inc.
+// Copyright 2015, Google Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -49,7 +49,7 @@ namespace Grpc.Core.Internal
 
         public static ServerCredentialsSafeHandle CreateSslCredentials(string pemRootCerts, string[] keyCertPairCertChainArray, string[] keyCertPairPrivateKeyArray, bool forceClientAuth)
         {
-            Preconditions.CheckArgument(keyCertPairCertChainArray.Length == keyCertPairPrivateKeyArray.Length);
+            GrpcPreconditions.CheckArgument(keyCertPairCertChainArray.Length == keyCertPairPrivateKeyArray.Length);
             return Native.grpcsharp_ssl_server_credentials_create(pemRootCerts,
                                                                   keyCertPairCertChainArray, keyCertPairPrivateKeyArray,
                                                                   new UIntPtr((ulong)keyCertPairCertChainArray.Length),

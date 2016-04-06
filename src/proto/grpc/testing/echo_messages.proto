@@ -1,5 +1,5 @@
 
-// Copyright 2015-2016, Google Inc.
+// Copyright 2015, Google Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -42,6 +42,7 @@ message RequestParams {
   bool echo_peer = 7;
   string expected_client_identity = 8; // will force check_auth_context.
   bool skip_cancelled_check = 9;
+  string expected_transport_security_type = 10;
 }
 
 message EchoRequest {

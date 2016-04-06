@@ -34,11 +34,11 @@
 #include <string.h>
 
 #include <grpc/support/alloc.h>
-#include <grpc/support/useful.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
-#include "src/core/json/json.h"
-#include "src/core/support/string.h"
+#include <grpc/support/useful.h>
+#include "src/core/lib/json/json.h"
+#include "src/core/lib/support/string.h"
 
 #include "test/core/util/test_config.h"
 
@@ -64,9 +64,10 @@ static testing_pair testing_pairs[] = {
     /* Testing UTF-8 character "𝄞", U+11D1E. */
     {"\"\xf0\x9d\x84\x9e\"", "\"\\ud834\\udd1e\""},
     {"\"\\ud834\\udd1e\"", "\"\\ud834\\udd1e\""},
+    {"{\"\\ud834\\udd1e\":0}", "{\"\\ud834\\udd1e\":0}"},
     /* Testing nested empty containers. */
     {
-     " [ [ ] , { } , [ ] ] ", "[[],{},[]]",
+        " [ [ ] , { } , [ ] ] ", "[[],{},[]]",
     },
     /* Testing escapes and control chars in key strings. */
     {" { \"\\u007f\x7f\\n\\r\\\"\\f\\b\\\\a , b\": 1, \"\": 0 } ",
@@ -85,20 +86,33 @@ static testing_pair testing_pairs[] = {
     /* Testing plain invalid things, exercising the state machine. */
     {"\\", NULL},
     {"nu ll", NULL},
+    {"{\"foo\": bar}", NULL},
+    {"{\"foo\": bar\"x\"}", NULL},
     {"fals", NULL},
+    {"0,0 ", NULL},
+    {"\"foo\",[]", NULL},
     /* Testing unterminated string. */
     {"\"\\x", NULL},
     /* Testing invalid UTF-16 number. */
     {"\"\\u123x", NULL},
+    {"{\"\\u123x", NULL},
     /* Testing imbalanced surrogate pairs. */
     {"\"\\ud834f", NULL},
+    {"{\"\\ud834f\":0}", NULL},
     {"\"\\ud834\\n", NULL},
+    {"{\"\\ud834\\n\":0}", NULL},
     {"\"\\udd1ef", NULL},
+    {"{\"\\udd1ef\":0}", NULL},
     {"\"\\ud834\\ud834\"", NULL},
+    {"{\"\\ud834\\ud834\"\":0}", NULL},
     {"\"\\ud834\\u1234\"", NULL},
+    {"{\"\\ud834\\u1234\"\":0}", NULL},
     {"\"\\ud834]\"", NULL},
+    {"{\"\\ud834]\"\":0}", NULL},
     {"\"\\ud834 \"", NULL},
+    {"{\"\\ud834 \"\":0}", NULL},
     {"\"\\ud834\\\\\"", NULL},
+    {"{\"\\ud834\\\\\"\":0}", NULL},
     /* Testing embedded invalid whitechars. */
     {"\"\n\"", NULL},
     {"\"\t\"", NULL},

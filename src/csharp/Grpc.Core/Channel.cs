@@ -68,7 +68,7 @@ namespace Grpc.Core
         /// <param name="options">Channel options.</param>
         public Channel(string target, ChannelCredentials credentials, IEnumerable<ChannelOption> options = null)
         {
-            this.target = Preconditions.CheckNotNull(target, "target");
+            this.target = GrpcPreconditions.CheckNotNull(target, "target");
             this.options = CreateOptionsDictionary(options);
             EnsureUserAgentChannelOption(this.options);
             this.environment = GrpcEnvironment.AddRef();
@@ -117,7 +117,7 @@ namespace Grpc.Core
         /// </summary>
         public Task WaitForStateChangedAsync(ChannelState lastObservedState, DateTime? deadline = null)
         {
-            Preconditions.CheckArgument(lastObservedState != ChannelState.FatalFailure,
+            GrpcPreconditions.CheckArgument(lastObservedState != ChannelState.FatalFailure,
                 "FatalFailure is a terminal state. No further state changes can occur.");
             var tcs = new TaskCompletionSource<object>();
             var deadlineTimespec = deadline.HasValue ? Timespec.FromDateTime(deadline.Value) : Timespec.InfFuture;
@@ -184,7 +184,7 @@ namespace Grpc.Core
         {
             lock (myLock)
             {
-                Preconditions.CheckState(!shutdownRequested);
+                GrpcPreconditions.CheckState(!shutdownRequested);
                 shutdownRequested = true;
             }
 
@@ -221,7 +221,7 @@ namespace Grpc.Core
 
             bool success = false;
             handle.DangerousAddRef(ref success);
-            Preconditions.CheckState(success);
+            GrpcPreconditions.CheckState(success);
         }
 
         internal void RemoveCallReference(object call)

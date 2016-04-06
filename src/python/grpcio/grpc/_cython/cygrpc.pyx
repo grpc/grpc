@@ -31,6 +31,7 @@ cimport cpython
 
 import pkg_resources
 import os.path
+import sys
 
 # TODO(atash): figure out why the coverage tool gets confused about the Cython
 # coverage plugin when the following files don't have a '.pxi' suffix.
@@ -39,6 +40,7 @@ include "grpc/_cython/_cygrpc/channel.pyx.pxi"
 include "grpc/_cython/_cygrpc/credentials.pyx.pxi"
 include "grpc/_cython/_cygrpc/completion_queue.pyx.pxi"
 include "grpc/_cython/_cygrpc/records.pyx.pxi"
+include "grpc/_cython/_cygrpc/security.pyx.pxi"
 include "grpc/_cython/_cygrpc/server.pyx.pxi"
 
 #
@@ -50,16 +52,22 @@ cdef class _ModuleState:
   cdef bint is_loaded
 
   def __cinit__(self):
-    filename = pkg_resources.resource_filename(
-        'grpc._cython', '_windows/grpc_c.64.python')
-    if not pygrpc_load_core(filename):
-      raise ImportError('failed to load core gRPC library')
-    grpc_init()
+    if 'win32' in sys.platform:
+      filename = pkg_resources.resource_filename(
+          'grpc._cython', '_windows/grpc_c.64.python')
+      if not pygrpc_load_core(filename):
+        raise ImportError('failed to load core gRPC library')
+    with nogil:
+      grpc_init()
     self.is_loaded = True
+    with nogil:
+      grpc_set_ssl_roots_override_callback(
+          <grpc_ssl_roots_override_callback>ssl_roots_override_callback)
 
   def __dealloc__(self):
     if self.is_loaded:
-      grpc_shutdown()
+      with nogil:
+        grpc_shutdown()
 
 _module_state = _ModuleState()
 

@@ -7,7 +7,7 @@
   # This file can be regenerated from the template by running
   # tools/buildgen/generate_projects.sh
 
-  # Copyright 2015-2016, Google Inc.
+  # Copyright 2015, Google Inc.
   # All rights reserved.
   #
   # Redistribution and use in source and binary forms, with or without
@@ -57,7 +57,8 @@
             'UNICODE',
             '_UNICODE',
             'NOMINMAX',
-            'OPENSSL_NO_ASM'
+            'OPENSSL_NO_ASM',
+            'GPR_BACKWARDS_COMPATIBILITY_MODE'
           ],
           "msvs_settings": {
             'VCCLCompilerTool': {
@@ -80,7 +81,8 @@
             # supports ALPN. The target is "[major].[minor].[patch]". We split by
             # periods and take the first field to get the major version.
           'defines': [
-            'TSI_OPENSSL_ALPN_SUPPORT=<!(echo <(target) | cut -d. -f1)'
+            'TSI_OPENSSL_ALPN_SUPPORT=<!(echo <(target) | cut -d. -f1)',
+            'GPR_BACKWARDS_COMPATIBILITY_MODE'
           ],
           'include_dirs': [
             '<(node_root_dir)/deps/openssl/openssl/include',

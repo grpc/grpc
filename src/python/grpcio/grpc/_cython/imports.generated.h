@@ -73,9 +73,30 @@ extern census_supported_type census_supported_import;
 typedef int(*census_enabled_type)(void);
 extern census_enabled_type census_enabled_import;
 #define census_enabled census_enabled_import
-typedef size_t(*census_context_serialize_type)(const census_context *context, char *buffer, size_t buf_size);
-extern census_context_serialize_type census_context_serialize_import;
-#define census_context_serialize census_context_serialize_import
+typedef census_context *(*census_context_create_type)(const census_context *base, const census_tag *tags, int ntags, census_context_status const **status);
+extern census_context_create_type census_context_create_import;
+#define census_context_create census_context_create_import
+typedef void(*census_context_destroy_type)(census_context *context);
+extern census_context_destroy_type census_context_destroy_import;
+#define census_context_destroy census_context_destroy_import
+typedef const census_context_status *(*census_context_get_status_type)(const census_context *context);
+extern census_context_get_status_type census_context_get_status_import;
+#define census_context_get_status census_context_get_status_import
+typedef void(*census_context_initialize_iterator_type)(const census_context *context, census_context_iterator *iterator);
+extern census_context_initialize_iterator_type census_context_initialize_iterator_import;
+#define census_context_initialize_iterator census_context_initialize_iterator_import
+typedef int(*census_context_next_tag_type)(census_context_iterator *iterator, census_tag *tag);
+extern census_context_next_tag_type census_context_next_tag_import;
+#define census_context_next_tag census_context_next_tag_import
+typedef int(*census_context_get_tag_type)(const census_context *context, const char *key, census_tag *tag);
+extern census_context_get_tag_type census_context_get_tag_import;
+#define census_context_get_tag census_context_get_tag_import
+typedef size_t(*census_context_encode_type)(const census_context *context, char *buffer, size_t buf_size);
+extern census_context_encode_type census_context_encode_import;
+#define census_context_encode census_context_encode_import
+typedef census_context *(*census_context_decode_type)(const char *buffer, size_t size);
+extern census_context_decode_type census_context_decode_import;
+#define census_context_decode census_context_decode_import
 typedef int(*census_trace_mask_type)(const census_context *context);
 extern census_trace_mask_type census_trace_mask_import;
 #define census_trace_mask census_trace_mask_import
@@ -112,37 +133,10 @@ extern census_get_trace_record_type census_get_trace_record_import;
 typedef void(*census_trace_scan_end_type)();
 extern census_trace_scan_end_type census_trace_scan_end_import;
 #define census_trace_scan_end census_trace_scan_end_import
-typedef census_tag_set *(*census_tag_set_create_type)(const census_tag_set *base, const census_tag *tags, int ntags, census_tag_set_create_status const **status);
-extern census_tag_set_create_type census_tag_set_create_import;
-#define census_tag_set_create census_tag_set_create_import
-typedef void(*census_tag_set_destroy_type)(census_tag_set *tags);
-extern census_tag_set_destroy_type census_tag_set_destroy_import;
-#define census_tag_set_destroy census_tag_set_destroy_import
-typedef const census_tag_set_create_status *(*census_tag_set_get_create_status_type)(const census_tag_set *tags);
-extern census_tag_set_get_create_status_type census_tag_set_get_create_status_import;
-#define census_tag_set_get_create_status census_tag_set_get_create_status_import
-typedef void(*census_tag_set_initialize_iterator_type)(const census_tag_set *tags, census_tag_set_iterator *iterator);
-extern census_tag_set_initialize_iterator_type census_tag_set_initialize_iterator_import;
-#define census_tag_set_initialize_iterator census_tag_set_initialize_iterator_import
-typedef int(*census_tag_set_next_tag_type)(census_tag_set_iterator *iterator, census_tag *tag);
-extern census_tag_set_next_tag_type census_tag_set_next_tag_import;
-#define census_tag_set_next_tag census_tag_set_next_tag_import
-typedef int(*census_tag_set_get_tag_by_key_type)(const census_tag_set *tags, const char *key, census_tag *tag);
-extern census_tag_set_get_tag_by_key_type census_tag_set_get_tag_by_key_import;
-#define census_tag_set_get_tag_by_key census_tag_set_get_tag_by_key_import
-typedef char *(*census_tag_set_encode_type)(const census_tag_set *tags, char *buffer, size_t buf_size, size_t *print_buf_size, size_t *bin_buf_size);
-extern census_tag_set_encode_type census_tag_set_encode_import;
-#define census_tag_set_encode census_tag_set_encode_import
-typedef census_tag_set *(*census_tag_set_decode_type)(const char *buffer, size_t size, const char *bin_buffer, size_t bin_size);
-extern census_tag_set_decode_type census_tag_set_decode_import;
-#define census_tag_set_decode census_tag_set_decode_import
-typedef census_tag_set *(*census_context_tag_set_type)(census_context *context);
-extern census_context_tag_set_type census_context_tag_set_import;
-#define census_context_tag_set census_context_tag_set_import
 typedef void(*census_record_values_type)(census_context *context, census_value *values, size_t nvalues);
 extern census_record_values_type census_record_values_import;
 #define census_record_values census_record_values_import
-typedef census_view *(*census_view_create_type)(uint32_t metric_id, const census_tag_set *tags, const census_aggregation *aggregations, size_t naggregations);
+typedef census_view *(*census_view_create_type)(uint32_t metric_id, const census_context *tags, const census_aggregation *aggregations, size_t naggregations);
 extern census_view_create_type census_view_create_import;
 #define census_view_create census_view_create_import
 typedef void(*census_view_delete_type)(census_view *view);
@@ -154,7 +148,7 @@ extern census_view_metric_type census_view_metric_import;
 typedef size_t(*census_view_naggregations_type)(const census_view *view);
 extern census_view_naggregations_type census_view_naggregations_import;
 #define census_view_naggregations census_view_naggregations_import
-typedef const census_tag_set *(*census_view_tags_type)(const census_view *view);
+typedef const census_context *(*census_view_tags_type)(const census_view *view);
 extern census_view_tags_type census_view_tags_import;
 #define census_view_tags census_view_tags_import
 typedef const census_aggregation *(*census_view_aggregrations_type)(const census_view *view);
@@ -172,7 +166,7 @@ extern grpc_compression_algorithm_parse_type grpc_compression_algorithm_parse_im
 typedef int(*grpc_compression_algorithm_name_type)(grpc_compression_algorithm algorithm, char **name);
 extern grpc_compression_algorithm_name_type grpc_compression_algorithm_name_import;
 #define grpc_compression_algorithm_name grpc_compression_algorithm_name_import
-typedef grpc_compression_algorithm(*grpc_compression_algorithm_for_level_type)(grpc_compression_level level);
+typedef grpc_compression_algorithm(*grpc_compression_algorithm_for_level_type)(grpc_compression_level level, uint32_t accepted_encodings);
 extern grpc_compression_algorithm_for_level_type grpc_compression_algorithm_for_level_import;
 #define grpc_compression_algorithm_for_level grpc_compression_algorithm_for_level_import
 typedef void(*grpc_compression_options_init_type)(grpc_compression_options *opts);
@@ -289,7 +283,7 @@ extern grpc_call_destroy_type grpc_call_destroy_import;
 typedef grpc_call_error(*grpc_server_request_call_type)(grpc_server *server, grpc_call **call, grpc_call_details *details, grpc_metadata_array *request_metadata, grpc_completion_queue *cq_bound_to_call, grpc_completion_queue *cq_for_notification, void *tag_new);
 extern grpc_server_request_call_type grpc_server_request_call_import;
 #define grpc_server_request_call grpc_server_request_call_import
-typedef void *(*grpc_server_register_method_type)(grpc_server *server, const char *method, const char *host);
+typedef void *(*grpc_server_register_method_type)(grpc_server *server, const char *method, const char *host, grpc_server_register_method_payload_handling payload_handling, uint32_t flags);
 extern grpc_server_register_method_type grpc_server_register_method_import;
 #define grpc_server_register_method grpc_server_register_method_import
 typedef grpc_call_error(*grpc_server_request_registered_call_type)(grpc_server *server, void *registered_method, grpc_call **call, gpr_timespec *deadline, grpc_metadata_array *request_metadata, grpc_byte_buffer **optional_payload, grpc_completion_queue *cq_bound_to_call, grpc_completion_queue *cq_for_notification, void *tag_new);
@@ -367,6 +361,9 @@ extern grpc_channel_credentials_release_type grpc_channel_credentials_release_im
 typedef grpc_channel_credentials *(*grpc_google_default_credentials_create_type)(void);
 extern grpc_google_default_credentials_create_type grpc_google_default_credentials_create_import;
 #define grpc_google_default_credentials_create grpc_google_default_credentials_create_import
+typedef void(*grpc_set_ssl_roots_override_callback_type)(grpc_ssl_roots_override_callback cb);
+extern grpc_set_ssl_roots_override_callback_type grpc_set_ssl_roots_override_callback_import;
+#define grpc_set_ssl_roots_override_callback grpc_set_ssl_roots_override_callback_import
 typedef grpc_channel_credentials *(*grpc_ssl_credentials_create_type)(const char *pem_root_certs, grpc_ssl_pem_key_cert_pair *pem_key_cert_pair, void *reserved);
 extern grpc_ssl_credentials_create_type grpc_ssl_credentials_create_import;
 #define grpc_ssl_credentials_create grpc_ssl_credentials_create_import
@@ -613,6 +610,9 @@ extern gpr_ref_init_type gpr_ref_init_import;
 typedef void(*gpr_ref_type)(gpr_refcount *r);
 extern gpr_ref_type gpr_ref_import;
 #define gpr_ref gpr_ref_import
+typedef void(*gpr_ref_non_zero_type)(gpr_refcount *r);
+extern gpr_ref_non_zero_type gpr_ref_non_zero_import;
+#define gpr_ref_non_zero gpr_ref_non_zero_import
 typedef void(*gpr_refn_type)(gpr_refcount *r, int n);
 extern gpr_refn_type gpr_refn_import;
 #define gpr_refn gpr_refn_import
@@ -661,22 +661,22 @@ extern gpr_time_add_type gpr_time_add_import;
 typedef gpr_timespec(*gpr_time_sub_type)(gpr_timespec a, gpr_timespec b);
 extern gpr_time_sub_type gpr_time_sub_import;
 #define gpr_time_sub gpr_time_sub_import
-typedef gpr_timespec(*gpr_time_from_micros_type)(long x, gpr_clock_type clock_type);
+typedef gpr_timespec(*gpr_time_from_micros_type)(int64_t x, gpr_clock_type clock_type);
 extern gpr_time_from_micros_type gpr_time_from_micros_import;
 #define gpr_time_from_micros gpr_time_from_micros_import
-typedef gpr_timespec(*gpr_time_from_nanos_type)(long x, gpr_clock_type clock_type);
+typedef gpr_timespec(*gpr_time_from_nanos_type)(int64_t x, gpr_clock_type clock_type);
 extern gpr_time_from_nanos_type gpr_time_from_nanos_import;
 #define gpr_time_from_nanos gpr_time_from_nanos_import
-typedef gpr_timespec(*gpr_time_from_millis_type)(long x, gpr_clock_type clock_type);
+typedef gpr_timespec(*gpr_time_from_millis_type)(int64_t x, gpr_clock_type clock_type);
 extern gpr_time_from_millis_type gpr_time_from_millis_import;
 #define gpr_time_from_millis gpr_time_from_millis_import
-typedef gpr_timespec(*gpr_time_from_seconds_type)(long x, gpr_clock_type clock_type);
+typedef gpr_timespec(*gpr_time_from_seconds_type)(int64_t x, gpr_clock_type clock_type);
 extern gpr_time_from_seconds_type gpr_time_from_seconds_import;
 #define gpr_time_from_seconds gpr_time_from_seconds_import
-typedef gpr_timespec(*gpr_time_from_minutes_type)(long x, gpr_clock_type clock_type);
+typedef gpr_timespec(*gpr_time_from_minutes_type)(int64_t x, gpr_clock_type clock_type);
 extern gpr_time_from_minutes_type gpr_time_from_minutes_import;
 #define gpr_time_from_minutes gpr_time_from_minutes_import
-typedef gpr_timespec(*gpr_time_from_hours_type)(long x, gpr_clock_type clock_type);
+typedef gpr_timespec(*gpr_time_from_hours_type)(int64_t x, gpr_clock_type clock_type);
 extern gpr_time_from_hours_type gpr_time_from_hours_import;
 #define gpr_time_from_hours gpr_time_from_hours_import
 typedef int32_t(*gpr_time_to_millis_type)(gpr_timespec timespec);
@@ -842,7 +842,15 @@ typedef void(*gpr_thd_join_type)(gpr_thd_id t);
 extern gpr_thd_join_type gpr_thd_join_import;
 #define gpr_thd_join gpr_thd_join_import
 
+#ifdef __cplusplus
+extern "C" {
+#endif  /* __cpluslus */
+
 void pygrpc_load_imports(HMODULE library);
+
+#ifdef __cplusplus
+}
+#endif  /* __cpluslus */
 
 #else /* !GPR_WIN32 */
 

@@ -41,7 +41,14 @@ census_initialize_type census_initialize_import;
 census_shutdown_type census_shutdown_import;
 census_supported_type census_supported_import;
 census_enabled_type census_enabled_import;
-census_context_serialize_type census_context_serialize_import;
+census_context_create_type census_context_create_import;
+census_context_destroy_type census_context_destroy_import;
+census_context_get_status_type census_context_get_status_import;
+census_context_initialize_iterator_type census_context_initialize_iterator_import;
+census_context_next_tag_type census_context_next_tag_import;
+census_context_get_tag_type census_context_get_tag_import;
+census_context_encode_type census_context_encode_import;
+census_context_decode_type census_context_decode_import;
 census_trace_mask_type census_trace_mask_import;
 census_set_trace_mask_type census_set_trace_mask_import;
 census_start_rpc_op_timestamp_type census_start_rpc_op_timestamp_import;
@@ -54,15 +61,6 @@ census_trace_print_type census_trace_print_import;
 census_trace_scan_start_type census_trace_scan_start_import;
 census_get_trace_record_type census_get_trace_record_import;
 census_trace_scan_end_type census_trace_scan_end_import;
-census_tag_set_create_type census_tag_set_create_import;
-census_tag_set_destroy_type census_tag_set_destroy_import;
-census_tag_set_get_create_status_type census_tag_set_get_create_status_import;
-census_tag_set_initialize_iterator_type census_tag_set_initialize_iterator_import;
-census_tag_set_next_tag_type census_tag_set_next_tag_import;
-census_tag_set_get_tag_by_key_type census_tag_set_get_tag_by_key_import;
-census_tag_set_encode_type census_tag_set_encode_import;
-census_tag_set_decode_type census_tag_set_decode_import;
-census_context_tag_set_type census_context_tag_set_import;
 census_record_values_type census_record_values_import;
 census_view_create_type census_view_create_import;
 census_view_delete_type census_view_delete_import;
@@ -139,6 +137,7 @@ grpc_auth_context_add_cstring_property_type grpc_auth_context_add_cstring_proper
 grpc_auth_context_set_peer_identity_property_name_type grpc_auth_context_set_peer_identity_property_name_import;
 grpc_channel_credentials_release_type grpc_channel_credentials_release_import;
 grpc_google_default_credentials_create_type grpc_google_default_credentials_create_import;
+grpc_set_ssl_roots_override_callback_type grpc_set_ssl_roots_override_callback_import;
 grpc_ssl_credentials_create_type grpc_ssl_credentials_create_import;
 grpc_call_credentials_release_type grpc_call_credentials_release_import;
 grpc_composite_channel_credentials_create_type grpc_composite_channel_credentials_create_import;
@@ -221,6 +220,7 @@ gpr_event_get_type gpr_event_get_import;
 gpr_event_wait_type gpr_event_wait_import;
 gpr_ref_init_type gpr_ref_init_import;
 gpr_ref_type gpr_ref_import;
+gpr_ref_non_zero_type gpr_ref_non_zero_import;
 gpr_refn_type gpr_refn_import;
 gpr_unref_type gpr_unref_import;
 gpr_stats_init_type gpr_stats_init_import;
@@ -298,12 +298,23 @@ gpr_thd_options_is_joinable_type gpr_thd_options_is_joinable_import;
 gpr_thd_currentid_type gpr_thd_currentid_import;
 gpr_thd_join_type gpr_thd_join_import;
 
+#ifdef __cplusplus
+extern "C" {
+#endif  /* __cpluslus */
+
 void pygrpc_load_imports(HMODULE library) {
   census_initialize_import = (census_initialize_type) GetProcAddress(library, "census_initialize");
   census_shutdown_import = (census_shutdown_type) GetProcAddress(library, "census_shutdown");
   census_supported_import = (census_supported_type) GetProcAddress(library, "census_supported");
   census_enabled_import = (census_enabled_type) GetProcAddress(library, "census_enabled");
-  census_context_serialize_import = (census_context_serialize_type) GetProcAddress(library, "census_context_serialize");
+  census_context_create_import = (census_context_create_type) GetProcAddress(library, "census_context_create");
+  census_context_destroy_import = (census_context_destroy_type) GetProcAddress(library, "census_context_destroy");
+  census_context_get_status_import = (census_context_get_status_type) GetProcAddress(library, "census_context_get_status");
+  census_context_initialize_iterator_import = (census_context_initialize_iterator_type) GetProcAddress(library, "census_context_initialize_iterator");
+  census_context_next_tag_import = (census_context_next_tag_type) GetProcAddress(library, "census_context_next_tag");
+  census_context_get_tag_import = (census_context_get_tag_type) GetProcAddress(library, "census_context_get_tag");
+  census_context_encode_import = (census_context_encode_type) GetProcAddress(library, "census_context_encode");
+  census_context_decode_import = (census_context_decode_type) GetProcAddress(library, "census_context_decode");
   census_trace_mask_import = (census_trace_mask_type) GetProcAddress(library, "census_trace_mask");
   census_set_trace_mask_import = (census_set_trace_mask_type) GetProcAddress(library, "census_set_trace_mask");
   census_start_rpc_op_timestamp_import = (census_start_rpc_op_timestamp_type) GetProcAddress(library, "census_start_rpc_op_timestamp");
@@ -316,15 +327,6 @@ void pygrpc_load_imports(HMODULE library) {
   census_trace_scan_start_import = (census_trace_scan_start_type) GetProcAddress(library, "census_trace_scan_start");
   census_get_trace_record_import = (census_get_trace_record_type) GetProcAddress(library, "census_get_trace_record");
   census_trace_scan_end_import = (census_trace_scan_end_type) GetProcAddress(library, "census_trace_scan_end");
-  census_tag_set_create_import = (census_tag_set_create_type) GetProcAddress(library, "census_tag_set_create");
-  census_tag_set_destroy_import = (census_tag_set_destroy_type) GetProcAddress(library, "census_tag_set_destroy");
-  census_tag_set_get_create_status_import = (census_tag_set_get_create_status_type) GetProcAddress(library, "census_tag_set_get_create_status");
-  census_tag_set_initialize_iterator_import = (census_tag_set_initialize_iterator_type) GetProcAddress(library, "census_tag_set_initialize_iterator");
-  census_tag_set_next_tag_import = (census_tag_set_next_tag_type) GetProcAddress(library, "census_tag_set_next_tag");
-  census_tag_set_get_tag_by_key_import = (census_tag_set_get_tag_by_key_type) GetProcAddress(library, "census_tag_set_get_tag_by_key");
-  census_tag_set_encode_import = (census_tag_set_encode_type) GetProcAddress(library, "census_tag_set_encode");
-  census_tag_set_decode_import = (census_tag_set_decode_type) GetProcAddress(library, "census_tag_set_decode");
-  census_context_tag_set_import = (census_context_tag_set_type) GetProcAddress(library, "census_context_tag_set");
   census_record_values_import = (census_record_values_type) GetProcAddress(library, "census_record_values");
   census_view_create_import = (census_view_create_type) GetProcAddress(library, "census_view_create");
   census_view_delete_import = (census_view_delete_type) GetProcAddress(library, "census_view_delete");
@@ -401,6 +403,7 @@ void pygrpc_load_imports(HMODULE library) {
   grpc_auth_context_set_peer_identity_property_name_import = (grpc_auth_context_set_peer_identity_property_name_type) GetProcAddress(library, "grpc_auth_context_set_peer_identity_property_name");
   grpc_channel_credentials_release_import = (grpc_channel_credentials_release_type) GetProcAddress(library, "grpc_channel_credentials_release");
   grpc_google_default_credentials_create_import = (grpc_google_default_credentials_create_type) GetProcAddress(library, "grpc_google_default_credentials_create");
+  grpc_set_ssl_roots_override_callback_import = (grpc_set_ssl_roots_override_callback_type) GetProcAddress(library, "grpc_set_ssl_roots_override_callback");
   grpc_ssl_credentials_create_import = (grpc_ssl_credentials_create_type) GetProcAddress(library, "grpc_ssl_credentials_create");
   grpc_call_credentials_release_import = (grpc_call_credentials_release_type) GetProcAddress(library, "grpc_call_credentials_release");
   grpc_composite_channel_credentials_create_import = (grpc_composite_channel_credentials_create_type) GetProcAddress(library, "grpc_composite_channel_credentials_create");
@@ -483,6 +486,7 @@ void pygrpc_load_imports(HMODULE library) {
   gpr_event_wait_import = (gpr_event_wait_type) GetProcAddress(library, "gpr_event_wait");
   gpr_ref_init_import = (gpr_ref_init_type) GetProcAddress(library, "gpr_ref_init");
   gpr_ref_import = (gpr_ref_type) GetProcAddress(library, "gpr_ref");
+  gpr_ref_non_zero_import = (gpr_ref_non_zero_type) GetProcAddress(library, "gpr_ref_non_zero");
   gpr_refn_import = (gpr_refn_type) GetProcAddress(library, "gpr_refn");
   gpr_unref_import = (gpr_unref_type) GetProcAddress(library, "gpr_unref");
   gpr_stats_init_import = (gpr_stats_init_type) GetProcAddress(library, "gpr_stats_init");
@@ -560,5 +564,9 @@ void pygrpc_load_imports(HMODULE library) {
   gpr_thd_currentid_import = (gpr_thd_currentid_type) GetProcAddress(library, "gpr_thd_currentid");
   gpr_thd_join_import = (gpr_thd_join_type) GetProcAddress(library, "gpr_thd_join");
 }
+
+#ifdef __cplusplus
+}
+#endif  /* __cpluslus */
 
 #endif /* !GPR_WIN32 */

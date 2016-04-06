@@ -1,5 +1,5 @@
 ﻿#region Copyright notice and license
-// Copyright 2015-2016, Google Inc.
+// Copyright 2015, Google Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -36,7 +36,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 using Grpc.Core;
-using Grpc.Health.V1Alpha;
+using Grpc.Health.V1;
 using NUnit.Framework;
 
 namespace Grpc.HealthCheck.Tests
@@ -49,7 +49,7 @@ namespace Grpc.HealthCheck.Tests
         const string Host = "localhost";
         Server server;
         Channel channel;
-        Grpc.Health.V1Alpha.Health.IHealthClient client;
+        Grpc.Health.V1.Health.HealthClient client;
         Grpc.HealthCheck.HealthServiceImpl serviceImpl;
 
         [TestFixtureSetUp]
@@ -59,13 +59,13 @@ namespace Grpc.HealthCheck.Tests
 
             server = new Server
             {
-                Services = { Grpc.Health.V1Alpha.Health.BindService(serviceImpl) },
+                Services = { Grpc.Health.V1.Health.BindService(serviceImpl) },
                 Ports = { { Host, ServerPort.PickUnused, ServerCredentials.Insecure } }
             };
             server.Start();
             channel = new Channel(Host, server.Ports.Single().BoundPort, ChannelCredentials.Insecure);
 
-            client = Grpc.Health.V1Alpha.Health.NewClient(channel);
+            client = Grpc.Health.V1.Health.NewClient(channel);
         }
 
         [TestFixtureTearDown]
@@ -79,16 +79,16 @@ namespace Grpc.HealthCheck.Tests
         [Test]
         public void ServiceIsRunning()
         {
-            serviceImpl.SetStatus("", "", HealthCheckResponse.Types.ServingStatus.SERVING);
+            serviceImpl.SetStatus("", HealthCheckResponse.Types.ServingStatus.SERVING);
 
-            var response = client.Check(new HealthCheckRequest { Host = "", Service = "" });
+            var response = client.Check(new HealthCheckRequest { Service = "" });
             Assert.AreEqual(HealthCheckResponse.Types.ServingStatus.SERVING, response.Status);
         }
 
         [Test]
         public void ServiceDoesntExist()
         {
-            Assert.Throws(Is.TypeOf(typeof(RpcException)).And.Property("Status").Property("StatusCode").EqualTo(StatusCode.NotFound), () => client.Check(new HealthCheckRequest { Host = "", Service = "nonexistent.service" }));
+            Assert.Throws(Is.TypeOf(typeof(RpcException)).And.Property("Status").Property("StatusCode").EqualTo(StatusCode.NotFound), () => client.Check(new HealthCheckRequest { Service = "nonexistent.service" }));
         }
 
         // TODO(jtattermusch): add test with timeout once timeouts are supported

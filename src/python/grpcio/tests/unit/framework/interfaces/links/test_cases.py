@@ -33,6 +33,8 @@
 import abc
 import unittest  # pylint: disable=unused-import
 
+import six
+
 from grpc.framework.interfaces.links import links
 from tests.unit.framework.common import test_constants
 from tests.unit.framework.interfaces.links import test_utilities
@@ -58,13 +60,12 @@ _TRANSMISSION_GROUP = 'test.Group'
 _TRANSMISSION_METHOD = 'TestMethod'
 
 
-class TransmissionTest(object):
+class TransmissionTest(six.with_metaclass(abc.ABCMeta)):
   """Tests ticket transmission between two connected links.
 
   This class must be mixed into a unittest.TestCase that implements the abstract
   methods it provides.
   """
-  __metaclass__ = abc.ABCMeta
 
   # This is a unittest.TestCase mix-in.
   # pylint: disable=invalid-name

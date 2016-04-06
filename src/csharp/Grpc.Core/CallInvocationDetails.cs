@@ -85,11 +85,11 @@ namespace Grpc.Core
         /// <param name="options">Call options.</param>
         public CallInvocationDetails(Channel channel, string method, string host, Marshaller<TRequest> requestMarshaller, Marshaller<TResponse> responseMarshaller, CallOptions options)
         {
-            this.channel = Preconditions.CheckNotNull(channel, "channel");
-            this.method = Preconditions.CheckNotNull(method, "method");
+            this.channel = GrpcPreconditions.CheckNotNull(channel, "channel");
+            this.method = GrpcPreconditions.CheckNotNull(method, "method");
             this.host = host;
-            this.requestMarshaller = Preconditions.CheckNotNull(requestMarshaller, "requestMarshaller");
-            this.responseMarshaller = Preconditions.CheckNotNull(responseMarshaller, "responseMarshaller");
+            this.requestMarshaller = GrpcPreconditions.CheckNotNull(requestMarshaller, "requestMarshaller");
+            this.responseMarshaller = GrpcPreconditions.CheckNotNull(responseMarshaller, "responseMarshaller");
             this.options = options;
         }
 

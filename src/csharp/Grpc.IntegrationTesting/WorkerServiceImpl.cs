@@ -45,11 +45,18 @@ namespace Grpc.Testing
     /// <summary>
     /// Implementation of WorkerService server
     /// </summary>
-    public class WorkerServiceImpl : WorkerService.IWorkerService
+    public class WorkerServiceImpl : WorkerService.WorkerServiceBase
     {
-        public async Task RunServer(IAsyncStreamReader<ServerArgs> requestStream, IServerStreamWriter<ServerStatus> responseStream, ServerCallContext context)
+        readonly Action stopRequestHandler;
+
+        public WorkerServiceImpl(Action stopRequestHandler)
         {
-            Grpc.Core.Utils.Preconditions.CheckState(await requestStream.MoveNext());
+            this.stopRequestHandler = GrpcPreconditions.CheckNotNull(stopRequestHandler);
+        }
+        
+        public override async Task RunServer(IAsyncStreamReader<ServerArgs> requestStream, IServerStreamWriter<ServerStatus> responseStream, ServerCallContext context)
+        {
+            GrpcPreconditions.CheckState(await requestStream.MoveNext());
             var serverConfig = requestStream.Current.Setup;
             var runner = ServerRunners.CreateStarted(serverConfig);
 
@@ -71,9 +78,9 @@ namespace Grpc.Testing
             await runner.StopAsync();
         }
 
-        public async Task RunClient(IAsyncStreamReader<ClientArgs> requestStream, IServerStreamWriter<ClientStatus> responseStream, ServerCallContext context)
+        public override async Task RunClient(IAsyncStreamReader<ClientArgs> requestStream, IServerStreamWriter<ClientStatus> responseStream, ServerCallContext context)
         {
-            Grpc.Core.Utils.Preconditions.CheckState(await requestStream.MoveNext());
+            GrpcPreconditions.CheckState(await requestStream.MoveNext());
             var clientConfig = requestStream.Current.Setup;
             var runner = ClientRunners.CreateStarted(clientConfig);
 
@@ -91,6 +98,17 @@ namespace Grpc.Testing
                 });
             }
             await runner.StopAsync();
+        }
+
+        public override Task<CoreResponse> CoreCount(CoreRequest request, ServerCallContext context)
+        {
+            return Task.FromResult(new CoreResponse { Cores = Environment.ProcessorCount });
+        }
+
+        public override Task<Void> QuitWorker(Void request, ServerCallContext context)
+        {
+            stopRequestHandler();
+            return Task.FromResult(new Void());
         }
     }
 }

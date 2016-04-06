@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2015-2016, Google Inc.
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -32,10 +32,9 @@ set -ex
 
 cd $(dirname $0)
 
-unzip "$EXTERNAL_GIT_ROOT/input_artifacts/csharp_nugets.zip" -d TestNugetFeed
+unzip -o "$EXTERNAL_GIT_ROOT/input_artifacts/csharp_nugets.zip" -d TestNugetFeed
 
-# TODO(jtattermusch): replace the version number
-./update_version.sh 0.13.0
+./update_version.sh auto
 
 nuget restore
 

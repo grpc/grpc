@@ -68,11 +68,11 @@ def create_jobspec(name, cmdline, environ=None, cwd=None, shell=False,
   return jobspec
 
 
-class CSharpNugetTarget:
+class CSharpPackage:
   """Builds C# nuget packages."""
 
   def __init__(self):
-    self.name = 'csharp_nuget'
+    self.name = 'csharp_package'
     self.labels = ['package', 'csharp', 'windows']
 
   def pre_build_jobspecs(self):
@@ -87,11 +87,12 @@ class CSharpNugetTarget:
   def __str__(self):
     return self.name
 
-class NodeNpmBinaryTarget:
-  """Builds Node NPM package and collects binaries"""
+
+class NodePackage:
+  """Builds Node NPM package and collects precompiled binaries"""
 
   def __init__(self):
-    self.name = 'node_npm_binary'
+    self.name = 'node_package'
     self.labels = ['package', 'node', 'linux']
 
   def pre_build_jobspecs(self):
@@ -103,6 +104,62 @@ class NodeNpmBinaryTarget:
         'tools/dockerfile/grpc_artifact_linux_x64',
         'tools/run_tests/build_package_node.sh')
 
+
+class RubyPackage:
+  """Collects ruby gems created in the artifact phase"""
+
+  def __init__(self):
+    self.name = 'ruby_package'
+    self.labels = ['package', 'ruby', 'linux']
+
+  def pre_build_jobspecs(self):
+    return []
+
+  def build_jobspec(self):
+    return create_docker_jobspec(
+        self.name,
+        'tools/dockerfile/grpc_artifact_linux_x64',
+        'tools/run_tests/build_package_ruby.sh')
+
+
+class PythonPackage:
+  """Collects python eggs and wheels created in the artifact phase"""
+
+  def __init__(self):
+    self.name = 'python_package'
+    self.labels = ['package', 'python', 'linux']
+
+  def pre_build_jobspecs(self):
+    return []
+
+  def build_jobspec(self):
+    return create_docker_jobspec(
+        self.name,
+        'tools/dockerfile/grpc_artifact_linux_x64',
+        'tools/run_tests/build_package_python.sh')
+
+
+class PHPPackage:
+  """Copy PHP PECL package artifact"""
+
+  def __init__(self):
+    self.name = 'php_package'
+    self.labels = ['package', 'php', 'linux']
+
+  def pre_build_jobspecs(self):
+    return []
+
+  def build_jobspec(self):
+    return create_docker_jobspec(
+        self.name,
+        'tools/dockerfile/grpc_artifact_linux_x64',
+        'tools/run_tests/build_package_php.sh')
+
+
 def targets():
   """Gets list of supported targets"""
-  return [CSharpNugetTarget(), NodeNpmBinaryTarget()]
+  return [CSharpPackage(),
+          NodePackage(),
+          RubyPackage(),
+          PythonPackage(),
+          PHPPackage()]

@@ -1,5 +1,5 @@
 #
-# Copyright 2015-2016, Google Inc.
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -94,7 +94,7 @@ ifneq ($(HAS_VALID_PROTOC),true)
 	@echo "Please install Google protocol buffers 3.0.0 and its compiler."
 	@echo "You can find it here:"
 	@echo
-	@echo "   https://github.com/google/protobuf/releases/tag/v3.0.0-alpha-1"
+	@echo "   https://github.com/google/protobuf/releases/tag/v3.0.0-beta-2"
 	@echo
 	@echo "Here is what I get when trying to evaluate your version of protoc:"
 	@echo

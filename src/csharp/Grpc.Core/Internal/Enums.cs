@@ -72,7 +72,7 @@ namespace Grpc.Core.Internal
         /// </summary>
         public static void CheckOk(this GRPCCallError callError)
         {
-            Preconditions.CheckState(callError == GRPCCallError.OK, "Call error: " + callError);
+            GrpcPreconditions.CheckState(callError == GRPCCallError.OK, "Call error: " + callError);
         }
     }
 

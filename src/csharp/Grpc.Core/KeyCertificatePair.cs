@@ -54,8 +54,8 @@ namespace Grpc.Core
         /// <param name="privateKey">PEM encoded private key.</param>
         public KeyCertificatePair(string certificateChain, string privateKey)
         {
-            this.certificateChain = Preconditions.CheckNotNull(certificateChain, "certificateChain");
-            this.privateKey = Preconditions.CheckNotNull(privateKey, "privateKey");
+            this.certificateChain = GrpcPreconditions.CheckNotNull(certificateChain, "certificateChain");
+            this.privateKey = GrpcPreconditions.CheckNotNull(privateKey, "privateKey");
         }
 
         /// <summary>

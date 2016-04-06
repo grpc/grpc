@@ -33,14 +33,14 @@
 
 /* Test of gpr time support. */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <limits.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/thd.h>
 #include <grpc/support/time.h>
+#include <limits.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include "test/core/util/test_config.h"
 
 static void to_fp(void *arg, const char *buf, size_t len) {
@@ -125,15 +125,15 @@ static void test_values(void) {
   }
 
   /* Test possible overflow in conversion of -ve values. */
-  x = gpr_time_from_micros(-(LONG_MAX - 999997), GPR_TIMESPAN);
+  x = gpr_time_from_micros(-(INT64_MAX - 999997), GPR_TIMESPAN);
   GPR_ASSERT(x.tv_sec < 0);
   GPR_ASSERT(x.tv_nsec >= 0 && x.tv_nsec < GPR_NS_PER_SEC);
 
-  x = gpr_time_from_nanos(-(LONG_MAX - 999999997), GPR_TIMESPAN);
+  x = gpr_time_from_nanos(-(INT64_MAX - 999999997), GPR_TIMESPAN);
   GPR_ASSERT(x.tv_sec < 0);
   GPR_ASSERT(x.tv_nsec >= 0 && x.tv_nsec < GPR_NS_PER_SEC);
 
-  x = gpr_time_from_millis(-(LONG_MAX - 997), GPR_TIMESPAN);
+  x = gpr_time_from_millis(-(INT64_MAX - 997), GPR_TIMESPAN);
   GPR_ASSERT(x.tv_sec < 0);
   GPR_ASSERT(x.tv_nsec >= 0 && x.tv_nsec < GPR_NS_PER_SEC);
 

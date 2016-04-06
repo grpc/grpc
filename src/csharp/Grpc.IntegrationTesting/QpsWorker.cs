@@ -85,24 +85,27 @@ namespace Grpc.IntegrationTesting
             }
 
             var workerServer = new QpsWorker(options);
-            workerServer.Run();
+            workerServer.RunAsync().Wait();
         }
 
-        private void Run()
+        private async Task RunAsync()
         {
             string host = "0.0.0.0";
             int port = options.DriverPort;
 
+            var tcs = new TaskCompletionSource<object>();
+            var workerServiceImpl = new WorkerServiceImpl(() => { Task.Run(() => tcs.SetResult(null)); });
+                
             var server = new Server
             {
-                Services = { WorkerService.BindService(new WorkerServiceImpl()) },
+                Services = { WorkerService.BindService(workerServiceImpl) },
                 Ports = { new ServerPort(host, options.DriverPort, ServerCredentials.Insecure )}
             };
             int boundPort = server.Ports.Single().BoundPort;
             Console.WriteLine("Running qps worker server on " + string.Format("{0}:{1}", host, boundPort));
             server.Start();
-
-            server.ShutdownTask.Wait();
+            await tcs.Task;
+            await server.ShutdownAsync();
         }
     }
 }

@@ -1,4 +1,4 @@
-# Copyright 2015-2016, Google Inc.
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -29,6 +29,17 @@
 
 FROM opensuse:42.1
 
-RUN zypper --non-interactive install git
-RUN zypper --non-interactive install ruby
+RUN zypper --non-interactive install curl
 
+RUN zypper --non-interactive install tar which
+
+RUN zypper --non-interactive install ca-certificates-mozilla
+
+# Install rvm
+RUN gpg --keyserver hkp://keys.gnupg.net --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3
+RUN \curl -sSL https://get.rvm.io | bash -s stable --ruby
+
+# OpenSUSE is a bit crazy and ignores .bashrc for login shell.
+RUN /bin/bash -l -c "echo '. /etc/profile.d/rvm.sh' >> ~/.profile"
+
+RUN /bin/bash -l -c 'gem install --update bundler'

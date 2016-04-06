@@ -220,16 +220,7 @@ describe GRPC::RpcServer do
       @srv = RpcServer.new(**opts)
     end
 
-    after(:each) do
-      @srv.stop
-    end
-
     it 'starts out false' do
-      expect(@srv.stopped?).to be(false)
-    end
-
-    it 'stays false after a #stop is called before #run' do
-      @srv.stop
       expect(@srv.stopped?).to be(false)
     end
 
@@ -247,8 +238,8 @@ describe GRPC::RpcServer do
       t = Thread.new { @srv.run }
       @srv.wait_till_running
       @srv.stop
-      expect(@srv.stopped?).to be(true)
       t.join
+      expect(@srv.stopped?).to be(true)
     end
   end
 
@@ -266,9 +257,7 @@ describe GRPC::RpcServer do
         server_override: @server
       }
       r = RpcServer.new(**opts)
-      r.run
-      expect(r.running?).to be(false)
-      r.stop
+      expect { r.run }.to raise_error(RuntimeError)
     end
 
     it 'is true after run is called with a registered service' do
@@ -291,10 +280,6 @@ describe GRPC::RpcServer do
     before(:each) do
       @opts = { a_channel_arg: 'an_arg', poll_period: 1 }
       @srv = RpcServer.new(**@opts)
-    end
-
-    after(:each) do
-      @srv.stop
     end
 
     it 'raises if #run has already been called' do
@@ -441,7 +426,7 @@ describe GRPC::RpcServer do
         threads.each(&:join)
       end
 
-      it 'should return UNAVAILABLE on too many jobs', server: true do
+      it 'should return RESOURCE_EXHAUSTED on too many jobs', server: true do
         opts = {
           a_channel_arg: 'an_arg',
           server_override: @server,
@@ -464,7 +449,8 @@ describe GRPC::RpcServer do
             begin
               stub.an_rpc(req)
             rescue GRPC::BadStatus => e
-              one_failed_as_unavailable = e.code == StatusCodes::UNAVAILABLE
+              one_failed_as_unavailable =
+                e.code == StatusCodes::RESOURCE_EXHAUSTED
             end
           end
         end
@@ -526,10 +512,6 @@ describe GRPC::RpcServer do
           poll_period: 1
         }
         @srv = RpcServer.new(**server_opts)
-      end
-
-      after(:each) do
-        @srv.stop
       end
 
       it 'should be added to BadStatus when requests fail', server: true do

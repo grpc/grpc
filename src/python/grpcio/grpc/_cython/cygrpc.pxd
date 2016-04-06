@@ -1,4 +1,4 @@
-# Copyright 2015-2016, Google Inc.
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -34,4 +34,5 @@ include "grpc/_cython/_cygrpc/channel.pxd.pxi"
 include "grpc/_cython/_cygrpc/credentials.pxd.pxi"
 include "grpc/_cython/_cygrpc/completion_queue.pxd.pxi"
 include "grpc/_cython/_cygrpc/records.pxd.pxi"
+include "grpc/_cython/_cygrpc/security.pxd.pxi"
 include "grpc/_cython/_cygrpc/server.pxd.pxi"

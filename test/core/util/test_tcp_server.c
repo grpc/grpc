@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -40,9 +40,9 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 #include <string.h>
-#include "src/core/iomgr/endpoint.h"
-#include "src/core/iomgr/sockaddr.h"
-#include "src/core/iomgr/tcp_server.h"
+#include "src/core/lib/iomgr/endpoint.h"
+#include "src/core/lib/iomgr/sockaddr.h"
+#include "src/core/lib/iomgr/tcp_server.h"
 #include "test/core/util/port.h"
 
 static void on_server_destroyed(grpc_exec_ctx *exec_ctx, void *data,
@@ -57,8 +57,8 @@ void test_tcp_server_init(test_tcp_server *server,
   server->tcp_server = NULL;
   grpc_closure_init(&server->shutdown_complete, on_server_destroyed, server);
   server->shutdown = 0;
-  grpc_pollset_init(&server->pollset);
-  server->pollsets[0] = &server->pollset;
+  server->pollset = gpr_malloc(grpc_pollset_size());
+  grpc_pollset_init(server->pollset, &server->mu);
   server->on_connect = on_connect;
   server->cb_data = user_data;
 }
@@ -77,7 +77,7 @@ void test_tcp_server_start(test_tcp_server *server, int port) {
       grpc_tcp_server_add_port(server->tcp_server, &addr, sizeof(addr));
   GPR_ASSERT(port_added == port);
 
-  grpc_tcp_server_start(&exec_ctx, server->tcp_server, server->pollsets, 1,
+  grpc_tcp_server_start(&exec_ctx, server->tcp_server, &server->pollset, 1,
                         server->on_connect, server->cb_data);
   gpr_log(GPR_INFO, "test tcp server listening on 0.0.0.0:%d", port);
 
@@ -85,15 +85,15 @@ void test_tcp_server_start(test_tcp_server *server, int port) {
 }
 
 void test_tcp_server_poll(test_tcp_server *server, int seconds) {
-  grpc_pollset_worker worker;
+  grpc_pollset_worker *worker = NULL;
   gpr_timespec deadline =
       gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
                    gpr_time_from_seconds(seconds, GPR_TIMESPAN));
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  gpr_mu_lock(GRPC_POLLSET_MU(&server->pollset));
-  grpc_pollset_work(&exec_ctx, &server->pollset, &worker,
+  gpr_mu_lock(server->mu);
+  grpc_pollset_work(&exec_ctx, server->pollset, &worker,
                     gpr_now(GPR_CLOCK_MONOTONIC), deadline);
-  gpr_mu_unlock(GRPC_POLLSET_MU(&server->pollset));
+  gpr_mu_unlock(server->mu);
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
@@ -111,8 +111,9 @@ void test_tcp_server_destroy(test_tcp_server *server) {
          gpr_time_cmp(gpr_now(GPR_CLOCK_MONOTONIC), shutdown_deadline) < 0) {
     test_tcp_server_poll(server, 1);
   }
-  grpc_pollset_shutdown(&exec_ctx, &server->pollset, &do_nothing_cb);
+  grpc_pollset_shutdown(&exec_ctx, server->pollset, &do_nothing_cb);
   grpc_exec_ctx_finish(&exec_ctx);
-  grpc_pollset_destroy(&server->pollset);
+  grpc_pollset_destroy(server->pollset);
+  gpr_free(server->pollset);
   grpc_shutdown();
 }

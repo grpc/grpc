@@ -2,9 +2,8 @@ Interoperability Test Case Descriptions
 =======================================
 
 Client and server use
-[test.proto](https://github.com/grpc/grpc/blob/master/test/proto/test.proto)
-and the [gRPC over HTTP/2 v2
-protocol](https://github.com/grpc/grpc/blob/master/doc/PROTOCOL-HTTP2.md).
+[test.proto](../src/proto/grpc/testing/test.proto)
+and the [gRPC over HTTP/2 v2 protocol](./PROTOCOL-HTTP2.md).
 
 Client
 ------
@@ -28,7 +27,7 @@ Clients should accept these arguments:
     * Whether to use a plaintext or encrypted connection
 * --use_test_ca=BOOLEAN
     * Whether to replace platform root CAs with
-      [ca.pem](https://github.com/grpc/grpc/blob/master/src/core/tsi/test_creds/ca.pem)
+      [ca.pem](https://github.com/grpc/grpc/blob/master/src/core/lib/tsi/test_creds/ca.pem)
       as the CA root
 * --default_service_account=ACCOUNT_EMAIL
     * Email of the GCE default service account. Only applicable
@@ -921,7 +920,7 @@ Servers should accept these arguments:
     * Whether to use a plaintext or encrypted connection
 
 Servers must support TLS with ALPN. They should use
-[server1.pem](https://github.com/grpc/grpc/blob/master/src/core/tsi/test_creds/server1.pem)
+[server1.pem](https://github.com/grpc/grpc/blob/master/src/core/lib/tsi/test_creds/server1.pem)
 for their certificate.
 
 ### EmptyCall

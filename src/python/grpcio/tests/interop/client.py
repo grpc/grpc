@@ -94,7 +94,7 @@ def _stub(args):
 
     channel = test_utilities.not_really_secure_channel(
         args.server_host, args.server_port,
-        implementations.ssl_channel_credentials(root_certificates, None, None),
+        implementations.ssl_channel_credentials(root_certificates),
         args.server_host_override)
     stub = test_pb2.beta_create_TestService_stub(
         channel, metadata_transformer=metadata_transformer)

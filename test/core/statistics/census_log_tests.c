@@ -31,10 +31,7 @@
  *
  */
 
-#include "src/core/statistics/census_log.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include "src/core/ext/census/census_log.h"
 #include <grpc/support/cpu.h>
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
@@ -42,6 +39,9 @@
 #include <grpc/support/thd.h>
 #include <grpc/support/time.h>
 #include <grpc/support/useful.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include "test/core/util/test_config.h"
 
 /* Fills in 'record' of size 'size'. Each byte in record is filled in with the
@@ -237,8 +237,8 @@ static void reader_thread(void *arg) {
   gpr_timespec interval;
   int counter = 0;
   printf("   Reader starting\n");
-  interval = gpr_time_from_micros(args->read_iteration_interval_in_msec * 1000,
-                                  GPR_TIMESPAN);
+  interval = gpr_time_from_micros(
+      (int64_t)args->read_iteration_interval_in_msec * 1000, GPR_TIMESPAN);
   gpr_mu_lock(args->mu);
   while (!args->stop_flag && records_read < args->total_records) {
     gpr_cv_wait(&args->stop, args->mu, interval);

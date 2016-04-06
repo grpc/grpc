@@ -1,6 +1,6 @@
 #region Copyright notice and license
 
-// Copyright 2015-2016, Google Inc.
+// Copyright 2015, Google Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -56,7 +56,7 @@ namespace Grpc.Core.Internal
         {
             lock (staticLock)
             {
-                var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(RootsPemResourceName);
+                var stream = typeof(DefaultSslRootsOverride).GetTypeInfo().Assembly.GetManifestResourceStream(RootsPemResourceName);
                 if (stream == null)
                 {
                     throw new IOException(string.Format("Error loading the embedded resource \"{0}\"", RootsPemResourceName));   

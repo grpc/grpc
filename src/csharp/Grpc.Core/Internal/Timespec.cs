@@ -1,5 +1,5 @@
 #region Copyright notice and license
-// Copyright 2015-2016, Google Inc.
+// Copyright 2015, Google Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -141,8 +141,8 @@ namespace Grpc.Core.Internal
         /// </summary>
         public DateTime ToDateTime()
         {
-            Preconditions.CheckState(tv_nsec >= 0 && tv_nsec < NanosPerSecond);
-            Preconditions.CheckState(clock_type == GPRClockType.Realtime);
+            GrpcPreconditions.CheckState(tv_nsec >= 0 && tv_nsec < NanosPerSecond);
+            GrpcPreconditions.CheckState(clock_type == GPRClockType.Realtime);
 
             // fast path for InfFuture
             if (this.Equals(InfFuture))
@@ -195,7 +195,7 @@ namespace Grpc.Core.Internal
                 return Timespec.InfPast;
             }
 
-            Preconditions.CheckArgument(dateTime.Kind == DateTimeKind.Utc, "dateTime needs of kind DateTimeKind.Utc or be equal to DateTime.MaxValue or DateTime.MinValue.");
+            GrpcPreconditions.CheckArgument(dateTime.Kind == DateTimeKind.Utc, "dateTime needs of kind DateTimeKind.Utc or be equal to DateTime.MaxValue or DateTime.MinValue.");
 
             try
             {

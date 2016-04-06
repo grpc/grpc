@@ -36,7 +36,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/useful.h>
 
-#include "src/core/channel/channel_args.h"
+#include "src/core/lib/channel/channel_args.h"
 
 #include "test/core/util/test_config.h"
 

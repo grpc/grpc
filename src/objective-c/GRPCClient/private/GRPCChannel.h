@@ -33,18 +33,54 @@
 
 #import <Foundation/Foundation.h>
 
-struct grpc_channel;
+#include <grpc/grpc.h>
+
+@class GRPCCompletionQueue;
+struct grpc_channel_credentials;
+
 
 /**
  * Each separate instance of this class represents at least one TCP connection to the provided host.
- * Create them using one of the subclasses |GRPCSecureChannel| and |GRPCUnsecuredChannel|.
  */
 @interface GRPCChannel : NSObject
-@property(nonatomic, readonly) struct grpc_channel *unmanagedChannel;
+
+@property(nonatomic, readonly, nonnull) struct grpc_channel *unmanagedChannel;
+
+- (nullable instancetype)init NS_UNAVAILABLE;
 
 /**
- * This initializer takes ownership of the passed channel, and will destroy it when this object is
- * deallocated. It's illegal to pass the same grpc_channel to two different GRPCChannel objects.
+ * Creates a secure channel to the specified @c host using default credentials and channel
+ * arguments. If certificates could not be found to create a secure channel, then @c nil is
+ * returned.
  */
-- (instancetype)initWithChannel:(struct grpc_channel *)unmanagedChannel NS_DESIGNATED_INITIALIZER;
++ (nullable GRPCChannel *)secureChannelWithHost:(nonnull NSString *)host;
+
+/**
+ * Creates a secure channel to the specified @c host using the specified @c pathToCertificates and 
+ * @c channelArgs. Only in tests should @c pathToCertificates be nil or
+ * @c GRPC_SSL_TARGET_NAME_OVERRIDE_ARG channel arg be set. Passing nil for @c pathToCertificates
+ * results in using the default root certificates distributed with the library. If certificates
+ * could not be found in any case, then @c nil is returned.
+ */
++ (nullable GRPCChannel *)secureChannelWithHost:(nonnull NSString *)host
+                             pathToCertificates:(nullable NSString *)pathToCertificates
+                                    channelArgs:(nullable NSDictionary *)channelArgs;
+
+
+/**
+ * Creates a secure channel to the specified @c host using the specified @c credentials and
+ * @c channelArgs. Only in tests should @c GRPC_SSL_TARGET_NAME_OVERRIDE_ARG channel arg be set.
+ */
++ (nonnull GRPCChannel *)secureChannelWithHost:(nonnull NSString *)host
+    credentials:(nonnull struct grpc_channel_credentials *)credentials
+    channelArgs:(nullable NSDictionary *)channelArgs;
+
+/**
+ * Creates an insecure channel to the specified @c host using the specified @c channelArgs.
+ */
++ (nonnull GRPCChannel *)insecureChannelWithHost:(nonnull NSString *)host
+                                     channelArgs:(nullable NSDictionary *)channelArgs;
+
+- (nullable grpc_call *)unmanagedCallWithPath:(nonnull NSString *)path
+                              completionQueue:(nonnull GRPCCompletionQueue *)queue;
 @end

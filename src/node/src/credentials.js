@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -98,6 +98,8 @@ exports.createFromMetadataGenerator = function(metadata_generator) {
         message = error.message;
         if (error.hasOwnProperty('code')) {
           code = error.code;
+        } else {
+          code = grpc.status.UNAUTHENTICATED;
         }
         if (!metadata) {
           metadata = new Metadata();
@@ -118,6 +120,7 @@ exports.createFromGoogleCredential = function(google_credential) {
     var service_url = auth_context.service_url;
     google_credential.getRequestMetadata(service_url, function(err, header) {
       if (err) {
+        console.log('Auth error:', err);
         callback(err);
         return;
       }

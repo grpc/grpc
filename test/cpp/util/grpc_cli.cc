@@ -65,11 +65,11 @@
 #include <sstream>
 
 #include <gflags/gflags.h>
-#include <grpc/grpc.h>
 #include <grpc++/channel.h>
 #include <grpc++/create_channel.h>
 #include <grpc++/security/credentials.h>
 #include <grpc++/support/string_ref.h>
+#include <grpc/grpc.h>
 
 #include "test/cpp/util/cli_call.h"
 #include "test/cpp/util/string_ref_helper.h"

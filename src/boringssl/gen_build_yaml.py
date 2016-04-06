@@ -1,5 +1,5 @@
 #!/usr/bin/env python2.7
-# Copyright 2015-2016, Google Inc.
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -32,6 +32,8 @@ import shutil
 import sys
 import os
 import yaml
+
+sys.dont_write_bytecode = True
 
 boring_ssl_root = os.path.abspath(os.path.join(
     os.path.dirname(sys.argv[0]), 

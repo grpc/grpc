@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -42,7 +42,7 @@ extern "C" {
  * formatted error message, corresponding to the error messageid.
  * Use in conjunction with GetLastError() et al.
  */
-GPR_API char *gpr_format_message(int messageid);
+GPRAPI char *gpr_format_message(int messageid);
 
 #ifdef __cplusplus
 }

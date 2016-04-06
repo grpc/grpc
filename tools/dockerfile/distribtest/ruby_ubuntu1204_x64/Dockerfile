@@ -1,4 +1,4 @@
-# Copyright 2015-2016, Google Inc.
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -29,7 +29,11 @@
 
 FROM ubuntu:12.04
 
-RUN apt-get update -y
-RUN apt-get install -y git
-RUN apt-get install -y ruby-full
+RUN apt-get update -y && apt-get install -y curl
 
+# Install rvm
+RUN gpg --keyserver hkp://keys.gnupg.net --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3
+RUN \curl -sSL https://get.rvm.io | bash -s stable --ruby
+
+RUN /bin/bash -l -c "echo '. /etc/profile.d/rvm.sh' >> ~/.bashrc"
+RUN /bin/bash -l -c "gem install --update bundler"

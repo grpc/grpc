@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -42,10 +42,11 @@
 #include <grpc/support/slice.h>
 #include <grpc/support/sync.h>
 
-#include "src/core/security/credentials.h"
+#include "src/core/lib/security/credentials.h"
 
 typedef struct {
-  grpc_pollset pollset;
+  gpr_mu *mu;
+  grpc_pollset *pollset;
   int is_done;
   char *token;
 } oauth2_request;
@@ -66,11 +67,11 @@ static void on_oauth2_response(grpc_exec_ctx *exec_ctx, void *user_data,
            GPR_SLICE_LENGTH(token_slice));
     token[GPR_SLICE_LENGTH(token_slice)] = '\0';
   }
-  gpr_mu_lock(GRPC_POLLSET_MU(&request->pollset));
+  gpr_mu_lock(request->mu);
   request->is_done = 1;
   request->token = token;
-  grpc_pollset_kick(&request->pollset, NULL);
-  gpr_mu_unlock(GRPC_POLLSET_MU(&request->pollset));
+  grpc_pollset_kick(request->pollset, NULL);
+  gpr_mu_unlock(request->mu);
 }
 
 static void do_nothing(grpc_exec_ctx *exec_ctx, void *unused, bool success) {}
@@ -82,28 +83,30 @@ char *grpc_test_fetch_oauth2_token_with_credentials(
   grpc_closure do_nothing_closure;
   grpc_auth_metadata_context null_ctx = {"", "", NULL, NULL};
 
-  grpc_pollset_init(&request.pollset);
+  request.pollset = gpr_malloc(grpc_pollset_size());
+  grpc_pollset_init(request.pollset, &request.mu);
   request.is_done = 0;
 
   grpc_closure_init(&do_nothing_closure, do_nothing, NULL);
 
-  grpc_call_credentials_get_request_metadata(&exec_ctx, creds, &request.pollset,
+  grpc_call_credentials_get_request_metadata(&exec_ctx, creds, request.pollset,
                                              null_ctx, on_oauth2_response,
                                              &request);
 
   grpc_exec_ctx_finish(&exec_ctx);
 
-  gpr_mu_lock(GRPC_POLLSET_MU(&request.pollset));
+  gpr_mu_lock(request.mu);
   while (!request.is_done) {
-    grpc_pollset_worker worker;
-    grpc_pollset_work(&exec_ctx, &request.pollset, &worker,
+    grpc_pollset_worker *worker = NULL;
+    grpc_pollset_work(&exec_ctx, request.pollset, &worker,
                       gpr_now(GPR_CLOCK_MONOTONIC),
                       gpr_inf_future(GPR_CLOCK_MONOTONIC));
   }
-  gpr_mu_unlock(GRPC_POLLSET_MU(&request.pollset));
+  gpr_mu_unlock(request.mu);
 
-  grpc_pollset_shutdown(&exec_ctx, &request.pollset, &do_nothing_closure);
+  grpc_pollset_shutdown(&exec_ctx, request.pollset, &do_nothing_closure);
   grpc_exec_ctx_finish(&exec_ctx);
-  grpc_pollset_destroy(&request.pollset);
+  grpc_pollset_destroy(request.pollset);
+  gpr_free(request.pollset);
   return request.token;
 }

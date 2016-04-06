@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Google Inc.
+// Copyright 2015, Google Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -65,4 +65,7 @@ service WorkerService {
 
   // Just return the core count - unary call
   rpc CoreCount(CoreRequest) returns (CoreResponse);
+
+  // Quit this worker
+  rpc QuitWorker(Void) returns (Void);
 }

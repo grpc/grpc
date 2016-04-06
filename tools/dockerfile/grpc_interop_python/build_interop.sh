@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2015-2016, Google Inc.
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -39,7 +39,6 @@ cp -r /var/local/jenkins/service_account $HOME || true
 
 cd /var/local/git/grpc
 
-make install-certs
 make
 
 # build Python interop client and server
