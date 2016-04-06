@@ -112,7 +112,7 @@ void grpc_chttp2_publish_reads(
      GOAWAY last-grpc_chttp2_stream-id=0 in this case. */
   if (!transport_parsing->is_client) {
     transport_global->last_incoming_stream_id =
-        transport_parsing->incoming_stream_id;
+        transport_parsing->last_incoming_stream_id;
   }
 
   /* update global settings */
@@ -371,7 +371,9 @@ int grpc_chttp2_perform_read(grpc_exec_ctx *exec_ctx,
       if (!init_frame_parser(exec_ctx, transport_parsing)) {
         return 0;
       }
-      if (transport_parsing->incoming_stream_id) {
+      if (transport_parsing->incoming_stream_id != 0 &&
+          transport_parsing->incoming_stream_id >
+              transport_parsing->last_incoming_stream_id) {
         transport_parsing->last_incoming_stream_id =
             transport_parsing->incoming_stream_id;
       }
