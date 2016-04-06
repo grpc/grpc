@@ -246,3 +246,5 @@ void simple_request(grpc_end2end_test_config config) {
   }
   test_invoke_10_simple_requests(config);
 }
+
+void simple_request_pre_init(void) {}
