@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,19 +31,19 @@
  *
  */
 
-#include "src/core/lib/client_config/subchannel_factory.h"
+#include <stdint.h>
+#include <string.h>
 
-void grpc_subchannel_factory_ref(grpc_subchannel_factory* factory) {
-  factory->vtable->ref(factory);
-}
+#include <grpc/support/alloc.h>
 
-void grpc_subchannel_factory_unref(grpc_exec_ctx* exec_ctx,
-                                   grpc_subchannel_factory* factory) {
-  factory->vtable->unref(exec_ctx, factory);
-}
+#include "src/core/ext/lb_policy/grpclb/load_balancer_api.h"
 
-grpc_subchannel* grpc_subchannel_factory_create_subchannel(
-    grpc_exec_ctx* exec_ctx, grpc_subchannel_factory* factory,
-    grpc_subchannel_args* args) {
-  return factory->vtable->create_subchannel(exec_ctx, factory, args);
+int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
+  gpr_slice slice = gpr_slice_from_copied_buffer((const char *)data, size);
+  grpc_grpclb_response *response;
+  if ((response = grpc_grpclb_response_parse(slice))) {
+    grpc_grpclb_response_destroy(response);
+  }
+  gpr_slice_unref(slice);
+  return 0;
 }

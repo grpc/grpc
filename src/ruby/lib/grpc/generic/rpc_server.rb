@@ -403,7 +403,7 @@ module GRPC
       loop_handle_server_calls
     end
 
-    # Sends UNAVAILABLE if there are too many unprocessed jobs
+    # Sends RESOURCE_EXHAUSTED if there are too many unprocessed jobs
     def available?(an_rpc)
       jobs_count, max = @pool.jobs_waiting, @max_waiting_requests
       GRPC.logger.info("waiting: #{jobs_count}, max: #{max}")
@@ -411,7 +411,7 @@ module GRPC
       GRPC.logger.warn("NOT AVAILABLE: too many jobs_waiting: #{an_rpc}")
       noop = proc { |x| x }
       c = ActiveCall.new(an_rpc.call, @cq, noop, noop, an_rpc.deadline)
-      c.send_status(StatusCodes::UNAVAILABLE, '')
+      c.send_status(StatusCodes::RESOURCE_EXHAUSTED, '')
       nil
     end
 
