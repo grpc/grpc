@@ -99,34 +99,39 @@ static bool maybe_add_http_filter(grpc_channel_stack_builder *builder,
 }
 
 static void register_builtin_channel_init() {
-  grpc_channel_init_register_stage(GRPC_CLIENT_CHANNEL, INT_MAX, prepend_filter,
-                                   (void *)&grpc_compress_filter);
-  grpc_channel_init_register_stage(GRPC_CLIENT_DIRECT_CHANNEL, INT_MAX,
-                                   prepend_filter,
-                                   (void *)&grpc_compress_filter);
-  grpc_channel_init_register_stage(GRPC_SERVER_CHANNEL, INT_MAX, prepend_filter,
-                                   (void *)&grpc_compress_filter);
-  grpc_channel_init_register_stage(GRPC_CLIENT_SUBCHANNEL, INT_MAX,
-                                   maybe_add_http_filter,
-                                   (void *)&grpc_http_client_filter);
-  grpc_channel_init_register_stage(GRPC_CLIENT_SUBCHANNEL, INT_MAX,
+  grpc_channel_init_register_stage(
+      GRPC_CLIENT_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY, prepend_filter,
+      (void *)&grpc_compress_filter);
+  grpc_channel_init_register_stage(
+      GRPC_CLIENT_DIRECT_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
+      prepend_filter, (void *)&grpc_compress_filter);
+  grpc_channel_init_register_stage(
+      GRPC_SERVER_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY, prepend_filter,
+      (void *)&grpc_compress_filter);
+  grpc_channel_init_register_stage(
+      GRPC_CLIENT_SUBCHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
+      maybe_add_http_filter, (void *)&grpc_http_client_filter);
+  grpc_channel_init_register_stage(GRPC_CLIENT_SUBCHANNEL,
+                                   GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
                                    grpc_add_connected_filter, NULL);
-  grpc_channel_init_register_stage(GRPC_CLIENT_DIRECT_CHANNEL, INT_MAX,
-                                   maybe_add_http_filter,
-                                   (void *)&grpc_http_client_filter);
-  grpc_channel_init_register_stage(GRPC_CLIENT_DIRECT_CHANNEL, INT_MAX,
+  grpc_channel_init_register_stage(
+      GRPC_CLIENT_DIRECT_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
+      maybe_add_http_filter, (void *)&grpc_http_client_filter);
+  grpc_channel_init_register_stage(GRPC_CLIENT_DIRECT_CHANNEL,
+                                   GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
                                    grpc_add_connected_filter, NULL);
-  grpc_channel_init_register_stage(GRPC_SERVER_CHANNEL, INT_MAX,
-                                   maybe_add_http_filter,
-                                   (void *)&grpc_http_server_filter);
-  grpc_channel_init_register_stage(GRPC_SERVER_CHANNEL, INT_MAX,
+  grpc_channel_init_register_stage(
+      GRPC_SERVER_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
+      maybe_add_http_filter, (void *)&grpc_http_server_filter);
+  grpc_channel_init_register_stage(GRPC_SERVER_CHANNEL,
+                                   GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
                                    grpc_add_connected_filter, NULL);
-  grpc_channel_init_register_stage(GRPC_CLIENT_CHANNEL, INT_MAX, append_filter,
-                                   (void *)&grpc_client_channel_filter);
-  grpc_channel_init_register_stage(GRPC_CLIENT_LAME_CHANNEL, INT_MAX,
+  grpc_channel_init_register_stage(GRPC_CLIENT_LAME_CHANNEL,
+                                   GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
                                    append_filter, (void *)&grpc_lame_filter);
-  grpc_channel_init_register_stage(GRPC_SERVER_CHANNEL, INT_MAX, prepend_filter,
-                                   (void *)&grpc_server_top_filter);
+  grpc_channel_init_register_stage(
+      GRPC_SERVER_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY, prepend_filter,
+      (void *)&grpc_server_top_filter);
 }
 
 typedef struct grpc_plugin {
@@ -155,12 +160,8 @@ void grpc_init(void) {
     gpr_time_init();
     grpc_mdctx_global_init();
     grpc_channel_init_init();
-    grpc_lb_policy_registry_init();
-    grpc_resolver_registry_init(GRPC_DEFAULT_NAME_PREFIX);
     grpc_register_tracer("api", &grpc_api_trace);
     grpc_register_tracer("channel", &grpc_trace_channel);
-    grpc_register_tracer("http", &grpc_http_trace);
-    grpc_register_tracer("flowctl", &grpc_flowctl_trace);
     grpc_register_tracer("connectivity_state", &grpc_connectivity_state_trace);
     grpc_register_tracer("channel_stack_builder",
                          &grpc_trace_channel_stack_builder);
@@ -170,7 +171,6 @@ void grpc_init(void) {
     grpc_tracer_init("GRPC_TRACE");
     gpr_timers_global_init();
     grpc_cq_global_init();
-    grpc_subchannel_index_init();
     for (i = 0; i < g_number_of_plugins; i++) {
       if (g_all_of_the_plugins[i].init != NULL) {
         g_all_of_the_plugins[i].init();
@@ -195,17 +195,13 @@ void grpc_shutdown(void) {
     grpc_executor_shutdown();
     grpc_cq_global_shutdown();
     grpc_iomgr_shutdown();
-    grpc_subchannel_index_shutdown();
     gpr_timers_global_destroy();
     grpc_tracer_shutdown();
-    grpc_resolver_registry_shutdown();
-    grpc_lb_policy_registry_shutdown();
-    for (i = 0; i < g_number_of_plugins; i++) {
+    for (i = g_number_of_plugins; i >= 0; i--) {
       if (g_all_of_the_plugins[i].destroy != NULL) {
         g_all_of_the_plugins[i].destroy();
       }
     }
-    grpc_channel_init_shutdown();
     grpc_mdctx_global_shutdown();
   }
   gpr_mu_unlock(&g_init_mu);

@@ -31,24 +31,38 @@
  *
  */
 
-#ifndef GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_BIN_ENCODER_H
-#define GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_BIN_ENCODER_H
+#include <limits.h>
 
-#include <grpc/support/slice.h>
+static bool set_default_host_if_unset(grpc_channel_stack_builder *builder,
+                                      void *arg) {
+  grpc_channel_args *args =
+      grpc_channel_stack_builder_get_channel_arguments(builder);
+  for (size_t i = 0; i < args->num_args; i++) {
+    if (0 == strcmp(args->args[i].key, GRPC_ARG_DEFAULT_AUTHORITY)) {
+      return true;
+    }
+  }
+  grpc_arg arg;
+  arg.type = GRPC_ARG_STRING;
+  arg.key = GRPC_ARG_DEFAULT_AUTHORITY;
+  arg.value.string = grpc_get_default_authority();
+  grpc_channel_stack_builder_set_channel_arguments(
+      builder, grpc_channel_args_copy_and_add(args, &arg, 1));
+}
 
-/* base64 encode a slice. Returns a new slice, does not take ownership of the
-   input */
-gpr_slice grpc_chttp2_base64_encode(gpr_slice input);
+void grpc_client_config_init(void) {
+  grpc_lb_policy_registry_init();
+  grpc_resolver_registry_init(GRPC_DEFAULT_NAME_PREFIX);
+  grpc_subchannel_index_init();
+  grpc_channel_init_register_stage(GRPC_CLIENT_CHANNEL, INT_MIN,
+                                   set_default_host_if_unset, NULL);
+  grpc_channel_init_register_stage(GRPC_CLIENT_CHANNEL, INT_MAX, append_filter,
+                                   (void *)&grpc_client_channel_filter);
+}
 
-/* Compress a slice with the static huffman encoder detailed in the hpack
-   standard. Returns a new slice, does not take ownership of the input */
-gpr_slice grpc_chttp2_huffman_compress(gpr_slice input);
-
-/* equivalent to:
-   gpr_slice x = grpc_chttp2_base64_encode(input);
-   gpr_slice y = grpc_chttp2_huffman_compress(x);
-   gpr_slice_unref(x);
-   return y; */
-gpr_slice grpc_chttp2_base64_encode_and_huffman_compress(gpr_slice input);
-
-#endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_BIN_ENCODER_H */
+void grpc_client_config_shutdown(void) {
+  grpc_subchannel_index_shutdown();
+  grpc_channel_init_shutdown();
+  grpc_resolver_registry_shutdown();
+  grpc_lb_policy_registry_shutdown();
+}

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,27 +31,16 @@
  *
  */
 
-#include "src/core/lib/iomgr/unix_sockets_posix.h"
+#include "src/core/ext/transport/chttp2/transport/bin_encoder.h"
+#include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
+#include "src/core/lib/debug/trace.h"
+#include "src/core/lib/transport/metadata.h"
 
-#ifndef GPR_HAVE_UNIX_SOCKET
-
-void grpc_create_socketpair_if_unix(int sv[2]) {
-  // TODO: Either implement this for the non-Unix socket case or make
-  // sure that it is never called in any such case. Until then, leave an
-  // assertion to notify if this gets called inadvertently
-  GPR_ASSERT(0);
+void grpc_chttp2_plugin_init(void) {
+  grpc_chttp2_base64_encode_and_huffman_compress =
+      grpc_chttp2_base64_encode_and_huffman_compress_impl;
+  grpc_register_tracer("http", &grpc_http_trace);
+  grpc_register_tracer("flowctl", &grpc_flowctl_trace);
 }
 
-grpc_resolved_addresses *grpc_resolve_unix_domain_address(const char *name) {
-  return NULL;
-}
-
-int grpc_is_unix_socket(const struct sockaddr *addr) { return false; }
-
-void grpc_unlink_if_unix_domain_socket(const struct sockaddr *addr) {}
-
-char *grpc_sockaddr_to_uri_unix_if_possible(const struct sockaddr *addr) {
-  return NULL;
-}
-
-#endif
+void grpc_chttp2_plugin_shutdown(void) {}

@@ -90,7 +90,7 @@ grpc_channel *grpc_channel_create(grpc_exec_ctx *exec_ctx, const char *target,
 
   grpc_channel *channel = grpc_channel_init_create_stack(
       exec_ctx, channel_stack_type, sizeof(grpc_channel), args, 1,
-      destroy_channel, NULL, optional_transport);
+      destroy_channel, NULL, optional_transport, target);
 
   memset(channel, 0, sizeof(*channel));
   channel->target = gpr_strdup(target);
@@ -141,16 +141,6 @@ grpc_channel *grpc_channel_create(grpc_exec_ctx *exec_ctx, const char *target,
         }
       }
     }
-  }
-
-  if (channel->is_client && channel->default_authority == NULL &&
-      target != NULL) {
-    char *default_authority = grpc_get_default_authority(target);
-    if (default_authority) {
-      channel->default_authority =
-          grpc_mdelem_from_strings(":authority", default_authority);
-    }
-    gpr_free(default_authority);
   }
 
   return channel;

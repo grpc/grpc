@@ -48,7 +48,7 @@
 #include <grpc/support/port_platform.h>
 #include <grpc/support/useful.h>
 
-#include "src/core/lib/transport/bin_encoder.h"
+#include "src/core/ext/transport/chttp2/transport/bin_encoder.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/support/string.h"
 

@@ -32,6 +32,7 @@
  */
 
 #include <limits.h>
+#include <string.h>
 
 #include <grpc/census.h>
 

@@ -97,6 +97,9 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\resolver\sockaddr\sockaddr_resolver.c">
       <Filter>src\core\ext\resolver\sockaddr</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\alpn\alpn.c">
+      <Filter>src\core\ext\transport\chttp2\alpn</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\client\insecure\channel_create.c">
       <Filter>src\core\ext\transport\chttp2\client\insecure</Filter>
     </ClCompile>
@@ -109,10 +112,10 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\server\secure\server_secure_chttp2.c">
       <Filter>src\core\ext\transport\chttp2\server\secure</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\alpn.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\bin_encoder.c">
       <Filter>src\core\ext\transport\chttp2\transport</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\bin_encoder.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\chttp2_plugin.c">
       <Filter>src\core\ext\transport\chttp2\transport</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\chttp2_transport.c">
@@ -599,8 +602,8 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\lb_policy\grpclb\proto\grpc\lb\v0\load_balancer.pb.h">
       <Filter>src\core\ext\lb_policy\grpclb\proto\grpc\lb\v0</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\alpn.h">
-      <Filter>src\core\ext\transport\chttp2\transport</Filter>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\alpn\alpn.h">
+      <Filter>src\core\ext\transport\chttp2\alpn</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\bin_encoder.h">
       <Filter>src\core\ext\transport\chttp2\transport</Filter>
@@ -1006,6 +1009,9 @@
     </Filter>
     <Filter Include="src\core\ext\transport\chttp2">
       <UniqueIdentifier>{ac42667b-bbba-3571-20bc-7a4240ef26ca}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\ext\transport\chttp2\alpn">
+      <UniqueIdentifier>{ef2aa344-783f-7fbd-c83a-47e2d38db14d}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\core\ext\transport\chttp2\client">
       <UniqueIdentifier>{dbffebe0-eebb-577d-1860-ef6837f4cf50}</UniqueIdentifier>

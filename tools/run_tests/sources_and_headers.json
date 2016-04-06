@@ -5617,7 +5617,6 @@
       "src/core/lib/surface/lame_client.h", 
       "src/core/lib/surface/server.h", 
       "src/core/lib/surface/surface_trace.h", 
-      "src/core/lib/transport/bin_encoder.h", 
       "src/core/lib/transport/byte_stream.h", 
       "src/core/lib/transport/connectivity_state.h", 
       "src/core/lib/transport/metadata.h", 
@@ -5775,8 +5774,6 @@
       "src/core/lib/surface/surface_trace.h", 
       "src/core/lib/surface/validate_metadata.c", 
       "src/core/lib/surface/version.c", 
-      "src/core/lib/transport/bin_encoder.c", 
-      "src/core/lib/transport/bin_encoder.h", 
       "src/core/lib/transport/byte_stream.c", 
       "src/core/lib/transport/byte_stream.h", 
       "src/core/lib/transport/connectivity_state.c", 
@@ -6073,6 +6070,7 @@
       "grpc_transport_chttp2_alpn"
     ], 
     "headers": [
+      "src/core/ext/transport/chttp2/transport/bin_encoder.h", 
       "src/core/ext/transport/chttp2/transport/chttp2_transport.h", 
       "src/core/ext/transport/chttp2/transport/frame.h", 
       "src/core/ext/transport/chttp2/transport/frame_data.h", 
@@ -6096,6 +6094,9 @@
     "language": "c", 
     "name": "grpc_transport_chttp2", 
     "src": [
+      "src/core/ext/transport/chttp2/transport/bin_encoder.c", 
+      "src/core/ext/transport/chttp2/transport/bin_encoder.h", 
+      "src/core/ext/transport/chttp2/transport/chttp2_plugin.c", 
       "src/core/ext/transport/chttp2/transport/chttp2_transport.c", 
       "src/core/ext/transport/chttp2/transport/chttp2_transport.h", 
       "src/core/ext/transport/chttp2/transport/frame.h", 

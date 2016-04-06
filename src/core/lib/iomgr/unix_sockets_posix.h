@@ -49,11 +49,6 @@ int grpc_is_unix_socket(const struct sockaddr *addr);
 
 void grpc_unlink_if_unix_domain_socket(const struct sockaddr *addr);
 
-int grpc_parse_unix(grpc_uri *uri, struct sockaddr_storage *addr, size_t *len);
-
-char *grpc_unix_get_default_authority(grpc_resolver_factory *factory,
-                                      grpc_uri *uri);
-
 char *grpc_sockaddr_to_uri_unix_if_possible(const struct sockaddr *addr);
 
 #endif /* GRPC_CORE_LIB_IOMGR_UNIX_SOCKETS_POSIX_H */
