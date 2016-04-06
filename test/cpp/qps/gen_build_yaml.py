@@ -1,4 +1,5 @@
-#!/bin/bash
+#!/usr/bin/env python2.7
+
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -28,25 +29,35 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-set -ex
+import json
+import pipes
+import shutil
+import sys
+import os
+import yaml
 
-cd $(dirname $0)/../../..
+run_tests_root = os.path.abspath(os.path.join(
+    os.path.dirname(sys.argv[0]),
+    '../../../tools/run_tests'))
+sys.path.append(run_tests_root)
 
-#TODO(jtattermusch): add support for more languages
+import performance.scenario_config as scenario_config
 
-CONFIG=${CONFIG:-opt}
-
-# build C++ qps worker & driver always - we need at least the driver to
-# run any of the scenarios.
-# TODO(jtattermusch): not embedding OpenSSL breaks the C# build because
-# grpc_csharp_ext needs OpenSSL embedded and some intermediate files from
-# this build will be reused.
-make CONFIG=${CONFIG} EMBED_OPENSSL=true EMBED_ZLIB=true qps_worker qps_driver qps_json_driver -j8
-
-for language in $@
-do
-  if [ "$language" != "c++" ]
-  then
-    tools/run_tests/run_tests.py -l $language -c $CONFIG --build_only -j 8
-  fi
-done
+print yaml.dump({
+  'tests': [
+    {
+      'name': 'json_run_localhost',
+      'shortname': 'json_run_localhost:%s' % js['name'],
+      'args': ['--scenario_json', pipes.quote(json.dumps(js))],
+      'ci_platforms': ['linux', 'mac', 'posix', 'windows'],
+      'platforms': ['linux', 'mac', 'posix', 'windows'],
+      'flaky': False,
+      'language': 'c++',
+      'boringssl': True,
+      'defaults': 'boringssl',
+      'cpu_cost': 1000.0,
+      'exclude_configs': []
+    }
+    for js in scenario_config.CXXLanguage().scenarios()
+  ]
+})
