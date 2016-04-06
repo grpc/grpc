@@ -1,5 +1,5 @@
 #!/usr/bin/env python2.7
-# Copyright 2015, Google Inc.
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -91,9 +91,9 @@ def run_client():
   """
   env = dict(os.environ)
   image_type = env['STRESS_TEST_IMAGE_TYPE']
-  image_name = env['STRESS_TEST_IMAGE']
+  stress_client_cmd = env['STRESS_TEST_CMD'].split()
   args_str = env['STRESS_TEST_ARGS_STR']
-  metrics_client_image = env['METRICS_CLIENT_IMAGE']
+  metrics_client_cmd = env['METRICS_CLIENT_CMD'].split()
   metrics_client_args_str = env['METRICS_CLIENT_ARGS_STR']
   run_id = env['RUN_ID']
   pod_name = env['POD_NAME']
@@ -125,9 +125,8 @@ def run_client():
   # Update status that the test is starting (in the status table)
   bq_helper.insert_summary_row(EventType.STARTING, details)
 
-  metrics_cmd = [metrics_client_image
-                ] + [x for x in metrics_client_args_str.split()]
-  stress_cmd = [image_name] + [x for x in args_str.split()]
+  metrics_cmd = metrics_client_cmd + [x for x in metrics_client_args_str.split()]
+  stress_cmd = stress_client_cmd + [x for x in args_str.split()]
 
   print 'Launching process %s ...' % stress_cmd
   stress_p = subprocess.Popen(args=stress_cmd,
