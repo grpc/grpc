@@ -107,12 +107,22 @@ class BigQueryHelper:
     query = ('SELECT event_type FROM %s.%s WHERE run_id = \'%s\' AND '
              'event_type="%s"') % (self.dataset_id, self.summary_table_id,
                                    self.run_id, EventType.FAILURE)
-    query_job = bq_utils.sync_query_job(self.bq, self.project_id, query)
-    page = self.bq.jobs().getQueryResults(**query_job['jobReference']).execute(
-        num_retries=num_query_retries)
-    num_failures = int(page['totalRows'])
-    print 'num rows: ', num_failures
-    return num_failures > 0
+    try:
+      query_job = bq_utils.sync_query_job(self.bq, self.project_id, query)
+      page = self.bq.jobs().getQueryResults(
+          **query_job['jobReference']).execute(num_retries=num_query_retries)
+      num_failures = int(page['totalRows'])
+      print 'num rows: ', num_failures
+      return num_failures > 0
+    # TODO (sreek): Cleanup the following lines once we have a better idea of
+    # why we sometimes get KeyError exceptions in long running test cases
+    except KeyError:
+      print 'KeyError in check_if_any_tests_failed()'
+      print 'Query:', query
+      print 'Query result page:', page
+    except:
+      print 'Exception in check_if_any_tests_failed(). Info: ', sys.exc_info()
+      print 'Query: ', query
 
   def print_summary_records(self, num_query_retries=3):
     line = '-' * 120
@@ -126,8 +136,9 @@ class BigQueryHelper:
                  self.dataset_id, self.summary_table_id, self.run_id)
     query_job = bq_utils.sync_query_job(self.bq, self.project_id, query)
 
-    print '{:<25} {:<12} {:<12} {:<30} {}'.format(
-        'Pod name', 'Image type', 'Event type', 'Date', 'Details')
+    print '{:<25} {:<12} {:<12} {:<30} {}'.format('Pod name', 'Image type',
+                                                  'Event type', 'Date',
+                                                  'Details')
     print line
     page_token = None
     while True:
@@ -136,9 +147,11 @@ class BigQueryHelper:
           **query_job['jobReference']).execute(num_retries=num_query_retries)
       rows = page.get('rows', [])
       for row in rows:
-        print '{:<25} {:<12} {:<12} {:<30} {}'.format(
-            row['f'][0]['v'], row['f'][1]['v'], row['f'][2]['v'],
-            row['f'][3]['v'], row['f'][4]['v'])
+        print '{:<25} {:<12} {:<12} {:<30} {}'.format(row['f'][0]['v'],
+                                                      row['f'][1]['v'],
+                                                      row['f'][2]['v'],
+                                                      row['f'][3]['v'],
+                                                      row['f'][4]['v'])
       page_token = page.get('pageToken')
       if not page_token:
         break
