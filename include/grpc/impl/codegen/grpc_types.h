@@ -142,6 +142,8 @@ typedef struct {
 /** Secondary user agent: goes at the end of the user-agent metadata
     sent on each request */
 #define GRPC_ARG_SECONDARY_USER_AGENT_STRING "grpc.secondary_user_agent"
+/** The maximum time between subsequent connection attempts, in ms */
+#define GRPC_ARG_MAX_RECONNECT_BACKOFF_MS "grpc.max_reconnect_backoff_ms"
 /* The caller of the secure_channel_create functions may override the target
    name used for SSL host name checking using this channel argument which is of
    type GRPC_ARG_STRING. This *should* be used for testing only.
@@ -204,8 +206,12 @@ typedef enum grpc_call_error {
 /* Initial metadata flags */
 /** Signal that the call is idempotent */
 #define GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST (0x00000010u)
+/** Signal that the call should not return UNAVAILABLE before it has started */
+#define GRPC_INITIAL_METADATA_IGNORE_CONNECTIVITY (0x00000020u)
 /** Mask of all valid flags */
-#define GRPC_INITIAL_METADATA_USED_MASK GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST
+#define GRPC_INITIAL_METADATA_USED_MASK       \
+  (GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST | \
+   GRPC_INITIAL_METADATA_IGNORE_CONNECTIVITY)
 
 /** A single metadata element */
 typedef struct grpc_metadata {

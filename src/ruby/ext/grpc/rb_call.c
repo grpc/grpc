@@ -359,7 +359,7 @@ static int grpc_rb_md_ary_fill_hash_cb(VALUE key, VALUE val, VALUE md_ary_obj) {
       md_ary->metadata[md_ary->count].value_length = value_len;
       md_ary->count += 1;
     }
-  } else {
+  } else if (TYPE(val) == T_STRING) {
     value_str = RSTRING_PTR(val);
     value_len = RSTRING_LEN(val);
     if (!grpc_is_binary_header(key_str, key_len) &&
@@ -373,6 +373,10 @@ static int grpc_rb_md_ary_fill_hash_cb(VALUE key, VALUE val, VALUE md_ary_obj) {
     md_ary->metadata[md_ary->count].value = value_str;
     md_ary->metadata[md_ary->count].value_length = value_len;
     md_ary->count += 1;
+  } else {
+    rb_raise(rb_eArgError,
+               "Header values must be of type string or array");
+    return ST_STOP;
   }
 
   return ST_CONTINUE;

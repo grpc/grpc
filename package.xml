@@ -167,6 +167,21 @@
     <file baseinstalldir="/" name="src/core/ext/census/grpc_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/mlog.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/rpc_metric_id.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/client_config/client_channel.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/client_config/client_channel_factory.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/client_config/client_config.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/client_config/connector.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/client_config/initial_connect_string.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/client_config/lb_policy.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/client_config/lb_policy_factory.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/client_config/lb_policy_registry.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/client_config/resolver.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/client_config/resolver_factory.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/client_config/resolver_registry.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/client_config/subchannel.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/client_config/subchannel_call_holder.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/client_config/subchannel_index.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/client_config/uri_parser.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/lb_policy/grpclb/load_balancer_api.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/lb_policy/grpclb/proto/grpc/lb/v0/load_balancer.pb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/alpn.h" role="src" />
@@ -193,26 +208,11 @@
     <file baseinstalldir="/" name="src/core/lib/channel/channel_args.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/channel_stack.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/channel_stack_builder.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/channel/client_channel.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/compress_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/connected_channel.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/context.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/http_client_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/http_server_filter.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/channel/subchannel_call_holder.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/client_config/client_config.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/client_config/connector.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/client_config/initial_connect_string.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/client_config/lb_policy.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/client_config/lb_policy_factory.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/client_config/lb_policy_registry.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/client_config/resolver.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/client_config/resolver_factory.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/client_config/resolver_registry.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/client_config/subchannel.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/client_config/subchannel_factory.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/client_config/subchannel_index.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/client_config/uri_parser.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/compression/algorithm_metadata.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/compression/message_compress.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/debug/trace.h" role="src" />
@@ -305,6 +305,23 @@
     <file baseinstalldir="/" name="src/core/ext/census/operation.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/placeholders.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/tracing.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/client_config/channel_connectivity.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/client_config/client_channel.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/client_config/client_channel_factory.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/client_config/client_config.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/client_config/connector.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/client_config/default_initial_connect_string.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/client_config/initial_connect_string.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/client_config/lb_policy.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/client_config/lb_policy_factory.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/client_config/lb_policy_registry.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/client_config/resolver.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/client_config/resolver_factory.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/client_config/resolver_registry.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/client_config/subchannel.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/client_config/subchannel_call_holder.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/client_config/subchannel_index.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/client_config/uri_parser.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/lb_policy/grpclb/load_balancer_api.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/lb_policy/grpclb/proto/grpc/lb/v0/load_balancer.pb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/lb_policy/pick_first/pick_first.c" role="src" />
@@ -339,26 +356,10 @@
     <file baseinstalldir="/" name="src/core/lib/channel/channel_args.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/channel_stack.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/channel_stack_builder.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/channel/client_channel.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/compress_filter.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/connected_channel.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/http_client_filter.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/http_server_filter.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/channel/subchannel_call_holder.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/client_config/client_config.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/client_config/connector.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/client_config/default_initial_connect_string.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/client_config/initial_connect_string.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/client_config/lb_policy.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/client_config/lb_policy_factory.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/client_config/lb_policy_registry.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/client_config/resolver.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/client_config/resolver_factory.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/client_config/resolver_registry.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/client_config/subchannel.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/client_config/subchannel_factory.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/client_config/subchannel_index.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/client_config/uri_parser.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/compression/compression_algorithm.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/compression/message_compress.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/debug/trace.c" role="src" />
@@ -431,7 +432,6 @@
     <file baseinstalldir="/" name="src/core/lib/surface/call_details.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/call_log_batch.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/channel.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/surface/channel_connectivity.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/channel_init.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/channel_ping.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/channel_stack_type.c" role="src" />
