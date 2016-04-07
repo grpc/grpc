@@ -161,14 +161,6 @@
     <ClInclude Include="$(SolutionDir)\..\test\cpp\util\benchmark_config.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\control.pb.cc">
-    </ClCompile>
-    <ClInclude Include="$(SolutionDir)\..\src\proto\grpc\testing\control.pb.h">
-    </ClInclude>
-    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\control.grpc.pb.cc">
-    </ClCompile>
-    <ClInclude Include="$(SolutionDir)\..\src\proto\grpc\testing\control.grpc.pb.h">
-    </ClInclude>
     <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\messages.pb.cc">
     </ClCompile>
     <ClInclude Include="$(SolutionDir)\..\src\proto\grpc\testing\messages.pb.h">
@@ -185,13 +177,21 @@
     </ClCompile>
     <ClInclude Include="$(SolutionDir)\..\src\proto\grpc\testing\payloads.grpc.pb.h">
     </ClInclude>
-    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\perf_db.pb.cc">
+    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\stats.pb.cc">
     </ClCompile>
-    <ClInclude Include="$(SolutionDir)\..\src\proto\grpc\testing\perf_db.pb.h">
+    <ClInclude Include="$(SolutionDir)\..\src\proto\grpc\testing\stats.pb.h">
     </ClInclude>
-    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\perf_db.grpc.pb.cc">
+    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\stats.grpc.pb.cc">
     </ClCompile>
-    <ClInclude Include="$(SolutionDir)\..\src\proto\grpc\testing\perf_db.grpc.pb.h">
+    <ClInclude Include="$(SolutionDir)\..\src\proto\grpc\testing\stats.grpc.pb.h">
+    </ClInclude>
+    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\control.pb.cc">
+    </ClCompile>
+    <ClInclude Include="$(SolutionDir)\..\src\proto\grpc\testing\control.pb.h">
+    </ClInclude>
+    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\control.grpc.pb.cc">
+    </ClCompile>
+    <ClInclude Include="$(SolutionDir)\..\src\proto\grpc\testing\control.grpc.pb.h">
     </ClInclude>
     <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\services.pb.cc">
     </ClCompile>
@@ -201,13 +201,13 @@
     </ClCompile>
     <ClInclude Include="$(SolutionDir)\..\src\proto\grpc\testing\services.grpc.pb.h">
     </ClInclude>
-    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\stats.pb.cc">
+    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\perf_db.pb.cc">
     </ClCompile>
-    <ClInclude Include="$(SolutionDir)\..\src\proto\grpc\testing\stats.pb.h">
+    <ClInclude Include="$(SolutionDir)\..\src\proto\grpc\testing\perf_db.pb.h">
     </ClInclude>
-    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\stats.grpc.pb.cc">
+    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\perf_db.grpc.pb.cc">
     </ClCompile>
-    <ClInclude Include="$(SolutionDir)\..\src\proto\grpc\testing\stats.grpc.pb.h">
+    <ClInclude Include="$(SolutionDir)\..\src\proto\grpc\testing\perf_db.grpc.pb.h">
     </ClInclude>
     <ClCompile Include="$(SolutionDir)\..\test\cpp\qps\client_async.cc">
     </ClCompile>
@@ -233,14 +233,14 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="$(SolutionDir)\..\vsprojects\vcxproj\.\grpc++\grpc++.vcxproj">
-      <Project>{C187A093-A0FE-489D-A40A-6E33DE0F9FEB}</Project>
+    <ProjectReference Include="$(SolutionDir)\..\vsprojects\vcxproj\.\grpc_test_util\grpc_test_util.vcxproj">
+      <Project>{17BCAFC0-5FDC-4C94-AEB9-95F3E220614B}</Project>
     </ProjectReference>
     <ProjectReference Include="$(SolutionDir)\..\vsprojects\vcxproj\.\grpc++_test_util\grpc++_test_util.vcxproj">
       <Project>{0BE77741-552A-929B-A497-4EF7ECE17A64}</Project>
     </ProjectReference>
-    <ProjectReference Include="$(SolutionDir)\..\vsprojects\vcxproj\.\grpc_test_util\grpc_test_util.vcxproj">
-      <Project>{17BCAFC0-5FDC-4C94-AEB9-95F3E220614B}</Project>
+    <ProjectReference Include="$(SolutionDir)\..\vsprojects\vcxproj\.\grpc++\grpc++.vcxproj">
+      <Project>{C187A093-A0FE-489D-A40A-6E33DE0F9FEB}</Project>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

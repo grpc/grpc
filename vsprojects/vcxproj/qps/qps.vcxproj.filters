@@ -1,22 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\control.proto">
-      <Filter>src\proto\grpc\testing</Filter>
-    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\messages.proto">
       <Filter>src\proto\grpc\testing</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\payloads.proto">
       <Filter>src\proto\grpc\testing</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\perf_db.proto">
+    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\stats.proto">
+      <Filter>src\proto\grpc\testing</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\control.proto">
       <Filter>src\proto\grpc\testing</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\services.proto">
       <Filter>src\proto\grpc\testing</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\stats.proto">
+    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\perf_db.proto">
       <Filter>src\proto\grpc\testing</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\cpp\qps\client_async.cc">
