@@ -175,8 +175,6 @@ filegroups:
   - include/grpc++/support/async_unary_call.h
   - include/grpc++/support/byte_buffer.h
   - include/grpc++/support/channel_arguments.h
-  - include/grpc++/support/config.h
-  - include/grpc++/support/config_protobuf.h
   - include/grpc++/support/slice.h
   - include/grpc++/support/status.h
   - include/grpc++/support/status_code_enum.h
@@ -219,6 +217,7 @@ filegroups:
   - grpc
   uses:
   - grpc++_codegen
+  - grpc++_config
 - name: grpc++_codegen
   public_headers:
   - include/grpc++/impl/codegen/async_stream.h
@@ -230,8 +229,6 @@ filegroups:
   - include/grpc++/impl/codegen/client_unary_call.h
   - include/grpc++/impl/codegen/completion_queue.h
   - include/grpc++/impl/codegen/completion_queue_tag.h
-  - include/grpc++/impl/codegen/config.h
-  - include/grpc++/impl/codegen/config_protobuf.h
   - include/grpc++/impl/codegen/core_codegen_interface.h
   - include/grpc++/impl/codegen/grpc_library.h
   - include/grpc++/impl/codegen/method_handler_impl.h
@@ -254,8 +251,19 @@ filegroups:
   - include/grpc++/impl/codegen/time.h
   src:
   - src/cpp/codegen/codegen_init.cc
-  deps:
-  - grpc
+  uses:
+  - grpc_codegen
+  - grpc++_config_codegen
+- name: grpc++_config
+  public_headers:
+  - include/grpc++/support/config.h
+  - include/grpc++/support/config_protobuf.h
+  uses:
+  - grpc++_config_codegen
+- name: grpc++_config_codegen
+  public_headers:
+  - include/grpc++/impl/codegen/config.h
+  - include/grpc++/impl/codegen/config_protobuf.h
 - name: grpc_base
   public_headers:
   - include/grpc/byte_buffer.h
@@ -471,8 +479,8 @@ filegroups:
   - include/grpc/impl/codegen/grpc_types.h
   - include/grpc/impl/codegen/propagation_bits.h
   - include/grpc/impl/codegen/status.h
-  deps:
-  - gpr
+  uses:
+  - gpr_codegen
 - name: grpc_lb_policy_grpclb
   headers:
   - src/core/ext/lb_policy/grpclb/load_balancer_api.h
@@ -693,8 +701,6 @@ libs:
 - name: grpc
   build: all
   language: c
-  deps:
-  - gpr
   baselib: true
   deps_linkage: static
   dll: true
@@ -710,9 +716,7 @@ libs:
   - grpc_resolver_dns_native
   - grpc_resolver_sockaddr
   - grpc_secure
-  - grpc_codegen
   - census
-  - nanopb
   generate_plugin_registry: true
   secure: true
   vs_packages:
@@ -774,8 +778,6 @@ libs:
   language: c
   src:
   - src/core/lib/surface/init_unsecure.c
-  deps:
-  - gpr
   baselib: true
   deps_linkage: static
   dll: true
@@ -788,9 +790,7 @@ libs:
   - grpc_lb_policy_grpclb
   - grpc_lb_policy_pick_first
   - grpc_lb_policy_round_robin
-  - grpc_codegen
   - census
-  - nanopb
   generate_plugin_registry: true
   secure: false
   vs_project_guid: '{46CEDFFF-9692-456A-AA24-38B5D6BCF4C5}'
@@ -917,8 +917,6 @@ libs:
   build: protoc
   language: c++
   headers:
-  - include/grpc++/support/config.h
-  - include/grpc++/support/config_protobuf.h
   - src/compiler/config.h
   - src/compiler/cpp_generator.h
   - src/compiler/cpp_generator_helpers.h
@@ -939,8 +937,7 @@ libs:
   - src/compiler/python_generator.cc
   - src/compiler/ruby_generator.cc
   filegroups:
-  - gpr_codegen
-  - grpc++_codegen
+  - grpc++_config
   secure: false
   vs_project_guid: '{B6E81D84-2ACB-41B8-8781-493A944C7817}'
   vs_props:
