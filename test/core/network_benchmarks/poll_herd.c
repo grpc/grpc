@@ -442,21 +442,23 @@ int fill_test_args(struct multi_epoll_test_args* args) {
   /* call epoll_wait on a shared epoll set, with an eventfd added various
    * ways */
   for (int i = 0; i < kEpollCtlVariants; ++i) {
-    args[i] = default_test_args();
+    args[test_count] = default_test_args();
     args[test_count].poller_args.poll_style = DIRECT_EPOLL;
     args[test_count].epoll_ctl_args = epoll_ctl_variants[test_count];
     ++test_count;
   }
   /* As above, but poll on the shared epoll */
   for (int i = 0; i < kEpollCtlVariants; ++i) {
-    args[test_count] = args[test_count - kEpollCtlVariants];
+    args[test_count] = default_test_args();
+    args[test_count].epoll_ctl_args = epoll_ctl_variants[i];
     args[test_count].poller_args.poll_style = POLL_EPOLL;
     ++test_count;
   }
   /* As above, but epoll_wait (on separate epoll sets) */
   for (int i = 0; i < kEpollCtlVariants; ++i) {
     for (int j = 0; j < kEpollCtlVariants; ++j) {
-      args[test_count] = args[test_count - kEpollCtlVariants];
+      args[test_count] = default_test_args();
+      args[test_count].epoll_ctl_args = epoll_ctl_variants[i];
       args[test_count].poller_args.poll_style = EPOLL_EPOLL;
       args[test_count].poller_args.epoll_ctl_args = epoll_ctl_variants[j];
       ++test_count;
