@@ -1,5 +1,5 @@
 ﻿#region Copyright notice and license
-// Copyright 2015-2016, Google Inc.
+// Copyright 2015, Google Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -49,7 +49,7 @@ namespace Grpc.HealthCheck.Tests
         const string Host = "localhost";
         Server server;
         Channel channel;
-        Grpc.Health.V1.Health.IHealthClient client;
+        Grpc.Health.V1.Health.HealthClient client;
         Grpc.HealthCheck.HealthServiceImpl serviceImpl;
 
         [TestFixtureSetUp]

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -95,11 +95,11 @@ typedef struct requested_call {
       grpc_byte_buffer **optional_payload;
     } registered;
   } data;
-  grpc_closure publish;
 } requested_call;
 
 typedef struct channel_registered_method {
   registered_method *server_registered_method;
+  uint32_t flags;
   grpc_mdstr *method;
   grpc_mdstr *host;
 } channel_registered_method;
@@ -152,17 +152,24 @@ struct call_data {
   grpc_completion_queue *cq_new;
 
   grpc_metadata_batch *recv_initial_metadata;
+  bool recv_idempotent_request;
   grpc_metadata_array initial_metadata;
+
+  request_matcher *request_matcher;
+  grpc_byte_buffer *payload;
 
   grpc_closure got_initial_metadata;
   grpc_closure server_on_recv_initial_metadata;
   grpc_closure kill_zombie_closure;
   grpc_closure *on_done_recv_initial_metadata;
 
+  grpc_closure publish;
+
   call_data *pending_next;
 };
 
 struct request_matcher {
+  grpc_server *server;
   call_data *pending_head;
   call_data *pending_tail;
   gpr_stack_lockfree *requests;
@@ -171,6 +178,8 @@ struct request_matcher {
 struct registered_method {
   char *method;
   char *host;
+  grpc_server_register_method_payload_handling payload_handling;
+  uint32_t flags;
   request_matcher request_matcher;
   registered_method *next;
 };
@@ -223,8 +232,7 @@ struct grpc_server {
 #define SERVER_FROM_CALL_ELEM(elem) \
   (((channel_data *)(elem)->channel_data)->server)
 
-static void begin_call(grpc_exec_ctx *exec_ctx, grpc_server *server,
-                       call_data *calld, requested_call *rc);
+static void publish_new_rpc(grpc_exec_ctx *exec_ctx, void *calld, bool success);
 static void fail_call(grpc_exec_ctx *exec_ctx, grpc_server *server,
                       requested_call *rc);
 /* Before calling maybe_finish_shutdown, we must hold mu_global and not
@@ -300,8 +308,10 @@ static void channel_broadcaster_shutdown(grpc_exec_ctx *exec_ctx,
  * request_matcher
  */
 
-static void request_matcher_init(request_matcher *rm, size_t entries) {
+static void request_matcher_init(request_matcher *rm, size_t entries,
+                                 grpc_server *server) {
   memset(rm, 0, sizeof(*rm));
+  rm->server = server;
   rm->requests = gpr_stack_lockfree_create(entries);
 }
 
@@ -414,21 +424,90 @@ static void destroy_channel(grpc_exec_ctx *exec_ctx, channel_data *chand) {
                        &op);
 }
 
-static void finish_start_new_rpc(grpc_exec_ctx *exec_ctx, grpc_server *server,
-                                 grpc_call_element *elem, request_matcher *rm) {
-  call_data *calld = elem->call_data;
-  int request_id;
+static void cpstr(char **dest, size_t *capacity, grpc_mdstr *value) {
+  gpr_slice slice = value->slice;
+  size_t len = GPR_SLICE_LENGTH(slice);
 
-  if (gpr_atm_acq_load(&server->shutdown_flag)) {
+  if (len + 1 > *capacity) {
+    *capacity = GPR_MAX(len + 1, *capacity * 2);
+    *dest = gpr_realloc(*dest, *capacity);
+  }
+  memcpy(*dest, grpc_mdstr_as_c_string(value), len + 1);
+}
+
+static void done_request_event(grpc_exec_ctx *exec_ctx, void *req,
+                               grpc_cq_completion *c) {
+  requested_call *rc = req;
+  grpc_server *server = rc->server;
+
+  if (rc >= server->requested_calls &&
+      rc < server->requested_calls + server->max_requested_calls) {
+    GPR_ASSERT(rc - server->requested_calls <= INT_MAX);
+    gpr_stack_lockfree_push(server->request_freelist,
+                            (int)(rc - server->requested_calls));
+  } else {
+    gpr_free(req);
+  }
+
+  server_unref(exec_ctx, server);
+}
+
+static void publish_call(grpc_exec_ctx *exec_ctx, grpc_server *server,
+                         call_data *calld, requested_call *rc) {
+  grpc_call_set_completion_queue(exec_ctx, calld->call, rc->cq_bound_to_call);
+  grpc_call *call = calld->call;
+  *rc->call = call;
+  calld->cq_new = rc->cq_for_notification;
+  GPR_SWAP(grpc_metadata_array, *rc->initial_metadata, calld->initial_metadata);
+  switch (rc->type) {
+    case BATCH_CALL:
+      GPR_ASSERT(calld->host != NULL);
+      GPR_ASSERT(calld->path != NULL);
+      cpstr(&rc->data.batch.details->host,
+            &rc->data.batch.details->host_capacity, calld->host);
+      cpstr(&rc->data.batch.details->method,
+            &rc->data.batch.details->method_capacity, calld->path);
+      rc->data.batch.details->deadline = calld->deadline;
+      rc->data.batch.details->flags =
+          0 | (calld->recv_idempotent_request
+                   ? GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST
+                   : 0);
+      break;
+    case REGISTERED_CALL:
+      *rc->data.registered.deadline = calld->deadline;
+      if (rc->data.registered.optional_payload) {
+        *rc->data.registered.optional_payload = calld->payload;
+      }
+      break;
+    default:
+      GPR_UNREACHABLE_CODE(return );
+  }
+
+  grpc_call_element *elem =
+      grpc_call_stack_element(grpc_call_get_call_stack(call), 0);
+  channel_data *chand = elem->channel_data;
+  server_ref(chand->server);
+  grpc_cq_end_op(exec_ctx, calld->cq_new, rc->tag, true, done_request_event, rc,
+                 &rc->completion);
+}
+
+static void publish_new_rpc(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
+  call_data *calld = arg;
+  request_matcher *rm = calld->request_matcher;
+  grpc_server *server = rm->server;
+
+  if (!success || gpr_atm_acq_load(&server->shutdown_flag)) {
     gpr_mu_lock(&calld->mu_state);
     calld->state = ZOMBIED;
     gpr_mu_unlock(&calld->mu_state);
-    grpc_closure_init(&calld->kill_zombie_closure, kill_zombie, elem);
+    grpc_closure_init(
+        &calld->kill_zombie_closure, kill_zombie,
+        grpc_call_stack_element(grpc_call_get_call_stack(calld->call), 0));
     grpc_exec_ctx_enqueue(exec_ctx, &calld->kill_zombie_closure, true, NULL);
     return;
   }
 
-  request_id = gpr_stack_lockfree_pop(rm->requests);
+  int request_id = gpr_stack_lockfree_pop(rm->requests);
   if (request_id == -1) {
     gpr_mu_lock(&server->mu_call);
     gpr_mu_lock(&calld->mu_state);
@@ -446,7 +525,41 @@ static void finish_start_new_rpc(grpc_exec_ctx *exec_ctx, grpc_server *server,
     gpr_mu_lock(&calld->mu_state);
     calld->state = ACTIVATED;
     gpr_mu_unlock(&calld->mu_state);
-    begin_call(exec_ctx, server, calld, &server->requested_calls[request_id]);
+    publish_call(exec_ctx, server, calld, &server->requested_calls[request_id]);
+  }
+}
+
+static void finish_start_new_rpc(
+    grpc_exec_ctx *exec_ctx, grpc_server *server, grpc_call_element *elem,
+    request_matcher *rm,
+    grpc_server_register_method_payload_handling payload_handling) {
+  call_data *calld = elem->call_data;
+
+  if (gpr_atm_acq_load(&server->shutdown_flag)) {
+    gpr_mu_lock(&calld->mu_state);
+    calld->state = ZOMBIED;
+    gpr_mu_unlock(&calld->mu_state);
+    grpc_closure_init(&calld->kill_zombie_closure, kill_zombie, elem);
+    grpc_exec_ctx_enqueue(exec_ctx, &calld->kill_zombie_closure, true, NULL);
+    return;
+  }
+
+  calld->request_matcher = rm;
+
+  switch (payload_handling) {
+    case GRPC_SRM_PAYLOAD_NONE:
+      publish_new_rpc(exec_ctx, calld, true);
+      break;
+    case GRPC_SRM_PAYLOAD_READ_INITIAL_BYTE_BUFFER: {
+      grpc_op op;
+      memset(&op, 0, sizeof(op));
+      op.op = GRPC_OP_RECV_MESSAGE;
+      op.data.recv_message = &calld->payload;
+      grpc_closure_init(&calld->publish, publish_new_rpc, calld);
+      grpc_call_start_batch_and_execute(exec_ctx, calld->call, &op, 1,
+                                        &calld->publish);
+      break;
+    }
   }
 }
 
@@ -468,8 +581,12 @@ static void start_new_rpc(grpc_exec_ctx *exec_ctx, grpc_call_element *elem) {
       if (!rm) break;
       if (rm->host != calld->host) continue;
       if (rm->method != calld->path) continue;
+      if ((rm->flags & GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST) &&
+          !calld->recv_idempotent_request)
+        continue;
       finish_start_new_rpc(exec_ctx, server, elem,
-                           &rm->server_registered_method->request_matcher);
+                           &rm->server_registered_method->request_matcher,
+                           rm->server_registered_method->payload_handling);
       return;
     }
     /* check for a wildcard method definition (no host set) */
@@ -480,13 +597,18 @@ static void start_new_rpc(grpc_exec_ctx *exec_ctx, grpc_call_element *elem) {
       if (!rm) break;
       if (rm->host != NULL) continue;
       if (rm->method != calld->path) continue;
+      if ((rm->flags & GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST) &&
+          !calld->recv_idempotent_request)
+        continue;
       finish_start_new_rpc(exec_ctx, server, elem,
-                           &rm->server_registered_method->request_matcher);
+                           &rm->server_registered_method->request_matcher,
+                           rm->server_registered_method->payload_handling);
       return;
     }
   }
   finish_start_new_rpc(exec_ctx, server, elem,
-                       &server->unregistered_request_matcher);
+                       &server->unregistered_request_matcher,
+                       GRPC_SRM_PAYLOAD_NONE);
 }
 
 static int num_listeners(grpc_server *server) {
@@ -563,10 +685,14 @@ static grpc_mdelem *server_filter(void *user_data, grpc_mdelem *md) {
   grpc_call_element *elem = user_data;
   call_data *calld = elem->call_data;
   if (md->key == GRPC_MDSTR_PATH) {
-    calld->path = GRPC_MDSTR_REF(md->value);
+    if (calld->path == NULL) {
+      calld->path = GRPC_MDSTR_REF(md->value);
+    }
     return NULL;
   } else if (md->key == GRPC_MDSTR_AUTHORITY) {
-    calld->host = GRPC_MDSTR_REF(md->value);
+    if (calld->host == NULL) {
+      calld->host = GRPC_MDSTR_REF(md->value);
+    }
     return NULL;
   }
   return md;
@@ -598,9 +724,11 @@ static void server_mutate_op(grpc_call_element *elem,
   call_data *calld = elem->call_data;
 
   if (op->recv_initial_metadata != NULL) {
+    GPR_ASSERT(op->recv_idempotent_request == NULL);
     calld->recv_initial_metadata = op->recv_initial_metadata;
     calld->on_done_recv_initial_metadata = op->recv_initial_metadata_ready;
     op->recv_initial_metadata_ready = &calld->server_on_recv_initial_metadata;
+    op->recv_idempotent_request = &calld->recv_idempotent_request;
   }
 }
 
@@ -813,7 +941,7 @@ grpc_server *grpc_server_create(const grpc_channel_args *args, void *reserved) {
     gpr_stack_lockfree_push(server->request_freelist, (int)i);
   }
   request_matcher_init(&server->unregistered_request_matcher,
-                       server->max_requested_calls);
+                       server->max_requested_calls, server);
   server->requested_calls = gpr_malloc(server->max_requested_calls *
                                        sizeof(*server->requested_calls));
 
@@ -829,11 +957,15 @@ static int streq(const char *a, const char *b) {
   return 0 == strcmp(a, b);
 }
 
-void *grpc_server_register_method(grpc_server *server, const char *method,
-                                  const char *host) {
+void *grpc_server_register_method(
+    grpc_server *server, const char *method, const char *host,
+    grpc_server_register_method_payload_handling payload_handling,
+    uint32_t flags) {
   registered_method *m;
-  GRPC_API_TRACE("grpc_server_register_method(server=%p, method=%s, host=%s)",
-                 3, (server, method, host));
+  GRPC_API_TRACE(
+      "grpc_server_register_method(server=%p, method=%s, host=%s, "
+      "flags=0x%08x)",
+      4, (server, method, host, flags));
   if (!method) {
     gpr_log(GPR_ERROR,
             "grpc_server_register_method method string cannot be NULL");
@@ -846,12 +978,20 @@ void *grpc_server_register_method(grpc_server *server, const char *method,
       return NULL;
     }
   }
+  if ((flags & ~GRPC_INITIAL_METADATA_USED_MASK) != 0) {
+    gpr_log(GPR_ERROR, "grpc_server_register_method invalid flags 0x%08x",
+            flags);
+    return NULL;
+  }
   m = gpr_malloc(sizeof(registered_method));
   memset(m, 0, sizeof(*m));
-  request_matcher_init(&m->request_matcher, server->max_requested_calls);
+  request_matcher_init(&m->request_matcher, server->max_requested_calls,
+                       server);
   m->method = gpr_strdup(method);
   m->host = gpr_strdup(host);
   m->next = server->registered_methods;
+  m->payload_handling = payload_handling;
+  m->flags = flags;
   server->registered_methods = m;
   return m;
 }
@@ -930,6 +1070,7 @@ void grpc_server_setup_transport(grpc_exec_ctx *exec_ctx, grpc_server *s,
       if (probes > max_probes) max_probes = probes;
       crm = &chand->registered_methods[(hash + probes) % slots];
       crm->server_registered_method = rm;
+      crm->flags = rm->flags;
       crm->host = host;
       crm->method = method;
     }
@@ -1123,8 +1264,8 @@ static grpc_call_error queue_call_request(grpc_exec_ctx *exec_ctx,
         GPR_ASSERT(calld->state == PENDING);
         calld->state = ACTIVATED;
         gpr_mu_unlock(&calld->mu_state);
-        begin_call(exec_ctx, server, calld,
-                   &server->requested_calls[request_id]);
+        publish_call(exec_ctx, server, calld,
+                     &server->requested_calls[request_id]);
       }
       gpr_mu_lock(&server->mu_call);
     }
@@ -1189,6 +1330,12 @@ grpc_call_error grpc_server_request_registered_call(
     error = GRPC_CALL_ERROR_NOT_SERVER_COMPLETION_QUEUE;
     goto done;
   }
+  if ((optional_payload == NULL) !=
+      (rm->payload_handling == GRPC_SRM_PAYLOAD_NONE)) {
+    gpr_free(rc);
+    error = GRPC_CALL_ERROR_PAYLOAD_TYPE_MISMATCH;
+    goto done;
+  }
   grpc_cq_begin_op(cq_for_notification, tag);
   rc->type = REGISTERED_CALL;
   rc->server = server;
@@ -1206,82 +1353,6 @@ done:
   return error;
 }
 
-static void publish_registered_or_batch(grpc_exec_ctx *exec_ctx,
-                                        void *user_data, bool success);
-
-static void cpstr(char **dest, size_t *capacity, grpc_mdstr *value) {
-  gpr_slice slice = value->slice;
-  size_t len = GPR_SLICE_LENGTH(slice);
-
-  if (len + 1 > *capacity) {
-    *capacity = GPR_MAX(len + 1, *capacity * 2);
-    *dest = gpr_realloc(*dest, *capacity);
-  }
-  memcpy(*dest, grpc_mdstr_as_c_string(value), len + 1);
-}
-
-static void begin_call(grpc_exec_ctx *exec_ctx, grpc_server *server,
-                       call_data *calld, requested_call *rc) {
-  grpc_op ops[1];
-  grpc_op *op = ops;
-
-  memset(ops, 0, sizeof(ops));
-
-  /* called once initial metadata has been read by the call, but BEFORE
-     the ioreq to fetch it out of the call has been executed.
-     This means metadata related fields can be relied on in calld, but to
-     fill in the metadata array passed by the client, we need to perform
-     an ioreq op, that should complete immediately. */
-
-  grpc_call_set_completion_queue(exec_ctx, calld->call, rc->cq_bound_to_call);
-  grpc_closure_init(&rc->publish, publish_registered_or_batch, rc);
-  *rc->call = calld->call;
-  calld->cq_new = rc->cq_for_notification;
-  GPR_SWAP(grpc_metadata_array, *rc->initial_metadata, calld->initial_metadata);
-  switch (rc->type) {
-    case BATCH_CALL:
-      GPR_ASSERT(calld->host != NULL);
-      GPR_ASSERT(calld->path != NULL);
-      cpstr(&rc->data.batch.details->host,
-            &rc->data.batch.details->host_capacity, calld->host);
-      cpstr(&rc->data.batch.details->method,
-            &rc->data.batch.details->method_capacity, calld->path);
-      rc->data.batch.details->deadline = calld->deadline;
-      break;
-    case REGISTERED_CALL:
-      *rc->data.registered.deadline = calld->deadline;
-      if (rc->data.registered.optional_payload) {
-        op->op = GRPC_OP_RECV_MESSAGE;
-        op->data.recv_message = rc->data.registered.optional_payload;
-        op++;
-      }
-      break;
-    default:
-      GPR_UNREACHABLE_CODE(return );
-  }
-
-  GRPC_CALL_INTERNAL_REF(calld->call, "server");
-  grpc_call_start_batch_and_execute(exec_ctx, calld->call, ops,
-                                    (size_t)(op - ops), &rc->publish);
-}
-
-static void done_request_event(grpc_exec_ctx *exec_ctx, void *req,
-                               grpc_cq_completion *c) {
-  requested_call *rc = req;
-  grpc_server *server = rc->server;
-
-  if (rc >= server->requested_calls &&
-      rc < server->requested_calls + server->max_requested_calls) {
-    GPR_ASSERT(rc - server->requested_calls <= INT_MAX);
-    gpr_stack_lockfree_push(server->request_freelist,
-                            (int)(rc - server->requested_calls));
-  } else {
-    gpr_free(req);
-  }
-
-  server_unref(exec_ctx, server);
-}
-
 static void fail_call(grpc_exec_ctx *exec_ctx, grpc_server *server,
                       requested_call *rc) {
   *rc->call = NULL;
@@ -1290,20 +1361,6 @@ static void fail_call(grpc_exec_ctx *exec_ctx, grpc_server *server,
   server_ref(server);
   grpc_cq_end_op(exec_ctx, rc->cq_for_notification, rc->tag, 0,
                  done_request_event, rc, &rc->completion);
-}
-
-static void publish_registered_or_batch(grpc_exec_ctx *exec_ctx, void *prc,
-                                        bool success) {
-  requested_call *rc = prc;
-  grpc_call *call = *rc->call;
-  grpc_call_element *elem =
-      grpc_call_stack_element(grpc_call_get_call_stack(call), 0);
-  call_data *calld = elem->call_data;
-  channel_data *chand = elem->channel_data;
-  server_ref(chand->server);
-  grpc_cq_end_op(exec_ctx, calld->cq_new, rc->tag, success, done_request_event,
-                 rc, &rc->completion);
-  GRPC_CALL_INTERNAL_UNREF(exec_ctx, call, "server");
 }
 
 const grpc_channel_args *grpc_server_get_channel_args(grpc_server *server) {

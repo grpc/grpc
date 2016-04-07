@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -132,3 +132,5 @@ static void test_invoke_empty_body(grpc_end2end_test_config config) {
 void empty_batch(grpc_end2end_test_config config) {
   test_invoke_empty_body(config);
 }
+
+void empty_batch_pre_init(void) {}

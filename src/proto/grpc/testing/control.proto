@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Google Inc.
+// Copyright 2015, Google Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -168,4 +168,29 @@ message CoreResponse {
 }
 
 message Void {
+}
+
+// A single performance scenario: input to qps_json_driver
+message Scenario {
+  // Human readable name for this scenario
+  string name = 1;
+  // Client configuration
+  ClientConfig client_config = 2;
+  // Number of clients to start for the test
+  int32 num_clients = 3;
+  // Server configuration
+  ServerConfig server_config = 4;
+  // Number of servers to start for the test
+  int32 num_servers = 5;
+  // Warmup period, in seconds
+  int32 warmup_seconds = 6;
+  // Benchmark time, in seconds
+  int32 benchmark_seconds = 7;
+  // Number of workers to spawn locally (usually zero)
+  int32 spawn_local_worker_count = 8;
+}
+
+// A set of scenarios to be run with qps_json_driver
+message Scenarios {
+  repeated Scenario scenarios = 1;
 }

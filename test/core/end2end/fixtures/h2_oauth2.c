@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -226,7 +226,7 @@ static grpc_end2end_test_config configs[] = {
 int main(int argc, char **argv) {
   size_t i;
   grpc_test_init(argc, argv);
-
+  grpc_end2end_tests_pre_init();
   grpc_init();
 
   for (i = 0; i < sizeof(configs) / sizeof(*configs); i++) {

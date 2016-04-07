@@ -42,11 +42,25 @@ void test_register_method_fail(void) {
   grpc_server *server = grpc_server_create(NULL, NULL);
   void *method;
   void *method_old;
-  method = grpc_server_register_method(server, NULL, NULL);
+  method =
+      grpc_server_register_method(server, NULL, NULL, GRPC_SRM_PAYLOAD_NONE, 0);
   GPR_ASSERT(method == NULL);
-  method_old = grpc_server_register_method(server, "m", "h");
+  method_old =
+      grpc_server_register_method(server, "m", "h", GRPC_SRM_PAYLOAD_NONE, 0);
   GPR_ASSERT(method_old != NULL);
-  method = grpc_server_register_method(server, "m", "h");
+  method = grpc_server_register_method(
+      server, "m", "h", GRPC_SRM_PAYLOAD_READ_INITIAL_BYTE_BUFFER, 0);
+  GPR_ASSERT(method == NULL);
+  method_old =
+      grpc_server_register_method(server, "m2", "h2", GRPC_SRM_PAYLOAD_NONE,
+                                  GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST);
+  GPR_ASSERT(method_old != NULL);
+  method =
+      grpc_server_register_method(server, "m2", "h2", GRPC_SRM_PAYLOAD_NONE, 0);
+  GPR_ASSERT(method == NULL);
+  method = grpc_server_register_method(
+      server, "m2", "h2", GRPC_SRM_PAYLOAD_READ_INITIAL_BYTE_BUFFER,
+      GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST);
   GPR_ASSERT(method == NULL);
   grpc_server_destroy(server);
 }

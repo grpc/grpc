@@ -37,7 +37,10 @@ export DOCKER_RUN_SCRIPT=tools/jenkins/docker_run.sh
 export DOCKERFILE_DIR=tools/dockerfile/test/fuzzer
 export OUTPUT_DIR=fuzzer_output
 
+runtime=${runtime:-3600}
+
 tools/jenkins/build_and_run_docker.sh \
   -e RUN_COMMAND="$RUN_COMMAND" \
   -e OUTPUT_DIR="$OUTPUT_DIR" \
-  -e config="$config"
+  -e config="$config" \
+  -e runtime="$runtime"
