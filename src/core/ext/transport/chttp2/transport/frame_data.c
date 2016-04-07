@@ -159,7 +159,10 @@ grpc_chttp2_parse_error grpc_chttp2_data_parser_parse(
   }
 
   switch (p->state) {
-  fh_0:
+    case GRPC_CHTTP2_DATA_ERROR:
+      p->state = GRPC_CHTTP2_DATA_ERROR;
+      return GRPC_CHTTP2_STREAM_ERROR;
+    fh_0:
     case GRPC_CHTTP2_DATA_FH_0:
       stream_parsing->stats.incoming.framing_bytes++;
       p->frame_type = *cur;
@@ -172,6 +175,7 @@ grpc_chttp2_parse_error grpc_chttp2_data_parser_parse(
           break;
         default:
           gpr_log(GPR_ERROR, "Bad GRPC frame type 0x%02x", p->frame_type);
+          p->state = GRPC_CHTTP2_DATA_ERROR;
           return GRPC_CHTTP2_STREAM_ERROR;
       }
       if (++cur == end) {
@@ -218,13 +222,11 @@ grpc_chttp2_parse_error grpc_chttp2_data_parser_parse(
               message_flags, &p->incoming_frames);
     /* fallthrough */
     case GRPC_CHTTP2_DATA_FRAME:
-      if (cur == end) {
-        grpc_chttp2_list_add_parsing_seen_stream(transport_parsing,
-                                                 stream_parsing);
-        return GRPC_CHTTP2_PARSE_OK;
-      }
       grpc_chttp2_list_add_parsing_seen_stream(transport_parsing,
                                                stream_parsing);
+      if (cur == end) {
+        return GRPC_CHTTP2_PARSE_OK;
+      }
       uint32_t remaining = (uint32_t)(end - cur);
       if (remaining == p->frame_size) {
         stream_parsing->stats.incoming.data_bytes += p->frame_size;
