@@ -49,6 +49,6 @@ gpr_slice grpc_chttp2_huffman_compress(gpr_slice input);
    gpr_slice y = grpc_chttp2_huffman_compress(x);
    gpr_slice_unref(x);
    return y; */
-gpr_slice grpc_chttp2_base64_encode_and_huffman_compress(gpr_slice input);
+gpr_slice grpc_chttp2_base64_encode_and_huffman_compress_impl(gpr_slice input);
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_BIN_ENCODER_H */

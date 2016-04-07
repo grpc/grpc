@@ -38,6 +38,8 @@
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/transport.h"
 
+#define GRPC_CHANNEL_INIT_BUILTIN_PRIORITY 10000
+
 /// This module provides a way for plugins (and the grpc core library itself)
 /// to register mutators for channel stacks.
 /// It also provides a universal entry path to run those mutators to build
@@ -78,9 +80,8 @@ void grpc_channel_init_shutdown(void);
 /// \a optional_transport is either NULL or a constructed transport object
 /// Returns a pointer to the base of the memory allocated (the actual channel
 /// stack object will be prefix_bytes past that pointer)
-void *grpc_channel_init_create_stack(
-    grpc_exec_ctx *exec_ctx, grpc_channel_stack_type type, size_t prefix_bytes,
-    const grpc_channel_args *args, int initial_refs, grpc_iomgr_cb_func destroy,
-    void *destroy_arg, grpc_transport *optional_transport);
+bool grpc_channel_init_create_stack(grpc_exec_ctx *exec_ctx,
+                                    grpc_channel_stack_builder *builder,
+                                    grpc_channel_stack_type type);
 
 #endif /* GRPC_CORE_LIB_SURFACE_CHANNEL_INIT_H */

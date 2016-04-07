@@ -148,24 +148,12 @@
   </ItemDefinitionGroup>
 
   <ItemGroup>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\alloc.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm_gcc_atomic.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm_gcc_sync.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm_win32.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\log.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\port_platform.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\slice.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\slice_buffer.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_generic.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_posix.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_win32.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\time.h" />
-  </ItemGroup>
-  <ItemGroup>
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\support\config.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\support\config_protobuf.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\config.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\config_protobuf.h" />
+  </ItemGroup>
+  <ItemGroup>
     <ClInclude Include="$(SolutionDir)\..\src\compiler\config.h" />
     <ClInclude Include="$(SolutionDir)\..\src\compiler\cpp_generator.h" />
     <ClInclude Include="$(SolutionDir)\..\src\compiler\cpp_generator_helpers.h" />
@@ -191,11 +179,6 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\compiler\ruby_generator.cc">
     </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="$(SolutionDir)\..\vsprojects\vcxproj\.\grpc++_codegen_lib\grpc++_codegen_lib.vcxproj">
-      <Project>{AAC6AF12-94C8-4A3C-A1BF-DAA4738F4500}</Project>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

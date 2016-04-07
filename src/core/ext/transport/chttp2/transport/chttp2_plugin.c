@@ -31,23 +31,16 @@
  *
  */
 
-#include "src/core/ext/transport/chttp2/alpn/alpn.h"
+#include "src/core/ext/transport/chttp2/transport/bin_encoder.h"
+#include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
+#include "src/core/lib/debug/trace.h"
+#include "src/core/lib/transport/metadata.h"
 
-#include <grpc/support/log.h>
-#include "test/core/util/test_config.h"
-
-static void test_alpn_success(void) {
-  GPR_ASSERT(grpc_chttp2_is_alpn_version_supported("h2", 2));
+void grpc_chttp2_plugin_init(void) {
+  grpc_chttp2_base64_encode_and_huffman_compress =
+      grpc_chttp2_base64_encode_and_huffman_compress_impl;
+  grpc_register_tracer("http", &grpc_http_trace);
+  grpc_register_tracer("flowctl", &grpc_flowctl_trace);
 }
 
-static void test_alpn_failure(void) {
-  GPR_ASSERT(!grpc_chttp2_is_alpn_version_supported("h2-155", 6));
-  GPR_ASSERT(!grpc_chttp2_is_alpn_version_supported("h1-15", 5));
-}
-
-int main(int argc, char **argv) {
-  grpc_test_init(argc, argv);
-  test_alpn_success();
-  test_alpn_failure();
-  return 0;
-}
+void grpc_chttp2_plugin_shutdown(void) {}
