@@ -147,8 +147,8 @@
   </ItemDefinitionGroup>
 
   <ItemGroup>
-    <ClInclude Include="$(SolutionDir)\..\test\core\end2end\end2end_tests.h" />
     <ClInclude Include="$(SolutionDir)\..\test\core\end2end\tests\cancel_test_helpers.h" />
+    <ClInclude Include="$(SolutionDir)\..\test\core\end2end\end2end_tests.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\end2end_nosec_tests.c">
