@@ -45,6 +45,7 @@
 #include <arpa/inet.h>
 #endif
 
+#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/thd.h>

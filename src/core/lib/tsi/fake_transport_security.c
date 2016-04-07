@@ -36,6 +36,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/useful.h>
@@ -137,7 +138,7 @@ static int tsi_fake_frame_ensure_size(tsi_fake_frame *frame) {
     frame->data = gpr_malloc(frame->allocated_size);
     if (frame->data == NULL) return 0;
   } else if (frame->size > frame->allocated_size) {
-    unsigned char *new_data = realloc(frame->data, frame->size);
+    unsigned char *new_data = gpr_realloc(frame->data, frame->size);
     if (new_data == NULL) {
       gpr_free(frame->data);
       frame->data = NULL;
