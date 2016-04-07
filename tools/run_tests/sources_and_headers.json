@@ -1906,7 +1906,7 @@
   }, 
   {
     "deps": [
-      "grpc++_codegen_lib"
+      "grpc++_codegen"
     ], 
     "headers": [
       "src/proto/grpc/testing/control.grpc.pb.h", 
@@ -4014,19 +4014,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_codegen", 
-      "grpc_codegen"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "grpc_codegen_lib", 
-    "src": [], 
-    "third_party": false, 
-    "type": "lib"
-  }, 
-  {
-    "deps": [
-      "gpr", 
       "grpc"
     ], 
     "headers": [], 
@@ -4198,21 +4185,6 @@
     "type": "lib"
   }, 
   {
-    "deps": [
-      "gpr", 
-      "gpr_codegen", 
-      "grpc", 
-      "grpc++_codegen", 
-      "grpc_codegen"
-    ], 
-    "headers": [], 
-    "language": "c++", 
-    "name": "grpc++_codegen_lib", 
-    "src": [], 
-    "third_party": false, 
-    "type": "lib"
-  }, 
-  {
     "deps": [], 
     "headers": [
       "test/cpp/util/test_config.h"
@@ -4287,7 +4259,8 @@
   {
     "deps": [
       "gpr_codegen", 
-      "grpc++_codegen_lib"
+      "grpc", 
+      "grpc++_codegen"
     ], 
     "headers": [
       "include/grpc++/support/config.h", 
