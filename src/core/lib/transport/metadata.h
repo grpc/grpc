@@ -155,4 +155,8 @@ int grpc_mdstr_is_bin_suffixed(grpc_mdstr *s);
 void grpc_mdctx_global_init(void);
 void grpc_mdctx_global_shutdown(void);
 
+/* Implementation provided by chttp2_transport */
+extern gpr_slice (*grpc_chttp2_base64_encode_and_huffman_compress)(
+    gpr_slice input);
+
 #endif /* GRPC_CORE_LIB_TRANSPORT_METADATA_H */
