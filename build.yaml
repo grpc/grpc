@@ -1938,6 +1938,18 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: poll_herd
+  build: benchmark
+  language: c
+  src:
+  - test/core/network_benchmarks/poll_herd.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  platforms:
+  - linux
 - name: resolve_address_test
   build: test
   language: c
