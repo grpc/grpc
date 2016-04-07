@@ -719,16 +719,6 @@ libs:
   - grpc.dependencies.openssl
   - grpc.dependencies.zlib
   vs_project_guid: '{29D16885-7228-4C31-81ED-5F9187C7F2A9}'
-- name: grpc_codegen_lib
-  build: protoc
-  language: c
-  headers: []
-  src: []
-  filegroups:
-  - gpr_codegen
-  - grpc_codegen
-  secure: false
-  vs_project_guid: '{A828FD72-44CE-4EA5-8966-6E4624458D58}'
 - name: grpc_dll
   build: private
   language: c
@@ -876,17 +866,6 @@ libs:
   - grpc++_codegen
   secure: check
   vs_project_guid: '{C187A093-A0FE-489D-A40A-6E33DE0F9FEB}'
-- name: grpc++_codegen_lib
-  build: all
-  language: c++
-  headers: []
-  src: []
-  filegroups:
-  - gpr_codegen
-  - grpc_codegen
-  - grpc++_codegen
-  secure: false
-  vs_project_guid: '{AAC6AF12-94C8-4A3C-A1BF-DAA4738F4500}'
 - name: grpc++_test_config
   build: private
   language: c++
@@ -959,10 +938,9 @@ libs:
   - src/compiler/objective_c_generator.cc
   - src/compiler/python_generator.cc
   - src/compiler/ruby_generator.cc
-  deps:
-  - grpc++_codegen_lib
   filegroups:
   - gpr_codegen
+  - grpc++_codegen
   secure: false
   vs_project_guid: '{B6E81D84-2ACB-41B8-8781-493A944C7817}'
   vs_props:
@@ -2410,8 +2388,8 @@ targets:
   - src/proto/grpc/testing/services.proto
   - src/proto/grpc/testing/stats.proto
   - test/cpp/codegen/codegen_test.cc
-  deps:
-  - grpc++_codegen_lib
+  filegroups:
+  - grpc++_codegen
 - name: credentials_test
   gtest: true
   build: test
